@@ -1,15 +1,4 @@
-import {
-  AudioBuffer,
-  DSPContext,
-  DSPProcessor,
-  copyBuffer,
-  BiquadFilter,
-  OnePoleFilter,
-  msToSamples,
-  dbToLinear,
-  softClip,
-  hardClip,
-} from "./core";
+import { AudioBuffer, DSPContext, DSPProcessor, copyBuffer, BiquadFilter, OnePoleFilter, msToSamples, dbToLinear, softClip, hardClip } from "./core";
 
 export class TubeDistortionProcessor implements DSPProcessor {
   private hpFilterL: BiquadFilter;
@@ -31,15 +20,15 @@ export class TubeDistortionProcessor implements DSPProcessor {
     params: Record<string, number | boolean | string>,
     _context: DSPContext,
   ): AudioBuffer {
-    const _output = copyBuffer(input);
+    const output = copyBuffer(input);
     this.sampleRate = input?.sampleRate;
 
-    const _drive = (params?.drive as number) ?? 0.5;
-    const _bias = (params?.bias as number) ?? 0.1;
-    const _warmth = (params?.warmth as number) ?? 0.5;
-    const _mix = (params?.mix as number) ?? 1.0;
-    const _outputLevel = (params?.output as number) ?? 0;
-    const _evenHarmonics = (params?.evenHarmonics as number) ?? 0.6;
+    const drive = (params?.drive as number) ?? 0.5;
+    const bias = (params?.bias as number) ?? 0.1;
+    const warmth = (params?.warmth as number) ?? 0.5;
+    const mix = (params?.mix as number) ?? 1.0;
+    const outputLevel = (params?.output as number) ?? 0;
+    const evenHarmonics = (params?.evenHarmonics as number) ?? 0.6;
 
     this?.hpFilterL.setHighpass(30, 0.707, this?.sampleRate);
     this?.hpFilterR.setHighpass(30, 0.707, this?.sampleRate);
@@ -54,27 +43,27 @@ export class TubeDistortionProcessor implements DSPProcessor {
       this?.sampleRate,
     );
 
-    const _driveAmount = 1 + drive * 10;
-    const _biasAmount = bias * 0.2;
-    const _outputGain = dbToLinear(outputLevel);
+    const driveAmount = 1 + drive * 10;
+    const biasAmount = bias * 0.2;
+    const outputGain = dbToLinear(outputLevel);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       for (let ch = 0; ch < input?.channels; ch++) {
         let sample = input?.samples[ch][i];
-        const _dry = sample;
+        const dry = sample;
 
-        const _hpFilter = ch === 0 ? this?.hpFilterL : this?.hpFilterR;
-        const _lpFilter = ch === 0 ? this?.lpFilterL : this?.lpFilterR;
+        const hpFilter = ch === 0 ? this?.hpFilterL : this?.hpFilterR;
+        const lpFilter = ch === 0 ? this?.lpFilterL : this?.lpFilterR;
 
         sample = hpFilter?.process(sample);
         sample = sample + biasAmount;
         sample = sample * driveAmount;
 
-        const _x = sample;
+        const x = sample;
         sample = x / (1 + Math?.abs(x));
 
         if (evenHarmonics > 0) {
-          const _squared = x * Math?.abs(x) * 0.5;
+          const squared = x * Math?.abs(x) * 0.5;
           sample = sample * (1 - evenHarmonics) + squared * evenHarmonics;
         }
 
@@ -82,7 +71,7 @@ export class TubeDistortionProcessor implements DSPProcessor {
         sample = lpFilter?.process(sample);
 
         sample = dry * (1 - mix) + sample * mix;
-        output?.samples[ch][i] = sample * outputGain;
+        output.samples[ch][i] = sample * outputGain;
       }
     }
 
@@ -123,17 +112,17 @@ export class TapeDistortionProcessor implements DSPProcessor {
     params: Record<string, number | boolean | string>,
     _context: DSPContext,
   ): AudioBuffer {
-    const _output = copyBuffer(input);
+    const output = copyBuffer(input);
     this.sampleRate = input?.sampleRate;
 
-    const _drive = (params?.drive as number) ?? 0.4;
-    const _saturation = (params?.saturation as number) ?? 0.5;
-    const _headBump = (params?.headBump as number) ?? 0.3;
-    const _compression = (params?.compression as number) ?? 0.4;
-    const _flutter = (params?.flutter as number) ?? 0.1;
-    const _hiss = (params?.hiss as number) ?? 0.02;
-    const _mix = (params?.mix as number) ?? 1.0;
-    const _outputLevel = (params?.output as number) ?? 0;
+    const drive = (params?.drive as number) ?? 0.4;
+    const saturation = (params?.saturation as number) ?? 0.5;
+    const headBump = (params?.headBump as number) ?? 0.3;
+    const compression = (params?.compression as number) ?? 0.4;
+    const flutter = (params?.flutter as number) ?? 0.1;
+    const hiss = (params?.hiss as number) ?? 0.02;
+    const mix = (params?.mix as number) ?? 1.0;
+    const outputLevel = (params?.output as number) ?? 0;
 
     this?.hpFilterL.setHighpass(40, 0.707, this?.sampleRate);
     this?.hpFilterR.setHighpass(40, 0.707, this?.sampleRate);
@@ -150,36 +139,36 @@ export class TapeDistortionProcessor implements DSPProcessor {
     this?.headBumpFilterL.setPeaking(80, 0.8, headBump * 6, this?.sampleRate);
     this?.headBumpFilterR.setPeaking(80, 0.8, headBump * 6, this?.sampleRate);
 
-    const _driveAmount = 1 + drive * 5;
-    const _outputGain = dbToLinear(outputLevel);
-    const _attackCoeff = Math?.exp(-1 / msToSamples(5, this?.sampleRate));
-    const _releaseCoeff = Math?.exp(-1 / msToSamples(100, this?.sampleRate));
+    const driveAmount = 1 + drive * 5;
+    const outputGain = dbToLinear(outputLevel);
+    const attackCoeff = Math?.exp(-1 / msToSamples(5, this?.sampleRate));
+    const releaseCoeff = Math?.exp(-1 / msToSamples(100, this?.sampleRate));
 
     for (let i = 0; i < input?.samples[0].length; i++) {
-      this?.flutterPhase += (2 * Math?.PI * 5) / this?.sampleRate;
-      const _flutterMod = Math?.sin(this?.flutterPhase) * flutter * 0.002;
+      this.flutterPhase += (2 * Math.PI * 5) / this?.sampleRate;
+      const flutterMod = Math?.sin(this?.flutterPhase) * flutter * 0.002;
 
       for (let ch = 0; ch < input?.channels; ch++) {
         let sample = input?.samples[ch][i];
-        const _dry = sample;
+        const dry = sample;
 
-        const _hpFilter = ch === 0 ? this?.hpFilterL : this?.hpFilterR;
-        const _lpFilter = ch === 0 ? this?.lpFilterL : this?.lpFilterR;
-        const _headBumpFilter =
+        const hpFilter = ch === 0 ? this?.hpFilterL : this?.hpFilterR;
+        const lpFilter = ch === 0 ? this?.lpFilterL : this?.lpFilterR;
+        const headBumpFilter =
           ch === 0 ? this?.headBumpFilterL : this?.headBumpFilterR;
 
         sample = hpFilter?.process(sample);
         sample = headBumpFilter?.process(sample);
         sample = sample * driveAmount;
 
-        const _inputLevel = Math?.abs(sample);
-        const _coeff =
+        const inputLevel = Math?.abs(sample);
+        const coeff =
           inputLevel > this?.compressionEnvelope ? attackCoeff : releaseCoeff;
         this.compressionEnvelope =
           this?.compressionEnvelope * coeff + inputLevel * (1 - coeff);
 
         if (compression > 0 && this?.compressionEnvelope > 0.5) {
-          const _gain = 0.5 / this?.compressionEnvelope;
+          const gain = 0.5 / this?.compressionEnvelope;
           sample = sample * (1 - compression + compression * gain);
         }
 
@@ -192,7 +181,7 @@ export class TapeDistortionProcessor implements DSPProcessor {
         }
 
         sample = dry * (1 - mix) + sample * mix;
-        output?.samples[ch][i] = sample * outputGain;
+        output.samples[ch][i] = sample * outputGain;
       }
     }
 
@@ -234,15 +223,15 @@ export class TransistorDistortionProcessor implements DSPProcessor {
     params: Record<string, number | boolean | string>,
     _context: DSPContext,
   ): AudioBuffer {
-    const _output = copyBuffer(input);
+    const output = copyBuffer(input);
     this.sampleRate = input?.sampleRate;
 
-    const _drive = (params?.drive as number) ?? 0.6;
-    const _tone = (params?.tone as number) ?? 0.5;
-    const _asymmetry = (params?.asymmetry as number) ?? 0.3;
-    const _hardness = (params?.hardness as number) ?? 0.7;
-    const _mix = (params?.mix as number) ?? 1.0;
-    const _outputLevel = (params?.output as number) ?? 0;
+    const drive = (params?.drive as number) ?? 0.6;
+    const tone = (params?.tone as number) ?? 0.5;
+    const asymmetry = (params?.asymmetry as number) ?? 0.3;
+    const hardness = (params?.hardness as number) ?? 0.7;
+    const mix = (params?.mix as number) ?? 1.0;
+    const outputLevel = (params?.output as number) ?? 0;
 
     this?.hpFilterL.setHighpass(80, 0.707, this?.sampleRate);
     this?.hpFilterR.setHighpass(80, 0.707, this?.sampleRate);
@@ -251,18 +240,18 @@ export class TransistorDistortionProcessor implements DSPProcessor {
     this?.toneFilterL.setPeaking(2000, 1, tone * 6 - 3, this?.sampleRate);
     this?.toneFilterR.setPeaking(2000, 1, tone * 6 - 3, this?.sampleRate);
 
-    const _driveAmount = 1 + drive * 20;
-    const _outputGain = dbToLinear(outputLevel);
-    const _clipThreshold = 1 - hardness * 0.5;
+    const driveAmount = 1 + drive * 20;
+    const outputGain = dbToLinear(outputLevel);
+    const clipThreshold = 1 - hardness * 0.5;
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       for (let ch = 0; ch < input?.channels; ch++) {
         let sample = input?.samples[ch][i];
-        const _dry = sample;
+        const dry = sample;
 
-        const _hpFilter = ch === 0 ? this?.hpFilterL : this?.hpFilterR;
-        const _lpFilter = ch === 0 ? this?.lpFilterL : this?.lpFilterR;
-        const _toneFilter = ch === 0 ? this?.toneFilterL : this?.toneFilterR;
+        const hpFilter = ch === 0 ? this?.hpFilterL : this?.hpFilterR;
+        const lpFilter = ch === 0 ? this?.lpFilterL : this?.lpFilterR;
+        const toneFilter = ch === 0 ? this?.toneFilterL : this?.toneFilterR;
 
         sample = hpFilter?.process(sample);
         sample = sample * driveAmount;
@@ -276,9 +265,9 @@ export class TransistorDistortionProcessor implements DSPProcessor {
         }
 
         if (Math?.abs(sample) > clipThreshold) {
-          const _sign = sample > 0 ? 1 : -1;
-          const _excess = Math?.abs(sample) - clipThreshold;
-          const _softPart = clipThreshold + excess * (1 - hardness);
+          const sign = sample > 0 ? 1 : -1;
+          const excess = Math?.abs(sample) - clipThreshold;
+          const softPart = clipThreshold + excess * (1 - hardness);
           sample = sign * Math?.min(1, softPart);
         }
 
@@ -287,7 +276,7 @@ export class TransistorDistortionProcessor implements DSPProcessor {
         sample = lpFilter?.process(sample);
 
         sample = dry * (1 - mix) + sample * mix;
-        output?.samples[ch][i] = sample * outputGain;
+        output.samples[ch][i] = sample * outputGain;
       }
     }
 
@@ -324,38 +313,38 @@ export class FuzzDistortionProcessor implements DSPProcessor {
     params: Record<string, number | boolean | string>,
     _context: DSPContext,
   ): AudioBuffer {
-    const _output = copyBuffer(input);
+    const output = copyBuffer(input);
     this.sampleRate = input?.sampleRate;
 
-    const _fuzz = (params?.fuzz as number) ?? 0.8;
-    const _tone = (params?.tone as number) ?? 0.5;
-    const _gate = (params?.gate as number) ?? 0.2;
-    const _sustain = (params?.sustain as number) ?? 0.6;
-    const _octave = (params?.octave as number) ?? 0;
-    const _mix = (params?.mix as number) ?? 1.0;
-    const _outputLevel = (params?.output as number) ?? 0;
+    const fuzz = (params?.fuzz as number) ?? 0.8;
+    const tone = (params?.tone as number) ?? 0.5;
+    const gate = (params?.gate as number) ?? 0.2;
+    const sustain = (params?.sustain as number) ?? 0.6;
+    const octave = (params?.octave as number) ?? 0;
+    const mix = (params?.mix as number) ?? 1.0;
+    const outputLevel = (params?.output as number) ?? 0;
 
     this?.hpFilterL.setHighpass(100, 0.707, this?.sampleRate);
     this?.hpFilterR.setHighpass(100, 0.707, this?.sampleRate);
     this?.lpFilterL.setLowpass(2000 + tone * 6000, 0.707, this?.sampleRate);
     this?.lpFilterR.setLowpass(2000 + tone * 6000, 0.707, this?.sampleRate);
 
-    const _fuzzAmount = 1 + fuzz * 50;
-    const _outputGain = dbToLinear(outputLevel);
-    const _gateThreshold = gate * 0.1;
-    const _sustainAmount = sustain * 2;
+    const fuzzAmount = 1 + fuzz * 50;
+    const outputGain = dbToLinear(outputLevel);
+    const gateThreshold = gate * 0.1;
+    const sustainAmount = sustain * 2;
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       for (let ch = 0; ch < input?.channels; ch++) {
         let sample = input?.samples[ch][i];
-        const _dry = sample;
+        const dry = sample;
 
-        const _hpFilter = ch === 0 ? this?.hpFilterL : this?.hpFilterR;
-        const _lpFilter = ch === 0 ? this?.lpFilterL : this?.lpFilterR;
+        const hpFilter = ch === 0 ? this?.hpFilterL : this?.hpFilterR;
+        const lpFilter = ch === 0 ? this?.lpFilterL : this?.lpFilterR;
 
         sample = hpFilter?.process(sample);
 
-        const _inputLevel = Math?.abs(sample);
+        const inputLevel = Math?.abs(sample);
         this.gateEnvelope = this?.gateEnvelope * 0.999 + inputLevel * 0.001;
 
         if (this?.gateEnvelope < gateThreshold) {
@@ -378,7 +367,7 @@ export class FuzzDistortionProcessor implements DSPProcessor {
         sample = lpFilter?.process(sample);
 
         sample = dry * (1 - mix) + sample * mix;
-        output?.samples[ch][i] = sample * outputGain;
+        output.samples[ch][i] = sample * outputGain;
       }
     }
 
@@ -412,21 +401,21 @@ export class BitcrushDistortionProcessor implements DSPProcessor {
     params: Record<string, number | boolean | string>,
     _context: DSPContext,
   ): AudioBuffer {
-    const _output = copyBuffer(input);
+    const output = copyBuffer(input);
     this.sampleRate = input?.sampleRate;
 
-    const _bitDepth = (params?.bitDepth as number) ?? 8;
-    const _sampleRateReduction = (params?.sampleRate as number) ?? 0.5;
-    const _jitter = (params?.jitter as number) ?? 0;
-    const _dither = (params?.dither as number) ?? 0;
-    const _aliasing = (params?.aliasing as number) ?? 0.5;
-    const _mix = (params?.mix as number) ?? 1.0;
-    const _outputLevel = (params?.output as number) ?? 0;
+    const bitDepth = (params?.bitDepth as number) ?? 8;
+    const sampleRateReduction = (params?.sampleRate as number) ?? 0.5;
+    const jitter = (params?.jitter as number) ?? 0;
+    const dither = (params?.dither as number) ?? 0;
+    const aliasing = (params?.aliasing as number) ?? 0.5;
+    const mix = (params?.mix as number) ?? 1.0;
+    const outputLevel = (params?.output as number) ?? 0;
 
-    const _targetRate = this?.sampleRate * (1 - sampleRateReduction * 0.95);
-    const _sampleSkip = Math?.max(1, Math?.floor(this?.sampleRate / targetRate));
-    const _levels = Math?.pow(2, bitDepth);
-    const _outputGain = dbToLinear(outputLevel);
+    const targetRate = this?.sampleRate * (1 - sampleRateReduction * 0.95);
+    const sampleSkip = Math?.max(1, Math?.floor(this?.sampleRate / targetRate));
+    const levels = Math?.pow(2, bitDepth);
+    const outputGain = dbToLinear(outputLevel);
 
     if (aliasing < 0.5) {
       this?.lpFilterL.setLowpass(targetRate * 0.4, this?.sampleRate);
@@ -437,9 +426,9 @@ export class BitcrushDistortionProcessor implements DSPProcessor {
     }
 
     for (let i = 0; i < input?.samples[0].length; i++) {
-      this?.sampleCounter++;
+      this.sampleCounter++;
 
-      const _jitterOffset =
+      const jitterOffset =
         jitter > 0 ? Math?.floor(Math?.random() * jitter * 4) : 0;
 
       if (this?.sampleCounter >= sampleSkip + jitterOffset) {
@@ -462,9 +451,9 @@ export class BitcrushDistortionProcessor implements DSPProcessor {
       sampleL = this?.lpFilterL.process(sampleL);
       sampleR = this?.lpFilterR.process(sampleR);
 
-      output?.samples[0][i] =
+      output.samples[0][i] =
         input?.samples[0][i] * (1 - mix) + sampleL * mix * outputGain;
-      output?.samples[1][i] =
+      output.samples[1][i] =
         input?.samples[1][i] * (1 - mix) + sampleR * mix * outputGain;
     }
 
@@ -497,17 +486,17 @@ export class WaveshaperDistortionProcessor implements DSPProcessor {
   private getCurve(type: string, amount: number, x: number): number {
     switch (type) {
       case "sine":
-        return Math?.sin(x * Math?.PI * 0.5 * (1 + amount * 2));
+        return Math?.sin(x * Math.PI * 0.5 * (1 + amount * 2));
       case "exponential":
         return Math?.sign(x) * Math?.pow(Math?.abs(x), 1 / (1 + amount * 2));
       case "cubic":
         return x - (amount * x * x * x) / 3;
       case "arctangent":
-        return (2 / Math?.PI) * Math?.atan(x * (1 + amount * 10));
+        return (2 / Math.PI) * Math?.atan(x * (1 + amount * 10));
       case "foldback":
-        const _foldX = x * (1 + amount * 4);
+        const foldX = x * (1 + amount * 4);
         if (Math?.abs(foldX) > 1) {
-          return Math?.sin(foldX * Math?.PI * 0.5);
+          return Math?.sin(foldX * Math.PI * 0.5);
         }
         return foldX;
       default:
@@ -520,32 +509,32 @@ export class WaveshaperDistortionProcessor implements DSPProcessor {
     params: Record<string, number | boolean | string>,
     _context: DSPContext,
   ): AudioBuffer {
-    const _output = copyBuffer(input);
+    const output = copyBuffer(input);
     this.sampleRate = input?.sampleRate;
 
-    const _curve = (params?.curve as string) ?? "tanh";
-    const _drive = (params?.drive as number) ?? 0.5;
-    const _amount = (params?.amount as number) ?? 0.5;
-    const _symmetry = (params?.symmetry as number) ?? 0;
-    const _postFilter = (params?.postFilter as number) ?? 8000;
-    const _mix = (params?.mix as number) ?? 1.0;
-    const _outputLevel = (params?.output as number) ?? 0;
+    const curve = (params?.curve as string) ?? "tanh";
+    const drive = (params?.drive as number) ?? 0.5;
+    const amount = (params?.amount as number) ?? 0.5;
+    const symmetry = (params?.symmetry as number) ?? 0;
+    const postFilter = (params?.postFilter as number) ?? 8000;
+    const mix = (params?.mix as number) ?? 1.0;
+    const outputLevel = (params?.output as number) ?? 0;
 
     this?.hpFilterL.setHighpass(20, 0.707, this?.sampleRate);
     this?.hpFilterR.setHighpass(20, 0.707, this?.sampleRate);
     this?.lpFilterL.setLowpass(postFilter, 0.707, this?.sampleRate);
     this?.lpFilterR.setLowpass(postFilter, 0.707, this?.sampleRate);
 
-    const _driveAmount = 1 + drive * 5;
-    const _outputGain = dbToLinear(outputLevel);
+    const driveAmount = 1 + drive * 5;
+    const outputGain = dbToLinear(outputLevel);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       for (let ch = 0; ch < input?.channels; ch++) {
         let sample = input?.samples[ch][i];
-        const _dry = sample;
+        const dry = sample;
 
-        const _hpFilter = ch === 0 ? this?.hpFilterL : this?.hpFilterR;
-        const _lpFilter = ch === 0 ? this?.lpFilterL : this?.lpFilterR;
+        const hpFilter = ch === 0 ? this?.hpFilterL : this?.hpFilterR;
+        const lpFilter = ch === 0 ? this?.lpFilterL : this?.lpFilterR;
 
         sample = hpFilter?.process(sample);
         sample = sample * driveAmount;
@@ -563,7 +552,7 @@ export class WaveshaperDistortionProcessor implements DSPProcessor {
         sample = lpFilter?.process(sample);
 
         sample = dry * (1 - mix) + sample * mix;
-        output?.samples[ch][i] = sample * outputGain;
+        output.samples[ch][i] = sample * outputGain;
       }
     }
 
@@ -601,15 +590,15 @@ export class OverdriveDistortionProcessor implements DSPProcessor {
     params: Record<string, number | boolean | string>,
     _context: DSPContext,
   ): AudioBuffer {
-    const _output = copyBuffer(input);
+    const output = copyBuffer(input);
     this.sampleRate = input?.sampleRate;
 
-    const _drive = (params?.drive as number) ?? 0.5;
-    const _tone = (params?.tone as number) ?? 0.5;
-    const _body = (params?.body as number) ?? 0.5;
-    const _presence = (params?.presence as number) ?? 0.5;
-    const _mix = (params?.mix as number) ?? 1.0;
-    const _outputLevel = (params?.output as number) ?? 0;
+    const drive = (params?.drive as number) ?? 0.5;
+    const tone = (params?.tone as number) ?? 0.5;
+    const body = (params?.body as number) ?? 0.5;
+    const presence = (params?.presence as number) ?? 0.5;
+    const mix = (params?.mix as number) ?? 1.0;
+    const outputLevel = (params?.output as number) ?? 0;
 
     this?.hpFilterL.setHighpass(60 + (1 - body) * 100, 0.707, this?.sampleRate);
     this?.hpFilterR.setHighpass(60 + (1 - body) * 100, 0.707, this?.sampleRate);
@@ -618,17 +607,17 @@ export class OverdriveDistortionProcessor implements DSPProcessor {
     this?.midBoostL.setPeaking(800, 1, presence * 4, this?.sampleRate);
     this?.midBoostR.setPeaking(800, 1, presence * 4, this?.sampleRate);
 
-    const _driveAmount = 1 + drive * 8;
-    const _outputGain = dbToLinear(outputLevel);
+    const driveAmount = 1 + drive * 8;
+    const outputGain = dbToLinear(outputLevel);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       for (let ch = 0; ch < input?.channels; ch++) {
         let sample = input?.samples[ch][i];
-        const _dry = sample;
+        const dry = sample;
 
-        const _hpFilter = ch === 0 ? this?.hpFilterL : this?.hpFilterR;
-        const _lpFilter = ch === 0 ? this?.lpFilterL : this?.lpFilterR;
-        const _midBoost = ch === 0 ? this?.midBoostL : this?.midBoostR;
+        const hpFilter = ch === 0 ? this?.hpFilterL : this?.hpFilterR;
+        const lpFilter = ch === 0 ? this?.lpFilterL : this?.lpFilterR;
+        const midBoost = ch === 0 ? this?.midBoostL : this?.midBoostR;
 
         sample = hpFilter?.process(sample);
         sample = sample * driveAmount;
@@ -639,7 +628,7 @@ export class OverdriveDistortionProcessor implements DSPProcessor {
         sample = lpFilter?.process(sample);
 
         sample = dry * (1 - mix) + sample * mix;
-        output?.samples[ch][i] = sample * outputGain;
+        output.samples[ch][i] = sample * outputGain;
       }
     }
 
@@ -679,15 +668,15 @@ export class SaturationDistortionProcessor implements DSPProcessor {
     params: Record<string, number | boolean | string>,
     _context: DSPContext,
   ): AudioBuffer {
-    const _output = copyBuffer(input);
+    const output = copyBuffer(input);
     this.sampleRate = input?.sampleRate;
 
-    const _saturation = (params?.saturation as number) ?? 0.3;
-    const _color = (params?.color as number) ?? 0.5;
-    const _harmonics = (params?.harmonics as number) ?? 0.5;
-    const _dynamics = (params?.dynamics as number) ?? 0.5;
-    const _mix = (params?.mix as number) ?? 1.0;
-    const _outputLevel = (params?.output as number) ?? 0;
+    const saturation = (params?.saturation as number) ?? 0.3;
+    const color = (params?.color as number) ?? 0.5;
+    const harmonics = (params?.harmonics as number) ?? 0.5;
+    const dynamics = (params?.dynamics as number) ?? 0.5;
+    const mix = (params?.mix as number) ?? 1.0;
+    const outputLevel = (params?.output as number) ?? 0;
 
     this?.hpFilterL.setHighpass(20, 0.707, this?.sampleRate);
     this?.hpFilterR.setHighpass(20, 0.707, this?.sampleRate);
@@ -712,23 +701,23 @@ export class SaturationDistortionProcessor implements DSPProcessor {
       this?.sampleRate,
     );
 
-    const _satAmount = saturation * 3;
-    const _outputGain = dbToLinear(outputLevel);
+    const satAmount = saturation * 3;
+    const outputGain = dbToLinear(outputLevel);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       for (let ch = 0; ch < input?.channels; ch++) {
         let sample = input?.samples[ch][i];
-        const _dry = sample;
+        const dry = sample;
 
-        const _hpFilter = ch === 0 ? this?.hpFilterL : this?.hpFilterR;
-        const _lpFilter = ch === 0 ? this?.lpFilterL : this?.lpFilterR;
-        const _harmonicFilter =
+        const hpFilter = ch === 0 ? this?.hpFilterL : this?.hpFilterR;
+        const lpFilter = ch === 0 ? this?.lpFilterL : this?.lpFilterR;
+        const harmonicFilter =
           ch === 0 ? this?.harmonicFilterL : this?.harmonicFilterR;
 
         sample = hpFilter?.process(sample);
 
-        const _inputLevel = Math?.abs(sample);
-        const _dynamicDrive =
+        const inputLevel = Math?.abs(sample);
+        const dynamicDrive =
           1 + satAmount * (dynamics + inputLevel * (1 - dynamics));
         sample = sample * dynamicDrive;
 
@@ -742,7 +731,7 @@ export class SaturationDistortionProcessor implements DSPProcessor {
         sample = lpFilter?.process(sample);
 
         sample = dry * (1 - mix) + sample * mix;
-        output?.samples[ch][i] = sample * outputGain;
+        output.samples[ch][i] = sample * outputGain;
       }
     }
 
@@ -782,33 +771,33 @@ export class LoFiDistortionProcessor implements DSPProcessor {
     params: Record<string, number | boolean | string>,
     _context: DSPContext,
   ): AudioBuffer {
-    const _output = copyBuffer(input);
+    const output = copyBuffer(input);
     this.sampleRate = input?.sampleRate;
 
-    const _bitDepth = (params?.bitDepth as number) ?? 12;
-    const _sampleReduction = (params?.sampleReduction as number) ?? 0.2;
-    const _noise = (params?.noise as number) ?? 0.1;
-    const _wow = (params?.wow as number) ?? 0.1;
-    const _lowCut = (params?.lowCut as number) ?? 200;
-    const _highCut = (params?.highCut as number) ?? 4000;
-    const _saturation = (params?.saturation as number) ?? 0.3;
-    const _mix = (params?.mix as number) ?? 1.0;
-    const _outputLevel = (params?.output as number) ?? 0;
+    const bitDepth = (params?.bitDepth as number) ?? 12;
+    const sampleReduction = (params?.sampleReduction as number) ?? 0.2;
+    const noise = (params?.noise as number) ?? 0.1;
+    const wow = (params?.wow as number) ?? 0.1;
+    const lowCut = (params?.lowCut as number) ?? 200;
+    const highCut = (params?.highCut as number) ?? 4000;
+    const saturation = (params?.saturation as number) ?? 0.3;
+    const mix = (params?.mix as number) ?? 1.0;
+    const outputLevel = (params?.output as number) ?? 0;
 
     this?.hpFilterL.setHighpass(lowCut, 0.707, this?.sampleRate);
     this?.hpFilterR.setHighpass(lowCut, 0.707, this?.sampleRate);
     this?.lpFilterL.setLowpass(highCut, 0.707, this?.sampleRate);
     this?.lpFilterR.setLowpass(highCut, 0.707, this?.sampleRate);
 
-    const _levels = Math?.pow(2, bitDepth);
-    const _sampleSkip = Math?.max(1, Math?.floor(sampleReduction * 10));
-    const _outputGain = dbToLinear(outputLevel);
+    const levels = Math?.pow(2, bitDepth);
+    const sampleSkip = Math?.max(1, Math?.floor(sampleReduction * 10));
+    const outputGain = dbToLinear(outputLevel);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
-      this?.wowPhase += (2 * Math?.PI * 0.5) / this?.sampleRate;
-      const _wowMod = 1 + Math?.sin(this?.wowPhase) * wow * 0.01;
+      this.wowPhase += (2 * Math.PI * 0.5) / this?.sampleRate;
+      const wowMod = 1 + Math?.sin(this?.wowPhase) * wow * 0.01;
 
-      this?.sampleCounter++;
+      this.sampleCounter++;
       if (this?.sampleCounter >= sampleSkip) {
         this.sampleCounter = 0;
         this.sampleHold = (input?.samples[0][i] + input?.samples[1][i]) * 0.5;
@@ -816,10 +805,10 @@ export class LoFiDistortionProcessor implements DSPProcessor {
 
       for (let ch = 0; ch < input?.channels; ch++) {
         let sample = input?.samples[ch][i];
-        const _dry = sample;
+        const dry = sample;
 
-        const _hpFilter = ch === 0 ? this?.hpFilterL : this?.hpFilterR;
-        const _lpFilter = ch === 0 ? this?.lpFilterL : this?.lpFilterR;
+        const hpFilter = ch === 0 ? this?.hpFilterL : this?.hpFilterR;
+        const lpFilter = ch === 0 ? this?.lpFilterL : this?.lpFilterR;
 
         if (sampleReduction > 0) {
           sample =
@@ -845,7 +834,7 @@ export class LoFiDistortionProcessor implements DSPProcessor {
         }
 
         sample = dry * (1 - mix) + sample * mix;
-        output?.samples[ch][i] = sample * outputGain;
+        output.samples[ch][i] = sample * outputGain;
       }
     }
 
@@ -895,19 +884,19 @@ export class AmpDistortionProcessor implements DSPProcessor {
     params: Record<string, number | boolean | string>,
     _context: DSPContext,
   ): AudioBuffer {
-    const _output = copyBuffer(input);
+    const output = copyBuffer(input);
     this.sampleRate = input?.sampleRate;
 
-    const _gain = (params?.gain as number) ?? 0.5;
-    const _bass = (params?.bass as number) ?? 0.5;
-    const _mid = (params?.mid as number) ?? 0.5;
-    const _treble = (params?.treble as number) ?? 0.5;
-    const _presence = (params?.presence as number) ?? 0.5;
-    const _master = (params?.master as number) ?? 0.5;
-    const _cabinet = (params?.cabinet as boolean) ?? true;
-    const _ampType = (params?.type as string) ?? "clean";
-    const _mix = (params?.mix as number) ?? 1.0;
-    const _outputLevel = (params?.output as number) ?? 0;
+    const gain = (params?.gain as number) ?? 0.5;
+    const bass = (params?.bass as number) ?? 0.5;
+    const mid = (params?.mid as number) ?? 0.5;
+    const treble = (params?.treble as number) ?? 0.5;
+    const presence = (params?.presence as number) ?? 0.5;
+    const master = (params?.master as number) ?? 0.5;
+    const cabinet = (params?.cabinet as boolean) ?? true;
+    const ampType = (params?.type as string) ?? "clean";
+    const mix = (params?.mix as number) ?? 1.0;
+    const outputLevel = (params?.output as number) ?? 0;
 
     this?.inputFilterL.setHighpass(80, 0.707, this?.sampleRate);
     this?.inputFilterR.setHighpass(80, 0.707, this?.sampleRate);
@@ -935,18 +924,18 @@ export class AmpDistortionProcessor implements DSPProcessor {
       );
     }
 
-    const _gainAmount = Math?.pow(10, gain * 2);
-    const _masterGain = master * 2;
-    const _outputGain = dbToLinear(outputLevel);
+    const gainAmount = Math?.pow(10, gain * 2);
+    const masterGain = master * 2;
+    const outputGain = dbToLinear(outputLevel);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       for (let ch = 0; ch < input?.channels; ch++) {
         let sample = input?.samples[ch][i];
-        const _dry = sample;
+        const dry = sample;
 
-        const _inputFilter = ch === 0 ? this?.inputFilterL : this?.inputFilterR;
-        const _toneStack = ch === 0 ? this?.toneStackL : this?.toneStackR;
-        const _cabinetFilter =
+        const inputFilter = ch === 0 ? this?.inputFilterL : this?.inputFilterR;
+        const toneStack = ch === 0 ? this?.toneStackL : this?.toneStackR;
+        const cabinetFilter =
           ch === 0 ? this?.cabinetFilterL : this?.cabinetFilterR;
 
         sample = inputFilter?.process(sample);
@@ -985,7 +974,7 @@ export class AmpDistortionProcessor implements DSPProcessor {
         sample = sample * masterGain;
 
         sample = dry * (1 - mix) + sample * mix;
-        output?.samples[ch][i] = sample * outputGain;
+        output.samples[ch][i] = sample * outputGain;
       }
     }
 

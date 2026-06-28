@@ -16,17 +16,17 @@ export function useKeyboardShortcuts(
   shortcuts: KeyboardShortcut[],
   enabled = true,
 ) {
-  const _shortcutsRef = useRef(shortcuts);
+  const shortcutsRef = useRef(shortcuts);
 
   useEffect(() => {
     shortcutsRef.current = shortcuts;
   }, [shortcuts]);
 
-  const _handleKeyDown = useCallback(
+  const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (!enabled) return;
 
-      const _target = e?.target as HTMLElement;
+      const target = e?.target as HTMLElement;
       if (
         target?.tagName === "INPUT" ||
         target?.tagName === "TEXTAREA" ||
@@ -36,16 +36,16 @@ export function useKeyboardShortcuts(
       }
 
       for (const shortcut of shortcutsRef?.current) {
-        const _ctrlMatch =
+        const ctrlMatch =
           shortcut?.ctrl === undefined ||
           shortcut?.ctrl === (e?.ctrlKey || e?.metaKey);
-        const _shiftMatch =
+        const shiftMatch =
           shortcut?.shift === undefined || shortcut?.shift === e?.shiftKey;
-        const _altMatch =
+        const altMatch =
           shortcut?.alt === undefined || shortcut?.alt === e?.altKey;
-        const _metaMatch =
+        const metaMatch =
           shortcut?.meta === undefined || shortcut?.meta === e?.metaKey;
-        const _keyMatch = shortcut?.key.toLowerCase() === e?.key.toLowerCase();
+        const keyMatch = shortcut?.key.toLowerCase() === e?.key.toLowerCase();
 
         if (keyMatch && ctrlMatch && shiftMatch && altMatch && metaMatch) {
           if (shortcut?.preventDefault !== false) {
@@ -67,9 +67,9 @@ export function useKeyboardShortcuts(
   }, [handleKeyDown, enabled]);
 
   return shortcuts?.map((s) => ({
-    key: s?.key,
-    description: s?.description || "",
-    category: s?.category || "General",
+    key: s.key,
+    description: s.description || "",
+    category: s.category || "General",
     modifiers: [
       s?.ctrl && "Ctrl",
       s?.shift && "Shift",
@@ -85,9 +85,9 @@ export function useShortcutOverlay() {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    const _handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e?.key === "?" && !e?.ctrlKey && !e?.altKey && !e?.metaKey) {
-        const _target = e?.target as HTMLElement;
+        const target = e?.target as HTMLElement;
         if (
           target?.tagName !== "INPUT" &&
           target?.tagName !== "TEXTAREA" &&
@@ -110,7 +110,7 @@ export function useShortcutOverlay() {
 }
 
 // Studio DAW specific shortcuts - comprehensive professional DAW controls
-export const _STUDIO_SHORTCUTS = {
+export const STUDIO_SHORTCUTS = {
   // Transport Controls
   PLAY_PAUSE: { key: " ", description: "Play/Pause", category: "Transport" },
   STOP: { key: "s", description: "Stop", category: "Transport" },

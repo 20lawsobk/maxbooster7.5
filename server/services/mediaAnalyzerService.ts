@@ -1,18 +1,21 @@
 /**
  * Media Analyzer Service — Max Booster
  *
- * Spawns the three Python analyzer scripts (urlAnalyzer, audioAnalyzer,
- * imageAnalyzer) and returns their JSON output as typed objects.
- * All analysis is performed on-device with no external API calls.
+ * URL analysis runs through the in-house TypeScript parser
+ * (advancedUrlParser, SSRF-safe). Audio and image analysis spawn their
+ * respective Python scripts (audioAnalyzer, imageAnalyzer) and return JSON
+ * as typed objects. Audio and image analysis run on-device with no external
+ * calls; URL analysis performs a bounded, SSRF-guarded fetch of the page.
  */
 
 import { spawn } from "child_process";
 import { promises as fs } from "fs";
 import os from "os";
 import path from "path";
+import { advancedUrlParser, type UrlCategory } from "./advancedUrlParser.js";
 
-const _PYTHON = process?.env.PYTHON_PATH || "python3";
-const _SERVICE_DIR = path?.join(process?.cwd(), "server", "services");
+const PYTHON = process?.env.PYTHON_PATH || "python3";
+const SERVICE_DIR = path?.join(process?.cwd(), "server", "services");
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -157,7 +160,7 @@ function runPython(
   timeout = 20_000,
 ): Promise<unknown> {
   return new Promise((resolve, reject) => {
-    const _child = spawn(PYTHON, [script, arg], {
+    const child = spawn(PYTHON, [script, arg], {
       env: { ...process?.env, PYTHONPATH: SERVICE_DIR },
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -171,14 +174,14 @@ function runPython(
       stderr += d?.toString();
     });
 
-    const _timer = setTimeout(() => {
+    const timer = setTimeout(() => {
       child?.kill("SIGKILL");
       reject(new Error(`Analyzer timed out after ${timeout}ms`));
     }, timeout);
 
     child?.on("close", (_code) => {
       clearTimeout(timer);
-      const _trimmed = stdout?.trim();
+      const trimmed = stdout?.trim();
       if (!trimmed) {
         reject(
           new Error(
@@ -205,10 +208,105 @@ function runPython(
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
+// Maps the parser's structured category to the (content_type, platform_category)
+// vocabulary the content-generation routes and client expect. This preserves
+// video/article/event/product/podcast/profile semantics that downstream CTA
+// selection and the client categorizer rely on.
+const URL_CATEGORY_TO_ANALYSIS: Record<
+  UrlCategory,
+  { content_type: string; platform_category: string }
+> = {
+  music_stream: { content_type: "music_track", platform_category: "music" },
+  music_download: { content_type: "music_track", platform_category: "music" },
+  music_video: { content_type: "music_video", platform_category: "music" },
+  podcast: { content_type: "podcast", platform_category: "audio" },
+  social_post: { content_type: "social_post", platform_category: "social" },
+  profile: { content_type: "profile", platform_category: "social" },
+  event: { content_type: "event", platform_category: "event" },
+  press: { content_type: "article", platform_category: "news" },
+  ecommerce: { content_type: "product", platform_category: "shopping" },
+  article: { content_type: "article", platform_category: "news" },
+  video: { content_type: "video", platform_category: "video" },
+  web: { content_type: "website", platform_category: "web" },
+};
+
+/**
+ * Analyze a URL with the in-house TypeScript parser and map its result into
+ * the UrlAnalysis shape consumed across the content-generation routes.
+ *
+ * The parser only populates the fields it can extract from page metadata
+ * (title/description/image, artist/track/album/genre, platform IDs,
+ * keywords/hashtags); the richer engagement/event/product fields the old
+ * Python analyzer guessed at are intentionally left at their empty defaults.
+ * Throws only when the URL itself is rejected (e.g. SSRF-blocked target);
+ * an unreachable page still yields a structure-derived analysis.
+ */
 export async function analyzeUrl(url: string): Promise<UrlAnalysis> {
-  const _script = path?.join(SERVICE_DIR, "urlAnalyzer.py");
-  const _result = (await runPython(script, url, 60_000)) as UrlAnalysis;
-  return result;
+  const parsed = await advancedUrlParser.parseUrl(url);
+  const platform = parsed.platform || "web";
+  const { content_type, platform_category } =
+    URL_CATEGORY_TO_ANALYSIS[parsed.category] ?? URL_CATEGORY_TO_ANALYSIS.web;
+  const image = parsed.imageUrl ?? "";
+  return {
+    url: parsed.url,
+    domain: parsed.host,
+    platform,
+    platform_category,
+    is_music: parsed.isMusic,
+    title: parsed.title ?? "",
+    description: parsed.description ?? "",
+    author: parsed.artist ?? "",
+    published: "",
+    modified: "",
+    og_image: image,
+    thumbnail_url: image,
+    canonical: parsed.finalUrl,
+    language: parsed.language ?? "",
+    content_type,
+    content_category: parsed.category,
+    genre: parsed.genre ?? "default",
+    tone: "default",
+    artist: parsed.artist ?? "",
+    track: parsed.track ?? "",
+    album: parsed.album ?? "",
+    duration: "",
+    release_date: "",
+    label: "",
+    isrc: "",
+    bpm: "",
+    keywords: parsed.keywords ?? [],
+    tags: (parsed.hashtags ?? []).map((h) => h.replace(/^#/, "")),
+    headings: [],
+    body_preview: parsed.summary ?? "",
+    summary: parsed.summary ?? parsed.description ?? "",
+    view_count: null,
+    like_count: null,
+    comment_count: null,
+    play_count: null,
+    share_count: null,
+    subscriber_count: null,
+    embed_url: "",
+    reading_time_minutes: null,
+    word_count: null,
+    section: "",
+    event_date: "",
+    event_end_date: "",
+    event_location: "",
+    performers: [],
+    organizer: "",
+    price: "",
+    currency: "",
+    brand: "",
+    rating: "",
+    review_count: null,
+    final_url: parsed.finalUrl,
+    youtube_id: parsed.ids.youtube ?? "",
+    spotify_type: parsed.ids.spotifyType ?? "",
+    spotify_id: parsed.ids.spotify ?? "",
+    apple_music_type: "",
+    apple_music_id: parsed.ids.appleMusic ?? "",
+    data_sources: ["advanced_url_parser"],
+  };
 }
 
 export async function analyzeAudio(
@@ -216,13 +314,13 @@ export async function analyzeAudio(
   originalName: string,
 ): Promise<AudioAnalysis> {
   // Write buffer to a temp file
-  const _ext = path?.extname(originalName) || ".mp3";
-  const _tmp = path?.join(os?.tmpdir(), `mb_audio_${Date?.now()}${ext}`);
+  const ext = path?.extname(originalName) || ".mp3";
+  const tmp = path?.join(os?.tmpdir(), `mb_audio_${Date?.now()}${ext}`);
   await fs?.writeFile(tmp, fileBuffer);
 
   try {
-    const _script = path?.join(SERVICE_DIR, "audioAnalyzer.py");
-    const _result = (await runPython(script, tmp, 60_000)) as AudioAnalysis;
+    const script = path?.join(SERVICE_DIR, "audioAnalyzer.py");
+    const result = (await runPython(script, tmp, 60_000)) as AudioAnalysis;
     return result;
   } finally {
     await fs?.unlink(tmp).catch(() => {});
@@ -233,13 +331,13 @@ export async function analyzeImage(
   fileBuffer: Buffer,
   originalName: string,
 ): Promise<ImageAnalysis> {
-  const _ext = path?.extname(originalName) || ".jpg";
-  const _tmp = path?.join(os?.tmpdir(), `mb_image_${Date?.now()}${ext}`);
+  const ext = path?.extname(originalName) || ".jpg";
+  const tmp = path?.join(os?.tmpdir(), `mb_image_${Date?.now()}${ext}`);
   await fs?.writeFile(tmp, fileBuffer);
 
   try {
-    const _script = path?.join(SERVICE_DIR, "imageAnalyzer.py");
-    const _result = (await runPython(script, tmp, 30_000)) as ImageAnalysis;
+    const script = path?.join(SERVICE_DIR, "imageAnalyzer.py");
+    const result = (await runPython(script, tmp, 30_000)) as ImageAnalysis;
     return result;
   } finally {
     await fs?.unlink(tmp).catch(() => {});
@@ -251,88 +349,88 @@ export async function analyzeImage(
 // accepted by unifiedAIController?.generateContent()
 
 export function urlToContentSeed(a: UrlAnalysis) {
-  const _topic = a?.track
+  const topic = a?.track
     ? `${a?.track}${a?.artist ? ` by ${a?.artist}` : ""}`
     : a?.summary || a?.title || a?.domain || a?.url;
   return {
     topic,
-    genre: a?.genre || "default",
-    tone: a?.tone || "default",
-    artist: a?.artist || "",
-    track: a?.track || "",
-    album: a?.album || "",
-    author: a?.author || "",
-    label: a?.label || "",
-    release_date: a?.release_date || "",
-    duration: a?.duration || "",
-    content_type: a?.content_type || "website",
-    content_category: a?.content_category || "general",
-    is_music: a?.is_music,
-    platform: a?.platform,
-    platform_category: a?.platform_category || "web",
-    og_image: a?.og_image || "",
-    thumbnail_url: a?.thumbnail_url || "",
-    embed_url: a?.embed_url || "",
-    keywords: a?.keywords || [],
-    tags: a?.tags || [],
-    headings: a?.headings || [],
-    body_preview: a?.body_preview || "",
+    genre: a.genre || "default",
+    tone: a.tone || "default",
+    artist: a.artist || "",
+    track: a.track || "",
+    album: a.album || "",
+    author: a.author || "",
+    label: a.label || "",
+    release_date: a.release_date || "",
+    duration: a.duration || "",
+    content_type: a.content_type || "website",
+    content_category: a.content_category || "general",
+    is_music: a.is_music,
+    platform: a.platform,
+    platform_category: a.platform_category || "web",
+    og_image: a.og_image || "",
+    thumbnail_url: a.thumbnail_url || "",
+    embed_url: a.embed_url || "",
+    keywords: a.keywords || [],
+    tags: a.tags || [],
+    headings: a.headings || [],
+    body_preview: a.body_preview || "",
     // Engagement
-    view_count: a?.view_count ?? null,
-    like_count: a?.like_count ?? null,
-    play_count: a?.play_count ?? null,
-    subscriber_count: a?.subscriber_count ?? null,
+    view_count: a.view_count ?? null,
+    like_count: a.like_count ?? null,
+    play_count: a.play_count ?? null,
+    subscriber_count: a.subscriber_count ?? null,
     // Event-specific
-    event_date: a?.event_date || "",
-    event_location: a?.event_location || "",
-    performers: a?.performers || [],
+    event_date: a.event_date || "",
+    event_location: a.event_location || "",
+    performers: a.performers || [],
     // Product-specific
-    price: a?.price || "",
-    currency: a?.currency || "",
-    brand: a?.brand || "",
-    rating: a?.rating || "",
+    price: a.price || "",
+    currency: a.currency || "",
+    brand: a.brand || "",
+    rating: a.rating || "",
     // Article-specific
-    reading_time_minutes: a?.reading_time_minutes ?? null,
-    section: a?.section || "",
+    reading_time_minutes: a.reading_time_minutes ?? null,
+    section: a.section || "",
     // Platform IDs
-    youtube_id: a?.youtube_id || "",
-    spotify_id: a?.spotify_id || "",
-    spotify_type: a?.spotify_type || "",
+    youtube_id: a.youtube_id || "",
+    spotify_id: a.spotify_id || "",
+    spotify_type: a.spotify_type || "",
     // Metadata
-    language: a?.language || "",
-    data_sources: a?.data_sources || [],
+    language: a.language || "",
+    data_sources: a.data_sources || [],
   };
 }
 
 export function audioToContentSeed(a: AudioAnalysis) {
-  const _topic = a?.track
+  const topic = a?.track
     ? `${a?.track}${a?.artist ? ` by ${a?.artist}` : ""}`
     : a?.title || "New Track";
   return {
     topic,
-    genre: a?.genre || "hip-hop",
+    genre: a.genre || "hip-hop",
     tone: "default",
-    artist: a?.artist || "",
-    track: a?.title || "",
-    bpm: a?.bpm,
-    energy: a?.energy,
-    valence: a?.valence,
-    tempo_norm: a?.tempo_norm,
-    nn_features: a?.nn_features,
+    artist: a.artist || "",
+    track: a.title || "",
+    bpm: a.bpm,
+    energy: a.energy,
+    valence: a.valence,
+    tempo_norm: a.tempo_norm,
+    nn_features: a.nn_features,
   };
 }
 
 export function imageToContentSeed(a: ImageAnalysis) {
   return {
     topic: `Visual mood: ${a?.mood}`,
-    genre: a?.genre_hint || "pop",
-    tone: a?.tone || "default",
-    bg_color: a?.bg_color,
-    ac_color: a?.ac_color,
-    palette: a?.palette.slice(0, 3).map((p) => p?.hex),
-    mood: a?.mood,
-    hue_shift_suggest: a?.hue_shift_suggest,
-    sat_mult_suggest: a?.sat_mult_suggest,
-    val_mult_suggest: a?.val_mult_suggest,
+    genre: a.genre_hint || "pop",
+    tone: a.tone || "default",
+    bg_color: a.bg_color,
+    ac_color: a.ac_color,
+    palette: a.palette.slice(0, 3).map((p) => p?.hex),
+    mood: a.mood,
+    hue_shift_suggest: a.hue_shift_suggest,
+    sat_mult_suggest: a.sat_mult_suggest,
+    val_mult_suggest: a.val_mult_suggest,
   };
 }

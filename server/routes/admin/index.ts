@@ -8,7 +8,7 @@ import { notificationService } from "../../services/notificationService.js";
 import { distributedCache } from "../../infrastructure/distributedCache.js";
 import { require2FA } from "../../middleware/auth.js";
 
-const _router = Router();
+const router = Router();
 
 const requireAdmin: RequestHandler = (req, res, next) => {
   if (!req?.isAuthenticated()) {
@@ -26,7 +26,7 @@ router?.use(require2FA);
 
 // Allowlist of admin-configurable platform setting keys.
 // Only keys in this set may be written via PUT /settings.
-const _ALLOWED_SETTING_KEYS = new Set([
+const ALLOWED_SETTING_KEYS = new Set([
   "emailNotifications",
   "maintenanceMode",
   "userRegistrationEnabled",
@@ -51,11 +51,11 @@ const _ALLOWED_SETTING_KEYS = new Set([
 // ============================================================
 router?.put("/settings", async (req, res) => {
   try {
-    const _body = req?.body as Record<string, unknown>;
+    const body = req?.body as Record<string, unknown>;
     if (!body || typeof body !== "object" || Array?.isArray(body)) {
       return res?.status(400).json({ error: "Request body must be an object" });
     }
-    const _unknown = Object?.keys(body).filter(
+    const unknown = Object?.keys(body).filter(
       (k) => !ALLOWED_SETTING_KEYS?.has(k),
     );
     if (unknown?.length > 0) {
@@ -80,12 +80,12 @@ router?.put("/settings", async (req, res) => {
 router?.get("/users", async (req, res) => {
   try {
     const { page = "1", limit = "20", search = "", status, plan } = req?.query;
-    const _pageNum = Math?.max(1, parseInt(page as string, 10) || 1);
-    const _limitNum = Math?.min(
+    const pageNum = Math?.max(1, parseInt(page as string, 10) || 1);
+    const limitNum = Math?.min(
       100,
       Math?.max(1, parseInt(limit as string, 10) || 20),
     );
-    const _offset = (pageNum - 1) * limitNum;
+    const offset = (pageNum - 1) * limitNum;
 
     let conditions = [];
 
@@ -108,23 +108,23 @@ router?.get("/users", async (req, res) => {
       conditions?.push(eq(users?.subscriptionTier, plan as string));
     }
 
-    const _whereClause = conditions?.length > 0 ? and(...conditions) : undefined;
+    const whereClause = conditions?.length > 0 ? and(...conditions) : undefined;
 
-    const _baseSelect = db
+    const baseSelect = db
       .select({
-        id: users?.id,
-        email: users?.email,
-        username: users?.username,
-        firstName: users?.firstName,
-        lastName: users?.lastName,
-        role: users?.role,
-        subscriptionTier: users?.subscriptionTier,
-        subscriptionStatus: users?.subscriptionStatus,
-        createdAt: users?.createdAt,
+        id: users.id,
+        email: users.email,
+        username: users.username,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        role: users.role,
+        subscriptionTier: users.subscriptionTier,
+        subscriptionStatus: users.subscriptionStatus,
+        createdAt: users.createdAt,
       })
       .from(users);
 
-    const _countSelect = db?.select({ count: count() }).from(users);
+    const countSelect = db?.select({ count: count() }).from(users);
 
     const [usersList, totalResult] = await Promise?.all([
       whereClause
@@ -140,9 +140,9 @@ router?.get("/users", async (req, res) => {
       whereClause ? countSelect?.where(whereClause) : countSelect,
     ]);
 
-    const _total = totalResult[0]?.count || 0;
+    const total = totalResult[0]?.count || 0;
 
-    const _usersWithDisplayName = usersList?.map((u) => ({
+    const usersWithDisplayName = usersList?.map((u) => ({
       ...u,
       displayName:
         u?.username ||
@@ -157,7 +157,7 @@ router?.get("/users", async (req, res) => {
         total,
         page: pageNum,
         limit: limitNum,
-        totalPages: Math?.ceil(total / limitNum),
+        totalPages: Math.ceil(total / limitNum),
       },
     });
   } catch (error) {
@@ -168,11 +168,11 @@ router?.get("/users", async (req, res) => {
 
 router?.get("/users/export", async (req, res) => {
   try {
-    const _pageSize = Math?.min(
+    const pageSize = Math?.min(
       parseInt(req?.query.limit as string) || 1000,
       5000,
     );
-    const _offset = Math?.min(
+    const offset = Math?.min(
       Math?.max(parseInt(req?.query.offset as string) || 0, 0),
       100_000,
     );
@@ -180,15 +180,15 @@ router?.get("/users/export", async (req, res) => {
     const [exportedUsers, totalResult] = await Promise?.all([
       db
         .select({
-          id: users?.id,
-          email: users?.email,
-          username: users?.username,
-          firstName: users?.firstName,
-          lastName: users?.lastName,
-          role: users?.role,
-          subscriptionTier: users?.subscriptionTier,
-          subscriptionStatus: users?.subscriptionStatus,
-          createdAt: users?.createdAt,
+          id: users.id,
+          email: users.email,
+          username: users.username,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          role: users.role,
+          subscriptionTier: users.subscriptionTier,
+          subscriptionStatus: users.subscriptionStatus,
+          createdAt: users.createdAt,
         })
         .from(users)
         .orderBy(desc(users?.createdAt))
@@ -197,7 +197,7 @@ router?.get("/users/export", async (req, res) => {
       db?.select({ count: count() }).from(users),
     ]);
 
-    const _total = Number(totalResult[0]?.count ?? 0);
+    const total = Number(totalResult[0]?.count ?? 0);
 
     res?.json({
       users: exportedUsers,
@@ -218,17 +218,17 @@ router?.get("/users/export", async (req, res) => {
 router?.get("/users/:userId", async (req, res) => {
   try {
     const { userId } = req?.params;
-    const _user = await db
+    const user = await db
       .select({
-        id: users?.id,
-        email: users?.email,
-        username: users?.username,
-        firstName: users?.firstName,
-        lastName: users?.lastName,
-        role: users?.role,
-        subscriptionTier: users?.subscriptionTier,
-        subscriptionStatus: users?.subscriptionStatus,
-        createdAt: users?.createdAt,
+        id: users.id,
+        email: users.email,
+        username: users.username,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        role: users.role,
+        subscriptionTier: users.subscriptionTier,
+        subscriptionStatus: users.subscriptionStatus,
+        createdAt: users.createdAt,
       })
       .from(users)
       .where(eq(users?.id, userId))
@@ -250,9 +250,9 @@ router?.put("/users/:userId", async (req, res) => {
     const { userId } = req?.params;
     const { role, subscriptionTier, subscriptionStatus } = req?.body;
 
-    const _allowedRoles = ["user", "admin"];
-    const _allowedTiers = ["free", "monthly", "yearly", "lifetime", null];
-    const _allowedStatuses = [
+    const allowedRoles = ["user", "admin"];
+    const allowedTiers = ["free", "monthly", "yearly", "lifetime", null];
+    const allowedStatuses = [
       "active",
       "inactive",
       "cancelled",
@@ -321,7 +321,7 @@ router?.put("/users/:userId", async (req, res) => {
       if (subscriptionStatus === "banned") {
         try {
           const [targetUser] = await db
-            .select({ email: users?.email })
+            .select({ email: users.email })
             .from(users)
             .where(eq(users?.id, userId))
             .limit(1);
@@ -353,7 +353,7 @@ router?.post("/users/:userId/report", requireAdmin, async (req, res) => {
     }
 
     const [targetUser] = await db
-      .select({ email: users?.email })
+      .select({ email: users.email })
       .from(users)
       .where(eq(users?.id, userId))
       .limit(1);
@@ -410,8 +410,8 @@ router?.post("/users/:userId/email", async (req, res) => {
         .json({ error: "Subject and message are required" });
     }
 
-    const _targetUser = await db
-      .select({ email: users?.email })
+    const targetUser = await db
+      .select({ email: users.email })
       .from(users)
       .where(eq(users?.id, userId))
       .limit(1);
@@ -442,12 +442,12 @@ router?.post("/users/:userId/email", async (req, res) => {
 
 router?.get("/analytics", async (_req, res) => {
   try {
-    const _cacheKey = `admin:stats:${Math?.floor(Date?.now() / 60000)}`;
-    const _payload = await distributedCache?.getOrSet(
+    const cacheKey = `admin:stats:${Math?.floor(Date?.now() / 60000)}`;
+    const payload = await distributedCache?.getOrSet(
       cacheKey,
       async () => {
-        const _now = new Date();
-        const _thirtyDaysAgo = new Date(
+        const now = new Date();
+        const thirtyDaysAgo = new Date(
           now?.getTime() - 30 * 24 * 60 * 60 * 1000,
         );
 
@@ -467,22 +467,22 @@ router?.get("/analytics", async (_req, res) => {
           db?.select({ count: count() }).from(projects),
           db?.select({ count: count() }).from(releases),
           db
-            .select({ plan: users?.subscriptionTier, count: count() })
+            .select({ plan: users.subscriptionTier, count: count() })
             .from(users)
             .groupBy(users?.subscriptionTier),
           db?.select({ total: sum(analytics?.revenue) }).from(analytics),
         ]);
 
-        const _totalUsers = totalUsersResult[0]?.count || 0;
-        const _newUsers = newUsersResult[0]?.count || 0;
-        const _totalProjects = totalProjectsResult[0]?.count || 0;
-        const _totalReleases = totalReleasesResult[0]?.count || 0;
-        const _totalRevenue = parseFloat(revenueResult[0]?.total || "0");
-        const _userGrowthRate =
+        const totalUsers = totalUsersResult[0]?.count || 0;
+        const newUsers = newUsersResult[0]?.count || 0;
+        const totalProjects = totalProjectsResult[0]?.count || 0;
+        const totalReleases = totalReleasesResult[0]?.count || 0;
+        const totalRevenue = parseFloat(revenueResult[0]?.total || "0");
+        const userGrowthRate =
           totalUsers > 0 ? (newUsers / totalUsers) * 100 : 0;
-        const _subscriptionStats = subscriptionStatsResult?.map((s) => ({
-          plan: s?.plan || "free",
-          count: s?.count,
+        const subscriptionStats = subscriptionStatsResult?.map((s) => ({
+          plan: s.plan || "free",
+          count: s.count,
         }));
 
         return {
@@ -503,9 +503,9 @@ router?.get("/analytics", async (_req, res) => {
           topArtists: [],
           platformStats: [],
           topCountries: [
-            { country: "United States", users: Math?.floor(totalUsers * 0.4) },
-            { country: "United Kingdom", users: Math?.floor(totalUsers * 0.15) },
-            { country: "Germany", users: Math?.floor(totalUsers * 0.1) },
+            { country: "United States", users: Math.floor(totalUsers * 0.4) },
+            { country: "United Kingdom", users: Math.floor(totalUsers * 0.15) },
+            { country: "Germany", users: Math.floor(totalUsers * 0.1) },
           ],
         };
       },
@@ -524,7 +524,7 @@ router?.get("/analytics", async (_req, res) => {
 
 router?.get("/settings", async (_req, res) => {
   try {
-    const _settings = await db
+    const settings = await db
       .select()
       .from(systemSettings)
       .where(like(systemSettings?.key, "platform.%"))
@@ -539,7 +539,7 @@ router?.get("/settings", async (_req, res) => {
     };
 
     settings?.forEach((s) => {
-      const _key = s?.key.replace("platform.", "");
+      const key = s?.key.replace("platform.", "");
       try {
         settingsMap[key] = JSON?.parse(s?.value);
       } catch {
@@ -555,10 +555,10 @@ router?.get("/settings", async (_req, res) => {
 });
 
 async function updateSetting(key: string, value: Record<string, unknown>) {
-  const _fullKey = `platform.${key}`;
-  const _stringValue = JSON?.stringify(value);
+  const fullKey = `platform.${key}`;
+  const stringValue = JSON?.stringify(value);
 
-  const _existing = await db
+  const existing = await db
     .select()
     .from(systemSettings)
     .where(eq(systemSettings?.key, fullKey))
@@ -638,33 +638,33 @@ router?.post("/settings/webhook", async (req, res) => {
 router?.get("/activity", async (req, res) => {
   try {
     const { limit = "20" } = req?.query;
-    const _limitNum = Math?.min(parseInt(limit as string) || 20, 100);
+    const limitNum = Math?.min(parseInt(limit as string) || 20, 100);
 
     const [recentUsers, recentReleases, pendingFixers] = await Promise?.all([
       db
         .select({
-          id: users?.id,
-          email: users?.email,
-          username: users?.username,
-          createdAt: users?.createdAt,
+          id: users.id,
+          email: users.email,
+          username: users.username,
+          createdAt: users.createdAt,
         })
         .from(users)
         .orderBy(desc(users?.createdAt))
         .limit(limitNum),
       db
         .select({
-          id: releases?.id,
-          title: releases?.title,
-          createdAt: releases?.createdAt,
+          id: releases.id,
+          title: releases.title,
+          createdAt: releases.createdAt,
         })
         .from(releases)
         .orderBy(desc(releases?.createdAt))
         .limit(Math?.floor(limitNum / 2)),
       db
         .select({
-          id: artistProfiles?.id,
-          artistName: artistProfiles?.artistName,
-          fixerRequestedAt: artistProfiles?.fixerRequestedAt,
+          id: artistProfiles.id,
+          artistName: artistProfiles.artistName,
+          fixerRequestedAt: artistProfiles.fixerRequestedAt,
         })
         .from(artistProfiles)
         .where(
@@ -677,27 +677,27 @@ router?.get("/activity", async (req, res) => {
         .limit(5),
     ]);
 
-    const _activities = [
+    const activities = [
       ...recentUsers?.map((u) => ({
         type: "success",
         action: `New user registered: ${u?.email || u?.username}`,
         user: "System",
         time: formatTimeAgo(u?.createdAt),
-        timestamp: u?.createdAt,
+        timestamp: u.createdAt,
       })),
       ...recentReleases?.map((r) => ({
         type: "info",
         action: `Release submitted: ${r?.title}`,
         user: "System",
         time: formatTimeAgo(r?.createdAt),
-        timestamp: r?.createdAt,
+        timestamp: r.createdAt,
       })),
       ...pendingFixers?.map((f) => ({
         type: "warning",
         action: `Artist fixer request pending: ${f?.artistName}`,
         user: "System",
         time: formatTimeAgo(f?.fixerRequestedAt),
-        timestamp: f?.fixerRequestedAt,
+        timestamp: f.fixerRequestedAt,
       })),
     ]
       .sort(
@@ -716,11 +716,11 @@ router?.get("/activity", async (req, res) => {
 
 function formatTimeAgo(date: Date | null): string {
   if (!date) return "Unknown";
-  const _now = new Date();
-  const _diff = now?.getTime() - new Date(date).getTime();
-  const _minutes = Math?.floor(diff / 60000);
-  const _hours = Math?.floor(diff / 3600000);
-  const _days = Math?.floor(diff / 86400000);
+  const now = new Date();
+  const diff = now?.getTime() - new Date(date).getTime();
+  const minutes = Math?.floor(diff / 60000);
+  const hours = Math?.floor(diff / 3600000);
+  const days = Math?.floor(diff / 86400000);
 
   if (minutes < 60) return `${minutes}m ago`;
   if (hours < 24) return `${hours}h ago`;
@@ -733,19 +733,19 @@ function formatTimeAgo(date: Date | null): string {
 
 router?.get("/metrics", async (_req, res) => {
   try {
-    const _memUsage = process?.memoryUsage();
-    const _uptimeSeconds = process?.uptime();
+    const memUsage = process?.memoryUsage();
+    const uptimeSeconds = process?.uptime();
 
-    const _cpus = os?.cpus();
-    const _loadAvg1m = os?.loadavg()[0];
-    const _cpuPercent = Math?.min(
+    const cpus = os?.cpus();
+    const loadAvg1m = os?.loadavg()[0];
+    const cpuPercent = Math?.min(
       100,
       Math?.round((loadAvg1m / cpus?.length) * 100),
     );
 
-    const _totalMem = os?.totalmem();
-    const _freeMem = os?.freemem();
-    const _memPercent = Math?.round(((totalMem - freeMem) / totalMem) * 100);
+    const totalMem = os?.totalmem();
+    const freeMem = os?.freemem();
+    const memPercent = Math?.round(((totalMem - freeMem) / totalMem) * 100);
 
     const [activeUsersResult] = await Promise?.all([
       db
@@ -757,11 +757,11 @@ router?.get("/metrics", async (_req, res) => {
     res?.json({
       cpu: cpuPercent,
       memory: memPercent,
-      heapUsedMb: Math?.round(memUsage?.heapUsed / 1024 / 1024),
-      heapTotalMb: Math?.round(memUsage?.heapTotal / 1024 / 1024),
-      uptimeSeconds: Math?.round(uptimeSeconds),
-      loadAverage: loadAvg1m?.toFixed(2),
-      cpuCount: cpus?.length,
+      heapUsedMb: Math.round(memUsage?.heapUsed / 1024 / 1024),
+      heapTotalMb: Math.round(memUsage?.heapTotal / 1024 / 1024),
+      uptimeSeconds: Math.round(uptimeSeconds),
+      loadAverage: loadAvg1m.toFixed(2),
+      cpuCount: cpus.length,
       activeUsers: activeUsersResult[0]?.count || 0,
     });
   } catch (error) {
@@ -776,12 +776,12 @@ router?.get("/metrics", async (_req, res) => {
 
 router?.get("/system-health", async (_req, res) => {
   try {
-    const _memUsage = process?.memoryUsage();
-    const _uptimeSeconds = process?.uptime();
-    const _loadAvg = os?.loadavg();
-    const _cpus = os?.cpus();
-    const _totalMem = os?.totalmem();
-    const _freeMem = os?.freemem();
+    const memUsage = process?.memoryUsage();
+    const uptimeSeconds = process?.uptime();
+    const loadAvg = os?.loadavg();
+    const cpus = os?.cpus();
+    const totalMem = os?.totalmem();
+    const freeMem = os?.freemem();
 
     // Quick DB ping
     let dbStatus = "ok";
@@ -794,15 +794,15 @@ router?.get("/system-health", async (_req, res) => {
     return res?.json({
       status: "healthy",
       timestamp: new Date().toISOString(),
-      uptime: Math?.round(uptimeSeconds),
+      uptime: Math.round(uptimeSeconds),
       database: dbStatus,
       memory: {
-        heapUsedMb: Math?.round(memUsage?.heapUsed / 1024 / 1024),
-        heapTotalMb: Math?.round(memUsage?.heapTotal / 1024 / 1024),
-        usedPercent: Math?.round(((totalMem - freeMem) / totalMem) * 100),
+        heapUsedMb: Math.round(memUsage?.heapUsed / 1024 / 1024),
+        heapTotalMb: Math.round(memUsage?.heapTotal / 1024 / 1024),
+        usedPercent: Math.round(((totalMem - freeMem) / totalMem) * 100),
       },
       cpu: {
-        count: cpus?.length,
+        count: cpus.length,
         loadAvg1m: loadAvg[0].toFixed(2),
         loadAvg5m: loadAvg[1].toFixed(2),
         loadAvg15m: loadAvg[2].toFixed(2),
@@ -829,12 +829,12 @@ router?.get("/moderation/reports", async (req, res) => {
     // Return reports from posts table — flagged posts serve as moderation queue
     let query = db
       .select({
-        id: posts?.id,
-        userId: posts?.userId,
-        platform: posts?.platform,
-        content: posts?.content,
-        status: posts?.status,
-        createdAt: posts?.createdAt,
+        id: posts.id,
+        userId: posts.userId,
+        platform: posts.platform,
+        content: posts.content,
+        status: posts.status,
+        createdAt: posts.createdAt,
       })
       .from(posts);
 
@@ -842,8 +842,8 @@ router?.get("/moderation/reports", async (req, res) => {
       query = query?.where(eq(posts?.status, status)) as typeof query;
     }
 
-    const _reports = await query?.orderBy(desc(posts?.createdAt)).limit(50);
-    return res?.json({ reports, total: reports?.length });
+    const reports = await query?.orderBy(desc(posts?.createdAt)).limit(50);
+    return res?.json({ reports, total: reports.length });
   } catch (error) {
     logger?.warn({ err: error }, "Error fetching moderation reports:");
     return res?.json({ reports: [], total: 0 });
@@ -857,7 +857,7 @@ router?.post("/moderation/:id/action", async (req, res) => {
       action: "approve" | "remove" | "warn";
       reason?: string;
     };
-    const _newStatus =
+    const newStatus =
       action === "remove"
         ? "removed"
         : action === "approve"
@@ -881,7 +881,7 @@ router?.post("/moderation/reports/:id/review", async (req, res) => {
       action: "approve" | "remove" | "warn" | "dismiss";
       notes?: string;
     };
-    const _newStatus =
+    const newStatus =
       action === "remove"
         ? "removed"
         : action === "dismiss"
@@ -904,7 +904,7 @@ router?.post("/moderation/reports/:id/review", async (req, res) => {
 // ============================================================
 
 // Default platform royalty rates by DSP
-const _DEFAULT_ROYALTY_RATES = [
+const DEFAULT_ROYALTY_RATES = [
   {
     platform: "Spotify",
     rate: 0.003,
@@ -964,7 +964,7 @@ const _DEFAULT_ROYALTY_RATES = [
 ];
 
 // Music industry tax treaties for international publishing
-const _DEFAULT_TAX_TREATIES = [
+const DEFAULT_TAX_TREATIES = [
   {
     country: "United States",
     code: "US",
@@ -1038,7 +1038,7 @@ const _DEFAULT_TAX_TREATIES = [
 ];
 
 // Default label deal structures
-const _DEFAULT_LABEL_SETTINGS = {
+const DEFAULT_LABEL_SETTINGS = {
   majorLabelRoyalty: 0.15,
   indieDistributorRoyalty: 0.8,
   publishingAdminFee: 0.1,
@@ -1054,7 +1054,7 @@ const _DEFAULT_LABEL_SETTINGS = {
 
 router?.get("/financial-config/royalty-rates", async (_req, res) => {
   try {
-    const _stored = await db
+    const stored = await db
       .select()
       .from(systemSettings)
       .where(eq(systemSettings?.key, "royalty_rates"))
@@ -1074,10 +1074,10 @@ router?.put("/financial-config/royalty-rates", async (req, res) => {
     const { rates } = req?.body;
     await db
       .insert(systemSettings)
-      .values({ key: "royalty_rates", value: JSON?.stringify({ rates }) })
+      .values({ key: "royalty_rates", value: JSON.stringify({ rates }) })
       .onConflictDoUpdate({
-        target: systemSettings?.key,
-        set: { value: JSON?.stringify({ rates }), updatedAt: new Date() },
+        target: systemSettings.key,
+        set: { value: JSON.stringify({ rates }), updatedAt: new Date() },
       });
     return res?.json({ success: true, rates });
   } catch (error) {
@@ -1088,7 +1088,7 @@ router?.put("/financial-config/royalty-rates", async (req, res) => {
 
 router?.get("/financial-config/tax-treaties", async (_req, res) => {
   try {
-    const _stored = await db
+    const stored = await db
       .select()
       .from(systemSettings)
       .where(eq(systemSettings?.key, "tax_treaties"))
@@ -1105,7 +1105,7 @@ router?.get("/financial-config/tax-treaties", async (_req, res) => {
 
 router?.get("/financial-config/label-settings", async (_req, res) => {
   try {
-    const _stored = await db
+    const stored = await db
       .select()
       .from(systemSettings)
       .where(eq(systemSettings?.key, "label_settings"))
@@ -1121,14 +1121,14 @@ router?.get("/financial-config/label-settings", async (_req, res) => {
 });
 
 // Allowlists for financial-config PATCH endpoints — prevents arbitrary field injection
-const _ROYALTY_RATE_FIELDS = new Set([
+const ROYALTY_RATE_FIELDS = new Set([
   "platform",
   "rate",
   "unit",
   "currency",
   "tier",
 ]);
-const _TAX_TREATY_FIELDS = new Set([
+const TAX_TREATY_FIELDS = new Set([
   "country",
   "code",
   "withholdingRate",
@@ -1140,10 +1140,10 @@ const _TAX_TREATY_FIELDS = new Set([
 router?.patch("/financial-config/royalty-rates/:id", async (req, res) => {
   try {
     const { id } = req?.params;
-    const _raw = req?.body as Record<string, unknown>;
+    const raw = req?.body as Record<string, unknown>;
     const update: Record<string, unknown> = {};
     for (const k of Object?.keys(raw)) {
-      if (ROYALTY_RATE_FIELDS?.has(k)) update[k] = raw[k];
+      if (ROYALTY_RATE_FIELDS.has(k)) update[k] = raw[k];
     }
     if (Object?.keys(update).length === 0) {
       return res
@@ -1153,15 +1153,15 @@ router?.patch("/financial-config/royalty-rates/:id", async (req, res) => {
           allowed: [...ROYALTY_RATE_FIELDS],
         });
     }
-    const _stored = await db
+    const stored = await db
       .select()
       .from(systemSettings)
       .where(eq(systemSettings?.key, "royalty_rates"))
       .limit(1);
-    const _current = stored?.length
+    const current = stored?.length
       ? JSON?.parse(stored[0].value as string)
       : { rates: DEFAULT_ROYALTY_RATES };
-    const _rates = (current?.rates || DEFAULT_ROYALTY_RATES).map(
+    const rates = (current?.rates || DEFAULT_ROYALTY_RATES).map(
       (r: Record<string, unknown>, idx: number) =>
         String(idx) === String(id) || r?.platform === id
           ? { ...r, ...update }
@@ -1169,10 +1169,10 @@ router?.patch("/financial-config/royalty-rates/:id", async (req, res) => {
     );
     await db
       .insert(systemSettings)
-      .values({ key: "royalty_rates", value: JSON?.stringify({ rates }) })
+      .values({ key: "royalty_rates", value: JSON.stringify({ rates }) })
       .onConflictDoUpdate({
-        target: systemSettings?.key,
-        set: { value: JSON?.stringify({ rates }), updatedAt: new Date() },
+        target: systemSettings.key,
+        set: { value: JSON.stringify({ rates }), updatedAt: new Date() },
       });
     return res?.json({ success: true, rates });
   } catch (error) {
@@ -1185,10 +1185,10 @@ router?.patch("/financial-config/royalty-rates/:id", async (req, res) => {
 router?.patch("/financial-config/tax-treaties/:id", async (req, res) => {
   try {
     const { id } = req?.params;
-    const _raw = req?.body as Record<string, unknown>;
+    const raw = req?.body as Record<string, unknown>;
     const update: Record<string, unknown> = {};
     for (const k of Object?.keys(raw)) {
-      if (TAX_TREATY_FIELDS?.has(k)) update[k] = raw[k];
+      if (TAX_TREATY_FIELDS.has(k)) update[k] = raw[k];
     }
     if (Object?.keys(update).length === 0) {
       return res
@@ -1198,24 +1198,24 @@ router?.patch("/financial-config/tax-treaties/:id", async (req, res) => {
           allowed: [...TAX_TREATY_FIELDS],
         });
     }
-    const _stored = await db
+    const stored = await db
       .select()
       .from(systemSettings)
       .where(eq(systemSettings?.key, "tax_treaties"))
       .limit(1);
-    const _current = stored?.length
+    const current = stored?.length
       ? JSON?.parse(stored[0].value as string)
       : { treaties: DEFAULT_TAX_TREATIES };
-    const _treaties = (current?.treaties || DEFAULT_TAX_TREATIES).map(
+    const treaties = (current?.treaties || DEFAULT_TAX_TREATIES).map(
       (t: Record<string, unknown>, idx: number) =>
         String(idx) === String(id) || t?.code === id ? { ...t, ...update } : t,
     );
     await db
       .insert(systemSettings)
-      .values({ key: "tax_treaties", value: JSON?.stringify({ treaties }) })
+      .values({ key: "tax_treaties", value: JSON.stringify({ treaties }) })
       .onConflictDoUpdate({
-        target: systemSettings?.key,
-        set: { value: JSON?.stringify({ treaties }), updatedAt: new Date() },
+        target: systemSettings.key,
+        set: { value: JSON.stringify({ treaties }), updatedAt: new Date() },
       });
     return res?.json({ success: true, treaties });
   } catch (error) {
@@ -1229,24 +1229,24 @@ router?.patch("/financial-config/label-settings/:key", async (req, res) => {
   try {
     const { key } = req?.params;
     const { value } = req?.body;
-    const _stored = await db
+    const stored = await db
       .select()
       .from(systemSettings)
       .where(eq(systemSettings?.key, "label_settings"))
       .limit(1);
-    const _current = stored?.length
+    const current = stored?.length
       ? JSON?.parse(stored[0].value as string)
       : { settings: DEFAULT_LABEL_SETTINGS };
-    const _settings = {
+    const settings = {
       ...(current?.settings || DEFAULT_LABEL_SETTINGS),
       [key]: value,
     };
     await db
       .insert(systemSettings)
-      .values({ key: "label_settings", value: JSON?.stringify({ settings }) })
+      .values({ key: "label_settings", value: JSON.stringify({ settings }) })
       .onConflictDoUpdate({
-        target: systemSettings?.key,
-        set: { value: JSON?.stringify({ settings }), updatedAt: new Date() },
+        target: systemSettings.key,
+        set: { value: JSON.stringify({ settings }), updatedAt: new Date() },
       });
     return res?.json({ success: true, settings });
   } catch (error) {

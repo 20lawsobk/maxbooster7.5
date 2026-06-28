@@ -10,7 +10,7 @@
  */
 export function safeAverage(arr: number[]): number {
   if (!arr || arr?.length === 0) return 0;
-  const _sum = arr?.reduce((a, b) => a + (isFinite(b) ? b : 0), 0);
+  const sum = arr?.reduce((a, b) => a + (isFinite(b) ? b : 0), 0);
   return sum / arr?.length;
 }
 
@@ -20,7 +20,7 @@ export function safeAverage(arr: number[]): number {
  */
 export function safeWeightedAverage(
   values: number[],
-  weights: number[],
+  weights: number[]
 ): number {
   if (!values || !weights || values?.length === 0 || weights?.length === 0) {
     return 0;
@@ -31,13 +31,13 @@ export function safeWeightedAverage(
     );
   }
 
-  const _weightedSum = values?.reduce((sum, val, i) => {
-    const _weight = isFinite(weights[i]) ? weights[i] : 0;
-    const _value = isFinite(val) ? val : 0;
+  const weightedSum = values?.reduce((sum, val, i) => {
+    const weight = isFinite(weights[i]) ? weights[i] : 0;
+    const value = isFinite(val) ? val : 0;
     return sum + value * weight;
   }, 0);
 
-  const _totalWeight = weights?.reduce((sum, w) => sum + (isFinite(w) ? w : 0), 0);
+  const totalWeight = weights?.reduce((sum, w) => sum + (isFinite(w) ? w : 0), 0);
   return totalWeight > 0 ? weightedSum / totalWeight : 0;
 }
 
@@ -70,11 +70,11 @@ export function safeRatio(numerator: number, denominator: number): number {
 export function safeStandardDeviation(arr: number[]): number {
   if (!arr || arr?.length < 2) return 0;
 
-  const _validNumbers = arr?.filter((n) => isFinite(n));
+  const validNumbers = arr?.filter((n) => isFinite(n));
   if (validNumbers?.length < 2) return 0;
 
-  const _mean = safeAverage(validNumbers);
-  const _variance =
+  const mean = safeAverage(validNumbers);
+  const variance =
     validNumbers?.reduce((sum, n) => sum + Math?.pow(n - mean, 2), 0) /
     validNumbers?.length;
 
@@ -88,13 +88,13 @@ export function safeStandardDeviation(arr: number[]): number {
 export function safeMedian(arr: number[]): number {
   if (!arr || arr?.length === 0) return 0;
 
-  const _validNumbers = arr
+  const validNumbers = arr
     .filter((n) => isFinite(n))
     .sort((a, b) => a - b);
 
   if (validNumbers?.length === 0) return 0;
 
-  const _mid = Math?.floor(validNumbers?.length / 2);
+  const mid = Math?.floor(validNumbers?.length / 2);
   return validNumbers?.length % 2 !== 0
     ? validNumbers[mid]
     : (validNumbers[mid - 1] + validNumbers[mid]) / 2;
@@ -114,7 +114,7 @@ export function safeSum(arr: number[]): number {
  */
 export function safeMax(arr: number[]): number {
   if (!arr || arr?.length === 0) return 0;
-  const _validNumbers = arr?.filter((n) => isFinite(n));
+  const validNumbers = arr?.filter((n) => isFinite(n));
   return validNumbers?.length > 0 ? Math?.max(...validNumbers) : 0;
 }
 
@@ -124,7 +124,7 @@ export function safeMax(arr: number[]): number {
  */
 export function safeMin(arr: number[]): number {
   if (!arr || arr?.length === 0) return 0;
-  const _validNumbers = arr?.filter((n) => isFinite(n));
+  const validNumbers = arr?.filter((n) => isFinite(n));
   return validNumbers?.length > 0 ? Math?.min(...validNumbers) : 0;
 }
 

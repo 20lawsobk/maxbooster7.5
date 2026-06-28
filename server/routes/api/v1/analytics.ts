@@ -7,7 +7,7 @@ import { logger } from "../../../logger.js";
 import { advancedAnalyticsService } from "../../../services/advancedAnalyticsService";
 import { distributedCache } from "../../../infrastructure/distributedCache.js";
 
-const _router = Router();
+const router = Router();
 
 // Apply API key authentication, rate limiting, and usage tracking to all routes
 router?.use(apiKeyService?.validateApiKey);
@@ -16,10 +16,10 @@ router?.use(apiKeyService?.trackApiUsage);
 
 // IDOR protection: an API key can only access its own user's data.
 // If :artistId is provided and differs from the key owner, reject.
-router?.param("artistId", (req: ApiKeyRequest, res, next, artistId) => {
-  const _userId = req?.apiKey?.userId;
+router.param("artistId", (req: ApiKeyRequest, res, next, artistId) => {
+  const userId = req.apiKey.userId;
   if (userId && artistId && artistId !== userId) {
-    return res?.status(403).json({
+    return res.status(403).json({
       error: "Forbidden",
       message: "API keys can only access data belonging to their owner",
     });
@@ -31,9 +31,9 @@ router?.param("artistId", (req: ApiKeyRequest, res, next, artistId) => {
  * GET /api/v1/analytics/platforms
  * List all connected platforms for the authenticated user
  */
-router?.get("/platforms", async (req: ApiKeyRequest, res) => {
+router.get("/platforms", async (req: ApiKeyRequest, res) => {
   try {
-    const _userId = req?.apiKey?.userId;
+    const userId = req.apiKey.userId;
 
     if (!userId) {
       return res
@@ -44,11 +44,11 @@ router?.get("/platforms", async (req: ApiKeyRequest, res) => {
     // Get user's connected platform tokens
     const [user] = await db
       .select({
-        youtube: users?.youtubeToken,
-        facebook: users?.facebookToken,
-        instagram: users?.instagramToken,
-        twitter: users?.twitterToken,
-        tiktok: users?.tiktokToken,
+        youtube: users.youtubeToken,
+        facebook: users.facebookToken,
+        instagram: users.instagramToken,
+        twitter: users.twitterToken,
+        tiktok: users.tiktokToken,
       })
       .from(users)
       .where(eq(users?.id, userId))
@@ -61,7 +61,7 @@ router?.get("/platforms", async (req: ApiKeyRequest, res) => {
     }
 
     // Build list of connected platforms (only includes platforms with OAuth tokens in the schema)
-    const _platforms = [];
+    const platforms = [];
     if (user?.youtube) platforms?.push({ name: "YouTube", status: "connected" });
     if (user?.facebook)
       platforms?.push({ name: "Facebook", status: "connected" });
@@ -73,7 +73,7 @@ router?.get("/platforms", async (req: ApiKeyRequest, res) => {
     return res?.json({
       success: true,
       platforms,
-      totalConnected: platforms?.length,
+      totalConnected: platforms.length,
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error fetching platforms:");
@@ -93,8 +93,8 @@ router?.get("/platforms", async (req: ApiKeyRequest, res) => {
  */
 router?.get("/streams{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
-    const _userId = req?.apiKey?.userId;
-    const _artistId = req?.params.artistId || userId;
+    const userId = req?.apiKey?.userId;
+    const artistId = req?.params.artistId || userId;
     const { startDate, endDate, platform, timeRange = "30d" } = req?.query;
 
     if (!userId) {
@@ -103,13 +103,13 @@ router?.get("/streams{/:artistId}", async (req: ApiKeyRequest, res) => {
         .json({ error: "Unauthorized", message: "User ID not found" });
     }
 
-    const _cacheKey = `v1:analytics:streams:${artistId}:${timeRange}:${startDate ?? ""}:${endDate ?? ""}:${platform ?? ""}`;
-    const _payload = await distributedCache?.getOrSet(
+    const cacheKey = `v1:analytics:streams:${artistId}:${timeRange}:${startDate ?? ""}:${endDate ?? ""}:${platform ?? ""}`;
+    const payload = await distributedCache?.getOrSet(
       cacheKey,
       async () => {
         // Calculate date range
-        const _end = endDate ? new Date(endDate as string) : new Date();
-        const _start = startDate
+        const end = endDate ? new Date(endDate as string) : new Date();
+        const start = startDate
           ? new Date(startDate as string)
           : new Date(
               end?.getTime() -
@@ -117,7 +117,7 @@ router?.get("/streams{/:artistId}", async (req: ApiKeyRequest, res) => {
             );
 
         // Build query conditions
-        const _conditions = [
+        const conditions = [
           eq(analytics?.userId, artistId as string),
           gte(analytics?.date, start),
           lte(analytics?.date, end),
@@ -131,7 +131,7 @@ router?.get("/streams{/:artistId}", async (req: ApiKeyRequest, res) => {
           db
             .select({
               date: sql<string>`DATE(${analytics?.date})`,
-              platform: analytics?.platform,
+              platform: analytics.platform,
               streams: sql<number>`COALESCE(SUM(${analytics?.streams}), 0)`,
               revenue: sql<number>`COALESCE(SUM(${analytics?.revenue}), 0)`,
               listeners: sql<number>`COALESCE(SUM(${analytics?.totalListeners}), 0)`,
@@ -150,7 +150,7 @@ router?.get("/streams{/:artistId}", async (req: ApiKeyRequest, res) => {
             .where(and(...conditions)),
           db
             .select({
-              platform: analytics?.platform,
+              platform: analytics.platform,
               streams: sql<number>`COALESCE(SUM(${analytics?.streams}), 0)`,
               revenue: sql<number>`COALESCE(SUM(${analytics?.revenue}), 0)`,
               listeners: sql<number>`COALESCE(SUM(${analytics?.totalListeners}), 0)`,
@@ -164,13 +164,13 @@ router?.get("/streams{/:artistId}", async (req: ApiKeyRequest, res) => {
         return {
           success: true,
           timeRange: {
-            start: start?.toISOString(),
-            end: end?.toISOString(),
+            start: start.toISOString(),
+            end: end.toISOString(),
           },
           totals: {
-            streams: totals?.totalStreams || 0,
+            streams: totals.totalStreams || 0,
             revenue: parseFloat(totals?.totalRevenue?.toString() || "0"),
-            listeners: totals?.totalListeners || 0,
+            listeners: totals.totalListeners || 0,
           },
           byPlatform,
           timeline: streamData,
@@ -197,8 +197,8 @@ router?.get("/streams{/:artistId}", async (req: ApiKeyRequest, res) => {
  */
 router?.get("/engagement{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
-    const _userId = req?.apiKey?.userId;
-    const _artistId = req?.params.artistId || userId;
+    const userId = req?.apiKey?.userId;
+    const artistId = req?.params.artistId || userId;
     const { startDate, endDate, timeRange = "30d" } = req?.query;
 
     if (!userId) {
@@ -208,8 +208,8 @@ router?.get("/engagement{/:artistId}", async (req: ApiKeyRequest, res) => {
     }
 
     // Calculate date range
-    const _end = endDate ? new Date(endDate as string) : new Date();
-    const _start = startDate
+    const end = endDate ? new Date(endDate as string) : new Date();
+    const start = startDate
       ? new Date(startDate as string)
       : new Date(
           end?.getTime() -
@@ -217,11 +217,11 @@ router?.get("/engagement{/:artistId}", async (req: ApiKeyRequest, res) => {
         );
 
     // Get engagement data from platformData JSONB field
-    const _engagementData = await db
+    const engagementData = await db
       .select({
         date: sql<string>`DATE(${analytics?.date})`,
-        platform: analytics?.platform,
-        platformData: analytics?.platformData,
+        platform: analytics.platform,
+        platformData: analytics.platformData,
       })
       .from(analytics)
       .where(
@@ -234,26 +234,26 @@ router?.get("/engagement{/:artistId}", async (req: ApiKeyRequest, res) => {
       .orderBy(sql`DATE(${analytics?.date})`);
 
     // Aggregate engagement metrics
-    const _engagement = engagementData?.map((row) => {
-      const _data = (row?.platformData as Record<string, unknown>) || {};
+    const engagement = engagementData?.map((row) => {
+      const data = (row?.platformData as Record<string, unknown>) || {};
       return {
-        date: row?.date,
-        platform: row?.platform,
-        likes: data?.likes || 0,
-        shares: data?.shares || 0,
-        comments: data?.comments || 0,
-        saves: data?.saves || 0,
-        engagement_rate: data?.engagement_rate || 0,
+        date: row.date,
+        platform: row.platform,
+        likes: data.likes || 0,
+        shares: data.shares || 0,
+        comments: data.comments || 0,
+        saves: data.saves || 0,
+        engagement_rate: data.engagement_rate || 0,
       };
     });
 
     // Calculate totals
-    const _totals = engagement?.reduce(
+    const totals = engagement?.reduce(
       (acc, curr) => ({
-        likes: acc?.likes + curr?.likes,
-        shares: acc?.shares + curr?.shares,
-        comments: acc?.comments + curr?.comments,
-        saves: acc?.saves + curr?.saves,
+        likes: acc.likes + curr?.likes,
+        shares: acc.shares + curr?.shares,
+        comments: acc.comments + curr?.comments,
+        saves: acc.saves + curr?.saves,
       }),
       { likes: 0, shares: 0, comments: 0, saves: 0 },
     );
@@ -261,8 +261,8 @@ router?.get("/engagement{/:artistId}", async (req: ApiKeyRequest, res) => {
     return res?.json({
       success: true,
       timeRange: {
-        start: start?.toISOString(),
-        end: end?.toISOString(),
+        start: start.toISOString(),
+        end: end.toISOString(),
       },
       totals,
       timeline: engagement,
@@ -284,8 +284,8 @@ router?.get("/engagement{/:artistId}", async (req: ApiKeyRequest, res) => {
  */
 router?.get("/demographics{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
-    const _userId = req?.apiKey?.userId;
-    const _artistId = req?.params.artistId || userId;
+    const userId = req?.apiKey?.userId;
+    const artistId = req?.params.artistId || userId;
     const { startDate, endDate, timeRange = "30d" } = req?.query;
 
     if (!userId) {
@@ -295,8 +295,8 @@ router?.get("/demographics{/:artistId}", async (req: ApiKeyRequest, res) => {
     }
 
     // Calculate date range
-    const _end = endDate ? new Date(endDate as string) : new Date();
-    const _start = startDate
+    const end = endDate ? new Date(endDate as string) : new Date();
+    const start = startDate
       ? new Date(startDate as string)
       : new Date(
           end?.getTime() -
@@ -304,9 +304,9 @@ router?.get("/demographics{/:artistId}", async (req: ApiKeyRequest, res) => {
         );
 
     // Get audience data from audienceData JSONB field
-    const _audienceData = await db
+    const audienceData = await db
       .select({
-        audienceData: analytics?.audienceData,
+        audienceData: analytics.audienceData,
       })
       .from(analytics)
       .where(
@@ -319,7 +319,7 @@ router?.get("/demographics{/:artistId}", async (req: ApiKeyRequest, res) => {
       .orderBy(desc(analytics?.date))
       .limit(1);
 
-    const _demographics = (audienceData[0]?.audienceData as Record<
+    const demographics = (audienceData[0]?.audienceData as Record<
       string,
       unknown
     >) || {
@@ -331,15 +331,15 @@ router?.get("/demographics{/:artistId}", async (req: ApiKeyRequest, res) => {
     return res?.json({
       success: true,
       timeRange: {
-        start: start?.toISOString(),
-        end: end?.toISOString(),
+        start: start.toISOString(),
+        end: end.toISOString(),
       },
       demographics: {
-        age: demographics?.age || [],
-        gender: demographics?.gender || [],
-        location: demographics?.location || [],
-        topCities: demographics?.topCities || [],
-        topCountries: demographics?.topCountries || [],
+        age: demographics.age || [],
+        gender: demographics.gender || [],
+        location: demographics.location || [],
+        topCities: demographics.topCities || [],
+        topCountries: demographics.topCountries || [],
       },
     });
   } catch (error: unknown) {
@@ -359,8 +359,8 @@ router?.get("/demographics{/:artistId}", async (req: ApiKeyRequest, res) => {
  */
 router?.get("/playlists{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
-    const _userId = req?.apiKey?.userId;
-    const _artistId = req?.params.artistId || userId;
+    const userId = req?.apiKey?.userId;
+    const artistId = req?.params.artistId || userId;
     const { startDate, endDate, timeRange = "30d" } = req?.query;
 
     if (!userId) {
@@ -370,8 +370,8 @@ router?.get("/playlists{/:artistId}", async (req: ApiKeyRequest, res) => {
     }
 
     // Calculate date range
-    const _end = endDate ? new Date(endDate as string) : new Date();
-    const _start = startDate
+    const end = endDate ? new Date(endDate as string) : new Date();
+    const start = startDate
       ? new Date(startDate as string)
       : new Date(
           end?.getTime() -
@@ -379,11 +379,11 @@ router?.get("/playlists{/:artistId}", async (req: ApiKeyRequest, res) => {
         );
 
     // Get playlist data from platformData JSONB field
-    const _playlistData = await db
+    const playlistData = await db
       .select({
         date: sql<string>`DATE(${analytics?.date})`,
-        platform: analytics?.platform,
-        platformData: analytics?.platformData,
+        platform: analytics.platform,
+        platformData: analytics.platformData,
       })
       .from(analytics)
       .where(
@@ -396,28 +396,28 @@ router?.get("/playlists{/:artistId}", async (req: ApiKeyRequest, res) => {
       .orderBy(desc(sql`DATE(${analytics?.date})`));
 
     // Extract playlist information
-    const _playlists = playlistData?.flatMap((row) => {
-      const _data = (row?.platformData as Record<string, unknown>) || {};
+    const playlists = playlistData?.flatMap((row) => {
+      const data = (row?.platformData as Record<string, unknown>) || {};
       return (data?.playlists || []).map((playlist: unknown) => ({
-        date: row?.date,
-        platform: row?.platform,
-        playlistName: playlist?.name,
-        playlistId: playlist?.id,
-        followers: playlist?.followers || 0,
-        streams: playlist?.streams || 0,
-        position: playlist?.position || null,
+        date: row.date,
+        platform: row.platform,
+        playlistName: playlist.name,
+        playlistId: playlist.id,
+        followers: playlist.followers || 0,
+        streams: playlist.streams || 0,
+        position: playlist.position || null,
       }));
     });
 
     // Calculate total playlist placements
-    const _totalPlacements = playlists?.length;
-    const _totalFollowers = playlists?.reduce((sum, p) => sum + p?.followers, 0);
+    const totalPlacements = playlists?.length;
+    const totalFollowers = playlists?.reduce((sum, p) => sum + p?.followers, 0);
 
     return res?.json({
       success: true,
       timeRange: {
-        start: start?.toISOString(),
-        end: end?.toISOString(),
+        start: start.toISOString(),
+        end: end.toISOString(),
       },
       summary: {
         totalPlacements,
@@ -427,7 +427,7 @@ router?.get("/playlists{/:artistId}", async (req: ApiKeyRequest, res) => {
             ? Math?.round(totalFollowers / totalPlacements)
             : 0,
       },
-      playlists: playlists?.slice(0, 50), // Limit to top 50
+      playlists: playlists.slice(0, 50), // Limit to top 50
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error fetching playlist data:");
@@ -446,10 +446,10 @@ router?.get("/playlists{/:artistId}", async (req: ApiKeyRequest, res) => {
  */
 router?.get("/tracks{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
-    const _userId = req?.apiKey?.userId;
-    const _artistId = req?.params.artistId || userId;
-    const _rawLimit = parseInt(String(req?.query.limit ?? "50"), 10);
-    const _limit = Math?.min(
+    const userId = req?.apiKey?.userId;
+    const artistId = req?.params.artistId || userId;
+    const rawLimit = parseInt(String(req?.query.limit ?? "50"), 10);
+    const limit = Math?.min(
       Number?.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 50,
       500,
     );
@@ -462,17 +462,17 @@ router?.get("/tracks{/:artistId}", async (req: ApiKeyRequest, res) => {
     }
 
     // Get all projects/tracks for the user
-    const _tracks = await db
+    const tracks = await db
       .select({
-        id: projects?.id,
-        title: projects?.title,
-        genre: projects?.genre,
-        streams: projects?.streams,
-        revenue: projects?.revenue,
-        playCount: projects?.playCount,
-        likeCount: projects?.likeCount,
-        artworkUrl: projects?.artworkUrl,
-        createdAt: projects?.createdAt,
+        id: projects.id,
+        title: projects.title,
+        genre: projects.genre,
+        streams: projects.streams,
+        revenue: projects.revenue,
+        playCount: projects.playCount,
+        likeCount: projects.likeCount,
+        artworkUrl: projects.artworkUrl,
+        createdAt: projects.createdAt,
       })
       .from(projects)
       .where(eq(projects?.userId, artistId as string))
@@ -481,7 +481,7 @@ router?.get("/tracks{/:artistId}", async (req: ApiKeyRequest, res) => {
 
     return res?.json({
       success: true,
-      total: tracks?.length,
+      total: tracks.length,
       tracks,
     });
   } catch (error: unknown) {
@@ -501,8 +501,8 @@ router?.get("/tracks{/:artistId}", async (req: ApiKeyRequest, res) => {
  */
 router?.get("/summary{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
-    const _userId = req?.apiKey?.userId;
-    const _artistId = req?.params.artistId || userId;
+    const userId = req?.apiKey?.userId;
+    const artistId = req?.params.artistId || userId;
     const { timeRange = "30d" } = req?.query;
 
     if (!userId) {
@@ -512,8 +512,8 @@ router?.get("/summary{/:artistId}", async (req: ApiKeyRequest, res) => {
     }
 
     // Calculate date range
-    const _end = new Date();
-    const _start = new Date(
+    const end = new Date();
+    const start = new Date(
       end?.getTime() -
         (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000,
     );
@@ -536,9 +536,9 @@ router?.get("/summary{/:artistId}", async (req: ApiKeyRequest, res) => {
       );
 
     // Get platform breakdown
-    const _platforms = await db
+    const platforms = await db
       .select({
-        platform: analytics?.platform,
+        platform: analytics.platform,
         streams: sql<number>`COALESCE(SUM(${analytics?.streams}), 0)`,
         revenue: sql<number>`COALESCE(SUM(${analytics?.revenue}), 0)`,
       })
@@ -555,14 +555,14 @@ router?.get("/summary{/:artistId}", async (req: ApiKeyRequest, res) => {
     return res?.json({
       success: true,
       timeRange: {
-        start: start?.toISOString(),
-        end: end?.toISOString(),
+        start: start.toISOString(),
+        end: end.toISOString(),
       },
       summary: {
-        totalStreams: summary?.totalStreams || 0,
+        totalStreams: summary.totalStreams || 0,
         totalRevenue: parseFloat(summary?.totalRevenue?.toString() || "0"),
-        totalListeners: summary?.totalListeners || 0,
-        avgStreamsPerDay: Math?.round(summary?.avgStreamsPerDay || 0),
+        totalListeners: summary.totalListeners || 0,
+        avgStreamsPerDay: Math.round(summary?.avgStreamsPerDay || 0),
       },
       platforms,
     });
@@ -583,7 +583,7 @@ router?.get("/summary{/:artistId}", async (req: ApiKeyRequest, res) => {
  */
 router?.post("/playlist-journeys", async (req: ApiKeyRequest, res) => {
   try {
-    const _userId = req?.apiKey?.userId;
+    const userId = req?.apiKey?.userId;
 
     if (!userId) {
       return res
@@ -612,11 +612,13 @@ router?.post("/playlist-journeys", async (req: ApiKeyRequest, res) => {
       !playlistType ||
       !action
     ) {
-      return res.status(400).json({
-        error: "Bad Request",
-        message:
-          "Missing required fields: trackId, playlistId, playlistName, platform, playlistType, action",
-      });
+      return res
+        .status(400)
+        .json({
+          error: "Bad Request",
+          message:
+            "Missing required fields: trackId, playlistId, playlistName, platform, playlistType, action",
+        });
     }
 
     await advancedAnalyticsService?.trackPlaylistJourney(userId, {
@@ -632,7 +634,7 @@ router?.post("/playlist-journeys", async (req: ApiKeyRequest, res) => {
       curatorName,
     });
 
-    const _journeys = await advancedAnalyticsService?.getPlaylistJourneys(
+    const journeys = await advancedAnalyticsService?.getPlaylistJourneys(
       userId,
       trackId,
     );
@@ -659,8 +661,8 @@ router?.post("/playlist-journeys", async (req: ApiKeyRequest, res) => {
  */
 router?.get("/global-ranking{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
-    const _userId = req?.apiKey?.userId;
-    const _artistId = req?.params.artistId || userId;
+    const userId = req?.apiKey?.userId;
+    const artistId = req?.params.artistId || userId;
     const { days = "30" } = req?.query;
 
     if (!userId) {
@@ -669,10 +671,10 @@ router?.get("/global-ranking{/:artistId}", async (req: ApiKeyRequest, res) => {
         .json({ error: "Unauthorized", message: "User ID not found" });
     }
 
-    const _ranking = await advancedAnalyticsService?.calculateGlobalRanking(
+    const ranking = await advancedAnalyticsService?.calculateGlobalRanking(
       artistId as string,
     );
-    const _history = await advancedAnalyticsService?.getGlobalRankingHistory(
+    const history = await advancedAnalyticsService?.getGlobalRankingHistory(
       artistId as string,
       parseInt(days as string),
     );
@@ -699,7 +701,7 @@ router?.get("/global-ranking{/:artistId}", async (req: ApiKeyRequest, res) => {
  */
 router?.post("/ar-discovery", async (req: ApiKeyRequest, res) => {
   try {
-    const _userId = req?.apiKey?.userId;
+    const userId = req?.apiKey?.userId;
 
     if (!userId) {
       return res
@@ -711,7 +713,7 @@ router?.post("/ar-discovery", async (req: ApiKeyRequest, res) => {
       req?.body;
 
     if (artistId) {
-      const _analysis =
+      const analysis =
         await advancedAnalyticsService?.analyzeArtistForAR(artistId);
       return res?.json({
         success: true,
@@ -719,7 +721,7 @@ router?.post("/ar-discovery", async (req: ApiKeyRequest, res) => {
       });
     }
 
-    const _discoveries = await advancedAnalyticsService?.discoverArtists({
+    const discoveries = await advancedAnalyticsService?.discoverArtists({
       genre,
       country,
       minGrowthScore,
@@ -730,7 +732,7 @@ router?.post("/ar-discovery", async (req: ApiKeyRequest, res) => {
     return res?.json({
       success: true,
       discoveries,
-      total: discoveries?.length,
+      total: discoveries.length,
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error performing A&R discovery:");
@@ -749,7 +751,7 @@ router?.post("/ar-discovery", async (req: ApiKeyRequest, res) => {
  */
 router?.post("/nlp-query", async (req: ApiKeyRequest, res) => {
   try {
-    const _userId = req?.apiKey?.userId;
+    const userId = req?.apiKey?.userId;
 
     if (!userId) {
       return res
@@ -760,13 +762,15 @@ router?.post("/nlp-query", async (req: ApiKeyRequest, res) => {
     const { query } = req?.body;
 
     if (!query || typeof query !== "string") {
-      return res.status(400).json({
-        error: "Bad Request",
-        message: "Query is required and must be a string",
-      });
+      return res
+        .status(400)
+        .json({
+          error: "Bad Request",
+          message: "Query is required and must be a string",
+        });
     }
 
-    const _result = await advancedAnalyticsService?.processNlpQuery(
+    const result = await advancedAnalyticsService?.processNlpQuery(
       userId,
       query,
     );
@@ -792,8 +796,8 @@ router?.post("/nlp-query", async (req: ApiKeyRequest, res) => {
  */
 router?.get("/historical{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
-    const _userId = req?.apiKey?.userId;
-    const _artistId = req?.params.artistId || userId;
+    const userId = req?.apiKey?.userId;
+    const artistId = req?.params.artistId || userId;
     const { startDate, endDate, period, trackId } = req?.query;
 
     if (!userId) {
@@ -819,7 +823,7 @@ router?.get("/historical{/:artistId}", async (req: ApiKeyRequest, res) => {
       options.period = period as "daily" | "weekly" | "monthly" | "yearly";
     }
 
-    const _historicalData = await advancedAnalyticsService?.getHistoricalData(
+    const historicalData = await advancedAnalyticsService?.getHistoricalData(
       artistId as string,
       options,
     );
@@ -845,8 +849,8 @@ router?.get("/historical{/:artistId}", async (req: ApiKeyRequest, res) => {
  */
 router?.get("/sync-impact{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
-    const _userId = req?.apiKey?.userId;
-    const _artistId = req?.params.artistId || userId;
+    const userId = req?.apiKey?.userId;
+    const artistId = req?.params.artistId || userId;
     const { trackId } = req?.query;
 
     if (!userId) {
@@ -855,16 +859,16 @@ router?.get("/sync-impact{/:artistId}", async (req: ApiKeyRequest, res) => {
         .json({ error: "Unauthorized", message: "User ID not found" });
     }
 
-    const _syncImpact = await advancedAnalyticsService?.getSyncImpact(
+    const syncImpact = await advancedAnalyticsService?.getSyncImpact(
       artistId as string,
       trackId as string | undefined,
     );
 
-    const _totalStreamLift = syncImpact?.reduce(
+    const totalStreamLift = syncImpact?.reduce(
       (sum, s) => sum + s?.totalStreamLift,
       0,
     );
-    const _totalRevenueLift = syncImpact?.reduce(
+    const totalRevenueLift = syncImpact?.reduce(
       (sum, s) => sum + s?.totalRevenueLift,
       0,
     );
@@ -872,8 +876,8 @@ router?.get("/sync-impact{/:artistId}", async (req: ApiKeyRequest, res) => {
     return res?.json({
       success: true,
       summary: {
-        totalTracks: syncImpact?.length,
-        totalPlacements: syncImpact?.reduce(
+        totalTracks: syncImpact.length,
+        totalPlacements: syncImpact.reduce(
           (sum, s) => sum + s?.placements.length,
           0,
         ),
@@ -899,8 +903,8 @@ router?.get("/sync-impact{/:artistId}", async (req: ApiKeyRequest, res) => {
  */
 router?.get("/cross-platform{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
-    const _userId = req?.apiKey?.userId;
-    const _artistId = req?.params.artistId || userId;
+    const userId = req?.apiKey?.userId;
+    const artistId = req?.params.artistId || userId;
     const { startDate, endDate, timeRange = "30d" } = req?.query;
 
     if (!userId) {
@@ -909,15 +913,15 @@ router?.get("/cross-platform{/:artistId}", async (req: ApiKeyRequest, res) => {
         .json({ error: "Unauthorized", message: "User ID not found" });
     }
 
-    const _end = endDate ? new Date(endDate as string) : new Date();
-    const _start = startDate
+    const end = endDate ? new Date(endDate as string) : new Date();
+    const start = startDate
       ? new Date(startDate as string)
       : new Date(
           end?.getTime() -
             (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000,
         );
 
-    const _crossPlatform =
+    const crossPlatform =
       await advancedAnalyticsService?.getCrossPlatformAnalysis(
         artistId as string,
         start,
@@ -927,8 +931,8 @@ router?.get("/cross-platform{/:artistId}", async (req: ApiKeyRequest, res) => {
     return res?.json({
       success: true,
       timeRange: {
-        start: start?.toISOString(),
-        end: end?.toISOString(),
+        start: start.toISOString(),
+        end: end.toISOString(),
       },
       ...crossPlatform,
     });
@@ -951,8 +955,8 @@ router?.get(
   "/data-sources/shazam{/:artistId}",
   async (req: ApiKeyRequest, res) => {
     try {
-      const _userId = req?.apiKey?.userId;
-      const _artistId = req?.params.artistId || userId;
+      const userId = req?.apiKey?.userId;
+      const artistId = req?.params.artistId || userId;
       const { startDate, endDate, timeRange = "30d" } = req?.query;
 
       if (!userId) {
@@ -961,15 +965,15 @@ router?.get(
           .json({ error: "Unauthorized", message: "User ID not found" });
       }
 
-      const _end = endDate ? new Date(endDate as string) : new Date();
-      const _start = startDate
+      const end = endDate ? new Date(endDate as string) : new Date();
+      const start = startDate
         ? new Date(startDate as string)
         : new Date(
             end?.getTime() -
               (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000,
           );
 
-      const _shazamData = await advancedAnalyticsService?.getShazamData(
+      const shazamData = await advancedAnalyticsService?.getShazamData(
         artistId as string,
         start,
         end,
@@ -978,8 +982,8 @@ router?.get(
       return res?.json({
         success: true,
         timeRange: {
-          start: start?.toISOString(),
-          end: end?.toISOString(),
+          start: start.toISOString(),
+          end: end.toISOString(),
         },
         ...shazamData,
       });
@@ -1003,8 +1007,8 @@ router?.get(
   "/data-sources/radio{/:artistId}",
   async (req: ApiKeyRequest, res) => {
     try {
-      const _userId = req?.apiKey?.userId;
-      const _artistId = req?.params.artistId || userId;
+      const userId = req?.apiKey?.userId;
+      const artistId = req?.params.artistId || userId;
       const { startDate, endDate, timeRange = "30d" } = req?.query;
 
       if (!userId) {
@@ -1013,15 +1017,15 @@ router?.get(
           .json({ error: "Unauthorized", message: "User ID not found" });
       }
 
-      const _end = endDate ? new Date(endDate as string) : new Date();
-      const _start = startDate
+      const end = endDate ? new Date(endDate as string) : new Date();
+      const start = startDate
         ? new Date(startDate as string)
         : new Date(
             end?.getTime() -
               (parseInt(timeRange as string) || 30) * 24 * 60 * 60 * 1000,
           );
 
-      const _radioData = await advancedAnalyticsService?.getRadioAirplayData(
+      const radioData = await advancedAnalyticsService?.getRadioAirplayData(
         artistId as string,
         start,
         end,
@@ -1030,8 +1034,8 @@ router?.get(
       return res?.json({
         success: true,
         timeRange: {
-          start: start?.toISOString(),
-          end: end?.toISOString(),
+          start: start.toISOString(),
+          end: end.toISOString(),
         },
         ...radioData,
       });
@@ -1055,8 +1059,8 @@ router?.get(
   "/data-sources/tour{/:artistId}",
   async (req: ApiKeyRequest, res) => {
     try {
-      const _userId = req?.apiKey?.userId;
-      const _artistId = req?.params.artistId || userId;
+      const userId = req?.apiKey?.userId;
+      const artistId = req?.params.artistId || userId;
 
       if (!userId) {
         return res
@@ -1064,7 +1068,7 @@ router?.get(
           .json({ error: "Unauthorized", message: "User ID not found" });
       }
 
-      const _tourData = await advancedAnalyticsService?.getTourData(
+      const tourData = await advancedAnalyticsService?.getTourData(
         artistId as string,
       );
 

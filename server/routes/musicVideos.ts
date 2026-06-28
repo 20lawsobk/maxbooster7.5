@@ -16,13 +16,13 @@ import {
   generateDiffusionFrames,
 } from "../services/diffusionVideoService.js";
 
-const _router = Router();
-const _CACHE_TTL = 300;
+const router = Router();
+const CACHE_TTL = 300;
 
 router?.get("/", requireAuth, async (req, res) => {
   try {
     const { limit, offset } = parsePaginationParams(req);
-    const _items = await db
+    const items = await db
       .select()
       .from(musicVideoProductions)
       .where(eq(musicVideoProductions?.userId, req?.user!.id))
@@ -38,10 +38,10 @@ router?.get("/", requireAuth, async (req, res) => {
 
 router?.get("/stats", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _cacheKey = createCacheKey("stats:musicVideos", userId);
+    const userId = req?.user!.id;
+    const cacheKey = createCacheKey("stats:musicVideos", userId);
 
-    const _stats = await queryCache?.getOrCompute(
+    const stats = await queryCache?.getOrCompute(
       cacheKey,
       async () => {
         const [totals] = await db
@@ -77,9 +77,9 @@ router?.get("/stats", requireAuth, async (req, res) => {
 
 router?.post("/", requireAuth, async (req, res) => {
   try {
-    const _data = insertMusicVideoProductionSchema?.parse({
+    const data = insertMusicVideoProductionSchema?.parse({
       ...req?.body,
-      userId: req?.user!.id,
+      userId: req.user!.id,
       budget:
         req?.body.budget !== "" && req?.body.budget != null
           ? parseFloat(req?.body.budget)
@@ -109,10 +109,10 @@ router?.post("/", requireAuth, async (req, res) => {
 
 router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
 
-    const _existing = await db
+    const existing = await db
       .select()
       .from(musicVideoProductions)
       .where(
@@ -129,7 +129,7 @@ router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
         .json({ error: "Music video production not found" });
     }
 
-    const _data = insertMusicVideoProductionSchema?.partial().parse({
+    const data = insertMusicVideoProductionSchema?.partial().parse({
       ...req?.body,
       budget:
         req?.body.budget !== "" && req?.body.budget != null
@@ -164,10 +164,10 @@ router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
 
 router?.delete("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
 
-    const _existing = await db
+    const existing = await db
       .select()
       .from(musicVideoProductions)
       .where(
@@ -228,10 +228,10 @@ router?.get("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
 
 router?.get("/diffusion/status", requireAuth, async (_req, res) => {
   try {
-    const _status = getDiffusionTrainingStatus();
+    const status = getDiffusionTrainingStatus();
     res?.json({
       ...status,
-      message: status?.trained
+      message: status.trained
         ? `Neural model trained — ${status?.epochs} epochs, loss ${status?.finalLoss?.toFixed(4)}, ${status?.weightsSizeKB} KB`
         : "Model not trained. POST /diffusion/train to train from scratch.",
     });
@@ -250,9 +250,9 @@ router?.post("/diffusion/train", requireAuth, async (req, res) => {
     medium: { n: 600, e: 20, eta: "~110 min" },
     deep: { n: 1000, e: 30, eta: "~275 min" },
   };
-  const _cfg = tierDefaults[tier] ?? tierDefaults?.quick;
-  const _finalSamples = nSamples ?? cfg?.n;
-  const _finalEpochs = nEpochs ?? cfg?.e;
+  const cfg = tierDefaults[tier] ?? tierDefaults?.quick;
+  const finalSamples = nSamples ?? cfg?.n;
+  const finalEpochs = nEpochs ?? cfg?.e;
 
   logger?.info(
     `[Diffusion] Training started: tier=${tier} ${finalSamples} samples × ${finalEpochs} epochs`,
@@ -264,7 +264,7 @@ router?.post("/diffusion/train", requireAuth, async (req, res) => {
     tier,
     nSamples: finalSamples,
     nEpochs: finalEpochs,
-    estimatedTime: cfg?.eta,
+    estimatedTime: cfg.eta,
     architecture: {
       parameters: "1.2M",
       channels: [32, 64, 96],
@@ -308,7 +308,7 @@ router?.post("/diffusion/generate", requireAuth, async (req, res) => {
       guidanceScale = 5.0,
     } = req?.body ?? {};
 
-    const _status = getDiffusionTrainingStatus();
+    const status = getDiffusionTrainingStatus();
     if (!status?.trained) {
       return res?.status(400).json({
         error: "Diffusion model not trained yet.",
@@ -320,7 +320,7 @@ router?.post("/diffusion/generate", requireAuth, async (req, res) => {
       `[Diffusion] Generating: prompt="${prompt}" genre=${genre} frames=${nFrames}`,
     );
 
-    const _result = await generateDiffusionFrames({
+    const result = await generateDiffusionFrames({
       prompt,
       genre,
       nFrames,
@@ -330,10 +330,10 @@ router?.post("/diffusion/generate", requireAuth, async (req, res) => {
     });
 
     res?.json({
-      framePaths: result?.framePaths,
-      frameCount: result?.frameCount,
-      elapsedMs: result?.elapsedMs,
-      modelMeta: result?.modelMeta,
+      framePaths: result.framePaths,
+      frameCount: result.frameCount,
+      elapsedMs: result.elapsedMs,
+      modelMeta: result.modelMeta,
       message: `Generated ${result?.frameCount} frames in ${(result?.elapsedMs / 1000).toFixed(1)}s`,
     });
   } catch (err) {
@@ -368,10 +368,12 @@ router?.post("/diffusion/background/start", requireAuth, async (_req, res) => {
       status: getBackgroundStatus(),
     });
   } catch (err) {
-    res.status(500).json({
-      error: "Could not start background trainer",
-      details: String(err),
-    });
+    res
+      .status(500)
+      .json({
+        error: "Could not start background trainer",
+        details: String(err),
+      });
   }
 });
 
@@ -395,10 +397,12 @@ router?.post("/diffusion/background/stop", requireAuth, async (req, res) => {
       status: getBackgroundStatus(),
     });
   } catch (err) {
-    res.status(500).json({
-      error: "Could not stop background trainer",
-      details: String(err),
-    });
+    res
+      .status(500)
+      .json({
+        error: "Could not stop background trainer",
+        details: String(err),
+      });
   }
 });
 

@@ -36,36 +36,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Play,
-  Pause,
-  Square,
-  SkipBack,
-  SkipForward,
-  Music,
-  FileText,
-  Sliders,
-  Volume2,
-  VolumeX,
-  Headphones,
-  Timer,
-  Maximize,
-  Minimize,
-  Settings,
-  Plus,
-  Trash2,
-  ChevronUp,
-  ChevronDown,
-  Save,
-  Tablet,
-  Wifi,
-  WifiOff,
-  EyeOff,
-  Radio,
-  StopCircle,
-  ListMusic,
-  MessageSquare,
-} from "lucide-react";
+import { Play, Pause, Square, SkipBack, SkipForward, Music, FileText, Sliders, Volume2, VolumeX, Headphones, Timer, Maximize, Minimize, Settings, Plus, Trash2, ChevronUp, ChevronDown, Save, Tablet, Wifi, WifiOff, EyeOff, Radio, StopCircle, ListMusic, MessageSquare } from "lucide-react";
 
 interface SetlistSong {
   id: string;
@@ -97,7 +68,7 @@ interface RemoteDevice {
 }
 
 export default function ShowPage() {
-  const { isLoading } = useRequireSubscription();
+  const {  isLoading } = useRequireSubscription();
   const { toast } = useToast();
   useQueryClient();
 
@@ -106,7 +77,8 @@ export default function ShowPage() {
     setTempo,
     isPlaying,
     setIsPlaying,
-
+    
+    
     metronomeEnabled,
     setMetronomeEnabled,
     metronomeVolume,

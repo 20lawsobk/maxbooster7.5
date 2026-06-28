@@ -55,8 +55,8 @@ interface OfflineQueueDB extends DBSchema {
   };
 }
 
-const _DB_NAME = "max-booster-offline-queue";
-const _DB_VERSION = 1;
+const DB_NAME = "max-booster-offline-queue";
+const DB_VERSION = 1;
 
 const PRIORITY_ORDER: Record<ActionPriority, number> = {
   critical: 0,
@@ -94,7 +94,7 @@ class OfflineQueue {
       this.db = await openDB<OfflineQueueDB>(DB_NAME, DB_VERSION, {
         upgrade(db) {
           if (!db?.objectStoreNames.contains("actions")) {
-            const _actionsStore = db?.createObjectStore("actions", {
+            const actionsStore = db?.createObjectStore("actions", {
               keyPath: "id",
             });
             actionsStore?.createIndex("by-status", "status");
@@ -126,7 +126,7 @@ class OfflineQueue {
   }
 
   private emit(event: QueueEvent): void {
-    const _listeners = this?.listeners.get(event?.type);
+    const listeners = this?.listeners.get(event?.type);
     if (listeners) {
       listeners?.forEach((listener) => {
         try {
@@ -164,21 +164,21 @@ class OfflineQueue {
       dependencies?: string[];
     } = {},
   ): Promise<QueuedAction<T>> {
-    const _db = await this?.ensureDb();
+    const db = await this?.ensureDb();
 
     const action: QueuedAction<T> = {
       id: `${type}-${Date?.now()}-${Math?.random().toString(36).substring(2, 9)}`,
       type,
       payload,
-      priority: options?.priority ?? "normal",
+      priority: options.priority ?? "normal",
       status: "pending",
-      conflictStrategy: options?.conflictStrategy ?? "local-wins",
-      createdAt: Date?.now(),
-      updatedAt: Date?.now(),
+      conflictStrategy: options.conflictStrategy ?? "local-wins",
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
       retryCount: 0,
-      maxRetries: options?.maxRetries ?? 3,
-      metadata: options?.metadata,
-      dependencies: options?.dependencies,
+      maxRetries: options.maxRetries ?? 3,
+      metadata: options.metadata,
+      dependencies: options.dependencies,
       localVersion: 1,
     };
 
@@ -190,7 +190,7 @@ class OfflineQueue {
   }
 
   async dequeue(id: string): Promise<void> {
-    const _db = await this?.ensureDb();
+    const db = await this?.ensureDb();
     await db?.delete("actions", id);
     this?.emit({ type: "action-removed", actionId: id });
   }
@@ -199,15 +199,15 @@ class OfflineQueue {
     id: string,
     updates: Partial<QueuedAction<T>>,
   ): Promise<QueuedAction<T> | null> {
-    const _db = await this?.ensureDb();
-    const _existing = await db?.get("actions", id);
+    const db = await this?.ensureDb();
+    const existing = await db?.get("actions", id);
 
     if (!existing) return null;
 
     const updated: QueuedAction<T> = {
       ...(existing as QueuedAction<T>),
       ...updates,
-      updatedAt: Date?.now(),
+      updatedAt: Date.now(),
     };
 
     await db?.put("actions", updated as QueuedAction);
@@ -219,16 +219,16 @@ class OfflineQueue {
   async getAction<T = unknown>(
     id: string,
   ): Promise<QueuedAction<T> | undefined> {
-    const _db = await this?.ensureDb();
+    const db = await this?.ensureDb();
     return db?.get("actions", id) as Promise<QueuedAction<T> | undefined>;
   }
 
   async getAllPending(): Promise<QueuedAction[]> {
-    const _db = await this?.ensureDb();
-    const _actions = await db?.getAllFromIndex("actions", "by-status", "pending");
+    const db = await this?.ensureDb();
+    const actions = await db?.getAllFromIndex("actions", "by-status", "pending");
 
     return actions?.sort((a, b) => {
-      const _priorityDiff =
+      const priorityDiff =
         PRIORITY_ORDER[a?.priority] - PRIORITY_ORDER[b?.priority];
       if (priorityDiff !== 0) return priorityDiff;
       return a?.createdAt - b?.createdAt;
@@ -236,22 +236,22 @@ class OfflineQueue {
   }
 
   async getByStatus(status: ActionStatus): Promise<QueuedAction[]> {
-    const _db = await this?.ensureDb();
+    const db = await this?.ensureDb();
     return db?.getAllFromIndex("actions", "by-status", status);
   }
 
   async getByType(type: string): Promise<QueuedAction[]> {
-    const _db = await this?.ensureDb();
+    const db = await this?.ensureDb();
     return db?.getAllFromIndex("actions", "by-type", type);
   }
 
   async getPendingCount(): Promise<number> {
-    const _db = await this?.ensureDb();
+    const db = await this?.ensureDb();
     return db?.countFromIndex("actions", "by-status", "pending");
   }
 
   async getTotalCount(): Promise<number> {
-    const _db = await this?.ensureDb();
+    const db = await this?.ensureDb();
     return db?.count("actions");
   }
 
@@ -266,11 +266,11 @@ class OfflineQueue {
   }
 
   async markFailed(id: string, error: string): Promise<void> {
-    const _action = await this?.getAction(id);
+    const action = await this?.getAction(id);
     if (!action) return;
 
-    const _newRetryCount = action?.retryCount + 1;
-    const _shouldRetry = newRetryCount < action?.maxRetries;
+    const newRetryCount = action?.retryCount + 1;
+    const shouldRetry = newRetryCount < action?.maxRetries;
 
     await this?.updateAction(id, {
       status: shouldRetry ? "pending" : "failed",
@@ -284,13 +284,13 @@ class OfflineQueue {
     localData: unknown,
     serverData: unknown,
   ): Promise<void> {
-    const _db = await this?.ensureDb();
+    const db = await this?.ensureDb();
 
     await db?.put("conflicts", {
       actionId,
       localData,
       serverData,
-      detectedAt: Date?.now(),
+      detectedAt: Date.now(),
       resolved: false,
     });
 
@@ -311,8 +311,8 @@ class OfflineQueue {
       detectedAt: number;
     }>
   > {
-    const _db = await this?.ensureDb();
-    const _conflicts = await db?.getAll("conflicts");
+    const db = await this?.ensureDb();
+    const conflicts = await db?.getAll("conflicts");
     return conflicts?.filter((c) => !c?.resolved);
   }
 
@@ -321,17 +321,17 @@ class OfflineQueue {
     resolution: "local" | "server" | "merged",
     mergedData?: unknown,
   ): Promise<void> {
-    const _db = await this?.ensureDb();
-    const _conflict = await db?.get("conflicts", actionId);
+    const db = await this?.ensureDb();
+    const conflict = await db?.get("conflicts", actionId);
 
     if (!conflict) return;
 
     await db?.put("conflicts", { ...conflict, resolved: true });
 
     if (resolution === "local" || resolution === "merged") {
-      const _action = await this?.getAction(actionId);
+      const action = await this?.getAction(actionId);
       if (action) {
-        const _payload = resolution === "merged" ? mergedData : action?.payload;
+        const payload = resolution === "merged" ? mergedData : action?.payload;
         await this?.updateAction(actionId, {
           status: "pending",
           payload,
@@ -344,8 +344,8 @@ class OfflineQueue {
   }
 
   async clearCompleted(): Promise<number> {
-    const _db = await this?.ensureDb();
-    const _completed = await db?.getAllFromIndex(
+    const db = await this?.ensureDb();
+    const completed = await db?.getAllFromIndex(
       "actions",
       "by-status",
       "completed",
@@ -359,20 +359,20 @@ class OfflineQueue {
   }
 
   async clearAll(): Promise<void> {
-    const _db = await this?.ensureDb();
+    const db = await this?.ensureDb();
     await db?.clear("actions");
     await db?.clear("conflicts");
   }
 
   async getNextBatch(batchSize = 10): Promise<QueuedAction[]> {
-    const _pending = await this?.getAllPending();
+    const pending = await this?.getAllPending();
     const batch: QueuedAction[] = [];
-    const _processing = new Set<string>();
+    const processing = new Set<string>();
 
     for (const action of pending) {
       if (batch?.length >= batchSize) break;
 
-      const _dependenciesMet =
+      const dependenciesMet =
         !action?.dependencies?.length ||
         action?.dependencies.every(
           (depId) => !pending?.find((p) => p?.id === depId),
@@ -395,7 +395,7 @@ class OfflineQueue {
     conflict: number;
     total: number;
   }> {
-    const _db = await this?.ensureDb();
+    const db = await this?.ensureDb();
 
     const [pending, syncing, completed, failed, conflict, total] =
       await Promise?.all([
@@ -411,7 +411,7 @@ class OfflineQueue {
   }
 }
 
-export const _offlineQueue = new OfflineQueue();
+export const offlineQueue = new OfflineQueue();
 
 export async function initOfflineQueue(): Promise<void> {
   await offlineQueue?.init();

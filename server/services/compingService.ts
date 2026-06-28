@@ -1,19 +1,6 @@
 import { randomBytes } from "crypto";
 import { db } from "../db";
-import {
-  takeGroups,
-  takeLanes,
-  takeSegments,
-  compVersions,
-  audioClips,
-  type TakeGroup,
-  type TakeLane,
-  type TakeSegment,
-  type CompVersion,
-  type InsertTakeGroup,
-  type InsertTakeLane,
-  type InsertTakeSegment,
-} from "@shared/schema";
+import { takeGroups, takeLanes, takeSegments, compVersions, audioClips, type TakeGroup, type TakeLane, type TakeSegment, type CompVersion, type InsertTakeGroup, type InsertTakeLane, type InsertTakeSegment } from "@shared/schema";
 import { eq, and, desc, asc } from "drizzle-orm";
 
 import { logger } from "../logger.js";
@@ -45,18 +32,18 @@ export class CompingService {
         })
         .returning();
 
-      const _initialVersion = await this?.createCompVersion(takeGroup?.id, {
+      const initialVersion = await this?.createCompVersion(takeGroup?.id, {
         name: "Version 1",
         versionNumber: 1,
-        createdBy: data?.trackId,
+        createdBy: data.trackId,
       });
 
       await db
         .update(takeGroups)
-        .set({ activeCompVersionId: initialVersion?.id })
+        .set({ activeCompVersionId: initialVersion.id })
         .where(eq(takeGroups?.id, takeGroup?.id));
 
-      return { ...takeGroup, activeCompVersionId: initialVersion?.id };
+      return { ...takeGroup, activeCompVersionId: initialVersion.id };
     } catch (error: unknown) {
       logger?.warn({ err: error }, "Error creating take group:");
       throw new Error("Failed to create take group");
@@ -65,7 +52,7 @@ export class CompingService {
 
   async getTakeGroup(groupId: string): Promise<TakeGroup | undefined> {
     try {
-      const _result = await db?.query.takeGroups?.findFirst({
+      const result = await db?.query.takeGroups?.findFirst({
         where: eq(takeGroups?.id, groupId),
       });
       return result;
@@ -77,7 +64,7 @@ export class CompingService {
 
   async getProjectTakeGroups(projectId: string): Promise<TakeGroup[]> {
     try {
-      const _results = await db?.query.takeGroups?.findMany({
+      const results = await db?.query.takeGroups?.findMany({
         where: eq(takeGroups?.projectId, projectId),
         orderBy: [asc(takeGroups?.startTime)],
       });
@@ -90,7 +77,7 @@ export class CompingService {
 
   async getTrackTakeGroups(trackId: string): Promise<TakeGroup[]> {
     try {
-      const _results = await db?.query.takeGroups?.findMany({
+      const results = await db?.query.takeGroups?.findMany({
         where: eq(takeGroups?.trackId, trackId),
         orderBy: [asc(takeGroups?.startTime)],
       });
@@ -105,15 +92,15 @@ export class CompingService {
     groupId: string,
   ): Promise<TakeGroupWithLanes | undefined> {
     try {
-      const _takeGroup = await this?.getTakeGroup(groupId);
+      const takeGroup = await this?.getTakeGroup(groupId);
       if (!takeGroup) return undefined;
 
-      const _lanes = await this?.getGroupLanes(groupId);
-      const _versions = await this?.getCompVersions(groupId);
+      const lanes = await this?.getGroupLanes(groupId);
+      const versions = await this?.getCompVersions(groupId);
 
       const lanesWithSegments: TakeLaneWithSegments[] = await Promise?.all(
         lanes?.map(async (lane) => {
-          const _segments = await this?.getLaneSegments(lane?.id);
+          const segments = await this?.getLaneSegments(lane?.id);
           return { ...lane, segments };
         }),
       );
@@ -162,22 +149,22 @@ export class CompingService {
 
   async createTakeLane(data: InsertTakeLane): Promise<TakeLane> {
     try {
-      const _existingLanes = await this?.getGroupLanes(data?.takeGroupId);
-      const _nextIndex = existingLanes?.length;
+      const existingLanes = await this?.getGroupLanes(data?.takeGroupId);
+      const nextIndex = existingLanes?.length;
 
       const [takeLane] = await db
         .insert(takeLanes)
         .values({
           ...data,
           id: `tl_${randomBytes(8).toString("hex")}`,
-          laneIndex: data?.laneIndex ?? nextIndex,
+          laneIndex: data.laneIndex ?? nextIndex,
         })
         .returning();
 
       await db
         .update(takeGroups)
         .set({
-          takeCount: existingLanes?.length + 1,
+          takeCount: existingLanes.length + 1,
           updatedAt: new Date(),
         })
         .where(eq(takeGroups?.id, data?.takeGroupId));
@@ -191,7 +178,7 @@ export class CompingService {
 
   async getTakeLane(laneId: string): Promise<TakeLane | undefined> {
     try {
-      const _result = await db?.query.takeLanes?.findFirst({
+      const result = await db?.query.takeLanes?.findFirst({
         where: eq(takeLanes?.id, laneId),
       });
       return result;
@@ -203,7 +190,7 @@ export class CompingService {
 
   async getGroupLanes(groupId: string): Promise<TakeLane[]> {
     try {
-      const _results = await db?.query.takeLanes?.findMany({
+      const results = await db?.query.takeLanes?.findMany({
         where: eq(takeLanes?.takeGroupId, groupId),
         orderBy: [asc(takeLanes?.laneIndex)],
       });
@@ -238,18 +225,18 @@ export class CompingService {
 
   async deleteTakeLane(laneId: string): Promise<void> {
     try {
-      const _lane = await this?.getTakeLane(laneId);
+      const lane = await this?.getTakeLane(laneId);
       if (!lane) {
         throw new Error("Take lane not found");
       }
 
       await db?.delete(takeLanes).where(eq(takeLanes?.id, laneId));
 
-      const _remainingLanes = await this?.getGroupLanes(lane?.takeGroupId);
+      const remainingLanes = await this?.getGroupLanes(lane?.takeGroupId);
       await db
         .update(takeGroups)
         .set({
-          takeCount: remainingLanes?.length,
+          takeCount: remainingLanes.length,
           updatedAt: new Date(),
         })
         .where(eq(takeGroups?.id, lane?.takeGroupId));
@@ -275,15 +262,15 @@ export class CompingService {
 
   async createTakeSegment(data: InsertTakeSegment): Promise<TakeSegment> {
     try {
-      const _existingSegments = await this?.getGroupSegments(data?.takeGroupId);
-      const _nextOrder = existingSegments?.length;
+      const existingSegments = await this?.getGroupSegments(data?.takeGroupId);
+      const nextOrder = existingSegments?.length;
 
       const [segment] = await db
         .insert(takeSegments)
         .values({
           ...data,
           id: `ts_${randomBytes(8).toString("hex")}`,
-          order: data?.order ?? nextOrder,
+          order: data.order ?? nextOrder,
         })
         .returning();
 
@@ -296,7 +283,7 @@ export class CompingService {
 
   async getTakeSegment(segmentId: string): Promise<TakeSegment | undefined> {
     try {
-      const _result = await db?.query.takeSegments?.findFirst({
+      const result = await db?.query.takeSegments?.findFirst({
         where: eq(takeSegments?.id, segmentId),
       });
       return result;
@@ -308,7 +295,7 @@ export class CompingService {
 
   async getGroupSegments(groupId: string): Promise<TakeSegment[]> {
     try {
-      const _results = await db?.query.takeSegments?.findMany({
+      const results = await db?.query.takeSegments?.findMany({
         where: eq(takeSegments?.takeGroupId, groupId),
         orderBy: [asc(takeSegments?.order), asc(takeSegments?.startTime)],
       });
@@ -321,7 +308,7 @@ export class CompingService {
 
   async getLaneSegments(laneId: string): Promise<TakeSegment[]> {
     try {
-      const _results = await db?.query.takeSegments?.findMany({
+      const results = await db?.query.takeSegments?.findMany({
         where: eq(takeSegments?.takeLaneId, laneId),
         orderBy: [asc(takeSegments?.startTime)],
       });
@@ -380,7 +367,7 @@ export class CompingService {
           ),
         );
 
-      const _segment = await this?.createTakeSegment({
+      const segment = await this?.createTakeSegment({
         takeGroupId: groupId,
         takeLaneId: laneId,
         compVersionId,
@@ -406,21 +393,21 @@ export class CompingService {
     },
   ): Promise<CompVersion> {
     try {
-      const _existingVersions = await this?.getCompVersions(groupId);
-      const _nextVersionNumber =
+      const existingVersions = await this?.getCompVersions(groupId);
+      const nextVersionNumber =
         data?.versionNumber ?? existingVersions?.length + 1;
 
-      const _segments = await this?.getGroupSegments(groupId);
+      const segments = await this?.getGroupSegments(groupId);
 
       const [version] = await db
         .insert(compVersions)
         .values({
           id: `cv_${randomBytes(8).toString("hex")}`,
           takeGroupId: groupId,
-          name: data?.name,
+          name: data.name,
           versionNumber: nextVersionNumber,
-          description: data?.description,
-          createdBy: data?.createdBy,
+          description: data.description,
+          createdBy: data.createdBy,
           segmentData: segments,
           isActive: false,
         })
@@ -435,7 +422,7 @@ export class CompingService {
 
   async getCompVersion(versionId: string): Promise<CompVersion | undefined> {
     try {
-      const _result = await db?.query.compVersions?.findFirst({
+      const result = await db?.query.compVersions?.findFirst({
         where: eq(compVersions?.id, versionId),
       });
       return result;
@@ -447,7 +434,7 @@ export class CompingService {
 
   async getCompVersions(groupId: string): Promise<CompVersion[]> {
     try {
-      const _results = await db?.query.compVersions?.findMany({
+      const results = await db?.query.compVersions?.findMany({
         where: eq(compVersions?.takeGroupId, groupId),
         orderBy: [desc(compVersions?.versionNumber)],
       });
@@ -481,26 +468,26 @@ export class CompingService {
         })
         .where(eq(takeGroups?.id, groupId));
 
-      const _version = await this?.getCompVersion(versionId);
+      const version = await this?.getCompVersion(versionId);
       if (version?.segmentData) {
         await db
           .delete(takeSegments)
           .where(eq(takeSegments?.takeGroupId, groupId));
 
-        const _segments = version?.segmentData as TakeSegment[];
+        const segments = version?.segmentData as TakeSegment[];
         for (const segment of segments) {
           await this?.createTakeSegment({
             takeGroupId: groupId,
-            takeLaneId: segment?.takeLaneId,
+            takeLaneId: segment.takeLaneId,
             compVersionId: versionId,
-            startTime: segment?.startTime,
-            endTime: segment?.endTime,
-            fadeIn: segment?.fadeIn,
-            fadeOut: segment?.fadeOut,
-            crossfadeType: segment?.crossfadeType,
-            gain: segment?.gain,
-            isSelected: segment?.isSelected,
-            order: segment?.order,
+            startTime: segment.startTime,
+            endTime: segment.endTime,
+            fadeIn: segment.fadeIn,
+            fadeOut: segment.fadeOut,
+            crossfadeType: segment.crossfadeType,
+            gain: segment.gain,
+            isSelected: segment.isSelected,
+            order: segment.order,
           });
         }
       }
@@ -512,7 +499,7 @@ export class CompingService {
 
   async deleteCompVersion(versionId: string): Promise<void> {
     try {
-      const _version = await this?.getCompVersion(versionId);
+      const version = await this?.getCompVersion(versionId);
       if (!version) {
         throw new Error("Comp version not found");
       }
@@ -528,38 +515,35 @@ export class CompingService {
     }
   }
 
-  async renderComp(
-    groupId: string,
-    _userId: string,
-  ): Promise<CompRenderResult> {
+  async renderComp(groupId: string, _userId: string): Promise<CompRenderResult> {
     try {
-      const _takeGroup = await this?.getTakeGroup(groupId);
+      const takeGroup = await this?.getTakeGroup(groupId);
       if (!takeGroup) {
         throw new Error("Take group not found");
       }
 
-      const _segments = await this?.getGroupSegments(groupId);
-      const _selectedSegments = segments?.filter((s) => s?.isSelected);
+      const segments = await this?.getGroupSegments(groupId);
+      const selectedSegments = segments?.filter((s) => s?.isSelected);
 
       if (selectedSegments?.length === 0) {
         throw new Error("No segments selected for rendering");
       }
 
-      const _clipId = `comp_${randomBytes(8).toString("hex")}`;
-      const _filePath = `/uploads/audio/comps/${clipId}.wav`;
+      const clipId = `comp_${randomBytes(8).toString("hex")}`;
+      const filePath = `/uploads/audio/comps/${clipId}.wav`;
 
       const [newClip] = await db
         .insert(audioClips)
         .values({
           id: clipId,
-          trackId: takeGroup?.trackId,
+          trackId: takeGroup.trackId,
           name: `${takeGroup?.name} (Comp)`,
           filePath,
-          duration: takeGroup?.endTime - takeGroup?.startTime,
-          startTime: takeGroup?.startTime,
-          endTime: takeGroup?.endTime,
+          duration: takeGroup.endTime - takeGroup?.startTime,
+          startTime: takeGroup.startTime,
+          endTime: takeGroup.endTime,
           isComped: true,
-          compSourceIds: selectedSegments?.map((s) => s?.id),
+          compSourceIds: selectedSegments.map((s) => s?.id),
         })
         .returning();
 
@@ -573,9 +557,9 @@ export class CompingService {
       }
 
       return {
-        clipId: newClip?.id,
-        filePath: newClip?.filePath,
-        duration: newClip?.duration,
+        clipId: newClip.id,
+        filePath: newClip.filePath,
+        duration: newClip.duration,
         status: "completed",
       };
     } catch (error: unknown) {
@@ -586,45 +570,45 @@ export class CompingService {
 
   async duplicateTakeGroup(groupId: string): Promise<TakeGroup> {
     try {
-      const _original = await this?.getTakeGroupWithDetails(groupId);
+      const original = await this?.getTakeGroupWithDetails(groupId);
       if (!original) {
         throw new Error("Take group not found");
       }
 
-      const _newGroup = await this?.createTakeGroup({
-        projectId: original?.projectId,
-        trackId: original?.trackId,
+      const newGroup = await this?.createTakeGroup({
+        projectId: original.projectId,
+        trackId: original.trackId,
         name: `${original?.name} (Copy)`,
-        startTime: original?.startTime,
-        endTime: original?.endTime,
-        color: original?.color,
-        metadata: original?.metadata,
+        startTime: original.startTime,
+        endTime: original.endTime,
+        color: original.color,
+        metadata: original.metadata,
       });
 
       for (const lane of original?.lanes) {
-        const _newLane = await this?.createTakeLane({
-          takeGroupId: newGroup?.id,
-          audioClipId: lane?.audioClipId,
-          name: lane?.name,
-          laneIndex: lane?.laneIndex,
-          volume: lane?.volume,
-          color: lane?.color,
-          rating: lane?.rating,
-          notes: lane?.notes,
+        const newLane = await this?.createTakeLane({
+          takeGroupId: newGroup.id,
+          audioClipId: lane.audioClipId,
+          name: lane.name,
+          laneIndex: lane.laneIndex,
+          volume: lane.volume,
+          color: lane.color,
+          rating: lane.rating,
+          notes: lane.notes,
         });
 
         for (const segment of lane?.segments) {
           await this?.createTakeSegment({
-            takeGroupId: newGroup?.id,
-            takeLaneId: newLane?.id,
-            startTime: segment?.startTime,
-            endTime: segment?.endTime,
-            fadeIn: segment?.fadeIn,
-            fadeOut: segment?.fadeOut,
-            crossfadeType: segment?.crossfadeType,
-            gain: segment?.gain,
-            isSelected: segment?.isSelected,
-            order: segment?.order,
+            takeGroupId: newGroup.id,
+            takeLaneId: newLane.id,
+            startTime: segment.startTime,
+            endTime: segment.endTime,
+            fadeIn: segment.fadeIn,
+            fadeOut: segment.fadeOut,
+            crossfadeType: segment.crossfadeType,
+            gain: segment.gain,
+            isSelected: segment.isSelected,
+            order: segment.order,
           });
         }
       }
@@ -642,13 +626,13 @@ export class CompingService {
     totalVersions: number;
   }> {
     try {
-      const _versions = await this?.getCompVersions(groupId);
-      const _activeVersion = versions?.find((v) => v?.isActive);
+      const versions = await this?.getCompVersions(groupId);
+      const activeVersion = versions?.find((v) => v?.isActive);
 
       return {
         versions,
         activeVersion,
-        totalVersions: versions?.length,
+        totalVersions: versions.length,
       };
     } catch (error: unknown) {
       logger?.warn({ err: error }, "Error getting comp history:");
@@ -657,4 +641,4 @@ export class CompingService {
   }
 }
 
-export const _compingService = new CompingService();
+export const compingService = new CompingService();

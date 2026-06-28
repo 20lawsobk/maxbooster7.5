@@ -25,25 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Play,
-  Pause,
-  Settings as SettingsIcon,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Zap,
-  Image,
-  Video,
-  Music,
-  FileText,
-  Globe,
-  Brain,
-  Sparkles,
-  RefreshCw,
-  Save,
-  RotateCcw,
-} from "lucide-react";
+import { Play, Pause, Settings as SettingsIcon, Clock, CheckCircle, AlertCircle, Zap, Image, Video, Music, FileText, Globe, Brain, Sparkles, RefreshCw, Save, RotateCcw } from "lucide-react";
 import {
   FacebookIcon,
   InstagramIcon,

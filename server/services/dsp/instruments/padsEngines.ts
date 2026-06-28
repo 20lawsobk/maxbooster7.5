@@ -1,17 +1,4 @@
-import {
-  AudioBuffer,
-  DSPContext,
-  createBuffer,
-  BiquadFilter,
-  DelayLine,
-  AllPassFilter,
-  CombFilter,
-  LFO,
-  Oscillator,
-  ADSR,
-  clamp,
-  softClip,
-} from "../core";
+import { AudioBuffer, DSPContext, createBuffer, BiquadFilter, DelayLine, AllPassFilter, CombFilter, LFO, Oscillator, ADSR, clamp, softClip } from "../core";
 
 export interface SynthesizerEngine {
   noteOn(frequency: number, velocity: number, context: DSPContext): void;
@@ -54,9 +41,9 @@ export class WarmPadSynth implements SynthesizerEngine {
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
-    const _detuneAmounts = [-0.08, -0.04, 0, 0, 0.04, 0.08];
+    const detuneAmounts = [-0.08, -0.04, 0, 0, 0.04, 0.08];
     for (let i = 0; i < 6; i++) {
-      const _detunedFreq = frequency * (1 + detuneAmounts[i] * 0.01);
+      const detunedFreq = frequency * (1 + detuneAmounts[i] * 0.01);
       this?.oscillators[i].setFrequency(detunedFreq, context?.sampleRate);
     }
     this?.subOsc.setFrequency(frequency * 0.5, context?.sampleRate);
@@ -79,36 +66,36 @@ export class WarmPadSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _filterEnvValue = this?.filterEnvelope.process();
+      const envValue = this?.envelope.process();
+      const filterEnvValue = this?.filterEnvelope.process();
 
-      const _lfo1Value = this?.lfo1.sine();
-      const _lfo2Value = this?.lfo2.triangle();
+      const lfo1Value = this?.lfo1.sine();
+      const lfo2Value = this?.lfo2.triangle();
 
       let sampleL = 0;
       let sampleR = 0;
 
       for (let o = 0; o < 6; o++) {
-        const _saw = this?.oscillators[o].sawBandLimited(14);
-        const _pulse = this?.oscillators[o].pulse(0.35 + lfo1Value * 0.15);
-        const _mixed = saw * 0.6 + pulse * 0.4;
+        const saw = this?.oscillators[o].sawBandLimited(14);
+        const pulse = this?.oscillators[o].pulse(0.35 + lfo1Value * 0.15);
+        const mixed = saw * 0.6 + pulse * 0.4;
 
-        const _pan = (o - 2.5) / 2.5;
+        const pan = (o - 2.5) / 2.5;
         sampleL += mixed * (1 - pan * 0.4);
         sampleR += mixed * (1 + pan * 0.4);
       }
 
-      const _sub = this?.subOsc.sine() * 0.25;
+      const sub = this?.subOsc.sine() * 0.25;
       sampleL += sub;
       sampleR += sub;
 
       sampleL /= 6;
       sampleR /= 6;
 
-      const _filterFreq =
+      const filterFreq =
         400 + filterEnvValue * 1800 + lfo2Value * 200 + this?.velocity * 1000;
       this?.lpFilter.setLowpass(
         clamp(filterFreq, 100, 8000),
@@ -126,8 +113,8 @@ export class WarmPadSynth implements SynthesizerEngine {
       sampleL *= envValue * this?.velocity;
       sampleR *= envValue * this?.velocity;
 
-      output?.samples[0][i] = softClip(sampleL, 0.9);
-      output?.samples[1][i] = softClip(sampleR, 0.9);
+      output.samples[0][i] = softClip(sampleL, 0.9);
+      output.samples[1][i] = softClip(sampleR, 0.9);
     }
 
     return output;
@@ -187,9 +174,9 @@ export class StringPadSynth implements SynthesizerEngine {
     this?.expressionLFO.setFrequency(0.2, context?.sampleRate);
 
     this?.sections.forEach((section, sIdx) => {
-      const _octaveOffset = sIdx === 3 ? 0.5 : 1;
+      const octaveOffset = sIdx === 3 ? 0.5 : 1;
       section?.oscillators.forEach((osc, _i) => {
-        const _detune = 1 + (Math?.random() - 0.5) * 0.006;
+        const detune = 1 + (Math?.random() - 0.5) * 0.006;
         osc?.setFrequency(frequency * octaveOffset * detune, context?.sampleRate);
       });
     });
@@ -212,12 +199,12 @@ export class StringPadSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _vibrato = this?.vibratoLFO.sine() * 0.003;
-      const _expression = 0.9 + this?.expressionLFO.sine() * 0.1;
+      const envValue = this?.envelope.process();
+      const vibrato = this?.vibratoLFO.sine() * 0.003;
+      const expression = 0.9 + this?.expressionLFO.sine() * 0.1;
 
       let sampleL = 0;
       let sampleR = 0;
@@ -225,7 +212,7 @@ export class StringPadSynth implements SynthesizerEngine {
       for (const section of this?.sections) {
         let sectionSample = 0;
         for (const osc of section?.oscillators) {
-          const _currentFreq = this?.frequency * (1 + vibrato);
+          const currentFreq = this?.frequency * (1 + vibrato);
           osc?.setFrequency(
             currentFreq * (1 + (Math?.random() - 0.5) * 0.001),
             this?.sampleRate,
@@ -234,8 +221,8 @@ export class StringPadSynth implements SynthesizerEngine {
         }
         sectionSample /= section?.oscillators.length;
 
-        const _panL = Math?.cos((section?.pan + 1) * Math?.PI * 0.25);
-        const _panR = Math?.sin((section?.pan + 1) * Math?.PI * 0.25);
+        const panL = Math?.cos((section?.pan + 1) * Math.PI * 0.25);
+        const panR = Math?.sin((section?.pan + 1) * Math.PI * 0.25);
 
         sampleL += sectionSample * panL;
         sampleR += sectionSample * panR;
@@ -253,8 +240,8 @@ export class StringPadSynth implements SynthesizerEngine {
       sampleL *= envValue * expression * this?.velocity;
       sampleR *= envValue * expression * this?.velocity;
 
-      output?.samples[0][i] = softClip(sampleL, 0.88);
-      output?.samples[1][i] = softClip(sampleR, 0.88);
+      output.samples[0][i] = softClip(sampleL, 0.88);
+      output.samples[1][i] = softClip(sampleR, 0.88);
     }
 
     return output;
@@ -311,16 +298,16 @@ export class ChoirPadSynth implements SynthesizerEngine {
     this.sampleRate = context?.sampleRate;
 
     for (let i = 0; i < 8; i++) {
-      const _detune = 1 + (i - 3.5) * 0.003;
+      const detune = 1 + (i - 3.5) * 0.003;
       this?.formantOscs[i].setFrequency(frequency * detune, context?.sampleRate);
     }
 
     this?.vibratoLFO.setFrequency(5.5, context?.sampleRate);
     this?.formantLFO.setFrequency(0.15, context?.sampleRate);
 
-    const _formantFreqs = [800, 1200, 2500, 3500, 4500];
-    const _formantQs = [10, 8, 6, 5, 4];
-    const _formantGains = [6, 4, 2, 1, 0.5];
+    const formantFreqs = [800, 1200, 2500, 3500, 4500];
+    const formantQs = [10, 8, 6, 5, 4];
+    const formantGains = [6, 4, 2, 1, 0.5];
     for (let i = 0; i < 5; i++) {
       this?.formantFilters[i].setPeaking(
         formantFreqs[i],
@@ -349,36 +336,36 @@ export class ChoirPadSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _breathValue = this?.breathEnvelope.process();
-      const _vibrato = this?.vibratoLFO.sine() * 0.004 * envValue;
+      const envValue = this?.envelope.process();
+      const breathValue = this?.breathEnvelope.process();
+      const vibrato = this?.vibratoLFO.sine() * 0.004 * envValue;
       this?.formantLFO.sine() * 0.08;
 
       let sampleL = 0;
       let sampleR = 0;
 
       for (let o = 0; o < 8; o++) {
-        const _currentFreq = this?.frequency * (1 + vibrato);
+        const currentFreq = this?.frequency * (1 + vibrato);
         this?.formantOscs[o].setFrequency(
           currentFreq * (1 + (o - 3.5) * 0.003),
           this?.sampleRate,
         );
 
-        const _saw = this?.formantOscs[o].sawBandLimited(16);
-        const _pulse = this?.formantOscs[o].pulse(0.3);
+        const saw = this?.formantOscs[o].sawBandLimited(16);
+        const pulse = this?.formantOscs[o].pulse(0.3);
         let sample = saw * 0.5 + pulse * 0.3;
 
-        const _breath = (Math?.random() * 2 - 1) * breathValue * 0.15;
+        const breath = (Math?.random() * 2 - 1) * breathValue * 0.15;
         sample += breath;
 
         for (const filter of this?.formantFilters) {
           sample = filter?.process(sample);
         }
 
-        const _pan = (o - 3.5) / 4;
+        const pan = (o - 3.5) / 4;
         sampleL += sample * (1 - pan * 0.3);
         sampleR += sample * (1 + pan * 0.3);
       }
@@ -394,8 +381,8 @@ export class ChoirPadSynth implements SynthesizerEngine {
       sampleL *= envValue * this?.velocity;
       sampleR *= envValue * this?.velocity;
 
-      output?.samples[0][i] = softClip(sampleL, 0.88);
-      output?.samples[1][i] = softClip(sampleR, 0.88);
+      output.samples[0][i] = softClip(sampleL, 0.88);
+      output.samples[1][i] = softClip(sampleR, 0.88);
     }
 
     return output;
@@ -451,11 +438,11 @@ export class GlassPadSynth implements SynthesizerEngine {
     this.sampleRate = context?.sampleRate;
 
     for (let i = 0; i < 6; i++) {
-      const _detune = 1 + (i - 2.5) * 0.002;
+      const detune = 1 + (i - 2.5) * 0.002;
       this?.oscillators[i].setFrequency(frequency * detune, context?.sampleRate);
     }
 
-    const _bellRatios = [2, 3.5, 5.19, 7.23];
+    const bellRatios = [2, 3.5, 5.19, 7.23];
     for (let i = 0; i < 4; i++) {
       this?.bellOscs[i].setFrequency(
         frequency * bellRatios[i],
@@ -485,28 +472,28 @@ export class GlassPadSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _shimmerEnvValue = this?.shimmerEnvelope.process();
-      const _shimmer = this?.shimmerLFO.sine();
+      const envValue = this?.envelope.process();
+      const shimmerEnvValue = this?.shimmerEnvelope.process();
+      const shimmer = this?.shimmerLFO.sine();
 
       let sampleL = 0;
       let sampleR = 0;
 
       for (let o = 0; o < 6; o++) {
-        const _tri = this?.oscillators[o].triangle();
-        const _sine = this?.oscillators[o].sine();
-        const _mixed = tri * 0.5 + sine * 0.5;
+        const tri = this?.oscillators[o].triangle();
+        const sine = this?.oscillators[o].sine();
+        const mixed = tri * 0.5 + sine * 0.5;
 
-        const _pan = (o - 2.5) / 3;
+        const pan = (o - 2.5) / 3;
         sampleL += mixed * (1 - pan * 0.4);
         sampleR += mixed * (1 + pan * 0.4);
       }
 
       let bellSample = 0;
-      const _bellAmps = [0.15, 0.1, 0.06, 0.03];
+      const bellAmps = [0.15, 0.1, 0.06, 0.03];
       for (let b = 0; b < 4; b++) {
         bellSample += this?.bellOscs[b].sine() * bellAmps[b] * shimmerEnvValue;
       }
@@ -515,7 +502,7 @@ export class GlassPadSynth implements SynthesizerEngine {
       sampleR = sampleR / 6 + bellSample;
 
       this?.sparkleDelay.write((sampleL + sampleR) * 0.5);
-      const _delayed =
+      const delayed =
         this?.sparkleDelay.readInterpolated(1500 + shimmer * 200) * 0.2;
       sampleL += delayed;
       sampleR += delayed;
@@ -530,8 +517,8 @@ export class GlassPadSynth implements SynthesizerEngine {
       sampleL *= envValue * this?.velocity;
       sampleR *= envValue * this?.velocity;
 
-      output?.samples[0][i] = softClip(sampleL, 0.9);
-      output?.samples[1][i] = softClip(sampleR, 0.9);
+      output.samples[0][i] = softClip(sampleL, 0.9);
+      output.samples[1][i] = softClip(sampleR, 0.9);
     }
 
     return output;
@@ -589,9 +576,9 @@ export class DarkPadSynth implements SynthesizerEngine {
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
-    const _detuneAmounts = [-0.15, -0.08, 0, 0.08, 0.15];
+    const detuneAmounts = [-0.15, -0.08, 0, 0.08, 0.15];
     for (let i = 0; i < 5; i++) {
-      const _detunedFreq = frequency * (1 + detuneAmounts[i] * 0.01);
+      const detunedFreq = frequency * (1 + detuneAmounts[i] * 0.01);
       this?.oscillators[i].setFrequency(detunedFreq, context?.sampleRate);
     }
     this?.subOsc.setFrequency(frequency * 0.25, context?.sampleRate);
@@ -616,35 +603,35 @@ export class DarkPadSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _filterEnvValue = this?.filterEnvelope.process();
+      const envValue = this?.envelope.process();
+      const filterEnvValue = this?.filterEnvelope.process();
 
-      const _lfo1Value = this?.lfo1.sine();
-      const _lfo2Value = this?.lfo2.triangle();
+      const lfo1Value = this?.lfo1.sine();
+      const lfo2Value = this?.lfo2.triangle();
 
       let sampleL = 0;
       let sampleR = 0;
 
       for (let o = 0; o < 5; o++) {
-        const _saw = this?.oscillators[o].sawBandLimited(10);
-        const _square = this?.oscillators[o].squareBandLimited(8);
-        const _mixed = saw * 0.7 + square * 0.3;
+        const saw = this?.oscillators[o].sawBandLimited(10);
+        const square = this?.oscillators[o].squareBandLimited(8);
+        const mixed = saw * 0.7 + square * 0.3;
 
-        const _pan = (o - 2) / 2.5;
+        const pan = (o - 2) / 2.5;
         sampleL += mixed * (1 - pan * 0.3);
         sampleR += mixed * (1 + pan * 0.3);
       }
 
-      const _sub = this?.subOsc.sine() * 0.4;
-      const _noise = this?.noiseOsc.noise() * 0.05 * envValue;
+      const sub = this?.subOsc.sine() * 0.4;
+      const noise = this?.noiseOsc.noise() * 0.05 * envValue;
 
       sampleL = sampleL / 5 + sub + noise;
       sampleR = sampleR / 5 + sub + noise;
 
-      const _filterFreq = 300 + filterEnvValue * 600 + lfo2Value * 150;
+      const filterFreq = 300 + filterEnvValue * 600 + lfo2Value * 150;
       this?.lpFilter.setLowpass(
         clamp(filterFreq, 80, 2000),
         2.5 + lfo1Value * 0.5,
@@ -663,8 +650,8 @@ export class DarkPadSynth implements SynthesizerEngine {
       sampleL *= envValue * this?.velocity;
       sampleR *= envValue * this?.velocity;
 
-      output?.samples[0][i] = softClip(sampleL, 0.92);
-      output?.samples[1][i] = softClip(sampleR, 0.92);
+      output.samples[0][i] = softClip(sampleL, 0.92);
+      output.samples[1][i] = softClip(sampleR, 0.92);
     }
 
     return output;
@@ -724,9 +711,9 @@ export class EvolvingPadSynth implements SynthesizerEngine {
     this.sampleRate = context?.sampleRate;
     this.sampleCounter = 0;
 
-    const _detuneAmounts = [-0.12, -0.08, -0.04, -0.01, 0.01, 0.04, 0.08, 0.12];
+    const detuneAmounts = [-0.12, -0.08, -0.04, -0.01, 0.01, 0.04, 0.08, 0.12];
     for (let i = 0; i < 8; i++) {
-      const _detunedFreq = frequency * (1 + detuneAmounts[i] * 0.01);
+      const detunedFreq = frequency * (1 + detuneAmounts[i] * 0.01);
       this?.oscillators[i].setFrequency(detunedFreq, context?.sampleRate);
     }
 
@@ -749,33 +736,33 @@ export class EvolvingPadSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _filterEnvValue = this?.filterEnvelope.process();
+      const envValue = this?.envelope.process();
+      const filterEnvValue = this?.filterEnvelope.process();
 
-      const _morph = (this?.morphLFO.sine() + 1) * 0.5;
-      const _pan = this?.panLFO.sine();
-      const _filterMod = this?.filterLFO.triangle();
-      const _pwm = 0.3 + this?.pwmLFO.sine() * 0.2;
+      const morph = (this?.morphLFO.sine() + 1) * 0.5;
+      const pan = this?.panLFO.sine();
+      const filterMod = this?.filterLFO.triangle();
+      const pwm = 0.3 + this?.pwmLFO.sine() * 0.2;
 
       let sampleL = 0;
       let sampleR = 0;
 
       for (let o = 0; o < 8; o++) {
-        const _saw = this?.oscillators[o].sawBandLimited(14);
-        const _pulse = this?.oscillators[o].pulse(pwm);
-        const _triangle = this?.oscillators[o].triangle();
-        const _sine = this?.oscillators[o].sine();
+        const saw = this?.oscillators[o].sawBandLimited(14);
+        const pulse = this?.oscillators[o].pulse(pwm);
+        const triangle = this?.oscillators[o].triangle();
+        const sine = this?.oscillators[o].sine();
 
-        const _mixed =
+        const mixed =
           saw * (1 - morph) * 0.4 +
           pulse * morph * 0.3 +
           triangle * (1 - morph) * 0.2 +
           sine * morph * 0.1;
 
-        const _oscPan = (o - 3.5) / 4 + pan * 0.2;
+        const oscPan = (o - 3.5) / 4 + pan * 0.2;
         sampleL += mixed * (1 - oscPan * 0.4);
         sampleR += mixed * (1 + oscPan * 0.4);
       }
@@ -783,9 +770,9 @@ export class EvolvingPadSynth implements SynthesizerEngine {
       sampleL /= 8;
       sampleR /= 8;
 
-      const _filterFreq =
+      const filterFreq =
         400 + filterEnvValue * 2500 + filterMod * 800 + this?.velocity * 1500;
-      const _resonance = 1.5 + morph * 2;
+      const resonance = 1.5 + morph * 2;
       this?.lpFilter.setLowpass(
         clamp(filterFreq, 100, 10000),
         resonance,
@@ -793,10 +780,10 @@ export class EvolvingPadSynth implements SynthesizerEngine {
       );
       this?.bpFilter.setBandpass(filterFreq * 1.5, 2, this?.sampleRate);
 
-      const _lpL = this?.lpFilter.process(sampleL);
-      const _lpR = this?.lpFilter.process(sampleR);
-      const _bpL = this?.bpFilter.process(sampleL);
-      const _bpR = this?.bpFilter.process(sampleR);
+      const lpL = this?.lpFilter.process(sampleL);
+      const lpR = this?.lpFilter.process(sampleR);
+      const bpL = this?.bpFilter.process(sampleL);
+      const bpR = this?.bpFilter.process(sampleR);
 
       sampleL = lpL * (1 - morph * 0.3) + bpL * morph * 0.3;
       sampleR = lpR * (1 - morph * 0.3) + bpR * morph * 0.3;
@@ -807,10 +794,10 @@ export class EvolvingPadSynth implements SynthesizerEngine {
       sampleL *= envValue * this?.velocity;
       sampleR *= envValue * this?.velocity;
 
-      output?.samples[0][i] = softClip(sampleL, 0.88);
-      output?.samples[1][i] = softClip(sampleR, 0.88);
+      output.samples[0][i] = softClip(sampleL, 0.88);
+      output.samples[1][i] = softClip(sampleR, 0.88);
 
-      this?.sampleCounter++;
+      this.sampleCounter++;
     }
 
     return output;
@@ -868,7 +855,7 @@ export class NoisePadSynth implements SynthesizerEngine {
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
-    const _filterFreqs = [
+    const filterFreqs = [
       frequency * 0.5,
       frequency,
       frequency * 2,
@@ -879,7 +866,7 @@ export class NoisePadSynth implements SynthesizerEngine {
     }
 
     for (let i = 0; i < 3; i++) {
-      const _detune = 1 + (i - 1) * 0.005;
+      const detune = 1 + (i - 1) * 0.005;
       this?.toneOscs[i].setFrequency(frequency * detune, context?.sampleRate);
     }
 
@@ -901,36 +888,36 @@ export class NoisePadSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _filterEnvValue = this?.filterEnvelope.process();
+      const envValue = this?.envelope.process();
+      const filterEnvValue = this?.filterEnvelope.process();
 
-      const _modulation = this?.modulationLFO.sine();
-      const _sweep = this?.sweepLFO.triangle();
+      const modulation = this?.modulationLFO.sine();
+      const sweep = this?.sweepLFO.triangle();
 
       let noiseSampleL = 0;
       let noiseSampleR = 0;
 
       for (let n = 0; n < 4; n++) {
-        const _noise = this?.noiseOscs[n].noise();
-        const _filterMod = 1 + sweep * 0.3 + filterEnvValue * 0.5;
+        const noise = this?.noiseOscs[n].noise();
+        const filterMod = 1 + sweep * 0.3 + filterEnvValue * 0.5;
         this?.lpFilters[n].setBandpass(
           this?.frequency * Math?.pow(2, n - 1) * filterMod,
           6 + modulation * 2,
           this?.sampleRate,
         );
-        const _filtered = this?.lpFilters[n].process(noise);
+        const filtered = this?.lpFilters[n].process(noise);
 
-        const _pan = (n - 1.5) / 2;
+        const pan = (n - 1.5) / 2;
         noiseSampleL += filtered * (1 - pan * 0.4) * 0.3;
         noiseSampleR += filtered * (1 + pan * 0.4) * 0.3;
       }
 
       let toneSample = 0;
       for (let t = 0; t < 3; t++) {
-        const _sine = this?.toneOscs[t].sine();
+        const sine = this?.toneOscs[t].sine();
         toneSample += sine * 0.15;
       }
 
@@ -945,8 +932,8 @@ export class NoisePadSynth implements SynthesizerEngine {
       sampleL *= envValue * this?.velocity;
       sampleR *= envValue * this?.velocity;
 
-      output?.samples[0][i] = softClip(sampleL, 0.88);
-      output?.samples[1][i] = softClip(sampleR, 0.88);
+      output.samples[0][i] = softClip(sampleL, 0.88);
+      output.samples[1][i] = softClip(sampleR, 0.88);
     }
 
     return output;
@@ -1000,9 +987,9 @@ export class BrassPadSynth implements SynthesizerEngine {
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
-    const _detuneAmounts = [-0.06, -0.03, 0, 0, 0.03, 0.06];
+    const detuneAmounts = [-0.06, -0.03, 0, 0, 0.03, 0.06];
     for (let i = 0; i < 6; i++) {
-      const _detunedFreq = frequency * (1 + detuneAmounts[i] * 0.01);
+      const detunedFreq = frequency * (1 + detuneAmounts[i] * 0.01);
       this?.oscillators[i].setFrequency(detunedFreq, context?.sampleRate);
     }
 
@@ -1024,30 +1011,30 @@ export class BrassPadSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _filterEnvValue = this?.filterEnvelope.process();
+      const envValue = this?.envelope.process();
+      const filterEnvValue = this?.filterEnvelope.process();
 
-      const _vibrato = this?.vibratoLFO.sine() * 0.003 * envValue;
-      const _growl = this?.growlLFO.sine() * 0.02 * this?.velocity;
+      const vibrato = this?.vibratoLFO.sine() * 0.003 * envValue;
+      const growl = this?.growlLFO.sine() * 0.02 * this?.velocity;
 
       let sampleL = 0;
       let sampleR = 0;
 
       for (let o = 0; o < 6; o++) {
-        const _currentFreq = this?.frequency * (1 + vibrato);
+        const currentFreq = this?.frequency * (1 + vibrato);
         this?.oscillators[o].setFrequency(
           currentFreq * (1 + (o - 2.5) * 0.002),
           this?.sampleRate,
         );
 
-        const _saw = this?.oscillators[o].sawBandLimited(16);
-        const _square = this?.oscillators[o].squareBandLimited(12);
-        const _mixed = saw * 0.6 + square * 0.4;
+        const saw = this?.oscillators[o].sawBandLimited(16);
+        const square = this?.oscillators[o].squareBandLimited(12);
+        const mixed = saw * 0.6 + square * 0.4;
 
-        const _pan = (o - 2.5) / 3;
+        const pan = (o - 2.5) / 3;
         sampleL += mixed * (1 - pan * 0.3);
         sampleR += mixed * (1 + pan * 0.3);
       }
@@ -1058,7 +1045,7 @@ export class BrassPadSynth implements SynthesizerEngine {
       sampleL *= 1 + growl;
       sampleR *= 1 + growl;
 
-      const _filterFreq = 800 + filterEnvValue * 4000 + this?.velocity * 2000;
+      const filterFreq = 800 + filterEnvValue * 4000 + this?.velocity * 2000;
       this?.lpFilter.setLowpass(
         clamp(filterFreq, 200, 10000),
         2 + filterEnvValue * 3,
@@ -1078,8 +1065,8 @@ export class BrassPadSynth implements SynthesizerEngine {
       sampleL *= envValue * this?.velocity;
       sampleR *= envValue * this?.velocity;
 
-      output?.samples[0][i] = softClip(sampleL, 0.9);
-      output?.samples[1][i] = softClip(sampleR, 0.9);
+      output.samples[0][i] = softClip(sampleL, 0.9);
+      output.samples[1][i] = softClip(sampleR, 0.9);
     }
 
     return output;
@@ -1130,7 +1117,7 @@ export class DigitalPadSynth implements SynthesizerEngine {
     this.sampleRate = context?.sampleRate;
 
     for (let i = 0; i < 4; i++) {
-      const _detune = 1 + (i - 1.5) * 0.001;
+      const detune = 1 + (i - 1.5) * 0.001;
       this?.oscillators[i].setFrequency(frequency * detune, context?.sampleRate);
     }
 
@@ -1154,22 +1141,22 @@ export class DigitalPadSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _stereoPan = this?.stereoLFO.sine() * 0.3;
+      const envValue = this?.envelope.process();
+      const stereoPan = this?.stereoLFO.sine() * 0.3;
       this?.phaseLFO.sine() * 0.1;
 
       let sampleL = 0;
       let sampleR = 0;
 
       for (let o = 0; o < 4; o++) {
-        const _triangle = this?.oscillators[o].triangle();
-        const _sine = this?.oscillators[o].sine();
-        const _mixed = triangle * 0.6 + sine * 0.4;
+        const triangle = this?.oscillators[o].triangle();
+        const sine = this?.oscillators[o].sine();
+        const mixed = triangle * 0.6 + sine * 0.4;
 
-        const _oscPan = (o - 1.5) / 2 + stereoPan;
+        const oscPan = (o - 1.5) / 2 + stereoPan;
         sampleL += mixed * (1 - oscPan * 0.4);
         sampleR += mixed * (1 + oscPan * 0.4);
       }
@@ -1187,8 +1174,8 @@ export class DigitalPadSynth implements SynthesizerEngine {
       sampleL *= envValue * this?.velocity;
       sampleR *= envValue * this?.velocity;
 
-      output?.samples[0][i] = softClip(sampleL, 0.95);
-      output?.samples[1][i] = softClip(sampleR, 0.95);
+      output.samples[0][i] = softClip(sampleL, 0.95);
+      output.samples[1][i] = softClip(sampleR, 0.95);
     }
 
     return output;
@@ -1247,9 +1234,9 @@ export class SpacePadSynth implements SynthesizerEngine {
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
-    const _detuneAmounts = [-0.1, -0.05, -0.02, 0.02, 0.05, 0.1];
+    const detuneAmounts = [-0.1, -0.05, -0.02, 0.02, 0.05, 0.1];
     for (let i = 0; i < 6; i++) {
-      const _detunedFreq = frequency * (1 + detuneAmounts[i] * 0.01);
+      const detunedFreq = frequency * (1 + detuneAmounts[i] * 0.01);
       this?.oscillators[i].setFrequency(detunedFreq, context?.sampleRate);
     }
 
@@ -1276,25 +1263,25 @@ export class SpacePadSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _reverbEnvValue = this?.reverbEnvelope.process();
+      const envValue = this?.envelope.process();
+      const reverbEnvValue = this?.reverbEnvelope.process();
 
-      const _spaceMod = this?.spaceLFO.sine();
-      const _drift = this?.driftLFO.triangle();
+      const spaceMod = this?.spaceLFO.sine();
+      const drift = this?.driftLFO.triangle();
 
       let sampleL = 0;
       let sampleR = 0;
 
       for (let o = 0; o < 6; o++) {
-        const _saw = this?.oscillators[o].sawBandLimited(12);
-        const _triangle = this?.oscillators[o].triangle();
-        const _sine = this?.oscillators[o].sine();
-        const _mixed = saw * 0.3 + triangle * 0.4 + sine * 0.3;
+        const saw = this?.oscillators[o].sawBandLimited(12);
+        const triangle = this?.oscillators[o].triangle();
+        const sine = this?.oscillators[o].sine();
+        const mixed = saw * 0.3 + triangle * 0.4 + sine * 0.3;
 
-        const _pan = (o - 2.5) / 3 + drift * 0.2;
+        const pan = (o - 2.5) / 3 + drift * 0.2;
         sampleL += mixed * (1 - pan * 0.5);
         sampleR += mixed * (1 + pan * 0.5);
       }
@@ -1304,15 +1291,15 @@ export class SpacePadSynth implements SynthesizerEngine {
 
       let reverbL = 0;
       let reverbR = 0;
-      const _delayTimes = [8000, 12000, 16000, 20000];
+      const delayTimes = [8000, 12000, 16000, 20000];
 
       for (let c = 0; c < 4; c++) {
-        const _combOut = this?.combFilters[c].process((sampleL + sampleR) * 0.25);
-        const _allpassOut = this?.allpassFilters[c].process(combOut);
+        const combOut = this?.combFilters[c].process((sampleL + sampleR) * 0.25);
+        const allpassOut = this?.allpassFilters[c].process(combOut);
 
         this?.delayLines[c].write(allpassOut);
-        const _delayMod = 1 + spaceMod * 0.05;
-        const _delayed = this?.delayLines[c].readInterpolated(
+        const delayMod = 1 + spaceMod * 0.05;
+        const delayed = this?.delayLines[c].readInterpolated(
           delayTimes[c] * delayMod,
         );
 
@@ -1336,8 +1323,8 @@ export class SpacePadSynth implements SynthesizerEngine {
       sampleL *= envValue * this?.velocity;
       sampleR *= envValue * this?.velocity;
 
-      output?.samples[0][i] = softClip(sampleL, 0.88);
-      output?.samples[1][i] = softClip(sampleR, 0.88);
+      output.samples[0][i] = softClip(sampleL, 0.88);
+      output.samples[1][i] = softClip(sampleR, 0.88);
     }
 
     return output;

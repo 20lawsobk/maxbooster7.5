@@ -38,9 +38,9 @@ export function useBatchSelect<T = string>(
   const [selectedIds, setSelectedIds] = useState<Set<T>>(
     () => new Set(initialSelection),
   );
-  const _lastSelectedRef = useRef<T | null>(null);
+  const lastSelectedRef = useRef<T | null>(null);
 
-  const _updateSelection = useCallback(
+  const updateSelection = useCallback(
     (newSelection: Set<T>) => {
       setSelectedIds(newSelection);
       onSelectionChange?.(Array?.from(newSelection));
@@ -48,12 +48,12 @@ export function useBatchSelect<T = string>(
     [onSelectionChange],
   );
 
-  const _isSelected = useCallback((id: T) => selectedIds?.has(id), [selectedIds]);
+  const isSelected = useCallback((id: T) => selectedIds?.has(id), [selectedIds]);
 
-  const _select = useCallback(
+  const select = useCallback(
     (id: T) => {
       if (maxSelection && selectedIds?.size >= maxSelection) return;
-      const _next = new Set(selectedIds);
+      const next = new Set(selectedIds);
       next?.add(id);
       lastSelectedRef.current = id;
       updateSelection(next);
@@ -61,16 +61,16 @@ export function useBatchSelect<T = string>(
     [selectedIds, maxSelection, updateSelection],
   );
 
-  const _deselect = useCallback(
+  const deselect = useCallback(
     (id: T) => {
-      const _next = new Set(selectedIds);
+      const next = new Set(selectedIds);
       next?.delete(id);
       updateSelection(next);
     },
     [selectedIds, updateSelection],
   );
 
-  const _toggle = useCallback(
+  const toggle = useCallback(
     (id: T) => {
       if (selectedIds?.has(id)) {
         deselect(id);
@@ -81,18 +81,18 @@ export function useBatchSelect<T = string>(
     [selectedIds, select, deselect],
   );
 
-  const _selectRange = useCallback(
+  const selectRange = useCallback(
     (startId: T, endId: T, allIds: T[]) => {
-      const _startIndex = allIds?.indexOf(startId);
-      const _endIndex = allIds?.indexOf(endId);
+      const startIndex = allIds?.indexOf(startId);
+      const endIndex = allIds?.indexOf(endId);
 
       if (startIndex === -1 || endIndex === -1) return;
 
       const [from, to] =
         startIndex < endIndex ? [startIndex, endIndex] : [endIndex, startIndex];
 
-      const _rangeIds = allIds?.slice(from, to + 1);
-      const _next = new Set(selectedIds);
+      const rangeIds = allIds?.slice(from, to + 1);
+      const next = new Set(selectedIds);
 
       for (const id of rangeIds) {
         if (!maxSelection || next?.size < maxSelection) {
@@ -106,7 +106,7 @@ export function useBatchSelect<T = string>(
     [selectedIds, maxSelection, updateSelection],
   );
 
-  const _toggleWithShift = useCallback(
+  const toggleWithShift = useCallback(
     (id: T, allIds: T[], shiftKey: boolean) => {
       if (shiftKey && lastSelectedRef?.current !== null) {
         selectRange(lastSelectedRef?.current, id, allIds);
@@ -118,9 +118,9 @@ export function useBatchSelect<T = string>(
     [toggle, selectRange],
   );
 
-  const _selectAll = useCallback(
+  const selectAll = useCallback(
     (ids: T[]) => {
-      const _idsToSelect = maxSelection ? ids?.slice(0, maxSelection) : ids;
+      const idsToSelect = maxSelection ? ids?.slice(0, maxSelection) : ids;
       updateSelection(new Set(idsToSelect));
       if (idsToSelect?.length > 0) {
         lastSelectedRef.current = idsToSelect[idsToSelect?.length - 1];
@@ -129,31 +129,31 @@ export function useBatchSelect<T = string>(
     [maxSelection, updateSelection],
   );
 
-  const _deselectAll = useCallback(() => {
+  const deselectAll = useCallback(() => {
     updateSelection(new Set());
     lastSelectedRef.current = null;
   }, [updateSelection]);
 
-  const _clearSelection = useCallback(() => {
+  const clearSelection = useCallback(() => {
     deselectAll();
   }, [deselectAll]);
 
-  const _setSelection = useCallback(
+  const setSelection = useCallback(
     (ids: T[]) => {
-      const _idsToSelect = maxSelection ? ids?.slice(0, maxSelection) : ids;
+      const idsToSelect = maxSelection ? ids?.slice(0, maxSelection) : ids;
       updateSelection(new Set(idsToSelect));
     },
     [maxSelection, updateSelection],
   );
 
-  const _getSelectedItems = useCallback(
+  const getSelectedItems = useCallback(
     <I extends { id: T }>(items: I[]): I[] => {
       return items?.filter((item) => selectedIds?.has(item?.id));
     },
     [selectedIds],
   );
 
-  const _isAllSelected = useCallback(
+  const isAllSelected = useCallback(
     (ids: T[]) => {
       if (ids?.length === 0) return false;
       return ids?.every((id) => selectedIds?.has(id));
@@ -161,16 +161,16 @@ export function useBatchSelect<T = string>(
     [selectedIds],
   );
 
-  const _isSomeSelected = useCallback(
+  const isSomeSelected = useCallback(
     (ids: T[]) => {
       if (ids?.length === 0) return false;
-      const _selectedCount = ids?.filter((id) => selectedIds?.has(id)).length;
+      const selectedCount = ids?.filter((id) => selectedIds?.has(id)).length;
       return selectedCount > 0 && selectedCount < ids?.length;
     },
     [selectedIds],
   );
 
-  const _selectedCount = useMemo(() => selectedIds?.size, [selectedIds]);
+  const selectedCount = useMemo(() => selectedIds?.size, [selectedIds]);
 
   return {
     selectedIds,
@@ -196,9 +196,9 @@ export function useMultiSelectKeyboard<T = string>(
   allIds: T[],
   focusedIndex: number,
 ) {
-  const _handleKeyDown = useCallback(
-    (e: React?.KeyboardEvent) => {
-      const _currentId = allIds[focusedIndex];
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const currentId = allIds[focusedIndex];
       if (!currentId) return;
 
       switch (e?.key) {

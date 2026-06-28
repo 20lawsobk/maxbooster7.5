@@ -55,22 +55,22 @@ interface NormalizedError {
 function normalizeError(err: unknown): NormalizedError {
   if (err instanceof AppError) {
     return {
-      name: err?.name,
-      message: err?.message,
-      stack: err?.stack,
-      statusCode: err?.statusCode,
-      code: err?.code,
-      isOperational: err?.isOperational,
-      context: err?.context,
+      name: err.name,
+      message: err.message,
+      stack: err.stack,
+      statusCode: err.statusCode,
+      code: err.code,
+      isOperational: err.isOperational,
+      context: err.context,
     };
   }
 
   if (err instanceof Error) {
-    const _anyErr = err as Record<string, unknown>;
+    const anyErr = err as Record<string, unknown>;
     return {
-      name: err?.name,
-      message: err?.message,
-      stack: err?.stack,
+      name: err.name,
+      message: err.message,
+      stack: err.stack,
       statusCode:
         typeof anyErr?.statusCode === "number"
           ? anyErr?.statusCode
@@ -83,7 +83,7 @@ function normalizeError(err: unknown): NormalizedError {
         typeof anyErr?.isOperational === "boolean"
           ? anyErr?.isOperational
           : false,
-      issues: Array?.isArray(anyErr?.issues) ? anyErr?.issues : undefined,
+      issues: Array.isArray(anyErr?.issues) ? anyErr?.issues : undefined,
       context:
         anyErr?.context && typeof anyErr?.context === "object"
           ? anyErr?.context
@@ -92,7 +92,7 @@ function normalizeError(err: unknown): NormalizedError {
   }
 
   if (err && typeof err === "object") {
-    const _anyErr = err as Record<string, unknown>;
+    const anyErr = err as Record<string, unknown>;
     return {
       name: typeof anyErr?.name === "string" ? anyErr?.name : "UnknownError",
       message:
@@ -109,7 +109,7 @@ function normalizeError(err: unknown): NormalizedError {
         typeof anyErr?.isOperational === "boolean"
           ? anyErr?.isOperational
           : false,
-      issues: Array?.isArray(anyErr?.issues) ? anyErr?.issues : undefined,
+      issues: Array.isArray(anyErr?.issues) ? anyErr?.issues : undefined,
       context:
         anyErr?.context && typeof anyErr?.context === "object"
           ? anyErr?.context
@@ -131,15 +131,15 @@ function extractReasonInfo(reason: unknown): {
   stack?: string;
 } {
   if (reason instanceof Error) {
-    const _anyReason = reason as Record<string, unknown>;
+    const anyReason = reason as Record<string, unknown>;
     return {
-      message: reason?.message,
+      message: reason.message,
       code: typeof anyReason?.code === "string" ? anyReason?.code : undefined,
-      stack: reason?.stack,
+      stack: reason.stack,
     };
   }
   if (reason && typeof reason === "object") {
-    const _anyReason = reason as Record<string, unknown>;
+    const anyReason = reason as Record<string, unknown>;
     return {
       message:
         typeof anyReason?.message === "string"
@@ -160,7 +160,7 @@ export function globalErrorHandler(
   res: Response,
   _next: NextFunction,
 ): void {
-  const _normalized = normalizeError(err);
+  const normalized = normalizeError(err);
 
   let statusCode = normalized?.statusCode;
   let message = normalized?.message;
@@ -169,7 +169,7 @@ export function globalErrorHandler(
 
   // Sanitize PDIM / circuit-breaker errors — infrastructure internals that
   // should never be shown verbatim to clients regardless of environment.
-  const _isPdimError =
+  const isPdimError =
     /^(\[?PDIM\]?|Circuit OPEN|PDIM HTTP|PDIM returned)/i?.test(message);
   if (isPdimError) {
     message =
@@ -180,8 +180,8 @@ export function globalErrorHandler(
 
   if (normalized?.name === "ZodError") {
     statusCode = 400;
-    const _issues = normalized?.issues || [];
-    const _firstIssue = issues[0];
+    const issues = normalized?.issues || [];
+    const firstIssue = issues[0];
     message = firstIssue
       ? `Validation failed: ${firstIssue?.path?.length ? firstIssue?.path.join(".") + " - " : ""}${firstIssue?.message}`
       : "Validation failed";
@@ -233,14 +233,14 @@ export function globalErrorHandler(
       code,
       statusCode,
       timestamp: new Date().toISOString(),
-      requestId: req?.headers["x-request-id"] as string,
+      requestId: req.headers["x-request-id"] as string,
     },
   };
 
   if (!isProductionEnv()) {
-    errorResponse?.error.details = {
-      stack: normalized?.stack,
-      context: normalized?.context,
+    errorResponse.error.details = {
+      stack: normalized.stack,
+      context: normalized.context,
     };
   }
 
@@ -248,40 +248,40 @@ export function globalErrorHandler(
     timestamp: new Date().toISOString(),
     userId: (req as Record<string, unknown>).user?.id,
     userEmail: (req as Record<string, unknown>).user?.email,
-    ip: req?.ip || "unknown",
-    userAgent: req?.get("user-agent") || "unknown",
+    ip: req.ip || "unknown",
+    userAgent: req.get("user-agent") || "unknown",
     action: "ERROR_HANDLED",
     resource: "system",
     details: {
       error: {
-        name: normalized?.name,
-        message: normalized?.message,
-        code: normalized?.code,
+        name: normalized.name,
+        message: normalized.message,
+        code: normalized.code,
         stack: !isProductionEnv() ? normalized?.stack : undefined,
         isOperational,
       },
       request: {
-        requestId: req?.headers["x-request-id"],
-        method: req?.method,
-        url: req?.originalUrl,
+        requestId: req.headers["x-request-id"],
+        method: req.method,
+        url: req.originalUrl,
         statusCode,
       },
     },
     result: statusCode >= 500 ? "error" : "failure",
     risk: statusCode >= 500 ? "high" : "medium",
-    sessionId: req?.sessionID,
+    sessionId: req.sessionID,
   });
 
   if (statusCode >= 500 && !isOperational) {
     logger?.warn("CRITICAL ERROR:", {
       timestamp: new Date().toISOString(),
-      method: req?.method,
-      url: req?.originalUrl,
-      error: normalized?.message,
-      stack: normalized?.stack,
-      context: normalized?.context,
+      method: req.method,
+      url: req.originalUrl,
+      error: normalized.message,
+      stack: normalized.stack,
+      context: normalized.context,
       userId: (req as Record<string, unknown>).user?.id,
-      ip: req?.ip,
+      ip: req.ip,
     });
   }
 
@@ -289,8 +289,8 @@ export function globalErrorHandler(
     logger?.warn(
       "[errorHandler] Headers already sent, cannot send error response",
       {
-        method: req?.method,
-        url: req?.originalUrl,
+        method: req.method,
+        url: req.originalUrl,
         statusCode,
       },
     );
@@ -310,18 +310,18 @@ export function handleUnhandledRejection(server?: Server) {
   process?.on(
     "unhandledRejection",
     (reason: unknown, _promise: Promise<unknown>) => {
-      const _info = extractReasonInfo(reason);
+      const info = extractReasonInfo(reason);
 
       // Completely silent: circuit-open rejections are owned by the circuit breaker's
       // own rate-limited logging — logging them here with a full stack just duplicates noise.
-      const _isSilent =
+      const isSilent =
         /\[LuaExecutor\] PDIM circuit OPEN|PDIM circuit OPEN.*skipping Worker|Circuit OPEN.*skipping|\[LuaExecutor\] PDIM circuit OPEN \(post-queue\)/i?.test(
           info?.message,
         );
       if (isSilent) return;
 
       // Non-fatal: stream/pipe errors, connection resets, fetch failures
-      const _isNonFatal =
+      const isNonFatal =
         info?.code === "EPIPE" ||
         info?.code === "ECONNRESET" ||
         info?.code === "ECONNABORTED" ||
@@ -335,7 +335,7 @@ export function handleUnhandledRejection(server?: Server) {
         return;
       }
 
-      const _isRedisError =
+      const isRedisError =
         (info?.message.includes("ECONNREFUSED") &&
           (info?.message.includes("6379") || info?.code === "ECONNREFUSED")) ||
         info?.message.includes("Redis") ||
@@ -346,8 +346,8 @@ export function handleUnhandledRejection(server?: Server) {
       }
 
       logger?.warn("UNHANDLED PROMISE REJECTION:", {
-        reason: info?.message,
-        stack: info?.stack,
+        reason: info.message,
+        stack: info.stack,
         timestamp: new Date().toISOString(),
       });
 
@@ -358,8 +358,8 @@ export function handleUnhandledRejection(server?: Server) {
         action: "UNHANDLED_REJECTION",
         resource: "system",
         details: {
-          reason: info?.message,
-          stack: info?.stack,
+          reason: info.message,
+          stack: info.stack,
         },
         result: "error",
         risk: "critical",
@@ -379,14 +379,14 @@ export function handleUncaughtException(server?: Server) {
   process?.on("uncaughtException", (error: Error) => {
     // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors
     // (e?.g. FFmpeg exits mid-render, client disconnects mid-stream)
-    const _code = (error as NodeJS.ErrnoException).code;
+    const code = (error as NodeJS.ErrnoException).code;
     if (code === "EPIPE" || code === "ECONNRESET" || code === "ECONNABORTED") {
       logger?.warn(`Non-fatal stream error (${code}): ${error?.message}`);
       return;
     }
     logger?.warn("UNCAUGHT EXCEPTION:", {
-      error: error?.message,
-      stack: error?.stack,
+      error: error.message,
+      stack: error.stack,
       timestamp: new Date().toISOString(),
     });
 
@@ -397,8 +397,8 @@ export function handleUncaughtException(server?: Server) {
       action: "UNCAUGHT_EXCEPTION",
       resource: "system",
       details: {
-        error: error?.message,
-        stack: error?.stack,
+        error: error.message,
+        stack: error.stack,
       },
       result: "error",
       risk: "critical",
@@ -415,7 +415,7 @@ function gracefulShutdown(server: Server | undefined, reason: string) {
   if (server && typeof server?.close === "function") {
     server?.close((err?: Error) => {
       if (err) {
-        logger?.warn("Error during server shutdown:", { error: err?.message });
+        logger?.warn("Error during server shutdown:", { error: err.message });
       } else {
         logger?.info("HTTP server closed");
       }

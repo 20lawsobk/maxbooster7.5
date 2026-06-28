@@ -10,7 +10,7 @@ import {
 import { count, eq } from "drizzle-orm";
 import { logger } from "../logger.js";
 
-const _router = Router();
+const router = Router();
 
 const requireAdmin: RequestHandler = (req, res, next) => {
   if (!req?.isAuthenticated()) {
@@ -27,7 +27,7 @@ router?.use(require2FA);
 
 router?.get("/results", async (_req, res) => {
   try {
-    const _now = new Date();
+    const now = new Date();
     new Date(now?.getTime() - 7 * 24 * 60 * 60 * 1000);
 
     const [userCount, projectCount, releaseCount] = await Promise?.all([
@@ -38,7 +38,7 @@ router?.get("/results", async (_req, res) => {
 
     let securityIssues = 0;
     try {
-      const _threatCount = await db
+      const threatCount = await db
         .select({ count: count() })
         .from(securityThreats)
         .where(eq(securityThreats?.status, "active"));
@@ -47,14 +47,14 @@ router?.get("/results", async (_req, res) => {
       securityIssues = 0;
     }
 
-    const _securityScore = Math?.max(70, 100 - securityIssues * 5);
-    const _functionalityScore = userCount[0]?.count ? 95 : 80;
-    const _performanceScore = 92;
-    const _codeQualityScore = 88;
-    const _accessibilityScore = 85;
-    const _seoScore = 90;
+    const securityScore = Math?.max(70, 100 - securityIssues * 5);
+    const functionalityScore = userCount[0]?.count ? 95 : 80;
+    const performanceScore = 92;
+    const codeQualityScore = 88;
+    const accessibilityScore = 85;
+    const seoScore = 90;
 
-    const _overallScore = Math?.round(
+    const overallScore = Math?.round(
       (securityScore +
         functionalityScore +
         performanceScore +
@@ -64,7 +64,7 @@ router?.get("/results", async (_req, res) => {
         6,
     );
 
-    const _auditItems = [
+    const auditItems = [
       {
         category: "Security",
         item: "HTTPS Enabled",
@@ -157,11 +157,11 @@ router?.get("/results", async (_req, res) => {
       },
     ];
 
-    const _passCount = auditItems?.filter((i) => i?.status === "pass").length;
-    const _warningCount = auditItems?.filter(
+    const passCount = auditItems?.filter((i) => i?.status === "pass").length;
+    const warningCount = auditItems?.filter(
       (i) => i?.status === "warning",
     ).length;
-    const _failCount = auditItems?.filter((i) => i?.status === "fail").length;
+    const failCount = auditItems?.filter((i) => i?.status === "fail").length;
 
     res?.json({
       overallScore,
@@ -177,7 +177,7 @@ router?.get("/results", async (_req, res) => {
         passed: passCount,
         warnings: warningCount,
         failed: failCount,
-        total: auditItems?.length,
+        total: auditItems.length,
       },
       recommendations: [
         {

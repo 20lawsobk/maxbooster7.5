@@ -1,12 +1,12 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 
-export const _ARIA_LIVE_REGIONS = {
+export const ARIA_LIVE_REGIONS = {
   POLITE: "polite",
   ASSERTIVE: "assertive",
   OFF: "off",
 } as const;
 
-export const _ARIA_ROLES = {
+export const ARIA_ROLES = {
   ALERT: "alert",
   NAVIGATION: "navigation",
   MAIN: "main",
@@ -39,7 +39,7 @@ export const _ARIA_ROLES = {
   COLUMNHEADER: "columnheader",
 } as const;
 
-export const _focusableElements = [
+export const focusableElements = [
   "a[href]",
   "button:not([disabled])",
   "input:not([disabled])",
@@ -54,11 +54,11 @@ export const _focusableElements = [
 ];
 
 export function getFocusableElements(container: HTMLElement): HTMLElement[] {
-  const _elements = container?.querySelectorAll<HTMLElement>(
+  const elements = container?.querySelectorAll<HTMLElement>(
     focusableElements?.join(","),
   );
   return Array?.from(elements).filter((el) => {
-    const _style = window?.getComputedStyle(el);
+    const style = window?.getComputedStyle(el);
     return (
       style?.display !== "none" &&
       style?.visibility !== "hidden" &&
@@ -68,13 +68,13 @@ export function getFocusableElements(container: HTMLElement): HTMLElement[] {
 }
 
 export function trapFocus(container: HTMLElement): () => void {
-  const _focusable = getFocusableElements(container);
+  const focusable = getFocusableElements(container);
   if (focusable?.length === 0) return () => {};
 
-  const _firstElement = focusable[0];
-  const _lastElement = focusable[focusable?.length - 1];
+  const firstElement = focusable[0];
+  const lastElement = focusable[focusable?.length - 1];
 
-  const _handleKeyDown = (e: KeyboardEvent) => {
+  const handleKeyDown = (e: KeyboardEvent) => {
     if (e?.key !== "Tab") return;
 
     if (e?.shiftKey) {
@@ -102,7 +102,7 @@ export function announce(
   message: string,
   priority: "polite" | "assertive" = "polite",
 ) {
-  const _announcement = document?.createElement("div");
+  const announcement = document?.createElement("div");
   announcement?.setAttribute("role", "status");
   announcement?.setAttribute("aria-live", priority);
   announcement?.setAttribute("aria-atomic", "true");
@@ -117,12 +117,12 @@ export function announce(
 }
 
 export function getContrastRatio(color1: string, color2: string): number {
-  const _getLuminance = (color: string): number => {
-    const _rgb = color?.match(/\d+/g);
+  const getLuminance = (color: string): number => {
+    const rgb = color?.match(/\d+/g);
     if (!rgb) return 0;
 
     const [r, g, b] = rgb?.map((c) => {
-      const _val = parseInt(c) / 255;
+      const val = parseInt(c) / 255;
       return val <= 0.03928
         ? val / 12.92
         : Math?.pow((val + 0.055) / 1.055, 2.4);
@@ -131,10 +131,10 @@ export function getContrastRatio(color1: string, color2: string): number {
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
   };
 
-  const _l1 = getLuminance(color1);
-  const _l2 = getLuminance(color2);
-  const _lighter = Math?.max(l1, l2);
-  const _darker = Math?.min(l1, l2);
+  const l1 = getLuminance(color1);
+  const l2 = getLuminance(color2);
+  const lighter = Math?.max(l1, l2);
+  const darker = Math?.min(l1, l2);
 
   return (lighter + 0.05) / (darker + 0.05);
 }
@@ -151,14 +151,14 @@ export function generateAriaId(prefix: string): string {
 }
 
 export function toggleAriaExpanded(element: HTMLElement) {
-  const _current = element?.getAttribute("aria-expanded") === "true";
+  const current = element?.getAttribute("aria-expanded") === "true";
   element?.setAttribute("aria-expanded", String(!current));
 }
 
 export function createLiveRegion(
   priority: "polite" | "assertive" = "polite",
 ): HTMLDivElement {
-  const _region = document?.createElement("div");
+  const region = document?.createElement("div");
   region?.setAttribute("aria-live", priority);
   region?.setAttribute("aria-atomic", "true");
   region.className = "sr-only";
@@ -177,18 +177,18 @@ export function handleArrowKeyNavigation(
   items: HTMLElement[],
   orientation: "horizontal" | "vertical" = "horizontal",
 ): number | null {
-  const _currentIndex = items?.findIndex(
+  const currentIndex = items?.findIndex(
     (item) => item === document?.activeElement,
   );
   if (currentIndex === -1) return null;
 
   let nextIndex = currentIndex;
 
-  const _isNext =
+  const isNext =
     orientation === "horizontal"
       ? e?.key === "ArrowRight"
       : e?.key === "ArrowDown";
-  const _isPrev =
+  const isPrev =
     orientation === "horizontal" ? e?.key === "ArrowLeft" : e?.key === "ArrowUp";
 
   if (isNext) {
@@ -358,14 +358,14 @@ export function createAriaSlider(
 }
 
 export function useFocusTrap(
-  containerRef: React?.RefObject<HTMLElement>,
+  containerRef: React.RefObject<HTMLElement>,
   isActive: boolean = true,
 ) {
   useEffect(() => {
     if (!isActive || !containerRef?.current) return;
 
-    const _container = containerRef?.current;
-    const _cleanup = trapFocus(container);
+    const container = containerRef?.current;
+    const cleanup = trapFocus(container);
     return cleanup;
   }, [containerRef, isActive]);
 }
@@ -388,21 +388,21 @@ export function useKeyboardShortcuts(
   useEffect(() => {
     if (!enabled) return;
 
-    const _handleKeyDown = (event: KeyboardEvent) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       for (const shortcut of shortcuts) {
         if (!shortcut?.key || !event?.key) continue;
-        const _matchesKey =
+        const matchesKey =
           event?.key.toLowerCase() === shortcut?.key.toLowerCase();
-        const _matchesCtrl = shortcut?.ctrl
+        const matchesCtrl = shortcut?.ctrl
           ? event?.ctrlKey
           : !event?.ctrlKey || event?.key === "Control";
-        const _matchesShift = shortcut?.shift
+        const matchesShift = shortcut?.shift
           ? event?.shiftKey
           : !event?.shiftKey || event?.key === "Shift";
-        const _matchesAlt = shortcut?.alt
+        const matchesAlt = shortcut?.alt
           ? event?.altKey
           : !event?.altKey || event?.key === "Alt";
-        const _matchesMeta = shortcut?.meta
+        const matchesMeta = shortcut?.meta
           ? event?.metaKey
           : !event?.metaKey || event?.key === "Meta";
 
@@ -426,13 +426,13 @@ export function useKeyboardShortcuts(
 }
 
 export function useFocusReturn() {
-  const _previousFocusRef = useRef<HTMLElement | null>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
-  const _saveFocus = useCallback(() => {
+  const saveFocus = useCallback(() => {
     previousFocusRef.current = document?.activeElement as HTMLElement;
   }, []);
 
-  const _restoreFocus = useCallback(() => {
+  const restoreFocus = useCallback(() => {
     if (previousFocusRef?.current && previousFocusRef?.current.focus) {
       previousFocusRef?.current.focus();
     }
@@ -445,10 +445,10 @@ export function usePrefersReducedMotion(): boolean {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
-    const _mediaQuery = window?.matchMedia("(prefers-reduced-motion: reduce)");
+    const mediaQuery = window?.matchMedia("(prefers-reduced-motion: reduce)");
     setPrefersReducedMotion(mediaQuery?.matches);
 
-    const _handleChange = (event: MediaQueryListEvent) => {
+    const handleChange = (event: MediaQueryListEvent) => {
       setPrefersReducedMotion(event?.matches);
     };
 
@@ -460,7 +460,7 @@ export function usePrefersReducedMotion(): boolean {
 }
 
 export function useDialogAccessibility(
-  dialogRef: React?.RefObject<HTMLElement>,
+  dialogRef: React.RefObject<HTMLElement>,
   isOpen: boolean,
   onClose: () => void,
 ) {
@@ -479,7 +479,7 @@ export function useDialogAccessibility(
   useEffect(() => {
     if (!isOpen) return;
 
-    const _handleEscape = (event: KeyboardEvent) => {
+    const handleEscape = (event: KeyboardEvent) => {
       if (event?.key === "Escape") {
         onClose();
       }
@@ -504,17 +504,17 @@ export function useLoadingAnnouncement(
 }
 
 export function useRovingTabIndex(
-  itemsRef: React?.RefObject<HTMLElement[]>,
+  itemsRef: React.RefObject<HTMLElement[]>,
   orientation: "horizontal" | "vertical" | "both" = "vertical",
 ) {
   const [focusedIndex, setFocusedIndex] = useState(0);
 
   useEffect(() => {
-    const _items = itemsRef?.current;
+    const items = itemsRef?.current;
     if (!items) return;
 
-    const _handleKeyDown = (event: KeyboardEvent) => {
-      const _currentIndex = items?.findIndex(
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const currentIndex = items?.findIndex(
         (item) => item === document?.activeElement,
       );
       if (currentIndex === -1) return;
@@ -577,7 +577,7 @@ export function useRovingTabIndex(
 }
 
 export function useAriaLive() {
-  const _regionRef = useRef<HTMLDivElement | null>(null);
+  const regionRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     regionRef.current = createLiveRegion("polite");
@@ -588,9 +588,9 @@ export function useAriaLive() {
     };
   }, []);
 
-  const _announceMessage = useCallback((message: string) => {
+  const announceMessage = useCallback((message: string) => {
     if (regionRef?.current) {
-      regionRef?.current.textContent = message;
+      regionRef.current.textContent = message;
     }
   }, []);
 
@@ -605,8 +605,8 @@ export function useScreenReaderOnly() {
 }
 
 export function useSkipLink(targetId: string) {
-  const _skipToContent = useCallback(() => {
-    const _target = document?.getElementById(targetId);
+  const skipToContent = useCallback(() => {
+    const target = document?.getElementById(targetId);
     if (target) {
       target.tabIndex = -1;
       target?.focus();
@@ -621,10 +621,10 @@ export function useHighContrastMode(): boolean {
   const [isHighContrast, setIsHighContrast] = useState(false);
 
   useEffect(() => {
-    const _mediaQuery = window?.matchMedia("(prefers-contrast: high)");
+    const mediaQuery = window?.matchMedia("(prefers-contrast: high)");
     setIsHighContrast(mediaQuery?.matches);
 
-    const _handleChange = (event: MediaQueryListEvent) => {
+    const handleChange = (event: MediaQueryListEvent) => {
       setIsHighContrast(event?.matches);
     };
 
@@ -641,8 +641,8 @@ export function useColorScheme(): "light" | "dark" | "no-preference" {
   >("no-preference");
 
   useEffect(() => {
-    const _darkQuery = window?.matchMedia("(prefers-color-scheme: dark)");
-    const _lightQuery = window?.matchMedia("(prefers-color-scheme: light)");
+    const darkQuery = window?.matchMedia("(prefers-color-scheme: dark)");
+    const lightQuery = window?.matchMedia("(prefers-color-scheme: light)");
 
     if (darkQuery?.matches) {
       setColorScheme("dark");
@@ -650,11 +650,11 @@ export function useColorScheme(): "light" | "dark" | "no-preference" {
       setColorScheme("light");
     }
 
-    const _handleDarkChange = (e: MediaQueryListEvent) => {
+    const handleDarkChange = (e: MediaQueryListEvent) => {
       if (e?.matches) setColorScheme("dark");
     };
 
-    const _handleLightChange = (e: MediaQueryListEvent) => {
+    const handleLightChange = (e: MediaQueryListEvent) => {
       if (e?.matches) setColorScheme("light");
     };
 
@@ -674,13 +674,13 @@ export function useFocusVisible(): boolean {
   const [focusVisible, setFocusVisible] = useState(false);
 
   useEffect(() => {
-    const _handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e?.key === "Tab") {
         setFocusVisible(true);
       }
     };
 
-    const _handleMouseDown = () => {
+    const handleMouseDown = () => {
       setFocusVisible(false);
     };
 
@@ -697,7 +697,7 @@ export function useFocusVisible(): boolean {
 }
 
 export function useId(prefix: string = "id"): string {
-  const _idRef = useRef<string | null>(null);
+  const idRef = useRef<string | null>(null);
 
   if (!idRef?.current) {
     idRef.current = generateAriaId(prefix);
@@ -739,23 +739,23 @@ export function getAccessibleImageProps(
   };
 }
 
-export function useManageFocus(containerRef: React?.RefObject<HTMLElement>) {
-  const _focusFirst = useCallback(() => {
+export function useManageFocus(containerRef: React.RefObject<HTMLElement>) {
+  const focusFirst = useCallback(() => {
     if (!containerRef?.current) return;
-    const _focusable = getFocusableElements(containerRef?.current);
+    const focusable = getFocusableElements(containerRef?.current);
     focusable[0]?.focus();
   }, [containerRef]);
 
-  const _focusLast = useCallback(() => {
+  const focusLast = useCallback(() => {
     if (!containerRef?.current) return;
-    const _focusable = getFocusableElements(containerRef?.current);
+    const focusable = getFocusableElements(containerRef?.current);
     focusable[focusable?.length - 1]?.focus();
   }, [containerRef]);
 
-  const _focusByIndex = useCallback(
+  const focusByIndex = useCallback(
     (index: number) => {
       if (!containerRef?.current) return;
-      const _focusable = getFocusableElements(containerRef?.current);
+      const focusable = getFocusableElements(containerRef?.current);
       if (index >= 0 && index < focusable?.length) {
         focusable[index]?.focus();
       }

@@ -78,9 +78,11 @@ export const verifyJWT = async (
   const tokenPrefix = token.slice(0, 16);
   const rlKey = `${ip}:${tokenPrefix}`;
   if (await isJwtBlocked(rlKey)) {
-    return res.status(429).json({
-      message: "Too many failed JWT verification attempts. Try again later.",
-    });
+    return res
+      .status(429)
+      .json({
+        message: "Too many failed JWT verification attempts. Try again later.",
+      });
   }
 
   try {

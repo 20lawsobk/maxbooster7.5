@@ -25,8 +25,8 @@ export class PerformanceRegressionDetector {
     checks: RegressionCheck[];
   }> {
     try {
-      const _baseline = await this?.loadBaseline(baselineName);
-      const _current = metricsCollector?.getDashboardData();
+      const baseline = await this?.loadBaseline(baselineName);
+      const current = metricsCollector?.getDashboardData();
 
       const checks: RegressionCheck[] = [];
 
@@ -57,7 +57,7 @@ export class PerformanceRegressionDetector {
         ),
       );
 
-      const _hasRegression = checks?.some((c) => c?.regressed);
+      const hasRegression = checks?.some((c) => c?.regressed);
 
       this?.printReport(checks, hasRegression);
 
@@ -74,8 +74,8 @@ export class PerformanceRegressionDetector {
     current: number,
     threshold: number,
   ): RegressionCheck {
-    const _percentChange = ((current - baseline) / baseline) * 100;
-    const _regressed = percentChange > threshold;
+    const percentChange = ((current - baseline) / baseline) * 100;
+    const regressed = percentChange > threshold;
 
     return {
       metric,
@@ -88,11 +88,11 @@ export class PerformanceRegressionDetector {
   }
 
   private async loadBaseline(name: string) {
-    const _files = await fs?.readdir(this?.baselineDir);
+    const files = await fs?.readdir(this?.baselineDir);
     let targetFile: string;
 
     if (name === "latest") {
-      const _baselineFiles = files?.filter((f) => f?.endsWith(".json"));
+      const baselineFiles = files?.filter((f) => f?.endsWith(".json"));
       baselineFiles?.sort().reverse();
       targetFile = baselineFiles[0];
     } else {
@@ -103,8 +103,8 @@ export class PerformanceRegressionDetector {
       throw new Error("No baseline found");
     }
 
-    const _filepath = path?.join(this?.baselineDir, targetFile);
-    const _content = await fs?.readFile(filepath, "utf-8");
+    const filepath = path?.join(this?.baselineDir, targetFile);
+    const content = await fs?.readFile(filepath, "utf-8");
     return JSON?.parse(content);
   }
 
@@ -114,8 +114,8 @@ export class PerformanceRegressionDetector {
     logger?.info("═".repeat(70) + "\n");
 
     for (const check of checks) {
-      const _icon = check?.regressed ? "❌" : "✅";
-      const _arrow = check?.percentChange > 0 ? "↑" : "↓";
+      const icon = check?.regressed ? "❌" : "✅";
+      const arrow = check?.percentChange > 0 ? "↑" : "↓";
 
       logger?.info(`${icon} ${check?.metric}`);
       logger?.info(`   Baseline: ${check?.baseline.toFixed(2)}`);
@@ -143,4 +143,4 @@ export class PerformanceRegressionDetector {
   }
 }
 
-export const _regressionDetector = new PerformanceRegressionDetector();
+export const regressionDetector = new PerformanceRegressionDetector();

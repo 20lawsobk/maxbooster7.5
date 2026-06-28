@@ -24,7 +24,7 @@ export function getEnvironmentType(): EnvironmentType {
     return "web";
   }
 
-  const _userAgent = window?.navigator.userAgent?.toLowerCase();
+  const userAgent = window?.navigator.userAgent?.toLowerCase();
 
   if (userAgent?.includes("electron")) {
     return "electron";
@@ -53,12 +53,12 @@ export function isWeb(): boolean {
 }
 
 export function isNativeApp(): boolean {
-  const _env = getEnvironmentType();
+  const env = getEnvironmentType();
   return env === "electron" || env === "capacitor";
 }
 
 export function getPlatformCapabilities() {
-  const _env = getEnvironmentType();
+  const env = getEnvironmentType();
 
   return {
     hasFileSystemAccess: env === "electron",

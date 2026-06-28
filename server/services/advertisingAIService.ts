@@ -131,46 +131,46 @@ export class AdvertisingAIService {
     campaign: CampaignInput,
     platforms: string[],
   ): Promise<Record<string, unknown>> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
 
     // Calculate organic amplification potential (100%+ boost vs paid ads)
-    const _viralityScore = this?.calculateViralityScore(creative);
-    const _organicReachMultiplier =
+    const viralityScore = this?.calculateViralityScore(creative);
+    const organicReachMultiplier =
       this?.calculateOrganicReachMultiplier(viralityScore);
-    const _platformPerformance = this?.predictPlatformPerformance(
+    const platformPerformance = this?.predictPlatformPerformance(
       creative,
       platforms,
     );
-    const _engagementOptimizations = this?.generateEngagementOptimizations(
+    const engagementOptimizations = this?.generateEngagementOptimizations(
       creative,
       platformPerformance,
     );
 
-    const _outputs = {
+    const outputs = {
       viralityScore,
       organicReachMultiplier, // 100%+ amplification vs paid ads
       platformPredictions: platformPerformance,
       engagementOptimizations,
-      costSavings: this?.calculateAdSpendSavings(
+      costSavings: this.calculateAdSpendSavings(
         platformPerformance,
         campaign?.budget || 0,
       ),
-      optimalPostSchedule: this?.generatePostSchedule(platforms),
+      optimalPostSchedule: this.generatePostSchedule(platforms),
       expectedOrganicReach:
         this?.calculateExpectedOrganicReach(platformPerformance),
     };
 
     // Record AI run for determinism verification
     await storage?.createAdAIRun({
-      creativeId: creative?.id,
-      modelVersion: this?.modelVersion,
+      creativeId: creative.id,
+      modelVersion: this.modelVersion,
       inferenceInputs: {
-        objective: campaign?.objective,
+        objective: campaign.objective,
         platforms,
-        contentType: creative?.contentType,
+        contentType: creative.contentType,
       },
       inferenceOutputs: outputs,
-      executionTime: Date?.now() - startTime,
+      executionTime: Date.now() - startTime,
       deterministic: true,
     });
 
@@ -186,22 +186,22 @@ export class AdvertisingAIService {
     platform: string,
     userId: string,
   ): Promise<Record<string, unknown>> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
 
     // Deterministic simulation based on industry benchmarks
     // Use competitor name hash for consistent results
-    const _seed = this?.hashString(competitorName + platform);
-    const _random = this?.seededRandom(seed);
+    const seed = this?.hashString(competitorName + platform);
+    const random = this?.seededRandom(seed);
 
     // Simulate competitor metrics (deterministic based on name)
-    const _postingFrequency = 3 + random() * 4; // 3-7 posts per week
-    const _avgEngagementRate = 0.03 + random() * 0.05; // 3-8%
-    const _avgLikes = Math?.floor(500 + random() * 2000); // 500-2500
-    const _avgComments = Math?.floor(50 + random() * 200); // 50-250
-    const _avgShares = Math?.floor(20 + random() * 100); // 20-120
+    const postingFrequency = 3 + random() * 4; // 3-7 posts per week
+    const avgEngagementRate = 0.03 + random() * 0.05; // 3-8%
+    const avgLikes = Math?.floor(500 + random() * 2000); // 500-2500
+    const avgComments = Math?.floor(50 + random() * 200); // 50-250
+    const avgShares = Math?.floor(20 + random() * 100); // 20-120
 
     // Content type distribution
-    const _contentTypes = [
+    const contentTypes = [
       { type: "video", percentage: 40 + random() * 20 },
       { type: "image", percentage: 30 + random() * 15 },
       { type: "carousel", percentage: 15 + random() * 10 },
@@ -209,7 +209,7 @@ export class AdvertisingAIService {
     ];
 
     // Top hashtags (deterministic based on seed)
-    const _hashtagPool = [
+    const hashtagPool = [
       "#music",
       "#newmusic",
       "#artist",
@@ -221,46 +221,46 @@ export class AdvertisingAIService {
       "#pop",
       "#indie",
     ];
-    const _topHashtags = hashtagPool?.slice(0, 5 + Math?.floor(random() * 3));
+    const topHashtags = hashtagPool?.slice(0, 5 + Math?.floor(random() * 3));
 
     // Posting times analysis
-    const _postingTimes = [
-      { day: "Monday", hour: 18, count: Math?.floor(15 + random() * 10) },
-      { day: "Wednesday", hour: 12, count: Math?.floor(10 + random() * 15) },
-      { day: "Friday", hour: 20, count: Math?.floor(20 + random() * 15) },
-      { day: "Sunday", hour: 14, count: Math?.floor(12 + random() * 10) },
+    const postingTimes = [
+      { day: "Monday", hour: 18, count: Math.floor(15 + random() * 10) },
+      { day: "Wednesday", hour: 12, count: Math.floor(10 + random() * 15) },
+      { day: "Friday", hour: 20, count: Math.floor(20 + random() * 15) },
+      { day: "Sunday", hour: 14, count: Math.floor(12 + random() * 10) },
     ];
 
     // AI-generated insights
-    const _strengths = [
+    const strengths = [
       "Consistent posting schedule with high frequency",
       "Strong video content performance",
       "High engagement rate above industry average",
       "Effective use of trending hashtags",
     ];
 
-    const _weaknesses = [
+    const weaknesses = [
       "Limited carousel content usage",
       "Low weekend posting frequency",
       "Inconsistent brand messaging",
       "Minimal user-generated content",
     ];
 
-    const _contentGaps = [
+    const contentGaps = [
       "Behind-the-scenes studio content",
       "Collaborative posts with other artists",
       "Educational music production tips",
       "Fan engagement contests",
     ];
 
-    const _opportunities = [
+    const opportunities = [
       "Increase carousel posts for higher engagement",
       "Optimize posting times for weekend audience",
       "Leverage trending audio formats",
       "Create more interactive poll content",
     ];
 
-    const _analysisData = {
+    const analysisData = {
       seed,
       benchmarkSource: "industry_average_2024",
       confidence: 0.82,
@@ -272,8 +272,8 @@ export class AdvertisingAIService {
       userId,
       competitorName,
       platform,
-      postingFrequency: postingFrequency?.toFixed(2),
-      avgEngagementRate: avgEngagementRate?.toFixed(4),
+      postingFrequency: postingFrequency.toFixed(2),
+      avgEngagementRate: avgEngagementRate.toFixed(4),
       avgLikes,
       avgComments,
       avgShares,
@@ -288,7 +288,7 @@ export class AdvertisingAIService {
     });
 
     // Record AI inference
-    const _outputs = {
+    const outputs = {
       competitorName,
       platform,
       metrics: {
@@ -306,10 +306,10 @@ export class AdvertisingAIService {
 
     await storage?.createAdAIRun({
       creativeId: `competitor_${competitorName}`,
-      modelVersion: this?.COMPETITOR_ANALYZER,
+      modelVersion: this.COMPETITOR_ANALYZER,
       inferenceInputs: { competitorName, platform },
       inferenceOutputs: outputs,
-      executionTime: Date?.now() - startTime,
+      executionTime: Date.now() - startTime,
       deterministic: true,
     });
 
@@ -320,21 +320,23 @@ export class AdvertisingAIService {
    * PHASE 2A FEATURE #2: Audience Clustering (Deterministic AI)
    * Segments audience into 5-10 clusters based on demographics, behavior, interests
    */
-  async clusterAudience(campaignId: number): Promise<{
+  async clusterAudience(
+    campaignId: number,
+  ): Promise<{
     segments: AudienceSegment[];
     summary: Record<string, unknown>;
   }> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
 
     // Deterministic k-means style clustering with fixed seed
-    const _numClusters = 7; // Optimal cluster count
-    const _seed = campaignId * 12345; // Deterministic seed
-    const _random = this?.seededRandom(seed);
+    const numClusters = 7; // Optimal cluster count
+    const seed = campaignId * 12345; // Deterministic seed
+    const random = this?.seededRandom(seed);
 
     const segments: AudienceSegment[] = [];
 
     // Generate deterministic audience segments
-    const _segmentTemplates = [
+    const segmentTemplates = [
       {
         name: "Young Trendsetters",
         demographics: {
@@ -534,29 +536,29 @@ export class AdvertisingAIService {
 
     // Create segments with deterministic variations
     for (let i = 0; i < numClusters; i++) {
-      const _template = segmentTemplates[i];
-      const _size = Math?.floor(1000 + random() * 3000); // 1k-4k per segment
-      const _predictedValue = (50 + random() * 200).toFixed(2); // $50-$250 LTV
+      const template = segmentTemplates[i];
+      const size = Math?.floor(1000 + random() * 3000); // 1k-4k per segment
+      const predictedValue = (50 + random() * 200).toFixed(2); // $50-$250 LTV
 
-      const _segment = {
+      const segment = {
         campaignId,
-        segmentName: template?.name,
+        segmentName: template.name,
         segmentIndex: i,
         size,
-        demographics: template?.demographics,
-        interests: template?.interests,
-        behaviors: template?.behaviors,
+        demographics: template.demographics,
+        interests: template.interests,
+        behaviors: template.behaviors,
         engagementHistory: {
-          avgSessionDuration: Math?.floor(120 + random() * 300), // 2-7 minutes
-          pageViews: Math?.floor(3 + random() * 10), // 3-13 pages
-          interactions: Math?.floor(1 + random() * 5), // 1-6 interactions
+          avgSessionDuration: Math.floor(120 + random() * 300), // 2-7 minutes
+          pageViews: Math.floor(3 + random() * 10), // 3-13 pages
+          interactions: Math.floor(1 + random() * 5), // 1-6 interactions
         },
         characteristics: [
           `${size?.toLocaleString()} estimated users`,
           `${template?.demographics.ageRange} age range`,
           `${template?.behaviors.engagementLevel} engagement level`,
         ],
-        targetingRecommendations: template?.targetingRecommendations,
+        targetingRecommendations: template.targetingRecommendations,
         predictedValue,
       };
 
@@ -566,24 +568,24 @@ export class AdvertisingAIService {
     }
 
     // Record AI inference
-    const _outputs = {
+    const outputs = {
       campaignId,
       totalSegments: numClusters,
-      segments: segments?.map((s) => ({
-        name: s?.segmentName,
-        size: s?.size,
-        predictedValue: s?.predictedValue,
-        platforms: s?.targetingRecommendations.platforms,
+      segments: segments.map((s) => ({
+        name: s.segmentName,
+        size: s.size,
+        predictedValue: s.predictedValue,
+        platforms: s.targetingRecommendations.platforms,
       })),
-      totalAudienceSize: segments?.reduce((sum, s) => sum + s?.size, 0),
+      totalAudienceSize: segments.reduce((sum, s) => sum + s?.size, 0),
     };
 
     await storage?.createAdAIRun({
       creativeId: `campaign_${campaignId}_clustering`,
-      modelVersion: this?.AUDIENCE_CLUSTERER,
+      modelVersion: this.AUDIENCE_CLUSTERER,
       inferenceInputs: { campaignId, numClusters },
       inferenceOutputs: outputs,
-      executionTime: Date?.now() - startTime,
+      executionTime: Date.now() - startTime,
       deterministic: true,
     });
 
@@ -598,44 +600,44 @@ export class AdvertisingAIService {
     creative: AdCreative,
     targetAudience?: TargetAudienceInput,
   ): Promise<Record<string, unknown>> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
 
     // Feature extraction from creative
-    const _features = this?.extractCreativeFeatures(creative);
+    const features = this?.extractCreativeFeatures(creative);
 
     // Deterministic prediction based on features
-    const _seed = this?.hashString(creative?.id);
-    const _random = this?.seededRandom(seed);
+    const seed = this?.hashString(creative?.id);
+    const random = this?.seededRandom(seed);
 
     // Base predictions from virality score
-    const _viralityScore = this?.calculateViralityScore(creative);
+    const viralityScore = this?.calculateViralityScore(creative);
 
     // CTR Prediction (0.5% - 8%)
-    const _baseCTR = 0.005 + (viralityScore / 100) * 0.075;
-    const _predictedCTR = baseCTR + (random() - 0.5) * 0.01;
+    const baseCTR = 0.005 + (viralityScore / 100) * 0.075;
+    const predictedCTR = baseCTR + (random() - 0.5) * 0.01;
 
     // Engagement Rate Prediction (1% - 15%)
-    const _baseEngagement = 0.01 + (viralityScore / 100) * 0.14;
-    const _predictedEngagementRate = baseEngagement + (random() - 0.5) * 0.02;
+    const baseEngagement = 0.01 + (viralityScore / 100) * 0.14;
+    const predictedEngagementRate = baseEngagement + (random() - 0.5) * 0.02;
 
     // Conversion Rate Prediction (0.1% - 5%)
-    const _baseConversion = 0.001 + (viralityScore / 100) * 0.049;
-    const _predictedConversionRate = baseConversion + (random() - 0.5) * 0.005;
+    const baseConversion = 0.001 + (viralityScore / 100) * 0.049;
+    const predictedConversionRate = baseConversion + (random() - 0.5) * 0.005;
 
     // Confidence intervals (95%)
-    const _ctrConfidenceInterval = {
-      lower: Math?.max(0, predictedCTR - 0.01),
-      upper: Math?.min(1, predictedCTR + 0.01),
+    const ctrConfidenceInterval = {
+      lower: Math.max(0, predictedCTR - 0.01),
+      upper: Math.min(1, predictedCTR + 0.01),
     };
 
-    const _engagementConfidenceInterval = {
-      lower: Math?.max(0, predictedEngagementRate - 0.02),
-      upper: Math?.min(1, predictedEngagementRate + 0.02),
+    const engagementConfidenceInterval = {
+      lower: Math.max(0, predictedEngagementRate - 0.02),
+      upper: Math.min(1, predictedEngagementRate + 0.02),
     };
 
-    const _conversionConfidenceInterval = {
-      lower: Math?.max(0, predictedConversionRate - 0.005),
-      upper: Math?.min(1, predictedConversionRate + 0.005),
+    const conversionConfidenceInterval = {
+      lower: Math.max(0, predictedConversionRate - 0.005),
+      upper: Math.min(1, predictedConversionRate + 0.005),
     };
 
     // Historical comparison — real data from past predictions in DB
@@ -646,8 +648,8 @@ export class AdvertisingAIService {
       })
       .from(adCreativePredictions);
 
-    const _historicalCount = Number(histStats?.totalCount ?? 0);
-    const _historicalAvgCTR = Number(histStats?.avgCTR ?? predictedCTR * 0.8);
+    const historicalCount = Number(histStats?.totalCount ?? 0);
+    const historicalAvgCTR = Number(histStats?.avgCTR ?? predictedCTR * 0.8);
 
     let percentile: number;
     if (historicalCount > 0) {
@@ -657,13 +659,13 @@ export class AdvertisingAIService {
         .where(
           sql`CAST(${adCreativePredictions?.predictedCTR} AS FLOAT) < ${predictedCTR}`,
         );
-      const _below = Number(belowRow?.belowCount ?? 0);
+      const below = Number(belowRow?.belowCount ?? 0);
       percentile = Math?.round((below / historicalCount) * 100);
     } else {
       percentile = Math?.min(95, Math?.round(60 + viralityScore / 3));
     }
 
-    const _comparisonData = {
+    const comparisonData = {
       historicalAvg: historicalAvgCTR || predictedCTR * 0.8,
       percentile,
       similarCreatives: historicalCount,
@@ -671,11 +673,11 @@ export class AdvertisingAIService {
 
     // Store prediction
     await db?.insert(adCreativePredictions).values({
-      creativeId: creative?.id,
-      targetAudienceId: targetAudience?.id || null,
-      predictedCTR: predictedCTR?.toFixed(4),
-      predictedEngagementRate: predictedEngagementRate?.toFixed(4),
-      predictedConversionRate: predictedConversionRate?.toFixed(4),
+      creativeId: creative.id,
+      targetAudienceId: targetAudience.id || null,
+      predictedCTR: predictedCTR.toFixed(4),
+      predictedEngagementRate: predictedEngagementRate.toFixed(4),
+      predictedConversionRate: predictedConversionRate.toFixed(4),
       predictedViralityScore: viralityScore,
       ctrConfidenceInterval,
       engagementConfidenceInterval,
@@ -685,7 +687,7 @@ export class AdvertisingAIService {
     });
 
     // Record AI inference
-    const _outputs = {
+    const outputs = {
       predictions: {
         ctr: { value: predictedCTR, confidence: ctrConfidenceInterval },
         engagementRate: {
@@ -700,15 +702,15 @@ export class AdvertisingAIService {
       },
       features,
       comparisonData,
-      explanation: this?.generatePredictionExplanation(features, viralityScore),
+      explanation: this.generatePredictionExplanation(features, viralityScore),
     };
 
     await storage?.createAdAIRun({
-      creativeId: creative?.id,
-      modelVersion: this?.CREATIVE_PREDICTOR,
-      inferenceInputs: { creativeId: creative?.id, features },
+      creativeId: creative.id,
+      modelVersion: this.CREATIVE_PREDICTOR,
+      inferenceInputs: { creativeId: creative.id, features },
       inferenceOutputs: outputs,
-      executionTime: Date?.now() - startTime,
+      executionTime: Date.now() - startTime,
       deterministic: true,
     });
 
@@ -724,10 +726,10 @@ export class AdvertisingAIService {
     totalBudget: number,
     goals: BudgetGoals,
   ): Promise<Record<string, unknown>> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
 
     // Get campaign data
-    const _campaign = await db
+    const campaign = await db
       .select()
       .from(adCampaigns)
       .where(eq(adCampaigns?.id, campaignId))
@@ -737,21 +739,21 @@ export class AdvertisingAIService {
     }
 
     // Get audience segments
-    const _segments = await db
+    const segments = await db
       .select()
       .from(adAudienceSegments)
       .where(eq(adAudienceSegments?.campaignId, campaignId))
       .orderBy(adAudienceSegments?.segmentIndex);
 
-    const _platforms = campaign[0].platforms || [
+    const platforms = campaign[0].platforms || [
       "facebook",
       "instagram",
       "tiktok",
     ];
 
     // Deterministic optimization algorithm
-    const _seed = campaignId * 67890;
-    const _random = this?.seededRandom(seed);
+    const seed = campaignId * 67890;
+    const random = this?.seededRandom(seed);
 
     // Platform allocation (based on ROI potential)
     const platformAllocations: Record<string, PlatformAllocation> = {};
@@ -767,23 +769,23 @@ export class AdvertisingAIService {
     // Calculate platform weights
     let totalWeight = 0;
     for (const platform of platforms) {
-      const _roi = platformROI[platform] || 2.0;
+      const roi = platformROI[platform] || 2.0;
       totalWeight += roi;
     }
 
     // Allocate budget by platform ROI
     for (const platform of platforms) {
-      const _roi = platformROI[platform] || 2.0;
-      const _allocation = (roi / totalWeight) * totalBudget;
+      const roi = platformROI[platform] || 2.0;
+      const allocation = (roi / totalWeight) * totalBudget;
 
       platformAllocations[platform] = {
-        budget: Math?.round(allocation),
-        expectedReach: Math?.floor(allocation * 100 * (1 + random() * 0.2)), // ~100 reach per $1
-        expectedConversions: Math?.floor(
+        budget: Math.round(allocation),
+        expectedReach: Math.floor(allocation * 100 * (1 + random() * 0.2)), // ~100 reach per $1
+        expectedConversions: Math.floor(
           allocation * 0.02 * (1 + random() * 0.3),
         ), // ~2% conversion
         expectedROI: roi + random() * 0.5,
-        bidStrategy: this?.getBidStrategy(platform, goals),
+        bidStrategy: this.getBidStrategy(platform, goals),
       };
     }
 
@@ -797,31 +799,31 @@ export class AdvertisingAIService {
         platforms: string[];
       }
     > = {};
-    const _totalSegmentValue = segments?.reduce(
+    const totalSegmentValue = segments?.reduce(
       (sum: number, s: { predictedValue?: string; size: number }) =>
         sum + parseFloat(s?.predictedValue || "0") * s?.size,
       0,
     );
 
     for (const segment of segments) {
-      const _segmentValue =
+      const segmentValue =
         parseFloat(segment?.predictedValue || "0") * segment?.size;
-      const _allocation = (segmentValue / totalSegmentValue) * totalBudget * 0.7; // 70% to segments
+      const allocation = (segmentValue / totalSegmentValue) * totalBudget * 0.7; // 70% to segments
 
-      segmentAllocations[segment?.segmentName] = {
-        budget: Math?.round(allocation),
-        size: segment?.size,
-        expectedConversions: Math?.floor(allocation * 0.025),
-        platforms: segment?.targetingRecommendations?.platforms || ["instagram"],
+      segmentAllocations[segment.segmentName] = {
+        budget: Math.round(allocation),
+        size: segment.size,
+        expectedConversions: Math.floor(allocation * 0.025),
+        platforms: segment.targetingRecommendations?.platforms || ["instagram"],
       };
     }
 
     // Time period allocation (spend pacing)
-    const _duration = goals?.duration || 30; // days
-    const _dailyBudget = totalBudget / duration;
+    const duration = goals?.duration || 30; // days
+    const dailyBudget = totalBudget / duration;
 
-    const _timeAllocation = {
-      dailyBudget: Math?.round(dailyBudget),
+    const timeAllocation = {
+      dailyBudget: Math.round(dailyBudget),
       weekdayMultiplier: 1.2, // 20% more on weekdays
       weekendMultiplier: 0.8, // 20% less on weekends
       peakHours: [12, 13, 18, 19, 20], // Noon and evening
@@ -829,12 +831,12 @@ export class AdvertisingAIService {
     };
 
     // Expected results
-    const _expectedResults = {
-      totalReach: Object?.values(platformAllocations).reduce(
+    const expectedResults = {
+      totalReach: Object.values(platformAllocations).reduce(
         (sum: number, p: PlatformAllocation) => sum + p?.expectedReach,
         0,
       ),
-      totalConversions: Object?.values(platformAllocations).reduce(
+      totalConversions: Object.values(platformAllocations).reduce(
         (sum: number, p: PlatformAllocation) => sum + p?.expectedConversions,
         0,
       ),
@@ -848,11 +850,11 @@ export class AdvertisingAIService {
               ) / totalBudget
             ).toFixed(2)
           : "0",
-      breakEvenPoint: Math?.ceil(duration * 0.4), // Day 12 of 30
+      breakEvenPoint: Math.ceil(duration * 0.4), // Day 12 of 30
     };
 
     // Record AI inference
-    const _outputs = {
+    const outputs = {
       totalBudget,
       platformAllocations,
       segmentAllocations,
@@ -860,7 +862,7 @@ export class AdvertisingAIService {
       expectedResults,
       recommendations: [
         `Focus ${Object?.keys(platformAllocations)[0]} (highest ROI)`,
-        `Target "${segments[0]?.segmentName}" segment (highest value)`,
+        `Target "${segments[0].segmentName}" segment (highest value)`,
         `Increase spend during peak hours (12pm, 6-8pm)`,
         `Monitor performance after day ${Math?.ceil(duration * 0.3)} for optimization`,
       ],
@@ -868,10 +870,10 @@ export class AdvertisingAIService {
 
     await storage?.createAdAIRun({
       creativeId: `campaign_${campaignId}_budget_opt`,
-      modelVersion: this?.BUDGET_OPTIMIZER,
+      modelVersion: this.BUDGET_OPTIMIZER,
       inferenceInputs: { campaignId, totalBudget, goals },
       inferenceOutputs: outputs,
-      executionTime: Date?.now() - startTime,
+      executionTime: Date.now() - startTime,
       deterministic: true,
     });
 
@@ -890,7 +892,7 @@ export class AdvertisingAIService {
     touchpoints: Touchpoint[] = [],
     attributionModel: "last_click" | "first_click" | "linear" = "last_click",
   ): Promise<Record<string, unknown>> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
 
     // Determine attribution
     let attributedCreativeId = null;
@@ -898,16 +900,16 @@ export class AdvertisingAIService {
 
     if (touchpoints?.length > 0) {
       if (attributionModel === "last_click") {
-        const _lastTouch = touchpoints[touchpoints?.length - 1];
+        const lastTouch = touchpoints[touchpoints?.length - 1];
         attributedCreativeId = lastTouch?.creativeId;
       } else if (attributionModel === "first_click") {
-        const _firstTouch = touchpoints[0];
+        const firstTouch = touchpoints[0];
         attributedCreativeId = firstTouch?.creativeId;
       } else if (attributionModel === "linear") {
         // For linear, use the most frequent creative
         const creativeFreq: Record<string, number> = {};
         for (const tp of touchpoints) {
-          creativeFreq[tp?.creativeId] = (creativeFreq[tp?.creativeId] || 0) + 1;
+          creativeFreq[tp.creativeId] = (creativeFreq[tp?.creativeId] || 0) + 1;
         }
         attributedCreativeId = Object?.keys(creativeFreq).reduce((a, b) =>
           creativeFreq[a] > creativeFreq[b] ? a : b,
@@ -916,27 +918,27 @@ export class AdvertisingAIService {
     }
 
     // Calculate metrics
-    const _campaign = await db
+    const campaign = await db
       .select()
       .from(adCampaigns)
       .where(eq(adCampaigns?.id, campaignId))
       .limit(1);
-    const _campaignBudget = campaign[0]?.budget || 1000;
+    const campaignBudget = campaign[0]?.budget || 1000;
 
     // Get total conversions for this campaign
-    const _existingConversions = await db
+    const existingConversions = await db
       .select()
       .from(adConversions)
       .where(eq(adConversions?.campaignId, campaignId));
 
-    const _totalConversions = existingConversions?.length + 1;
-    const _costPerConversion = campaignBudget / totalConversions;
+    const totalConversions = existingConversions?.length + 1;
+    const costPerConversion = campaignBudget / totalConversions;
 
-    const _totalRevenue = existingConversions?.reduce(
+    const totalRevenue = existingConversions?.reduce(
       (sum, c) => sum + parseFloat(c?.conversionValue?.toString() || "0"),
       conversionValue,
     );
-    const _roas = campaignBudget > 0 ? totalRevenue / campaignBudget : 0;
+    const roas = campaignBudget > 0 ? totalRevenue / campaignBudget : 0;
 
     // Store conversion
     await db?.insert(adConversions).values({
@@ -945,16 +947,16 @@ export class AdvertisingAIService {
       creativeId: attributedCreativeId,
       audienceSegmentId: attributedSegmentId,
       conversionType,
-      conversionValue: conversionValue?.toFixed(2),
+      conversionValue: conversionValue.toFixed(2),
       attributionModel,
-      touchpoints: touchpoints?.map((tp) => ({
-        timestamp: tp?.timestamp || new Date().toISOString(),
-        platform: tp?.platform || "unknown",
-        creativeId: tp?.creativeId || "",
-        interaction: tp?.interaction || "view",
+      touchpoints: touchpoints.map((tp) => ({
+        timestamp: tp.timestamp || new Date().toISOString(),
+        platform: tp.platform || "unknown",
+        creativeId: tp.creativeId || "",
+        interaction: tp.interaction || "view",
       })),
-      costPerConversion: costPerConversion?.toFixed(2),
-      roas: roas?.toFixed(2),
+      costPerConversion: costPerConversion.toFixed(2),
+      roas: roas.toFixed(2),
       metadata: {
         totalCampaignConversions: totalConversions,
         totalCampaignRevenue: totalRevenue,
@@ -962,7 +964,7 @@ export class AdvertisingAIService {
     });
 
     // Record AI inference for conversion analysis
-    const _outputs = {
+    const outputs = {
       conversionId: `conv_${Date?.now()}`,
       campaignId,
       conversionType,
@@ -970,13 +972,13 @@ export class AdvertisingAIService {
       attribution: {
         model: attributionModel,
         attributedCreativeId,
-        touchpointCount: touchpoints?.length,
+        touchpointCount: touchpoints.length,
       },
       metrics: {
-        costPerConversion: costPerConversion?.toFixed(2),
-        roas: roas?.toFixed(2),
+        costPerConversion: costPerConversion.toFixed(2),
+        roas: roas.toFixed(2),
         totalConversions,
-        totalRevenue: totalRevenue?.toFixed(2),
+        totalRevenue: totalRevenue.toFixed(2),
       },
     };
 
@@ -985,7 +987,7 @@ export class AdvertisingAIService {
       modelVersion: "conversion_tracker_v1",
       inferenceInputs: { campaignId, conversionType, attributionModel },
       inferenceOutputs: outputs,
-      executionTime: Date?.now() - startTime,
+      executionTime: Date.now() - startTime,
       deterministic: true,
     });
 
@@ -1000,19 +1002,19 @@ export class AdvertisingAIService {
     campaignSettings: CampaignSettings,
     duration: number,
   ): Promise<Record<string, unknown>> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
 
     const { campaignId, budget = 0, platforms } = campaignSettings;
 
     // Deterministic forecasting
-    const _seed = (campaignId || 1) * 11111;
-    const _random = this?.seededRandom(seed);
+    const seed = (campaignId || 1) * 11111;
+    const random = this?.seededRandom(seed);
 
-    const _dailyBudget = budget / duration;
+    const dailyBudget = budget / duration;
 
     // Generate daily projections
-    const _dailyProjections = [];
-    const _weeklyProjections = [];
+    const dailyProjections = [];
+    const weeklyProjections = [];
 
     let cumulativeReach = 0;
     let cumulativeImpressions = 0;
@@ -1022,20 +1024,20 @@ export class AdvertisingAIService {
 
     for (let day = 1; day <= duration; day++) {
       // Deterministic growth curve (S-curve adoption)
-      const _growthFactor = 1 / (1 + Math?.exp(-0.1 * (day - duration / 2)));
-      const _dailyMultiplier = 0.5 + growthFactor;
+      const growthFactor = 1 / (1 + Math?.exp(-0.1 * (day - duration / 2)));
+      const dailyMultiplier = 0.5 + growthFactor;
 
-      const _dailyReach = Math?.floor(
+      const dailyReach = Math?.floor(
         dailyBudget * 100 * dailyMultiplier * (1 + (random() - 0.5) * 0.2),
       );
-      const _dailyImpressions = Math?.floor(dailyReach * (2 + random()));
-      const _dailyClicks = Math?.floor(
+      const dailyImpressions = Math?.floor(dailyReach * (2 + random()));
+      const dailyClicks = Math?.floor(
         dailyImpressions * (0.02 + random() * 0.03),
       );
-      const _dailyConversions = Math?.floor(
+      const dailyConversions = Math?.floor(
         dailyClicks * (0.03 + random() * 0.02),
       );
-      const _dailySpendActual = dailyBudget * (0.9 + random() * 0.2); // 90-110% of budget
+      const dailySpendActual = dailyBudget * (0.9 + random() * 0.2); // 90-110% of budget
 
       cumulativeReach += dailyReach;
       cumulativeImpressions += dailyImpressions;
@@ -1050,49 +1052,49 @@ export class AdvertisingAIService {
           .split("T")[0],
         reach: {
           value: dailyReach,
-          lowerBound: Math?.floor(dailyReach * 0.8),
-          upperBound: Math?.floor(dailyReach * 1.2),
+          lowerBound: Math.floor(dailyReach * 0.8),
+          upperBound: Math.floor(dailyReach * 1.2),
         },
         impressions: {
           value: dailyImpressions,
-          lowerBound: Math?.floor(dailyImpressions * 0.8),
-          upperBound: Math?.floor(dailyImpressions * 1.2),
+          lowerBound: Math.floor(dailyImpressions * 0.8),
+          upperBound: Math.floor(dailyImpressions * 1.2),
         },
         clicks: {
           value: dailyClicks,
-          lowerBound: Math?.floor(dailyClicks * 0.7),
-          upperBound: Math?.floor(dailyClicks * 1.3),
+          lowerBound: Math.floor(dailyClicks * 0.7),
+          upperBound: Math.floor(dailyClicks * 1.3),
         },
         conversions: {
           value: dailyConversions,
-          lowerBound: Math?.floor(dailyConversions * 0.6),
-          upperBound: Math?.floor(dailyConversions * 1.4),
+          lowerBound: Math.floor(dailyConversions * 0.6),
+          upperBound: Math.floor(dailyConversions * 1.4),
         },
         spend: {
-          value: Math?.round(dailySpendActual),
-          lowerBound: Math?.round(dailySpendActual * 0.95),
-          upperBound: Math?.round(dailySpendActual * 1.05),
+          value: Math.round(dailySpendActual),
+          lowerBound: Math.round(dailySpendActual * 0.95),
+          upperBound: Math.round(dailySpendActual * 1.05),
         },
       });
 
       // Weekly aggregation
       if (day % 7 === 0 || day === duration) {
-        const _weekStart = Math?.floor((day - 1) / 7) * 7 + 1;
-        const _weekData = dailyProjections?.slice(weekStart - 1, day);
+        const weekStart = Math?.floor((day - 1) / 7) * 7 + 1;
+        const weekData = dailyProjections?.slice(weekStart - 1, day);
 
         weeklyProjections?.push({
-          week: Math?.ceil(day / 7),
-          totalReach: weekData?.reduce((sum, d) => sum + d?.reach.value, 0),
-          totalImpressions: weekData?.reduce(
+          week: Math.ceil(day / 7),
+          totalReach: weekData.reduce((sum, d) => sum + d?.reach.value, 0),
+          totalImpressions: weekData.reduce(
             (sum, d) => sum + d?.impressions.value,
             0,
           ),
-          totalClicks: weekData?.reduce((sum, d) => sum + d?.clicks.value, 0),
-          totalConversions: weekData?.reduce(
+          totalClicks: weekData.reduce((sum, d) => sum + d?.clicks.value, 0),
+          totalConversions: weekData.reduce(
             (sum, d) => sum + d?.conversions.value,
             0,
           ),
-          totalSpend: Math?.round(
+          totalSpend: Math.round(
             weekData?.reduce((sum, d) => sum + d?.spend.value, 0),
           ),
         });
@@ -1100,17 +1102,17 @@ export class AdvertisingAIService {
     }
 
     // Early warning system
-    const _warnings = [];
-    const _expectedCTR = 0.025;
+    const warnings = [];
+    const expectedCTR = 0.025;
 
     if (dailyProjections?.length > 7) {
-      const _week1Clicks = dailyProjections
+      const week1Clicks = dailyProjections
         .slice(0, 7)
         .reduce((sum, d) => sum + d?.clicks.value, 0);
-      const _week1Impressions = dailyProjections
+      const week1Impressions = dailyProjections
         .slice(0, 7)
         .reduce((sum, d) => sum + d?.impressions.value, 0);
-      const _actualCTR = week1Clicks / week1Impressions;
+      const actualCTR = week1Clicks / week1Impressions;
 
       if (actualCTR < expectedCTR * 0.7) {
         warnings?.push({
@@ -1124,13 +1126,13 @@ export class AdvertisingAIService {
     }
 
     // Summary
-    const _summary = {
+    const summary = {
       totalDuration: duration,
       projectedReach: cumulativeReach,
       projectedImpressions: cumulativeImpressions,
       projectedClicks: cumulativeClicks,
       projectedConversions: cumulativeConversions,
-      projectedSpend: Math?.round(cumulativeSpend),
+      projectedSpend: Math.round(cumulativeSpend),
       projectedROI:
         cumulativeSpend > 0
           ? (
@@ -1145,7 +1147,7 @@ export class AdvertisingAIService {
     };
 
     // Record AI inference
-    const _outputs = {
+    const outputs = {
       campaignId,
       duration,
       dailyProjections,
@@ -1160,7 +1162,7 @@ export class AdvertisingAIService {
       modelVersion: "campaign_forecaster_v1",
       inferenceInputs: { campaignId, budget, duration, platforms },
       inferenceOutputs: outputs,
-      executionTime: Date?.now() - startTime,
+      executionTime: Date.now() - startTime,
       deterministic: true,
     });
 
@@ -1178,16 +1180,16 @@ export class AdvertisingAIService {
   private calculateViralityScore(creative: AdCreative): number {
     let score = 50; // baseline
 
-    const _text = creative?.normalizedContent || creative?.rawContent || "";
+    const text = creative?.normalizedContent || creative?.rawContent || "";
 
     // Text engagement factors
-    const _hashtagCount = (text?.match(/#/g) || []).length;
-    const _questionCount = (text?.match(/\?/g) || []).length;
-    const _emojiCount = (
+    const hashtagCount = (text?.match(/#/g) || []).length;
+    const questionCount = (text?.match(/\?/g) || []).length;
+    const emojiCount = (
       text?.match(new RegExp("[\\u{1F300}-\\u{1F9FF}]", "gu")) || []
     ).length;
-    const _mentionCount = (text?.match(/@\w+/g) || []).length;
-    const _wordCount = text?.split(/\s+/).length;
+    const mentionCount = (text?.match(/@\w+/g) || []).length;
+    const wordCount = text?.split(/\s+/).length;
 
     // Hashtag virality (discovery mechanism)
     score += Math?.min(hashtagCount * 5, 20); // +5 per hashtag, max +20
@@ -1208,7 +1210,7 @@ export class AdvertisingAIService {
 
     // Media multiplier (visual content performs 10x better organically)
     if (creative?.assetUrls && creative?.assetUrls.length > 0) {
-      const _mediaBonus = creative?.contentType === "video" ? 20 : 15;
+      const mediaBonus = creative?.contentType === "video" ? 20 : 15;
       score += mediaBonus;
     }
 
@@ -1223,7 +1225,7 @@ export class AdvertisingAIService {
    */
   private calculateOrganicReachMultiplier(viralityScore: number): number {
     let multiplier = 1.0;
-    const _viralityBonus = (viralityScore / 100) * 1.5;
+    const viralityBonus = (viralityScore / 100) * 1.5;
     multiplier += viralityBonus;
     multiplier += 0.8; // engagement bonus
     multiplier += 0.6; // algorithm bonus
@@ -1242,28 +1244,28 @@ export class AdvertisingAIService {
     const predictions: Record<string, PlatformMetrics> = {};
 
     for (const platform of platforms) {
-      const _baselineMetrics = this?.getOrganicBaselineMetrics(platform);
-      const _contentMultiplier = this?.getContentTypeMultiplier(
+      const baselineMetrics = this?.getOrganicBaselineMetrics(platform);
+      const contentMultiplier = this?.getContentTypeMultiplier(
         creative?.contentType,
         platform,
       );
 
       predictions[platform] = {
-        estimatedReach: Math?.round(
+        estimatedReach: Math.round(
           baselineMetrics?.avgFollowerReach * contentMultiplier,
         ),
-        estimatedEngagement: baselineMetrics?.engagementRate * contentMultiplier,
-        estimatedShares: Math?.round(
+        estimatedEngagement: baselineMetrics.engagementRate * contentMultiplier,
+        estimatedShares: Math.round(
           baselineMetrics?.avgShares * contentMultiplier,
         ),
-        estimatedClicks: Math?.round(
+        estimatedClicks: Math.round(
           baselineMetrics?.avgClicks * contentMultiplier,
         ),
-        estimatedSaves: Math?.round(
+        estimatedSaves: Math.round(
           baselineMetrics?.avgSaves * contentMultiplier,
         ),
         confidence: 0.85,
-        costSavings: this?.calculatePlatformAdCost(
+        costSavings: this.calculatePlatformAdCost(
           platform,
           baselineMetrics?.avgFollowerReach,
         ),
@@ -1386,8 +1388,8 @@ export class AdvertisingAIService {
     };
 
     for (const [platform, metrics] of Object?.entries(platformPerformance)) {
-      const _costPerEngagement = adCosts[platform] || 0.5;
-      const _organicEngagements =
+      const costPerEngagement = adCosts[platform] || 0.5;
+      const organicEngagements =
         metrics?.estimatedReach * metrics?.estimatedEngagement;
       totalSavings += organicEngagements * costPerEngagement;
     }
@@ -1415,10 +1417,10 @@ export class AdvertisingAIService {
    */
   private generateEngagementOptimizations(
     creative: AdCreative,
-    _platformPerformance: Record<string, PlatformMetrics>,
+    platformPerformance: Record<string, PlatformMetrics>,
   ): string[] {
     const optimizations: string[] = [];
-    const _text = creative?.normalizedContent || creative?.rawContent || "";
+    const text = creative?.normalizedContent || creative?.rawContent || "";
 
     if (text?.length < 50) {
       optimizations?.push(
@@ -1426,7 +1428,7 @@ export class AdvertisingAIService {
       );
     }
 
-    const _hashtagCount = (text?.match(/#/g) || []).length;
+    const hashtagCount = (text?.match(/#/g) || []).length;
     if (hashtagCount < 3) {
       optimizations?.push(
         "Add 3-5 relevant hashtags to increase organic discovery (+50% reach)",
@@ -1493,7 +1495,7 @@ export class AdvertisingAIService {
    * Extract creative features for AI analysis
    */
   private extractCreativeFeatures(creative: AdCreative): CreativeFeatures {
-    const _text = creative?.normalizedContent || creative?.rawContent || "";
+    const text = creative?.normalizedContent || creative?.rawContent || "";
 
     return {
       visualElements:
@@ -1502,19 +1504,19 @@ export class AdvertisingAIService {
             ? ["video"]
             : ["image"]
           : ["text-only"],
-      copyLength: text?.length,
+      copyLength: text.length,
       ctaPlacement:
         text?.toLowerCase().includes("link") ||
         text?.toLowerCase().includes("click")
           ? "explicit"
           : "implicit",
-      emotionalTone: this?.detectEmotionalTone(text),
+      emotionalTone: this.detectEmotionalTone(text),
       colorScheme: "default", // Would analyze image if available
       hasHashtags: (text?.match(/#/g) || []).length > 0,
       hasEmojis:
         (text?.match(new RegExp("[\\u{1F300}-\\u{1F9FF}]", "gu")) || []).length >
         0,
-      hasQuestions: text?.includes("?"),
+      hasQuestions: text.includes("?"),
       hasMentions: (text?.match(/@\w+/g) || []).length > 0,
     };
   }
@@ -1523,7 +1525,7 @@ export class AdvertisingAIService {
    * Detect emotional tone from text
    */
   private detectEmotionalTone(text: string): string {
-    const _lowerText = text?.toLowerCase();
+    const lowerText = text?.toLowerCase();
 
     if (lowerText?.match(/excit|amaz|love|great|awesome|incredible/))
       return "excited";
@@ -1564,7 +1566,7 @@ export class AdvertisingAIService {
    * Get bid strategy for platform and goals
    */
   private getBidStrategy(platform: string, goals: BudgetGoals): string {
-    const _objective = goals?.objective || "engagement";
+    const objective = goals?.objective || "engagement";
 
     const strategies: Record<string, Record<string, string>> = {
       engagement: {
@@ -1613,7 +1615,7 @@ export class AdvertisingAIService {
   private hashString(str: string): number {
     let hash = 0;
     for (let i = 0; i < str?.length; i++) {
-      const _char = str?.charCodeAt(i);
+      const char = str?.charCodeAt(i);
       hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }

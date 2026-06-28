@@ -58,7 +58,7 @@ async function loadOptionalModules() {
     initializeWorkers = workers?.value.initializeWorkers;
 }
 
-const _app = express();
+const app = express();
 
 // securityMiddleware (server/middleware/security?.ts) applies the canonical
 // helmet instance with a production-aware CSP (no unsafe-inline/-eval in prod).
@@ -93,15 +93,15 @@ app?.use(cookieParser());
 
 // Fast-path health endpoint: must be registered BEFORE session/PDIM middleware so
 // Replit's health checker always gets an instant response regardless of PDIM load.
-app?.use((req, res, next) => {
-  if (req?.path === "/api/health") {
-    res?.json({ status: "ok", timestamp: new Date().toISOString() });
+app.use((req, res, next) => {
+  if (req.path === "/api/health") {
+    res.json({ status: "ok", timestamp: new Date().toISOString() });
     return;
   }
   next();
 });
 
-const _httpServer = createServer(app);
+const httpServer = createServer(app);
 
 // keepAliveTimeout MUST exceed the upstream load-balancer idle timeout (~60 s on Replit Autoscale).
 // If Node closes a keep-alive socket before the LB does, the LB sends a request on a dead socket
@@ -126,7 +126,7 @@ httpServer?.on("connection", (socket) => {
 // requests that arrive before they are ready will get 404/503 for a few seconds,
 // which is acceptable; the deployment health check only needs /health to pass.
 {
-  const __earlyPort = env?.PORT;
+  const _earlyPort = env?.PORT;
   httpServer?.listen(
     { port: _earlyPort, host: "0.0.0.0", reusePort: true },
     () =>
@@ -140,7 +140,7 @@ httpServer?.on("connection", (socket) => {
 // Using an IP allowlist (Cloudflare ranges + private/loopback) is more secure than a hop
 // count: Express only trusts X-Forwarded-For when the socket connection itself comes from
 // a listed IP, preventing clients from spoofing their IP by injecting header values.
-app?.set("trust proxy", buildTrustProxyValue());
+app.set("trust proxy", buildTrustProxyValue());
 
 // Cloudflare integration — extracts real client IP from CF-Connecting-IP (validated against
 // Cloudflare's published IP ranges), adds no-store headers on /api routes, and annotates
@@ -202,7 +202,7 @@ app?.get("/.well-known/security.txt", (_req, res) => {
   res
     .type("text/plain")
     .send(
-      "Contact: mailto:security@max-booster?.com\n" +
+      "Contact: mailto:security@max-booster.com\n" +
         "Expires: 2027-01-01T00:00:00.000Z\n" +
         "Preferred-Languages: en\n" +
         "Policy: https://max-booster.com/security-policy\n",
@@ -246,7 +246,7 @@ app?.use(
     maxAge: 0,
     setHeaders: (res, filePath) => {
       if (filePath?.endsWith("sw.js")) {
-        res?.setHeader("Content-Type", "application/javascript; charset=utf-8");
+        res.setHeader("Content-Type", "application/javascript; charset=utf-8");
         res?.setHeader("Service-Worker-Allowed", "/");
         res?.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
       }
@@ -329,7 +329,7 @@ app?.use(
 );
 
 export function log(message: string, source = "express") {
-  const _formattedTime = new Date().toLocaleTimeString("en-US", {
+  const formattedTime = new Date().toLocaleTimeString("en-US", {
     hour: "numeric",
     minute: "2-digit",
     second: "2-digit",
@@ -340,22 +340,22 @@ export function log(message: string, source = "express") {
 }
 
 app?.use((req, res, next) => {
-  const _start = Date?.now();
-  const _path = req?.path;
+  const start = Date?.now();
+  const path = req?.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
-  const _originalResJson = res?.json;
+  const originalResJson = res?.json;
   res.json = function (bodyJson, ...args) {
     capturedJsonResponse = bodyJson;
     return originalResJson?.apply(res, [bodyJson, ...args]);
   };
 
   res?.on("finish", () => {
-    const _duration = Date?.now() - start;
+    const duration = Date?.now() - start;
     if (path?.startsWith("/api")) {
       let logLine = `${req?.method} ${path} ${res?.statusCode} in ${duration}ms`;
       if (capturedJsonResponse && !isProductionEnv()) {
-        const _responseStr = JSON?.stringify(capturedJsonResponse);
+        const responseStr = JSON?.stringify(capturedJsonResponse);
         logLine += ` :: ${responseStr?.length > 500 ? responseStr?.substring(0, 500) + "...[truncated]" : responseStr}`;
       }
 
@@ -372,7 +372,7 @@ app?.use((req, res, next) => {
 // after boot.  During that window, any browser request to GET / (or any non-API
 // route) falls through with no handler and returns 404.
 //
-// This middleware fires BEFORE all API routes.  It serves dist/index.html for
+// This middleware fires BEFORE all API routes.  It serves dist/index?.html for
 // non-API GET requests during the startup window only.  Once Vite or
 // serveStatic registers its own catch-all (_spaHandlerReady = true), this
 // middleware calls next() immediately and is completely transparent.
@@ -386,7 +386,7 @@ let _spaHandlerReady = false;
 // The early-boot stubs check this flag and call next() once routes are loaded,
 // handing off to the real handlers in routes?.ts.
 let _routesReady = false;
-const __spaFallbackIndexPath = path?.resolve(
+const _spaFallbackIndexPath = path?.resolve(
   process?.cwd(),
   "dist",
   "public",
@@ -441,7 +441,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     return next();
   // Static assets (JS chunks, CSS, images, fonts) must not receive an HTML
   // shell during the boot window — they must reach the express?.static handler.
-  const _assetExt =
+  const assetExt =
     /\.(js|css|png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|eot|map|json)$/i;
   if (req?.path.startsWith("/assets/") || assetExt?.test(req?.path)) return next();
   // Serve the pre-built SPA shell if it exists.  In development this is the
@@ -451,10 +451,10 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     res?.setHeader("X-Boot-Fallback", "1");
     return res?.sendFile(_spaFallbackIndexPath);
   }
-  // In dev mode (no built index.html) serve a minimal loading page so mobile
+  // In dev mode (no built index?.html) serve a minimal loading page so mobile
   // browsers see something instead of a white screen during the boot window.
   res?.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-  res?.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
   res?.setHeader("X-Boot-Fallback", "1");
   res?.status(200).send(`<!DOCTYPE html>
 <html lang="en">
@@ -509,7 +509,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   // in one parallel Promise?.all.  Removing them from the module's static
   // import graph means the synchronous code above (express setup + listen())
   // now completes in < 50 ms instead of waiting 30–60 s for the route tree /
-  // TF?.js / distributedCache / DB pool to initialise before listen() is called.
+  // TF.js / distributedCache / DB pool to initialise before listen() is called.
   const [
     { registerRoutes },
     { serveStatic, serveStaticFiles },
@@ -520,7 +520,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     { originValidation },
     { distributedCache },
     prometheusModule,
-  ] = await Promise?.all([
+  ] = await Promise.all([
     import("./routes.js"),
     import("./static.js"),
     import("express-session"),
@@ -531,14 +531,14 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     import("./infrastructure/distributedCache.js"),
     import("./routes/prometheus.js"),
   ]);
-  const _prometheusRouter = (prometheusModule as { default?: unknown }).default;
+  const prometheusRouter = (prometheusModule as { default?: unknown }).default;
   const { httpRequestDuration, httpRequestTotal } = prometheusModule as {
     httpRequestDuration: unknown;
     httpRequestTotal: unknown;
   };
 
   // ── Early static file serving ─────────────────────────────────────────────
-  // Register express?.static for dist/public BEFORE session middleware is wired.
+  // Register express.static for dist/public BEFORE session middleware is wired.
   // Static asset requests (favicon, /assets/*.js, /assets/*.css, images) must
   // never pay the cost of a PDIM session lookup.  During PDIM 429 bursts at
   // startup, session lookups can block for hundreds of milliseconds, inflating
@@ -549,7 +549,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   // Always register static file serving — not just in production.
   // In dev mode the pre-built dist/public/assets/ files (hashed JS/CSS chunks)
   // need to be served during the ~10 s boot window before Vite middleware loads.
-  // express?.static() calls next() for unknown paths so Vite's own module graph
+  // express.static() calls next() for unknown paths so Vite's own module graph
   // (/@vite/client, /src/...) is unaffected.
   serveStaticFiles(app);
   logger?.info(
@@ -559,19 +559,19 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   // Load optional modules in background — they're only used inside setImmediate
   // blocks that fire after all sync setup completes, so awaiting here just adds
   // latency without any ordering benefit.
-  const __optionalModulesReady = loadOptionalModules().catch((e) =>
-    logger?.warn(
+  const _optionalModulesReady = loadOptionalModules().catch((e) =>
+    logger.warn(
       "[boot] Optional module load error (non-blocking):",
-      e?.message,
+      e.message,
     ),
   );
 
   // Determine once whether this process is the designated background worker.
-  // In cluster mode CLUSTER_WORKER_ID is injected by cluster?.ts for each forked
+  // In cluster mode CLUSTER_WORKER_ID is injected by cluster.ts for each forked
   // worker (0, 1, 2, …).  In single-process mode (dev / DISABLE_CLUSTER) it is
   // undefined — treat that as the BG worker so everything still runs.
-  const _clusterId = process?.env.CLUSTER_WORKER_ID;
-  const _isBgWorker = clusterId === undefined || clusterId === "0";
+  const clusterId = process.env.CLUSTER_WORKER_ID;
+  const isBgWorker = clusterId === undefined || clusterId === "0";
 
   // DatabaseLogTransport is disabled: even a single-worker process can exhaust
   // Neon's connection limit when the regular query pool is busy, triggering
@@ -639,11 +639,11 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   // ========================================
   // SESSION STORE INITIALIZATION (PRODUCTION-READY)
   // ========================================
-  const _isProduction = isProductionEnv();
+  const isProduction = isProductionEnv();
 
   // Validate SESSION_SECRET in production - abort if missing or weak
   if (isProduction) {
-    const _sessionSecret = env?.SESSION_SECRET;
+    const sessionSecret = env?.SESSION_SECRET;
     if (!sessionSecret) {
       logger?.warn(
         "❌ CRITICAL: SESSION_SECRET environment variable is required in production",
@@ -663,7 +663,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   let activeSessionStore: import("express-session").Store | null = null;
 
   activeSessionStore = await createSessionStore();
-  const _sessionConfig = getSessionConfig(activeSessionStore);
+  const sessionConfig = getSessionConfig(activeSessionStore);
   app?.use(session(sessionConfig));
   logger?.info("✅ Session store initialized (PDIM)");
 
@@ -717,7 +717,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   // INITIALIZE PRODUCTION SAFETY SYSTEMS
   // ========================================
   try {
-    const _safetyResult = await initializeSafetySystems();
+    const safetyResult = await initializeSafetySystems();
     if (!safetyResult?.success) {
       logger?.warn(
         `⚠️ Safety systems initialized with warnings: ${safetyResult?.errors.join(", ")}`,
@@ -827,7 +827,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
              status      = 'active',
              updated_at  = NOW()
         FROM claimed_domains cd
-       WHERE cd.domain          = z?.domain
+       WHERE cd.domain          = z.domain
          AND cd.registrar_name  = 'maxbooster'
          AND (z.is_verified = false OR z.status = 'pending')
     `);
@@ -921,8 +921,8 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       next,
     ) => {
       if (req?.method !== "GET") return next();
-      const _basePath = req?.path.replace(/\/$/, "") || req?.path;
-      const _ttl = cachedRoutes[basePath];
+      const basePath = req?.path.replace(/\/$/, "") || req?.path;
+      const ttl = cachedRoutes[basePath];
       if (ttl)
         return cacheMiddleware({ ttlSeconds: ttl, varyByUser: true })(
           req,
@@ -950,7 +950,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     };
     app?.use("/api", (req, res, next) => {
       if (req?.method !== "GET") return next();
-      const _directive = SWR_ROUTES[req?.path.replace(/\/$/, "") || req?.path];
+      const directive = SWR_ROUTES[req?.path.replace(/\/$/, "") || req?.path];
       if (directive && !res?.getHeader("Cache-Control")) {
         res?.setHeader("Cache-Control", directive);
       }
@@ -967,24 +967,24 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   }
 
   // Prometheus metrics endpoint (before routes so it's always reachable)
-  app?.use(prometheusRouter);
+  app.use(prometheusRouter);
 
   // HTTP request duration instrumentation for Prometheus
-  app?.use((req: Request, res: Response, next: NextFunction) => {
-    const _start = Date?.now();
-    res?.on("finish", () => {
-      const _route =
-        req?.route?.path ||
-        req?.path.replace(/\/[0-9a-f-]{36}/gi, "/:id") ||
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    const start = Date.now();
+    res.on("finish", () => {
+      const route =
+        req.route?.path ||
+        req.path.replace(/\/[0-9a-f-]{36}/gi, "/:id") ||
         "unknown";
-      const _durationSecs = (Date?.now() - start) / 1000;
-      const _labels = {
-        method: req?.method,
+      const durationSecs = (Date.now() - start) / 1000;
+      const labels = {
+        method: req.method,
         route,
-        status_code: String(res?.statusCode),
+        status_code: String(res.statusCode),
       };
-      httpRequestDuration?.observe(labels, durationSecs);
-      httpRequestTotal?.inc(labels);
+      httpRequestDuration.observe(labels, durationSecs);
+      httpRequestTotal.inc(labels);
     });
     next();
   });
@@ -992,27 +992,27 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   const { multiTenantRouter } = await import(
     "./middleware/multiTenantRouter.js"
   );
-  app?.use(multiTenantRouter);
+  app.use(multiTenantRouter);
 
   // Web Vitals ingestion endpoint — receives Core Web Vitals from the SPA.
   // Lightweight: log structured metric, no auth (any browser can post their own
   // perf numbers). Rate-limited via the global API limiter.
-  app?.post(
+  app.post(
     "/api/metrics/web-vitals",
-    express?.json({ limit: "8kb" }),
+    express.json({ limit: "8kb" }),
     (req, res) => {
       try {
-        const { name, value, rating, page } = req?.body || {};
+        const { name, value, rating, page } = req.body || {};
         if (typeof name !== "string" || typeof value !== "number") {
-          return res?.status(400).json({ ok: false });
+          return res.status(400).json({ ok: false });
         }
-        logger?.info(
-          { metric: name, value, rating, page, ua: req?.get("user-agent") },
+        logger.info(
+          { metric: name, value, rating, page, ua: req.get("user-agent") },
           "[web-vitals]",
         );
-        return res?.status(204).end();
+        return res.status(204).end();
       } catch {
-        return res?.status(204).end();
+        return res.status(204).end();
       }
     },
   );
@@ -1023,7 +1023,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     "./lib/bootState.js"
   );
   _setRoutesReady();
-  logger?.info(
+  logger.info(
     "[Boot] Routes registered — boot stubs deactivated, real handlers active",
   );
 
@@ -1033,9 +1033,9 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     const { mobilePushService } = await import(
       "./services/mobilePushService.js"
     );
-    logger?.info(`📱 Mobile Push Service mode: ${mobilePushService?.getMode()}`);
+    logger.info(`📱 Mobile Push Service mode: ${mobilePushService.getMode()}`);
   } catch (e) {
-    logger?.warn(
+    logger.warn(
       "[MobilePush] Failed to initialize at startup:",
       (e as Error).message,
     );
@@ -1044,11 +1044,11 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     const { desktopPushService } = await import(
       "./services/desktopPushService.js"
     );
-    logger?.info(
-      `🖥️  Desktop Push Service ready: ${desktopPushService?.isReady()}`,
+    logger.info(
+      `🖥️  Desktop Push Service ready: ${desktopPushService.isReady()}`,
     );
   } catch (e) {
-    logger?.warn(
+    logger.warn(
       "[DesktopPush] Failed to initialize at startup:",
       (e as Error).message,
     );
@@ -1060,7 +1060,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     const { registerCoreProbes } = await import("./lib/healthRegistry.js");
     registerCoreProbes();
   } catch (err) {
-    logger?.warn({ err }, "[Health] Failed to register core probes");
+    logger.warn({ err }, "[Health] Failed to register core probes");
   }
 
   // Start retention background services
@@ -1068,8 +1068,8 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     const { reEngagementService } = await import(
       "./services/reEngagementService.js"
     );
-    reEngagementService?.startDailyCron();
-    logger?.info("[Retention] Re-engagement cron started");
+    reEngagementService.startDailyCron();
+    logger.info("[Retention] Re-engagement cron started");
 
     // ACME / Let's Encrypt renewal cron — no-ops cleanly when ACME_ENABLED!=true
     const { startAcmeRenewalCron } = await import("./services/acmeClient.js");
@@ -1088,7 +1088,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     const { getRetentionQueue, startRetentionWorker } = await import(
       "./lib/scaleJobQueue.js"
     );
-    const _retentionQueue = getRetentionQueue();
+    const retentionQueue = getRetentionQueue();
     startRetentionWorker();
 
     setInterval(
@@ -1150,7 +1150,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       "[Engagement] Social engagement refresh cron started (8h interval)",
     );
   } catch (retentionErr) {
-    const _errMsg =
+    const errMsg =
       retentionErr instanceof Error
         ? `${retentionErr?.message}\n${retentionErr?.stack}`
         : String(retentionErr);
@@ -1173,15 +1173,15 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
 
   // SEO routes must be registered before global error handler so their errors are caught
   try {
-    const _seoRoutes = (await import("./routes/seo.js")).default;
+    const seoRoutes = (await import("./routes/seo.js")).default;
     app?.use(seoRoutes);
   } catch (e) {
     logger?.warn(`⚠️ SEO routes not available: ${e?.message}`);
   }
 
   // ── Platform Subdomain Router ────────────────────────────────────────────────
-  // Handles requests to {label}.max-booster.com — Max Booster's built-in
-  // storefront subdomain system.  Each artist can claim e?.g. beatsby?.max-booster.com
+  // Handles requests to {label}.max-booster?.com — Max Booster's built-in
+  // storefront subdomain system.  Each artist can claim e.g. beatsby.max-booster.com
   // and this middleware resolves the label → storefront slug and serves the SPA.
   //
   // Requires a wildcard DNS record at the registrar:
@@ -1190,14 +1190,14 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   // API + asset paths are passed through so the full app still works on the subdomain.
   app?.use(async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const _BASE = process?.env.BASE_DOMAIN || "max-booster.com";
-      const _host = req?.hostname ?? "";
+      const BASE = process?.env.BASE_DOMAIN || "max-booster.com";
+      const host = req?.hostname ?? "";
 
       // Only intercept true subdomains of the platform domain (not the root itself)
       if (host === BASE || !host?.endsWith(`.${BASE}`)) return next();
 
       // Let API calls, assets, and Vite HMR pass through unchanged
-      const _p = req?.path;
+      const p = req?.path;
       if (
         p?.startsWith("/api/") ||
         p?.startsWith("/assets/") ||
@@ -1206,7 +1206,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       )
         return next();
 
-      const _label = host
+      const label = host
         .slice(0, -`.${BASE}`.length)
         .toLowerCase()
         .replace(/[^a-z0-9-]/g, "");
@@ -1220,12 +1220,12 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         "@shared/schema"
       );
       const { eq, and } = await import("drizzle-orm");
-      const _fqdn = `${label}.${BASE}`;
+      const fqdn = `${label}.${BASE}`;
 
       // 1. storefront_domains registry — any type (managed_subdomain, custom_domain, platform_subdomain)
       const { inArray } = await import("drizzle-orm");
       const [domRow] = await sDb
-        .select({ slug: sStores?.slug })
+        .select({ slug: sStores.slug })
         .from(sDoms)
         .innerJoin(sStores, eq(sDoms?.storefrontId, sStores?.id))
         .where(
@@ -1248,7 +1248,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       //    falling back to slug derived from subdomain label
       const { claimedDomains: cDoms } = await import("@shared/schema");
       const [claimRow] = await sDb
-        .select({ slug: sStores?.slug, storefrontId: cDoms?.storefrontId })
+        .select({ slug: sStores.slug, storefrontId: cDoms.storefrontId })
         .from(cDoms)
         .leftJoin(sStores, eq(cDoms?.storefrontId, sStores?.id))
         .where(eq(cDoms?.domain, fqdn))
@@ -1260,25 +1260,25 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
 
       // 3. Direct slug match (artist's slug == subdomain label)
       const [slugRow] = await sDb
-        .select({ slug: sStores?.slug })
+        .select({ slug: sStores.slug })
         .from(sStores)
-        .where(eq(sStores?.slug, label))
+        .where(eq(sStores.slug, label))
         .limit(1);
 
-      if (slugRow?.slug) {
-        return res?.redirect(302, `/storefront/${slugRow?.slug}`);
+      if (slugRow.slug) {
+        return res.redirect(302, `/storefront/${slugRow.slug}`);
       }
 
       // No match — fall through to SPA (will show not-found)
       return next();
     } catch (err) {
-      logger?.warn({ err }, "[subdomain] routing error");
+      logger.warn({ err }, "[subdomain] routing error");
       return next();
     }
   });
 
   // Storefront short-link: /s/:label → /storefront/:slug (backward compat)
-  app?.get(
+  app.get(
     "/s/:label",
     async (req: Request, res: Response, next: NextFunction) => {
       try {
@@ -1286,48 +1286,48 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         const { storefrontDomains: sDomains, storefronts: sStorefronts } =
           await import("@shared/schema");
         const { eq, and } = await import("drizzle-orm");
-        const _BASE = process?.env.BASE_DOMAIN || "max-booster.com";
-        const _label = String(req?.params.label)
+        const BASE = process.env.BASE_DOMAIN || "max-booster.com";
+        const label = String(req.params.label)
           .toLowerCase()
           .replace(/[^a-z0-9-]/g, "");
 
-        // 1. Check managed subdomain registry (e?.g. b-lawz-music reserved via UI)
-        const _fqdn = `${label}.${BASE}`;
+        // 1. Check managed subdomain registry (e.g. b-lawz-music reserved via UI)
+        const fqdn = `${label}.${BASE}`;
         const [domRow] = await sDb
-          .select({ slug: sStorefronts?.slug })
+          .select({ slug: sStorefronts.slug })
           .from(sDomains)
-          .innerJoin(sStorefronts, eq(sDomains?.storefrontId, sStorefronts?.id))
+          .innerJoin(sStorefronts, eq(sDomains.storefrontId, sStorefronts.id))
           .where(
             and(
-              eq(sDomains?.domain, fqdn),
-              eq(sDomains?.type, "managed_subdomain"),
+              eq(sDomains.domain, fqdn),
+              eq(sDomains.type, "managed_subdomain"),
             ),
           )
           .limit(1);
-        if (domRow?.slug) {
-          return res?.redirect(302, `/storefront/${domRow?.slug}`);
+        if (domRow.slug) {
+          return res.redirect(302, `/storefront/${domRow.slug}`);
         }
 
         // 2. Fall back to direct slug match (label == storefront slug)
         const [slugRow] = await sDb
-          .select({ slug: sStorefronts?.slug })
+          .select({ slug: sStorefronts.slug })
           .from(sStorefronts)
-          .where(eq(sStorefronts?.slug, label))
+          .where(eq(sStorefronts.slug, label))
           .limit(1);
-        if (slugRow?.slug) {
-          return res?.redirect(302, `/storefront/${slugRow?.slug}`);
+        if (slugRow.slug) {
+          return res.redirect(302, `/storefront/${slugRow.slug}`);
         }
 
         return next();
       } catch (err) {
-        logger?.warn({ err: err }, "[/s/:label] lookup error:");
+        logger.warn({ err: err }, "[/s/:label] lookup error:");
         return next();
       }
     },
   );
 
   // MANDATORY global error handler (from safety module) - must be LAST middleware
-  app?.use(safetyErrorHandler);
+  app.use(safetyErrorHandler);
 
   if (isProductionEnv()) {
     serveStatic(app);
@@ -1337,19 +1337,19 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   }
   // Real SPA handler is now registered — disable the boot-time fallback shim.
   _spaHandlerReady = true;
-  logger?.info("✅ [SPA] Vite/static handler ready — boot fallback deactivated");
+  logger.info("✅ [SPA] Vite/static handler ready — boot fallback deactivated");
 
-  // Python AI microservice replaced by MaxCore (https://secure-ai-forge?.replit.app)
+  // Python AI microservice replaced by MaxCore (https://secure-ai-forge.replit.app)
 
   // Server is already listening (early listen above). Kick off deferred init now.
   log(`all middleware and routes registered — kicking off autonomous systems`);
   setImmediate(async () => {
-    logger?.info("");
-    logger?.info(
+    logger.info("");
+    logger.info(
       "🤖 ═══════════════════════════════════════════════════════════",
     );
-    logger?.info("🤖 INITIALIZING AUTONOMOUS SYSTEMS (background)");
-    logger?.info(
+    logger.info("🤖 INITIALIZING AUTONOMOUS SYSTEMS (background)");
+    logger.info(
       "🤖 ═══════════════════════════════════════════════════════════",
     );
 
@@ -1360,53 +1360,53 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     // connecting.  Worker 0 (BG) connects immediately; workers 1 and 2 wait
     // 1.5 s and 3 s respectively.  Total PDIM connection window ≤ 3 s instead
     // of all workers colliding in the same 200 ms window and triggering 429s.
-    const __pdimWorkerDelay =
-      parseInt(process?.env.CLUSTER_WORKER_ID || "0", 10) * 1500;
+    const _pdimWorkerDelay =
+      parseInt(process.env.CLUSTER_WORKER_ID || "0", 10) * 1500;
     if (_pdimWorkerDelay > 0) {
-      logger?.info(
-        `[DistributedCache] Staggering connect by ${_pdimWorkerDelay}ms (worker ${process?.env.CLUSTER_WORKER_ID})`,
+      logger.info(
+        `[DistributedCache] Staggering connect by ${_pdimWorkerDelay}ms (worker ${process.env.CLUSTER_WORKER_ID})`,
       );
       await new Promise((resolve) => setTimeout(resolve, _pdimWorkerDelay));
     }
     try {
-      await distributedCache?.connect();
-      logger?.info("✅ [DistributedCache] Connected (deferred)");
+      await distributedCache.connect();
+      logger.info("✅ [DistributedCache] Connected (deferred)");
       // Start the API cache cross-pod invalidation poller now that PDIM is live.
       // The poller reads PDIM every 100 ms and evicts L1 entries when another pod
       // has signalled an invalidation — equivalent to pub/sub but using PDIM key-polling
-      // (PDIM stubs PUBLISH/SUBSCRIBE as no-ops; see pdimClient?.ts:1080-1084).
+      // (PDIM stubs PUBLISH/SUBSCRIBE as no-ops; see pdimClient.ts:1080-1084).
       try {
         const { apiCache: _ac } = await import("./middleware/apiCache.js");
-        _ac?.startPoller();
+        _ac.startPoller();
       } catch (pollerErr: unknown) {
-        logger?.warn(
-          `⚠️ API cache invalidation poller failed to start: ${(pollerErr as Error)?.message}`,
+        logger.warn(
+          `⚠️ API cache invalidation poller failed to start: ${(pollerErr as Error).message}`,
         );
       }
     } catch (e) {
-      logger?.warn(
-        `⚠️ Distributed cache connect failed (non-fatal, in-memory fallback active): ${e?.message}`,
+      logger.warn(
+        `⚠️ Distributed cache connect failed (non-fatal, in-memory fallback active): ${e.message}`,
       );
     }
 
     // 0a. Stripe products — network call, not needed before first payment request
     try {
-      const _priceIds = await ensureStripeProductsAndPrices();
-      logger?.info("✅ Stripe products and prices initialized");
-      logger?.info(
-        `   Monthly: ${priceIds?.monthly} | Yearly: ${priceIds?.yearly} | Lifetime: ${priceIds?.lifetime}`,
+      const priceIds = await ensureStripeProductsAndPrices();
+      logger.info("✅ Stripe products and prices initialized");
+      logger.info(
+        `   Monthly: ${priceIds.monthly} | Yearly: ${priceIds.yearly} | Lifetime: ${priceIds.lifetime}`,
       );
     } catch (e) {
-      logger?.warn(`❌ Failed to initialize Stripe prices: ${e?.message}`);
+      logger.warn(`❌ Failed to initialize Stripe prices: ${e.message}`);
     }
 
     // 0b. Admin account seeding — idempotent, safe to run after listen
     try {
       const { initializeAdmin } = await import("./init-admin.js");
       await initializeAdmin();
-      logger?.info("✅ Admin account initialized");
+      logger.info("✅ Admin account initialized");
     } catch (e) {
-      logger?.warn(`❌ Failed to initialize admin: ${e?.message}`);
+      logger.warn(`❌ Failed to initialize admin: ${e.message}`);
     }
 
     // 0c. Onboarding task seeding
@@ -1414,10 +1414,10 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       const { onboardingService } = await import(
         "./services/onboardingService.js"
       );
-      await onboardingService?.seedDefaultTasks();
-      await onboardingService?.ensureAITasksExist();
+      await onboardingService.seedDefaultTasks();
+      await onboardingService.ensureAITasksExist();
     } catch (e) {
-      logger?.warn(`⚠️ Could not seed onboarding tasks: ${e?.message}`);
+      logger.warn(`⚠️ Could not seed onboarding tasks: ${e.message}`);
     }
 
     // 0d. Hybrid Storage System (Replit hot + Pocket Dimension cold)
@@ -1425,18 +1425,18 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       const { hybridStorageService } = await import(
         "./services/hybridStorageService.js"
       );
-      await hybridStorageService?.initialize();
-      logger?.info(
+      await hybridStorageService.initialize();
+      logger.info(
         "✅ [Storage] Hybrid Storage initialized (Replit Object Storage + Pocket Dimension)",
       );
 
       // Auto-tiering runs on worker 0 only — it's a maintenance sweep that
       // reads/writes PDIM and does not need to run on every cluster worker.
       if (isBgWorker) {
-        const _autoTierInterval = 6 * 60 * 60 * 1000;
+        const autoTierInterval = 6 * 60 * 60 * 1000;
         setInterval(async () => {
           try {
-            const _result = await hybridStorageService?.runAutoTiering();
+            const result = await hybridStorageService?.runAutoTiering();
             if (result?.tieredDown > 0 || result?.tieredUp > 0) {
               logger?.info(
                 `[Storage] Auto-tiering: ${result?.tieredDown} files moved to cold, ${result?.tieredUp} promoted to hot`,
@@ -1471,8 +1471,8 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
 
     // 1. Autonomous Service (Core)
     try {
-      const _mod = await import("./services/autonomousService.js");
-      const _svc = mod?.autonomousService;
+      const mod = await import("./services/autonomousService.js");
+      const svc = mod?.autonomousService;
       if (svc && typeof svc?.getStatus === "function") {
         // Only start autonomous operations on the background worker (worker 0).
         // All other workers serve HTTP only — running autonomous ops on every
@@ -1487,7 +1487,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
             `[Autonomy] Worker ${clusterId} — autonomous ops handled by worker 0`,
           );
         }
-        const _status = svc?.getStatus();
+        const status = svc?.getStatus();
         logger?.info(
           `✅ [Autonomy] Autonomous Service initialized - Running: ${status?.isRunning}`,
         );
@@ -1511,13 +1511,13 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
 
     // 2. Automation System
     try {
-      const _mod = await import("./automation-system.js");
-      const _AutomationSystemClass = mod?.AutomationSystem ?? mod?.default;
+      const mod = await import("./automation-system.js");
+      const AutomationSystemClass = mod?.AutomationSystem ?? mod?.default;
       if (
         AutomationSystemClass &&
         typeof AutomationSystemClass?.getInstance === "function"
       ) {
-        const _system = AutomationSystemClass?.getInstance();
+        const system = AutomationSystemClass?.getInstance();
         logger?.info("✅ [Autonomy] Automation System initialized");
         killSwitch?.registerSystem("automation-system", {
           kill: () => {
@@ -1536,8 +1536,8 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
 
     // 3. Autonomous Updates Orchestrator
     try {
-      const _mod = await import("./autonomous-updates.js");
-      const _orchestrator =
+      const mod = await import("./autonomous-updates.js");
+      const orchestrator =
         mod?.autonomousUpdates ?? mod?.AutonomousUpdatesOrchestrator;
       if (orchestrator) {
         if (typeof orchestrator?.configure === "function") {
@@ -1566,7 +1566,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     }
 
     // 4-9. Other autonomous modules — load in parallel then register with kill switch
-    const _parallelMods = await Promise?.allSettled([
+    const parallelMods = await Promise?.allSettled([
       import("./autonomous-autopilot.js"),
       import("./autopilot-engine.js"),
       import("./services/autoPostingService.js"),
@@ -1577,7 +1577,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
 
     // 4. Autonomous Autopilot
     if (parallelMods[0].status === "fulfilled") {
-      const _mod = (
+      const mod = (
         parallelMods[0] as PromiseFulfilledResult<Record<string, unknown>>
       ).value;
       if (mod?.autonomousAutopilot) {
@@ -1603,10 +1603,10 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
 
     // 5. Autopilot Engine
     if (parallelMods[1].status === "fulfilled") {
-      const _mod = (
+      const mod = (
         parallelMods[1] as PromiseFulfilledResult<Record<string, unknown>>
       ).value;
-      const _engine =
+      const engine =
         mod?.autopilotEngine ??
         (mod?.AutopilotEngine ? new mod.AutopilotEngine() : null);
       if (engine) {
@@ -1627,7 +1627,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
 
     // 6. Auto-Posting Service V1
     if (parallelMods[2].status === "fulfilled") {
-      const _mod = (
+      const mod = (
         parallelMods[2] as PromiseFulfilledResult<Record<string, unknown>>
       ).value;
       if (mod?.autoPostingService) {
@@ -1650,7 +1650,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
 
     // 7. Auto-Posting Service V2
     if (parallelMods[3].status === "fulfilled") {
-      const _mod = (
+      const mod = (
         parallelMods[3] as PromiseFulfilledResult<Record<string, unknown>>
       ).value;
       if (mod?.autoPostingServiceV2) {
@@ -1673,18 +1673,18 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
 
     // 8. Auto Post Generator (stateless — no running loop; kill switch flag surfaced via log)
     if (parallelMods[4].status === "fulfilled") {
-      const _mod = (
+      const mod = (
         parallelMods[4] as PromiseFulfilledResult<Record<string, unknown>>
       ).value;
       if (mod?.autoPostGenerator) {
         logger?.info("✅ [Autonomy] Auto Post Generator initialized");
         killSwitch?.registerSystem("auto-post-generator", {
           kill: () => {
-            (mod?.autoPostGenerator as Record<string, unknown>)._killed = true;
+            (mod.autoPostGenerator as Record<string, unknown>)._killed = true;
             logger?.warn("[AutoPostGenerator] Paused by kill switch");
           },
           resume: () => {
-            (mod?.autoPostGenerator as Record<string, unknown>)._killed = false;
+            (mod.autoPostGenerator as Record<string, unknown>)._killed = false;
             logger?.info("[AutoPostGenerator] Resumed");
           },
         });
@@ -1696,7 +1696,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
 
     // 9. Autopilot Publisher
     if (parallelMods[5].status === "fulfilled") {
-      const _mod = (
+      const mod = (
         parallelMods[5] as PromiseFulfilledResult<Record<string, unknown>>
       ).value;
       if (mod?.autopilotPublisher) {
@@ -1777,7 +1777,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     }
 
     // Diffusion self-training: starts 60s after boot so server is stable first.
-    // Runs on worker 0 only: spawning Python synthesizer.py from multiple workers
+    // Runs on worker 0 only: spawning Python synthesizer?.py from multiple workers
     // causes file-lock contention on meta?.json / memory?.json and doubles CPU load.
     // startBackgroundTraining() checks the MaxCore Diffusion Gateway on port 8008
     // first — if the Gateway is running, the local synthesizer is skipped (MaxCore
@@ -1787,7 +1787,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         import("./services/diffusionBackgroundTrainer.js")
           .then(({ startBackgroundTraining }) => {
             startBackgroundTraining()
-              .then((_result?: void) => {
+              .then((result?: void) => {
                 logger?.info(
                   "🎬 [DiffBG] Diffusion trainer initialised (MaxCore Gateway or local fallback)",
                 );
@@ -1821,12 +1821,12 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       const { pool: _keepPool, replicaPool: _replicaKeepPool } = await import(
         "./db.js"
       );
-      const __keepalive = setInterval(() => {
+      const keepalive = setInterval(() => {
         _keepPool?.query("SELECT 1").catch(() => {});
         if (_replicaKeepPool)
           _replicaKeepPool?.query("SELECT 1").catch(() => {});
       }, 25_000);
-      _keepalive?.unref();
+      keepalive?.unref();
       logger?.info(
         "[DB] Keepalive started — pinging primary + replica every 25s to prevent Neon cold-start latency",
       );
@@ -1856,7 +1856,7 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
   logger?.info(`[Shutdown] Received ${signal}, starting graceful shutdown...`);
 
   // Hard deadline: autoscale sends SIGKILL at ~30 s, so we must complete within 25 s.
-  const _hardExit = setTimeout(() => {
+  const hardExit = setTimeout(() => {
     logger?.warn("[Shutdown] Hard timeout reached — forcing exit");
     process?.exit(exitCode);
   }, 25_000);
@@ -1891,11 +1891,11 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
     const { autopilotCoordinatorService } = await import(
       "./services/autopilotCoordinatorService.js"
     );
-    await Promise?.race([
-      autopilotCoordinatorService?.flushPendingPersists(),
+    await Promise.race([
+      autopilotCoordinatorService.flushPendingPersists(),
       new Promise<void>((resolve) => setTimeout(resolve, 3_000)),
     ]);
-    logger?.info("[Shutdown] Autopilot coordinator persists flushed");
+    logger.info("[Shutdown] Autopilot coordinator persists flushed");
   } catch {
     /* non-critical */
   }
@@ -1913,8 +1913,8 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
     const { platformAutoFixer } = await import(
       "./services/platformAutoFixer.js"
     );
-    (platformAutoFixer as { stop?: () => void })?.stop?.();
-    logger?.info("[Shutdown] PlatformAutoFixer stopped");
+    (platformAutoFixer as { stop?: () => void }).stop?.();
+    logger.info("[Shutdown] PlatformAutoFixer stopped");
   } catch {
     /* non-critical */
   }
@@ -1922,31 +1922,31 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
   try {
     // 4. Close the database pool so in-flight queries complete before the process exits.
     const { pool } = await import("./db.js");
-    await pool?.end();
-    logger?.info("[Shutdown] Database pool closed");
+    await pool.end();
+    logger.info("[Shutdown] Database pool closed");
   } catch (err) {
-    logger?.warn({ err: err }, "[Shutdown] Error closing DB pool:");
+    logger.warn({ err: err }, "[Shutdown] Error closing DB pool:");
   }
 
   clearTimeout(hardExit);
-  process?.exit(exitCode);
+  process.exit(exitCode);
 }
 
-process?.on("SIGTERM", () => gracefulShutdown("SIGTERM", 0));
-process?.on("SIGINT", () => gracefulShutdown("SIGINT", 0));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM", 0));
+process.on("SIGINT", () => gracefulShutdown("SIGINT", 0));
 
-process?.on("uncaughtException", (error: Error) => {
-  // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors (e?.g. FFmpeg exits mid-render)
-  const _code = (error as NodeJS.ErrnoException).code;
+process.on("uncaughtException", (error: Error) => {
+  // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors (e.g. FFmpeg exits mid-render)
+  const code = (error as NodeJS.ErrnoException).code;
   if (code === "EPIPE" || code === "ECONNRESET" || code === "ECONNABORTED")
     return;
-  const _eMsg = error?.message ?? "";
+  const eMsg = error.message ?? "";
   // PDIM 500/502 during cold-start: the circuit breaker slow-lane already
   // handles these — no additional log or shutdown needed.
-  if (/PDIM HTTP 5/i?.test(eMsg)) return;
+  if (/PDIM HTTP 5/i.test(eMsg)) return;
   // Truncate to first line so pino-pretty doesn't emit bare multi-line stack
   // traces that appear without timestamp prefixes in the workflow logs.
-  const _summary = eMsg?.split("\n")[0] ?? eMsg;
+  const summary = eMsg?.split("\n")[0] ?? eMsg;
   logger?.warn(
     { errMsg: summary },
     "[Process] Uncaught exception — shutting down:",
@@ -1955,12 +1955,12 @@ process?.on("uncaughtException", (error: Error) => {
 });
 
 process?.on("unhandledRejection", (reason: unknown) => {
-  const _err = reason instanceof Error ? reason : new Error(String(reason));
-  const _code = (reason as NodeJS.ErrnoException)?.code;
+  const err = reason instanceof Error ? reason : new Error(String(reason));
+  const code = (reason as NodeJS.ErrnoException)?.code;
 
   // Non-fatal: known transient errors that the ChainFixer / circuit breaker
   // handle automatically.  Suppress them so they do not trigger a restart.
-  const _isNonFatal =
+  const isNonFatal =
     (code && ["EPIPE", "ECONNRESET", "ECONNABORTED"].includes(code)) ||
     /EPIPE|ECONNRESET|ECONNABORTED|ECONNREFUSED|AbortError|fetch failed|Failed to fetch|Command timed out|Connection is closed|\[PDIM\] Circuit OPEN|\[LuaExecutor\] script timeout|\[LuaExecutor\] Wait queue saturated|erroredJobIds|PDIM.*Circuit|script timeout exceeded|PDIM HTTP 5/i?.test(
       err?.message,

@@ -33,13 +33,13 @@ import os from "os";
 import { randomBytes } from "crypto";
 import { logger } from "../logger.js";
 
-const _execFileAsync = promisify(execFile);
+const execFileAsync = promisify(execFile);
 
 // ── FFmpeg path resolution ────────────────────────────────────────────────────
 function resolveFFmpegPath(): string {
-  if (process?.env.FFMPEG_PATH) return process?.env.FFMPEG_PATH;
+  if (process.env.FFMPEG_PATH) return process.env.FFMPEG_PATH;
   try {
-    const _p = execFileSync("/bin/sh", ["-c", "which ffmpeg"], { timeout: 3000 })
+    const p = execFileSync("/bin/sh", ["-c", "which ffmpeg"], { timeout: 3000 })
       .toString()
       .trim();
     if (p) return p;
@@ -55,8 +55,8 @@ function resolveFFmpegPath(): string {
   }
   return "ffmpeg";
 }
-const _FFMPEG = resolveFFmpegPath();
-const _VOICE_DIR = path?.join(process?.cwd(), "uploads", "voices");
+const FFMPEG = resolveFFmpegPath();
+const VOICE_DIR = path.join(process.cwd(), "uploads", "voices");
 
 // ── FLITE VOICE AVAILABILITY ──────────────────────────────────────────────────
 // flite voices compiled into FFmpeg differ by build. We probe at startup and
@@ -65,7 +65,7 @@ let _bestFliteVoice: string | null = null;
 
 async function detectBestFliteVoice(): Promise<string> {
   if (_bestFliteVoice) return _bestFliteVoice;
-  const _voices = ["kal16", "slt", "awb", "rms", "kal"];
+  const voices = ["kal16", "slt", "awb", "rms", "kal"];
   for (const v of voices) {
     try {
       await execFileAsync(
@@ -85,14 +85,14 @@ async function detectBestFliteVoice(): Promise<string> {
         { timeout: 5000 },
       );
       _bestFliteVoice = v;
-      logger?.info(`[VoiceSynth] Best flite voice: ${v}`);
+      logger.info(`[VoiceSynth] Best flite voice: ${v}`);
       return v;
     } catch {
       /* try next */
     }
   }
   // No flite at all — use silence + warn
-  logger?.warn(
+  logger.warn(
     "[VoiceSynth] No flite TTS voices available in this FFmpeg build. Silence fallback active.",
   );
   _bestFliteVoice = "none";
@@ -349,16 +349,16 @@ export async function analyzeReferenceVoice(
     );
 
     // Parse RMS level → energy estimate
-    const _rmsMatch = stderr?.match(/RMS level dB:\s*([-\d.]+)/);
-    const _rmsDb = rmsMatch ? parseFloat(rmsMatch[1]) : -20;
+    const rmsMatch = stderr?.match(/RMS level dB:\s*([-\d.]+)/);
+    const rmsDb = rmsMatch ? parseFloat(rmsMatch[1]) : -20;
     const energy: VoiceCharacteristics["energy"] =
       rmsDb > -12 ? "loud" : rmsDb > -24 ? "moderate" : "quiet";
 
     // Parse mean sample value / peak → rough pitch approximation
     // (real pitch detection needs librosa; this is a heuristic)
-    const _peakMatch = stderr?.match(/Max level dB:\s*([-\d.]+)/);
-    const _peakDb = peakMatch ? parseFloat(peakMatch[1]) : -6;
-    const _dynamic = peakDb - rmsDb; // wider dynamic = more expressive/slower
+    const peakMatch = stderr?.match(/Max level dB:\s*([-\d.]+)/);
+    const peakDb = peakMatch ? parseFloat(peakMatch[1]) : -6;
+    const dynamic = peakDb - rmsDb; // wider dynamic = more expressive/slower
 
     const estimatedPitch: VoiceCharacteristics["estimatedPitch"] =
       dynamic < 8
@@ -431,7 +431,7 @@ export async function synthesizeVoice(
 ): Promise<SynthesisResult> {
   mkdirSync(VOICE_DIR, { recursive: true });
 
-  const _fliteVoice = await detectBestFliteVoice();
+  const fliteVoice = await detectBestFliteVoice();
   if (fliteVoice === "none") {
     return {
       success: false,
@@ -443,7 +443,7 @@ export async function synthesizeVoice(
   // If reference audio provided, adapt profile to match it
   let profileId = options?.profileId || "smooth_narrator";
   if (options?.referenceAudioPath && existsSync(options?.referenceAudioPath)) {
-    const _characteristics = await analyzeReferenceVoice(
+    const characteristics = await analyzeReferenceVoice(
       options?.referenceAudioPath,
     );
     if (!options?.profileId) {
@@ -454,24 +454,24 @@ export async function synthesizeVoice(
     }
   }
 
-  const _profile = VOICE_PROFILES[profileId] || VOICE_PROFILES?.smooth_narrator;
-  const _cleanText = sanitizeForFlite(text);
+  const profile = VOICE_PROFILES[profileId] || VOICE_PROFILES?.smooth_narrator;
+  const cleanText = sanitizeForFlite(text);
   if (!cleanText) {
     return { success: false, error: "No usable text after sanitization" };
   }
 
   // Compute final processing parameters (profile × user overrides)
-  const _pitchMult = profile?.pitchFactor * (options?.pitch ?? 1.0);
-  const _tempoMult = profile?.tempoFactor * (options?.speed ?? 1.0);
-  const _volumeMult = options?.volume ?? 1.0;
-  const _reverbMix = Math?.max(0, Math?.min(1, options?.reverbAmount ?? 1.0));
+  const pitchMult = profile?.pitchFactor * (options?.pitch ?? 1.0);
+  const tempoMult = profile?.tempoFactor * (options?.speed ?? 1.0);
+  const volumeMult = options?.volume ?? 1.0;
+  const reverbMix = Math?.max(0, Math?.min(1, options?.reverbAmount ?? 1.0));
 
   // FFmpeg pitch-shift trick:
   //   asetrate changes the sample rate (shifts pitch + speed together)
   //   atempo corrects the speed back (restores duration without affecting pitch)
   // Clamp atempo to valid range (0.5–2.0); for extreme shifts use chained atempo filters
-  const _asetrate = Math?.round(44100 * pitchMult);
-  const _rawTempo = (1 / pitchMult) * tempoMult;
+  const asetrate = Math?.round(44100 * pitchMult);
+  const rawTempo = (1 / pitchMult) * tempoMult;
   const clampedTempos: number[] = [];
   let t = rawTempo;
   while (t > 2.0) {
@@ -483,19 +483,19 @@ export async function synthesizeVoice(
     t *= 2.0;
   }
   clampedTempos?.push(t);
-  const _atempoChain = clampedTempos
+  const atempoChain = clampedTempos
     .map((v) => `atempo=${v?.toFixed(4)}`)
     .join(",");
 
   // Build the spatial FX with scaled reverb
-  const _spatialFx =
+  const spatialFx =
     reverbMix <= 0.05
       ? "aecho=0:0:1:0" // near-zero echo = effectively bypass
       : profile?.spatialFx;
 
   // Build the full audio filter graph
-  const _gainFilter = `volume=${(volumeMult * Math?.pow(10, profile?.gainDb / 20)).toFixed(4)}`;
-  const _filterChain = [
+  const gainFilter = `volume=${(volumeMult * Math?.pow(10, profile?.gainDb / 20)).toFixed(4)}`;
+  const filterChain = [
     `highpass=f=80`, // remove sub-rumble
     `asetrate=r=${asetrate}`, // pitch shift
     `aformat=sample_rates=44100:channel_layouts=stereo`, // normalize SR after asetrate
@@ -507,12 +507,12 @@ export async function synthesizeVoice(
     gainFilter, // final gain
   ].join(",");
 
-  const _ext = options?.outputFormat === "mp3" ? "mp3" : "wav";
-  const _outFilename = `voice_${randomBytes(6).toString("hex")}.${ext}`;
-  const _outputPath = path?.join(VOICE_DIR, outFilename);
-  const _maxDur = options?.maxDurationSeconds;
+  const ext = options?.outputFormat === "mp3" ? "mp3" : "wav";
+  const outFilename = `voice_${randomBytes(6).toString("hex")}.${ext}`;
+  const outputPath = path?.join(VOICE_DIR, outFilename);
+  const maxDur = options?.maxDurationSeconds;
 
-  const _ffmpegArgs = [
+  const ffmpegArgs = [
     "-y",
     "-f",
     "lavfi",
@@ -542,7 +542,7 @@ export async function synthesizeVoice(
         ["-i", outputPath, "-f", "null", "-"],
         { timeout: 10_000 },
       );
-      const _dur = stdout?.match(/Duration:\s*(\d+):(\d+):([\d.]+)/);
+      const dur = stdout?.match(/Duration:\s*(\d+):(\d+):([\d.]+)/);
       if (!dur) throw new Error("no duration match");
       durationSeconds =
         parseInt(dur[1]) * 3600 + parseInt(dur[2]) * 60 + parseFloat(dur[3]);
@@ -553,7 +553,7 @@ export async function synthesizeVoice(
           ["-i", outputPath, "-f", "null", "-"],
           { timeout: 10_000 },
         );
-        const _dur = stderr?.match(/Duration:\s*(\d+):(\d+):([\d.]+)/);
+        const dur = stderr?.match(/Duration:\s*(\d+):(\d+):([\d.]+)/);
         if (dur) {
           durationSeconds =
             parseInt(dur[1]) * 3600 +
@@ -566,18 +566,18 @@ export async function synthesizeVoice(
     }
 
     logger?.info(
-      `[VoiceSynth] ✅ ${outFilename} — profile=${profile?.id} voice=${fliteVoice} dur=${durationSeconds?.toFixed(1)}s`,
+      `[VoiceSynth] ✅ ${outFilename} — profile=${profile.id} voice=${fliteVoice} dur=${durationSeconds?.toFixed(1)}s`,
     );
 
     return {
       success: true,
       outputPath,
       durationSeconds,
-      profileUsed: profile?.id,
+      profileUsed: profile.id,
       voiceUsed: fliteVoice,
     };
   } catch (err) {
-    const _errMsg = err?.stderr?.slice(-500) || err?.message || String(err);
+    const errMsg = err?.stderr?.slice(-500) || err?.message || String(err);
     logger?.warn("[VoiceSynth] Synthesis failed:", errMsg);
     return { success: false, error: `Voice synthesis failed: ${errMsg}` };
   }
@@ -600,8 +600,8 @@ export async function synthesizeSegments(
     // Synthesize each segment to a temp file
     const segPaths: string[] = [];
     for (let i = 0; i < segments?.length; i++) {
-      const _seg = segments[i];
-      const _result = await synthesizeVoice(seg?.text, options);
+      const seg = segments[i];
+      const result = await synthesizeVoice(seg?.text, options);
       if (!result?.success || !result?.outputPath) {
         return {
           success: false,
@@ -613,7 +613,7 @@ export async function synthesizeSegments(
 
       // Add a silence gap between segments if requested
       if (seg?.pause && seg?.pause > 0 && i < segments?.length - 1) {
-        const _pausePath = path?.join(
+        const pausePath = path?.join(
           os?.tmpdir(),
           `pause_${randomBytes(4).toString("hex")}.wav`,
         );
@@ -642,12 +642,12 @@ export async function synthesizeSegments(
       return {
         success: true,
         outputPath: segPaths[0],
-        profileUsed: options?.profileId,
+        profileUsed: options.profileId,
       };
     }
 
     // Concatenate all segments using FFmpeg concat demuxer
-    const _concatList = path?.join(
+    const concatList = path?.join(
       os?.tmpdir(),
       `concat_${randomBytes(4).toString("hex")}.txt`,
     );
@@ -657,8 +657,8 @@ export async function synthesizeSegments(
     );
     tempFiles?.push(concatList);
 
-    const _outFilename = `voice_${randomBytes(6).toString("hex")}.wav`;
-    const _outputPath = path?.join(VOICE_DIR, outFilename);
+    const outFilename = `voice_${randomBytes(6).toString("hex")}.wav`;
+    const outputPath = path?.join(VOICE_DIR, outFilename);
 
     await execFileAsync(
       FFMPEG,
@@ -677,9 +677,9 @@ export async function synthesizeSegments(
       { timeout: 60_000 },
     );
 
-    return { success: true, outputPath, profileUsed: options?.profileId };
+    return { success: true, outputPath, profileUsed: options.profileId };
   } catch (err) {
-    return { success: false, error: err?.message || String(err) };
+    return { success: false, error: err.message || String(err) };
   } finally {
     // Clean up temp segment files
     for (const f of tempFiles) {

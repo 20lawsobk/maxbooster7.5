@@ -28,14 +28,14 @@ export function useKeyboardShortcut(
     preventDefault = true,
   } = options;
 
-  const _handlerRef = useRef(handler);
+  const handlerRef = useRef(handler);
   handlerRef.current = handler;
 
-  const _handleKeyDown = useCallback(
+  const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
       if (!enabled) return;
 
-      const _target = event?.target as HTMLElement;
+      const target = event?.target as HTMLElement;
       if (
         !allowInInput &&
         (target?.tagName === "INPUT" ||
@@ -65,12 +65,12 @@ export function useKeyboardShortcut(
 }
 
 export function useKeyboardShortcuts(shortcuts: KeyboardShortcutConfig[]) {
-  const _shortcutsRef = useRef(shortcuts);
+  const shortcutsRef = useRef(shortcuts);
   shortcutsRef.current = shortcuts;
 
-  const _handleKeyDown = useCallback((event: KeyboardEvent) => {
-    const _target = event?.target as HTMLElement;
-    const _isInput =
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    const target = event?.target as HTMLElement;
+    const isInput =
       target?.tagName === "INPUT" ||
       target?.tagName === "TEXTAREA" ||
       target?.contentEditable === "true";
@@ -97,11 +97,11 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcutConfig[]) {
 }
 
 export function useHotkey(combo: string, handler: () => void, enabled = true) {
-  const _parts = combo
+  const parts = combo
     .toLowerCase()
     .split("+")
     .map((p) => p?.trim());
-  const _key = parts[parts?.length - 1];
+  const key = parts[parts?.length - 1];
   const modifiers: ShortcutModifier[] = [];
 
   parts?.slice(0, -1).forEach((mod) => {
@@ -130,14 +130,14 @@ export function useArrowKeys(
   },
   enabled = true,
 ) {
-  const _handlersRef = useRef(handlers);
+  const handlersRef = useRef(handlers);
   handlersRef.current = handlers;
 
-  const _handleKeyDown = useCallback(
+  const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
       if (!enabled) return;
 
-      const _target = event?.target as HTMLElement;
+      const target = event?.target as HTMLElement;
       if (
         target?.tagName === "INPUT" ||
         target?.tagName === "TEXTAREA" ||
@@ -186,13 +186,13 @@ export function useKeyPress(targetKey: string) {
   const [isPressed, setIsPressed] = useState(false);
 
   useEffect(() => {
-    const _handleKeyDown = (event: KeyboardEvent) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (event?.key === targetKey) {
         setIsPressed(true);
       }
     };
 
-    const _handleKeyUp = (event: KeyboardEvent) => {
+    const handleKeyUp = (event: KeyboardEvent) => {
       if (event?.key === targetKey) {
         setIsPressed(false);
       }
@@ -219,21 +219,21 @@ export function useModifierKeys() {
   });
 
   useEffect(() => {
-    const _handleKeyDown = (event: KeyboardEvent) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       setModifiers({
-        ctrl: event?.ctrlKey,
-        shift: event?.shiftKey,
-        alt: event?.altKey,
-        meta: event?.metaKey,
+        ctrl: event.ctrlKey,
+        shift: event.shiftKey,
+        alt: event.altKey,
+        meta: event.metaKey,
       });
     };
 
-    const _handleKeyUp = (event: KeyboardEvent) => {
+    const handleKeyUp = (event: KeyboardEvent) => {
       setModifiers({
-        ctrl: event?.ctrlKey,
-        shift: event?.shiftKey,
-        alt: event?.altKey,
-        meta: event?.metaKey,
+        ctrl: event.ctrlKey,
+        shift: event.shiftKey,
+        alt: event.altKey,
+        meta: event.metaKey,
       });
     };
 

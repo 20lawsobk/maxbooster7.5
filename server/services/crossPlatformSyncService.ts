@@ -72,14 +72,14 @@ interface UpdateRollout {
   deviceStatuses: Map<string, DeviceUpdateStatus>;
 }
 
-const _WEB_VERSION = "3.0.0";
-const _HEARTBEAT_TIMEOUT_MS = 5 * 60 * 1000;
+const WEB_VERSION = "3.0.0";
+const HEARTBEAT_TIMEOUT_MS = 5 * 60 * 1000;
 
 // Memory caps — in-process cache only. Persistent state lives in Redis/DB.
-const _MAX_USER_CACHE = 50_000; // ~50 K concurrent active users
-const _MAX_DEVICE_SYNC_KEYS = 200_000; // 50 K users × 4 devices each
-const _MAX_UPDATE_ROLLOUTS = 1_000; // admin-created, small by nature
-const _DEVICE_STALE_TTL_MS = 2 * 60 * 60 * 1000; // 2 h without a heartbeat → evict
+const MAX_USER_CACHE = 50_000; // ~50 K concurrent active users
+const MAX_DEVICE_SYNC_KEYS = 200_000; // 50 K users × 4 devices each
+const MAX_UPDATE_ROLLOUTS = 1_000; // admin-created, small by nature
+const DEVICE_STALE_TTL_MS = 2 * 60 * 60 * 1000; // 2 h without a heartbeat → evict
 
 const userDevices: Map<string, Map<string, DeviceInfo>> = new Map();
 const userSyncStates: Map<string, SyncState> = new Map();
@@ -119,9 +119,9 @@ latestVersions?.set("desktop", {
 // has been idle for DEVICE_STALE_TTL_MS.  Also enforces hard caps as a safety net.
 setInterval(
   () => {
-    const _now = Date?.now();
+    const now = Date?.now();
     for (const [uid, devices] of userDevices?.entries()) {
-      const _allStale = [...devices?.values()].every(
+      const allStale = [...devices?.values()].every(
         (d) => now - new Date(d?.lastSeen).getTime() > DEVICE_STALE_TTL_MS,
       );
       if (allStale) {
@@ -133,17 +133,17 @@ setInterval(
     }
     // Hard-cap safety net: if still over limit after TTL eviction, drop oldest entries.
     while (userDevices?.size > MAX_USER_CACHE) {
-      const _oldest = userDevices?.keys().next().value;
+      const oldest = userDevices?.keys().next().value;
       if (oldest === undefined) break;
       userDevices?.delete(oldest);
       userSyncStates?.delete(oldest);
     }
     while (deviceSyncVersions?.size > MAX_DEVICE_SYNC_KEYS) {
-      const _oldest = deviceSyncVersions?.keys().next().value;
+      const oldest = deviceSyncVersions?.keys().next().value;
       if (oldest !== undefined) deviceSyncVersions?.delete(oldest);
     }
     while (updateRollouts?.size > MAX_UPDATE_ROLLOUTS) {
-      const _oldest = updateRollouts?.keys().next().value;
+      const oldest = updateRollouts?.keys().next().value;
       if (oldest !== undefined) updateRollouts?.delete(oldest);
     }
   },
@@ -151,12 +151,12 @@ setInterval(
 ).unref(); // unref: won't keep process alive on shutdown
 
 function compareVersions(a: string, b: string): number {
-  const _partsA = a?.replace(/^v/, "").split(".").map(Number);
-  const _partsB = b?.replace(/^v/, "").split(".").map(Number);
-  const _len = Math?.max(partsA?.length, partsB?.length);
+  const partsA = a?.replace(/^v/, "").split(".").map(Number);
+  const partsB = b?.replace(/^v/, "").split(".").map(Number);
+  const len = Math?.max(partsA?.length, partsB?.length);
   for (let i = 0; i < len; i++) {
-    const _numA = partsA[i] || 0;
-    const _numB = partsB[i] || 0;
+    const numA = partsA[i] || 0;
+    const numB = partsB[i] || 0;
     if (numA > numB) return 1;
     if (numA < numB) return -1;
   }
@@ -195,18 +195,18 @@ export function registerDevice(
     deviceName: string;
   },
 ): DeviceInfo {
-  const _devices = getUserDevices(userId);
-  const _now = new Date().toISOString();
+  const devices = getUserDevices(userId);
+  const now = new Date().toISOString();
 
   const deviceInfo: DeviceInfo = {
-    deviceId: device?.deviceId,
+    deviceId: device.deviceId,
     userId,
-    platform: device?.platform,
-    appVersion: device?.appVersion,
-    osInfo: device?.osInfo,
-    deviceName: device?.deviceName,
+    platform: device.platform,
+    appVersion: device.appVersion,
+    osInfo: device.osInfo,
+    deviceName: device.deviceName,
     lastSeen: now,
-    registeredAt: devices?.has(device?.deviceId)
+    registeredAt: devices.has(device?.deviceId)
       ? devices?.get(device?.deviceId)!.registeredAt
       : now,
   };
@@ -214,15 +214,15 @@ export function registerDevice(
   devices?.set(device?.deviceId, deviceInfo);
   logger?.info("Device registered", {
     userId,
-    deviceId: device?.deviceId,
-    platform: device?.platform,
+    deviceId: device.deviceId,
+    platform: device.platform,
   });
   return deviceInfo;
 }
 
 export function unregisterDevice(userId: string, deviceId: string): boolean {
-  const _devices = getUserDevices(userId);
-  const _removed = devices?.delete(deviceId);
+  const devices = getUserDevices(userId);
+  const removed = devices?.delete(deviceId);
   if (removed) {
     deviceSyncVersions?.delete(`${userId}:${deviceId}`);
     logger?.info("Device unregistered", { userId, deviceId });
@@ -231,20 +231,20 @@ export function unregisterDevice(userId: string, deviceId: string): boolean {
 }
 
 export function heartbeat(userId: string, deviceId: string): DeviceInfo | null {
-  const _devices = getUserDevices(userId);
-  const _device = devices?.get(deviceId);
+  const devices = getUserDevices(userId);
+  const device = devices?.get(deviceId);
   if (!device) return null;
   device.lastSeen = new Date().toISOString();
   return device;
 }
 
 export function listDevices(userId: string): DeviceInfo[] {
-  const _devices = getUserDevices(userId);
+  const devices = getUserDevices(userId);
   return Array?.from(devices?.values());
 }
 
 export function isDeviceOnline(device: DeviceInfo): boolean {
-  const _lastSeen = new Date(device?.lastSeen).getTime();
+  const lastSeen = new Date(device?.lastSeen).getTime();
   return Date?.now() - lastSeen < HEARTBEAT_TIMEOUT_MS;
 }
 
@@ -252,11 +252,11 @@ export function checkForUpdate(
   platform: PlatformType,
   currentVersion: string,
 ): VersionInfo {
-  const _latest = latestVersions?.get(platform);
-  const _latestVersion = latest?.version || WEB_VERSION;
-  const _updateAvailable = compareVersions(currentVersion, latestVersion) < 0;
+  const latest = latestVersions?.get(platform);
+  const latestVersion = latest?.version || WEB_VERSION;
+  const updateAvailable = compareVersions(currentVersion, latestVersion) < 0;
 
-  const _forcedNotifications = (updateNotifications?.get("global") || []).filter(
+  const forcedNotifications = (updateNotifications?.get("global") || []).filter(
     (n) =>
       n?.platform === platform &&
       n?.isForced &&
@@ -268,10 +268,10 @@ export function checkForUpdate(
     currentVersion,
     latestVersion,
     updateAvailable,
-    releaseDate: latest?.releaseDate || new Date().toISOString(),
-    changelog: latest?.changelog || "",
-    downloadUrl: latest?.downloadUrl || "",
-    isForced: forcedNotifications?.length > 0,
+    releaseDate: latest.releaseDate || new Date().toISOString(),
+    changelog: latest.changelog || "",
+    downloadUrl: latest.downloadUrl || "",
+    isForced: forcedNotifications.length > 0,
   };
 }
 
@@ -385,10 +385,10 @@ export function triggerRemoteUpdate(
   pushUpdateNotification(platform, targetVersion, changelog, isForced);
 
   logger?.info("Remote update triggered", {
-    rolloutId: rollout?.id,
+    rolloutId: rollout.id,
     platform,
     targetVersion,
-    affectedDevices: rollout?.deviceStatuses.size,
+    affectedDevices: rollout.deviceStatuses.size,
   });
   return rollout;
 }
@@ -410,24 +410,24 @@ export function getUpdateRolloutStatus(): Array<{
   };
   devices: DeviceUpdateStatus[];
 }> {
-  const _results = [];
+  const results = [];
   for (const [, rollout] of updateRollouts?.entries()) {
-    const _devices = Array?.from(rollout?.deviceStatuses.values());
-    const _stats = {
-      total: devices?.length,
-      pending: devices?.filter((d) => d?.status === "pending").length,
-      downloading: devices?.filter((d) => d?.status === "downloading").length,
-      installed: devices?.filter((d) => d?.status === "installed").length,
-      failed: devices?.filter((d) => d?.status === "failed").length,
+    const devices = Array?.from(rollout?.deviceStatuses.values());
+    const stats = {
+      total: devices.length,
+      pending: devices.filter((d) => d?.status === "pending").length,
+      downloading: devices.filter((d) => d?.status === "downloading").length,
+      installed: devices.filter((d) => d?.status === "installed").length,
+      failed: devices.filter((d) => d?.status === "failed").length,
     };
     results?.push({
-      id: rollout?.id,
-      platform: rollout?.platform,
-      targetVersion: rollout?.targetVersion,
-      isForced: rollout?.isForced,
-      changelog: rollout?.changelog,
-      triggeredAt: rollout?.triggeredAt,
-      triggeredBy: rollout?.triggeredBy,
+      id: rollout.id,
+      platform: rollout.platform,
+      targetVersion: rollout.targetVersion,
+      isForced: rollout.isForced,
+      changelog: rollout.changelog,
+      triggeredAt: rollout.triggeredAt,
+      triggeredBy: rollout.triggeredBy,
       stats,
       devices,
     });
@@ -439,10 +439,10 @@ export function pullSyncState(
   userId: string,
   deviceId: string,
 ): { state: SyncState; hasChanges: boolean } {
-  const _syncState = getUserSyncState(userId);
-  const _deviceSyncKey = `${userId}:${deviceId}`;
-  const _lastDeviceVersion = deviceSyncVersions?.get(deviceSyncKey) || 0;
-  const _hasChanges = syncState?.syncVersion > lastDeviceVersion;
+  const syncState = getUserSyncState(userId);
+  const deviceSyncKey = `${userId}:${deviceId}`;
+  const lastDeviceVersion = deviceSyncVersions?.get(deviceSyncKey) || 0;
+  const hasChanges = syncState?.syncVersion > lastDeviceVersion;
 
   deviceSyncVersions?.set(deviceSyncKey, syncState?.syncVersion);
 
@@ -454,7 +454,7 @@ export function pushSyncState(
   deviceId: string,
   changes: Partial<SyncState>,
 ): SyncState {
-  const _syncState = getUserSyncState(userId);
+  const syncState = getUserSyncState(userId);
 
   if (changes?.preferences !== undefined) {
     syncState.preferences = {
@@ -477,39 +477,39 @@ export function pushSyncState(
     };
   }
   if (changes?.notificationReadIds !== undefined) {
-    const _merged = new Set([
+    const merged = new Set([
       ...syncState?.notificationReadIds,
       ...changes?.notificationReadIds,
     ]);
     syncState.notificationReadIds = Array?.from(merged);
   }
 
-  syncState?.syncVersion += 1;
+  syncState.syncVersion += 1;
   syncState.lastSyncAt = new Date().toISOString();
 
-  const _deviceSyncKey = `${userId}:${deviceId}`;
+  const deviceSyncKey = `${userId}:${deviceId}`;
   deviceSyncVersions?.set(deviceSyncKey, syncState?.syncVersion);
 
   logger?.info("Sync state updated", {
     userId,
     deviceId,
-    syncVersion: syncState?.syncVersion,
+    syncVersion: syncState.syncVersion,
   });
   return { ...syncState };
 }
 
 export function getSyncStatus(userId: string): SyncStatus[] {
-  const _devices = getUserDevices(userId);
-  const _syncState = getUserSyncState(userId);
+  const devices = getUserDevices(userId);
+  const syncState = getUserSyncState(userId);
   const statuses: SyncStatus[] = [];
 
   for (const [deviceId, device] of devices?.entries()) {
-    const _deviceSyncKey = `${userId}:${deviceId}`;
-    const _deviceVersion = deviceSyncVersions?.get(deviceSyncKey) || 0;
+    const deviceSyncKey = `${userId}:${deviceId}`;
+    const deviceVersion = deviceSyncVersions?.get(deviceSyncKey) || 0;
 
     statuses?.push({
       deviceId,
-      platform: device?.platform,
+      platform: device.platform,
       lastSyncAt:
         deviceVersion > 0 ? syncState?.lastSyncAt : device?.registeredAt,
       syncVersion: deviceVersion,

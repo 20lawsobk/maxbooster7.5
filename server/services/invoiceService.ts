@@ -210,7 +210,7 @@ const currencySymbols: Record<string, string> = {
   NOK: "kr",
   DKK: "kr",
   ZAR: "R",
-  AED: "د?.إ",
+  AED: "د.إ",
   PLN: "zł",
   CZK: "Kč",
 };
@@ -226,8 +226,8 @@ class InvoiceService {
   private static readonly MAX_INVOICES = 50_000;
 
   private evictIfOverCap(): void {
-    while (this?.invoices.size >= InvoiceService?.MAX_INVOICES) {
-      const _oldestKey = this?.invoices.keys().next().value;
+    while (this?.invoices.size >= InvoiceService.MAX_INVOICES) {
+      const oldestKey = this?.invoices.keys().next().value;
       if (oldestKey !== undefined) {
         this?.invoices.delete(oldestKey);
       } else {
@@ -237,13 +237,13 @@ class InvoiceService {
   }
 
   generateInvoiceNumber(): string {
-    const _year = new Date().getFullYear();
-    const _number = ++this?.invoiceCounter;
+    const year = new Date().getFullYear();
+    const number = ++this.invoiceCounter;
     return `INV-${year}-${number?.toString().padStart(5, "0")}`;
   }
 
   getTaxRates(country: string, state?: string): TaxRate[] {
-    const _rates = taxRates?.filter((r) => {
+    const rates = taxRates?.filter((r) => {
       if (r?.country !== country) return false;
       if (state && r?.state && r?.state !== state) return false;
       if (!state && r?.state) return false;
@@ -262,7 +262,7 @@ class InvoiceService {
     country: string,
     state?: string,
   ): TaxBreakdown[] {
-    const _rates = this?.getTaxRates(country, state);
+    const rates = this?.getTaxRates(country, state);
     const taxes: TaxBreakdown[] = [];
     let taxableAmount = amount;
 
@@ -271,12 +271,12 @@ class InvoiceService {
         taxableAmount = amount + taxes?.reduce((sum, t) => sum + t?.taxAmount, 0);
       }
 
-      const _taxAmount = taxableAmount * (rate?.rate / 100);
+      const taxAmount = taxableAmount * (rate?.rate / 100);
       taxes?.push({
-        taxType: rate?.taxType,
-        taxRate: rate?.rate,
+        taxType: rate.taxType,
+        taxRate: rate.rate,
         taxableAmount,
-        taxAmount: Math?.round(taxAmount * 100) / 100,
+        taxAmount: Math.round(taxAmount * 100) / 100,
       });
     }
 
@@ -288,7 +288,7 @@ class InvoiceService {
   }
 
   formatCurrency(amount: number, currency: string): string {
-    const _symbol = this?.getCurrencySymbol(currency);
+    const symbol = this?.getCurrencySymbol(currency);
     return `${symbol}${amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 
@@ -307,33 +307,33 @@ class InvoiceService {
     applyTax?: boolean;
     metadata?: Record<string, any>;
   }): Invoice {
-    const _currency = data?.currency || "USD";
-    const _invoiceNumber = this?.generateInvoiceNumber();
+    const currency = data?.currency || "USD";
+    const invoiceNumber = this?.generateInvoiceNumber();
 
     const lineItems: InvoiceLineItem[] = data?.lineItems.map((item) => {
-      const _subtotal = item?.quantity * item?.unitPrice;
-      const _discountAmount = item?.discount
+      const subtotal = item?.quantity * item?.unitPrice;
+      const discountAmount = item?.discount
         ? subtotal * (item?.discount / 100)
         : 0;
-      const _taxAmount = item?.taxRate
+      const taxAmount = item?.taxRate
         ? (subtotal - discountAmount) * (item?.taxRate / 100)
         : 0;
-      const _total = subtotal - discountAmount + taxAmount;
+      const total = subtotal - discountAmount + taxAmount;
 
       return {
         id: randomBytes(4).toString("hex"),
-        description: item?.description,
-        quantity: item?.quantity,
-        unitPrice: item?.unitPrice,
-        taxRate: item?.taxRate,
-        discount: item?.discount,
-        total: Math?.round(total * 100) / 100,
+        description: item.description,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        taxRate: item.taxRate,
+        discount: item.discount,
+        total: Math.round(total * 100) / 100,
       };
     });
 
-    const _subtotal = lineItems?.reduce((sum, item) => {
-      const _itemSubtotal = item?.quantity * item?.unitPrice;
-      const _itemDiscount = item?.discount
+    const subtotal = lineItems?.reduce((sum, item) => {
+      const itemSubtotal = item?.quantity * item?.unitPrice;
+      const itemDiscount = item?.discount
         ? itemSubtotal * (item?.discount / 100)
         : 0;
       return sum + (itemSubtotal - itemDiscount);
@@ -344,7 +344,7 @@ class InvoiceService {
       taxes = this?.calculateTax(subtotal, data?.to.country, data?.to.state);
     }
 
-    const _totalTax = taxes?.reduce((sum, t) => sum + t?.taxAmount, 0);
+    const totalTax = taxes?.reduce((sum, t) => sum + t?.taxAmount, 0);
 
     let discountAmount = 0;
     if (data?.discount) {
@@ -355,30 +355,30 @@ class InvoiceService {
       }
     }
 
-    const _total = subtotal + totalTax - discountAmount;
+    const total = subtotal + totalTax - discountAmount;
 
     const invoice: Invoice = {
       id: `inv_${randomBytes(6).toString("hex")}`,
       invoiceNumber,
-      userId: data?.userId,
-      type: data?.type,
+      userId: data.userId,
+      type: data.type,
       status: "draft",
-      from: data?.from,
-      to: data?.to,
+      from: data.from,
+      to: data.to,
       lineItems,
-      subtotal: Math?.round(subtotal * 100) / 100,
+      subtotal: Math.round(subtotal * 100) / 100,
       taxes,
-      totalTax: Math?.round(totalTax * 100) / 100,
+      totalTax: Math.round(totalTax * 100) / 100,
       discount:
         discountAmount > 0 ? Math?.round(discountAmount * 100) / 100 : undefined,
-      discountType: data?.discountType,
-      total: Math?.round(total * 100) / 100,
+      discountType: data.discountType,
+      total: Math.round(total * 100) / 100,
       currency,
-      dueDate: data?.dueDate || new Date(Date?.now() + 30 * 24 * 60 * 60 * 1000),
+      dueDate: data.dueDate || new Date(Date?.now() + 30 * 24 * 60 * 60 * 1000),
       issuedDate: new Date(),
-      notes: data?.notes,
-      terms: data?.terms || "Payment is due within 30 days of invoice date.",
-      metadata: data?.metadata,
+      notes: data.notes,
+      terms: data.terms || "Payment is due within 30 days of invoice date.",
+      metadata: data.metadata,
     };
 
     this?.evictIfOverCap();
@@ -407,7 +407,7 @@ class InvoiceService {
       paymentMethod?: string;
     },
   ): Invoice {
-    const _invoice = this?.invoices.get(invoiceId);
+    const invoice = this?.invoices.get(invoiceId);
     if (!invoice) {
       throw new Error("Invoice not found");
     }
@@ -425,14 +425,14 @@ class InvoiceService {
   }
 
   generatePDF(invoiceId: string): Buffer {
-    const _invoice = this?.invoices.get(invoiceId);
+    const invoice = this?.invoices.get(invoiceId);
     if (!invoice) {
       throw new Error("Invoice not found");
     }
 
-    const _doc = new jsPDF();
-    const _pageWidth = doc?.internal.pageSize?.getWidth();
-    const _margin = 20;
+    const doc = new jsPDF();
+    const pageWidth = doc?.internal.pageSize?.getWidth();
+    const margin = 20;
     let y = margin;
 
     doc?.setFontSize(24);
@@ -504,7 +504,7 @@ class InvoiceService {
       y += 5;
     }
 
-    const _detailsX = pageWidth - margin - 60;
+    const detailsX = pageWidth - margin - 60;
     let detailsY = 60;
     doc?.setFont("helvetica", "bold");
     doc?.text("Invoice Date:", detailsX, detailsY);
@@ -533,7 +533,7 @@ class InvoiceService {
 
     y = Math?.max(y, detailsY) + 20;
 
-    const _tableData = invoice?.lineItems.map((item) => [
+    const tableData = invoice?.lineItems.map((item) => [
       item?.description,
       item?.quantity.toString(),
       this?.formatCurrency(item?.unitPrice, invoice?.currency),
@@ -566,7 +566,7 @@ class InvoiceService {
 
     y = (doc as Record<string, unknown>).lastAutoTable?.finalY + 10;
 
-    const _totalsX = pageWidth - margin - 60;
+    const totalsX = pageWidth - margin - 60;
 
     doc?.setFont("helvetica", "normal");
     doc?.text("Subtotal:", totalsX, y);
@@ -623,7 +623,7 @@ class InvoiceService {
       doc?.text("Notes:", margin, y);
       y += 7;
       doc?.setFont("helvetica", "normal");
-      const _noteLines = doc?.splitTextToSize(
+      const noteLines = doc?.splitTextToSize(
         invoice?.notes,
         pageWidth - margin * 2,
       );
@@ -637,7 +637,7 @@ class InvoiceService {
       doc?.text("Terms & Conditions:", margin, y);
       y += 7;
       doc?.setFont("helvetica", "normal");
-      const _termLines = doc?.splitTextToSize(
+      const termLines = doc?.splitTextToSize(
         invoice?.terms,
         pageWidth - margin * 2,
       );
@@ -661,7 +661,7 @@ class InvoiceService {
   }
 
   getOverdueInvoices(userId?: string): Invoice[] {
-    const _now = new Date();
+    const now = new Date();
     return Array?.from(this?.invoices.values()).filter((inv) => {
       if (userId && inv?.userId !== userId) return false;
       if (
@@ -682,28 +682,28 @@ class InvoiceService {
     invoiceCount: number;
     byStatus: Record<string, number>;
   } {
-    const _userInvoices = this?.getInvoicesByUser(userId);
-    const _now = new Date();
+    const userInvoices = this?.getInvoicesByUser(userId);
+    const now = new Date();
 
-    const _summary = {
+    const summary = {
       totalInvoiced: 0,
       totalPaid: 0,
       totalOutstanding: 0,
       totalOverdue: 0,
-      invoiceCount: userInvoices?.length,
+      invoiceCount: userInvoices.length,
       byStatus: {} as Record<string, number>,
     };
 
     for (const inv of userInvoices) {
-      summary?.totalInvoiced += inv?.total;
-      summary?.byStatus[inv?.status] = (summary?.byStatus[inv?.status] || 0) + 1;
+      summary.totalInvoiced += inv?.total;
+      summary.byStatus[inv.status] = (summary?.byStatus[inv?.status] || 0) + 1;
 
       if (inv?.status === "paid") {
-        summary?.totalPaid += inv?.total;
+        summary.totalPaid += inv?.total;
       } else if (inv?.status !== "cancelled" && inv?.status !== "refunded") {
-        summary?.totalOutstanding += inv?.total;
+        summary.totalOutstanding += inv?.total;
         if (new Date(inv?.dueDate) < now) {
-          summary?.totalOverdue += inv?.total;
+          summary.totalOverdue += inv?.total;
         }
       }
     }
@@ -712,4 +712,4 @@ class InvoiceService {
   }
 }
 
-export const _invoiceService = new InvoiceService();
+export const invoiceService = new InvoiceService();

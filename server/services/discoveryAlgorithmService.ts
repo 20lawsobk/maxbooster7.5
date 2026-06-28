@@ -3,7 +3,7 @@ import { eq, desc, and, sql } from "drizzle-orm";
 import { userTasteProfiles, beatInteractions, listings, users, storefronts, storefrontFollows } from "@shared/schema";
 import { logger } from "../logger.js";
 
-const _GENRE_LIST = [
+const GENRE_LIST = [
   "Hip-Hop",
   "Trap",
   "R&B",
@@ -26,7 +26,7 @@ const _GENRE_LIST = [
   "Alternative",
 ];
 
-const _MOOD_LIST = [
+const MOOD_LIST = [
   "Dark",
   "Energetic",
   "Chill",
@@ -97,7 +97,7 @@ const GENRE_TRENDING_BOOST: Record<string, number> = {
 export class DiscoveryAlgorithmService {
   async getOrCreateTasteProfile(userId: string) {
     try {
-      const _existing = await db
+      const existing = await db
         .select()
         .from(userTasteProfiles)
         .where(eq(userTasteProfiles?.userId, userId))
@@ -143,13 +143,13 @@ export class DiscoveryAlgorithmService {
   }) {
     try {
       await db?.insert(beatInteractions).values({
-        userId: data?.userId,
-        beatId: data?.beatId,
-        interactionType: data?.interactionType,
-        playDurationSeconds: data?.playDurationSeconds,
-        completionRate: data?.completionRate,
-        source: data?.source || "browse",
-        sessionId: data?.sessionId,
+        userId: data.userId,
+        beatId: data.beatId,
+        interactionType: data.interactionType,
+        playDurationSeconds: data.playDurationSeconds,
+        completionRate: data.completionRate,
+        source: data.source || "browse",
+        sessionId: data.sessionId,
       });
 
       await this?.updateTasteProfileFromInteraction(
@@ -173,32 +173,32 @@ export class DiscoveryAlgorithmService {
     completionRate?: number,
   ) {
     try {
-      const _weight = INTERACTION_WEIGHTS[interactionType] ?? 0;
+      const weight = INTERACTION_WEIGHTS[interactionType] ?? 0;
       if (weight === 0) return;
 
-      const _beatData = await db
+      const beatData = await db
         .select()
         .from(listings)
         .where(eq(listings?.id, beatId))
         .limit(1);
       if (beatData?.length === 0) return;
 
-      const _beat = beatData[0];
-      const _metadata = (beat?.metadata as Record<string, any>) || {};
-      const _genre = metadata?.genre || beat?.category;
-      const _mood = metadata?.mood;
-      const _bpm = metadata?.bpm || metadata?.tempo;
+      const beat = beatData[0];
+      const metadata = (beat?.metadata as Record<string, any>) || {};
+      const genre = metadata?.genre || beat?.category;
+      const mood = metadata?.mood;
+      const bpm = metadata?.bpm || metadata?.tempo;
 
-      const _profile = await this?.getOrCreateTasteProfile(userId);
-      const _genreScores = {
+      const profile = await this?.getOrCreateTasteProfile(userId);
+      const genreScores = {
         ...((profile?.genreScores as Record<string, number>) || {}),
       };
-      const _moodScores = {
+      const moodScores = {
         ...((profile?.moodScores as Record<string, number>) || {}),
       };
 
       // Dynamic learning rate — stronger for high-intent interactions
-      const _baseLearningRate = LEARNING_RATES[interactionType] ?? 0.05;
+      const baseLearningRate = LEARNING_RATES[interactionType] ?? 0.05;
 
       // Completion rate modifier — finishing a track is a stronger signal
       let completionBoost = 1.0;
@@ -208,13 +208,13 @@ export class DiscoveryAlgorithmService {
         else if (completionRate < 0.25) completionBoost = 0.5; // Bailed early
       }
 
-      const _effectiveLearningRate = baseLearningRate * completionBoost;
-      const _normalizedWeight =
+      const effectiveLearningRate = baseLearningRate * completionBoost;
+      const normalizedWeight =
         weight / Math?.max(...Object?.values(INTERACTION_WEIGHTS));
 
       // Update genre preference
       if (genre && genreScores[genre] !== undefined) {
-        const _delta = effectiveLearningRate * normalizedWeight;
+        const delta = effectiveLearningRate * normalizedWeight;
         genreScores[genre] = Math?.min(
           1.0,
           Math?.max(0.0, genreScores[genre] + delta),
@@ -229,7 +229,7 @@ export class DiscoveryAlgorithmService {
 
       // Update mood preference
       if (mood && moodScores[mood] !== undefined) {
-        const _delta = effectiveLearningRate * normalizedWeight;
+        const delta = effectiveLearningRate * normalizedWeight;
         moodScores[mood] = Math?.min(
           1.0,
           Math?.max(0.0, moodScores[mood] + delta),
@@ -249,8 +249,8 @@ export class DiscoveryAlgorithmService {
         profile?.totalInteractions &&
         profile?.totalInteractions > 3
       ) {
-        const _currentMin = profile?.preferredTempoMin || 80;
-        const _currentMax = profile?.preferredTempoMax || 150;
+        const currentMin = profile?.preferredTempoMin || 80;
+        const currentMax = profile?.preferredTempoMax || 150;
         // Gradually expand or shift tempo range toward liked tempos
         if (bpm < currentMin && weight > 1) {
           tempoUpdates.preferredTempoMin = Math?.max(
@@ -296,31 +296,31 @@ export class DiscoveryAlgorithmService {
     } = {},
   ) {
     try {
-      const _limit = Math?.min(options?.limit || 20, 50);
-      const _offset = options?.offset || 0;
+      const limit = Math?.min(options?.limit || 20, 50);
+      const offset = options?.offset || 0;
 
-      const _profile = await this?.getOrCreateTasteProfile(userId);
-      const _genreScores = (profile?.genreScores as Record<string, number>) || {};
-      const _moodScores = (profile?.moodScores as Record<string, number>) || {};
-      const _followedProducers = (profile?.followedProducers as string[]) || [];
+      const profile = await this?.getOrCreateTasteProfile(userId);
+      const genreScores = (profile?.genreScores as Record<string, number>) || {};
+      const moodScores = (profile?.moodScores as Record<string, number>) || {};
+      const followedProducers = (profile?.followedProducers as string[]) || [];
 
       // Fetch a large enough candidate pool for ranking (2x for genre/filter fallback)
-      const _candidatePool = 300;
-      const _allListings = await db
+      const candidatePool = 300;
+      const allListings = await db
         .select({
-          id: listings?.id,
-          userId: listings?.userId,
-          title: listings?.title,
-          description: listings?.description,
-          priceCents: listings?.priceCents,
-          currency: listings?.currency,
-          category: listings?.category,
-          audioUrl: listings?.audioUrl,
-          artworkUrl: listings?.artworkUrl,
-          previewUrl: listings?.previewUrl,
-          metadata: listings?.metadata,
-          createdAt: listings?.createdAt,
-          producerName: users?.username,
+          id: listings.id,
+          userId: listings.userId,
+          title: listings.title,
+          description: listings.description,
+          priceCents: listings.priceCents,
+          currency: listings.currency,
+          category: listings.category,
+          audioUrl: listings.audioUrl,
+          artworkUrl: listings.artworkUrl,
+          previewUrl: listings.previewUrl,
+          metadata: listings.metadata,
+          createdAt: listings.createdAt,
+          producerName: users.username,
         })
         .from(listings)
         .leftJoin(users, eq(listings?.userId, users?.id))
@@ -328,25 +328,25 @@ export class DiscoveryAlgorithmService {
         .orderBy(desc(listings?.createdAt))
         .limit(candidatePool);
 
-      const _now = new Date();
-      const _oneDayAgo = new Date(now?.getTime() - 24 * 60 * 60 * 1000);
-      const _threeeDaysAgo = new Date(now?.getTime() - 3 * 24 * 60 * 60 * 1000);
-      const _oneWeekAgo = new Date(now?.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const _oneMonthAgo = new Date(now?.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const now = new Date();
+      const oneDayAgo = new Date(now?.getTime() - 24 * 60 * 60 * 1000);
+      const threeeDaysAgo = new Date(now?.getTime() - 3 * 24 * 60 * 60 * 1000);
+      const oneWeekAgo = new Date(now?.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const oneMonthAgo = new Date(now?.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-      const _totalInteractions = profile?.totalInteractions || 0;
+      const totalInteractions = profile?.totalInteractions || 0;
       // Cold-start mode: new users get a more exploration-heavy blend
-      const _isColdStart = totalInteractions < 5;
+      const isColdStart = totalInteractions < 5;
 
-      const _scoredBeats = allListings?.map((beat) => {
-        const _metadata = (beat?.metadata as Record<string, any>) || {};
-        const _genre = metadata?.genre || beat?.category || "";
-        const _mood = metadata?.mood || "";
-        const _tempo = metadata?.bpm || metadata?.tempo || 120;
-        const _producerId = beat?.userId || "";
-        const _createdAt = beat?.createdAt || new Date();
-        const _plays = metadata?.plays || 0;
-        const _likes = metadata?.likes || 0;
+      const scoredBeats = allListings?.map((beat) => {
+        const metadata = (beat?.metadata as Record<string, any>) || {};
+        const genre = metadata?.genre || beat?.category || "";
+        const mood = metadata?.mood || "";
+        const tempo = metadata?.bpm || metadata?.tempo || 120;
+        const producerId = beat?.userId || "";
+        const createdAt = beat?.createdAt || new Date();
+        const plays = metadata?.plays || 0;
+        const likes = metadata?.likes || 0;
 
         // ── Taste score (personalization) ──────────────────────────────────────
         let tasteScore = 0.5; // neutral default
@@ -356,23 +356,23 @@ export class DiscoveryAlgorithmService {
           let moodScore = moodScores[mood] ?? 0.5;
 
           // Apply trending genre boost
-          const _trendingBoost = GENRE_TRENDING_BOOST[genre] || 1.0;
+          const trendingBoost = GENRE_TRENDING_BOOST[genre] || 1.0;
           genreScore = Math?.min(1.0, genreScore * trendingBoost);
 
           // Weighted average of genre and mood (genre is slightly more predictive)
           tasteScore = genreScore * 0.6 + moodScore * 0.4;
         } else {
           // Cold start: use trending genre boost to surface popular genres
-          const _trendingBoost = GENRE_TRENDING_BOOST[genre] || 1.0;
+          const trendingBoost = GENRE_TRENDING_BOOST[genre] || 1.0;
           tasteScore = 0.45 + (trendingBoost - 1.0) * 0.5;
         }
 
         // ── Tempo compatibility ────────────────────────────────────────────────
-        const _tempoMin = profile?.preferredTempoMin || 70;
-        const _tempoMax = profile?.preferredTempoMax || 160;
+        const tempoMin = profile?.preferredTempoMin || 70;
+        const tempoMax = profile?.preferredTempoMax || 160;
         let tempoScore = 1.0;
         if (tempo < tempoMin || tempo > tempoMax) {
-          const _distance = Math?.min(
+          const distance = Math?.min(
             Math?.abs(tempo - tempoMin),
             Math?.abs(tempo - tempoMax),
           );
@@ -389,7 +389,7 @@ export class DiscoveryAlgorithmService {
         } else if (createdAt >= oneWeekAgo) {
           freshnessScore = 0.7;
         } else if (createdAt >= oneMonthAgo) {
-          const _daysSince =
+          const daysSince =
             (now?.getTime() - createdAt?.getTime()) / (24 * 60 * 60 * 1000);
           // Exponential decay with slower curve (τ = 45 days vs original 30)
           freshnessScore = Math?.max(
@@ -401,13 +401,13 @@ export class DiscoveryAlgorithmService {
         }
 
         // ── Producer affinity score ────────────────────────────────────────────
-        const _producerScore = followedProducers?.includes(producerId)
+        const producerScore = followedProducers?.includes(producerId)
           ? 1.0
           : 0.25;
 
         // ── Social proof (popularity signals) ─────────────────────────────────
         // Soft popularity signal — prevents completely unproven content from topping feed
-        const _popularityScore = Math?.min(
+        const popularityScore = Math?.min(
           1.0,
           Math?.log1p(plays) / 12 + Math?.log1p(likes) / 8,
         );
@@ -440,18 +440,18 @@ export class DiscoveryAlgorithmService {
           return { beat, discoveryScore: discoveryScore * 0.05 };
         }
         if (options?.search) {
-          const _searchLower = options?.search.toLowerCase();
-          const _titleMatch = beat?.title?.toLowerCase().includes(searchLower);
-          const _descMatch = beat?.description
+          const searchLower = options?.search.toLowerCase();
+          const titleMatch = beat?.title?.toLowerCase().includes(searchLower);
+          const descMatch = beat?.description
             ?.toLowerCase()
             .includes(searchLower);
-          const _producerMatch = beat?.producerName
+          const producerMatch = beat?.producerName
             ?.toLowerCase()
             .includes(searchLower);
-          const _genreMatch = genre?.toLowerCase().includes(searchLower);
-          const _moodMatch = mood?.toLowerCase().includes(searchLower);
-          const _tags = (metadata?.tags || []) as string[];
-          const _tagMatch = tags?.some((t: string) =>
+          const genreMatch = genre?.toLowerCase().includes(searchLower);
+          const moodMatch = mood?.toLowerCase().includes(searchLower);
+          const tags = (metadata?.tags || []) as string[];
+          const tagMatch = tags?.some((t: string) =>
             t?.toLowerCase().includes(searchLower),
           );
 
@@ -472,43 +472,43 @@ export class DiscoveryAlgorithmService {
         return { beat, discoveryScore };
       });
 
-      const _filteredBeats = options?.search
+      const filteredBeats = options?.search
         ? scoredBeats?.filter((b) => b?.discoveryScore > 0)
         : scoredBeats;
 
       filteredBeats?.sort((a, b) => b?.discoveryScore - a?.discoveryScore);
 
       // Inject diversity: avoid top-5 all being same genre
-      const _diversifiedBeats = this?.diversifyResults(filteredBeats);
-      const _paginatedResults = diversifiedBeats?.slice(offset, offset + limit);
+      const diversifiedBeats = this?.diversifyResults(filteredBeats);
+      const paginatedResults = diversifiedBeats?.slice(offset, offset + limit);
 
       return paginatedResults?.map(({ beat, discoveryScore }) => {
-        const _metadata = (beat?.metadata as Record<string, any>) || {};
+        const metadata = (beat?.metadata as Record<string, any>) || {};
         return {
-          id: beat?.id,
-          title: beat?.title,
-          producer: beat?.producerName || "Producer",
-          producerId: beat?.userId,
+          id: beat.id,
+          title: beat.title,
+          producer: beat.producerName || "Producer",
+          producerId: beat.userId,
           price: (beat?.priceCents || 0) / 100,
-          currency: beat?.currency || "usd",
-          genre: metadata?.genre || beat?.category || "Other",
-          mood: metadata?.mood || "Chill",
-          tempo: metadata?.bpm || metadata?.tempo || 120,
-          key: metadata?.key || "C Major",
-          duration: metadata?.duration || 180,
-          audioUrl: beat?.audioUrl,
-          previewUrl: beat?.previewUrl,
-          artworkUrl: beat?.artworkUrl,
-          coverArt: beat?.artworkUrl,
-          plays: metadata?.plays || 0,
-          likes: metadata?.likes || 0,
-          avgRating: metadata?.avgRating || 0,
-          ratingCount: metadata?.ratingCount || 0,
+          currency: beat.currency || "usd",
+          genre: metadata.genre || beat?.category || "Other",
+          mood: metadata.mood || "Chill",
+          tempo: metadata.bpm || metadata?.tempo || 120,
+          key: metadata.key || "C Major",
+          duration: metadata.duration || 180,
+          audioUrl: beat.audioUrl,
+          previewUrl: beat.previewUrl,
+          artworkUrl: beat.artworkUrl,
+          coverArt: beat.artworkUrl,
+          plays: metadata.plays || 0,
+          likes: metadata.likes || 0,
+          avgRating: metadata.avgRating || 0,
+          ratingCount: metadata.ratingCount || 0,
           isHot: discoveryScore > 0.72,
-          isNew: beat?.createdAt && beat?.createdAt >= oneWeekAgo,
+          isNew: beat.createdAt && beat?.createdAt >= oneWeekAgo,
           isTrending: discoveryScore > 0.8 && (metadata?.plays || 0) > 50,
-          discoveryScore: Math?.round(discoveryScore * 100) / 100,
-          licenseOptions: metadata?.licenses || [
+          discoveryScore: Math.round(discoveryScore * 100) / 100,
+          licenseOptions: metadata.licenses || [
             {
               type: "basic",
               price: (beat?.priceCents || 0) / 100,
@@ -548,9 +548,9 @@ export class DiscoveryAlgorithmService {
     const remaining: T[] = [];
 
     for (const item of scoredBeats) {
-      const _meta = (item?.beat.metadata as Record<string, any>) || {};
-      const _genre = meta?.genre || item?.beat.category || "Other";
-      const _sameGenreCount = recentGenres
+      const meta = (item?.beat.metadata as Record<string, any>) || {};
+      const genre = meta?.genre || item?.beat.category || "Other";
+      const sameGenreCount = recentGenres
         .slice(-3)
         .filter((g) => g === genre).length;
 
@@ -568,8 +568,8 @@ export class DiscoveryAlgorithmService {
 
   async followProducer(userId: string, producerId: string) {
     try {
-      const _profile = await this?.getOrCreateTasteProfile(userId);
-      const _followedProducers = [
+      const profile = await this?.getOrCreateTasteProfile(userId);
+      const followedProducers = [
         ...((profile?.followedProducers as string[]) || []),
       ];
 
@@ -591,8 +591,8 @@ export class DiscoveryAlgorithmService {
 
   async unfollowProducer(userId: string, producerId: string) {
     try {
-      const _profile = await this?.getOrCreateTasteProfile(userId);
-      const _followedProducers = (
+      const profile = await this?.getOrCreateTasteProfile(userId);
+      const followedProducers = (
         (profile?.followedProducers as string[]) || []
       ).filter((id) => id !== producerId);
 
@@ -615,18 +615,18 @@ export class DiscoveryAlgorithmService {
     follow: boolean,
   ) {
     try {
-      const _userStorefront = await db
-        .select({ id: storefronts?.id })
+      const userStorefront = await db
+        .select({ id: storefronts.id })
         .from(storefronts)
         .where(eq(storefronts?.userId, producerId))
         .limit(1);
 
-      const _storefrontId = userStorefront[0]?.id;
+      const storefrontId = userStorefront[0]?.id;
       if (!storefrontId) return;
 
       if (follow) {
-        const _existing = await db
-          .select({ id: storefrontFollows?.id })
+        const existing = await db
+          .select({ id: storefrontFollows.id })
           .from(storefrontFollows)
           .where(
             and(
@@ -656,7 +656,7 @@ export class DiscoveryAlgorithmService {
 
   async getProducerFollowers(producerId: string): Promise<string[]> {
     try {
-      const _result = await db?.execute(
+      const result = await db?.execute(
         sql`SELECT user_id FROM user_taste_profiles
             WHERE followed_producers @> ARRAY[${producerId}]::text[]`,
       );
@@ -671,29 +671,29 @@ export class DiscoveryAlgorithmService {
 
   async getTasteInsights(userId: string) {
     try {
-      const _profile = await this?.getOrCreateTasteProfile(userId);
-      const _genreScores = (profile?.genreScores as Record<string, number>) || {};
-      const _moodScores = (profile?.moodScores as Record<string, number>) || {};
+      const profile = await this?.getOrCreateTasteProfile(userId);
+      const genreScores = (profile?.genreScores as Record<string, number>) || {};
+      const moodScores = (profile?.moodScores as Record<string, number>) || {};
 
-      const _topGenres = Object?.entries(genreScores)
+      const topGenres = Object?.entries(genreScores)
         .filter(([, score]) => score > 0.5) // Only show genuine preferences
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5)
         .map(([genre, score]) => ({
           genre,
-          score: Math?.round(score * 100) / 100,
+          score: Math.round(score * 100) / 100,
         }));
 
-      const _topMoods = Object?.entries(moodScores)
+      const topMoods = Object?.entries(moodScores)
         .filter(([, score]) => score > 0.5)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5)
         .map(([mood, score]) => ({
           mood,
-          score: Math?.round(score * 100) / 100,
+          score: Math.round(score * 100) / 100,
         }));
 
-      const _recentInteractions = await db
+      const recentInteractions = await db
         .select()
         .from(beatInteractions)
         .where(eq(beatInteractions?.userId, userId))
@@ -701,18 +701,18 @@ export class DiscoveryAlgorithmService {
         .limit(10);
 
       return {
-        totalInteractions: profile?.totalInteractions || 0,
-        purchaseCount: profile?.purchaseCount || 0,
+        totalInteractions: profile.totalInteractions || 0,
+        purchaseCount: profile.purchaseCount || 0,
         topGenres,
         topMoods,
         preferredTempoRange: {
-          min: profile?.preferredTempoMin || 80,
-          max: profile?.preferredTempoMax || 150,
+          min: profile.preferredTempoMin || 80,
+          max: profile.preferredTempoMax || 150,
         },
         followedProducersCount: ((profile?.followedProducers as string[]) || [])
           .length,
-        recentActivityCount: recentInteractions?.length,
-        profileMaturity: Math?.min(
+        recentActivityCount: recentInteractions.length,
+        profileMaturity: Math.min(
           100,
           Math?.round((profile?.totalInteractions || 0) / 0.5),
         ),
@@ -724,4 +724,4 @@ export class DiscoveryAlgorithmService {
   }
 }
 
-export const _discoveryAlgorithmService = new DiscoveryAlgorithmService();
+export const discoveryAlgorithmService = new DiscoveryAlgorithmService();

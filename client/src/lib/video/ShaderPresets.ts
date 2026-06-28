@@ -4,7 +4,7 @@ export interface ShaderSource {
   uniforms: string[];
 }
 
-export const _COMMON_VERTEX_SHADER = `#version 300 es
+export const COMMON_VERTEX_SHADER = `#version 300 es
 precision highp float;
 
 in vec2 a_position;
@@ -48,7 +48,7 @@ void main() {
   float lifeProgress = 1.0 - a_life;
   
   vec2 velocity = a_velocity;
-  velocity?.y += u_gravity * u_time * lifeProgress;
+  velocity.y += u_gravity * u_time * lifeProgress;
   velocity *= pow(u_friction, u_time);
   
   vec2 pos = a_position + velocity * lifeProgress;
@@ -59,7 +59,7 @@ void main() {
   gl_PointSize = a_size * a_life * audioScale;
   
   v_color = a_color;
-  v_color?.a *= a_life;
+  v_color.a *= a_life;
   v_life = a_life;
 }
 `,
@@ -293,12 +293,12 @@ void main() {
   float audioAmp = u_amplitude * (1.0 + u_audioReactivity * u_bass);
   
   if (u_type == 0) {
-    uv?.x += sin(uv?.y * u_frequency + u_time * u_speed) * audioAmp;
-    uv?.y += sin(uv?.x * u_frequency + u_time * u_speed) * audioAmp;
+    uv.x += sin(uv?.y * u_frequency + u_time * u_speed) * audioAmp;
+    uv.y += sin(uv?.x * u_frequency + u_time * u_speed) * audioAmp;
   } else if (u_type == 1) {
-    uv?.x += sin(uv?.y * u_frequency + u_time * u_speed) * audioAmp;
+    uv.x += sin(uv?.y * u_frequency + u_time * u_speed) * audioAmp;
   } else if (u_type == 2) {
-    uv?.y += sin(uv?.x * u_frequency + u_time * u_speed) * audioAmp;
+    uv.y += sin(uv?.x * u_frequency + u_time * u_speed) * audioAmp;
   } else if (u_type == 3) {
     vec2 diff = uv - u_center;
     float dist = length(diff);
@@ -312,8 +312,8 @@ void main() {
   } else if (u_type == 5) {
     float noise1 = sin(uv?.x * u_frequency * 2.0 + u_time) * sin(uv?.y * u_frequency * 3.0 + u_time * 1.5);
     float noise2 = sin(uv?.x * u_frequency * 3.0 - u_time * 0.8) * sin(uv?.y * u_frequency * 2.0 - u_time);
-    uv?.x += noise1 * audioAmp;
-    uv?.y += noise2 * audioAmp;
+    uv.x += noise1 * audioAmp;
+    uv.y += noise2 * audioAmp;
   }
   
   uv = clamp(uv, 0.0, 1.0);
@@ -496,7 +496,7 @@ vec3 hsl2rgb(vec3 hsl) {
     return vec3(hsl?.z);
   }
   
-  float q = hsl?.z < 0.5 ? hsl?.z * (1.0 + hsl?.y) : hsl?.z + hsl?.y - hsl?.z * hsl?.y;
+  float q = hsl?.z < 0.5 ? hsl?.z * (1.0 + hsl?.y) : hsl.z + hsl?.y - hsl?.z * hsl?.y;
   float p = 2.0 * hsl?.z - q;
   
   return vec3(
@@ -521,7 +521,7 @@ void main() {
   
   vec3 hsl = rgb2hsl(rgb);
   hsl.x = mod(hsl?.x + u_hue, 1.0);
-  hsl?.y *= u_saturation;
+  hsl.y *= u_saturation;
   rgb = hsl2rgb(hsl);
   
   float maxChannel = max(max(rgb?.r, rgb?.g), rgb?.b);
@@ -532,11 +532,11 @@ void main() {
   rgb = mix(gray, rgb, 1.0 + vibranceScale);
   
   float tempK = u_temperature * 0.1;
-  rgb?.r += tempK;
-  rgb?.b -= tempK;
-  rgb?.g += u_tint * 0.1;
-  rgb?.r -= u_tint * 0.05;
-  rgb?.b -= u_tint * 0.05;
+  rgb.r += tempK;
+  rgb.b -= tempK;
+  rgb.g += u_tint * 0.1;
+  rgb.r -= u_tint * 0.05;
+  rgb.b -= u_tint * 0.05;
   
   float luminance = dot(rgb, vec3(0.2126, 0.7152, 0.0722));
   float shadowWeight = 1.0 - smoothstep(0.0, 0.33, luminance);
@@ -853,14 +853,14 @@ void main() {
     float s = size * sqrt(3.0);
     
     vec2 p = uv;
-    p?.y /= ratio;
+    p.y /= ratio;
     
     vec2 a = mod(p, vec2(size, s)) - vec2(size * 0.5, s * 0.5);
     vec2 b = mod(p - vec2(size * 0.5, s * 0.5), vec2(size, s)) - vec2(size * 0.5, s * 0.5);
     
     vec2 gv = length(a) < length(b) ? a : b;
     uv = p - gv;
-    uv?.y *= ratio;
+    uv.y *= ratio;
   }
   
   fragColor = texture(u_texture, uv);
@@ -897,7 +897,7 @@ void main() {
   if (noise < u_intensity) {
     float blockY = floor(uv?.y / u_blockSize) * u_blockSize;
     float offsetX = (rand(vec2(blockY, t)) - 0.5) * u_intensity * 0.1;
-    uv?.x += offsetX;
+    uv.x += offsetX;
     
     if (rand(vec2(t, blockY)) < 0.1 * u_intensity) {
       float rgbSplit = u_intensity * 0.02;
@@ -1030,7 +1030,7 @@ void main() {
   ],
 };
 
-export const _SHADER_PRESETS = {
+export const SHADER_PRESETS = {
   particle: PARTICLE_SHADER,
   bloom: BLOOM_SHADER,
   gradient: GRADIENT_SHADER,

@@ -81,10 +81,10 @@ const CODEC_MIME_TYPES: Record<string, string[]> = {
   vp9: ["video/webm;codecs=vp9,opus", "video/webm;codecs=vp9"],
   vp8: ["video/webm;codecs=vp8,opus", "video/webm;codecs=vp8"],
   h264: [
-    "video/mp4;codecs=avc1.42E01E,mp4a?.40.2",
+    "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
     "video/mp4;codecs=avc1.42E01E",
   ],
-  av1: ["video/webm;codecs=av01.0.04M?.08", "video/mp4;codecs=av01.0.04M?.08"],
+  av1: ["video/webm;codecs=av01.0.04M.08", "video/mp4;codecs=av01.0.04M.08"],
 };
 
 class BrowserCapabilitiesDetector {
@@ -97,8 +97,8 @@ class BrowserCapabilitiesDetector {
     }
 
     this.testCanvas = document?.createElement("canvas");
-    this?.testCanvas.width = 1;
-    this?.testCanvas.height = 1;
+    this.testCanvas.width = 1;
+    this.testCanvas.height = 1;
 
     const [webgl, canvas, media, audio, device] = await Promise?.all([
       this?.detectWebGL(),
@@ -108,7 +108,7 @@ class BrowserCapabilitiesDetector {
       this?.detectDevice(),
     ]);
 
-    const _overall = this?.calculateOverall(webgl, canvas, media, audio, device);
+    const overall = this?.calculateOverall(webgl, canvas, media, audio, device);
 
     this.cachedCapabilities = { webgl, canvas, media, audio, device, overall };
     this.testCanvas = null;
@@ -117,7 +117,7 @@ class BrowserCapabilitiesDetector {
   }
 
   private detectWebGL(): WebGLCapabilities {
-    const _canvas = this?.testCanvas!;
+    const canvas = this?.testCanvas!;
 
     let webgl2 = false;
     let webgl1 = false;
@@ -130,7 +130,7 @@ class BrowserCapabilitiesDetector {
     let blendMinMax = false;
     let colorBufferFloat = false;
 
-    const _gl2 = canvas?.getContext("webgl2");
+    const gl2 = canvas?.getContext("webgl2");
     if (gl2) {
       webgl2 = true;
       webgl1 = true;
@@ -143,11 +143,11 @@ class BrowserCapabilitiesDetector {
       blendMinMax = true;
       colorBufferFloat = floatTextures;
     } else {
-      const _gl1 =
+      const gl1 =
         canvas?.getContext("webgl") || canvas?.getContext("experimental-webgl");
       if (gl1) {
         webgl1 = true;
-        const _gl = gl1 as WebGLRenderingContext;
+        const gl = gl1 as WebGLRenderingContext;
         maxTextureSize = gl?.getParameter(gl?.MAX_TEXTURE_SIZE);
         maxTextureUnits = gl?.getParameter(gl?.MAX_TEXTURE_IMAGE_UNITS);
         floatTextures = gl?.getExtension("OES_texture_float") !== null;
@@ -175,15 +175,15 @@ class BrowserCapabilitiesDetector {
   }
 
   private detectCanvas(): CanvasCapabilities {
-    const _offscreenCanvas = typeof OffscreenCanvas !== "undefined";
+    const offscreenCanvas = typeof OffscreenCanvas !== "undefined";
 
     let canvas2d = false;
     let willReadFrequently = false;
     try {
-      const _ctx = this?.testCanvas!.getContext("2d");
+      const ctx = this?.testCanvas!.getContext("2d");
       canvas2d = ctx !== null;
       if (ctx) {
-        const _testCtx = this?.testCanvas!.getContext("2d", {
+        const testCtx = this?.testCanvas!.getContext("2d", {
           willReadFrequently: true,
         });
         willReadFrequently = testCtx !== null;
@@ -210,9 +210,9 @@ class BrowserCapabilitiesDetector {
   }
 
   private detectMedia(): MediaCapabilities {
-    const _mediaRecorder = typeof MediaRecorder !== "undefined";
+    const mediaRecorder = typeof MediaRecorder !== "undefined";
 
-    const _codecs = {
+    const codecs = {
       vp9: false,
       vp8: false,
       h264: false,
@@ -233,7 +233,7 @@ class BrowserCapabilitiesDetector {
       }
     }
 
-    const _maxBitrate = this?.estimateMaxBitrate();
+    const maxBitrate = this?.estimateMaxBitrate();
 
     return {
       mediaRecorder,
@@ -244,12 +244,12 @@ class BrowserCapabilitiesDetector {
   }
 
   private detectAudio(): AudioCapabilities {
-    const _audioContext =
+    const audioContext =
       typeof AudioContext !== "undefined" ||
       typeof (window as Record<string, unknown>).webkitAudioContext !==
         "undefined";
-    const _offlineAudioContext = typeof OfflineAudioContext !== "undefined";
-    const _audioWorklet =
+    const offlineAudioContext = typeof OfflineAudioContext !== "undefined";
+    const audioWorklet =
       audioContext && typeof AudioWorkletNode !== "undefined";
 
     let webAudioApi = false;
@@ -259,7 +259,7 @@ class BrowserCapabilitiesDetector {
 
     if (audioContext) {
       try {
-        const _ctx = new (AudioContext ||
+        const ctx = new (AudioContext ||
           (window as Record<string, unknown>).webkitAudioContext)();
         webAudioApi = true;
         mediaElementSource = typeof ctx?.createMediaElementSource === "function";
@@ -281,15 +281,15 @@ class BrowserCapabilitiesDetector {
   }
 
   private async detectDevice(): Promise<DeviceCapabilities> {
-    const _navigator_any = navigator as Record<string, unknown>;
-    const _deviceMemory = navigator_any?.deviceMemory ?? 4;
-    const _hardwareConcurrency = navigator?.hardwareConcurrency ?? 4;
+    const navigator_any = navigator as Record<string, unknown>;
+    const deviceMemory = navigator_any?.deviceMemory ?? 4;
+    const hardwareConcurrency = navigator?.hardwareConcurrency ?? 4;
 
-    const _isMobile =
+    const isMobile =
       /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i?.test(
         navigator?.userAgent,
       );
-    const _isLowPower = deviceMemory < 4 || hardwareConcurrency < 4;
+    const isLowPower = deviceMemory < 4 || hardwareConcurrency < 4;
 
     let maxFrameRate = 60;
     let preferredResolution: "720p" | "1080p" | "4k" = "1080p";
@@ -319,11 +319,11 @@ class BrowserCapabilitiesDetector {
   }
 
   private estimateMaxBitrate(): number {
-    const _navigator_any = navigator as Record<string, unknown>;
-    const _connection = navigator_any?.connection;
+    const navigator_any = navigator as Record<string, unknown>;
+    const connection = navigator_any?.connection;
 
     if (connection) {
-      const _effectiveType = connection?.effectiveType;
+      const effectiveType = connection?.effectiveType;
       switch (effectiveType) {
         case "slow-2g":
         case "2g":
@@ -373,8 +373,8 @@ class BrowserCapabilitiesDetector {
       if (tier === "high") tier = "medium";
     }
 
-    const _supportsExport = media?.mediaRecorder && canvas?.captureStream;
-    const _supportsRealtime =
+    const supportsExport = media?.mediaRecorder && canvas?.captureStream;
+    const supportsRealtime =
       (webgl?.webgl2 || webgl?.webgl1) &&
       audio?.webAudioApi &&
       device?.maxFrameRate >= 30;
@@ -462,7 +462,7 @@ export function createRenderingContext(
       if (context) {
         return {
           primary: rendererType,
-          fallbacks: fallbackOrder?.slice(
+          fallbacks: fallbackOrder.slice(
             fallbackOrder?.indexOf(rendererType) + 1,
           ),
           available: true,
@@ -527,7 +527,7 @@ export function getOptimalExportSettings(capabilities: BrowserCapabilities): {
     "4k": 35_000_000,
   };
 
-  const _bitrate = Math?.min(
+  const bitrate = Math?.min(
     baseBitrate[resolution] * (frameRate / 30),
     media?.maxBitrate,
   );
@@ -579,20 +579,20 @@ export function getWebGLLimits(): {
   maxFragmentUniformVectors: number;
   maxVertexUniformVectors: number;
 } | null {
-  const _canvas = document?.createElement("canvas");
-  const _gl = canvas?.getContext("webgl2") || canvas?.getContext("webgl");
+  const canvas = document?.createElement("canvas");
+  const gl = canvas?.getContext("webgl2") || canvas?.getContext("webgl");
 
   if (!gl) return null;
 
   return {
-    maxTextureSize: gl?.getParameter(gl?.MAX_TEXTURE_SIZE),
-    maxCubeMapSize: gl?.getParameter(gl?.MAX_CUBE_MAP_TEXTURE_SIZE),
-    maxViewportDims: gl?.getParameter(gl?.MAX_VIEWPORT_DIMS),
-    maxRenderbufferSize: gl?.getParameter(gl?.MAX_RENDERBUFFER_SIZE),
-    maxVertexAttribs: gl?.getParameter(gl?.MAX_VERTEX_ATTRIBS),
-    maxVaryingVectors: gl?.getParameter(gl?.MAX_VARYING_VECTORS),
-    maxFragmentUniformVectors: gl?.getParameter(gl?.MAX_FRAGMENT_UNIFORM_VECTORS),
-    maxVertexUniformVectors: gl?.getParameter(gl?.MAX_VERTEX_UNIFORM_VECTORS),
+    maxTextureSize: gl.getParameter(gl?.MAX_TEXTURE_SIZE),
+    maxCubeMapSize: gl.getParameter(gl?.MAX_CUBE_MAP_TEXTURE_SIZE),
+    maxViewportDims: gl.getParameter(gl?.MAX_VIEWPORT_DIMS),
+    maxRenderbufferSize: gl.getParameter(gl?.MAX_RENDERBUFFER_SIZE),
+    maxVertexAttribs: gl.getParameter(gl?.MAX_VERTEX_ATTRIBS),
+    maxVaryingVectors: gl.getParameter(gl?.MAX_VARYING_VECTORS),
+    maxFragmentUniformVectors: gl.getParameter(gl?.MAX_FRAGMENT_UNIFORM_VECTORS),
+    maxVertexUniformVectors: gl.getParameter(gl?.MAX_VERTEX_UNIFORM_VECTORS),
   };
 }
 
@@ -606,7 +606,7 @@ export function estimateRenderPerformance(
   canRealtime: boolean;
   recommendedQuality: "low" | "medium" | "high";
 } {
-  const _pixels = width * height;
+  const pixels = width * height;
   const { device, overall } = capabilities;
 
   let baseFps = 60;
@@ -620,10 +620,10 @@ export function estimateRenderPerformance(
   if (overall?.tier === "low") baseFps *= 0.5;
   else if (overall?.tier === "medium") baseFps *= 0.75;
 
-  if (device?.isLowPower) baseFps *= 0.6;
+  if (device.isLowPower) baseFps *= 0.6;
 
-  const _estimatedFps = Math?.round(Math?.min(60, Math?.max(10, baseFps)));
-  const _canRealtime = estimatedFps >= 24;
+  const estimatedFps = Math?.round(Math?.min(60, Math?.max(10, baseFps)));
+  const canRealtime = estimatedFps >= 24;
 
   let recommendedQuality: "low" | "medium" | "high" = "high";
   if (estimatedFps < 30) recommendedQuality = "low";

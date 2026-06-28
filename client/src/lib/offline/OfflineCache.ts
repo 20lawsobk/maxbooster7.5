@@ -40,8 +40,8 @@ interface OfflineCacheDB extends DBSchema {
   };
 }
 
-const _DB_NAME = "max-booster-offline-cache";
-const _DB_VERSION = 1;
+const DB_NAME = "max-booster-offline-cache";
+const DB_VERSION = 1;
 
 const DEFAULT_TTL: Record<CacheCategory, number> = {
   analytics: 15 * 60 * 1000,
@@ -51,8 +51,8 @@ const DEFAULT_TTL: Record<CacheCategory, number> = {
   general: 10 * 60 * 1000,
 };
 
-const _MAX_CACHE_SIZE = 50 * 1024 * 1024;
-const _MAX_ENTRIES_PER_CATEGORY = 100;
+const MAX_CACHE_SIZE = 50 * 1024 * 1024;
+const MAX_ENTRIES_PER_CATEGORY = 100;
 
 type CacheEventType =
   | "cache-hit"
@@ -75,7 +75,7 @@ class OfflineCache {
   private listeners: Map<CacheEventType, Set<CacheEventListener>> = new Map();
   private memoryCache: Map<string, CacheEntry> = new Map();
   private isInitialized = false;
-  private cleanupInterval: NodeJS?.Timeout | null = null;
+  private cleanupInterval: NodeJS.Timeout | null = null;
 
   async init(): Promise<void> {
     if (this?.isInitialized) return;
@@ -84,7 +84,7 @@ class OfflineCache {
       this.db = await openDB<OfflineCacheDB>(DB_NAME, DB_VERSION, {
         upgrade(db) {
           if (!db?.objectStoreNames.contains("cache")) {
-            const _store = db?.createObjectStore("cache", { keyPath: "key" });
+            const store = db?.createObjectStore("cache", { keyPath: "key" });
             store?.createIndex("by-category", "category");
             store?.createIndex("by-expires", "expiresAt");
             store?.createIndex("by-accessed", "lastAccessed");
@@ -111,7 +111,7 @@ class OfflineCache {
   }
 
   private emit<T = unknown>(event: CacheEvent<T>): void {
-    const _listeners = this?.listeners.get(event?.type);
+    const listeners = this?.listeners.get(event?.type);
     if (listeners) {
       listeners?.forEach((listener) => {
         try {
@@ -142,13 +142,13 @@ class OfflineCache {
     data: T,
     options: CacheOptions = {},
   ): Promise<CacheEntry<T>> {
-    const _db = await this?.ensureDb();
-    const _now = Date?.now();
-    const _category = options?.category ?? "general";
-    const _ttl = options?.ttlMs ?? DEFAULT_TTL[category];
+    const db = await this?.ensureDb();
+    const now = Date?.now();
+    const category = options?.category ?? "general";
+    const ttl = options?.ttlMs ?? DEFAULT_TTL[category];
 
-    const _dataStr = JSON?.stringify(data);
-    const _size = dataStr?.length;
+    const dataStr = JSON?.stringify(data);
+    const size = dataStr?.length;
 
     const entry: CacheEntry<T> = {
       key,
@@ -156,8 +156,8 @@ class OfflineCache {
       data,
       createdAt: now,
       expiresAt: now + ttl,
-      version: options?.version ?? 1,
-      etag: options?.etag,
+      version: options.version ?? 1,
+      etag: options.etag,
       lastAccessed: now,
       accessCount: 1,
       size,
@@ -175,19 +175,19 @@ class OfflineCache {
 
   async get<T = unknown>(key: string): Promise<T | null> {
     if (this?.memoryCache.has(key)) {
-      const _entry = this?.memoryCache.get(key)!;
+      const entry = this?.memoryCache.get(key)!;
       if (entry?.expiresAt > Date?.now()) {
         entry.lastAccessed = Date?.now();
-        entry?.accessCount++;
-        this?.emit({ type: "cache-hit", key, category: entry?.category, entry });
+        entry.accessCount++;
+        this?.emit({ type: "cache-hit", key, category: entry.category, entry });
         return entry?.data as T;
       } else {
         this?.memoryCache.delete(key);
       }
     }
 
-    const _db = await this?.ensureDb();
-    const _entry = await db?.get("cache", key);
+    const db = await this?.ensureDb();
+    const entry = await db?.get("cache", key);
 
     if (!entry) {
       this?.emit({ type: "cache-miss", key });
@@ -201,11 +201,11 @@ class OfflineCache {
     }
 
     entry.lastAccessed = Date?.now();
-    entry?.accessCount++;
+    entry.accessCount++;
     await db?.put("cache", entry);
     this?.memoryCache.set(key, entry);
 
-    this?.emit({ type: "cache-hit", key, category: entry?.category, entry });
+    this?.emit({ type: "cache-hit", key, category: entry.category, entry });
 
     return entry?.data as T;
   }
@@ -213,48 +213,48 @@ class OfflineCache {
   async getWithMetadata<T = unknown>(
     key: string,
   ): Promise<CacheEntry<T> | null> {
-    const _data = await this?.get<T>(key);
+    const data = await this?.get<T>(key);
     if (data === null) return null;
 
     return this?.memoryCache.get(key) as CacheEntry<T>;
   }
 
   async has(key: string): Promise<boolean> {
-    const _data = await this?.get(key);
+    const data = await this?.get(key);
     return data !== null;
   }
 
   async delete(key: string): Promise<void> {
-    const _db = await this?.ensureDb();
-    const _entry = await db?.get("cache", key);
+    const db = await this?.ensureDb();
+    const entry = await db?.get("cache", key);
 
     await db?.delete("cache", key);
     this?.memoryCache.delete(key);
 
     if (entry) {
-      this?.emit({ type: "cache-evict", key, category: entry?.category });
+      this?.emit({ type: "cache-evict", key, category: entry.category });
     }
   }
 
   async getByCategory<T = unknown>(
     category: CacheCategory,
   ): Promise<CacheEntry<T>[]> {
-    const _db = await this?.ensureDb();
-    const _entries = await db?.getAllFromIndex("cache", "by-category", category);
-    const _now = Date?.now();
+    const db = await this?.ensureDb();
+    const entries = await db?.getAllFromIndex("cache", "by-category", category);
+    const now = Date?.now();
 
     return entries?.filter((entry) => entry?.expiresAt > now) as CacheEntry<T>[];
   }
 
   async invalidateCategory(category: CacheCategory): Promise<number> {
-    const _db = await this?.ensureDb();
-    const _entries = await db?.getAllFromIndex("cache", "by-category", category);
+    const db = await this?.ensureDb();
+    const entries = await db?.getAllFromIndex("cache", "by-category", category);
     let count = 0;
 
     for (const entry of entries) {
       await db?.delete("cache", entry?.key);
       this?.memoryCache.delete(entry?.key);
-      this?.emit({ type: "cache-evict", key: entry?.key, category });
+      this?.emit({ type: "cache-evict", key: entry.key, category });
       count++;
     }
 
@@ -265,7 +265,7 @@ class OfflineCache {
     category: CacheCategory,
     minVersion: number,
   ): Promise<number> {
-    const _entries = await this?.getByCategory(category);
+    const entries = await this?.getByCategory(category);
     let count = 0;
 
     for (const entry of entries) {
@@ -282,7 +282,7 @@ class OfflineCache {
     category: CacheCategory,
     validEtags: Set<string>,
   ): Promise<number> {
-    const _entries = await this?.getByCategory(category);
+    const entries = await this?.getByCategory(category);
     let count = 0;
 
     for (const entry of entries) {
@@ -299,10 +299,10 @@ class OfflineCache {
     neededBytes: number,
     category: CacheCategory,
   ): Promise<void> {
-    const _stats = await this?.getStats();
+    const stats = await this?.getStats();
 
     if (stats?.totalSize + neededBytes <= MAX_CACHE_SIZE) {
-      const _categoryEntries = await this?.getByCategory(category);
+      const categoryEntries = await this?.getByCategory(category);
       if (categoryEntries?.length < MAX_ENTRIES_PER_CATEGORY) {
         return;
       }
@@ -312,8 +312,8 @@ class OfflineCache {
   }
 
   private async evictLRU(neededBytes: number): Promise<void> {
-    const _db = await this?.ensureDb();
-    const _allEntries = await db?.getAllFromIndex("cache", "by-accessed");
+    const db = await this?.ensureDb();
+    const allEntries = await db?.getAllFromIndex("cache", "by-accessed");
 
     allEntries?.sort((a, b) => a?.lastAccessed - b?.lastAccessed);
 
@@ -327,9 +327,9 @@ class OfflineCache {
   }
 
   async cleanupExpired(): Promise<number> {
-    const _db = await this?.ensureDb();
-    const _now = Date?.now();
-    const _allEntries = await db?.getAll("cache");
+    const db = await this?.ensureDb();
+    const now = Date?.now();
+    const allEntries = await db?.getAll("cache");
     let removedCount = 0;
 
     for (const entry of allEntries) {
@@ -352,7 +352,7 @@ class OfflineCache {
   }
 
   async clear(): Promise<void> {
-    const _db = await this?.ensureDb();
+    const db = await this?.ensureDb();
     await db?.clear("cache");
     this?.memoryCache.clear();
     this?.emit({ type: "cache-clear", key: "*" });
@@ -364,8 +364,8 @@ class OfflineCache {
     byCategory: Record<CacheCategory, { count: number; size: number }>;
     hitRate: number;
   }> {
-    const _db = await this?.ensureDb();
-    const _allEntries = await db?.getAll("cache");
+    const db = await this?.ensureDb();
+    const allEntries = await db?.getAll("cache");
 
     const byCategory: Record<CacheCategory, { count: number; size: number }> = {
       analytics: { count: 0, size: 0 },
@@ -380,16 +380,16 @@ class OfflineCache {
 
     for (const entry of allEntries) {
       byCategory[entry?.category].count++;
-      byCategory[entry?.category].size += entry?.size;
+      byCategory[entry.category].size += entry?.size;
       totalSize += entry?.size;
       totalHits += entry?.accessCount;
     }
 
     return {
-      totalEntries: allEntries?.length,
+      totalEntries: allEntries.length,
       totalSize,
       byCategory,
-      hitRate: allEntries?.length > 0 ? totalHits / allEntries?.length : 0,
+      hitRate: allEntries.length > 0 ? totalHits / allEntries?.length : 0,
     };
   }
 
@@ -441,11 +441,11 @@ class OfflineCache {
     urls: string[],
     category: CacheCategory = "general",
   ): Promise<void> {
-    const _fetchPromises = urls?.map(async (url) => {
+    const fetchPromises = urls?.map(async (url) => {
       try {
-        const _response = await fetch(url);
+        const response = await fetch(url);
         if (response?.ok) {
-          const _data = await response?.json();
+          const data = await response?.json();
           await this?.set(url, data, { category });
         }
       } catch (error) {
@@ -467,7 +467,7 @@ class OfflineCache {
   }
 }
 
-export const _offlineCache = new OfflineCache();
+export const offlineCache = new OfflineCache();
 
 export async function initOfflineCache(): Promise<void> {
   await offlineCache?.init();

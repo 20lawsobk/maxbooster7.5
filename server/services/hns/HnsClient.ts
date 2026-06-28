@@ -84,12 +84,12 @@ export class HnsClient {
 
   constructor(cfg: HnsConfig) {
     this.cfg = {
-      host: cfg?.host || "127.0.0.1",
-      port: cfg?.port || 12037,
-      apiKey: cfg?.apiKey,
-      wallet: cfg?.wallet || "primary",
-      network: cfg?.network || "main",
-      timeout: cfg?.timeout || 10_000,
+      host: cfg.host || "127.0.0.1",
+      port: cfg.port || 12037,
+      apiKey: cfg.apiKey,
+      wallet: cfg.wallet || "primary",
+      network: cfg.network || "main",
+      timeout: cfg.timeout || 10_000,
     };
     this.auth = Buffer?.from(`x:${this?.cfg.apiKey}`).toString("base64");
     this.httpLib = this?.cfg.port === 443 ? https : http;
@@ -103,10 +103,10 @@ export class HnsClient {
     body?: Record<string, unknown>,
   ): Promise<unknown> {
     return new Promise((resolve, reject) => {
-      const _bodyStr = body ? JSON?.stringify(body) : "";
+      const bodyStr = body ? JSON?.stringify(body) : "";
       const opts: http.RequestOptions = {
-        hostname: this?.cfg.host,
-        port: this?.cfg.port,
+        hostname: this.cfg.host,
+        port: this.cfg.port,
         path,
         method,
         headers: {
@@ -114,16 +114,16 @@ export class HnsClient {
           Authorization: `Basic ${this?.auth}`,
           "Content-Length": Buffer?.byteLength(bodyStr),
         },
-        timeout: this?.cfg.timeout,
+        timeout: this.cfg.timeout,
       };
 
-      const _req = (this?.httpLib as typeof http).request(opts, (res) => {
+      const req = (this?.httpLib as typeof http).request(opts, (res) => {
         const chunks: Buffer[] = [];
         res?.on("data", (c) => chunks?.push(c));
         res?.on("end", () => {
-          const _text = Buffer?.concat(chunks).toString();
+          const text = Buffer?.concat(chunks).toString();
           try {
-            const _json = JSON?.parse(text);
+            const json = JSON?.parse(text);
             if (json?.error)
               reject(new Error(`hsd: ${json?.error.message || json?.error}`));
             else resolve(json?.result ?? json);
@@ -143,7 +143,7 @@ export class HnsClient {
 
   /** hsd node JSON-RPC */
   private rpc(method: string, params: unknown[] = []): Promise<unknown> {
-    return this?.request("POST", "/", { method, params, id: Date?.now() });
+    return this?.request("POST", "/", { method, params, id: Date.now() });
   }
 
   /** hsd wallet REST API */
@@ -172,7 +172,7 @@ export class HnsClient {
 
   async isReady(): Promise<boolean> {
     try {
-      const _info = await this?.getInfo();
+      const info = await this?.getInfo();
       return info?.version !== undefined;
     } catch {
       return false;
@@ -182,7 +182,7 @@ export class HnsClient {
   // ── Name queries ──────────────────────────────────────────────────────────
 
   async getNameInfo(name: string): Promise<HnsNameInfo> {
-    const _res = await this?.rpc("getnameinfo", [name]);
+    const res = await this?.rpc("getnameinfo", [name]);
     return res?.info || res;
   }
 
@@ -204,8 +204,8 @@ export class HnsClient {
     state: string;
     nameInfo: HnsNameInfo;
   }> {
-    const _info = await this?.getNameInfo(name);
-    const _state = info?.state || "UNKNOWN";
+    const info = await this?.getNameInfo(name);
+    const state = info?.state || "UNKNOWN";
 
     if (state === "CLOSED" && info?.registered) {
       return {
@@ -254,12 +254,12 @@ export class HnsClient {
   }
 
   async getReceiveAddress(): Promise<string> {
-    const _res = await this?.walletGet("/key");
+    const res = await this?.walletGet("/key");
     return res?.address || "";
   }
 
   async getWalletBids(own = true): Promise<HnsBid[]> {
-    return this?.walletGet(`/bid?own=${own}`);
+    return this.walletGet(`/bid?own=${own}`);
   }
 
   async getWalletReveals(): Promise<any[]> {
@@ -289,8 +289,8 @@ export class HnsClient {
     bidHNS: number,
     lockupHNS: number,
   ): Promise<HnsTx> {
-    const _bid = Math?.floor(bidHNS * 1_000_000);
-    const _lockup = Math?.floor(lockupHNS * 1_000_000);
+    const bid = Math?.floor(bidHNS * 1_000_000);
+    const lockup = Math?.floor(lockupHNS * 1_000_000);
     return this?.walletPost("/bid", { name, bid, lockup });
   }
 
@@ -313,7 +313,7 @@ export class HnsClient {
    * records: Handshake resource format (see HNS DNS docs)
    */
   async updateName(name: string, records: HnsResource[]): Promise<HnsTx> {
-    const _data = encodeHnsResource(records);
+    const data = encodeHnsResource(records);
     return this?.walletPost("/update", { name, data });
   }
 
@@ -342,7 +342,7 @@ export class HnsClient {
    * Send HNS to an address.
    */
   async sendHNS(toAddress: string, amountHNS: number): Promise<HnsTx> {
-    const _value = Math?.floor(amountHNS * 1_000_000);
+    const value = Math?.floor(amountHNS * 1_000_000);
     return this?.walletPost("/send", {
       outputs: [{ address: toAddress, value }],
     });
@@ -369,24 +369,24 @@ export interface HnsResource {
  */
 export function encodeHnsResource(records: HnsResource[]): string {
   // hsd accepts a JSON-like resource object
-  const _resource = {
-    records: records?.map((r) => {
-      switch (r?.type) {
+  const resource = {
+    records: records.map((r) => {
+      switch (r.type) {
         case "NS":
-          return { type: "NS", ns: r?.ns };
+          return { type: "NS", ns: r.ns };
         case "GLUE4":
-          return { type: "GLUE4", ns: r?.ns, address: r?.address };
+          return { type: "GLUE4", ns: r.ns, address: r.address };
         case "GLUE6":
-          return { type: "GLUE6", ns: r?.ns, address: r?.address };
+          return { type: "GLUE6", ns: r.ns, address: r.address };
         case "TXT":
           return { type: "TXT", txt: r.txt };
         case "DS":
           return {
             type: "DS",
-            keyTag: r?.keyTag,
-            algorithm: r?.algorithm,
-            digestType: r?.digestType,
-            digest: r?.digest,
+            keyTag: r.keyTag,
+            algorithm: r.algorithm,
+            digestType: r.digestType,
+            digest: r.digest,
           };
         default:
           return r;
@@ -394,7 +394,7 @@ export function encodeHnsResource(records: HnsResource[]): string {
     }),
   };
   // hsd expects hex-encoded serialized resource
-  return Buffer?.from(JSON?.stringify(resource)).toString("hex");
+  return Buffer.from(JSON.stringify(resource)).toString("hex");
 }
 
 /**

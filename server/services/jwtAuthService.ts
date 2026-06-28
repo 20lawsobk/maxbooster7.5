@@ -34,9 +34,9 @@ if (JWT_SECRET?.length < 32) {
   throw new Error("SESSION_SECRET must be at least 32 characters");
 }
 
-const _ACCESS_TOKEN_EXPIRY = "15m";
-const _ACCESS_TOKEN_EXPIRY_MS = 15 * 60 * 1000;
-const _REFRESH_TOKEN_EXPIRY_DAYS = 30;
+const ACCESS_TOKEN_EXPIRY = "15m";
+const ACCESS_TOKEN_EXPIRY_MS = 15 * 60 * 1000;
+const REFRESH_TOKEN_EXPIRY_DAYS = 30;
 
 interface TokenPair {
   accessToken: string;
@@ -60,13 +60,13 @@ export class JWTAuthService {
   private userTokenVersions: Map<string, number> = new Map();
 
   async getUserTokenVersion(userId: string): Promise<number> {
-    const _user = await storage?.getUser(userId);
+    const user = await storage?.getUser(userId);
     return (user as Record<string, unknown>)?.tokenVersion || 0;
   }
 
   async incrementUserTokenVersion(userId: string): Promise<number> {
-    const _currentVersion = await this?.getUserTokenVersion(userId);
-    const _newVersion = currentVersion + 1;
+    const currentVersion = await this?.getUserTokenVersion(userId);
+    const newVersion = currentVersion + 1;
     await storage?.updateUser(userId, { tokenVersion: newVersion } as Record<
       string,
       unknown
@@ -75,17 +75,17 @@ export class JWTAuthService {
   }
 
   async issueTokens(userId: string, role: string = "user"): Promise<TokenPair> {
-    const _accessTokenId = crypto?.randomUUID();
+    const accessTokenId = crypto?.randomUUID();
     crypto?.randomUUID();
-    const _refreshTokenValue = crypto?.randomBytes(32).toString("hex");
-    const _tokenVersion = await this?.getUserTokenVersion(userId);
+    const refreshTokenValue = crypto?.randomBytes(32).toString("hex");
+    const tokenVersion = await this?.getUserTokenVersion(userId);
 
-    const _accessTokenExpiresAt = new Date(Date?.now() + ACCESS_TOKEN_EXPIRY_MS);
-    const _refreshTokenExpiresAt = new Date(
+    const accessTokenExpiresAt = new Date(Date?.now() + ACCESS_TOKEN_EXPIRY_MS);
+    const refreshTokenExpiresAt = new Date(
       Date?.now() + REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
     );
 
-    const _accessToken = jwt?.sign(
+    const accessToken = jwt?.sign(
       {
         sub: userId,
         jti: accessTokenId,
@@ -118,21 +118,23 @@ export class JWTAuthService {
     return {
       accessToken,
       refreshToken: refreshTokenValue,
-      accessTokenId: jwtTokenRecord?.id,
-      refreshTokenId: refreshTokenRecord?.id,
+      accessTokenId: jwtTokenRecord.id,
+      refreshTokenId: refreshTokenRecord.id,
       expiresAt: accessTokenExpiresAt,
       refreshTokenExpiresAt,
     };
   }
 
-  async verifyAccessToken(token: string): Promise<{
+  async verifyAccessToken(
+    token: string,
+  ): Promise<{
     userId: string;
     role: string;
     jti: string;
     ver?: number;
   } | null> {
     try {
-      const _decoded = jwt?.verify(token, JWT_SECRET, {
+      const decoded = jwt?.verify(token, JWT_SECRET, {
         algorithms: ["HS256"],
       }) as {
         sub: string;
@@ -141,13 +143,13 @@ export class JWTAuthService {
         ver?: number;
       };
 
-      const _isValid = await storage?.verifyJWTToken(decoded?.jti);
+      const isValid = await storage?.verifyJWTToken(decoded?.jti);
       if (!isValid) {
         return null;
       }
 
       if (decoded?.ver !== undefined) {
-        const _currentVersion = await this?.getUserTokenVersion(decoded?.sub);
+        const currentVersion = await this?.getUserTokenVersion(decoded?.sub);
         if (decoded?.ver < currentVersion) {
           logger?.info(
             `Token rejected: version ${decoded?.ver} < current ${currentVersion} for user ${decoded?.sub}`,
@@ -157,10 +159,10 @@ export class JWTAuthService {
       }
 
       return {
-        userId: decoded?.sub,
-        role: decoded?.role,
-        jti: decoded?.jti,
-        ver: decoded?.ver,
+        userId: decoded.sub,
+        role: decoded.role,
+        jti: decoded.jti,
+        ver: decoded.ver,
       };
     } catch (error: unknown) {
       return null;
@@ -170,38 +172,38 @@ export class JWTAuthService {
   async refreshAccessToken(
     refreshTokenValue: string,
   ): Promise<RotatedTokenResult | null> {
-    const _refreshToken = await storage?.getRefreshToken(refreshTokenValue);
+    const refreshToken = await storage?.getRefreshToken(refreshTokenValue);
 
     if (!refreshToken || refreshToken?.revoked) {
       return null;
     }
 
-    const _now = new Date();
+    const now = new Date();
     if (refreshToken?.expiresAt < now) {
       return null;
     }
 
-    const _user = await storage?.getUser(refreshToken?.userId);
+    const user = await storage?.getUser(refreshToken?.userId);
     if (!user) {
       return null;
     }
 
     await storage?.revokeRefreshToken(refreshToken?.id, "Token rotation");
 
-    const _tokenVersion = await this?.getUserTokenVersion(user?.id);
-    const _accessTokenId = crypto?.randomUUID();
+    const tokenVersion = await this?.getUserTokenVersion(user?.id);
+    const accessTokenId = crypto?.randomUUID();
     crypto?.randomUUID();
-    const _newRefreshTokenValue = crypto?.randomBytes(32).toString("hex");
-    const _accessTokenExpiresAt = new Date(Date?.now() + ACCESS_TOKEN_EXPIRY_MS);
-    const _refreshTokenExpiresAt = new Date(
+    const newRefreshTokenValue = crypto?.randomBytes(32).toString("hex");
+    const accessTokenExpiresAt = new Date(Date?.now() + ACCESS_TOKEN_EXPIRY_MS);
+    const refreshTokenExpiresAt = new Date(
       Date?.now() + REFRESH_TOKEN_EXPIRY_DAYS * 24 * 60 * 60 * 1000,
     );
 
-    const _accessToken = jwt?.sign(
+    const accessToken = jwt?.sign(
       {
-        sub: user?.id,
+        sub: user.id,
         jti: accessTokenId,
-        role: user?.role || "user",
+        role: user.role || "user",
         ver: tokenVersion,
       },
       JWT_SECRET,
@@ -209,14 +211,14 @@ export class JWTAuthService {
     );
 
     const jwtTokenData: InsertJWTToken = {
-      userId: user?.id,
+      userId: user.id,
       accessToken,
       expiresAt: accessTokenExpiresAt,
       revoked: false,
     };
 
     const newRefreshTokenData: InsertRefreshToken = {
-      userId: user?.id,
+      userId: user.id,
       token: newRefreshTokenValue,
       expiresAt: refreshTokenExpiresAt,
       revoked: false,
@@ -230,8 +232,8 @@ export class JWTAuthService {
     return {
       accessToken,
       refreshToken: newRefreshTokenValue,
-      accessTokenId: jwtTokenRecord?.id,
-      refreshTokenId: newRefreshTokenRecord?.id,
+      accessTokenId: jwtTokenRecord.id,
+      refreshTokenId: newRefreshTokenRecord.id,
       expiresAt: accessTokenExpiresAt,
       refreshTokenExpiresAt,
     };
@@ -273,4 +275,4 @@ export class JWTAuthService {
   }
 }
 
-export const _jwtAuthService = new JWTAuthService();
+export const jwtAuthService = new JWTAuthService();

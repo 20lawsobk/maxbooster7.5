@@ -27,42 +27,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Shield,
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  Activity,
-  Users,
-  Database,
-  Server,
-  Cpu,
-  HardDrive,
-  Network,
-  Zap,
-  BarChart3,
-  TrendingUp,
-  RefreshCw,
-  Eye,
-  Bug,
-  TestTube,
-  FileText,
-  Clock,
-  Star,
-  Award,
-  Target,
-  AlertCircle,
-  Info,
-  CheckSquare,
-  XSquare,
-  Key,
-  Webhook,
-  Search,
-  Filter,
-  Trash2,
-  RotateCcw,
-  Loader2,
-} from "lucide-react";
+import { Shield, CheckCircle, XCircle, AlertTriangle, Activity, Users, Database, Server, Cpu, HardDrive, Network, Zap, BarChart3, TrendingUp, RefreshCw, Eye, Bug, TestTube, FileText, Clock, Star, Award, Target, AlertCircle, Info, CheckSquare, XSquare, Key, Webhook, Search, Filter, Trash2, RotateCcw, Loader2 } from "lucide-react";
 
 interface AuditIssue {
   severity: string;
@@ -698,35 +663,33 @@ export default function AdminDashboard() {
                   <Skeleton className="h-48 w-full" />
                 ) : recentActivity.length > 0 ? (
                   <div className="space-y-4">
-                    {recentActivity.map(
-                      (activity: ActivityItem, index: number) => (
+                    {recentActivity.map((activity: ActivityItem, index: number) => (
+                      <div
+                        key={index}
+                        className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg"
+                      >
                         <div
-                          key={index}
-                          className="flex items-center space-x-4 p-3 bg-gray-50 rounded-lg"
-                        >
-                          <div
-                            className={`w-2 h-2 rounded-full ${
-                              activity.type === "success"
-                                ? "bg-green-500"
-                                : activity.type === "error"
-                                  ? "bg-red-500"
-                                  : "bg-blue-500"
-                            }`}
-                          />
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-gray-900">
-                              {activity.action}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {activity.user}
-                            </p>
-                          </div>
-                          <span className="text-xs text-gray-400">
-                            {activity.time}
-                          </span>
+                          className={`w-2 h-2 rounded-full ${
+                            activity.type === "success"
+                              ? "bg-green-500"
+                              : activity.type === "error"
+                                ? "bg-red-500"
+                                : "bg-blue-500"
+                          }`}
+                        />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900">
+                            {activity.action}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {activity.user}
+                          </p>
                         </div>
-                      ),
-                    )}
+                        <span className="text-xs text-gray-400">
+                          {activity.time}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <div className="text-center py-8">
@@ -1239,85 +1202,87 @@ export default function AdminDashboard() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {usersData.users.map((userData: AdminUser) => (
-                            <TableRow key={userData.id}>
-                              <TableCell className="font-medium">
-                                {userData.username}
-                              </TableCell>
-                              <TableCell>{userData.email}</TableCell>
-                              <TableCell>
-                                <Badge
-                                  variant={
-                                    userData.role === "admin"
-                                      ? "default"
-                                      : "secondary"
-                                  }
-                                >
-                                  {userData.role || "user"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell>
-                                {userData.subscriptionTier ? (
+                          {usersData.users.map(
+                            (userData: AdminUser) => (
+                              <TableRow key={userData.id}>
+                                <TableCell className="font-medium">
+                                  {userData.username}
+                                </TableCell>
+                                <TableCell>{userData.email}</TableCell>
+                                <TableCell>
                                   <Badge
                                     variant={
-                                      userData.subscriptionTier === "lifetime"
+                                      userData.role === "admin"
                                         ? "default"
-                                        : "outline"
+                                        : "secondary"
                                     }
                                   >
-                                    {userData.subscriptionTier}
+                                    {userData.role || "user"}
                                   </Badge>
-                                ) : (
-                                  <span className="text-sm text-gray-500">
-                                    Free
-                                  </span>
-                                )}
-                              </TableCell>
-                              <TableCell>
-                                <Badge
-                                  variant={
-                                    userData.emailVerified
-                                      ? "default"
-                                      : "secondary"
-                                  }
-                                  className={
-                                    userData.emailVerified
-                                      ? "bg-green-100 text-green-800"
-                                      : ""
-                                  }
-                                >
-                                  {userData.emailVerified
-                                    ? "Verified"
-                                    : "Unverified"}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-sm text-gray-500">
-                                {userData.createdAt
-                                  ? new Date(
-                                      userData.createdAt,
-                                    ).toLocaleDateString()
-                                  : "N/A"}
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedUser(userData);
-                                    setShowUserDetails(true);
-                                  }}
-                                >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
+                                </TableCell>
+                                <TableCell>
+                                  {userData.subscriptionTier ? (
+                                    <Badge
+                                      variant={
+                                        userData.subscriptionTier === "lifetime"
+                                          ? "default"
+                                          : "outline"
+                                      }
+                                    >
+                                      {userData.subscriptionTier}
+                                    </Badge>
+                                  ) : (
+                                    <span className="text-sm text-gray-500">
+                                      Free
+                                    </span>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <Badge
+                                    variant={
+                                      userData.emailVerified
+                                        ? "default"
+                                        : "secondary"
+                                    }
+                                    className={
+                                      userData.emailVerified
+                                        ? "bg-green-100 text-green-800"
+                                        : ""
+                                    }
+                                  >
+                                    {userData.emailVerified
+                                      ? "Verified"
+                                      : "Unverified"}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-sm text-gray-500">
+                                  {userData.createdAt
+                                    ? new Date(
+                                        userData.createdAt,
+                                      ).toLocaleDateString()
+                                    : "N/A"}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedUser(userData);
+                                      setShowUserDetails(true);
+                                    }}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ),
+                          )}
                         </TableBody>
                       </Table>
                     </div>
 
                     {/* Pagination */}
-                    {usersData.pagination && (
+                    {usersData?.pagination && (
                       <div className="flex items-center justify-between">
                         <p className="text-sm text-gray-600">
                           Showing {usersData.pagination.offset + 1} to{" "}
@@ -1344,7 +1309,7 @@ export default function AdminDashboard() {
                             size="sm"
                             onClick={() => setUsersPage((p) => p + 1)}
                             disabled={
-                              !usersData.pagination ||
+                              !usersData?.pagination ||
                               usersPage >=
                                 Math.ceil(
                                   usersData.pagination.total /
@@ -1653,11 +1618,9 @@ function WebhookMonitorTab() {
   const { toast } = useToast();
   const [eventId, setEventId] = useState("");
 
-  const { data: dlqData, isLoading: dlqLoading } = useQuery<WebhookDlqResponse>(
-    {
-      queryKey: ["/api/admin/webhooks/dead-letter"],
-    },
-  );
+  const { data: dlqData, isLoading: dlqLoading } = useQuery<WebhookDlqResponse>({
+    queryKey: ["/api/admin/webhooks/dead-letter"],
+  });
 
   const { mutate: retryWebhook, isPending: retrying } = useMutation({
     mutationFn: async (id: string) => {
@@ -2016,7 +1979,7 @@ function BeatMoneyLoopTab() {
       toast({
         title,
         description,
-        variant: r?.status === "failed" ? "destructive" : "default",
+        variant: r.status === "failed" ? "destructive" : "default",
       });
       refetch();
     },

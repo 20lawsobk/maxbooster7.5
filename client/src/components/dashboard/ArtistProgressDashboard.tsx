@@ -21,21 +21,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import {
-  TrendingDown,
-  Users,
-  Music,
-  DollarSign,
-  Zap,
-  Award,
-  Target,
-  Crown,
-  Flame,
-  Star,
-  Trophy,
-  ArrowUp,
-  ArrowDown,
-} from "lucide-react";
+import { TrendingDown, Users, Music, DollarSign, Zap, Award, Target, Crown, Flame, Star, Trophy, ArrowUp, ArrowDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface GrowthMetrics {

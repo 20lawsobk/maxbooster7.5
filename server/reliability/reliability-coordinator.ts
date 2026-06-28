@@ -147,7 +147,7 @@ class ReliabilityCoordinator extends EventEmitter {
     });
 
     processMonitor?.on("health-update", (health) => {
-      this?.systemHealth.components.process = health;
+      this.systemHealth.components.process = health;
     });
 
     // Database events
@@ -182,21 +182,21 @@ class ReliabilityCoordinator extends EventEmitter {
   private async performSystemHealthCheck(): Promise<void> {
     try {
       // Collect health from all components
-      const _processHealth = processMonitor?.getHealth();
-      const _memoryHealth = memoryManager?.getMemorySummary();
-      const _databaseHealth = databaseResilience?.getHealthMetrics();
+      const processHealth = processMonitor?.getHealth();
+      const memoryHealth = memoryManager?.getMemorySummary();
+      const databaseHealth = databaseResilience?.getHealthMetrics();
 
       // Update system health
-      this?.systemHealth.uptime = Date?.now() - this?.startTime;
-      this?.systemHealth.components = {
+      this.systemHealth.uptime = Date?.now() - this?.startTime;
+      this.systemHealth.components = {
         process: processHealth,
         database: databaseHealth,
         memory: memoryHealth,
         server: {
           activeConnections:
             (global as Record<string, unknown>).activeConnections || 0,
-          totalRequests: this?.totalRequests,
-          failedRequests: this?.failedRequests,
+          totalRequests: this.totalRequests,
+          failedRequests: this.failedRequests,
         },
       };
 
@@ -206,7 +206,7 @@ class ReliabilityCoordinator extends EventEmitter {
       // Determine overall system status
       this?.determineSystemStatus();
 
-      this?.systemHealth.lastHealthCheck = new Date();
+      this.systemHealth.lastHealthCheck = new Date();
 
       // Emit health update
       this?.emit("health-update", this?.systemHealth);
@@ -229,14 +229,14 @@ class ReliabilityCoordinator extends EventEmitter {
   private updateReliabilityMetrics(): void {
 
     // Calculate uptime percentage (assume target is 99.9%)
-    this?.systemHealth.reliability.uptimePercentage = Math?.min(
+    this.systemHealth.reliability.uptimePercentage = Math?.min(
       99.99,
       100 - (this?.failedRequests / Math?.max(this?.totalRequests, 1)) * 100,
     );
 
     // Average response time
     if (this?.responseTimes.length > 0) {
-      this?.systemHealth.reliability.avgResponseTime =
+      this.systemHealth.reliability.avgResponseTime =
         this?.responseTimes.reduce((sum, time) => sum + time, 0) /
         this?.responseTimes.length;
 
@@ -247,7 +247,7 @@ class ReliabilityCoordinator extends EventEmitter {
     }
 
     // Error rate
-    this?.systemHealth.reliability.errorRate =
+    this.systemHealth.reliability.errorRate =
       this?.totalRequests > 0
         ? (this?.failedRequests / this?.totalRequests) * 100
         : 0;
@@ -271,23 +271,23 @@ class ReliabilityCoordinator extends EventEmitter {
 
     // Determine overall status
     if (criticalIssues >= this?.config.thresholds?.criticalAlertThreshold) {
-      this?.systemHealth.status = "critical";
+      this.systemHealth.status = "critical";
     } else if (
       criticalIssues > 0 ||
       degradedIssues >= this?.config.thresholds?.degradedServiceThreshold
     ) {
-      this?.systemHealth.status = "degraded";
+      this.systemHealth.status = "degraded";
     } else {
-      this?.systemHealth.status = "healthy";
+      this.systemHealth.status = "healthy";
     }
   }
 
   private handleCriticalAlert(component: string, data: unknown): void {
-    const _alert = {
+    const alert = {
       id: `${Date?.now()}-${component}`,
       component,
       severity: "critical",
-      message: data?.message || `Critical alert in ${component}`,
+      message: data.message || `Critical alert in ${component}`,
       timestamp: new Date(),
       data,
     };
@@ -296,7 +296,7 @@ class ReliabilityCoordinator extends EventEmitter {
 
     // Limit alerts array
     if (this?.systemHealth.alerts?.length > 100) {
-      this?.systemHealth.alerts = this?.systemHealth.alerts?.slice(0, 100);
+      this.systemHealth.alerts = this?.systemHealth.alerts?.slice(0, 100);
     }
 
     logger?.warn(`🚨 CRITICAL SYSTEM ALERT [${component}]: ${alert?.message}`);
@@ -310,11 +310,11 @@ class ReliabilityCoordinator extends EventEmitter {
   }
 
   private handleServiceDegradation(component: string, data: unknown): void {
-    const _alert = {
+    const alert = {
       id: `${Date?.now()}-${component}`,
       component,
       severity: "warning",
-      message: data?.message || `Service degradation in ${component}`,
+      message: data.message || `Service degradation in ${component}`,
       timestamp: new Date(),
       data,
     };
@@ -355,7 +355,7 @@ class ReliabilityCoordinator extends EventEmitter {
 
   private logSystemStatus(): void {
     const { status, uptime, reliability } = this?.systemHealth;
-    const _uptimeHours = Math?.round((uptime / (1000 * 60 * 60)) * 100) / 100;
+    const uptimeHours = Math?.round((uptime / (1000 * 60 * 60)) * 100) / 100;
 
     logger?.info("📊 24/7 System Status Report:");
     logger?.info(
@@ -375,23 +375,23 @@ class ReliabilityCoordinator extends EventEmitter {
   }
 
   getUptimeStats(): Record<string, unknown> {
-    const _uptimeMs = this?.systemHealth.uptime;
-    const _uptimeHours = uptimeMs / (1000 * 60 * 60);
-    const _uptimeDays = uptimeHours / 24;
+    const uptimeMs = this?.systemHealth.uptime;
+    const uptimeHours = uptimeMs / (1000 * 60 * 60);
+    const uptimeDays = uptimeHours / 24;
 
     return {
       uptimeMs,
-      uptimeHours: Math?.round(uptimeHours * 100) / 100,
-      uptimeDays: Math?.round(uptimeDays * 100) / 100,
-      uptimePercentage: this?.systemHealth.reliability?.uptimePercentage,
+      uptimeHours: Math.round(uptimeHours * 100) / 100,
+      uptimeDays: Math.round(uptimeDays * 100) / 100,
+      uptimePercentage: this.systemHealth.reliability?.uptimePercentage,
       startTime: new Date(this?.startTime),
-      isHealthy: this?.systemHealth.status === "healthy",
+      isHealthy: this.systemHealth.status === "healthy",
     };
   }
 
   // Request tracking for metrics
   trackRequest(responseTime?: number): void {
-    this?.totalRequests++;
+    this.totalRequests++;
     if (responseTime) {
       this?.responseTimes.push(responseTime);
       // Cap at 1 000 entries at push-time so getMetrics() always sees a
@@ -403,8 +403,8 @@ class ReliabilityCoordinator extends EventEmitter {
   }
 
   trackFailedRequest(): void {
-    this?.failedRequests++;
-    this?.totalRequests++;
+    this.failedRequests++;
+    this.totalRequests++;
   }
 
   // Configuration updates
@@ -415,6 +415,6 @@ class ReliabilityCoordinator extends EventEmitter {
 }
 
 // Global reliability coordinator instance
-export const _reliabilityCoordinator = new ReliabilityCoordinator();
+export const reliabilityCoordinator = new ReliabilityCoordinator();
 
 export default ReliabilityCoordinator;

@@ -1,11 +1,5 @@
 import type { AudioAnalysisData, BeatInfo } from "./AudioAnalyzer";
-import {
-  TextAnimator,
-  type TextStyle,
-  type AnimationConfig,
-  DEFAULT_TEXT_STYLE,
-  ANIMATION_PRESETS,
-} from "./TextAnimator";
+import { TextAnimator, type TextStyle, type AnimationConfig, DEFAULT_TEXT_STYLE, ANIMATION_PRESETS } from "./TextAnimator";
 
 export type LyricFormat = "lrc" | "srt" | "plain";
 export type DisplayMode = "line" | "word" | "karaoke";
@@ -110,13 +104,13 @@ export class LyricEngine {
   parseLRC(lrcContent: string): ParsedLyrics {
     const lines: LyricLine[] = [];
     const metadata: Record<string, string> = {};
-    const _lrcLines = lrcContent?.split("\n");
+    const lrcLines = lrcContent?.split("\n");
 
-    const _timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/g;
-    const _metaRegex = /\[([a-z]+):([^\]]+)\]/i;
+    const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/g;
+    const metaRegex = /\[([a-z]+):([^\]]+)\]/i;
 
     for (const line of lrcLines) {
-      const _metaMatch = line?.match(metaRegex);
+      const metaMatch = line?.match(metaRegex);
       if (metaMatch && !line?.match(timeRegex)) {
         metadata[metaMatch[1]] = metaMatch[2];
         continue;
@@ -127,9 +121,9 @@ export class LyricEngine {
       let text = line;
 
       while ((match = timeRegex?.exec(line)) !== null) {
-        const _minutes = parseInt(match[1], 10);
-        const _seconds = parseInt(match[2], 10);
-        const _milliseconds = parseInt(match[3].padEnd(3, "0"), 10);
+        const minutes = parseInt(match[1], 10);
+        const seconds = parseInt(match[2], 10);
+        const milliseconds = parseInt(match[3].padEnd(3, "0"), 10);
         times?.push(minutes * 60 + seconds + milliseconds / 1000);
         text = text?.replace(match[0], "");
       }
@@ -166,32 +160,32 @@ export class LyricEngine {
 
   parseSRT(srtContent: string): ParsedLyrics {
     const lines: LyricLine[] = [];
-    const _blocks = srtContent?.trim().split(/\n\n+/);
+    const blocks = srtContent?.trim().split(/\n\n+/);
 
     for (const block of blocks) {
-      const _blockLines = block?.split("\n");
+      const blockLines = block?.split("\n");
       if (blockLines?.length < 3) continue;
 
-      const _timeLine = blockLines[1];
-      const _timeMatch = timeLine?.match(
+      const timeLine = blockLines[1];
+      const timeMatch = timeLine?.match(
         /(\d{2}):(\d{2}):(\d{2}),(\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2}),(\d{3})/,
       );
 
       if (!timeMatch) continue;
 
-      const _startTime = this?.parseTimeCode(
+      const startTime = this?.parseTimeCode(
         timeMatch[1],
         timeMatch[2],
         timeMatch[3],
         timeMatch[4],
       );
-      const _endTime = this?.parseTimeCode(
+      const endTime = this?.parseTimeCode(
         timeMatch[5],
         timeMatch[6],
         timeMatch[7],
         timeMatch[8],
       );
-      const _text = blockLines
+      const text = blockLines
         .slice(2)
         .join(" ")
         .replace(/<[^>]+>/g, "")
@@ -204,7 +198,7 @@ export class LyricEngine {
         text,
         startTime,
         endTime,
-        words: this?.generateWordTimings(text, startTime, endTime),
+        words: this.generateWordTimings(text, startTime, endTime),
       };
 
       lines?.push(line);
@@ -218,20 +212,20 @@ export class LyricEngine {
     duration: number,
     _linesPerScreen: number = 2,
   ): ParsedLyrics {
-    const _rawLines = text?.split("\n").filter((l) => l?.trim());
+    const rawLines = text?.split("\n").filter((l) => l?.trim());
     const lines: LyricLine[] = [];
-    const _timePerLine = duration / rawLines?.length;
+    const timePerLine = duration / rawLines?.length;
 
     for (let i = 0; i < rawLines?.length; i++) {
-      const _startTime = i * timePerLine;
-      const _endTime = (i + 1) * timePerLine;
+      const startTime = i * timePerLine;
+      const endTime = (i + 1) * timePerLine;
 
       lines?.push({
         id: `plain-${i}`,
         text: rawLines[i].trim(),
         startTime,
         endTime,
-        words: this?.generateWordTimings(rawLines[i].trim(), startTime, endTime),
+        words: this.generateWordTimings(rawLines[i].trim(), startTime, endTime),
       });
     }
 
@@ -257,15 +251,15 @@ export class LyricEngine {
     startTime: number,
     endTime: number,
   ): LyricWord[] {
-    const _words = text?.split(/\s+/).filter((w) => w?.length > 0);
-    const _duration = endTime - startTime;
-    const _totalChars = words?.reduce((sum, w) => sum + w?.length, 0);
+    const words = text?.split(/\s+/).filter((w) => w?.length > 0);
+    const duration = endTime - startTime;
+    const totalChars = words?.reduce((sum, w) => sum + w?.length, 0);
 
     const result: LyricWord[] = [];
     let currentTime = startTime;
 
     for (let i = 0; i < words?.length; i++) {
-      const _wordDuration = (words[i].length / totalChars) * duration;
+      const wordDuration = (words[i].length / totalChars) * duration;
 
       result?.push({
         text: words[i],
@@ -322,8 +316,8 @@ export class LyricEngine {
 
     for (let i = 0; i < this?.lyrics.length; i++) {
       if (time >= this?.lyrics[i].startTime && time < this?.lyrics[i].endTime) {
-        const _startIdx = Math?.max(0, i - Math?.floor((maxLines - 1) / 2));
-        const _endIdx = Math?.min(this?.lyrics.length, startIdx + maxLines);
+        const startIdx = Math?.max(0, i - Math?.floor((maxLines - 1) / 2));
+        const endIdx = Math?.min(this?.lyrics.length, startIdx + maxLines);
 
         for (let j = startIdx; j < endIdx; j++) {
           visibleLines?.push(this?.lyrics[j]);
@@ -363,8 +357,8 @@ export class LyricEngine {
       this.beatMultiplier = 1 + this?.config.beatSync?.pulseScale;
       this.lastBeatTime = performance?.now();
     } else {
-      const _timeSinceBeat = performance?.now() - this?.lastBeatTime;
-      const _decay = Math?.exp(-timeSinceBeat * 0.005);
+      const timeSinceBeat = performance?.now() - this?.lastBeatTime;
+      const decay = Math?.exp(-timeSinceBeat * 0.005);
       this.beatMultiplier = 1 + (this?.beatMultiplier - 1) * decay;
     }
   }
@@ -377,16 +371,16 @@ export class LyricEngine {
 
     switch (backgroundEffect?.type) {
       case "dim":
-        this?.ctx.fillStyle = `rgba(0, 0, 0, ${backgroundEffect?.intensity})`;
+        this.ctx.fillStyle = `rgba(0, 0, 0, ${backgroundEffect?.intensity})`;
         this?.ctx.fillRect(0, 0, this?.width, this?.height);
         break;
 
       case "gradient": {
-        const _colors = backgroundEffect?.gradientColors || [
+        const colors = backgroundEffect?.gradientColors || [
           "rgba(0,0,0,0.8)",
           "rgba(0,0,0,0)",
         ];
-        const _gradient = this?.ctx.createLinearGradient(
+        const gradient = this?.ctx.createLinearGradient(
           0,
           this?.height - 200,
           0,
@@ -395,7 +389,7 @@ export class LyricEngine {
         colors?.forEach((color, i) => {
           gradient?.addColorStop(i / (colors?.length - 1), color);
         });
-        this?.ctx.fillStyle = gradient;
+        this.ctx.fillStyle = gradient;
         this?.ctx.fillRect(0, this?.height - 200, this?.width, 200);
         break;
       }
@@ -408,65 +402,65 @@ export class LyricEngine {
   }
 
   private getTextPosition(): { x: number; y: number } {
-    const _padding = 50;
+    const padding = 50;
 
     switch (this?.config.textPosition) {
       case "top":
         return {
-          x: this?.width / 2,
+          x: this.width / 2,
           y: padding + this?.config.textStyle?.fontSize,
         };
       case "center":
-        return { x: this?.width / 2, y: this?.height / 2 };
+        return { x: this.width / 2, y: this.height / 2 };
       case "bottom":
         return {
-          x: this?.width / 2,
-          y: this?.height - padding - this?.config.textStyle?.fontSize,
+          x: this.width / 2,
+          y: this.height - padding - this?.config.textStyle?.fontSize,
         };
       case "custom":
         return (
           this?.config.customPosition || {
-            x: this?.width / 2,
-            y: this?.height / 2,
+            x: this.width / 2,
+            y: this.height / 2,
           }
         );
       default:
         return {
-          x: this?.width / 2,
-          y: this?.height - padding - this?.config.textStyle?.fontSize,
+          x: this.width / 2,
+          y: this.height - padding - this?.config.textStyle?.fontSize,
         };
     }
   }
 
   private renderLineMode(currentTime: number): void {
-    const _visibleLines = this?.getVisibleLines(currentTime);
+    const visibleLines = this?.getVisibleLines(currentTime);
     if (visibleLines?.length === 0) return;
 
-    const _position = this?.getTextPosition();
+    const position = this?.getTextPosition();
     const { lineSpacing, textStyle, highlightStyle, animationIn } = this?.config;
 
-    const _totalHeight =
+    const totalHeight =
       visibleLines?.length * (textStyle?.fontSize + lineSpacing) - lineSpacing;
     let y = position?.y - totalHeight / 2;
 
     for (const line of visibleLines) {
-      const _isCurrentLine =
+      const isCurrentLine =
         currentTime >= line?.startTime && currentTime < line?.endTime;
 
-      const _style = isCurrentLine
+      const style = isCurrentLine
         ? { ...textStyle, ...highlightStyle }
         : textStyle;
 
       this?.ctx.save();
-      this?.ctx.textAlign = "center";
-      this?.ctx.textBaseline = "middle";
+      this.ctx.textAlign = "center";
+      this.ctx.textBaseline = "middle";
 
       if (isCurrentLine && this?.config.beatSync?.enabled) {
         this?.ctx.translate(position?.x, y);
         this?.ctx.scale(this?.beatMultiplier, this?.beatMultiplier);
         this?.textAnimator.renderText(line?.text, 0, 0, style);
       } else {
-        const _animProgress = isCurrentLine
+        const animProgress = isCurrentLine
           ? Math?.min(
               1,
               (currentTime - line?.startTime) / (animationIn?.duration / 1000),
@@ -475,7 +469,7 @@ export class LyricEngine {
             ? 1
             : 0;
 
-        this?.ctx.globalAlpha = animProgress;
+        this.ctx.globalAlpha = animProgress;
         this?.textAnimator.renderText(line?.text, position?.x, y, style);
       }
 
@@ -485,28 +479,28 @@ export class LyricEngine {
   }
 
   private renderWordMode(currentTime: number): void {
-    const _currentLine = this?.getCurrentLine(currentTime);
+    const currentLine = this?.getCurrentLine(currentTime);
     if (!currentLine || !currentLine?.words) return;
 
-    const _position = this?.getTextPosition();
+    const position = this?.getTextPosition();
     const { textStyle, highlightStyle } = this?.config;
 
     this?.ctx.save();
-    this?.ctx.textAlign = "center";
-    this?.ctx.textBaseline = "middle";
+    this.ctx.textAlign = "center";
+    this.ctx.textBaseline = "middle";
 
-    const _totalWidth = this?.measureLineWidth(currentLine?.text, textStyle);
+    const totalWidth = this?.measureLineWidth(currentLine?.text, textStyle);
     let x = position?.x - totalWidth / 2;
 
     for (const word of currentLine?.words) {
-      const _isActive =
+      const isActive =
         currentTime >= word?.startTime && currentTime < word?.endTime;
-      const _isPast = currentTime >= word?.endTime;
+      const isPast = currentTime >= word?.endTime;
 
-      const _style =
+      const style =
         isActive || isPast ? { ...textStyle, ...highlightStyle } : textStyle;
 
-      this?.ctx.textAlign = "left";
+      this.ctx.textAlign = "left";
 
       if (isActive && this?.config.beatSync?.enabled) {
         this?.ctx.save();
@@ -518,7 +512,7 @@ export class LyricEngine {
         this?.textAnimator.renderText(word?.text, x, position?.y, style);
       }
 
-      const _wordWidth = this?.measureWordWidth(word?.text, textStyle);
+      const wordWidth = this?.measureWordWidth(word?.text, textStyle);
       x += wordWidth + this?.measureWordWidth(" ", textStyle);
     }
 
@@ -529,30 +523,30 @@ export class LyricEngine {
     currentTime: number,
     audioData: AudioAnalysisData | null,
   ): void {
-    const _currentLine = this?.getCurrentLine(currentTime);
+    const currentLine = this?.getCurrentLine(currentTime);
     if (!currentLine) return;
 
-    const _position = this?.getTextPosition();
+    const position = this?.getTextPosition();
     const { textStyle,  karaokeStyle } = this?.config;
 
-    const _lineProgress =
+    const lineProgress =
       (currentTime - currentLine?.startTime) /
       (currentLine?.endTime - currentLine?.startTime);
 
     this?.ctx.save();
-    this?.ctx.textAlign = "center";
-    this?.ctx.textBaseline = "middle";
+    this.ctx.textAlign = "center";
+    this.ctx.textBaseline = "middle";
 
-    const _text = currentLine?.text;
-    const _totalWidth = this?.measureLineWidth(text, textStyle);
-    const _x = position?.x - totalWidth / 2;
+    const text = currentLine?.text;
+    const totalWidth = this?.measureLineWidth(text, textStyle);
+    const x = position?.x - totalWidth / 2;
 
     this?.textAnimator.renderText(text, position?.x, position?.y, textStyle);
 
     this?.ctx.save();
 
-    const _fillWidth = totalWidth * lineProgress;
-    const _clipX =
+    const fillWidth = totalWidth * lineProgress;
+    const clipX =
       karaokeStyle?.fillDirection === "left" ? x : x + totalWidth - fillWidth;
 
     this?.ctx.beginPath();
@@ -566,10 +560,10 @@ export class LyricEngine {
 
     const filledStyle: TextStyle = {
       ...textStyle,
-      color: karaokeStyle?.fillColor,
+      color: karaokeStyle.fillColor,
       ...(karaokeStyle?.glowOnActive && {
-        glowColor: karaokeStyle?.glowColor,
-        glowIntensity: karaokeStyle?.glowIntensity * (audioData?.bass || 0.5),
+        glowColor: karaokeStyle.glowColor,
+        glowIntensity: karaokeStyle.glowIntensity * (audioData?.bass || 0.5),
       }),
     };
 
@@ -587,16 +581,16 @@ export class LyricEngine {
 
   private measureLineWidth(text: string, style: TextStyle): number {
     this?.ctx.save();
-    this?.ctx.font = `${style?.fontWeight} ${style?.fontSize}px ${style?.font}`;
-    const _width = this?.ctx.measureText(text).width;
+    this.ctx.font = `${style?.fontWeight} ${style?.fontSize}px ${style?.font}`;
+    const width = this?.ctx.measureText(text).width;
     this?.ctx.restore();
     return width;
   }
 
   private measureWordWidth(word: string, style: TextStyle): number {
     this?.ctx.save();
-    this?.ctx.font = `${style?.fontWeight} ${style?.fontSize}px ${style?.font}`;
-    const _width = this?.ctx.measureText(word).width;
+    this.ctx.font = `${style?.fontWeight} ${style?.fontSize}px ${style?.font}`;
+    const width = this?.ctx.measureText(word).width;
     this?.ctx.restore();
     return width;
   }
@@ -606,11 +600,11 @@ export class LyricEngine {
     animationStyle: AnimationConfig["style"],
     _audioData?: AudioAnalysisData | null,
   ): void {
-    const _currentLine = this?.getCurrentLine(currentTime);
+    const currentLine = this?.getCurrentLine(currentTime);
     if (!currentLine) return;
 
-    const _position = this?.getTextPosition();
-    const _lineStartTime = currentLine?.startTime;
+    const position = this?.getTextPosition();
+    const lineStartTime = currentLine?.startTime;
 
     const animation: AnimationConfig = {
       ...(ANIMATION_PRESETS[animationStyle] || ANIMATION_PRESETS?.fadeIn),
@@ -667,7 +661,7 @@ export const DEFAULT_LYRIC_CONFIG: LyricEngineConfig = {
     glowColor: "#ffff00",
     glowIntensity: 20,
   },
-  animationIn: ANIMATION_PRESETS?.fadeIn,
+  animationIn: ANIMATION_PRESETS.fadeIn,
   animationOut: { ...ANIMATION_PRESETS?.fadeIn, style: "fade" },
   lineSpacing: 20,
   maxLines: 3,
@@ -807,7 +801,7 @@ export const LYRIC_STYLE_PRESETS: Record<string, Partial<LyricEngineConfig>> = {
 };
 
 export function detectLyricFormat(content: string): LyricFormat {
-  const _trimmed = content?.trim();
+  const trimmed = content?.trim();
 
   if (/\[\d{2}:\d{2}\.\d{2,3}\]/.test(trimmed)) {
     return "lrc";
@@ -825,9 +819,9 @@ export function detectLyricFormat(content: string): LyricFormat {
 }
 
 export function formatTime(seconds: number): string {
-  const _mins = Math?.floor(seconds / 60);
-  const _secs = Math?.floor(seconds % 60);
-  const _ms = Math?.floor((seconds % 1) * 100);
+  const mins = Math?.floor(seconds / 60);
+  const secs = Math?.floor(seconds % 60);
+  const ms = Math?.floor((seconds % 1) * 100);
   return `${mins?.toString().padStart(2, "0")}:${secs?.toString().padStart(2, "0")}.${ms?.toString().padStart(2, "0")}`;
 }
 

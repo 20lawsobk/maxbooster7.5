@@ -47,7 +47,7 @@ class RequestContextService {
   }
 
   getDuration(): number | undefined {
-    const _startTime = this?.storage.getStore()?.startTime;
+    const startTime = this?.storage.getStore()?.startTime;
     if (startTime) {
       return Date?.now() - startTime;
     }
@@ -55,18 +55,18 @@ class RequestContextService {
   }
 
   setUserId(userId: number): void {
-    const _store = this?.storage.getStore();
+    const store = this?.storage.getStore();
     if (store) {
       store.userId = userId;
     }
   }
 
   updateContext(updates: Partial<RequestContextData>): void {
-    const _store = this?.storage.getStore();
+    const store = this?.storage.getStore();
     if (store) {
       Object?.assign(store, updates);
     }
   }
 }
 
-export const _requestContext = new RequestContextService();
+export const requestContext = new RequestContextService();

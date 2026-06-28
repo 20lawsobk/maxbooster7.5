@@ -80,22 +80,22 @@ class EmailService {
     shouldQueue: boolean = true,
   ): Promise<boolean> {
     if (!this?.resend) return false;
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
 
     try {
       await this?.resend.emails?.send({
-        from: emailData?.from,
-        to: emailData?.to as string,
-        subject: emailData?.subject,
-        html: emailData?.html,
-        text: emailData?.text,
+        from: emailData.from,
+        to: emailData.to as string,
+        subject: emailData.subject,
+        html: emailData.html,
+        text: emailData.text,
       });
-      const _deliveryTime = Date?.now() - startTime;
+      const deliveryTime = Date?.now() - startTime;
       emailMonitor?.logEmail(emailData as any, "sent", undefined, deliveryTime);
       return true;
     } catch (error: unknown) {
-      const _deliveryTime = Date?.now() - startTime;
-      const _errorMessage = (error as Error).message || "Unknown error";
+      const deliveryTime = Date?.now() - startTime;
+      const errorMessage = (error as Error).message || "Unknown error";
       logger?.warn(`⚠️ Resend error for ${emailData?.to}: ${errorMessage}`);
       emailMonitor?.logEmail(
         emailData as any,
@@ -105,8 +105,8 @@ class EmailService {
       );
       if (shouldQueue) {
         queueForRetry("resend", "send_email", {
-          to: emailData?.to,
-          subject: emailData?.subject,
+          to: emailData.to,
+          subject: emailData.subject,
         });
         logger?.info(`📥 Email to ${emailData?.to} queued for retry`);
       }
@@ -123,18 +123,18 @@ class EmailService {
       return false;
     }
 
-    const _template = this?.getInvitationTemplate(data);
-    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
+    const template = this?.getInvitationTemplate(data);
+    const fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
 
-    const _emailData = {
-      to: data?.to,
+    const emailData = {
+      to: data.to,
       from: fromEmail,
-      subject: template?.subject,
-      text: template?.text,
-      html: template?.html,
+      subject: template.subject,
+      text: template.text,
+      html: template.html,
     };
 
-    const _success = await this?.sendWithCircuitBreaker(emailData);
+    const success = await this?.sendWithCircuitBreaker(emailData);
     if (success) {
       logger?.info(
         `📧 Invitation email sent to ${data?.to} from ${data?.inviterName}`,
@@ -203,9 +203,9 @@ class EmailService {
       return false;
     }
 
-    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
+    const fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
 
-    const _emailData = {
+    const emailData = {
       to,
       from: fromEmail,
       subject: `Support Ticket Created: ${ticketSubject}`,
@@ -229,7 +229,7 @@ class EmailService {
                 </div>
                 <p>You can track the status of your ticket in your account dashboard.</p>
                 <div style="text-align: center; margin: 30px 0;">
-                  <a href="https://maxbooster?.ai/support/tickets/${ticketId}" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px;">View Ticket</a>
+                  <a href="https://maxbooster.ai/support/tickets/${ticketId}" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px;">View Ticket</a>
                 </div>
                 <p style="color: #6b7280; font-size: 14px;">Thank you for using Max Booster!</p>
               </div>
@@ -238,7 +238,7 @@ class EmailService {
         </body>
         </html>
       `,
-      text: `Hi ${userName},\n\nYour support ticket has been created.\n\nSubject: ${ticketSubject}\nTicket ID: ${ticketId}\n\nOur team will respond as soon as possible.\n\nView your ticket: https://maxbooster?.ai/support/tickets/${ticketId}`,
+      text: `Hi ${userName},\n\nYour support ticket has been created.\n\nSubject: ${ticketSubject}\nTicket ID: ${ticketId}\n\nOur team will respond as soon as possible.\n\nView your ticket: https://maxbooster.ai/support/tickets/${ticketId}`,
     };
 
     return this?.sendWithCircuitBreaker(emailData);
@@ -256,13 +256,13 @@ class EmailService {
       return false;
     }
 
-    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
-    const _truncatedMessage =
+    const fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
+    const truncatedMessage =
       replyMessage?.length > 200
         ? replyMessage?.substring(0, 200) + "..."
         : replyMessage;
 
-    const _emailData = {
+    const emailData = {
       to,
       from: fromEmail,
       subject: `New Reply on: ${ticketSubject}`,
@@ -285,7 +285,7 @@ class EmailService {
                   <p style="margin: 5px 0 0;">${truncatedMessage}</p>
                 </div>
                 <div style="text-align: center; margin: 30px 0;">
-                  <a href="https://maxbooster?.ai/support/tickets/${ticketId}" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px;">View Full Conversation</a>
+                  <a href="https://maxbooster.ai/support/tickets/${ticketId}" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px;">View Full Conversation</a>
                 </div>
               </div>
             </div>
@@ -293,7 +293,7 @@ class EmailService {
         </body>
         </html>
       `,
-      text: `Hi ${userName},\n\nYou have a new reply on your support ticket: ${ticketSubject}\n\nReply: ${truncatedMessage}\n\nView full conversation: https://maxbooster?.ai/support/tickets/${ticketId}`,
+      text: `Hi ${userName},\n\nYou have a new reply on your support ticket: ${ticketSubject}\n\nReply: ${truncatedMessage}\n\nView full conversation: https://maxbooster.ai/support/tickets/${ticketId}`,
     };
 
     return this?.sendWithCircuitBreaker(emailData);
@@ -313,7 +313,7 @@ class EmailService {
       return false;
     }
 
-    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
+    const fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
     const statusMessages: Record<string, string> = {
       open: "Your ticket is now open and awaiting review.",
       in_progress: "Our team is actively working on your ticket.",
@@ -321,7 +321,7 @@ class EmailService {
       closed: "Your ticket has been closed.",
     };
 
-    const _emailData = {
+    const emailData = {
       to,
       from: fromEmail,
       subject: `Ticket Status Update: ${ticketSubject}`,
@@ -345,7 +345,7 @@ class EmailService {
                   <p style="margin: 10px 0 0; color: #6b7280;">${statusMessages[newStatus] || "Status has been updated."}</p>
                 </div>
                 <div style="text-align: center; margin: 30px 0;">
-                  <a href="https://maxbooster?.ai/support/tickets/${ticketId}" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px;">View Ticket</a>
+                  <a href="https://maxbooster.ai/support/tickets/${ticketId}" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px;">View Ticket</a>
                 </div>
               </div>
             </div>
@@ -353,7 +353,7 @@ class EmailService {
         </body>
         </html>
       `,
-      text: `Hi ${userName},\n\nYour support ticket status has been updated to: ${newStatus?.replace("_", " ").toUpperCase()}\n\nTicket: ${ticketSubject}\n\n${statusMessages[newStatus] || "Status has been updated."}\n\nView ticket: https://maxbooster?.ai/support/tickets/${ticketId}`,
+      text: `Hi ${userName},\n\nYour support ticket status has been updated to: ${newStatus?.replace("_", " ").toUpperCase()}\n\nTicket: ${ticketSubject}\n\n${statusMessages[newStatus] || "Status has been updated."}\n\nView ticket: https://maxbooster.ai/support/tickets/${ticketId}`,
     };
 
     return this?.sendWithCircuitBreaker(emailData);
@@ -365,8 +365,8 @@ class EmailService {
       return false;
     }
 
-    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
-    const _html = `
+    const fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
+    const html = `
 <!DOCTYPE html>
 <html>
 <body style="margin: 0; padding: 0; font-family: Arial, sans-serif;">
@@ -387,7 +387,7 @@ class EmailService {
           <li>📊 <strong>Analytics</strong> – Track your growth and earnings</li>
         </ul>
         <div style="text-align: center; margin: 30px 0;">
-          <a href="https://maxbooster?.ai/dashboard" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px;">Go to Dashboard</a>
+          <a href="https://maxbooster.ai/dashboard" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px;">Go to Dashboard</a>
         </div>
         <p>Let's make some amazing music together! 🎶</p>
         <p>Best,<br>The Max Booster Team</p>
@@ -397,17 +397,17 @@ class EmailService {
 </body>
 </html>`;
 
-    const _emailData = {
-      to: data?.email,
+    const emailData = {
+      to: data.email,
       from: fromEmail,
       subject: "🎵 Welcome to Max Booster - Your Music Career Starts Here!",
       html,
-      text: `Hi ${data?.firstName},\n\nWelcome to Max Booster!\n\nYou now have access to our complete platform including Studio, Distribution, Social Media Management, Marketplace, and Analytics.\n\nGet started: https://maxbooster?.ai/dashboard\n\nBest,\nThe Max Booster Team`,
+      text: `Hi ${data.firstName},\n\nWelcome to Max Booster!\n\nYou now have access to our complete platform including Studio, Distribution, Social Media Management, Marketplace, and Analytics.\n\nGet started: https://maxbooster.ai/dashboard\n\nBest,\nThe Max Booster Team`,
     };
 
-    const _success = await this?.sendWithCircuitBreaker(emailData);
+    const success = await this.sendWithCircuitBreaker(emailData);
     if (success) {
-      logger?.info(`📧 Welcome email sent to ${data?.email}`);
+      logger.info(`📧 Welcome email sent to ${data.email}`);
     }
     return success;
   }
@@ -416,15 +416,15 @@ class EmailService {
     data: PasswordResetEmailData,
     to: string,
   ): Promise<boolean> {
-    if (!this?.isInitialized) {
-      logger?.warn(
+    if (!this.isInitialized) {
+      logger.warn(
         "⚠️  SendGrid not initialized, skipping password reset email",
       );
       return false;
     }
 
-    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
-    const _html = `
+    const fromEmail = env.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
+    const html = `
 <!DOCTYPE html>
 <html>
 <body style="margin: 0; padding: 0; font-family: Arial, sans-serif;">
@@ -434,12 +434,12 @@ class EmailService {
         <h1 style="margin: 0; color: #ffffff; font-size: 28px;">🔒 Password Reset Request</h1>
       </div>
       <div style="padding: 30px;">
-        <p>Hi ${data?.firstName},</p>
+        <p>Hi ${data.firstName},</p>
         <p>We received a request to reset your Max Booster password. Click the button below to create a new password:</p>
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${data?.resetLink}" style="display: inline-block; padding: 12px 30px; background: #dc2626; color: white; text-decoration: none; border-radius: 6px;">Reset Password</a>
+          <a href="${data.resetLink}" style="display: inline-block; padding: 12px 30px; background: #dc2626; color: white; text-decoration: none; border-radius: 6px;">Reset Password</a>
         </div>
-        <p><strong>This link expires in ${data?.expiresIn}.</strong></p>
+        <p><strong>This link expires in ${data.expiresIn}.</strong></p>
         <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0;">
           <p style="margin: 0; font-weight: bold;">⚠️ Security Notice:</p>
           <ul style="margin: 10px 0 0 0;">
@@ -456,7 +456,7 @@ class EmailService {
 </body>
 </html>`;
 
-    const _emailData = {
+    const emailData = {
       to,
       from: fromEmail,
       subject: "🔒 Reset Your Max Booster Password",
@@ -464,9 +464,9 @@ class EmailService {
       text: `Hi ${data?.firstName},\n\nWe received a request to reset your password.\n\nReset link: ${data?.resetLink}\n\nThis link expires in ${data?.expiresIn}.\n\nIf you didn't request this, please ignore this email.\n\nBest,\nThe Max Booster Team`,
     };
 
-    const _success = await this?.sendWithCircuitBreaker(emailData);
+    const success = await this.sendWithCircuitBreaker(emailData);
     if (success) {
-      logger?.info(`📧 Password reset email sent to ${to}`);
+      logger.info(`📧 Password reset email sent to ${to}`);
     }
     return success;
   }
@@ -475,62 +475,62 @@ class EmailService {
     data: DistributionNotificationData,
     to: string,
   ): Promise<boolean> {
-    if (!this?.isInitialized) {
-      logger?.warn(
+    if (!this.isInitialized) {
+      logger.warn(
         "⚠️  SendGrid not initialized, skipping distribution notification",
       );
       return false;
     }
 
-    const _statusEmojis = {
+    const statusEmojis = {
       submitted: "📤",
       processing: "⚙️",
       live: "🎉",
       failed: "❌",
     };
 
-    const _statusTitles = {
+    const statusTitles = {
       submitted: "Release Submitted",
       processing: "Release Processing",
       live: "Release is Live!",
       failed: "Distribution Failed",
     };
 
-    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
-    const _platformsTags = data?.platforms
+    const fromEmail = env.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
+    const platformsTags = data.platforms
       .map(
         (p) =>
           `<span style="display: inline-block; background: #e0e7ff; color: #4c51bf; padding: 5px 12px; border-radius: 12px; margin: 3px; font-size: 13px;">${p}</span>`,
       )
       .join("");
 
-    const _html = `
+    const html = `
 <!DOCTYPE html>
 <html>
 <body style="margin: 0; padding: 0; font-family: Arial, sans-serif;">
   <div style="background-color: #f3f4f6; padding: 40px 20px;">
     <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden;">
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
-        <h1 style="margin: 0; color: #ffffff; font-size: 28px;">${statusEmojis[data?.status]} ${statusTitles[data?.status]}</h1>
+        <h1 style="margin: 0; color: #ffffff; font-size: 28px;">${statusEmojis[data.status]} ${statusTitles[data.status]}</h1>
       </div>
       <div style="padding: 30px;">
-        <p>Hi ${data?.firstName},</p>
-        <p>Your release "<strong>${data?.releaseName}</strong>" ${data?.status === "live" ? "is now live!" : `status: ${data?.status}`}</p>
+        <p>Hi ${data.firstName},</p>
+        <p>Your release "<strong>${data.releaseName}</strong>" ${data.status === "live" ? "is now live!" : `status: ${data.status}`}</p>
         <div style="background: white; padding: 15px; border-radius: 4px; margin: 15px 0;">
           <strong>Platforms:</strong><br>
           ${platformsTags}
         </div>
         ${
-          data?.status === "failed" && data?.errorMessage
+          data.status === "failed" && data.errorMessage
             ? `
         <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0;">
-          <strong>Error Details:</strong><br>${data?.errorMessage}
+          <strong>Error Details:</strong><br>${data.errorMessage}
         </div>
         `
             : ""
         }
         <div style="text-align: center; margin: 30px 0;">
-          <a href="https://maxbooster?.ai/distribution" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px;">View Distribution Status</a>
+          <a href="https://maxbooster.ai/distribution" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px;">View Distribution Status</a>
         </div>
         <p>Best,<br>The Max Booster Team</p>
       </div>
@@ -539,17 +539,17 @@ class EmailService {
 </body>
 </html>`;
 
-    const _emailData = {
+    const emailData = {
       to,
       from: fromEmail,
-      subject: `${statusEmojis[data?.status]} ${statusTitles[data?.status]}: ${data?.releaseName}`,
+      subject: `${statusEmojis[data.status]} ${statusTitles[data.status]}: ${data.releaseName}`,
       html,
-      text: `Hi ${data?.firstName},\n\nYour release "${data?.releaseName}" status: ${data?.status}\n\nPlatforms: ${data?.platforms.join(", ")}\n\n${data?.errorMessage || ""}\n\nView status: https://maxbooster?.ai/distribution\n\nBest,\nThe Max Booster Team`,
+      text: `Hi ${data.firstName},\n\nYour release "${data.releaseName}" status: ${data.status}\n\nPlatforms: ${data.platforms.join(", ")}\n\n${data.errorMessage || ""}\n\nView status: https://maxbooster.ai/distribution\n\nBest,\nThe Max Booster Team`,
     };
 
-    const _success = await this?.sendWithCircuitBreaker(emailData);
+    const success = await this.sendWithCircuitBreaker(emailData);
     if (success) {
-      logger?.info(`📧 Distribution notification sent to ${to}`);
+      logger.info(`📧 Distribution notification sent to ${to}`);
     }
     return success;
   }
@@ -558,15 +558,15 @@ class EmailService {
     data: SubscriptionEmailData,
     to: string,
   ): Promise<boolean> {
-    if (!this?.isInitialized) {
-      logger?.warn(
+    if (!this.isInitialized) {
+      logger.warn(
         "⚠️  SendGrid not initialized, skipping subscription confirmation",
       );
       return false;
     }
 
-    const _fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
-    const _html = `
+    const fromEmail = env.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
+    const html = `
 <!DOCTYPE html>
 <html>
 <body style="margin: 0; padding: 0; font-family: Arial, sans-serif;">
@@ -576,16 +576,16 @@ class EmailService {
         <h1 style="margin: 0; color: #ffffff; font-size: 28px;">🎉 Subscription Confirmed!</h1>
       </div>
       <div style="padding: 30px;">
-        <p>Hi ${data?.firstName},</p>
+        <p>Hi ${data.firstName},</p>
         <p>Thank you for subscribing to Max Booster! Your payment has been processed successfully.</p>
         <div style="background: white; border: 2px solid #667eea; padding: 20px; margin: 20px 0; border-radius: 8px; text-align: center;">
-          <h2 style="margin: 0; color: #667eea;">${data?.plan}</h2>
-          <div style="font-size: 36px; font-weight: bold; color: #667eea; margin: 10px 0;">${data?.amount}</div>
-          ${data?.nextBillingDate ? `<p style="margin: 0; color: #666;">Next billing: ${data?.nextBillingDate}</p>` : '<p style="margin: 0; color: #666;">Lifetime Access</p>'}
+          <h2 style="margin: 0; color: #667eea;">${data.plan}</h2>
+          <div style="font-size: 36px; font-weight: bold; color: #667eea; margin: 10px 0;">${data.amount}</div>
+          ${data.nextBillingDate ? `<p style="margin: 0; color: #666;">Next billing: ${data.nextBillingDate}</p>` : '<p style="margin: 0; color: #666;">Lifetime Access</p>'}
         </div>
         <p>You now have full access to all Max Booster features!</p>
         <div style="text-align: center; margin: 30px 0;">
-          <a href="https://maxbooster?.ai/dashboard" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px;">Go to Dashboard</a>
+          <a href="https://maxbooster.ai/dashboard" style="display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px;">Go to Dashboard</a>
         </div>
         <p>Best,<br>The Max Booster Team</p>
       </div>
@@ -594,17 +594,17 @@ class EmailService {
 </body>
 </html>`;
 
-    const _emailData = {
+    const emailData = {
       to,
       from: fromEmail,
       subject: "🎉 Welcome to Max Booster! Your Subscription is Active",
       html,
-      text: `Hi ${data?.firstName},\n\nThank you for subscribing to Max Booster!\n\nPlan: ${data?.plan}\nAmount: ${data?.amount}\n${data?.nextBillingDate ? `Next billing: ${data?.nextBillingDate}` : "Lifetime Access"}\n\nView dashboard: https://maxbooster?.ai/dashboard\n\nBest,\nThe Max Booster Team`,
+      text: `Hi ${data.firstName},\n\nThank you for subscribing to Max Booster!\n\nPlan: ${data.plan}\nAmount: ${data.amount}\n${data.nextBillingDate ? `Next billing: ${data.nextBillingDate}` : "Lifetime Access"}\n\nView dashboard: https://maxbooster.ai/dashboard\n\nBest,\nThe Max Booster Team`,
     };
 
-    const _success = await this?.sendWithCircuitBreaker(emailData);
+    const success = await this.sendWithCircuitBreaker(emailData);
     if (success) {
-      logger?.info(`📧 Subscription confirmation sent to ${to}`);
+      logger.info(`📧 Subscription confirmation sent to ${to}`);
     }
     return success;
   }
@@ -641,7 +641,7 @@ class EmailService {
             Log in to Max Booster to view the project and start collaborating!
           </p>
         `;
-        actionButton = `<a href="https://maxbooster?.ai/dashboard" style="display: inline-block; margin: 20px 0; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">View Project</a>`;
+        actionButton = `<a href="https://maxbooster.ai/dashboard" style="display: inline-block; margin: 20px 0; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">View Project</a>`;
         break;
 
       case "team":
@@ -657,7 +657,7 @@ class EmailService {
             Join their team to collaborate on music projects, manage releases, and grow together!
           </p>
         `;
-        actionButton = `<a href="https://maxbooster?.ai/dashboard" style="display: inline-block; margin: 20px 0; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">Accept Invitation</a>`;
+        actionButton = `<a href="https://maxbooster.ai/dashboard" style="display: inline-block; margin: 20px 0; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">Accept Invitation</a>`;
         break;
 
       case "general":
@@ -672,11 +672,11 @@ class EmailService {
         `;
         actionButton = inviteLink
           ? `<a href="${inviteLink}" style="display: inline-block; margin: 20px 0; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">Accept Invitation</a>`
-          : `<a href="https://maxbooster?.ai/pricing" style="display: inline-block; margin: 20px 0; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">Get Started</a>`;
+          : `<a href="https://maxbooster.ai/pricing" style="display: inline-block; margin: 20px 0; padding: 12px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 6px; font-weight: 600;">Get Started</a>`;
         break;
     }
 
-    const _html = `
+    const html = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -733,7 +733,7 @@ class EmailService {
 </html>
     `.trim();
 
-    const _text = `
+    const text = `
 ${subject}
 
 ${inviterName} (${inviterEmail}) has invited you ${inviteType === "collaboration" ? `to collaborate on "${projectName}"` : "to Max Booster"}.
@@ -744,7 +744,7 @@ ${inviteType === "collaboration" ? "Log in to Max Booster to view the project an
 ${inviteType === "team" ? "Join their team to collaborate on music projects and grow together!" : ""}
 ${inviteType === "general" ? "Max Booster helps artists distribute music, manage royalties, create AI-powered content, and grow their music career." : ""}
 
-${inviteLink || "https://maxbooster?.ai/dashboard"}
+${inviteLink || "https://maxbooster.ai/dashboard"}
 
 If you have any questions, feel free to contact ${inviterName} at ${inviterEmail}.
 
@@ -774,7 +774,7 @@ If you did not expect this invitation, you can safely ignore this email.
   ): Promise<boolean> {
     const emailData: sgMail.MailDataRequired = {
       to,
-      from: env?.SENDGRID_FROM_EMAIL ?? "noreply@max-booster.com",
+      from: env.SENDGRID_FROM_EMAIL ?? "noreply@max-booster.com",
       subject,
       html,
     };
@@ -799,15 +799,15 @@ If you did not expect this invitation, you can safely ignore this email.
       return false;
     }
     const emailData: sgMail.MailDataRequired = {
-      to: options?.to,
+      to: options.to,
       from:
         options?.from ?? env?.SENDGRID_FROM_EMAIL ?? "noreply@max-booster.com",
-      subject: options?.subject,
-      html: options?.html,
-      text: options?.text ?? options?.html.replace(/<[^>]+>/g, ""),
+      subject: options.subject,
+      html: options.html,
+      text: options.text ?? options?.html.replace(/<[^>]+>/g, ""),
     };
     return this?.sendWithCircuitBreaker(emailData, true);
   }
 }
 
-export const _emailService = new EmailService();
+export const emailService = new EmailService();

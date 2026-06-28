@@ -147,8 +147,8 @@ export class PocketDimension extends EventEmitter {
     }
 
     this.metadata = {
-      id: this?.id,
-      name: this?.name,
+      id: this.id,
+      name: this.name,
       createdAt: new Date(),
       updatedAt: new Date(),
       totalSize: 0,
@@ -211,7 +211,7 @@ export class PocketDimension extends EventEmitter {
 
     // Load metadata and index from PDIM
     try {
-      const _metaRaw = await getPdimClient().get(
+      const metaRaw = await getPdimClient().get(
         `pdim:meta:${this?.id}:metadata`,
       );
       if (metaRaw) {
@@ -219,7 +219,7 @@ export class PocketDimension extends EventEmitter {
 
         // Load encryption key if the dimension was encrypted
         if (this?.metadata.encrypted && !this?.encryptionKey) {
-          const _keyRaw = await getPdimClient().get(
+          const keyRaw = await getPdimClient().get(
             `pdim:meta:${this?.id}:keyfile`,
           );
           if (!keyRaw) {
@@ -227,7 +227,7 @@ export class PocketDimension extends EventEmitter {
               `Encrypted pocket dimension ${this?.id} is missing its keyfile - data cannot be decrypted`,
             );
           }
-          const _keyInfo = JSON?.parse(keyRaw);
+          const keyInfo = JSON?.parse(keyRaw);
           this.rawEncryptionKey = keyInfo?.key;
           this.encryptionKey = scryptSync(
             keyInfo?.key,
@@ -236,11 +236,11 @@ export class PocketDimension extends EventEmitter {
           );
         }
 
-        const _indexRaw = await getPdimClient().get(
+        const indexRaw = await getPdimClient().get(
           `pdim:meta:${this?.id}:index`,
         );
         if (indexRaw) {
-          const _index = JSON?.parse(indexRaw);
+          const index = JSON?.parse(indexRaw);
           this.entries = new Map(Object?.entries(index?.entries));
           this.chunks = new Map(Object?.entries(index?.chunks));
         }
@@ -254,7 +254,7 @@ export class PocketDimension extends EventEmitter {
     }
 
     this.isOpen = true;
-    this?.emit("opened", { id: this?.id, name: this?.name });
+    this?.emit("opened", { id: this.id, name: this.name });
   }
 
   async close(): Promise<void> {
@@ -269,7 +269,7 @@ export class PocketDimension extends EventEmitter {
     }
 
     this.isOpen = false;
-    this?.emit("closed", { id: this?.id });
+    this?.emit("closed", { id: this.id });
   }
 
   private async persistMetadata(): Promise<void> {
@@ -281,8 +281,8 @@ export class PocketDimension extends EventEmitter {
     await getPdimClient().set(
       `pdim:meta:${this?.id}:index`,
       JSON?.stringify({
-        entries: Object?.fromEntries(this?.entries),
-        chunks: Object?.fromEntries(this?.chunks),
+        entries: Object.fromEntries(this?.entries),
+        chunks: Object.fromEntries(this?.chunks),
       }),
     );
 
@@ -291,7 +291,7 @@ export class PocketDimension extends EventEmitter {
       await getPdimClient().set(
         `pdim:meta:${this?.id}:keyfile`,
         JSON?.stringify({
-          key: this?.rawEncryptionKey,
+          key: this.rawEncryptionKey,
           createdAt: new Date().toISOString(),
         }),
       );
@@ -309,8 +309,8 @@ export class PocketDimension extends EventEmitter {
   ): Promise<PocketEntry> {
     if (!this?.isOpen) await this?.open();
 
-    const _buffer = typeof data === "string" ? Buffer?.from(data) : data;
-    const _depth = options?.depth || 0;
+    const buffer = typeof data === "string" ? Buffer?.from(data) : data;
+    const depth = options?.depth || 0;
 
     if (depth > this?.maxRecursionDepth) {
       throw new Error(
@@ -318,17 +318,17 @@ export class PocketDimension extends EventEmitter {
       );
     }
 
-    const _originalSize = buffer?.length;
+    const originalSize = buffer?.length;
     const chunks: string[] = [];
     let compressedSize = 0;
 
     // Split into chunks
-    for (let offset = 0; offset < buffer?.length; offset += this?.chunkSize) {
-      const _chunkData = buffer?.subarray(
+    for (let offset = 0; offset < buffer.length; offset += this?.chunkSize) {
+      const chunkData = buffer?.subarray(
         offset,
         Math?.min(offset + this?.chunkSize, buffer?.length),
       );
-      const _chunk = await this?.processChunk(chunkData, depth);
+      const chunk = await this?.processChunk(chunkData, depth);
       chunks?.push(chunk?.id);
       compressedSize += chunk?.compressedSize;
     }
@@ -339,7 +339,7 @@ export class PocketDimension extends EventEmitter {
       size: originalSize,
       compressedSize,
       chunks,
-      createdAt: this?.entries.has(entryPath)
+      createdAt: this.entries.has(entryPath)
         ? this?.entries.get(entryPath)!.createdAt
         : new Date(),
       modifiedAt: new Date(),
@@ -366,21 +366,21 @@ export class PocketDimension extends EventEmitter {
     depth: number,
   ): Promise<PocketChunk> {
     // Generate content-addressed hash
-    const _hash = this?.hashContent(data);
+    const hash = this?.hashContent(data);
 
     // Check for deduplication
     if (this?.enableDeduplication && this?.chunks.has(hash)) {
-      const _existing = this?.chunks.get(hash)!;
-      existing?.accessCount++;
+      const existing = this?.chunks.get(hash)!;
+      existing.accessCount++;
       existing.lastAccessed = new Date();
       return existing;
     }
 
     // Compress the chunk
-    const _compressed = await this?.compress(data);
+    const compressed = await this?.compress(data);
 
     // Encrypt if enabled
-    const _finalData = this?.encryptionKey
+    const finalData = this?.encryptionKey
       ? this?.encrypt(compressed)
       : compressed;
 
@@ -390,9 +390,9 @@ export class PocketDimension extends EventEmitter {
 
     const chunk: PocketChunk = {
       id: hash,
-      size: data?.length,
-      compressedSize: finalData?.length,
-      compressionRatio: data?.length / finalData?.length,
+      size: data.length,
+      compressedSize: finalData.length,
+      compressionRatio: data.length / finalData?.length,
       createdAt: new Date(),
       accessCount: 1,
       lastAccessed: new Date(),
@@ -406,7 +406,7 @@ export class PocketDimension extends EventEmitter {
   }
 
   private async persistChunk(id: string, data: Buffer): Promise<void> {
-    const _key = `pdim:chunk:${this?.id}:${id}`;
+    const key = `pdim:chunk:${this?.id}:${id}`;
     await getPdimClient().set(key, data?.toString("base64"));
   }
 
@@ -417,7 +417,7 @@ export class PocketDimension extends EventEmitter {
   async read(entryPath: string): Promise<Buffer> {
     if (!this?.isOpen) await this?.open();
 
-    const _entry = this?.entries.get(entryPath);
+    const entry = this?.entries.get(entryPath);
     if (!entry) {
       throw new Error(`Entry not found in pocket dimension: ${entryPath}`);
     }
@@ -425,11 +425,11 @@ export class PocketDimension extends EventEmitter {
     const chunks: Buffer[] = [];
 
     for (const chunkId of entry?.chunks) {
-      const _chunkData = await this?.readChunk(chunkId);
+      const chunkData = await this?.readChunk(chunkId);
       chunks?.push(chunkData);
     }
 
-    this?.emit("read", { path: entryPath, size: entry?.size });
+    this?.emit("read", { path: entryPath, size: entry.size });
 
     return Buffer?.concat(chunks);
   }
@@ -439,8 +439,8 @@ export class PocketDimension extends EventEmitter {
     let data = this?.chunkData.get(id);
 
     if (!data) {
-      const _key = `pdim:chunk:${this?.id}:${id}`;
-      const _encoded = await getPdimClient().get(key);
+      const key = `pdim:chunk:${this?.id}:${id}`;
+      const encoded = await getPdimClient().get(key);
       if (!encoded) {
         throw new Error(`Chunk not found in PDIM: ${id}`);
       }
@@ -449,15 +449,15 @@ export class PocketDimension extends EventEmitter {
     }
 
     // Decrypt if needed
-    const _decrypted = this?.encryptionKey ? this?.decrypt(data) : data;
+    const decrypted = this?.encryptionKey ? this?.decrypt(data) : data;
 
     // Decompress
-    const _decompressed = await this?.decompress(decrypted);
+    const decompressed = await this?.decompress(decrypted);
 
     // Update access stats
-    const _chunk = this?.chunks.get(id);
+    const chunk = this?.chunks.get(id);
     if (chunk) {
-      chunk?.accessCount++;
+      chunk.accessCount++;
       chunk.lastAccessed = new Date();
     }
 
@@ -465,7 +465,7 @@ export class PocketDimension extends EventEmitter {
   }
 
   async readStream(entryPath: string): Promise<Readable> {
-    const _data = await this?.read(entryPath);
+    const data = await this?.read(entryPath);
     return Readable?.from(data);
   }
 
@@ -485,17 +485,17 @@ export class PocketDimension extends EventEmitter {
       );
     }
 
-    const _nested = new PocketDimension({
+    const nested = new PocketDimension({
       id: `${this?.id}/${dimensionPath}`,
       name: dimensionPath,
-      encryptionKey: config?.encryptionKey,
-      chunkSize: config?.chunkSize || this?.chunkSize,
-      maxRecursionDepth: config?.maxRecursionDepth || this?.maxRecursionDepth,
-      compressionLevel: config?.compressionLevel || this?.compressionLevel,
+      encryptionKey: config.encryptionKey,
+      chunkSize: config.chunkSize || this?.chunkSize,
+      maxRecursionDepth: config.maxRecursionDepth || this?.maxRecursionDepth,
+      compressionLevel: config.compressionLevel || this?.compressionLevel,
       enableDeduplication:
         config?.enableDeduplication ?? this?.enableDeduplication,
-      enableVersioning: config?.enableVersioning ?? this?.enableVersioning,
-      storagePath: this?.storagePath,
+      enableVersioning: config.enableVersioning ?? this?.enableVersioning,
+      storagePath: this.storagePath,
     });
 
     (nested as Record<string, unknown>).currentDepth = this?.currentDepth + 1;
@@ -514,18 +514,18 @@ export class PocketDimension extends EventEmitter {
       createdAt: new Date(),
       modifiedAt: new Date(),
       version: 1,
-      metadata: { dimensionId: nested?.id },
+      metadata: { dimensionId: nested.id },
     };
 
     this?.entries.set(dimensionPath, entry);
-    this?.metadata.maxDepth = Math?.max(
+    this.metadata.maxDepth = Math?.max(
       this?.metadata.maxDepth,
       this?.currentDepth + 1,
     );
 
     this?.emit("dimensionCreated", {
       path: dimensionPath,
-      depth: this?.currentDepth + 1,
+      depth: this.currentDepth + 1,
     });
 
     return nested;
@@ -546,15 +546,15 @@ export class PocketDimension extends EventEmitter {
   async delete(entryPath: string): Promise<boolean> {
     if (!this?.isOpen) await this?.open();
 
-    const _entry = this?.entries.get(entryPath);
+    const entry = this?.entries.get(entryPath);
     if (!entry) return false;
 
     // If it's a dimension, close and remove it
-    if (entry?.type === "dimension") {
-      const _nested = this?.nestedDimensions.get(entryPath);
+    if (entry.type === "dimension") {
+      const nested = this.nestedDimensions.get(entryPath);
       if (nested) {
-        await nested?.close();
-        this?.nestedDimensions.delete(entryPath);
+        await nested.close();
+        this.nestedDimensions.delete(entryPath);
       }
     }
 
@@ -562,8 +562,8 @@ export class PocketDimension extends EventEmitter {
     // For now, just remove the entry
     this?.entries.delete(entryPath);
 
-    this?.metadata.totalSize -= entry?.size;
-    this?.metadata.compressedSize -= entry?.compressedSize;
+    this.metadata.totalSize -= entry?.size;
+    this.metadata.compressedSize -= entry?.compressedSize;
 
     this?.emit("deleted", { path: entryPath });
 
@@ -593,23 +593,23 @@ export class PocketDimension extends EventEmitter {
       duplicateRefs += chunk?.accessCount - 1;
     }
 
-    const _deduplicationSavings =
+    const deduplicationSavings =
       duplicateRefs > 0
         ? (duplicateRefs / (uniqueChunks + duplicateRefs)) * 100
         : 0;
 
     return {
-      totalEntries: this?.entries.size,
-      totalSize: this?.metadata.totalSize,
-      compressedSize: this?.metadata.compressedSize,
+      totalEntries: this.entries.size,
+      totalSize: this.metadata.totalSize,
+      compressedSize: this.metadata.compressedSize,
       compressionRatio:
         this?.metadata.totalSize > 0
           ? this?.metadata.totalSize / this?.metadata.compressedSize
           : 0,
       deduplicationSavings,
-      nestedDimensions: this?.nestedDimensions.size,
-      maxDepth: this?.metadata.maxDepth,
-      chunkCount: this?.chunks.size,
+      nestedDimensions: this.nestedDimensions.size,
+      maxDepth: this.metadata.maxDepth,
+      chunkCount: this.chunks.size,
       uniqueChunks,
     };
   }
@@ -621,14 +621,14 @@ export class PocketDimension extends EventEmitter {
   private async compress(data: Buffer): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = [];
-      const _gzip = createGzip({
-        level: this?.compressionLevel,
+      const gzip = createGzip({
+        level: this.compressionLevel,
         memLevel: 9,
-        strategy: zlibConstants?.Z_DEFAULT_STRATEGY,
+        strategy: zlibConstants.Z_DEFAULT_STRATEGY,
       });
 
-      const _source = Readable?.from(data);
-      const _destination = new Writable({
+      const source = Readable?.from(data);
+      const destination = new Writable({
         write(chunk, _encoding, callback) {
           chunks?.push(chunk);
           callback();
@@ -646,10 +646,10 @@ export class PocketDimension extends EventEmitter {
   private async decompress(data: Buffer): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       const chunks: Buffer[] = [];
-      const _gunzip = createGunzip();
+      const gunzip = createGunzip();
 
-      const _source = Readable?.from(data);
-      const _destination = new Writable({
+      const source = Readable?.from(data);
+      const destination = new Writable({
         write(chunk, _encoding, callback) {
           chunks?.push(chunk);
           callback();
@@ -671,11 +671,11 @@ export class PocketDimension extends EventEmitter {
   private encrypt(data: Buffer): Buffer {
     if (!this?.encryptionKey) return data;
 
-    const _iv = randomBytes(16);
-    const _cipher = createCipheriv("aes-256-gcm", this?.encryptionKey, iv);
+    const iv = randomBytes(16);
+    const cipher = createCipheriv("aes-256-gcm", this?.encryptionKey, iv);
 
-    const _encrypted = Buffer?.concat([cipher?.update(data), cipher?.final()]);
-    const _authTag = cipher?.getAuthTag();
+    const encrypted = Buffer?.concat([cipher?.update(data), cipher?.final()]);
+    const authTag = cipher?.getAuthTag();
 
     // Prepend IV and auth tag
     return Buffer?.concat([iv, authTag, encrypted]);
@@ -684,11 +684,11 @@ export class PocketDimension extends EventEmitter {
   private decrypt(data: Buffer): Buffer {
     if (!this?.encryptionKey) return data;
 
-    const _iv = data?.subarray(0, 16);
-    const _authTag = data?.subarray(16, 32);
-    const _encrypted = data?.subarray(32);
+    const iv = data?.subarray(0, 16);
+    const authTag = data?.subarray(16, 32);
+    const encrypted = data?.subarray(32);
 
-    const _decipher = createDecipheriv("aes-256-gcm", this?.encryptionKey, iv, {
+    const decipher = createDecipheriv("aes-256-gcm", this?.encryptionKey, iv, {
       authTagLength: 16,
     });
     decipher?.setAuthTag(authTag);
@@ -705,10 +705,10 @@ export class PocketDimension extends EventEmitter {
   }
 
   private updateMetadata(originalSize: number, compressedSize: number): void {
-    this?.metadata.totalSize += originalSize;
-    this?.metadata.compressedSize += compressedSize;
-    this?.metadata.chunkCount = this?.chunks.size;
-    this?.metadata.updatedAt = new Date();
+    this.metadata.totalSize += originalSize;
+    this.metadata.compressedSize += compressedSize;
+    this.metadata.chunkCount = this?.chunks.size;
+    this.metadata.updatedAt = new Date();
   }
 
   getMetadata(): PocketMetadata {
@@ -765,28 +765,28 @@ export class PocketDimensionManager {
 
   /**
    * Open or create a pocket dimension with bracket notation access
-   * Usage: const _pocket = await manager?.openPocket('my-dimension');
-   *        pocket['files/audio?.mp3'].write(audioData);
+   * Usage: const pocket = await manager?.openPocket('my-dimension');
+   *        pocket['files/audio.mp3'].write(audioData);
    */
   async openPocket<T extends string>(
     id: T,
     config?: Partial<PocketDimensionConfig>,
   ): Promise<PocketDimension & PocketBracketAccessor> {
     if (this?.dimensions.has(id)) {
-      const _dimension = this?.dimensions.get(id)!;
+      const dimension = this?.dimensions.get(id)!;
       return dimension as PocketDimension & PocketBracketAccessor;
     }
 
-    const _dimension = new PocketDimension({
+    const dimension = new PocketDimension({
       id,
-      name: config?.name || id,
-      encryptionKey: config?.encryptionKey,
-      chunkSize: config?.chunkSize,
-      maxRecursionDepth: config?.maxRecursionDepth,
-      compressionLevel: config?.compressionLevel,
-      enableDeduplication: config?.enableDeduplication,
-      enableVersioning: config?.enableVersioning,
-      storagePath: this?.storagePath,
+      name: config.name || id,
+      encryptionKey: config.encryptionKey,
+      chunkSize: config.chunkSize,
+      maxRecursionDepth: config.maxRecursionDepth,
+      compressionLevel: config.compressionLevel,
+      enableDeduplication: config.enableDeduplication,
+      enableVersioning: config.enableVersioning,
+      storagePath: this.storagePath,
     });
 
     await dimension?.open();
@@ -796,7 +796,7 @@ export class PocketDimensionManager {
     return new Proxy(dimension, {
       get: (target, prop: string) => {
         if (prop in target) {
-          const _value = (target as Record<string, unknown>)[prop];
+          const value = (target as Record<string, unknown>)[prop];
           return typeof value === "function" ? value?.bind(target) : value;
         }
         // Bracket accessor for paths
@@ -814,7 +814,7 @@ export class PocketDimensionManager {
   }
 
   async closePocket(id: string): Promise<void> {
-    const _dimension = this?.dimensions.get(id);
+    const dimension = this?.dimensions.get(id);
     if (dimension) {
       await dimension?.close();
       this?.dimensions.delete(id);
@@ -844,13 +844,13 @@ export class PocketDimensionManager {
     let compressedSize = 0;
 
     for (const dimension of this?.dimensions.values()) {
-      const _stats = dimension?.getStats();
+      const stats = dimension?.getStats();
       totalSize += stats?.totalSize;
       compressedSize += stats?.compressedSize;
     }
 
     return {
-      pockets: this?.dimensions.size,
+      pockets: this.dimensions.size,
       totalSize,
       compressedSize,
     };
@@ -858,7 +858,7 @@ export class PocketDimensionManager {
 }
 
 // Export singleton
-export const _pocketManager = PocketDimensionManager?.getInstance(
+export const pocketManager = PocketDimensionManager?.getInstance(
   "./pocket-dimensions",
 );
 

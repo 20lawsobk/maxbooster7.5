@@ -11,11 +11,11 @@ import {
 import { tfWorkerPool } from "../lib/tensorflowWorkerPool";
 import { requireAdmin, require2FA } from "../middleware/auth.js";
 
-const _registry = new Registry();
+const registry = new Registry();
 
 collectDefaultMetrics({ register: registry, prefix: "maxbooster_" });
 
-export const _httpRequestDuration = new Histogram({
+export const httpRequestDuration = new Histogram({
   name: "maxbooster_http_request_duration_seconds",
   help: "HTTP request duration in seconds",
   labelNames: ["method", "route", "status_code"],
@@ -23,41 +23,41 @@ export const _httpRequestDuration = new Histogram({
   registers: [registry],
 });
 
-export const _httpRequestTotal = new Counter({
+export const httpRequestTotal = new Counter({
   name: "maxbooster_http_requests_total",
   help: "Total number of HTTP requests",
   labelNames: ["method", "route", "status_code"],
   registers: [registry],
 });
 
-export const _activeWebSocketConnections = new Gauge({
+export const activeWebSocketConnections = new Gauge({
   name: "maxbooster_websocket_connections_active",
   help: "Number of active WebSocket connections",
   registers: [registry],
 });
 
-export const _bullmqJobsTotal = new Counter({
+export const bullmqJobsTotal = new Counter({
   name: "maxbooster_bullmq_jobs_total",
   help: "Total BullMQ jobs processed",
   labelNames: ["queue", "status"],
   registers: [registry],
 });
 
-export const _cacheHits = new Counter({
+export const cacheHits = new Counter({
   name: "maxbooster_cache_hits_total",
   help: "Cache hits",
   labelNames: ["backend"],
   registers: [registry],
 });
 
-export const _cacheMisses = new Counter({
+export const cacheMisses = new Counter({
   name: "maxbooster_cache_misses_total",
   help: "Cache misses",
   labelNames: ["backend"],
   registers: [registry],
 });
 
-export const _dbQueryDuration = new Histogram({
+export const dbQueryDuration = new Histogram({
   name: "maxbooster_db_query_duration_seconds",
   help: "Database query duration in seconds",
   labelNames: ["operation"],
@@ -65,7 +65,7 @@ export const _dbQueryDuration = new Histogram({
   registers: [registry],
 });
 
-export const _tfInferenceDuration = new Histogram({
+export const tfInferenceDuration = new Histogram({
   name: "maxbooster_tf_inference_duration_seconds",
   help: "TensorFlow inference duration in seconds",
   labelNames: ["model"],
@@ -73,20 +73,20 @@ export const _tfInferenceDuration = new Histogram({
   registers: [registry],
 });
 
-export const _activeUsers = new Gauge({
+export const activeUsers = new Gauge({
   name: "maxbooster_active_users",
   help: "Number of currently authenticated users with active sessions",
   registers: [registry],
 });
 
-export const _stripePaymentTotal = new Counter({
+export const stripePaymentTotal = new Counter({
   name: "maxbooster_stripe_payments_total",
   help: "Total Stripe payment events",
   labelNames: ["status"],
   registers: [registry],
 });
 
-export const _tfWorkerQueueDepth = new Gauge({
+export const tfWorkerQueueDepth = new Gauge({
   name: "maxbooster_tf_worker_queue_depth",
   help: "Current depth of the TensorFlow worker inference queue",
   registers: [registry],
@@ -95,7 +95,7 @@ export const _tfWorkerQueueDepth = new Gauge({
   },
 });
 
-const _router = Router();
+const router = Router();
 
 router?.get(
   "/metrics",
@@ -104,7 +104,7 @@ router?.get(
   async (_req: Request, res: Response) => {
     try {
       res?.set("Content-Type", registry?.contentType as RegistryContentType);
-      const _metrics = await registry?.metrics();
+      const metrics = await registry?.metrics();
       res?.end(metrics);
     } catch (err) {
       res?.status(500).end("Failed to collect metrics");

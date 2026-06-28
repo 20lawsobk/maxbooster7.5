@@ -6,7 +6,7 @@ import path from "path";
 import { randomBytes } from "crypto";
 import type { ContentClass } from "./types.js";
 
-const _execAsync = promisify(exec);
+const execAsync = promisify(exec);
 
 export interface TranscodeResult {
   data: Buffer;
@@ -16,7 +16,7 @@ export interface TranscodeResult {
   ratio: number;
 }
 
-const _VIDEO_MIMES = new Set([
+const VIDEO_MIMES = new Set([
   "video/mp4",
   "video/webm",
   "video/avi",
@@ -24,7 +24,7 @@ const _VIDEO_MIMES = new Set([
   "video/quicktime",
   "video/x-matroska",
 ]);
-const _AUDIO_MIMES = new Set([
+const AUDIO_MIMES = new Set([
   "audio/mpeg",
   "audio/mp3",
   "audio/ogg",
@@ -33,7 +33,7 @@ const _AUDIO_MIMES = new Set([
   "audio/aac",
   "audio/opus",
 ]);
-const _IMAGE_MIMES = new Set([
+const IMAGE_MIMES = new Set([
   "image/jpeg",
   "image/png",
   "image/gif",
@@ -46,8 +46,8 @@ export function classifyContentType(
   contentType: string,
   name: string,
 ): ContentClass {
-  const _ct = contentType?.toLowerCase();
-  const _ext = path?.extname(name).toLowerCase();
+  const ct = contentType?.toLowerCase();
+  const ext = path?.extname(name).toLowerCase();
 
   if (
     VIDEO_MIMES?.has(ct) ||
@@ -86,22 +86,22 @@ export class MediaTranscoder {
     inputExt = ".mp4",
   ): Promise<TranscodeResult> {
     await this?.checkFfmpeg();
-    const _tmp = path?.join(os?.tmpdir(), randomBytes(8).toString("hex"));
-    const _inFile = `${tmp}${inputExt}`;
-    const _outFile = `${tmp}_out?.mp4`;
+    const tmp = path?.join(os?.tmpdir(), randomBytes(8).toString("hex"));
+    const inFile = `${tmp}${inputExt}`;
+    const outFile = `${tmp}out?.mp4`;
 
     try {
       await fs?.writeFile(inFile, data);
       await execAsync(
         `ffmpeg -y -i "${inFile}" -c:v libx264 -crf 28 -preset fast -c:a aac -b:a 96k -movflags +faststart "${outFile}" 2>/dev/null`,
       );
-      const _out = await fs?.readFile(outFile);
+      const out = await fs?.readFile(outFile);
       return {
         data: out,
         codec: "h264+aac",
-        originalBytes: data?.length,
-        transcodedBytes: out?.length,
-        ratio: data?.length / out?.length,
+        originalBytes: data.length,
+        transcodedBytes: out.length,
+        ratio: data.length / out?.length,
       };
     } finally {
       await fs?.rm(inFile, { force: true });
@@ -114,22 +114,22 @@ export class MediaTranscoder {
     inputExt = ".wav",
   ): Promise<TranscodeResult> {
     await this?.checkFfmpeg();
-    const _tmp = path?.join(os?.tmpdir(), randomBytes(8).toString("hex"));
-    const _inFile = `${tmp}${inputExt}`;
-    const _outFile = `${tmp}_out?.opus`;
+    const tmp = path?.join(os?.tmpdir(), randomBytes(8).toString("hex"));
+    const inFile = `${tmp}${inputExt}`;
+    const outFile = `${tmp}out?.opus`;
 
     try {
       await fs?.writeFile(inFile, data);
       await execAsync(
         `ffmpeg -y -i "${inFile}" -c:a libopus -b:a 64k "${outFile}" 2>/dev/null`,
       );
-      const _out = await fs?.readFile(outFile);
+      const out = await fs?.readFile(outFile);
       return {
         data: out,
         codec: "opus@64k",
-        originalBytes: data?.length,
-        transcodedBytes: out?.length,
-        ratio: data?.length / out?.length,
+        originalBytes: data.length,
+        transcodedBytes: out.length,
+        ratio: data.length / out?.length,
       };
     } finally {
       await fs?.rm(inFile, { force: true });
@@ -138,17 +138,17 @@ export class MediaTranscoder {
   }
 
   async transcodeImage(data: Buffer): Promise<TranscodeResult> {
-    const _sharp = (await import("sharp")).default;
-    const _out = await sharp(data)
+    const sharp = (await import("sharp")).default;
+    const out = await sharp(data)
       .webp({ quality: 72, effort: 6, smartSubsample: true })
       .toBuffer();
 
     return {
       data: out,
       codec: "webp@q72",
-      originalBytes: data?.length,
-      transcodedBytes: out?.length,
-      ratio: data?.length / out?.length,
+      originalBytes: data.length,
+      transcodedBytes: out.length,
+      ratio: data.length / out?.length,
     };
   }
 
@@ -157,7 +157,7 @@ export class MediaTranscoder {
     contentClass: ContentClass,
     originalName: string,
   ): Promise<TranscodeResult | null> {
-    const _ext =
+    const ext =
       path?.extname(originalName).toLowerCase() || this?.classToExt(contentClass);
 
     try {
@@ -192,4 +192,4 @@ export class MediaTranscoder {
   }
 }
 
-export const _mediaTranscoder = new MediaTranscoder();
+export const mediaTranscoder = new MediaTranscoder();

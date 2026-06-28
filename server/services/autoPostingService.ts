@@ -81,7 +81,7 @@ class AutoPostingService {
       | "manual" = "manual",
     viralPrediction?: Record<string, unknown>,
   ): Promise<ScheduledPost> {
-    const _postId = `post_${Date?.now()}_${randomBytes(4).toString("hex")}`;
+    const postId = `post_${Date?.now()}_${randomBytes(4).toString("hex")}`;
 
     const scheduledPost: ScheduledPost = {
       id: postId,
@@ -126,35 +126,35 @@ class AutoPostingService {
     const results: PostResult[] = [];
 
     // Get user's connected platforms and tokens
-    const _user = await storage?.getUserById(userId);
+    const user = await storage.getUserById(userId);
     if (!user) {
       throw new Error("User not found");
     }
 
     // Post to each platform in parallel
-    const _postPromises = platforms?.map(async (platform) => {
+    const postPromises = platforms.map(async (platform) => {
       try {
-        const _result = await this?.postToPlatform(user, platform, content);
-        results?.push(result);
+        const result = await this.postToPlatform(user, platform, content);
+        results.push(result);
       } catch (error) {
-        logger?.warn({ err: error }, `Failed to post to ${platform}:`);
-        results?.push({
+        logger.warn({ err: error }, `Failed to post to ${platform}:`);
+        results.push({
           platform,
           success: false,
-          error: error?.message,
+          error: error.message,
           postedAt: new Date(),
         });
       }
     });
 
-    await Promise?.all(postPromises);
+    await Promise.all(postPromises);
 
     // Track in analytics
-    await storage?.trackSocialPost({
+    await storage.trackSocialPost({
       userId,
       platforms,
-      content: content?.text,
-      mediaType: content?.mediaType || "text",
+      content: content.text,
+      mediaType: content.mediaType || "text",
       postedAt: new Date(),
       results,
       createdBy,
@@ -171,49 +171,49 @@ class AutoPostingService {
     platform: string,
     content: PostContent,
   ): Promise<PostResult> {
-    const _startTime = Date?.now();
+    const startTime = Date.now();
 
     // Get access token for platform
-    const _token = await this?.getAccessToken(user?.id, platform);
+    const token = await this.getAccessToken(user.id, platform);
     if (!token) {
       throw new Error(`No access token found for ${platform}`);
     }
 
     let result: PostResult;
 
-    switch (platform?.toLowerCase()) {
+    switch (platform.toLowerCase()) {
       case "facebook":
-        result = await this?.postToFacebook(token, content);
+        result = await this.postToFacebook(token, content);
         break;
       case "instagram":
-        result = await this?.postToInstagram(token, content);
+        result = await this.postToInstagram(token, content);
         break;
       case "twitter":
       case "x":
-        result = await this?.postToTwitter(token, content);
+        result = await this.postToTwitter(token, content);
         break;
       case "tiktok":
-        result = await this?.postToTikTok(token, content);
+        result = await this.postToTikTok(token, content);
         break;
       case "youtube":
-        result = await this?.postToYouTube(token, content);
+        result = await this.postToYouTube(token, content);
         break;
       case "linkedin":
-        result = await this?.postToLinkedIn(token, content);
+        result = await this.postToLinkedIn(token, content);
         break;
       case "threads":
-        result = await this?.postToThreads(token, content);
+        result = await this.postToThreads(token, content);
         break;
       case "google_business":
-        result = await this?.postToGoogleBusiness(token, content);
+        result = await this.postToGoogleBusiness(token, content);
         break;
       default:
         throw new Error(`Unsupported platform: ${platform}`);
     }
 
-    const _duration = Date?.now() - startTime;
-    logger?.info(
-      `Posted to ${platform} in ${duration}ms: ${result?.success ? "SUCCESS" : "FAILED"}`,
+    const duration = Date.now() - startTime;
+    logger.info(
+      `Posted to ${platform} in ${duration}ms: ${result.success ? "SUCCESS" : "FAILED"}`,
     );
 
     return result;
@@ -228,37 +228,37 @@ class AutoPostingService {
   ): Promise<PostResult> {
     try {
       const postData: Record<string, unknown> = {
-        message: this?.formatContent(content),
+        message: this.formatContent(content),
         access_token: token,
       };
 
-      if (content?.link) {
-        postData.link = content?.link;
+      if (content.link) {
+        postData.link = content.link;
       }
 
-      if (content?.mediaUrl && content?.mediaType === "image") {
-        postData.url = content?.mediaUrl;
+      if (content.mediaUrl && content.mediaType === "image") {
+        postData.url = content.mediaUrl;
       }
 
-      const _response = await axios?.post(
-        "https://graph?.facebook.com/v18.0/me/feed",
+      const response = await axios.post(
+        "https://graph.facebook.com/v18.0/me/feed",
         postData,
       );
 
       return {
         platform: "facebook",
         success: true,
-        postId: response?.data.id,
-        postUrl: `https://facebook.com/${response?.data.id}`,
+        postId: response.data.id,
+        postUrl: `https://facebook.com/${response.data.id}`,
         postedAt: new Date(),
       };
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         "Facebook posting error:",
-        error?.response?.data || error?.message,
+        error.response.data || error.message,
       );
       throw new Error(
-        `Facebook: ${error?.response?.data?.error?.message || error?.message}`,
+        `Facebook: ${error.response.data.error.message || error.message}`,
       );
     }
   }
@@ -272,28 +272,28 @@ class AutoPostingService {
   ): Promise<PostResult> {
     try {
       // Instagram requires media (images/videos)
-      if (!content?.mediaUrl) {
+      if (!content.mediaUrl) {
         throw new Error("Instagram requires media (image or video)");
       }
 
       // Step 1: Create media container
       const containerData: Record<string, unknown> = {
-        image_url: content?.mediaType === "image" ? content?.mediaUrl : undefined,
-        video_url: content?.mediaType === "video" ? content?.mediaUrl : undefined,
-        caption: this?.formatContent(content),
+        image_url: content.mediaType === "image" ? content.mediaUrl : undefined,
+        video_url: content.mediaType === "video" ? content.mediaUrl : undefined,
+        caption: this.formatContent(content),
         access_token: token,
       };
 
-      const _containerResponse = await axios?.post(
-        "https://graph?.facebook.com/v18.0/me/media",
+      const containerResponse = await axios.post(
+        "https://graph.facebook.com/v18.0/me/media",
         containerData,
       );
 
-      const _creationId = containerResponse?.data.id;
+      const creationId = containerResponse.data.id;
 
       // Step 2: Publish the media
-      const _publishResponse = await axios?.post(
-        "https://graph?.facebook.com/v18.0/me/media_publish",
+      const publishResponse = await axios.post(
+        "https://graph.facebook.com/v18.0/me/media_publish",
         {
           creation_id: creationId,
           access_token: token,
@@ -303,17 +303,17 @@ class AutoPostingService {
       return {
         platform: "instagram",
         success: true,
-        postId: publishResponse?.data.id,
-        postUrl: `https://instagram.com/p/${publishResponse?.data.id}`,
+        postId: publishResponse.data.id,
+        postUrl: `https://instagram.com/p/${publishResponse.data.id}`,
         postedAt: new Date(),
       };
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         "Instagram posting error:",
-        error?.response?.data || error?.message,
+        error.response.data || error.message,
       );
       throw new Error(
-        `Instagram: ${error?.response?.data?.error?.message || error?.message}`,
+        `Instagram: ${error.response.data.error.message || error.message}`,
       );
     }
   }
@@ -327,17 +327,17 @@ class AutoPostingService {
   ): Promise<PostResult> {
     try {
       const tweetData: Record<string, unknown> = {
-        text: this?.formatContent(content, 280), // Twitter character limit
+        text: this.formatContent(content, 280), // Twitter character limit
       };
 
-      if (content?.mediaUrl) {
+      if (content.mediaUrl) {
         // Upload media first
-        const _mediaId = await this?.uploadTwitterMedia(token, content?.mediaUrl);
+        const mediaId = await this.uploadTwitterMedia(token, content.mediaUrl);
         tweetData.media = { media_ids: [mediaId] };
       }
 
-      const _response = await axios?.post(
-        "https://api?.twitter.com/2/tweets",
+      const response = await axios.post(
+        "https://api.twitter.com/2/tweets",
         tweetData,
         {
           headers: {
@@ -350,17 +350,17 @@ class AutoPostingService {
       return {
         platform: "twitter",
         success: true,
-        postId: response?.data.data?.id,
-        postUrl: `https://twitter.com/i/web/status/${response?.data.data?.id}`,
+        postId: response.data.data.id,
+        postUrl: `https://twitter.com/i/web/status/${response.data.data.id}`,
         postedAt: new Date(),
       };
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         "Twitter posting error:",
-        error?.response?.data || error?.message,
+        error.response.data || error.message,
       );
       throw new Error(
-        `Twitter: ${error?.response?.data?.detail || error?.message}`,
+        `Twitter: ${error.response.data.detail || error.message}`,
       );
     }
   }
@@ -374,16 +374,16 @@ class AutoPostingService {
   ): Promise<PostResult> {
     try {
       // TikTok Content Posting API v2 requires video content
-      if (!content?.mediaUrl || content?.mediaType !== "video") {
+      if (!content.mediaUrl || content.mediaType !== "video") {
         throw new Error("TikTok requires video content");
       }
 
-      // TikTok Content Posting API v2 (replaces deprecated v1 open-api?.tiktok.com)
-      const _response = await axios?.post(
-        "https://open?.tiktokapis.com/v2/post/publish/video/init/",
+      // TikTok Content Posting API v2 (replaces deprecated v1 open-api.tiktok.com)
+      const response = await axios.post(
+        "https://open.tiktokapis.com/v2/post/publish/video/init/",
         {
           post_info: {
-            title: this?.formatContent(content, 2200), // TikTok caption limit
+            title: this.formatContent(content, 2200), // TikTok caption limit
             privacy_level: "PUBLIC_TO_EVERYONE",
             disable_duet: false,
             disable_comment: false,
@@ -391,7 +391,7 @@ class AutoPostingService {
           },
           source_info: {
             source: "URL",
-            video_url: content?.mediaUrl,
+            video_url: content.mediaUrl,
           },
         },
         {
@@ -402,10 +402,10 @@ class AutoPostingService {
         },
       );
 
-      const _publishId = response?.data?.data?.publish_id;
+      const publishId = response.data.data.publish_id;
       if (!publishId) {
         throw new Error(
-          `TikTok API returned unexpected response: ${JSON?.stringify(response?.data)}`,
+          `TikTok API returned unexpected response: ${JSON.stringify(response.data)}`,
         );
       }
 
@@ -413,16 +413,16 @@ class AutoPostingService {
         platform: "tiktok",
         success: true,
         postId: publishId,
-        postUrl: `https://www?.tiktok.com/@/video/${publishId}`,
+        postUrl: `https://www.tiktok.com/@/video/${publishId}`,
         postedAt: new Date(),
       };
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         "TikTok posting error:",
-        error?.response?.data || error?.message,
+        error.response.data || error.message,
       );
       throw new Error(
-        `TikTok: ${error?.response?.data?.message || error?.message}`,
+        `TikTok: ${error.response.data.message || error.message}`,
       );
     }
   }
@@ -437,16 +437,16 @@ class AutoPostingService {
     try {
       const postData: Record<string, unknown> = {
         snippet: {
-          description: this?.formatContent(content),
+          description: this.formatContent(content),
         },
       };
 
-      if (content?.mediaUrl && content?.mediaType === "image") {
-        postData?.snippet.images = [{ url: content?.mediaUrl }];
+      if (content.mediaUrl && content.mediaType === "image") {
+        postData.snippet.images = [{ url: content.mediaUrl }];
       }
 
-      const _response = await axios?.post(
-        "https://youtube?.googleapis.com/youtube/v3/communityPosts",
+      const response = await axios.post(
+        "https://youtube.googleapis.com/youtube/v3/communityPosts",
         postData,
         {
           headers: {
@@ -459,17 +459,17 @@ class AutoPostingService {
       return {
         platform: "youtube",
         success: true,
-        postId: response?.data.id,
-        postUrl: `https://youtube.com/post/${response?.data.id}`,
+        postId: response.data.id,
+        postUrl: `https://youtube.com/post/${response.data.id}`,
         postedAt: new Date(),
       };
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         "YouTube posting error:",
-        error?.response?.data || error?.message,
+        error.response.data || error.message,
       );
       throw new Error(
-        `YouTube: ${error?.response?.data?.error?.message || error?.message}`,
+        `YouTube: ${error.response.data.error.message || error.message}`,
       );
     }
   }
@@ -483,48 +483,48 @@ class AutoPostingService {
   ): Promise<PostResult> {
     try {
       // Resolve the authenticated user's LinkedIn person URN
-      const _profileResp = await axios?.get(
-        "https://api?.linkedin.com/v2/userinfo",
+      const profileResp = await axios?.get(
+        "https://api.linkedin.com/v2/userinfo",
         {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
-      const _personId = profileResp?.data?.sub;
+      const personId = profileResp?.data?.sub;
       if (!personId) {
         throw new Error(
           "Could not determine LinkedIn author URN — missing sub in userinfo response",
         );
       }
-      const _authorUrn = `urn:li:person:${personId}`;
+      const authorUrn = `urn:li:person:${personId}`;
 
       const postData: Record<string, unknown> = {
         author: authorUrn,
         lifecycleState: "PUBLISHED",
         specificContent: {
-          "com?.linkedin.ugc?.ShareContent": {
+          "com.linkedin.ugc.ShareContent": {
             shareCommentary: {
-              text: this?.formatContent(content, 3000), // LinkedIn limit
+              text: this.formatContent(content, 3000), // LinkedIn limit
             },
-            shareMediaCategory: content?.mediaUrl ? "IMAGE" : "NONE",
+            shareMediaCategory: content.mediaUrl ? "IMAGE" : "NONE",
           },
         },
         visibility: {
-          "com?.linkedin.ugc?.MemberNetworkVisibility": "PUBLIC",
+          "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC",
         },
       };
 
       if (content?.mediaUrl && content?.mediaType === "image") {
-        postData?.specificContent["com?.linkedin.ugc?.ShareContent"].media = [
+        postData.specificContent["com.linkedin.ugc.ShareContent"].media = [
           {
             status: "READY",
-            description: { text: this?.formatContent(content, 200) },
-            originalUrl: content?.mediaUrl,
+            description: { text: this.formatContent(content, 200) },
+            originalUrl: content.mediaUrl,
           },
         ];
       }
 
-      const _response = await axios?.post(
-        "https://api?.linkedin.com/v2/ugcPosts",
+      const response = await axios?.post(
+        "https://api.linkedin.com/v2/ugcPosts",
         postData,
         {
           headers: {
@@ -538,8 +538,8 @@ class AutoPostingService {
       return {
         platform: "linkedin",
         success: true,
-        postId: response?.data.id,
-        postUrl: `https://linkedin.com/feed/update/${response?.data.id}`,
+        postId: response.data.id,
+        postUrl: `https://linkedin?.com/feed/update/${response.data.id}`,
         postedAt: new Date(),
       };
     } catch (error) {
@@ -562,7 +562,7 @@ class AutoPostingService {
   ): Promise<PostResult> {
     try {
       const postData: Record<string, unknown> = {
-        text: this?.formatContent(content, 500), // Threads limit
+        text: this.formatContent(content, 500), // Threads limit
         access_token: token,
       };
 
@@ -571,16 +571,16 @@ class AutoPostingService {
         postData.media_type = content?.mediaType?.toUpperCase();
       }
 
-      const _response = await axios?.post(
-        "https://graph?.threads.net/v1.0/me/threads",
+      const response = await axios?.post(
+        "https://graph.threads.net/v1.0/me/threads",
         postData,
       );
 
       return {
         platform: "threads",
         success: true,
-        postId: response?.data.id,
-        postUrl: `https://threads.net/t/${response?.data.id}`,
+        postId: response.data.id,
+        postUrl: `https://threads?.net/t/${response.data.id}`,
         postedAt: new Date(),
       };
     } catch (error) {
@@ -603,7 +603,7 @@ class AutoPostingService {
   ): Promise<PostResult> {
     try {
       const postData: Record<string, unknown> = {
-        summary: this?.formatContent(content, 1500),
+        summary: this.formatContent(content, 1500),
         topicType: "STANDARD",
       };
 
@@ -611,13 +611,13 @@ class AutoPostingService {
         postData.media = [
           {
             mediaFormat: "PHOTO",
-            sourceUrl: content?.mediaUrl,
+            sourceUrl: content.mediaUrl,
           },
         ];
       }
 
-      const _response = await axios?.post(
-        "https://mybusiness?.googleapis.com/v4/accounts/ACCOUNT_ID/locations/LOCATION_ID/localPosts",
+      const response = await axios?.post(
+        "https://mybusiness.googleapis.com/v4/accounts/ACCOUNT_ID/locations/LOCATION_ID/localPosts",
         postData,
         {
           headers: {
@@ -630,8 +630,8 @@ class AutoPostingService {
       return {
         platform: "google_business",
         success: true,
-        postId: response?.data.name,
-        postUrl: "https://business?.google.com",
+        postId: response.data.name,
+        postUrl: "https://business.google.com",
         postedAt: new Date(),
       };
     } catch (error) {
@@ -653,16 +653,16 @@ class AutoPostingService {
     mediaUrl: string,
   ): Promise<string> {
     // Download media
-    const _mediaResponse = await axios?.get(mediaUrl, {
+    const mediaResponse = await axios?.get(mediaUrl, {
       responseType: "arraybuffer",
     });
-    const _mediaBuffer = Buffer?.from(mediaResponse?.data);
+    const mediaBuffer = Buffer?.from(mediaResponse?.data);
 
     // Upload to Twitter
-    const _uploadResponse = await axios?.post(
-      "https://upload?.twitter.com/1.1/media/upload.json",
+    const uploadResponse = await axios?.post(
+      "https://upload.twitter.com/1.1/media/upload.json",
       {
-        media_data: mediaBuffer?.toString("base64"),
+        media_data: mediaBuffer.toString("base64"),
       },
       {
         headers: {
@@ -685,7 +685,7 @@ class AutoPostingService {
 
     // Add hashtags
     if (content?.hashtags && content?.hashtags.length > 0) {
-      const _hashtags = content?.hashtags.map((tag) =>
+      const hashtags = content?.hashtags.map((tag) =>
         tag?.startsWith("#") ? tag : `#${tag}`,
       );
       text += "\n\n" + hashtags?.join(" ");
@@ -693,7 +693,7 @@ class AutoPostingService {
 
     // Add mentions
     if (content?.mentions && content?.mentions.length > 0) {
-      const _mentions = content?.mentions.map((mention) =>
+      const mentions = content?.mentions.map((mention) =>
         mention?.startsWith("@") ? mention : `@${mention}`,
       );
       text += "\n" + mentions?.join(" ");
@@ -714,7 +714,7 @@ class AutoPostingService {
     userId: string,
     platform: string,
   ): Promise<string | null> {
-    const _tokens = await storage?.getSocialTokens(userId, platform);
+    const tokens = await storage?.getSocialTokens(userId, platform);
     if (!tokens || !tokens?.accessToken) {
       return null;
     }
@@ -724,7 +724,7 @@ class AutoPostingService {
       // Token expired, refresh it
       if (tokens?.refreshToken) {
         try {
-          const _refreshed = await this?.refreshToken(
+          const refreshed = await this?.refreshToken(
             userId,
             platform,
             tokens?.refreshToken,
@@ -753,11 +753,11 @@ class AutoPostingService {
     _refreshToken: string,
   ): Promise<{ accessToken: string; expiresIn?: number }> {
     try {
-      const _result = await socialOAuth?.refreshAccessToken(userId, platform);
+      const result = await socialOAuth?.refreshAccessToken(userId, platform);
       logger?.info(`Token refreshed for user ${userId} on platform ${platform}`);
       return {
-        accessToken: result?.accessToken,
-        expiresIn: result?.expiresIn,
+        accessToken: result.accessToken,
+        expiresIn: result.expiresIn,
       };
     } catch (error) {
       logger?.warn({ err: error }, `Token refresh failed for ${platform}:`);
@@ -777,7 +777,7 @@ class AutoPostingService {
       this.isProcessing = true;
 
       try {
-        const _now = new Date();
+        const now = new Date();
 
         // Find posts that need to be posted
         for (const [postId, scheduledPost] of this?.postQueue.entries()) {
@@ -793,7 +793,7 @@ class AutoPostingService {
 
             try {
               // Post to platforms
-              const _results = await this?.postNow(
+              const results = await this?.postNow(
                 scheduledPost?.userId,
                 scheduledPost?.platforms,
                 scheduledPost?.content,
@@ -818,17 +818,17 @@ class AutoPostingService {
                     .recordPerformance(
                       scheduledPost?.userId,
                       {
-                        platform: result?.platform,
-                        contentType: scheduledPost?.content.mediaType
+                        platform: result.platform,
+                        contentType: scheduledPost.content.mediaType
                           ? "media_post"
                           : "text_post",
                         hookType: detectHookPattern(
                           scheduledPost?.content.text || "",
                         ),
-                        hashtags: scheduledPost?.content.hashtags || [],
-                        contentText: scheduledPost?.content.text,
-                        mediaType: scheduledPost?.content.mediaType || null,
-                        postId: result?.postId || null,
+                        hashtags: scheduledPost.content.hashtags || [],
+                        contentText: scheduledPost.content.text,
+                        mediaType: scheduledPost.content.mediaType || null,
+                        postId: result.postId || null,
                         postedAt: new Date(),
                         metadata: {
                           scheduledPostId: postId,
@@ -884,7 +884,7 @@ class AutoPostingService {
    * Cancel scheduled post
    */
   async cancelScheduledPost(postId: string, userId: string): Promise<void> {
-    const _post = this?.postQueue.get(postId);
+    const post = this?.postQueue.get(postId);
     if (post && post?.userId === userId) {
       this?.postQueue.delete(postId);
       await storage?.updateScheduledPostStatus(postId, "failed");
@@ -894,5 +894,5 @@ class AutoPostingService {
 }
 
 // Export singleton instance
-export const _autoPostingService = new AutoPostingService();
+export const autoPostingService = new AutoPostingService();
 

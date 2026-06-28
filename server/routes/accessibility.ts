@@ -3,7 +3,7 @@ import { storage } from "../storage";
 import { logger } from "../logger";
 import { requireAuth } from "../middleware/auth.js";
 
-const _router = Router();
+const router = Router();
 
 export interface AccessibilityPreferences {
   reducedMotion: boolean | null;
@@ -50,7 +50,7 @@ function validatePreferences(preferences: Partial<AccessibilityPreferences>): {
   }
 
   if (preferences?.contrastMode !== undefined) {
-    const _validModes = ["normal", "high", "more", null];
+    const validModes = ["normal", "high", "more", null];
     if (!validModes?.includes(preferences?.contrastMode)) {
       errors?.push("contrastMode must be normal, high, more, or null");
     } else {
@@ -59,7 +59,7 @@ function validatePreferences(preferences: Partial<AccessibilityPreferences>): {
   }
 
   if (preferences?.fontSize !== undefined) {
-    const _validSizes = ["small", "medium", "large", "x-large"];
+    const validSizes = ["small", "medium", "large", "x-large"];
     if (!validSizes?.includes(preferences?.fontSize)) {
       errors?.push("fontSize must be small, medium, large, or x-large");
     } else {
@@ -68,7 +68,7 @@ function validatePreferences(preferences: Partial<AccessibilityPreferences>): {
   }
 
   if (preferences?.colorBlindMode !== undefined) {
-    const _validModes = [
+    const validModes = [
       "none",
       "protanopia",
       "deuteranopia",
@@ -114,7 +114,7 @@ function validatePreferences(preferences: Partial<AccessibilityPreferences>): {
   }
 
   return {
-    valid: errors?.length === 0,
+    valid: errors.length === 0,
     errors,
     sanitized,
   };
@@ -125,14 +125,14 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _user = await storage?.getUser(userId);
+      const userId = req?.user!.id;
+      const user = await storage?.getUser(userId);
 
       if (!user) {
         return res?.status(404).json({ error: "User not found" });
       }
 
-      const _preferences = user?.accessibilityPreferences || defaultPreferences;
+      const preferences = user?.accessibilityPreferences || defaultPreferences;
 
       return res?.json({
         ...defaultPreferences,
@@ -152,8 +152,8 @@ router?.put(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _updates = req?.body;
+      const userId = req?.user!.id;
+      const updates = req?.body;
 
       const { valid, errors, sanitized } = validatePreferences(updates);
 
@@ -164,14 +164,14 @@ router?.put(
         });
       }
 
-      const _user = await storage?.getUser(userId);
+      const user = await storage?.getUser(userId);
       if (!user) {
         return res?.status(404).json({ error: "User not found" });
       }
 
-      const _currentPreferences =
+      const currentPreferences =
         user?.accessibilityPreferences || defaultPreferences;
-      const _newPreferences = {
+      const newPreferences = {
         ...currentPreferences,
         ...sanitized,
       };
@@ -200,7 +200,7 @@ router?.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       await storage?.updateUser(userId, {
         accessibilityPreferences: defaultPreferences,

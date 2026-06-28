@@ -18,35 +18,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import {
-  Music,
-  Play,
-  Pause,
-  Heart,
-  Share2,
-  MessageCircle,
-  Star,
-  Award,
-  Trophy,
-  Crown,
-  Flame,
-  Users,
-  CheckCircle,
-  Calendar,
-  MapPin,
-  Globe,
-  Headphones,
-  ShoppingCart,
-  BarChart3,
-  Zap,
-  Music2,
-} from "lucide-react";
-import {
-  InstagramIcon,
-  YouTubeIcon,
-  TikTokIcon,
-  TwitterIcon,
-} from "@/components/ui/brand-icons";
+import { Music, Play, Pause, Heart, Share2, MessageCircle, Star, Award, Trophy, Crown, Flame, Users, CheckCircle, Calendar, MapPin, Globe, Headphones, ShoppingCart, BarChart3, Zap, Music2 } from "lucide-react";
+import { InstagramIcon, YouTubeIcon, TikTokIcon, TwitterIcon } from "@/components/ui/brand-icons";
+
+
+
+
+
 
 interface ProducerProfileProps {
   producerId: string;
@@ -680,16 +658,16 @@ export function ProducerProfile({
                           <CardContent className="p-4">
                             <div className="flex items-start gap-3">
                               <Avatar className="w-10 h-10">
-                                <AvatarImage src={review.reviewer.avatar} />
+                                <AvatarImage src={review.reviewer?.avatar} />
                                 <AvatarFallback>
-                                  {review.reviewer.name.charAt(0)}
+                                  {(review.reviewer?.name ?? '?').charAt(0)}
                                 </AvatarFallback>
                               </Avatar>
                               <div className="flex-1">
                                 <div className="flex items-center justify-between">
                                   <div>
                                     <p className="font-medium">
-                                      {review.reviewer.name}
+                                      {review.reviewer?.name ?? 'Anonymous'}
                                     </p>
                                     <div className="flex items-center gap-2">
                                       <div className="flex">

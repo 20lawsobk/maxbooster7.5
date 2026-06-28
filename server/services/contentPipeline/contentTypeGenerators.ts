@@ -116,21 +116,21 @@ async function callMaxCore(
     // server-side, so caption is always clean structured text (never raw model tokens).
     const payload: Record<string, unknown> = {
       topic: prompt,
-      platform: ctx?.platform,
-      tone: ctx?.brandVoice,
-      genre: ctx?.genre,
-      artist_name: ctx?.artistName,
-      brand_voice: ctx?.brandVoice,
-      target_audience: ctx?.targetAudience,
+      platform: ctx.platform,
+      tone: ctx.brandVoice,
+      genre: ctx.genre,
+      artist_name: ctx.artistName,
+      brand_voice: ctx.brandVoice,
+      target_audience: ctx.targetAudience,
     };
     // Pass all available content-guidance signals as structured fields
-    if (ctx?.keywords?.length) payload.preferred_hashtags = ctx?.keywords;
-    if (ctx?.avoidTopics?.length) payload.avoid_topics = ctx?.avoidTopics;
-    if (ctx?.extraContext) payload.extra_context = ctx?.extraContext;
-    if (ctx?.trackTitle) payload.track_title = ctx?.trackTitle;
-    if (ctx?.releaseDate) payload.release_date = ctx?.releaseDate;
+    if (ctx.keywords.length) payload.preferred_hashtags = ctx?.keywords;
+    if (ctx.avoidTopics.length) payload.avoid_topics = ctx?.avoidTopics;
+    if (ctx.extraContext) payload.extra_context = ctx?.extraContext;
+    if (ctx.trackTitle) payload.track_title = ctx?.trackTitle;
+    if (ctx.releaseDate) payload.release_date = ctx?.releaseDate;
 
-    const _result = await MaxCoreAIClient?.infer<{
+    const result = await MaxCoreAIClient?.infer<{
       caption?: string;
       hook?: string;
       body?: string;
@@ -150,20 +150,20 @@ async function callMaxCore(
 // ─── Hook Generator ──────────────────────────────────────────────────────────
 
 export async function generateHooks(ctx: GeneratorContext): Promise<HookSet> {
-  const _prompt = `Generate 5 social media hooks for ${ctx?.artistName}, a ${ctx?.genre} artist.
+  const prompt = `Generate 5 social media hooks for ${ctx?.artistName}, a ${ctx?.genre} artist.
 Mood: ${ctx?.mood}. Platform: ${ctx?.platform}. Goal: ${ctx?.campaignGoal}.
-${ctx?.trackTitle ? `Track: "${ctx?.trackTitle}".` : ""}
+${ctx?.trackTitle ? `Track: "${ctx.trackTitle}".` : ""}
 ${ctx?.extraContext ?? ""}
 Return: primary hook, 3 alternates, a question hook, a statement hook, and a cliffhanger hook.
 Keep each hook under 15 words. Make the primary hook irresistible in the first 3 seconds.`;
 
-  const _raw = await callMaxCore(prompt, ctx);
+  const raw = await callMaxCore(prompt, ctx);
 
   if (raw) {
-    const _lines = raw?.split("\n").filter((l) => l?.trim().length > 0);
+    const lines = raw?.split("\n").filter((l) => l?.trim().length > 0);
     return {
       primary: lines[0] ?? "",
-      alternates: lines?.slice(1, 4),
+      alternates: lines.slice(1, 4),
       questionHook: lines[4] ?? "",
       statementHook: lines[5] ?? "",
       cliffhangerHook: lines[6] ?? "",
@@ -187,9 +187,9 @@ Keep each hook under 15 words. Make the primary hook irresistible in the first 3
 export async function generateCaptions(
   ctx: GeneratorContext,
 ): Promise<CaptionSet> {
-  const _prompt = `Write 3 social media captions for ${ctx?.artistName} on ${ctx?.platform}.
+  const prompt = `Write 3 social media captions for ${ctx?.artistName} on ${ctx?.platform}.
 Genre: ${ctx?.genre}. Mood: ${ctx?.mood}. Goal: ${ctx?.campaignGoal}.
-${ctx?.trackTitle ? `Track: "${ctx?.trackTitle}".` : ""}
+${ctx?.trackTitle ? `Track: "${ctx.trackTitle}".` : ""}
 ${ctx?.extraContext ?? ""}
 Write:
 1. SHORT (≤80 chars) — punchy, emoji-rich
@@ -197,22 +197,22 @@ Write:
 3. LONG (≤400 chars) — narrative, emotional, CTA
 Use ${ctx?.brandVoice} tone. No filler. Every word earns its place.`;
 
-  const _raw = await callMaxCore(prompt, ctx);
+  const raw = await callMaxCore(prompt, ctx);
 
   if (raw) {
-    const _sections = raw?.split(/\n{2,}/);
+    const sections = raw?.split(/\n{2,}/);
     return {
       short: sections[0]?.trim() ?? "",
       medium: sections[1]?.trim() ?? "",
       long: sections[2]?.trim() ?? "",
-      platform: ctx?.platform,
+      platform: ctx.platform,
     };
   }
 
   logger?.debug(
     "[ContentGenerators] MaxCore returned empty caption response — local fallback",
   );
-  return { short: "", medium: "", long: "", platform: ctx?.platform };
+  return { short: "", medium: "", long: "", platform: ctx.platform };
 }
 
 // ─── Hashtag Generator ───────────────────────────────────────────────────────
@@ -220,7 +220,7 @@ Use ${ctx?.brandVoice} tone. No filler. Every word earns its place.`;
 export async function generateHashtags(
   ctx: GeneratorContext,
 ): Promise<HashtagSet> {
-  const _branded = [`#${ctx?.artistName.replace(/\s+/g, "")}`, `#MaxBooster`];
+  const branded = [`#${ctx?.artistName.replace(/\s+/g, "")}`, `#MaxBooster`];
 
   // Platform-specific trending anchors (always included as a floor)
   const trendingAnchor: Record<SupportedPlatform, string[]> = {
@@ -235,14 +235,14 @@ export async function generateHashtags(
   };
 
   // Ask MaxCore for AI-powered hashtag intelligence
-  const _prompt = `Generate 20 high-performing hashtags for a ${ctx?.genre} artist named ${ctx?.artistName} 
+  const prompt = `Generate 20 high-performing hashtags for a ${ctx?.genre} artist named ${ctx?.artistName} 
 on ${ctx?.platform}. Mood: ${ctx?.mood}. Goal: ${ctx?.campaignGoal}. 
-${ctx?.trackTitle ? `Track: "${ctx?.trackTitle}".` : ""}
+${ctx?.trackTitle ? `Track: "${ctx.trackTitle}".` : ""}
 ${ctx?.keywords?.length ? `Preferred topics: ${ctx?.keywords.join(", ")}.` : ""}
 Return only hashtags, one per line, with # prefix. 
 Mix: 5 niche/genre-specific, 5 broad/discovery, 5 trending/platform-native, 5 emotional/mood-based.`;
 
-  const _raw = await callMaxCore(prompt, ctx);
+  const raw = await callMaxCore(prompt, ctx);
 
   // Parse AI hashtags if returned, otherwise fall back to static sets
   const aiTags: string[] = raw
@@ -253,7 +253,7 @@ Mix: 5 niche/genre-specific, 5 broad/discovery, 5 trending/platform-native, 5 em
         .slice(0, 20)
     : [];
 
-  const _nicheStatic = [
+  const nicheStatic = [
     `#${ctx?.genre.replace(/\s+/g, "")}Music`,
     `#${ctx?.genre.replace(/\s+/g, "")}Artist`,
     `#IndependentArtist`,
@@ -261,7 +261,7 @@ Mix: 5 niche/genre-specific, 5 broad/discovery, 5 trending/platform-native, 5 em
     `#UnsignedArtist`,
   ];
 
-  const _broadStatic = [
+  const broadStatic = [
     "#Music",
     "#MusicProducer",
     "#Artist",
@@ -270,14 +270,14 @@ Mix: 5 niche/genre-specific, 5 broad/discovery, 5 trending/platform-native, 5 em
     "#MusicMarketing",
   ];
 
-  const _niche = aiTags?.length >= 5 ? aiTags?.slice(0, 5) : nicheStatic;
-  const _broad = aiTags?.length >= 10 ? aiTags?.slice(5, 10) : broadStatic;
-  const _trending =
+  const niche = aiTags?.length >= 5 ? aiTags?.slice(0, 5) : nicheStatic;
+  const broad = aiTags?.length >= 10 ? aiTags?.slice(5, 10) : broadStatic;
+  const trending =
     aiTags?.length >= 15
       ? aiTags?.slice(10, 15)
       : (trendingAnchor[ctx?.platform] ?? []);
 
-  const _combined = [
+  const combined = [
     ...branded,
     ...niche?.slice(0, 3),
     ...broad?.slice(0, 3),
@@ -293,9 +293,9 @@ Mix: 5 niche/genre-specific, 5 broad/discovery, 5 trending/platform-native, 5 em
 export async function generateAdCopy(
   ctx: GeneratorContext,
 ): Promise<AdCopySet> {
-  const _prompt = `Write high-converting ad copy for ${ctx?.artistName} on ${ctx?.platform}.
+  const prompt = `Write high-converting ad copy for ${ctx?.artistName} on ${ctx?.platform}.
 Genre: ${ctx?.genre}. Goal: ${ctx?.campaignGoal}. Audience: ${ctx?.targetAudience}.
-${ctx?.trackTitle ? `Track: "${ctx?.trackTitle}".` : ""}
+${ctx?.trackTitle ? `Track: "${ctx.trackTitle}".` : ""}
 ${ctx?.extraContext ?? ""}
 Include:
 - Headline (≤40 chars)
@@ -304,10 +304,10 @@ Include:
 - CTA button text (≤20 chars)
 Then write 2 A/B variants with different angles.`;
 
-  const _raw = await callMaxCore(prompt, ctx);
+  const raw = await callMaxCore(prompt, ctx);
 
   if (raw) {
-    const _lines = raw?.split("\n").filter((l) => l?.trim().length > 0);
+    const lines = raw?.split("\n").filter((l) => l?.trim().length > 0);
     return {
       headline: lines[0] ?? "",
       subheadline: lines[1] ?? "",
@@ -338,9 +338,9 @@ export async function generateVideoScript(
   ctx: GeneratorContext,
   durationSeconds: 15 | 30 | 60 | 180 = 30,
 ): Promise<VideoScript> {
-  const _prompt = `Write a ${durationSeconds}-second video script for ${ctx?.artistName} on ${ctx?.platform}.
+  const prompt = `Write a ${durationSeconds}-second video script for ${ctx?.artistName} on ${ctx?.platform}.
 Genre: ${ctx?.genre}. Mood: ${ctx?.mood}. Goal: ${ctx?.campaignGoal}.
-${ctx?.trackTitle ? `Track: "${ctx?.trackTitle}".` : ""}
+${ctx?.trackTitle ? `Track: "${ctx.trackTitle}".` : ""}
 ${ctx?.extraContext ?? ""}
 Format:
 HOOK (spoken/visual — first 3s):
@@ -350,9 +350,9 @@ B-ROLL (4 visual suggestions):
 MUSIC NOTE (tempo/energy direction):
 OVERLAY TEXTS (3 short text overlays for the video):`;
 
-  const _raw = await callMaxCore(prompt, ctx);
+  const raw = await callMaxCore(prompt, ctx);
 
-  const _defaultBRoll = [
+  const defaultBRoll = [
     `Close-up of artist in moody lighting`,
     `Wide shot: artist performing in ${ctx?.mood} atmosphere`,
     `B-roll of studio session — raw and authentic`,
@@ -360,10 +360,10 @@ OVERLAY TEXTS (3 short text overlays for the video):`;
   ];
 
   if (raw) {
-    const _lines = raw?.split("\n").filter((l) => l?.trim().length > 0);
+    const lines = raw?.split("\n").filter((l) => l?.trim().length > 0);
     return {
       hook: lines[0] ?? "",
-      body: lines?.slice(1, 4),
+      body: lines.slice(1, 4),
       cta: lines[4] ?? "",
       durationHint: `${durationSeconds}s`,
       bRoll: defaultBRoll,
@@ -391,7 +391,7 @@ OVERLAY TEXTS (3 short text overlays for the video):`;
 export async function generateVisualPrompt(
   ctx: GeneratorContext,
 ): Promise<VisualPrompt> {
-  const _palette = ctx?.colorPalette.join(", ");
+  const palette = ctx?.colorPalette.join(", ");
   return {
     imagePrompt: `A ${ctx?.mood} ${ctx?.genre} music promotional image for ${ctx?.artistName}. 
 Color palette: ${palette}. Cinematic quality, high contrast, professional photography aesthetic.
@@ -416,8 +416,8 @@ export async function generateStorySequence(
   ctx: GeneratorContext,
 ): Promise<StorySequence> {
   // Ask MaxCore for the 5-frame story copy all at once
-  const _prompt = `Write a 5-frame Instagram/Facebook Story sequence for ${ctx?.artistName}, a ${ctx?.genre} artist.
-Mood: ${ctx?.mood}. Goal: ${ctx?.campaignGoal}.${ctx?.trackTitle ? ` Track: "${ctx?.trackTitle}".` : ""}
+  const prompt = `Write a 5-frame Instagram/Facebook Story sequence for ${ctx?.artistName}, a ${ctx?.genre} artist.
+Mood: ${ctx?.mood}. Goal: ${ctx?.campaignGoal}.${ctx?.trackTitle ? ` Track: "${ctx.trackTitle}".` : ""}
 ${ctx?.extraContext ?? ""}
 Frame rules:
 Frame 1 (5s) — Hook: ultra-short stop-scroll text, max 8 words
@@ -427,8 +427,8 @@ Frame 4 (8s) — Engagement: poll question or "this or that", max 12 words
 Frame 5 (5s) — CTA: clear action with link, max 8 words
 Return exactly 5 lines, one per frame.`;
 
-  const _raw = await callMaxCore(prompt, ctx);
-  const _aiLines = raw
+  const raw = await callMaxCore(prompt, ctx);
+  const aiLines = raw
     ? raw
         .split("\n")
         .map((l) => l?.replace(/^Frame\s*\d+[:\-–]?\s*/i, "").trim())
@@ -477,6 +477,6 @@ Return exactly 5 lines, one per frame.`;
 
   return {
     frames,
-    totalDurationSeconds: frames?.reduce((sum, f) => sum + f?.durationSeconds, 0),
+    totalDurationSeconds: frames.reduce((sum, f) => sum + f?.durationSeconds, 0),
   };
 }

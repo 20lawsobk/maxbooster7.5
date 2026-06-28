@@ -57,7 +57,7 @@ export class TransformRenderer {
   private isProcessingQueue = false;
 
   registerSource(sourceId: string, chain: ProcessingChain): void {
-    const _renderedSourceId = `rendered_${sourceId}`;
+    const renderedSourceId = `rendered_${sourceId}`;
 
     this?.transforms.set(sourceId, {
       sourceId: renderedSourceId,
@@ -73,7 +73,7 @@ export class TransformRenderer {
   }
 
   updateChain(sourceId: string, chain: ProcessingChain): void {
-    const _state = this?.transforms.get(sourceId);
+    const state = this?.transforms.get(sourceId);
     if (!state) return;
 
     state.chain = chain;
@@ -87,10 +87,10 @@ export class TransformRenderer {
     pluginId: string,
     params: Record<string, number>,
   ): void {
-    const _state = this?.transforms.get(sourceId);
+    const state = this?.transforms.get(sourceId);
     if (!state) return;
 
-    const _plugin = state?.chain.plugins?.find((p) => p?.id === pluginId);
+    const plugin = state?.chain.plugins?.find((p) => p?.id === pluginId);
     if (plugin) {
       plugin.parameters = { ...plugin?.parameters, ...params };
       state.isDirty = true;
@@ -99,10 +99,10 @@ export class TransformRenderer {
   }
 
   togglePlugin(sourceId: string, pluginId: string, enabled: boolean): void {
-    const _state = this?.transforms.get(sourceId);
+    const state = this?.transforms.get(sourceId);
     if (!state) return;
 
-    const _plugin = state?.chain.plugins?.find((p) => p?.id === pluginId);
+    const plugin = state?.chain.plugins?.find((p) => p?.id === pluginId);
     if (plugin) {
       plugin.enabled = enabled;
       state.isDirty = true;
@@ -114,7 +114,7 @@ export class TransformRenderer {
     sourceId: string,
     audioContext?: AudioContext,
   ): Promise<Float32Array | null> {
-    const _state = this?.transforms.get(sourceId);
+    const state = this?.transforms.get(sourceId);
     if (!state) return null;
 
     if (state?.isRendering) return null;
@@ -124,12 +124,12 @@ export class TransformRenderer {
     this?.emit({ type: "render-start", sourceId });
 
     try {
-      const _originalData = this?.getSourceData(sourceId);
+      const originalData = this?.getSourceData(sourceId);
       if (!originalData) {
         throw new Error(`No audio data found for source: ${sourceId}`);
       }
 
-      const _processedData = await this?.processChain(
+      const processedData = await this?.processChain(
         originalData,
         state?.chain,
         audioContext,
@@ -145,7 +145,7 @@ export class TransformRenderer {
       state.isRendering = false;
       state.renderProgress = 1;
 
-      const _sampleRate = audioContext?.sampleRate || 44100;
+      const sampleRate = audioContext?.sampleRate || 44100;
       peakCacheEngine?.invalidateCache(state?.sourceId);
       peakCacheEngine?.generatePeakCache(
         state?.sourceId,
@@ -158,9 +158,9 @@ export class TransformRenderer {
         type: "render-complete",
         sourceId,
         data: {
-          renderedSourceId: state?.sourceId,
-          duration: processedData?.length / sampleRate,
-          sampleCount: processedData?.length,
+          renderedSourceId: state.sourceId,
+          duration: processedData.length / sampleRate,
+          sampleCount: processedData.length,
         },
       });
 
@@ -183,7 +183,7 @@ export class TransformRenderer {
       return new Float32Array(inputData);
     }
 
-    const _activePlugins = chain?.plugins.filter((p) => p?.enabled);
+    const activePlugins = chain?.plugins.filter((p) => p?.enabled);
     if (activePlugins?.length === 0) {
       return new Float32Array(inputData);
     }
@@ -191,7 +191,7 @@ export class TransformRenderer {
     let currentData = new Float32Array(inputData);
 
     for (let i = 0; i < activePlugins?.length; i++) {
-      const _plugin = activePlugins[i];
+      const plugin = activePlugins[i];
       currentData = this?.applyPlugin(currentData, plugin);
 
       if (onProgress) {
@@ -208,7 +208,7 @@ export class TransformRenderer {
     data: Float32Array,
     plugin: ProcessingPlugin,
   ): Float32Array {
-    const _output = new Float32Array(data?.length);
+    const output = new Float32Array(data?.length);
 
     switch (plugin?.type) {
       case "compressor":
@@ -232,21 +232,21 @@ export class TransformRenderer {
     output: Float32Array,
     params: Record<string, number>,
   ): Float32Array {
-    const _threshold = params?.threshold ?? -20;
-    const _ratio = params?.ratio ?? 4;
-    const _attack = params?.attack ?? 0.01;
-    const _release = params?.release ?? 0.1;
-    const _makeupGain = params?.makeupGain ?? 0;
+    const threshold = params?.threshold ?? -20;
+    const ratio = params?.ratio ?? 4;
+    const attack = params?.attack ?? 0.01;
+    const release = params?.release ?? 0.1;
+    const makeupGain = params?.makeupGain ?? 0;
 
-    const _thresholdLinear = Math?.pow(10, threshold / 20);
-    const _attackCoeff = Math?.exp(-1 / (attack * 44100));
-    const _releaseCoeff = Math?.exp(-1 / (release * 44100));
-    const _makeupLinear = Math?.pow(10, makeupGain / 20);
+    const thresholdLinear = Math?.pow(10, threshold / 20);
+    const attackCoeff = Math?.exp(-1 / (attack * 44100));
+    const releaseCoeff = Math?.exp(-1 / (release * 44100));
+    const makeupLinear = Math?.pow(10, makeupGain / 20);
 
     let envelope = 0;
 
     for (let i = 0; i < input?.length; i++) {
-      const _absInput = Math?.abs(input[i]);
+      const absInput = Math?.abs(input[i]);
 
       if (absInput > envelope) {
         envelope = attackCoeff * envelope + (1 - attackCoeff) * absInput;
@@ -256,8 +256,8 @@ export class TransformRenderer {
 
       let gain = 1.0;
       if (envelope > thresholdLinear) {
-        const _overDb = 20 * Math?.log10(envelope / thresholdLinear);
-        const _compressedDb = overDb / ratio;
+        const overDb = 20 * Math?.log10(envelope / thresholdLinear);
+        const compressedDb = overDb / ratio;
         gain = Math?.pow(10, (compressedDb - overDb) / 20);
       }
 
@@ -272,8 +272,8 @@ export class TransformRenderer {
     output: Float32Array,
     params: Record<string, number>,
   ): Float32Array {
-    const _ceiling = params?.ceiling ?? -0.3;
-    const _ceilingLinear = Math?.pow(10, ceiling / 20);
+    const ceiling = params?.ceiling ?? -0.3;
+    const ceilingLinear = Math?.pow(10, ceiling / 20);
 
     for (let i = 0; i < input?.length; i++) {
       if (Math?.abs(input[i]) > ceilingLinear) {
@@ -292,7 +292,7 @@ export class TransformRenderer {
     params: Record<string, number>,
   ): Float32Array {
     Math?.pow(10, (params?.lowGain ?? 0) / 20);
-    const _midGain = Math?.pow(10, (params?.midGain ?? 0) / 20);
+    const midGain = Math?.pow(10, (params?.midGain ?? 0) / 20);
     Math?.pow(10, (params?.highGain ?? 0) / 20);
 
     for (let i = 0; i < input?.length; i++) {
@@ -307,11 +307,11 @@ export class TransformRenderer {
     output: Float32Array,
     params: Record<string, number>,
   ): Float32Array {
-    const _drive = params?.drive ?? 1;
-    const _mix = params?.mix ?? 0.5;
+    const drive = params?.drive ?? 1;
+    const mix = params?.mix ?? 0.5;
 
     for (let i = 0; i < input?.length; i++) {
-      const _driven = Math?.tanh(input[i] * drive);
+      const driven = Math?.tanh(input[i] * drive);
       output[i] = input[i] * (1 - mix) + driven * mix;
     }
 
@@ -323,17 +323,17 @@ export class TransformRenderer {
     output: Float32Array,
     params: Record<string, number>,
   ): Float32Array {
-    const _threshold = params?.threshold ?? -40;
-    const _thresholdLinear = Math?.pow(10, threshold / 20);
-    const _attackMs = params?.attack ?? 0.5;
-    const _releaseMs = params?.release ?? 50;
-    const _attackCoeff = Math?.exp(-1 / ((attackMs / 1000) * 44100));
-    const _releaseCoeff = Math?.exp(-1 / ((releaseMs / 1000) * 44100));
+    const threshold = params?.threshold ?? -40;
+    const thresholdLinear = Math?.pow(10, threshold / 20);
+    const attackMs = params?.attack ?? 0.5;
+    const releaseMs = params?.release ?? 50;
+    const attackCoeff = Math?.exp(-1 / ((attackMs / 1000) * 44100));
+    const releaseCoeff = Math?.exp(-1 / ((releaseMs / 1000) * 44100));
 
     let gateGain = 0;
 
     for (let i = 0; i < input?.length; i++) {
-      const _absInput = Math?.abs(input[i]);
+      const absInput = Math?.abs(input[i]);
 
       if (absInput > thresholdLinear) {
         gateGain = attackCoeff * gateGain + (1 - attackCoeff) * 1;
@@ -348,10 +348,10 @@ export class TransformRenderer {
   }
 
   private getSourceData(sourceId: string): Float32Array | null {
-    const _cacheStats = peakCacheEngine?.getCacheStats();
+    const cacheStats = peakCacheEngine?.getCacheStats();
     if (cacheStats?.entries === 0) return null;
 
-    const _peakResult = peakCacheEngine?.getPeaksForView(
+    const peakResult = peakCacheEngine?.getPeaksForView(
       sourceId,
       0,
       44100 * 300,
@@ -359,7 +359,7 @@ export class TransformRenderer {
     );
     if (!peakResult) return null;
 
-    const _data = new Float32Array(peakResult?.peaks.length);
+    const data = new Float32Array(peakResult?.peaks.length);
     for (let i = 0; i < peakResult?.peaks.length; i++) {
       data[i] = (peakResult?.peaks[i].max + peakResult?.peaks[i].min) / 2;
     }
@@ -379,7 +379,7 @@ export class TransformRenderer {
     this.isProcessingQueue = true;
 
     while (this?.renderQueue.length > 0) {
-      const _sourceId = this?.renderQueue.shift()!;
+      const sourceId = this?.renderQueue.shift()!;
       await this?.renderTransform(sourceId);
     }
 
@@ -391,7 +391,7 @@ export class TransformRenderer {
   }
 
   getRenderedSourceId(sourceId: string): string {
-    const _state = this?.transforms.get(sourceId);
+    const state = this?.transforms.get(sourceId);
     if (state && state?.renderedData && !state?.isDirty) {
       return state?.sourceId;
     }
@@ -399,7 +399,7 @@ export class TransformRenderer {
   }
 
   isRendered(sourceId: string): boolean {
-    const _state = this?.transforms.get(sourceId);
+    const state = this?.transforms.get(sourceId);
     return state ? !state?.isDirty && state?.renderedData !== null : false;
   }
 
@@ -423,4 +423,4 @@ export class TransformRenderer {
   }
 }
 
-export const _transformRenderer = new TransformRenderer();
+export const transformRenderer = new TransformRenderer();

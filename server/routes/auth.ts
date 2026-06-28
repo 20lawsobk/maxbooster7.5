@@ -12,7 +12,7 @@ import crypto from "crypto";
 import { requireAuth } from "../middleware/auth.js";
 import { emailService } from "../services/emailService.js";
 
-const _router = Router();
+const router = Router();
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string; email?: string };
@@ -24,7 +24,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _sessionId = req?.session?.id;
+      const sessionId = req?.session?.id;
 
       if (!sessionId) {
         return res?.status(400).json({
@@ -35,7 +35,7 @@ router?.post(
         });
       }
 
-      const _existingSession = await db
+      const existingSession = await db
         .select()
         .from(sessions)
         .where(eq(sessions?.id, sessionId))
@@ -50,7 +50,7 @@ router?.post(
         });
       }
 
-      const _session = existingSession[0];
+      const session = existingSession[0];
 
       if (session?.expiresAt && new Date(session?.expiresAt) < new Date()) {
         return res?.status(401).json({
@@ -61,7 +61,7 @@ router?.post(
         });
       }
 
-      const _newExpiresAt = new Date(Date?.now() + 24 * 60 * 60 * 1000);
+      const newExpiresAt = new Date(Date?.now() + 24 * 60 * 60 * 1000);
 
       await db
         .update(sessions)
@@ -74,7 +74,7 @@ router?.post(
       res?.json({
         success: true,
         message: "Token refreshed successfully",
-        expiresAt: newExpiresAt?.toISOString(),
+        expiresAt: newExpiresAt.toISOString(),
         outcome: "token_refresh_successful",
       });
     } catch (error) {
@@ -94,7 +94,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _sessionId = req?.session?.id;
+      const sessionId = req?.session?.id;
       const { extendMinutes = 30 } = req?.body;
 
       if (!sessionId) {
@@ -105,7 +105,7 @@ router?.post(
         });
       }
 
-      const _existingSession = await db
+      const existingSession = await db
         .select()
         .from(sessions)
         .where(eq(sessions?.id, sessionId))
@@ -119,7 +119,7 @@ router?.post(
         });
       }
 
-      const _parsedMinutes = Number(extendMinutes);
+      const parsedMinutes = Number(extendMinutes);
       if (!Number?.isFinite(parsedMinutes) || parsedMinutes <= 0) {
         return res?.status(400).json({
           success: false,
@@ -127,9 +127,9 @@ router?.post(
           message: "extendMinutes must be a positive number",
         });
       }
-      const _maxExtendMinutes = 120;
-      const _actualExtend = Math?.min(parsedMinutes, maxExtendMinutes);
-      const _newExpiresAt = new Date(Date?.now() + actualExtend * 60 * 1000);
+      const maxExtendMinutes = 120;
+      const actualExtend = Math?.min(parsedMinutes, maxExtendMinutes);
+      const newExpiresAt = new Date(Date?.now() + actualExtend * 60 * 1000);
 
       await db
         .update(sessions)
@@ -142,7 +142,7 @@ router?.post(
       res?.json({
         success: true,
         message: `Session extended by ${actualExtend} minutes`,
-        expiresAt: newExpiresAt?.toISOString(),
+        expiresAt: newExpiresAt.toISOString(),
         extendedMinutes: actualExtend,
         outcome: "session_extended",
       });
@@ -162,10 +162,10 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _currentSessionId = req?.session?.id;
+      const userId = req?.user!.id;
+      const currentSessionId = req?.session?.id;
 
-      const _userSessions = await db
+      const userSessions = await db
         .select()
         .from(sessions)
         .where(
@@ -174,8 +174,8 @@ router?.get(
         .orderBy(desc(sessions?.lastActivity))
         .limit(50);
 
-      const _formattedSessions = userSessions?.map((session) => {
-        const _userAgent = session?.userAgent || "";
+      const formattedSessions = userSessions?.map((session) => {
+        const userAgent = session?.userAgent || "";
         let device = "Unknown Device";
         let browser = "Unknown Browser";
         let os = "Unknown OS";
@@ -200,29 +200,29 @@ router?.get(
           os = "Linux";
         }
 
-        if (userAgent?.includes("Chrome")) browser = "Chrome";
-        else if (userAgent?.includes("Firefox")) browser = "Firefox";
-        else if (userAgent?.includes("Safari")) browser = "Safari";
-        else if (userAgent?.includes("Edge")) browser = "Edge";
+        if (userAgent.includes("Chrome")) browser = "Chrome";
+        else if (userAgent.includes("Firefox")) browser = "Firefox";
+        else if (userAgent.includes("Safari")) browser = "Safari";
+        else if (userAgent.includes("Edge")) browser = "Edge";
 
         return {
-          id: session?.id,
+          id: session.id,
           device,
           browser,
           os,
-          ipAddress: session?.ipAddress || "Unknown",
+          ipAddress: session.ipAddress || "Unknown",
           location: "Unknown",
-          lastActivity: session?.lastActivity?.toISOString(),
-          createdAt: session?.createdAt?.toISOString(),
-          expiresAt: session?.expiresAt?.toISOString(),
-          current: session?.id === currentSessionId,
-          trusted: session?.trusted ?? false,
+          lastActivity: session.lastActivity?.toISOString(),
+          createdAt: session.createdAt?.toISOString(),
+          expiresAt: session.expiresAt?.toISOString(),
+          current: session.id === currentSessionId,
+          trusted: session.trusted ?? false,
         };
       });
 
       res?.json({
         sessions: formattedSessions,
-        totalCount: formattedSessions?.length,
+        totalCount: formattedSessions.length,
         currentSessionId,
       });
     } catch (error) {
@@ -237,9 +237,9 @@ router?.delete(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { sessionId } = req?.params;
-      const _currentSessionId = req?.session?.id;
+      const currentSessionId = req?.session?.id;
 
       if (sessionId === currentSessionId) {
         return res?.status(400).json({
@@ -249,7 +249,7 @@ router?.delete(
         });
       }
 
-      const _sessionToDelete = await db
+      const sessionToDelete = await db
         .select()
         .from(sessions)
         .where(and(eq(sessions?.id, sessionId), eq(sessions?.userId, userId)))
@@ -269,7 +269,7 @@ router?.delete(
         threatType: "remote_session_terminated",
         severity: "low",
         userId,
-        sourceIp: req?.ip || "unknown",
+        sourceIp: req.ip || "unknown",
         status: "resolved",
         indicators: { terminatedSessionId: sessionId },
         metadata: { action: "user_terminated_session" },
@@ -296,11 +296,11 @@ router?.delete(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _currentSessionId = req?.session?.id;
+      const userId = req?.user!.id;
+      const currentSessionId = req?.session?.id;
 
-      const _otherSessions = await db
-        .select({ id: sessions?.id })
+      const otherSessions = await db
+        .select({ id: sessions.id })
         .from(sessions)
         .where(
           and(
@@ -310,7 +310,7 @@ router?.delete(
         )
         .limit(500);
 
-      const _terminatedCount = otherSessions?.length;
+      const terminatedCount = otherSessions?.length;
 
       await db
         .delete(sessions)
@@ -325,7 +325,7 @@ router?.delete(
         threatType: "all_other_sessions_logged_out",
         severity: "low",
         userId,
-        sourceIp: req?.ip || "unknown",
+        sourceIp: req.ip || "unknown",
         status: "resolved",
         indicators: { terminatedCount },
         metadata: { action: "user_logged_out_all_devices" },
@@ -353,7 +353,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { deviceId, trusted } = req?.body;
 
       if (!deviceId) {
@@ -364,7 +364,7 @@ router?.post(
         });
       }
 
-      const _session = await db
+      const session = await db
         .select()
         .from(sessions)
         .where(and(eq(sessions?.id, deviceId), eq(sessions?.userId, userId)))
@@ -383,7 +383,7 @@ router?.post(
         .set({ trusted: !!trusted })
         .where(and(eq(sessions?.id, deviceId), eq(sessions?.userId, userId)));
 
-      const _outcome = trusted ? "device_trusted" : "device_untrusted";
+      const outcome = trusted ? "device_trusted" : "device_untrusted";
 
       res?.json({
         success: true,
@@ -410,8 +410,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _currentSessionId = req?.session?.id;
+      const userId = req?.user!.id;
+      const currentSessionId = req?.session?.id;
 
       if (!currentSessionId) {
         return res?.json({
@@ -422,7 +422,7 @@ router?.get(
         });
       }
 
-      const _session = await db
+      const session = await db
         .select()
         .from(sessions)
         .where(eq(sessions?.id, currentSessionId))
@@ -437,24 +437,24 @@ router?.get(
         });
       }
 
-      const _expiresAt = session[0].expiresAt;
-      const _now = new Date();
-      const _isValid = expiresAt ? new Date(expiresAt) > now : true;
-      const _secondsRemaining = expiresAt
+      const expiresAt = session[0].expiresAt;
+      const now = new Date();
+      const isValid = expiresAt ? new Date(expiresAt) > now : true;
+      const secondsRemaining = expiresAt
         ? Math?.max(
             0,
             Math?.floor((new Date(expiresAt).getTime() - now?.getTime()) / 1000),
           )
         : null;
 
-      const _sessionCount = await db
+      const sessionCount = await db
         .select({ count: sql<number>`count(*)` })
         .from(sessions)
         .where(and(eq(sessions?.userId, userId), gte(sessions?.expiresAt, now)));
 
       res?.json({
         valid: isValid,
-        expiresAt: expiresAt?.toISOString(),
+        expiresAt: expiresAt.toISOString(),
         secondsRemaining,
         concurrentSessions: Number(sessionCount[0]?.count || 1),
         outcome: isValid ? "session_valid" : "session_expired",
@@ -471,9 +471,9 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _accounts = await db
+      const accounts = await db
         .select()
         .from(socialAccounts)
         .where(
@@ -484,13 +484,13 @@ router?.get(
         )
         .limit(20);
 
-      const _now = new Date();
-      const _platformStatus = accounts?.map((account) => {
-        const _tokenExpiresAt = account?.tokenExpiresAt;
-        const _isExpired = tokenExpiresAt
+      const now = new Date();
+      const platformStatus = accounts?.map((account) => {
+        const tokenExpiresAt = account?.tokenExpiresAt;
+        const isExpired = tokenExpiresAt
           ? new Date(tokenExpiresAt) < now
           : false;
-        const _expiresInSeconds = tokenExpiresAt
+        const expiresInSeconds = tokenExpiresAt
           ? Math?.floor(
               (new Date(tokenExpiresAt).getTime() - now?.getTime()) / 1000,
             )
@@ -511,14 +511,14 @@ router?.get(
         }
 
         return {
-          platform: account?.platform,
-          platformName: account?.platformName || account?.platform,
+          platform: account.platform,
+          platformName: account.platformName || account?.platform,
           status,
           action,
-          tokenExpiresAt: tokenExpiresAt?.toISOString(),
+          tokenExpiresAt: tokenExpiresAt.toISOString(),
           expiresInSeconds,
-          lastRefreshed: account?.lastRefreshedAt?.toISOString(),
-          scopes: account?.scopes || [],
+          lastRefreshed: account.lastRefreshedAt?.toISOString(),
+          scopes: account.scopes || [],
           outcome:
             status === "connected"
               ? "token_valid"
@@ -530,13 +530,13 @@ router?.get(
         };
       });
 
-      const _needsAttention = platformStatus?.filter((p) => p?.action !== null);
+      const needsAttention = platformStatus?.filter((p) => p?.action !== null);
 
       res?.json({
         platforms: platformStatus,
         needsAttention,
-        hasExpiredTokens: needsAttention?.some((p) => p?.status === "expired"),
-        hasExpiringTokens: needsAttention?.some(
+        hasExpiredTokens: needsAttention.some((p) => p?.status === "expired"),
+        hasExpiringTokens: needsAttention.some(
           (p) => p?.status === "expiring_soon",
         ),
       });
@@ -552,10 +552,10 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { platform } = req?.params;
 
-      const _account = await db
+      const account = await db
         .select()
         .from(socialAccounts)
         .where(
@@ -608,10 +608,10 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _sevenDaysAgo = new Date(Date?.now() - 7 * 24 * 60 * 60 * 1000);
+      const userId = req?.user!.id;
+      const sevenDaysAgo = new Date(Date?.now() - 7 * 24 * 60 * 60 * 1000);
 
-      const _userThreats = await db
+      const userThreats = await db
         .select()
         .from(securityThreats)
         .where(
@@ -623,9 +623,9 @@ router?.get(
         .orderBy(desc(securityThreats?.detectedAt))
         .limit(50);
 
-      const _alerts = userThreats?.map((threat) => {
-        const _metadata = (threat?.metadata as Record<string, any>) || {};
-        const _indicators = (threat?.indicators as Record<string, any>) || {};
+      const alerts = userThreats?.map((threat) => {
+        const metadata = (threat?.metadata as Record<string, any>) || {};
+        const indicators = (threat?.indicators as Record<string, any>) || {};
 
         let type: string = "security_alert";
         let title = "Security Alert";
@@ -724,35 +724,35 @@ router?.get(
         }
 
         return {
-          id: threat?.id,
+          id: threat.id,
           type,
           title,
           message,
-          severity: threat?.severity,
-          timestamp: threat?.detectedAt?.toISOString(),
-          resolved: threat?.status === "resolved" || threat?.status === "healed",
+          severity: threat.severity,
+          timestamp: threat.detectedAt?.toISOString(),
+          resolved: threat.status === "resolved" || threat?.status === "healed",
           action,
           actionLabel,
           metadata: {
-            ip: threat?.sourceIp,
+            ip: threat.sourceIp,
             ...indicators,
             ...metadata,
           },
         };
       });
 
-      const _unresolvedCount = alerts?.filter((a) => !a?.resolved).length;
-      const _criticalCount = alerts?.filter(
+      const unresolvedCount = alerts?.filter((a) => !a?.resolved).length;
+      const criticalCount = alerts?.filter(
         (a) => a?.severity === "critical" && !a?.resolved,
       ).length;
 
       res?.json({
         alerts,
         summary: {
-          total: alerts?.length,
+          total: alerts.length,
           unresolved: unresolvedCount,
           critical: criticalCount,
-          requiresAction: alerts?.filter((a) => a?.action && !a?.resolved).length,
+          requiresAction: alerts.filter((a) => a?.action && !a?.resolved).length,
         },
       });
     } catch (error) {
@@ -767,7 +767,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { alertId } = req?.params;
 
       await db
@@ -793,7 +793,7 @@ router?.post(
   requireAuth,
   async (req: Record<string, unknown>, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const [user] = await db
         .select()
         .from(users)
@@ -805,8 +805,8 @@ router?.post(
         return res?.json({ success: true, message: "Email already verified" });
       }
 
-      const _token = crypto?.randomBytes(32).toString("hex");
-      const _expires = new Date(Date?.now() + 24 * 60 * 60 * 1000);
+      const token = crypto?.randomBytes(32).toString("hex");
+      const expires = new Date(Date?.now() + 24 * 60 * 60 * 1000);
 
       await db
         .update(users)
@@ -816,13 +816,13 @@ router?.post(
         })
         .where(eq(users?.id, userId));
 
-      const _appUrl =
+      const appUrl =
         process?.env.APP_URL || process?.env.DOMAIN || "https://max-booster.com";
-      const _verificationUrl = `${appUrl}/verify-email?token=${token}`;
+      const verificationUrl = `${appUrl}/verify-email?token=${token}`;
 
       try {
         await emailService?.sendEmail({
-          to: user?.email,
+          to: user.email,
           subject: "Verify your Max Booster email",
           html: `<h2>Email Verification</h2><p>Click the link below to verify your email address:</p><p><a href="${verificationUrl}">Verify Email</a></p><p>This link expires in 24 hours.</p>`,
         });
@@ -863,9 +863,11 @@ router?.get("/verify-email", async (req, res) => {
       user?.emailVerificationExpires &&
       new Date(user?.emailVerificationExpires) < new Date()
     ) {
-      return res.status(400).json({
-        error: "Verification token has expired. Please request a new one.",
-      });
+      return res
+        .status(400)
+        .json({
+          error: "Verification token has expired. Please request a new one.",
+        });
     }
 
     await db
@@ -889,13 +891,13 @@ router?.get(
   requireAuth,
   async (req: Record<string, unknown>, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const [user] = await db
-        .select({ emailVerified: users?.emailVerified })
+        .select({ emailVerified: users.emailVerified })
         .from(users)
         .where(eq(users?.id, userId))
         .limit(1);
-      res?.json({ emailVerified: user?.emailVerified ?? false });
+      res?.json({ emailVerified: user.emailVerified ?? false });
     } catch (error) {
       logger?.warn({ err: error }, "Error checking email verification:");
       res?.status(500).json({ error: "Failed to check verification status" });

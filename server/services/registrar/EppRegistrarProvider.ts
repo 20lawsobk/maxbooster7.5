@@ -16,22 +16,22 @@ import type {
 
 function getEppConfig() {
   return {
-    host: process?.env.EPP_HOST || "",
+    host: process.env.EPP_HOST || "",
     port: parseInt(process?.env.EPP_PORT || "700"),
-    user: process?.env.EPP_USERNAME || "",
-    pass: process?.env.EPP_PASSWORD || "",
-    tlsCert: process?.env.EPP_TLS_CERT,
-    tlsKey: process?.env.EPP_TLS_KEY,
+    user: process.env.EPP_USERNAME || "",
+    pass: process.env.EPP_PASSWORD || "",
+    tlsCert: process.env.EPP_TLS_CERT,
+    tlsKey: process.env.EPP_TLS_KEY,
   };
 }
 
 function isConfigured(): boolean {
-  const _config = getEppConfig();
+  const config = getEppConfig();
   return !!(config?.host && config?.user && config?.pass);
 }
 
 function notConfigured(method: string): never {
-  const _msg =
+  const msg =
     `EPP_NOT_CONFIGURED: ${method}() called but no EPP credentials are set. ` +
     `Set EPP_HOST + EPP_USERNAME + EPP_PASSWORD and set REGISTRAR_PROVIDER=epp.`;
   logger?.warn(msg);
@@ -52,7 +52,7 @@ export class EppRegistrarProvider implements RegistrarProvider {
   }
 
   private generateContactId(userId: string, fqdn: string): string {
-    const _hash = createHash("sha256").update(`${userId}:${fqdn}`).digest("hex");
+    const hash = createHash("sha256").update(`${userId}:${fqdn}`).digest("hex");
     return `MB-${hash?.slice(0, 13)}`.toUpperCase();
   }
 
@@ -66,11 +66,11 @@ export class EppRegistrarProvider implements RegistrarProvider {
       };
     }
     try {
-      const _session = await this?.getSession();
+      const session = await this?.getSession();
       await session?.connectAndLogin();
       return { ok: true };
     } catch (err) {
-      return { ok: false, message: err?.message };
+      return { ok: false, message: err.message };
     }
   }
 
@@ -79,8 +79,8 @@ export class EppRegistrarProvider implements RegistrarProvider {
   async checkAvailability(fqdn: string): Promise<AvailabilityResult> {
     if (!isConfigured()) notConfigured("checkAvailability");
 
-    const _session = await this?.getSession();
-    const _available = await session?.checkAvailability(fqdn);
+    const session = await this?.getSession();
+    const available = await session?.checkAvailability(fqdn);
 
     return {
       fqdn,
@@ -93,17 +93,17 @@ export class EppRegistrarProvider implements RegistrarProvider {
   async registerDomain(params: RegisterParams): Promise<RegisterResult> {
     if (!isConfigured()) notConfigured("registerDomain");
 
-    const _session = await this?.getSession();
-    const _contactId = this?.generateContactId(params?.userId, params?.fqdn);
+    const session = await this?.getSession();
+    const contactId = this?.generateContactId(params?.userId, params?.fqdn);
 
     // 1. Create contact
     await session?.createContact(contactId, params?.contact);
 
     // 2. Create domain
-    const _resp = await session?.registerDomain({
-      fqdn: params?.fqdn,
-      years: params?.years,
-      nameservers: params?.nameservers,
+    const resp = await session?.registerDomain({
+      fqdn: params.fqdn,
+      years: params.years,
+      nameservers: params.nameservers,
       registrantId: contactId,
       adminId: contactId,
       techId: contactId,
@@ -115,16 +115,16 @@ export class EppRegistrarProvider implements RegistrarProvider {
       );
     }
 
-    const _creData = resp?.resData?.creData;
+    const creData = resp?.resData?.creData;
 
     return {
       ok: true,
-      registryId: resp?.trid.svTRID,
-      expiresAt: creData?.exDate
+      registryId: resp.trid.svTRID,
+      expiresAt: creData.exDate
         ? new Date(creData?.exDate)
         : new Date(Date?.now() + params?.years * 365 * 24 * 60 * 60 * 1000),
-      nameservers: params?.nameservers,
-      status: resp?.code === 1000 ? "active" : "pendingCreate",
+      nameservers: params.nameservers,
+      status: resp.code === 1000 ? "active" : "pendingCreate",
     };
   }
 
@@ -133,16 +133,16 @@ export class EppRegistrarProvider implements RegistrarProvider {
   async renewDomain(fqdn: string, years: number): Promise<RenewResult> {
     if (!isConfigured()) notConfigured("renewDomain");
 
-    const _session = await this?.getSession();
-    const _info = await session?.getDomainInfo(fqdn);
-    const _curExpDate = info?.resData.infData?.exDate;
+    const session = await this?.getSession();
+    const info = await session?.getDomainInfo(fqdn);
+    const curExpDate = info?.resData.infData?.exDate;
 
-    const _resp = await session?.renewDomain(fqdn, curExpDate, years);
+    const resp = await session?.renewDomain(fqdn, curExpDate, years);
     if (resp?.code !== 1000) {
       throw new Error(`Domain renewal failed: ${resp?.msg} (code ${resp?.code})`);
     }
 
-    const _renData = resp?.resData.renData;
+    const renData = resp?.resData.renData;
 
     return {
       ok: true,
@@ -156,19 +156,19 @@ export class EppRegistrarProvider implements RegistrarProvider {
   async setNameservers(fqdn: string, nameservers: string[]): Promise<void> {
     if (!isConfigured()) notConfigured("setNameservers");
 
-    const _session = await this?.getSession();
-    const _info = await session?.getDomainInfo(fqdn);
-    const _currentNs = info?.resData.infData?.ns?.hostObj || [];
-    const _currentNsArray = Array?.isArray(currentNs) ? currentNs : [currentNs];
+    const session = await this?.getSession();
+    const info = await session?.getDomainInfo(fqdn);
+    const currentNs = info?.resData.infData?.ns?.hostObj || [];
+    const currentNsArray = Array?.isArray(currentNs) ? currentNs : [currentNs];
 
-    const _toAdd = nameservers?.filter((ns) => !currentNsArray?.includes(ns));
-    const _toRem = currentNsArray?.filter(
+    const toAdd = nameservers?.filter((ns) => !currentNsArray?.includes(ns));
+    const toRem = currentNsArray?.filter(
       (ns: string) => !nameservers?.includes(ns),
     );
 
     if (toAdd?.length === 0 && toRem?.length === 0) return;
 
-    const _resp = await session?.updateNameservers(fqdn, toAdd, toRem);
+    const resp = await session?.updateNameservers(fqdn, toAdd, toRem);
     if (resp?.code !== 1000) {
       throw new Error(
         `Updating nameservers failed: ${resp?.msg} (code ${resp?.code})`,
@@ -181,25 +181,25 @@ export class EppRegistrarProvider implements RegistrarProvider {
   async getDomainInfo(fqdn: string): Promise<DomainInfo> {
     if (!isConfigured()) notConfigured("getDomainInfo");
 
-    const _session = await this?.getSession();
-    const _resp = await session?.getDomainInfo(fqdn);
+    const session = await this?.getSession();
+    const resp = await session?.getDomainInfo(fqdn);
     if (resp?.code !== 1000) {
       throw new Error(
         `Getting domain info failed: ${resp?.msg} (code ${resp?.code})`,
       );
     }
 
-    const _infData = resp?.resData.infData;
-    const _ns = infData?.ns?.hostObj || [];
+    const infData = resp?.resData.infData;
+    const ns = infData?.ns?.hostObj || [];
 
     return {
       fqdn,
-      status: Array?.isArray(infData?.status)
+      status: Array.isArray(infData?.status)
         ? infData?.status[0]["@_s"]
         : infData?.status?.["@_s"] || "active",
-      expiresAt: infData?.exDate ? new Date(infData?.exDate) : undefined,
-      nameservers: Array?.isArray(ns) ? ns : [ns],
-      registryId: infData?.roid,
+      expiresAt: infData.exDate ? new Date(infData?.exDate) : undefined,
+      nameservers: Array.isArray(ns) ? ns : [ns],
+      registryId: infData.roid,
       autoRenew: true, // EPP doesn't always expose this directly in info
       locked: !!infData?.status?.find?.((s: Record<string, unknown>) =>
         s["@_s"]?.includes("Prohibited"),
@@ -220,8 +220,8 @@ export class EppRegistrarProvider implements RegistrarProvider {
   async initiateTransferIn(params: TransferParams): Promise<TransferResult> {
     if (!isConfigured()) notConfigured("initiateTransferIn");
 
-    const _session = await this?.getSession();
-    const _resp = await session?.transferDomain(params?.fqdn, params?.authCode);
+    const session = await this?.getSession();
+    const resp = await session?.transferDomain(params?.fqdn, params?.authCode);
 
     if (resp?.code !== 1000 && resp?.code !== 1001) {
       throw new Error(
@@ -231,8 +231,8 @@ export class EppRegistrarProvider implements RegistrarProvider {
 
     return {
       ok: true,
-      status: resp?.code === 1001 ? "pendingTransfer" : "active",
-      message: resp?.msg,
+      status: resp.code === 1001 ? "pendingTransfer" : "active",
+      message: resp.msg,
     };
   }
 }

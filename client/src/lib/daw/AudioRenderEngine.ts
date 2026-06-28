@@ -381,7 +381,7 @@ export class AudioRenderEngine {
     presetName: string,
     baseSettings: RenderSettings = DEFAULT_RENDER_SETTINGS,
   ): RenderSettings {
-    const _preset = RENDER_PRESETS[presetName];
+    const preset = RENDER_PRESETS[presetName];
     if (!preset) return baseSettings;
     return { ...baseSettings, ...preset };
   }
@@ -390,8 +390,8 @@ export class AudioRenderEngine {
     settings: RenderSettings,
     durationSeconds: number,
   ): number {
-    const _channels = settings?.channels;
-    const _bytesPerSample = settings?.bitDepth / 8;
+    const channels = settings?.channels;
+    const bytesPerSample = settings?.bitDepth / 8;
 
     switch (settings?.format) {
       case "wav":
@@ -400,7 +400,7 @@ export class AudioRenderEngine {
           durationSeconds * settings?.sampleRate * channels * bytesPerSample
         );
       case "flac":
-        const _compressionRatio = 1 - (settings?.flacCompression || 5) * 0.05;
+        const compressionRatio = 1 - (settings?.flacCompression || 5) * 0.05;
         return (
           durationSeconds *
           settings?.sampleRate *
@@ -413,7 +413,7 @@ export class AudioRenderEngine {
       case "aac":
         return durationSeconds * (((settings?.aacBitrate || 256) * 1000) / 8);
       case "ogg":
-        const _oggBitrate = 64 + (settings?.oggQuality || 5) * 32;
+        const oggBitrate = 64 + (settings?.oggQuality || 5) * 32;
         return durationSeconds * ((oggBitrate * 1000) / 8);
       case "opus":
         return durationSeconds * (((settings?.opusBitrate || 128) * 1000) / 8);
@@ -492,7 +492,7 @@ export class AudioRenderEngine {
       !/^[A-Z]{2}[A-Z0-9]{3}\d{7}$/.test(settings?.metadata.isrc)
     ) {
       errors?.push(
-        "Invalid ISRC format. Expected: CCXXXYYNNNNN (e?.g., USRC17607839)",
+        "Invalid ISRC format. Expected: CCXXXYYNNNNN (e.g., USRC17607839)",
       );
     }
 
@@ -500,7 +500,7 @@ export class AudioRenderEngine {
       errors?.push("Invalid UPC format. Expected: 12-14 digits");
     }
 
-    return { valid: errors?.length === 0, errors, warnings };
+    return { valid: errors.length === 0, errors, warnings };
   }
 
   async render(
@@ -515,13 +515,13 @@ export class AudioRenderEngine {
     this.isRendering = true;
     this.abortController = new AbortController();
 
-    const _notify = (progress: RenderProgress) => {
+    const notify = (progress: RenderProgress) => {
       if (onProgress) onProgress(progress);
       this?.listeners.forEach((l) => l(progress));
     };
 
     try {
-      const _validation = this?.validateSettings(settings);
+      const validation = this?.validateSettings(settings);
       if (!validation?.valid) {
         throw new Error(`Invalid settings: ${validation?.errors.join(", ")}`);
       }
@@ -529,23 +529,23 @@ export class AudioRenderEngine {
       notify({
         phase: "preparing",
         progress: 0,
-        warnings: validation?.warnings,
+        warnings: validation.warnings,
       });
 
-      const _csrfToken = getCsrfTokenFromCookie();
-      const _response = await fetch(`/api/studio/projects/${projectId}/render`, {
+      const csrfToken = getCsrfTokenFromCookie();
+      const response = await fetch(`/api/studio/projects/${projectId}/render`, {
         method: "POST",
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
           ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
         },
-        body: JSON?.stringify(settings),
-        signal: this?.abortController.signal,
+        body: JSON.stringify(settings),
+        signal: this.abortController.signal,
       });
 
       if (!response?.ok) {
-        const _error = await response?.json();
+        const error = await response?.json();
         throw new Error(error?.message || "Render failed");
       }
 
@@ -554,10 +554,10 @@ export class AudioRenderEngine {
       notify({
         phase: "complete",
         progress: 100,
-        peakLevel: result?.peakLevel,
-        lufs: result?.lufs,
-        truePeak: result?.truePeak,
-        warnings: result?.warnings,
+        peakLevel: result.peakLevel,
+        lufs: result.lufs,
+        truePeak: result.truePeak,
+        warnings: result.warnings,
       });
 
       return result;
@@ -590,4 +590,4 @@ export class AudioRenderEngine {
   }
 }
 
-export const _audioRenderEngine = new AudioRenderEngine();
+export const audioRenderEngine = new AudioRenderEngine();

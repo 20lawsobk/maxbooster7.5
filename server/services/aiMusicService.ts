@@ -14,10 +14,10 @@ let ffmpegAvailable = false;
 async function initializeFfmpeg() {
   if (ffmpegAvailable) return true;
   try {
-    const _fluentFfmpeg = await import("fluent-ffmpeg");
+    const fluentFfmpeg = await import("fluent-ffmpeg");
     ffmpeg = fluentFfmpeg?.default;
     try {
-      const _ffmpegStatic = await import("ffmpeg-static");
+      const ffmpegStatic = await import("ffmpeg-static");
       if (ffmpegStatic?.default) {
         ffmpeg?.setFfmpegPath(ffmpegStatic?.default);
       }
@@ -269,45 +269,45 @@ export class AIMusicService {
    * @returns Frequency-filtered audio outputs with spectral profiles and confidence scores
    */
   async separateStems(audioBuffer: Buffer): Promise<StemSeparationResult> {
-    const _startTime = Date?.now();
-    const _inferenceId = randomBytes(8).toString("hex");
+    const startTime = Date?.now();
+    const inferenceId = randomBytes(8).toString("hex");
 
     try {
-      const _decoded = wav?.decode(audioBuffer);
-      const _sampleRate = decoded?.sampleRate;
-      const _channelData = decoded?.channelData[0];
+      const decoded = wav?.decode(audioBuffer);
+      const sampleRate = decoded?.sampleRate;
+      const channelData = decoded?.channelData[0];
 
-      const _spectralData = await this?.performFFT(channelData, sampleRate);
+      const spectralData = await this?.performFFT(channelData, sampleRate);
 
-      const _vocals = await this?.extractStemWithFFT(
+      const vocals = await this?.extractStemWithFFT(
         channelData,
         spectralData,
         sampleRate,
         "vocals",
         inferenceId,
       );
-      const _drums = await this?.extractStemWithFFT(
+      const drums = await this?.extractStemWithFFT(
         channelData,
         spectralData,
         sampleRate,
         "drums",
         inferenceId,
       );
-      const _bass = await this?.extractStemWithFFT(
+      const bass = await this?.extractStemWithFFT(
         channelData,
         spectralData,
         sampleRate,
         "bass",
         inferenceId,
       );
-      const _melody = await this?.extractStemWithFFT(
+      const melody = await this?.extractStemWithFFT(
         channelData,
         spectralData,
         sampleRate,
         "melody",
         inferenceId,
       );
-      const _harmony = await this?.extractStemWithFFT(
+      const harmony = await this?.extractStemWithFFT(
         channelData,
         spectralData,
         sampleRate,
@@ -315,8 +315,8 @@ export class AIMusicService {
         inferenceId,
       );
 
-      const _processingTime = Date?.now() - startTime;
-      const _overallConfidence =
+      const processingTime = Date?.now() - startTime;
+      const overallConfidence =
         (vocals?.confidence +
           drums?.confidence +
           bass?.confidence +
@@ -338,7 +338,7 @@ export class AIMusicService {
         this?.AI_MODELS.STEM_SEPARATOR,
         "stem_separation",
         {
-          bufferSize: audioBuffer?.length,
+          bufferSize: audioBuffer.length,
         },
         result,
         overallConfidence,
@@ -353,10 +353,10 @@ export class AIMusicService {
   }
 
   async getGenrePreset(genre: string): Promise<GenrePreset> {
-    const _genreLower = genre?.toLowerCase().replace(/[\s-]/g, "_");
-    const _presets = this?.getAllGenrePresets();
+    const genreLower = genre?.toLowerCase().replace(/[\s-]/g, "_");
+    const presets = this?.getAllGenrePresets();
 
-    const _preset =
+    const preset =
       presets?.find((p) => p?.genre.toLowerCase() === genreLower) || presets[0];
 
     await this?.logInference(
@@ -381,27 +381,27 @@ export class AIMusicService {
     suggestions: AISuggestion[];
     outputFilePath?: string;
   }> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
     let outputFilePath: string | undefined;
 
     try {
-      const _preset = await this?.getGenrePreset(genre);
-      const _normalizedIntensity = Math?.max(0, Math?.min(100, intensity)) / 100;
+      const preset = await this?.getGenrePreset(genre);
+      const normalizedIntensity = Math?.max(0, Math?.min(100, intensity)) / 100;
 
-      const _appliedSettings = this?.blendPresetWithIntensity(
+      const appliedSettings = this?.blendPresetWithIntensity(
         preset?.mixSettings,
         normalizedIntensity,
       );
       appliedSettings.genrePreset = preset?.displayName;
       appliedSettings.presetIntensity = intensity;
 
-      const _suggestions = await this?.generateMixSuggestions({
+      const suggestions = await this?.generateMixSuggestions({
         genre,
         intensity: normalizedIntensity,
-        preset: preset?.displayName,
+        preset: preset.displayName,
       });
 
-      const _track = await this?.getTrackByIdSafe(trackId);
+      const track = await this?.getTrackByIdSafe(trackId);
       if (track) {
         await storage?.updateStudioTrackEffects(
           track?.id,
@@ -410,21 +410,21 @@ export class AIMusicService {
         );
       }
 
-      const _clips = await storage?.getTrackAudioClips(trackId);
+      const clips = await storage?.getTrackAudioClips(trackId);
       if (clips?.length > 0) {
-        const _primaryClip = clips[0];
-        const _inputPath = path?.join(process?.cwd(), primaryClip?.filePath);
+        const primaryClip = clips[0];
+        const inputPath = path?.join(process?.cwd(), primaryClip?.filePath);
 
-        const _inputAccessible = await fsPromises
+        const inputAccessible = await fsPromises
           .access(inputPath)
           .then(() => true)
           .catch(() => false);
         if (inputAccessible && track) {
-          const _processedDir = path?.join(process?.cwd(), "uploads", "processed");
+          const processedDir = path?.join(process?.cwd(), "uploads", "processed");
           await fsPromises?.mkdir(processedDir, { recursive: true });
 
-          const _processedFilename = `${genre}_${randomBytes(8).toString("hex")}.wav`;
-          const _outputPath = path?.join(processedDir, processedFilename);
+          const processedFilename = `${genre}_${randomBytes(8).toString("hex")}.wav`;
+          const outputPath = path?.join(processedDir, processedFilename);
 
           await this?.applyAudioProcessing(
             inputPath,
@@ -441,7 +441,7 @@ export class AIMusicService {
             {
               type: "genre_preset",
               settings: {
-                genre: preset?.displayName,
+                genre: preset.displayName,
                 intensity,
                 appliedSettings,
               },
@@ -455,7 +455,7 @@ export class AIMusicService {
         }
       }
 
-      const _processingTime = Date?.now() - startTime;
+      const processingTime = Date?.now() - startTime;
 
       await this?.logInference(
         this?.AI_MODELS.GENRE_PRESET_ENGINE,
@@ -482,7 +482,7 @@ export class AIMusicService {
     outputPath: string,
     settings: MixSettings,
   ): Promise<void> {
-    const _hasFFmpeg = await initializeFfmpeg();
+    const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
       throw new Error(
         "FFmpeg is not available. Audio processing features are disabled in this deployment.",
@@ -518,21 +518,21 @@ export class AIMusicService {
     }
 
     if (settings?.eq.lowCut > 20) {
-      filters?.push(`highpass=f=${settings?.eq.lowCut}`);
+      filters.push(`highpass=f=${settings?.eq.lowCut}`);
     }
     if (settings?.eq.highCut < 20000) {
-      filters?.push(`lowpass=f=${settings?.eq.highCut}`);
+      filters.push(`lowpass=f=${settings?.eq.highCut}`);
     }
 
     filters?.push(...eqBands);
 
-    const _ratio = Math?.max(1.5, Math?.min(20, settings?.compression.ratio));
-    const _threshold = Math?.max(
+    const ratio = Math?.max(1.5, Math?.min(20, settings?.compression.ratio));
+    const threshold = Math?.max(
       -60,
       Math?.min(0, settings?.compression.threshold),
     );
-    const _attack = Math?.max(0.01, Math?.min(2000, settings?.compression.attack));
-    const _release = Math?.max(
+    const attack = Math?.max(0.01, Math?.min(2000, settings?.compression.attack));
+    const release = Math?.max(
       0.01,
       Math?.min(9000, settings?.compression.release),
     );
@@ -542,8 +542,8 @@ export class AIMusicService {
     );
 
     if (settings?.stereoImaging.width !== 1.0) {
-      const _width = Math?.max(0, Math?.min(2, settings?.stereoImaging.width));
-      filters?.push(`stereotools=mlev=${width}:mwid=1.0`);
+      const width = Math?.max(0, Math?.min(2, settings?.stereoImaging.width));
+      filters.push(`stereotools=mlev=${width}:mwid=1.0`);
     }
 
     return new Promise((resolve, reject) => {
@@ -562,25 +562,25 @@ export class AIMusicService {
   }
 
   async analyzeReferenceTrack(audioBuffer: Buffer): Promise<ReferenceAnalysis> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
 
-    const _spectralProfile = this?.analyzeSpectrum(audioBuffer);
-    const _loudnessMetrics = await this?.measureLoudness(audioBuffer);
+    const spectralProfile = this?.analyzeSpectrum(audioBuffer);
+    const loudnessMetrics = await this?.measureLoudness(audioBuffer);
 
     const analysis: ReferenceAnalysis = {
-      spectralProfile: this?.calculateSpectralProfile(spectralProfile),
+      spectralProfile: this.calculateSpectralProfile(spectralProfile),
       loudnessMetrics,
-      dynamicRange: loudnessMetrics?.dynamicRange,
-      stereoWidth: this?.calculateStereoWidth(audioBuffer),
-      frequencyBalance: this?.analyzeFrequencyBalance(spectralProfile),
+      dynamicRange: loudnessMetrics.dynamicRange,
+      stereoWidth: this.calculateStereoWidth(audioBuffer),
+      frequencyBalance: this.analyzeFrequencyBalance(spectralProfile),
     };
 
-    const _processingTime = Date?.now() - startTime;
+    const processingTime = Date?.now() - startTime;
     await this?.logInference(
       this?.AI_MODELS.REFERENCE_MATCHER,
       "reference_analysis",
       {
-        bufferSize: audioBuffer?.length,
+        bufferSize: audioBuffer.length,
       },
       analysis,
       0.92,
@@ -598,13 +598,13 @@ export class AIMusicService {
     confidenceScore: number;
     adjustments: Record<string, any>;
   }> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
 
     const suggestions: AISuggestion[] = [];
     const adjustments: Record<string, any> = {};
 
-    const _track = await this?.getTrackByIdSafe(targetTrackId);
-    const _currentEffects =
+    const track = await this?.getTrackByIdSafe(targetTrackId);
+    const currentEffects =
       (track?.effects as MixSettings) || this?.getDefaultMixSettings();
 
     if (referenceProfile?.loudnessMetrics.integrated > -14) {
@@ -614,7 +614,7 @@ export class AIMusicService {
         suggestion: `Increase master loudness to ${referenceProfile?.loudnessMetrics.integrated?.toFixed(1)} LUFS`,
         reasoning: `Reference track has higher integrated loudness. Increase by ${Math?.abs(referenceProfile?.loudnessMetrics.integrated + 14).toFixed(1)}dB to match`,
         confidence: 0.88,
-        parameters: { targetLUFS: referenceProfile?.loudnessMetrics.integrated },
+        parameters: { targetLUFS: referenceProfile.loudnessMetrics.integrated },
         priority: "high",
         estimatedImpact: 8.5,
       });
@@ -622,7 +622,7 @@ export class AIMusicService {
     }
 
     if (referenceProfile?.frequencyBalance.treble > 0.7) {
-      const _boostAmount = (referenceProfile?.frequencyBalance.treble - 0.7) * 3;
+      const boostAmount = (referenceProfile?.frequencyBalance.treble - 0.7) * 3;
       suggestions?.push({
         id: randomBytes(8).toString("hex"),
         category: "eq",
@@ -634,11 +634,11 @@ export class AIMusicService {
         estimatedImpact: 7.2,
       });
       adjustments.highShelf = { frequency: 8000, gain: boostAmount };
-      currentEffects?.eq.highGain += boostAmount;
+      currentEffects.eq.highGain += boostAmount;
     }
 
     if (referenceProfile?.stereoWidth > 1.0) {
-      const _widthIncrease = (
+      const widthIncrease = (
         (referenceProfile?.stereoWidth - 1.0) *
         100
       ).toFixed(0);
@@ -648,12 +648,12 @@ export class AIMusicService {
         suggestion: `Add +${widthIncrease}% stereo width`,
         reasoning: `Reference track has wider stereo image (${(referenceProfile?.stereoWidth * 100).toFixed(0)}%). Expanding to match spatial depth`,
         confidence: 0.82,
-        parameters: { width: referenceProfile?.stereoWidth },
+        parameters: { width: referenceProfile.stereoWidth },
         priority: "medium",
         estimatedImpact: 6.8,
       });
       adjustments.stereoWidth = referenceProfile?.stereoWidth;
-      currentEffects?.stereoImaging.width = referenceProfile?.stereoWidth;
+      currentEffects.stereoImaging.width = referenceProfile?.stereoWidth;
     }
 
     if (referenceProfile?.frequencyBalance.bass > 0.75) {
@@ -668,7 +668,7 @@ export class AIMusicService {
         estimatedImpact: 8.0,
       });
       adjustments.bassBoost = { frequency: 80, gain: 2.5 };
-      currentEffects?.eq.lowGain += 2.5;
+      currentEffects.eq.lowGain += 2.5;
     }
 
     if (track) {
@@ -679,8 +679,8 @@ export class AIMusicService {
       );
     }
 
-    const _processingTime = Date?.now() - startTime;
-    const _confidenceScore =
+    const processingTime = Date?.now() - startTime;
+    const confidenceScore =
       suggestions?.reduce((sum, s) => sum + s?.confidence, 0) /
         suggestions?.length || 0.8;
 
@@ -717,25 +717,25 @@ export class AIMusicService {
    * @returns Real measured loudness metrics from FFmpeg analysis
    */
   async measureLoudness(audioBuffer: Buffer): Promise<LoudnessMetrics> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
 
-    const _hasFFmpeg = await initializeFfmpeg();
+    const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
       logger?.warn("FFmpeg not available - using fallback loudness measurement");
       return this?.measureLoudnessFallback(audioBuffer);
     }
 
     try {
-      const _tempDir = path?.join(process?.cwd(), "uploads", "temp");
+      const tempDir = path?.join(process?.cwd(), "uploads", "temp");
       await fsPromises?.mkdir(tempDir, { recursive: true });
 
-      const _tempInputPath = path?.join(
+      const tempInputPath = path?.join(
         tempDir,
         `input_${randomBytes(8).toString("hex")}.wav`,
       );
       await fsPromises?.writeFile(tempInputPath, audioBuffer);
 
-      const _metrics = await new Promise<LoudnessMetrics>((resolve, reject) => {
+      const metrics = await new Promise<LoudnessMetrics>((resolve, reject) => {
         let stderrOutput = "";
 
         ffmpeg(tempInputPath)
@@ -751,23 +751,23 @@ export class AIMusicService {
           })
           .on("end", () => {
             try {
-              const _jsonMatch = stderrOutput?.match(/\{[\s\S]*?\}/);
+              const jsonMatch = stderrOutput?.match(/\{[\s\S]*?\}/);
               if (!jsonMatch) {
                 throw new Error("No JSON output from loudnorm filter");
               }
 
-              const _data = JSON?.parse(jsonMatch[0]);
+              const data = JSON?.parse(jsonMatch[0]);
 
-              const _integrated = parseFloat(data?.input_i) || -23.0;
-              const _truePeak = parseFloat(data?.input_tp) || -3.0;
-              const _loudnessRange = parseFloat(data?.input_lra) || 7.0;
+              const integrated = parseFloat(data?.input_i) || -23.0;
+              const truePeak = parseFloat(data?.input_tp) || -3.0;
+              const loudnessRange = parseFloat(data?.input_lra) || 7.0;
               parseFloat(data?.input_thresh) || -33.0;
 
-              const _audioData = this?.bufferToFloat32Array(audioBuffer);
-              const _dynamicRange = this?.calculateDynamicRange(audioData);
+              const audioData = this?.bufferToFloat32Array(audioBuffer);
+              const dynamicRange = this?.calculateDynamicRange(audioData);
 
-              const _shortTerm = integrated + loudnessRange / 3;
-              const _momentary = integrated + loudnessRange / 2;
+              const shortTerm = integrated + loudnessRange / 3;
+              const momentary = integrated + loudnessRange / 2;
 
               resolve({
                 integrated,
@@ -787,12 +787,12 @@ export class AIMusicService {
 
       await fsPromises?.unlink(tempInputPath).catch(() => {});
 
-      const _processingTime = Date?.now() - startTime;
+      const processingTime = Date?.now() - startTime;
       await this?.logInference(
         this?.AI_MODELS.LUFS_METER,
         "loudness_measurement",
         {
-          bufferSize: audioBuffer?.length,
+          bufferSize: audioBuffer.length,
         },
         metrics,
         0.98,
@@ -806,16 +806,16 @@ export class AIMusicService {
         "Loudness measurement error, falling back to simplified calculation:",
       );
 
-      const _audioData = this?.bufferToFloat32Array(audioBuffer);
-      const _sampleRate = 48000;
+      const audioData = this?.bufferToFloat32Array(audioBuffer);
+      const sampleRate = 48000;
 
       const fallbackMetrics: LoudnessMetrics = {
-        integrated: this?.calculateIntegratedLoudness(audioData, sampleRate),
-        shortTerm: this?.calculateShortTermLoudness(audioData, sampleRate),
-        momentary: this?.calculateMomentaryLoudness(audioData, sampleRate),
-        truePeak: this?.calculateTruePeak(audioData),
-        dynamicRange: this?.calculateDynamicRange(audioData),
-        loudnessRange: this?.calculateLoudnessRange(audioData, sampleRate),
+        integrated: this.calculateIntegratedLoudness(audioData, sampleRate),
+        shortTerm: this.calculateShortTermLoudness(audioData, sampleRate),
+        momentary: this.calculateMomentaryLoudness(audioData, sampleRate),
+        truePeak: this.calculateTruePeak(audioData),
+        dynamicRange: this.calculateDynamicRange(audioData),
+        loudnessRange: this.calculateLoudnessRange(audioData, sampleRate),
       };
 
       return fallbackMetrics;
@@ -832,14 +832,14 @@ export class AIMusicService {
     suggestions: AISuggestion[];
     outputFilePath?: string;
   }> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
     let outputFilePath: string | undefined;
 
     try {
-      const _audioBuffer = await this?.loadTrackAudio(trackId);
-      const _loudnessMetrics = await this?.measureLoudness(audioBuffer);
-      const _currentLoudness = loudnessMetrics?.integrated;
-      const _requiredGain = targetLUFS - currentLoudness;
+      const audioBuffer = await this?.loadTrackAudio(trackId);
+      const loudnessMetrics = await this?.measureLoudness(audioBuffer);
+      const currentLoudness = loudnessMetrics?.integrated;
+      const requiredGain = targetLUFS - currentLoudness;
 
       const suggestions: AISuggestion[] = [
         {
@@ -866,26 +866,26 @@ export class AIMusicService {
         });
       }
 
-      const _track = await this?.getTrackByIdSafe(trackId);
-      const _clips = await storage?.getTrackAudioClips(trackId);
+      const track = await this?.getTrackByIdSafe(trackId);
+      const clips = await storage?.getTrackAudioClips(trackId);
       if (clips?.length > 0) {
-        const _primaryClip = clips[0];
-        const _inputPath = path?.join(process?.cwd(), primaryClip?.filePath);
+        const primaryClip = clips[0];
+        const inputPath = path?.join(process?.cwd(), primaryClip?.filePath);
 
-        const _inputAccessible = await fsPromises
+        const inputAccessible = await fsPromises
           .access(inputPath)
           .then(() => true)
           .catch(() => false);
         if (inputAccessible && track) {
-          const _normalizedDir = path?.join(
+          const normalizedDir = path?.join(
             process?.cwd(),
             "uploads",
             "normalized",
           );
           await fsPromises?.mkdir(normalizedDir, { recursive: true });
 
-          const _normalizedFilename = `normalized_${randomBytes(8).toString("hex")}.wav`;
-          const _outputPath = path?.join(normalizedDir, normalizedFilename);
+          const normalizedFilename = `normalized_${randomBytes(8).toString("hex")}.wav`;
+          const outputPath = path?.join(normalizedDir, normalizedFilename);
 
           await this?.applyLoudnessNormalization(
             inputPath,
@@ -917,7 +917,7 @@ export class AIMusicService {
         }
       }
 
-      const _processingTime = Date?.now() - startTime;
+      const processingTime = Date?.now() - startTime;
       await this?.logInference(
         this?.AI_MODELS.LUFS_METER,
         "loudness_normalization",
@@ -953,7 +953,7 @@ export class AIMusicService {
     targetLUFS: number,
     measuredLUFS: number,
   ): Promise<void> {
-    const _hasFFmpeg = await initializeFfmpeg();
+    const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
       throw new Error(
         "FFmpeg is not available. Loudness normalization features are disabled in this deployment.",
@@ -981,7 +981,7 @@ export class AIMusicService {
   ): Promise<AISuggestion[]> {
     const suggestions: AISuggestion[] = [];
 
-    const { genre, energy, intensity, preset } = audioAnalysis;
+    const { genre, energy,  intensity, preset } = audioAnalysis;
 
     if (genre === "hip-hop" || genre === "trap") {
       suggestions?.push({
@@ -1095,7 +1095,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.0, bassMonoFreq: 150 },
         },
-        masterSettings: this?.getMasteringPresetForGenre("hip_hop"),
+        masterSettings: this.getMasteringPresetForGenre("hip_hop"),
         characteristics: {
           bassEmphasis: 0.95,
           vocalClarity: 0.9,
@@ -1135,7 +1135,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.3, bassMonoFreq: 120 },
         },
-        masterSettings: this?.getMasteringPresetForGenre("edm"),
+        masterSettings: this.getMasteringPresetForGenre("edm"),
         characteristics: {
           bassEmphasis: 0.9,
           vocalClarity: 0.7,
@@ -1175,7 +1175,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.15, bassMonoFreq: 140 },
         },
-        masterSettings: this?.getMasteringPresetForGenre("rock"),
+        masterSettings: this.getMasteringPresetForGenre("rock"),
         characteristics: {
           bassEmphasis: 0.75,
           vocalClarity: 0.85,
@@ -1215,7 +1215,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.2, bassMonoFreq: 130 },
         },
-        masterSettings: this?.getMasteringPresetForGenre("pop"),
+        masterSettings: this.getMasteringPresetForGenre("pop"),
         characteristics: {
           bassEmphasis: 0.7,
           vocalClarity: 0.95,
@@ -1255,7 +1255,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.1, bassMonoFreq: 135 },
         },
-        masterSettings: this?.getMasteringPresetForGenre("rnb"),
+        masterSettings: this.getMasteringPresetForGenre("rnb"),
         characteristics: {
           bassEmphasis: 0.8,
           vocalClarity: 0.92,
@@ -1295,7 +1295,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.05, bassMonoFreq: 100 },
         },
-        masterSettings: this?.getMasteringPresetForGenre("jazz"),
+        masterSettings: this.getMasteringPresetForGenre("jazz"),
         characteristics: {
           bassEmphasis: 0.6,
           vocalClarity: 0.7,
@@ -1335,7 +1335,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.0, bassMonoFreq: 80 },
         },
-        masterSettings: this?.getMasteringPresetForGenre("classical"),
+        masterSettings: this.getMasteringPresetForGenre("classical"),
         characteristics: {
           bassEmphasis: 0.55,
           vocalClarity: 0.65,
@@ -1375,7 +1375,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.08, bassMonoFreq: 125 },
         },
-        masterSettings: this?.getMasteringPresetForGenre("country"),
+        masterSettings: this.getMasteringPresetForGenre("country"),
         characteristics: {
           bassEmphasis: 0.65,
           vocalClarity: 0.88,
@@ -1415,7 +1415,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.25, bassMonoFreq: 160 },
         },
-        masterSettings: this?.getMasteringPresetForGenre("metal"),
+        masterSettings: this.getMasteringPresetForGenre("metal"),
         characteristics: {
           bassEmphasis: 0.88,
           vocalClarity: 0.75,
@@ -1455,7 +1455,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.12, bassMonoFreq: 145 },
         },
-        masterSettings: this?.getMasteringPresetForGenre("reggae"),
+        masterSettings: this.getMasteringPresetForGenre("reggae"),
         characteristics: {
           bassEmphasis: 0.95,
           vocalClarity: 0.78,
@@ -1495,7 +1495,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.18, bassMonoFreq: 135 },
         },
-        masterSettings: this?.getMasteringPresetForGenre("latin"),
+        masterSettings: this.getMasteringPresetForGenre("latin"),
         characteristics: {
           bassEmphasis: 0.82,
           vocalClarity: 0.85,
@@ -1535,7 +1535,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.08, bassMonoFreq: 128 },
         },
-        masterSettings: this?.getMasteringPresetForGenre("indie"),
+        masterSettings: this.getMasteringPresetForGenre("indie"),
         characteristics: {
           bassEmphasis: 0.68,
           vocalClarity: 0.82,
@@ -1575,7 +1575,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.05, bassMonoFreq: 115 },
         },
-        masterSettings: this?.getMasteringPresetForGenre("folk"),
+        masterSettings: this.getMasteringPresetForGenre("folk"),
         characteristics: {
           bassEmphasis: 0.6,
           vocalClarity: 0.9,
@@ -1615,7 +1615,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.06, bassMonoFreq: 122 },
         },
-        masterSettings: this?.getMasteringPresetForGenre("blues"),
+        masterSettings: this.getMasteringPresetForGenre("blues"),
         characteristics: {
           bassEmphasis: 0.72,
           vocalClarity: 0.85,
@@ -1655,7 +1655,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.14, bassMonoFreq: 138 },
         },
-        masterSettings: this?.getMasteringPresetForGenre("funk"),
+        masterSettings: this.getMasteringPresetForGenre("funk"),
         characteristics: {
           bassEmphasis: 0.9,
           vocalClarity: 0.8,
@@ -1695,7 +1695,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.1, bassMonoFreq: 132 },
         },
-        masterSettings: this?.getMasteringPresetForGenre("soul"),
+        masterSettings: this.getMasteringPresetForGenre("soul"),
         characteristics: {
           bassEmphasis: 0.78,
           vocalClarity: 0.93,
@@ -1735,7 +1735,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.28, bassMonoFreq: 125 },
         },
-        masterSettings: this?.getMasteringPresetForGenre("house"),
+        masterSettings: this.getMasteringPresetForGenre("house"),
         characteristics: {
           bassEmphasis: 0.92,
           vocalClarity: 0.72,
@@ -1775,7 +1775,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.32, bassMonoFreq: 118 },
         },
-        masterSettings: this?.getMasteringPresetForGenre("techno"),
+        masterSettings: this.getMasteringPresetForGenre("techno"),
         characteristics: {
           bassEmphasis: 0.96,
           vocalClarity: 0.6,
@@ -1815,7 +1815,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.35, bassMonoFreq: 115 },
         },
-        masterSettings: this?.getMasteringPresetForGenre("dubstep"),
+        masterSettings: this.getMasteringPresetForGenre("dubstep"),
         characteristics: {
           bassEmphasis: 0.99,
           vocalClarity: 0.68,
@@ -1855,7 +1855,7 @@ export class AIMusicService {
           },
           stereoImaging: { width: 1.08, bassMonoFreq: 155 },
         },
-        masterSettings: this?.getMasteringPresetForGenre("trap"),
+        masterSettings: this.getMasteringPresetForGenre("trap"),
         characteristics: {
           bassEmphasis: 0.97,
           vocalClarity: 0.88,
@@ -1906,19 +1906,22 @@ export class AIMusicService {
   }
 
   private analyzeSpectrum(audioBuffer: Buffer): Float32Array {
-    const _size = Math?.min(audioBuffer?.length / 4, 8192);
+    const size = Math?.min(audioBuffer?.length / 4, 8192);
     return new Float32Array(size).map((_, i) => {
-      const _normalized = i / size;
-      return Math?.sin(normalized * Math?.PI) * Math?.random() * 0.5 + 0.5;
+      const normalized = i / size;
+      return Math?.sin(normalized * Math.PI) * Math?.random() * 0.5 + 0.5;
     });
   }
+
+
+
 
   private calculateStemConfidence(
     filteredAudio: Float32Array,
     stemType: string,
     originalSize: number,
   ): number {
-    const _rms = Math?.sqrt(
+    const rms = Math?.sqrt(
       filteredAudio?.reduce((sum, val) => sum + val * val, 0) /
         filteredAudio?.length,
     );
@@ -1931,8 +1934,8 @@ export class AIMusicService {
       harmony: 0.76,
     };
 
-    const _sizeBonus = Math?.min(0.1, originalSize / 10000000);
-    const _energyBonus = Math?.min(0.05, rms * 10);
+    const sizeBonus = Math?.min(0.1, originalSize / 10000000);
+    const energyBonus = Math?.min(0.05, rms * 10);
 
     return Math?.min(
       0.95,
@@ -1943,35 +1946,35 @@ export class AIMusicService {
   private calculateSpectralProfile(
     spectralData: Float32Array,
   ): SpectralProfile {
-    const _lowFreq =
+    const lowFreq =
       spectralData
         .slice(0, spectralData?.length * 0.1)
         .reduce((a, b) => a + b, 0) /
       (spectralData?.length * 0.1);
-    const _lowMidFreq =
+    const lowMidFreq =
       spectralData
         .slice(spectralData?.length * 0.1, spectralData?.length * 0.3)
         .reduce((a, b) => a + b, 0) /
       (spectralData?.length * 0.2);
-    const _midFreq =
+    const midFreq =
       spectralData
         .slice(spectralData?.length * 0.3, spectralData?.length * 0.6)
         .reduce((a, b) => a + b, 0) /
       (spectralData?.length * 0.3);
-    const _highMidFreq =
+    const highMidFreq =
       spectralData
         .slice(spectralData?.length * 0.6, spectralData?.length * 0.8)
         .reduce((a, b) => a + b, 0) /
       (spectralData?.length * 0.2);
-    const _highFreq =
+    const highFreq =
       spectralData?.slice(spectralData?.length * 0.8).reduce((a, b) => a + b, 0) /
       (spectralData?.length * 0.2);
 
-    const _spectralCentroid =
+    const spectralCentroid =
       spectralData?.reduce((sum, val, idx) => sum + val * idx, 0) /
       spectralData?.reduce((sum, val) => sum + val, 0);
-    const _spectralRolloff = spectralData?.length * 0.85;
-    const _spectralFlux = spectralData?.reduce(
+    const spectralRolloff = spectralData?.length * 0.85;
+    const spectralFlux = spectralData?.reduce(
       (sum, val, idx) =>
         idx > 0 ? sum + Math?.abs(val - spectralData[idx - 1]) : sum,
       0,
@@ -1990,24 +1993,24 @@ export class AIMusicService {
   }
 
   private bufferToFloat32Array(buffer: Buffer): Float32Array {
-    const _floatArray = new Float32Array(buffer?.length / 2);
+    const floatArray = new Float32Array(buffer?.length / 2);
     for (let i = 0; i < floatArray?.length; i++) {
-      const _int16 = buffer?.readInt16LE(i * 2);
+      const int16 = buffer?.readInt16LE(i * 2);
       floatArray[i] = int16 / 32768.0;
     }
     return floatArray;
   }
 
   private measureLoudnessFallback(audioBuffer: Buffer): LoudnessMetrics {
-    const _sampleRate = 44100;
-    const _audioData = this?.bufferToFloat32Array(audioBuffer);
+    const sampleRate = 44100;
+    const audioData = this?.bufferToFloat32Array(audioBuffer);
 
-    const _integrated = this?.calculateIntegratedLoudness(audioData, sampleRate);
-    const _shortTerm = this?.calculateShortTermLoudness(audioData, sampleRate);
-    const _momentary = this?.calculateMomentaryLoudness(audioData, sampleRate);
-    const _truePeak = this?.calculateTruePeak(audioData);
-    const _dynamicRange = this?.calculateDynamicRange(audioData);
-    const _loudnessRange = this?.calculateLoudnessRange(audioData, sampleRate);
+    const integrated = this?.calculateIntegratedLoudness(audioData, sampleRate);
+    const shortTerm = this?.calculateShortTermLoudness(audioData, sampleRate);
+    const momentary = this?.calculateMomentaryLoudness(audioData, sampleRate);
+    const truePeak = this?.calculateTruePeak(audioData);
+    const dynamicRange = this?.calculateDynamicRange(audioData);
+    const loudnessRange = this?.calculateLoudnessRange(audioData, sampleRate);
 
     return {
       integrated,
@@ -2023,16 +2026,16 @@ export class AIMusicService {
     audioData: Float32Array,
     sampleRate: number,
   ): number {
-    const _blockSize = Math?.floor(sampleRate * 0.4);
+    const blockSize = Math?.floor(sampleRate * 0.4);
     let totalLoudness = 0;
     let blockCount = 0;
 
-    for (let i = 0; i < audioData?.length - blockSize; i += blockSize / 2) {
-      const _block = audioData?.slice(i, i + blockSize);
-      const _rms = Math?.sqrt(
+    for (let i = 0; i < audioData.length - blockSize; i += blockSize / 2) {
+      const block = audioData?.slice(i, i + blockSize);
+      const rms = Math?.sqrt(
         block?.reduce((sum, val) => sum + val * val, 0) / block?.length,
       );
-      const _loudness = -0.691 + 10 * Math?.log10(rms + 1e-10);
+      const loudness = -0.691 + 10 * Math?.log10(rms + 1e-10);
 
       if (loudness > -70) {
         totalLoudness += loudness;
@@ -2047,9 +2050,9 @@ export class AIMusicService {
     audioData: Float32Array,
     sampleRate: number,
   ): number {
-    const _blockSize = Math?.floor(sampleRate * 3);
-    const _block = audioData?.slice(0, Math?.min(blockSize, audioData?.length));
-    const _rms = Math?.sqrt(
+    const blockSize = Math?.floor(sampleRate * 3);
+    const block = audioData?.slice(0, Math?.min(blockSize, audioData?.length));
+    const rms = Math?.sqrt(
       block?.reduce((sum, val) => sum + val * val, 0) / block?.length,
     );
     return -0.691 + 10 * Math?.log10(rms + 1e-10);
@@ -2059,16 +2062,16 @@ export class AIMusicService {
     audioData: Float32Array,
     sampleRate: number,
   ): number {
-    const _blockSize = Math?.floor(sampleRate * 0.4);
-    const _block = audioData?.slice(0, Math?.min(blockSize, audioData?.length));
-    const _rms = Math?.sqrt(
+    const blockSize = Math?.floor(sampleRate * 0.4);
+    const block = audioData?.slice(0, Math?.min(blockSize, audioData?.length));
+    const rms = Math?.sqrt(
       block?.reduce((sum, val) => sum + val * val, 0) / block?.length,
     );
     return -0.691 + 10 * Math?.log10(rms + 1e-10);
   }
 
   private calculateTruePeak(audioData: Float32Array): number {
-    const _peak = audioData?.reduce(
+    const peak = audioData?.reduce(
       (max, val) => Math?.max(max, Math?.abs(val)),
       0,
     );
@@ -2076,10 +2079,10 @@ export class AIMusicService {
   }
 
   private calculateDynamicRange(audioData: Float32Array): number {
-    const _rms = Math?.sqrt(
+    const rms = Math?.sqrt(
       audioData?.reduce((sum, val) => sum + val * val, 0) / audioData?.length,
     );
-    const _peak = audioData?.reduce(
+    const peak = audioData?.reduce(
       (max, val) => Math?.max(max, Math?.abs(val)),
       0,
     );
@@ -2090,24 +2093,24 @@ export class AIMusicService {
     audioData: Float32Array,
     sampleRate: number,
   ): number {
-    const _blockSize = Math?.floor(sampleRate * 3);
+    const blockSize = Math?.floor(sampleRate * 3);
     const loudnessValues: number[] = [];
 
-    for (let i = 0; i < audioData?.length - blockSize; i += blockSize / 2) {
-      const _block = audioData?.slice(i, i + blockSize);
-      const _rms = Math?.sqrt(
+    for (let i = 0; i < audioData.length - blockSize; i += blockSize / 2) {
+      const block = audioData?.slice(i, i + blockSize);
+      const rms = Math?.sqrt(
         block?.reduce((sum, val) => sum + val * val, 0) / block?.length,
       );
-      const _loudness = -0.691 + 10 * Math?.log10(rms + 1e-10);
+      const loudness = -0.691 + 10 * Math?.log10(rms + 1e-10);
       if (loudness > -70) loudnessValues?.push(loudness);
     }
 
     if (loudnessValues?.length === 0) return 0;
 
     loudnessValues?.sort((a, b) => a - b);
-    const _lowPercentile =
+    const lowPercentile =
       loudnessValues[Math?.floor(loudnessValues?.length * 0.1)];
-    const _highPercentile =
+    const highPercentile =
       loudnessValues[Math?.floor(loudnessValues?.length * 0.95)];
 
     return highPercentile - lowPercentile;
@@ -2118,15 +2121,15 @@ export class AIMusicService {
     if (!audioBuffer || audioBuffer?.length < 4) return 1.0;
     let leftSum = 0,
       rightSum = 0;
-    const _samples = Math?.min(audioBuffer?.length >> 1, 8000); // 16-bit stereo pairs
+    const samples = Math?.min(audioBuffer?.length >> 1, 8000); // 16-bit stereo pairs
     for (let i = 0; i < samples; i += 4) {
-      const _l = audioBuffer?.readInt16LE(i);
-      const _r = audioBuffer?.readInt16LE(i + 2);
+      const l = audioBuffer?.readInt16LE(i);
+      const r = audioBuffer?.readInt16LE(i + 2);
       leftSum += Math?.abs(l);
       rightSum += Math?.abs(r);
     }
     if (leftSum + rightSum === 0) return 1.0;
-    const _diff = Math?.abs(leftSum - rightSum) / (leftSum + rightSum);
+    const diff = Math?.abs(leftSum - rightSum) / (leftSum + rightSum);
     return Math?.round((1.0 + diff * 0.5) * 100) / 100; // 1.00–1.50 stereo width ratio
   }
 
@@ -2137,27 +2140,27 @@ export class AIMusicService {
     highMid: number;
     treble: number;
   } {
-    const _bass =
+    const bass =
       spectralData
         .slice(0, spectralData?.length * 0.1)
         .reduce((a, b) => a + b, 0) /
       (spectralData?.length * 0.1);
-    const _lowMid =
+    const lowMid =
       spectralData
         .slice(spectralData?.length * 0.1, spectralData?.length * 0.3)
         .reduce((a, b) => a + b, 0) /
       (spectralData?.length * 0.2);
-    const _mid =
+    const mid =
       spectralData
         .slice(spectralData?.length * 0.3, spectralData?.length * 0.6)
         .reduce((a, b) => a + b, 0) /
       (spectralData?.length * 0.3);
-    const _highMid =
+    const highMid =
       spectralData
         .slice(spectralData?.length * 0.6, spectralData?.length * 0.8)
         .reduce((a, b) => a + b, 0) /
       (spectralData?.length * 0.2);
-    const _treble =
+    const treble =
       spectralData?.slice(spectralData?.length * 0.8).reduce((a, b) => a + b, 0) /
       (spectralData?.length * 0.2);
 
@@ -2168,7 +2171,7 @@ export class AIMusicService {
     settings: MixSettings,
     intensity: number,
   ): MixSettings {
-    const _blend = (value: number) => value * intensity;
+    const blend = (value: number) => value * intensity;
 
     return {
       eq: {
@@ -2177,30 +2180,30 @@ export class AIMusicService {
         midGain: blend(settings?.eq.midGain),
         highMidGain: blend(settings?.eq.highMidGain),
         highGain: blend(settings?.eq.highGain),
-        lowCut: settings?.eq.lowCut,
-        highCut: settings?.eq.highCut,
+        lowCut: settings.eq.lowCut,
+        highCut: settings.eq.highCut,
       },
       compression: {
-        threshold: settings?.compression.threshold,
+        threshold: settings.compression.threshold,
         ratio: 1 + (settings?.compression.ratio - 1) * intensity,
-        attack: settings?.compression.attack,
-        release: settings?.compression.release,
+        attack: settings.compression.attack,
+        release: settings.compression.release,
         makeupGain: blend(settings?.compression.makeupGain),
       },
       effects: {
         reverb: {
           wetness: blend(settings?.effects.reverb?.wetness),
-          roomSize: settings?.effects.reverb?.roomSize,
-          damping: settings?.effects.reverb?.damping,
+          roomSize: settings.effects.reverb?.roomSize,
+          damping: settings.effects.reverb?.damping,
         },
         delay: {
-          time: settings?.effects.delay?.time,
-          feedback: settings?.effects.delay?.feedback,
+          time: settings.effects.delay?.time,
+          feedback: settings.effects.delay?.feedback,
           wetness: blend(settings?.effects.delay?.wetness),
         },
         chorus: {
-          rate: settings?.effects.chorus?.rate,
-          depth: settings?.effects.chorus?.depth,
+          rate: settings.effects.chorus?.rate,
+          depth: settings.effects.chorus?.depth,
           wetness: blend(settings?.effects.chorus?.wetness),
         },
         saturation: {
@@ -2210,23 +2213,23 @@ export class AIMusicService {
       },
       stereoImaging: {
         width: 1 + (settings?.stereoImaging.width - 1) * intensity,
-        bassMonoFreq: settings?.stereoImaging.bassMonoFreq,
+        bassMonoFreq: settings.stereoImaging.bassMonoFreq,
       },
     };
   }
 
   private async loadTrackAudio(trackId: string): Promise<Buffer> {
     try {
-      const _clips = await storage?.getTrackAudioClips(trackId);
+      const clips = await storage?.getTrackAudioClips(trackId);
 
       if (clips?.length === 0) {
         throw new Error(`No audio clips found for track ${trackId}`);
       }
 
-      const _primaryClip = clips[0];
-      const _audioPath = path?.join(process?.cwd(), primaryClip?.filePath);
+      const primaryClip = clips[0];
+      const audioPath = path?.join(process?.cwd(), primaryClip?.filePath);
 
-      const _audioAccessible = await fsPromises
+      const audioAccessible = await fsPromises
         .access(audioPath)
         .then(() => true)
         .catch(() => false);
@@ -2240,17 +2243,17 @@ export class AIMusicService {
         );
       }
 
-      const _audioBuffer = await fsPromises?.readFile(audioPath);
+      const audioBuffer = await fsPromises?.readFile(audioPath);
 
       try {
-        const _metadata = await parseFile(audioPath);
-        const _format = metadata?.format;
+        const metadata = await parseFile(audioPath);
+        const format = metadata?.format;
 
         if (format?.container !== "WAVE") {
           logger?.info(
             `Converting ${format?.container} to WAV for processing...`,
           );
-          const _convertedBuffer = await this?.convertToWav(audioPath);
+          const convertedBuffer = await this?.convertToWav(audioPath);
           return convertedBuffer;
         }
 
@@ -2269,16 +2272,16 @@ export class AIMusicService {
   }
 
   private async convertToWav(inputPath: string): Promise<Buffer> {
-    const _hasFFmpeg = await initializeFfmpeg();
+    const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
       throw new Error(
         "FFmpeg is not available. Audio format conversion is disabled in this deployment.",
       );
     }
-    const _tempDir = path?.join(process?.cwd(), "uploads", "temp");
+    const tempDir = path?.join(process?.cwd(), "uploads", "temp");
     await fsPromises?.mkdir(tempDir, { recursive: true });
 
-    const _tempOutputPath = path?.join(
+    const tempOutputPath = path?.join(
       tempDir,
       `converted_${randomBytes(8).toString("hex")}.wav`,
     );
@@ -2294,7 +2297,7 @@ export class AIMusicService {
         })
         .on("end", async () => {
           try {
-            const _buffer = await fsPromises?.readFile(tempOutputPath);
+            const buffer = await fsPromises?.readFile(tempOutputPath);
             await fsPromises?.unlink(tempOutputPath).catch(() => {});
             resolve(buffer);
           } catch (readError: unknown) {
@@ -2307,16 +2310,16 @@ export class AIMusicService {
 
   private async performFFT(
     audioData: Float32Array,
-    _sampleRate: number,
+    sampleRate: number,
   ): Promise<Float32Array> {
-    const _fftSize = 4096;
-    const _fft = new FFT(fftSize);
+    const fftSize = 4096;
+    const fft = new FFT(fftSize);
 
-    const _complexOutput = fft?.createComplexArray();
+    const complexOutput = fft?.createComplexArray();
     const magnitudes: number[] = [];
 
-    for (let i = 0; i < audioData?.length - fftSize; i += fftSize / 2) {
-      const _chunk = Array?.from(audioData?.slice(i, i + fftSize));
+    for (let i = 0; i < audioData.length - fftSize; i += fftSize / 2) {
+      const chunk = Array?.from(audioData?.slice(i, i + fftSize));
 
       while (chunk?.length < fftSize) {
         chunk?.push(0);
@@ -2325,9 +2328,9 @@ export class AIMusicService {
       fft?.realTransform(complexOutput, chunk);
 
       for (let j = 0; j < fftSize / 2; j++) {
-        const _real = complexOutput[j * 2];
-        const _imag = complexOutput[j * 2 + 1];
-        const _magnitude = Math?.sqrt(real * real + imag * imag);
+        const real = complexOutput[j * 2];
+        const imag = complexOutput[j * 2 + 1];
+        const magnitude = Math?.sqrt(real * real + imag * imag);
         magnitudes?.push(magnitude);
       }
     }
@@ -2346,32 +2349,32 @@ export class AIMusicService {
     confidence: number;
     spectralProfile: SpectralProfile;
   }> {
-    const _filteredAudio = this?.applyFrequencyBandFilter(
+    const filteredAudio = this?.applyFrequencyBandFilter(
       audioData,
       stemType,
       sampleRate,
     );
 
-    const _stemsDir = path?.join(process?.cwd(), "uploads", "stems");
+    const stemsDir = path?.join(process?.cwd(), "uploads", "stems");
     await fsPromises?.mkdir(stemsDir, { recursive: true });
 
-    const _stemId = randomBytes(8).toString("hex");
-    const _stemFilename = `${stemType}_${stemId}.wav`;
-    const _stemPath = path?.join(stemsDir, stemFilename);
+    const stemId = randomBytes(8).toString("hex");
+    const stemFilename = `${stemType}_${stemId}.wav`;
+    const stemPath = path?.join(stemsDir, stemFilename);
 
-    const _wavBuffer = wav?.encode([filteredAudio], {
+    const wavBuffer = wav?.encode([filteredAudio], {
       sampleRate,
       float: false,
       bitDepth: 16,
     });
     await fsPromises?.writeFile(stemPath, Buffer?.from(wavBuffer));
 
-    const _confidenceScore = this?.calculateStemConfidence(
+    const confidenceScore = this?.calculateStemConfidence(
       filteredAudio,
       stemType,
       audioData?.length,
     );
-    const _spectralProfile = this?.calculateSpectralProfile(spectralData);
+    const spectralProfile = this?.calculateSpectralProfile(spectralData);
 
     return {
       audioPath: `/uploads/stems/${stemFilename}`,
@@ -2394,37 +2397,37 @@ export class AIMusicService {
     stemType: string,
     sampleRate: number,
   ): Float32Array {
-    const _fftSize = 4096;
-    const _hopSize = fftSize / 4; // 75% overlap for smoother reconstruction
-    const _fft = new FFT(fftSize);
-    const _output = new Float32Array(audioData?.length);
-    const _windowSum = new Float32Array(audioData?.length);
+    const fftSize = 4096;
+    const hopSize = fftSize / 4; // 75% overlap for smoother reconstruction
+    const fft = new FFT(fftSize);
+    const output = new Float32Array(audioData?.length);
+    const windowSum = new Float32Array(audioData?.length);
 
     // Pre-compute Hann window for analysis and synthesis
-    const _hannWindow = new Float32Array(fftSize);
+    const hannWindow = new Float32Array(fftSize);
     for (let n = 0; n < fftSize; n++) {
-      hannWindow[n] = 0.5 * (1 - Math?.cos((2 * Math?.PI * n) / (fftSize - 1)));
+      hannWindow[n] = 0.5 * (1 - Math?.cos((2 * Math.PI * n) / (fftSize - 1)));
     }
 
-    for (let i = 0; i <= audioData?.length - fftSize; i += hopSize) {
+    for (let i = 0; i <= audioData.length - fftSize; i += hopSize) {
       // Apply Hann window to the analysis frame
       const windowed: number[] = new Array(fftSize);
       for (let n = 0; n < fftSize; n++) {
         windowed[n] = audioData[i + n] * hannWindow[n];
       }
 
-      const _complexArray = fft?.createComplexArray();
+      const complexArray = fft?.createComplexArray();
       fft?.realTransform(complexArray, windowed);
 
       // Apply frequency-domain attenuation
       for (let j = 0; j < fftSize / 2; j++) {
-        const _freq = (j * sampleRate) / fftSize;
-        const _gain = this?.getFrequencyAttenuation(freq, stemType);
+        const freq = (j * sampleRate) / fftSize;
+        const gain = this?.getFrequencyAttenuation(freq, stemType);
         complexArray[j * 2] *= gain;
         complexArray[j * 2 + 1] *= gain;
         // Mirror for conjugate symmetry
         if (j > 0 && j < fftSize / 2) {
-          const _mi = fftSize - j;
+          const mi = fftSize - j;
           if (mi < (fftSize / 2) * 2) {
             complexArray[mi * 2] *= gain;
             complexArray[mi * 2 + 1] *= gain;
@@ -2432,12 +2435,12 @@ export class AIMusicService {
         }
       }
 
-      const _inverseOutput = fft?.createComplexArray();
+      const inverseOutput = fft?.createComplexArray();
       fft?.inverseTransform(inverseOutput, complexArray);
 
       // Overlap-add with synthesis Hann window
       for (let n = 0; n < fftSize && i + n < output?.length; n++) {
-        const _synthSample = inverseOutput[n * 2] * hannWindow[n];
+        const synthSample = inverseOutput[n * 2] * hannWindow[n];
         output[i + n] += synthSample;
         windowSum[i + n] += hannWindow[n] * hannWindow[n];
       }
@@ -2466,7 +2469,7 @@ export class AIMusicService {
    */
   private getFrequencyAttenuation(frequency: number, stemType: string): number {
     // Inline smooth step: cubic ease between two frequency points
-    const _smoothStep = (
+    const smoothStep = (
       f: number,
       lo: number,
       hi: number,
@@ -2475,8 +2478,8 @@ export class AIMusicService {
     ) => {
       if (f <= lo) return gainLo;
       if (f >= hi) return gainHi;
-      const _t = (f - lo) / (hi - lo);
-      const _s = t * t * (3 - 2 * t); // cubic Hermite
+      const t = (f - lo) / (hi - lo);
+      const s = t * t * (3 - 2 * t); // cubic Hermite
       return gainLo + s * (gainHi - gainLo);
     };
 
@@ -2551,15 +2554,15 @@ export class AIMusicService {
     durationSeconds: number,
     channels: number,
   ): Buffer {
-    const _sampleRate = 48000;
-    const _bytesPerSample = 2;
-    const _totalSamples = Math?.floor(sampleRate * durationSeconds * channels);
-    const _bufferSize = totalSamples * bytesPerSample;
+    const sampleRate = 48000;
+    const bytesPerSample = 2;
+    const totalSamples = Math?.floor(sampleRate * durationSeconds * channels);
+    const bufferSize = totalSamples * bytesPerSample;
 
-    const _buffer = Buffer?.alloc(bufferSize);
+    const buffer = Buffer?.alloc(bufferSize);
 
     for (let i = 0; i < totalSamples; i++) {
-      const _value = Math?.floor((Math?.random() * 2 - 1) * 16000);
+      const value = Math?.floor((Math?.random() * 2 - 1) * 16000);
       buffer?.writeInt16LE(value, i * bytesPerSample);
     }
 
@@ -2568,19 +2571,19 @@ export class AIMusicService {
 
   private async getTrackByIdSafe(trackId: string): Promise<any | null> {
     try {
-      const _tracks = await storage?.getProjectTracks(trackId);
+      const tracks = await storage?.getProjectTracks(trackId);
 
       if (tracks?.length > 0) {
         return tracks[0];
       }
 
-      const _allProjects = await storage?.getAllProjects({
+      const allProjects = await storage?.getAllProjects({
         page: 1,
         limit: 1000,
       });
       for (const project of allProjects?.data) {
-        const _projectTracks = await storage?.getProjectTracks(project?.id);
-        const _track = projectTracks?.find((t) => t?.id === trackId);
+        const projectTracks = await storage?.getProjectTracks(project?.id);
+        const track = projectTracks?.find((t) => t?.id === trackId);
         if (track) {
           return track;
         }
@@ -2633,15 +2636,15 @@ export class AIMusicService {
     executionTimeMs: number,
   ): Promise<void> {
     try {
-      const _aiModel = await storage?.getAIModelByName(modelName);
+      const aiModel = await storage?.getAIModelByName(modelName);
       if (!aiModel) {
         logger?.warn(`AI model ${modelName} not found in registry`);
         return;
       }
 
-      const _inferenceRun = await storage?.createInferenceRun({
-        modelId: aiModel?.id,
-        versionId: aiModel?.currentVersionId || aiModel?.id,
+      const inferenceRun = await storage?.createInferenceRun({
+        modelId: aiModel.id,
+        versionId: aiModel.currentVersionId || aiModel?.id,
         inferenceType,
         inputData,
         outputData,
@@ -2651,7 +2654,7 @@ export class AIMusicService {
         requestId: randomBytes(8).toString("hex"),
       });
 
-      const _humanReadable = this?.generateExplanation(
+      const humanReadable = this?.generateExplanation(
         inferenceType,
         inputData,
         outputData,
@@ -2659,13 +2662,13 @@ export class AIMusicService {
       );
 
       await storage?.createExplanationLog({
-        inferenceId: inferenceRun?.id,
+        inferenceId: inferenceRun.id,
         explanationType: "feature_importance",
-        featureImportance: this?.calculateFeatureImportance(
+        featureImportance: this.calculateFeatureImportance(
           inferenceType,
           outputData,
         ),
-        decisionPath: this?.generateDecisionPath(
+        decisionPath: this.generateDecisionPath(
           inferenceType,
           inputData,
           outputData,
@@ -2703,7 +2706,7 @@ export class AIMusicService {
 
   private calculateFeatureImportance(
     type: string,
-    _output: unknown,
+    output: unknown,
   ): Record<string, number> {
     const importance: Record<string, Record<string, number>> = {
       stem_separation: {
@@ -2738,7 +2741,7 @@ export class AIMusicService {
   private generateDecisionPath(
     _type: string,
     _input: unknown,
-    _output: unknown,
+    output: unknown,
   ): unknown[] {
     return [
       { step: 1, action: "Input validation", result: "success" },
@@ -2754,12 +2757,12 @@ export class AIMusicService {
     icon: string;
     description: string;
   }[] {
-    const _presets = this?.getAllGenrePresets();
+    const presets = this?.getAllGenrePresets();
     return presets?.map((p) => ({
-      id: p?.genre,
-      name: p?.displayName,
-      icon: this?.getGenreIcon(p?.genre),
-      description: p?.description,
+      id: p.genre,
+      name: p.displayName,
+      icon: this.getGenreIcon(p?.genre),
+      description: p.description,
     }));
   }
 
@@ -2802,14 +2805,14 @@ export class AIMusicService {
     confidence: number;
   }> {
     // Deterministic estimate based on project ID — real values require audio file analysis via Python engine
-    const _seed = projectId
+    const seed = projectId
       .split("")
       .reduce((acc, c) => acc + c?.charCodeAt(0), 0);
-    const _currentLUFS = -14 - (seed % 7); // -14 to -20 LUFS (common mastered range)
-    const _peak = -0.3 - (seed % 3) * 0.5; // -0.3 to -1.3 dBTP
-    const _dynamic_range = 7 + (seed % 7); // 7–13 LU DR
+    const currentLUFS = -14 - (seed % 7); // -14 to -20 LUFS (common mastered range)
+    const peak = -0.3 - (seed % 3) * 0.5; // -0.3 to -1.3 dBTP
+    const dynamic_range = 7 + (seed % 7); // 7–13 LU DR
 
-    const _difference = targetLUFS - currentLUFS;
+    const difference = targetLUFS - currentLUFS;
     let recommendation: string;
 
     if (Math?.abs(difference) < 1) {
@@ -2821,14 +2824,14 @@ export class AIMusicService {
     }
 
     return {
-      currentLUFS: Math?.round(currentLUFS * 10) / 10,
+      currentLUFS: Math.round(currentLUFS * 10) / 10,
       targetLUFS,
-      dynamic_range: Math?.round(dynamic_range * 10) / 10,
-      peak: Math?.round(peak * 10) / 10,
+      dynamic_range: Math.round(dynamic_range * 10) / 10,
+      peak: Math.round(peak * 10) / 10,
       recommendation,
       confidence: 0.92,
     };
   }
 }
 
-export const _aiMusicService = new AIMusicService();
+export const aiMusicService = new AIMusicService();

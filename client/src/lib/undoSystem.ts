@@ -67,9 +67,9 @@ export class UndoStack {
     if (!this?.config.persistToStorage || typeof window === "undefined") return;
 
     try {
-      const _stored = sessionStorage?.getItem(this?.config.storageKey);
+      const stored = sessionStorage?.getItem(this?.config.storageKey);
       if (stored) {
-        const _parsed = JSON?.parse(stored);
+        const parsed = JSON?.parse(stored);
         this.history = parsed?.history || [];
         this.redoStack = parsed?.redoStack || [];
       }
@@ -82,24 +82,24 @@ export class UndoStack {
     if (!this?.config.persistToStorage || typeof window === "undefined") return;
 
     try {
-      const _serialized = {
-        history: this?.history.map((a) => ({
-          id: a?.id,
-          type: a?.type,
-          description: a?.description,
-          module: a?.module,
-          timestamp: a?.timestamp,
-          entityId: a?.entityId,
-          entityType: a?.entityType,
-          groupId: a?.groupId,
-          isRestorePoint: a?.isRestorePoint,
+      const serialized = {
+        history: this.history.map((a) => ({
+          id: a.id,
+          type: a.type,
+          description: a.description,
+          module: a.module,
+          timestamp: a.timestamp,
+          entityId: a.entityId,
+          entityType: a.entityType,
+          groupId: a.groupId,
+          isRestorePoint: a.isRestorePoint,
         })),
-        redoStack: this?.redoStack.map((a) => ({
-          id: a?.id,
-          type: a?.type,
-          description: a?.description,
-          module: a?.module,
-          timestamp: a?.timestamp,
+        redoStack: this.redoStack.map((a) => ({
+          id: a.id,
+          type: a.type,
+          description: a.description,
+          module: a.module,
+          timestamp: a.timestamp,
         })),
       };
       sessionStorage?.setItem(
@@ -125,9 +125,9 @@ export class UndoStack {
   ): Promise<UndoAction> {
     const fullAction: UndoAction = {
       ...action,
-      id: UndoStack?.generateId(),
-      timestamp: Date?.now(),
-      groupId: this?.currentGroupId || undefined,
+      id: UndoStack.generateId(),
+      timestamp: Date.now(),
+      groupId: this.currentGroupId || undefined,
     };
 
     try {
@@ -136,7 +136,7 @@ export class UndoStack {
       this?.history.push(fullAction);
 
       if (this?.currentGroupId) {
-        const _group = this?.groups.get(this?.currentGroupId);
+        const group = this?.groups.get(this?.currentGroupId);
         if (group) {
           group?.actions.push(fullAction);
         }
@@ -158,7 +158,7 @@ export class UndoStack {
   }
 
   async undo(): Promise<UndoAction | null> {
-    const _action = this?.history.pop();
+    const action = this?.history.pop();
     if (!action) return null;
 
     try {
@@ -181,11 +181,11 @@ export class UndoStack {
   }
 
   async redo(): Promise<UndoAction | null> {
-    const _action = this?.redoStack.pop();
+    const action = this?.redoStack.pop();
     if (!action) return null;
 
     try {
-      const _redoFn = action?.redo || action?.execute;
+      const redoFn = action?.redo || action?.execute;
       await redoFn();
 
       this?.history.push(action);
@@ -201,12 +201,12 @@ export class UndoStack {
   }
 
   startGroup(name: string): string {
-    const _groupId = UndoStack?.generateId("group");
+    const groupId = UndoStack?.generateId("group");
     const group: ActionGroup = {
       id: groupId,
       name,
       actions: [],
-      timestamp: Date?.now(),
+      timestamp: Date.now(),
       isUndone: false,
     };
     this?.groups.set(groupId, group);
@@ -223,12 +223,12 @@ export class UndoStack {
   }
 
   async undoGroup(groupId: string): Promise<void> {
-    const _group = this?.groups.get(groupId);
+    const group = this?.groups.get(groupId);
     if (!group) return;
 
     for (let i = group?.actions.length - 1; i >= 0; i--) {
-      const _action = group?.actions[i];
-      const _historyIndex = this?.history.findIndex((a) => a?.id === action?.id);
+      const action = group?.actions[i];
+      const historyIndex = this?.history.findIndex((a) => a?.id === action?.id);
       if (historyIndex !== -1) {
         this?.history.splice(historyIndex, 1);
         await action?.undo();
@@ -241,22 +241,22 @@ export class UndoStack {
   }
 
   async undoToRestorePoint(actionId: string): Promise<void> {
-    const _targetIndex = this?.history.findIndex((a) => a?.id === actionId);
+    const targetIndex = this?.history.findIndex((a) => a?.id === actionId);
     if (targetIndex === -1) return;
 
-    const _actionsToUndo = this?.history.slice(targetIndex + 1).reverse();
-    for (const action of actionsToUndo) {
+    const actionsToUndo = this?.history.slice(targetIndex + 1).reverse();
+    for (const _action of actionsToUndo) {
       await this?.undo();
     }
   }
 
   createRestorePoint(description: string): UndoAction {
     const restorePoint: UndoAction = {
-      id: UndoStack?.generateId("restore"),
+      id: UndoStack.generateId("restore"),
       type: "custom",
       description,
       module: "system",
-      timestamp: Date?.now(),
+      timestamp: Date.now(),
       isRestorePoint: true,
       execute: async () => {},
       undo: async () => {},
@@ -327,12 +327,12 @@ export class UndoStack {
     isGrouping: boolean;
   } {
     return {
-      canUndo: this?.canUndo(),
-      canRedo: this?.canRedo(),
-      historyLength: this?.history.length,
-      redoLength: this?.redoStack.length,
-      lastAction: this?.getLastAction(),
-      isGrouping: this?.currentGroupId !== null,
+      canUndo: this.canUndo(),
+      canRedo: this.canRedo(),
+      historyLength: this.history.length,
+      redoLength: this.redoStack.length,
+      lastAction: this.getLastAction(),
+      isGrouping: this.currentGroupId !== null,
     };
   }
 
@@ -364,8 +364,8 @@ export function createUndoAction<T>(
   state: { before: T; after: T },
   apply: (value: T) => void | Promise<void>,
 ): Omit<UndoAction<T>, "id" | "timestamp"> {
-  const _before = structuredClone(state?.before);
-  const _after = structuredClone(state?.after);
+  const before = structuredClone(state?.before);
+  const after = structuredClone(state?.after);
 
   return {
     type,

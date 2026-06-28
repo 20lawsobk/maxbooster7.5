@@ -6,13 +6,13 @@ import { gte, lte, and, eq, isNotNull } from "drizzle-orm";
 import axios from "axios";
 import crypto from "crypto";
 
-const _TOKEN_ENCRYPTION_IV_LENGTH = 16;
-const _TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000; // Refresh 5 minutes before expiry
-const _TOKEN_REFRESH_CHECK_INTERVAL_MS = 60 * 1000; // Check every minute
-const _ENCRYPTION_KEY_SETTING = "social_oauth_encryption_key";
+const TOKEN_ENCRYPTION_IV_LENGTH = 16;
+const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000; // Refresh 5 minutes before expiry
+const TOKEN_REFRESH_CHECK_INTERVAL_MS = 60 * 1000; // Check every minute
+const ENCRYPTION_KEY_SETTING = "social_oauth_encryption_key";
 
 // Get base domain for OAuth redirects - always use production URL for consistency
-const _getOAuthDomain = () =>
+const getOAuthDomain = () =>
   process?.env.DOMAIN || process?.env.APP_URL || "https://max-booster.com";
 
 /**
@@ -45,7 +45,7 @@ export class SocialOAuthService {
 
   /**
    * Load or generate a stable token encryption key.
-   * Priority: process?.env.TOKEN_ENCRYPTION_KEY > system_settings DB > generate+persist
+   * Priority: process.env.TOKEN_ENCRYPTION_KEY > system_settings DB > generate+persist
    */
   private async initializeEncryptionKey(): Promise<void> {
     if (process?.env.TOKEN_ENCRYPTION_KEY) {
@@ -55,7 +55,7 @@ export class SocialOAuthService {
     }
 
     try {
-      const _rows = await db
+      const rows = await db
         .select()
         .from(systemSettings)
         .where(eq(systemSettings?.key, ENCRYPTION_KEY_SETTING))
@@ -68,7 +68,7 @@ export class SocialOAuthService {
       }
 
       // Generate a new key and persist it so restarts reuse the same key
-      const _newKey = crypto?.randomBytes(32).toString("hex");
+      const newKey = crypto?.randomBytes(32).toString("hex");
       await db
         .insert(systemSettings)
         .values({
@@ -109,15 +109,15 @@ export class SocialOAuthService {
    * Encrypt token data using AES-256-GCM
    */
   private encryptToken(plainText: string): string {
-    const _iv = crypto?.randomBytes(TOKEN_ENCRYPTION_IV_LENGTH);
-    const _key = Buffer?.from(
+    const iv = crypto?.randomBytes(TOKEN_ENCRYPTION_IV_LENGTH);
+    const key = Buffer?.from(
       this?.getEncryptionKey().substring(0, 32).padEnd(32, "0"),
     );
-    const _cipher = crypto?.createCipheriv("aes-256-gcm", key, iv);
+    const cipher = crypto?.createCipheriv("aes-256-gcm", key, iv);
 
     let encrypted = cipher?.update(plainText, "utf8", "hex");
     encrypted += cipher?.final("hex");
-    const _authTag = cipher?.getAuthTag();
+    const authTag = cipher?.getAuthTag();
 
     return `${iv?.toString("hex")}:${authTag?.toString("hex")}:${encrypted}`;
   }
@@ -133,12 +133,12 @@ export class SocialOAuthService {
         return encryptedText;
       }
 
-      const _iv = Buffer?.from(ivHex, "hex");
-      const _authTag = Buffer?.from(authTagHex, "hex");
-      const _key = Buffer?.from(
+      const iv = Buffer?.from(ivHex, "hex");
+      const authTag = Buffer?.from(authTagHex, "hex");
+      const key = Buffer?.from(
         this?.getEncryptionKey().substring(0, 32).padEnd(32, "0"),
       );
-      const _decipher = crypto?.createDecipheriv("aes-256-gcm", key, iv, {
+      const decipher = crypto?.createDecipheriv("aes-256-gcm", key, iv, {
         authTagLength: 16,
       });
       decipher?.setAuthTag(authTag);
@@ -178,10 +178,10 @@ export class SocialOAuthService {
   private async checkAndRefreshExpiringTokens(): Promise<void> {
     try {
       // Query tokens expiring within the refresh buffer (5 minutes from now)
-      const _expiryThreshold = new Date(Date?.now() + TOKEN_REFRESH_BUFFER_MS);
-      const _now = new Date();
+      const expiryThreshold = new Date(Date?.now() + TOKEN_REFRESH_BUFFER_MS);
+      const now = new Date();
 
-      const _expiringAccounts = await db
+      const expiringAccounts = await db
         .select()
         .from(socialAccounts)
         .where(
@@ -201,8 +201,8 @@ export class SocialOAuthService {
         try {
           if (!account?.tokenExpiresAt || !account?.refreshToken) continue;
 
-          const _expiresAt = new Date(account?.tokenExpiresAt).getTime();
-          const _timeUntilExpiry = expiresAt - Date?.now();
+          const expiresAt = new Date(account?.tokenExpiresAt).getTime();
+          const timeUntilExpiry = expiresAt - Date?.now();
 
           // Refresh if expiring within buffer period
           if (
@@ -214,7 +214,7 @@ export class SocialOAuthService {
             );
 
             // Decrypt the refresh token before passing to refreshAccessToken
-            const _decryptedRefreshToken = this?.decryptToken(
+            const decryptedRefreshToken = this?.decryptToken(
               account?.refreshToken,
             );
             if (decryptedRefreshToken) {
@@ -232,7 +232,7 @@ export class SocialOAuthService {
           // If the upstream refresh detected a revocation, handleRevokedToken was
           // already called inside refreshAccessToken.  Just log at debug level to
           // avoid noisy warn spam for a condition that is already being handled.
-          const _msg = (error as Record<string, unknown>)?.message ?? "";
+          const msg = (error as Record<string, unknown>)?.message ?? "";
           if (msg?.includes("revoked") || msg?.includes("Token revoked")) {
             logger?.info(
               `[SocialOAuth] Proactive refresh: token revoked for ${account?.userId}:${account?.platform} — platform disconnected`,
@@ -254,7 +254,7 @@ export class SocialOAuthService {
    * Check if a token error indicates revocation
    */
   private isTokenRevokedError(error: Error): boolean {
-    const _revokedIndicators = [
+    const revokedIndicators = [
       "invalid_grant",
       "token_revoked",
       "access_denied",
@@ -265,13 +265,13 @@ export class SocialOAuthService {
       "Error validating access token",
     ];
 
-    const _errorMessage =
+    const errorMessage =
       error?.response?.data?.error_description ||
       error?.response?.data?.error ||
       error?.message ||
       "";
 
-    const _statusCode = error?.response?.status;
+    const statusCode = error?.response?.status;
 
     // 401 with specific error messages typically means revoked
     if (
@@ -295,7 +295,7 @@ export class SocialOAuthService {
     userId: string,
     platform: string,
   ): Promise<void> {
-    const _cacheKey = `${userId}:${platform}`;
+    const cacheKey = `${userId}:${platform}`;
 
     // Prevent duplicate handling
     if (this?.revokedTokenCache.has(cacheKey)) {
@@ -335,22 +335,22 @@ export class SocialOAuthService {
     userId: string,
     platform: string,
   ): Promise<string | null> {
-    const _tokens = await this?.getStoredTokens(userId, platform);
+    const tokens = await this?.getStoredTokens(userId, platform);
     if (!tokens) {
       return null;
     }
 
     // Check if token is expired or expiring soon
     if (tokens?.expiresAt) {
-      const _expiresAt = new Date(tokens?.expiresAt).getTime();
-      const _now = Date?.now();
+      const expiresAt = new Date(tokens?.expiresAt).getTime();
+      const now = Date?.now();
 
       if (expiresAt <= now + TOKEN_REFRESH_BUFFER_MS) {
         logger?.info(
           `Token expiring soon for ${userId}:${platform}, refreshing...`,
         );
         try {
-          const _refreshed = await this?.refreshAccessToken(userId, platform);
+          const refreshed = await this?.refreshAccessToken(userId, platform);
           return refreshed?.accessToken;
         } catch (error) {
           if (this?.isTokenRevokedError(error)) {
@@ -373,7 +373,7 @@ export class SocialOAuthService {
 
     try {
       // Try to decrypt first
-      const _decrypted = this?.decryptToken(tokenString);
+      const decrypted = this?.decryptToken(tokenString);
       if (!decrypted) return null;
 
       return JSON?.parse(decrypted);
@@ -399,8 +399,8 @@ export class SocialOAuthService {
         process?.env.FACEBOOK_APP_SECRET ||
         process?.env.FACEBOOK_CLIENT_SECRET ||
         "",
-      authUrl: "https://www?.facebook.com/v19.0/dialog/oauth",
-      tokenUrl: "https://graph?.facebook.com/v19.0/oauth/access_token",
+      authUrl: "https://www.facebook.com/v19.0/dialog/oauth",
+      tokenUrl: "https://graph.facebook.com/v19.0/oauth/access_token",
       scopes: [
         "public_profile",
         "email",
@@ -423,14 +423,14 @@ export class SocialOAuthService {
         process?.env.TWITTER_API_SECRET ||
         "",
       authUrl: "https://twitter.com/i/oauth2/authorize",
-      tokenUrl: "https://api?.x.com/2/oauth2/token",
+      tokenUrl: "https://api.x.com/2/oauth2/token",
       scopes: [
-        "tweet?.read",
-        "tweet?.write",
-        "users?.read",
-        "follows?.read",
-        "follows?.write",
-        "offline?.access",
+        "tweet.read",
+        "tweet.write",
+        "users.read",
+        "follows.read",
+        "follows.write",
+        "offline.access",
       ],
       redirectUri: `${getOAuthDomain()}/auth/twitter/callback`,
     });
@@ -443,31 +443,31 @@ export class SocialOAuthService {
         process?.env.YOUTUBE_CLIENT_SECRET ||
         process?.env.GOOGLE_CLIENT_SECRET ||
         "",
-      authUrl: "https://accounts?.google.com/o/oauth2/v2/auth",
-      tokenUrl: "https://oauth2?.googleapis.com/token",
+      authUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+      tokenUrl: "https://oauth2.googleapis.com/token",
       scopes: [
-        "https://www?.googleapis.com/auth/youtube?.upload",
-        "https://www?.googleapis.com/auth/youtube",
+        "https://www.googleapis.com/auth/youtube.upload",
+        "https://www.googleapis.com/auth/youtube",
       ],
       redirectUri: `${getOAuthDomain()}/auth/youtube/callback`,
     });
 
     // Google OAuth
     this?.oauthConfigs.set("google", {
-      clientId: process?.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process?.env.GOOGLE_CLIENT_SECRET || "",
-      authUrl: "https://accounts?.google.com/o/oauth2/v2/auth",
-      tokenUrl: "https://oauth2?.googleapis.com/token",
+      clientId: process.env.GOOGLE_CLIENT_ID || "",
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
+      authUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+      tokenUrl: "https://oauth2.googleapis.com/token",
       scopes: ["openid", "email", "profile"],
       redirectUri: `${getOAuthDomain()}/auth/google/callback`,
     });
 
     // LinkedIn OAuth
     this?.oauthConfigs.set("linkedin", {
-      clientId: process?.env.LINKEDIN_CLIENT_ID || "",
-      clientSecret: process?.env.LINKEDIN_CLIENT_SECRET || "",
-      authUrl: "https://www?.linkedin.com/oauth/v2/authorization",
-      tokenUrl: "https://www?.linkedin.com/oauth/v2/accessToken",
+      clientId: process.env.LINKEDIN_CLIENT_ID || "",
+      clientSecret: process.env.LINKEDIN_CLIENT_SECRET || "",
+      authUrl: "https://www.linkedin.com/oauth/v2/authorization",
+      tokenUrl: "https://www.linkedin.com/oauth/v2/accessToken",
       scopes: ["openid", "profile", "email", "w_member_social"],
       redirectUri: `${getOAuthDomain()}/auth/linkedin/callback`,
     });
@@ -482,19 +482,19 @@ export class SocialOAuthService {
         process?.env.GOOGLE_BUSINESS_CLIENT_SECRET ||
         process?.env.GOOGLE_CLIENT_SECRET ||
         "",
-      authUrl: "https://accounts?.google.com/o/oauth2/v2/auth",
-      tokenUrl: "https://oauth2?.googleapis.com/token",
-      scopes: ["https://www?.googleapis.com/auth/business?.manage"],
+      authUrl: "https://accounts.google.com/o/oauth2/v2/auth",
+      tokenUrl: "https://oauth2.googleapis.com/token",
+      scopes: ["https://www.googleapis.com/auth/business.manage"],
       redirectUri: `${getOAuthDomain()}/auth/google-business/callback`,
     });
 
     // Threads OAuth
     this?.oauthConfigs.set("threads", {
-      clientId: process?.env.THREADS_APP_ID || process?.env.FACEBOOK_APP_ID || "",
+      clientId: process.env.THREADS_APP_ID || process?.env.FACEBOOK_APP_ID || "",
       clientSecret:
         process?.env.THREADS_APP_SECRET || process?.env.FACEBOOK_APP_SECRET || "",
       authUrl: "https://threads.net/oauth/authorize",
-      tokenUrl: "https://graph?.threads.net/oauth/access_token",
+      tokenUrl: "https://graph.threads.net/oauth/access_token",
       scopes: [
         "threads_basic",
         "threads_content_publish",
@@ -509,27 +509,27 @@ export class SocialOAuthService {
         `${getOAuthDomain()}/auth/threads/callback`,
     });
 
-    const _tiktokEnv = process?.env.TIKTOK_ENV;
-    const _isTikTokSandbox = tiktokEnv === "sandbox";
-    const _tiktokClientKey = isTikTokSandbox
+    const tiktokEnv = process?.env.TIKTOK_ENV;
+    const isTikTokSandbox = tiktokEnv === "sandbox";
+    const tiktokClientKey = isTikTokSandbox
       ? process?.env.TIKTOK_SANDBOX_CLIENT_KEY ||
         process?.env.TIKTOK_CLIENT_KEY ||
         ""
       : process?.env.TIKTOK_PROD_CLIENT_KEY ||
         process?.env.TIKTOK_CLIENT_KEY ||
         "";
-    const _tiktokClientSecret = isTikTokSandbox
+    const tiktokClientSecret = isTikTokSandbox
       ? process?.env.TIKTOK_SANDBOX_CLIENT_SECRET ||
         process?.env.TIKTOK_CLIENT_SECRET ||
         ""
       : process?.env.TIKTOK_PROD_CLIENT_SECRET ||
         process?.env.TIKTOK_CLIENT_SECRET ||
         "";
-    const _tiktokScopesStr = isTikTokSandbox
+    const tiktokScopesStr = isTikTokSandbox
       ? process?.env.TIKTOK_SANDBOX_SCOPES ||
-        "user?.info.basic,video?.list,video?.upload,video?.publish"
-      : process?.env.TIKTOK_PROD_SCOPES || "user?.info.basic";
-    const _tiktokRedirectUri = isTikTokSandbox
+        "user.info.basic,video.list,video.upload,video.publish"
+      : process?.env.TIKTOK_PROD_SCOPES || "user.info.basic";
+    const tiktokRedirectUri = isTikTokSandbox
       ? process?.env.TIKTOK_SANDBOX_REDIRECT_URI ||
         `${getOAuthDomain()}/tiktok/sandbox/callback`
       : process?.env.TIKTOK_PROD_REDIRECT_URI ||
@@ -538,9 +538,9 @@ export class SocialOAuthService {
     this?.oauthConfigs.set("tiktok", {
       clientId: tiktokClientKey,
       clientSecret: tiktokClientSecret,
-      authUrl: "https://www?.tiktok.com/v2/auth/authorize/",
-      tokenUrl: "https://open?.tiktokapis.com/v2/oauth/token/",
-      scopes: tiktokScopesStr?.split(","),
+      authUrl: "https://www.tiktok.com/v2/auth/authorize/",
+      tokenUrl: "https://open.tiktokapis.com/v2/oauth/token/",
+      scopes: tiktokScopesStr.split(","),
       redirectUri: tiktokRedirectUri,
     });
   }
@@ -549,18 +549,18 @@ export class SocialOAuthService {
    * Get OAuth authorization URL
    */
   getAuthorizationUrl(platform: string, userId: string): string {
-    const _actualPlatform = platform === "tiktok_sandbox" ? "tiktok" : platform;
-    const _config = this?.oauthConfigs.get(actualPlatform);
+    const actualPlatform = platform === "tiktok_sandbox" ? "tiktok" : platform;
+    const config = this?.oauthConfigs.get(actualPlatform);
     if (!config) {
       throw new Error(`OAuth not configured for platform: ${platform}`);
     }
 
-    const _isTikTok = platform === "tiktok" || platform === "tiktok_sandbox";
+    const isTikTok = platform === "tiktok" || platform === "tiktok_sandbox";
 
-    const _params = new URLSearchParams({
+    const params = new URLSearchParams({
       [isTikTok ? "client_key" : "client_id"]: config?.clientId,
-      redirect_uri: config?.redirectUri,
-      scope: isTikTok ? config?.scopes.join(",") : config?.scopes.join(" "),
+      redirect_uri: config.redirectUri,
+      scope: isTikTok ? config?.scopes.join(",") : config.scopes.join(" "),
       response_type: "code",
       state: `${userId}:${platform}:${Date?.now()}`,
     });
@@ -585,23 +585,23 @@ export class SocialOAuthService {
     refreshToken?: string;
     expiresIn?: number;
   }> {
-    const _config = this?.oauthConfigs.get(platform);
+    const config = this?.oauthConfigs.get(platform);
     if (!config) {
       throw new Error(`OAuth not configured for platform: ${platform}`);
     }
 
     try {
-      const _isTikTok = platform === "tiktok" || platform === "tiktok_sandbox";
+      const isTikTok = platform === "tiktok" || platform === "tiktok_sandbox";
 
       const tokenParams: Record<string, string> = {
         [isTikTok ? "client_key" : "client_id"]: config?.clientId,
-        client_secret: config?.clientSecret,
+        client_secret: config.clientSecret,
         code,
-        redirect_uri: config?.redirectUri,
+        redirect_uri: config.redirectUri,
         grant_type: "authorization_code",
       };
 
-      const _response = await axios?.post(
+      const response = await axios?.post(
         config?.tokenUrl,
         new URLSearchParams(tokenParams).toString(),
         {
@@ -611,11 +611,11 @@ export class SocialOAuthService {
         },
       );
 
-      const _tokenData = response?.data;
-      const _access_token = tokenData?.access_token;
-      const _refresh_token = tokenData?.refresh_token;
-      const _expires_in = tokenData?.expires_in;
-      const _open_id = tokenData?.open_id;
+      const tokenData = response?.data;
+      const access_token = tokenData?.access_token;
+      const refresh_token = tokenData?.refresh_token;
+      const expires_in = tokenData?.expires_in;
+      const open_id = tokenData?.open_id;
 
       await this?.saveTokens(userId, platform, {
         accessToken: access_token,
@@ -652,7 +652,7 @@ export class SocialOAuthService {
     platform: string,
     providedRefreshToken?: string,
   ): Promise<{ accessToken: string; expiresIn?: number }> {
-    const _config = this?.oauthConfigs.get(platform);
+    const config = this?.oauthConfigs.get(platform);
     if (!config) {
       throw new Error(`OAuth not configured for platform: ${platform}`);
     }
@@ -662,14 +662,14 @@ export class SocialOAuthService {
 
       if (!refreshToken) {
         // Get refresh token from database if not provided
-        const _tokens = await this?.getStoredTokens(userId, platform);
+        const tokens = await this?.getStoredTokens(userId, platform);
         if (!tokens?.refreshToken) {
           throw new Error("No refresh token available");
         }
         refreshToken = tokens?.refreshToken;
       }
 
-      const _isTikTok = platform === "tiktok" || platform === "tiktok_sandbox";
+      const isTikTok = platform === "tiktok" || platform === "tiktok_sandbox";
 
       const refreshParams: Record<string, string> = {
         [isTikTok ? "client_key" : "client_id"]: config?.clientId,
@@ -682,7 +682,7 @@ export class SocialOAuthService {
       };
 
       if (platform === "twitter") {
-        const _credentials = Buffer?.from(
+        const credentials = Buffer?.from(
           `${config?.clientId}:${config?.clientSecret}`,
         ).toString("base64");
         headers["Authorization"] = `Basic ${credentials}`;
@@ -690,7 +690,7 @@ export class SocialOAuthService {
         refreshParams.client_secret = config?.clientSecret;
       }
 
-      const _response = await axios?.post(
+      const response = await axios?.post(
         config?.tokenUrl,
         new URLSearchParams(refreshParams).toString(),
         { headers },
@@ -720,9 +720,9 @@ export class SocialOAuthService {
       };
     } catch (error: unknown) {
       // Surface the actual API error (e?.g. Google's invalid_grant) in the log
-      const _apiError = (error as Record<string, unknown>)?.response?.data;
-      const _httpStatus = (error as Record<string, unknown>)?.response?.status;
-      const _errDetail = apiError
+      const apiError = (error as Record<string, unknown>)?.response?.data;
+      const httpStatus = (error as Record<string, unknown>)?.response?.status;
+      const errDetail = apiError
         ? JSON?.stringify(apiError)
         : ((error as Record<string, unknown>)?.message ?? "unknown error");
       logger?.warn(
@@ -750,7 +750,7 @@ export class SocialOAuthService {
     platform: string,
   ): Promise<boolean> {
     try {
-      const _token = await storage?.getUserSocialToken(userId, platform);
+      const token = await storage?.getUserSocialToken(userId, platform);
       return !!token;
     } catch (error: unknown) {
       return false;
@@ -761,7 +761,7 @@ export class SocialOAuthService {
    * Get connected platforms for a user
    */
   async getConnectedPlatforms(userId: string): Promise<string[]> {
-    const _platforms = [
+    const platforms = [
       "facebook",
       "instagram",
       "twitter",
@@ -809,15 +809,15 @@ export class SocialOAuthService {
       expiresAt?: Date;
     },
   ): Promise<void> {
-    const _tokenData = {
-      accessToken: tokens?.accessToken,
-      refreshToken: tokens?.refreshToken,
-      expiresAt: tokens?.expiresAt?.toISOString(),
+    const tokenData = {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresAt: tokens.expiresAt?.toISOString(),
       connectedAt: new Date().toISOString(),
     };
 
     // Encrypt token data before storing
-    const _encryptedData = this?.encryptToken(JSON?.stringify(tokenData));
+    const encryptedData = this?.encryptToken(JSON?.stringify(tokenData));
     await storage?.updateUserSocialToken(userId, platform, encryptedData);
 
     logger?.info(
@@ -832,7 +832,7 @@ export class SocialOAuthService {
     userId: string,
     platform: string,
   ): Promise<unknown> {
-    const _tokenString = await storage?.getUserSocialToken(userId, platform);
+    const tokenString = await storage?.getUserSocialToken(userId, platform);
     if (!tokenString) return null;
 
     return this?.parseStoredTokens(tokenString);
@@ -850,19 +850,19 @@ export class SocialOAuthService {
       refreshToken?: string;
     },
   ): Promise<void> {
-    const _existing = await this?.getStoredTokens(userId, platform);
+    const existing = await this?.getStoredTokens(userId, platform);
     if (!existing) return;
 
-    const _updated = {
+    const updated = {
       ...existing,
-      accessToken: update?.accessToken,
-      expiresAt: update?.expiresAt?.toISOString(),
+      accessToken: update.accessToken,
+      expiresAt: update.expiresAt?.toISOString(),
       updatedAt: new Date().toISOString(),
-      ...(update?.refreshToken ? { refreshToken: update?.refreshToken } : {}),
+      ...(update?.refreshToken ? { refreshToken: update.refreshToken } : {}),
     };
 
     // Encrypt updated token data before storing
-    const _encryptedData = this?.encryptToken(JSON?.stringify(updated));
+    const encryptedData = this?.encryptToken(JSON?.stringify(updated));
     await storage?.updateUserSocialToken(userId, platform, encryptedData);
 
     logger?.info(
@@ -881,4 +881,4 @@ interface OAuthConfig {
 }
 
 // Export singleton instance
-export const _socialOAuth = new SocialOAuthService();
+export const socialOAuth = new SocialOAuthService();

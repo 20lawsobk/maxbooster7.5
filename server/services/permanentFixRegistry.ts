@@ -95,17 +95,17 @@ const ESCALATION_MAP: Record<string, EscalationTarget> = {
 };
 
 // PDIM key prefix
-const _PFR = "pfr:";
+const PFR = "pfr:";
 
 // How long a session must run (clean) before de-escalation is considered.
 // 45 min (was 30 min) — more cautious; real patterns often re-emerge 30–40 min
 // after startup once BullMQ worker queues fill up.
-const _DEESCALATION_WINDOW_MS = 45 * 60_000;
+const DEESCALATION_WINDOW_MS = 45 * 60_000;
 
 // AIMD gap state is persisted every N seconds so cold restarts resume mid-flight.
 // 30 s (was 60 s) — 2× more frequent ensures even short-lived restarts resume
 // with an accurate gap, avoiding the cold 600ms spike on every bounce.
-const _AIMD_PERSIST_INTERVAL_MS = 30_000;
+const AIMD_PERSIST_INTERVAL_MS = 30_000;
 
 // ── Audit entry ───────────────────────────────────────────────────────────────
 
@@ -170,7 +170,7 @@ class PermanentFixRegistry {
   private async _tryConnectPdim(): Promise<void> {
     try {
       const { getPdimClient } = await import("../lib/pdimClient.js");
-      const _client = getPdimClient();
+      const client = getPdimClient();
       this._pdimGet = (k) =>
         (client as Record<string, unknown>).get(k).catch(() => null);
       this._pdimSet = async (k, v) => {
@@ -197,7 +197,7 @@ class PermanentFixRegistry {
 
     await this?._tryConnectPdim();
 
-    const _get = this?._pdimGet;
+    const get = this?._pdimGet;
     if (!get) {
       logger?.info(
         "[PermanentFixer] PDIM unavailable — starting with default constants",
@@ -231,30 +231,30 @@ class PermanentFixRegistry {
       // maximum-capacity PDIM (120M req/s) and stored escalations from a
       // previously rate-limited deployment are now stale — discard them.
       if (rawGapFloor && DEFAULTS?.pdimGapFloorMs > 1) {
-        const _v = parseInt(rawGapFloor, 10);
+        const v = parseInt(rawGapFloor, 10);
         if (!isNaN(v) && v > DEFAULTS?.pdimGapFloorMs) {
-          this?._overrides.pdimGapFloorMs = v;
+          this._overrides.pdimGapFloorMs = v;
           changed = true;
         }
       }
       if (rawLuaWait) {
-        const _v = parseInt(rawLuaWait, 10);
+        const v = parseInt(rawLuaWait, 10);
         if (!isNaN(v) && v > DEFAULTS?.luaWaitMs) {
-          this?._overrides.luaWaitMs = v;
+          this._overrides.luaWaitMs = v;
           changed = true;
         }
       }
       if (rawHeapWarn) {
-        const _v = parseFloat(rawHeapWarn);
+        const v = parseFloat(rawHeapWarn);
         if (!isNaN(v) && v < DEFAULTS?.heapWarnRatio) {
-          this?._overrides.heapWarnRatio = v;
+          this._overrides.heapWarnRatio = v;
           changed = true;
         }
       }
       if (rawHeapPatch) {
-        const _v = parseFloat(rawHeapPatch);
+        const v = parseFloat(rawHeapPatch);
         if (!isNaN(v) && v < DEFAULTS?.heapPatchRatio) {
-          this?._overrides.heapPatchRatio = v;
+          this._overrides.heapPatchRatio = v;
           changed = true;
         }
       }
@@ -286,14 +286,14 @@ class PermanentFixRegistry {
       // Workers time out at 60s waiting for main-thread redis?.call dispatch.
       // 400ms gives a safe anti-thundering-herd spacing while draining in
       // ~4 minutes (780 × 600ms) instead of 28.  AIMD self-tunes from there.
-      const __AIMD_RESTORE_CAP_MS = 400;
+      const _AIMD_RESTORE_CAP_MS = 400;
       if (rawAimdGap) {
-        const _saved = parseInt(rawAimdGap, 10);
+        const saved = parseInt(rawAimdGap, 10);
         if (!isNaN(saved) && saved > this?._overrides.pdimGapFloorMs) {
           try {
             const { setPdimAdaptiveGap } = await import("../lib/pdimClient.js");
             if (typeof setPdimAdaptiveGap === "function") {
-              const _capped = Math?.min(saved, _AIMD_RESTORE_CAP_MS);
+              const capped = Math?.min(saved, _AIMD_RESTORE_CAP_MS);
               setPdimAdaptiveGap(capped);
               logger?.info(
                 `[PermanentFixer] ✅ AIMD gap restored to ${capped}ms` +
@@ -328,11 +328,11 @@ class PermanentFixRegistry {
   }
 
   private async _persistAimdGap(): Promise<void> {
-    const _set = this?._pdimSet;
+    const set = this?._pdimSet;
     if (!set) return;
     try {
       const { getPdimAdaptiveGapMs } = await import("../lib/pdimClient.js");
-      const _gap = getPdimAdaptiveGapMs?.();
+      const gap = getPdimAdaptiveGapMs?.();
       if (typeof gap === "number" && gap > 0) {
         await set(`${PFR}aimd_gap_ms`, String(gap));
       }
@@ -360,22 +360,22 @@ class PermanentFixRegistry {
   private async _runDeEscalationCheck(): Promise<void> {
     // Map each override key to the minimum session count across all patterns that drive it.
     // If ANY pattern on that key fired this session, we do NOT de-escalate that key.
-    const _keyFirings = new Map<string, number>();
+    const keyFirings = new Map<string, number>();
     for (const [id, target] of Object?.entries(ESCALATION_MAP)) {
-      const _fires = this?._sessionCounts.get(id) ?? 0;
-      const _prev = keyFirings?.get(target?.key) ?? 0;
+      const fires = this?._sessionCounts.get(id) ?? 0;
+      const prev = keyFirings?.get(target?.key) ?? 0;
       keyFirings?.set(target?.key, prev + fires);
     }
 
     for (const [id, target] of Object?.entries(ESCALATION_MAP)) {
-      const _keyFired = keyFirings?.get(target?.key) ?? 0;
+      const keyFired = keyFirings?.get(target?.key) ?? 0;
       if (keyFired > 0) continue; // pattern drove activity this session — don't de-escalate
 
-      const _current = this?._overrides[target?.key] as number;
-      const _defaultV = DEFAULTS[target?.key] as number;
+      const current = this._overrides[target.key] as number;
+      const defaultV = DEFAULTS[target.key] as number;
 
       // Only de-escalate if we're clearly elevated above default
-      const _isElevated =
+      const isElevated =
         target?.delta > 0
           ? current > defaultV // ms values go up from default
           : current < defaultV; // ratio values go down from default
@@ -383,63 +383,63 @@ class PermanentFixRegistry {
       if (!isElevated) continue;
 
       // Cautious reduction: 50% of delta (in the de-escalation direction)
-      const _step = target?.delta * -0.5; // opposite direction of escalation
-      const _rawNew = current + step;
-      const _newValue =
+      const step = target?.delta * -0.5; // opposite direction of escalation
+      const rawNew = current + step;
+      const newValue =
         target?.delta > 0
           ? Math?.max(defaultV, Math?.min(target?.max, rawNew))
           : Math?.min(defaultV, Math?.max(target?.min, rawNew));
 
       if (newValue === current) continue;
 
-      (this?._overrides as Record<string, unknown>)[target?.key] = newValue;
-      this?._deEscalationsAllTime++;
-      this?._escalationsAllTime++; // counts toward all-time (it's a change event)
+      (this._overrides as Record<string, unknown>)[target.key] = newValue;
+      this._deEscalationsAllTime++;
+      this._escalationsAllTime++; // counts toward all-time (it's a change event)
 
       const entry: AuditEntry = {
-        ts: Date?.now(),
+        ts: Date.now(),
         patternId: id,
-        key: target?.key,
-        label: target?.label,
+        key: target.key,
+        label: target.label,
         oldValue: current,
         newValue,
         cumulativeCount: 0,
         direction: "de-escalation",
-        reason: `Pattern '${id}' fired 0 times in ${Math?.round(DEESCALATION_WINDOW_MS / 60_000)} min — cautious de-escalation (50% step)`,
+        reason: `Pattern '${id}' fired 0 times in ${Math.round(DEESCALATION_WINDOW_MS / 60_000)} min — cautious de-escalation (50% step)`,
       };
-      this?._audit.unshift(entry);
-      if (this?._audit.length > this?._MAX_AUDIT)
-        this?._audit.length = this?._MAX_AUDIT;
+      this._audit.unshift(entry);
+      if (this._audit.length > this._MAX_AUDIT)
+        this._audit.length = this._MAX_AUDIT;
 
-      logger?.info(
+      logger.info(
         `[PermanentFixer] 📉 DE-ESCALATION: '${id}' clean session → ` +
-          `${target?.label} ${current} → ${newValue} (saved to PDIM)`,
+          `${target.label} ${current} → ${newValue} (saved to PDIM)`,
       );
 
-      await this?._applyOverridesToModules();
+      await this._applyOverridesToModules();
 
-      const _set = this?._pdimSet;
+      const set = this._pdimSet;
       if (set) {
-        const _pdimKey = this?._overrideKeyToPdim(target?.key);
+        const pdimKey = this._overrideKeyToPdim(target.key);
         await set(`${PFR}override:${pdimKey}`, String(newValue));
         await set(
           `${PFR}escalations_all_time`,
-          String(this?._escalationsAllTime),
+          String(this._escalationsAllTime),
         );
         await set(
           `${PFR}deescalations_all_time`,
-          String(this?._deEscalationsAllTime),
+          String(this._deEscalationsAllTime),
         );
       }
-      const _lpush = this?._pdimLpush;
-      const _ltrim = this?._pdimLtrim;
+      const lpush = this._pdimLpush;
+      const ltrim = this._pdimLtrim;
       if (lpush && ltrim) {
-        await lpush(`${PFR}audit`, JSON?.stringify(entry));
-        await ltrim(`${PFR}audit`, 0, this?._MAX_AUDIT - 1);
+        await lpush(`${PFR}audit`, JSON.stringify(entry));
+        await ltrim(`${PFR}audit`, 0, this._MAX_AUDIT - 1);
       }
 
       // Only de-escalate the first matching pattern per key to avoid double reduction
-      keyFirings?.set(target?.key, 1); // mark as processed
+      keyFirings.set(target.key, 1); // mark as processed
     }
   }
 
@@ -448,14 +448,14 @@ class PermanentFixRegistry {
   private async _applyOverridesToModules(): Promise<void> {
     try {
       const { setPdimGapFloor } = await import("../lib/pdimClient.js");
-      setPdimGapFloor(this?._overrides.pdimGapFloorMs);
+      setPdimGapFloor(this._overrides.pdimGapFloorMs);
     } catch {
       /* module not available yet */
     }
 
     try {
       const { setLuaScriptTimeout } = await import("../lib/luaExecutor.js");
-      setLuaScriptTimeout(this?._overrides.luaWaitMs);
+      setLuaScriptTimeout(this._overrides.luaWaitMs);
     } catch {
       /* module not available yet */
     }
@@ -467,16 +467,16 @@ class PermanentFixRegistry {
   // ── Core: record a fix and escalate if threshold crossed ───────────────────
 
   recordFix(patternId: string): void {
-    const _target = ESCALATION_MAP[patternId];
+    const target = ESCALATION_MAP[patternId];
     if (!target) return;
 
-    const _prev = this?._sessionCounts.get(patternId) ?? 0;
-    const _next = prev + 1;
-    this?._sessionCounts.set(patternId, next);
+    const prev = this._sessionCounts.get(patternId) ?? 0;
+    const next = prev + 1;
+    this._sessionCounts.set(patternId, next);
 
-    const _threshold = target?.threshold ?? 5;
+    const threshold = target.threshold ?? 5;
     if (next >= threshold && next % threshold === 0) {
-      this?._escalate(patternId, target, next).catch(() => {});
+      this._escalate(patternId, target, next).catch(() => {});
     }
   }
 
@@ -485,30 +485,30 @@ class PermanentFixRegistry {
     target: EscalationTarget,
     sessionCount: number,
   ): Promise<void> {
-    const _oldValue = this?._overrides[target?.key] as number;
-    const _rawNew = oldValue + target?.delta;
-    const _newValue =
-      target?.delta > 0
-        ? Math?.min(target?.max, Math?.max(target?.min, rawNew))
-        : Math?.max(target?.min, Math?.min(target?.max, rawNew));
+    const oldValue = this._overrides[target.key] as number;
+    const rawNew = oldValue + target.delta;
+    const newValue =
+      target.delta > 0
+        ? Math.min(target.max, Math.max(target.min, rawNew))
+        : Math.max(target.min, Math.min(target.max, rawNew));
 
     if (newValue === oldValue) {
-      logger?.info(
-        `[PermanentFixer] ${patternId} → ${target?.label} already at bound (${oldValue}), no further escalation`,
+      logger.info(
+        `[PermanentFixer] ${patternId} → ${target.label} already at bound (${oldValue}), no further escalation`,
       );
       return;
     }
 
-    (this?._overrides as Record<string, unknown>)[target?.key] = newValue;
-    this?._escalationsThisSession++;
-    this?._escalationsAllTime++;
+    (this._overrides as Record<string, unknown>)[target.key] = newValue;
+    this._escalationsThisSession++;
+    this._escalationsAllTime++;
 
-    const _threshold = target?.threshold ?? 5;
+    const threshold = target.threshold ?? 5;
     const entry: AuditEntry = {
-      ts: Date?.now(),
+      ts: Date.now(),
       patternId,
-      key: target?.key,
-      label: target?.label,
+      key: target.key,
+      label: target.label,
       oldValue,
       newValue,
       cumulativeCount: sessionCount,
@@ -516,22 +516,22 @@ class PermanentFixRegistry {
       reason: `Pattern '${patternId}' fired ${sessionCount}× this session (threshold=${threshold})`,
     };
 
-    this?._audit.unshift(entry);
-    if (this?._audit.length > this?._MAX_AUDIT)
-      this?._audit.length = this?._MAX_AUDIT;
+    this._audit.unshift(entry);
+    if (this._audit.length > this._MAX_AUDIT)
+      this._audit.length = this._MAX_AUDIT;
 
-    logger?.warn(
+    logger.warn(
       `[PermanentFixer] 🔧 PERMANENT FIX: '${patternId}' triggered ${sessionCount}× → ` +
         `${target?.label} ${oldValue} → ${newValue} (saved to PDIM, applied immediately)`,
     );
 
     await this?._applyOverridesToModules();
 
-    const _set = this?._pdimSet;
-    const _lpush = this?._pdimLpush;
-    const _ltrim = this?._pdimLtrim;
+    const set = this?._pdimSet;
+    const lpush = this?._pdimLpush;
+    const ltrim = this?._pdimLtrim;
     if (set) {
-      const _pdimKey = this?._overrideKeyToPdim(target?.key);
+      const pdimKey = this?._overrideKeyToPdim(target?.key);
       await set(`${PFR}override:${pdimKey}`, String(newValue));
       await set(`${PFR}escalations_all_time`, String(this?._escalationsAllTime));
     }
@@ -574,13 +574,13 @@ class PermanentFixRegistry {
   // ── Status — exposed via admin endpoint ─────────────────────────────────────
 
   getStatus() {
-    const _upMinutes = Math?.round((Date?.now() - this?._sessionStartMs) / 60_000);
+    const upMinutes = Math?.round((Date?.now() - this?._sessionStartMs) / 60_000);
     return {
-      loaded: this?._loaded,
+      loaded: this._loaded,
       sessionUptimeMinutes: upMinutes,
-      escalationsThisSession: this?._escalationsThisSession,
-      escalationsAllTime: this?._escalationsAllTime,
-      deEscalationsAllTime: this?._deEscalationsAllTime,
+      escalationsThisSession: this._escalationsThisSession,
+      escalationsAllTime: this._escalationsAllTime,
+      deEscalationsAllTime: this._deEscalationsAllTime,
       currentOverrides: { ...this?._overrides },
       defaults: { ...DEFAULTS },
       improvementsVsDefaults: {
@@ -601,22 +601,22 @@ class PermanentFixRegistry {
             ? `Critical patch triggers ${Math?.round((DEFAULTS?.heapPatchRatio - this?._overrides.heapPatchRatio) * 100)}% earlier`
             : "at default",
       },
-      sessionFixCounts: Object?.fromEntries(this?._sessionCounts),
-      escalationMap: Object?.fromEntries(
+      sessionFixCounts: Object.fromEntries(this?._sessionCounts),
+      escalationMap: Object.fromEntries(
         Object?.entries(ESCALATION_MAP).map(([id, t]) => [
           id,
           {
-            overrideKey: t?.key,
-            delta: t?.delta,
-            threshold: t?.threshold ?? 5,
-            currentValue: this?._overrides[t?.key],
-            min: t?.min,
-            max: t?.max,
-            firesThisSession: this?._sessionCounts.get(id) ?? 0,
+            overrideKey: t.key,
+            delta: t.delta,
+            threshold: t.threshold ?? 5,
+            currentValue: this._overrides[t?.key],
+            min: t.min,
+            max: t.max,
+            firesThisSession: this._sessionCounts.get(id) ?? 0,
           },
         ]),
       ),
-      recentAudit: this?._audit.slice(0, 20),
+      recentAudit: this._audit.slice(0, 20),
       description:
         "Tracks recurring runtime fixes and permanently improves constants when patterns repeat. " +
         "Also de-escalates cautiously when patterns have a clean session (30 min+ without fires). " +
@@ -626,4 +626,4 @@ class PermanentFixRegistry {
   }
 }
 
-export const _permanentFixRegistry = new PermanentFixRegistry();
+export const permanentFixRegistry = new PermanentFixRegistry();

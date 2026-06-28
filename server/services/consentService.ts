@@ -3,8 +3,8 @@ import { consentLogs, users } from "../../shared/schema";
 import { eq } from "drizzle-orm";
 import { logger } from "../logger.js";
 
-const _CURRENT_TOS_VERSION = "1.0.0";
-const _CURRENT_PRIVACY_VERSION = "1.0.0";
+const CURRENT_TOS_VERSION = "1.0.0";
+const CURRENT_PRIVACY_VERSION = "1.0.0";
 
 interface LogConsentInput {
   userId: string;
@@ -27,13 +27,13 @@ export class ConsentService {
   async logConsent(input: LogConsentInput): Promise<void> {
     try {
       await db?.insert(consentLogs).values({
-        userId: input?.userId,
-        consentType: input?.consentType,
-        action: input?.action,
-        version: input?.version,
-        ipAddress: input?.ipAddress,
-        userAgent: input?.userAgent,
-        metadata: input?.metadata,
+        userId: input.userId,
+        consentType: input.consentType,
+        action: input.action,
+        version: input.version,
+        ipAddress: input.ipAddress,
+        userAgent: input.userAgent,
+        metadata: input.metadata,
       });
 
       logger?.info(
@@ -51,10 +51,10 @@ export class ConsentService {
     ipAddress?: string,
     userAgent?: string,
   ): Promise<void> {
-    const _now = new Date();
+    const now = new Date();
 
     // Validate age (COPPA compliance - must be 13+)
-    const _age = this?.calculateAge(input?.birthdate);
+    const age = this?.calculateAge(input?.birthdate);
     if (age < 13) {
       throw new Error(
         "Users must be at least 13 years old to register (COPPA compliance)",
@@ -78,8 +78,8 @@ export class ConsentService {
         tosVersion: CURRENT_TOS_VERSION,
         privacyAcceptedAt: now,
         privacyVersion: CURRENT_PRIVACY_VERSION,
-        marketingConsent: input?.marketingConsent || false,
-        marketingConsentAt: input?.marketingConsent ? now : null,
+        marketingConsent: input.marketingConsent || false,
+        marketingConsentAt: input.marketingConsent ? now : null,
       })
       .where(eq(users?.id, userId));
 
@@ -108,7 +108,7 @@ export class ConsentService {
       await this?.logConsent({
         userId,
         consentType: "marketing",
-        action: input?.marketingConsent ? "accepted" : "rejected",
+        action: input.marketingConsent ? "accepted" : "rejected",
         ipAddress,
         userAgent,
       });
@@ -120,10 +120,10 @@ export class ConsentService {
   }
 
   calculateAge(birthdate: Date): number {
-    const _today = new Date();
-    const _birth = new Date(birthdate);
+    const today = new Date();
+    const birth = new Date(birthdate);
     let age = today?.getFullYear() - birth?.getFullYear();
-    const _monthDiff = today?.getMonth() - birth?.getMonth();
+    const monthDiff = today?.getMonth() - birth?.getMonth();
     if (
       monthDiff < 0 ||
       (monthDiff === 0 && today?.getDate() < birth?.getDate())
@@ -163,16 +163,16 @@ export class ConsentService {
   }
 
   async getUserConsents(userId: string) {
-    const _user = await db
+    const user = await db
       .select({
-        tosAcceptedAt: users?.tosAcceptedAt,
-        tosVersion: users?.tosVersion,
-        privacyAcceptedAt: users?.privacyAcceptedAt,
-        privacyVersion: users?.privacyVersion,
-        marketingConsent: users?.marketingConsent,
-        marketingConsentAt: users?.marketingConsentAt,
-        ageVerified: users?.ageVerified,
-        birthdate: users?.birthdate,
+        tosAcceptedAt: users.tosAcceptedAt,
+        tosVersion: users.tosVersion,
+        privacyAcceptedAt: users.privacyAcceptedAt,
+        privacyVersion: users.privacyVersion,
+        marketingConsent: users.marketingConsent,
+        marketingConsentAt: users.marketingConsentAt,
+        ageVerified: users.ageVerified,
+        birthdate: users.birthdate,
       })
       .from(users)
       .where(eq(users?.id, userId))
@@ -189,4 +189,4 @@ export class ConsentService {
   }
 }
 
-export const _consentService = new ConsentService();
+export const consentService = new ConsentService();

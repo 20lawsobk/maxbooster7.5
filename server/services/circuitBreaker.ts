@@ -76,13 +76,13 @@ export class CircuitBreaker extends EventEmitter {
   constructor(options: CircuitBreakerOptions) {
     super();
     this.options = {
-      name: options?.name,
-      failureThreshold: options?.failureThreshold ?? 5,
-      resetTimeout: options?.resetTimeout ?? 30000,
-      monitorInterval: options?.monitorInterval ?? 5000,
-      timeout: options?.timeout ?? 10000,
-      successThreshold: options?.successThreshold ?? 3,
-      volumeThreshold: options?.volumeThreshold ?? 10,
+      name: options.name,
+      failureThreshold: options.failureThreshold ?? 5,
+      resetTimeout: options.resetTimeout ?? 30000,
+      monitorInterval: options.monitorInterval ?? 5000,
+      timeout: options.timeout ?? 10000,
+      successThreshold: options.successThreshold ?? 3,
+      volumeThreshold: options.volumeThreshold ?? 10,
     };
 
     this?.startMonitoring();
@@ -98,7 +98,7 @@ export class CircuitBreaker extends EventEmitter {
     fallback?: () => Promise<T> | T,
   ): Promise<T> {
     if (this?.state === "OPEN") {
-      const _elapsed = this?.lastFailure
+      const elapsed = this?.lastFailure
         ? Date?.now() - this?.lastFailure.getTime()
         : this?.options.resetTimeout;
 
@@ -132,13 +132,13 @@ export class CircuitBreaker extends EventEmitter {
       );
     }
 
-    this?.totalRequests++;
+    this.totalRequests++;
     if (this?.state === "HALF_OPEN") {
-      this?.halfOpenRequests++;
+      this.halfOpenRequests++;
     }
 
     try {
-      const _result = await this?.withTimeout(fn(), this?.options.timeout);
+      const result = await this?.withTimeout(fn(), this?.options.timeout);
       this?.onSuccess();
       return result;
     } catch (error) {
@@ -156,14 +156,14 @@ export class CircuitBreaker extends EventEmitter {
   private async withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
     let timeoutId: NodeJS.Timeout;
 
-    const _timeoutPromise = new Promise<never>((_, reject) => {
+    const timeoutPromise = new Promise<never>((_, reject) => {
       timeoutId = setTimeout(() => {
         reject(new TimeoutError(this?.options.name, ms));
       }, ms);
     });
 
     try {
-      const _result = await Promise?.race([promise, timeoutPromise]);
+      const result = await Promise?.race([promise, timeoutPromise]);
       clearTimeout(timeoutId!);
       return result;
     } catch (error) {
@@ -176,8 +176,8 @@ export class CircuitBreaker extends EventEmitter {
   }
 
   private onSuccess(): void {
-    this?.successes++;
-    this?.consecutiveSuccesses++;
+    this.successes++;
+    this.consecutiveSuccesses++;
     this.consecutiveFailures = 0;
     this.lastSuccess = new Date();
     this?.emitEvent("success");
@@ -191,8 +191,8 @@ export class CircuitBreaker extends EventEmitter {
   }
 
   private onFailure(error: Error): void {
-    this?.failures++;
-    this?.consecutiveFailures++;
+    this.failures++;
+    this.consecutiveFailures++;
     this.consecutiveSuccesses = 0;
     this.lastFailure = new Date();
     this?.emitEvent("failure", error);
@@ -208,7 +208,7 @@ export class CircuitBreaker extends EventEmitter {
   }
 
   private transitionTo(newState: CircuitState): void {
-    const _previousState = this?.state;
+    const previousState = this?.state;
     this.state = newState;
 
     if (this?.resetTimer) {
@@ -232,7 +232,7 @@ export class CircuitBreaker extends EventEmitter {
     );
 
     this?.emit("state_change", {
-      name: this?.options.name,
+      name: this.options.name,
       type: "state_change",
       previousState,
       newState,
@@ -242,7 +242,7 @@ export class CircuitBreaker extends EventEmitter {
 
   private emitEvent(type: CircuitBreakerEvent["type"], error?: Error): void {
     this?.emit(type, {
-      name: this?.options.name,
+      name: this.options.name,
       type,
       error,
       timestamp: new Date(),
@@ -260,23 +260,23 @@ export class CircuitBreaker extends EventEmitter {
   }
 
   getStats(): CircuitBreakerStats {
-    const _failureRate =
+    const failureRate =
       this?.totalRequests > 0
         ? Math?.round((this?.failures / this?.totalRequests) * 100 * 100) / 100
         : 0;
 
     return {
-      name: this?.options.name,
-      state: this?.state,
-      failures: this?.failures,
-      successes: this?.successes,
-      lastFailure: this?.lastFailure,
-      lastSuccess: this?.lastSuccess,
-      totalRequests: this?.totalRequests,
+      name: this.options.name,
+      state: this.state,
+      failures: this.failures,
+      successes: this.successes,
+      lastFailure: this.lastFailure,
+      lastSuccess: this.lastSuccess,
+      totalRequests: this.totalRequests,
       failureRate,
-      consecutiveFailures: this?.consecutiveFailures,
-      consecutiveSuccesses: this?.consecutiveSuccesses,
-      isHealthy: this?.state === "CLOSED",
+      consecutiveFailures: this.consecutiveFailures,
+      consecutiveSuccesses: this.consecutiveSuccesses,
+      isHealthy: this.state === "CLOSED",
     };
   }
 
@@ -297,7 +297,7 @@ export class CircuitBreaker extends EventEmitter {
     }
 
     logger?.info(`🔌 Circuit breaker ${this?.options.name} reset`);
-    this?.emit("reset", { name: this?.options.name, timestamp: new Date() });
+    this?.emit("reset", { name: this.options.name, timestamp: new Date() });
   }
 
   forceOpen(): void {
@@ -326,14 +326,14 @@ export async function withTimeout<T>(
 ): Promise<T> {
   let timeoutId: NodeJS.Timeout;
 
-  const _timeoutPromise = new Promise<never>((_, reject) => {
+  const timeoutPromise = new Promise<never>((_, reject) => {
     timeoutId = setTimeout(() => {
       reject(new TimeoutError(serviceName, ms));
     }, ms);
   });
 
   try {
-    const _result = await Promise?.race([promise, timeoutPromise]);
+    const result = await Promise?.race([promise, timeoutPromise]);
     clearTimeout(timeoutId!);
     return result;
   } catch (error) {
@@ -377,13 +377,13 @@ export class CircuitBreakerRegistry {
     unhealthy: number;
     circuits: CircuitBreakerStats[];
   } {
-    const _stats = this?.getAllStats();
-    const _healthy = stats?.filter((s) => s?.isHealthy).length;
+    const stats = this?.getAllStats();
+    const healthy = stats?.filter((s) => s?.isHealthy).length;
 
     return {
-      total: stats?.length,
+      total: stats.length,
       healthy,
-      unhealthy: stats?.length - healthy,
+      unhealthy: stats.length - healthy,
       circuits: stats,
     };
   }
@@ -398,4 +398,4 @@ export class CircuitBreakerRegistry {
   }
 }
 
-export const _circuitBreakerRegistry = CircuitBreakerRegistry?.getInstance();
+export const circuitBreakerRegistry = CircuitBreakerRegistry?.getInstance();

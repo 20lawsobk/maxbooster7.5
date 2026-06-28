@@ -50,9 +50,9 @@ export function useOfflineCache<T = unknown>(
   );
   const [error, setError] = useState<Error | null>(null);
 
-  const _loadFromCache = useCallback(async (): Promise<T | null> => {
+  const loadFromCache = useCallback(async (): Promise<T | null> => {
     try {
-      const _cached = await offlineCache?.getWithMetadata<T>(key);
+      const cached = await offlineCache?.getWithMetadata<T>(key);
       if (cached) {
         setData(cached?.data);
         setCacheMetadata(cached);
@@ -68,12 +68,12 @@ export function useOfflineCache<T = unknown>(
     }
   }, [key, onCacheHit, onCacheMiss]);
 
-  const _fetchAndCache = useCallback(async (): Promise<void> => {
+  const fetchAndCache = useCallback(async (): Promise<void> => {
     if (!fetcher) return;
 
     try {
       setIsLoading(true);
-      const _freshData = await fetcher();
+      const freshData = await fetcher();
       await offlineCache?.set(key, freshData, { category, ttlMs });
       setData(freshData as T);
       setIsCached(true);
@@ -86,7 +86,7 @@ export function useOfflineCache<T = unknown>(
     }
   }, [key, fetcher, category, ttlMs]);
 
-  const _refresh = useCallback(async (): Promise<void> => {
+  const refresh = useCallback(async (): Promise<void> => {
     if (staleWhileRevalidate) {
       await loadFromCache();
       await fetchAndCache();
@@ -96,7 +96,7 @@ export function useOfflineCache<T = unknown>(
     }
   }, [staleWhileRevalidate, loadFromCache, fetchAndCache]);
 
-  const _invalidate = useCallback(async (): Promise<void> => {
+  const invalidate = useCallback(async (): Promise<void> => {
     try {
       await offlineCache?.delete(key);
       setData(null);
@@ -107,10 +107,10 @@ export function useOfflineCache<T = unknown>(
     }
   }, [key]);
 
-  const _set = useCallback(
+  const set = useCallback(
     async (newData: T, cacheOptions?: CacheOptions): Promise<void> => {
       try {
-        const _entry = await offlineCache?.set(key, newData, {
+        const entry = await offlineCache?.set(key, newData, {
           category,
           ttlMs,
           ...cacheOptions,
@@ -131,9 +131,9 @@ export function useOfflineCache<T = unknown>(
       return;
     }
 
-    const _init = async () => {
+    const init = async () => {
       setIsLoading(true);
-      const _cached = await loadFromCache();
+      const cached = await loadFromCache();
 
       if (cached && !staleWhileRevalidate) {
         setIsLoading(false);
@@ -172,10 +172,10 @@ export function useOfflineCacheCategory(category: CacheCategory) {
   const [entries, setEntries] = useState<CacheEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const _loadEntries = useCallback(async () => {
+  const loadEntries = useCallback(async () => {
     setIsLoading(true);
     try {
-      const _categoryEntries = await offlineCache?.getByCategory(category);
+      const categoryEntries = await offlineCache?.getByCategory(category);
       setEntries(categoryEntries);
     } catch (err) {
       logger?.error("[useOfflineCacheCategory] Failed to load:", err);
@@ -184,7 +184,7 @@ export function useOfflineCacheCategory(category: CacheCategory) {
     }
   }, [category]);
 
-  const _invalidateAll = useCallback(async () => {
+  const invalidateAll = useCallback(async () => {
     await offlineCache?.invalidateCategory(category);
     setEntries([]);
   }, [category]);
@@ -209,17 +209,17 @@ export function useOfflineCacheStats() {
     hitRate: number;
   } | null>(null);
 
-  const _loadStats = useCallback(async () => {
-    const _s = await offlineCache?.getStats();
+  const loadStats = useCallback(async () => {
+    const s = await offlineCache?.getStats();
     setStats(s);
   }, []);
 
-  const _clearAll = useCallback(async () => {
+  const clearAll = useCallback(async () => {
     await offlineCache?.clear();
     await loadStats();
   }, [loadStats]);
 
-  const _cleanupExpired = useCallback(async () => {
+  const cleanupExpired = useCallback(async () => {
     await offlineCache?.cleanupExpired();
     await loadStats();
   }, [loadStats]);

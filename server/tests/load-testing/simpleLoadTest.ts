@@ -1,6 +1,7 @@
 import http from "http";
 import { logger } from "../../logger.js";
 
+
 interface LoadTestResult {
   endpoint: string;
   concurrentUsers: number;
@@ -28,9 +29,9 @@ async function httpGet(
   path: string,
   cookie?: string,
 ): Promise<{ status: number; time: number; error?: string }> {
-  const _start = Date?.now();
+  const start = Date?.now();
   return new Promise((resolve) => {
-    const _req = http?.request(
+    const req = http?.request(
       {
         hostname: "localhost",
         port: 5000,
@@ -43,17 +44,17 @@ async function httpGet(
         let body = "";
         res?.on("data", (chunk) => (body += chunk));
         res?.on("end", () => {
-          resolve({ status: res?.statusCode || 0, time: Date?.now() - start });
+          resolve({ status: res.statusCode || 0, time: Date.now() - start });
         });
       },
     );
 
     req?.on("error", (e) =>
-      resolve({ status: 0, time: Date?.now() - start, error: e?.message }),
+      resolve({ status: 0, time: Date.now() - start, error: e.message }),
     );
     req?.on("timeout", () => {
       req?.destroy();
-      resolve({ status: 0, time: Date?.now() - start, error: "TIMEOUT" });
+      resolve({ status: 0, time: Date.now() - start, error: "TIMEOUT" });
     });
     req?.end();
   });
@@ -64,11 +65,11 @@ async function httpPost(
   body: Record<string, unknown>,
   cookie?: string,
 ): Promise<{ status: number; time: number; error?: string }> {
-  const _start = Date?.now();
-  const _data = JSON?.stringify(body);
+  const start = Date?.now();
+  const data = JSON?.stringify(body);
 
   return new Promise((resolve) => {
-    const _req = http?.request(
+    const req = http?.request(
       {
         hostname: "localhost",
         port: 5000,
@@ -85,17 +86,17 @@ async function httpPost(
         let responseBody = "";
         res?.on("data", (chunk) => (responseBody += chunk));
         res?.on("end", () => {
-          resolve({ status: res?.statusCode || 0, time: Date?.now() - start });
+          resolve({ status: res.statusCode || 0, time: Date.now() - start });
         });
       },
     );
 
     req?.on("error", (e) =>
-      resolve({ status: 0, time: Date?.now() - start, error: e?.message }),
+      resolve({ status: 0, time: Date.now() - start, error: e.message }),
     );
     req?.on("timeout", () => {
       req?.destroy();
-      resolve({ status: 0, time: Date?.now() - start, error: "TIMEOUT" });
+      resolve({ status: 0, time: Date.now() - start, error: "TIMEOUT" });
     });
     req?.write(data);
     req?.end();
@@ -104,9 +105,9 @@ async function httpPost(
 
 async function getAuthCookie(): Promise<string> {
   return new Promise((resolve, reject) => {
-    const _timeout = setTimeout(() => reject(new Error("Auth timeout")), 5000);
+    const timeout = setTimeout(() => reject(new Error("Auth timeout")), 5000);
 
-    const _req = http?.request(
+    const req = http?.request(
       {
         hostname: "localhost",
         port: 5000,
@@ -116,9 +117,9 @@ async function getAuthCookie(): Promise<string> {
       },
       (res) => {
         clearTimeout(timeout);
-        const _cookies = res?.headers["set-cookie"];
+        const cookies = res?.headers["set-cookie"];
         if (cookies) {
-          const _sid = cookies?.find((c) => c?.includes("connect?.sid"));
+          const sid = cookies?.find((c) => c?.includes("connect.sid"));
           if (sid) {
             resolve(sid?.split(";")[0]);
             return;
@@ -150,23 +151,23 @@ async function runConcurrentRequests(
   const results: { status: number; time: number; error?: string }[] = [];
   const errors: Record<string, number> = {};
 
-  const _startTime = Date?.now();
+  const startTime = Date?.now();
 
-  const _userPromises = [];
+  const userPromises = [];
   for (let u = 0; u < concurrency; u++) {
     userPromises?.push(
       (async () => {
         for (let r = 0; r < requestsPerUser; r++) {
-          const _result =
+          const result =
             method === "GET"
               ? await httpGet(endpoint, cookie)
               : await httpPost(endpoint, body, cookie);
           results?.push(result);
 
           if (result?.error) {
-            errors[result?.error] = (errors[result?.error] || 0) + 1;
+            errors[result.error] = (errors[result?.error] || 0) + 1;
           } else if (result?.status >= 400) {
-            const _key = `HTTP_${result?.status}`;
+            const key = `HTTP_${result?.status}`;
             errors[key] = (errors[key] || 0) + 1;
           }
         }
@@ -176,22 +177,22 @@ async function runConcurrentRequests(
 
   await Promise?.all(userPromises);
 
-  const _totalTime = Date?.now() - startTime;
-  const _successResults = results?.filter(
+  const totalTime = Date?.now() - startTime;
+  const successResults = results?.filter(
     (r) => r?.status >= 200 && r?.status < 400,
   );
-  const _times = results?.map((r) => r?.time).sort((a, b) => a - b);
+  const times = results?.map((r) => r?.time).sort((a, b) => a - b);
 
   return {
     endpoint,
     concurrentUsers: concurrency,
-    totalRequests: results?.length,
-    successfulRequests: successResults?.length,
-    failedRequests: results?.length - successResults?.length,
-    avgResponseMs: times?.reduce((a, b) => a + b, 0) / times?.length,
+    totalRequests: results.length,
+    successfulRequests: successResults.length,
+    failedRequests: results.length - successResults?.length,
+    avgResponseMs: times.reduce((a, b) => a + b, 0) / times?.length,
     minResponseMs: times[0] || 0,
     maxResponseMs: times[times?.length - 1] || 0,
-    requestsPerSecond: results?.length / (totalTime / 1000),
+    requestsPerSecond: results.length / (totalTime / 1000),
     errors,
   };
 }
@@ -200,15 +201,15 @@ function projectToScale(
   baseResult: LoadTestResult,
   targetUsers: number,
 ): ScaleProjection {
-  const _scaleFactor = targetUsers / baseResult?.concurrentUsers;
-  const _degradationFactor = 1 + Math?.log10(Math?.max(1, scaleFactor)) * 0.15;
+  const scaleFactor = targetUsers / baseResult?.concurrentUsers;
+  const degradationFactor = 1 + Math?.log10(Math?.max(1, scaleFactor)) * 0.15;
 
-  const _projectedThroughput =
+  const projectedThroughput =
     baseResult?.requestsPerSecond * Math?.min(scaleFactor, 100000);
-  const _projectedLatency = baseResult?.avgResponseMs * degradationFactor;
+  const projectedLatency = baseResult?.avgResponseMs * degradationFactor;
 
-  const _requiredThroughput = targetUsers / 10;
-  const _serversNeeded = Math?.ceil(
+  const requiredThroughput = targetUsers / 10;
+  const serversNeeded = Math?.ceil(
     requiredThroughput / baseResult?.requestsPerSecond,
   );
 
@@ -269,7 +270,7 @@ async function main() {
     logger?.warn("Auth failed, proceeding with unauthenticated tests");
   }
 
-  const _endpoints = [
+  const endpoints = [
     { name: "Health", path: "/api/health", method: "GET" as const },
     { name: "AI Health", path: "/api/ai/health", method: "GET" as const },
     {
@@ -303,14 +304,14 @@ async function main() {
     },
   ];
 
-  const _scales = [10, 50, 100, 500, 1000];
-  const _projectionTargets = [1e6, 1e7, 1e8, 1e9, 1e10, 8e10];
+  const scales = [10, 50, 100, 500, 1000];
+  const projectionTargets = [1e6, 1e7, 1e8, 1e9, 1e10, 8e10];
 
   const allResults: Map<string, LoadTestResult[]> = new Map();
   const allIssues: string[] = [];
 
   for (const ep of endpoints) {
-    logger?.info(`Testing: ${ep?.name}`, { path: ep?.path });
+    logger?.info(`Testing: ${ep?.name}`, { path: ep.path });
 
     const results: LoadTestResult[] = [];
 
@@ -318,7 +319,7 @@ async function main() {
       process?.stdout.write(`  Testing ${concurrency} concurrent users... `);
 
       try {
-        const _result = await runConcurrentRequests(
+        const result = await runConcurrentRequests(
           ep?.path,
           ep?.method,
           concurrency,
@@ -328,15 +329,15 @@ async function main() {
         );
         results?.push(result);
 
-        const _successRate = (
+        const successRate = (
           (result?.successfulRequests / result?.totalRequests) *
           100
         ).toFixed(1);
         logger?.info(`Load test passed`, {
-          endpoint: ep?.path,
+          endpoint: ep.path,
           concurrency,
-          reqPerSec: result?.requestsPerSecond.toFixed(0),
-          avgMs: result?.avgResponseMs.toFixed(0),
+          reqPerSec: result.requestsPerSecond.toFixed(0),
+          avgMs: result.avgResponseMs.toFixed(0),
           successRate: `${successRate}%`,
         });
 
@@ -347,9 +348,9 @@ async function main() {
         }
       } catch (error) {
         logger?.warn(`Load test failed`, {
-          endpoint: ep?.path,
+          endpoint: ep.path,
           concurrency,
-          error: error?.message,
+          error: error.message,
         });
         allIssues?.push(`${ep?.name} at ${concurrency}: ${error?.message}`);
       }
@@ -363,14 +364,14 @@ async function main() {
   for (const [name, results] of allResults?.entries()) {
     if (results?.length === 0) continue;
 
-    const _bestResult = results?.reduce((a, b) =>
+    const bestResult = results?.reduce((a, b) =>
       a?.requestsPerSecond > b?.requestsPerSecond ? a : b,
     );
 
     const projections: Record<string, string> = {};
     for (const target of projectionTargets) {
-      const _projection = projectToScale(bestResult, target);
-      projections[`${projection?.scale} users`] =
+      const projection = projectToScale(bestResult, target);
+      projections[`${projection.scale} users`] =
         `~${formatNumber(projection?.serversNeeded)} servers, ${projection?.projectedLatency.toFixed(0)}ms latency`;
     }
 
@@ -418,8 +419,8 @@ async function main() {
     });
   }
 
-  const _totalEndpoints = allResults?.size;
-  const _successfulEndpoints = Array?.from(allResults?.values()).filter(
+  const totalEndpoints = allResults?.size;
+  const successfulEndpoints = Array?.from(allResults?.values()).filter(
     (r) =>
       r?.length > 0 &&
       r[r?.length - 1].failedRequests / r[r?.length - 1].totalRequests < 0.05,

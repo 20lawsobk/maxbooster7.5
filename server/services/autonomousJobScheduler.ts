@@ -6,12 +6,12 @@ import { logger } from "../logger.js";
 import { db } from "../db.js";
 import { sql } from "drizzle-orm";
 
-export const _AUTONOMOUS_QUEUE = "autonomous";
+export const AUTONOMOUS_QUEUE = "autonomous";
 
 // ── State ────────────────────────────────────────────────────────────────────
 
-let _queue: Queue | null = null;
-let _worker: Worker | null = null;
+let queue: Queue | null = null;
+let worker: Worker | null = null;
 
 // Track whether this pod is currently executing a job AND when it last finished one.
 // isSchedulerLeader() returns true while a job is running OR within 2× the shortest
@@ -20,7 +20,7 @@ let _worker: Worker | null = null;
 // between ticks rather than everyone reporting false when idle.
 let _isProcessingJob = false;
 let _lastJobCompletedAt = 0;
-const _LEADER_STALENESS_MS = 120_000; // 2× content-dispatch interval (60 s)
+const LEADER_STALENESS_MS = 120_000; // 2× content-dispatch interval (60 s)
 
 export function isSchedulerLeader(): boolean {
   return (
@@ -29,11 +29,11 @@ export function isSchedulerLeader(): boolean {
 }
 
 // BullMQ repeat key per campaign (for removeCampaignOptimization)
-const __campaignJobKeys = new Map<string, string>();
+const _campaignJobKeys = new Map<string, string>();
 
 function getQueue(): Queue {
-  if (!_queue) {
-    _queue = new Queue(AUTONOMOUS_QUEUE, {
+  if (!queue) {
+    queue = new Queue(AUTONOMOUS_QUEUE, {
       connection: newBullMQRedisConnection(),
       defaultJobOptions: {
         removeOnComplete: true,
@@ -43,18 +43,18 @@ function getQueue(): Queue {
       },
     });
   }
-  return _queue;
+  return queue;
 }
 
 // ── Maintenance helpers ───────────────────────────────────────────────────────
 
 /** Delete system_logs rows older than `days` days. */
 async function pruneSystemLogs(days = 7): Promise<void> {
-  const _cutoff = new Date(Date?.now() - days * 86_400_000);
-  const _result = await db?.execute(
+  const cutoff = new Date(Date?.now() - days * 86_400_000);
+  const result = await db?.execute(
     sql`DELETE FROM system_logs WHERE timestamp < ${cutoff}`,
   );
-  const _count = (result as Record<string, unknown>).rowCount ?? 0;
+  const count = (result as Record<string, unknown>).rowCount ?? 0;
   if (count > 0)
     logger?.info(
       `[Maintenance] Pruned ${count} system_logs rows older than ${days}d`,
@@ -64,7 +64,7 @@ async function pruneSystemLogs(days = 7): Promise<void> {
 /** Delete audit_log rows older than `days` days. */
 async function pruneAuditLog(days = 90): Promise<void> {
   const { cleanupAuditLog } = await import("../safety/auditLogger.js");
-  const _count = await cleanupAuditLog(days);
+  const count = await cleanupAuditLog(days);
   if (count > 0)
     logger?.info(
       `[Maintenance] Pruned ${count} audit_log rows older than ${days}d`,
@@ -73,11 +73,11 @@ async function pruneAuditLog(days = 90): Promise<void> {
 
 /** Delete notifications older than `days` days. */
 async function pruneNotifications(days = 30): Promise<void> {
-  const _cutoff = new Date(Date?.now() - days * 86_400_000);
-  const _result = await db?.execute(
+  const cutoff = new Date(Date?.now() - days * 86_400_000);
+  const result = await db?.execute(
     sql`DELETE FROM notifications WHERE created_at < ${cutoff}`,
   );
-  const _count = (result as Record<string, unknown>).rowCount ?? 0;
+  const count = (result as Record<string, unknown>).rowCount ?? 0;
   if (count > 0)
     logger?.info(
       `[Maintenance] Pruned ${count} notifications older than ${days}d`,
@@ -86,13 +86,13 @@ async function pruneNotifications(days = 30): Promise<void> {
 
 /** Delete files older than `days` days from local upload cache directories. */
 async function pruneUploadDirs(days = 7): Promise<void> {
-  const _dirs = [
+  const dirs = [
     path?.join(process?.cwd(), "uploads", "audio"),
     path?.join(process?.cwd(), "uploads", "videos"),
     path?.join(process?.cwd(), "uploads", "processed"),
     path?.join(process?.cwd(), "uploads", "normalized"),
   ];
-  const _cutoffMs = Date?.now() - days * 86_400_000;
+  const cutoffMs = Date?.now() - days * 86_400_000;
   let total = 0;
 
   // Scan all directories in parallel — each dir is independent I/O.
@@ -106,12 +106,12 @@ async function pruneUploadDirs(days = 7): Promise<void> {
       }
 
       // Delete eligible files within each dir in parallel (up to 8 concurrent unlinks).
-      const _cutoffEntries = (
+      const cutoffEntries = (
         await Promise?.allSettled(
           entries?.map(async (name) => {
-            const _full = path?.join(dir, name);
+            const full = path?.join(dir, name);
             try {
-              const _stat = await fsPromises?.stat(full);
+              const stat = await fsPromises?.stat(full);
               return stat?.isFile() && stat?.mtimeMs < cutoffMs ? full : null;
             } catch {
               return null;
@@ -189,7 +189,7 @@ async function processAutonomousJob(job: Job): Promise<void> {
       const { beatMoneyLoopService } = await import(
         "./beatMoneyLoopService.js"
       );
-      const _result = await beatMoneyLoopService?.tick();
+      const result = await beatMoneyLoopService?.tick();
       if (result?.ran) {
         logger?.info(
           `[AutonomousScheduler] beat-money-loop-tick fired cycle ${result?.cycleId} (${result?.reason})`,
@@ -208,7 +208,7 @@ async function processAutonomousJob(job: Job): Promise<void> {
     }
     default:
       if (job?.name.startsWith("campaign-optimize-")) {
-        const _campaignId = job?.data?.campaignId as string | undefined;
+        const campaignId = job?.data?.campaignId as string | undefined;
         if (campaignId) {
           const { autonomousService } = await import("./autonomousService.js");
           await autonomousService?.runCampaignOptimization(campaignId);
@@ -235,19 +235,19 @@ async function processAutonomousJob(job: Job): Promise<void> {
 //                           ensures only one pod processes each job globally.
 
 function createAutonomousWorker(): Worker {
-  const _connection = newBullMQRedisConnection();
+  const connection = newBullMQRedisConnection();
 
-  const _worker = new Worker(
+  const worker = new Worker(
     AUTONOMOUS_QUEUE,
     async (job: Job) => {
-      logger?.info(`[AutonomousScheduler] ▶ ${job?.name} (id=${job?.id})`);
+      logger.info(`[AutonomousScheduler] ▶ ${job.name} (id=${job.id})`);
       _isProcessingJob = true;
       try {
         await processAutonomousJob(job);
-        _lastJobCompletedAt = Date?.now(); // update on success so isSchedulerLeader() stays true between ticks
+        _lastJobCompletedAt = Date.now(); // update on success so isSchedulerLeader() stays true between ticks
       } catch (err) {
-        logger?.warn(
-          `[AutonomousScheduler] ${job?.name} error: ${(err as Error).message}`,
+        logger.warn(
+          `[AutonomousScheduler] ${job.name} error: ${(err as Error).message}`,
         );
         throw err; // re-throw so BullMQ handles retry/failure state
       } finally {
@@ -256,7 +256,7 @@ function createAutonomousWorker(): Worker {
     },
     {
       connection,
-      // concurrency: 4 — allows up to 4 independent jobs (e?.g. multiple prune
+      // concurrency: 4 — allows up to 4 independent jobs (e.g. multiple prune
       // jobs or a prune + analytics) to run simultaneously on this pod.
       // BullMQ's Redis lock still ensures each repeatable job fires exactly once
       // across all pods, so raising concurrency only helps when the queue has
@@ -281,14 +281,14 @@ function createAutonomousWorker(): Worker {
     logger?.info(`[AutonomousScheduler] ✅ ${job?.name} done`),
   );
   worker?.on("failed", (job, err) => {
-    const _msg = err?.message ?? "";
+    const msg = err?.message ?? "";
     if (/PDIM circuit OPEN|Circuit OPEN/i?.test(msg)) return; // circuit-open is self-healing
     logger?.warn(`[AutonomousScheduler] ❌ ${job?.name} failed: ${msg}`);
   });
   worker?.on("error", (err) => {
-    const _full = err?.message ?? "";
+    const full = err?.message ?? "";
     // Strip Lua/Node?.js stack traces — keep only the first line of the message.
-    const _msg = full?.split("\n")[0] ?? full;
+    const msg = full?.split("\n")[0] ?? full;
     // Completely silent: circuit-open and PDIM 5xx are handled by the
     // circuit breaker which already emits its own diagnostics.
     if (
@@ -323,7 +323,7 @@ function createAutonomousWorker(): Worker {
 
 // ── Job schedule definition ───────────────────────────────────────────────────
 
-const _REPEATABLE_JOBS = [
+const REPEATABLE_JOBS = [
   { name: "content-dispatch", every: 60_000 },
   { name: "analytics", every: 3_600_000 },
   { name: "metrics-persist", every: 60_000 },
@@ -334,7 +334,7 @@ const _REPEATABLE_JOBS = [
   { name: "beat-money-loop-tick", every: 1_800_000 }, // 30 min heartbeat; cycle fires only when due
 ] as const;
 
-const _SCHED_DEFAULTS = {
+const SCHED_DEFAULTS = {
   removeOnComplete: true,
   removeOnFail: { count: 10 },
   attempts: 2,
@@ -388,9 +388,9 @@ async function waitForPdimSettled(
   await new Promise((r) => setTimeout(r, minWaitMs));
 
   const { getPdimQueueDepth } = await import("../lib/pdimClient.js");
-  const _deadline = Date?.now() + extraTimeoutMs;
+  const deadline = Date?.now() + extraTimeoutMs;
   while (Date?.now() < deadline) {
-    const _depth = getPdimQueueDepth();
+    const depth = getPdimQueueDepth();
     if (depth < maxDepth) {
       logger?.info(
         `[AutonomousScheduler] PDIM settled (depth=${depth}) — registering jobs now`,
@@ -412,9 +412,9 @@ async function waitForPdimSettled(
 }
 
 export async function setupRepeatableJobs(): Promise<void> {
-  if (_worker) {
-    await _worker?.close().catch(() => {});
-    _worker = null;
+  if (worker) {
+    await worker?.close().catch(() => {});
+    worker = null;
   }
 
   // ── Wait for startup PDIM burst to drain ─────────────────────────────────
@@ -425,7 +425,7 @@ export async function setupRepeatableJobs(): Promise<void> {
   // upsertJobScheduler calls complete cleanly in a few hundred ms each.
   await waitForPdimSettled();
 
-  const _queue = getQueue();
+  const queue = getQueue();
 
   // ── Prune stale repeatable jobs from prior deploys ────────────────────────
   // BullMQ persists repeatable-job schedules in Redis across restarts.  When a
@@ -435,17 +435,17 @@ export async function setupRepeatableJobs(): Promise<void> {
   // legacy queue?.add(..., { repeat }) format).  Remove any repeatable job whose
   // name is NOT in the current REPEATABLE_JOBS list so stale entries don't
   // accumulate and spam the logs on every tick.
-  const _knownNames = new Set(REPEATABLE_JOBS?.map((j) => j?.name));
+  const knownNames = new Set(REPEATABLE_JOBS.map((j) => j.name));
   try {
-    const _existing = await queue?.getRepeatableJobs().catch(() => []);
-    await Promise?.allSettled(
+    const existing = await queue.getRepeatableJobs().catch(() => []);
+    await Promise.allSettled(
       existing
-        .filter((j) => !j?.name || !knownNames?.has(j?.name))
+        .filter((j) => !j.name || !knownNames.has(j.name))
         .map((j) => {
-          logger?.info(
-            `[AutonomousScheduler] Removing stale repeatable job: name=${j?.name ?? "(none)"} key=${j?.key}`,
+          logger.info(
+            `[AutonomousScheduler] Removing stale repeatable job: name=${j.name ?? "(none)"} key=${j.key}`,
           );
-          return queue?.removeRepeatableByKey(j?.key).catch(() => {});
+          return queue.removeRepeatableByKey(j.key).catch(() => {});
         }),
     );
   } catch {
@@ -453,7 +453,7 @@ export async function setupRepeatableJobs(): Promise<void> {
   }
 
   // ── Serialise repeatable-job registration ────────────────────────────────
-  // Previously this used Promise?.allSettled (all 7 at once).  That caused all
+  // Previously this used Promise.allSettled (all 7 at once).  That caused all
   // 7 LuaExecutor workers to queue simultaneously; the one holding the slot
   // stalled under PDIM congestion while the other 6 waited.  Sequential
   // processing ensures only ONE LuaExecutor worker is active at a time, so
@@ -475,9 +475,9 @@ export async function setupRepeatableJobs(): Promise<void> {
   // the settling window.  We always hold the flag for at least REG_MIN_HOLD_MS
   // from the moment it was raised, deferring the clear via setTimeout if the
   // loop finishes sooner.
-  const _REG_MIN_HOLD_MS = 5 * 60_000; // 5-minute minimum window
+  const REG_MIN_HOLD_MS = 5 * 60_000; // 5-minute minimum window
   const { setLuaRegistrationMode } = await import("../lib/luaExecutor.js");
-  const _regStart = Date?.now();
+  const regStart = Date.now();
   setLuaRegistrationMode(true);
   try {
     for (const { name, every } of REPEATABLE_JOBS) {
@@ -486,8 +486,8 @@ export async function setupRepeatableJobs(): Promise<void> {
         .catch((err: Error) => {
           // Truncate Lua stack traces to a single line; silence PDIM 5xx cold-start
           // errors (the scheduler retries automatically on the next boot cycle).
-          const _full = err?.message ?? "";
-          const _msg = full?.split("\n")[0] ?? full;
+          const full = err.message ?? "";
+          const msg = full.split("\n")[0] ?? full;
           // 429 (rate-limit) and 5xx cold-start errors are self-healing:
           // pdimClient's AIMD backoff recovers 429s; the scheduler retries 5xx
           // on the next boot.  Both are already logged by pdimClient — no
@@ -522,14 +522,14 @@ export async function setupRepeatableJobs(): Promise<void> {
     //   fromEnd:   minimum 2 min after the loop ends.
     //     Covers the BullMQ worker-startup PDIM spike that occurs when the newly
     //     registered workers begin executing their first cycle simultaneously.
-    const _elapsed = Date?.now() - regStart;
-    const _fromStart = Math?.max(0, REG_MIN_HOLD_MS - elapsed);
-    const _fromEnd = 2 * 60_000;
-    const _holdMs = Math?.max(fromStart, fromEnd);
+    const elapsed = Date?.now() - regStart;
+    const fromStart = Math?.max(0, REG_MIN_HOLD_MS - elapsed);
+    const fromEnd = 2 * 60_000;
+    const holdMs = Math?.max(fromStart, fromEnd);
     setTimeout(() => setLuaRegistrationMode(false), holdMs);
   }
 
-  _worker = createAutonomousWorker();
+  worker = createAutonomousWorker();
   logger?.info(
     "[AutonomousScheduler] ✅ Repeatable jobs registered (BullMQ, Redis-backed, exactly-once per interval)",
   );
@@ -543,14 +543,14 @@ export async function scheduleCampaignOptimization(
   campaignId: string,
 ): Promise<void> {
   if (_campaignJobKeys?.has(campaignId)) return;
-  const _jobName = `campaign-optimize-${campaignId}`;
+  const jobName = `campaign-optimize-${campaignId}`;
 
   // Mark as registered BEFORE the async add() so that concurrent or re-entrant
   // calls see the sentinel and return early without adding a duplicate job.
   // The value is updated to the real BullMQ repeat key after getRepeatableJobs().
   _campaignJobKeys?.set(campaignId, jobName);
 
-  const _queue = getQueue();
+  const queue = getQueue();
   try {
     await queue?.add(
       jobName,
@@ -564,8 +564,8 @@ export async function scheduleCampaignOptimization(
   }
 
   // Capture the BullMQ repeat key so removeCampaignOptimization can remove by key.
-  const _repeatableJobs = await queue?.getRepeatableJobs().catch(() => []);
-  const _found = repeatableJobs?.find((j) => j?.name === jobName);
+  const repeatableJobs = await queue?.getRepeatableJobs().catch(() => []);
+  const found = repeatableJobs?.find((j) => j?.name === jobName);
   if (found?.key) _campaignJobKeys?.set(campaignId, found?.key);
 
   logger?.info(
@@ -579,15 +579,15 @@ export async function scheduleCampaignOptimization(
 export async function removeCampaignOptimization(
   campaignId: string,
 ): Promise<void> {
-  const _queue = getQueue();
-  const _key = _campaignJobKeys?.get(campaignId);
+  const queue = getQueue();
+  const key = _campaignJobKeys?.get(campaignId);
   if (key) {
     await queue?.removeRepeatableByKey(key).catch(() => {});
     _campaignJobKeys?.delete(campaignId);
   } else {
-    const _jobName = `campaign-optimize-${campaignId}`;
-    const _repeatableJobs = await queue?.getRepeatableJobs().catch(() => []);
-    const _found = repeatableJobs?.find((j) => j?.name === jobName);
+    const jobName = `campaign-optimize-${campaignId}`;
+    const repeatableJobs = await queue?.getRepeatableJobs().catch(() => []);
+    const found = repeatableJobs?.find((j) => j?.name === jobName);
     if (found?.key)
       await queue?.removeRepeatableByKey(found?.key).catch(() => {});
   }
@@ -601,9 +601,9 @@ export async function removeCampaignOptimization(
  * Repeatable job schedules remain in Redis — call setupRepeatableJobs() to resume.
  */
 export async function teardownRepeatableJobs(): Promise<void> {
-  if (_worker) {
-    await _worker?.close().catch(() => {});
-    _worker = null;
+  if (worker) {
+    await worker?.close().catch(() => {});
+    worker = null;
   }
   _isProcessingJob = false;
   logger?.info(
@@ -615,13 +615,13 @@ export async function teardownRepeatableJobs(): Promise<void> {
  * Full teardown: close worker and queue. Called on SIGTERM / process exit.
  */
 export async function closeScheduler(): Promise<void> {
-  if (_worker) {
-    await _worker?.close().catch(() => {});
-    _worker = null;
+  if (worker) {
+    await worker?.close().catch(() => {});
+    worker = null;
   }
-  if (_queue) {
-    await _queue?.close().catch(() => {});
-    _queue = null;
+  if (queue) {
+    await queue?.close().catch(() => {});
+    queue = null;
   }
   _isProcessingJob = false;
   _campaignJobKeys?.clear();

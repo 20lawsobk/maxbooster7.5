@@ -8,7 +8,7 @@ import { getRedisClient } from "../lib/redisConnectionFactory.js";
 
 async function getPdimArtistLearningData(artistId: string) {
   try {
-    const _redis = await getRedisClient();
+    const redis = await getRedisClient();
     if (!redis) return null;
     const [patternRaw, peaksRaw, runsRaw, statsRaw] = await Promise?.all([
       redis?.get(`mb:ads:${artistId}:patterns`).catch(() => null),
@@ -46,7 +46,7 @@ async function getPdimArtistLearningData(artistId: string) {
   }
 }
 
-const _router = Router();
+const router = Router();
 
 // Delay first learning cycle by 90 seconds so it doesn't compete with
 // cold-start DB connections and slow down the initial page load.
@@ -54,7 +54,7 @@ const _router = Router();
 // in single-process mode). Running HyperLearning on every cluster worker
 // fires 5+ expensive aggregate DB queries per cycle per worker and piles up
 // PDIM calls N× at the same time — defeating the in-process cache entirely.
-const __isBgWorkerForHL =
+const _isBgWorkerForHL =
   process?.env.CLUSTER_WORKER_ID === undefined ||
   process?.env.CLUSTER_WORKER_ID === "0";
 if (_isBgWorkerForHL) {
@@ -71,9 +71,9 @@ if (_isBgWorkerForHL) {
 
 router?.get("/status", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _hyperStatus = hyperLearningEngine?.getStatus();
-    const _metrics = hyperLearningEngine?.getMetrics();
+    const userId = req?.user!.id;
+    const hyperStatus = hyperLearningEngine?.getStatus();
+    const metrics = hyperLearningEngine?.getMetrics();
 
     const [insights, recommendations, performance, platformStats, pdimData] =
       await Promise?.all([
@@ -87,51 +87,51 @@ router?.get("/status", requireAuth, async (req, res) => {
     res?.json({
       success: true,
       learning: {
-        isActive: hyperStatus?.isRunning,
-        totalDataPoints: metrics?.totalDataPointsProcessed,
-        patternsDetected: metrics?.patternsDetected,
-        microPatternsFound: metrics?.microPatternsFound,
+        isActive: hyperStatus.isRunning,
+        totalDataPoints: metrics.totalDataPointsProcessed,
+        patternsDetected: metrics.patternsDetected,
+        microPatternsFound: metrics.microPatternsFound,
         learningMultiplier: `${metrics?.learningMultiplier.toFixed(1)}x`,
-        lastLearningCycle: hyperStatus?.metrics.lastCycleAt || null,
-        processingTimeMs: metrics?.actualProcessingTimeMs,
-        humanEquivalentHours: metrics?.humanEquivalentHours,
+        lastLearningCycle: hyperStatus.metrics.lastCycleAt || null,
+        processingTimeMs: metrics.actualProcessingTimeMs,
+        humanEquivalentHours: metrics.humanEquivalentHours,
       },
       insights: {
-        total: insights?.length,
-        types: insights?.reduce((acc: Record<string, number>, i) => {
-          acc[i?.type] = (acc[i?.type] || 0) + 1;
+        total: insights.length,
+        types: insights.reduce((acc: Record<string, number>, i) => {
+          acc[i.type] = (acc[i?.type] || 0) + 1;
           return acc;
         }, {}),
       },
       recommendations: {
-        total: recommendations?.length,
-        actionable: recommendations?.filter((r) => r?.actionable).length,
+        total: recommendations.length,
+        actionable: recommendations.filter((r) => r?.actionable).length,
       },
       performance: {
-        totalRecorded: performance?.total,
-        platformsCovered: platformStats?.length,
-        platforms: platformStats?.map((p) => ({
-          platform: p?.platform,
-          postCount: p?.postCount,
-          avgEngagement: p?.avgEngagement,
+        totalRecorded: performance.total,
+        platformsCovered: platformStats.length,
+        platforms: platformStats.map((p) => ({
+          platform: p.platform,
+          postCount: p.postCount,
+          avgEngagement: p.avgEngagement,
         })),
       },
       adLearning: pdimData
         ? {
             source: "pdim",
-            platformsLearned: Object?.keys(pdimData?.patterns || {}),
-            peakWindows: pdimData?.peaks.length,
-            runsRecorded: pdimData?.runs.length,
-            topCtas: Object?.values(pdimData?.patterns || {})
+            platformsLearned: Object.keys(pdimData?.patterns || {}),
+            peakWindows: pdimData.peaks.length,
+            runsRecorded: pdimData.runs.length,
+            topCtas: Object.values(pdimData?.patterns || {})
               .flatMap((p: Record<string, unknown>) => p?.top_ctas || [])
               .slice(0, 5),
-            topHooks: Object?.values(pdimData?.patterns || {})
+            topHooks: Object.values(pdimData?.patterns || {})
               .flatMap((p: Record<string, unknown>) => p?.top_hooks || [])
               .slice(0, 5),
-            avgRoas: Object?.values(pdimData?.patterns || {})
+            avgRoas: Object.values(pdimData?.patterns || {})
               .map((p: Record<string, unknown>) => p?.avg_roas)
               .filter(Boolean),
-            stats: pdimData?.stats,
+            stats: pdimData.stats,
           }
         : null,
       capabilities: [
@@ -152,32 +152,32 @@ router?.get("/status", requireAuth, async (req, res) => {
   }
 });
 
-const _recordPerformanceSchema = z?.object({
-  platform: z?.string(),
-  contentType: z?.string().optional(),
-  hookType: z?.string().optional(),
-  hashtags: z?.array(z?.string()).optional(),
-  contentText: z?.string().optional(),
-  mediaType: z?.string().optional(),
-  postId: z?.string().optional(),
-  postedAt: z?.string().datetime().optional(),
-  metadata: z?.record(z?.string(), z?.any()).optional(),
-  analytics: z?.object({
-    impressions: z?.number().optional(),
-    clicks: z?.number().optional(),
-    shares: z?.number().optional(),
-    likes: z?.number().optional(),
-    comments: z?.number().optional(),
-    saves: z?.number().optional(),
-    reach: z?.number().optional(),
-    engagementRate: z?.number().optional(),
+const recordPerformanceSchema = z.object({
+  platform: z.string(),
+  contentType: z.string().optional(),
+  hookType: z.string().optional(),
+  hashtags: z.array(z.string()).optional(),
+  contentText: z.string().optional(),
+  mediaType: z.string().optional(),
+  postId: z.string().optional(),
+  postedAt: z.string().datetime().optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
+  analytics: z.object({
+    impressions: z.number().optional(),
+    clicks: z.number().optional(),
+    shares: z.number().optional(),
+    likes: z.number().optional(),
+    comments: z.number().optional(),
+    saves: z.number().optional(),
+    reach: z.number().optional(),
+    engagementRate: z.number().optional(),
   }),
 });
 
 router?.get("/insights", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _insights = await autopilotLearningService?.getLearningInsights(userId);
+    const userId = req?.user!.id;
+    const insights = await autopilotLearningService?.getLearningInsights(userId);
 
     res?.json({
       success: true,
@@ -192,14 +192,14 @@ router?.get("/insights", requireAuth, async (req, res) => {
 
 router?.get("/recommendations", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _recommendations =
+    const userId = req?.user!.id;
+    const recommendations =
       await autopilotLearningService?.getRecommendations(userId);
 
     res?.json({
       success: true,
       recommendations,
-      count: recommendations?.length,
+      count: recommendations.length,
     });
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get recommendations:");
@@ -209,19 +209,19 @@ router?.get("/recommendations", requireAuth, async (req, res) => {
 
 router?.get("/performance", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { platform, limit, offset } = req?.query;
 
-    const _limitNum = Math?.min(
+    const limitNum = Math?.min(
       Math?.max(parseInt(limit as string, 10) || 50, 1),
       500,
     );
-    const _offsetNum = Math?.min(
+    const offsetNum = Math?.min(
       Math?.max(parseInt(offset as string, 10) || 0, 0),
       100_000,
     );
 
-    const _result = await autopilotLearningService?.getPerformanceHistory(
+    const result = await autopilotLearningService?.getPerformanceHistory(
       userId,
       {
         platform: platform as string | undefined,
@@ -232,8 +232,8 @@ router?.get("/performance", requireAuth, async (req, res) => {
 
     res?.json({
       success: true,
-      data: result?.data,
-      total: result?.total,
+      data: result.data,
+      total: result.total,
       pagination: {
         limit: limitNum,
         offset: offsetNum,
@@ -247,22 +247,22 @@ router?.get("/performance", requireAuth, async (req, res) => {
 
 router?.post("/record", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _data = recordPerformanceSchema?.parse(req?.body);
+    const userId = req?.user!.id;
+    const data = recordPerformanceSchema?.parse(req?.body);
 
-    const _postData = {
-      platform: data?.platform,
-      contentType: data?.contentType,
-      hookType: data?.hookType,
-      hashtags: data?.hashtags,
-      contentText: data?.contentText,
-      mediaType: data?.mediaType,
-      postId: data?.postId,
-      postedAt: data?.postedAt ? new Date(data?.postedAt) : undefined,
-      metadata: data?.metadata,
+    const postData = {
+      platform: data.platform,
+      contentType: data.contentType,
+      hookType: data.hookType,
+      hashtags: data.hashtags,
+      contentText: data.contentText,
+      mediaType: data.mediaType,
+      postId: data.postId,
+      postedAt: data.postedAt ? new Date(data?.postedAt) : undefined,
+      metadata: data.metadata,
     };
 
-    const _recordId = await autopilotLearningService?.recordPerformance(
+    const recordId = await autopilotLearningService?.recordPerformance(
       userId,
       postData,
       data?.analytics,
@@ -274,8 +274,8 @@ router?.post("/record", requireAuth, async (req, res) => {
       message: "Performance data recorded successfully",
     });
   } catch (error) {
-    if (error instanceof z?.ZodError) {
-      res?.status(400).json({ error: "Invalid data", details: error?.issues });
+    if (error instanceof z.ZodError) {
+      res?.status(400).json({ error: "Invalid data", details: error.issues });
       return;
     }
     logger?.warn({ err: error }, "Failed to record performance:");
@@ -285,10 +285,10 @@ router?.post("/record", requireAuth, async (req, res) => {
 
 router?.get("/optimal-times/:platform", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { platform } = req?.params;
 
-    const _optimalTimes = await autopilotLearningService?.getOptimalPostingTimes(
+    const optimalTimes = await autopilotLearningService?.getOptimalPostingTimes(
       userId,
       platform,
     );
@@ -306,10 +306,10 @@ router?.get("/optimal-times/:platform", requireAuth, async (req, res) => {
 
 router?.get("/top-content", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { platform } = req?.query;
 
-    const _topContentTypes =
+    const topContentTypes =
       await autopilotLearningService?.getTopPerformingContentTypes(
         userId,
         platform as string | undefined,
@@ -329,8 +329,8 @@ router?.get("/top-content", requireAuth, async (req, res) => {
 
 router?.get("/patterns", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _patterns = await autopilotLearningService?.detectPatterns(userId);
+    const userId = req?.user!.id;
+    const patterns = await autopilotLearningService?.detectPatterns(userId);
 
     res?.json({
       success: true,
@@ -344,8 +344,8 @@ router?.get("/patterns", requireAuth, async (req, res) => {
 
 router?.get("/platform-stats", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _stats = await autopilotLearningService?.getPlatformStatistics(userId);
+    const userId = req?.user!.id;
+    const stats = await autopilotLearningService?.getPlatformStatistics(userId);
 
     res?.json({
       success: true,
@@ -359,10 +359,10 @@ router?.get("/platform-stats", requireAuth, async (req, res) => {
 
 router?.post("/generate-insights", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     await autopilotLearningService?.generateInsights(userId);
 
-    const _insights = await autopilotLearningService?.getLearningInsights(userId);
+    const insights = await autopilotLearningService?.getLearningInsights(userId);
 
     res?.json({
       success: true,
@@ -377,7 +377,7 @@ router?.post("/generate-insights", requireAuth, async (req, res) => {
 
 router?.get("/hyper/status", requireAuth, async (_req, res) => {
   try {
-    const _status = hyperLearningEngine?.getStatus();
+    const status = hyperLearningEngine?.getStatus();
 
     res?.json({
       success: true,
@@ -397,18 +397,18 @@ router?.get("/hyper/status", requireAuth, async (_req, res) => {
 
 router?.get("/hyper/insights", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _hyperInsights = await hyperLearningEngine?.getHyperInsights(userId);
-    const _metrics = hyperLearningEngine?.getMetrics();
+    const userId = req?.user!.id;
+    const hyperInsights = await hyperLearningEngine?.getHyperInsights(userId);
+    const metrics = hyperLearningEngine?.getMetrics();
 
     res?.json({
       success: true,
       hyperInsights,
-      count: hyperInsights?.length,
+      count: hyperInsights.length,
       metrics: {
-        learningMultiplier: metrics?.learningMultiplier,
-        humanEquivalentHours: metrics?.humanEquivalentHours,
-        actualProcessingMs: metrics?.actualProcessingTimeMs,
+        learningMultiplier: metrics.learningMultiplier,
+        humanEquivalentHours: metrics.humanEquivalentHours,
+        actualProcessingMs: metrics.actualProcessingTimeMs,
         efficiency: `${((metrics?.humanEquivalentHours * 3600000) / Math?.max(1, metrics?.actualProcessingTimeMs)).toFixed(1)}x faster than human`,
       },
       capabilities: {
@@ -429,10 +429,10 @@ router?.get("/hyper/insights", requireAuth, async (req, res) => {
 
 router?.get("/hyper/predict/:platform", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { platform } = req?.params;
 
-    const _prediction = await hyperLearningEngine?.predictOptimalContent(
+    const prediction = await hyperLearningEngine?.predictOptimalContent(
       userId,
       platform,
     );
@@ -452,7 +452,7 @@ router?.get("/hyper/predict/:platform", requireAuth, async (req, res) => {
             : "Hashtag count will be available once posting history is established",
         expectedEngagement: `Predicted engagement rate: ${prediction?.predictedEngagement.toFixed(2)}%`,
       },
-      microPatternRecommendations: prediction?.microPatternRecommendations,
+      microPatternRecommendations: prediction.microPatternRecommendations,
     });
   } catch (error) {
     logger?.warn({ err: error }, "Failed to predict optimal content:");
@@ -462,7 +462,7 @@ router?.get("/hyper/predict/:platform", requireAuth, async (req, res) => {
 
 router?.get("/hyper/metrics", requireAuth, async (_req, res) => {
   try {
-    const _metrics = hyperLearningEngine?.getMetrics();
+    const metrics = hyperLearningEngine?.getMetrics();
 
     res?.json({
       success: true,
@@ -474,7 +474,7 @@ router?.get("/hyper/metrics", requireAuth, async (_req, res) => {
         dataPointsPerSecond:
           metrics?.totalDataPointsProcessed /
           Math?.max(1, metrics?.actualProcessingTimeMs / 1000),
-        microPatternDepth: metrics?.microPatternsFound,
+        microPatternDepth: metrics.microPatternsFound,
         predictionAccuracy: "Improving with each learning cycle",
       },
       comparison: {
@@ -485,7 +485,7 @@ router?.get("/hyper/metrics", requireAuth, async (_req, res) => {
           breakRequired: true,
         },
         hyperLearning: {
-          patternsPerHour: Math?.round(
+          patternsPerHour: Math.round(
             metrics?.patternsDetected /
               Math?.max(1, metrics?.actualProcessingTimeMs / 3600000),
           ),
@@ -504,7 +504,7 @@ router?.get("/hyper/metrics", requireAuth, async (_req, res) => {
 router?.post("/hyper/start", requireAuth, async (_req, res) => {
   try {
     await hyperLearningEngine?.start();
-    const _status = hyperLearningEngine?.getStatus();
+    const status = hyperLearningEngine?.getStatus();
 
     res?.json({
       success: true,

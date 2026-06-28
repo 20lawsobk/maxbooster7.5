@@ -31,11 +31,11 @@ import type { RichPushPayload } from "./pushNotificationTypes.js";
 
 // ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
-const _timedFetch = (
+const timedFetch = (
   url: string | URL | Request,
   init: RequestInit = {},
 ): Promise<Response> =>
-  fetch(url, { signal: AbortSignal?.timeout(10_000), ...init });
+  fetch(url, { signal: AbortSignal.timeout(10_000), ...init });
 
 interface FCMAndroidConfig {
   notification_key?: string;
@@ -99,19 +99,19 @@ class MobilePushService {
   }
 
   private initialize() {
-    const _projectId =
+    const projectId =
       process?.env.FCM_PROJECT_ID || process?.env.FIREBASE_PROJECT_ID;
-    const _serviceAccountRaw =
+    const serviceAccountRaw =
       process?.env.FCM_SERVICE_ACCOUNT_KEY ||
       process?.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-    const _serverKey =
+    const serverKey =
       process?.env.FCM_SERVER_KEY || process?.env.FIREBASE_SERVER_KEY;
-    const _clientEmail = process?.env.FCM_CLIENT_EMAIL;
+    const clientEmail = process?.env.FCM_CLIENT_EMAIL;
 
     if (projectId && serviceAccountRaw) {
       // Option A: full JSON service account file
       try {
-        const _parsed = JSON?.parse(serviceAccountRaw);
+        const parsed = JSON?.parse(serviceAccountRaw);
         this.serviceAccountKey = parsed;
         this.projectId = projectId;
         this.mode = "fcm_v1";
@@ -142,7 +142,7 @@ class MobilePushService {
             project_id: projectId,
             private_key: rawKey,
             client_email: clientEmail,
-            token_uri: "https://oauth2?.googleapis.com/token",
+            token_uri: "https://oauth2.googleapis.com/token",
           } as Record<string, string>;
           this.projectId = projectId;
           this.mode = "fcm_v1";
@@ -193,7 +193,7 @@ class MobilePushService {
     appVersion?: string,
   ): Promise<void> {
     try {
-      const _existing = await db
+      const existing = await db
         .select()
         .from(mobileDeviceTokens)
         .where(eq(mobileDeviceTokens?.token, token))
@@ -272,16 +272,16 @@ class MobilePushService {
   }
 
   async getUserTokenStatus(userId: string) {
-    const _tokens = await this?.getUserTokens(userId);
+    const tokens = await this?.getUserTokens(userId);
     return {
-      hasTokens: tokens?.length > 0,
-      count: tokens?.length,
-      devices: tokens?.map((t) => ({
-        id: t?.id,
-        platform: t?.platform,
-        deviceName: t?.deviceName,
-        appVersion: t?.appVersion,
-        lastSeenAt: t?.lastSeenAt,
+      hasTokens: tokens.length > 0,
+      count: tokens.length,
+      devices: tokens.map((t) => ({
+        id: t.id,
+        platform: t.platform,
+        deviceName: t.deviceName,
+        appVersion: t.appVersion,
+        lastSeenAt: t.lastSeenAt,
       })),
     };
   }
@@ -295,30 +295,30 @@ class MobilePushService {
 
     try {
       const { createSign } = await import("crypto");
-      const _now = Math?.floor(Date?.now() / 1000);
-      const _header = Buffer?.from(
+      const now = Math?.floor(Date?.now() / 1000);
+      const header = Buffer?.from(
         JSON?.stringify({ alg: "RS256", typ: "JWT" }),
       ).toString("base64url");
-      const _payload = Buffer?.from(
+      const payload = Buffer?.from(
         JSON?.stringify({
-          iss: this?.serviceAccountKey.client_email,
-          scope: "https://www?.googleapis.com/auth/firebase?.messaging",
-          aud: "https://oauth2?.googleapis.com/token",
+          iss: this.serviceAccountKey.client_email,
+          scope: "https://www.googleapis.com/auth/firebase.messaging",
+          aud: "https://oauth2.googleapis.com/token",
           iat: now,
           exp: now + 3600,
         }),
       ).toString("base64url");
 
-      const _unsignedToken = `${header}.${payload}`;
-      const _sign = createSign("RSA-SHA256");
+      const unsignedToken = `${header}.${payload}`;
+      const sign = createSign("RSA-SHA256");
       sign?.update(unsignedToken);
-      const _signature = sign?.sign(
+      const signature = sign?.sign(
         this?.serviceAccountKey.private_key,
         "base64url",
       );
-      const _jwt = `${unsignedToken}.${signature}`;
+      const jwt = `${unsignedToken}.${signature}`;
 
-      const _response = await timedFetch("https://oauth2?.googleapis.com/token", {
+      const response = await timedFetch("https://oauth2.googleapis.com/token", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
@@ -332,7 +332,7 @@ class MobilePushService {
         return null;
       }
 
-      const _data = (await response?.json()) as {
+      const data = (await response?.json()) as {
         access_token: string;
         expires_in: number;
       };
@@ -352,42 +352,42 @@ class MobilePushService {
     payload: MobilePushPayload,
     platform: string,
   ): Promise<boolean> {
-    const _accessToken = await this?.getAccessToken();
+    const accessToken = await this?.getAccessToken();
     if (!accessToken) return false;
 
-    const _androidConfig = {
-      priority: payload?.priority === "high" ? "HIGH" : "NORMAL",
-      collapse_key: payload?.collapseKey,
-      notification: payload?.silent
+    const androidConfig = {
+      priority: payload.priority === "high" ? "HIGH" : "NORMAL",
+      collapse_key: payload.collapseKey,
+      notification: payload.silent
         ? undefined
         : {
-            title: payload?.title,
-            body: payload?.body,
-            image: payload?.imageUrl,
-            color: payload?.android?.color || "#4A9EFF",
-            sound: payload?.android?.sound || "default",
-            icon: payload?.android?.icon || "ic_notification",
+            title: payload.title,
+            body: payload.body,
+            image: payload.imageUrl,
+            color: payload.android?.color || "#4A9EFF",
+            sound: payload.android?.sound || "default",
+            icon: payload.android?.icon || "ic_notification",
             channel_id:
               payload?.android?.notification_channel_id || "max_booster_default",
-            tag: payload?.android?.tag,
+            tag: payload.android?.tag,
             click_action:
               payload?.android?.click_action || "FLUTTER_NOTIFICATION_CLICK",
           },
       data: {
-        url: payload?.url || "/",
-        title: payload?.title,
-        body: payload?.body,
+        url: payload.url || "/",
+        title: payload.title,
+        body: payload.body,
         ...(payload?.data || {}),
       },
     };
 
-    const _apnsConfig =
+    const apnsConfig =
       platform === "ios"
         ? {
             payload: {
               aps: {
-                badge: payload?.apns?.badge ?? 1,
-                sound: payload?.apns?.sound || "default",
+                badge: payload.apns?.badge ?? 1,
+                sound: payload.apns?.sound || "default",
                 "content-available": payload?.silent ? 1 : undefined,
                 "mutable-content": payload?.apns?.mutable_content
                   ? 1
@@ -395,43 +395,43 @@ class MobilePushService {
                 "interruption-level":
                   payload?.apns?.interruption_level ||
                   (payload?.priority === "high" ? "time-sensitive" : "active"),
-                alert: payload?.silent
+                alert: payload.silent
                   ? undefined
-                  : { title: payload?.title, body: payload?.body },
+                  : { title: payload.title, body: payload.body },
               },
-              url: payload?.url || "/",
+              url: payload.url || "/",
               ...(payload?.data || {}),
             },
           }
         : undefined;
 
-    const _body = {
+    const body = {
       message: {
         token,
         android: platform === "android" ? androidConfig : undefined,
         apns: apnsConfig,
         data: {
-          url: payload?.url || "/",
+          url: payload.url || "/",
           ...(payload?.data || {}),
         },
       },
     };
 
     try {
-      const _response = await timedFetch(
-        `https://fcm?.googleapis.com/v1/projects/${this?.projectId}/messages:send`,
+      const response = await timedFetch(
+        `https://fcm?.googleapis.com/v1/projects/${this.projectId}/messages:send`,
         {
           method: "POST",
           headers: {
             Authorization: `Bearer ${accessToken}`,
             "Content-Type": "application/json",
           },
-          body: JSON?.stringify(body),
+          body: JSON.stringify(body),
         },
       );
 
       if (!response?.ok) {
-        const _errText = await response?.text();
+        const errText = await response?.text();
         if (response?.status === 404 || errText?.includes("UNREGISTERED")) {
           await this?.deactivateToken(token);
         }
@@ -456,39 +456,39 @@ class MobilePushService {
   ): Promise<boolean> {
     if (!this?.serverKey) return false;
 
-    const _body = {
+    const body = {
       to: token,
-      collapse_key: payload?.collapseKey,
-      priority: payload?.priority === "high" ? "high" : "normal",
-      notification: payload?.silent
+      collapse_key: payload.collapseKey,
+      priority: payload.priority === "high" ? "high" : "normal",
+      notification: payload.silent
         ? undefined
         : {
-            title: payload?.title,
-            body: payload?.body,
+            title: payload.title,
+            body: payload.body,
             sound: "default",
             icon: "ic_notification",
             color: "#4A9EFF",
-            image: payload?.imageUrl,
+            image: payload.imageUrl,
             android_channel_id: "max_booster_default",
-            tag: payload?.collapseKey,
+            tag: payload.collapseKey,
           },
       data: {
-        url: payload?.url || "/",
-        title: payload?.title,
-        body: payload?.body,
+        url: payload.url || "/",
+        title: payload.title,
+        body: payload.body,
         ...(payload?.data || {}),
       },
-      content_available: payload?.silent,
+      content_available: payload.silent,
     };
 
     try {
-      const _response = await timedFetch("https://fcm?.googleapis.com/fcm/send", {
+      const response = await timedFetch("https://fcm.googleapis.com/fcm/send", {
         method: "POST",
         headers: {
           Authorization: `key=${this?.serverKey}`,
           "Content-Type": "application/json",
         },
-        body: JSON?.stringify(body),
+        body: JSON.stringify(body),
       });
 
       if (!response?.ok) {
@@ -496,13 +496,13 @@ class MobilePushService {
         return false;
       }
 
-      const _result = (await response?.json()) as {
+      const result = (await response?.json()) as {
         success?: number;
         failure?: number;
         results?: Array<{ error?: string }>;
       };
       if (result?.failure && result?.failure > 0 && result?.results?.[0]?.error) {
-        const _err = result?.results[0].error;
+        const err = result?.results[0].error;
         if (err === "NotRegistered" || err === "InvalidRegistration") {
           await this?.deactivateToken(token);
         }
@@ -525,14 +525,14 @@ class MobilePushService {
       return { sent: 0, failed: 0 };
     }
 
-    const _tokens = await this?.getUserTokens(userId);
+    const tokens = await this?.getUserTokens(userId);
     if (tokens?.length === 0) return { sent: 0, failed: 0 };
 
     let sent = 0;
     let failed = 0;
 
     for (const record of tokens) {
-      const _ok =
+      const ok =
         this?.mode === "fcm_v1"
           ? await this?.sendViav1(record?.token, payload, record?.platform)
           : await this?.sendViaLegacy(record?.token, payload);
@@ -554,34 +554,34 @@ class MobilePushService {
     userId: string,
     richPayload: RichPushPayload,
   ): Promise<{ sent: number; failed: number }> {
-    const _mobilePriority = richPayload?.requireInteraction ? "high" : "normal";
-    const _apnsInterruption = richPayload?.requireInteraction
+    const mobilePriority = richPayload?.requireInteraction ? "high" : "normal";
+    const apnsInterruption = richPayload?.requireInteraction
       ? "time-sensitive"
       : "active";
 
     const payload: MobilePushPayload = {
-      title: richPayload?.title,
-      body: richPayload?.body,
-      url: richPayload?.url,
-      imageUrl: richPayload?.image,
-      silent: richPayload?.silent,
+      title: richPayload.title,
+      body: richPayload.body,
+      url: richPayload.url,
+      imageUrl: richPayload.image,
+      silent: richPayload.silent,
       priority: mobilePriority,
-      collapseKey: richPayload?.tag,
+      collapseKey: richPayload.tag,
       data: {
-        url: richPayload?.url,
-        tag: richPayload?.tag,
-        category: richPayload?.category,
+        url: richPayload.url,
+        tag: richPayload.tag,
+        category: richPayload.category,
         type: String(richPayload?.data?.type || ""),
       },
       android: {
         notification_channel_id: `maxbooster_${richPayload?.category}`,
-        color: this?.getCategoryColor(richPayload?.category),
-        tag: richPayload?.tag,
+        color: this.getCategoryColor(richPayload?.category),
+        tag: richPayload.tag,
       },
       apns: {
         interruption_level: apnsInterruption,
         mutable_content: !!richPayload?.image,
-        sound: richPayload?.silent ? undefined : "default",
+        sound: richPayload.silent ? undefined : "default",
       },
     };
 
@@ -609,4 +609,4 @@ class MobilePushService {
   }
 }
 
-export const _mobilePushService = new MobilePushService();
+export const mobilePushService = new MobilePushService();

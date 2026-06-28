@@ -117,8 +117,8 @@ const TAX_WITHHOLDING_RATES: Record<string, number> = {
   default: 0.0,
 };
 
-const _PREF_CACHE_MAX = 50_000; // max users cached in-process
-const _PREF_CACHE_TTL = 30 * 60 * 1000; // 30 min read-through cache
+const PREF_CACHE_MAX = 50_000; // max users cached in-process
+const PREF_CACHE_TTL = 30 * 60 * 1000; // 30 min read-through cache
 
 export class PayoutService {
   private payoutRequests: Map<string, PayoutRequest> = new Map();
@@ -137,21 +137,21 @@ export class PayoutService {
     // Periodic cleanup: evict stale cache entries and enforce hard caps.
     setInterval(
       () => {
-        const _cutoff = Date?.now() - PREF_CACHE_TTL;
+        const cutoff = Date?.now() - PREF_CACHE_TTL;
         for (const [uid, entry] of this?.paymentPreferences.entries()) {
           if (entry?.cachedAt < cutoff) this?.paymentPreferences.delete(uid);
         }
         // Hard caps
         while (this?.paymentPreferences.size > PREF_CACHE_MAX) {
-          const _k = this?.paymentPreferences.keys().next().value;
+          const k = this?.paymentPreferences.keys().next().value;
           if (k !== undefined) this?.paymentPreferences.delete(k);
         }
         while (this?.payoutRequests.size > this?.MAX_PAYOUT_REQUESTS) {
-          const _k = this?.payoutRequests.keys().next().value;
+          const k = this?.payoutRequests.keys().next().value;
           if (k !== undefined) this?.payoutRequests.delete(k);
         }
         while (this?.receipts.size > this?.MAX_RECEIPTS) {
-          const _k = this?.receipts.keys().next().value;
+          const k = this?.receipts.keys().next().value;
           if (k !== undefined) this?.receipts.delete(k);
         }
       },
@@ -163,19 +163,19 @@ export class PayoutService {
     userId: string,
   ): Promise<PaymentPreferences | null> {
     // 1. Check in-process cache
-    const _cached = this?.paymentPreferences.get(userId);
+    const cached = this?.paymentPreferences.get(userId);
     if (cached && Date?.now() - cached?.cachedAt < PREF_CACHE_TTL)
       return cached?.prefs;
     // 2. Read through to DB
     try {
-      const _row = await db
-        .select({ value: systemSettings?.value })
+      const row = await db
+        .select({ value: systemSettings.value })
         .from(systemSettings)
         .where(eq(systemSettings?.key, `payment_prefs:${userId}`))
         .limit(1);
       if (row?.length && row[0].value) {
-        const _prefs = row[0].value as unknown as PaymentPreferences;
-        this?.paymentPreferences.set(userId, { prefs, cachedAt: Date?.now() });
+        const prefs = row[0].value as unknown as PaymentPreferences;
+        this?.paymentPreferences.set(userId, { prefs, cachedAt: Date.now() });
         return prefs;
       }
     } catch (err) {
@@ -206,20 +206,20 @@ export class PayoutService {
         value: preferences as Record<string, unknown>,
       })
       .onConflictDoUpdate({
-        target: systemSettings?.key,
+        target: systemSettings.key,
         set: { value: preferences as unknown as Record<string, unknown> },
       });
     // Update in-process cache
     this?.paymentPreferences.set(preferences?.userId, {
       prefs: preferences,
-      cachedAt: Date?.now(),
+      cachedAt: Date.now(),
     });
     logger?.info(`Updated payment preferences for user ${preferences?.userId}`);
     return preferences;
   }
 
   getMinimumThreshold(currency: string): number {
-    return DEFAULT_THRESHOLDS[currency] || DEFAULT_THRESHOLDS?.USD;
+    return DEFAULT_THRESHOLDS[currency] || DEFAULT_THRESHOLDS.USD;
   }
 
   async calculateAvailableBalance(userId: string): Promise<{
@@ -228,7 +228,7 @@ export class PayoutService {
     held: number;
     currency: string;
   }> {
-    const _statements = await db
+    const statements = await db
       .select()
       .from(royaltyStatements)
       .where(
@@ -238,20 +238,20 @@ export class PayoutService {
         ),
       );
 
-    const _pendingPayouts = Array?.from(this?.payoutRequests.values()).filter(
+    const pendingPayouts = Array?.from(this?.payoutRequests.values()).filter(
       (p) =>
         p?.userId === userId &&
         (p?.status === "pending" || p?.status === "processing"),
     );
 
-    const _available = statements?.reduce(
+    const available = statements?.reduce(
       (sum, s) => sum + Number(s?.payableAmount),
       0,
     );
-    const _pending = pendingPayouts?.reduce((sum, p) => sum + p?.amount, 0);
+    const pending = pendingPayouts?.reduce((sum, p) => sum + p?.amount, 0);
 
     return {
-      available: Math?.max(0, available - pending),
+      available: Math.max(0, available - pending),
       pending,
       held: 0,
       currency: "USD",
@@ -268,19 +268,19 @@ export class PayoutService {
     let taxFormType: "1099-MISC" | "W-8BEN" | "none" = "none";
 
     if (userCountry === "US") {
-      withholdingRate = TAX_WITHHOLDING_RATES?.US_DOMESTIC;
+      withholdingRate = TAX_WITHHOLDING_RATES.US_DOMESTIC;
       if (amount >= 600) {
         taxFormRequired = true;
         taxFormType = "1099-MISC";
       }
     } else if (!taxProfileComplete) {
-      withholdingRate = TAX_WITHHOLDING_RATES?.US_FOREIGN;
+      withholdingRate = TAX_WITHHOLDING_RATES.US_FOREIGN;
       taxFormRequired = true;
       taxFormType = "W-8BEN";
     }
 
-    const _withholdingAmount = amount * withholdingRate;
-    const _netAmount = amount - withholdingAmount;
+    const withholdingAmount = amount * withholdingRate;
+    const netAmount = amount - withholdingAmount;
 
     return {
       grossAmount: amount,
@@ -297,27 +297,27 @@ export class PayoutService {
     amount: number,
     method?: PaymentMethod,
   ): Promise<PayoutRequest> {
-    const _preferences = await this?.getPaymentPreferences(userId);
-    const _paymentMethod =
+    const preferences = await this?.getPaymentPreferences(userId);
+    const paymentMethod =
       method || preferences?.preferredMethod || "bank_transfer";
-    const _currency = preferences?.currency || "USD";
+    const currency = preferences?.currency || "USD";
 
-    const _balance = await this?.calculateAvailableBalance(userId);
+    const balance = await this?.calculateAvailableBalance(userId);
     if (amount > balance?.available) {
       throw new Error(
         `Requested amount $${amount} exceeds available balance $${balance?.available}`,
       );
     }
 
-    const _threshold =
+    const threshold =
       preferences?.minimumThreshold || this?.getMinimumThreshold(currency);
     if (amount < threshold) {
       throw new Error(`Amount must be at least ${threshold} ${currency}`);
     }
 
-    const _taxCalc = this?.calculateTaxWithholding(amount, "US", true);
+    const taxCalc = this?.calculateTaxWithholding(amount, "US", true);
 
-    const _payoutId = crypto?.randomUUID();
+    const payoutId = crypto?.randomUUID();
     const payout: PayoutRequest = {
       id: payoutId,
       userId,
@@ -326,8 +326,8 @@ export class PayoutService {
       method: paymentMethod,
       status: "pending",
       grossAmount: amount,
-      taxWithheld: taxCalc?.withholdingAmount,
-      netAmount: taxCalc?.netAmount,
+      taxWithheld: taxCalc.withholdingAmount,
+      netAmount: taxCalc.netAmount,
       createdAt: new Date(),
     };
 
@@ -340,7 +340,7 @@ export class PayoutService {
   }
 
   async processPayout(payoutId: string): Promise<PayoutRequest> {
-    const _payout = this?.payoutRequests.get(payoutId);
+    const payout = this?.payoutRequests.get(payoutId);
     if (!payout) {
       throw new Error(`Payout ${payoutId} not found`);
     }
@@ -362,7 +362,7 @@ export class PayoutService {
       payout.completedAt = new Date();
       payout.transactionId = `txn_${crypto?.randomUUID().slice(0, 8)}`;
 
-      const _receipt = await this?.generateReceipt(payout);
+      const receipt = await this?.generateReceipt(payout);
       payout.receiptUrl = `/receipts/${receipt?.receiptId}`;
 
       this?.payoutRequests.set(payoutId, payout);
@@ -399,7 +399,7 @@ export class PayoutService {
   }
 
   async cancelPayout(payoutId: string, reason: string): Promise<PayoutRequest> {
-    const _payout = this?.payoutRequests.get(payoutId);
+    const payout = this?.payoutRequests.get(payoutId);
     if (!payout) {
       throw new Error(`Payout ${payoutId} not found`);
     }
@@ -436,14 +436,14 @@ export class PayoutService {
   }
 
   async getPayoutSchedule(userId: string): Promise<PayoutSchedule> {
-    const _preferences = await this?.getPaymentPreferences(userId);
-    const _balance = await this?.calculateAvailableBalance(userId);
+    const preferences = await this?.getPaymentPreferences(userId);
+    const balance = await this?.calculateAvailableBalance(userId);
 
-    const _frequency = preferences?.frequency || "monthly";
-    const _minimumThreshold =
+    const frequency = preferences?.frequency || "monthly";
+    const minimumThreshold =
       preferences?.minimumThreshold || this?.getMinimumThreshold("USD");
 
-    const _today = new Date();
+    const today = new Date();
     let nextPayoutDate = new Date(today);
 
     switch (frequency) {
@@ -470,7 +470,7 @@ export class PayoutService {
         break;
     }
 
-    const _isEligible = balance?.available >= minimumThreshold;
+    const isEligible = balance?.available >= minimumThreshold;
     let eligibilityReason: string | undefined;
 
     if (!isEligible) {
@@ -482,23 +482,23 @@ export class PayoutService {
       frequency,
       nextPayoutDate,
       minimumThreshold,
-      currentBalance: balance?.available,
+      currentBalance: balance.available,
       isEligible,
       eligibilityReason,
     };
   }
 
   async generateReceipt(payout: PayoutRequest): Promise<PaymentReceipt> {
-    const _receiptId = crypto?.randomUUID();
+    const receiptId = crypto?.randomUUID();
 
     const receipt: PaymentReceipt = {
       receiptId,
-      payoutId: payout?.id,
-      userId: payout?.userId,
-      amount: payout?.netAmount,
-      currency: payout?.currency,
-      method: payout?.method,
-      transactionId: payout?.transactionId,
+      payoutId: payout.id,
+      userId: payout.userId,
+      amount: payout.netAmount,
+      currency: payout.currency,
+      method: payout.method,
+      transactionId: payout.transactionId,
       createdAt: new Date(),
       statementPeriods: [],
     };
@@ -528,7 +528,7 @@ export class PayoutService {
     let failed = 0;
     let skipped = 0;
 
-    const _allPreferences = Array?.from(this?.paymentPreferences.values()).map(
+    const allPreferences = Array?.from(this?.paymentPreferences.values()).map(
       (e) => e?.prefs,
     );
 
@@ -539,14 +539,14 @@ export class PayoutService {
       }
 
       try {
-        const _schedule = await this?.getPayoutSchedule(prefs?.userId);
+        const schedule = await this?.getPayoutSchedule(prefs?.userId);
 
         if (!schedule?.isEligible) {
           skipped++;
           continue;
         }
 
-        const _payout = await this?.requestPayout(
+        const payout = await this?.requestPayout(
           prefs?.userId,
           schedule?.currentBalance,
           prefs?.preferredMethod,
@@ -582,4 +582,4 @@ export class PayoutService {
   }
 }
 
-export const _payoutService = new PayoutService();
+export const payoutService = new PayoutService();

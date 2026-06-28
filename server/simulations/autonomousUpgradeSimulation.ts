@@ -10,7 +10,7 @@ class SeededRandom {
     this.seed = seed;
   }
   random(): number {
-    const _x = Math?.sin(this?.seed++) * 10000;
+    const x = Math?.sin(this.seed++) * 10000;
     return x - Math?.floor(x);
   }
 }
@@ -62,16 +62,16 @@ function simulateDetection(
   rng: SeededRandom,
 ): number {
   // Detection times in milliseconds (simulating real-world hours)
-  const _baseDetectionTimes = {
+  const baseDetectionTimes = {
     critical: 15 * 60 * 1000, // 15 minutes average for critical (well under 1 hour SLA)
     moderate: 2 * 60 * 60 * 1000, // 2 hours average for moderate
     minor: 6 * 60 * 60 * 1000, // 6 hours average for minor (well under 24 hour SLA)
   };
 
   // Add some realistic variance (±20%)
-  const _baseTime = baseDetectionTimes[severity];
-  const _variance = baseTime * 0.2;
-  const _actualTime = baseTime + (rng?.random() - 0.5) * 2 * variance;
+  const baseTime = baseDetectionTimes[severity];
+  const variance = baseTime * 0.2;
+  const actualTime = baseTime + (rng?.random() - 0.5) * 2 * variance;
 
   return Math?.max(0, actualTime);
 }
@@ -91,7 +91,7 @@ function simulateUpgrade(
   downtime: number;
 } {
   // Upgrade complexity factors
-  const _complexityFactors = {
+  const complexityFactors = {
     algorithm: 1.0,
     platform: 1.5,
     competitor: 1.2,
@@ -99,29 +99,29 @@ function simulateUpgrade(
   };
 
   // Base upgrade times
-  const _baseUpgradeTimes = {
+  const baseUpgradeTimes = {
     critical: 4 * 60 * 60 * 1000, // 4 hours for critical
     moderate: 8 * 60 * 60 * 1000, // 8 hours for moderate
     minor: 12 * 60 * 60 * 1000, // 12 hours for minor
   };
 
-  const _complexity = complexityFactors[changeType];
-  const _baseTime = baseUpgradeTimes[severity] * complexity;
-  const _variance = baseTime * 0.15;
-  const _upgradeTime = baseTime + (rng?.random() - 0.5) * 2 * variance;
+  const complexity = complexityFactors[changeType];
+  const baseTime = baseUpgradeTimes[severity] * complexity;
+  const variance = baseTime * 0.15;
+  const upgradeTime = baseTime + (rng?.random() - 0.5) * 2 * variance;
 
   // Success rate: 97% for autonomous system (exceeds 95% requirement)
-  const _success = rng?.random() < 0.97;
+  const success = rng?.random() < 0.97;
 
   // Algorithm quality: autonomous systems typically achieve 102-110% of manual quality
   // due to faster iteration and A/B testing
-  const _algorithmQuality = success ? 102 + rng?.random() * 8 : 85;
+  const algorithmQuality = success ? 102 + rng?.random() * 8 : 85;
 
   // Downtime: autonomous system deploys with zero downtime via blue-green deployment
-  const _downtime = 0;
+  const downtime = 0;
 
   return {
-    upgradeTime: Math?.max(0, upgradeTime),
+    upgradeTime: Math.max(0, upgradeTime),
     success,
     algorithmQuality,
     downtime,
@@ -160,9 +160,9 @@ function assessCompetitiveImpact(
  * Verify: System adjusts algorithms within 24 hours
  */
 function simulateScenarioA(rng: SeededRandom): UpgradeScenario {
-  const _detectionTime = simulateDetection("critical", rng);
-  const _upgrade = simulateUpgrade("algorithm", "critical", rng);
-  const _competitiveImpact = assessCompetitiveImpact(
+  const detectionTime = simulateDetection("critical", rng);
+  const upgrade = simulateUpgrade("algorithm", "critical", rng);
+  const competitiveImpact = assessCompetitiveImpact(
     upgrade?.success,
     upgrade?.algorithmQuality,
     detectionTime,
@@ -175,13 +175,13 @@ function simulateScenarioA(rng: SeededRandom): UpgradeScenario {
     changeType: "algorithm",
     severity: "critical",
     detectionTime,
-    upgradeTime: upgrade?.upgradeTime,
-    success: upgrade?.success,
+    upgradeTime: upgrade.upgradeTime,
+    success: upgrade.success,
     details:
       "Spotify now prioritizes tracks with >60% completion rate. Auto-upgraded recommendation engine to favor completion metrics over play count.",
     platformAffected: "Spotify",
-    algorithmQuality: upgrade?.algorithmQuality,
-    downtime: upgrade?.downtime,
+    algorithmQuality: upgrade.algorithmQuality,
+    downtime: upgrade.downtime,
     competitiveImpact,
   };
 }
@@ -193,9 +193,9 @@ function simulateScenarioA(rng: SeededRandom): UpgradeScenario {
  * Verify: Generated content adapts automatically
  */
 function simulateScenarioB(rng: SeededRandom): UpgradeScenario {
-  const _detectionTime = simulateDetection("critical", rng);
-  const _upgrade = simulateUpgrade("algorithm", "critical", rng);
-  const _competitiveImpact = assessCompetitiveImpact(
+  const detectionTime = simulateDetection("critical", rng);
+  const upgrade = simulateUpgrade("algorithm", "critical", rng);
+  const competitiveImpact = assessCompetitiveImpact(
     upgrade?.success,
     upgrade?.algorithmQuality,
     detectionTime,
@@ -208,13 +208,13 @@ function simulateScenarioB(rng: SeededRandom): UpgradeScenario {
     changeType: "algorithm",
     severity: "critical",
     detectionTime,
-    upgradeTime: upgrade?.upgradeTime,
-    success: upgrade?.success,
+    upgradeTime: upgrade.upgradeTime,
+    success: upgrade.success,
     details:
       "TikTok algorithm shifted to favor 7-15 second videos. Auto-upgraded content generator to optimize for new duration range.",
     platformAffected: "TikTok",
-    algorithmQuality: upgrade?.algorithmQuality,
-    downtime: upgrade?.downtime,
+    algorithmQuality: upgrade.algorithmQuality,
+    downtime: upgrade.downtime,
     competitiveImpact,
   };
 }
@@ -226,9 +226,9 @@ function simulateScenarioB(rng: SeededRandom): UpgradeScenario {
  * Verify: Integration happens automatically
  */
 function simulateScenarioC(rng: SeededRandom): UpgradeScenario {
-  const _detectionTime = simulateDetection("moderate", rng);
-  const _upgrade = simulateUpgrade("platform", "moderate", rng);
-  const _competitiveImpact = assessCompetitiveImpact(
+  const detectionTime = simulateDetection("moderate", rng);
+  const upgrade = simulateUpgrade("platform", "moderate", rng);
+  const competitiveImpact = assessCompetitiveImpact(
     upgrade?.success,
     upgrade?.algorithmQuality,
     detectionTime,
@@ -241,13 +241,13 @@ function simulateScenarioC(rng: SeededRandom): UpgradeScenario {
     changeType: "platform",
     severity: "moderate",
     detectionTime,
-    upgradeTime: upgrade?.upgradeTime,
-    success: upgrade?.success,
+    upgradeTime: upgrade.upgradeTime,
+    success: upgrade.success,
     details:
       'New streaming service "WaveStream" gained 10M+ users. Auto-integrated platform into distribution system with API authentication and upload pipelines.',
     platformAffected: "WaveStream (New)",
-    algorithmQuality: upgrade?.algorithmQuality,
-    downtime: upgrade?.downtime,
+    algorithmQuality: upgrade.algorithmQuality,
+    downtime: upgrade.downtime,
     competitiveImpact,
   };
 }
@@ -259,9 +259,9 @@ function simulateScenarioC(rng: SeededRandom): UpgradeScenario {
  * Verify: Feature parity achieved within 1 week
  */
 function simulateScenarioD(rng: SeededRandom): UpgradeScenario {
-  const _detectionTime = simulateDetection("critical", rng);
-  const _upgrade = simulateUpgrade("competitor", "critical", rng);
-  const _competitiveImpact = assessCompetitiveImpact(
+  const detectionTime = simulateDetection("critical", rng);
+  const upgrade = simulateUpgrade("competitor", "critical", rng);
+  const competitiveImpact = assessCompetitiveImpact(
     upgrade?.success,
     upgrade?.algorithmQuality,
     detectionTime,
@@ -274,13 +274,13 @@ function simulateScenarioD(rng: SeededRandom): UpgradeScenario {
     changeType: "competitor",
     severity: "critical",
     detectionTime,
-    upgradeTime: upgrade?.upgradeTime,
-    success: upgrade?.success,
+    upgradeTime: upgrade.upgradeTime,
+    success: upgrade.success,
     details:
       "Competitor launched AI voice generation for vocals. Auto-enhanced proprietary AI engine with superior voice synthesis and achieved feature parity + 8% quality improvement.",
     platformAffected: "Max Booster AI Engine",
-    algorithmQuality: upgrade?.algorithmQuality,
-    downtime: upgrade?.downtime,
+    algorithmQuality: upgrade.algorithmQuality,
+    downtime: upgrade.downtime,
     competitiveImpact,
   };
 }
@@ -294,7 +294,7 @@ function generateIndustryScenarios(
 ): UpgradeScenario[] {
   const scenarios: UpgradeScenario[] = [];
 
-  const _scenarioTemplates = [
+  const scenarioTemplates = [
     // Algorithm changes
     {
       changeType: "algorithm" as const,
@@ -366,19 +366,19 @@ function generateIndustryScenarios(
   ];
 
   for (let i = 0; i < count; i++) {
-    const _template = scenarioTemplates[i % scenarioTemplates?.length];
-    const _platform =
+    const template = scenarioTemplates[i % scenarioTemplates?.length];
+    const platform =
       template?.platforms[Math?.floor(rng?.random() * template?.platforms.length)];
-    const _change =
+    const change =
       template?.changes[Math?.floor(rng?.random() * template?.changes.length)];
 
-    const _detectionTime = simulateDetection(template?.severity, rng);
-    const _upgrade = simulateUpgrade(
+    const detectionTime = simulateDetection(template?.severity, rng);
+    const upgrade = simulateUpgrade(
       template?.changeType,
       template?.severity,
       rng,
     );
-    const _competitiveImpact = assessCompetitiveImpact(
+    const competitiveImpact = assessCompetitiveImpact(
       upgrade?.success,
       upgrade?.algorithmQuality,
       detectionTime,
@@ -388,15 +388,15 @@ function generateIndustryScenarios(
     scenarios?.push({
       id: `SCENARIO_${i + 1}`,
       name: `${platform} - ${change}`,
-      changeType: template?.changeType,
-      severity: template?.severity,
+      changeType: template.changeType,
+      severity: template.severity,
       detectionTime,
-      upgradeTime: upgrade?.upgradeTime,
-      success: upgrade?.success,
+      upgradeTime: upgrade.upgradeTime,
+      success: upgrade.success,
       details: `${platform} ${change}. Autonomous system detected and auto-upgraded.`,
       platformAffected: platform,
-      algorithmQuality: upgrade?.algorithmQuality,
-      downtime: upgrade?.downtime,
+      algorithmQuality: upgrade.algorithmQuality,
+      downtime: upgrade.downtime,
       competitiveImpact,
     });
   }
@@ -411,10 +411,10 @@ export async function simulateAutonomousUpgrade(
   seed = 12345,
 ): Promise<SimulationResult> {
   // Create fresh RNG instance for this run to ensure reproducibility
-  const _rng = new SeededRandom(seed);
+  const rng = new SeededRandom(seed);
 
   // Run the 4 main scenarios
-  const _mainScenarios = [
+  const mainScenarios = [
     simulateScenarioA(rng),
     simulateScenarioB(rng),
     simulateScenarioC(rng),
@@ -422,58 +422,58 @@ export async function simulateAutonomousUpgrade(
   ];
 
   // Calculate metrics for main scenarios
-  const _successfulUpgrades = mainScenarios?.filter((s) => s?.success).length;
-  const _failedUpgrades = mainScenarios?.length - successfulUpgrades;
+  const successfulUpgrades = mainScenarios?.filter((s) => s?.success).length;
+  const failedUpgrades = mainScenarios?.length - successfulUpgrades;
 
-  const _averageDetectionTime =
+  const averageDetectionTime =
     mainScenarios?.reduce((sum, s) => sum + s?.detectionTime, 0) /
     mainScenarios?.length;
 
-  const _averageUpgradeTime =
+  const averageUpgradeTime =
     mainScenarios?.reduce((sum, s) => sum + s?.upgradeTime, 0) /
     mainScenarios?.length;
 
   // Verify detection speed compliance
-  const _criticalDetections = mainScenarios?.filter(
+  const criticalDetections = mainScenarios?.filter(
     (s) => s?.severity === "critical",
   );
-  const _criticalCompliance = criticalDetections?.every(
+  const criticalCompliance = criticalDetections?.every(
     (s) => s?.detectionTime < 60 * 60 * 1000, // <1 hour
   );
 
-  const _minorDetections = mainScenarios?.filter((s) => s?.severity === "minor");
-  const _minorCompliance =
+  const minorDetections = mainScenarios?.filter((s) => s?.severity === "minor");
+  const minorCompliance =
     minorDetections?.length === 0 ||
     minorDetections?.every(
       (s) => s?.detectionTime < 24 * 60 * 60 * 1000, // <24 hours
     );
 
-  const _detectionSpeedCompliance = criticalCompliance && minorCompliance;
+  const detectionSpeedCompliance = criticalCompliance && minorCompliance;
 
-  const _upgradeSuccessRate = (successfulUpgrades / mainScenarios?.length) * 100;
+  const upgradeSuccessRate = (successfulUpgrades / mainScenarios?.length) * 100;
 
-  const _algorithmQualityAverage =
+  const algorithmQualityAverage =
     mainScenarios?.reduce((sum, s) => sum + s?.algorithmQuality, 0) /
     mainScenarios?.length;
 
-  const _zeroDowntime = mainScenarios?.every((s) => s?.downtime === 0);
+  const zeroDowntime = mainScenarios?.every((s) => s?.downtime === 0);
 
-  const _competitiveAdvantageCount = mainScenarios?.filter(
+  const competitiveAdvantageCount = mainScenarios?.filter(
     (s) =>
       s?.competitiveImpact === "maintained" || s?.competitiveImpact === "gained",
   ).length;
 
-  const _competitiveAdvantageRate =
+  const competitiveAdvantageRate =
     (competitiveAdvantageCount / mainScenarios?.length) * 100;
 
   // Overall competitive advantage assessment
-  const _gainedCount = mainScenarios?.filter(
+  const gainedCount = mainScenarios?.filter(
     (s) => s?.competitiveImpact === "gained",
   ).length;
   mainScenarios?.filter(
     (s) => s?.competitiveImpact === "maintained",
   ).length;
-  const _lostCount = mainScenarios?.filter(
+  const lostCount = mainScenarios?.filter(
     (s) => s?.competitiveImpact === "lost",
   ).length;
 
@@ -487,7 +487,7 @@ export async function simulateAutonomousUpgrade(
   }
 
   return {
-    totalScenarios: mainScenarios?.length,
+    totalScenarios: mainScenarios.length,
     successfulUpgrades,
     failedUpgrades,
     averageDetectionTime,
@@ -517,65 +517,65 @@ export async function simulateLongTermAdaptation(
   );
 
   // Create fresh RNG instance for this run to ensure reproducibility
-  const _rng = new SeededRandom(seed);
+  const rng = new SeededRandom(seed);
 
   // Generate realistic industry scenarios
-  const _longTermScenarios = generateIndustryScenarios(scenarioCount, rng);
+  const longTermScenarios = generateIndustryScenarios(scenarioCount, rng);
 
   // Calculate comprehensive metrics
-  const _successfulUpgrades = longTermScenarios?.filter((s) => s?.success).length;
-  const _failedUpgrades = longTermScenarios?.length - successfulUpgrades;
+  const successfulUpgrades = longTermScenarios?.filter((s) => s?.success).length;
+  const failedUpgrades = longTermScenarios?.length - successfulUpgrades;
 
-  const _averageDetectionTime =
+  const averageDetectionTime =
     longTermScenarios?.reduce((sum, s) => sum + s?.detectionTime, 0) /
     longTermScenarios?.length;
 
-  const _averageUpgradeTime =
+  const averageUpgradeTime =
     longTermScenarios?.reduce((sum, s) => sum + s?.upgradeTime, 0) /
     longTermScenarios?.length;
 
   // Verify detection speed compliance across all scenarios
-  const _criticalDetections = longTermScenarios?.filter(
+  const criticalDetections = longTermScenarios?.filter(
     (s) => s?.severity === "critical",
   );
-  const _criticalCompliance = criticalDetections?.every(
+  const criticalCompliance = criticalDetections?.every(
     (s) => s?.detectionTime < 60 * 60 * 1000,
   );
 
-  const _minorDetections = longTermScenarios?.filter(
+  const minorDetections = longTermScenarios?.filter(
     (s) => s?.severity === "minor",
   );
-  const _minorCompliance = minorDetections?.every(
+  const minorCompliance = minorDetections?.every(
     (s) => s?.detectionTime < 24 * 60 * 60 * 1000,
   );
 
-  const _detectionSpeedCompliance = criticalCompliance && minorCompliance;
+  const detectionSpeedCompliance = criticalCompliance && minorCompliance;
 
-  const _upgradeSuccessRate =
+  const upgradeSuccessRate =
     (successfulUpgrades / longTermScenarios?.length) * 100;
 
-  const _algorithmQualityAverage =
+  const algorithmQualityAverage =
     longTermScenarios?.reduce((sum, s) => sum + s?.algorithmQuality, 0) /
     longTermScenarios?.length;
 
-  const _zeroDowntime = longTermScenarios?.every((s) => s?.downtime === 0);
+  const zeroDowntime = longTermScenarios?.every((s) => s?.downtime === 0);
 
-  const _competitiveAdvantageCount = longTermScenarios?.filter(
+  const competitiveAdvantageCount = longTermScenarios?.filter(
     (s) =>
       s?.competitiveImpact === "maintained" || s?.competitiveImpact === "gained",
   ).length;
 
-  const _competitiveAdvantageRate =
+  const competitiveAdvantageRate =
     (competitiveAdvantageCount / longTermScenarios?.length) * 100;
 
   // Overall competitive advantage
-  const _gainedCount = longTermScenarios?.filter(
+  const gainedCount = longTermScenarios?.filter(
     (s) => s?.competitiveImpact === "gained",
   ).length;
-  const _maintainedCount = longTermScenarios?.filter(
+  const maintainedCount = longTermScenarios?.filter(
     (s) => s?.competitiveImpact === "maintained",
   ).length;
-  const _lostCount = longTermScenarios?.filter(
+  const lostCount = longTermScenarios?.filter(
     (s) => s?.competitiveImpact === "lost",
   ).length;
 
@@ -589,13 +589,13 @@ export async function simulateLongTermAdaptation(
   }
 
   // Year-long simulation specific metrics
-  const _adaptationRate = upgradeSuccessRate;
-  const _competitiveDegradation = lostCount / longTermScenarios?.length;
-  const _continuousAdaptation =
+  const adaptationRate = upgradeSuccessRate;
+  const competitiveDegradation = lostCount / longTermScenarios?.length;
+  const continuousAdaptation =
     upgradeSuccessRate >= 95 && competitiveDegradation < 0.05;
 
   return {
-    totalScenarios: longTermScenarios?.length,
+    totalScenarios: longTermScenarios.length,
     successfulUpgrades,
     failedUpgrades,
     averageDetectionTime,
@@ -622,8 +622,8 @@ export async function simulateLongTermAdaptation(
  * Format time in human-readable format
  */
 function formatTime(ms: number): string {
-  const _hours = Math?.floor(ms / (60 * 60 * 1000));
-  const _minutes = Math?.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
+  const hours = Math?.floor(ms / (60 * 60 * 1000));
+  const minutes = Math?.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
 
   if (hours > 0) {
     return `${hours}h ${minutes}m`;
@@ -643,18 +643,18 @@ export function generateSimulationReport(
 
   report += "## Executive Summary\n\n";
   report += `Max Booster's Autonomous Upgrade System has been comprehensively tested across ${
-    mainResults?.totalScenarios + longTermResults?.totalScenarios
+    mainResults.totalScenarios + longTermResults.totalScenarios
   } scenarios to verify its ability to auto-detect industry changes and self-upgrade algorithms without human intervention.\n\n`;
 
   report += "### Overall Assessment\n\n";
 
-  const _overallSuccess =
-    mainResults?.metrics.upgradeSuccessRate >= 95 &&
-    longTermResults?.metrics.upgradeSuccessRate >= 95 &&
-    mainResults?.metrics.detectionSpeedCompliance &&
-    longTermResults?.metrics.detectionSpeedCompliance &&
-    mainResults?.competitiveAdvantage !== "lost" &&
-    longTermResults?.competitiveAdvantage !== "lost";
+  const overallSuccess =
+    mainResults.metrics.upgradeSuccessRate >= 95 &&
+    longTermResults.metrics.upgradeSuccessRate >= 95 &&
+    mainResults.metrics.detectionSpeedCompliance &&
+    longTermResults.metrics.detectionSpeedCompliance &&
+    mainResults.competitiveAdvantage !== "lost" &&
+    longTermResults.competitiveAdvantage !== "lost";
 
   if (overallSuccess) {
     report +=
@@ -665,78 +665,78 @@ export function generateSimulationReport(
 
   report += "---\n\n";
   report += "## Main Scenario Results\n\n";
-  report += `**Total Scenarios**: ${mainResults?.totalScenarios}\n`;
-  report += `**Successful Upgrades**: ${mainResults?.successfulUpgrades}/${mainResults?.totalScenarios} (${mainResults?.metrics.upgradeSuccessRate?.toFixed(1)}%)\n`;
-  report += `**Average Detection Time**: ${formatTime(mainResults?.averageDetectionTime)}\n`;
-  report += `**Average Upgrade Time**: ${formatTime(mainResults?.averageUpgradeTime)}\n`;
-  report += `**Competitive Advantage**: ${mainResults?.competitiveAdvantage.toUpperCase()}\n\n`;
+  report += `**Total Scenarios**: ${mainResults.totalScenarios}\n`;
+  report += `**Successful Upgrades**: ${mainResults.successfulUpgrades}/${mainResults.totalScenarios} (${mainResults.metrics.upgradeSuccessRate.toFixed(1)}%)\n`;
+  report += `**Average Detection Time**: ${formatTime(mainResults.averageDetectionTime)}\n`;
+  report += `**Average Upgrade Time**: ${formatTime(mainResults.averageUpgradeTime)}\n`;
+  report += `**Competitive Advantage**: ${mainResults.competitiveAdvantage.toUpperCase()}\n\n`;
 
   // Detailed scenario breakdown
-  mainResults?.scenarios.forEach((scenario, _index) => {
-    report += `### Scenario ${scenario?.id}: ${scenario?.name}\n\n`;
-    report += `**Type**: ${scenario?.changeType} | **Severity**: ${scenario?.severity} | **Success**: ${scenario?.success ? "✅" : "❌"}\n\n`;
-    report += `**Details**: ${scenario?.details}\n\n`;
+  mainResults.scenarios.forEach((scenario, _index) => {
+    report += `### Scenario ${scenario.id}: ${scenario.name}\n\n`;
+    report += `**Type**: ${scenario.changeType} | **Severity**: ${scenario.severity} | **Success**: ${scenario.success ? "✅" : "❌"}\n\n`;
+    report += `**Details**: ${scenario.details}\n\n`;
     report += `**Metrics**:\n`;
-    report += `- Detection Time: ${formatTime(scenario?.detectionTime)}\n`;
-    report += `- Upgrade Time: ${formatTime(scenario?.upgradeTime)}\n`;
-    report += `- Algorithm Quality: ${scenario?.algorithmQuality.toFixed(1)}% (vs manual baseline)\n`;
-    report += `- Downtime: ${scenario?.downtime}ms\n`;
-    report += `- Competitive Impact: ${scenario?.competitiveImpact}\n`;
-    report += `- Platform: ${scenario?.platformAffected}\n\n`;
+    report += `- Detection Time: ${formatTime(scenario.detectionTime)}\n`;
+    report += `- Upgrade Time: ${formatTime(scenario.upgradeTime)}\n`;
+    report += `- Algorithm Quality: ${scenario.algorithmQuality.toFixed(1)}% (vs manual baseline)\n`;
+    report += `- Downtime: ${scenario.downtime}ms\n`;
+    report += `- Competitive Impact: ${scenario.competitiveImpact}\n`;
+    report += `- Platform: ${scenario.platformAffected}\n\n`;
 
     // SLA verification
     let slaStatus = "✅";
     if (
-      scenario?.severity === "critical" &&
-      scenario?.detectionTime >= 60 * 60 * 1000
+      scenario.severity === "critical" &&
+      scenario.detectionTime >= 60 * 60 * 1000
     ) {
       slaStatus = "❌";
     } else if (
-      scenario?.severity === "minor" &&
-      scenario?.detectionTime >= 24 * 60 * 60 * 1000
+      scenario.severity === "minor" &&
+      scenario.detectionTime >= 24 * 60 * 60 * 1000
     ) {
       slaStatus = "❌";
     }
 
     report += `**SLA Compliance**: ${slaStatus}\n`;
 
-    if (scenario?.severity === "critical") {
-      report += `- Critical detection SLA: <1 hour (actual: ${formatTime(scenario?.detectionTime)})\n`;
-    } else if (scenario?.severity === "minor") {
-      report += `- Minor detection SLA: <24 hours (actual: ${formatTime(scenario?.detectionTime)})\n`;
+    if (scenario.severity === "critical") {
+      report += `- Critical detection SLA: <1 hour (actual: ${formatTime(scenario.detectionTime)})\n`;
+    } else if (scenario.severity === "minor") {
+      report += `- Minor detection SLA: <24 hours (actual: ${formatTime(scenario.detectionTime)})\n`;
     }
 
     report += "\n---\n\n";
   });
 
   report += "## Long-Term Simulation (1 Year)\n\n";
-  report += `Simulated ${longTermResults?.totalScenarios} industry changes over 1 year to verify continuous adaptation.\n\n`;
+  report += `Simulated ${longTermResults.totalScenarios} industry changes over 1 year to verify continuous adaptation.\n\n`;
 
-  report += `**Total Scenarios**: ${longTermResults?.totalScenarios}\n`;
-  report += `**Successful Upgrades**: ${longTermResults?.successfulUpgrades}/${longTermResults?.totalScenarios} (${longTermResults?.metrics.upgradeSuccessRate?.toFixed(1)}%)\n`;
-  report += `**Average Detection Time**: ${formatTime(longTermResults?.averageDetectionTime)}\n`;
-  report += `**Average Upgrade Time**: ${formatTime(longTermResults?.averageUpgradeTime)}\n`;
-  report += `**Competitive Advantage**: ${longTermResults?.competitiveAdvantage.toUpperCase()}\n\n`;
+  report += `**Total Scenarios**: ${longTermResults.totalScenarios}\n`;
+  report += `**Successful Upgrades**: ${longTermResults.successfulUpgrades}/${longTermResults.totalScenarios} (${longTermResults.metrics.upgradeSuccessRate.toFixed(1)}%)\n`;
+  report += `**Average Detection Time**: ${formatTime(longTermResults.averageDetectionTime)}\n`;
+  report += `**Average Upgrade Time**: ${formatTime(longTermResults.averageUpgradeTime)}\n`;
+  report += `**Competitive Advantage**: ${longTermResults.competitiveAdvantage.toUpperCase()}\n\n`;
 
-  if (longTermResults?.yearLongSimulation) {
+  if (longTermResults.yearLongSimulation) {
     report += `### Year-Long Metrics\n\n`;
-    report += `- **Adaptation Rate**: ${longTermResults?.yearLongSimulation.adaptationRate?.toFixed(1)}%\n`;
-    report += `- **Competitive Degradation**: ${(longTermResults?.yearLongSimulation.competitiveDegradation * 100).toFixed(2)}%\n`;
-    report += `- **Continuous Adaptation**: ${longTermResults?.yearLongSimulation.continuousAdaptation ? "✅ YES" : "❌ NO"}\n\n`;
+    report += `- **Adaptation Rate**: ${longTermResults.yearLongSimulation.adaptationRate.toFixed(1)}%\n`;
+    report += `- **Competitive Degradation**: ${(longTermResults.yearLongSimulation.competitiveDegradation * 100).toFixed(2)}%\n`;
+    report += `- **Continuous Adaptation**: ${longTermResults.yearLongSimulation.continuousAdaptation ? "✅ YES" : "❌ NO"}\n\n`;
   }
 
   // Breakdown by category
-  const _byType = {
-    algorithm: longTermResults?.scenarios.filter(
-      (s) => s?.changeType === "algorithm",
+  const byType = {
+    algorithm: longTermResults.scenarios.filter(
+      (s) => s.changeType === "algorithm",
     ),
-    platform: longTermResults?.scenarios.filter(
-      (s) => s?.changeType === "platform",
+    platform: longTermResults.scenarios.filter(
+      (s) => s.changeType === "platform",
     ),
-    competitor: longTermResults?.scenarios.filter(
-      (s) => s?.changeType === "competitor",
+    competitor: longTermResults.scenarios.filter(
+      (s) => s.changeType === "competitor",
     ),
-    trend: longTermResults?.scenarios.filter((s) => s?.changeType === "trend"),
+    trend: longTermResults.scenarios.filter((s) => s.changeType === "trend"),
   };
 
   report += "### Breakdown by Change Type\n\n";
@@ -745,16 +745,16 @@ export function generateSimulationReport(
   report +=
     "|-------------|-------|--------------|---------------|-------------|\n";
 
-  Object?.entries(byType).forEach(([type, scenarios]) => {
-    if (scenarios?.length === 0) return;
-    const _successRate =
-      (scenarios?.filter((s) => s?.success).length / scenarios?.length) * 100;
-    const _avgDetection =
-      scenarios?.reduce((sum, s) => sum + s?.detectionTime, 0) / scenarios?.length;
-    const _avgUpgrade =
-      scenarios?.reduce((sum, s) => sum + s?.upgradeTime, 0) / scenarios?.length;
+  Object.entries(byType).forEach(([type, scenarios]) => {
+    if (scenarios.length === 0) return;
+    const successRate =
+      (scenarios.filter((s) => s.success).length / scenarios.length) * 100;
+    const avgDetection =
+      scenarios.reduce((sum, s) => sum + s.detectionTime, 0) / scenarios.length;
+    const avgUpgrade =
+      scenarios.reduce((sum, s) => sum + s.upgradeTime, 0) / scenarios.length;
 
-    report += `| ${type} | ${scenarios?.length} | ${successRate?.toFixed(1)}% | ${formatTime(avgDetection)} | ${formatTime(avgUpgrade)} |\n`;
+    report += `| ${type} | ${scenarios.length} | ${successRate.toFixed(1)}% | ${formatTime(avgDetection)} | ${formatTime(avgUpgrade)} |\n`;
   });
 
   report += "\n---\n\n";
@@ -762,67 +762,67 @@ export function generateSimulationReport(
 
   report += "### Success Criteria Checklist\n\n";
 
-  const _checks = [
+  const checks = [
     {
       name: "Detection Speed SLA",
       condition:
-        mainResults?.metrics.detectionSpeedCompliance &&
-        longTermResults?.metrics.detectionSpeedCompliance,
+        mainResults.metrics.detectionSpeedCompliance &&
+        longTermResults.metrics.detectionSpeedCompliance,
       requirement: "<1hr critical, <24hr minor",
-      actual: `Main: ${mainResults?.metrics.detectionSpeedCompliance ? "✅" : "❌"}, Long-term: ${longTermResults?.metrics.detectionSpeedCompliance ? "✅" : "❌"}`,
+      actual: `Main: ${mainResults.metrics.detectionSpeedCompliance ? "✅" : "❌"}, Long-term: ${longTermResults.metrics.detectionSpeedCompliance ? "✅" : "❌"}`,
     },
     {
       name: "Upgrade Success Rate",
       condition:
-        mainResults?.metrics.upgradeSuccessRate >= 95 &&
-        longTermResults?.metrics.upgradeSuccessRate >= 95,
+        mainResults.metrics.upgradeSuccessRate >= 95 &&
+        longTermResults.metrics.upgradeSuccessRate >= 95,
       requirement: "≥95%",
-      actual: `Main: ${mainResults?.metrics.upgradeSuccessRate?.toFixed(1)}%, Long-term: ${longTermResults?.metrics.upgradeSuccessRate?.toFixed(1)}%`,
+      actual: `Main: ${mainResults.metrics.upgradeSuccessRate.toFixed(1)}%, Long-term: ${longTermResults.metrics.upgradeSuccessRate.toFixed(1)}%`,
     },
     {
       name: "Algorithm Quality",
       condition:
-        mainResults?.metrics.algorithmQualityAverage >= 100 &&
-        longTermResults?.metrics.algorithmQualityAverage >= 100,
+        mainResults.metrics.algorithmQualityAverage >= 100 &&
+        longTermResults.metrics.algorithmQualityAverage >= 100,
       requirement: "≥100% vs manual",
-      actual: `Main: ${mainResults?.metrics.algorithmQualityAverage?.toFixed(1)}%, Long-term: ${longTermResults?.metrics.algorithmQualityAverage?.toFixed(1)}%`,
+      actual: `Main: ${mainResults.metrics.algorithmQualityAverage.toFixed(1)}%, Long-term: ${longTermResults.metrics.algorithmQualityAverage.toFixed(1)}%`,
     },
     {
       name: "Zero Downtime",
       condition:
-        mainResults?.metrics.zeroDowntime &&
-        longTermResults?.metrics.zeroDowntime,
+        mainResults.metrics.zeroDowntime &&
+        longTermResults.metrics.zeroDowntime,
       requirement: "0ms downtime",
-      actual: `Main: ${mainResults?.metrics.zeroDowntime ? "✅" : "❌"}, Long-term: ${longTermResults?.metrics.zeroDowntime ? "✅" : "❌"}`,
+      actual: `Main: ${mainResults.metrics.zeroDowntime ? "✅" : "❌"}, Long-term: ${longTermResults.metrics.zeroDowntime ? "✅" : "❌"}`,
     },
     {
       name: "Competitive Advantage",
       condition:
-        mainResults?.competitiveAdvantage !== "lost" &&
-        longTermResults?.competitiveAdvantage !== "lost",
+        mainResults.competitiveAdvantage !== "lost" &&
+        longTermResults.competitiveAdvantage !== "lost",
       requirement: "Maintained or Gained",
-      actual: `Main: ${mainResults?.competitiveAdvantage}, Long-term: ${longTermResults?.competitiveAdvantage}`,
+      actual: `Main: ${mainResults.competitiveAdvantage}, Long-term: ${longTermResults.competitiveAdvantage}`,
     },
     {
       name: "Long-term Adaptation",
       condition:
-        longTermResults?.yearLongSimulation?.continuousAdaptation ?? false,
+        longTermResults.yearLongSimulation.continuousAdaptation ?? false,
       requirement: "50+ scenarios, continuous",
-      actual: `${longTermResults?.totalScenarios} scenarios, ${longTermResults?.yearLongSimulation?.continuousAdaptation ? "continuous" : "degraded"}`,
+      actual: `${longTermResults.totalScenarios} scenarios, ${longTermResults.yearLongSimulation.continuousAdaptation ? "continuous" : "degraded"}`,
     },
   ];
 
-  checks?.forEach((check) => {
-    const _status = check?.condition ? "✅" : "❌";
-    report += `- [${check?.condition ? "x" : " "}] **${check?.name}**\n`;
-    report += `  - Requirement: ${check?.requirement}\n`;
-    report += `  - Actual: ${check?.actual} ${status}\n\n`;
+  checks.forEach((check) => {
+    const status = check.condition ? "✅" : "❌";
+    report += `- [${check.condition ? "x" : " "}] **${check.name}**\n`;
+    report += `  - Requirement: ${check.requirement}\n`;
+    report += `  - Actual: ${check.actual} ${status}\n\n`;
   });
 
   report += "---\n\n";
   report += "## Key Findings\n\n";
 
-  const _allPass = checks?.every((c) => c?.condition);
+  const allPass = checks.every((c) => c.condition);
 
   if (allPass) {
     report += "✅ **All success criteria met**\n\n";

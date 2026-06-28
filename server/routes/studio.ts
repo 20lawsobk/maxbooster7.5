@@ -27,11 +27,11 @@ import {
   handleUploadError,
 } from "../middleware/uploadHandler.js";
 
-const _router = Router();
+const router = Router();
 
-const _createTrackSchema = z?.object({
-  projectId: z?.string().min(1),
-  name: z?.string().min(1).max(255),
+const createTrackSchema = z.object({
+  projectId: z.string().min(1),
+  name: z.string().min(1).max(255),
   trackType: z
     .enum([
       "audio",
@@ -46,96 +46,96 @@ const _createTrackSchema = z?.object({
       "guitar",
     ])
     .default("audio"),
-  trackNumber: z?.number().int().min(0).optional(),
-  volume: z?.number().min(0).max(2).default(1),
-  pan: z?.number().min(-1).max(1).default(0),
-  mute: z?.boolean().default(false),
-  solo: z?.boolean().default(false),
-  armed: z?.boolean().default(false),
-  recordEnabled: z?.boolean().default(false),
-  inputMonitoring: z?.boolean().default(false),
+  trackNumber: z.number().int().min(0).optional(),
+  volume: z.number().min(0).max(2).default(1),
+  pan: z.number().min(-1).max(1).default(0),
+  mute: z.boolean().default(false),
+  solo: z.boolean().default(false),
+  armed: z.boolean().default(false),
+  recordEnabled: z.boolean().default(false),
+  inputMonitoring: z.boolean().default(false),
   color: z
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/)
     .optional(),
-  height: z?.number().int().min(40).max(300).default(80),
-  collapsed: z?.boolean().default(false),
-  outputBus: z?.string().default("master"),
-  parentFolderId: z?.string().optional(),
+  height: z.number().int().min(40).max(300).default(80),
+  collapsed: z.boolean().default(false),
+  outputBus: z.string().default("master"),
+  parentFolderId: z.string().optional(),
   folderColor: z
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/)
     .optional(),
 });
 
-const _updateTrackSchema = z?.object({
-  name: z?.string().min(1).max(255).optional(),
-  volume: z?.number().min(0).max(2).optional(),
-  pan: z?.number().min(-1).max(1).optional(),
-  mute: z?.boolean().optional(),
-  solo: z?.boolean().optional(),
-  armed: z?.boolean().optional(),
-  isMuted: z?.boolean().optional(),
-  isSolo: z?.boolean().optional(),
-  isArmed: z?.boolean().optional(),
+const updateTrackSchema = z.object({
+  name: z.string().min(1).max(255).optional(),
+  volume: z.number().min(0).max(2).optional(),
+  pan: z.number().min(-1).max(1).optional(),
+  mute: z.boolean().optional(),
+  solo: z.boolean().optional(),
+  armed: z.boolean().optional(),
+  isMuted: z.boolean().optional(),
+  isSolo: z.boolean().optional(),
+  isArmed: z.boolean().optional(),
   color: z
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/)
     .optional(),
-  outputBus: z?.string().optional(),
-  order: z?.number().int().optional(),
-  parentFolderId: z?.string().nullable().optional(),
-  collapsed: z?.boolean().optional(),
+  outputBus: z.string().optional(),
+  order: z.number().int().optional(),
+  parentFolderId: z.string().nullable().optional(),
+  collapsed: z.boolean().optional(),
   folderColor: z
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/)
     .optional(),
 });
 
-const _updateClipSchema = z?.object({
-  name: z?.string().min(1).max(255).optional(),
-  startTime: z?.number().min(0).optional(),
-  endTime: z?.number().min(0).optional(),
-  offset: z?.number().min(0).optional(),
-  gain: z?.number().min(0).max(10).optional(),
-  fadeIn: z?.number().min(0).optional(),
-  fadeOut: z?.number().min(0).optional(),
-  muted: z?.boolean().optional(),
-  locked: z?.boolean().optional(),
+const updateClipSchema = z.object({
+  name: z.string().min(1).max(255).optional(),
+  startTime: z.number().min(0).optional(),
+  endTime: z.number().min(0).optional(),
+  offset: z.number().min(0).optional(),
+  gain: z.number().min(0).max(10).optional(),
+  fadeIn: z.number().min(0).optional(),
+  fadeOut: z.number().min(0).optional(),
+  muted: z.boolean().optional(),
+  locked: z.boolean().optional(),
 });
 
-const _updateProjectSchema = z?.object({
-  title: z?.string().min(1).max(255).optional(),
-  description: z?.string().optional(),
-  genre: z?.string().optional(),
-  tempo: z?.number().min(20).max(999).optional(),
-  bpm: z?.number().min(20).max(999).optional(),
-  key: z?.string().optional(),
+const updateProjectSchema = z.object({
+  title: z.string().min(1).max(255).optional(),
+  description: z.string().optional(),
+  genre: z.string().optional(),
+  tempo: z.number().min(20).max(999).optional(),
+  bpm: z.number().min(20).max(999).optional(),
+  key: z.string().optional(),
   timeSignature: z
     .string()
     .regex(/^\d+\/\d+$/)
     .optional(),
-  sampleRate: z?.number().min(8000).max(192000).optional(),
+  sampleRate: z.number().min(8000).max(192000).optional(),
   bitDepth: z
     .number()
     .refine((v) => [16, 24, 32].includes(v), {
       message: "Bit depth must be 16, 24, or 32",
     })
     .optional(),
-  workflowStage: z?.string().optional(),
-  status: z?.string().optional(),
-  version: z?.number().int().optional(),
+  workflowStage: z.string().optional(),
+  status: z.string().optional(),
+  version: z.number().int().optional(),
 });
 
 async function verifyProjectOwnership(
   projectId: string,
   userId: string,
 ): Promise<boolean> {
-  const _project = await db?.query.projects?.findFirst({
+  const project = await db?.query.projects?.findFirst({
     where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
   });
   if (project) return true;
-  const _studioProject = await db?.query.studioProjects?.findFirst({
+  const studioProject = await db?.query.studioProjects?.findFirst({
     where: and(
       eq(studioProjects?.id, projectId),
       eq(studioProjects?.userId, userId),
@@ -147,16 +147,16 @@ async function verifyProjectOwnership(
 // GET all projects for user (with optional pagination)
 router?.get("/projects", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
-    const _limit = Math?.min(
+    const userId = req?.user!.id;
+    const limit = Math?.min(
       500,
       Math?.max(1, parseInt(String(req?.query.limit || "200"), 10)),
     );
-    const _offset = Math?.min(
+    const offset = Math?.min(
       Math?.max(0, parseInt(String(req?.query.offset || "0"), 10)),
       100_000,
     );
-    const _userProjects = await db?.query.projects?.findMany({
+    const userProjects = await db?.query.projects?.findMany({
       where: eq(projects?.userId, userId),
       orderBy: [desc(projects?.updatedAt)],
       limit,
@@ -172,7 +172,7 @@ router?.get("/projects", requireAuth, async (req: Request, res: Response) => {
 // POST create new project
 router?.post("/projects", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const {
       title,
       description,
@@ -186,7 +186,7 @@ router?.post("/projects", requireAuth, async (req: Request, res: Response) => {
       workflowStage,
       status,
     } = req?.body;
-    const _projectId = randomBytes(8).toString("hex");
+    const projectId = randomBytes(8).toString("hex");
 
     const [project] = await db
       .insert(projects)
@@ -236,9 +236,9 @@ router?.delete(
   async (req: Request, res: Response) => {
     try {
       const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _hasAccess = await verifyProjectOwnership(projectId, userId);
+      const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
         return res?.status(403).json({ error: "Access denied" });
       }
@@ -262,8 +262,8 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _files = await db
+      const userId = req?.user!.id;
+      const files = await db
         .select()
         .from(studioRecentFiles)
         .where(eq(studioRecentFiles?.userId, userId))
@@ -306,7 +306,7 @@ interface SampleMetadata {
   createdAt: string;
 }
 
-const _SAMPLE_CATEGORIES = [
+const SAMPLE_CATEGORIES = [
   {
     id: "drums",
     name: "Drums",
@@ -374,7 +374,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     tags: ["808", "hard", "trap"],
     tempo: undefined,
     duration: 0.8,
-    audioUrl: "/samples/drums/808-kick-hard?.wav",
+    audioUrl: "/samples/drums/808-kick-hard.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
   },
@@ -385,7 +385,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     subcategory: "kicks",
     tags: ["808", "soft", "rnb"],
     duration: 0.6,
-    audioUrl: "/samples/drums/808-kick-soft?.wav",
+    audioUrl: "/samples/drums/808-kick-soft.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
   },
@@ -396,7 +396,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     subcategory: "kicks",
     tags: ["punchy", "hip-hop"],
     duration: 0.4,
-    audioUrl: "/samples/drums/punchy-kick?.wav",
+    audioUrl: "/samples/drums/punchy-kick.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
   },
@@ -407,7 +407,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     subcategory: "snares",
     tags: ["trap", "crisp"],
     duration: 0.3,
-    audioUrl: "/samples/drums/trap-snare?.wav",
+    audioUrl: "/samples/drums/trap-snare.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
   },
@@ -418,7 +418,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     subcategory: "snares",
     tags: ["rnb", "smooth"],
     duration: 0.35,
-    audioUrl: "/samples/drums/rnb-snare?.wav",
+    audioUrl: "/samples/drums/rnb-snare.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
   },
@@ -429,7 +429,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     subcategory: "hi-hats",
     tags: ["closed", "crisp"],
     duration: 0.1,
-    audioUrl: "/samples/drums/hihat-closed?.wav",
+    audioUrl: "/samples/drums/hihat-closed.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
   },
@@ -440,7 +440,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     subcategory: "hi-hats",
     tags: ["open", "shimmer"],
     duration: 0.5,
-    audioUrl: "/samples/drums/hihat-open?.wav",
+    audioUrl: "/samples/drums/hihat-open.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
   },
@@ -451,7 +451,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     subcategory: "percussion",
     tags: ["clap", "thick", "layered"],
     duration: 0.25,
-    audioUrl: "/samples/drums/clap-thick?.wav",
+    audioUrl: "/samples/drums/clap-thick.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
   },
@@ -463,7 +463,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     tags: ["808", "deep"],
     key: "C",
     duration: 2.0,
-    audioUrl: "/samples/bass/808-c?.wav",
+    audioUrl: "/samples/bass/808-c.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
   },
@@ -475,7 +475,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     tags: ["sub", "deep"],
     key: "D",
     duration: 1.5,
-    audioUrl: "/samples/bass/sub-d?.wav",
+    audioUrl: "/samples/bass/sub-d.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
   },
@@ -487,7 +487,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     tags: ["pluck", "bright"],
     key: "A",
     duration: 0.8,
-    audioUrl: "/samples/synths/pluck-lead?.wav",
+    audioUrl: "/samples/synths/pluck-lead.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
   },
@@ -499,7 +499,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     tags: ["pad", "warm", "ambient"],
     key: "E",
     duration: 4.0,
-    audioUrl: "/samples/synths/warm-pad?.wav",
+    audioUrl: "/samples/synths/warm-pad.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
   },
@@ -510,7 +510,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     subcategory: "risers",
     tags: ["riser", "tension"],
     duration: 4.0,
-    audioUrl: "/samples/fx/riser-white?.wav",
+    audioUrl: "/samples/fx/riser-white.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
   },
@@ -521,7 +521,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     subcategory: "impacts",
     tags: ["impact", "cinematic", "big"],
     duration: 2.0,
-    audioUrl: "/samples/fx/impact-cinematic?.wav",
+    audioUrl: "/samples/fx/impact-cinematic.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
   },
@@ -533,7 +533,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     tags: ["chop", "female"],
     key: "G",
     duration: 0.5,
-    audioUrl: "/samples/vocals/chop-ah?.wav",
+    audioUrl: "/samples/vocals/chop-ah.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
   },
@@ -545,7 +545,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     tags: ["trap", "drums"],
     tempo: 140,
     duration: 4.0,
-    audioUrl: "/samples/loops/trap-140?.wav",
+    audioUrl: "/samples/loops/trap-140.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
   },
@@ -557,7 +557,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     tags: ["rnb", "groove"],
     tempo: 90,
     duration: 4.0,
-    audioUrl: "/samples/loops/rnb-90?.wav",
+    audioUrl: "/samples/loops/rnb-90.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
   },
@@ -569,7 +569,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     tags: ["hip-hop", "boom-bap"],
     tempo: 95,
     duration: 4.0,
-    audioUrl: "/samples/loops/hiphop-95?.wav",
+    audioUrl: "/samples/loops/hiphop-95.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
   },
@@ -581,7 +581,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
     tags: ["brass", "stab", "orchestral"],
     key: "F",
     duration: 0.6,
-    audioUrl: "/samples/oneshots/brass-stab?.wav",
+    audioUrl: "/samples/oneshots/brass-stab.wav",
     isBuiltIn: true,
     createdAt: "2024-01-01",
   },
@@ -590,7 +590,7 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
 // GET samples library with filtering
 router?.get("/samples", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const {
       category,
       subcategory,
@@ -602,8 +602,8 @@ router?.get("/samples", requireAuth, async (req: Request, res: Response) => {
       offset = "0",
     } = req?.query;
 
-    const _limitNum = Math?.min(Math?.max(parseInt(limit as string) || 0, 0), 100);
-    const _offsetNum = Math?.min(
+    const limitNum = Math?.min(Math?.max(parseInt(limit as string) || 0, 0), 100);
+    const offsetNum = Math?.min(
       Math?.max(parseInt(offset as string) || 0, 0),
       100_000,
     );
@@ -618,11 +618,11 @@ router?.get("/samples", requireAuth, async (req: Request, res: Response) => {
       conditions?.push(eq(studioSamples?.subcategory, subcategory as string));
     if (key) conditions?.push(eq(studioSamples?.key, key as string));
     if (search) {
-      const _term = `%${(search as string).toLowerCase()}%`;
+      const term = `%${(search as string).toLowerCase()}%`;
       conditions?.push(ilike(studioSamples?.name, term));
     }
     if (tags) {
-      const _tagList = (tags as string)
+      const tagList = (tags as string)
         .split(",")
         .map((t) => t?.trim().toLowerCase());
       conditions?.push(arrayOverlaps(studioSamples?.tags, tagList));
@@ -637,33 +637,33 @@ router?.get("/samples", requireAuth, async (req: Request, res: Response) => {
       .offset(offsetNum);
 
     if (dbSamples?.length > 0) {
-      const _countRows = await db
+      const countRows = await db
         .select({ count: drizzleSql<number>`COUNT(*)` })
         .from(studioSamples)
         .where(and(...conditions));
-      const _total = Number(countRows[0]?.count ?? 0);
+      const total = Number(countRows[0]?.count ?? 0);
 
       // Filter by tempo tolerance if specified (done in JS since SQL range on nullable needs casting)
       if (tempo) {
-        const _targetTempo = parseInt(tempo as string);
+        const targetTempo = parseInt(tempo as string);
         dbSamples = dbSamples?.filter(
           (s) => s?.tempo && Math?.abs(s?.tempo - targetTempo) <= 10,
         );
       }
 
       return res?.json({
-        samples: dbSamples?.map((s) => ({
-          id: s?.id,
-          name: s?.name,
-          category: s?.category,
-          subcategory: s?.subcategory,
-          tags: s?.tags || [],
-          tempo: s?.tempo,
-          key: s?.key,
-          duration: s?.duration,
-          audioUrl: s?.audioUrl,
-          isBuiltIn: s?.isBuiltIn,
-          createdAt: s?.createdAt,
+        samples: dbSamples.map((s) => ({
+          id: s.id,
+          name: s.name,
+          category: s.category,
+          subcategory: s.subcategory,
+          tags: s.tags || [],
+          tempo: s.tempo,
+          key: s.key,
+          duration: s.duration,
+          audioUrl: s.audioUrl,
+          isBuiltIn: s.isBuiltIn,
+          createdAt: s.createdAt,
         })),
         categories: SAMPLE_CATEGORIES,
         total,
@@ -679,7 +679,7 @@ router?.get("/samples", requireAuth, async (req: Request, res: Response) => {
     if (subcategory)
       samples = samples?.filter((s) => s?.subcategory === subcategory);
     if (search) {
-      const _sl = (search as string).toLowerCase();
+      const sl = (search as string).toLowerCase();
       samples = samples?.filter(
         (s) =>
           s?.name.toLowerCase().includes(sl) ||
@@ -687,18 +687,18 @@ router?.get("/samples", requireAuth, async (req: Request, res: Response) => {
       );
     }
     if (tags) {
-      const _tl = (tags as string).split(",");
+      const tl = (tags as string).split(",");
       samples = samples?.filter((s) =>
         tl?.some((t) => s?.tags.includes(t?.trim().toLowerCase())),
       );
     }
     if (tempo) {
-      const _tgt = parseInt(tempo as string);
+      const tgt = parseInt(tempo as string);
       samples = samples?.filter((s) => s?.tempo && Math?.abs(s?.tempo - tgt) <= 10);
     }
     if (key) samples = samples?.filter((s) => s?.key === key);
 
-    const _total = samples?.length;
+    const total = samples?.length;
     samples = samples?.slice(offsetNum, offsetNum + limitNum);
 
     res?.json({
@@ -736,7 +736,7 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const { sampleId } = req?.params;
-      const _sample = BUILT_IN_SAMPLES?.find((s) => s?.id === sampleId);
+      const sample = BUILT_IN_SAMPLES?.find((s) => s?.id === sampleId);
 
       if (!sample) {
         return res?.status(404).json({ error: "Sample not found" });
@@ -760,7 +760,7 @@ router?.post(
       let samples = [...BUILT_IN_SAMPLES];
 
       if (query) {
-        const _queryLower = query?.toLowerCase();
+        const queryLower = query?.toLowerCase();
         samples = samples?.filter(
           (s) =>
             s?.name.toLowerCase().includes(queryLower) ||
@@ -797,7 +797,7 @@ router?.post(
         }
       }
 
-      res?.json({ samples, total: samples?.length });
+      res?.json({ samples, total: samples.length });
     } catch (error: unknown) {
       logger?.warn({ err: error }, "Error searching samples:");
       res?.status(500).json({ error: "Failed to search samples" });
@@ -813,8 +813,8 @@ router?.post(
   handleUploadError,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _file = req?.file;
+      const userId = req?.user!.id;
+      const file = req?.file;
 
       if (!file) {
         return res?.status(400).json({ error: "No audio file provided" });
@@ -825,8 +825,8 @@ router?.post(
       // Store to object storage and get a persistent URL
       const { url, key } = await storeUploadedFile(file, userId, "audio");
 
-      const _clipId = randomBytes(8).toString("hex");
-      const _clipName =
+      const clipId = randomBytes(8).toString("hex");
+      const clipName =
         recordingName || `Recording ${new Date().toLocaleTimeString()}`;
 
       // If trackId + projectId provided, persist as an audio clip
@@ -973,9 +973,9 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _project = await db?.query.projects?.findFirst({
+      const project = await db?.query.projects?.findFirst({
         where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
       });
 
@@ -983,8 +983,8 @@ router?.get(
         return res?.status(404).json({ error: "Project not found" });
       }
 
-      const _metadata = (project?.metadata as Record<string, unknown>) || {};
-      const _mixBusses =
+      const metadata = (project?.metadata as Record<string, unknown>) || {};
+      const mixBusses =
         (metadata?.mixBusses as MixBusConfig[]) || DEFAULT_MIX_BUSSES;
 
       res?.json(mixBusses);
@@ -1001,9 +1001,9 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _project = await db?.query.projects?.findFirst({
+      const project = await db?.query.projects?.findFirst({
         where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
       });
 
@@ -1025,19 +1025,19 @@ router?.patch(
   async (req: Request, res: Response) => {
     try {
       const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
         return res?.status(404).json({ error: "Project not found" });
       }
 
-      const _data = updateProjectSchema?.parse(req?.body);
+      const data = updateProjectSchema?.parse(req?.body);
 
       const [updated] = await db
         .update(projects)
         .set({
           ...data,
-          bpm: data?.tempo,
+          bpm: data.tempo,
           updatedAt: new Date(),
         })
         .where(and(eq(projects?.id, projectId), eq(projects?.userId, userId)))
@@ -1046,10 +1046,10 @@ router?.patch(
       res?.json(updated);
     } catch (error: unknown) {
       logger?.warn({ err: error }, "Error updating project:");
-      if (error instanceof z?.ZodError) {
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid data", details: error?.issues });
+          .json({ error: "Invalid data", details: error.issues });
       }
       res?.status(500).json({ error: "Failed to update project" });
     }
@@ -1063,7 +1063,7 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
         return res?.status(404).json({ error: "Project not found" });
@@ -1080,12 +1080,12 @@ router?.post(
         version,
       } = req?.body;
 
-      const _metadata = await db?.query.projects?.findFirst({
+      const metadata = await db?.query.projects?.findFirst({
         where: eq(projects?.id, projectId),
         columns: { metadata: true },
       });
 
-      const _existingMetadata =
+      const existingMetadata =
         (metadata?.metadata as Record<string, unknown>) || {};
 
       const [updated] = await db
@@ -1123,9 +1123,9 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _project = await db?.query.projects?.findFirst({
+      const project = await db?.query.projects?.findFirst({
         where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
       });
 
@@ -1133,23 +1133,23 @@ router?.get(
         return res?.status(404).json({ error: "Project not found" });
       }
 
-      const _metadata = (project?.metadata as Record<string, unknown>) || {};
-      const _dawState = metadata?.dawState as string | undefined;
-      const _dawVersion = metadata?.dawVersion as number | undefined;
-      const _dawSavedAt = metadata?.dawSavedAt as string | undefined;
+      const metadata = (project?.metadata as Record<string, unknown>) || {};
+      const dawState = metadata?.dawState as string | undefined;
+      const dawVersion = metadata?.dawVersion as number | undefined;
+      const dawSavedAt = metadata?.dawSavedAt as string | undefined;
 
       res?.json({
         project: {
-          id: project?.id,
-          title: project?.title,
-          bpm: project?.bpm,
-          tempo: project?.bpm,
-          timeSignature: project?.timeSignature,
-          sampleRate: project?.sampleRate,
-          bitDepth: project?.bitDepth,
-          description: project?.description,
-          createdAt: project?.createdAt,
-          updatedAt: project?.updatedAt,
+          id: project.id,
+          title: project.title,
+          bpm: project.bpm,
+          tempo: project.bpm,
+          timeSignature: project.timeSignature,
+          sampleRate: project.sampleRate,
+          bitDepth: project.bitDepth,
+          description: project.description,
+          createdAt: project.createdAt,
+          updatedAt: project.updatedAt,
         },
         dawState,
         dawVersion,
@@ -1168,7 +1168,7 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
         return res?.status(404).json({ error: "Project not found" });
@@ -1200,11 +1200,11 @@ router?.post(
             await db
               .update(studioTracks)
               .set({
-                name: track?.name,
-                volume: track?.volume?.toString(),
-                pan: track?.pan?.toString(),
-                muted: track?.muted,
-                solo: track?.solo,
+                name: track.name,
+                volume: track.volume?.toString(),
+                pan: track.pan?.toString(),
+                muted: track.muted,
+                solo: track.solo,
                 updatedAt: new Date(),
               })
               .where(
@@ -1231,21 +1231,21 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
         return res?.status(404).json({ error: "Project not found" });
       }
 
-      const _settings = req?.body || {};
+      const settings = req?.body || {};
 
-      const _validFormats = ["wav", "flac", "aiff", "mp3", "aac", "ogg", "opus"];
-      const _validSampleRates = [44100, 48000, 88200, 96000, 176400, 192000];
-      const _validBitDepths = [16, 24, 32];
+      const validFormats = ["wav", "flac", "aiff", "mp3", "aac", "ogg", "opus"];
+      const validSampleRates = [44100, 48000, 88200, 96000, 176400, 192000];
+      const validBitDepths = [16, 24, 32];
 
-      const _format = settings?.format || "wav";
-      const _sampleRate = settings?.sampleRate || 48000;
-      const _bitDepth = settings?.bitDepth || 24;
+      const format = settings?.format || "wav";
+      const sampleRate = settings?.sampleRate || 48000;
+      const bitDepth = settings?.bitDepth || 24;
 
       if (!validFormats?.includes(format)) {
         return res
@@ -1289,7 +1289,7 @@ router?.post(
           .json({ error: "Invalid UPC format. Expected: 12-14 digits" });
       }
 
-      const _project = await db?.query.projects?.findFirst({
+      const project = await db?.query.projects?.findFirst({
         where: eq(projects?.id, projectId),
       });
 
@@ -1297,7 +1297,7 @@ router?.post(
         return res?.status(404).json({ error: "Project not found" });
       }
 
-      const _renderJob = {
+      const renderJob = {
         id: `render_${randomBytes(8).toString("hex")}`,
         projectId,
         userId,
@@ -1305,51 +1305,51 @@ router?.post(
           format,
           sampleRate,
           bitDepth,
-          channels: settings?.channels || 2,
-          dither: settings?.dither || "triangular",
-          normalize: settings?.normalize || "lufs",
-          normalizeTarget: settings?.normalizeTarget ?? -14,
-          truePeakCeiling: settings?.truePeakCeiling ?? -1,
-          limiter: settings?.limiter || "true-peak",
-          limiterThreshold: settings?.limiterThreshold ?? -1,
-          limiterRelease: settings?.limiterRelease ?? 100,
-          limiterLookahead: settings?.limiterLookahead ?? 5,
-          dcOffset: settings?.dcOffset ?? true,
-          fadeIn: settings?.fadeIn ?? 0,
-          fadeOut: settings?.fadeOut ?? 0,
-          fadeType: settings?.fadeType || "equal-power",
-          tailLength: settings?.tailLength ?? 0,
-          trimSilence: settings?.trimSilence ?? false,
-          silenceThreshold: settings?.silenceThreshold ?? -60,
-          mp3Bitrate: settings?.mp3Bitrate ?? 320,
-          flacCompression: settings?.flacCompression ?? 5,
+          channels: settings.channels || 2,
+          dither: settings.dither || "triangular",
+          normalize: settings.normalize || "lufs",
+          normalizeTarget: settings.normalizeTarget ?? -14,
+          truePeakCeiling: settings.truePeakCeiling ?? -1,
+          limiter: settings.limiter || "true-peak",
+          limiterThreshold: settings.limiterThreshold ?? -1,
+          limiterRelease: settings.limiterRelease ?? 100,
+          limiterLookahead: settings.limiterLookahead ?? 5,
+          dcOffset: settings.dcOffset ?? true,
+          fadeIn: settings.fadeIn ?? 0,
+          fadeOut: settings.fadeOut ?? 0,
+          fadeType: settings.fadeType || "equal-power",
+          tailLength: settings.tailLength ?? 0,
+          trimSilence: settings.trimSilence ?? false,
+          silenceThreshold: settings.silenceThreshold ?? -60,
+          mp3Bitrate: settings.mp3Bitrate ?? 320,
+          flacCompression: settings.flacCompression ?? 5,
           metadata: {
-            title: settings?.metadata?.title || project?.title,
-            artist: settings?.metadata?.artist || "",
-            album: settings?.metadata?.album || "",
+            title: settings.metadata?.title || project?.title,
+            artist: settings.metadata?.artist || "",
+            album: settings.metadata?.album || "",
             year:
               settings?.metadata?.year || new Date().getFullYear().toString(),
-            genre: settings?.metadata?.genre || project?.genre || "",
-            isrc: settings?.metadata?.isrc || "",
-            iswc: settings?.metadata?.iswc || "",
-            upc: settings?.metadata?.upc || "",
-            copyright: settings?.metadata?.copyright || "",
-            bpm: settings?.metadata?.bpm || project?.bpm,
-            key: settings?.metadata?.key || project?.key || "",
-            producer: settings?.metadata?.producer || "",
-            mixer: settings?.metadata?.mixer || "",
-            masteringEngineer: settings?.metadata?.masteringEngineer || "",
+            genre: settings.metadata?.genre || project?.genre || "",
+            isrc: settings.metadata?.isrc || "",
+            iswc: settings.metadata?.iswc || "",
+            upc: settings.metadata?.upc || "",
+            copyright: settings.metadata?.copyright || "",
+            bpm: settings.metadata?.bpm || project?.bpm,
+            key: settings.metadata?.key || project?.key || "",
+            producer: settings.metadata?.producer || "",
+            mixer: settings.metadata?.mixer || "",
+            masteringEngineer: settings.metadata?.masteringEngineer || "",
           },
-          exportRange: settings?.exportRange || "full",
-          stemExport: settings?.stemExport ?? false,
+          exportRange: settings.exportRange || "full",
+          stemExport: settings.stemExport ?? false,
         },
         status: "completed",
         createdAt: new Date(),
       };
 
-      const _estimatedDuration = 180;
-      const _bytesPerSample = renderJob?.settings.bitDepth / 8;
-      const _channels = renderJob?.settings.channels;
+      const estimatedDuration = 180;
+      const bytesPerSample = renderJob?.settings.bitDepth / 8;
+      const channels = renderJob?.settings.channels;
       let fileSize: number;
 
       switch (renderJob?.settings.format) {
@@ -1380,38 +1380,38 @@ router?.post(
       logger?.info(
         `[Studio] Professional render completed for project ${projectId}`,
         {
-          format: renderJob?.settings.format,
-          sampleRate: renderJob?.settings.sampleRate,
-          bitDepth: renderJob?.settings.bitDepth,
-          normalize: renderJob?.settings.normalize,
-          normalizeTarget: renderJob?.settings.normalizeTarget,
-          limiter: renderJob?.settings.limiter,
-          dither: renderJob?.settings.dither,
+          format: renderJob.settings.format,
+          sampleRate: renderJob.settings.sampleRate,
+          bitDepth: renderJob.settings.bitDepth,
+          normalize: renderJob.settings.normalize,
+          normalizeTarget: renderJob.settings.normalizeTarget,
+          limiter: renderJob.settings.limiter,
+          dither: renderJob.settings.dither,
           hasISRC: !!renderJob?.settings.metadata?.isrc,
         },
       );
 
-      const _result = {
+      const result = {
         success: true,
         outputPath: `/exports/${projectId}/${renderJob?.id}.${renderJob?.settings.format}`,
         downloadUrl: `/api/studio/projects/${projectId}/download/${renderJob?.id}`,
         duration: estimatedDuration,
         fileSize,
         peakLevel: -0.3,
-        lufs: renderJob?.settings.normalizeTarget,
-        truePeak: renderJob?.settings.truePeakCeiling,
+        lufs: renderJob.settings.normalizeTarget,
+        truePeak: renderJob.settings.truePeakCeiling,
         warnings: [] as string[],
         renderSettings: {
-          format: renderJob?.settings.format,
+          format: renderJob.settings.format,
           sampleRate: `${renderJob?.settings.sampleRate / 1000}kHz`,
           bitDepth: `${renderJob?.settings.bitDepth}-bit`,
-          channels: renderJob?.settings.channels === 2 ? "Stereo" : "Mono",
-          dither: renderJob?.settings.dither,
-          normalize: renderJob?.settings.normalize,
+          channels: renderJob.settings.channels === 2 ? "Stereo" : "Mono",
+          dither: renderJob.settings.dither,
+          normalize: renderJob.settings.normalize,
           normalizeTarget: `${renderJob?.settings.normalizeTarget} ${renderJob?.settings.normalize === "lufs" ? "LUFS" : "dB"}`,
           truePeakCeiling: `${renderJob?.settings.truePeakCeiling} dBTP`,
-          limiter: renderJob?.settings.limiter,
-          metadata: renderJob?.settings.metadata,
+          limiter: renderJob.settings.limiter,
+          metadata: renderJob.settings.metadata,
         },
       };
 
@@ -1459,8 +1459,8 @@ router?.post(
 
 router?.post("/tracks", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
-    const _data = createTrackSchema?.parse(req?.body);
+    const userId = req?.user!.id;
+    const data = createTrackSchema?.parse(req?.body);
 
     if (!(await verifyProjectOwnership(data?.projectId, userId))) {
       return res?.status(404).json({ error: "Project not found" });
@@ -1468,7 +1468,7 @@ router?.post("/tracks", requireAuth, async (req: Request, res: Response) => {
 
     // Validate parentFolderId BEFORE creating track
     if (data?.parentFolderId) {
-      const _folder = await db?.query.studioTracks?.findFirst({
+      const folder = await db?.query.studioTracks?.findFirst({
         where: and(
           eq(studioTracks?.id, data?.parentFolderId),
           eq(studioTracks?.trackType, "folder"),
@@ -1480,29 +1480,29 @@ router?.post("/tracks", requireAuth, async (req: Request, res: Response) => {
       }
     }
 
-    const _existingTracks = await db?.query.studioTracks?.findMany({
+    const existingTracks = await db?.query.studioTracks?.findMany({
       where: eq(studioTracks?.projectId, data?.projectId),
     });
 
-    const _trackOrder = data?.trackNumber ?? existingTracks?.length;
+    const trackOrder = data?.trackNumber ?? existingTracks?.length;
 
-    const _trackId = `track_${randomBytes(8).toString("hex")}`;
+    const trackId = `track_${randomBytes(8).toString("hex")}`;
     const [track] = await db
       .insert(studioTracks)
       .values({
         id: trackId,
-        projectId: data?.projectId,
-        name: data?.name,
-        trackType: data?.trackType,
+        projectId: data.projectId,
+        name: data.name,
+        trackType: data.trackType,
         order: trackOrder,
-        volume: data?.volume,
-        pan: data?.pan,
-        isMuted: data?.mute,
-        isSolo: data?.solo,
-        isArmed: data?.armed,
+        volume: data.volume,
+        pan: data.pan,
+        isMuted: data.mute,
+        isSolo: data.solo,
+        isArmed: data.armed,
         inputSource: null,
-        color: data?.color || `#${randomBytes(3).toString("hex")}`,
-        outputBus: data?.outputBus,
+        color: data.color || `#${randomBytes(3).toString("hex")}`,
+        outputBus: data.outputBus,
       })
       .returning();
 
@@ -1514,16 +1514,16 @@ router?.post("/tracks", requireAuth, async (req: Request, res: Response) => {
       });
 
       if (!studioProject) {
-        const _regularProject = await db?.query.projects?.findFirst({
+        const regularProject = await db?.query.projects?.findFirst({
           where: eq(projects?.id, data?.projectId),
         });
         if (regularProject) {
           const [created] = await db
             .insert(studioProjects)
             .values({
-              id: data?.projectId,
+              id: data.projectId,
               userId: userId,
-              name: regularProject?.name || "Untitled",
+              name: regularProject.name || "Untitled",
               metadata: {},
             })
             .returning();
@@ -1532,9 +1532,9 @@ router?.post("/tracks", requireAuth, async (req: Request, res: Response) => {
       }
 
       if (studioProject) {
-        const _metadata =
+        const metadata =
           (studioProject?.metadata as Record<string, unknown>) || {};
-        const _trackFolders = { ...metadata?.trackFolders };
+        const trackFolders = { ...metadata?.trackFolders };
         trackFolders[trackId] = data?.parentFolderId;
         await db
           .update(studioProjects)
@@ -1545,13 +1545,13 @@ router?.post("/tracks", requireAuth, async (req: Request, res: Response) => {
 
     res
       .status(201)
-      .json({ ...track, parentFolderId: data?.parentFolderId || null });
+      .json({ ...track, parentFolderId: data.parentFolderId || null });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error creating track:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid data", details: error?.issues });
+        .json({ error: "Invalid data", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to create track" });
   }
@@ -1563,7 +1563,7 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
         return res?.status(404).json({ error: "Project not found" });
@@ -1576,7 +1576,7 @@ router?.get(
 
       // If no tracks exist but project has an audioUrl, auto-create a track with clip
       if (tracks?.length === 0) {
-        const _project = await db?.query.projects?.findFirst({
+        const project = await db?.query.projects?.findFirst({
           where: eq(projects?.id, projectId),
         });
 
@@ -1591,7 +1591,7 @@ router?.get(
             .values({
               id: randomBytes(8).toString("hex"),
               projectId,
-              name: project?.title || "Audio Track 1",
+              name: project.title || "Audio Track 1",
               type: "audio",
               order: 0,
               color: "#3b82f6",
@@ -1608,9 +1608,9 @@ router?.get(
             await db?.insert(audioClips).values({
               id: randomBytes(8).toString("hex"),
               projectId: projectId,
-              trackId: newTrack?.id,
-              name: project?.title || "Audio Clip",
-              audioUrl: project?.audioUrl,
+              trackId: newTrack.id,
+              name: project.title || "Audio Clip",
+              audioUrl: project.audioUrl,
               startTime: 0,
               duration: 0, // Will be detected by frontend
               gain: 1,
@@ -1624,22 +1624,22 @@ router?.get(
       }
 
       // Fetch all clips for this project to include in the response
-      const _clips = await db?.query.audioClips?.findMany({
+      const clips = await db?.query.audioClips?.findMany({
         where: eq(audioClips?.projectId, projectId),
       });
 
       // Map clips to use filePath for frontend compatibility
-      const _mappedClips = clips?.map((clip) => ({
-        id: clip?.id,
-        trackId: clip?.trackId,
-        name: clip?.name,
-        filePath: clip?.audioUrl, // audioUrl stored in DB, but frontend expects filePath
-        startTime: clip?.startTime || 0,
-        duration: clip?.duration || 0,
-        offset: clip?.offset || 0,
-        gain: clip?.gain || 1,
-        fadeIn: clip?.fadeIn || 0,
-        fadeOut: clip?.fadeOut || 0,
+      const mappedClips = clips?.map((clip) => ({
+        id: clip.id,
+        trackId: clip.trackId,
+        name: clip.name,
+        filePath: clip.audioUrl, // audioUrl stored in DB, but frontend expects filePath
+        startTime: clip.startTime || 0,
+        duration: clip.duration || 0,
+        offset: clip.offset || 0,
+        gain: clip.gain || 1,
+        fadeIn: clip.fadeIn || 0,
+        fadeOut: clip.fadeOut || 0,
       }));
 
       res?.json({ tracks, clips: mappedClips });
@@ -1656,9 +1656,9 @@ router?.patch(
   async (req: Request, res: Response) => {
     try {
       const { trackId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _track = await db?.query.studioTracks?.findFirst({
+      const track = await db?.query.studioTracks?.findFirst({
         where: eq(studioTracks?.id, trackId),
       });
 
@@ -1670,7 +1670,7 @@ router?.patch(
         return res?.status(404).json({ error: "Project not found" });
       }
 
-      const _data = updateTrackSchema?.parse(req?.body);
+      const data = updateTrackSchema?.parse(req?.body);
 
       const dbData: Record<string, unknown> = {};
       if (data?.name !== undefined) dbData.name = data?.name;
@@ -1691,7 +1691,7 @@ router?.patch(
       if (data?.parentFolderId !== undefined) {
         // Validate folder exists if not null
         if (data?.parentFolderId !== null) {
-          const _folder = await db?.query.studioTracks?.findFirst({
+          const folder = await db?.query.studioTracks?.findFirst({
             where: and(
               eq(studioTracks?.id, data?.parentFolderId),
               eq(studioTracks?.trackType, "folder"),
@@ -1710,17 +1710,17 @@ router?.patch(
 
         // If studioProject doesn't exist, check if we have a regular project
         if (!studioProject) {
-          const _regularProject = await db?.query.projects?.findFirst({
-            where: eq(projects?.id, track?.projectId),
+          const regularProject = await db.query.projects.findFirst({
+            where: eq(projects.id, track.projectId),
           });
           if (regularProject) {
             // Create studioProject entry to store folder metadata
             const [created] = await db
               .insert(studioProjects)
               .values({
-                id: track?.projectId,
+                id: track.projectId,
                 userId: userId,
-                name: regularProject?.name || "Untitled",
+                name: regularProject.name || "Untitled",
                 metadata: {},
               })
               .returning();
@@ -1729,159 +1729,159 @@ router?.patch(
         }
 
         if (studioProject) {
-          const _metadata =
-            (studioProject?.metadata as Record<string, unknown>) || {};
-          const _trackFolders = { ...metadata?.trackFolders };
+          const metadata =
+            (studioProject.metadata as Record<string, unknown>) || {};
+          const trackFolders = { ...metadata.trackFolders };
 
-          if (data?.parentFolderId === null) {
+          if (data.parentFolderId === null) {
             delete trackFolders[trackId];
             parentFolderId = null;
           } else {
-            trackFolders[trackId] = data?.parentFolderId;
-            parentFolderId = data?.parentFolderId;
+            trackFolders[trackId] = data.parentFolderId;
+            parentFolderId = data.parentFolderId;
           }
 
           await db
             .update(studioProjects)
             .set({ metadata: { ...metadata, trackFolders } })
-            .where(eq(studioProjects?.id, track?.projectId));
+            .where(eq(studioProjects.id, track.projectId));
         }
       }
 
       if (
-        Object?.keys(dbData).length === 0 &&
-        data?.parentFolderId === undefined
+        Object.keys(dbData).length === 0 &&
+        data.parentFolderId === undefined
       ) {
-        return res?.json(track);
+        return res.json(track);
       }
 
       let updated = track;
-      if (Object?.keys(dbData).length > 0) {
+      if (Object.keys(dbData).length > 0) {
         const [result] = await db
           .update(studioTracks)
           .set(dbData)
-          .where(eq(studioTracks?.id, trackId))
+          .where(eq(studioTracks.id, trackId))
           .returning();
         updated = result;
       }
 
-      res?.json({ ...updated, parentFolderId });
+      res.json({ ...updated, parentFolderId });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error updating track:");
-      if (error instanceof z?.ZodError) {
+      logger.warn({ err: error }, "Error updating track:");
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid data", details: error?.issues });
+          .json({ error: "Invalid data", details: error.issues });
       }
-      res?.status(500).json({ error: "Failed to update track" });
+      res.status(500).json({ error: "Failed to update track" });
     }
   },
 );
 
-router?.delete(
+router.delete(
   "/tracks/:trackId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { trackId } = req?.params;
-      const _userId = req?.user!.id;
+      const { trackId } = req.params;
+      const userId = req.user!.id;
 
-      const _track = await db?.query.studioTracks?.findFirst({
-        where: eq(studioTracks?.id, trackId),
+      const track = await db.query.studioTracks.findFirst({
+        where: eq(studioTracks.id, trackId),
       });
 
       if (!track) {
-        return res?.status(404).json({ error: "Track not found" });
+        return res.status(404).json({ error: "Track not found" });
       }
 
-      if (!(await verifyProjectOwnership(track?.projectId, userId))) {
-        return res?.status(404).json({ error: "Project not found" });
+      if (!(await verifyProjectOwnership(track.projectId, userId))) {
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      await db?.delete(audioClips).where(eq(audioClips?.trackId, trackId));
-      await db?.delete(studioTracks).where(eq(studioTracks?.id, trackId));
+      await db.delete(audioClips).where(eq(audioClips.trackId, trackId));
+      await db.delete(studioTracks).where(eq(studioTracks.id, trackId));
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error deleting track:");
-      res?.status(500).json({ error: "Failed to delete track" });
+      logger.warn({ err: error }, "Error deleting track:");
+      res.status(500).json({ error: "Failed to delete track" });
     }
   },
 );
 
-router?.get(
+router.get(
   "/tracks/:trackId/audio-clips",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { trackId } = req?.params;
-      const _userId = req?.user!.id;
+      const { trackId } = req.params;
+      const userId = req.user!.id;
 
-      const _track = await db?.query.studioTracks?.findFirst({
-        where: eq(studioTracks?.id, trackId),
+      const track = await db.query.studioTracks.findFirst({
+        where: eq(studioTracks.id, trackId),
       });
 
       if (!track) {
-        return res?.status(404).json({ error: "Track not found" });
+        return res.status(404).json({ error: "Track not found" });
       }
 
-      if (!(await verifyProjectOwnership(track?.projectId, userId))) {
-        return res?.status(404).json({ error: "Project not found" });
+      if (!(await verifyProjectOwnership(track.projectId, userId))) {
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _clips = await db?.query.audioClips?.findMany({
-        where: eq(audioClips?.trackId, trackId),
-        orderBy: (audioClips, { asc }) => [asc(audioClips?.startTime)],
+      const clips = await db.query.audioClips.findMany({
+        where: eq(audioClips.trackId, trackId),
+        orderBy: (audioClips, { asc }) => [asc(audioClips.startTime)],
       });
 
-      res?.json(clips);
+      res.json(clips);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error getting audio clips:");
-      res?.status(500).json({ error: "Failed to get audio clips" });
+      logger.warn({ err: error }, "Error getting audio clips:");
+      res.status(500).json({ error: "Failed to get audio clips" });
     }
   },
 );
 
-router?.post(
+router.post(
   "/projects/:projectId/tracks/:trackId/clips/upload",
   requireAuth,
-  audioUpload?.single("audio"),
+  audioUpload.single("audio"),
   handleUploadError,
   async (req: Request, res: Response) => {
     try {
-      const { projectId, trackId } = req?.params;
-      const _userId = req?.user!.id;
+      const { projectId, trackId } = req.params;
+      const userId = req.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _track = await db?.query.studioTracks?.findFirst({
+      const track = await db.query.studioTracks.findFirst({
         where: and(
-          eq(studioTracks?.id, trackId),
-          eq(studioTracks?.projectId, projectId),
+          eq(studioTracks.id, trackId),
+          eq(studioTracks.projectId, projectId),
         ),
       });
 
       if (!track) {
-        return res?.status(404).json({ error: "Track not found" });
+        return res.status(404).json({ error: "Track not found" });
       }
 
-      const _file = req?.file;
+      const file = req.file;
       if (!file) {
-        return res?.status(400).json({ error: "No audio file provided" });
+        return res.status(400).json({ error: "No audio file provided" });
       }
 
       const { url } = await storeUploadedFile(file, userId, "audio");
 
-      const _name =
-        req?.body.name ||
-        file?.originalname ||
+      const name =
+        req.body.name ||
+        file.originalname ||
         `Recording ${new Date().toLocaleTimeString()}`;
-      const _startTime = parseFloat(req?.body.startTime) || 0;
-      const _duration = parseFloat(req?.body.duration) || null;
+      const startTime = parseFloat(req.body.startTime) || 0;
+      const duration = parseFloat(req.body.duration) || null;
 
-      const _clipId = randomBytes(8).toString("hex");
+      const clipId = randomBytes(8).toString("hex");
       const [clip] = await db
         .insert(audioClips)
         .values({
@@ -1895,50 +1895,50 @@ router?.post(
         })
         .returning();
 
-      logger?.info("Audio clip uploaded successfully", {
+      logger.info("Audio clip uploaded successfully", {
         clipId,
         trackId,
         projectId,
         userId,
       });
 
-      res?.status(201).json({
+      res.status(201).json({
         success: true,
-        clipId: clip?.id,
+        clipId: clip.id,
         clip,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error uploading audio clip:");
-      res?.status(500).json({ error: "Failed to upload audio clip" });
+      logger.warn({ err: error }, "Error uploading audio clip:");
+      res.status(500).json({ error: "Failed to upload audio clip" });
     }
   },
 );
 
-router?.patch(
+router.patch(
   "/clips/:clipId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { clipId } = req?.params;
-      const _userId = req?.user!.id;
+      const { clipId } = req.params;
+      const userId = req.user!.id;
 
-      const _clip = await db?.query.audioClips?.findFirst({
-        where: eq(audioClips?.id, clipId),
+      const clip = await db.query.audioClips.findFirst({
+        where: eq(audioClips.id, clipId),
       });
 
       if (!clip) {
-        return res?.status(404).json({ error: "Clip not found" });
+        return res.status(404).json({ error: "Clip not found" });
       }
 
-      const _track = await db?.query.studioTracks?.findFirst({
-        where: eq(studioTracks?.id, clip?.trackId),
+      const track = await db.query.studioTracks.findFirst({
+        where: eq(studioTracks.id, clip.trackId),
       });
 
-      if (!track || !(await verifyProjectOwnership(track?.projectId, userId))) {
-        return res?.status(404).json({ error: "Project not found" });
+      if (!track || !(await verifyProjectOwnership(track.projectId, userId))) {
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _data = updateClipSchema?.parse(req?.body);
+      const data = updateClipSchema.parse(req.body);
 
       const [updated] = await db
         .update(audioClips)
@@ -1946,166 +1946,166 @@ router?.patch(
           ...data,
           updatedAt: new Date(),
         })
-        .where(eq(audioClips?.id, clipId))
+        .where(eq(audioClips.id, clipId))
         .returning();
 
-      res?.json(updated);
+      res.json(updated);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error updating clip:");
-      if (error instanceof z?.ZodError) {
+      logger.warn({ err: error }, "Error updating clip:");
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
-          .json({ error: "Invalid data", details: error?.issues });
+          .json({ error: "Invalid data", details: error.issues });
       }
-      res?.status(500).json({ error: "Failed to update clip" });
+      res.status(500).json({ error: "Failed to update clip" });
     }
   },
 );
 
-router?.delete(
+router.delete(
   "/clips/:clipId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { clipId } = req?.params;
-      const _userId = req?.user!.id;
+      const { clipId } = req.params;
+      const userId = req.user!.id;
 
-      const _clip = await db?.query.audioClips?.findFirst({
-        where: eq(audioClips?.id, clipId),
+      const clip = await db.query.audioClips.findFirst({
+        where: eq(audioClips.id, clipId),
       });
 
       if (!clip) {
-        return res?.status(404).json({ error: "Clip not found" });
+        return res.status(404).json({ error: "Clip not found" });
       }
 
-      const _track = await db?.query.studioTracks?.findFirst({
-        where: eq(studioTracks?.id, clip?.trackId),
+      const track = await db.query.studioTracks.findFirst({
+        where: eq(studioTracks.id, clip.trackId),
       });
 
-      if (!track || !(await verifyProjectOwnership(track?.projectId, userId))) {
-        return res?.status(404).json({ error: "Project not found" });
+      if (!track || !(await verifyProjectOwnership(track.projectId, userId))) {
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      await db?.delete(audioClips).where(eq(audioClips?.id, clipId));
+      await db.delete(audioClips).where(eq(audioClips.id, clipId));
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error deleting clip:");
-      res?.status(500).json({ error: "Failed to delete clip" });
+      logger.warn({ err: error }, "Error deleting clip:");
+      res.status(500).json({ error: "Failed to delete clip" });
     }
   },
 );
 
-router?.get(
+router.get(
   "/tracks/:trackId/automation",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { trackId } = req?.params;
-      const _userId = req?.user!.id;
-      const { parameter } = req?.query;
+      const { trackId } = req.params;
+      const userId = req.user!.id;
+      const { parameter } = req.query;
 
-      const _track = await db?.query.studioTracks?.findFirst({
-        where: eq(studioTracks?.id, trackId),
+      const track = await db.query.studioTracks.findFirst({
+        where: eq(studioTracks.id, trackId),
       });
 
       if (!track) {
-        return res?.status(404).json({ error: "Track not found" });
+        return res.status(404).json({ error: "Track not found" });
       }
 
-      if (!(await verifyProjectOwnership(track?.projectId, userId))) {
-        return res?.status(404).json({ error: "Project not found" });
+      if (!(await verifyProjectOwnership(track.projectId, userId))) {
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _metadata = (track?.metadata as Record<string, unknown>) || {};
-      const _automation =
-        (metadata?.automation as Record<string, unknown[]>) || {};
+      const metadata = (track.metadata as Record<string, unknown>) || {};
+      const automation =
+        (metadata.automation as Record<string, unknown[]>) || {};
 
       if (parameter) {
-        res?.json({ points: automation[parameter as string] || [] });
+        res.json({ points: automation[parameter as string] || [] });
       } else {
-        res?.json({ automation });
+        res.json({ automation });
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error getting automation:");
-      res?.status(500).json({ error: "Failed to get automation" });
+      logger.warn({ err: error }, "Error getting automation:");
+      res.status(500).json({ error: "Failed to get automation" });
     }
   },
 );
 
-router?.put(
+router.put(
   "/tracks/:trackId/automation",
   requireAuth,
-  express?.json({ limit: "10mb" }),
+  express.json({ limit: "10mb" }),
   async (req: Request, res: Response) => {
     try {
-      const { trackId } = req?.params;
-      const _userId = req?.user!.id;
-      const { parameter, points } = req?.body;
+      const { trackId } = req.params;
+      const userId = req.user!.id;
+      const { parameter, points } = req.body;
 
-      if (!parameter || !Array?.isArray(points)) {
+      if (!parameter || !Array.isArray(points)) {
         return res
           .status(400)
           .json({ error: "Parameter and points array required" });
       }
 
-      const _track = await db?.query.studioTracks?.findFirst({
-        where: eq(studioTracks?.id, trackId),
+      const track = await db.query.studioTracks.findFirst({
+        where: eq(studioTracks.id, trackId),
       });
 
       if (!track) {
-        return res?.status(404).json({ error: "Track not found" });
+        return res.status(404).json({ error: "Track not found" });
       }
 
-      if (!(await verifyProjectOwnership(track?.projectId, userId))) {
-        return res?.status(404).json({ error: "Project not found" });
+      if (!(await verifyProjectOwnership(track.projectId, userId))) {
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _metadata = (track?.metadata as Record<string, unknown>) || {};
-      const _automation =
-        (metadata?.automation as Record<string, unknown[]>) || {};
+      const metadata = (track.metadata as Record<string, unknown>) || {};
+      const automation =
+        (metadata.automation as Record<string, unknown[]>) || {};
       automation[parameter] = points;
 
       const [updated] = await db
         .update(studioTracks)
         .set({ metadata: { ...metadata, automation } })
-        .where(eq(studioTracks?.id, trackId))
+        .where(eq(studioTracks.id, trackId))
         .returning();
 
-      logger?.info("Automation saved", {
+      logger.info("Automation saved", {
         trackId,
         parameter,
-        pointCount: points?.length,
+        pointCount: points.length,
       });
-      res?.json({ success: true, points });
+      res.json({ success: true, points });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error saving automation:");
-      res?.status(500).json({ error: "Failed to save automation" });
+      logger.warn({ err: error }, "Error saving automation:");
+      res.status(500).json({ error: "Failed to save automation" });
     }
   },
 );
 
 // Duplicate /record/upload route removed — the multipart handler above (line ~394) is canonical.
 
-router?.post("/mix-busses", requireAuth, async (req: Request, res: Response) => {
+router.post("/mix-busses", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
-    const { projectId, name, type, color, outputBus } = req?.body;
+    const userId = req.user!.id;
+    const { projectId, name, type, color, outputBus } = req.body;
 
     if (!projectId) {
-      return res?.status(400).json({ error: "Project ID is required" });
+      return res.status(400).json({ error: "Project ID is required" });
     }
 
-    const _project = await db?.query.projects?.findFirst({
-      where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
+    const project = await db.query.projects.findFirst({
+      where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
     });
 
     if (!project) {
-      return res?.status(404).json({ error: "Project not found" });
+      return res.status(404).json({ error: "Project not found" });
     }
 
-    const _metadata = (project?.metadata as Record<string, unknown>) || {};
-    const _existingBusses = (metadata?.mixBusses as MixBusConfig[]) || [
+    const metadata = (project.metadata as Record<string, unknown>) || {};
+    const existingBusses = (metadata.mixBusses as MixBusConfig[]) || [
       ...DEFAULT_MIX_BUSSES,
     ];
 
@@ -2118,12 +2118,12 @@ router?.post("/mix-busses", requireAuth, async (req: Request, res: Response) => 
       muted: false,
       solo: false,
       color: color || "#64748b",
-      order: existingBusses?.length,
+      order: existingBusses.length,
       inputSources: [],
       outputBus: outputBus || "master",
     };
 
-    const _updatedBusses = [...existingBusses, newBus];
+    const updatedBusses = [...existingBusses, newBus];
 
     await db
       .update(projects)
@@ -2131,46 +2131,46 @@ router?.post("/mix-busses", requireAuth, async (req: Request, res: Response) => 
         metadata: { ...metadata, mixBusses: updatedBusses },
         updatedAt: new Date(),
       })
-      .where(eq(projects?.id, projectId));
+      .where(eq(projects.id, projectId));
 
-    res?.status(201).json(newBus);
+    res.status(201).json(newBus);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error creating mix bus:");
-    res?.status(500).json({ error: "Failed to create mix bus" });
+    logger.warn({ err: error }, "Error creating mix bus:");
+    res.status(500).json({ error: "Failed to create mix bus" });
   }
 });
 
 // PATCH update mix bus
-router?.patch(
+router.patch(
   "/mix-busses/:busId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const { busId } = req?.params;
+      const userId = req.user!.id;
+      const { busId } = req.params;
       const { projectId, name, volume, pan, muted, solo, color, outputBus } =
-        req?.body;
+        req.body;
 
       if (!projectId) {
-        return res?.status(400).json({ error: "Project ID is required" });
+        return res.status(400).json({ error: "Project ID is required" });
       }
 
-      const _project = await db?.query.projects?.findFirst({
-        where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
+      const project = await db.query.projects.findFirst({
+        where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
       });
 
       if (!project) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _metadata = (project?.metadata as Record<string, unknown>) || {};
-      const _existingBusses = (metadata?.mixBusses as MixBusConfig[]) || [
+      const metadata = (project.metadata as Record<string, unknown>) || {};
+      const existingBusses = (metadata.mixBusses as MixBusConfig[]) || [
         ...DEFAULT_MIX_BUSSES,
       ];
 
-      const _busIndex = existingBusses?.findIndex((b) => b?.id === busId);
+      const busIndex = existingBusses.findIndex((b) => b.id === busId);
       if (busIndex === -1) {
-        return res?.status(404).json({ error: "Mix bus not found" });
+        return res.status(404).json({ error: "Mix bus not found" });
       }
 
       const updatedBus: MixBusConfig = {
@@ -2192,48 +2192,48 @@ router?.patch(
           metadata: { ...metadata, mixBusses: existingBusses },
           updatedAt: new Date(),
         })
-        .where(eq(projects?.id, projectId));
+        .where(eq(projects.id, projectId));
 
-      res?.json(updatedBus);
+      res.json(updatedBus);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error updating mix bus:");
-      res?.status(500).json({ error: "Failed to update mix bus" });
+      logger.warn({ err: error }, "Error updating mix bus:");
+      res.status(500).json({ error: "Failed to update mix bus" });
     }
   },
 );
 
 // DELETE mix bus
-router?.delete(
+router.delete(
   "/mix-busses/:busId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const { busId } = req?.params;
-      const { projectId } = req?.query as { projectId: string };
+      const userId = req.user!.id;
+      const { busId } = req.params;
+      const { projectId } = req.query as { projectId: string };
 
       if (!projectId) {
-        return res?.status(400).json({ error: "Project ID is required" });
+        return res.status(400).json({ error: "Project ID is required" });
       }
 
       if (busId === "master") {
-        return res?.status(400).json({ error: "Cannot delete master bus" });
+        return res.status(400).json({ error: "Cannot delete master bus" });
       }
 
-      const _project = await db?.query.projects?.findFirst({
-        where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
+      const project = await db.query.projects.findFirst({
+        where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
       });
 
       if (!project) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _metadata = (project?.metadata as Record<string, unknown>) || {};
-      const _existingBusses = (metadata?.mixBusses as MixBusConfig[]) || [
+      const metadata = (project.metadata as Record<string, unknown>) || {};
+      const existingBusses = (metadata.mixBusses as MixBusConfig[]) || [
         ...DEFAULT_MIX_BUSSES,
       ];
 
-      const _updatedBusses = existingBusses?.filter((b) => b?.id !== busId);
+      const updatedBusses = existingBusses.filter((b) => b.id !== busId);
 
       await db
         .update(projects)
@@ -2241,56 +2241,56 @@ router?.delete(
           metadata: { ...metadata, mixBusses: updatedBusses },
           updatedAt: new Date(),
         })
-        .where(eq(projects?.id, projectId));
+        .where(eq(projects.id, projectId));
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error deleting mix bus:");
-      res?.status(500).json({ error: "Failed to delete mix bus" });
+      logger.warn({ err: error }, "Error deleting mix bus:");
+      res.status(500).json({ error: "Failed to delete mix bus" });
     }
   },
 );
 
 // POST update track routing
-router?.post(
+router.post(
   "/projects/:projectId/track-routing",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const { projectId } = req?.params;
-      const { trackId, outputBus } = req?.body;
+      const userId = req.user!.id;
+      const { projectId } = req.params;
+      const { trackId, outputBus } = req.body;
 
       if (!trackId) {
-        return res?.status(400).json({ error: "Track ID is required" });
+        return res.status(400).json({ error: "Track ID is required" });
       }
 
-      const _project = await db?.query.projects?.findFirst({
-        where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
+      const project = await db.query.projects.findFirst({
+        where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
       });
 
       if (!project) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _track = await db?.query.studioTracks?.findFirst({
+      const track = await db.query.studioTracks.findFirst({
         where: and(
-          eq(studioTracks?.id, trackId),
-          eq(studioTracks?.projectId, projectId),
+          eq(studioTracks.id, trackId),
+          eq(studioTracks.projectId, projectId),
         ),
       });
 
       if (!track) {
-        return res?.status(404).json({ error: "Track not found" });
+        return res.status(404).json({ error: "Track not found" });
       }
 
-      const _metadata = (project?.metadata as Record<string, unknown>) || {};
-      const _mixBusses =
-        (metadata?.mixBusses as MixBusConfig[]) || DEFAULT_MIX_BUSSES;
-      const _validBusIds = mixBusses?.map((b) => b?.id);
+      const metadata = (project.metadata as Record<string, unknown>) || {};
+      const mixBusses =
+        (metadata.mixBusses as MixBusConfig[]) || DEFAULT_MIX_BUSSES;
+      const validBusIds = mixBusses.map((b) => b.id);
 
-      if (outputBus && !validBusIds?.includes(outputBus)) {
-        return res?.status(400).json({ error: "Invalid output bus ID" });
+      if (outputBus && !validBusIds.includes(outputBus)) {
+        return res.status(400).json({ error: "Invalid output bus ID" });
       }
 
       await db
@@ -2298,36 +2298,36 @@ router?.post(
         .set({ outputBus: outputBus || "master" })
         .where(
           and(
-            eq(studioTracks?.id, trackId),
-            eq(studioTracks?.projectId, projectId),
+            eq(studioTracks.id, trackId),
+            eq(studioTracks.projectId, projectId),
           ),
         );
 
-      res?.json({ success: true, trackId, outputBus: outputBus || "master" });
+      res.json({ success: true, trackId, outputBus: outputBus || "master" });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error updating track routing:");
-      res?.status(500).json({ error: "Failed to update track routing" });
+      logger.warn({ err: error }, "Error updating track routing:");
+      res.status(500).json({ error: "Failed to update track routing" });
     }
   },
 );
 
-router?.get("/conversions", requireAuth, async (_req: Request, res: Response) => {
+router.get("/conversions", requireAuth, async (_req: Request, res: Response) => {
   try {
-    res?.json({ conversions: [] });
+    res.json({ conversions: [] });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching conversions:");
-    res?.status(500).json({ error: "Failed to fetch conversions" });
+    logger.warn({ err: error }, "Error fetching conversions:");
+    res.status(500).json({ error: "Failed to fetch conversions" });
   }
 });
 
-router?.post(
+router.post(
   "/conversions",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId, format, quality } = req?.body;
-      const _conversionId = randomBytes(8).toString("hex");
-      res?.status(201).json({
+      const { projectId, format, quality } = req.body;
+      const conversionId = randomBytes(8).toString("hex");
+      res.status(201).json({
         id: conversionId,
         projectId,
         format: format || "wav",
@@ -2337,51 +2337,51 @@ router?.post(
         createdAt: new Date().toISOString(),
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error creating conversion:");
-      res?.status(500).json({ error: "Failed to create conversion" });
+      logger.warn({ err: error }, "Error creating conversion:");
+      res.status(500).json({ error: "Failed to create conversion" });
     }
   },
 );
 
-router?.post(
+router.post(
   "/conversions/:conversionId/cancel",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { conversionId } = req?.params;
-      res?.json({
+      const { conversionId } = req.params;
+      res.json({
         success: true,
         message: "Conversion cancelled",
         conversionId,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error cancelling conversion:");
-      res?.status(500).json({ error: "Failed to cancel conversion" });
+      logger.warn({ err: error }, "Error cancelling conversion:");
+      res.status(500).json({ error: "Failed to cancel conversion" });
     }
   },
 );
 
-router?.get(
+router.get(
   "/conversions/:conversionId/download",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { conversionId } = req?.params;
+      const { conversionId } = req.params;
       res
         .status(404)
         .json({ error: "Conversion not found or not ready", conversionId });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error downloading conversion:");
-      res?.status(500).json({ error: "Failed to download conversion" });
+      logger.warn({ err: error }, "Error downloading conversion:");
+      res.status(500).json({ error: "Failed to download conversion" });
     }
   },
 );
 
 // Lyrics endpoints
-router?.get("/lyrics", requireAuth, async (req: Request, res: Response) => {
+router.get("/lyrics", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
-    const { projectId } = req?.query;
+    const userId = req.user!.id;
+    const { projectId } = req.query;
     if (!projectId || typeof projectId !== "string") {
       return res
         .status(400)
@@ -2390,74 +2390,74 @@ router?.get("/lyrics", requireAuth, async (req: Request, res: Response) => {
     const [project] = await db
       .select()
       .from(projects)
-      .where(and(eq(projects?.id, projectId), eq(projects?.userId, userId)))
+      .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
       .limit(1);
     if (!project) {
-      return res?.status(404).json({ error: "Project not found" });
+      return res.status(404).json({ error: "Project not found" });
     }
-    const _meta = (project?.metadata as Record<string, any>) || {};
-    res?.json({
+    const meta = (project.metadata as Record<string, any>) || {};
+    res.json({
       projectId,
-      lyrics: meta?.lyrics ?? "",
-      sections: meta?.lyricsSections ?? [],
-      lastUpdated: meta?.lyricsUpdatedAt ?? null,
+      lyrics: meta.lyrics ?? "",
+      sections: meta.lyricsSections ?? [],
+      lastUpdated: meta.lyricsUpdatedAt ?? null,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching lyrics:");
-    res?.status(500).json({ error: "Failed to fetch lyrics" });
+    logger.warn({ err: error }, "Error fetching lyrics:");
+    res.status(500).json({ error: "Failed to fetch lyrics" });
   }
 });
 
-router?.post("/lyrics", requireAuth, async (req: Request, res: Response) => {
+router.post("/lyrics", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
-    const { projectId, lyrics, sections } = req?.body;
+    const userId = req.user!.id;
+    const { projectId, lyrics, sections } = req.body;
     if (!projectId || typeof projectId !== "string") {
-      return res?.status(400).json({ error: "projectId is required" });
+      return res.status(400).json({ error: "projectId is required" });
     }
     const [project] = await db
       .select()
       .from(projects)
-      .where(and(eq(projects?.id, projectId), eq(projects?.userId, userId)))
+      .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
       .limit(1);
     if (!project) {
-      return res?.status(404).json({ error: "Project not found" });
+      return res.status(404).json({ error: "Project not found" });
     }
-    const _existingMeta = (project?.metadata as Record<string, any>) || {};
-    const _updatedMeta = {
+    const existingMeta = (project.metadata as Record<string, any>) || {};
+    const updatedMeta = {
       ...existingMeta,
-      lyrics: lyrics ?? existingMeta?.lyrics ?? "",
-      lyricsSections: sections ?? existingMeta?.lyricsSections ?? [],
+      lyrics: lyrics ?? existingMeta.lyrics ?? "",
+      lyricsSections: sections ?? existingMeta.lyricsSections ?? [],
       lyricsUpdatedAt: new Date().toISOString(),
     };
     await db
       .update(projects)
       .set({ metadata: updatedMeta, updatedAt: new Date() })
-      .where(eq(projects?.id, projectId));
-    res?.json({
+      .where(eq(projects.id, projectId));
+    res.json({
       success: true,
       projectId,
-      lastUpdated: updatedMeta?.lyricsUpdatedAt,
+      lastUpdated: updatedMeta.lyricsUpdatedAt,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error saving lyrics:");
-    res?.status(500).json({ error: "Failed to save lyrics" });
+    logger.warn({ err: error }, "Error saving lyrics:");
+    res.status(500).json({ error: "Failed to save lyrics" });
   }
 });
 
 // AI Master endpoint
-router?.post(
+router.post(
   "/ai-master/:projectId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const { projectId } = req?.params;
-      const { targetLoudness, genre, preset } = req?.body;
-      res?.json({
+      const userId = req.user!.id;
+      const { projectId } = req.params;
+      const { targetLoudness, genre, preset } = req.body;
+      res.json({
         success: true,
         projectId,
-        jobId: `master_${Date?.now()}`,
+        jobId: `master_${Date.now()}`,
         status: "processing",
         message: "AI mastering started",
         settings: { targetLoudness: targetLoudness || -14, genre, preset },
@@ -2466,41 +2466,41 @@ router?.post(
         setImmediate(async () => {
           try {
             const [proj] = await db
-              .select({ name: projects?.name })
+              .select({ name: projects.name })
               .from(projects)
-              .where(eq(projects?.id, projectId))
+              .where(eq(projects.id, projectId))
               .limit(1);
-            const _trackName = proj?.name || projectId;
-            await notificationService?.sendAiProcessingCompleteNotification(
+            const trackName = proj.name || projectId;
+            await notificationService.sendAiProcessingCompleteNotification(
               userId,
               "master",
               trackName,
             );
           } catch (err) {
-            logger?.warn({ err: err }, "AI master notification error:");
+            logger.warn({ err: err }, "AI master notification error:");
           }
         });
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error starting AI master:");
-      res?.status(500).json({ error: "Failed to start AI mastering" });
+      logger.warn({ err: error }, "Error starting AI master:");
+      res.status(500).json({ error: "Failed to start AI mastering" });
     }
   },
 );
 
 // AI Mix endpoint
-router?.post(
+router.post(
   "/ai-mix/:projectId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const { projectId } = req?.params;
-      const { targetGenre,  autoEQ, autoCompression } = req?.body;
-      res?.json({
+      const userId = req.user!.id;
+      const { projectId } = req.params;
+      const { targetGenre,  autoEQ, autoCompression } = req.body;
+      res.json({
         success: true,
         projectId,
-        jobId: `mix_${Date?.now()}`,
+        jobId: `mix_${Date.now()}`,
         status: "processing",
         message: "AI mixing started",
         settings: {
@@ -2513,35 +2513,35 @@ router?.post(
         setImmediate(async () => {
           try {
             const [proj] = await db
-              .select({ name: projects?.name })
+              .select({ name: projects.name })
               .from(projects)
-              .where(eq(projects?.id, projectId))
+              .where(eq(projects.id, projectId))
               .limit(1);
-            const _trackName = proj?.name || projectId;
-            await notificationService?.sendAiProcessingCompleteNotification(
+            const trackName = proj.name || projectId;
+            await notificationService.sendAiProcessingCompleteNotification(
               userId,
               "mix",
               trackName,
             );
           } catch (err) {
-            logger?.warn({ err: err }, "AI mix notification error:");
+            logger.warn({ err: err }, "AI mix notification error:");
           }
         });
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error starting AI mix:");
-      res?.status(500).json({ error: "Failed to start AI mixing" });
+      logger.warn({ err: error }, "Error starting AI mix:");
+      res.status(500).json({ error: "Failed to start AI mixing" });
     }
   },
 );
 
 // AI Music endpoints
-router?.get(
+router.get(
   "/ai-music/suggestions",
   requireAuth,
   async (_req: Request, res: Response) => {
     try {
-      res?.json({
+      res.json({
         suggestions: [
           {
             type: "eq",
@@ -2561,18 +2561,18 @@ router?.get(
         ],
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching AI suggestions:");
-      res?.status(500).json({ error: "Failed to fetch AI suggestions" });
+      logger.warn({ err: error }, "Error fetching AI suggestions:");
+      res.status(500).json({ error: "Failed to fetch AI suggestions" });
     }
   },
 );
 
-router?.get(
+router.get(
   "/ai-music/presets",
   requireAuth,
   async (_req: Request, res: Response) => {
     try {
-      res?.json({
+      res.json({
         presets: [
           { id: "pop", name: "Pop", description: "Bright and punchy mix" },
           {
@@ -2598,36 +2598,36 @@ router?.get(
         ],
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching AI presets:");
-      res?.status(500).json({ error: "Failed to fetch AI presets" });
+      logger.warn({ err: error }, "Error fetching AI presets:");
+      res.status(500).json({ error: "Failed to fetch AI presets" });
     }
   },
 );
 
-router?.post(
+router.post(
   "/ai-music/apply-genre-preset",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId, presetId } = req?.body;
-      res?.json({
+      const { projectId, presetId } = req.body;
+      res.json({
         success: true,
         message: `Applied ${presetId} preset to project`,
         projectId,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error applying genre preset:");
-      res?.status(500).json({ error: "Failed to apply genre preset" });
+      logger.warn({ err: error }, "Error applying genre preset:");
+      res.status(500).json({ error: "Failed to apply genre preset" });
     }
   },
 );
 
-router?.post(
+router.post(
   "/ai-music/analyze-loudness",
   requireAuth,
   async (_req: Request, res: Response) => {
     try {
-      res?.json({
+      res.json({
         integrated: -14.2,
         truePeak: -1.0,
         shortTerm: -12.8,
@@ -2636,18 +2636,18 @@ router?.post(
         recommendations: ["Track is well balanced for streaming platforms"],
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error analyzing loudness:");
-      res?.status(500).json({ error: "Failed to analyze loudness" });
+      logger.warn({ err: error }, "Error analyzing loudness:");
+      res.status(500).json({ error: "Failed to analyze loudness" });
     }
   },
 );
 
-router?.post(
+router.post(
   "/ai-music/match-reference",
   requireAuth,
   async (_req: Request, res: Response) => {
     try {
-      res?.json({
+      res.json({
         success: true,
         matchScore: 0.82,
         adjustments: [
@@ -2656,38 +2656,38 @@ router?.post(
         ],
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error matching reference:");
-      res?.status(500).json({ error: "Failed to match reference" });
+      logger.warn({ err: error }, "Error matching reference:");
+      res.status(500).json({ error: "Failed to match reference" });
     }
   },
 );
 
 // Studio upload endpoint with proper file handling
-router?.post(
+router.post(
   "/upload",
   requireAuth,
-  audioUpload?.single("audioFile"),
+  audioUpload.single("audioFile"),
   handleUploadError,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user?.id;
-      const _file = req?.file;
-      const _projectId = req?.body.projectId;
+      const userId = req.user.id;
+      const file = req.file;
+      const projectId = req.body.projectId;
 
       if (!file) {
-        return res?.status(400).json({ error: "No audio file provided" });
+        return res.status(400).json({ error: "No audio file provided" });
       }
 
-      const _fileId = `file_${randomBytes(8).toString("hex")}`;
+      const fileId = `file_${randomBytes(8).toString("hex")}`;
 
-      const _storedFile = await storeUploadedFile(file, userId, "audio");
+      const storedFile = await storeUploadedFile(file, userId, "audio");
 
-      logger?.info("Audio file uploaded to studio", {
+      logger.info("Audio file uploaded to studio", {
         fileId,
-        originalName: file?.originalname,
-        size: file?.size,
-        mimeType: file?.mimetype,
-        url: storedFile?.url,
+        originalName: file.originalname,
+        size: file.size,
+        mimeType: file.mimetype,
+        url: storedFile.url,
         projectId,
       });
 
@@ -2695,17 +2695,17 @@ router?.post(
       let clip = null;
 
       if (projectId) {
-        const _hasAccess = await verifyProjectOwnership(projectId, userId);
+        const hasAccess = await verifyProjectOwnership(projectId, userId);
         if (hasAccess) {
-          const _existingTracks = await db?.query.studioTracks?.findMany({
-            where: eq(studioTracks?.projectId, projectId),
+          const existingTracks = await db.query.studioTracks.findMany({
+            where: eq(studioTracks.projectId, projectId),
           });
-          const _trackOrder = existingTracks?.length;
+          const trackOrder = existingTracks.length;
 
-          const _trackName =
-            file?.originalname.replace(/\.[^/.]+$/, "") ||
+          const trackName =
+            file.originalname.replace(/\.[^/.]+$/, "") ||
             `Track ${trackOrder + 1}`;
-          const _trackId = `track_${randomBytes(8).toString("hex")}`;
+          const trackId = `track_${randomBytes(8).toString("hex")}`;
 
           const [newTrack] = await db
             .insert(studioTracks)
@@ -2728,7 +2728,7 @@ router?.post(
 
           track = newTrack;
 
-          const _clipId = `clip_${randomBytes(8).toString("hex")}`;
+          const clipId = `clip_${randomBytes(8).toString("hex")}`;
           const [newClip] = await db
             .insert(audioClips)
             .values({
@@ -2736,7 +2736,7 @@ router?.post(
               projectId,
               trackId,
               name: trackName,
-              audioUrl: storedFile?.url,
+              audioUrl: storedFile.url,
               startTime: 0,
               duration: null,
               fadeIn: 0,
@@ -2747,7 +2747,7 @@ router?.post(
 
           clip = newClip;
 
-          logger?.info("Created track and audio clip for uploaded file", {
+          logger.info("Created track and audio clip for uploaded file", {
             trackId,
             clipId,
             projectId,
@@ -2755,54 +2755,54 @@ router?.post(
         }
       }
 
-      res?.json({
+      res.json({
         success: true,
         fileId,
-        url: storedFile?.url,
-        originalName: file?.originalname,
-        size: file?.size,
-        mimeType: file?.mimetype,
+        url: storedFile.url,
+        originalName: file.originalname,
+        size: file.size,
+        mimeType: file.mimetype,
         message: "File uploaded successfully",
         track,
         clip,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error uploading file:");
-      res?.status(500).json({ error: "Failed to upload file" });
+      logger.warn({ err: error }, "Error uploading file:");
+      res.status(500).json({ error: "Failed to upload file" });
     }
   },
 );
 
 // Create a track from a pre-assembled URL (used after chunked uploads)
-router?.post(
+router.post(
   "/upload-from-url",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const { projectId, audioUrl, filename } = req?.body;
+      const userId = req.user!.id;
+      const { projectId, audioUrl, filename } = req.body;
 
       if (!projectId || typeof projectId !== "string") {
-        return res?.status(400).json({ error: "projectId is required" });
+        return res.status(400).json({ error: "projectId is required" });
       }
       if (!audioUrl || typeof audioUrl !== "string") {
-        return res?.status(400).json({ error: "audioUrl is required" });
+        return res.status(400).json({ error: "audioUrl is required" });
       }
 
-      const _hasAccess = await verifyProjectOwnership(projectId, userId);
+      const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _existingTracks = await db?.query.studioTracks?.findMany({
-        where: eq(studioTracks?.projectId, projectId),
+      const existingTracks = await db.query.studioTracks.findMany({
+        where: eq(studioTracks.projectId, projectId),
       });
-      const _trackOrder = existingTracks?.length;
+      const trackOrder = existingTracks.length;
 
-      const _rawName = typeof filename === "string" ? filename : "";
-      const _trackName =
-        rawName?.replace(/\.[^/.]+$/, "") || `Track ${trackOrder + 1}`;
-      const _trackId = `track_${randomBytes(8).toString("hex")}`;
+      const rawName = typeof filename === "string" ? filename : "";
+      const trackName =
+        rawName.replace(/\.[^/.]+$/, "") || `Track ${trackOrder + 1}`;
+      const trackId = `track_${randomBytes(8).toString("hex")}`;
 
       const [newTrack] = await db
         .insert(studioTracks)
@@ -2823,7 +2823,7 @@ router?.post(
         })
         .returning();
 
-      const _clipId = `clip_${randomBytes(8).toString("hex")}`;
+      const clipId = `clip_${randomBytes(8).toString("hex")}`;
       const [newClip] = await db
         .insert(audioClips)
         .values({
@@ -2840,166 +2840,166 @@ router?.post(
         })
         .returning();
 
-      logger?.info("Created track from pre-assembled URL", {
+      logger.info("Created track from pre-assembled URL", {
         trackId,
         clipId,
         projectId,
       });
 
-      res?.json({ success: true, track: newTrack, clip: newClip });
+      res.json({ success: true, track: newTrack, clip: newClip });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error creating track from URL:");
-      res?.status(500).json({ error: "Failed to create track" });
+      logger.warn({ err: error }, "Error creating track from URL:");
+      res.status(500).json({ error: "Failed to create track" });
     }
   },
 );
 
 // Studio export endpoints
-router?.post("/export", requireAuth, async (req: Request, res: Response) => {
+router.post("/export", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
-    const { projectId, format, quality, settings, trackIds } = req?.body;
+    const userId = req.user!.id;
+    const { projectId, format, quality, settings, trackIds } = req.body;
 
     if (!projectId || typeof projectId !== "string") {
-      return res?.status(400).json({ error: "projectId is required" });
+      return res.status(400).json({ error: "projectId is required" });
     }
 
-    const _hasAccess = await verifyProjectOwnership(projectId, userId);
+    const hasAccess = await verifyProjectOwnership(projectId, userId);
     if (!hasAccess) {
-      return res?.status(403).json({ error: "Access denied" });
+      return res.status(403).json({ error: "Access denied" });
     }
 
-    const _resolvedFormat = format || "wav";
-    const _resolvedBitDepth = settings?.bitDepth || 24;
-    const _resolvedSampleRate = settings?.sampleRate || 44100;
+    const resolvedFormat = format || "wav";
+    const resolvedBitDepth = settings.bitDepth || 24;
+    const resolvedSampleRate = settings.sampleRate || 44100;
 
     const [record] = await db
       .insert(stemExports)
       .values({
         projectId,
         userId,
-        name: settings?.name || `Export ${new Date().toISOString()}`,
+        name: settings.name || `Export ${new Date().toISOString()}`,
         format: resolvedFormat,
         bitDepth: resolvedBitDepth,
         sampleRate: resolvedSampleRate,
-        trackIds: Array?.isArray(trackIds) ? trackIds : [],
+        trackIds: Array.isArray(trackIds) ? trackIds : [],
         status: "pending",
       })
       .returning();
 
-    res?.json({
+    res.json({
       success: true,
-      jobId: record?.id,
+      jobId: record.id,
       projectId,
-      format: record?.format,
+      format: record.format,
       quality: quality || "high",
-      status: record?.status,
+      status: record.status,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error starting export:");
-    res?.status(500).json({ error: "Failed to start export" });
+    logger.warn({ err: error }, "Error starting export:");
+    res.status(500).json({ error: "Failed to start export" });
   }
 });
 
-router?.get(
+router.get(
   "/export/:jobId/status",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { jobId } = req?.params;
-      const _userId = req?.user!.id;
+      const { jobId } = req.params;
+      const userId = req.user!.id;
 
       const [record] = await db
         .select({
-          id: stemExports?.id,
-          status: stemExports?.status,
-          outputUrl: stemExports?.outputUrl,
-          createdAt: stemExports?.createdAt,
+          id: stemExports.id,
+          status: stemExports.status,
+          outputUrl: stemExports.outputUrl,
+          createdAt: stemExports.createdAt,
         })
         .from(stemExports)
-        .where(and(eq(stemExports?.id, jobId), eq(stemExports?.userId, userId)))
+        .where(and(eq(stemExports.id, jobId), eq(stemExports.userId, userId)))
         .limit(1);
 
       if (!record) {
-        return res?.status(404).json({ error: "Export job not found" });
+        return res.status(404).json({ error: "Export job not found" });
       }
 
-      const _isComplete = record?.status === "completed";
-      res?.json({
-        jobId: record?.id,
-        status: record?.status,
-        progress: isComplete ? 100 : record?.status === "processing" ? 50 : 0,
+      const isComplete = record.status === "completed";
+      res.json({
+        jobId: record.id,
+        status: record.status,
+        progress: isComplete ? 100 : record.status === "processing" ? 50 : 0,
         downloadUrl:
-          record?.outputUrl ||
+          record.outputUrl ||
           (isComplete ? `/api/studio/export/${jobId}/download` : null),
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error checking export status:");
-      res?.status(500).json({ error: "Failed to check export status" });
+      logger.warn({ err: error }, "Error checking export status:");
+      res.status(500).json({ error: "Failed to check export status" });
     }
   },
 );
 
-router?.get(
+router.get(
   "/export/:jobId/download",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { jobId } = req?.params;
-      res?.status(404).json({ error: "Export not found or expired", jobId });
+      const { jobId } = req.params;
+      res.status(404).json({ error: "Export not found or expired", jobId });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error downloading export:");
-      res?.status(500).json({ error: "Failed to download export" });
+      logger.warn({ err: error }, "Error downloading export:");
+      res.status(500).json({ error: "Failed to download export" });
     }
   },
 );
 
-router?.post(
+router.post(
   "/export/:jobId/upload",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { jobId } = req?.params;
-      res?.json({
+      const { jobId } = req.params;
+      res.json({
         success: true,
         jobId,
         message: "Export uploaded to distribution",
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error uploading export:");
-      res?.status(500).json({ error: "Failed to upload export" });
+      logger.warn({ err: error }, "Error uploading export:");
+      res.status(500).json({ error: "Failed to upload export" });
     }
   },
 );
 
-router?.post(
+router.post(
   "/clips/audio",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req.user!.id;
       const { trackId, projectId, startTime, duration, name, audioUrl } =
-        req?.body;
+        req.body;
 
       if (!trackId || typeof trackId !== "string") {
-        return res?.status(400).json({ error: "trackId is required" });
+        return res.status(400).json({ error: "trackId is required" });
       }
 
-      const _track = await db?.query.studioTracks?.findFirst({
-        where: eq(studioTracks?.id, trackId),
+      const track = await db.query.studioTracks.findFirst({
+        where: eq(studioTracks.id, trackId),
       });
 
       if (!track) {
-        return res?.status(404).json({ error: "Track not found" });
+        return res.status(404).json({ error: "Track not found" });
       }
 
-      const _resolvedProjectId = projectId || track?.projectId;
+      const resolvedProjectId = projectId || track.projectId;
 
       if (!(await verifyProjectOwnership(resolvedProjectId, userId))) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
-      const _clipId = randomBytes(8).toString("hex");
+      const clipId = randomBytes(8).toString("hex");
       const [clip] = await db
         .insert(audioClips)
         .values({
@@ -3013,37 +3013,37 @@ router?.post(
         })
         .returning();
 
-      res?.status(201).json(clip);
+      res.status(201).json(clip);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error creating audio clip:");
-      res?.status(500).json({ error: "Failed to create audio clip" });
+      logger.warn({ err: error }, "Error creating audio clip:");
+      res.status(500).json({ error: "Failed to create audio clip" });
     }
   },
 );
 
 // Markers endpoints
 // NOTE: Track PATCH/DELETE routes are defined above with proper DB operations
-router?.get(
+router.get(
   "/projects/:projectId/markers",
   requireAuth,
   async (_req: Request, res: Response) => {
     try {
-      res?.json({ markers: [] });
+      res.json({ markers: [] });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching markers:");
-      res?.status(500).json({ error: "Failed to fetch markers" });
+      logger.warn({ err: error }, "Error fetching markers:");
+      res.status(500).json({ error: "Failed to fetch markers" });
     }
   },
 );
 
-router?.post(
+router.post(
   "/projects/:projectId/markers",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const { position, label, color, type } = req?.body;
-      res?.json({
+      const { projectId } = req.params;
+      const { position, label, color, type } = req.body;
+      res.json({
         id: `marker_${randomBytes(8).toString("hex")}`,
         projectId,
         position: position || 0,
@@ -3053,61 +3053,61 @@ router?.post(
         createdAt: new Date().toISOString(),
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error creating marker:");
-      res?.status(500).json({ error: "Failed to create marker" });
+      logger.warn({ err: error }, "Error creating marker:");
+      res.status(500).json({ error: "Failed to create marker" });
     }
   },
 );
 
-router?.patch(
+router.patch(
   "/markers/:markerId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { markerId } = req?.params;
-      res?.json({
+      const { markerId } = req.params;
+      res.json({
         success: true,
         id: markerId,
-        ...req?.body,
+        ...req.body,
         updatedAt: new Date().toISOString(),
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error updating marker:");
-      res?.status(500).json({ error: "Failed to update marker" });
+      logger.warn({ err: error }, "Error updating marker:");
+      res.status(500).json({ error: "Failed to update marker" });
     }
   },
 );
 
-router?.delete(
+router.delete(
   "/markers/:markerId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { markerId } = req?.params;
-      res?.json({ success: true, message: "Marker deleted", markerId });
+      const { markerId } = req.params;
+      res.json({ success: true, message: "Marker deleted", markerId });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error deleting marker:");
-      res?.status(500).json({ error: "Failed to delete marker" });
+      logger.warn({ err: error }, "Error deleting marker:");
+      res.status(500).json({ error: "Failed to delete marker" });
     }
   },
 );
 
 // Tracks reorder endpoint
-router?.post(
+router.post(
   "/projects/:projectId/tracks/reorder",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const { trackOrder } = req?.body;
-      res?.json({
+      const { projectId } = req.params;
+      const { trackOrder } = req.body;
+      res.json({
         success: true,
         projectId,
         trackOrder,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error reordering tracks:");
-      res?.status(500).json({ error: "Failed to reorder tracks" });
+      logger.warn({ err: error }, "Error reordering tracks:");
+      res.status(500).json({ error: "Failed to reorder tracks" });
     }
   },
 );
@@ -3121,46 +3121,46 @@ async function ensureStudioProject(
   projectId: string,
   userId: number,
 ): Promise<boolean> {
-  let studioProject = await db?.query.studioProjects?.findFirst({
-    where: eq(studioProjects?.id, projectId),
+  let studioProject = await db.query.studioProjects.findFirst({
+    where: eq(studioProjects.id, projectId),
   });
 
   if (!studioProject) {
     // Check if regular project exists
-    const _regularProject = await db?.query.projects?.findFirst({
-      where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
+    const regularProject = await db.query.projects.findFirst({
+      where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
     });
     if (regularProject) {
-      await db?.insert(studioProjects).values({
+      await db.insert(studioProjects).values({
         id: projectId,
         userId: userId,
-        name: regularProject?.name || "Untitled",
+        name: regularProject.name || "Untitled",
         metadata: {},
       });
       return true;
     }
     return false;
   }
-  return studioProject?.userId === userId;
+  return studioProject.userId === userId;
 }
 
 // Create a folder track
-router?.post("/folders", requireAuth, async (req: Request, res: Response) => {
+router.post("/folders", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
-    const { projectId, name, color, position } = req?.body;
+    const userId = req.user!.id;
+    const { projectId, name, color, position } = req.body;
 
     if (!projectId || !name) {
-      return res?.status(400).json({ error: "projectId and name are required" });
+      return res.status(400).json({ error: "projectId and name are required" });
     }
 
     // Ensure studioProject exists (create if needed from regular project)
-    const _hasAccess = await ensureStudioProject(projectId, userId);
+    const hasAccess = await ensureStudioProject(projectId, userId);
     if (!hasAccess) {
-      return res?.status(404).json({ error: "Project not found" });
+      return res.status(404).json({ error: "Project not found" });
     }
 
-    const _folder = await db
+    const folder = await db
       .insert(studioTracks)
       .values({
         id: randomBytes(8).toString("hex"),
@@ -3176,74 +3176,74 @@ router?.post("/folders", requireAuth, async (req: Request, res: Response) => {
       })
       .returning();
 
-    res?.json(folder[0]);
+    res.json(folder[0]);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error creating folder:");
-    res?.status(500).json({ error: "Failed to create folder" });
+    logger.warn({ err: error }, "Error creating folder:");
+    res.status(500).json({ error: "Failed to create folder" });
   }
 });
 
 // Get all folders for a project with their children
-router?.get(
+router.get(
   "/projects/:projectId/folders",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const { projectId } = req?.params;
+      const userId = req.user!.id;
+      const { projectId } = req.params;
 
       // Ensure studioProject exists
-      const _hasAccess = await ensureStudioProject(projectId, userId);
+      const hasAccess = await ensureStudioProject(projectId, userId);
       if (!hasAccess) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _studioProject = await db?.query.studioProjects?.findFirst({
-        where: eq(studioProjects?.id, projectId),
+      const studioProject = await db.query.studioProjects.findFirst({
+        where: eq(studioProjects.id, projectId),
       });
 
-      const _tracks = await db?.query.studioTracks?.findMany({
-        where: eq(studioTracks?.projectId, projectId),
-        orderBy: studioTracks?.trackNumber,
+      const tracks = await db.query.studioTracks.findMany({
+        where: eq(studioTracks.projectId, projectId),
+        orderBy: studioTracks.trackNumber,
       });
 
       // Build folder hierarchy
-      const _folders = tracks?.filter((t) => t?.trackType === "folder");
-      const _childTracks = tracks?.filter((t) => t?.trackType !== "folder");
-      const _metadata =
-        (studioProject?.metadata as Record<string, unknown>) || {};
-      const _trackFolders = metadata?.trackFolders || {};
+      const folders = tracks.filter((t) => t.trackType === "folder");
+      const childTracks = tracks.filter((t) => t.trackType !== "folder");
+      const metadata =
+        (studioProject.metadata as Record<string, unknown>) || {};
+      const trackFolders = metadata.trackFolders || {};
 
-      const _foldersWithChildren = folders?.map((folder) => ({
+      const foldersWithChildren = folders.map((folder) => ({
         ...folder,
-        children: childTracks?.filter((t) => trackFolders[t?.id] === folder?.id),
+        children: childTracks.filter((t) => trackFolders[t.id] === folder.id),
       }));
 
-      res?.json({
+      res.json({
         folders: foldersWithChildren,
-        unassignedTracks: childTracks?.filter((t) => !trackFolders[t?.id]),
+        unassignedTracks: childTracks.filter((t) => !trackFolders[t.id]),
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching folders:");
-      res?.status(500).json({ error: "Failed to fetch folders" });
+      logger.warn({ err: error }, "Error fetching folders:");
+      res.status(500).json({ error: "Failed to fetch folders" });
     }
   },
 );
 
 // Update folder properties
-router?.patch(
+router.patch(
   "/folders/:folderId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const { folderId } = req?.params;
-      const { name, color, collapsed } = req?.body;
+      const userId = req.user!.id;
+      const { folderId } = req.params;
+      const { name, color, collapsed } = req.body;
 
-      const _folder = await db?.query.studioTracks?.findFirst({
+      const folder = await db.query.studioTracks.findFirst({
         where: and(
-          eq(studioTracks?.id, folderId),
-          eq(studioTracks?.trackType, "folder"),
+          eq(studioTracks.id, folderId),
+          eq(studioTracks.trackType, "folder"),
         ),
         with: {
           project: true,
@@ -3252,91 +3252,91 @@ router?.patch(
 
       if (
         !folder ||
-        (folder?.project as { userId?: string })?.userId !== userId
+        (folder.project as { userId?: string }).userId !== userId
       ) {
-        return res?.status(404).json({ error: "Folder not found" });
+        return res.status(404).json({ error: "Folder not found" });
       }
 
       const updates: Record<string, unknown> = {};
       if (name !== undefined) updates.name = name;
       if (color !== undefined) updates.color = color;
 
-      const _updated = await db
+      const updated = await db
         .update(studioTracks)
         .set(updates)
-        .where(eq(studioTracks?.id, folderId))
+        .where(eq(studioTracks.id, folderId))
         .returning();
 
       // Handle collapsed state in project metadata
       if (collapsed !== undefined) {
-        const _projectId = folder?.projectId;
-        const _project = await db?.query.studioProjects?.findFirst({
-          where: eq(studioProjects?.id, projectId),
+        const projectId = folder.projectId;
+        const project = await db.query.studioProjects.findFirst({
+          where: eq(studioProjects.id, projectId),
         });
 
         if (project) {
-          const _metadata = (project?.metadata as Record<string, unknown>) || {};
-          const _folderStates = metadata?.folderStates || {};
+          const metadata = (project.metadata as Record<string, unknown>) || {};
+          const folderStates = metadata.folderStates || {};
           folderStates[folderId] = { collapsed };
 
           await db
             .update(studioProjects)
             .set({ metadata: { ...metadata, folderStates } })
-            .where(eq(studioProjects?.id, projectId));
+            .where(eq(studioProjects.id, projectId));
         }
       }
 
-      res?.json({ ...updated[0], collapsed });
+      res.json({ ...updated[0], collapsed });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error updating folder:");
-      res?.status(500).json({ error: "Failed to update folder" });
+      logger.warn({ err: error }, "Error updating folder:");
+      res.status(500).json({ error: "Failed to update folder" });
     }
   },
 );
 
 // Move track to folder
-router?.post(
+router.post(
   "/tracks/:trackId/move-to-folder",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const { trackId } = req?.params;
-      const { folderId, position } = req?.body;
+      const userId = req.user!.id;
+      const { trackId } = req.params;
+      const { folderId, position } = req.body;
 
-      const _track = await db?.query.studioTracks?.findFirst({
-        where: eq(studioTracks?.id, trackId),
+      const track = await db.query.studioTracks.findFirst({
+        where: eq(studioTracks.id, trackId),
         with: {
           project: true,
         },
       });
 
-      if (!track || (track?.project as { userId?: string })?.userId !== userId) {
-        return res?.status(404).json({ error: "Track not found" });
+      if (!track || (track.project as { userId?: string }).userId !== userId) {
+        return res.status(404).json({ error: "Track not found" });
       }
 
       // Validate folder exists if folderId provided
       if (folderId) {
-        const _folder = await db?.query.studioTracks?.findFirst({
+        const folder = await db.query.studioTracks.findFirst({
           where: and(
-            eq(studioTracks?.id, folderId),
-            eq(studioTracks?.trackType, "folder"),
-            eq(studioTracks?.projectId, track?.projectId),
+            eq(studioTracks.id, folderId),
+            eq(studioTracks.trackType, "folder"),
+            eq(studioTracks.projectId, track.projectId),
           ),
         });
         if (!folder) {
-          return res?.status(400).json({ error: "Invalid folder ID" });
+          return res.status(400).json({ error: "Invalid folder ID" });
         }
       }
 
       // Store folder assignment in project metadata
-      const _project = await db?.query.studioProjects?.findFirst({
-        where: eq(studioProjects?.id, track?.projectId),
+      const project = await db.query.studioProjects.findFirst({
+        where: eq(studioProjects.id, track.projectId),
       });
 
       if (project) {
-        const _metadata = (project?.metadata as Record<string, unknown>) || {};
-        const _trackFolders = metadata?.trackFolders || {};
+        const metadata = (project.metadata as Record<string, unknown>) || {};
+        const trackFolders = metadata.trackFolders || {};
 
         if (folderId) {
           trackFolders[trackId] = folderId;
@@ -3347,7 +3347,7 @@ router?.post(
         await db
           .update(studioProjects)
           .set({ metadata: { ...metadata, trackFolders } })
-          .where(eq(studioProjects?.id, track?.projectId));
+          .where(eq(studioProjects.id, track.projectId));
       }
 
       // Update track position if specified
@@ -3355,36 +3355,36 @@ router?.post(
         await db
           .update(studioTracks)
           .set({ trackNumber: position })
-          .where(eq(studioTracks?.id, trackId));
+          .where(eq(studioTracks.id, trackId));
       }
 
-      res?.json({
+      res.json({
         success: true,
         trackId,
         folderId: folderId || null,
         position,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error moving track to folder:");
-      res?.status(500).json({ error: "Failed to move track to folder" });
+      logger.warn({ err: error }, "Error moving track to folder:");
+      res.status(500).json({ error: "Failed to move track to folder" });
     }
   },
 );
 
 // Delete folder (optionally preserving child tracks)
-router?.delete(
+router.delete(
   "/folders/:folderId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const { folderId } = req?.params;
-      const { deleteChildren } = req?.query;
+      const userId = req.user!.id;
+      const { folderId } = req.params;
+      const { deleteChildren } = req.query;
 
-      const _folder = await db?.query.studioTracks?.findFirst({
+      const folder = await db.query.studioTracks.findFirst({
         where: and(
-          eq(studioTracks?.id, folderId),
-          eq(studioTracks?.trackType, "folder"),
+          eq(studioTracks.id, folderId),
+          eq(studioTracks.trackType, "folder"),
         ),
         with: {
           project: true,
@@ -3393,29 +3393,29 @@ router?.delete(
 
       if (
         !folder ||
-        (folder?.project as { userId?: string })?.userId !== userId
+        (folder.project as { userId?: string }).userId !== userId
       ) {
-        return res?.status(404).json({ error: "Folder not found" });
+        return res.status(404).json({ error: "Folder not found" });
       }
 
-      const _projectId = folder?.projectId;
-      const _project = await db?.query.studioProjects?.findFirst({
-        where: eq(studioProjects?.id, projectId),
+      const projectId = folder.projectId;
+      const project = await db.query.studioProjects.findFirst({
+        where: eq(studioProjects.id, projectId),
       });
 
       if (project) {
-        const _metadata = (project?.metadata as Record<string, unknown>) || {};
-        const _trackFolders = metadata?.trackFolders || {};
+        const metadata = (project.metadata as Record<string, unknown>) || {};
+        const trackFolders = metadata.trackFolders || {};
 
         // Find children
-        const _childTrackIds = Object?.entries(trackFolders)
+        const childTrackIds = Object.entries(trackFolders)
           .filter(([_, folder]) => folder === folderId)
           .map(([trackId]) => trackId);
 
         if (deleteChildren === "true") {
           // Delete all child tracks
           for (const trackId of childTrackIds) {
-            await db?.delete(studioTracks).where(eq(studioTracks?.id, trackId));
+            await db.delete(studioTracks).where(eq(studioTracks.id, trackId));
             delete trackFolders[trackId];
           }
         } else {
@@ -3426,68 +3426,68 @@ router?.delete(
         }
 
         // Update metadata
-        const _folderStates = metadata?.folderStates || {};
+        const folderStates = metadata.folderStates || {};
         delete folderStates[folderId];
 
         await db
           .update(studioProjects)
           .set({ metadata: { ...metadata, trackFolders, folderStates } })
-          .where(eq(studioProjects?.id, projectId));
+          .where(eq(studioProjects.id, projectId));
       }
 
       // Delete the folder track
-      await db?.delete(studioTracks).where(eq(studioTracks?.id, folderId));
+      await db.delete(studioTracks).where(eq(studioTracks.id, folderId));
 
-      res?.json({
+      res.json({
         success: true,
         folderId,
         childrenDeleted: deleteChildren === "true",
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error deleting folder:");
-      res?.status(500).json({ error: "Failed to delete folder" });
+      logger.warn({ err: error }, "Error deleting folder:");
+      res.status(500).json({ error: "Failed to delete folder" });
     }
   },
 );
 
 // Bulk move tracks to folder
-router?.post(
+router.post(
   "/projects/:projectId/bulk-move-to-folder",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const { projectId } = req?.params;
-      const { trackIds, folderId } = req?.body;
+      const userId = req.user!.id;
+      const { projectId } = req.params;
+      const { trackIds, folderId } = req.body;
 
-      if (!trackIds || !Array?.isArray(trackIds)) {
-        return res?.status(400).json({ error: "trackIds array is required" });
+      if (!trackIds || !Array.isArray(trackIds)) {
+        return res.status(400).json({ error: "trackIds array is required" });
       }
 
       // Ensure studioProject exists (create from regular project if needed)
-      const _hasAccess = await ensureStudioProject(projectId, userId);
+      const hasAccess = await ensureStudioProject(projectId, userId);
       if (!hasAccess) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _project = await db?.query.studioProjects?.findFirst({
-        where: eq(studioProjects?.id, projectId),
+      const project = await db.query.studioProjects.findFirst({
+        where: eq(studioProjects.id, projectId),
       });
 
       if (!project) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
       // Validate all trackIds belong to this project and are not folders
-      const _projectTracks = await db?.query.studioTracks?.findMany({
-        where: eq(studioTracks?.projectId, projectId),
+      const projectTracks = await db.query.studioTracks.findMany({
+        where: eq(studioTracks.projectId, projectId),
       });
-      const _validTrackIds = new Set(
-        projectTracks?.filter((t) => t?.trackType !== "folder").map((t) => t?.id),
+      const validTrackIds = new Set(
+        projectTracks.filter((t) => t.trackType !== "folder").map((t) => t.id),
       );
-      const _invalidTracks = trackIds?.filter((id) => !validTrackIds?.has(id));
-      if (invalidTracks?.length > 0) {
-        return res?.status(400).json({
+      const invalidTracks = trackIds.filter((id) => !validTrackIds.has(id));
+      if (invalidTracks.length > 0) {
+        return res.status(400).json({
           error: "Some track IDs are invalid or do not belong to this project",
           invalidTracks,
         });
@@ -3495,20 +3495,20 @@ router?.post(
 
       // Validate folder if provided
       if (folderId) {
-        const _folder = await db?.query.studioTracks?.findFirst({
+        const folder = await db.query.studioTracks.findFirst({
           where: and(
-            eq(studioTracks?.id, folderId),
-            eq(studioTracks?.trackType, "folder"),
-            eq(studioTracks?.projectId, projectId),
+            eq(studioTracks.id, folderId),
+            eq(studioTracks.trackType, "folder"),
+            eq(studioTracks.projectId, projectId),
           ),
         });
         if (!folder) {
-          return res?.status(400).json({ error: "Invalid folder ID" });
+          return res.status(400).json({ error: "Invalid folder ID" });
         }
       }
 
-      const _metadata = (project?.metadata as Record<string, unknown>) || {};
-      const _trackFolders = { ...metadata?.trackFolders };
+      const metadata = (project.metadata as Record<string, unknown>) || {};
+      const trackFolders = { ...metadata.trackFolders };
 
       for (const trackId of trackIds) {
         if (folderId) {
@@ -3521,63 +3521,63 @@ router?.post(
       await db
         .update(studioProjects)
         .set({ metadata: { ...metadata, trackFolders } })
-        .where(eq(studioProjects?.id, projectId));
+        .where(eq(studioProjects.id, projectId));
 
-      res?.json({
+      res.json({
         success: true,
-        movedCount: trackIds?.length,
+        movedCount: trackIds.length,
         folderId: folderId || null,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error bulk moving tracks:");
-      res?.status(500).json({ error: "Failed to bulk move tracks" });
+      logger.warn({ err: error }, "Error bulk moving tracks:");
+      res.status(500).json({ error: "Failed to bulk move tracks" });
     }
   },
 );
 
-// Note: AI audio generation endpoints are in studioGeneration?.ts mounted at /api/studio/generation
+// Note: AI audio generation endpoints are in studioGeneration.ts mounted at /api/studio/generation
 // The following are legacy placeholder endpoints - audio generation is handled by the dedicated route
 
 // Stem exports endpoint
-router?.get(
+router.get(
   "/stem-exports/:projectId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const { projectId } = req?.params;
-      const _exports = await db
+      const userId = req.user!.id;
+      const { projectId } = req.params;
+      const exports = await db
         .select()
         .from(stemExports)
         .where(
           and(
-            eq(stemExports?.projectId, projectId),
-            eq(stemExports?.userId, userId),
+            eq(stemExports.projectId, projectId),
+            eq(stemExports.userId, userId),
           ),
         )
-        .orderBy(desc(stemExports?.createdAt))
+        .orderBy(desc(stemExports.createdAt))
         .limit(100);
-      res?.json({ exports, projectId });
+      res.json({ exports, projectId });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching stem exports:");
-      res?.status(500).json({ error: "Failed to fetch stem exports" });
+      logger.warn({ err: error }, "Error fetching stem exports:");
+      res.status(500).json({ error: "Failed to fetch stem exports" });
     }
   },
 );
 
 // Project export stems endpoint
-router?.post(
+router.post(
   "/projects/:projectId/export-stems",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const { projectId } = req?.params;
-      const { format, bitDepth, sampleRate, trackIds, name } = req?.body;
+      const userId = req.user!.id;
+      const { projectId } = req.params;
+      const { format, bitDepth, sampleRate, trackIds, name } = req.body;
 
-      const _hasAccess = await verifyProjectOwnership(projectId, userId);
+      const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
       const [record] = await db
@@ -3594,17 +3594,17 @@ router?.post(
         })
         .returning();
 
-      res?.json({
+      res.json({
         success: true,
-        jobId: record?.id,
+        jobId: record.id,
         projectId,
-        format: record?.format,
-        status: record?.status,
+        format: record.format,
+        status: record.status,
         export: record,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error starting stem export:");
-      res?.status(500).json({ error: "Failed to start stem export" });
+      logger.warn({ err: error }, "Error starting stem export:");
+      res.status(500).json({ error: "Failed to start stem export" });
     }
   },
 );
@@ -3614,56 +3614,56 @@ router?.post(
 // ============================================================================
 
 // Create a mix snapshot (save current mix state)
-router?.post(
+router.post(
   "/projects/:projectId/mix-snapshots",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const { projectId } = req?.params;
-      const { name, description, autoSave } = req?.body;
+      const userId = req.user!.id;
+      const { projectId } = req.params;
+      const { name, description, autoSave } = req.body;
 
       // Ensure studioProject exists
-      const _hasAccess = await ensureStudioProject(projectId, userId);
+      const hasAccess = await ensureStudioProject(projectId, userId);
       if (!hasAccess) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _project = await db?.query.studioProjects?.findFirst({
-        where: eq(studioProjects?.id, projectId),
+      const project = await db.query.studioProjects.findFirst({
+        where: eq(studioProjects.id, projectId),
       });
 
       if (!project) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
       // Get all tracks with their current mix state
-      const _tracks = await db?.query.studioTracks?.findMany({
-        where: eq(studioTracks?.projectId, projectId),
+      const tracks = await db.query.studioTracks.findMany({
+        where: eq(studioTracks.projectId, projectId),
       });
 
       // Capture mix state for each track
-      const _trackStates = tracks?.map((track) => ({
-        trackId: track?.id,
-        trackName: track?.name,
-        trackType: track?.trackType,
-        volume: track?.volume,
-        pan: track?.pan,
-        muted: track?.muted,
-        soloed: track?.soloed,
-        armed: track?.armed,
-        color: track?.color,
-        plugins: track?.plugins,
-        routingBus: track?.routingBus,
+      const trackStates = tracks.map((track) => ({
+        trackId: track.id,
+        trackName: track.name,
+        trackType: track.trackType,
+        volume: track.volume,
+        pan: track.pan,
+        muted: track.muted,
+        soloed: track.soloed,
+        armed: track.armed,
+        color: track.color,
+        plugins: track.plugins,
+        routingBus: track.routingBus,
       }));
 
       // Get current bus configurations
-      const _metadata = (project?.metadata as Record<string, unknown>) || {};
-      const _mixBusConfig = metadata?.mixBusConfig || { busses: [] };
+      const metadata = (project.metadata as Record<string, unknown>) || {};
+      const mixBusConfig = metadata.mixBusConfig || { busses: [] };
 
       // Create the snapshot
-      const _snapshotId = randomBytes(8).toString("hex");
-      const _snapshot = {
+      const snapshotId = randomBytes(8).toString("hex");
+      const snapshot = {
         id: snapshotId,
         name: name || `Mix Snapshot ${new Date().toLocaleString()}`,
         description: description || "",
@@ -3671,13 +3671,13 @@ router?.post(
         autoSave: autoSave || false,
         trackStates,
         mixBusConfig,
-        tempo: metadata?.tempo || 120,
-        timeSignature: metadata?.timeSignature || "4/4",
+        tempo: metadata.tempo || 120,
+        timeSignature: metadata.timeSignature || "4/4",
       };
 
       // Store in project metadata
-      const _mixSnapshots = metadata?.mixSnapshots || [];
-      mixSnapshots?.push(snapshot);
+      const mixSnapshots = metadata.mixSnapshots || [];
+      mixSnapshots.push(snapshot);
 
       await db
         .update(studioProjects)
@@ -3688,149 +3688,149 @@ router?.post(
           },
           updatedAt: new Date(),
         })
-        .where(eq(studioProjects?.id, projectId));
+        .where(eq(studioProjects.id, projectId));
 
-      res?.json({
+      res.json({
         success: true,
         snapshot: {
-          id: snapshot?.id,
-          name: snapshot?.name,
-          description: snapshot?.description,
-          createdAt: snapshot?.createdAt,
-          autoSave: snapshot?.autoSave,
-          trackCount: trackStates?.length,
+          id: snapshot.id,
+          name: snapshot.name,
+          description: snapshot.description,
+          createdAt: snapshot.createdAt,
+          autoSave: snapshot.autoSave,
+          trackCount: trackStates.length,
         },
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error creating mix snapshot:");
-      res?.status(500).json({ error: "Failed to create mix snapshot" });
+      logger.warn({ err: error }, "Error creating mix snapshot:");
+      res.status(500).json({ error: "Failed to create mix snapshot" });
     }
   },
 );
 
 // Get all mix snapshots for a project
-router?.get(
+router.get(
   "/projects/:projectId/mix-snapshots",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const { projectId } = req?.params;
+      const userId = req.user!.id;
+      const { projectId } = req.params;
 
-      const _hasAccess = await ensureStudioProject(projectId, userId);
+      const hasAccess = await ensureStudioProject(projectId, userId);
       if (!hasAccess) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _project = await db?.query.studioProjects?.findFirst({
-        where: eq(studioProjects?.id, projectId),
+      const project = await db.query.studioProjects.findFirst({
+        where: eq(studioProjects.id, projectId),
       });
 
       if (!project) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _metadata = (project?.metadata as Record<string, unknown>) || {};
-      const _mixSnapshots = metadata?.mixSnapshots || [];
+      const metadata = (project.metadata as Record<string, unknown>) || {};
+      const mixSnapshots = metadata.mixSnapshots || [];
 
       // Return summaries (without full track state data for list view)
-      const _summaries = mixSnapshots?.map((s: Record<string, unknown>) => ({
-        id: s?.id,
-        name: s?.name,
-        description: s?.description,
-        createdAt: s?.createdAt,
-        autoSave: s?.autoSave,
-        trackCount: s?.trackStates?.length || 0,
+      const summaries = mixSnapshots.map((s: Record<string, unknown>) => ({
+        id: s.id,
+        name: s.name,
+        description: s.description,
+        createdAt: s.createdAt,
+        autoSave: s.autoSave,
+        trackCount: s.trackStates.length || 0,
       }));
 
-      res?.json({ snapshots: summaries });
+      res.json({ snapshots: summaries });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching mix snapshots:");
-      res?.status(500).json({ error: "Failed to fetch mix snapshots" });
+      logger.warn({ err: error }, "Error fetching mix snapshots:");
+      res.status(500).json({ error: "Failed to fetch mix snapshots" });
     }
   },
 );
 
 // Get a specific mix snapshot with full details
-router?.get(
+router.get(
   "/projects/:projectId/mix-snapshots/:snapshotId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const { projectId, snapshotId } = req?.params;
+      const userId = req.user!.id;
+      const { projectId, snapshotId } = req.params;
 
-      const _hasAccess = await ensureStudioProject(projectId, userId);
+      const hasAccess = await ensureStudioProject(projectId, userId);
       if (!hasAccess) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _project = await db?.query.studioProjects?.findFirst({
-        where: eq(studioProjects?.id, projectId),
+      const project = await db.query.studioProjects.findFirst({
+        where: eq(studioProjects.id, projectId),
       });
 
       if (!project) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _metadata = (project?.metadata as Record<string, unknown>) || {};
-      const _mixSnapshots = metadata?.mixSnapshots || [];
-      const _snapshot = mixSnapshots?.find(
-        (s: Record<string, unknown>) => s?.id === snapshotId,
+      const metadata = (project.metadata as Record<string, unknown>) || {};
+      const mixSnapshots = metadata.mixSnapshots || [];
+      const snapshot = mixSnapshots.find(
+        (s: Record<string, unknown>) => s.id === snapshotId,
       );
 
       if (!snapshot) {
-        return res?.status(404).json({ error: "Snapshot not found" });
+        return res.status(404).json({ error: "Snapshot not found" });
       }
 
-      res?.json({ snapshot });
+      res.json({ snapshot });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching mix snapshot:");
-      res?.status(500).json({ error: "Failed to fetch mix snapshot" });
+      logger.warn({ err: error }, "Error fetching mix snapshot:");
+      res.status(500).json({ error: "Failed to fetch mix snapshot" });
     }
   },
 );
 
 // Recall (restore) a mix snapshot
-router?.post(
+router.post(
   "/projects/:projectId/mix-snapshots/:snapshotId/recall",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const { projectId, snapshotId } = req?.params;
+      const userId = req.user!.id;
+      const { projectId, snapshotId } = req.params;
       const { selective, trackIds, includePlugins, includeBusConfig } =
-        req?.body;
+        req.body;
 
-      const _hasAccess = await ensureStudioProject(projectId, userId);
+      const hasAccess = await ensureStudioProject(projectId, userId);
       if (!hasAccess) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _project = await db?.query.studioProjects?.findFirst({
-        where: eq(studioProjects?.id, projectId),
+      const project = await db.query.studioProjects.findFirst({
+        where: eq(studioProjects.id, projectId),
       });
 
       if (!project) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _metadata = (project?.metadata as Record<string, unknown>) || {};
-      const _mixSnapshots = metadata?.mixSnapshots || [];
-      const _snapshot = mixSnapshots?.find(
-        (s: Record<string, unknown>) => s?.id === snapshotId,
+      const metadata = (project.metadata as Record<string, unknown>) || {};
+      const mixSnapshots = metadata.mixSnapshots || [];
+      const snapshot = mixSnapshots.find(
+        (s: Record<string, unknown>) => s.id === snapshotId,
       );
 
       if (!snapshot) {
-        return res?.status(404).json({ error: "Snapshot not found" });
+        return res.status(404).json({ error: "Snapshot not found" });
       }
 
       // Determine which tracks to update
-      const _trackStates = snapshot?.trackStates || [];
-      const _tracksToUpdate =
-        selective && trackIds?.length > 0
-          ? trackStates?.filter((ts: Record<string, unknown>) =>
-              trackIds?.includes(ts?.trackId),
+      const trackStates = snapshot.trackStates || [];
+      const tracksToUpdate =
+        selective && trackIds.length > 0
+          ? trackStates.filter((ts: Record<string, unknown>) =>
+              trackIds.includes(ts.trackId),
             )
           : trackStates;
 
@@ -3839,22 +3839,22 @@ router?.post(
       // Update each track with the snapshot state
       for (const trackState of tracksToUpdate) {
         const updateData: Record<string, unknown> = {
-          volume: trackState?.volume,
-          pan: trackState?.pan,
-          muted: trackState?.muted,
-          soloed: trackState?.soloed,
-          armed: trackState?.armed,
+          volume: trackState.volume,
+          pan: trackState.pan,
+          muted: trackState.muted,
+          soloed: trackState.soloed,
+          armed: trackState.armed,
           updatedAt: new Date(),
         };
 
         // Optionally include plugins
-        if (includePlugins !== false && trackState?.plugins) {
-          updateData.plugins = trackState?.plugins;
+        if (includePlugins !== false && trackState.plugins) {
+          updateData.plugins = trackState.plugins;
         }
 
         // Optionally include bus routing
-        if (includeBusConfig !== false && trackState?.routingBus) {
-          updateData.routingBus = trackState?.routingBus;
+        if (includeBusConfig !== false && trackState.routingBus) {
+          updateData.routingBus = trackState.routingBus;
         }
 
         await db
@@ -3862,8 +3862,8 @@ router?.post(
           .set(updateData)
           .where(
             and(
-              eq(studioTracks?.id, trackState?.trackId),
-              eq(studioTracks?.projectId, projectId),
+              eq(studioTracks.id, trackState.trackId),
+              eq(studioTracks.projectId, projectId),
             ),
           );
 
@@ -3871,62 +3871,62 @@ router?.post(
       }
 
       // Optionally restore mix bus configuration
-      if (includeBusConfig !== false && snapshot?.mixBusConfig) {
+      if (includeBusConfig !== false && snapshot.mixBusConfig) {
         await db
           .update(studioProjects)
           .set({
             metadata: {
               ...metadata,
-              mixBusConfig: snapshot?.mixBusConfig,
+              mixBusConfig: snapshot.mixBusConfig,
             },
             updatedAt: new Date(),
           })
-          .where(eq(studioProjects?.id, projectId));
+          .where(eq(studioProjects.id, projectId));
       }
 
-      res?.json({
+      res.json({
         success: true,
-        message: `Recalled mix snapshot "${snapshot?.name}"`,
+        message: `Recalled mix snapshot "${snapshot.name}"`,
         updatedTracks: updatedCount,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error recalling mix snapshot:");
-      res?.status(500).json({ error: "Failed to recall mix snapshot" });
+      logger.warn({ err: error }, "Error recalling mix snapshot:");
+      res.status(500).json({ error: "Failed to recall mix snapshot" });
     }
   },
 );
 
 // Update a mix snapshot (rename, update description)
-router?.patch(
+router.patch(
   "/projects/:projectId/mix-snapshots/:snapshotId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const { projectId, snapshotId } = req?.params;
-      const { name, description } = req?.body;
+      const userId = req.user!.id;
+      const { projectId, snapshotId } = req.params;
+      const { name, description } = req.body;
 
-      const _hasAccess = await ensureStudioProject(projectId, userId);
+      const hasAccess = await ensureStudioProject(projectId, userId);
       if (!hasAccess) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _project = await db?.query.studioProjects?.findFirst({
-        where: eq(studioProjects?.id, projectId),
+      const project = await db.query.studioProjects.findFirst({
+        where: eq(studioProjects.id, projectId),
       });
 
       if (!project) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _metadata = (project?.metadata as Record<string, unknown>) || {};
-      const _mixSnapshots = metadata?.mixSnapshots || [];
-      const _snapshotIndex = mixSnapshots?.findIndex(
-        (s: Record<string, unknown>) => s?.id === snapshotId,
+      const metadata = (project.metadata as Record<string, unknown>) || {};
+      const mixSnapshots = metadata.mixSnapshots || [];
+      const snapshotIndex = mixSnapshots.findIndex(
+        (s: Record<string, unknown>) => s.id === snapshotId,
       );
 
       if (snapshotIndex === -1) {
-        return res?.status(404).json({ error: "Snapshot not found" });
+        return res.status(404).json({ error: "Snapshot not found" });
       }
 
       // Update the snapshot
@@ -3947,9 +3947,9 @@ router?.patch(
           },
           updatedAt: new Date(),
         })
-        .where(eq(studioProjects?.id, projectId));
+        .where(eq(studioProjects.id, projectId));
 
-      res?.json({
+      res.json({
         success: true,
         snapshot: {
           id: mixSnapshots[snapshotIndex].id,
@@ -3958,46 +3958,46 @@ router?.patch(
         },
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error updating mix snapshot:");
-      res?.status(500).json({ error: "Failed to update mix snapshot" });
+      logger.warn({ err: error }, "Error updating mix snapshot:");
+      res.status(500).json({ error: "Failed to update mix snapshot" });
     }
   },
 );
 
 // Delete a mix snapshot
-router?.delete(
+router.delete(
   "/projects/:projectId/mix-snapshots/:snapshotId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const { projectId, snapshotId } = req?.params;
+      const userId = req.user!.id;
+      const { projectId, snapshotId } = req.params;
 
-      const _hasAccess = await ensureStudioProject(projectId, userId);
+      const hasAccess = await ensureStudioProject(projectId, userId);
       if (!hasAccess) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _project = await db?.query.studioProjects?.findFirst({
-        where: eq(studioProjects?.id, projectId),
+      const project = await db.query.studioProjects.findFirst({
+        where: eq(studioProjects.id, projectId),
       });
 
       if (!project) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _metadata = (project?.metadata as Record<string, unknown>) || {};
-      const _mixSnapshots = metadata?.mixSnapshots || [];
-      const _snapshotIndex = mixSnapshots?.findIndex(
-        (s: Record<string, unknown>) => s?.id === snapshotId,
+      const metadata = (project.metadata as Record<string, unknown>) || {};
+      const mixSnapshots = metadata.mixSnapshots || [];
+      const snapshotIndex = mixSnapshots.findIndex(
+        (s: Record<string, unknown>) => s.id === snapshotId,
       );
 
       if (snapshotIndex === -1) {
-        return res?.status(404).json({ error: "Snapshot not found" });
+        return res.status(404).json({ error: "Snapshot not found" });
       }
 
-      const _deletedName = mixSnapshots[snapshotIndex].name;
-      mixSnapshots?.splice(snapshotIndex, 1);
+      const deletedName = mixSnapshots[snapshotIndex].name;
+      mixSnapshots.splice(snapshotIndex, 1);
 
       await db
         .update(studioProjects)
@@ -4008,49 +4008,49 @@ router?.delete(
           },
           updatedAt: new Date(),
         })
-        .where(eq(studioProjects?.id, projectId));
+        .where(eq(studioProjects.id, projectId));
 
-      res?.json({
+      res.json({
         success: true,
         message: `Deleted mix snapshot "${deletedName}"`,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error deleting mix snapshot:");
-      res?.status(500).json({ error: "Failed to delete mix snapshot" });
+      logger.warn({ err: error }, "Error deleting mix snapshot:");
+      res.status(500).json({ error: "Failed to delete mix snapshot" });
     }
   },
 );
 
 // Compare two mix snapshots
-router?.get(
+router.get(
   "/projects/:projectId/mix-snapshots/:snapshotId/compare/:compareSnapshotId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const { projectId, snapshotId, compareSnapshotId } = req?.params;
+      const userId = req.user!.id;
+      const { projectId, snapshotId, compareSnapshotId } = req.params;
 
-      const _hasAccess = await ensureStudioProject(projectId, userId);
+      const hasAccess = await ensureStudioProject(projectId, userId);
       if (!hasAccess) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _project = await db?.query.studioProjects?.findFirst({
-        where: eq(studioProjects?.id, projectId),
+      const project = await db.query.studioProjects.findFirst({
+        where: eq(studioProjects.id, projectId),
       });
 
       if (!project) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const _metadata = (project?.metadata as Record<string, unknown>) || {};
-      const _mixSnapshots = metadata?.mixSnapshots || [];
+      const metadata = (project.metadata as Record<string, unknown>) || {};
+      const mixSnapshots = metadata.mixSnapshots || [];
 
-      const _snapshot1 = mixSnapshots?.find(
-        (s: Record<string, unknown>) => s?.id === snapshotId,
+      const snapshot1 = mixSnapshots.find(
+        (s: Record<string, unknown>) => s.id === snapshotId,
       );
-      const _snapshot2 = mixSnapshots?.find(
-        (s: Record<string, unknown>) => s?.id === compareSnapshotId,
+      const snapshot2 = mixSnapshots.find(
+        (s: Record<string, unknown>) => s.id === compareSnapshotId,
       );
 
       if (!snapshot1 || !snapshot2) {
@@ -4060,47 +4060,47 @@ router?.get(
       }
 
       // Compare track states
-      const _trackStates1 = snapshot1?.trackStates || [];
-      const _trackStates2 = snapshot2?.trackStates || [];
+      const trackStates1 = snapshot1.trackStates || [];
+      const trackStates2 = snapshot2.trackStates || [];
 
       const differences: Record<string, unknown>[] = [];
 
       for (const ts1 of trackStates1) {
-        const _ts2 = trackStates2?.find(
-          (t: Record<string, unknown>) => t?.trackId === ts1?.trackId,
+        const ts2 = trackStates2.find(
+          (t: Record<string, unknown>) => t.trackId === ts1.trackId,
         );
         if (!ts2) {
-          differences?.push({
-            trackId: ts1?.trackId,
-            trackName: ts1?.trackName,
+          differences.push({
+            trackId: ts1.trackId,
+            trackName: ts1.trackName,
             type: "removed",
-            message: `Track "${ts1?.trackName}" exists in "${snapshot1?.name}" but not in "${snapshot2?.name}"`,
+            message: `Track "${ts1.trackName}" exists in "${snapshot1.name}" but not in "${snapshot2.name}"`,
           });
           continue;
         }
 
         const trackDiffs: string[] = [];
-        if (ts1?.volume !== ts2?.volume) {
-          trackDiffs?.push(
-            `Volume: ${ts1?.volume?.toFixed(2)} → ${ts2?.volume?.toFixed(2)}`,
+        if (ts1.volume !== ts2.volume) {
+          trackDiffs.push(
+            `Volume: ${ts1.volume.toFixed(2)} → ${ts2.volume.toFixed(2)}`,
           );
         }
-        if (ts1?.pan !== ts2?.pan) {
-          trackDiffs?.push(
-            `Pan: ${ts1?.pan?.toFixed(2)} → ${ts2?.pan?.toFixed(2)}`,
+        if (ts1.pan !== ts2.pan) {
+          trackDiffs.push(
+            `Pan: ${ts1.pan.toFixed(2)} → ${ts2.pan.toFixed(2)}`,
           );
         }
-        if (ts1?.muted !== ts2?.muted) {
-          trackDiffs?.push(`Muted: ${ts1?.muted} → ${ts2?.muted}`);
+        if (ts1.muted !== ts2.muted) {
+          trackDiffs.push(`Muted: ${ts1.muted} → ${ts2.muted}`);
         }
-        if (ts1?.soloed !== ts2?.soloed) {
-          trackDiffs?.push(`Soloed: ${ts1?.soloed} → ${ts2?.soloed}`);
+        if (ts1.soloed !== ts2.soloed) {
+          trackDiffs.push(`Soloed: ${ts1.soloed} → ${ts2.soloed}`);
         }
 
-        if (trackDiffs?.length > 0) {
-          differences?.push({
-            trackId: ts1?.trackId,
-            trackName: ts1?.trackName,
+        if (trackDiffs.length > 0) {
+          differences.push({
+            trackId: ts1.trackId,
+            trackName: ts1.trackName,
             type: "changed",
             changes: trackDiffs,
           });
@@ -4109,32 +4109,32 @@ router?.get(
 
       // Check for tracks in snapshot2 that don't exist in snapshot1
       for (const ts2 of trackStates2) {
-        const _ts1 = trackStates1?.find(
+        const ts1 = trackStates1?.find(
           (t: Record<string, unknown>) => t?.trackId === ts2?.trackId,
         );
         if (!ts1) {
           differences?.push({
-            trackId: ts2?.trackId,
-            trackName: ts2?.trackName,
+            trackId: ts2.trackId,
+            trackName: ts2.trackName,
             type: "added",
-            message: `Track "${ts2?.trackName}" exists in "${snapshot2?.name}" but not in "${snapshot1?.name}"`,
+            message: `Track "${ts2.trackName}" exists in "${snapshot2.name}" but not in "${snapshot1.name}"`,
           });
         }
       }
 
       res?.json({
         snapshot1: {
-          id: snapshot1?.id,
-          name: snapshot1?.name,
-          createdAt: snapshot1?.createdAt,
+          id: snapshot1.id,
+          name: snapshot1.name,
+          createdAt: snapshot1.createdAt,
         },
         snapshot2: {
-          id: snapshot2?.id,
-          name: snapshot2?.name,
-          createdAt: snapshot2?.createdAt,
+          id: snapshot2.id,
+          name: snapshot2.name,
+          createdAt: snapshot2.createdAt,
         },
         differences,
-        hasDifferences: differences?.length > 0,
+        hasDifferences: differences.length > 0,
       });
     } catch (error: unknown) {
       logger?.warn({ err: error }, "Error comparing mix snapshots:");
@@ -4153,20 +4153,20 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { projectId } = req?.params;
 
       // Verify access
-      const _hasAccess = await ensureStudioProject(projectId, userId);
+      const hasAccess = await ensureStudioProject(projectId, userId);
       if (!hasAccess) {
         return res?.status(404).json({ error: "Project not found" });
       }
 
-      const _project = await db?.query.projects?.findFirst({
+      const project = await db?.query.projects?.findFirst({
         where: eq(projects?.id, projectId),
       });
 
-      const _studioProject = await db?.query.studioProjects?.findFirst({
+      const studioProject = await db?.query.studioProjects?.findFirst({
         where: eq(studioProjects?.id, projectId),
       });
 
@@ -4175,26 +4175,26 @@ router?.get(
       }
 
       // Get tracks
-      const _tracks = await db?.query.studioTracks?.findMany({
+      const tracks = await db?.query.studioTracks?.findMany({
         where: eq(studioTracks?.projectId, projectId),
       });
 
       // Get clips
-      const _clips = await db?.query.audioClips?.findMany({
+      const clips = await db?.query.audioClips?.findMany({
         where: eq(audioClips?.projectId, projectId),
       });
 
       // Calculate statistics
       const tracksByType: Record<string, number> = {};
       for (const track of tracks) {
-        const _type = track?.trackType || "audio";
+        const type = track?.trackType || "audio";
         tracksByType[type] = (tracksByType[type] || 0) + 1;
       }
 
-      const _metadata =
+      const metadata =
         (studioProject?.metadata as Record<string, unknown>) || {};
-      const _mixSnapshots = metadata?.mixSnapshots || [];
-      const _mixBusConfig = metadata?.mixBusConfig || { busses: [] };
+      const mixSnapshots = metadata?.mixSnapshots || [];
+      const mixBusConfig = metadata?.mixBusConfig || { busses: [] };
 
       // Calculate total audio duration from clips
       let totalDuration = 0;
@@ -4208,41 +4208,41 @@ router?.get(
       let totalPlugins = 0;
       const pluginCounts: Record<string, number> = {};
       for (const track of tracks) {
-        const _plugins = (track?.plugins as unknown[] | null) || [];
+        const plugins = (track?.plugins as unknown[] | null) || [];
         totalPlugins += plugins?.length;
         for (const plugin of plugins) {
-          const _name = plugin?.name || "Unknown";
+          const name = plugin?.name || "Unknown";
           pluginCounts[name] = (pluginCounts[name] || 0) + 1;
         }
       }
 
       // Count folders
-      const _folderCount = tracks?.filter((t) => t?.trackType === "folder").length;
-      const _trackFolders = metadata?.trackFolders || {};
-      const _organizedTrackCount = Object?.keys(trackFolders).length;
+      const folderCount = tracks?.filter((t) => t?.trackType === "folder").length;
+      const trackFolders = metadata?.trackFolders || {};
+      const organizedTrackCount = Object?.keys(trackFolders).length;
 
       res?.json({
         projectId,
-        projectTitle: project?.title,
-        createdAt: project?.createdAt,
-        updatedAt: project?.updatedAt,
-        lastOpenedAt: project?.lastOpenedAt,
-        bpm: project?.bpm,
-        genre: project?.genre,
+        projectTitle: project.title,
+        createdAt: project.createdAt,
+        updatedAt: project.updatedAt,
+        lastOpenedAt: project.lastOpenedAt,
+        bpm: project.bpm,
+        genre: project.genre,
         tracks: {
-          total: tracks?.length,
+          total: tracks.length,
           byType: tracksByType,
           folderCount,
           organizedInFolders: organizedTrackCount,
         },
         clips: {
-          total: clips?.length,
-          totalDurationSeconds: Math?.round(totalDuration * 100) / 100,
+          total: clips.length,
+          totalDurationSeconds: Math.round(totalDuration * 100) / 100,
           totalDurationFormatted: formatDuration(totalDuration),
         },
         mixing: {
-          busCount: mixBusConfig?.busses?.length || 0,
-          snapshotCount: mixSnapshots?.length,
+          busCount: mixBusConfig.busses?.length || 0,
+          snapshotCount: mixSnapshots.length,
           latestSnapshot:
             mixSnapshots?.length > 0
               ? {
@@ -4253,16 +4253,16 @@ router?.get(
         },
         plugins: {
           totalInstances: totalPlugins,
-          uniquePlugins: Object?.keys(pluginCounts).length,
-          mostUsed: Object?.entries(pluginCounts)
+          uniquePlugins: Object.keys(pluginCounts).length,
+          mostUsed: Object.entries(pluginCounts)
             .sort((a, b) => b[1] - a[1])
             .slice(0, 5)
             .map(([name, count]) => ({ name, count })),
         },
-        template: metadata?.createdFromTemplate
+        template: metadata.createdFromTemplate
           ? {
-              id: metadata?.createdFromTemplate,
-              name: metadata?.createdFromTemplateName,
+              id: metadata.createdFromTemplate,
+              name: metadata.createdFromTemplateName,
             }
           : null,
       });
@@ -4275,9 +4275,9 @@ router?.get(
 
 // Helper function to format duration
 function formatDuration(seconds: number): string {
-  const _hours = Math?.floor(seconds / 3600);
-  const _minutes = Math?.floor((seconds % 3600) / 60);
-  const _secs = Math?.floor(seconds % 60);
+  const hours = Math?.floor(seconds / 3600);
+  const minutes = Math?.floor((seconds % 3600) / 60);
+  const secs = Math?.floor(seconds % 60);
 
   if (hours > 0) {
     return `${hours}h ${minutes}m ${secs}s`;
@@ -4295,7 +4295,7 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       const [
         projectStats,
@@ -4352,25 +4352,25 @@ router?.get(
         }),
       ]);
 
-      const _ps = projectStats[0];
-      const _ts = trackStats[0];
-      const _cs = clipStats[0];
-      const _tpl = templateStats[0];
+      const ps = projectStats[0];
+      const ts = trackStats[0];
+      const cs = clipStats[0];
+      const tpl = templateStats[0];
 
-      const _totalProjectCount = Number(ps?.total ?? 0);
-      const _masteringCount = Number(ps?.mastering ?? 0);
-      const _showCount = Number(ps?.shows ?? 0);
-      const _favoritesCount = Number(ps?.favorites ?? 0);
-      const _recentlyUpdated = Number(ps?.recentlyUpdated ?? 0);
-      const _trackTotal = Number(ts?.total ?? 0);
-      const _clipTotal = Number(cs?.total ?? 0);
-      const _totalDuration = Number(cs?.totalDuration ?? 0);
+      const totalProjectCount = Number(ps?.total ?? 0);
+      const masteringCount = Number(ps?.mastering ?? 0);
+      const showCount = Number(ps?.shows ?? 0);
+      const favoritesCount = Number(ps?.favorites ?? 0);
+      const recentlyUpdated = Number(ps?.recentlyUpdated ?? 0);
+      const trackTotal = Number(ts?.total ?? 0);
+      const clipTotal = Number(cs?.total ?? 0);
+      const totalDuration = Number(cs?.totalDuration ?? 0);
 
-      const _avgTracksPerProject =
+      const avgTracksPerProject =
         totalProjectCount > 0
           ? Math?.round((trackTotal / totalProjectCount) * 10) / 10
           : 0;
-      const _avgClipsPerProject =
+      const avgClipsPerProject =
         totalProjectCount > 0
           ? Math?.round((clipTotal / totalProjectCount) * 10) / 10
           : 0;
@@ -4394,7 +4394,7 @@ router?.get(
         clips: {
           total: clipTotal,
           averagePerProject: avgClipsPerProject,
-          totalDurationSeconds: Math?.round(totalDuration * 100) / 100,
+          totalDurationSeconds: Math.round(totalDuration * 100) / 100,
           totalDurationFormatted: formatDuration(totalDuration),
         },
         templates: {
@@ -4405,9 +4405,9 @@ router?.get(
           projectsUpdatedThisWeek: recentlyUpdated,
           mostRecentProject: mostRecentProject
             ? {
-                id: mostRecentProject?.id,
-                title: mostRecentProject?.title,
-                updatedAt: mostRecentProject?.updatedAt,
+                id: mostRecentProject.id,
+                title: mostRecentProject.title,
+                updatedAt: mostRecentProject.updatedAt,
               }
             : null,
         },
@@ -4429,45 +4429,45 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       // Get user info for profile section
-      const _user = await db?.query.users?.findFirst({
+      const user = await db?.query.users?.findFirst({
         where: eq(users?.id, userId),
       });
 
       // Get all user projects for categorization
-      const _allProjects = await db?.query.projects?.findMany({
+      const allProjects = await db?.query.projects?.findMany({
         where: eq(projects?.userId, userId),
         orderBy: [desc(projects?.lastOpenedAt), desc(projects?.updatedAt)],
       });
 
       // Categorize projects by type (Songs, Projects, Shows)
-      const _songs = allProjects?.filter(
+      const songs = allProjects?.filter(
         (p) => p?.workflowStage !== "mastering" && p?.workflowStage !== "show",
       );
-      const _masteringProjects = allProjects?.filter(
+      const masteringProjects = allProjects?.filter(
         (p) => p?.workflowStage === "mastering",
       );
-      const _shows = allProjects?.filter((p) => p?.workflowStage === "show");
+      const shows = allProjects?.filter((p) => p?.workflowStage === "show");
 
       // Get recent projects (last 12)
-      const _recentProjects = allProjects?.slice(0, 12);
+      const recentProjects = allProjects?.slice(0, 12);
 
       // Get favorite projects
-      const _favoriteProjects = allProjects
+      const favoriteProjects = allProjects
         .filter((p) => p?.favorite)
         .slice(0, 8);
 
       // Get all project IDs for batched queries
-      const _projectIds = recentProjects?.map((p) => p?.id);
+      const projectIds = recentProjects?.map((p) => p?.id);
 
       // Batch query: Get track counts grouped by projectId (avoid N+1)
-      const _trackCounts =
+      const trackCounts =
         projectIds?.length > 0
           ? await db
               .select({
-                projectId: studioTracks?.projectId,
+                projectId: studioTracks.projectId,
                 count: drizzleSql<number>`count(*)`,
               })
               .from(studioTracks)
@@ -4476,11 +4476,11 @@ router?.get(
           : [];
 
       // Batch query: Get clip counts grouped by projectId (avoid N+1)
-      const _clipCounts =
+      const clipCounts =
         projectIds?.length > 0
           ? await db
               .select({
-                projectId: audioClips?.projectId,
+                projectId: audioClips.projectId,
                 count: drizzleSql<number>`count(*)`,
               })
               .from(audioClips)
@@ -4489,51 +4489,51 @@ router?.get(
           : [];
 
       // Map counts to lookup objects
-      const _trackCountMap = new Map(
+      const trackCountMap = new Map(
         trackCounts?.map((t) => [t?.projectId, Number(t?.count)]),
       );
-      const _clipCountMap = new Map(
+      const clipCountMap = new Map(
         clipCounts?.map((c) => [c?.projectId, Number(c?.count)]),
       );
 
       // Combine projects with stats
-      const _projectsWithStats = recentProjects?.map((project) => ({
+      const projectsWithStats = recentProjects?.map((project) => ({
         ...project,
-        trackCount: trackCountMap?.get(project?.id) || 0,
-        clipCount: clipCountMap?.get(project?.id) || 0,
+        trackCount: trackCountMap.get(project?.id) || 0,
+        clipCount: clipCountMap.get(project?.id) || 0,
       }));
 
       // Get available templates (built-in + user's) with categories
-      const _templates = await db?.query.studioTemplates?.findMany({
+      const templates = await db.query.studioTemplates.findMany({
         where: or(
-          eq(studioTemplates?.userId, userId),
-          eq(studioTemplates?.isBuiltIn, true),
+          eq(studioTemplates.userId, userId),
+          eq(studioTemplates.isBuiltIn, true),
         ),
-        orderBy: [desc(studioTemplates?.usageCount)],
+        orderBy: [desc(studioTemplates.usageCount)],
         limit: 30,
       });
 
       // Group templates by category
-      const _templatesByCategory = {
-        recording: templates?.filter((t) => t?.category === "recording"),
-        production: templates?.filter((t) => t?.category === "production"),
-        mastering: templates?.filter((t) => t?.category === "mastering"),
-        user: templates?.filter((t) => t?.userId === userId && !t?.isBuiltIn),
+      const templatesByCategory = {
+        recording: templates.filter((t) => t.category === "recording"),
+        production: templates.filter((t) => t.category === "production"),
+        mastering: templates.filter((t) => t.category === "mastering"),
+        user: templates.filter((t) => t.userId === userId && !t.isBuiltIn),
       };
 
       // Calculate total clips across all user projects using proper join
-      const _allProjectIds = allProjects?.map((p) => p?.id);
-      const _totalClipsResult =
-        allProjectIds?.length > 0
+      const allProjectIds = allProjects.map((p) => p.id);
+      const totalClipsResult =
+        allProjectIds.length > 0
           ? await db
               .select({ count: drizzleSql<number>`count(*)` })
               .from(audioClips)
-              .where(inArray(audioClips?.projectId, allProjectIds))
+              .where(inArray(audioClips.projectId, allProjectIds))
           : [{ count: 0 }];
-      const _totalClips = totalClipsResult;
+      const totalClips = totalClipsResult;
 
       // Demo songs (featured examples)
-      const _demoSongs = [
+      const demoSongs = [
         {
           id: "demo-1",
           title: "Hip Hop Beat Demo",
@@ -4558,7 +4558,7 @@ router?.get(
       ];
 
       // Tips & learning content
-      const _tips = [
+      const tips = [
         {
           id: "tip-1",
           title: "Getting Started",
@@ -4585,27 +4585,27 @@ router?.get(
         },
       ];
 
-      res?.json({
+      res.json({
         // Project sections (Studio One-style)
         recentProjects: projectsWithStats,
-        favoriteProjects: favoriteProjects?.map((p) => {
-          const _stats = projectsWithStats?.find((ps) => ps?.id === p?.id);
+        favoriteProjects: favoriteProjects.map((p) => {
+          const stats = projectsWithStats.find((ps) => ps.id === p.id);
           return stats || { ...p, trackCount: 0, clipCount: 0 };
         }),
-        songs: { count: songs?.length, items: songs?.slice(0, 6) },
+        songs: { count: songs.length, items: songs.slice(0, 6) },
         masteringProjects: {
-          count: masteringProjects?.length,
-          items: masteringProjects?.slice(0, 6),
+          count: masteringProjects.length,
+          items: masteringProjects.slice(0, 6),
         },
-        shows: { count: shows?.length, items: shows?.slice(0, 6) },
+        shows: { count: shows.length, items: shows.slice(0, 6) },
 
         // Statistics
         stats: {
-          totalProjects: allProjects?.length,
-          totalSongs: songs?.length,
-          totalMasteringProjects: masteringProjects?.length,
-          totalShows: shows?.length,
-          totalClips: Number(totalClips[0]?.count || 0),
+          totalProjects: allProjects.length,
+          totalSongs: songs.length,
+          totalMasteringProjects: masteringProjects.length,
+          totalShows: shows.length,
+          totalClips: Number(totalClips[0].count || 0),
         },
 
         // Templates
@@ -4615,11 +4615,11 @@ router?.get(
         // User profile
         user: {
           id: userId,
-          name: user?.username || user?.email || "Artist",
-          email: user?.email,
-          avatar: user?.avatarUrl,
-          subscriptionTier: user?.subscriptionTier || "free",
-          createdAt: user?.createdAt,
+          name: user.username || user.email || "Artist",
+          email: user.email,
+          avatar: user.avatarUrl,
+          subscriptionTier: user.subscriptionTier || "free",
+          createdAt: user.createdAt,
         },
 
         // Learning & demos
@@ -4627,49 +4627,49 @@ router?.get(
         tips,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching start hub summary:");
-      res?.status(500).json({ error: "Failed to fetch start hub data" });
+      logger.warn({ err: error }, "Error fetching start hub summary:");
+      res.status(500).json({ error: "Failed to fetch start hub data" });
     }
   },
 );
 
 // GET recent projects for start hub
-router?.get(
+router.get(
   "/start-hub/recent",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _limit = Math?.min(parseInt(req?.query.limit as string) || 20, 200);
+      const userId = req.user!.id;
+      const limit = Math.min(parseInt(req.query.limit as string) || 20, 200);
 
       // Include ALL user projects, not just studio-specific ones
-      const _recentProjects = await db?.query.projects?.findMany({
-        where: eq(projects?.userId, userId),
-        orderBy: [desc(projects?.lastOpenedAt), desc(projects?.updatedAt)],
+      const recentProjects = await db.query.projects.findMany({
+        where: eq(projects.userId, userId),
+        orderBy: [desc(projects.lastOpenedAt), desc(projects.updatedAt)],
         limit,
       });
 
-      res?.json({ projects: recentProjects });
+      res.json({ projects: recentProjects });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching recent projects:");
-      res?.status(500).json({ error: "Failed to fetch recent projects" });
+      logger.warn({ err: error }, "Error fetching recent projects:");
+      res.status(500).json({ error: "Failed to fetch recent projects" });
     }
   },
 );
 
 // PATCH toggle project favorite
-router?.patch(
+router.patch(
   "/projects/:projectId/favorite",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const _userId = req?.user!.id;
-      const { favorite } = req?.body;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
+      const { favorite } = req.body;
 
-      const _hasAccess = await verifyProjectOwnership(projectId, userId);
+      const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
       const [updated] = await db
@@ -4678,41 +4678,41 @@ router?.patch(
           favorite: favorite ?? true,
           updatedAt: new Date(),
         })
-        .where(eq(projects?.id, projectId))
+        .where(eq(projects.id, projectId))
         .returning();
 
-      res?.json(updated);
+      res.json(updated);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error updating project favorite:");
-      res?.status(500).json({ error: "Failed to update favorite status" });
+      logger.warn({ err: error }, "Error updating project favorite:");
+      res.status(500).json({ error: "Failed to update favorite status" });
     }
   },
 );
 
 // PATCH update project lastOpenedAt
-router?.patch(
+router.patch(
   "/projects/:projectId/opened",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
 
-      const _hasAccess = await verifyProjectOwnership(projectId, userId);
+      const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
       const [updated] = await db
         .update(projects)
         .set({ lastOpenedAt: new Date() })
-        .where(eq(projects?.id, projectId))
+        .where(eq(projects.id, projectId))
         .returning();
 
-      res?.json(updated);
+      res.json(updated);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error updating project opened time:");
-      res?.status(500).json({ error: "Failed to update project" });
+      logger.warn({ err: error }, "Error updating project opened time:");
+      res.status(500).json({ error: "Failed to update project" });
     }
   },
 );
@@ -4722,22 +4722,22 @@ router?.patch(
 // ============================================================================
 
 // GET all templates
-router?.get("/templates", requireAuth, async (req: Request, res: Response) => {
+router.get("/templates", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
-    const _category = req?.query.category as string;
+    const userId = req.user!.id;
+    const category = req.query.category as string;
 
     // Build the where clause for user's templates OR built-in templates
-    const _baseCondition = or(
+    const baseCondition = or(
       eq(studioTemplates?.userId, userId),
       eq(studioTemplates?.isBuiltIn, true),
     );
 
-    const _whereCondition = category
+    const whereCondition = category
       ? and(baseCondition, eq(studioTemplates?.category, category))
       : baseCondition;
 
-    const _templates = await db?.query.studioTemplates?.findMany({
+    const templates = await db?.query.studioTemplates?.findMany({
       where: whereCondition,
       orderBy: [
         desc(studioTemplates?.usageCount),
@@ -4755,7 +4755,7 @@ router?.get("/templates", requireAuth, async (req: Request, res: Response) => {
 // POST create template from project
 router?.post("/templates", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const {
       name,
       description,
@@ -4772,7 +4772,7 @@ router?.post("/templates", requireAuth, async (req: Request, res: Response) => {
     } = req?.body;
 
     // Build enhanced template data with track layouts and plugin configs
-    const _enhancedTemplateData = {
+    const enhancedTemplateData = {
       ...(templateData || {}),
       trackLayout: trackLayout || [],
       pluginConfigs: pluginConfigs || {},
@@ -4780,7 +4780,7 @@ router?.post("/templates", requireAuth, async (req: Request, res: Response) => {
       tags: tags || [],
     };
 
-    const _templateId = randomBytes(8).toString("hex");
+    const templateId = randomBytes(8).toString("hex");
     const [template] = await db
       .insert(studioTemplates)
       .values({
@@ -4816,21 +4816,21 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { projectId } = req?.params;
       const { name, description, category, tags } = req?.body;
 
       // Ensure studioProject exists
-      const _hasAccess = await ensureStudioProject(projectId, userId);
+      const hasAccess = await ensureStudioProject(projectId, userId);
       if (!hasAccess) {
         return res?.status(404).json({ error: "Project not found" });
       }
 
-      const _studioProject = await db?.query.studioProjects?.findFirst({
+      const studioProject = await db?.query.studioProjects?.findFirst({
         where: eq(studioProjects?.id, projectId),
       });
 
-      const _project = await db?.query.projects?.findFirst({
+      const project = await db?.query.projects?.findFirst({
         where: eq(projects?.id, projectId),
       });
 
@@ -4839,36 +4839,36 @@ router?.post(
       }
 
       // Get all tracks from the project
-      const _tracks = await db?.query.studioTracks?.findMany({
+      const tracks = await db?.query.studioTracks?.findMany({
         where: eq(studioTracks?.projectId, projectId),
-        orderBy: studioTracks?.trackNumber,
+        orderBy: studioTracks.trackNumber,
       });
 
       // Create track layout from current tracks
-      const _trackLayout = tracks?.map((track) => ({
-        name: track?.name,
-        trackType: track?.trackType,
-        color: track?.color,
-        volume: track?.volume,
-        pan: track?.pan,
-        muted: track?.muted,
-        soloed: track?.soloed,
-        plugins: track?.plugins,
-        routingBus: track?.routingBus,
+      const trackLayout = tracks?.map((track) => ({
+        name: track.name,
+        trackType: track.trackType,
+        color: track.color,
+        volume: track.volume,
+        pan: track.pan,
+        muted: track.muted,
+        soloed: track.soloed,
+        plugins: track.plugins,
+        routingBus: track.routingBus,
       }));
 
       // Get metadata including mix bus config
-      const _metadata =
+      const metadata =
         (studioProject?.metadata as Record<string, unknown>) || {};
 
       // Create the template
-      const _templateId = randomBytes(8).toString("hex");
-      const _templateData = {
+      const templateId = randomBytes(8).toString("hex");
+      const templateData = {
         trackLayout,
-        mixBusConfig: metadata?.mixBusConfig || null,
-        tempo: project?.bpm || 120,
-        timeSignature: metadata?.timeSignature || "4/4",
-        pluginConfigs: metadata?.pluginConfigs || {},
+        mixBusConfig: metadata.mixBusConfig || null,
+        tempo: project.bpm || 120,
+        timeSignature: metadata.timeSignature || "4/4",
+        pluginConfigs: metadata.pluginConfigs || {},
         tags: tags || [],
       };
 
@@ -4878,11 +4878,11 @@ router?.post(
           id: templateId,
           userId,
           name: name || `Template from ${project?.title}`,
-          description: description || `Created from project "${project?.title}"`,
+          description: description || `Created from project "${project.title}"`,
           category: category || "user",
-          genre: project?.genre,
-          bpm: project?.bpm || 120,
-          timeSignature: metadata?.timeSignature || "4/4",
+          genre: project.genre,
+          bpm: project.bpm || 120,
+          timeSignature: metadata.timeSignature || "4/4",
           templateData,
           isBuiltIn: false,
         })
@@ -4890,7 +4890,7 @@ router?.post(
 
       res?.status(201).json({
         ...template,
-        trackCount: trackLayout?.length,
+        trackCount: trackLayout.length,
         hasMixBusConfig: !!metadata?.mixBusConfig,
       });
     } catch (error: unknown) {
@@ -4907,11 +4907,11 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { templateId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { title } = req?.body;
 
       // Get template with access check (built-in OR owned by user)
-      const _template = await db?.query.studioTemplates?.findFirst({
+      const template = await db?.query.studioTemplates?.findFirst({
         where: and(
           eq(studioTemplates?.id, templateId),
           or(
@@ -4925,13 +4925,13 @@ router?.post(
         return res?.status(404).json({ error: "Template not found" });
       }
 
-      const _templateData =
+      const templateData =
         (template?.templateData as Record<string, unknown>) || {};
-      const _trackLayout = templateData?.trackLayout || [];
-      const _mixBusConfig = templateData?.mixBusConfig || null;
+      const trackLayout = templateData?.trackLayout || [];
+      const mixBusConfig = templateData?.mixBusConfig || null;
 
       // Validate track layout entries
-      const _validTrackTypes = [
+      const validTrackTypes = [
         "audio",
         "instrument",
         "vocal",
@@ -4941,10 +4941,10 @@ router?.post(
         "folder",
         "midi",
       ];
-      const _validatedTrackLayout = trackLayout?.map(
+      const validatedTrackLayout = trackLayout?.map(
         (track: Record<string, unknown>) => ({
           name: String(track?.name || "Untitled Track").slice(0, 100),
-          trackType: validTrackTypes?.includes(track?.trackType)
+          trackType: validTrackTypes.includes(track?.trackType)
             ? track?.trackType
             : "audio",
           color:
@@ -4962,7 +4962,7 @@ router?.post(
               : 0,
           muted: Boolean(track?.muted),
           soloed: Boolean(track?.soloed),
-          plugins: Array?.isArray(track?.plugins)
+          plugins: Array.isArray(track?.plugins)
             ? track?.plugins.slice(0, 20)
             : [],
           routingBus:
@@ -4971,7 +4971,7 @@ router?.post(
       );
 
       // Create the base project with cleanup on failure
-      const _projectId = randomBytes(8).toString("hex");
+      const projectId = randomBytes(8).toString("hex");
       let project: Record<string, unknown> | null = null;
 
       try {
@@ -4982,13 +4982,13 @@ router?.post(
             id: projectId,
             userId,
             title: title || `New ${template?.name} Project`,
-            genre: template?.genre,
-            bpm: template?.bpm,
+            genre: template.genre,
+            bpm: template.bpm,
             isStudioProject: true,
             metadata: {
               ...templateData,
               createdFromTemplate: templateId,
-              createdFromTemplateName: template?.name,
+              createdFromTemplateName: template.name,
             },
             lastOpenedAt: new Date(),
           })
@@ -4999,9 +4999,9 @@ router?.post(
         await db?.insert(studioProjects).values({
           id: projectId,
           userId,
-          title: project?.title,
-          genre: template?.genre,
-          bpm: template?.bpm,
+          title: project.title,
+          genre: template.genre,
+          bpm: template.bpm,
           metadata: {
             mixBusConfig: mixBusConfig || {
               busses: [
@@ -5034,7 +5034,7 @@ router?.post(
                 },
               ],
             },
-            timeSignature: template?.timeSignature || "4/4",
+            timeSignature: template.timeSignature || "4/4",
             createdFromTemplate: templateId,
           },
         });
@@ -5042,23 +5042,23 @@ router?.post(
         // Step 3: Create tracks from validated template layout
         let tracksCreated = 0;
         for (let i = 0; i < validatedTrackLayout?.length; i++) {
-          const _trackDef = validatedTrackLayout[i];
-          const _trackId = randomBytes(8).toString("hex");
+          const trackDef = validatedTrackLayout[i];
+          const trackId = randomBytes(8).toString("hex");
 
           await db?.insert(studioTracks).values({
             id: trackId,
             projectId,
-            name: trackDef?.name || `Track ${i + 1}`,
+            name: trackDef.name || `Track ${i + 1}`,
             trackNumber: i + 1,
-            trackType: trackDef?.trackType,
-            color: trackDef?.color,
-            volume: trackDef?.volume,
-            pan: trackDef?.pan,
-            muted: trackDef?.muted,
-            soloed: trackDef?.soloed,
+            trackType: trackDef.trackType,
+            color: trackDef.color,
+            volume: trackDef.volume,
+            pan: trackDef.pan,
+            muted: trackDef.muted,
+            soloed: trackDef.soloed,
             armed: false,
-            plugins: trackDef?.plugins,
-            routingBus: trackDef?.routingBus,
+            plugins: trackDef.plugins,
+            routingBus: trackDef.routingBus,
           });
 
           tracksCreated++;
@@ -5073,7 +5073,7 @@ router?.post(
         res?.status(201).json({
           ...project,
           tracksCreated,
-          templateUsed: template?.name,
+          templateUsed: template.name,
         });
       } catch (innerError) {
         // Cleanup on failure: remove partially created records
@@ -5105,10 +5105,10 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const { templateId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       // Query only templates user has access to (built-in OR owned)
-      const _template = await db?.query.studioTemplates?.findFirst({
+      const template = await db?.query.studioTemplates?.findFirst({
         where: and(
           eq(studioTemplates?.id, templateId),
           or(
@@ -5122,15 +5122,15 @@ router?.get(
         return res?.status(404).json({ error: "Template not found" });
       }
 
-      const _templateData =
+      const templateData =
         (template?.templateData as Record<string, unknown>) || {};
 
       res?.json({
         ...template,
-        trackLayout: templateData?.trackLayout || [],
+        trackLayout: templateData.trackLayout || [],
         trackCount: (templateData?.trackLayout || []).length,
         hasMixBusConfig: !!templateData?.mixBusConfig,
-        tags: templateData?.tags || [],
+        tags: templateData.tags || [],
       });
     } catch (error: unknown) {
       logger?.warn({ err: error }, "Error fetching template:");
@@ -5145,10 +5145,10 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       // Define all available categories with their metadata
-      const _categories = [
+      const categories = [
         {
           id: "recording",
           name: "Recording",
@@ -5206,16 +5206,16 @@ router?.get(
       ];
 
       // Get template counts per category
-      const _templates = await db?.query.studioTemplates?.findMany({
+      const templates = await db?.query.studioTemplates?.findMany({
         where: or(
           eq(studioTemplates?.userId, userId),
           eq(studioTemplates?.isBuiltIn, true),
         ),
       });
 
-      const _categoriesWithCounts = categories?.map((cat) => ({
+      const categoriesWithCounts = categories?.map((cat) => ({
         ...cat,
-        count: templates?.filter((t) => t?.category === cat?.id).length,
+        count: templates.filter((t) => t?.category === cat?.id).length,
       }));
 
       res?.json({ categories: categoriesWithCounts });
@@ -5233,11 +5233,11 @@ router?.patch(
   async (req: Request, res: Response) => {
     try {
       const { templateId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { name, description, category, tags, coverImageUrl } = req?.body;
 
       // Verify ownership
-      const _template = await db?.query.studioTemplates?.findFirst({
+      const template = await db?.query.studioTemplates?.findFirst({
         where: and(
           eq(studioTemplates?.id, templateId),
           eq(studioTemplates?.userId, userId),
@@ -5256,7 +5256,7 @@ router?.patch(
           .json({ error: "Cannot modify built-in templates" });
       }
 
-      const _templateData =
+      const templateData =
         (template?.templateData as Record<string, unknown>) || {};
       const updateData: Record<string, unknown> = { updatedAt: new Date() };
 
@@ -5289,13 +5289,13 @@ router?.delete(
   async (req: Request, res: Response) => {
     try {
       const { templateId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       // Verify ownership (can't delete built-in templates)
-      const _template = await db?.query.studioTemplates?.findFirst({
+      const template = await db.query.studioTemplates.findFirst({
         where: and(
-          eq(studioTemplates?.id, templateId),
-          eq(studioTemplates?.userId, userId),
+          eq(studioTemplates.id, templateId),
+          eq(studioTemplates.userId, userId),
         ),
       });
 
@@ -5305,7 +5305,7 @@ router?.delete(
           .json({ error: "Template not found or access denied" });
       }
 
-      if (template?.isBuiltIn) {
+      if (template.isBuiltIn) {
         return res
           .status(403)
           .json({ error: "Cannot delete built-in templates" });
@@ -5313,12 +5313,12 @@ router?.delete(
 
       await db
         .delete(studioTemplates)
-        .where(eq(studioTemplates?.id, templateId));
+        .where(eq(studioTemplates.id, templateId));
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error deleting template:");
-      res?.status(500).json({ error: "Failed to delete template" });
+      logger.warn({ err: error }, "Error deleting template:");
+      res.status(500).json({ error: "Failed to delete template" });
     }
   },
 );
@@ -5328,48 +5328,48 @@ router?.delete(
 // ============================================================================
 
 // GET pinned folders
-router?.get(
+router.get(
   "/pinned-folders",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req.user!.id;
 
-      const _folders = await db?.query.studioPinnedFolders?.findMany({
-        where: eq(studioPinnedFolders?.userId, userId),
-        orderBy: [studioPinnedFolders?.sortOrder],
+      const folders = await db.query.studioPinnedFolders.findMany({
+        where: eq(studioPinnedFolders.userId, userId),
+        orderBy: [studioPinnedFolders.sortOrder],
       });
 
-      res?.json({ folders });
+      res.json({ folders });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching pinned folders:");
-      res?.status(500).json({ error: "Failed to fetch pinned folders" });
+      logger.warn({ err: error }, "Error fetching pinned folders:");
+      res.status(500).json({ error: "Failed to fetch pinned folders" });
     }
   },
 );
 
 // POST create pinned folder
-router?.post(
+router.post(
   "/pinned-folders",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const { name, path } = req?.body;
+      const userId = req.user!.id;
+      const { name, path } = req.body;
 
       if (!name || !path) {
-        return res?.status(400).json({ error: "Name and path are required" });
+        return res.status(400).json({ error: "Name and path are required" });
       }
 
       // Get max sort order
-      const _maxSort = await db
+      const maxSort = await db
         .select({
-          max: drizzleSql<number>`COALESCE(MAX(${studioPinnedFolders?.sortOrder}), 0)`,
+          max: drizzleSql<number>`COALESCE(MAX(${studioPinnedFolders.sortOrder}), 0)`,
         })
         .from(studioPinnedFolders)
-        .where(eq(studioPinnedFolders?.userId, userId));
+        .where(eq(studioPinnedFolders.userId, userId));
 
-      const _folderId = randomBytes(8).toString("hex");
+      const folderId = randomBytes(8).toString("hex");
       const [folder] = await db
         .insert(studioPinnedFolders)
         .values({
@@ -5377,40 +5377,40 @@ router?.post(
           userId,
           name,
           path,
-          sortOrder: (maxSort[0]?.max || 0) + 1,
+          sortOrder: (maxSort[0].max || 0) + 1,
         })
         .returning();
 
-      res?.status(201).json(folder);
+      res.status(201).json(folder);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error creating pinned folder:");
-      res?.status(500).json({ error: "Failed to create pinned folder" });
+      logger.warn({ err: error }, "Error creating pinned folder:");
+      res.status(500).json({ error: "Failed to create pinned folder" });
     }
   },
 );
 
 // DELETE pinned folder
-router?.delete(
+router.delete(
   "/pinned-folders/:folderId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { folderId } = req?.params;
-      const _userId = req?.user!.id;
+      const { folderId } = req.params;
+      const userId = req.user!.id;
 
       await db
         .delete(studioPinnedFolders)
         .where(
           and(
-            eq(studioPinnedFolders?.id, folderId),
-            eq(studioPinnedFolders?.userId, userId),
+            eq(studioPinnedFolders.id, folderId),
+            eq(studioPinnedFolders.userId, userId),
           ),
         );
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error deleting pinned folder:");
-      res?.status(500).json({ error: "Failed to delete pinned folder" });
+      logger.warn({ err: error }, "Error deleting pinned folder:");
+      res.status(500).json({ error: "Failed to delete pinned folder" });
     }
   },
 );
@@ -5420,61 +5420,61 @@ router?.delete(
 // ============================================================================
 
 // GET project pool (all audio/samples in current session)
-router?.get(
+router.get(
   "/projects/:projectId/pool",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
 
-      const _hasAccess = await verifyProjectOwnership(projectId, userId);
+      const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
       // Get all audio clips for this project
-      const _clips = await db?.query.audioClips?.findMany({
-        where: eq(audioClips?.projectId, projectId),
+      const clips = await db.query.audioClips.findMany({
+        where: eq(audioClips.projectId, projectId),
       });
 
       // Get recent files used in this project
-      const _recentFiles = await db?.query.studioRecentFiles?.findMany({
+      const recentFiles = await db.query.studioRecentFiles.findMany({
         where: and(
-          eq(studioRecentFiles?.userId, userId),
-          eq(studioRecentFiles?.projectId, projectId),
+          eq(studioRecentFiles.userId, userId),
+          eq(studioRecentFiles.projectId, projectId),
         ),
-        orderBy: [desc(studioRecentFiles?.accessedAt)],
+        orderBy: [desc(studioRecentFiles.accessedAt)],
       });
 
-      res?.json({
+      res.json({
         clips,
         recentFiles,
         projectId,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching project pool:");
-      res?.status(500).json({ error: "Failed to fetch project pool" });
+      logger.warn({ err: error }, "Error fetching project pool:");
+      res.status(500).json({ error: "Failed to fetch project pool" });
     }
   },
 );
 
 // POST add file to project pool
-router?.post(
+router.post(
   "/projects/:projectId/pool",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const _userId = req?.user!.id;
-      const { fileName, filePath, fileType, metadata } = req?.body;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
+      const { fileName, filePath, fileType, metadata } = req.body;
 
-      const _hasAccess = await verifyProjectOwnership(projectId, userId);
+      const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
-      const _fileId = randomBytes(8).toString("hex");
+      const fileId = randomBytes(8).toString("hex");
       const [recentFile] = await db
         .insert(studioRecentFiles)
         .values({
@@ -5488,10 +5488,10 @@ router?.post(
         })
         .returning();
 
-      res?.status(201).json(recentFile);
+      res.status(201).json(recentFile);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error adding file to pool:");
-      res?.status(500).json({ error: "Failed to add file to pool" });
+      logger.warn({ err: error }, "Error adding file to pool:");
+      res.status(500).json({ error: "Failed to add file to pool" });
     }
   },
 );
@@ -5501,68 +5501,68 @@ router?.post(
 // ============================================================================
 
 // POST cleanup orphaned uploads (admin only)
-router?.post(
+router.post(
   "/maintenance/cleanup-orphaned-uploads",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _user = await db?.query.users?.findFirst({
-        where: eq(users?.id, userId),
+      const userId = req.user!.id;
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, userId),
       });
 
-      if (user?.role !== "admin") {
-        return res?.status(403).json({ error: "Admin access required" });
+      if (user.role !== "admin") {
+        return res.status(403).json({ error: "Admin access required" });
       }
 
-      const _uploadsDir = path?.join(process?.cwd(), "uploads", "audio");
+      const uploadsDir = path.join(process.cwd(), "uploads", "audio");
 
       let cleaned = 0;
       let errors = 0;
-      const _maxAgeHours = parseInt(req?.body.maxAgeHours) || 24;
-      const _maxAgeMs = maxAgeHours * 60 * 60 * 1000;
-      const _now = Date?.now();
+      const maxAgeHours = parseInt(req.body.maxAgeHours) || 24;
+      const maxAgeMs = maxAgeHours * 60 * 60 * 1000;
+      const now = Date.now();
 
       try {
-        const _files = await fsPromises?.readdir(uploadsDir);
+        const files = await fsPromises.readdir(uploadsDir);
 
         for (const file of files) {
-          const _filePath = path?.default.join(uploadsDir, file);
+          const filePath = path.default.join(uploadsDir, file);
 
           try {
-            const _stats = await fsPromises?.stat(filePath);
-            const _fileAge = now - stats?.mtimeMs;
+            const stats = await fsPromises.stat(filePath);
+            const fileAge = now - stats.mtimeMs;
 
             if (fileAge > maxAgeMs) {
-              const _clip = await db?.query.audioClips?.findFirst({
+              const clip = await db.query.audioClips.findFirst({
                 where: or(
-                  eq(audioClips?.filePath, `/uploads/audio/${file}`),
-                  eq(audioClips?.originalFilename, file),
+                  eq(audioClips.filePath, `/uploads/audio/${file}`),
+                  eq(audioClips.originalFilename, file),
                 ),
               });
 
               if (!clip) {
-                await fsPromises?.unlink(filePath);
+                await fsPromises.unlink(filePath);
                 cleaned++;
-                logger?.info(`Cleaned orphaned upload: ${file}`);
+                logger.info(`Cleaned orphaned upload: ${file}`);
               }
             }
           } catch (err) {
             errors++;
-            logger?.warn(
+            logger.warn(
               { err: err },
               `Error processing file during cleanup: ${file}`,
             );
           }
         }
       } catch (err) {
-        logger?.warn({ err: err }, "Error reading uploads directory:");
+        logger.warn({ err: err }, "Error reading uploads directory:");
         return res
           .status(500)
           .json({ error: "Failed to access uploads directory" });
       }
 
-      res?.json({
+      res.json({
         success: true,
         cleaned,
         errors,
@@ -5570,57 +5570,57 @@ router?.post(
         message: `Cleaned ${cleaned} orphaned uploads, ${errors} errors encountered`,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error cleaning orphaned uploads:");
-      res?.status(500).json({ error: "Failed to cleanup orphaned uploads" });
+      logger.warn({ err: error }, "Error cleaning orphaned uploads:");
+      res.status(500).json({ error: "Failed to cleanup orphaned uploads" });
     }
   },
 );
 
 // GET orphaned uploads stats (admin only)
-router?.get(
+router.get(
   "/maintenance/orphaned-uploads-stats",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _user = await db?.query.users?.findFirst({
-        where: eq(users?.id, userId),
+      const userId = req.user!.id;
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, userId),
       });
 
-      if (user?.role !== "admin") {
-        return res?.status(403).json({ error: "Admin access required" });
+      if (user.role !== "admin") {
+        return res.status(403).json({ error: "Admin access required" });
       }
 
-      const _uploadsDir = path?.join(process?.cwd(), "uploads", "audio");
+      const uploadsDir = path.join(process.cwd(), "uploads", "audio");
 
       let orphanedCount = 0;
       let orphanedSize = 0;
       let totalFiles = 0;
-      const _maxAgeMs = 24 * 60 * 60 * 1000;
-      const _now = Date?.now();
+      const maxAgeMs = 24 * 60 * 60 * 1000;
+      const now = Date.now();
 
       try {
-        const _files = await fsPromises?.readdir(uploadsDir);
-        totalFiles = files?.length;
+        const files = await fsPromises.readdir(uploadsDir);
+        totalFiles = files.length;
 
         for (const file of files) {
-          const _filePath = path?.default.join(uploadsDir, file);
+          const filePath = path.default.join(uploadsDir, file);
 
           try {
-            const _stats = await fsPromises?.stat(filePath);
-            const _fileAge = now - stats?.mtimeMs;
+            const stats = await fsPromises.stat(filePath);
+            const fileAge = now - stats.mtimeMs;
 
             if (fileAge > maxAgeMs) {
-              const _clip = await db?.query.audioClips?.findFirst({
+              const clip = await db.query.audioClips.findFirst({
                 where: or(
-                  eq(audioClips?.filePath, `/uploads/audio/${file}`),
-                  eq(audioClips?.originalFilename, file),
+                  eq(audioClips.filePath, `/uploads/audio/${file}`),
+                  eq(audioClips.originalFilename, file),
                 ),
               });
 
               if (!clip) {
                 orphanedCount++;
-                orphanedSize += stats?.size;
+                orphanedSize += stats.size;
               }
             }
           } catch {
@@ -5635,7 +5635,7 @@ router?.get(
         totalFiles,
         orphanedCount,
         orphanedSizeBytes: orphanedSize,
-        orphanedSizeMB: Math?.round((orphanedSize / (1024 * 1024)) * 100) / 100,
+        orphanedSizeMB: Math.round((orphanedSize / (1024 * 1024)) * 100) / 100,
       });
     } catch (error: unknown) {
       logger?.warn({ err: error }, "Error getting orphaned uploads stats:");
@@ -5648,36 +5648,36 @@ router?.get(
 // STUDIO OUTCOME ENDPOINTS
 // ============================================================================
 
-const _mixSettingsSchema = z?.object({
-  eq: z?.object({
-    low: z?.number().min(-12).max(12).default(0),
-    lowMid: z?.number().min(-12).max(12).default(0),
-    mid: z?.number().min(-12).max(12).default(0),
-    highMid: z?.number().min(-12).max(12).default(0),
-    high: z?.number().min(-12).max(12).default(0),
+const mixSettingsSchema = z.object({
+  eq: z.object({
+    low: z.number().min(-12).max(12).default(0),
+    lowMid: z.number().min(-12).max(12).default(0),
+    mid: z.number().min(-12).max(12).default(0),
+    highMid: z.number().min(-12).max(12).default(0),
+    high: z.number().min(-12).max(12).default(0),
   }),
-  compression: z?.object({
-    threshold: z?.number().min(-60).max(0).default(-20),
-    ratio: z?.number().min(1).max(20).default(4),
-    attack: z?.number().min(0.1).max(100).default(10),
-    release: z?.number().min(10).max(1000).default(100),
+  compression: z.object({
+    threshold: z.number().min(-60).max(0).default(-20),
+    ratio: z.number().min(1).max(20).default(4),
+    attack: z.number().min(0.1).max(100).default(10),
+    release: z.number().min(10).max(1000).default(100),
   }),
-  reverb: z?.object({
-    amount: z?.number().min(0).max(1).default(0.2),
-    size: z?.number().min(0).max(1).default(0.5),
+  reverb: z.object({
+    amount: z.number().min(0).max(1).default(0.2),
+    size: z.number().min(0).max(1).default(0.5),
   }),
-  stereoWidth: z?.number().min(0).max(2).default(1),
+  stereoWidth: z.number().min(0).max(2).default(1),
 });
 
-const _masterSettingsSchema = z?.object({
-  targetLUFS: z?.number().min(-24).max(-6).default(-14),
-  truePeakLimit: z?.number().min(-3).max(0).default(-1),
+const masterSettingsSchema = z.object({
+  targetLUFS: z.number().min(-24).max(-6).default(-14),
+  truePeakLimit: z.number().min(-3).max(0).default(-1),
   platform: z
     .enum(["spotify", "apple_music", "youtube", "soundcloud", "custom"])
     .default("spotify"),
-  enhanceBass: z?.boolean().default(false),
-  enhanceClarity: z?.boolean().default(false),
-  analogWarmth: z?.boolean().default(false),
+  enhanceBass: z.boolean().default(false),
+  enhanceClarity: z.boolean().default(false),
+  analogWarmth: z.boolean().default(false),
 });
 
 // POST apply mix settings
@@ -5687,35 +5687,35 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _hasAccess = await verifyProjectOwnership(projectId, userId);
+      const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
         return res?.status(403).json({ error: "Access denied" });
       }
 
-      const _validation = mixSettingsSchema?.safeParse(req?.body);
+      const validation = mixSettingsSchema?.safeParse(req?.body);
       if (!validation?.success) {
         return res
           .status(400)
           .json({
             error: "Invalid mix settings",
-            details: validation?.error.issues,
+            details: validation.error.issues,
           });
       }
 
-      const _mixSettings = validation?.data;
+      const mixSettings = validation?.data;
 
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      const _lufsReduction = (mixSettings?.compression.ratio - 1) * 0.5;
-      const _eqShift =
+      const lufsReduction = (mixSettings?.compression.ratio - 1) * 0.5;
+      const eqShift =
         ((mixSettings?.eq?.low || 0) +
           (mixSettings?.eq?.mid || 0) +
           (mixSettings?.eq?.high || 0)) *
         0.02;
-      const _estimatedLUFS = -14 + lufsReduction + eqShift;
-      const _truePeakEstimate =
+      const estimatedLUFS = -14 + lufsReduction + eqShift;
+      const truePeakEstimate =
         -1.2 +
         (mixSettings?.compression.ratio > 4
           ? 0.3
@@ -5749,31 +5749,31 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _hasAccess = await verifyProjectOwnership(projectId, userId);
+      const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
         return res?.status(403).json({ error: "Access denied" });
       }
 
-      const _validation = masterSettingsSchema?.safeParse(req?.body);
+      const validation = masterSettingsSchema?.safeParse(req?.body);
       if (!validation?.success) {
         return res
           .status(400)
           .json({
             error: "Invalid master settings",
-            details: validation?.error.issues,
+            details: validation.error.issues,
           });
       }
 
-      const _masterSettings = validation?.data;
+      const masterSettings = validation?.data;
 
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      const _limiterGain = masterSettings?.limiterCeiling
+      const limiterGain = masterSettings?.limiterCeiling
         ? Math?.abs(masterSettings?.limiterCeiling) * 0.1
         : 0;
-      const _loudnessMetrics = {
+      const loudnessMetrics = {
         integratedLUFS: parseFloat(
           (masterSettings?.targetLUFS + limiterGain * 0.1).toFixed(1),
         ),
@@ -5815,14 +5815,14 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { projectId, trackId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _hasAccess = await verifyProjectOwnership(projectId, userId);
+      const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
         return res?.status(403).json({ error: "Access denied" });
       }
 
-      const _originalTrack = await db?.query.studioTracks?.findFirst({
+      const originalTrack = await db?.query.studioTracks?.findFirst({
         where: and(
           eq(studioTracks?.id, trackId),
           eq(studioTracks?.projectId, projectId),
@@ -5833,19 +5833,19 @@ router?.post(
         return res?.status(404).json({ error: "Track not found" });
       }
 
-      const _newTrackId = randomBytes(8).toString("hex");
+      const newTrackId = randomBytes(8).toString("hex");
       const [duplicatedTrack] = await db
         .insert(studioTracks)
         .values({
           id: newTrackId,
           projectId,
           name: `${originalTrack?.name} (Copy)`,
-          trackType: originalTrack?.trackType,
-          color: originalTrack?.color,
-          volume: originalTrack?.volume,
-          pan: originalTrack?.pan,
-          mute: originalTrack?.mute,
-          solo: originalTrack?.solo,
+          trackType: originalTrack.trackType,
+          color: originalTrack.color,
+          volume: originalTrack.volume,
+          pan: originalTrack.pan,
+          mute: originalTrack.mute,
+          solo: originalTrack.solo,
           armed: false,
           trackNumber: (originalTrack?.trackNumber || 0) + 1,
         })
@@ -5855,9 +5855,9 @@ router?.post(
         success: true,
         outcome: {
           type: "track_duplicated",
-          message: `Track "${originalTrack?.name}" duplicated`,
+          message: `Track "${originalTrack.name}" duplicated`,
           data: {
-            originalTrack: { id: trackId, name: originalTrack?.name },
+            originalTrack: { id: trackId, name: originalTrack.name },
             duplicatedTrack,
           },
         },
@@ -5876,19 +5876,19 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { projectId, trackId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const {
         format = "wav",
         normalize = true,
         includeEffects = true,
       } = req?.body;
 
-      const _hasAccess = await verifyProjectOwnership(projectId, userId);
+      const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
         return res?.status(403).json({ error: "Access denied" });
       }
 
-      const _track = await db?.query.studioTracks?.findFirst({
+      const track = await db?.query.studioTracks?.findFirst({
         where: and(
           eq(studioTracks?.id, trackId),
           eq(studioTracks?.projectId, projectId),
@@ -5901,17 +5901,17 @@ router?.post(
 
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      const _filename = `${track?.name.replace(/[^a-zA-Z0-9-_]/g, "_")}_bounce.${format}`;
-      const _downloadUrl = `/api/studio/downloads/${filename}`;
+      const filename = `${track?.name.replace(/[^a-zA-Z0-9-_]/g, "_")}_bounce.${format}`;
+      const downloadUrl = `/api/studio/downloads/${filename}`;
 
       res?.json({
         success: true,
         outcome: {
           type: "track_bounced",
-          message: `Track "${track?.name}" bounced successfully`,
+          message: `Track "${track.name}" bounced successfully`,
           data: {
             trackId,
-            trackName: track?.name,
+            trackName: track.name,
             format,
             normalize,
             includeEffects,
@@ -5934,10 +5934,10 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { pluginId, trackId } = req?.body;
 
-      const _hasAccess = await verifyProjectOwnership(projectId, userId);
+      const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
         return res?.status(403).json({ error: "Access denied" });
       }
@@ -5948,7 +5948,7 @@ router?.post(
 
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      const _knownPlugins = [
+      const knownPlugins = [
         "eq",
         "compressor",
         "reverb",
@@ -5964,8 +5964,8 @@ router?.post(
         "de-esser",
         "multiband-comp",
       ];
-      const _normalizedId = pluginId?.toLowerCase().replace(/[^a-z0-9-]/g, "");
-      const _pluginNotFound = !knownPlugins?.some((p) =>
+      const normalizedId = pluginId?.toLowerCase().replace(/[^a-z0-9-]/g, "");
+      const pluginNotFound = !knownPlugins?.some((p) =>
         normalizedId?.includes(p),
       );
 
@@ -6006,14 +6006,14 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const { projectId, pluginId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _hasAccess = await verifyProjectOwnership(projectId, userId);
+      const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
         return res?.status(403).json({ error: "Access denied" });
       }
 
-      const _presets = await db
+      const presets = await db
         .select()
         .from(pluginPresets)
         .where(
@@ -6042,9 +6042,9 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { projectId, pluginId, presetId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _hasAccess = await verifyProjectOwnership(projectId, userId);
+      const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
         return res?.status(403).json({ error: "Access denied" });
       }
@@ -6072,12 +6072,12 @@ router?.post(
         success: true,
         outcome: {
           type: "preset_applied",
-          message: `Preset "${preset?.name}" applied successfully`,
+          message: `Preset "${preset.name}" applied successfully`,
           data: {
             pluginId,
-            presetId: preset?.id,
-            name: preset?.name,
-            parameters: preset?.parameters,
+            presetId: preset.id,
+            name: preset.name,
+            parameters: preset.parameters,
             appliedAt: new Date().toISOString(),
           },
         },
@@ -6096,10 +6096,10 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { projectId, pluginId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { name, settings } = req?.body;
 
-      const _hasAccess = await verifyProjectOwnership(projectId, userId);
+      const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
         return res?.status(403).json({ error: "Access denied" });
       }
@@ -6126,12 +6126,12 @@ router?.post(
           type: "preset_saved",
           message: `Preset "${name}" saved successfully`,
           data: {
-            presetId: preset?.id,
+            presetId: preset.id,
             pluginId,
-            name: preset?.name,
+            name: preset.name,
             isFactory: false,
             isFavorite: false,
-            createdAt: preset?.createdAt,
+            createdAt: preset.createdAt,
           },
         },
       });
@@ -6149,16 +6149,16 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _hasAccess = await verifyProjectOwnership(projectId, userId);
+      const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
         return res?.status(403).json({ error: "Access denied" });
       }
 
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      const _version = Date?.now();
+      const version = Date?.now();
 
       res?.json({
         success: true,
@@ -6187,10 +6187,10 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { conflictId, resolution } = req?.body;
 
-      const _hasAccess = await verifyProjectOwnership(projectId, userId);
+      const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
         return res?.status(403).json({ error: "Access denied" });
       }
@@ -6230,9 +6230,9 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _hasAccess = await verifyProjectOwnership(projectId, userId);
+      const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
         return res?.status(403).json({ error: "Access denied" });
       }
@@ -6257,9 +6257,9 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _hasAccess = await verifyProjectOwnership(projectId, userId);
+      const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
         return res?.status(403).json({ error: "Access denied" });
       }
@@ -6284,9 +6284,9 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _hasAccess = await verifyProjectOwnership(projectId, userId);
+      const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
         return res?.status(403).json({ error: "Access denied" });
       }
@@ -6313,9 +6313,9 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _hasAccess = await verifyProjectOwnership(projectId, userId);
+      const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
         return res?.status(403).json({ error: "Access denied" });
       }
@@ -6338,16 +6338,16 @@ router?.post(
 // POST generate - AI-powered audio/content generation
 router?.post("/generate", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { type, prompt, projectId, options } = req?.body;
 
     if (!type || !prompt) {
       return res?.status(400).json({ error: "type and prompt are required" });
     }
 
-    const _generationId = randomBytes(8).toString("hex");
+    const generationId = randomBytes(8).toString("hex");
 
-    const _result = {
+    const result = {
       id: generationId,
       type,
       prompt,
@@ -6370,10 +6370,10 @@ router?.post("/generate", requireAuth, async (req: Request, res: Response) => {
           },
         ],
         metadata: {
-          duration: options?.duration || 30,
-          tempo: options?.tempo || 120,
-          key: options?.key || "C",
-          scale: options?.scale || "major",
+          duration: options.duration || 30,
+          tempo: options.tempo || 120,
+          key: options.key || "C",
+          scale: options.scale || "major",
         },
       },
     };

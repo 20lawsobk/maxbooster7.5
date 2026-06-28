@@ -7,23 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
-import {
-  ArrowRight,
-  Clock,
-  Target,
-  TrendingUp,
-  DollarSign,
-  CheckCircle,
-  XCircle,
-  Lightbulb,
-  Star,
-  Music,
-  Settings,
-  Sparkles,
-  Rocket,
-  MessageSquare,
-  Award,
-} from "lucide-react";
+import { ArrowRight, Clock, Target, TrendingUp, DollarSign, CheckCircle, XCircle, Lightbulb, Star, Music, Settings, Sparkles, Rocket, MessageSquare, Award } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type CareerStage =

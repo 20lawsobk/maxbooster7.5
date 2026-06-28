@@ -9,14 +9,14 @@ promisify(exec);
 
 // Lazy service loaders — avoid circular imports at module load time.
 async function loadNotificationService() {
-  const _m = await import("./services/notificationService.js");
+  const m = await import("./services/notificationService.js");
   return (
     (m as Record<string, unknown>).notificationService ??
     (m as Record<string, unknown>).default
   );
 }
 async function loadDistributionService() {
-  const _m = await import("./services/distributionService.js");
+  const m = await import("./services/distributionService.js");
   return (
     (m as Record<string, unknown>).distributionService ??
     (m as Record<string, unknown>).default
@@ -24,13 +24,13 @@ async function loadDistributionService() {
 }
 async function loadAutoPostingService() {
   try {
-    const _m = await import("./services/autoPostingServiceV2.js");
+    const m = await import("./services/autoPostingServiceV2.js");
     return (
       (m as Record<string, unknown>).autoPostingServiceV2 ??
       (m as Record<string, unknown>).default
     );
   } catch {
-    const _m = await import("./services/autoPostingService.js");
+    const m = await import("./services/autoPostingService.js");
     return (
       (m as Record<string, unknown>).autoPostingService ??
       (m as Record<string, unknown>).default
@@ -38,7 +38,7 @@ async function loadAutoPostingService() {
   }
 }
 async function loadStorage() {
-  const _m = await import("./storage.js");
+  const m = await import("./storage.js");
   return (m as Record<string, unknown>).storage;
 }
 
@@ -51,7 +51,7 @@ export class AutomationSystem extends EventEmitter {
   private conditions: Map<string, Condition> = new Map();
   private isRunning: boolean = false;
   private automationMetrics: AutomationMetrics;
-  private scheduledTasks: Map<string, cron?.ScheduledTask> = new Map();
+  private scheduledTasks: Map<string, cron.ScheduledTask> = new Map();
   private webhookHandlers: Map<
     string,
     Array<{ callback: Function; secret?: string }>
@@ -66,7 +66,7 @@ export class AutomationSystem extends EventEmitter {
     payload: unknown,
     headers: Record<string, string> = {},
   ): Promise<number> {
-    const _list = this?.webhookHandlers.get(webhookId);
+    const list = this?.webhookHandlers.get(webhookId);
     if (!list || list?.length === 0) return 0;
     let fired = 0;
     for (const h of list) {
@@ -90,7 +90,7 @@ export class AutomationSystem extends EventEmitter {
       totalExecutions: 0,
       averageExecutionTime: 0,
       successRate: 0,
-      lastExecution: Date?.now(),
+      lastExecution: Date.now(),
       automationScore: 0,
     };
 
@@ -140,31 +140,31 @@ export class AutomationSystem extends EventEmitter {
           `📧 Sending email to ${params?.to ?? params?.userId}: ${params?.subject}`,
         );
         try {
-          const _notif = await loadNotificationService();
+          const notif = await loadNotificationService();
           if (!notif) throw new Error("notificationService unavailable");
           // notificationService is user-centric; resolve user when only an
           // address is supplied so we can hit its public sendEmail flow.
           let userId: string | undefined = params?.userId;
           if (!userId && params?.to) {
-            const _storage = await loadStorage();
-            const _u = await storage?.getUserByEmail?.(params?.to);
+            const storage = await loadStorage();
+            const u = await storage?.getUserByEmail?.(params?.to);
             userId = u?.id;
           }
           if (!userId) throw new Error("no userId resolvable for email");
           if (typeof notif?.send !== "function") {
-            throw new Error("notificationService?.send unavailable");
+            throw new Error("notificationService.send unavailable");
           }
           await notif?.send({
             userId,
-            type: params?.template || "system",
-            title: params?.subject,
-            message: params?.body,
-            link: params?.link,
+            type: params.template || "system",
+            title: params.subject,
+            message: params.body,
+            link: params.link,
           });
           return { success: true, message: "Email sent successfully" };
         } catch (e) {
           logger?.warn({ err: e }, "send-email action failed");
-          return { success: false, message: e?.message ?? "send-email failed" };
+          return { success: false, message: e.message ?? "send-email failed" };
         }
       },
     });
@@ -175,31 +175,31 @@ export class AutomationSystem extends EventEmitter {
       description: "Post content to social media platforms",
       parameters: ["userId", "platforms", "content", "media", "schedule"],
       execute: async (params) => {
-        const _platforms = Array?.isArray(params?.platforms)
+        const platforms = Array?.isArray(params?.platforms)
           ? params?.platforms
           : [params?.platforms];
         logger?.info(`📱 Posting to social media: ${platforms?.join(", ")}`);
         try {
-          const _svc = await loadAutoPostingService();
+          const svc = await loadAutoPostingService();
           if (!svc?.schedulePost) {
-            throw new Error("autoPostingService?.schedulePost unavailable");
+            throw new Error("autoPostingService.schedulePost unavailable");
           }
           // autoPostingServiceV2?.schedulePost signature:
           //   (userId, platforms[], content: PostContent, scheduledTime: Date, ...)
-          const _text =
+          const text =
             typeof params?.content === "string"
               ? params?.content
               : (params?.content?.text ?? params?.content?.caption ?? "");
-          const _postContent = {
+          const postContent = {
             text,
-            hashtags: params?.content?.hashtags,
-            mediaUrl: params?.media ?? params?.content?.mediaUrl,
-            mediaType: params?.content?.mediaType,
+            hashtags: params.content?.hashtags,
+            mediaUrl: params.media ?? params?.content?.mediaUrl,
+            mediaType: params.content?.mediaType,
           };
-          const _scheduledTime = params?.schedule
+          const scheduledTime = params?.schedule
             ? new Date(params?.schedule)
             : new Date();
-          const _r = await svc?.schedulePost(
+          const r = await svc?.schedulePost(
             params?.userId,
             platforms,
             postContent,
@@ -214,7 +214,7 @@ export class AutomationSystem extends EventEmitter {
           logger?.warn({ err: e }, "post-social-media action failed");
           return {
             success: false,
-            message: e?.message ?? "post-social-media failed",
+            message: e.message ?? "post-social-media failed",
           };
         }
       },
@@ -226,15 +226,15 @@ export class AutomationSystem extends EventEmitter {
       description: "Distribute music to streaming platforms",
       parameters: ["userId", "releaseId", "platforms", "metadata"],
       execute: async (params) => {
-        const _platforms = Array?.isArray(params?.platforms)
+        const platforms = Array?.isArray(params?.platforms)
           ? params?.platforms
           : [params?.platforms];
         logger?.info(`🎵 Distributing music to ${platforms?.join(", ")}`);
         try {
-          const _dist = await loadDistributionService();
+          const dist = await loadDistributionService();
           if (!dist?.distributeRelease)
             throw new Error("distributionService unavailable");
-          const _r = await dist?.distributeRelease(
+          const r = await dist?.distributeRelease(
             params?.releaseId,
             params?.userId,
           );
@@ -247,7 +247,7 @@ export class AutomationSystem extends EventEmitter {
           logger?.warn({ err: e }, "distribute-music action failed");
           return {
             success: false,
-            message: e?.message ?? "distribute-music failed",
+            message: e.message ?? "distribute-music failed",
           };
         }
       },
@@ -324,31 +324,31 @@ export class AutomationSystem extends EventEmitter {
       execute: async (params) => {
         logger?.info(`🔔 Sending notification: ${params?.title}`);
         try {
-          const _notif = await loadNotificationService();
+          const notif = await loadNotificationService();
           if (!notif?.send)
-            throw new Error("notificationService?.send unavailable");
+            throw new Error("notificationService.send unavailable");
           const recipients: string[] = Array?.isArray(params?.recipients)
             ? params?.recipients
             : [params?.recipients].filter(Boolean);
           for (const userId of recipients) {
             await notif?.send({
               userId,
-              type: params?.type ?? "system",
-              title: params?.title,
-              message: params?.message,
-              link: params?.link,
+              type: params.type ?? "system",
+              title: params.title,
+              message: params.message,
+              link: params.link,
             });
           }
           return {
             success: true,
             message: "Notification sent",
-            count: recipients?.length,
+            count: recipients.length,
           };
         } catch (e) {
           logger?.warn({ err: e }, "send-notification action failed");
           return {
             success: false,
-            message: e?.message ?? "send-notification failed",
+            message: e.message ?? "send-notification failed",
           };
         }
       },
@@ -389,9 +389,9 @@ export class AutomationSystem extends EventEmitter {
         return {
           success: true,
           message: "Promotional video created successfully",
-          templateType: params?.templateType,
-          platform: params?.platform,
-          aspectRatio: params?.aspectRatio || "16:9",
+          templateType: params.templateType,
+          platform: params.platform,
+          aspectRatio: params.aspectRatio || "16:9",
         };
       },
     });
@@ -408,15 +408,15 @@ export class AutomationSystem extends EventEmitter {
         "visualStyle",
       ],
       execute: async (params) => {
-        const _platformList = Array?.isArray(params?.platforms)
+        const platformList = Array?.isArray(params?.platforms)
           ? params?.platforms.join(", ")
           : params?.platforms;
         logger?.info(`📹 Creating social video for: ${platformList}`);
         return {
           success: true,
           message: "Social media video created successfully",
-          platforms: params?.platforms,
-          duration: params?.duration || 15,
+          platforms: params.platforms,
+          duration: params.duration || 15,
         };
       },
     });
@@ -437,8 +437,8 @@ export class AutomationSystem extends EventEmitter {
         return {
           success: true,
           message: "Lyric video created successfully",
-          visualStyle: params?.visualStyle || "karaoke",
-          resolution: params?.resolution || "1080p",
+          visualStyle: params.visualStyle || "karaoke",
+          resolution: params.resolution || "1080p",
         };
       },
     });
@@ -460,8 +460,8 @@ export class AutomationSystem extends EventEmitter {
         return {
           success: true,
           message: "Visualizer video created successfully",
-          visualizerType: params?.visualizerType || "spectrum",
-          shaderEffects: params?.shaderEffects || ["bloom", "particles"],
+          visualizerType: params.visualizerType || "spectrum",
+          shaderEffects: params.shaderEffects || ["bloom", "particles"],
         };
       },
     });
@@ -475,8 +475,8 @@ export class AutomationSystem extends EventEmitter {
       description: "Check if current time matches condition",
       parameters: ["time", "timezone", "days"],
       evaluate: async (params) => {
-        const _now = new Date();
-        const _targetTime = new Date(params?.time);
+        const now = new Date();
+        const targetTime = new Date(params?.time);
         return (
           now?.getHours() === targetTime?.getHours() &&
           now?.getMinutes() === targetTime?.getMinutes()
@@ -537,15 +537,15 @@ export class AutomationSystem extends EventEmitter {
       description: "Trigger based on schedule",
       parameters: ["cron", "timezone"],
       start: (params, callback) => {
-        const _task = cron?.schedule(params?.cron, callback, {
+        const task = cron?.schedule(params?.cron, callback, {
           scheduled: false,
-          timezone: params?.timezone,
+          timezone: params.timezone,
         });
         task?.start();
         return task;
       },
       stop: (trigger) => {
-        if (trigger instanceof cron?.ScheduledTask) {
+        if (trigger instanceof cron.ScheduledTask) {
           trigger?.stop();
         }
       },
@@ -558,7 +558,7 @@ export class AutomationSystem extends EventEmitter {
       parameters: ["eventType", "filters"],
       start: (params, callback) => {
         this?.on(params?.eventType, callback);
-        return { eventType: params?.eventType, callback };
+        return { eventType: params.eventType, callback };
       },
       stop: (trigger) => {
         if (trigger && trigger?.eventType) {
@@ -575,14 +575,14 @@ export class AutomationSystem extends EventEmitter {
       description: "Trigger based on webhook calls",
       parameters: ["webhookId", "secret"],
       start: (params, callback) => {
-        const _webhookId = String(params?.webhookId || params?.url || "").trim();
+        const webhookId = String(params?.webhookId || params?.url || "").trim();
         if (!webhookId) {
           throw new Error("webhook trigger requires `webhookId` parameter");
         }
-        const _list = this?.webhookHandlers.get(webhookId) || [];
-        const _handler = {
+        const list = this?.webhookHandlers.get(webhookId) || [];
+        const handler = {
           callback,
-          secret: params?.secret as string | undefined,
+          secret: params.secret as string | undefined,
         };
         list?.push(handler);
         this?.webhookHandlers.set(webhookId, list);
@@ -593,8 +593,8 @@ export class AutomationSystem extends EventEmitter {
       },
       stop: (trigger) => {
         if (!trigger?.webhookId) return;
-        const _list = this?.webhookHandlers.get(trigger?.webhookId) || [];
-        const _next = list?.filter(
+        const list = this?.webhookHandlers.get(trigger?.webhookId) || [];
+        const next = list?.filter(
           (h: Record<string, unknown>) => h !== trigger?.handler,
         );
         if (next?.length === 0) this?.webhookHandlers.delete(trigger?.webhookId);
@@ -644,10 +644,10 @@ export class AutomationSystem extends EventEmitter {
   // Check workflow triggers
   private async checkWorkflowTriggers(workflow: Workflow): Promise<void> {
     for (const triggerConfig of workflow?.triggers) {
-      const _trigger = this?.triggers.get(triggerConfig?.type);
+      const trigger = this?.triggers.get(triggerConfig?.type);
       if (trigger) {
         try {
-          const _shouldTrigger = await trigger?.evaluate(
+          const shouldTrigger = await trigger?.evaluate(
             triggerConfig?.parameters,
           );
           if (shouldTrigger) {
@@ -678,8 +678,8 @@ export class AutomationSystem extends EventEmitter {
 
   // Execute workflow step
   private async executeWorkflowStep(workflow: Workflow): Promise<void> {
-    const _actionConfig = workflow?.actions[workflow?.nextAction];
-    const _action = this?.actions.get(actionConfig?.type);
+    const actionConfig = workflow?.actions[workflow?.nextAction];
+    const action = this?.actions.get(actionConfig?.type);
 
     if (!action) {
       logger?.warn(`Action not found: ${actionConfig?.type}`);
@@ -691,14 +691,14 @@ export class AutomationSystem extends EventEmitter {
       // Check conditions
       if (actionConfig?.conditions) {
         for (const conditionConfig of actionConfig?.conditions) {
-          const _condition = this?.conditions.get(conditionConfig?.type);
+          const condition = this?.conditions.get(conditionConfig?.type);
           if (condition) {
-            const _conditionMet = await condition?.evaluate(
+            const conditionMet = await condition?.evaluate(
               conditionConfig?.parameters,
             );
             if (!conditionMet) {
               logger?.info(`Condition not met for action: ${actionConfig?.type}`);
-              workflow?.nextAction++;
+              workflow.nextAction++;
               return;
             }
           }
@@ -706,13 +706,13 @@ export class AutomationSystem extends EventEmitter {
       }
 
       // Execute action
-      const _startTime = Date?.now();
+      const startTime = Date?.now();
       await action?.execute(actionConfig?.parameters);
-      const _executionTime = Date?.now() - startTime;
+      const executionTime = Date?.now() - startTime;
 
       // Update metrics
-      this?.automationMetrics.totalExecutions++;
-      this?.automationMetrics.averageExecutionTime =
+      this.automationMetrics.totalExecutions++;
+      this.automationMetrics.averageExecutionTime =
         (this?.automationMetrics.averageExecutionTime + executionTime) / 2;
 
       logger?.info(
@@ -720,7 +720,7 @@ export class AutomationSystem extends EventEmitter {
       );
 
       // Move to next action
-      workflow?.nextAction++;
+      workflow.nextAction++;
 
       // Check if workflow is complete
       if (workflow?.nextAction >= workflow?.actions.length) {
@@ -728,7 +728,7 @@ export class AutomationSystem extends EventEmitter {
         workflow.endTime = Date?.now();
         workflow.executionTime = workflow?.endTime - workflow?.startTime;
 
-        this?.automationMetrics.completedWorkflows++;
+        this.automationMetrics.completedWorkflows++;
         logger?.info(`🎉 Workflow completed: ${workflow?.name}`);
 
         // Emit workflow completed event
@@ -743,7 +743,7 @@ export class AutomationSystem extends EventEmitter {
       workflow.endTime = Date?.now();
       workflow.error = error instanceof Error ? error?.message : String(error);
 
-      this?.automationMetrics.failedWorkflows++;
+      this.automationMetrics.failedWorkflows++;
 
       // Emit workflow failed event
       this?.emit("workflow:failed", workflow);
@@ -753,19 +753,19 @@ export class AutomationSystem extends EventEmitter {
   // Create workflow
   public createWorkflow(config: WorkflowConfig): Workflow {
     const workflow: Workflow = {
-      id: config?.id || this?.generateId(),
-      name: config?.name,
-      description: config?.description,
-      triggers: config?.triggers,
-      actions: config?.actions,
+      id: config.id || this?.generateId(),
+      name: config.name,
+      description: config.description,
+      triggers: config.triggers,
+      actions: config.actions,
       status: "inactive",
       nextAction: 0,
-      createdAt: Date?.now(),
-      updatedAt: Date?.now(),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
     };
 
     this?.workflows.set(workflow?.id, workflow);
-    this?.automationMetrics.totalWorkflows++;
+    this.automationMetrics.totalWorkflows++;
 
     logger?.info(`📋 Workflow created: ${workflow?.name}`);
 
@@ -774,7 +774,7 @@ export class AutomationSystem extends EventEmitter {
 
   // Start workflow
   public startWorkflow(workflowId: string): boolean {
-    const _workflow = this?.workflows.get(workflowId);
+    const workflow = this?.workflows.get(workflowId);
     if (!workflow) return false;
 
     workflow.status = "active";
@@ -782,9 +782,9 @@ export class AutomationSystem extends EventEmitter {
 
     // Start triggers
     for (const triggerConfig of workflow?.triggers) {
-      const _trigger = this?.triggers.get(triggerConfig?.type);
+      const trigger = this?.triggers.get(triggerConfig?.type);
       if (trigger) {
-        const _triggerInstance = trigger?.start(triggerConfig?.parameters, () => {
+        const triggerInstance = trigger?.start(triggerConfig?.parameters, () => {
           this?.triggerWorkflow(workflow);
         });
         workflow.triggerInstances = workflow?.triggerInstances || [];
@@ -792,7 +792,7 @@ export class AutomationSystem extends EventEmitter {
       }
     }
 
-    this?.automationMetrics.activeWorkflows++;
+    this.automationMetrics.activeWorkflows++;
     logger?.info(`▶️ Workflow started: ${workflow?.name}`);
 
     return true;
@@ -800,7 +800,7 @@ export class AutomationSystem extends EventEmitter {
 
   // Stop workflow
   public stopWorkflow(workflowId: string): boolean {
-    const _workflow = this?.workflows.get(workflowId);
+    const workflow = this?.workflows.get(workflowId);
     if (!workflow) return false;
 
     workflow.status = "inactive";
@@ -809,7 +809,7 @@ export class AutomationSystem extends EventEmitter {
     // Stop triggers
     if (workflow?.triggerInstances) {
       for (const triggerInstance of workflow?.triggerInstances) {
-        const _trigger = this?.triggers.get(workflow?.triggers[0].type);
+        const trigger = this?.triggers.get(workflow?.triggers[0].type);
         if (trigger) {
           trigger?.stop(triggerInstance);
         }
@@ -817,7 +817,7 @@ export class AutomationSystem extends EventEmitter {
       workflow.triggerInstances = [];
     }
 
-    this?.automationMetrics.activeWorkflows--;
+    this.automationMetrics.activeWorkflows--;
     logger?.info(`⏹️ Workflow stopped: ${workflow?.name}`);
 
     return true;
@@ -873,12 +873,12 @@ export class AutomationSystem extends EventEmitter {
 
   // Delete workflow
   public deleteWorkflow(id: string): boolean {
-    const _workflow = this?.workflows.get(id);
+    const workflow = this?.workflows.get(id);
     if (!workflow) return false;
 
     this?.stopWorkflow(id);
     this?.workflows.delete(id);
-    this?.automationMetrics.totalWorkflows--;
+    this.automationMetrics.totalWorkflows--;
 
     logger?.info(`🗑️ Workflow deleted: ${workflow?.name}`);
     return true;
@@ -886,7 +886,7 @@ export class AutomationSystem extends EventEmitter {
 }
 
 // Pre-built workflow templates
-export const _WORKFLOW_TEMPLATES = {
+export const WORKFLOW_TEMPLATES = {
   // Music release workflow
   "music-release": {
     name: "Music Release Workflow",
@@ -938,7 +938,7 @@ export const _WORKFLOW_TEMPLATES = {
         type: "generate-analytics-report",
         parameters: {
           reportType: "weekly",
-          recipients: ["admin@maxbooster?.ai"],
+          recipients: ["admin@maxbooster.ai"],
         },
       },
       {

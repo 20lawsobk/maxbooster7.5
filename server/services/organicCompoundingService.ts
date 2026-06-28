@@ -70,26 +70,26 @@ interface AssetCandidate {
   basedOnChannelId?: string;
 }
 
-const _HOURLY_RATE_ESTIMATE = 50;
-const _MINIMUM_ROI_THRESHOLD = 1.0;
-const _EXPLORE_RATIO = 0.2;
+const HOURLY_RATE_ESTIMATE = 50;
+const MINIMUM_ROI_THRESHOLD = 1.0;
+const EXPLORE_RATIO = 0.2;
 
 class OrganicCompoundingService {
   async computeOrganicRoi(asset: OrganicAsset): Promise<RoiData> {
     try {
-      const _performance = asset?.performance as AssetPerformance | null;
-      const _revenueGenerated = performance?.revenueGenerated ?? 0;
+      const performance = asset?.performance as AssetPerformance | null;
+      const revenueGenerated = performance?.revenueGenerated ?? 0;
 
-      const _creationCostDollars =
+      const creationCostDollars =
         (asset?.creationCostHours ?? 0) * HOURLY_RATE_ESTIMATE;
-      const _distributionCost = asset?.distributionCost ?? 0;
-      const _totalCost = creationCostDollars + distributionCost;
+      const distributionCost = asset?.distributionCost ?? 0;
+      const totalCost = creationCostDollars + distributionCost;
 
-      const _effectiveRoi =
+      const effectiveRoi =
         totalCost > 0 ? (revenueGenerated - totalCost) / totalCost : 0;
 
-      const _now = new Date();
-      const _periodStart = new Date(now?.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const now = new Date();
+      const periodStart = new Date(now?.getTime() - 30 * 24 * 60 * 60 * 1000);
 
       return {
         revenueOverPeriod: revenueGenerated,
@@ -110,8 +110,8 @@ class OrganicCompoundingService {
     assets: OrganicAsset[],
   ): number {
     try {
-      const _channelAssets = assets?.filter((a) => {
-        const _performance = a?.performance as AssetPerformance | null;
+      const channelAssets = assets?.filter((a) => {
+        const performance = a?.performance as AssetPerformance | null;
         return performance && performance?.revenueGenerated > 0;
       });
 
@@ -119,12 +119,12 @@ class OrganicCompoundingService {
         return channel?.audienceQualityScore ?? 0.5;
       }
 
-      const _totalRevenue = channelAssets?.reduce((sum, a) => {
-        const _perf = a?.performance as AssetPerformance;
+      const totalRevenue = channelAssets?.reduce((sum, a) => {
+        const perf = a?.performance as AssetPerformance;
         return sum + (perf?.revenueGenerated ?? 0);
       }, 0);
 
-      const _totalCost = channelAssets?.reduce((sum, a) => {
+      const totalCost = channelAssets?.reduce((sum, a) => {
         return (
           sum +
           (a?.creationCostHours ?? 0) * HOURLY_RATE_ESTIMATE +
@@ -132,12 +132,12 @@ class OrganicCompoundingService {
         );
       }, 0);
 
-      const _roi = totalCost > 0 ? totalRevenue / totalCost : 0;
-      const _reach = channel?.estimatedMonthlyReach ?? 0;
-      const _audienceQuality = channel?.audienceQualityScore ?? 0.5;
+      const roi = totalCost > 0 ? totalRevenue / totalCost : 0;
+      const reach = channel?.estimatedMonthlyReach ?? 0;
+      const audienceQuality = channel?.audienceQualityScore ?? 0.5;
 
-      const _reachScore = Math?.min(reach / 100000, 1);
-      const _efficiencyScore =
+      const reachScore = Math?.min(reach / 100000, 1);
+      const efficiencyScore =
         roi * 0.4 + reachScore * 0.3 + audienceQuality * 0.3;
 
       return Math?.max(0, Math?.min(1, efficiencyScore));
@@ -155,14 +155,14 @@ class OrganicCompoundingService {
     const candidates: AssetCandidate[] = [];
 
     try {
-      const _topPerformingAssets = existingAssets
+      const topPerformingAssets = existingAssets
         .filter((a) => {
-          const _perf = a?.performance as AssetPerformance | null;
+          const perf = a?.performance as AssetPerformance | null;
           return perf && perf?.revenueGenerated > 0;
         })
         .sort((a, b) => {
-          const _perfA = a?.performance as AssetPerformance;
-          const _perfB = b?.performance as AssetPerformance;
+          const perfA = a?.performance as AssetPerformance;
+          const perfB = b?.performance as AssetPerformance;
           return (
             (perfB?.revenueGenerated ?? 0) - (perfA?.revenueGenerated ?? 0)
           );
@@ -172,16 +172,16 @@ class OrganicCompoundingService {
       for (const asset of topPerformingAssets) {
         candidates?.push({
           assetId: `candidate_${randomBytes(8).toString("hex")}`,
-          type: asset?.type,
+          type: asset.type,
           topic: `${asset?.topic} - Extended`,
-          intent: asset?.intent,
+          intent: asset.intent,
           creationCostHours: (asset?.creationCostHours ?? 0) * 0.8,
-          distributionCost: asset?.distributionCost ?? 0,
-          basedOnAssetId: asset?.id,
+          distributionCost: asset.distributionCost ?? 0,
+          basedOnAssetId: asset.id,
         });
       }
 
-      const _topChannels = channels
+      const topChannels = channels
         .filter((c) => (c?.efficiencyScore ?? 0) > 0.5)
         .slice(0, 3);
 
@@ -212,26 +212,26 @@ class OrganicCompoundingService {
             { type: "press_release", hours: 4 },
           ],
         };
-        const _assetDefs = channelAssetMap[channel?.type] ?? [
+        const assetDefs = channelAssetMap[channel?.type] ?? [
           { type: "seo_article", hours: 5 },
           { type: "tiktok_reel_clip", hours: 1.5 },
         ];
         for (const def of assetDefs) {
           candidates?.push({
             assetId: `candidate_${randomBytes(8).toString("hex")}`,
-            type: def?.type,
+            type: def.type,
             topic: `${def?.type.replace(/_/g, " ")} for ${channel?.name}`,
-            intent: channel?.type === "search" ? "search" : "discovery",
-            creationCostHours: def?.hours,
+            intent: channel.type === "search" ? "search" : "discovery",
+            creationCostHours: def.hours,
             distributionCost: 0,
-            basedOnChannelId: channel?.id,
+            basedOnChannelId: channel.id,
           });
         }
       }
 
       if (candidates?.length < 5) {
         // Music-career-specific evergreen asset types ordered by ROI-to-effort ratio
-        const _defaultTypes = [
+        const defaultTypes = [
           {
             type: "tiktok_reel_clip",
             topic: "Studio Behind-the-Scenes Clip",
@@ -295,14 +295,14 @@ class OrganicCompoundingService {
           },
         ];
 
-        const _needed = 5 - candidates?.length;
+        const needed = 5 - candidates?.length;
         for (const defaultAsset of defaultTypes?.slice(0, needed)) {
           candidates?.push({
             assetId: `candidate_${randomBytes(8).toString("hex")}`,
-            type: defaultAsset?.type,
-            topic: defaultAsset?.topic,
-            intent: defaultAsset?.intent,
-            creationCostHours: defaultAsset?.hours,
+            type: defaultAsset.type,
+            topic: defaultAsset.topic,
+            intent: defaultAsset.intent,
+            creationCostHours: defaultAsset.hours,
             distributionCost: 0,
           });
         }
@@ -321,7 +321,7 @@ class OrganicCompoundingService {
     channels: OrganicChannel[],
   ): { effectiveRoi: number; streams: number; ltv: number } {
     try {
-      const _similarAssets = existingAssets?.filter(
+      const similarAssets = existingAssets?.filter(
         (a) => a?.type === candidate?.type || a?.intent === candidate?.intent,
       );
 
@@ -329,12 +329,12 @@ class OrganicCompoundingService {
       let avgStreams = 0;
 
       if (similarAssets?.length > 0) {
-        const _totalRevenue = similarAssets?.reduce((sum, a) => {
-          const _perf = a?.performance as AssetPerformance | null;
+        const totalRevenue = similarAssets?.reduce((sum, a) => {
+          const perf = a?.performance as AssetPerformance | null;
           return sum + (perf?.revenueGenerated ?? 0);
         }, 0);
-        const _totalStreams = similarAssets?.reduce((sum, a) => {
-          const _perf = a?.performance as AssetPerformance | null;
+        const totalStreams = similarAssets?.reduce((sum, a) => {
+          const perf = a?.performance as AssetPerformance | null;
           return sum + (perf?.streamingConversions ?? 0);
         }, 0);
 
@@ -345,17 +345,17 @@ class OrganicCompoundingService {
         avgStreams = 50;
       }
 
-      const _creationCost = candidate?.creationCostHours * HOURLY_RATE_ESTIMATE;
-      const _totalCost = creationCost + candidate?.distributionCost;
+      const creationCost = candidate?.creationCostHours * HOURLY_RATE_ESTIMATE;
+      const totalCost = creationCost + candidate?.distributionCost;
 
-      const _expectedRevenue = avgRevenue * 1.2;
-      const _effectiveRoi =
+      const expectedRevenue = avgRevenue * 1.2;
+      const effectiveRoi =
         totalCost > 0 ? (expectedRevenue - totalCost) / totalCost : 0;
 
-      const _avgChannelLtv =
+      const avgChannelLtv =
         channels?.length > 0
           ? channels?.reduce((sum, c) => {
-              const _hist =
+              const hist =
                 c?.historicalPerformance as HistoricalPerformance | null;
               return sum + (hist?.avgLtvOfUsers ?? 5);
             }, 0) / channels?.length
@@ -377,16 +377,16 @@ class OrganicCompoundingService {
     expectedRoi: { effectiveRoi: number; streams: number; ltv: number },
   ): number {
     try {
-      const _roiScore = Math?.min(expectedRoi?.effectiveRoi / 2, 1);
+      const roiScore = Math?.min(expectedRoi?.effectiveRoi / 2, 1);
 
-      const _timeEfficiency =
+      const timeEfficiency =
         candidate?.creationCostHours > 0
           ? Math?.min(expectedRoi?.streams / candidate?.creationCostHours / 20, 1)
           : 0;
 
-      const _ltvScore = Math?.min(expectedRoi?.ltv / 20, 1);
+      const ltvScore = Math?.min(expectedRoi?.ltv / 20, 1);
 
-      const _efficiencyScore =
+      const efficiencyScore =
         roiScore * 0.5 + timeEfficiency * 0.3 + ltvScore * 0.2;
 
       return Math?.max(0, Math?.min(1, efficiencyScore));
@@ -401,20 +401,20 @@ class OrganicCompoundingService {
     timeBudgetHours: number,
   ): ScoredCandidate[] {
     try {
-      const _numExplore = Math?.floor(candidates?.length * EXPLORE_RATIO);
-      const _numExploit = candidates?.length - numExplore;
+      const numExplore = Math?.floor(candidates?.length * EXPLORE_RATIO);
+      const numExploit = candidates?.length - numExplore;
 
-      const _sortedByEfficiency = [...candidates].sort(
+      const sortedByEfficiency = [...candidates].sort(
         (a, b) => b?.efficiencyScore - a?.efficiencyScore,
       );
-      const _exploitCandidates = sortedByEfficiency?.slice(0, numExploit);
+      const exploitCandidates = sortedByEfficiency?.slice(0, numExploit);
 
-      const _exploreCandidates = sortedByEfficiency
+      const exploreCandidates = sortedByEfficiency
         .slice(numExploit)
         .sort(() => Math?.random() - 0.5)
         .slice(0, numExplore);
 
-      const _allCandidates = [...exploitCandidates, ...exploreCandidates].sort(
+      const allCandidates = [...exploitCandidates, ...exploreCandidates].sort(
         (a, b) => b?.efficiencyScore - a?.efficiencyScore,
       );
 
@@ -440,10 +440,10 @@ class OrganicCompoundingService {
     channels: OrganicChannel[],
   ): OrganicChannel[] {
     try {
-      const _sortedChannels = [...channels].sort((a, b) => {
-        const _scoreA =
+      const sortedChannels = [...channels].sort((a, b) => {
+        const scoreA =
           (a?.efficiencyScore ?? 0) * (a?.audienceQualityScore ?? 0.5);
-        const _scoreB =
+        const scoreB =
           (b?.efficiencyScore ?? 0) * (b?.audienceQualityScore ?? 0.5);
         return scoreB - scoreA;
       });
@@ -469,21 +469,21 @@ class OrganicCompoundingService {
 
   calculateDecay(asset: OrganicAsset): number {
     try {
-      const _decayCurve = asset?.decayCurve as DecayCurve | null;
+      const decayCurve = asset?.decayCurve as DecayCurve | null;
       if (!decayCurve) return 1;
 
-      const _halfLifeDays = decayCurve?.halfLifeDays || 90;
-      const _stabilityScore = decayCurve?.stabilityScore || 0.5;
+      const halfLifeDays = decayCurve?.halfLifeDays || 90;
+      const stabilityScore = decayCurve?.stabilityScore || 0.5;
 
-      const _createdAt = asset?.createdAt
+      const createdAt = asset?.createdAt
         ? new Date(asset?.createdAt)
         : new Date();
-      const _ageInDays =
+      const ageInDays =
         (Date?.now() - createdAt?.getTime()) / (1000 * 60 * 60 * 24);
 
-      const _decayFactor = Math?.pow(0.5, ageInDays / halfLifeDays);
+      const decayFactor = Math?.pow(0.5, ageInDays / halfLifeDays);
 
-      const _adjustedDecay = (decayFactor * (1 + stabilityScore)) / 2;
+      const adjustedDecay = (decayFactor * (1 + stabilityScore)) / 2;
 
       return Math?.max(0.1, Math?.min(1, adjustedDecay));
     } catch (error) {
@@ -503,25 +503,25 @@ class OrganicCompoundingService {
     });
 
     try {
-      const _assets = await this?.getAssets(userId);
-      const _channels = await this?.getChannels(userId);
+      const assets = await this?.getAssets(userId);
+      const channels = await this?.getChannels(userId);
 
       logger?.info(
         `Loaded ${assets?.length} assets and ${channels?.length} channels`,
       );
 
       for (const asset of assets) {
-        const _roi = await this?.computeOrganicRoi(asset);
+        const roi = await this?.computeOrganicRoi(asset);
         await this?.saveRoiSnapshot(userId, asset?.id, roi);
         await this?.updateLifetimeStats(userId, asset?.id);
       }
 
       for (const channel of channels) {
-        const _efficiency = this?.computeChannelEfficiency(channel, assets);
+        const efficiency = this?.computeChannelEfficiency(channel, assets);
         await this?.updateChannelEfficiency(channel?.id, efficiency);
       }
 
-      const _candidateAssets = this?.proposeCandidateAssets(
+      const candidateAssets = this?.proposeCandidateAssets(
         userId,
         assets,
         channels,
@@ -529,38 +529,38 @@ class OrganicCompoundingService {
 
       const scoredCandidates: ScoredCandidate[] = [];
       for (const cand of candidateAssets) {
-        const _expectedRoi = this?.estimateFutureRoi(cand, assets, channels);
-        const _efficiencyScore = this?.computeEfficiencyScore(cand, expectedRoi);
+        const expectedRoi = this?.estimateFutureRoi(cand, assets, channels);
+        const efficiencyScore = this?.computeEfficiencyScore(cand, expectedRoi);
 
         scoredCandidates?.push({
-          assetId: cand?.assetId,
-          expectedRoi: expectedRoi?.effectiveRoi,
-          expectedStreams: expectedRoi?.streams,
-          expectedLtv: expectedRoi?.ltv,
+          assetId: cand.assetId,
+          expectedRoi: expectedRoi.effectiveRoi,
+          expectedStreams: expectedRoi.streams,
+          expectedLtv: expectedRoi.ltv,
           efficiencyScore,
-          timeCostHours: cand?.creationCostHours,
-          type: cand?.type,
-          topic: cand?.topic,
-          intent: cand?.intent,
+          timeCostHours: cand.creationCostHours,
+          type: cand.type,
+          topic: cand.topic,
+          intent: cand.intent,
         });
       }
 
-      const _selected = this?.selectAssetsUnderBudget(
+      const selected = this?.selectAssetsUnderBudget(
         scoredCandidates,
         timeBudgetHours,
       );
 
       const placements: Placement[] = [];
       for (const sel of selected) {
-        const _bestChannels = this?.selectBestChannelsForAsset(
+        const bestChannels = this?.selectBestChannelsForAsset(
           sel?.assetId,
           channels,
         );
         for (const ch of bestChannels) {
           placements?.push({
-            assetId: sel?.assetId,
-            channelId: ch?.id,
-            expectedReach: ch?.estimatedMonthlyReach ?? 0,
+            assetId: sel.assetId,
+            channelId: ch.id,
+            expectedReach: ch.estimatedMonthlyReach ?? 0,
           });
         }
       }
@@ -569,17 +569,17 @@ class OrganicCompoundingService {
         weekStart,
         timeBudgetHours,
         candidateAssets: scoredCandidates,
-        selectedAssets: selected?.map((s) => ({
-          assetId: s?.assetId,
-          reason: this?.labelSelectionReason(s),
+        selectedAssets: selected.map((s) => ({
+          assetId: s.assetId,
+          reason: this.labelSelectionReason(s),
         })),
         placements,
       };
 
       logger?.info(`Weekly organic loop completed for user ${userId}`, {
-        candidatesGenerated: scoredCandidates?.length,
-        assetsSelected: selected?.length,
-        placementsCreated: placements?.length,
+        candidatesGenerated: scoredCandidates.length,
+        assetsSelected: selected.length,
+        placementsCreated: placements.length,
       });
 
       return weeklyState;
@@ -726,12 +726,12 @@ class OrganicCompoundingService {
         .values({
           userId,
           assetId,
-          revenueOverPeriod: roiData?.revenueOverPeriod,
-          creationCost: roiData?.creationCost,
-          distributionCost: roiData?.distributionCost,
-          effectiveRoi: roiData?.effectiveRoi,
-          periodStart: roiData?.periodStart,
-          periodEnd: roiData?.periodEnd,
+          revenueOverPeriod: roiData.revenueOverPeriod,
+          creationCost: roiData.creationCost,
+          distributionCost: roiData.distributionCost,
+          effectiveRoi: roiData.effectiveRoi,
+          periodStart: roiData.periodStart,
+          periodEnd: roiData.periodEnd,
         })
         .returning();
 
@@ -768,24 +768,24 @@ class OrganicCompoundingService {
     assetId: string,
   ): Promise<OrganicAssetLifetimeRecord | null> {
     try {
-      const _asset = await this?.getAssetById(assetId);
+      const asset = await this?.getAssetById(assetId);
       if (!asset) return null;
 
-      const _roiHistory = await this?.getRoiHistory(userId, assetId);
+      const roiHistory = await this?.getRoiHistory(userId, assetId);
 
-      const _lifetimeRevenue = roiHistory?.reduce(
+      const lifetimeRevenue = roiHistory?.reduce(
         (sum, r) => sum + (r?.revenueOverPeriod ?? 0),
         0,
       );
-      const _performance = asset?.performance as AssetPerformance | null;
-      const _lifetimeStreams = performance?.streamingConversions ?? 0;
+      const performance = asset?.performance as AssetPerformance | null;
+      const lifetimeStreams = performance?.streamingConversions ?? 0;
 
-      const _totalCreationCostHours = asset?.creationCostHours ?? 0;
-      const _totalDistributionCost = asset?.distributionCost ?? 0;
-      const _totalCost =
+      const totalCreationCostHours = asset?.creationCostHours ?? 0;
+      const totalDistributionCost = asset?.distributionCost ?? 0;
+      const totalCost =
         totalCreationCostHours * HOURLY_RATE_ESTIMATE + totalDistributionCost;
 
-      const _effectiveRoi =
+      const effectiveRoi =
         totalCost > 0 ? (lifetimeRevenue - totalCost) / totalCost : 0;
 
       const [existing] = await db
@@ -825,7 +825,7 @@ class OrganicCompoundingService {
             totalCreationCostHours,
             totalDistributionCost,
             effectiveRoi,
-            firstSeen: asset?.createdAt ?? new Date(),
+            firstSeen: asset.createdAt ?? new Date(),
             lastSeen: new Date(),
           })
           .returning();
@@ -866,12 +866,12 @@ class OrganicCompoundingService {
     limit: number = 10,
   ): Promise<OrganicAsset[]> {
     try {
-      const _assets = await this?.getAssets(userId);
+      const assets = await this?.getAssets(userId);
 
       return assets
         .sort((a, b) => {
-          const _roiA = this?.calculateQuickRoi(a);
-          const _roiB = this?.calculateQuickRoi(b);
+          const roiA = this?.calculateQuickRoi(a);
+          const roiB = this?.calculateQuickRoi(b);
           return roiB - roiA;
         })
         .slice(0, limit);
@@ -882,9 +882,9 @@ class OrganicCompoundingService {
   }
 
   private calculateQuickRoi(asset: OrganicAsset): number {
-    const _performance = asset?.performance as AssetPerformance | null;
-    const _revenue = performance?.revenueGenerated ?? 0;
-    const _cost =
+    const performance = asset?.performance as AssetPerformance | null;
+    const revenue = performance?.revenueGenerated ?? 0;
+    const cost =
       (asset?.creationCostHours ?? 0) * HOURLY_RATE_ESTIMATE +
       (asset?.distributionCost ?? 0);
     return cost > 0 ? (revenue - cost) / cost : 0;
@@ -895,10 +895,10 @@ class OrganicCompoundingService {
     paidRoiBaseline: number = 0.5,
   ): Promise<OrganicAsset[]> {
     try {
-      const _assets = await this?.getAssets(userId);
+      const assets = await this?.getAssets(userId);
 
       return assets?.filter((asset) => {
-        const _roi = this?.calculateQuickRoi(asset);
+        const roi = this?.calculateQuickRoi(asset);
         return roi > paidRoiBaseline;
       });
     } catch (error) {
@@ -917,8 +917,8 @@ class OrganicCompoundingService {
     topChannels: { channelId: string; name: string; efficiency: number }[];
   }> {
     try {
-      const _assets = await this?.getAssets(userId);
-      const _channels = await this?.getChannels(userId);
+      const assets = await this?.getAssets(userId);
+      const channels = await this?.getChannels(userId);
 
       let totalRevenue = 0;
       let totalCost = 0;
@@ -926,12 +926,12 @@ class OrganicCompoundingService {
       let roiSum = 0;
 
       for (const asset of assets) {
-        const _perf = asset?.performance as AssetPerformance | null;
-        const _revenue = perf?.revenueGenerated ?? 0;
-        const _cost =
+        const perf = asset?.performance as AssetPerformance | null;
+        const revenue = perf?.revenueGenerated ?? 0;
+        const cost =
           (asset?.creationCostHours ?? 0) * HOURLY_RATE_ESTIMATE +
           (asset?.distributionCost ?? 0);
-        const _roi = cost > 0 ? (revenue - cost) / cost : 0;
+        const roi = cost > 0 ? (revenue - cost) / cost : 0;
 
         totalRevenue += revenue;
         totalCost += cost;
@@ -942,21 +942,21 @@ class OrganicCompoundingService {
         }
       }
 
-      const _overallRoi =
+      const overallRoi =
         totalCost > 0 ? (totalRevenue - totalCost) / totalCost : 0;
-      const _avgRoiPerAsset = assets?.length > 0 ? roiSum / assets?.length : 0;
+      const avgRoiPerAsset = assets?.length > 0 ? roiSum / assets?.length : 0;
 
-      const _topChannels = channels
+      const topChannels = channels
         .sort((a, b) => (b?.efficiencyScore ?? 0) - (a?.efficiencyScore ?? 0))
         .slice(0, 5)
         .map((c) => ({
-          channelId: c?.id,
-          name: c?.name,
-          efficiency: c?.efficiencyScore ?? 0,
+          channelId: c.id,
+          name: c.name,
+          efficiency: c.efficiencyScore ?? 0,
         }));
 
       return {
-        totalAssets: assets?.length,
+        totalAssets: assets.length,
         totalRevenue,
         totalCost,
         overallRoi,
@@ -971,4 +971,4 @@ class OrganicCompoundingService {
   }
 }
 
-export const _organicCompoundingService = new OrganicCompoundingService();
+export const organicCompoundingService = new OrganicCompoundingService();

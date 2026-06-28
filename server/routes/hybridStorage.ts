@@ -15,8 +15,8 @@ import { createHardenedUpload } from "../middleware/uploadHandler.js";
 import { logger } from "../logger.js";
 import { requireAuth } from "../middleware/auth.js";
 
-const _router = Router();
-const _upload = createHardenedUpload({
+const router = Router();
+const upload = createHardenedUpload({
   maxFileSize: 100 * 1024 * 1024, // 100MB max
   maxFiles: 1,
   label: "hybrid storage file",
@@ -36,10 +36,10 @@ router?.post(
         return res?.status(400).json({ error: "No file provided" });
       }
 
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { folder, forceLocation, forceTier } = req?.body;
 
-      const _result = await hybridStorageService?.upload(
+      const result = await hybridStorageService?.upload(
         userId,
         req?.file.originalname,
         req?.file.buffer,
@@ -71,10 +71,10 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _fileKey = decodeURIComponent(req?.params.fileKey);
+      const userId = req?.user!.id;
+      const fileKey = decodeURIComponent(req?.params.fileKey);
 
-      const _metadata = hybridStorageService?.getMetadata(fileKey);
+      const metadata = hybridStorageService?.getMetadata(fileKey);
       if (!metadata) {
         return res?.status(404).json({ error: "File not found" });
       }
@@ -83,12 +83,12 @@ router?.get(
         return res?.status(403).json({ error: "Access denied" });
       }
 
-      const _data = await hybridStorageService?.read(userId, fileKey);
+      const data = await hybridStorageService?.read(userId, fileKey);
 
       res?.setHeader("Content-Type", metadata?.mimeType);
       res?.setHeader(
         "Content-Disposition",
-        `inline; filename="${metadata?.originalName}"`,
+        `inline; filename="${metadata.originalName}"`,
       );
       res?.setHeader("Content-Length", data?.length);
       res?.setHeader("X-Storage-Tier", metadata?.tier);
@@ -111,10 +111,10 @@ router?.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _fileKey = decodeURIComponent(req?.params.fileKey);
+      const userId = req?.user!.id;
+      const fileKey = decodeURIComponent(req?.params.fileKey);
 
-      const _metadata = hybridStorageService?.getMetadata(fileKey);
+      const metadata = hybridStorageService?.getMetadata(fileKey);
       if (!metadata) {
         return res?.status(404).json({ error: "File not found" });
       }
@@ -123,7 +123,7 @@ router?.delete(
         return res?.status(403).json({ error: "Access denied" });
       }
 
-      const _success = await hybridStorageService?.delete(userId, fileKey);
+      const success = await hybridStorageService?.delete(userId, fileKey);
 
       if (success) {
         res?.json({ success: true, message: "File deleted" });
@@ -143,10 +143,10 @@ router?.delete(
  */
 router?.get("/files", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { tier, location, folder } = req?.query;
 
-    const _files = hybridStorageService?.listFiles(userId, {
+    const files = hybridStorageService?.listFiles(userId, {
       tier: tier as StorageTier | undefined,
       location: location as StorageLocation | undefined,
       folder: folder as string | undefined,
@@ -168,10 +168,10 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _fileKey = decodeURIComponent(req?.params.fileKey);
+      const userId = req?.user!.id;
+      const fileKey = decodeURIComponent(req?.params.fileKey);
 
-      const _metadata = hybridStorageService?.getMetadata(fileKey);
+      const metadata = hybridStorageService?.getMetadata(fileKey);
       if (!metadata) {
         return res?.status(404).json({ error: "File not found" });
       }
@@ -194,14 +194,14 @@ router?.get(
  */
 router?.post("/migrate", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { fileKey, targetTier, targetLocation } = req?.body;
 
     if (!fileKey || !targetTier || !targetLocation) {
       return res?.status(400).json({ error: "Missing required fields" });
     }
 
-    const _metadata = hybridStorageService?.getMetadata(fileKey);
+    const metadata = hybridStorageService?.getMetadata(fileKey);
     if (!metadata) {
       return res?.status(404).json({ error: "File not found" });
     }
@@ -210,7 +210,7 @@ router?.post("/migrate", requireAuth, async (req: Request, res: Response) => {
       return res?.status(403).json({ error: "Access denied" });
     }
 
-    const _success = await hybridStorageService?.migrateFile(
+    const success = await hybridStorageService?.migrateFile(
       userId,
       fileKey,
       targetTier as StorageTier,
@@ -218,7 +218,7 @@ router?.post("/migrate", requireAuth, async (req: Request, res: Response) => {
     );
 
     if (success) {
-      const _newMetadata = hybridStorageService?.getMetadata(fileKey);
+      const newMetadata = hybridStorageService?.getMetadata(fileKey);
       res?.json({ success: true, metadata: newMetadata });
     } else {
       res?.status(500).json({ error: "Migration failed" });
@@ -235,8 +235,8 @@ router?.post("/migrate", requireAuth, async (req: Request, res: Response) => {
  */
 router?.get("/analytics", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
-    const _analytics = await hybridStorageService?.getAnalytics(userId);
+    const userId = req?.user!.id;
+    const analytics = await hybridStorageService?.getAnalytics(userId);
 
     res?.json({ analytics });
   } catch (error) {
@@ -251,8 +251,8 @@ router?.get("/analytics", requireAuth, async (req: Request, res: Response) => {
  */
 router?.post("/optimize", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
-    const _result = await hybridStorageService?.optimizeStorage(userId);
+    const userId = req?.user!.id;
+    const result = await hybridStorageService?.optimizeStorage(userId);
 
     res?.json({ success: true, ...result });
   } catch (error) {
@@ -267,10 +267,10 @@ router?.post("/optimize", requireAuth, async (req: Request, res: Response) => {
  */
 router?.post("/cleanup", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { olderThanDays } = req?.body;
 
-    const _result = await hybridStorageService?.cleanup(userId, {
+    const result = await hybridStorageService?.cleanup(userId, {
       olderThanDays: olderThanDays ? parseInt(olderThanDays, 10) : undefined,
     });
 
@@ -290,10 +290,10 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
-      const _fileKey = decodeURIComponent(req?.params.fileKey);
+      const userId = req?.user!.id;
+      const fileKey = decodeURIComponent(req?.params.fileKey);
 
-      const _metadata = hybridStorageService?.getMetadata(fileKey);
+      const metadata = hybridStorageService?.getMetadata(fileKey);
       if (!metadata) {
         return res?.status(404).json({ error: "File not found" });
       }
@@ -302,7 +302,7 @@ router?.get(
         return res?.status(403).json({ error: "Access denied" });
       }
 
-      const _url = await hybridStorageService?.getDownloadUrl(userId, fileKey);
+      const url = await hybridStorageService?.getDownloadUrl(userId, fileKey);
 
       res?.json({ url });
     } catch (error) {

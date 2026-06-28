@@ -1,17 +1,4 @@
-import {
-  AudioBuffer,
-  DSPContext,
-  createBuffer,
-  BiquadFilter,
-  OnePoleFilter,
-  DelayLine,
-  LFO,
-  Oscillator,
-  ADSR,
-  msToSamples,
-  softClip,
-  hardClip,
-} from "../core";
+import { AudioBuffer, DSPContext, createBuffer, BiquadFilter, OnePoleFilter, DelayLine, LFO, Oscillator, ADSR, msToSamples, softClip, hardClip } from "../core";
 
 export interface SynthesizerEngine {
   noteOn(frequency: number, velocity: number, context: DSPContext): void;
@@ -75,14 +62,14 @@ export class ElectricBassSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _ampEnvValue = this?.ampEnvelope.process();
+      const envValue = this?.envelope.process();
+      const ampEnvValue = this?.ampEnvelope.process();
 
       let sample = 0;
-      const _harmonicAmps = [1.0, 0.5, 0.25, 0.12, 0.06, 0.03];
+      const harmonicAmps = [1.0, 0.5, 0.25, 0.12, 0.06, 0.03];
       for (let h = 0; h < 6; h++) {
         this?.oscillators[h].setFrequency(
           this?.frequency * (h + 1),
@@ -91,7 +78,7 @@ export class ElectricBassSynth implements SynthesizerEngine {
         sample += this?.oscillators[h].sine() * harmonicAmps[h];
       }
 
-      const _fingerNoise = (Math?.random() * 2 - 1) * 0.02 * ampEnvValue;
+      const fingerNoise = (Math?.random() * 2 - 1) * 0.02 * ampEnvValue;
       sample += fingerNoise;
 
       sample = this?.hpFilter.process(sample);
@@ -102,8 +89,8 @@ export class ElectricBassSynth implements SynthesizerEngine {
       sample *= envValue * this?.velocity;
       sample = softClip(sample, 0.9);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -169,19 +156,19 @@ export class SynthBassSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _filterEnvValue = this?.filterEnvelope.process();
+      const envValue = this?.envelope.process();
+      const filterEnvValue = this?.filterEnvelope.process();
 
-      const _saw1 = this?.oscillator1.sawBandLimited(16);
-      const _saw2 = this?.oscillator2.sawBandLimited(16);
-      const _sub = this?.subOsc.sine();
+      const saw1 = this?.oscillator1.sawBandLimited(16);
+      const saw2 = this?.oscillator2.sawBandLimited(16);
+      const sub = this?.subOsc.sine();
 
       let sample = saw1 * 0.4 + saw2 * 0.3 + sub * 0.3;
 
-      const _filterFreq = 200 + filterEnvValue * 2500 + this?.velocity * 1500;
+      const filterFreq = 200 + filterEnvValue * 2500 + this?.velocity * 1500;
       this?.lpFilter.setLowpass(
         filterFreq,
         2 + filterEnvValue * 4,
@@ -196,8 +183,8 @@ export class SynthBassSynth implements SynthesizerEngine {
       sample *= envValue * this?.velocity;
       sample = softClip(sample, 0.92);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -279,32 +266,32 @@ export class AcousticBassSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _bodyEnvValue = this?.bodyEnvelope.process();
+      const envValue = this?.envelope.process();
+      const bodyEnvValue = this?.bodyEnvelope.process();
 
       let sample = 0;
-      const _harmonicDecay = [1.0, 0.6, 0.35, 0.2, 0.12, 0.07, 0.04, 0.02];
+      const harmonicDecay = [1.0, 0.6, 0.35, 0.2, 0.12, 0.07, 0.04, 0.02];
       for (let h = 0; h < 8; h++) {
         this?.oscillators[h].setFrequency(
           this?.frequency * (h + 1),
           this?.sampleRate,
         );
-        const _sawComp = this?.oscillators[h].sawBandLimited(12) * 0.3;
-        const _sineComp = this?.oscillators[h].sine() * 0.7;
+        const sawComp = this?.oscillators[h].sawBandLimited(12) * 0.3;
+        const sineComp = this?.oscillators[h].sine() * 0.7;
         sample += (sawComp + sineComp) * harmonicDecay[h];
       }
 
-      const _bodyResonance =
-        Math?.sin((2 * Math?.PI * 100 * i) / this?.sampleRate) *
+      const bodyResonance =
+        Math?.sin((2 * Math.PI * 100 * i) / this?.sampleRate) *
         bodyEnvValue *
         0.1;
       sample += bodyResonance;
 
       this?.stringDelay.write(sample);
-      const _delayedSample = this?.stringDelay.readInterpolated(
+      const delayedSample = this?.stringDelay.readInterpolated(
         Math?.floor(this?.sampleRate / this?.frequency),
       );
       sample = sample * 0.7 + delayedSample * 0.3;
@@ -317,8 +304,8 @@ export class AcousticBassSynth implements SynthesizerEngine {
       sample *= envValue * this?.velocity;
       sample = softClip(sample, 0.88);
 
-      output?.samples[0][i] = sample * 0.98;
-      output?.samples[1][i] = sample * 1.02;
+      output.samples[0][i] = sample * 0.98;
+      output.samples[1][i] = sample * 1.02;
     }
 
     return output;
@@ -376,13 +363,13 @@ export class SubBassSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
+      const envValue = this?.envelope.process();
 
-      const _mainSine = this?.oscillator.sine();
-      const _subSine = this?.subOsc.sine();
+      const mainSine = this?.oscillator.sine();
+      const subSine = this?.subOsc.sine();
 
       let sample = mainSine * 0.6 + subSine * 0.4;
 
@@ -392,8 +379,8 @@ export class SubBassSynth implements SynthesizerEngine {
       sample *= envValue * this?.velocity * 1.2;
       sample = softClip(sample, 0.98);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -464,22 +451,22 @@ export class WobbleBassSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _filterEnvValue = this?.filterEnvelope.process();
+      const envValue = this?.envelope.process();
+      const filterEnvValue = this?.filterEnvelope.process();
 
-      const _wobble = (this?.wobbleLFO.sine() + 1) * 0.5;
+      const wobble = (this?.wobbleLFO.sine() + 1) * 0.5;
 
-      const _saw1 = this?.oscillator1.sawBandLimited(16);
-      const _saw2 = this?.oscillator2.sawBandLimited(16);
-      const _square1 = this?.oscillator1.squareBandLimited(12);
-      const _sub = this?.subOsc.sine();
+      const saw1 = this?.oscillator1.sawBandLimited(16);
+      const saw2 = this?.oscillator2.sawBandLimited(16);
+      const square1 = this?.oscillator1.squareBandLimited(12);
+      const sub = this?.subOsc.sine();
 
       let sample = saw1 * 0.35 + saw2 * 0.25 + square1 * 0.15 + sub * 0.25;
 
-      const _filterFreq = 100 + wobble * 3500 + filterEnvValue * 1500;
+      const filterFreq = 100 + wobble * 3500 + filterEnvValue * 1500;
       this?.lpFilter.setLowpass(filterFreq, 4 + wobble * 6, this?.sampleRate);
       this?.resonanceFilter.setPeaking(filterFreq * 0.7, 4, 6, this?.sampleRate);
 
@@ -490,8 +477,8 @@ export class WobbleBassSynth implements SynthesizerEngine {
       sample *= envValue * this?.velocity;
       sample = softClip(sample * 1.3, 0.95);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -579,15 +566,15 @@ export class FunkBassSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _slapValue = this?.slapEnvelope.process();
-      const _popValue = this?.popEnvelope.process();
+      const envValue = this?.envelope.process();
+      const slapValue = this?.slapEnvelope.process();
+      const popValue = this?.popEnvelope.process();
 
       let sample = 0;
-      const _harmonicAmps = [
+      const harmonicAmps = [
         1.0, 0.7, 0.45, 0.3, 0.2, 0.15, 0.1, 0.07, 0.04, 0.02,
       ];
       for (let h = 0; h < 10; h++) {
@@ -598,9 +585,9 @@ export class FunkBassSynth implements SynthesizerEngine {
         sample += this?.oscillators[h].sine() * harmonicAmps[h];
       }
 
-      const _slapClick = (Math?.random() * 2 - 1) * slapValue * 0.8;
-      const _popHarmonic =
-        Math?.sin((2 * Math?.PI * this?.frequency * 4 * i) / this?.sampleRate) *
+      const slapClick = (Math?.random() * 2 - 1) * slapValue * 0.8;
+      const popHarmonic =
+        Math?.sin((2 * Math.PI * this?.frequency * 4 * i) / this?.sampleRate) *
         popValue *
         0.5;
 
@@ -614,8 +601,8 @@ export class FunkBassSynth implements SynthesizerEngine {
       sample *= envValue * this?.velocity;
       sample = softClip(sample * 1.2, 0.92);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -648,7 +635,7 @@ export class ReesBassSynth implements SynthesizerEngine {
   constructor() {
     for (let i = 0; i < 6; i++) {
       this?.oscillators.push(new Oscillator());
-      this?.phaseOffsets.push(Math?.random() * Math?.PI * 2);
+      this?.phaseOffsets.push(Math?.random() * Math.PI * 2);
     }
     this.envelope = new ADSR(0.001, 0.15, 0.85, 0.3, 44100);
     this.filterEnvelope = new ADSR(0.001, 0.1, 0.4, 0.2, 44100);
@@ -661,9 +648,9 @@ export class ReesBassSynth implements SynthesizerEngine {
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
-    const _detuneAmounts = [-0.12, -0.06, -0.02, 0.02, 0.06, 0.12];
+    const detuneAmounts = [-0.12, -0.06, -0.02, 0.02, 0.06, 0.12];
     for (let i = 0; i < 6; i++) {
-      const _detunedFreq = frequency * (1 + detuneAmounts[i] * 0.01);
+      const detunedFreq = frequency * (1 + detuneAmounts[i] * 0.01);
       this?.oscillators[i].setFrequency(detunedFreq, context?.sampleRate);
     }
 
@@ -681,18 +668,18 @@ export class ReesBassSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _filterEnvValue = this?.filterEnvelope.process();
+      const envValue = this?.envelope.process();
+      const filterEnvValue = this?.filterEnvelope.process();
 
       let sample = 0;
       for (let o = 0; o < 6; o++) {
         sample += this?.oscillators[o].sawBandLimited(14) / 6;
       }
 
-      const _filterFreq = 150 + filterEnvValue * 2000 + this?.velocity * 1500;
+      const filterFreq = 150 + filterEnvValue * 2000 + this?.velocity * 1500;
       this?.lpFilter.setLowpass(
         filterFreq,
         2 + filterEnvValue * 3,
@@ -705,9 +692,9 @@ export class ReesBassSynth implements SynthesizerEngine {
       sample *= envValue * this?.velocity;
       sample = softClip(sample, 0.9);
 
-      const _stereoPhase = Math?.sin(i * 0.0005) * 0.1;
-      output?.samples[0][i] = sample * (1 + stereoPhase);
-      output?.samples[1][i] = sample * (1 - stereoPhase);
+      const stereoPhase = Math?.sin(i * 0.0005) * 0.1;
+      output.samples[0][i] = sample * (1 + stereoPhase);
+      output.samples[1][i] = sample * (1 - stereoPhase);
     }
 
     return output;
@@ -790,17 +777,17 @@ export class FMBassSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _modEnvValue = this?.modEnvelope.process();
+      const envValue = this?.envelope.process();
+      const modEnvValue = this?.modEnvelope.process();
 
-      const _mod1 = this?.modulatorOsc1.sine() * this?.modIndex * modEnvValue;
-      const _mod2 =
+      const mod1 = this?.modulatorOsc1.sine() * this?.modIndex * modEnvValue;
+      const mod2 =
         this?.modulatorOsc2.sine() * this?.modIndex * 0.5 * modEnvValue;
 
-      const _carrierPhase = (2 * Math?.PI * this?.frequency * i) / this?.sampleRate;
+      const carrierPhase = (2 * Math.PI * this?.frequency * i) / this?.sampleRate;
       let sample = Math?.sin(carrierPhase + mod1 + mod2);
 
       sample = this?.lpFilter.process(sample);
@@ -809,8 +796,8 @@ export class FMBassSynth implements SynthesizerEngine {
       sample *= envValue * this?.velocity;
       sample = softClip(sample, 0.9);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -888,19 +875,19 @@ export class PluckBassSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _filterEnvValue = this?.filterEnvelope.process();
+      const envValue = this?.envelope.process();
+      const filterEnvValue = this?.filterEnvelope.process();
 
-      const _saw = this?.oscillator.sawBandLimited(12);
-      const _square = this?.oscillator.squareBandLimited(10);
-      const _sub = this?.subOsc.sine();
+      const saw = this?.oscillator.sawBandLimited(12);
+      const square = this?.oscillator.squareBandLimited(10);
+      const sub = this?.subOsc.sine();
 
       let sample = saw * 0.4 + square * 0.3 + sub * 0.3;
 
-      const _filterFreq = 300 + filterEnvValue * 4000 + this?.velocity * 2000;
+      const filterFreq = 300 + filterEnvValue * 4000 + this?.velocity * 2000;
       this?.lpFilter.setLowpass(
         filterFreq,
         3 + filterEnvValue * 5,
@@ -912,7 +899,7 @@ export class PluckBassSynth implements SynthesizerEngine {
       sample = this?.pluckFilter.process(sample);
 
       this?.stringDelay.write(sample * 0.3);
-      const _delaySample = this?.stringDelay.readInterpolated(
+      const delaySample = this?.stringDelay.readInterpolated(
         msToSamples(5, this?.sampleRate),
       );
       sample = sample * 0.8 + delaySample * 0.2;
@@ -920,8 +907,8 @@ export class PluckBassSynth implements SynthesizerEngine {
       sample *= envValue * this?.velocity;
       sample = softClip(sample, 0.9);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -1003,31 +990,31 @@ export class GrowlBassSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _filterEnvValue = this?.filterEnvelope.process();
+      const envValue = this?.envelope.process();
+      const filterEnvValue = this?.filterEnvelope.process();
 
-      const _growl = this?.growlLFO.sine();
-      const _formantMod = (this?.formantLFO.sine() + 1) * 0.5;
+      const growl = this?.growlLFO.sine();
+      const formantMod = (this?.formantLFO.sine() + 1) * 0.5;
 
-      const _saw1 = this?.oscillator1.sawBandLimited(16);
-      const _saw2 = this?.oscillator2.sawBandLimited(16);
-      const _saw3 = this?.oscillator3.sawBandLimited(16);
-      const _sub = this?.subOsc.sine();
+      const saw1 = this?.oscillator1.sawBandLimited(16);
+      const saw2 = this?.oscillator2.sawBandLimited(16);
+      const saw3 = this?.oscillator3.sawBandLimited(16);
+      const sub = this?.subOsc.sine();
 
       let sample = ((saw1 + saw2 + saw3) / 3) * 0.7 + sub * 0.3;
 
-      const _filterFreq = 200 + filterEnvValue * 2500 + growl * 500;
+      const filterFreq = 200 + filterEnvValue * 2500 + growl * 500;
       this?.lpFilter.setLowpass(
         filterFreq,
         4 + filterEnvValue * 4,
         this?.sampleRate,
       );
 
-      const _formantFreq1 = 400 + formantMod * 400;
-      const _formantFreq2 = 1200 + formantMod * 600;
+      const formantFreq1 = 400 + formantMod * 400;
+      const formantFreq2 = 1200 + formantMod * 600;
       this?.formant1.setPeaking(formantFreq1, 4, 6, this?.sampleRate);
       this?.formant2.setPeaking(formantFreq2, 3, 4, this?.sampleRate);
 
@@ -1042,9 +1029,9 @@ export class GrowlBassSynth implements SynthesizerEngine {
       sample *= envValue * this?.velocity;
       sample = softClip(sample, 0.95);
 
-      const _stereoGrowl = growl * 0.05;
-      output?.samples[0][i] = sample * (1 + stereoGrowl);
-      output?.samples[1][i] = sample * (1 - stereoGrowl);
+      const stereoGrowl = growl * 0.05;
+      output.samples[0][i] = sample * (1 + stereoGrowl);
+      output.samples[1][i] = sample * (1 - stereoGrowl);
     }
 
     return output;

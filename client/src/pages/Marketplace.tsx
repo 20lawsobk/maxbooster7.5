@@ -75,80 +75,8 @@ import type {
   LicenseTierInfo,
 } from "@/components/marketplace/MarketplaceBeatCard";
 import type { MerchItem, MerchOrder } from "@shared/schema";
-import {
-  BeatGridSkeleton,
-  PurchaseHistorySkeleton,
-  NoBeatsFoundEmptyState,
-  EmptyCartState,
-  NoPurchasesState,
-  NoMyBeatsState,
-  NoEscrowTransactionsState,
-  NoContractsState,
-  NoCollaborationsState,
-  FilterResultsHeader,
-} from "@/components/marketplace";
-import {
-  Music,
-  Play,
-  Pause,
-  Volume2,
-  VolumeX,
-  Share2,
-  Download,
-  Upload,
-  Plus,
-  Edit,
-  Trash2,
-  Search,
-  Grid,
-  List,
-  Star,
-  Trophy,
-  TrendingUp,
-  Users,
-  Eye,
-  DollarSign,
-  CreditCard,
-  ShoppingCart,
-  Package,
-  CheckCircle,
-  AlertCircle,
-  Clock,
-  MapPin,
-  Shield,
-  Sparkles,
-  Brain,
-  Target,
-  BarChart3,
-  PieChart,
-  Activity,
-  Loader2,
-  X,
-  Check,
-  ChevronDown,
-  UserPlus,
-  UserCheck,
-  MessageCircle,
-  Image as ImageIcon,
-  FileText,
-  FileAudio,
-  Save,
-  RefreshCw,
-  Link2,
-  Handshake,
-  FileSignature,
-  Wallet,
-  Banknote,
-  SkipBack,
-  SkipForward,
-  Layers,
-  UploadCloud,
-  FolderUp,
-  Lightbulb,
-  Percent,
-  Receipt,
-  ScrollText,
-} from "lucide-react";
+import { BeatGridSkeleton, PurchaseHistorySkeleton, NoBeatsFoundEmptyState, EmptyCartState, NoPurchasesState, NoMyBeatsState, NoEscrowTransactionsState, NoContractsState, NoCollaborationsState, FilterResultsHeader } from "@/components/marketplace";
+import { Music, Play, Pause, Volume2, VolumeX, Share2, Download, Upload, Plus, Edit, Trash2, Search, Grid, List, Star, Trophy, TrendingUp, Users, Eye, DollarSign, CreditCard, ShoppingCart, Package, CheckCircle, AlertCircle, Clock, MapPin, Shield, Sparkles, Brain, Target, BarChart3, PieChart, Activity, Loader2, X, Check, ChevronDown, UserPlus, UserCheck, MessageCircle, Image as ImageIcon, FileText, FileAudio, Save, RefreshCw, Link2, Handshake, FileSignature, Wallet, Banknote, SkipBack, SkipForward, Layers, UploadCloud, FolderUp, Lightbulb, Percent, Receipt, ScrollText } from "lucide-react";
 
 // BeatStars Clone Interfaces
 interface LicenseTier {
@@ -1119,10 +1047,11 @@ export default function Marketplace() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: producersData } = useQuery<ProducersResponse>({
-    queryKey: ["/api/marketplace/producers"],
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: producersData } =
+    useQuery<ProducersResponse>({
+      queryKey: ["/api/marketplace/producers"],
+      staleTime: 5 * 60 * 1000,
+    });
 
   const producers = producersData?.producers || [];
 
@@ -1134,11 +1063,12 @@ export default function Marketplace() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: salesAnalytics } = useQuery<SalesAnalytics>({
-    queryKey: ["/api/marketplace/sales-analytics"],
-    enabled: !!user,
-    staleTime: 5 * 60 * 1000,
-  });
+  const { data: salesAnalytics } =
+    useQuery<SalesAnalytics>({
+      queryKey: ["/api/marketplace/sales-analytics"],
+      enabled: !!user,
+      staleTime: 5 * 60 * 1000,
+    });
 
   const { data: myBeats = [], isLoading: myBeatsLoading } = useQuery<Beat[]>({
     queryKey: ["/api/marketplace/my-beats"],
@@ -1365,7 +1295,7 @@ export default function Marketplace() {
           if (Array.isArray(prev)) {
             queryClient.setQueryData(
               qk,
-              prev.map((b) => (b?.id === id ? { ...b, ...patch } : b)),
+              prev.map((b) => (b.id === id ? { ...b, ...patch } : b)),
             );
           }
         };
@@ -1381,9 +1311,9 @@ export default function Marketplace() {
       _vars: { id: string; data: FormData },
       ctx: { prevMy?: unknown; prevAll?: unknown } | undefined,
     ) => {
-      if (ctx?.prevMy !== undefined)
+      if (ctx.prevMy !== undefined)
         queryClient.setQueryData(["/api/marketplace/my-beats"], ctx.prevMy);
-      if (ctx?.prevAll !== undefined)
+      if (ctx.prevAll !== undefined)
         queryClient.setQueryData(["/api/marketplace/beats"], ctx.prevAll);
       toast({
         title: "Update Failed",
@@ -1409,7 +1339,7 @@ export default function Marketplace() {
             queryClient.setQueryData(
               key,
               prev.map((b) =>
-                b?.id === updated.id ? { ...b, ...updated } : b,
+                b.id === updated.id ? { ...b, ...updated } : b,
               ),
             );
           }
@@ -1423,7 +1353,7 @@ export default function Marketplace() {
       queryClient.invalidateQueries({ queryKey: ["/api/marketplace/beats"] });
       queryClient.invalidateQueries({
         predicate: (q) => {
-          const k = q.queryKey?.[0];
+          const k = q.queryKey[0];
           return (
             typeof k === "string" &&
             (k === "producer-beats" ||
@@ -1457,7 +1387,7 @@ export default function Marketplace() {
       queryClient.invalidateQueries({ queryKey: ["/api/marketplace/beats"] });
       queryClient.invalidateQueries({
         predicate: (q) => {
-          const k = q.queryKey?.[0];
+          const k = q.queryKey[0];
           return (
             typeof k === "string" &&
             (k === "producer-beats" ||
@@ -1662,7 +1592,7 @@ export default function Marketplace() {
       price: beat.price || 50,
       licenseType: beat.licenseType || "basic",
       description: beat.description || "",
-      tags: beat.tags?.join(", ") || "",
+      tags: beat.tags.join(", ") || "",
       coverArtFile: null,
       discountPercent: beat.discountPercent || 0,
       discountExpiresAt: beat.discountExpiresAt || "",
@@ -1949,7 +1879,7 @@ export default function Marketplace() {
       toast({
         title: "Rating Failed",
         description:
-          error?.message || "Could not submit your rating. Please try again.",
+          error.message || "Could not submit your rating. Please try again.",
         variant: "destructive",
       });
     },
@@ -2048,7 +1978,7 @@ export default function Marketplace() {
     onError: (error: Error) => {
       toast({
         title: "Update Failed",
-        description: error?.message || "Failed to update contract.",
+        description: error.message || "Failed to update contract.",
         variant: "destructive",
       });
     },
@@ -2076,7 +2006,7 @@ export default function Marketplace() {
     onError: (error: Error) => {
       toast({
         title: "Delete Failed",
-        description: error?.message || "Failed to delete contract.",
+        description: error.message || "Failed to delete contract.",
         variant: "destructive",
       });
     },
@@ -4587,10 +4517,10 @@ export default function Marketplace() {
                       >
                         <div className="flex items-center space-x-4">
                           <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-                            {affiliate.name.substring(0, 2).toUpperCase()}
+                            {(affiliate.name ?? '??').substring(0, 2).toUpperCase()}
                           </div>
                           <div>
-                            <p className="font-medium">{affiliate.name}</p>
+                            <p className="font-medium">{affiliate.name ?? ''}</p>
                             <p className="text-sm text-muted-foreground">
                               {affiliate.email}
                             </p>
@@ -4812,17 +4742,17 @@ export default function Marketplace() {
                         <div className="flex items-center space-x-4">
                           <div className="flex -space-x-2">
                             <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold border-2 border-white">
-                              {collab.fromUser.name
+                              {(collab.fromUser?.name || "??")
                                 .substring(0, 2)
                                 .toUpperCase()}
                             </div>
                             <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center text-white font-bold border-2 border-white">
-                              {collab.toUser.name.substring(0, 2).toUpperCase()}
+                              {(collab.toUser?.name || "??").substring(0, 2).toUpperCase()}
                             </div>
                           </div>
                           <div>
                             <p className="font-medium">
-                              {collab.fromUser.name} → {collab.toUser.name}
+                              {collab.fromUser?.name} → {collab.toUser?.name}
                             </p>
                             <p className="text-sm text-muted-foreground capitalize">
                               {collab.type.replace("_", " ")}
@@ -5077,7 +5007,7 @@ export default function Marketplace() {
                         <CardContent className="h-48" />
                       </Card>
                     ))
-                  ) : merchItems?.length === 0 ? (
+                  ) : (merchItems?.length ?? 0) === 0 ? (
                     <div className="col-span-full flex flex-col items-center justify-center py-12 text-center border-2 border-dashed rounded-lg bg-muted/10">
                       <Package className="h-12 w-12 text-muted-foreground mb-4" />
                       <h3 className="text-lg font-semibold">
@@ -5183,7 +5113,7 @@ export default function Marketplace() {
                               <TableCell colSpan={5} className="h-12" />
                             </TableRow>
                           ))
-                        ) : merchOrders?.length === 0 ? (
+                        ) : (merchOrders?.length ?? 0) === 0 ? (
                           <TableRow>
                             <TableCell
                               colSpan={5}

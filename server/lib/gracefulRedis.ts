@@ -28,7 +28,7 @@ export function createGracefulRedisClient(
     );
   }
 
-  const _pdim = getPdimClient();
+  const pdim = getPdimClient();
   logger?.info(`✅ ${serviceName}: Connected via PDIM`);
 
   return {
@@ -54,7 +54,7 @@ export function createGracefulRedisClient(
     },
 
     async exists(key: string): Promise<boolean> {
-      const _result = await pdim?.exists(key);
+      const result = await pdim?.exists(key);
       return result === 1;
     },
 

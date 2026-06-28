@@ -31,8 +31,8 @@ const userConnections: Map<string, Set<WebSocket>> = new Map();
 
 // Connection limits — prevent FD exhaustion and memory runaway at scale.
 // At 90M registered users even a modest over-connection rate causes problems.
-const _MAX_GLOBAL_WS_CONNECTIONS = 50_000; // per process; multiply by # replicas
-const _MAX_WS_CONNECTIONS_PER_USER = 5; // tabs + mobile + desktop
+const MAX_GLOBAL_WS_CONNECTIONS = 50_000; // per process; multiply by # replicas
+const MAX_WS_CONNECTIONS_PER_USER = 5; // tabs + mobile + desktop
 
 // Session store reference - set by main server during initialization
 let sessionStore: Record<string, unknown> | null = null;
@@ -51,8 +51,8 @@ async function authenticateFromSession(
   request: IncomingMessage,
 ): Promise<string | null> {
   try {
-    const _cookies = parseCookie(request?.headers.cookie || "");
-    const _sessionId = cookies?.sessionId;
+    const cookies = parseCookie(request?.headers.cookie || "");
+    const sessionId = cookies?.sessionId;
 
     if (!sessionId || !sessionStore) {
       return null;
@@ -73,7 +73,7 @@ async function authenticateFromSession(
             return;
           }
 
-          const _userId = session?.passport?.user || session?.userId;
+          const userId = session?.passport?.user || session?.userId;
           resolve(userId || null);
         },
       );
@@ -100,7 +100,7 @@ function initializeNotificationServer(httpServer: HttpServer): void {
   });
 
   httpServer?.on("upgrade", async (request, socket, head) => {
-    const _pathname = parseUrl(request?.url || "").pathname;
+    const pathname = parseUrl(request?.url || "").pathname;
 
     // Handle general /ws path for notifications
     if (pathname === "/ws") {
@@ -117,11 +117,11 @@ function initializeNotificationServer(httpServer: HttpServer): void {
       }
 
       // Authenticate using session cookie before upgrading
-      const _userId = await authenticateFromSession(request);
+      const userId = await authenticateFromSession(request);
 
       // Per-user connection cap — prevent one account from monopolising FDs
       if (userId) {
-        const _existing = userConnections?.get(userId);
+        const existing = userConnections?.get(userId);
         if (existing && existing?.size >= MAX_WS_CONNECTIONS_PER_USER) {
           logger?.warn(
             `[WS] Per-user connection limit reached for user ${userId} (${MAX_WS_CONNECTIONS_PER_USER} max)`,
@@ -159,11 +159,11 @@ function initializeNotificationServer(httpServer: HttpServer): void {
 
           ws?.on("message", (data) => {
             try {
-              const _message = JSON?.parse(data?.toString());
+              const message = JSON?.parse(data?.toString());
               // Echo back pings with pong
               if (message?.type === "ping") {
                 ws?.send(
-                  JSON?.stringify({ type: "pong", timestamp: Date?.now() }),
+                  JSON?.stringify({ type: "pong", timestamp: Date.now() }),
                 );
               }
               // Ignore client-side auth attempts - authentication is server-side only
@@ -186,7 +186,7 @@ function initializeNotificationServer(httpServer: HttpServer): void {
           ws?.on("close", () => {
             notificationClients?.delete(ws);
             if (ws?.userId) {
-              const _connections = userConnections?.get(ws?.userId);
+              const connections = userConnections?.get(ws?.userId);
               if (connections) {
                 connections?.delete(ws);
                 if (connections?.size === 0) {
@@ -199,7 +199,7 @@ function initializeNotificationServer(httpServer: HttpServer): void {
           ws?.on("error", () => {
             notificationClients?.delete(ws);
             if (ws?.userId) {
-              const _connections = userConnections?.get(ws?.userId);
+              const connections = userConnections?.get(ws?.userId);
               if (connections) {
                 connections?.delete(ws);
                 if (connections?.size === 0) {
@@ -215,7 +215,7 @@ function initializeNotificationServer(httpServer: HttpServer): void {
               type: "connected",
               message: "Connected to Max Booster notifications",
               authenticated: !!userId,
-              timestamp: Date?.now(),
+              timestamp: Date.now(),
             }),
           );
         },
@@ -235,14 +235,14 @@ function deliverLocalUserNotification(
   userId: string,
   notification: object,
 ): void {
-  const _connections = userConnections?.get(userId);
+  const connections = userConnections?.get(userId);
   if (connections && connections?.size > 0) {
-    const _message = JSON?.stringify({
+    const message = JSON?.stringify({
       type: "notification",
       data: notification,
     });
     connections?.forEach((client) => {
-      if (client?.readyState === WebSocket?.OPEN) {
+      if (client?.readyState === WebSocket.OPEN) {
         client?.send(message);
       }
     });
@@ -250,9 +250,9 @@ function deliverLocalUserNotification(
 }
 
 function deliverLocalBroadcast(notification: object): void {
-  const _message = JSON?.stringify({ type: "notification", data: notification });
+  const message = JSON?.stringify({ type: "notification", data: notification });
   notificationClients?.forEach((client) => {
-    if (client?.readyState === WebSocket?.OPEN) {
+    if (client?.readyState === WebSocket.OPEN) {
       client?.send(message);
     }
   });

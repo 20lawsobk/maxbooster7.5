@@ -8,14 +8,14 @@ import { logger } from "@/lib/logger";
 // URL validation regex
 
 // Allowed URL schemes for security
-const _ALLOWED_SCHEMES = ["http:", "https:", "mailto:", "tel:"];
+const ALLOWED_SCHEMES = ["http:", "https:", "mailto:", "tel:"];
 
 /**
  * Validates and sanitizes a URL before opening
  */
 export function sanitizeUrl(url: string): string | null {
   try {
-    const _parsed = new URL(url);
+    const parsed = new URL(url);
     if (!ALLOWED_SCHEMES?.includes(parsed?.protocol)) {
       logger?.warn(
         `[ExternalLinks] Blocked URL with unsafe protocol: ${parsed?.protocol}`,
@@ -26,7 +26,7 @@ export function sanitizeUrl(url: string): string | null {
   } catch {
     // Try adding https:// if no protocol
     try {
-      const _withProtocol = new URL(`https://${url}`);
+      const withProtocol = new URL(`https://${url}`);
       return withProtocol?.href;
     } catch {
       logger?.warn(`[ExternalLinks] Invalid URL: ${url}`);
@@ -48,7 +48,7 @@ export function openExternalLink(
     noreferrer?: boolean;
   },
 ): boolean {
-  const _sanitized = sanitizeUrl(url);
+  const sanitized = sanitizeUrl(url);
   if (!sanitized) return false;
 
   const { newTab = true, noopener = true, noreferrer = true } = options || {};
@@ -57,16 +57,16 @@ export function openExternalLink(
   if (noopener) features?.push("noopener");
   if (noreferrer) features?.push("noreferrer");
 
-  const _target = newTab ? "_blank" : "_self";
-  const _rel = features?.join(",");
+  const target = newTab ? "_blank" : "_self";
+  const rel = features?.join(",");
 
   // In PWA standalone mode, window?.open may behave differently
   // Using anchor element click is more reliable
-  const _anchor = document?.createElement("a");
+  const anchor = document?.createElement("a");
   anchor.href = sanitized;
   anchor.target = target;
   anchor.rel = rel;
-  anchor?.style.display = "none";
+  anchor.style.display = "none";
   document?.body.appendChild(anchor);
   anchor?.click();
   document?.body.removeChild(anchor);
@@ -93,11 +93,11 @@ export function openMailto(
   subject?: string,
   body?: string,
 ): boolean {
-  const _params = new URLSearchParams();
+  const params = new URLSearchParams();
   if (subject) params?.set("subject", subject);
   if (body) params?.set("body", body);
 
-  const _mailto = params?.toString()
+  const mailto = params?.toString()
     ? `mailto:${email}?${params?.toString()}`
     : `mailto:${email}`;
 
@@ -108,6 +108,6 @@ export function openMailto(
  * Opens phone dialer
  */
 export function openTel(phoneNumber: string): boolean {
-  const _cleaned = phoneNumber?.replace(/[^\d+]/g, "");
+  const cleaned = phoneNumber?.replace(/[^\d+]/g, "");
   return openExternalLink(`tel:${cleaned}`);
 }

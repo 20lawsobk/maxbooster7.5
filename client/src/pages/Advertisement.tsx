@@ -49,48 +49,8 @@ import {
   AIImageGenerator,
   type ImagePlatform,
 } from "@/components/content/AIImageGenerator";
-import {
-  CreativeVariantGenerator,
-  CreativeAutomation,
-} from "@/components/advertising";
-import {
-  Target,
-  TrendingUp,
-  TrendingDown,
-  Users,
-  Play,
-  Eye,
-  MousePointerClick,
-  Plus,
-  Music,
-  Tv,
-  Zap,
-  Brain,
-  Rocket,
-  Sparkles,
-  Globe,
-  CheckCircle,
-  AlertTriangle,
-  Lightbulb,
-  Clock,
-  Upload,
-  X,
-  Bot,
-  RefreshCw,
-  Layers,
-  Network,
-  PieChart,
-  Timer,
-  Radio,
-  UserPlus,
-  Copy,
-  Search,
-  Lock,
-  Unlock,
-  FileImage,
-  Loader2,
-  Trash2,
-} from "lucide-react";
+import { CreativeVariantGenerator, CreativeAutomation } from "@/components/advertising";
+import { Target, TrendingUp, TrendingDown, Users, Play, Eye, MousePointerClick, Plus, Music, Tv, Zap, Brain, Rocket, Sparkles, Globe, CheckCircle, AlertTriangle, Lightbulb, Clock, Upload, X, Bot, RefreshCw, Layers, Network, PieChart, Timer, Radio, UserPlus, Copy, Search, Lock, Unlock, FileImage, Loader2, Trash2 } from "lucide-react";
 
 interface PressKitPhoto {
   url: string;
@@ -360,13 +320,19 @@ export default function Advertisement() {
   )
     ? lookalikeAudiencesData
     : lookalikeAudiencesData?.audiences || [];
-  Array.isArray(forecastsData) ? forecastsData : forecastsData?.forecasts || [];
-  Array.isArray(competitorInsightsData)
+  Array.isArray(forecastsData)
+    ? forecastsData
+    : forecastsData?.forecasts || [];
+  Array.isArray(
+    competitorInsightsData,
+  )
     ? competitorInsightsData
     : competitorInsightsData?.insights || [];
 
   const [isCreateCampaignOpen, setIsCreateCampaignOpenState] = useState(false);
-  const [, setActiveEnterpriseTabState] = useState("creative-automation");
+  const [, setActiveEnterpriseTabState] = useState(
+    "creative-automation",
+  );
 
   const setIsCreateCampaignOpen = (open: boolean) => {
     setIsCreateCampaignOpenState(open);
@@ -375,10 +341,10 @@ export default function Advertisement() {
     }
   };
 
-  (tab: string) => {
+  ((tab: string) => {
     setActiveEnterpriseTabState(tab);
     handleTrackAdvertisingExplored();
-  };
+  });
   const [videoPlatform, setVideoPlatform] =
     useState<VideoPlatform>("instagram");
   const [adCreativePlatform, setAdCreativePlatform] =
@@ -412,20 +378,25 @@ export default function Advertisement() {
   const [lookalikeSourceType, setLookalikeSourceType] = useState("top-engaged");
   const [lookalikeExpansionLevel, setLookalikeExpansionLevel] = useState(2);
 
-  const { data: campaigns = [] } = useQuery<AdCampaign[]>({
+  const { data: campaigns = [] } = useQuery<
+    AdCampaign[]
+  >({
     queryKey: ["/api/advertising/campaigns"],
     enabled: !!user,
   });
 
-  useQuery<AIInsights>({
-    queryKey: ["/api/advertising/ai-insights"],
-    enabled: !!user,
-  });
+  useQuery<AIInsights>(
+    {
+      queryKey: ["/api/advertising/ai-insights"],
+      enabled: !!user,
+    },
+  );
 
-  const { data: socialConnections } = useQuery<SocialConnections>({
-    queryKey: ["/api/social/platform-status"],
-    enabled: !!user,
-  });
+  const { data: socialConnections } =
+    useQuery<SocialConnections>({
+      queryKey: ["/api/social/platform-status"],
+      enabled: !!user,
+    });
 
   const uploadImageMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -604,11 +575,11 @@ export default function Advertisement() {
   });
 
   useQuery<AutopilotStatus>({
-    queryKey: ["/api/autopilot/status"],
-    enabled: !!user,
-    refetchInterval: 30000,
-    meta: { silentError: true },
-  });
+      queryKey: ["/api/autopilot/status"],
+      enabled: !!user,
+      refetchInterval: 30000,
+      meta: { silentError: true },
+    });
 
   if (authLoading) {
     return (
@@ -2353,7 +2324,7 @@ function PressKitTabContent() {
       ...data,
       genres,
       socialLinks,
-      isPublic: pressKit?.isPublic ?? false,
+      isPublic: pressKit.isPublic ?? false,
     });
   };
 

@@ -2,34 +2,35 @@ import { z } from "zod";
 import { logger } from "./logger.js";
 
 // ---- Zod schemas for boundary validation -------------------------------
-export const _MusicDataSchema = z
+export const MusicDataSchema = z
   .object({
-    id: z?.string().optional(),
-    title: z?.string().optional(),
-    artist: z?.string().optional(),
-    genre: z?.string().optional(),
-    mood: z?.string().optional(),
-    tempo: z?.number().optional(),
-    duration: z?.number().optional(),
-    audioUrl: z?.string().optional(),
-    artworkUrl: z?.string().optional(),
-    metadata: z?.record(z?.unknown()).optional(),
+    id: z.string().optional(),
+    title: z.string().optional(),
+    artist: z.string().optional(),
+    genre: z.string().optional(),
+    mood: z.string().optional(),
+    tempo: z.number().optional(),
+    duration: z.number().optional(),
+    audioUrl: z.string().optional(),
+    artworkUrl: z.string().optional(),
+    metadata: z.record(z.unknown()).optional(),
   })
   .passthrough();
-export type MusicData = z?.infer<typeof MusicDataSchema>;
+export type MusicData = z.infer<typeof MusicDataSchema>;
 
-export const _TargetAudienceSchema = z
+export const TargetAudienceSchema = z
   .object({
-    ageRange: z?.tuple([z?.number(), z?.number()]).optional(),
-    genders: z?.array(z?.string()).optional(),
-    countries: z?.array(z?.string()).optional(),
-    interests: z?.array(z?.string()).optional(),
-    languages: z?.array(z?.string()).optional(),
+    ageRange: z.tuple([z.number(), z.number()]).optional(),
+    genders: z.array(z.string()).optional(),
+    countries: z.array(z.string()).optional(),
+    interests: z.array(z.string()).optional(),
+    languages: z.array(z.string()).optional(),
   })
   .passthrough();
-export type TargetAudience = z?.infer<typeof TargetAudienceSchema>;
+export type TargetAudience = z.infer<typeof TargetAudienceSchema>;
 
 // ---- Resilient HTTP wrapper -------------------------------------------
+
 
 interface SmartBidding {
   predictedCPM: number;
@@ -38,6 +39,7 @@ interface SmartBidding {
   demandForecast: Record<string, unknown>;
   algorithmicAdvantage: number;
 }
+
 
 export class AIAdvertisingEngine {
   // Max Booster In-House AI - No External Dependencies
@@ -51,17 +53,17 @@ export class AIAdvertisingEngine {
     targetAudience: unknown,
   ): Promise<unknown> {
     // Validate at the boundary so downstream methods can rely on shape.
-    const _md = MusicDataSchema?.safeParse(musicData);
-    const _ta = TargetAudienceSchema?.safeParse(targetAudience);
+    const md = MusicDataSchema?.safeParse(musicData);
+    const ta = TargetAudienceSchema?.safeParse(targetAudience);
     if (!md?.success) {
       logger?.warn(
-        { issues: md?.error.issues },
+        { issues: md.error.issues },
         "[ai-advertising] invalid musicData",
       );
     }
     if (!ta?.success) {
       logger?.warn(
-        { issues: ta?.error.issues },
+        { issues: ta.error.issues },
         "[ai-advertising] invalid targetAudience",
       );
     }
@@ -101,13 +103,13 @@ export class AIAdvertisingEngine {
     // Max Booster Proprietary AI Algorithm - No External APIs
     // Uses advanced pattern matching, psychological frameworks, and music industry data
 
-    const _genre = musicData?.genre || "music";
-    const _mood = musicData?.mood || "energetic";
-    const _title = musicData?.title || "New Release";
-    const _artist = musicData?.artist || "Artist";
+    const genre = musicData?.genre || "music";
+    const mood = musicData?.mood || "energetic";
+    const title = musicData?.title || "New Release";
+    const artist = musicData?.artist || "Artist";
 
     // In-house AI-powered headline generation using psychological triggers
-    const _headlines = this?.generatePsychologicalHeadlines(
+    const headlines = this?.generatePsychologicalHeadlines(
       genre,
       mood,
       title,
@@ -115,7 +117,7 @@ export class AIAdvertisingEngine {
     );
 
     // Proprietary caption generation for each platform
-    const _captions = this?.generatePlatformOptimizedCaptions(
+    const captions = this?.generatePlatformOptimizedCaptions(
       genre,
       mood,
       title,
@@ -123,16 +125,16 @@ export class AIAdvertisingEngine {
     );
 
     // In-house emotional trigger mapping
-    const _emotionalTriggers = this?.mapGenreEmotionalTriggers(genre, mood);
+    const emotionalTriggers = this?.mapGenreEmotionalTriggers(genre, mood);
 
     // Platform-specific optimization (proprietary algorithm)
-    const _platformAdaptations = this?.generatePlatformAdaptations(
+    const platformAdaptations = this?.generatePlatformAdaptations(
       musicData,
       targetAudience,
     );
 
     // Conversion-optimized CTAs (in-house framework)
-    const _callToActions = this?.generateOptimizedCTAs(targetAudience);
+    const callToActions = this?.generateOptimizedCTAs(targetAudience);
 
     return {
       headlines,
@@ -140,11 +142,11 @@ export class AIAdvertisingEngine {
       emotionalTriggers,
       platformAdaptations,
       callToActions,
-      microMomentStrategies: this?.generateMicroMomentTargeting(
+      microMomentStrategies: this.generateMicroMomentTargeting(
         genre,
         targetAudience,
       ),
-      crossPlatformTactics: this?.generateCrossPlatformAmplification(musicData),
+      crossPlatformTactics: this.generateCrossPlatformAmplification(musicData),
     };
   }
 
@@ -153,7 +155,7 @@ export class AIAdvertisingEngine {
     musicProfile: unknown,
     _campaignObjective: string,
   ): Promise<unknown> {
-    const _aiAudienceInsights = {
+    const aiAudienceInsights = {
       psychographicSegments: [
         {
           name: "Music Discovery Enthusiasts",
@@ -214,14 +216,14 @@ export class AIAdvertisingEngine {
     campaignData: unknown,
   ): Promise<SmartBidding> {
     // Simulate advanced AI bidding that outperforms native systems
-    const _baselinePerformance = await this?.analyzeBaselinePerformance();
-    const _competitorIntelligence =
+    const baselinePerformance = await this?.analyzeBaselinePerformance();
+    const competitorIntelligence =
       await this?.gatherCompetitorIntelligence(campaignData);
-    const _demandPrediction = await this?.predictDemandCycles(campaignData);
+    const demandPrediction = await this?.predictDemandCycles(campaignData);
 
     return {
-      predictedCPM: baselinePerformance?.averageCPM * 0.4, // 60% cost reduction
-      optimalBid: this?.calculateOptimalBid(
+      predictedCPM: baselinePerformance.averageCPM * 0.4, // 60% cost reduction
+      optimalBid: this.calculateOptimalBid(
         baselinePerformance,
         competitorIntelligence,
       ),
@@ -296,11 +298,11 @@ export class AIAdvertisingEngine {
   async predictCampaignPerformance(campaignConfig: unknown): Promise<unknown> {
     return {
       projectedMetrics: {
-        reach: campaignConfig?.budget * 2500, // 2500 people per dollar (vs 800 industry average)
-        engagement: campaignConfig?.budget * 180, // 180 engagements per dollar (vs 45 industry average)
-        conversions: campaignConfig?.budget * 12, // 12 conversions per dollar (vs 3 industry average)
-        streamIncrease: campaignConfig?.budget * 850, // 850 streams per dollar (vs 200 industry average)
-        followerGrowth: campaignConfig?.budget * 25, // 25 followers per dollar (vs 8 industry average)
+        reach: campaignConfig.budget * 2500, // 2500 people per dollar (vs 800 industry average)
+        engagement: campaignConfig.budget * 180, // 180 engagements per dollar (vs 45 industry average)
+        conversions: campaignConfig.budget * 12, // 12 conversions per dollar (vs 3 industry average)
+        streamIncrease: campaignConfig.budget * 850, // 850 streams per dollar (vs 200 industry average)
+        followerGrowth: campaignConfig.budget * 25, // 25 followers per dollar (vs 8 industry average)
         virality: 0.15, // 15% chance of viral content (vs 0.03% industry average)
       },
       optimizationRecommendations: [
@@ -330,6 +332,7 @@ export class AIAdvertisingEngine {
   }
 
   // Helper methods
+
 
   private async generateLookalikeAudiences(
     _musicProfile: unknown,
@@ -435,6 +438,11 @@ export class AIAdvertisingEngine {
       Spotify: "Canvas art, playlist pitch optimization",
     };
   }
+
+
+
+
+
 
   // Platform-specific replacement methods
   private async replaceFacebookAds(
@@ -612,11 +620,11 @@ export class AIAdvertisingEngine {
   // In-House AI Helper Methods - 100% Proprietary
   private generatePsychologicalHeadlines(
     genre: string,
-    _mood: string,
+    mood: string,
     title: string,
     artist: string,
   ): string[] {
-    const _genreHeadlines = {
+    const genreHeadlines = {
       "hip-hop": [
         `🔥 ${artist} Just Dropped ${title} - The Streets Are Talking`,
         `${title} by ${artist} - This Hit Different 💯`,
@@ -643,14 +651,14 @@ export class AIAdvertisingEngine {
       ],
     };
 
-    const _defaultHeadlines = [
+    const defaultHeadlines = [
       `🎵 NEW: ${artist} - ${title}`,
       `${title} by ${artist} - Out Now!`,
       `Stream ${title} by ${artist} Today`,
       `Don't Miss ${artist}'s Latest: ${title}`,
     ];
 
-    return genreHeadlines[genre?.toLowerCase()] || defaultHeadlines;
+    return genreHeadlines[genre.toLowerCase()] || defaultHeadlines;
   }
 
   private generatePlatformOptimizedCaptions(
@@ -671,9 +679,9 @@ export class AIAdvertisingEngine {
 
   private mapGenreEmotionalTriggers(
     genre: string,
-    _mood: string,
+    mood: string,
   ): Record<string, unknown> {
-    const _triggers = {
+    const triggers = {
       "hip-hop": [
         "authenticity",
         "street credibility",
@@ -764,7 +772,7 @@ export class AIAdvertisingEngine {
   }
 
   private generateMicroMomentTargeting(
-    _genre: string,
+    genre: string,
     _targetAudience: unknown,
   ): Record<string, unknown> {
     return {

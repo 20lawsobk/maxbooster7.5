@@ -54,7 +54,7 @@ All errors follow this format:
       `,
       contact: {
         name: "Max Booster Support",
-        email: "support@maxbooster?.ai",
+        email: "support@maxbooster.ai",
       },
       license: {
         name: "Proprietary",
@@ -71,7 +71,7 @@ All errors follow this format:
         sessionCookie: {
           type: "apiKey",
           in: "cookie",
-          name: "connect?.sid",
+          name: "connect.sid",
           description: "Session cookie obtained from login",
         },
       },
@@ -165,7 +165,7 @@ All errors follow this format:
   apis: ["./server/routes.ts", "./server/routes/*.ts"], // Path to route files
 };
 
-const _swaggerSpec = swaggerJsdoc(options);
+const swaggerSpec = swaggerJsdoc(options);
 
 /**
  * Setup Swagger documentation for Express app
@@ -212,7 +212,7 @@ export function setupSwagger(app: Express): void {
  *               email:
  *                 type: string
  *                 format: email
- *                 example: user@example.com
+ *                 example: user@example?.com
  *               password:
  *                 type: string
  *                 format: password

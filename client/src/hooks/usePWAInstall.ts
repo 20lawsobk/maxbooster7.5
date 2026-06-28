@@ -12,21 +12,21 @@ export function usePWAInstall() {
   const [isInstallable, setIsInstallable] = useState(false);
 
   useEffect(() => {
-    const _checkInstalled = () => {
-      const _isStandalone =
+    const checkInstalled = () => {
+      const isStandalone =
         window?.matchMedia("(display-mode: standalone)").matches ||
         (window?.navigator as Record<string, unknown>).standalone === true;
       setIsInstalled(isStandalone);
     };
     checkInstalled();
 
-    const _handleBeforeInstall = (e: Event) => {
+    const handleBeforeInstall = (e: Event) => {
       e?.preventDefault();
       setInstallPrompt(e as BeforeInstallPromptEvent);
       setIsInstallable(true);
     };
 
-    const _handleAppInstalled = () => {
+    const handleAppInstalled = () => {
       setIsInstalled(true);
       setIsInstallable(false);
       setInstallPrompt(null);
@@ -41,7 +41,7 @@ export function usePWAInstall() {
     };
   }, []);
 
-  const _promptInstall = async () => {
+  const promptInstall = async () => {
     if (!installPrompt) return false;
 
     await installPrompt?.prompt();

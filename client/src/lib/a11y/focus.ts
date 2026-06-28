@@ -7,10 +7,10 @@ export interface FocusRestoreState {
 
 export function saveFocusState(): FocusRestoreState {
   return {
-    element: document?.activeElement as HTMLElement | null,
+    element: document.activeElement as HTMLElement | null,
     scrollPosition: {
-      x: window?.scrollX,
-      y: window?.scrollY,
+      x: window.scrollX,
+      y: window.scrollY,
     },
   };
 }
@@ -38,7 +38,7 @@ class FocusManager {
   }
 
   pop(): void {
-    const _state = this?.stack.pop();
+    const state = this?.stack.pop();
     if (state) {
       requestAnimationFrame(() => {
         restoreFocusState(state);
@@ -55,10 +55,10 @@ class FocusManager {
   }
 }
 
-export const _focusManager = FocusManager?.getInstance();
+export const focusManager = FocusManager?.getInstance();
 
 export function focusFirstElement(container: HTMLElement): boolean {
-  const _focusable = getFocusableElements(container);
+  const focusable = getFocusableElements(container);
   if (focusable?.length > 0) {
     focusable[0].focus();
     return true;
@@ -69,7 +69,7 @@ export function focusFirstElement(container: HTMLElement): boolean {
 }
 
 export function focusLastElement(container: HTMLElement): boolean {
-  const _focusable = getFocusableElements(container);
+  const focusable = getFocusableElements(container);
   if (focusable?.length > 0) {
     focusable[focusable?.length - 1].focus();
     return true;
@@ -78,7 +78,7 @@ export function focusLastElement(container: HTMLElement): boolean {
 }
 
 export function focusByIndex(container: HTMLElement, index: number): boolean {
-  const _focusable = getFocusableElements(container);
+  const focusable = getFocusableElements(container);
   if (index >= 0 && index < focusable?.length) {
     focusable[index].focus();
     return true;
@@ -90,8 +90,8 @@ export function getNextFocusable(
   container: HTMLElement,
   currentElement: HTMLElement,
 ): HTMLElement | null {
-  const _focusable = getFocusableElements(container);
-  const _currentIndex = focusable?.indexOf(currentElement);
+  const focusable = getFocusableElements(container);
+  const currentIndex = focusable?.indexOf(currentElement);
   if (currentIndex === -1 || currentIndex === focusable?.length - 1) {
     return focusable[0] || null;
   }
@@ -102,8 +102,8 @@ export function getPreviousFocusable(
   container: HTMLElement,
   currentElement: HTMLElement,
 ): HTMLElement | null {
-  const _focusable = getFocusableElements(container);
-  const _currentIndex = focusable?.indexOf(currentElement);
+  const focusable = getFocusableElements(container);
+  const currentIndex = focusable?.indexOf(currentElement);
   if (currentIndex === -1 || currentIndex === 0) {
     return focusable[focusable?.length - 1] || null;
   }
@@ -140,9 +140,9 @@ export function applyFocusIndicator(
   element: HTMLElement,
   options: FocusIndicatorOptions = {},
 ): () => void {
-  const _originalOutline = element?.style.outline;
-  const _originalOutlineOffset = element?.style.outlineOffset;
-  const _originalBorderRadius = element?.style.borderRadius;
+  const originalOutline = element?.style.outline;
+  const originalOutlineOffset = element?.style.outlineOffset;
+  const originalBorderRadius = element?.style.borderRadius;
 
   const {
     offset = 2,
@@ -152,16 +152,16 @@ export function applyFocusIndicator(
     borderRadius = 4,
   } = options;
 
-  const _handleFocus = () => {
-    element?.style.outline = `${width}px ${style} ${color}`;
-    element?.style.outlineOffset = `${offset}px`;
-    element?.style.borderRadius = `${borderRadius}px`;
+  const handleFocus = () => {
+    element.style.outline = `${width}px ${style} ${color}`;
+    element.style.outlineOffset = `${offset}px`;
+    element.style.borderRadius = `${borderRadius}px`;
   };
 
-  const _handleBlur = () => {
-    element?.style.outline = originalOutline;
-    element?.style.outlineOffset = originalOutlineOffset;
-    element?.style.borderRadius = originalBorderRadius;
+  const handleBlur = () => {
+    element.style.outline = originalOutline;
+    element.style.outlineOffset = originalOutlineOffset;
+    element.style.borderRadius = originalBorderRadius;
   };
 
   element?.addEventListener("focus", handleFocus);
@@ -170,9 +170,9 @@ export function applyFocusIndicator(
   return () => {
     element?.removeEventListener("focus", handleFocus);
     element?.removeEventListener("blur", handleBlur);
-    element?.style.outline = originalOutline;
-    element?.style.outlineOffset = originalOutlineOffset;
-    element?.style.borderRadius = originalBorderRadius;
+    element.style.outline = originalOutline;
+    element.style.outlineOffset = originalOutlineOffset;
+    element.style.borderRadius = originalBorderRadius;
   };
 }
 
@@ -194,11 +194,11 @@ export function isElementFocusable(element: HTMLElement): boolean {
   if (element?.hasAttribute("disabled")) return false;
   if (element?.getAttribute("tabindex") === "-1") return false;
 
-  const _style = window?.getComputedStyle(element);
+  const style = window?.getComputedStyle(element);
   if (style?.display === "none" || style?.visibility === "hidden") return false;
 
-  const _tagName = element?.tagName.toLowerCase();
-  const _focusableTags = [
+  const tagName = element?.tagName.toLowerCase();
+  const focusableTags = [
     "a",
     "button",
     "input",
@@ -219,14 +219,14 @@ export function moveFocusWithinContainer(
   container: HTMLElement,
   direction: "next" | "previous",
 ): void {
-  const _activeElement = document?.activeElement as HTMLElement;
+  const activeElement = document?.activeElement as HTMLElement;
 
   if (!container?.contains(activeElement)) {
     focusFirstElement(container);
     return;
   }
 
-  const _nextElement =
+  const nextElement =
     direction === "next"
       ? getNextFocusable(container, activeElement)
       : getPreviousFocusable(container, activeElement);
@@ -241,8 +241,8 @@ export function createFocusScope(container: HTMLElement): {
   const externalElements: { element: HTMLElement; tabindex: string | null }[] =
     [];
 
-  const _lock = () => {
-    const _allFocusable = document?.querySelectorAll<HTMLElement>(
+  const lock = () => {
+    const allFocusable = document?.querySelectorAll<HTMLElement>(
       'a[href], button, input, textarea, select, [tabindex]:not([tabindex="-1"])',
     );
 
@@ -250,7 +250,7 @@ export function createFocusScope(container: HTMLElement): {
       if (!container?.contains(element)) {
         externalElements?.push({
           element,
-          tabindex: element?.getAttribute("tabindex"),
+          tabindex: element.getAttribute("tabindex"),
         });
         element?.setAttribute("tabindex", "-1");
         element?.setAttribute("data-focus-scope-disabled", "true");
@@ -258,7 +258,7 @@ export function createFocusScope(container: HTMLElement): {
     });
   };
 
-  const _unlock = () => {
+  const unlock = () => {
     externalElements?.forEach(({ element, tabindex }) => {
       if (tabindex === null) {
         element?.removeAttribute("tabindex");

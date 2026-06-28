@@ -6,19 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Sparkles,
-  TrendingUp,
-  Clock,
-  Music,
-  Play,
-  ChevronRight,
-  RefreshCw,
-  Flame,
-  Star,
-  Zap,
-  Disc,
-} from "lucide-react";
+import { Sparkles, TrendingUp, Clock, Music, Play, ChevronRight, RefreshCw, Flame, Star, Zap, Disc } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface DiscoverySection {
@@ -502,7 +490,7 @@ export function SimilarBeatsSection({
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center gap-2 text-lg">
           <Zap className="h-5 w-5 text-yellow-400" />
-          Similar to "{data.sourceBeat?.title}"
+          Similar to "{data.sourceBeat.title}"
         </CardTitle>
         <p className="text-sm text-slate-400">
           Beats with similar{" "}

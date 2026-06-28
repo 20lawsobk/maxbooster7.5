@@ -260,7 +260,7 @@ export class UnifiedAIController {
   }
 
   private async performInitialization(): Promise<void> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
     logger?.info("🤖 Initializing Unified AI Controller...");
 
     try {
@@ -285,7 +285,7 @@ export class UnifiedAIController {
       this?.initializeTimeSeriesModels();
 
       this.initialized = true;
-      const _duration = Date?.now() - startTime;
+      const duration = Date?.now() - startTime;
       logger?.info(`✅ Unified AI Controller initialized in ${duration}ms`);
     } catch (error) {
       logger?.warn(
@@ -307,7 +307,7 @@ export class UnifiedAIController {
 
     for (const metric of metrics) {
       for (const horizon of horizons) {
-        const _key = `${metric}_${horizon}`;
+        const key = `${metric}_${horizon}`;
         this?.timeSeriesModels.set(
           key,
           new AdvancedTimeSeriesModel(metric, horizon),
@@ -355,8 +355,8 @@ export class UnifiedAIController {
     } = {};
     if (callerContentType) result.contentType = callerContentType;
     try {
-      const _key = platform?.toLowerCase();
-      const _posting = key
+      const key = platform?.toLowerCase();
+      const posting = key
         ? evolutionRegistry?.getPostingOptimization(key)
         : null;
       if (!posting) return result;
@@ -367,7 +367,7 @@ export class UnifiedAIController {
 
       if (!callerContentType && Array?.isArray(posting?.contentFormatPriority)) {
         for (const fmt of posting?.contentFormatPriority) {
-          const _mapped =
+          const mapped =
             typeof fmt === "string"
               ? CONTENT_FORMAT_TO_TYPE[fmt?.toLowerCase()]
               : undefined;
@@ -399,7 +399,7 @@ export class UnifiedAIController {
   public async generateContent(
     options: ContentGenerationOptions,
   ): Promise<UnifiedAIResult<CaptionResult>> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
     await this?.ensureInitialized();
 
     try {
@@ -407,7 +407,7 @@ export class UnifiedAIController {
         threads: "instagram",
         googlebusiness: "facebook",
       };
-      const _mappedPlatform =
+      const mappedPlatform =
         options?.platform && platformAliases[options?.platform]
           ? platformAliases[options?.platform]
           : options?.platform || "instagram";
@@ -416,14 +416,14 @@ export class UnifiedAIController {
       // the live registry (keyed by the artist-facing platform, not the alias)
       // so the manual "generate a post" button honors the same guidance the
       // autopilot and scheduled paths already do. Caller-pinned values win.
-      const _posting = this?.applyPostingOptimization(
+      const posting = this?.applyPostingOptimization(
         options?.platform,
         options?.contentType,
       );
-      const _effectiveContentType = posting?.contentType;
-      const _effectiveObjective = posting?.objective;
+      const effectiveContentType = posting?.contentType;
+      const effectiveObjective = posting?.objective;
 
-      const _ctx = options?.userContext;
+      const ctx = options?.userContext;
 
       // MaxCore is the ONLY source — always succeeds via remote + local engine
       //
@@ -441,25 +441,25 @@ export class UnifiedAIController {
       // This separation is the difference between MaxCore generating generic
       // music captions vs. actually following what the user asked for.
 
-      const _artist = ctx?.artistName || options?.artistName;
+      const artist = ctx?.artistName || options.artistName;
 
       // Build a clean topic from metadata — no user instruction text
-      const _baseTopic = options?.topic || options?.genre || "new music";
+      const baseTopic = options.topic || options.genre || "new music";
       const topicParts: string[] = [baseTopic];
-      if (artist && !baseTopic?.toLowerCase().includes(artist?.toLowerCase())) {
-        topicParts?.push(`by ${artist}`);
+      if (artist && !baseTopic.toLowerCase().includes(artist.toLowerCase())) {
+        topicParts.push(`by ${artist}`);
       }
       if (
-        options?.trackTitle &&
-        !baseTopic?.toLowerCase().includes(options?.trackTitle.toLowerCase())
+        options.trackTitle &&
+        !baseTopic.toLowerCase().includes(options.trackTitle.toLowerCase())
       ) {
-        topicParts?.push(`"${options?.trackTitle}"`);
+        topicParts.push(`"${options.trackTitle}"`);
       }
-      if (options?.mood) topicParts?.push(options?.mood);
-      if (options?.keywords?.length)
-        topicParts?.push(options?.keywords.slice(0, 4).join(", "));
+      if (options.mood) topicParts.push(options.mood);
+      if (options.keywords?.length)
+        topicParts.push(options.keywords.slice(0, 4).join(", "));
       // 300-char limit is enough for full metadata context without polluting the topic signal
-      const _enrichedTopic = topicParts?.join(" — ").slice(0, 300);
+      const enrichedTopic = topicParts.join(" — ").slice(0, 300);
 
       // ── Build extra_context — user instruction FIRST, then supporting detail ──
       const extraParts: string[] = [];
@@ -487,14 +487,14 @@ export class UnifiedAIController {
         extraParts?.push(`${(options?.likeCount / 1000).toFixed(0)}K likes`);
       }
       if (options?.bodyPreview) {
-        const _clean = options?.bodyPreview
+        const clean = options?.bodyPreview
           .replace(/<[^>]+>/g, " ")
           .replace(/\s+/g, " ")
           .trim()
           .slice(0, 180);
         if (clean) extraParts?.push(clean);
       } else if (options?.description) {
-        const _clean = options?.description
+        const clean = options?.description
           .replace(/<[^>]+>/g, " ")
           .replace(/\s+/g, " ")
           .trim()
@@ -505,13 +505,13 @@ export class UnifiedAIController {
       // User instruction (extraParts[0]) remains the primary directive — industry
       // context is always last so MaxCore treats it as background signal, not a command.
       // getContextForMode() uses a 30-min cache, so latency after first fetch is negligible.
-      const __industryCtx = await musicIndustryContextFilter
+      const _industryCtx = await musicIndustryContextFilter
         .getContextForMode("social")
         .catch(() => null);
       if (_industryCtx?.contextString)
         extraParts?.push(_industryCtx?.contextString);
 
-      const _combinedExtra = extraParts?.length
+      const combinedExtra = extraParts?.length
         ? extraParts?.join(" | ")
         : undefined;
 
@@ -522,8 +522,8 @@ export class UnifiedAIController {
       const mcPayload: Record<string, unknown> = {
         platform: mappedPlatform,
         topic: enrichedTopic,
-        tone: options?.tone || "energetic",
-        genre: options?.genre || ctx?.genre,
+        tone: options.tone || "energetic",
+        genre: options.genre || ctx?.genre,
         artist_name: artist,
         brand_voice: ctx?.brandVoice,
         target_audience: ctx?.targetAudience,
@@ -551,25 +551,25 @@ export class UnifiedAIController {
       if (effectiveContentType) mcPayload.content_type = effectiveContentType;
       if (effectiveObjective) mcPayload.objective = effectiveObjective;
       // Release / project metadata
-      if (options?.album) mcPayload.album = options?.album;
-      if (options?.releaseDate) mcPayload.release_date = options?.releaseDate;
-      if (options?.label) mcPayload.label = options?.label;
-      if (options?.tracklist?.length) mcPayload.tracklist = options?.tracklist;
+      if (options.album) mcPayload.album = options?.album;
+      if (options.releaseDate) mcPayload.release_date = options?.releaseDate;
+      if (options.label) mcPayload.label = options?.label;
+      if (options.tracklist?.length) mcPayload.tracklist = options?.tracklist;
       // extra_context: user instruction FIRST (already placed first in extraParts),
       // followed by supporting metadata. Never truncated — MaxCore needs the full text.
       if (combinedExtra) mcPayload.extra_context = combinedExtra;
 
       logger?.debug(
-        `[UnifiedAI] MaxCore payload topic="${enrichedTopic?.slice(0, 60)}" instruction="${(options?.extraContext ?? "").slice(0, 80)}"`,
+        `[UnifiedAI] MaxCore payload topic="${enrichedTopic.slice(0, 60)}" instruction="${(options.extraContext ?? "").slice(0, 80)}"`,
       );
 
-      const _mc = await MaxCoreAIClient?.infer<unknown>(
+      const mc = await MaxCoreAIClient?.infer<unknown>(
         "/api/generate/content",
         mcPayload,
       );
 
       if (mc?.caption || mc?.hook) {
-        const _caption =
+        const caption =
           mc?.caption ||
           `${mc?.hook}\n\n${mc?.body || ""}\n\n${mc?.cta || ""}`.trim();
 
@@ -581,14 +581,14 @@ export class UnifiedAIController {
         const mcHashtags: string[] = Array?.isArray(mc?.hashtags)
           ? mc?.hashtags
           : [];
-        const _keywordHashtags = (options?.keywords ?? [])
+        const keywordHashtags = (options?.keywords ?? [])
           .filter((k: string) => k && k?.length > 1)
           .map((k: string) =>
             k?.startsWith("#") ? k : `#${k?.replace(/\s+/g, "").toLowerCase()}`,
           )
           .filter((h: string) => !mcHashtags?.includes(h));
         // Also derive hashtag from artist name if available and not already present
-        const _artistTag = artist
+        const artistTag = artist
           ? `#${artist?.replace(/\s+/g, "").toLowerCase()}`
           : null;
         if (
@@ -598,7 +598,7 @@ export class UnifiedAIController {
         ) {
           keywordHashtags?.unshift(artistTag);
         }
-        const _enrichedHashtags = [...keywordHashtags, ...mcHashtags].slice(
+        const enrichedHashtags = [...keywordHashtags, ...mcHashtags].slice(
           0,
           15,
         );
@@ -607,18 +607,18 @@ export class UnifiedAIController {
           success: true,
           data: {
             caption,
-            hashtags: enrichedHashtags?.length ? enrichedHashtags : mcHashtags,
-            tone: options?.tone || "energetic",
-            toneMatch: mc?.confidence || 0.95,
+            hashtags: enrichedHashtags.length ? enrichedHashtags : mcHashtags,
+            tone: options.tone || "energetic",
+            toneMatch: mc.confidence || 0.95,
             platform: mappedPlatform,
-            charCount: caption?.length,
-            hook: mc?.hook,
-            body: mc?.body,
-            cta: mc?.cta,
+            charCount: caption.length,
+            hook: mc.hook,
+            body: mc.body,
+            cta: mc.cta,
           } as CaptionResult,
-          processingTimeMs: Date?.now() - startTime,
+          processingTimeMs: Date.now() - startTime,
           source: "MaxCoreAI",
-          confidence: mc?.confidence || 0.95,
+          confidence: mc.confidence || 0.95,
         };
       }
 
@@ -629,7 +629,7 @@ export class UnifiedAIController {
       return {
         success: false,
         error: "MaxCore returned no content — please retry",
-        processingTimeMs: Date?.now() - startTime,
+        processingTimeMs: Date.now() - startTime,
         source: "MaxCoreAI",
       };
     } catch (error) {
@@ -638,7 +638,7 @@ export class UnifiedAIController {
         success: false,
         error:
           error instanceof Error ? error?.message : "Content generation failed",
-        processingTimeMs: Date?.now() - startTime,
+        processingTimeMs: Date.now() - startTime,
         source: "MaxCoreAI",
       };
     }
@@ -656,34 +656,34 @@ export class UnifiedAIController {
       artist: string;
     };
   }): Promise<UnifiedAIResult<{ content: string[] }>> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
     await this?.ensureInitialized();
 
-    const _platform = (options?.platform || "instagram") as string;
-    const _topic = options?.musicData
+    const platform = (options?.platform || "instagram") as string;
+    const topic = options?.musicData
       ? `${options?.musicData.title} by ${options?.musicData.artist}`
       : options?.customPrompt || "new music";
-    const _tone = options?.tone || "energetic";
+    const tone = options?.tone || "energetic";
 
     try {
       // MaxCore is the ONLY source — always succeeds via remote + local engine
-      const _mc = await MaxCoreAIClient?.infer<unknown>("/api/generate/content", {
+      const mc = await MaxCoreAIClient?.infer<unknown>("/api/generate/content", {
         platform,
         topic,
         tone,
-        genre: options?.musicData?.genre,
-        artist_name: options?.musicData?.artist,
+        genre: options.musicData?.genre,
+        artist_name: options.musicData?.artist,
       });
       if (mc?.caption || mc?.hook) {
-        const _parts = mc?.caption
+        const parts = mc?.caption
           ? [mc?.caption]
           : [mc?.hook, mc?.body, mc?.cta].filter(Boolean);
         return {
           success: true,
           data: { content: parts },
-          processingTimeMs: Date?.now() - startTime,
+          processingTimeMs: Date.now() - startTime,
           source: "MaxCoreAI",
-          confidence: mc?.confidence || 0.95,
+          confidence: mc.confidence || 0.95,
         };
       }
       // MaxCore returned no content — transient.
@@ -693,7 +693,7 @@ export class UnifiedAIController {
       return {
         success: false,
         error: "MaxCore returned no content — please retry",
-        processingTimeMs: Date?.now() - startTime,
+        processingTimeMs: Date.now() - startTime,
         source: "MaxCoreAI",
       };
     } catch (error) {
@@ -704,7 +704,7 @@ export class UnifiedAIController {
           error instanceof Error
             ? error?.message
             : "Social content generation failed",
-        processingTimeMs: Date?.now() - startTime,
+        processingTimeMs: Date.now() - startTime,
         source: "MaxCoreAI",
       };
     }
@@ -727,28 +727,28 @@ export class UnifiedAIController {
   public async analyzeSentiment(
     options: SentimentAnalysisOptions,
   ): Promise<UnifiedAIResult<FullAnalysisResult | SentimentResult>> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
     await this?.ensureInitialized();
 
     try {
       // Priority 1: MaxCore
       if (await MaxCoreAIClient?.isAvailable()) {
         try {
-          const _mc = await MaxCoreAIClient?.infer<unknown>(
+          const mc = await MaxCoreAIClient?.infer<unknown>(
             "/analyze/sentiment",
             {
-              text: options?.text,
-              includeEmotions: options?.includeEmotions,
-              includeToxicity: options?.includeToxicity,
+              text: options.text,
+              includeEmotions: options.includeEmotions,
+              includeToxicity: options.includeToxicity,
             },
           );
           if (mc?.sentiment || mc?.label) {
             return {
               success: true,
               data: mc as FullAnalysisResult,
-              processingTimeMs: Date?.now() - startTime,
+              processingTimeMs: Date.now() - startTime,
               source: "MaxCoreAI",
-              confidence: mc?.confidence || 0.92,
+              confidence: mc.confidence || 0.92,
             };
           }
         } catch (mcErr) {
@@ -769,14 +769,14 @@ export class UnifiedAIController {
       } else {
         result = this?.sentimentAnalyzer.analyzeSentiment(options?.text);
       }
-      const _confidence =
+      const confidence =
         "overallConfidence" in result
           ? result?.overallConfidence
           : result?.confidence;
       return {
         success: true,
         data: result,
-        processingTimeMs: Date?.now() - startTime,
+        processingTimeMs: Date.now() - startTime,
         source: "SentimentAnalyzer",
         confidence,
       };
@@ -786,7 +786,7 @@ export class UnifiedAIController {
         success: false,
         error:
           error instanceof Error ? error?.message : "Sentiment analysis failed",
-        processingTimeMs: Date?.now() - startTime,
+        processingTimeMs: Date.now() - startTime,
         source: "SentimentAnalyzer",
       };
     }
@@ -807,7 +807,7 @@ export class UnifiedAIController {
   public async getRecommendations(
     options: RecommendationOptions,
   ): Promise<UnifiedAIResult<RecommendationResult | SimilarityResult[]>> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
     await this?.ensureInitialized();
 
     try {
@@ -842,7 +842,7 @@ export class UnifiedAIController {
           throw new Error(`Unknown recommendation type: ${options?.type}`);
       }
 
-      const _confidence = Array?.isArray(result)
+      const confidence = Array?.isArray(result)
         ? result?.length > 0
           ? result[0].score
           : 0
@@ -851,7 +851,7 @@ export class UnifiedAIController {
       return {
         success: true,
         data: result,
-        processingTimeMs: Date?.now() - startTime,
+        processingTimeMs: Date.now() - startTime,
         source: "RecommendationEngine",
         confidence,
       };
@@ -860,7 +860,7 @@ export class UnifiedAIController {
       return {
         success: false,
         error: error instanceof Error ? error?.message : "Recommendation failed",
-        processingTimeMs: Date?.now() - startTime,
+        processingTimeMs: Date.now() - startTime,
         source: "RecommendationEngine",
       };
     }
@@ -892,19 +892,19 @@ export class UnifiedAIController {
       | ROIForecast
     >
   > {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
     await this?.ensureInitialized();
 
     try {
       // Priority 1: MaxCore
       if (await MaxCoreAIClient?.isAvailable()) {
         try {
-          const _mc = await MaxCoreAIClient?.infer<unknown>("/optimize/ad", {
-            action: options?.action,
-            campaign: options?.campaign,
-            campaigns: options?.campaigns,
-            totalBudget: options?.totalBudget,
-            forecastPeriod: options?.forecastPeriod,
+          const mc = await MaxCoreAIClient?.infer<unknown>("/optimize/ad", {
+            action: options.action,
+            campaign: options.campaign,
+            campaigns: options.campaigns,
+            totalBudget: options.totalBudget,
+            forecastPeriod: options.forecastPeriod,
           });
           // MaxCore returns {action, confidence, source} — accept any non-empty response
           if (
@@ -918,9 +918,9 @@ export class UnifiedAIController {
             return {
               success: true,
               data: mc,
-              processingTimeMs: Date?.now() - startTime,
+              processingTimeMs: Date.now() - startTime,
               source: "MaxCoreAI",
-              confidence: mc?.confidence || 0.9,
+              confidence: mc.confidence || 0.9,
             };
           }
         } catch (mcErr) {
@@ -976,12 +976,12 @@ export class UnifiedAIController {
           throw new Error(`Unknown ad optimization action: ${options?.action}`);
       }
 
-      const _confidence = "confidence" in result ? result?.confidence : 0.75;
+      const confidence = "confidence" in result ? result?.confidence : 0.75;
 
       return {
         success: true,
         data: result,
-        processingTimeMs: Date?.now() - startTime,
+        processingTimeMs: Date.now() - startTime,
         source: "AdOptimizationEngine",
         confidence,
       };
@@ -991,7 +991,7 @@ export class UnifiedAIController {
         success: false,
         error:
           error instanceof Error ? error?.message : "Ad optimization failed",
-        processingTimeMs: Date?.now() - startTime,
+        processingTimeMs: Date.now() - startTime,
         source: "AdOptimizationEngine",
       };
     }
@@ -1028,20 +1028,20 @@ export class UnifiedAIController {
       | ScheduleOptimization
     >
   > {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
     await this?.ensureInitialized();
 
     try {
       // Priority 1: MaxCore
       if (await MaxCoreAIClient?.isAvailable()) {
         try {
-          const _mc = await MaxCoreAIClient?.infer<unknown>(
+          const mc = await MaxCoreAIClient?.infer<unknown>(
             "/predict/engagement",
             {
-              platform: options?.platform,
-              action: options?.action,
-              content: options?.content,
-              postsPerWeek: options?.postsPerWeek,
+              platform: options.platform,
+              action: options.action,
+              content: options.content,
+              postsPerWeek: options.postsPerWeek,
             },
           );
           // MaxCore returns {action, platform, confidence, source} — accept any non-empty response
@@ -1056,9 +1056,9 @@ export class UnifiedAIController {
             return {
               success: true,
               data: mc,
-              processingTimeMs: Date?.now() - startTime,
+              processingTimeMs: Date.now() - startTime,
               source: "MaxCoreAI",
-              confidence: mc?.confidence || 0.9,
+              confidence: mc.confidence || 0.9,
             };
           }
         } catch (mcErr) {
@@ -1100,7 +1100,7 @@ export class UnifiedAIController {
           );
           break;
         case "predict_engagement":
-          const _viralScore = this?.socialAutopilotEngine.scoreViralPotential(
+          const viralScore = this?.socialAutopilotEngine.scoreViralPotential(
             options?.platform,
             options?.content,
           );
@@ -1112,12 +1112,12 @@ export class UnifiedAIController {
           );
       }
 
-      const _confidence = "confidence" in result ? result?.confidence : 0.7;
+      const confidence = "confidence" in result ? result?.confidence : 0.7;
 
       return {
         success: true,
         data: result,
-        processingTimeMs: Date?.now() - startTime,
+        processingTimeMs: Date.now() - startTime,
         source: "SocialAutopilotEngine",
         confidence,
       };
@@ -1129,7 +1129,7 @@ export class UnifiedAIController {
           error instanceof Error
             ? error?.message
             : "Engagement prediction failed",
-        processingTimeMs: Date?.now() - startTime,
+        processingTimeMs: Date.now() - startTime,
         source: "SocialAutopilotEngine",
       };
     }
@@ -1166,11 +1166,11 @@ export class UnifiedAIController {
   public async forecastMetrics(
     options: ForecastOptions,
   ): Promise<UnifiedAIResult<ForecastResult>> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
     await this?.ensureInitialized();
 
     try {
-      const _modelKey = `${options?.metric}_${options?.horizon}`;
+      const modelKey = `${options?.metric}_${options?.horizon}`;
       let model = this?.timeSeriesModels.get(modelKey);
 
       if (!model) {
@@ -1192,7 +1192,7 @@ export class UnifiedAIController {
         labels?.dispose();
       }
 
-      const _result = await model?.forecast(
+      const result = await model?.forecast(
         options?.historicalData,
         options?.timestamps,
       );
@@ -1200,7 +1200,7 @@ export class UnifiedAIController {
       return {
         success: true,
         data: result,
-        processingTimeMs: Date?.now() - startTime,
+        processingTimeMs: Date.now() - startTime,
         source: "AdvancedTimeSeriesModel",
         confidence: 1 - result?.accuracy.mape / 100,
       };
@@ -1210,7 +1210,7 @@ export class UnifiedAIController {
         success: false,
         error:
           error instanceof Error ? error?.message : "Metric forecasting failed",
-        processingTimeMs: Date?.now() - startTime,
+        processingTimeMs: Date.now() - startTime,
         source: "AdvancedTimeSeriesModel",
       };
     }
@@ -1288,7 +1288,7 @@ export class UnifiedAIController {
   // ============================================================================
 
   public async getAIHealthStatus(): Promise<AIHealthStatus> {
-    const _now = new Date();
+    const now = new Date();
 
     if (
       this?.healthCache &&
@@ -1301,20 +1301,20 @@ export class UnifiedAIController {
       modelRegistry: await this?.checkServiceHealth("modelRegistry", () =>
         this?.modelRegistry.listModels(),
       ),
-      contentGenerator: this?.checkSyncServiceHealth("contentGenerator", () => {
+      contentGenerator: this.checkSyncServiceHealth("contentGenerator", () => {
         this?.contentGenerator.generateCaption({
           tone: "casual",
           platform: "twitter",
           maxLength: 50,
         });
       }),
-      sentimentAnalyzer: this?.checkSyncServiceHealth(
+      sentimentAnalyzer: this.checkSyncServiceHealth(
         "sentimentAnalyzer",
         () => {
           this?.sentimentAnalyzer.analyzeSentiment("test");
         },
       ),
-      recommendationEngine: this?.checkSyncServiceHealth(
+      recommendationEngine: this.checkSyncServiceHealth(
         "recommendationEngine",
         () => {
           this?.recommendationEngine.findSimilar("test", "track", 1);
@@ -1329,13 +1329,13 @@ export class UnifiedAIController {
           );
         },
       ),
-      socialAutopilotEngine: this?.checkSyncServiceHealth(
+      socialAutopilotEngine: this.checkSyncServiceHealth(
         "socialAutopilotEngine",
         () => {
           this?.socialAutopilotEngine.predictBestTime("twitter", "text");
         },
       ),
-      timeSeriesModel: this?.checkSyncServiceHealth("timeSeriesModel", () => {
+      timeSeriesModel: this.checkSyncServiceHealth("timeSeriesModel", () => {
         return this?.timeSeriesModels.size > 0;
       }),
       legacyAIService: await this?.checkServiceHealth(
@@ -1352,13 +1352,13 @@ export class UnifiedAIController {
       ),
     };
 
-    const _registeredModels = await this?.modelRegistry.listModels();
-    const _activeModels = registeredModels?.filter((m) => m?.status === "active");
+    const registeredModels = await this?.modelRegistry.listModels();
+    const activeModels = registeredModels?.filter((m) => m?.status === "active");
 
-    const _healthyCount = Object?.values(services).filter(
+    const healthyCount = Object?.values(services).filter(
       (s) => s?.status === "healthy",
     ).length;
-    const _totalCount = Object?.keys(services).length;
+    const totalCount = Object?.keys(services).length;
 
     let overall: "healthy" | "degraded" | "unhealthy" = "healthy";
     if (healthyCount < totalCount * 0.5) {
@@ -1372,9 +1372,9 @@ export class UnifiedAIController {
       lastChecked: now,
       services,
       modelStats: {
-        registeredModels: registeredModels?.length,
-        activeModels: activeModels?.length,
-        trainedModels: this?.timeSeriesModels.size,
+        registeredModels: registeredModels.length,
+        activeModels: activeModels.length,
+        trainedModels: this.timeSeriesModels.size,
       },
     };
 
@@ -1386,20 +1386,20 @@ export class UnifiedAIController {
     _name: string,
     healthCheck: () => Promise<unknown>,
   ): Promise<ServiceHealth> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
     try {
       await healthCheck();
       return {
         status: "healthy",
         initialized: true,
-        responseTimeMs: Date?.now() - startTime,
+        responseTimeMs: Date.now() - startTime,
       };
     } catch (error) {
       return {
         status: "unhealthy",
-        initialized: this?.initialized,
+        initialized: this.initialized,
         lastError: error instanceof Error ? error?.message : "Unknown error",
-        responseTimeMs: Date?.now() - startTime,
+        responseTimeMs: Date.now() - startTime,
       };
     }
   }
@@ -1408,20 +1408,20 @@ export class UnifiedAIController {
     _name: string,
     healthCheck: () => any,
   ): ServiceHealth {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
     try {
       healthCheck();
       return {
         status: "healthy",
         initialized: true,
-        responseTimeMs: Date?.now() - startTime,
+        responseTimeMs: Date.now() - startTime,
       };
     } catch (error) {
       return {
         status: "unhealthy",
-        initialized: this?.initialized,
+        initialized: this.initialized,
         lastError: error instanceof Error ? error?.message : "Unknown error",
-        responseTimeMs: Date?.now() - startTime,
+        responseTimeMs: Date.now() - startTime,
       };
     }
   }
@@ -1436,9 +1436,9 @@ export class UnifiedAIController {
 
   public getServiceStats() {
     return {
-      initialized: this?.initialized,
-      timeSeriesModelsLoaded: this?.timeSeriesModels.size,
-      lastHealthCheck: this?.lastHealthCheck,
+      initialized: this.initialized,
+      timeSeriesModelsLoaded: this.timeSeriesModels.size,
+      lastHealthCheck: this.lastHealthCheck,
     };
   }
 
@@ -1451,9 +1451,9 @@ export class UnifiedAIController {
     content: Record<string, unknown>;
     goals: Record<string, unknown>;
   }): Promise<UnifiedAIResult<unknown>> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
     try {
-      const _result = await this?.adEngine.optimizePersonalAdNetwork(
+      const result = await this?.adEngine.optimizePersonalAdNetwork(
         options?.profiles,
         options?.content,
         options?.goals,
@@ -1461,8 +1461,8 @@ export class UnifiedAIController {
       return {
         success: true,
         data: result,
-        processingTimeMs: Date?.now() - startTime,
-        source: "AdOptimizationEngine?.optimizePersonalAdNetwork",
+        processingTimeMs: Date.now() - startTime,
+        source: "AdOptimizationEngine.optimizePersonalAdNetwork",
       };
     } catch (error) {
       logger?.warn({ err: error }, "Organic growth optimization error:");
@@ -1472,8 +1472,8 @@ export class UnifiedAIController {
           error instanceof Error
             ? error?.message
             : "Organic optimization failed",
-        processingTimeMs: Date?.now() - startTime,
-        source: "AdOptimizationEngine?.optimizePersonalAdNetwork",
+        processingTimeMs: Date.now() - startTime,
+        source: "AdOptimizationEngine.optimizePersonalAdNetwork",
       };
     }
   }
@@ -1481,14 +1481,14 @@ export class UnifiedAIController {
   public async calculateOrganicROI(
     results: Record<string, unknown>,
   ): Promise<UnifiedAIResult<unknown>> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
     try {
-      const _analysis = this?.adEngine.calculateOrganicROI(results);
+      const analysis = this?.adEngine.calculateOrganicROI(results);
       return {
         success: true,
         data: analysis,
-        processingTimeMs: Date?.now() - startTime,
-        source: "AdOptimizationEngine?.calculateOrganicROI",
+        processingTimeMs: Date.now() - startTime,
+        source: "AdOptimizationEngine.calculateOrganicROI",
       };
     } catch (error) {
       logger?.warn({ err: error }, "Organic ROI calculation error:");
@@ -1498,8 +1498,8 @@ export class UnifiedAIController {
           error instanceof Error
             ? error?.message
             : "Organic ROI calculation failed",
-        processingTimeMs: Date?.now() - startTime,
-        source: "AdOptimizationEngine?.calculateOrganicROI",
+        processingTimeMs: Date.now() - startTime,
+        source: "AdOptimizationEngine.calculateOrganicROI",
       };
     }
   }
@@ -1509,9 +1509,9 @@ export class UnifiedAIController {
     contentQueue: unknown[];
     goals: Record<string, unknown>;
   }): Promise<UnifiedAIResult<unknown>> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
     try {
-      const _schedule = this?.adEngine.generateOrganicSchedule(
+      const schedule = this?.adEngine.generateOrganicSchedule(
         options?.profiles,
         options?.contentQueue,
         options?.goals,
@@ -1519,8 +1519,8 @@ export class UnifiedAIController {
       return {
         success: true,
         data: schedule,
-        processingTimeMs: Date?.now() - startTime,
-        source: "AdOptimizationEngine?.generateOrganicSchedule",
+        processingTimeMs: Date.now() - startTime,
+        source: "AdOptimizationEngine.generateOrganicSchedule",
       };
     } catch (error) {
       logger?.warn({ err: error }, "Organic schedule generation error:");
@@ -1528,8 +1528,8 @@ export class UnifiedAIController {
         success: false,
         error:
           error instanceof Error ? error?.message : "Schedule generation failed",
-        processingTimeMs: Date?.now() - startTime,
-        source: "AdOptimizationEngine?.generateOrganicSchedule",
+        processingTimeMs: Date.now() - startTime,
+        source: "AdOptimizationEngine.generateOrganicSchedule",
       };
     }
   }
@@ -1537,21 +1537,21 @@ export class UnifiedAIController {
   public async analyzePersonalAdNetwork(
     userId?: string,
   ): Promise<UnifiedAIResult<unknown>> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
     try {
       let profiles: unknown[] = [];
 
       if (userId) {
-        const _socialAccounts = await storage?.getUserSocialAccounts(userId);
+        const socialAccounts = await storage?.getUserSocialAccounts(userId);
         if (socialAccounts && socialAccounts?.length > 0) {
           profiles = socialAccounts?.map((account: Record<string, unknown>) => ({
-            id: account?.id?.toString() || account?.platformUserId || "",
-            platform: account?.platform,
-            username: account?.username || account?.profileName || "user",
-            followers: account?.followers || account?.metrics?.followers || 0,
+            id: account.id?.toString() || account?.platformUserId || "",
+            platform: account.platform,
+            username: account.username || account?.profileName || "user",
+            followers: account.followers || account?.metrics?.followers || 0,
             engagementRate:
               account?.engagementRate || account?.metrics?.engagementRate || 0.03,
-            isActive: account?.isActive !== false,
+            isActive: account.isActive !== false,
           }));
         }
       }
@@ -1588,7 +1588,7 @@ export class UnifiedAIController {
         );
       }
 
-      const _result = await this?.adEngine.optimizePersonalAdNetwork(
+      const result = await this?.adEngine.optimizePersonalAdNetwork(
         profiles,
         {
           id: userId || "demo",
@@ -1601,12 +1601,12 @@ export class UnifiedAIController {
       return {
         success: true,
         data: {
-          networkAnalysis: result?.networkAnalysis,
-          equivalentAdValue: result?.equivalentAdValue,
-          recommendations: result?.recommendations,
+          networkAnalysis: result.networkAnalysis,
+          equivalentAdValue: result.equivalentAdValue,
+          recommendations: result.recommendations,
         },
-        processingTimeMs: Date?.now() - startTime,
-        source: "AdOptimizationEngine?.analyzePersonalAdNetwork",
+        processingTimeMs: Date.now() - startTime,
+        source: "AdOptimizationEngine.analyzePersonalAdNetwork",
       };
     } catch (error) {
       logger?.warn({ err: error }, "Personal Ad Network analysis error:");
@@ -1614,8 +1614,8 @@ export class UnifiedAIController {
         success: false,
         error:
           error instanceof Error ? error?.message : "Network analysis failed",
-        processingTimeMs: Date?.now() - startTime,
-        source: "AdOptimizationEngine?.analyzePersonalAdNetwork",
+        processingTimeMs: Date.now() - startTime,
+        source: "AdOptimizationEngine.analyzePersonalAdNetwork",
       };
     }
   }
@@ -1625,6 +1625,6 @@ export class UnifiedAIController {
 // SINGLETON EXPORT
 // ============================================================================
 
-export const _unifiedAIController = UnifiedAIController?.getInstance();
+export const unifiedAIController = UnifiedAIController?.getInstance();
 
 export default unifiedAIController;

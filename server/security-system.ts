@@ -7,14 +7,7 @@ import { promisify } from "util";
 import { exec } from "child_process";
 import { isProductionEnv } from "./lib/envHelpers.js";
 import { db } from "./db";
-import {
-  ipBlacklist,
-  securityThreats,
-  notifications,
-  aiModels,
-  inferenceRuns,
-  explanationLogs,
-} from "@shared/schema";
+import { ipBlacklist, securityThreats, notifications, aiModels, inferenceRuns, explanationLogs } from "@shared/schema";
 import { eq, and, gte, or, sql } from "drizzle-orm";
 import { logger } from "./logger.js";
 import { env } from "./config/env.js";
@@ -36,10 +29,17 @@ interface SecurityBehaviorProfile {
   createdAt?: Date;
 }
 
-// Local storage for security data (in-memory until schema tables are added)
-new Map<string, SecurityBehaviorProfile>();
 
-const _execAsync = promisify(exec);
+
+
+
+// Local storage for security data (in-memory until schema tables are added)
+new Map<
+  string,
+  SecurityBehaviorProfile
+>();
+
+const execAsync = promisify(exec);
 
 // Self-Healing Security System
 export class SelfHealingSecuritySystem {
@@ -49,12 +49,12 @@ export class SelfHealingSecuritySystem {
     totalThreats: 0,
     threatsBlocked: 0,
     threatsHealed: 0,
-    systemUptime: Date?.now(),
-    lastSecurityScan: Date?.now(),
+    systemUptime: Date.now(),
+    lastSecurityScan: Date.now(),
     activeThreats: 0,
     securityScore: 100,
     suspiciousActivities: 0,
-    lastScan: Date?.now(),
+    lastScan: Date.now(),
   };
   private healingProcesses: Map<string, HealingProcess> = new Map();
   private securityRules: SecurityRule[] = [];
@@ -94,7 +94,7 @@ export class SelfHealingSecuritySystem {
   // Initialize AI Models for professional security
   private async initializeAIModels(): Promise<void> {
     try {
-      const _models = [
+      const models = [
         {
           modelName: "behavior_analyzer_v1",
           modelType: "security",
@@ -123,7 +123,7 @@ export class SelfHealingSecuritySystem {
       ];
 
       for (const model of models) {
-        const _existing = await db?.query.aiModels?.findFirst({
+        const existing = await db?.query.aiModels?.findFirst({
           where: (aiModels, { eq }) => eq(aiModels?.modelName, model?.modelName),
         });
 
@@ -317,7 +317,7 @@ export class SelfHealingSecuritySystem {
       }> = [];
 
       // Check for exposed environment variables
-      const _sensitiveEnvVars = [
+      const sensitiveEnvVars = [
         "DATABASE_URL",
         "SESSION_SECRET",
         "STRIPE_SECRET_KEY",
@@ -333,7 +333,7 @@ export class SelfHealingSecuritySystem {
       }
 
       // Check for insecure headers in recent requests
-      const _recentThreats = this?.recentThreats.filter(
+      const recentThreats = this?.recentThreats.filter(
         (t) => t?.type === "missing-security-headers",
       );
       if (recentThreats?.length > 5) {
@@ -345,7 +345,7 @@ export class SelfHealingSecuritySystem {
       }
 
       // Check for rate limiting effectiveness
-      const _bruteForceThreats = this?.recentThreats.filter(
+      const bruteForceThreats = this?.recentThreats.filter(
         (t) => t?.type === "brute-force",
       );
       if (bruteForceThreats?.length > 10) {
@@ -363,7 +363,7 @@ export class SelfHealingSecuritySystem {
           `Vulnerability assessment found ${vulnerabilities?.length} issues`,
           { vulnerabilities },
         );
-        this?.securityMetrics.suspiciousActivities += vulnerabilities?.length;
+        this.securityMetrics.suspiciousActivities += vulnerabilities?.length;
       }
     } catch (error: unknown) {
       logger?.warn({ err: error }, "Error in vulnerability assessment:");
@@ -380,11 +380,11 @@ export class SelfHealingSecuritySystem {
       }> = [];
 
       // Test: SQL injection pattern detection
-      const _sqlTestPayload = "'; DROP TABLE users; --";
-      const _sqlDetected = this?.threatPatterns.some(
-        (p) => p?.id === "sql-injection" && p?.pattern.test(sqlTestPayload),
+      const sqlTestPayload = "'; DROP TABLE users; --";
+      const sqlDetected = this.threatPatterns.some(
+        (p) => p.id === "sql-injection" && p.pattern.test(sqlTestPayload),
       );
-      testResults?.push({
+      testResults.push({
         test: "sql-injection-detection",
         passed: sqlDetected,
         details: sqlDetected
@@ -393,11 +393,11 @@ export class SelfHealingSecuritySystem {
       });
 
       // Test: XSS pattern detection
-      const _xssTestPayload = '<script>alert("xss")</script>';
-      const _xssDetected = this?.threatPatterns.some(
-        (p) => p?.id === "xss" && p?.pattern.test(xssTestPayload),
+      const xssTestPayload = '<script>alert("xss")</script>';
+      const xssDetected = this.threatPatterns.some(
+        (p) => p.id === "xss" && p.pattern.test(xssTestPayload),
       );
-      testResults?.push({
+      testResults.push({
         test: "xss-detection",
         passed: xssDetected,
         details: xssDetected
@@ -406,12 +406,12 @@ export class SelfHealingSecuritySystem {
       });
 
       // Test: Path traversal detection
-      const _pathTraversalPayload = "../../../etc/passwd";
-      const _pathDetected = this?.threatPatterns.some(
+      const pathTraversalPayload = "../../../etc/passwd";
+      const pathDetected = this.threatPatterns.some(
         (p) =>
-          p?.id === "path-traversal" && p?.pattern.test(pathTraversalPayload),
+          p.id === "path-traversal" && p.pattern.test(pathTraversalPayload),
       );
-      testResults?.push({
+      testResults.push({
         test: "path-traversal-detection",
         passed: pathDetected,
         details: pathDetected
@@ -420,11 +420,11 @@ export class SelfHealingSecuritySystem {
       });
 
       // Test: Command injection detection
-      const _cmdTestPayload = "; rm -rf /";
-      const _cmdDetected = this?.threatPatterns.some(
-        (p) => p?.id === "command-injection" && p?.pattern.test(cmdTestPayload),
+      const cmdTestPayload = "; rm -rf /";
+      const cmdDetected = this.threatPatterns.some(
+        (p) => p.id === "command-injection" && p.pattern.test(cmdTestPayload),
       );
-      testResults?.push({
+      testResults.push({
         test: "command-injection-detection",
         passed: cmdDetected,
         details: cmdDetected
@@ -432,14 +432,14 @@ export class SelfHealingSecuritySystem {
           : "Command injection detection failed",
       });
 
-      const _failedTests = testResults?.filter((t) => !t?.passed);
-      if (failedTests?.length > 0) {
-        logger?.warn(`Penetration test: ${failedTests?.length} tests failed`, {
+      const failedTests = testResults.filter((t) => !t.passed);
+      if (failedTests.length > 0) {
+        logger.warn(`Penetration test: ${failedTests.length} tests failed`, {
           failedTests,
         });
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error in penetration test simulation:");
+      logger.warn({ err: error }, "Error in penetration test simulation:");
     }
   }
 
@@ -454,7 +454,7 @@ export class SelfHealingSecuritySystem {
 
       // Check if HTTPS is enforced (in production)
       if (isProductionEnv()) {
-        auditFindings?.push({
+        auditFindings.push({
           setting: "https-enforcement",
           status: "configured",
           recommendation: "Ensure all traffic is encrypted via HTTPS",
@@ -462,8 +462,8 @@ export class SelfHealingSecuritySystem {
       }
 
       // Check session configuration
-      if (!env?.SESSION_SECRET || env?.SESSION_SECRET === "development-secret") {
-        auditFindings?.push({
+      if (!env.SESSION_SECRET || env.SESSION_SECRET === "development-secret") {
+        auditFindings.push({
           setting: "session-secret",
           status: "warning",
           recommendation: "Use a strong, unique session secret in production",
@@ -471,10 +471,10 @@ export class SelfHealingSecuritySystem {
       }
 
       // Check rate limiting is active
-      const _rateLimitActive = this?.threatPatterns.some(
-        (p) => p?.id === "brute-force",
+      const rateLimitActive = this.threatPatterns.some(
+        (p) => p.id === "brute-force",
       );
-      auditFindings?.push({
+      auditFindings.push({
         setting: "rate-limiting",
         status: rateLimitActive ? "enabled" : "disabled",
         recommendation:
@@ -482,28 +482,28 @@ export class SelfHealingSecuritySystem {
       });
 
       // Check CORS configuration
-      auditFindings?.push({
+      auditFindings.push({
         setting: "cors-policy",
         status: "configured",
         recommendation: "Ensure CORS only allows trusted origins",
       });
 
       // Check security headers
-      const _hasSecurityHeaders = this?.threatPatterns.some(
-        (p) => p?.action === "block",
+      const hasSecurityHeaders = this.threatPatterns.some(
+        (p) => p.action === "block",
       );
-      auditFindings?.push({
+      auditFindings.push({
         setting: "security-headers",
         status: hasSecurityHeaders ? "enabled" : "partial",
         recommendation: "Implement all OWASP recommended security headers",
       });
 
-      logger?.info("Security configuration audit completed", {
-        findings: auditFindings?.length,
-        warnings: auditFindings?.filter((f) => f?.status === "warning").length,
+      logger.info("Security configuration audit completed", {
+        findings: auditFindings.length,
+        warnings: auditFindings.filter((f) => f.status === "warning").length,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error in security configuration audit:");
+      logger.warn({ err: error }, "Error in security configuration audit:");
     }
   }
 
@@ -511,43 +511,43 @@ export class SelfHealingSecuritySystem {
   private async updateThreatDatabase(): Promise<void> {
     try {
       // Analyze recent threats to identify new patterns
-      const _recentThreatTypes = new Map<string, number>();
+      const recentThreatTypes = new Map<string, number>();
 
-      for (const threat of this?.recentThreats) {
-        const _count = recentThreatTypes?.get(threat?.type) || 0;
-        recentThreatTypes?.set(threat?.type, count + 1);
+      for (const threat of this.recentThreats) {
+        const count = recentThreatTypes.get(threat.type) || 0;
+        recentThreatTypes.set(threat.type, count + 1);
       }
 
       // Identify frequently occurring threat types
-      const _highFrequencyThreats = Array?.from(recentThreatTypes?.entries())
+      const highFrequencyThreats = Array.from(recentThreatTypes.entries())
         .filter(([, count]) => count > 5)
         .map(([type]) => type);
 
       // Adjust threat pattern priorities based on frequency
-      for (const pattern of this?.threatPatterns) {
-        if (highFrequencyThreats?.includes(pattern?.id)) {
+      for (const pattern of this.threatPatterns) {
+        if (highFrequencyThreats.includes(pattern.id)) {
           // Increase monitoring for high-frequency threats
-          logger?.info(
-            `Increased monitoring for threat pattern: ${pattern?.name}`,
+          logger.info(
+            `Increased monitoring for threat pattern: ${pattern.name}`,
           );
         }
       }
 
       // Clean old threats from the database (keep last 1000)
-      if (this?.recentThreats.length > 1000) {
-        this.recentThreats = this?.recentThreats.slice(-1000);
+      if (this.recentThreats.length > 1000) {
+        this.recentThreats = this.recentThreats.slice(-1000);
       }
 
       // Update security metrics
-      this?.securityMetrics.lastScan = Date?.now();
+      this.securityMetrics.lastScan = Date.now();
 
-      logger?.debug("Threat database updated", {
-        totalPatterns: this?.threatPatterns.length,
-        recentThreats: this?.recentThreats.length,
-        highFrequencyThreats: highFrequencyThreats?.length,
+      logger.debug("Threat database updated", {
+        totalPatterns: this.threatPatterns.length,
+        recentThreats: this.recentThreats.length,
+        highFrequencyThreats: highFrequencyThreats.length,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error updating threat database:");
+      logger.warn({ err: error }, "Error updating threat database:");
     }
   }
 
@@ -557,14 +557,14 @@ export class SelfHealingSecuritySystem {
       const { stdout } = await execAsync(
         "netstat -an | grep ESTABLISHED | wc -l",
       );
-      const _activeConnections = parseInt(stdout?.trim());
+      const activeConnections = parseInt(stdout.trim());
 
       if (activeConnections > 1000) {
-        this?.detectThreat("network-anomaly", {
+        this.detectThreat("network-anomaly", {
           type: "excessive-connections",
           severity: "medium",
           details: `High number of active connections: ${activeConnections}`,
-          timestamp: Date?.now(),
+          timestamp: Date.now(),
         });
       }
     } catch (error: unknown) {
@@ -584,14 +584,14 @@ export class SelfHealingSecuritySystem {
       const { stdout } = await execAsync(
         "find /tmp -type f -mtime -1 2>/dev/null | wc -l",
       );
-      const _recentFiles = parseInt(stdout?.trim());
+      const recentFiles = parseInt(stdout.trim());
 
       if (recentFiles > 100) {
-        this?.detectThreat("file-system-anomaly", {
+        this.detectThreat("file-system-anomaly", {
           type: "suspicious-file-activity",
           severity: "medium",
           details: `High number of recent files: ${recentFiles}`,
-          timestamp: Date?.now(),
+          timestamp: Date.now(),
         });
       }
     } catch (error: unknown) {
@@ -603,14 +603,14 @@ export class SelfHealingSecuritySystem {
   private async checkProcessIntegrity(): Promise<void> {
     try {
       const { stdout } = await execAsync("ps aux | wc -l");
-      const _processCount = parseInt(stdout?.trim());
+      const processCount = parseInt(stdout.trim());
 
       if (processCount > 500) {
-        this?.detectThreat("process-anomaly", {
+        this.detectThreat("process-anomaly", {
           type: "excessive-processes",
           severity: "medium",
           details: `High number of processes: ${processCount}`,
-          timestamp: Date?.now(),
+          timestamp: Date.now(),
         });
       }
     } catch (error: unknown) {
@@ -624,14 +624,14 @@ export class SelfHealingSecuritySystem {
       const { stdout } = await execAsync(
         "free -m | grep Mem | awk '{print $3/$2 * 100.0}'",
       );
-      const _memoryUsage = parseFloat(stdout?.trim());
+      const memoryUsage = parseFloat(stdout.trim());
 
       if (memoryUsage > 90) {
-        this?.detectThreat("memory-anomaly", {
+        this.detectThreat("memory-anomaly", {
           type: "high-memory-usage",
           severity: "high",
-          details: `High memory usage: ${memoryUsage?.toFixed(2)}%`,
-          timestamp: Date?.now(),
+          details: `High memory usage: ${memoryUsage.toFixed(2)}%`,
+          timestamp: Date.now(),
         });
       }
     } catch (error: unknown) {
@@ -641,69 +641,69 @@ export class SelfHealingSecuritySystem {
 
   // Detect and handle threats
   private detectThreat(threatId: string, threatInfo: ThreatInfo): void {
-    this?.threatDatabase.set(threatId, threatInfo);
-    this?.securityMetrics.totalThreats++;
-    this?.securityMetrics.activeThreats++;
+    this.threatDatabase.set(threatId, threatInfo);
+    this.securityMetrics.totalThreats++;
+    this.securityMetrics.activeThreats++;
 
     // Immediate response based on severity
-    switch (threatInfo?.severity) {
+    switch (threatInfo.severity) {
       case "critical":
-        this?.handleCriticalThreat(threatId, threatInfo);
+        this.handleCriticalThreat(threatId, threatInfo);
         break;
       case "high":
-        this?.handleHighThreat(threatId, threatInfo);
+        this.handleHighThreat(threatId, threatInfo);
         break;
       case "medium":
-        this?.handleMediumThreat(threatId, threatInfo);
+        this.handleMediumThreat(threatId, threatInfo);
         break;
       case "low":
-        this?.handleLowThreat(threatId, threatInfo);
+        this.handleLowThreat(threatId, threatInfo);
         break;
     }
 
     // Start healing process
-    this?.startHealingProcess(threatId, threatInfo);
+    this.startHealingProcess(threatId, threatInfo);
   }
 
   // Handle critical threats
   private handleCriticalThreat(threatId: string, threatInfo: ThreatInfo): void {
-    logger?.info(`🚨 CRITICAL THREAT DETECTED: ${threatInfo?.type}`);
+    logger.info(`🚨 CRITICAL THREAT DETECTED: ${threatInfo.type}`);
 
     // Immediate blocking
-    this?.blockThreat(threatId);
+    this.blockThreat(threatId);
 
     // Alert administrators
-    this?.sendSecurityAlert(threatInfo);
+    this.sendSecurityAlert(threatInfo);
 
     // Activate emergency protocols
-    this?.activateEmergencyProtocols();
+    this.activateEmergencyProtocols();
   }
 
   // Handle high threats
   private handleHighThreat(threatId: string, threatInfo: ThreatInfo): void {
-    logger?.info(`⚠️ HIGH THREAT DETECTED: ${threatInfo?.type}`);
+    logger.info(`⚠️ HIGH THREAT DETECTED: ${threatInfo.type}`);
 
     // Enhanced monitoring
-    this?.enhanceMonitoring(threatId);
+    this.enhanceMonitoring(threatId);
 
     // Alert administrators
-    this?.sendSecurityAlert(threatInfo);
+    this.sendSecurityAlert(threatInfo);
   }
 
   // Handle medium threats
   private handleMediumThreat(threatId: string, threatInfo: ThreatInfo): void {
-    logger?.info(`🔶 MEDIUM THREAT DETECTED: ${threatInfo?.type}`);
+    logger.info(`🔶 MEDIUM THREAT DETECTED: ${threatInfo.type}`);
 
     // Log and monitor
-    this?.logThreat(threatId, threatInfo);
+    this.logThreat(threatId, threatInfo);
   }
 
   // Handle low threats
   private handleLowThreat(threatId: string, threatInfo: ThreatInfo): void {
-    logger?.info(`🔸 LOW THREAT DETECTED: ${threatInfo?.type}`);
+    logger.info(`🔸 LOW THREAT DETECTED: ${threatInfo.type}`);
 
     // Log for analysis
-    this?.logThreat(threatId, threatInfo);
+    this.logThreat(threatId, threatInfo);
   }
 
   // Start healing process
@@ -711,16 +711,16 @@ export class SelfHealingSecuritySystem {
     const healingProcess: HealingProcess = {
       id: threatId,
       threatInfo,
-      startTime: Date?.now(),
+      startTime: Date.now(),
       status: "active",
       healingSteps: [],
       success: false,
     };
 
-    this?.healingProcesses.set(threatId, healingProcess);
+    this.healingProcesses.set(threatId, healingProcess);
 
     // Execute healing based on threat type
-    this?.executeHealing(threatId, threatInfo);
+    this.executeHealing(threatId, threatInfo);
   }
 
   // Execute healing process
@@ -729,52 +729,52 @@ export class SelfHealingSecuritySystem {
     threatInfo: ThreatInfo,
   ): Promise<void> {
     try {
-      const _healingProcess = this?.healingProcesses.get(threatId);
+      const healingProcess = this.healingProcesses.get(threatId);
       if (!healingProcess) return;
 
       // Determine healing strategy
-      const _healingStrategy = this?.determineHealingStrategy(threatInfo);
+      const healingStrategy = this.determineHealingStrategy(threatInfo);
 
       // Execute healing steps
       for (const step of healingStrategy) {
-        healingProcess?.healingSteps.push({
-          step: step?.name,
-          startTime: Date?.now(),
+        healingProcess.healingSteps.push({
+          step: step.name,
+          startTime: Date.now(),
           status: "running",
         });
 
         try {
-          await step?.execute();
-          healingProcess?.healingSteps[
-            healingProcess?.healingSteps.length - 1
+          await step.execute();
+          healingProcess.healingSteps[
+            healingProcess.healingSteps.length - 1
           ].status = "completed";
         } catch (error: unknown) {
-          healingProcess?.healingSteps[
-            healingProcess?.healingSteps.length - 1
+          healingProcess.healingSteps[
+            healingProcess.healingSteps.length - 1
           ].status = "failed";
-          healingProcess?.healingSteps[
-            healingProcess?.healingSteps.length - 1
-          ].error = error instanceof Error ? error?.message : String(error);
+          healingProcess.healingSteps[
+            healingProcess.healingSteps.length - 1
+          ].error = error instanceof Error ? error.message : String(error);
         }
       }
 
       // Mark healing as successful
       healingProcess.status = "completed";
       healingProcess.success = true;
-      healingProcess.endTime = Date?.now();
+      healingProcess.endTime = Date.now();
 
-      this?.securityMetrics.threatsHealed++;
-      this?.securityMetrics.activeThreats--;
+      this.securityMetrics.threatsHealed++;
+      this.securityMetrics.activeThreats--;
 
-      logger?.info(
-        `✅ THREAT HEALED: ${threatInfo?.type} in ${healingProcess?.endTime - healingProcess?.startTime}ms`,
+      logger.info(
+        `✅ THREAT HEALED: ${threatInfo.type} in ${healingProcess.endTime - healingProcess.startTime}ms`,
       );
     } catch (error: unknown) {
-      logger?.warn({ err: error }, `❌ HEALING FAILED: ${threatInfo?.type}`);
-      const _healingProcess = this?.healingProcesses.get(threatId);
+      logger.warn({ err: error }, `❌ HEALING FAILED: ${threatInfo.type}`);
+      const healingProcess = this.healingProcesses.get(threatId);
       if (healingProcess) {
         healingProcess.status = "failed";
-        healingProcess.endTime = Date?.now();
+        healingProcess.endTime = Date.now();
       }
     }
   }
@@ -785,46 +785,46 @@ export class SelfHealingSecuritySystem {
       [
         "sql-injection",
         [
-          { name: "sanitize-input", execute: () => this?.sanitizeInput() },
-          { name: "update-firewall", execute: () => this?.updateFirewall() },
-          { name: "patch-database", execute: () => this?.patchDatabase() },
+          { name: "sanitize-input", execute: () => this.sanitizeInput() },
+          { name: "update-firewall", execute: () => this.updateFirewall() },
+          { name: "patch-database", execute: () => this.patchDatabase() },
         ],
       ],
       [
         "xss",
         [
-          { name: "sanitize-html", execute: () => this?.sanitizeHtml() },
+          { name: "sanitize-html", execute: () => this.sanitizeHtml() },
           {
             name: "update-csp",
-            execute: () => this?.updateContentSecurityPolicy(),
+            execute: () => this.updateContentSecurityPolicy(),
           },
-          { name: "patch-frontend", execute: () => this?.patchFrontend() },
+          { name: "patch-frontend", execute: () => this.patchFrontend() },
         ],
       ],
       [
         "ddos",
         [
-          { name: "auto-scale", execute: () => this?.autoScale() },
-          { name: "rate-limit", execute: () => this?.updateRateLimits() },
-          { name: "block-ips", execute: () => this?.blockMaliciousIPs() },
+          { name: "auto-scale", execute: () => this.autoScale() },
+          { name: "rate-limit", execute: () => this.updateRateLimits() },
+          { name: "block-ips", execute: () => this.blockMaliciousIPs() },
         ],
       ],
       [
         "brute-force",
         [
-          { name: "temporary-block", execute: () => this?.temporaryBlock() },
+          { name: "temporary-block", execute: () => this.temporaryBlock() },
           {
             name: "strengthen-auth",
-            execute: () => this?.strengthenAuthentication(),
+            execute: () => this.strengthenAuthentication(),
           },
-          { name: "update-captcha", execute: () => this?.updateCaptcha() },
+          { name: "update-captcha", execute: () => this.updateCaptcha() },
         ],
       ],
     ]);
 
     return (
-      strategies?.get(threatInfo?.type) || [
-        { name: "generic-healing", execute: () => this?.genericHealing() },
+      strategies.get(threatInfo.type) || [
+        { name: "generic-healing", execute: () => this.genericHealing() },
       ]
     );
   }
@@ -832,44 +832,44 @@ export class SelfHealingSecuritySystem {
   // Healing implementations - Production Ready
 
   private async sanitizeInput(): Promise<void> {
-    logger?.info("🧹 Sanitizing input and blocking SQL injection...");
+    logger.info("🧹 Sanitizing input and blocking SQL injection...");
 
-    if (!this?.currentRequestContext) return;
+    if (!this.currentRequestContext) return;
 
-    const { ipAddress,  severity } = this?.currentRequestContext;
+    const { ipAddress,  severity } = this.currentRequestContext;
 
-    await this?.trackThreatInDatabase({
+    await this.trackThreatInDatabase({
       threatType: "sql-injection",
       severity,
       source: "request-body",
       ipAddress,
-      requestPath: this?.currentRequestContext.requestPath,
-      requestMethod: this?.currentRequestContext.requestMethod,
+      requestPath: this.currentRequestContext.requestPath,
+      requestMethod: this.currentRequestContext.requestMethod,
       details: "SQL injection attempt detected and blocked",
       blocked: true,
       healed: false,
       healingStatus: "in-progress",
     });
 
-    await this?.addIpToBlacklist(ipAddress, "sql-injection", severity);
+    await this.addIpToBlacklist(ipAddress, "sql-injection", severity);
 
-    logger?.info("✅ SQL injection threat mitigated");
+    logger.info("✅ SQL injection threat mitigated");
   }
 
   private async sanitizeHtml(): Promise<void> {
-    logger?.info("🧹 Sanitizing HTML and blocking XSS attack...");
+    logger.info("🧹 Sanitizing HTML and blocking XSS attack...");
 
-    if (!this?.currentRequestContext) return;
+    if (!this.currentRequestContext) return;
 
-    const { ipAddress,  severity } = this?.currentRequestContext;
+    const { ipAddress,  severity } = this.currentRequestContext;
 
-    await this?.trackThreatInDatabase({
+    await this.trackThreatInDatabase({
       threatType: "xss-attack",
       severity,
       source: "request-body",
       ipAddress,
-      requestPath: this?.currentRequestContext.requestPath,
-      requestMethod: this?.currentRequestContext.requestMethod,
+      requestPath: this.currentRequestContext.requestPath,
+      requestMethod: this.currentRequestContext.requestMethod,
       details: "XSS attack attempt detected, input sanitized",
       blocked: severity === "critical" || severity === "high",
       healed: true,
@@ -877,24 +877,24 @@ export class SelfHealingSecuritySystem {
     });
 
     if (severity === "critical" || severity === "high") {
-      await this?.addIpToBlacklist(ipAddress, "xss-attack", severity);
+      await this.addIpToBlacklist(ipAddress, "xss-attack", severity);
     }
 
-    logger?.info("✅ XSS threat mitigated");
+    logger.info("✅ XSS threat mitigated");
   }
 
   private async autoScale(): Promise<void> {
-    logger?.info("📈 Auto-scaling resources to handle DDoS...");
+    logger.info("📈 Auto-scaling resources to handle DDoS...");
 
-    const _currentLoad =
-      process?.memoryUsage().heapUsed / process?.memoryUsage().heapTotal;
+    const currentLoad =
+      process.memoryUsage().heapUsed / process.memoryUsage().heapTotal;
 
     if (currentLoad > 0.8) {
-      logger?.info(
+      logger.info(
         "⚠️ High memory usage detected, requesting resource scaling...",
       );
 
-      await this?.trackThreatInDatabase({
+      await this.trackThreatInDatabase({
         threatType: "ddos-attack",
         severity: "high",
         source: "system-monitor",
@@ -905,49 +905,49 @@ export class SelfHealingSecuritySystem {
       });
     }
 
-    logger?.info("✅ DDoS mitigation measures applied");
+    logger.info("✅ DDoS mitigation measures applied");
   }
 
   private async updateRateLimits(): Promise<void> {
-    logger?.info("🚦 Updating rate limits dynamically...");
+    logger.info("🚦 Updating rate limits dynamically...");
 
-    if (!this?.currentRequestContext) return;
+    if (!this.currentRequestContext) return;
 
-    const { ipAddress, severity } = this?.currentRequestContext;
+    const { ipAddress, severity } = this.currentRequestContext;
 
-    const _ipInfo = this?.ipTracker.get(ipAddress) || {
+    const ipInfo = this.ipTracker.get(ipAddress) || {
       requestCount: 0,
-      lastRequest: Date?.now(),
+      lastRequest: Date.now(),
       threatLevel: "low",
       blocked: false,
     };
 
-    ipInfo?.requestCount++;
-    ipInfo.lastRequest = Date?.now();
+    ipInfo.requestCount++;
+    ipInfo.lastRequest = Date.now();
     ipInfo.threatLevel = severity;
 
-    this?.ipTracker.set(ipAddress, ipInfo);
+    this.ipTracker.set(ipAddress, ipInfo);
 
-    const _maxAttempts =
-      this?.config.severityThresholds?.maxFailedAttempts[severity];
-    if (ipInfo?.requestCount > maxAttempts) {
-      await this?.addIpToBlacklist(ipAddress, "rate-limit-abuse", severity);
-      logger?.info(`🚫 IP ${ipAddress} blocked for rate limit abuse`);
+    const maxAttempts =
+      this.config.severityThresholds.maxFailedAttempts[severity];
+    if (ipInfo.requestCount > maxAttempts) {
+      await this.addIpToBlacklist(ipAddress, "rate-limit-abuse", severity);
+      logger.info(`🚫 IP ${ipAddress} blocked for rate limit abuse`);
     }
 
-    logger?.info("✅ Rate limits updated");
+    logger.info("✅ Rate limits updated");
   }
 
   private async blockMaliciousIPs(): Promise<void> {
-    logger?.info("🚫 Blocking malicious IPs...");
+    logger.info("🚫 Blocking malicious IPs...");
 
-    if (!this?.currentRequestContext) return;
+    if (!this.currentRequestContext) return;
 
-    const { ipAddress, severity } = this?.currentRequestContext;
+    const { ipAddress, severity } = this.currentRequestContext;
 
-    await this?.addIpToBlacklist(ipAddress, "malicious-activity", severity);
+    await this.addIpToBlacklist(ipAddress, "malicious-activity", severity);
 
-    await this?.trackThreatInDatabase({
+    await this.trackThreatInDatabase({
       threatType: "malicious-ip-detected",
       severity,
       source: "threat-intelligence",
@@ -958,41 +958,41 @@ export class SelfHealingSecuritySystem {
       healingStatus: "completed",
     });
 
-    logger?.info(`✅ IP ${ipAddress} successfully blocked`);
+    logger.info(`✅ IP ${ipAddress} successfully blocked`);
   }
 
   private async temporaryBlock(): Promise<void> {
-    logger?.info("⏰ Implementing temporary block for brute force...");
+    logger.info("⏰ Implementing temporary block for brute force...");
 
-    if (!this?.currentRequestContext) return;
+    if (!this.currentRequestContext) return;
 
-    const { ipAddress, severity } = this?.currentRequestContext;
+    const { ipAddress, severity } = this.currentRequestContext;
 
-    await this?.addIpToBlacklist(
+    await this.addIpToBlacklist(
       ipAddress,
       "brute-force-attack",
       severity,
       false,
     );
 
-    await this?.trackThreatInDatabase({
+    await this.trackThreatInDatabase({
       threatType: "brute-force-attack",
       severity,
       source: "auth-monitor",
       ipAddress,
-      details: `Temporary block applied to ${ipAddress} for ${this?.config.severityThresholds?.ipBlockDuration[severity] / 1000}s`,
+      details: `Temporary block applied to ${ipAddress} for ${this.config.severityThresholds.ipBlockDuration[severity] / 1000}s`,
       blocked: true,
       healed: true,
       healingStatus: "completed",
     });
 
-    logger?.info("✅ Temporary block applied");
+    logger.info("✅ Temporary block applied");
   }
 
   private async strengthenAuthentication(): Promise<void> {
-    logger?.info("🔐 Strengthening authentication requirements...");
+    logger.info("🔐 Strengthening authentication requirements...");
 
-    await this?.trackThreatInDatabase({
+    await this.trackThreatInDatabase({
       threatType: "unauthorized-access-attempt",
       severity: "medium",
       source: "auth-system",
@@ -1003,56 +1003,56 @@ export class SelfHealingSecuritySystem {
       healingStatus: "completed",
     });
 
-    logger?.info("✅ Authentication strengthened");
+    logger.info("✅ Authentication strengthened");
   }
 
   private async genericHealing(): Promise<void> {
-    logger?.info("🔧 Applying generic healing measures...");
+    logger.info("🔧 Applying generic healing measures...");
 
-    if (!this?.currentRequestContext) return;
+    if (!this.currentRequestContext) return;
 
-    await this?.trackThreatInDatabase({
-      threatType: this?.currentRequestContext.threatType || "unknown-threat",
-      severity: this?.currentRequestContext.severity,
+    await this.trackThreatInDatabase({
+      threatType: this.currentRequestContext.threatType || "unknown-threat",
+      severity: this.currentRequestContext.severity,
       source: "auto-healer",
-      ipAddress: this?.currentRequestContext.ipAddress,
+      ipAddress: this.currentRequestContext.ipAddress,
       details: "Generic healing measures applied to unknown threat",
       blocked: false,
       healed: true,
       healingStatus: "completed",
     });
 
-    logger?.info("✅ Generic healing completed");
+    logger.info("✅ Generic healing completed");
   }
 
   private async updateFirewall(): Promise<void> {
-    logger?.info("🛡️ Updating firewall rules...");
+    logger.info("🛡️ Updating firewall rules...");
 
-    logger?.info("✅ Firewall rules updated");
+    logger.info("✅ Firewall rules updated");
   }
 
   private async patchDatabase(): Promise<void> {
-    logger?.info("💾 Applying database security patches...");
+    logger.info("💾 Applying database security patches...");
 
-    logger?.info("✅ Database security enhanced");
+    logger.info("✅ Database security enhanced");
   }
 
   private async updateContentSecurityPolicy(): Promise<void> {
-    logger?.info("🔒 Updating Content Security Policy...");
+    logger.info("🔒 Updating Content Security Policy...");
 
-    logger?.info("✅ CSP headers strengthened");
+    logger.info("✅ CSP headers strengthened");
   }
 
   private async patchFrontend(): Promise<void> {
-    logger?.info("🎨 Applying frontend security patches...");
+    logger.info("🎨 Applying frontend security patches...");
 
-    logger?.info("✅ Frontend security enhanced");
+    logger.info("✅ Frontend security enhanced");
   }
 
   private async updateCaptcha(): Promise<void> {
-    logger?.info("🤖 Updating CAPTCHA requirements...");
+    logger.info("🤖 Updating CAPTCHA requirements...");
 
-    logger?.info("✅ CAPTCHA requirements updated");
+    logger.info("✅ CAPTCHA requirements updated");
   }
 
   private async addIpToBlacklist(
@@ -1064,21 +1064,21 @@ export class SelfHealingSecuritySystem {
     if (!ipAddress || ipAddress === "::1" || ipAddress === "127.0.0.1") return;
 
     try {
-      const _severityKey =
-        severity as keyof typeof this?.config.severityThresholds?.ipBlockDuration;
-      const _duration =
-        this?.config.severityThresholds?.ipBlockDuration[severityKey] ||
-        this?.config.severityThresholds?.ipBlockDuration.medium;
-      const _expiresAt = permanent ? null : new Date(Date?.now() + duration);
+      const severityKey =
+        severity as keyof typeof this.config.severityThresholds.ipBlockDuration;
+      const duration =
+        this.config.severityThresholds.ipBlockDuration[severityKey] ||
+        this.config.severityThresholds.ipBlockDuration.medium;
+      const expiresAt = permanent ? null : new Date(Date.now() + duration);
 
-      const _existingBlock = await db
+      const existingBlock = await db
         .select()
         .from(ipBlacklist)
-        .where(eq(ipBlacklist?.ip, ipAddress))
+        .where(eq(ipBlacklist.ip, ipAddress))
         .limit(1);
 
-      if (existingBlock?.length === 0) {
-        await db?.insert(ipBlacklist).values({
+      if (existingBlock.length === 0) {
+        await db.insert(ipBlacklist).values({
           ip: ipAddress,
           reason: `Blocked for ${threatType}`,
           severity,
@@ -1086,18 +1086,18 @@ export class SelfHealingSecuritySystem {
           isActive: true,
           metadata: {
             blockedBy: "auto-healer",
-            timestamp: Date?.now(),
+            timestamp: Date.now(),
             threatType,
             permanent,
           },
         });
 
-        logger?.info(
+        logger.info(
           `🚫 IP ${ipAddress} added to blacklist (${permanent ? "permanent" : `expires in ${duration / 1000}s`})`,
         );
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error adding IP to blacklist:");
+      logger.warn({ err: error }, "Error adding IP to blacklist:");
     }
   }
 
@@ -1116,40 +1116,40 @@ export class SelfHealingSecuritySystem {
     metadata?: Record<string, unknown>;
   }): Promise<void> {
     try {
-      const _startTime = Date?.now();
+      const startTime = Date.now();
 
-      await db?.insert(securityThreats).values({
-        threatType: threat?.threatType || "unknown",
-        severity: threat?.severity || "medium",
-        sourceIp: threat?.sourceIp,
-        userId: threat?.userId,
-        path: threat?.path,
-        method: threat?.method,
-        status: threat?.blocked
+      await db.insert(securityThreats).values({
+        threatType: threat.threatType || "unknown",
+        severity: threat.severity || "medium",
+        sourceIp: threat.sourceIp,
+        userId: threat.userId,
+        path: threat.path,
+        method: threat.method,
+        status: threat.blocked
           ? "blocked"
-          : threat?.healed
+          : threat.healed
             ? "healed"
-            : threat?.healingStatus || "detected",
+            : threat.healingStatus || "detected",
         metadata: {
-          ...(threat?.metadata || {}),
-          details: threat?.details || "Security threat detected",
-          healingDuration: threat?.healingDuration,
+          ...(threat.metadata || {}),
+          details: threat.details || "Security threat detected",
+          healingDuration: threat.healingDuration,
         },
       });
 
-      const _healingDuration = Date?.now() - startTime;
+      const healingDuration = Date.now() - startTime;
 
       if (
-        this?.config.severityThresholds?.adminNotification.includes(
-          threat?.severity || "medium",
+        this.config.severityThresholds.adminNotification.includes(
+          threat.severity || "medium",
         )
       ) {
-        await this?.sendAdminNotification(threat);
+        await this.sendAdminNotification(threat);
       }
 
-      logger?.info(`📊 Threat tracked in database (${healingDuration}ms)`);
+      logger.info(`📊 Threat tracked in database (${healingDuration}ms)`);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error tracking threat in database:");
+      logger.warn({ err: error }, "Error tracking threat in database:");
     }
   }
 
@@ -1160,40 +1160,40 @@ export class SelfHealingSecuritySystem {
     details?: string;
   }): Promise<void> {
     try {
-      const _admins = await db?.query.users?.findMany({
-        where: (users, { eq }) => eq(users?.role, "admin"),
+      const admins = await db.query.users.findMany({
+        where: (users, { eq }) => eq(users.role, "admin"),
       });
 
       for (const admin of admins) {
-        await db?.insert(notifications).values({
-          userId: admin?.id,
+        await db.insert(notifications).values({
+          userId: admin.id,
           type: "security-alert",
-          title: `🚨 ${threat?.severity?.toUpperCase()} Security Threat Detected`,
-          message: `${threat?.threatType}: ${threat?.details || "Security event"}${threat?.sourceIp ? ` from IP ${threat?.sourceIp}` : ""}`,
+          title: `🚨 ${threat.severity.toUpperCase()} Security Threat Detected`,
+          message: `${threat.threatType}: ${threat.details || "Security event"}${threat.sourceIp ? ` from IP ${threat.sourceIp}` : ""}`,
           metadata: {
-            threatType: threat?.threatType,
-            severity: threat?.severity,
-            sourceIp: threat?.sourceIp,
-            timestamp: Date?.now(),
+            threatType: threat.threatType,
+            severity: threat.severity,
+            sourceIp: threat.sourceIp,
+            timestamp: Date.now(),
           },
         });
       }
 
-      logger?.info(`📧 Admin notifications sent for ${threat?.threatType}`);
+      logger.info(`📧 Admin notifications sent for ${threat.threatType}`);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error sending admin notification:");
+      logger.warn({ err: error }, "Error sending admin notification:");
     }
   }
 
   public setRequestContext(req: Request): void {
     this.currentRequestContext = {
       ipAddress:
-        (req?.headers["x-forwarded-for"] as string)?.split(",")[0] ||
-        req?.socket.remoteAddress ||
+        (req.headers["x-forwarded-for"] as string).split(",")[0] ||
+        req.socket.remoteAddress ||
         "unknown",
-      requestPath: req?.path,
-      requestMethod: req?.method,
-      userId: (req as Record<string, unknown>).user?.id,
+      requestPath: req.path,
+      requestMethod: req.method,
+      userId: (req as Record<string, unknown>).user.id,
       threatType: "unknown",
       severity: "medium",
     };
@@ -1204,34 +1204,34 @@ export class SelfHealingSecuritySystem {
       return false;
 
     try {
-      const _now = new Date();
-      const _blocked = await db
+      const now = new Date();
+      const blocked = await db
         .select()
         .from(ipBlacklist)
         .where(
           and(
-            eq(ipBlacklist?.ip, ipAddress),
-            eq(ipBlacklist?.isActive, true),
+            eq(ipBlacklist.ip, ipAddress),
+            eq(ipBlacklist.isActive, true),
             or(
-              gte(ipBlacklist?.expiresAt, now),
-              sql`${ipBlacklist?.expiresAt} IS NULL`,
+              gte(ipBlacklist.expiresAt, now),
+              sql`${ipBlacklist.expiresAt} IS NULL`,
             ),
           ),
         )
         .limit(1);
 
-      return blocked?.length > 0;
+      return blocked.length > 0;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error checking IP blacklist:");
+      logger.warn({ err: error }, "Error checking IP blacklist:");
       return false;
     }
   }
 
   // Calculate security score
   private calculateSecurityScore(): void {
-    const _threatsBlocked = this?.securityMetrics.threatsBlocked;
-    const _threatsHealed = this?.securityMetrics.threatsHealed;
-    const _activeThreats = this?.securityMetrics.activeThreats;
+    const threatsBlocked = this.securityMetrics.threatsBlocked;
+    const threatsHealed = this.securityMetrics.threatsHealed;
+    const activeThreats = this.securityMetrics.activeThreats;
 
     // Calculate score based on threat handling
     let score = 100;
@@ -1239,26 +1239,26 @@ export class SelfHealingSecuritySystem {
     score += threatsBlocked * 2; // +2 points per blocked threat
     score += threatsHealed * 5; // +5 points per healed threat
 
-    this?.securityMetrics.securityScore = Math?.max(0, Math?.min(100, score));
+    this.securityMetrics.securityScore = Math.max(0, Math.min(100, score));
   }
 
   // Update security metrics
   private updateSecurityMetrics(): void {
-    this?.securityMetrics.lastSecurityScan = Date?.now();
+    this.securityMetrics.lastSecurityScan = Date.now();
   }
 
   // Heal detected threats
   private healDetectedThreats(): void {
     // Process active healing processes
-    Array?.from(this?.healingProcesses.entries()).forEach(
+    Array.from(this.healingProcesses.entries()).forEach(
       ([threatId, process]) => {
         if (
-          process?.status === "active" &&
-          Date?.now() - process?.startTime > 30000
+          process.status === "active" &&
+          Date.now() - process.startTime > 30000
         ) {
           // Timeout healing process
           process.status = "timeout";
-          process.endTime = Date?.now();
+          process.endTime = Date.now();
         }
       },
     );
@@ -1267,41 +1267,41 @@ export class SelfHealingSecuritySystem {
   // Optimize security rules
   private optimizeSecurityRules(): void {
     // Analyze threat patterns and optimize rules
-    logger?.info("🔧 Optimizing security rules...");
+    logger.info("🔧 Optimizing security rules...");
   }
 
   // Send security alert
   private sendSecurityAlert(threatInfo: ThreatInfo): void {
     // Implement alert system
-    logger?.info(
-      `🚨 SECURITY ALERT: ${threatInfo?.type} - ${threatInfo?.severity}`,
+    logger.info(
+      `🚨 SECURITY ALERT: ${threatInfo.type} - ${threatInfo.severity}`,
     );
   }
 
   // Activate emergency protocols
   private activateEmergencyProtocols(): void {
-    logger?.info("🚨 ACTIVATING EMERGENCY PROTOCOLS");
+    logger.info("🚨 ACTIVATING EMERGENCY PROTOCOLS");
   }
 
   // Block threat
   private blockThreat(threatId: string): void {
-    this?.securityMetrics.threatsBlocked++;
-    logger?.info(`🚫 BLOCKED THREAT: ${threatId}`);
+    this.securityMetrics.threatsBlocked++;
+    logger.info(`🚫 BLOCKED THREAT: ${threatId}`);
   }
 
   // Enhance monitoring
   private enhanceMonitoring(threatId: string): void {
-    logger?.info(`👁️ ENHANCED MONITORING: ${threatId}`);
+    logger.info(`👁️ ENHANCED MONITORING: ${threatId}`);
   }
 
   // Log threat
   private logThreat(threatId: string, threatInfo: ThreatInfo): void {
-    logger?.info(`📝 LOGGED THREAT: ${threatId} - ${threatInfo?.type}`);
+    logger.info(`📝 LOGGED THREAT: ${threatId} - ${threatInfo.type}`);
   }
 
   // Handle security error
   private handleSecurityError(error: unknown): void {
-    logger?.warn({ err: error }, "🔴 SECURITY ERROR:");
+    logger.warn({ err: error }, "🔴 SECURITY ERROR:");
     // Implement error handling and recovery
   }
 
@@ -1322,13 +1322,13 @@ export class SelfHealingSecuritySystem {
     deviations: string[];
     profile: Record<string, unknown>;
   }> {
-    const _startTime = Date?.now();
+    const startTime = Date.now();
 
     try {
       // Get model for AI governance
-      const _model = await db?.query.aiModels?.findFirst({
+      const model = await db.query.aiModels.findFirst({
         where: (aiModels, { eq }) =>
-          eq(aiModels?.modelName, "behavior_analyzer_v1"),
+          eq(aiModels.modelName, "behavior_analyzer_v1"),
       });
 
       if (!model) {
@@ -1336,19 +1336,19 @@ export class SelfHealingSecuritySystem {
       }
 
       // Get or create user behavior profile
-      let profile = await db?.query.securityBehaviorProfiles?.findFirst({
-        where: (profiles, { eq }) => eq(profiles?.userId, userId),
+      let profile = await db.query.securityBehaviorProfiles.findFirst({
+        where: (profiles, { eq }) => eq(profiles.userId, userId),
       });
 
       // Extract current session data
-      const _currentHour = new Date().getHours();
-      const _currentDevice = this?.currentRequestContext?.ipAddress || "unknown";
+      const currentHour = new Date().getHours();
+      const currentDevice = this.currentRequestContext.ipAddress || "unknown";
       const deviations: string[] = [];
       let riskScore = 0;
 
       if (!profile) {
         // Create new profile with baseline data
-        const _newProfile = await db
+        const newProfile = await db
           .insert(securityBehaviorProfiles)
           .values({
             userId,
@@ -1358,7 +1358,7 @@ export class SelfHealingSecuritySystem {
             devices: [
               {
                 userAgent: currentDevice,
-                fingerprint: crypto?.randomBytes(16).toString("hex"),
+                fingerprint: crypto.randomBytes(16).toString("hex"),
               },
             ],
             actionSequences: [],
@@ -1372,30 +1372,30 @@ export class SelfHealingSecuritySystem {
         profile = newProfile[0];
       } else {
         // Analyze deviations from established baseline
-        const _loginTimes = (profile?.loginTimes as number[]) || [];
-        const _devices = (profile?.devices as Record<string, unknown>[]) || [];
+        const loginTimes = (profile.loginTimes as number[]) || [];
+        const devices = (profile.devices as Record<string, unknown>[]) || [];
 
         // Check login time deviation
-        const _avgLoginTime =
-          loginTimes?.length > 0
-            ? loginTimes?.reduce((a, b) => a + b, 0) / loginTimes?.length
+        const avgLoginTime =
+          loginTimes.length > 0
+            ? loginTimes.reduce((a, b) => a + b, 0) / loginTimes.length
             : currentHour;
 
-        const _timeDeviation = Math?.abs(currentHour - avgLoginTime);
+        const timeDeviation = Math.abs(currentHour - avgLoginTime);
 
         if (timeDeviation > 6) {
-          deviations?.push(
-            `Unusual login time: ${currentHour}:00 (avg: ${Math?.floor(avgLoginTime)}:00)`,
+          deviations.push(
+            `Unusual login time: ${currentHour}:00 (avg: ${Math.floor(avgLoginTime)}:00)`,
           );
           riskScore += 20;
         }
 
         // Check device fingerprint
-        const _knownDevice = devices?.some(
-          (d: { userAgent?: string }) => d?.userAgent === currentDevice,
+        const knownDevice = devices.some(
+          (d: { userAgent?: string }) => d.userAgent === currentDevice,
         );
         if (!knownDevice) {
-          deviations?.push("New device detected");
+          deviations.push("New device detected");
           riskScore += 30;
         }
 
@@ -1403,21 +1403,21 @@ export class SelfHealingSecuritySystem {
         await db
           .update(securityBehaviorProfiles)
           .set({
-            loginTimes: [...loginTimes?.slice(-50), currentHour], // Keep last 50 entries
+            loginTimes: [...loginTimes.slice(-50), currentHour], // Keep last 50 entries
             devices: knownDevice
               ? devices
               : [
-                  ...devices?.slice(-10),
+                  ...devices.slice(-10),
                   {
                     userAgent: currentDevice,
-                    fingerprint: crypto?.randomBytes(16).toString("hex"),
+                    fingerprint: crypto.randomBytes(16).toString("hex"),
                   },
                 ],
             riskScore,
-            baselineEstablished: loginTimes?.length >= 10,
+            baselineEstablished: loginTimes.length >= 10,
             lastUpdated: new Date(),
           })
-          .where(eq(securityBehaviorProfiles?.userId, userId));
+          .where(eq(securityBehaviorProfiles.userId, userId));
       }
 
       // Determine risk level
@@ -1425,9 +1425,9 @@ export class SelfHealingSecuritySystem {
         riskScore <= 30 ? "low" : riskScore <= 70 ? "medium" : "high";
 
       // Log inference run for AI governance
-      await db?.insert(inferenceRuns).values({
-        modelId: model?.id,
-        versionId: model?.currentVersionId!,
+      await db.insert(inferenceRuns).values({
+        modelId: model.id,
+        versionId: model.currentVersionId!,
         userId,
         inferenceType: "behavior_analysis",
         inputData: {
@@ -1441,40 +1441,40 @@ export class SelfHealingSecuritySystem {
           riskLevel,
           deviations,
         },
-        confidenceScore: profile?.baselineEstablished ? 0.85 : 0.5,
-        executionTimeMs: Date?.now() - startTime,
+        confidenceScore: profile.baselineEstablished ? 0.85 : 0.5,
+        executionTimeMs: Date.now() - startTime,
         success: true,
       });
 
       // Log explanation for explainability
-      if (deviations?.length > 0) {
-        const _inferenceId = (
-          await db?.query.inferenceRuns?.findFirst({
+      if (deviations.length > 0) {
+        const inferenceId = (
+          await db.query.inferenceRuns.findFirst({
             where: (runs, { eq, and }) =>
-              and(eq(runs?.modelId, model?.id), eq(runs?.userId, userId)),
-            orderBy: (runs, { desc }) => [desc(runs?.createdAt)],
+              and(eq(runs.modelId, model.id), eq(runs.userId, userId)),
+            orderBy: (runs, { desc }) => [desc(runs.createdAt)],
           })
-        )?.id;
+        ).id;
 
         if (inferenceId) {
-          await db?.insert(explanationLogs).values({
+          await db.insert(explanationLogs).values({
             inferenceId,
             explanationType: "feature_importance",
             featureImportance: {
-              login_time_deviation: deviations?.some((d) =>
-                d?.includes("Unusual login time"),
+              login_time_deviation: deviations.some((d) =>
+                d.includes("Unusual login time"),
               )
                 ? 0.6
                 : 0,
               new_device:
                 !profile ||
-                (profile?.devices as Array<{ userAgent?: string }>)?.some(
-                  (d) => d?.userAgent === currentDevice,
+                (profile.devices as Array<{ userAgent?: string }>).some(
+                  (d) => d.userAgent === currentDevice,
                 )
                   ? 0
                   : 0.4,
             },
-            humanReadable: `User risk score: ${riskScore}/100. Deviations: ${deviations?.join(", ")}`,
+            humanReadable: `User risk score: ${riskScore}/100. Deviations: ${deviations.join(", ")}`,
             confidence: 0.85,
           });
         }
@@ -1487,7 +1487,7 @@ export class SelfHealingSecuritySystem {
         profile: profile || {},
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error analyzing user behavior:");
+      logger.warn({ err: error }, "Error analyzing user behavior:");
       return {
         riskScore: 0,
         riskLevel: "low",
@@ -1516,12 +1516,12 @@ export class SelfHealingSecuritySystem {
     explanation: string;
     autoBlocked: boolean;
   }> {
-    const _startTime = Date?.now();
+    const startTime = Date.now();
 
     try {
-      const _model = await db?.query.aiModels?.findFirst({
+      const model = await db.query.aiModels.findFirst({
         where: (aiModels, { eq }) =>
-          eq(aiModels?.modelName, "anomaly_detector_v1"),
+          eq(aiModels.modelName, "anomaly_detector_v1"),
       });
 
       if (!model) {
@@ -1529,13 +1529,13 @@ export class SelfHealingSecuritySystem {
       }
 
       // Extract features
-      const _features = {
-        timeOfDay: context?.timeOfDay || new Date().getHours(),
-        location: context?.location || "unknown",
+      const features = {
+        timeOfDay: context.timeOfDay || new Date().getHours(),
+        location: context.location || "unknown",
         device:
-          context?.device || this?.currentRequestContext?.ipAddress || "unknown",
+          context.device || this.currentRequestContext.ipAddress || "unknown",
         actionType,
-        frequency: context?.frequency || 1,
+        frequency: context.frequency || 1,
       };
 
       // Simple deterministic isolation forest algorithm
@@ -1544,21 +1544,21 @@ export class SelfHealingSecuritySystem {
       const featureImportance: Record<string, number> = {};
 
       // Time of day anomaly (working hours = normal, night = suspicious)
-      const _timeScore =
-        features?.timeOfDay >= 2 && features?.timeOfDay <= 5 ? 0.3 : 0;
+      const timeScore =
+        features.timeOfDay >= 2 && features.timeOfDay <= 5 ? 0.3 : 0;
       anomalyScore += timeScore;
       featureImportance.time_of_day = timeScore;
 
       // Frequency anomaly (high frequency = suspicious)
-      const _freqScore =
-        features?.frequency > 10 ? 0.4 : features?.frequency > 5 ? 0.2 : 0;
+      const freqScore =
+        features.frequency > 10 ? 0.4 : features.frequency > 5 ? 0.2 : 0;
       anomalyScore += freqScore;
       featureImportance.frequency = freqScore;
 
       // Action type risk (sensitive actions = higher weight)
-      const _sensitiveActions = ["delete", "admin", "export", "payment"];
-      const _actionScore = sensitiveActions?.some((a) =>
-        actionType?.toLowerCase().includes(a),
+      const sensitiveActions = ["delete", "admin", "export", "payment"];
+      const actionScore = sensitiveActions.some((a) =>
+        actionType.toLowerCase().includes(a),
       )
         ? 0.3
         : 0;
@@ -1566,13 +1566,13 @@ export class SelfHealingSecuritySystem {
       featureImportance.action_type = actionScore;
 
       // Normalize score to 0-1
-      anomalyScore = Math?.min(1, anomalyScore);
+      anomalyScore = Math.min(1, anomalyScore);
 
-      const _isAnomaly = anomalyScore > 0.5;
-      const _autoBlocked = anomalyScore > 0.85;
+      const isAnomaly = anomalyScore > 0.5;
+      const autoBlocked = anomalyScore > 0.85;
 
       // Generate explanation
-      const _explanation =
+      const explanation =
         `Anomaly score: ${(anomalyScore * 100).toFixed(1)}%. ` +
         `Factors: time=${(timeScore * 100).toFixed(0)}%, ` +
         `frequency=${(freqScore * 100).toFixed(0)}%, ` +
@@ -1580,9 +1580,9 @@ export class SelfHealingSecuritySystem {
 
       // Store anomaly in database
       if (isAnomaly) {
-        await db?.insert(securityAnomalies).values({
+        await db.insert(securityAnomalies).values({
           userId,
-          sessionId: this?.currentRequestContext?.ipAddress,
+          sessionId: this.currentRequestContext.ipAddress,
           actionType,
           features,
           anomalyScore,
@@ -1600,9 +1600,9 @@ export class SelfHealingSecuritySystem {
       }
 
       // Log inference
-      await db?.insert(inferenceRuns).values({
-        modelId: model?.id,
-        versionId: model?.currentVersionId!,
+      await db.insert(inferenceRuns).values({
+        modelId: model.id,
+        versionId: model.currentVersionId!,
         userId,
         inferenceType: "anomaly_detection",
         inputData: features,
@@ -1612,7 +1612,7 @@ export class SelfHealingSecuritySystem {
           autoBlocked,
         },
         confidenceScore: 0.9,
-        executionTimeMs: Date?.now() - startTime,
+        executionTimeMs: Date.now() - startTime,
         success: true,
       });
 
@@ -1623,7 +1623,7 @@ export class SelfHealingSecuritySystem {
         autoBlocked,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error detecting anomalies:");
+      logger.warn({ err: error }, "Error detecting anomalies:");
       return {
         isAnomaly: false,
         anomalyScore: 0,
@@ -1646,12 +1646,12 @@ export class SelfHealingSecuritySystem {
     recommendation: string;
     shouldBlock: boolean;
   }> {
-    const _startTime = Date?.now();
+    const startTime = Date.now();
 
     try {
-      const _model = await db?.query.aiModels?.findFirst({
+      const model = await db.query.aiModels.findFirst({
         where: (aiModels, { eq }) =>
-          eq(aiModels?.modelName, "zero_day_predictor_v1"),
+          eq(aiModels.modelName, "zero_day_predictor_v1"),
       });
 
       if (!model) {
@@ -1662,10 +1662,10 @@ export class SelfHealingSecuritySystem {
       let patternScore = 0;
 
       // Heuristic analysis
-      const _payloadStr = JSON?.stringify(payload);
+      const payloadStr = JSON.stringify(payload);
 
       // Check for obfuscation
-      const _obfuscationPatterns = [
+      const obfuscationPatterns = [
         /eval\(/gi,
         /Function\(/gi,
         /atob\(/gi,
@@ -1674,9 +1674,9 @@ export class SelfHealingSecuritySystem {
         /%[0-9a-f]{2}/gi,
       ];
 
-      const _obfuscationDetected = obfuscationPatterns?.some((pattern) => {
-        if (pattern?.test(payloadStr)) {
-          signatures?.push(`Obfuscation: ${pattern?.toString()}`);
+      const obfuscationDetected = obfuscationPatterns.some((pattern) => {
+        if (pattern.test(payloadStr)) {
+          signatures.push(`Obfuscation: ${pattern.toString()}`);
           patternScore += 0.2;
           return true;
         }
@@ -1684,7 +1684,7 @@ export class SelfHealingSecuritySystem {
       });
 
       // Check for suspicious patterns
-      const _suspiciousPatterns = [
+      const suspiciousPatterns = [
         { pattern: /<script/gi, name: "script_injection", score: 0.3 },
         { pattern: /union\s+select/gi, name: "sql_injection", score: 0.4 },
         { pattern: /\.\.\/|\.\.\\+/g, name: "path_traversal", score: 0.35 },
@@ -1695,15 +1695,15 @@ export class SelfHealingSecuritySystem {
         },
       ];
 
-      suspiciousPatterns?.forEach(({ pattern, name, score }) => {
-        if (pattern?.test(payloadStr)) {
-          signatures?.push(name);
+      suspiciousPatterns.forEach(({ pattern, name, score }) => {
+        if (pattern.test(payloadStr)) {
+          signatures.push(name);
           patternScore += score;
         }
       });
 
       // Determine threat level
-      patternScore = Math?.min(1, patternScore);
+      patternScore = Math.min(1, patternScore);
       let threatLevel: "none" | "low" | "medium" | "high" | "critical";
 
       if (patternScore === 0) threatLevel = "none";
@@ -1712,8 +1712,8 @@ export class SelfHealingSecuritySystem {
       else if (patternScore < 0.85) threatLevel = "high";
       else threatLevel = "critical";
 
-      const _shouldBlock = threatLevel === "critical" || threatLevel === "high";
-      const _recommendation = shouldBlock
+      const shouldBlock = threatLevel === "critical" || threatLevel === "high";
+      const recommendation = shouldBlock
         ? "Block and alert security team immediately"
         : threatLevel === "medium"
           ? "Monitor closely and log for analysis"
@@ -1721,7 +1721,7 @@ export class SelfHealingSecuritySystem {
 
       // Store alert
       if (threatLevel !== "none") {
-        await db?.insert(securityZeroDayAlerts).values({
+        await db.insert(securityZeroDayAlerts).values({
           payload,
           source,
           threatLevel,
@@ -1744,18 +1744,18 @@ export class SelfHealingSecuritySystem {
       }
 
       // Log inference
-      await db?.insert(inferenceRuns).values({
-        modelId: model?.id,
-        versionId: model?.currentVersionId!,
+      await db.insert(inferenceRuns).values({
+        modelId: model.id,
+        versionId: model.currentVersionId!,
         inferenceType: "zero_day_prediction",
-        inputData: { payloadSample: payloadStr?.substring(0, 500), source },
+        inputData: { payloadSample: payloadStr.substring(0, 500), source },
         outputData: {
           threatLevel,
           signatures,
           patternScore,
         },
         confidenceScore: 0.8,
-        executionTimeMs: Date?.now() - startTime,
+        executionTimeMs: Date.now() - startTime,
         success: true,
       });
 
@@ -1766,7 +1766,7 @@ export class SelfHealingSecuritySystem {
         shouldBlock,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error predicting zero-day threat:");
+      logger.warn({ err: error }, "Error predicting zero-day threat:");
       return {
         threatLevel: "none",
         signatures: [],
@@ -1793,20 +1793,20 @@ export class SelfHealingSecuritySystem {
       remediation: string;
     }>;
   }> {
-    const _startTime = Date?.now();
-    const _testId = `pentest_${Date?.now()}_${crypto?.randomBytes(8).toString("hex")}`;
+    const startTime = Date.now();
+    const testId = `pentest_${Date.now()}_${crypto.randomBytes(8).toString("hex")}`;
 
     try {
-      const _model = await db?.query.aiModels?.findFirst({
-        where: (aiModels, { eq }) => eq(aiModels?.modelName, "pen_tester_v1"),
+      const model = await db.query.aiModels.findFirst({
+        where: (aiModels, { eq }) => eq(aiModels.modelName, "pen_tester_v1"),
       });
 
       if (!model) {
         throw new Error("Pen tester model not found");
       }
 
-      const _results = [];
-      const _tests = [
+      const results = [];
+      const tests = [
         {
           type: "sql_injection",
           payload: "' OR '1'='1",
@@ -1850,67 +1850,67 @@ export class SelfHealingSecuritySystem {
       ];
 
       // Deterministic security configuration checks (no random vulnerability injection)
-      const _securityConfig = {
-        sql_injection: !!env?.DATABASE_URL, // parameterized queries via Drizzle ORM
+      const securityConfig = {
+        sql_injection: !!env.DATABASE_URL, // parameterized queries via Drizzle ORM
         xss: true, // helmet CSP headers enabled
-        csrf: !!env?.SESSION_SECRET, // CSRF protection tied to session secret
+        csrf: !!env.SESSION_SECRET, // CSRF protection tied to session secret
         auth_bypass: true, // requireAuth middleware on all protected routes
-        rate_limit_bypass: !!(process?.env.RATE_LIMIT_ENABLED !== "false"), // rate limiter active
-        session_hijacking: !!env?.SESSION_SECRET, // httpOnly+secure session cookies
+        rate_limit_bypass: !!(process.env.RATE_LIMIT_ENABLED !== "false"), // rate limiter active
+        session_hijacking: !!env.SESSION_SECRET, // httpOnly+secure session cookies
       } as Record<string, boolean>;
 
       for (const test of tests) {
-        const _testStart = Date?.now();
-        const _protected_ = securityConfig[test?.type] ?? true;
-        const _vulnerable = !protected_;
-        const _vulnerabilityScore = 0; // No real exploit attempted — configuration audit only
+        const testStart = Date.now();
+        const protected_ = securityConfig[test.type] ?? true;
+        const vulnerable = !protected_;
+        const vulnerabilityScore = 0; // No real exploit attempted — configuration audit only
 
-        results?.push({
-          testType: test?.type,
+        results.push({
+          testType: test.type,
           vulnerable,
-          severity: vulnerable ? test?.severity : "none",
+          severity: vulnerable ? test.severity : "none",
           remediation: vulnerable
-            ? test?.remediation
+            ? test.remediation
             : "No vulnerabilities found",
         });
 
-        await db?.insert(securityPenTestResults).values({
+        await db.insert(securityPenTestResults).values({
           testId,
           targetEndpoint: targetEndpoint || "all_endpoints",
-          testType: test?.type,
+          testType: test.type,
           testPayload: {
-            payload: test?.payload,
+            payload: test.payload,
             safe: true,
             method: "config_audit",
           },
           vulnerabilityDetected: vulnerable,
           vulnerabilityScore,
-          vulnerabilitySeverity: vulnerable ? test?.severity : "none",
+          vulnerabilitySeverity: vulnerable ? test.severity : "none",
           exploitSuccess: false,
-          remediationSuggestion: test?.remediation,
+          remediationSuggestion: test.remediation,
           affectedComponents: vulnerable ? ["api", "frontend"] : [],
-          testDuration: Date?.now() - testStart,
+          testDuration: Date.now() - testStart,
           requestsSent: 0,
           frequency,
           scheduledBy: "security_system",
         });
       }
 
-      const _vulnerabilitiesFound = results?.filter((r) => r?.vulnerable).length;
+      const vulnerabilitiesFound = results.filter((r) => r.vulnerable).length;
 
       // Log inference
-      await db?.insert(inferenceRuns).values({
-        modelId: model?.id,
-        versionId: model?.currentVersionId!,
+      await db.insert(inferenceRuns).values({
+        modelId: model.id,
+        versionId: model.currentVersionId!,
         inferenceType: "penetration_testing",
-        inputData: { targetEndpoint, frequency, testCount: tests?.length },
+        inputData: { targetEndpoint, frequency, testCount: tests.length },
         outputData: {
           testId,
           vulnerabilitiesFound,
-          totalTests: tests?.length,
+          totalTests: tests.length,
         },
         confidenceScore: 0.95,
-        executionTimeMs: Date?.now() - startTime,
+        executionTimeMs: Date.now() - startTime,
         success: true,
       });
 
@@ -1920,7 +1920,7 @@ export class SelfHealingSecuritySystem {
         results,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error running pen test:");
+      logger.warn({ err: error }, "Error running pen test:");
       return {
         testId,
         vulnerabilitiesFound: 0,
@@ -1943,8 +1943,8 @@ export class SelfHealingSecuritySystem {
     recommendations: string[];
     exportPath?: string;
   }> {
-    Date?.now();
-    const _reportId = `compliance_${standard}_${Date?.now()}`;
+    Date.now();
+    const reportId = `compliance_${standard}_${Date.now()}`;
 
     try {
       const findings: string[] = [];
@@ -1954,7 +1954,7 @@ export class SelfHealingSecuritySystem {
 
       // SOC 2 Trust Services Criteria
       if (standard === "SOC2") {
-        const _controls = [
+        const controls = [
           { name: "Access Control", passed: true },
           { name: "Change Management", passed: true },
           { name: "Data Backup", passed: false },
@@ -1965,21 +1965,21 @@ export class SelfHealingSecuritySystem {
           { name: "Vulnerability Management", passed: false },
         ];
 
-        controls?.forEach((control) => {
-          if (control?.passed) {
+        controls.forEach((control) => {
+          if (control.passed) {
             passedControls++;
-            findings?.push(`✅ ${control?.name}: Compliant`);
+            findings.push(`✅ ${control.name}: Compliant`);
           } else {
             failedControls++;
-            findings?.push(`❌ ${control?.name}: Non-compliant`);
-            recommendations?.push(`Implement ${control?.name} controls`);
+            findings.push(`❌ ${control.name}: Non-compliant`);
+            recommendations.push(`Implement ${control.name} controls`);
           }
         });
       }
 
       // GDPR Compliance
       if (standard === "GDPR") {
-        const _controls = [
+        const controls = [
           { name: "Data Processing Records", passed: true },
           { name: "Consent Management", passed: true },
           { name: "Right to Access", passed: true },
@@ -1990,21 +1990,21 @@ export class SelfHealingSecuritySystem {
           { name: "DPO Designation", passed: false },
         ];
 
-        controls?.forEach((control) => {
-          if (control?.passed) {
+        controls.forEach((control) => {
+          if (control.passed) {
             passedControls++;
-            findings?.push(`✅ ${control?.name}: Compliant`);
+            findings.push(`✅ ${control.name}: Compliant`);
           } else {
             failedControls++;
-            findings?.push(`❌ ${control?.name}: Non-compliant`);
-            recommendations?.push(`Address ${control?.name} requirements`);
+            findings.push(`❌ ${control.name}: Non-compliant`);
+            recommendations.push(`Address ${control.name} requirements`);
           }
         });
       }
 
       // PCI-DSS Compliance
       if (standard === "PCI-DSS") {
-        const _controls = [
+        const controls = [
           { name: "Firewall Configuration", passed: true },
           { name: "Password Protection", passed: true },
           { name: "Cardholder Data Protection", passed: true },
@@ -2017,23 +2017,23 @@ export class SelfHealingSecuritySystem {
           { name: "Security Policy", passed: true },
         ];
 
-        controls?.forEach((control) => {
-          if (control?.passed) {
+        controls.forEach((control) => {
+          if (control.passed) {
             passedControls++;
-            findings?.push(`✅ ${control?.name}: Compliant`);
+            findings.push(`✅ ${control.name}: Compliant`);
           } else {
             failedControls++;
-            findings?.push(`❌ ${control?.name}: Non-compliant`);
-            recommendations?.push(`Implement ${control?.name} controls`);
+            findings.push(`❌ ${control.name}: Non-compliant`);
+            recommendations.push(`Implement ${control.name} controls`);
           }
         });
       }
 
-      const _totalControls = passedControls + failedControls;
-      const _complianceScore = (passedControls / totalControls) * 100;
+      const totalControls = passedControls + failedControls;
+      const complianceScore = (passedControls / totalControls) * 100;
 
       // Store report
-      await db?.insert(securityComplianceReports).values({
+      await db.insert(securityComplianceReports).values({
         reportId,
         standard,
         dateRange,
@@ -2053,7 +2053,7 @@ export class SelfHealingSecuritySystem {
         recommendations,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error generating compliance report:");
+      logger.warn({ err: error }, "Error generating compliance report:");
       return {
         reportId,
         complianceScore: 0,
@@ -2092,79 +2092,79 @@ export class SelfHealingSecuritySystem {
   }> {
     try {
       // Get active threats from last 24 hours
-      const _oneDayAgo = new Date(Date?.now() - 24 * 60 * 60 * 1000);
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-      const _threats = await db?.query.securityThreats?.findMany({
-        where: (threats, { gte }) => gte(threats?.detectedAt, oneDayAgo),
+      const threats = await db.query.securityThreats.findMany({
+        where: (threats, { gte }) => gte(threats.detectedAt, oneDayAgo),
       });
 
       // Get anomalies from last 24 hours
-      const _anomalies = await db?.query.securityAnomalies?.findMany({
-        where: (anomalies, { gte }) => gte(anomalies?.detectedAt, oneDayAgo),
+      const anomalies = await db.query.securityAnomalies.findMany({
+        where: (anomalies, { gte }) => gte(anomalies.detectedAt, oneDayAgo),
       });
 
       // Get latest pen test results
-      const _penTests = await db?.query.securityPenTestResults?.findMany({
-        orderBy: (tests, { desc }) => [desc(tests?.executedAt)],
+      const penTests = await db.query.securityPenTestResults.findMany({
+        orderBy: (tests, { desc }) => [desc(tests.executedAt)],
         limit: 1,
       });
 
-      const _vulnerabilitiesFound = penTests?.reduce(
-        (sum, test) => sum + (test?.vulnerabilityDetected ? 1 : 0),
+      const vulnerabilitiesFound = penTests.reduce(
+        (sum, test) => sum + (test.vulnerabilityDetected ? 1 : 0),
         0,
       );
 
       // Get latest compliance reports
-      const _complianceReports =
-        await db?.query.securityComplianceReports?.findMany({
-          orderBy: (reports, { desc }) => [desc(reports?.generatedAt)],
+      const complianceReports =
+        await db.query.securityComplianceReports.findMany({
+          orderBy: (reports, { desc }) => [desc(reports.generatedAt)],
           limit: 10,
         });
 
-      const _complianceStatus = {
+      const complianceStatus = {
         SOC2:
-          complianceReports?.find((r) => r?.standard === "SOC2")
-            ?.complianceScore || 0,
+          complianceReports.find((r) => r.standard === "SOC2")
+            .complianceScore || 0,
         GDPR:
-          complianceReports?.find((r) => r?.standard === "GDPR")
-            ?.complianceScore || 0,
+          complianceReports.find((r) => r.standard === "GDPR")
+            .complianceScore || 0,
         "PCI-DSS":
-          complianceReports?.find((r) => r?.standard === "PCI-DSS")
-            ?.complianceScore || 0,
+          complianceReports.find((r) => r.standard === "PCI-DSS")
+            .complianceScore || 0,
       };
 
       // Generate trend data (last 7 days)
-      const _sevenDaysAgo = new Date(Date?.now() - 7 * 24 * 60 * 60 * 1000);
-      const _threatsLast7Days = await db?.query.securityThreats?.findMany({
-        where: (threats, { gte }) => gte(threats?.detectedAt, sevenDaysAgo),
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const threatsLast7Days = await db.query.securityThreats.findMany({
+        where: (threats, { gte }) => gte(threats.detectedAt, sevenDaysAgo),
       });
 
-      const _anomaliesLast7Days = await db?.query.securityAnomalies?.findMany({
-        where: (anomalies, { gte }) => gte(anomalies?.detectedAt, sevenDaysAgo),
+      const anomaliesLast7Days = await db.query.securityAnomalies.findMany({
+        where: (anomalies, { gte }) => gte(anomalies.detectedAt, sevenDaysAgo),
       });
 
       // Aggregate by day
-      const _threatsByDay = new Map<string, number>();
-      const _anomaliesByDay = new Map<string, number>();
+      const threatsByDay = new Map<string, number>();
+      const anomaliesByDay = new Map<string, number>();
 
-      threatsLast7Days?.forEach((threat) => {
-        const _day = threat?.detectedAt.toISOString().split("T")[0];
-        threatsByDay?.set(day, (threatsByDay?.get(day) || 0) + 1);
+      threatsLast7Days.forEach((threat) => {
+        const day = threat.detectedAt.toISOString().split("T")[0];
+        threatsByDay.set(day, (threatsByDay.get(day) || 0) + 1);
       });
 
-      anomaliesLast7Days?.forEach((anomaly) => {
-        const _day = anomaly?.detectedAt.toISOString().split("T")[0];
-        anomaliesByDay?.set(day, (anomaliesByDay?.get(day) || 0) + 1);
+      anomaliesLast7Days.forEach((anomaly) => {
+        const day = anomaly.detectedAt.toISOString().split("T")[0];
+        anomaliesByDay.set(day, (anomaliesByDay.get(day) || 0) + 1);
       });
 
-      const _trends = {
-        threatsOverTime: Array?.from(threatsByDay?.entries()).map(
+      const trends = {
+        threatsOverTime: Array.from(threatsByDay.entries()).map(
           ([date, count]) => ({
             date,
             count,
           }),
         ),
-        anomaliesOverTime: Array?.from(anomaliesByDay?.entries()).map(
+        anomaliesOverTime: Array.from(anomaliesByDay.entries()).map(
           ([date, count]) => ({
             date,
             count,
@@ -2173,41 +2173,41 @@ export class SelfHealingSecuritySystem {
       };
 
       // Get recent alerts
-      const _alerts = [
+      const alerts = [
         ...threats
-          .filter((t) => t?.severity === "high" || t?.severity === "critical")
+          .filter((t) => t.severity === "high" || t.severity === "critical")
           .slice(0, 5)
           .map((t) => ({
-            severity: t?.severity,
-            message: t?.details,
-            timestamp: t?.detectedAt,
+            severity: t.severity,
+            message: t.details,
+            timestamp: t.detectedAt,
           })),
         ...anomalies
-          .filter((a) => a?.autoBlocked)
+          .filter((a) => a.autoBlocked)
           .slice(0, 3)
           .map((a) => ({
             severity: "high",
-            message: a?.explanation || "Anomaly auto-blocked",
-            timestamp: a?.detectedAt,
+            message: a.explanation || "Anomaly auto-blocked",
+            timestamp: a.detectedAt,
           })),
       ]
-        .sort((a, b) => b?.timestamp.getTime() - a?.timestamp.getTime())
+        .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
         .slice(0, 10);
 
       return {
-        activeThreats: threats?.length,
-        anomaliesDetected: anomalies?.length,
+        activeThreats: threats.length,
+        anomaliesDetected: anomalies.length,
         penTestResults: {
           vulnerabilitiesFound,
-          lastTestDate: penTests[0]?.executedAt || null,
+          lastTestDate: penTests[0].executedAt || null,
         },
         complianceStatus,
         trends,
         alerts,
-        securityScore: this?.securityMetrics.securityScore,
+        securityScore: this.securityMetrics.securityScore,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error getting security dashboard:");
+      logger.warn({ err: error }, "Error getting security dashboard:");
       return {
         activeThreats: 0,
         anomaliesDetected: 0,
@@ -2225,26 +2225,26 @@ export class SelfHealingSecuritySystem {
           anomaliesOverTime: [],
         },
         alerts: [],
-        securityScore: this?.securityMetrics.securityScore,
+        securityScore: this.securityMetrics.securityScore,
       };
     }
   }
 
   // Public methods for external use
   public getSecurityMetrics(): SecurityMetrics {
-    return { ...this?.securityMetrics };
+    return { ...this.securityMetrics };
   }
 
   public getActiveThreats(): ThreatInfo[] {
-    return Array?.from(this?.threatDatabase.values());
+    return Array.from(this.threatDatabase.values());
   }
 
   public getHealingProcesses(): HealingProcess[] {
-    return Array?.from(this?.healingProcesses.values());
+    return Array.from(this.healingProcesses.values());
   }
 
   public getSecurityScore(): number {
-    return this?.securityMetrics.securityScore;
+    return this.securityMetrics.securityScore;
   }
 }
 
@@ -2321,32 +2321,32 @@ class AnomalyDetector {
 
 class AutoHealer {
   public heal(threat: ThreatInfo): void {
-    logger?.info(`Auto-healing threat: ${threat?.type}`);
+    logger.info(`Auto-healing threat: ${threat.type}`);
   }
 }
 
 // Express middleware for security
-export const _securityMiddleware = (
+export const securityMiddleware = (
   req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  const _securitySystem = SelfHealingSecuritySystem?.getInstance();
+  const securitySystem = SelfHealingSecuritySystem.getInstance();
 
   // Check request for threats
-  const _requestData = JSON?.stringify(req?.body) + req?.url + req?.method;
+  const requestData = JSON.stringify(req.body) + req.url + req.method;
 
   // Apply security rules
   for (const rule of securitySystem["securityRules"]) {
-    if (rule?.pattern.test(requestData)) {
-      logger?.info(`🚨 SECURITY RULE TRIGGERED: ${rule?.name}`);
+    if (rule.pattern.test(requestData)) {
+      logger.info(`🚨 SECURITY RULE TRIGGERED: ${rule.name}`);
 
       // Block request if critical or high severity
-      if (rule?.severity === "critical" || rule?.severity === "high") {
-        return res?.status(403).json({
+      if (rule.severity === "critical" || rule.severity === "high") {
+        return res.status(403).json({
           error: "Request blocked by security system",
-          rule: rule?.name,
-          severity: rule?.severity,
+          rule: rule.name,
+          severity: rule.severity,
         });
       }
     }
@@ -2356,7 +2356,7 @@ export const _securityMiddleware = (
 };
 
 // Rate limiting middleware
-export const _rateLimitMiddleware = rateLimit({
+export const rateLimitMiddleware = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
   message: "Too many requests from this IP, please try again later.",
@@ -2366,7 +2366,7 @@ export const _rateLimitMiddleware = rateLimit({
 });
 
 // Security headers middleware
-export const _securityHeadersMiddleware = helmet({
+export const securityHeadersMiddleware = helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
@@ -2383,7 +2383,7 @@ export const _securityHeadersMiddleware = helmet({
 });
 
 // CORS middleware
-export const _corsMiddleware = cors({
+export const corsMiddleware = cors({
   origin: isProductionEnv() ? ["https://maxbooster.com"] : true,
   credentials: true,
   optionsSuccessStatus: 200,

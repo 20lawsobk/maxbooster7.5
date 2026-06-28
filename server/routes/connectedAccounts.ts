@@ -6,12 +6,12 @@ import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
 import { notificationService } from "../services/notificationService.js";
 
-const _router = Router();
+const router = Router();
 
 router?.use(requireAuth);
 
-const _getDefaultPermissions = (provider: string) => {
-  const _basePermissions = [
+const getDefaultPermissions = (provider: string) => {
+  const basePermissions = [
     {
       id: "read_profile",
       label: "Read Profile",
@@ -21,7 +21,7 @@ const _getDefaultPermissions = (provider: string) => {
     },
   ];
 
-  const _streamingPermissions = [
+  const streamingPermissions = [
     {
       id: "read_playlists",
       label: "Read Playlists",
@@ -38,7 +38,7 @@ const _getDefaultPermissions = (provider: string) => {
     },
   ];
 
-  const _socialPermissions = [
+  const socialPermissions = [
     {
       id: "read_followers",
       label: "Read Followers",
@@ -77,8 +77,8 @@ function getAccountStatus(
 
 router?.get("/", async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user.id;
-    const _accounts = await db
+    const userId = req?.user.id;
+    const accounts = await db
       .select()
       .from(socialAccounts)
       .where(
@@ -89,17 +89,17 @@ router?.get("/", async (req: Request, res: Response) => {
       )
       .limit(50);
 
-    const _safeAccounts = accounts?.map((account) => ({
-      id: account?.id,
-      provider: account?.platform,
-      providerAccountId: account?.platformUserId || "",
-      username: account?.username || undefined,
-      displayName: account?.username || account?.platform,
+    const safeAccounts = accounts?.map((account) => ({
+      id: account.id,
+      provider: account.platform,
+      providerAccountId: account.platformUserId || "",
+      username: account.username || undefined,
+      displayName: account.username || account?.platform,
       email: undefined,
       avatarUrl: undefined,
-      connectedAt: account?.createdAt?.toISOString() || new Date().toISOString(),
-      lastSyncedAt: account?.createdAt?.toISOString(),
-      expiresAt: account?.tokenExpiresAt?.toISOString(),
+      connectedAt: account.createdAt?.toISOString() || new Date().toISOString(),
+      lastSyncedAt: account.createdAt?.toISOString(),
+      expiresAt: account.tokenExpiresAt?.toISOString(),
       status: getAccountStatus(account),
       scopes: [],
       permissions: getDefaultPermissions(account?.platform),
@@ -109,13 +109,13 @@ router?.get("/", async (req: Request, res: Response) => {
 
     setImmediate(async () => {
       try {
-        const _sevenDays = 7 * 24 * 60 * 60 * 1000;
+        const sevenDays = 7 * 24 * 60 * 60 * 1000;
         for (const account of accounts) {
           if (account?.tokenExpiresAt) {
-            const _msUntilExpiry =
+            const msUntilExpiry =
               new Date(account?.tokenExpiresAt).getTime() - Date?.now();
             if (msUntilExpiry > 0 && msUntilExpiry <= sevenDays) {
-              const _platformName =
+              const platformName =
                 account?.platform.charAt(0).toUpperCase() +
                 account?.platform.slice(1);
               await notificationService?.sendSocialTokenExpiringNotification(
@@ -137,10 +137,10 @@ router?.get("/", async (req: Request, res: Response) => {
 
 router?.delete("/:accountId", async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user.id;
+    const userId = req?.user.id;
     const { accountId } = req?.params;
 
-    const _result = await db
+    const result = await db
       .update(socialAccounts)
       .set({ isActive: false })
       .where(
@@ -149,7 +149,7 @@ router?.delete("/:accountId", async (req: Request, res: Response) => {
           eq(socialAccounts?.userId, userId),
         ),
       )
-      .returning({ id: socialAccounts?.id });
+      .returning({ id: socialAccounts.id });
 
     if (result?.length === 0) {
       return res?.status(404).json({ error: "Connected account not found" });
@@ -164,11 +164,11 @@ router?.delete("/:accountId", async (req: Request, res: Response) => {
 
 router?.post("/:accountId/refresh", async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user.id;
+    const userId = req?.user.id;
     const { accountId } = req?.params;
 
-    const _now = new Date();
-    const _result = await db
+    const now = new Date();
+    const result = await db
       .update(socialAccounts)
       .set({ createdAt: now })
       .where(
@@ -177,7 +177,7 @@ router?.post("/:accountId/refresh", async (req: Request, res: Response) => {
           eq(socialAccounts?.userId, userId),
         ),
       )
-      .returning({ id: socialAccounts?.id });
+      .returning({ id: socialAccounts.id });
 
     if (result?.length === 0) {
       return res?.status(404).json({ error: "Connected account not found" });
@@ -188,7 +188,7 @@ router?.post("/:accountId/refresh", async (req: Request, res: Response) => {
       account: {
         id: accountId,
         status: "connected",
-        lastSyncedAt: now?.toISOString(),
+        lastSyncedAt: now.toISOString(),
       },
     });
   } catch (error) {
@@ -199,7 +199,7 @@ router?.post("/:accountId/refresh", async (req: Request, res: Response) => {
 
 router?.post("/manual-token", async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user.id;
+    const userId = req?.user.id;
     const {
       platform,
       accessToken,
@@ -215,7 +215,7 @@ router?.post("/manual-token", async (req: Request, res: Response) => {
         .json({ error: "Platform and access token are required" });
     }
 
-    const _validPlatforms = [
+    const validPlatforms = [
       "instagram",
       "facebook",
       "tiktok",
@@ -235,7 +235,7 @@ router?.post("/manual-token", async (req: Request, res: Response) => {
         });
     }
 
-    const _existing = await db
+    const existing = await db
       .select()
       .from(socialAccounts)
       .where(
@@ -246,7 +246,7 @@ router?.post("/manual-token", async (req: Request, res: Response) => {
       )
       .limit(5);
 
-    const _tokenExpiresAt = expiresIn
+    const tokenExpiresAt = expiresIn
       ? new Date(Date?.now() + expiresIn * 1000)
       : null;
 
@@ -282,13 +282,13 @@ router?.post("/manual-token", async (req: Request, res: Response) => {
           tokenExpiresAt,
           isActive: true,
         })
-        .returning({ id: socialAccounts?.id });
+        .returning({ id: socialAccounts.id });
 
       logger?.info(`[ManualToken] Created ${platform} token for user ${userId}`);
       res?.json({
         success: true,
         message: `${platform} connected successfully`,
-        id: newAccount?.id,
+        id: newAccount.id,
       });
     }
   } catch (error) {
@@ -299,11 +299,11 @@ router?.post("/manual-token", async (req: Request, res: Response) => {
 
 router?.put("/:accountId/permissions", async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user.id;
+    const userId = req?.user.id;
     const { accountId } = req?.params;
-    const _permissionUpdates = req?.body;
+    const permissionUpdates = req?.body;
 
-    const _accounts = await db
+    const accounts = await db
       .select()
       .from(socialAccounts)
       .where(
@@ -318,11 +318,11 @@ router?.put("/:accountId/permissions", async (req: Request, res: Response) => {
       return res?.status(404).json({ error: "Connected account not found" });
     }
 
-    const _account = accounts[0];
-    const _permissions = getDefaultPermissions(account?.platform);
+    const account = accounts[0];
+    const permissions = getDefaultPermissions(account?.platform);
 
     for (const [permId, enabled] of Object?.entries(permissionUpdates)) {
-      const _permission = permissions?.find((p) => p?.id === permId);
+      const permission = permissions?.find((p) => p?.id === permId);
       if (permission && !permission?.required) {
         permission.enabled = !!enabled;
       }

@@ -8,9 +8,9 @@ import { Resend } from "resend";
 import { logger } from "../logger.js";
 import type { AudioConvertJobData, AudioMixJobData, CSVImportJobData, AnalyticsJobData, EmailJobData } from "../services/queueService.js";
 
-const _audioService = new AudioService();
-const _csvImportService = new RoyaltiesCSVImportService();
-const _anomalyService = new AnalyticsAnomalyService();
+const audioService = new AudioService();
+const csvImportService = new RoyaltiesCSVImportService();
+const anomalyService = new AnalyticsAnomalyService();
 
 if (process?.env.SENDGRID_API_KEY) {
   sgMail?.setApiKey(process?.env.SENDGRID_API_KEY);
@@ -21,16 +21,16 @@ if (process?.env.SENDGRID_API_KEY) {
   );
 }
 
-const _MEMORY_WARNING_THRESHOLD = 512 * 1024 * 1024; // 512 MB — realistic for Replit VM
-const _MEMORY_CRITICAL_THRESHOLD = 768 * 1024 * 1024; // 768 MB — triggers forced GC
+const MEMORY_WARNING_THRESHOLD = 512 * 1024 * 1024; // 512 MB — realistic for Replit VM
+const MEMORY_CRITICAL_THRESHOLD = 768 * 1024 * 1024; // 768 MB — triggers forced GC
 let lastMemoryLog = 0;
 
 function checkMemoryUsage(workerName: string): void {
-  const _now = Date?.now();
+  const now = Date?.now();
   if (now - lastMemoryLog < 30000) return;
   lastMemoryLog = now;
   const { heapUsed } = process?.memoryUsage();
-  const _heapUsedMB = Math?.round(heapUsed / 1024 / 1024);
+  const heapUsedMB = Math?.round(heapUsed / 1024 / 1024);
   if (heapUsed > MEMORY_CRITICAL_THRESHOLD) {
     logger?.warn(`🚨 ${workerName}: CRITICAL memory usage ${heapUsedMB}MB`);
     if (global?.gc) {
@@ -47,7 +47,7 @@ function workerOpts(concurrency: number) {
   // script costs ~100-300 ms over the network.  Keep concurrency low and add a
   // generous drainDelay so idle workers back off instead of hammering the Lua
   // executor with continuous moveToActive polls.
-  const _pdimConcurrency = Math?.min(concurrency, 2);
+  const pdimConcurrency = Math?.min(concurrency, 2);
   return {
     connection: newBullMQRedisConnection(),
     concurrency: pdimConcurrency,
@@ -83,7 +83,7 @@ let analyticsWorker: Worker | null = null;
 let emailWorker: Worker | null = null;
 
 function createAudioWorker(): Worker {
-  const _w = new Worker(
+  const w = new Worker(
     "audio",
     async (job: Job) => {
       logger?.info(`🎵 Audio job ${job?.id} (${job?.name}) starting...`);
@@ -113,7 +113,7 @@ function createAudioWorker(): Worker {
 }
 
 function createCsvWorker(): Worker {
-  const _w = new Worker(
+  const w = new Worker(
     "csv",
     async (job: Job) => {
       logger?.info(`📊 CSV import job ${job?.id} starting...`);
@@ -130,7 +130,7 @@ function createCsvWorker(): Worker {
 }
 
 function createAnalyticsWorker(): Worker {
-  const _w = new Worker(
+  const w = new Worker(
     "analytics",
     async (job: Job) => {
       logger?.info(`📈 Analytics job ${job?.id} (${job?.data.type}) starting...`);
@@ -156,7 +156,7 @@ function createAnalyticsWorker(): Worker {
 }
 
 function createEmailWorker(): Worker {
-  const _w = new Worker(
+  const w = new Worker(
     "email",
     async (job: Job) => {
       const { to, subject, html, from } = job?.data as EmailJobData;
@@ -168,8 +168,8 @@ function createEmailWorker(): Worker {
         return;
       }
 
-      const _resend = new Resend(process?.env.RESEND_API_KEY);
-      const _fromEmail =
+      const resend = new Resend(process?.env.RESEND_API_KEY);
+      const fromEmail =
         from || process?.env.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
       await resend?.emails.send({ to, from: fromEmail, subject, html });
       logger?.info(`✅ Email sent to ${to}`);
@@ -217,45 +217,45 @@ process?.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
 process?.on("uncaughtException", (error) => {
   // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors (e?.g. FFmpeg exits mid-render)
-  const _code = (error as NodeJS.ErrnoException).code;
+  const code = (error as NodeJS.ErrnoException).code;
   if (code === "EPIPE" || code === "ECONNRESET" || code === "ECONNABORTED")
     return;
   // PDIM 500/502 during cold-start: the circuit breaker slow-lane already
   // handles these — no additional log or shutdown.
-  const _eMsg = error?.message ?? "";
+  const eMsg = error?.message ?? "";
   if (/PDIM HTTP 5/i?.test(eMsg)) return;
   // Truncate to first line so pino-pretty doesn't emit bare stack-trace lines
   // without timestamp prefixes.
-  const _summary = eMsg?.split("\n")[0] ?? eMsg;
-  logger?.warn({ errMsg: summary }, "❌ Uncaught exception:");
+  const summary = eMsg.split("\n")[0] ?? eMsg;
+  logger.warn({ errMsg: summary }, "❌ Uncaught exception:");
   gracefulShutdown("uncaughtException");
 });
 
-process?.on("unhandledRejection", (reason: Record<string, unknown>) => {
-  const _full = String(reason?.message ?? reason ?? "");
+process.on("unhandledRejection", (reason: Record<string, unknown>) => {
+  const full = String(reason.message ?? reason ?? "");
   // Truncate to first line — pino-pretty prints multi-line strings as bare
   // continuation lines without timestamp prefixes, flooding the log.
-  const _msg = full?.split("\n")[0] ?? full;
-  const _code = reason?.code;
+  const msg = full.split("\n")[0] ?? full;
+  const code = reason.code;
   // Never crash the worker process on transient/stream/network errors.
   // Includes PDIM cold-start 5xx, circuit-open, LuaExecutor timeout, and
   // BullMQ non-array return — all handled automatically by the ChainFixer.
-  const _isNonFatal =
+  const isNonFatal =
     code === "EPIPE" ||
     code === "ECONNRESET" ||
     code === "ECONNABORTED" ||
-    /EPIPE|ECONNRESET|ECONNABORTED|ECONNREFUSED|socket|fetch failed|Failed to fetch|Command timed out|Connection is closed|AbortError|\[PDIM\] Circuit OPEN|\[LuaExecutor\]|erroredJobIds|PDIM.*Circuit|script timeout|PDIM HTTP 5/i?.test(
+    /EPIPE|ECONNRESET|ECONNABORTED|ECONNREFUSED|socket|fetch failed|Failed to fetch|Command timed out|Connection is closed|AbortError|\[PDIM\] Circuit OPEN|\[LuaExecutor\]|erroredJobIds|PDIM.*Circuit|script timeout|PDIM HTTP 5/i.test(
       msg,
     );
   if (isNonFatal) return; // circuit breaker / ChainFixer already handles these
   // Log but do NOT shut down — BullMQ retries handle job-level failures.
-  logger?.warn("❌ Unhandled rejection (workers):", msg);
+  logger.warn("❌ Unhandled rejection (workers):", msg);
 });
 
 /**
  * Poll PDIM with a lightweight PING until it returns 200 or the deadline passes.
  *
- * Why: PDIM (pocketdimensionstorage?.replit.app) may be in a sleeping/cold-start
+ * Why: PDIM (pocketdimensionstorage.replit.app) may be in a sleeping/cold-start
  * state when Max Booster restarts.  The first few hundred requests during its
  * ~45-second wake-up window return HTTP 500/502.  BullMQ's initial
  * moveStalledJobsToWait Lua scripts each make ~35 sequential redis?.call()s,
@@ -272,27 +272,27 @@ async function waitForPdimReady(
   maxWaitMs = 130_000,
   retryMs = 2_000,
 ): Promise<void> {
-  const _pdimUrl = process?.env.PDIM_HTTP_EXEC_URL;
-  const _pdimToken = process?.env.PDIM_BEARER_TOKEN;
+  const pdimUrl = process?.env.PDIM_HTTP_EXEC_URL;
+  const pdimToken = process?.env.PDIM_BEARER_TOKEN;
   if (!pdimUrl || !pdimToken) return; // no PDIM configured — skip gate
 
-  const _deadline = Date?.now() + maxWaitMs;
+  const deadline = Date?.now() + maxWaitMs;
   let attempt = 0;
 
   while (Date?.now() < deadline) {
     attempt++;
     try {
-      const _res = await fetch(pdimUrl, {
+      const res = await fetch(pdimUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${pdimToken}`,
         },
-        body: JSON?.stringify({ cmd: "PING", args: [] }),
-        signal: AbortSignal?.timeout(5_000),
+        body: JSON.stringify({ cmd: "PING", args: [] }),
+        signal: AbortSignal.timeout(5_000),
       });
       if (res?.ok) {
-        const _elapsed = Date?.now() - (deadline - maxWaitMs);
+        const elapsed = Date?.now() - (deadline - maxWaitMs);
         logger?.info(
           `[Workers] PDIM ready after ${attempt} probe(s) (${elapsed}ms) — starting BullMQ workers`,
         );
@@ -364,7 +364,7 @@ export async function initializeWorkers(): Promise<void> {
   // firing their initial moveStalledJobsToWait Lua script simultaneously on startup.
   // With stalledInterval=300s the stall checks are: audio@0s, csv@5s, analytics@10s,
   // email@15s — each runs solo through the single LuaExecutor slot instead of piling up.
-  const _STAGGER_MS = 5_000;
+  const STAGGER_MS = 5_000;
   startWorkerSafe(audioWorker, "audio");
   setTimeout(() => startWorkerSafe(csvWorker!, "csv"), 1 * STAGGER_MS);
   setTimeout(

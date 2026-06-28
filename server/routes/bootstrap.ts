@@ -22,7 +22,7 @@ import { eq, desc, and } from "drizzle-orm";
 import { requireAuthOnly } from "../middleware/auth.js";
 import { logger } from "../logger.js";
 
-const _router = Router();
+const router = Router();
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string; email?: string; role?: string };
@@ -32,40 +32,40 @@ router?.get(
   "/",
   requireAuthOnly,
   async (req: AuthenticatedRequest, res: Response) => {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
     try {
       // All bootstrap queries are read-only — route to the read replica for speed
-      const _reader = dbRead ?? db;
+      const reader = dbRead ?? db;
 
       const [userResult, projectsResult, notificationsResult, releasesResult] =
         await Promise?.allSettled([
           reader
             .select({
-              id: users?.id,
-              email: users?.email,
-              username: users?.username,
-              firstName: users?.firstName,
-              lastName: users?.lastName,
-              artistName: users?.artistName,
-              bio: users?.bio,
-              avatarUrl: users?.avatarUrl,
-              profileImageUrl: users?.profileImageUrl,
-              role: users?.role,
-              subscriptionTier: users?.subscriptionTier,
-              subscriptionStatus: users?.subscriptionStatus,
-              subscriptionEndsAt: users?.subscriptionEndsAt,
-              trialEndsAt: users?.trialEndsAt,
-              onboardingCompleted: users?.onboardingCompleted,
-              onboardingStep: users?.onboardingStep,
-              preferences: users?.preferences,
-              notificationSettings: users?.notificationSettings,
-              twoFactorEnabled: users?.twoFactorEnabled,
-              emailVerified: users?.emailVerified,
-              socialLinks: users?.socialLinks,
-              website: users?.website,
-              location: users?.location,
-              createdAt: users?.createdAt,
+              id: users.id,
+              email: users.email,
+              username: users.username,
+              firstName: users.firstName,
+              lastName: users.lastName,
+              artistName: users.artistName,
+              bio: users.bio,
+              avatarUrl: users.avatarUrl,
+              profileImageUrl: users.profileImageUrl,
+              role: users.role,
+              subscriptionTier: users.subscriptionTier,
+              subscriptionStatus: users.subscriptionStatus,
+              subscriptionEndsAt: users.subscriptionEndsAt,
+              trialEndsAt: users.trialEndsAt,
+              onboardingCompleted: users.onboardingCompleted,
+              onboardingStep: users.onboardingStep,
+              preferences: users.preferences,
+              notificationSettings: users.notificationSettings,
+              twoFactorEnabled: users.twoFactorEnabled,
+              emailVerified: users.emailVerified,
+              socialLinks: users.socialLinks,
+              website: users.website,
+              location: users.location,
+              createdAt: users.createdAt,
             })
             .from(users)
             .where(eq(users?.id, userId))
@@ -98,17 +98,17 @@ router?.get(
             .limit(5),
         ]);
 
-      const _user =
+      const user =
         userResult?.status === "fulfilled"
           ? (userResult?.value[0] ?? null)
           : null;
-      const _projectList =
+      const projectList =
         projectsResult?.status === "fulfilled" ? projectsResult?.value : [];
-      const _notifList =
+      const notifList =
         notificationsResult?.status === "fulfilled"
           ? notificationsResult?.value
           : [];
-      const _releaseList =
+      const releaseList =
         releasesResult?.status === "fulfilled" ? releasesResult?.value : [];
 
       res?.set(
@@ -120,7 +120,7 @@ router?.get(
         projects: projectList,
         notifications: notifList,
         releases: releaseList,
-        _ts: Date?.now(),
+        _ts: Date.now(),
       });
     } catch (err) {
       logger?.warn({ err: err }, "[Bootstrap] Failed to load initial data:");

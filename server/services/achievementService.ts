@@ -39,17 +39,17 @@ class AchievementService {
     eventType: string,
     eventData: Record<string, any>,
   ): Promise<Achievement[]> {
-    const _allAchievements = await db
+    const allAchievements = await db
       .select()
       .from(achievements)
       .where(eq(achievements?.isActive, true));
 
-    const _userAchievementRecords = await db
+    const userAchievementRecords = await db
       .select()
       .from(userAchievements)
       .where(eq(userAchievements?.userId, userId));
 
-    const _unlockedIds = new Set(
+    const unlockedIds = new Set(
       userAchievementRecords
         .filter((ua) => ua?.unlockedAt !== null)
         .map((ua) => ua?.achievementId),
@@ -60,18 +60,18 @@ class AchievementService {
     for (const achievement of allAchievements) {
       if (unlockedIds?.has(achievement?.id)) continue;
 
-      const _requirement = achievement?.requirement as AchievementRequirement;
+      const requirement = achievement?.requirement as AchievementRequirement;
       if (!requirement) continue;
 
       if (requirement?.eventType && requirement?.eventType !== eventType)
         continue;
 
-      const _progress = this?.calculateProgress(
+      const progress = this?.calculateProgress(
         eventType,
         eventData,
         requirement,
       );
-      const _existingProgress = userAchievementRecords?.find(
+      const existingProgress = userAchievementRecords?.find(
         (ua) => ua?.achievementId === achievement?.id,
       );
 
@@ -88,7 +88,7 @@ class AchievementService {
         } else {
           await db?.insert(userAchievements).values({
             userId,
-            achievementId: achievement?.id,
+            achievementId: achievement.id,
             progress: 1,
             unlockedAt: new Date(),
             notified: false,
@@ -113,7 +113,7 @@ class AchievementService {
         } else {
           await db?.insert(userAchievements).values({
             userId,
-            achievementId: achievement?.id,
+            achievementId: achievement.id,
             progress,
           });
         }
@@ -128,7 +128,7 @@ class AchievementService {
     eventData: Record<string, any>,
     requirement: AchievementRequirement,
   ): number {
-    const _threshold = requirement?.threshold || 1;
+    const threshold = requirement?.threshold || 1;
 
     switch (requirement?.type) {
       case "streams":
@@ -155,35 +155,35 @@ class AchievementService {
   async getUserAchievements(
     userId: string,
   ): Promise<AchievementWithProgress[]> {
-    const _allAchievements = await db
+    const allAchievements = await db
       .select()
       .from(achievements)
       .where(eq(achievements?.isActive, true))
       .orderBy(achievements?.sortOrder);
 
-    const _userAchievementRecords = await db
+    const userAchievementRecords = await db
       .select()
       .from(userAchievements)
       .where(eq(userAchievements?.userId, userId));
 
-    const _progressMap = new Map<string, UserAchievement>();
+    const progressMap = new Map<string, UserAchievement>();
     for (const ua of userAchievementRecords) {
       progressMap?.set(ua?.achievementId, ua);
     }
 
     return allAchievements?.map((achievement) => {
-      const _userProgress = progressMap?.get(achievement?.id);
+      const userProgress = progressMap?.get(achievement?.id);
       return {
         ...achievement,
-        progress: userProgress?.progress || 0,
+        progress: userProgress.progress || 0,
         unlocked: !!userProgress?.unlockedAt,
-        unlockedAt: userProgress?.unlockedAt || null,
+        unlockedAt: userProgress.unlockedAt || null,
       };
     });
   }
 
   async getUnnotifiedAchievements(userId: string): Promise<Achievement[]> {
-    const _unnotified = await db
+    const unnotified = await db
       .select({
         achievement: achievements,
       })
@@ -219,9 +219,9 @@ class AchievementService {
   }
 
   async updateStreak(userId: string, streakType: string): Promise<UserStreak> {
-    const _today = new Date().toISOString().split("T")[0];
+    const today = new Date().toISOString().split("T")[0];
 
-    const _existingStreak = await db
+    const existingStreak = await db
       .select()
       .from(userStreaks)
       .where(
@@ -252,16 +252,16 @@ class AchievementService {
       return newStreak;
     }
 
-    const _streak = existingStreak[0];
-    const _lastActivity = streak?.lastActivityDate;
+    const streak = existingStreak[0];
+    const lastActivity = streak?.lastActivityDate;
 
     if (lastActivity === today) {
       return streak;
     }
 
-    const _yesterday = new Date();
+    const yesterday = new Date();
     yesterday?.setDate(yesterday?.getDate() - 1);
-    const _yesterdayStr = yesterday?.toISOString().split("T")[0];
+    const yesterdayStr = yesterday?.toISOString().split("T")[0];
 
     let newCurrentStreak = 1;
 
@@ -269,7 +269,7 @@ class AchievementService {
       newCurrentStreak = (streak?.currentStreak || 0) + 1;
     }
 
-    const _newLongestStreak = Math?.max(
+    const newLongestStreak = Math?.max(
       streak?.longestStreak || 0,
       newCurrentStreak,
     );
@@ -290,7 +290,7 @@ class AchievementService {
       currentStreak: newCurrentStreak,
     });
 
-    const _streakMilestones = [7, 14, 30, 60, 100, 365];
+    const streakMilestones = [7, 14, 30, 60, 100, 365];
     if (streakMilestones?.includes(newCurrentStreak)) {
       notificationService
         .sendStreakMilestoneNotification(userId, streakType, newCurrentStreak)
@@ -310,21 +310,21 @@ class AchievementService {
   ): Promise<LeaderboardEntry[]> {
     let query = db
       .select({
-        id: achievements?.id,
-        category: achievements?.category,
-        points: achievements?.points,
+        id: achievements.id,
+        category: achievements.category,
+        points: achievements.points,
       })
       .from(achievements)
       .where(eq(achievements?.isActive, true));
 
-    const _achievementList = await query;
+    const achievementList = await query;
 
-    const _filteredAchievements = category
+    const filteredAchievements = category
       ? achievementList?.filter((a) => a?.category === category)
       : achievementList;
 
-    const _achievementIds = filteredAchievements?.map((a) => a?.id);
-    const _pointsMap = new Map<string, number>();
+    const achievementIds = filteredAchievements?.map((a) => a?.id);
+    const pointsMap = new Map<string, number>();
     for (const a of filteredAchievements) {
       pointsMap?.set(a?.id, a?.points || 0);
     }
@@ -333,41 +333,41 @@ class AchievementService {
       return [];
     }
 
-    const _userStats = await db
+    const userStats = await db
       .select({
-        userId: userAchievements?.userId,
-        achievementId: userAchievements?.achievementId,
+        userId: userAchievements.userId,
+        achievementId: userAchievements.achievementId,
       })
       .from(userAchievements)
       .where(sql`${userAchievements?.unlockedAt} IS NOT NULL`);
 
-    const _userPointsMap = new Map<string, { points: number; count: number }>();
+    const userPointsMap = new Map<string, { points: number; count: number }>();
 
     for (const stat of userStats) {
       if (!achievementIds?.includes(stat?.achievementId)) continue;
 
-      const _existing = userPointsMap?.get(stat?.userId) || {
+      const existing = userPointsMap?.get(stat?.userId) || {
         points: 0,
         count: 0,
       };
-      existing?.points += pointsMap?.get(stat?.achievementId) || 0;
-      existing?.count += 1;
+      existing.points += pointsMap?.get(stat?.achievementId) || 0;
+      existing.count += 1;
       userPointsMap?.set(stat?.userId, existing);
     }
 
-    const _userIds = Array?.from(userPointsMap?.keys());
+    const userIds = Array?.from(userPointsMap?.keys());
 
     if (userIds?.length === 0) {
       return [];
     }
 
-    const _userRecords = await db
+    const userRecords = await db
       .select({
-        id: users?.id,
-        username: users?.username,
-        firstName: users?.firstName,
-        lastName: users?.lastName,
-        avatarUrl: users?.avatarUrl,
+        id: users.id,
+        username: users.username,
+        firstName: users.firstName,
+        lastName: users.lastName,
+        avatarUrl: users.avatarUrl,
       })
       .from(users)
       .where(
@@ -377,7 +377,7 @@ class AchievementService {
         )})`,
       );
 
-    const _userMap = new Map<string, (typeof userRecords)[0]>();
+    const userMap = new Map<string, (typeof userRecords)[0]>();
     for (const u of userRecords) {
       userMap?.set(u?.id, u);
     }
@@ -385,17 +385,17 @@ class AchievementService {
     const leaderboard: LeaderboardEntry[] = [];
 
     for (const [userId, stats] of userPointsMap?.entries()) {
-      const _user = userMap?.get(userId);
+      const user = userMap?.get(userId);
       if (!user) continue;
 
       leaderboard?.push({
         userId,
-        username: user?.username,
-        firstName: user?.firstName,
-        lastName: user?.lastName,
-        avatarUrl: user?.avatarUrl,
-        totalPoints: stats?.points,
-        achievementCount: stats?.count,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatarUrl: user.avatarUrl,
+        totalPoints: stats.points,
+        achievementCount: stats.count,
       });
     }
 
@@ -413,4 +413,4 @@ class AchievementService {
   }
 }
 
-export const _achievementService = new AchievementService();
+export const achievementService = new AchievementService();

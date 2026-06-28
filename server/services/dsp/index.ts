@@ -65,14 +65,14 @@ export const ALL_INSTRUMENT_SYNTHESIZERS: Record<
 };
 
 export function getEffectProcessor(pluginId: string): DSPProcessor | null {
-  const _factory = ALL_EFFECT_PROCESSORS[pluginId];
+  const factory = ALL_EFFECT_PROCESSORS[pluginId];
   return factory ? factory() : null;
 }
 
 export function getInstrumentSynthesizer(
   pluginId: string,
 ): SynthesizerEngine | null {
-  const _SynthClass = ALL_INSTRUMENT_SYNTHESIZERS[pluginId];
+  const SynthClass = ALL_INSTRUMENT_SYNTHESIZERS[pluginId];
   return SynthClass ? new SynthClass() : null;
 }
 
@@ -87,28 +87,28 @@ export function listAvailableInstruments(): string[] {
 export function getProcessorInfo() {
   return {
     effects: {
-      reverb: Object?.keys(REVERB_PROCESSORS),
-      delay: Object?.keys(DELAY_PROCESSORS),
-      compressor: Object?.keys(COMPRESSOR_PROCESSORS),
-      eq: Object?.keys(EQ_PROCESSORS),
-      distortion: Object?.keys(DISTORTION_PROCESSORS),
-      modulation: Object?.keys(MODULATION_PROCESSORS),
-      dynamics: Object?.keys(DYNAMICS_PROCESSORS),
-      vocal: Object?.keys(VOCAL_PROCESSORS),
-      microphone: Object?.keys(MICROPHONE_PROCESSORS),
-      total: Object?.keys(ALL_EFFECT_PROCESSORS).length,
+      reverb: Object.keys(REVERB_PROCESSORS),
+      delay: Object.keys(DELAY_PROCESSORS),
+      compressor: Object.keys(COMPRESSOR_PROCESSORS),
+      eq: Object.keys(EQ_PROCESSORS),
+      distortion: Object.keys(DISTORTION_PROCESSORS),
+      modulation: Object.keys(MODULATION_PROCESSORS),
+      dynamics: Object.keys(DYNAMICS_PROCESSORS),
+      vocal: Object.keys(VOCAL_PROCESSORS),
+      microphone: Object.keys(MICROPHONE_PROCESSORS),
+      total: Object.keys(ALL_EFFECT_PROCESSORS).length,
     },
     instruments: {
-      piano: Object?.keys(PIANO_SYNTHESIZERS),
-      strings: Object?.keys(STRINGS_SYNTHESIZERS),
-      drums: Object?.keys(DRUMS_SYNTHESIZERS),
-      bass: Object?.keys(BASS_SYNTHESIZERS),
-      pads: Object?.keys(PADS_SYNTHESIZERS),
-      analogSynth: Object?.keys(ANALOG_SYNTH_SYNTHESIZERS),
-      fmSynth: Object?.keys(FM_SYNTH_SYNTHESIZERS),
-      wavetableSynth: Object?.keys(WAVETABLE_SYNTH_SYNTHESIZERS),
-      sampler: Object?.keys(SAMPLER_SYNTHESIZERS),
-      total: Object?.keys(ALL_INSTRUMENT_SYNTHESIZERS).length,
+      piano: Object.keys(PIANO_SYNTHESIZERS),
+      strings: Object.keys(STRINGS_SYNTHESIZERS),
+      drums: Object.keys(DRUMS_SYNTHESIZERS),
+      bass: Object.keys(BASS_SYNTHESIZERS),
+      pads: Object.keys(PADS_SYNTHESIZERS),
+      analogSynth: Object.keys(ANALOG_SYNTH_SYNTHESIZERS),
+      fmSynth: Object.keys(FM_SYNTH_SYNTHESIZERS),
+      wavetableSynth: Object.keys(WAVETABLE_SYNTH_SYNTHESIZERS),
+      sampler: Object.keys(SAMPLER_SYNTHESIZERS),
+      total: Object.keys(ALL_INSTRUMENT_SYNTHESIZERS).length,
     },
     grandTotal:
       Object?.keys(ALL_EFFECT_PROCESSORS).length +

@@ -5,47 +5,47 @@ import { promotionalToolsService } from "../services/promotionalToolsService";
 import { logger } from "../logger";
 import { requireAuth } from "../middleware/auth.js";
 
-const _router = Router();
+const router = Router();
 
-const _preSavePageSchema = z?.object({
-  releaseId: z?.string(),
-  slug: z?.string().optional(),
-  description: z?.string().optional(),
-  backgroundColor: z?.string().optional(),
-  textColor: z?.string().optional(),
-  buttonColor: z?.string().optional(),
-  spotifyPreSaveUrl: z?.string().optional(),
-  appleMusicPreAddUrl: z?.string().optional(),
-  deezerPreSaveUrl: z?.string().optional(),
-  amazonMusicUrl: z?.string().optional(),
-  youtubeUrl: z?.string().optional(),
-  tidalUrl: z?.string().optional(),
+const preSavePageSchema = z.object({
+  releaseId: z.string(),
+  slug: z.string().optional(),
+  description: z.string().optional(),
+  backgroundColor: z.string().optional(),
+  textColor: z.string().optional(),
+  buttonColor: z.string().optional(),
+  spotifyPreSaveUrl: z.string().optional(),
+  appleMusicPreAddUrl: z.string().optional(),
+  deezerPreSaveUrl: z.string().optional(),
+  amazonMusicUrl: z.string().optional(),
+  youtubeUrl: z.string().optional(),
+  tidalUrl: z.string().optional(),
   socialLinks: z
     .object({
-      instagram: z?.string().optional(),
-      twitter: z?.string().optional(),
-      tiktok: z?.string().optional(),
-      youtube: z?.string().optional(),
-      facebook: z?.string().optional(),
-      website: z?.string().optional(),
+      instagram: z.string().optional(),
+      twitter: z.string().optional(),
+      tiktok: z.string().optional(),
+      youtube: z.string().optional(),
+      facebook: z.string().optional(),
+      website: z.string().optional(),
     })
     .optional(),
   customLinks: z
     .array(
-      z?.object({
-        label: z?.string(),
-        url: z?.string(),
+      z.object({
+        label: z.string(),
+        url: z.string(),
       }),
     )
     .optional(),
-  emailCapture: z?.boolean().optional(),
+  emailCapture: z.boolean().optional(),
 });
 
 router?.post("/presave", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = (req?.user as Record<string, unknown>).id;
-    const _data = preSavePageSchema?.parse(req?.body);
-    const _page = await promotionalToolsService?.createPreSavePage(
+    const userId = (req?.user as Record<string, unknown>).id;
+    const data = preSavePageSchema?.parse(req?.body);
+    const page = await promotionalToolsService?.createPreSavePage(
       userId,
       data?.releaseId,
       data,
@@ -59,8 +59,8 @@ router?.post("/presave", requireAuth, async (req: Request, res: Response) => {
 
 router?.get("/presave", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = (req?.user as Record<string, unknown>).id;
-    const _pages = await promotionalToolsService?.getUserPreSavePages(userId);
+    const userId = (req?.user as Record<string, unknown>).id;
+    const pages = await promotionalToolsService?.getUserPreSavePages(userId);
     res?.json(pages);
   } catch (error) {
     logger?.warn({ err: error }, "Error fetching pre-save pages:");
@@ -70,7 +70,7 @@ router?.get("/presave", requireAuth, async (req: Request, res: Response) => {
 
 router?.get("/presave/:id", async (req: Request, res: Response) => {
   try {
-    const _page = await promotionalToolsService?.getPreSavePage(req?.params.id);
+    const page = await promotionalToolsService?.getPreSavePage(req?.params.id);
     if (!page) {
       return res?.status(404).json({ error: "Pre-save page not found" });
     }
@@ -84,7 +84,7 @@ router?.get("/presave/:id", async (req: Request, res: Response) => {
 
 router?.get("/presave/slug/:slug", async (req: Request, res: Response) => {
   try {
-    const _page = await promotionalToolsService?.getPreSavePageBySlug(
+    const page = await promotionalToolsService?.getPreSavePageBySlug(
       req?.params.slug,
     );
     if (!page) {
@@ -100,8 +100,8 @@ router?.get("/presave/slug/:slug", async (req: Request, res: Response) => {
 
 router?.put("/presave/:id", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = (req?.user as Record<string, unknown>).id;
-    const _page = await promotionalToolsService?.updatePreSavePage(
+    const userId = (req?.user as Record<string, unknown>).id;
+    const page = await promotionalToolsService?.updatePreSavePage(
       req?.params.id,
       userId,
       req?.body,
@@ -116,9 +116,9 @@ router?.put("/presave/:id", requireAuth, async (req: Request, res: Response) => 
   }
 });
 
-const _PRESAVE_EVENTS = ["view", "presave", "email", "click"] as const;
+const PRESAVE_EVENTS = ["view", "presave", "email", "click"] as const;
 type PresaveEvent = (typeof PRESAVE_EVENTS)[number];
-const _PLATFORM_RE = /^[a-zA-Z0-9_-]{1,32}$/;
+const PLATFORM_RE = /^[a-zA-Z0-9_-]{1,32}$/;
 
 router?.post("/presave/:id/analytics", async (req: Request, res: Response) => {
   try {
@@ -150,7 +150,7 @@ router?.post("/presave/:id/email", async (req: Request, res: Response) => {
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res?.status(400).json({ error: "Valid email address required" });
     }
-    const _success = await promotionalToolsService?.captureEmail(
+    const success = await promotionalToolsService?.captureEmail(
       req?.params.id,
       email,
     );
@@ -172,8 +172,8 @@ router?.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = (req?.user as Record<string, unknown>).id;
-      const _deleted = await promotionalToolsService?.deletePreSavePage(
+      const userId = (req?.user as Record<string, unknown>).id;
+      const deleted = await promotionalToolsService?.deletePreSavePage(
         req?.params.id,
         userId,
       );
@@ -187,15 +187,15 @@ router?.delete(
   },
 );
 
-const _promoCardSchema = z?.object({
-  releaseId: z?.string(),
-  type: z?.enum(["square", "story", "banner", "twitter"]),
-  template: z?.string().optional(),
-  customText: z?.string().optional(),
-  backgroundColor: z?.string().optional(),
-  textColor: z?.string().optional(),
-  accentColor: z?.string().optional(),
-  fontFamily: z?.string().optional(),
+const promoCardSchema = z.object({
+  releaseId: z.string(),
+  type: z.enum(["square", "story", "banner", "twitter"]),
+  template: z.string().optional(),
+  customText: z.string().optional(),
+  backgroundColor: z.string().optional(),
+  textColor: z.string().optional(),
+  accentColor: z.string().optional(),
+  fontFamily: z.string().optional(),
 });
 
 router?.post(
@@ -203,9 +203,9 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = (req?.user as Record<string, unknown>).id;
-      const _data = promoCardSchema?.parse(req?.body);
-      const _card = await promotionalToolsService?.createPromoCard(
+      const userId = (req?.user as Record<string, unknown>).id;
+      const data = promoCardSchema?.parse(req?.body);
+      const card = await promotionalToolsService?.createPromoCard(
         userId,
         data?.releaseId,
         data,
@@ -220,9 +220,9 @@ router?.post(
 
 router?.get("/promo-cards", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = (req?.user as Record<string, unknown>).id;
-    const _releaseId = req?.query.releaseId as string | undefined;
-    const _cards = await promotionalToolsService?.getPromoCards(
+    const userId = (req?.user as Record<string, unknown>).id;
+    const releaseId = req?.query.releaseId as string | undefined;
+    const cards = await promotionalToolsService?.getPromoCards(
       userId,
       releaseId,
     );
@@ -247,8 +247,8 @@ router?.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = (req?.user as Record<string, unknown>).id;
-      const _deleted = await promotionalToolsService?.deletePromoCard(
+      const userId = (req?.user as Record<string, unknown>).id;
+      const deleted = await promotionalToolsService?.deletePromoCard(
         req?.params.id,
         userId,
       );
@@ -262,18 +262,18 @@ router?.delete(
   },
 );
 
-const _miniVideoSchema = z?.object({
-  releaseId: z?.string(),
-  type: z?.enum(["waveform", "visualizer", "lyrics", "countdown", "slideshow"]),
-  aspectRatio: z?.enum(["1:1", "9:16", "16:9"]),
-  audioPreviewUrl: z?.string().optional(),
-  audioStartTime: z?.number().optional(),
-  textOverlay: z?.string().optional(),
+const miniVideoSchema = z.object({
+  releaseId: z.string(),
+  type: z.enum(["waveform", "visualizer", "lyrics", "countdown", "slideshow"]),
+  aspectRatio: z.enum(["1:1", "9:16", "16:9"]),
+  audioPreviewUrl: z.string().optional(),
+  audioStartTime: z.number().optional(),
+  textOverlay: z.string().optional(),
   animationStyle: z
     .enum(["pulse", "wave", "bounce", "glow", "particles"])
     .optional(),
-  backgroundColor: z?.string().optional(),
-  accentColor: z?.string().optional(),
+  backgroundColor: z.string().optional(),
+  accentColor: z.string().optional(),
 });
 
 router?.post(
@@ -281,9 +281,9 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = (req?.user as Record<string, unknown>).id;
-      const _data = miniVideoSchema?.parse(req?.body);
-      const _video = await promotionalToolsService?.createMiniVideo(
+      const userId = (req?.user as Record<string, unknown>).id;
+      const data = miniVideoSchema?.parse(req?.body);
+      const video = await promotionalToolsService?.createMiniVideo(
         userId,
         data?.releaseId,
         data,
@@ -298,9 +298,9 @@ router?.post(
 
 router?.get("/mini-videos", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = (req?.user as Record<string, unknown>).id;
-    const _releaseId = req?.query.releaseId as string | undefined;
-    const _videos = await promotionalToolsService?.getMiniVideos(
+    const userId = (req?.user as Record<string, unknown>).id;
+    const releaseId = req?.query.releaseId as string | undefined;
+    const videos = await promotionalToolsService?.getMiniVideos(
       userId,
       releaseId,
     );
@@ -316,8 +316,8 @@ router?.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = (req?.user as Record<string, unknown>).id;
-      const _deleted = await promotionalToolsService?.deleteMiniVideo(
+      const userId = (req?.user as Record<string, unknown>).id;
+      const deleted = await promotionalToolsService?.deleteMiniVideo(
         req?.params.id,
         userId,
       );
@@ -331,12 +331,12 @@ router?.delete(
   },
 );
 
-const _spotifyCanvasSchema = z?.object({
-  releaseId: z?.string(),
-  trackId: z?.string(),
-  type: z?.enum(["video", "animation", "static"]),
-  sourceUrl: z?.string(),
-  loopPoint: z?.number().optional(),
+const spotifyCanvasSchema = z.object({
+  releaseId: z.string(),
+  trackId: z.string(),
+  type: z.enum(["video", "animation", "static"]),
+  sourceUrl: z.string(),
+  loopPoint: z.number().optional(),
 });
 
 router?.post(
@@ -344,9 +344,9 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = (req?.user as Record<string, unknown>).id;
-      const _data = spotifyCanvasSchema?.parse(req?.body);
-      const _canvas = await promotionalToolsService?.createSpotifyCanvas(
+      const userId = (req?.user as Record<string, unknown>).id;
+      const data = spotifyCanvasSchema?.parse(req?.body);
+      const canvas = await promotionalToolsService?.createSpotifyCanvas(
         userId,
         data?.releaseId,
         data?.trackId,
@@ -365,9 +365,9 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = (req?.user as Record<string, unknown>).id;
-      const _releaseId = req?.query.releaseId as string | undefined;
-      const _canvases = await promotionalToolsService?.getSpotifyCanvases(
+      const userId = (req?.user as Record<string, unknown>).id;
+      const releaseId = req?.query.releaseId as string | undefined;
+      const canvases = await promotionalToolsService?.getSpotifyCanvases(
         userId,
         releaseId,
       );
@@ -384,7 +384,7 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _canvas = await promotionalToolsService?.processSpotifyCanvas(
+      const canvas = await promotionalToolsService?.processSpotifyCanvas(
         req?.params.id,
       );
       res?.json(canvas);
@@ -400,7 +400,7 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _canvas = await promotionalToolsService?.submitSpotifyCanvas(
+      const canvas = await promotionalToolsService?.submitSpotifyCanvas(
         req?.params.id,
       );
       res?.json(canvas);
@@ -425,12 +425,12 @@ router?.delete(
   },
 );
 
-const _lyricsSyncSchema = z?.object({
-  releaseId: z?.string(),
-  trackId: z?.string(),
-  language: z?.string(),
-  plainText: z?.string(),
-  syncMethod: z?.enum(["manual", "auto", "ai"]).optional(),
+const lyricsSyncSchema = z.object({
+  releaseId: z.string(),
+  trackId: z.string(),
+  language: z.string(),
+  plainText: z.string(),
+  syncMethod: z.enum(["manual", "auto", "ai"]).optional(),
 });
 
 router?.post(
@@ -438,9 +438,9 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = (req?.user as Record<string, unknown>).id;
-      const _data = lyricsSyncSchema?.parse(req?.body);
-      const _sync = await promotionalToolsService?.createLyricsSync(
+      const userId = (req?.user as Record<string, unknown>).id;
+      const data = lyricsSyncSchema?.parse(req?.body);
+      const sync = await promotionalToolsService?.createLyricsSync(
         userId,
         data?.releaseId,
         data?.trackId,
@@ -456,9 +456,9 @@ router?.post(
 
 router?.get("/lyrics-sync", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = (req?.user as Record<string, unknown>).id;
-    const _releaseId = req?.query.releaseId as string | undefined;
-    const _syncs = await promotionalToolsService?.getLyricsSyncs(
+    const userId = (req?.user as Record<string, unknown>).id;
+    const releaseId = req?.query.releaseId as string | undefined;
+    const syncs = await promotionalToolsService?.getLyricsSyncs(
       userId,
       releaseId,
     );
@@ -475,7 +475,7 @@ router?.put(
   async (req: Request, res: Response) => {
     try {
       const { lyrics } = req?.body;
-      const _sync = await promotionalToolsService?.updateLyricsSync(
+      const sync = await promotionalToolsService?.updateLyricsSync(
         req?.params.id,
         lyrics,
       );
@@ -492,7 +492,7 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _sync = await promotionalToolsService?.submitLyricsToplatforms(
+      const sync = await promotionalToolsService?.submitLyricsToplatforms(
         req?.params.id,
       );
       res?.json(sync);
@@ -508,18 +508,18 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _syncs = await promotionalToolsService?.getLyricsSyncs(
+      const syncs = await promotionalToolsService?.getLyricsSyncs(
         (req?.user as Record<string, unknown>).id,
       );
-      const _sync = syncs?.find((s) => s?.id === req?.params.id);
+      const sync = syncs?.find((s) => s?.id === req?.params.id);
       if (!sync) {
         return res?.status(404).json({ error: "Lyrics sync not found" });
       }
-      const _lrc = promotionalToolsService?.exportLRC(sync);
+      const lrc = promotionalToolsService?.exportLRC(sync);
       res?.setHeader("Content-Type", "text/plain");
       res?.setHeader(
         "Content-Disposition",
-        `attachment; filename="lyrics-${sync?.id}.lrc"`,
+        `attachment; filename="lyrics-${sync.id}.lrc"`,
       );
       res?.send(lrc);
     } catch (error) {
@@ -534,18 +534,18 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _syncs = await promotionalToolsService?.getLyricsSyncs(
+      const syncs = await promotionalToolsService?.getLyricsSyncs(
         (req?.user as Record<string, unknown>).id,
       );
-      const _sync = syncs?.find((s) => s?.id === req?.params.id);
+      const sync = syncs?.find((s) => s?.id === req?.params.id);
       if (!sync) {
         return res?.status(404).json({ error: "Lyrics sync not found" });
       }
-      const _srt = promotionalToolsService?.exportSRT(sync);
+      const srt = promotionalToolsService?.exportSRT(sync);
       res?.setHeader("Content-Type", "text/plain");
       res?.setHeader(
         "Content-Disposition",
-        `attachment; filename="lyrics-${sync?.id}.srt"`,
+        `attachment; filename="lyrics-${sync.id}.srt"`,
       );
       res?.send(srt);
     } catch (error) {

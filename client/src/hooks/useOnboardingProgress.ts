@@ -45,7 +45,7 @@ export type OnboardingTaskName =
   | "Invite a collaborator";
 
 export function useOnboardingProgress() {
-  const _queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
 
   const { data: progress, isLoading } = useQuery<OnboardingProgress>({
@@ -54,9 +54,9 @@ export function useOnboardingProgress() {
     refetchOnWindowFocus: false,
   });
 
-  const _completeStepMutation = useMutation({
+  const completeStepMutation = useMutation({
     mutationFn: async (stepId: string) => {
-      const _response = await apiRequest(
+      const response = await apiRequest(
         "POST",
         "/api/onboarding/complete-step",
         { stepId },
@@ -69,7 +69,7 @@ export function useOnboardingProgress() {
       if (data?.pointsAwarded > 0) {
         toast({
           title: `+${data?.pointsAwarded} XP!`,
-          description: data?.message,
+          description: data.message,
         });
       }
     },
@@ -78,24 +78,24 @@ export function useOnboardingProgress() {
     },
   });
 
-  const _findTaskByName = useCallback(
+  const findTaskByName = useCallback(
     (name: OnboardingTaskName): OnboardingTask | undefined => {
       return progress?.tasks?.find((t) => t?.name === name);
     },
     [progress?.tasks],
   );
 
-  const _isTaskCompleted = useCallback(
+  const isTaskCompleted = useCallback(
     (name: OnboardingTaskName): boolean => {
-      const _task = findTaskByName(name);
+      const task = findTaskByName(name);
       return task?.completed ?? false;
     },
     [findTaskByName],
   );
 
-  const _completeTaskByName = useCallback(
+  const completeTaskByName = useCallback(
     async (name: OnboardingTaskName): Promise<boolean> => {
-      const _task = findTaskByName(name);
+      const task = findTaskByName(name);
       if (!task) {
         logger?.warn(`Onboarding task not found: ${name}`);
         return false;
@@ -116,9 +116,9 @@ export function useOnboardingProgress() {
     [findTaskByName, completeStepMutation],
   );
 
-  const _completeTaskById = useCallback(
+  const completeTaskById = useCallback(
     async (stepId: string): Promise<boolean> => {
-      const _task = progress?.tasks?.find((t) => t?.id === stepId);
+      const task = progress?.tasks?.find((t) => t?.id === stepId);
       if (!task) {
         logger?.warn(`Onboarding task not found with id: ${stepId}`);
         return false;
@@ -139,43 +139,43 @@ export function useOnboardingProgress() {
     [progress?.tasks, completeStepMutation],
   );
 
-  const _trackProfileComplete = useCallback(async () => {
+  const trackProfileComplete = useCallback(async () => {
     await completeTaskByName("Complete your profile");
   }, [completeTaskByName]);
 
-  const _trackFirstTrackUpload = useCallback(async () => {
+  const trackFirstTrackUpload = useCallback(async () => {
     await completeTaskByName("Upload first track");
   }, [completeTaskByName]);
 
-  const _trackAIGeneratorUsed = useCallback(async () => {
+  const trackAIGeneratorUsed = useCallback(async () => {
     await completeTaskByName("Try AI Music Generator");
   }, [completeTaskByName]);
 
-  const _trackSocialAccountConnected = useCallback(async () => {
+  const trackSocialAccountConnected = useCallback(async () => {
     await completeTaskByName("Connect a social account");
   }, [completeTaskByName]);
 
-  const _trackSocialAutopilotActivated = useCallback(async () => {
+  const trackSocialAutopilotActivated = useCallback(async () => {
     await completeTaskByName("Activate Social Autopilot");
   }, [completeTaskByName]);
 
-  const _trackBeatStoreSetup = useCallback(async () => {
+  const trackBeatStoreSetup = useCallback(async () => {
     await completeTaskByName("Set up your beat store");
   }, [completeTaskByName]);
 
-  const _trackFirstPostScheduled = useCallback(async () => {
+  const trackFirstPostScheduled = useCallback(async () => {
     await completeTaskByName("Schedule first post");
   }, [completeTaskByName]);
 
-  const _trackZeroCostAdvertisingExplored = useCallback(async () => {
+  const trackZeroCostAdvertisingExplored = useCallback(async () => {
     await completeTaskByName("Explore Zero-Cost Advertising");
   }, [completeTaskByName]);
 
-  const _trackAnalyticsExplored = useCallback(async () => {
+  const trackAnalyticsExplored = useCallback(async () => {
     await completeTaskByName("Explore analytics");
   }, [completeTaskByName]);
 
-  const _trackCollaboratorInvited = useCallback(async () => {
+  const trackCollaboratorInvited = useCallback(async () => {
     await completeTaskByName("Invite a collaborator");
   }, [completeTaskByName]);
 
@@ -183,8 +183,8 @@ export function useOnboardingProgress() {
     progress,
     isLoading,
     isOnboardingActive: !progress?.completedAt && !progress?.skippedAt,
-    completionPercentage: progress?.completionPercentage ?? 0,
-    totalPoints: progress?.totalPoints ?? 0,
+    completionPercentage: progress.completionPercentage ?? 0,
+    totalPoints: progress.totalPoints ?? 0,
 
     isTaskCompleted,
     completeTaskByName,

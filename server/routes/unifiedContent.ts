@@ -42,7 +42,7 @@ import {
 } from "../services/contentPipeline/platformFormatters.js";
 import { MAX_BOOSTER_FEATURES } from "../services/contentPipeline/maxBoosterContentStrategy.js";
 
-const _router = Router();
+const router = Router();
 
 // ─── Input validation ─────────────────────────────────────────────────────────
 
@@ -55,7 +55,7 @@ function validateInput(body: unknown): {
     return { valid: false, error: "Request body must be a JSON object" };
   }
 
-  const _b = body as Record<string, unknown>;
+  const b = body as Record<string, unknown>;
 
   if (!b?.artistName || typeof b?.artistName !== "string") {
     return { valid: false, error: "artistName is required (string)" };
@@ -67,12 +67,12 @@ function validateInput(body: unknown): {
     return { valid: false, error: "mood is required (string)" };
   }
 
-  const _validPlatforms = new Set(ALL_PLATFORMS);
-  const _requestedPlatforms = Array?.isArray(b?.platforms)
+  const validPlatforms = new Set(ALL_PLATFORMS);
+  const requestedPlatforms = Array?.isArray(b?.platforms)
     ? (b?.platforms as string[])
     : undefined;
   if (requestedPlatforms) {
-    const _invalid = requestedPlatforms?.filter(
+    const invalid = requestedPlatforms?.filter(
       (p) => !validPlatforms?.has(p as SupportedPlatform),
     );
     if (invalid?.length > 0) {
@@ -83,38 +83,38 @@ function validateInput(body: unknown): {
     }
   }
 
-  const _inputType =
+  const inputType =
     (b?.type as string) === "boostsheet" ? "boostsheet" : "artist_context";
-  const _commonFields = {
-    artistName: b?.artistName as string,
-    genre: b?.genre as string,
-    mood: b?.mood as string,
-    trackTitle: b?.trackTitle as string | undefined,
-    albumTitle: b?.albumTitle as string | undefined,
-    releaseDate: b?.releaseDate as string | undefined,
-    streamingLinks: b?.streamingLinks as Record<string, string> | undefined,
-    bio: b?.bio as string | undefined,
+  const commonFields = {
+    artistName: b.artistName as string,
+    genre: b.genre as string,
+    mood: b.mood as string,
+    trackTitle: b.trackTitle as string | undefined,
+    albumTitle: b.albumTitle as string | undefined,
+    releaseDate: b.releaseDate as string | undefined,
+    streamingLinks: b.streamingLinks as Record<string, string> | undefined,
+    bio: b.bio as string | undefined,
     brandVoice:
       (b?.brandVoice as ArtistContextInput["brandVoice"]) ?? "energetic",
-    colorPalette: Array?.isArray(b?.colorPalette)
+    colorPalette: Array.isArray(b?.colorPalette)
       ? (b?.colorPalette as string[])
       : undefined,
-    targetAudience: b?.targetAudience as string | undefined,
-    keywords: Array?.isArray(b?.keywords) ? (b?.keywords as string[]) : undefined,
+    targetAudience: b.targetAudience as string | undefined,
+    keywords: Array.isArray(b?.keywords) ? (b?.keywords as string[]) : undefined,
     campaignGoal:
       (b?.campaignGoal as ArtistContextInput["campaignGoal"]) ?? "growth",
     platforms: requestedPlatforms as SupportedPlatform[] | undefined,
-    collaborators: Array?.isArray(b?.collaborators)
+    collaborators: Array.isArray(b?.collaborators)
       ? (b?.collaborators as string[])
       : undefined,
-    upcomingEvents: Array?.isArray(b?.upcomingEvents)
+    upcomingEvents: Array.isArray(b?.upcomingEvents)
       ? (b?.upcomingEvents as unknown[])
       : undefined,
-    socialHandles: b?.socialHandles as Record<string, string> | undefined,
+    socialHandles: b.socialHandles as Record<string, string> | undefined,
     targetArtistSegment:
       (b?.targetArtistSegment as ArtistContextInput["targetArtistSegment"]) ??
       "emerging_artist",
-    schedulingOptions: b?.schedulingOptions as
+    schedulingOptions: b.schedulingOptions as
       | Record<string, unknown>
       | undefined,
   };
@@ -124,7 +124,7 @@ function validateInput(body: unknown): {
       ? ({
           ...commonFields,
           type: "boostsheet",
-          sheetId: b?.sheetId as string | undefined,
+          sheetId: b.sheetId as string | undefined,
         } as BoostSheetInput)
       : ({ ...commonFields, type: "artist_context" } as ArtistContextInput);
 
@@ -142,29 +142,31 @@ router?.post("/", requireAuth, async (req: Request, res: Response) => {
 
   try {
     logger?.info(
-      `[UnifiedContent] Full pipeline triggered by user=${req?.user?.id ?? "unknown"} artist="${input?.artistName}"`,
+      `[UnifiedContent] Full pipeline triggered by user=${req.user.id ?? "unknown"} artist="${input.artistName}"`,
     );
-    const _pkg = await unifiedContentOrchestrator?.generate(input);
+    const pkg = await unifiedContentOrchestrator?.generate(input);
 
     res?.json({
       success: true,
-      runId: pkg?.runId,
-      generatedAt: pkg?.generatedAt,
-      stats: pkg?.stats,
-      artistContent: pkg?.artistContent,
-      maxBoosterContent: pkg?.maxBoosterContent,
-      platformBundles: pkg?.platformBundles,
-      scheduleManifest: pkg?.scheduleManifest,
-      bulkSchedulePayload: pkg?.bulkSchedulePayload,
+      runId: pkg.runId,
+      generatedAt: pkg.generatedAt,
+      stats: pkg.stats,
+      artistContent: pkg.artistContent,
+      maxBoosterContent: pkg.maxBoosterContent,
+      platformBundles: pkg.platformBundles,
+      scheduleManifest: pkg.scheduleManifest,
+      bulkSchedulePayload: pkg.bulkSchedulePayload,
     });
   } catch (err) {
     logger?.warn(`[UnifiedContent] Pipeline error: ${(err as Error).message}`, {
       stack: (err as Error).stack,
     });
-    res.status(500).json({
-      error: "Content generation pipeline failed",
-      detail: (err as Error).message,
-    });
+    res
+      .status(500)
+      .json({
+        error: "Content generation pipeline failed",
+        detail: (err as Error).message,
+      });
   }
 });
 
@@ -181,11 +183,11 @@ router?.post(
     }
 
     try {
-      const _content =
+      const content =
         await unifiedContentOrchestrator?.generateArtistContentOnly(input);
       res?.json({
         success: true,
-        count: content?.length,
+        count: content.length,
         artistContent: content,
       });
     } catch (err) {
@@ -213,11 +215,11 @@ router?.post(
     }
 
     try {
-      const _content =
+      const content =
         await unifiedContentOrchestrator?.generateMaxBoosterContentOnly(input);
       res?.json({
         success: true,
-        count: content?.length,
+        count: content.length,
         maxBoosterContent: content,
       });
     } catch (err) {
@@ -238,7 +240,7 @@ router?.post(
   "/platform/:platform",
   requireAuth,
   async (req: Request, res: Response) => {
-    const _platform = req?.params.platform as SupportedPlatform;
+    const platform = req?.params.platform as SupportedPlatform;
 
     if (!ALL_PLATFORMS?.includes(platform)) {
       res?.status(400).json({
@@ -255,7 +257,7 @@ router?.post(
     }
 
     try {
-      const _bundle = await unifiedContentOrchestrator?.generateForPlatform(
+      const bundle = await unifiedContentOrchestrator?.generateForPlatform(
         input,
         platform,
       );
@@ -264,10 +266,12 @@ router?.post(
       logger?.warn(
         `[UnifiedContent/platform/${platform}] ${(err as Error).message}`,
       );
-      res.status(500).json({
-        error: `Platform bundle generation failed for ${platform}`,
-        detail: (err as Error).message,
-      });
+      res
+        .status(500)
+        .json({
+          error: `Platform bundle generation failed for ${platform}`,
+          detail: (err as Error).message,
+        });
     }
   },
 );
@@ -276,7 +280,7 @@ router?.post(
 
 router?.get("/platforms", (_req: Request, res: Response) => {
   res?.json({
-    platforms: ALL_PLATFORMS?.map((p) => ({
+    platforms: ALL_PLATFORMS.map((p) => ({
       id: p,
       ...PLATFORM_SPECS[p],
     })),
@@ -287,14 +291,14 @@ router?.get("/platforms", (_req: Request, res: Response) => {
 
 router?.get("/features", (_req: Request, res: Response) => {
   res?.json({
-    features: MAX_BOOSTER_FEATURES?.map((f) => ({
-      id: f?.id,
-      displayName: f?.displayName,
-      category: f?.category,
-      tagline: f?.tagline,
-      valueProp: f?.valueProp,
-      relevantPlatforms: f?.relevantPlatforms,
-      contentAngles: f?.contentAngles,
+    features: MAX_BOOSTER_FEATURES.map((f) => ({
+      id: f.id,
+      displayName: f.displayName,
+      category: f.category,
+      tagline: f.tagline,
+      valueProp: f.valueProp,
+      relevantPlatforms: f.relevantPlatforms,
+      contentAngles: f.contentAngles,
     })),
   });
 });

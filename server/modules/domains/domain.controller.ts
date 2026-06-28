@@ -11,13 +11,13 @@ import {
 import { validateDnsLabel, validateDomain } from "./dnsValidators.js";
 import { logger } from "../../logger.js";
 
-const _BASE_DOMAIN = process?.env.BASE_DOMAIN || "max-booster.com";
-const _PLATFORM_IP = process?.env.DNS_SERVER_IP || "34.111.179.208";
+const BASE_DOMAIN = process?.env.BASE_DOMAIN || "max-booster.com";
+const PLATFORM_IP = process?.env.DNS_SERVER_IP || "34.111.179.208";
 
-const _SUBDOMAIN_MIN = 3;
-const _SUBDOMAIN_MAX = 30;
+const SUBDOMAIN_MIN = 3;
+const SUBDOMAIN_MAX = 30;
 
-const _RESERVED_SUBDOMAIN_LABELS = new Set([
+const RESERVED_SUBDOMAIN_LABELS = new Set([
   "ns",
   "ns1",
   "ns2",
@@ -91,7 +91,7 @@ const _RESERVED_SUBDOMAIN_LABELS = new Set([
 function validateSubdomainLabel(
   raw: string,
 ): { ok: false; error: string } | { ok: true; normalized: string } {
-  const _result = validateDnsLabel(raw);
+  const result = validateDnsLabel(raw);
   if (!result?.ok) return result;
 
   const { normalized } = result;
@@ -123,20 +123,20 @@ function validateSubdomainLabel(
 export async function checkManaged(req: Request, res: Response) {
   try {
     const { desiredLabel } = req?.body as { desiredLabel?: string };
-    const _result = validateSubdomainLabel(desiredLabel || "");
+    const result = validateSubdomainLabel(desiredLabel || "");
     if (!result?.ok)
-      return res?.status(400).json({ ok: false, error: result?.error });
+      return res?.status(400).json({ ok: false, error: result.error });
 
-    const _fqdn = `${result?.normalized}.${BASE_DOMAIN}`;
-    const _existing = await db
-      .select({ id: storefrontDomains?.id })
+    const fqdn = `${result?.normalized}.${BASE_DOMAIN}`;
+    const existing = await db
+      .select({ id: storefrontDomains.id })
       .from(storefrontDomains)
       .where(eq(storefrontDomains?.domain, fqdn))
       .limit(1);
 
     return res?.json({
       ok: true,
-      available: existing?.length === 0,
+      available: existing.length === 0,
       domain: fqdn,
     });
   } catch (err) {
@@ -159,14 +159,14 @@ export async function reserveManaged(req: Request, res: Response) {
         .status(400)
         .json({ ok: false, error: "storefrontId required." });
 
-    const _labelResult = validateSubdomainLabel(desiredLabel || "");
+    const labelResult = validateSubdomainLabel(desiredLabel || "");
     if (!labelResult?.ok)
-      return res?.status(400).json({ ok: false, error: labelResult?.error });
+      return res?.status(400).json({ ok: false, error: labelResult.error });
 
-    const _fqdn = `${labelResult?.normalized}.${BASE_DOMAIN}`;
+    const fqdn = `${labelResult?.normalized}.${BASE_DOMAIN}`;
 
     const [sf] = await db
-      .select({ id: storefronts?.id, userId: storefronts?.userId })
+      .select({ id: storefronts.id, userId: storefronts.userId })
       .from(storefronts)
       .where(eq(storefronts?.id, storefrontId))
       .limit(1);
@@ -178,11 +178,11 @@ export async function reserveManaged(req: Request, res: Response) {
     if (sf?.userId !== (req?.user as Record<string, unknown>).id)
       return res?.status(403).json({ ok: false, error: "Unauthorized." });
 
-    const _label = labelResult?.normalized;
+    const label = labelResult?.normalized;
 
     // Check storefront_domains uniqueness on the full FQDN.
-    const _existing = await db
-      .select({ id: storefrontDomains?.id })
+    const existing = await db
+      .select({ id: storefrontDomains.id })
       .from(storefrontDomains)
       .where(eq(storefrontDomains?.domain, fqdn))
       .limit(1);
@@ -195,8 +195,8 @@ export async function reserveManaged(req: Request, res: Response) {
     // Also check storefronts?.subdomain uniqueness early — the column has a DB
     // unique constraint.  Without this check, the INSERT below can succeed but
     // the subsequent UPDATE throws a constraint violation (unlogged 500).
-    const _subdomainTaken = await db
-      .select({ id: storefronts?.id })
+    const subdomainTaken = await db
+      .select({ id: storefronts.id })
       .from(storefronts)
       .where(
         and(
@@ -239,14 +239,14 @@ export async function reserveManaged(req: Request, res: Response) {
       .insert(storefrontHosts)
       .values({ host: fqdn, storefrontId, certStatus: "pending" })
       .onConflictDoUpdate({
-        target: storefrontHosts?.host,
+        target: storefrontHosts.host,
         set: { storefrontId, updatedAt: new Date() },
       });
 
     // The canonical public URL for the store is the platform subdomain.
-    // Requests to {label}.max-booster.com reach the Express server via the
+    // Requests to {label}.max-booster?.com reach the Express server via the
     // wildcard A/CNAME record and are routed by the Host-header middleware.
-    const _publicShortUrl = `https://${label}.${BASE_DOMAIN}`;
+    const publicShortUrl = `https://${label}.${BASE_DOMAIN}`;
 
     logger?.info(
       `[domains] Managed subdomain reserved: ${fqdn} → storefront ${storefrontId} (public: ${publicShortUrl})`,
@@ -255,15 +255,15 @@ export async function reserveManaged(req: Request, res: Response) {
       .status(201)
       .json({
         ok: true,
-        domain: record?.domain,
-        id: record?.id,
+        domain: record.domain,
+        id: record.id,
         publicUrl: publicShortUrl,
         label,
       });
   } catch (err) {
     // Use pino's (object, message) signature so the full error is captured in logs.
-    logger?.warn({ err }, "[domains] reserveManaged error");
-    return res?.status(500).json({ ok: false, error: "Internal error." });
+    logger.warn({ err }, "[domains] reserveManaged error");
+    return res.status(500).json({ ok: false, error: "Internal error." });
   }
 }
 
@@ -271,10 +271,10 @@ export async function reserveManaged(req: Request, res: Response) {
 
 export async function requestCustomDomain(req: Request, res: Response) {
   try {
-    if (!req?.isAuthenticated())
-      return res?.status(401).json({ ok: false, error: "Unauthorized." });
+    if (!req.isAuthenticated())
+      return res.status(401).json({ ok: false, error: "Unauthorized." });
 
-    const { storefrontId, domain: rawDomain } = req?.body as {
+    const { storefrontId, domain: rawDomain } = req.body as {
       storefrontId?: string;
       domain?: string;
     };
@@ -283,32 +283,32 @@ export async function requestCustomDomain(req: Request, res: Response) {
         .status(400)
         .json({ ok: false, error: "storefrontId required." });
 
-    const _domResult = validateDomain(rawDomain || "");
-    if (!domResult?.ok) return res?.status(400).json(domResult);
+    const domResult = validateDomain(rawDomain || "");
+    if (!domResult.ok) return res.status(400).json(domResult);
 
     const [sf] = await db
-      .select({ id: storefronts?.id, userId: storefronts?.userId })
+      .select({ id: storefronts.id, userId: storefronts.userId })
       .from(storefronts)
-      .where(eq(storefronts?.id, storefrontId))
+      .where(eq(storefronts.id, storefrontId))
       .limit(1);
 
     if (!sf)
       return res
         .status(404)
         .json({ ok: false, error: "Storefront not found." });
-    if (sf?.userId !== (req?.user as Record<string, unknown>).id)
-      return res?.status(403).json({ ok: false, error: "Unauthorized." });
+    if (sf.userId !== (req.user as Record<string, unknown>).id)
+      return res.status(403).json({ ok: false, error: "Unauthorized." });
 
-    const _domain = domResult?.normalized;
-    const _token = `mb-${crypto?.randomUUID()}`;
+    const domain = domResult.normalized;
+    const token = `mb-${crypto.randomUUID()}`;
 
-    const _existing = await db
-      .select({ id: storefrontDomains?.id })
+    const existing = await db
+      .select({ id: storefrontDomains.id })
       .from(storefrontDomains)
-      .where(eq(storefrontDomains?.domain, domain))
+      .where(eq(storefrontDomains.domain, domain))
       .limit(1);
 
-    if (existing?.length > 0)
+    if (existing.length > 0)
       return res
         .status(409)
         .json({ ok: false, error: "Domain already registered." });
@@ -324,9 +324,9 @@ export async function requestCustomDomain(req: Request, res: Response) {
       })
       .returning();
 
-    return res?.status(201).json({
+    return res.status(201).json({
       ok: true,
-      domain: record?.domain,
+      domain: record.domain,
       verificationToken: token,
       platformIp: PLATFORM_IP,
       instructions: {
@@ -347,50 +347,50 @@ export async function requestCustomDomain(req: Request, res: Response) {
       },
     });
   } catch (err) {
-    logger?.warn("[domains] requestCustomDomain error:", err);
-    return res?.status(500).json({ ok: false, error: "Internal error." });
+    logger.warn("[domains] requestCustomDomain error:", err);
+    return res.status(500).json({ ok: false, error: "Internal error." });
   }
 }
 
 export async function verifyCustomDomain(req: Request, res: Response) {
   try {
-    if (!req?.isAuthenticated())
-      return res?.status(401).json({ ok: false, error: "Unauthorized." });
+    if (!req.isAuthenticated())
+      return res.status(401).json({ ok: false, error: "Unauthorized." });
 
-    const { domain } = req?.body as { domain?: string };
+    const { domain } = req.body as { domain?: string };
     if (!domain)
-      return res?.status(400).json({ ok: false, error: "domain required." });
+      return res.status(400).json({ ok: false, error: "domain required." });
 
     const [record] = await db
       .select()
       .from(storefrontDomains)
       .where(
         and(
-          eq(storefrontDomains?.domain, domain?.toLowerCase()),
-          eq(storefrontDomains?.type, "custom_domain"),
+          eq(storefrontDomains.domain, domain.toLowerCase()),
+          eq(storefrontDomains.type, "custom_domain"),
         ),
       )
       .limit(1);
 
     if (!record)
-      return res?.status(404).json({ ok: false, error: "Domain not found." });
+      return res.status(404).json({ ok: false, error: "Domain not found." });
 
     const [sf] = await db
-      .select({ userId: storefronts?.userId })
+      .select({ userId: storefronts.userId })
       .from(storefronts)
-      .where(eq(storefronts?.id, record?.storefrontId))
+      .where(eq(storefronts.id, record.storefrontId))
       .limit(1);
 
-    if (sf?.userId !== (req?.user as Record<string, unknown>).id)
-      return res?.status(403).json({ ok: false, error: "Unauthorized." });
+    if (sf.userId !== (req.user as Record<string, unknown>).id)
+      return res.status(403).json({ ok: false, error: "Unauthorized." });
 
-    const _txtName = `_maxbooster.${domain}`;
+    const txtName = `_maxbooster.${domain}`;
     let verified = false;
 
     try {
-      const _txtRecords = await dns?.resolveTxt(txtName);
-      const _flat = txtRecords?.flat().map((v) => v?.toString());
-      if (flat?.includes(record?.verificationToken!)) verified = true;
+      const txtRecords = await dns.resolveTxt(txtName);
+      const flat = txtRecords.flat().map((v) => v.toString());
+      if (flat.includes(record.verificationToken!)) verified = true;
     } catch {
       // no TXT record found — verification failed
     }
@@ -399,40 +399,40 @@ export async function verifyCustomDomain(req: Request, res: Response) {
       await db
         .update(storefrontDomains)
         .set({ status: "verification_failed", updatedAt: new Date() })
-        .where(eq(storefrontDomains?.id, record?.id));
-      return res?.json({ ok: true, verified: false });
+        .where(eq(storefrontDomains.id, record.id));
+      return res.json({ ok: true, verified: false });
     }
 
     await db
       .update(storefrontDomains)
       .set({ status: "active", updatedAt: new Date() })
-      .where(eq(storefrontDomains?.id, record?.id));
+      .where(eq(storefrontDomains.id, record.id));
 
     // Write storefront_hosts so edge routing + lookupStorefrontByHost pick this up
     await db
       .insert(storefrontHosts)
       .values({
         host: domain,
-        storefrontId: record?.storefrontId,
+        storefrontId: record.storefrontId,
         certStatus: "pending",
       })
       .onConflictDoUpdate({
-        target: storefrontHosts?.host,
-        set: { storefrontId: record?.storefrontId, updatedAt: new Date() },
+        target: storefrontHosts.host,
+        set: { storefrontId: record.storefrontId, updatedAt: new Date() },
       });
 
     // Also add www variant for root domains
-    if (!domain?.startsWith("www.") && domain?.split(".").length === 2) {
+    if (!domain.startsWith("www.") && domain.split(".").length === 2) {
       await db
         .insert(storefrontHosts)
         .values({
           host: `www.${domain}`,
-          storefrontId: record?.storefrontId,
+          storefrontId: record.storefrontId,
           certStatus: "pending",
         })
         .onConflictDoUpdate({
-          target: storefrontHosts?.host,
-          set: { storefrontId: record?.storefrontId, updatedAt: new Date() },
+          target: storefrontHosts.host,
+          set: { storefrontId: record.storefrontId, updatedAt: new Date() },
         });
     }
 
@@ -463,7 +463,7 @@ export async function listDomains(req: Request, res: Response) {
 
     const { storefrontId } = req?.params;
     const [sf] = await db
-      .select({ userId: storefronts?.userId })
+      .select({ userId: storefronts.userId })
       .from(storefronts)
       .where(eq(storefronts?.id, storefrontId))
       .limit(1);
@@ -475,7 +475,7 @@ export async function listDomains(req: Request, res: Response) {
     if (sf?.userId !== (req?.user as Record<string, unknown>).id)
       return res?.status(403).json({ ok: false, error: "Unauthorized." });
 
-    const _domains = await db
+    const domains = await db
       .select()
       .from(storefrontDomains)
       .where(eq(storefrontDomains?.storefrontId, storefrontId));
@@ -503,7 +503,7 @@ export async function deleteDomain(req: Request, res: Response) {
       return res?.status(404).json({ ok: false, error: "Domain not found." });
 
     const [sf] = await db
-      .select({ userId: storefronts?.userId })
+      .select({ userId: storefronts.userId })
       .from(storefronts)
       .where(eq(storefronts?.id, record?.storefrontId))
       .limit(1);

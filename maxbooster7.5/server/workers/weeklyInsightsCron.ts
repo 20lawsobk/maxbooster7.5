@@ -14,8 +14,9 @@ export function initializeWeeklyInsightsCron(): void {
       logger.info("📊 Starting weekly insights email job (Monday 9 AM)");
 
       try {
-        const { weeklyInsightsService } =
-          await import("../services/weeklyInsightsService.js");
+        const { weeklyInsightsService } = await import(
+          "../services/weeklyInsightsService.js"
+        );
         const result = await weeklyInsightsService.sendWeeklyInsights();
 
         logger.info(

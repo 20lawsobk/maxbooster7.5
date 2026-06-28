@@ -186,8 +186,9 @@ async function processAutonomousJob(job: Job): Promise<void> {
       await pruneUploadDirs(7);
       break;
     case "beat-money-loop-tick": {
-      const { beatMoneyLoopService } =
-        await import("./beatMoneyLoopService.js");
+      const { beatMoneyLoopService } = await import(
+        "./beatMoneyLoopService.js"
+      );
       const result = await beatMoneyLoopService.tick();
       if (result.ran) {
         logger.info(

@@ -21,7 +21,7 @@ class Logger {
   private isDevelopment: boolean;
 
   constructor() {
-    this.isDevelopment = import?.meta.env?.DEV;
+    this.isDevelopment = import.meta.env?.DEV;
   }
 
   private formatLog(
@@ -56,11 +56,11 @@ class Logger {
       return;
     }
 
-    const _logEntry = this?.formatLog(level, message, data, context);
+    const logEntry = this?.formatLog(level, message, data, context);
 
     if (this?.isDevelopment) {
-      const _prefix = `[${level?.toUpperCase()}]${context ? ` [${context}]` : ""}`;
-      const _style = this?.getConsoleStyle(level);
+      const prefix = `[${level?.toUpperCase()}]${context ? ` [${context}]` : ""}`;
+      const style = this?.getConsoleStyle(level);
 
       if (data !== undefined) {
         console?.log(`%c${prefix} ${message}`, style, data);
@@ -77,7 +77,7 @@ class Logger {
   }
 
   private getConsoleStyle(level: LogLevel): string {
-    const _styles = {
+    const styles = {
       info: "color: #3b82f6; font-weight: bold",
       warn: "color: #f59e0b; font-weight: bold",
       error: "color: #ef4444; font-weight: bold",
@@ -103,4 +103,4 @@ class Logger {
   }
 }
 
-export const _logger = new Logger();
+export const logger = new Logger();

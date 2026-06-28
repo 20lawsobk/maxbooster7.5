@@ -16,7 +16,7 @@ export class AppError extends Error {
     public code: string,
     public statusCode: number,
     message: string,
-    public context?: ErrorContext,
+    public context?: ErrorContext
   ) {
     super(message);
     this.name = "AppError";
@@ -30,7 +30,7 @@ export class AppError extends Error {
 export async function safeAsync<T>(
   fn: () => Promise<T>,
   context: ErrorContext,
-  fallback?: T,
+  fallback?: T
 ): Promise<T> {
   try {
     return await fn();
@@ -49,7 +49,7 @@ export async function safeAsync<T>(
 export function safeSync<T>(
   fn: () => T,
   context: ErrorContext,
-  fallback?: T,
+  fallback?: T
 ): T {
   try {
     return fn();
@@ -69,17 +69,17 @@ export function logError(
   error: unknown,
   context: ErrorContext
 ): void {
-  const _errorMessage = error instanceof Error ? error?.message : String(error);
-  const _errorStack = error instanceof Error ? error?.stack : "";
+  const errorMessage = error instanceof Error ? error?.message : String(error);
+  const errorStack = error instanceof Error ? error?.stack : "";
 
-  const _logEntry = {
+  const logEntry = {
     timestamp: new Date().toISOString(),
-    service: context?.service,
-    operation: context?.operation,
-    userId: context?.userId,
+    service: context.service,
+    operation: context.operation,
+    userId: context.userId,
     error: errorMessage,
     stack: errorStack,
-    metadata: context?.metadata,
+    metadata: context.metadata,
   };
 
   console?.error("[ERROR]", JSON?.stringify(logEntry));
@@ -92,7 +92,7 @@ export async function retryWithBackoff<T>(
   fn: () => Promise<T>,
   context: ErrorContext,
   maxRetries: number = 3,
-  initialDelayMs: number = 100,
+  initialDelayMs: number = 100
 ): Promise<T> {
   let lastError: unknown;
 
@@ -101,7 +101,7 @@ export async function retryWithBackoff<T>(
       return await fn();
     } catch (error) {
       lastError = error;
-      const _delayMs = initialDelayMs * Math?.pow(2, attempt);
+      const delayMs = initialDelayMs * Math?.pow(2, attempt);
 
       logError(error, {
         ...context,
@@ -123,9 +123,9 @@ export async function retryWithBackoff<T>(
 export function validateRequired(
   obj: Record<string, unknown>,
   fields: string[],
-  context: ErrorContext,
+  context: ErrorContext
 ): void {
-  const _missing = fields?.filter((field) => !obj[field]);
+  const missing = fields?.filter((field) => !obj[field]);
   if (missing?.length > 0) {
     throw new AppError(
       "VALIDATION_ERROR",
@@ -144,14 +144,14 @@ export function validateRange(
   min: number,
   max: number,
   fieldName: string,
-  context: ErrorContext,
+  context: ErrorContext
 ): void {
   if (value < min || value > max) {
     throw new AppError(
       "VALIDATION_ERROR",
       400,
       `${fieldName} must be between ${min} and ${max}, got ${value}`,
-      { ...context, metadata: { fieldName, value, min, max } },
+      { ...context, metadata: { fieldName, value, min, max } }
     );
   }
 }
@@ -162,7 +162,7 @@ export function validateRange(
 export function safeJsonParse<T>(
   json: string,
   context: ErrorContext,
-  fallback?: T,
+  fallback?: T
 ): T {
   try {
     return JSON?.parse(json) as T;
@@ -171,7 +171,12 @@ export function safeJsonParse<T>(
     if (fallback !== undefined) {
       return fallback;
     }
-    throw new AppError("JSON_PARSE_ERROR", 400, "Invalid JSON", context);
+    throw new AppError(
+      "JSON_PARSE_ERROR",
+      400,
+      "Invalid JSON",
+      context
+    );
   }
 }
 
@@ -181,7 +186,7 @@ export function safeJsonParse<T>(
 export async function safeDbOperation<T>(
   fn: () => Promise<T>,
   context: ErrorContext,
-  fallback?: T,
+  fallback?: T
 ): Promise<T> {
   try {
     return await fn();
@@ -195,7 +200,7 @@ export async function safeDbOperation<T>(
           "DUPLICATE_ENTRY",
           409,
           "Record already exists",
-          context,
+          context
         );
       }
       if (error?.message.includes("NOT NULL constraint")) {
@@ -203,7 +208,7 @@ export async function safeDbOperation<T>(
           "MISSING_REQUIRED_FIELD",
           400,
           "Missing required database field",
-          context,
+          context
         );
       }
     }
@@ -221,7 +226,7 @@ export async function safeDbOperation<T>(
 export async function safeApiCall<T>(
   fn: () => Promise<T>,
   context: ErrorContext,
-  fallback?: T,
+  fallback?: T
 ): Promise<T> {
   try {
     return await fn();
@@ -242,7 +247,7 @@ export async function safeApiCall<T>(
           "RATE_LIMITED",
           429,
           "Rate limited by external API",
-          context,
+          context
         );
       }
     }
@@ -261,13 +266,13 @@ export function errorHandlerMiddleware(
   err: unknown,
   _req: any,
   res: any,
-  _next: any,
+  _next: any
 ): void {
   if (err instanceof AppError) {
     res?.status(err?.statusCode).json({
-      error: err?.code,
-      message: err?.message,
-      context: err?.context,
+      error: err.code,
+      message: err.message,
+      context: err.context,
     });
   } else if (err instanceof Error) {
     console?.error("[UNHANDLED_ERROR]", err);

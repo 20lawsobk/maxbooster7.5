@@ -10,10 +10,10 @@
 
 import { logger } from "../logger.js";
 
-const _BASE_URL = `http://127.0.0.1:${process?.env.PORT || 5000}/api/boosterstate`;
+const BASE_URL = `http://127.0.0.1:${process.env.PORT || 5000}/api/boosterstate`;
 
 function authHeaders(): Record<string, string> {
-  const _secret = process?.env.BOOSTERSTATE_SECRET;
+  const secret = process?.env.BOOSTERSTATE_SECRET;
   if (secret) {
     return { Authorization: `Bearer ${secret}` };
   }
@@ -24,16 +24,16 @@ async function post(
   path: string,
   body: Record<string, unknown>,
 ): Promise<unknown> {
-  const _res = await fetch(`${BASE_URL}${path}`, {
+  const res = await fetch(`${BASE_URL}${path}`, {
     method: "POST",
-    signal: AbortSignal?.timeout(10_000), // 10 s — internal service hang must not hold event loop
+    signal: AbortSignal.timeout(10_000), // 10 s — internal service hang must not hold event loop
     headers: { "Content-Type": "application/json", ...authHeaders() },
-    body: JSON?.stringify(body),
+    body: JSON.stringify(body),
   });
   if (!res?.ok) {
     throw new Error(`BoosterState ${path} returned ${res?.status}`);
   }
-  const _text = await res?.text();
+  const text = await res?.text();
   return text ? JSON?.parse(text) : {};
 }
 
@@ -43,8 +43,8 @@ export class BoosterStateClient {
   }
 
   async connect(): Promise<void> {
-    const _res = await fetch(`${BASE_URL}/ping`, {
-      signal: AbortSignal?.timeout(5_000),
+    const res = await fetch(`${BASE_URL}/ping`, {
+      signal: AbortSignal.timeout(5_000),
       headers: authHeaders(),
     });
     if (!res?.ok) {
@@ -54,15 +54,15 @@ export class BoosterStateClient {
   }
 
   async ping(): Promise<string> {
-    const _res = await fetch(`${BASE_URL}/ping`, {
-      signal: AbortSignal?.timeout(5_000),
+    const res = await fetch(`${BASE_URL}/ping`, {
+      signal: AbortSignal.timeout(5_000),
       headers: authHeaders(),
     });
     return await res?.text();
   }
 
   async get(key: string): Promise<string | null> {
-    const _data = await post("/kv/get", { key });
+    const data = await post("/kv/get", { key });
     return data?.value ?? null;
   }
 
@@ -87,17 +87,17 @@ export class BoosterStateClient {
         flatKeys?.push(k);
       }
     }
-    const _data = await post("/kv/del", { keys: flatKeys });
+    const data = await post("/kv/del", { keys: flatKeys });
     return data?.deleted ?? 0;
   }
 
   async exists(key: string): Promise<number> {
-    const _data = await post("/kv/exists", { key });
+    const data = await post("/kv/exists", { key });
     return data?.exists ? 1 : 0;
   }
 
   async incr(key: string): Promise<number> {
-    const _data = await post("/kv/incr", { key });
+    const data = await post("/kv/incr", { key });
     return data?.value ?? 0;
   }
 
@@ -106,7 +106,7 @@ export class BoosterStateClient {
   }
 
   async keys(pattern: string): Promise<string[]> {
-    const _data = await post("/kv/keys", { pattern });
+    const data = await post("/kv/keys", { pattern });
     return data?.keys ?? [];
   }
 
@@ -114,11 +114,11 @@ export class BoosterStateClient {
     key: string,
     member: { score: number; value: string },
   ): Promise<void> {
-    await post("/zset/add", { key, score: member?.score, value: member?.value });
+    await post("/zset/add", { key, score: member.score, value: member.value });
   }
 
   async zCard(key: string): Promise<number> {
-    const _data = await post("/zset/card", { key });
+    const data = await post("/zset/card", { key });
     return data?.count ?? 0;
   }
 
@@ -128,11 +128,11 @@ export class BoosterStateClient {
     end: number,
     options?: { REV?: boolean },
   ): Promise<string[]> {
-    const _data = await post("/zset/range", {
+    const data = await post("/zset/range", {
       key,
       start,
       end,
-      rev: options?.REV ?? false,
+      rev: options.REV ?? false,
     });
     return data?.values ?? [];
   }
@@ -142,7 +142,7 @@ export class BoosterStateClient {
     min: string | number,
     max: string | number,
   ): Promise<number> {
-    const _data = await post("/zset/rem-range-by-score", {
+    const data = await post("/zset/rem-range-by-score", {
       key,
       min: String(min),
       max: String(max),
@@ -155,14 +155,14 @@ export class BoosterStateClient {
     data: Record<string, unknown>,
     priority?: number,
   ): Promise<string | null> {
-    const _result = await post("/queue/push", { queue, data, priority });
+    const result = await post("/queue/push", { queue, data, priority });
     return result?.id ?? null;
   }
 
   async queuePop(
     queue: string,
   ): Promise<{ id: string; data: Record<string, unknown> } | null> {
-    const _result = await post("/queue/pop", { queue });
+    const result = await post("/queue/pop", { queue });
     return result?.item ?? null;
   }
 
@@ -175,8 +175,8 @@ export class BoosterStateClient {
     const body: Record<string, any> = { key, tokens };
     if (capacity !== undefined) body.capacity = capacity;
     if (refillPerSec !== undefined) body.refill_per_sec = refillPerSec;
-    const _data = await post("/rate/take", body);
-    return { allowed: data?.allowed ?? true, remaining: data?.remaining ?? 0 };
+    const data = await post("/rate/take", body);
+    return { allowed: data.allowed ?? true, remaining: data.remaining ?? 0 };
   }
 
   async quit(): Promise<void> {
@@ -191,7 +191,7 @@ export async function getBoosterStateClient(): Promise<BoosterStateClient> {
     return singleton;
   }
 
-  const _client = new BoosterStateClient();
+  const client = new BoosterStateClient();
   await client?.connect();
   singleton = client;
   return client;
@@ -199,12 +199,12 @@ export async function getBoosterStateClient(): Promise<BoosterStateClient> {
 
 export async function isBoosterStateHealthy(): Promise<boolean> {
   try {
-    const _res = await fetch(`${BASE_URL}/health`, {
-      signal: AbortSignal?.timeout(5_000),
+    const res = await fetch(`${BASE_URL}/health`, {
+      signal: AbortSignal.timeout(5_000),
       headers: authHeaders(),
     });
     if (!res?.ok) return false;
-    const _data = await res?.json();
+    const data = await res?.json();
     return data?.status === "ok";
   } catch {
     return false;

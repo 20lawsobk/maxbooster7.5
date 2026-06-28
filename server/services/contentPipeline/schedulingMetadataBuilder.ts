@@ -52,7 +52,7 @@ export interface SchedulingOptions {
 
 // ─── Day-of-week helpers ──────────────────────────────────────────────────────
 
-const _DAY_NAMES = [
+const DAY_NAMES = [
   "Sunday",
   "Monday",
   "Tuesday",
@@ -63,17 +63,17 @@ const _DAY_NAMES = [
 ];
 
 function nextOccurrenceOf(dayName: string, from: Date): Date {
-  const _target = DAY_NAMES?.indexOf(dayName);
+  const target = DAY_NAMES?.indexOf(dayName);
   if (target === -1) return new Date(from);
-  const _result = new Date(from);
-  const _current = result?.getDay();
-  const _diff = (target - current + 7) % 7;
+  const result = new Date(from);
+  const current = result?.getDay();
+  const diff = (target - current + 7) % 7;
   result?.setDate(result?.getDate() + (diff === 0 ? 7 : diff));
   return result;
 }
 
 function buildDatetime(baseDate: Date, utcHour: number): Date {
-  const _d = new Date(baseDate);
+  const d = new Date(baseDate);
   d?.setUTCHours(utcHour, 0, 0, 0);
   return d;
 }
@@ -94,7 +94,7 @@ function getOptimalWindows(
   platform: SupportedPlatform,
   goal: SchedulingOptions["campaignGoal"],
 ): OptimalWindow[] {
-  const _spec = PLATFORM_SPECS[platform];
+  const spec = PLATFORM_SPECS[platform];
   const windows: OptimalWindow[] = [];
 
   for (const day of spec?.bestPostingDays) {
@@ -146,30 +146,30 @@ export function buildScheduleManifest(
     priorityPlatforms = [],
   } = options;
 
-  const _campaignStart = new Date(startDate);
-  const _campaignEnd = new Date(startDate);
+  const campaignStart = new Date(startDate);
+  const campaignEnd = new Date(startDate);
   campaignEnd?.setDate(campaignEnd?.getDate() + durationDays);
 
   const entries: ScheduleManifestEntry[] = [];
   const platformBreakdown: Partial<Record<SupportedPlatform, number>> = {};
 
   // Group slots by platform
-  const _byPlatform = new Map<SupportedPlatform, ContentSlot[]>();
+  const byPlatform = new Map<SupportedPlatform, ContentSlot[]>();
   for (const { platform, slot } of slots) {
     if (!byPlatform?.has(platform)) byPlatform?.set(platform, []);
     byPlatform?.get(platform)!.push(slot);
   }
 
   for (const [platform, contentSlots] of byPlatform?.entries()) {
-    const _windows = getOptimalWindows(platform, campaignGoal);
-    const _isPriority = priorityPlatforms?.includes(platform);
-    const _weeklyTarget = isPriority
+    const windows = getOptimalWindows(platform, campaignGoal);
+    const isPriority = priorityPlatforms?.includes(platform);
+    const weeklyTarget = isPriority
       ? postsPerPlatformPerWeek + 2
       : postsPerPlatformPerWeek;
 
     let postCount = 0;
     let windowIdx = 0;
-    const _scheduled = new Set<string>(); // prevent duplicate day+hour slots
+    const scheduled = new Set<string>(); // prevent duplicate day+hour slots
 
     for (const slot of contentSlots) {
       if (postCount >= weeklyTarget * Math?.ceil(durationDays / 7)) break;
@@ -177,25 +177,25 @@ export function buildScheduleManifest(
       // Find the next available window that hasn't been scheduled
       let attempts = 0;
       while (attempts < windows?.length * 2) {
-        const _win = windows[windowIdx % windows?.length];
+        const win = windows[windowIdx % windows?.length];
         windowIdx++;
         attempts++;
 
-        const _slotKey = `${win?.day}:${win?.utcHour}`;
+        const slotKey = `${win?.day}:${win?.utcHour}`;
         if (scheduled?.has(slotKey)) continue;
         scheduled?.add(slotKey);
 
-        const _baseDate = nextOccurrenceOf(win?.day, campaignStart);
+        const baseDate = nextOccurrenceOf(win?.day, campaignStart);
         if (baseDate > campaignEnd) continue;
 
-        const _scheduledAt = buildDatetime(baseDate, win?.utcHour);
+        const scheduledAt = buildDatetime(baseDate, win?.utcHour);
 
         entries?.push({
           platform,
           slot,
           scheduledAt,
-          utcHour: win?.utcHour,
-          dayOfWeek: win?.day,
+          utcHour: win.utcHour,
+          dayOfWeek: win.day,
           timezone,
           priority: isPriority
             ? "high"
@@ -228,7 +228,7 @@ export function buildScheduleManifest(
     campaignStart,
     campaignEnd,
     entries,
-    totalPostCount: entries?.length,
+    totalPostCount: entries.length,
     platformBreakdown: platformBreakdown as Record<SupportedPlatform, number>,
     frequencyPerWeek: postsPerPlatformPerWeek,
   };
@@ -245,12 +245,12 @@ export function manifestToBulkSchedulePayload(
   return manifest?.entries
     .filter((entry) => contentMap?.has(`${entry?.platform}:${entry?.slot}`))
     .map((entry) => {
-      const _key = `${entry?.platform}:${entry?.slot}`;
-      const _item = contentMap?.get(key)!;
+      const key = `${entry?.platform}:${entry?.slot}`;
+      const item = contentMap?.get(key)!;
       return {
-        platform: entry?.platform,
-        content: item?.content,
-        scheduledAt: entry?.scheduledAt.toISOString(),
+        platform: entry.platform,
+        content: item.content,
+        scheduledAt: entry.scheduledAt.toISOString(),
       };
     });
 }

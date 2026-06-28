@@ -39,13 +39,13 @@ export function useScreenReaderAnnouncer(
 ): ScreenReaderAnnouncerResult {
   const { debounceMs = 100, clearOnUnmount = true } = options;
 
-  const _debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const _delayTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const delayTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
 
   useEffect(() => {
     return () => {
       if (clearOnUnmount) {
-        const _announcer = ScreenReaderAnnouncer?.getInstance();
+        const announcer = ScreenReaderAnnouncer?.getInstance();
         announcer?.clear();
       }
 
@@ -58,7 +58,7 @@ export function useScreenReaderAnnouncer(
     };
   }, [clearOnUnmount]);
 
-  const _announce = useCallback(
+  const announce = useCallback(
     (message: string, priority: AnnouncementPriority = "polite") => {
       if (!message?.trim()) return;
 
@@ -77,21 +77,21 @@ export function useScreenReaderAnnouncer(
     [debounceMs],
   );
 
-  const _announceWithPolite = useCallback((message: string) => {
+  const announceWithPolite = useCallback((message: string) => {
     announcePolite(message);
   }, []);
 
-  const _announceWithAssertive = useCallback((message: string) => {
+  const announceWithAssertive = useCallback((message: string) => {
     announceAssertive(message);
   }, []);
 
-  const _announceWithDelay = useCallback(
+  const announceWithDelay = useCallback(
     (
       message: string,
       delayMs: number,
       priority: AnnouncementPriority = "polite",
     ) => {
-      const _timer = setTimeout(() => {
+      const timer = setTimeout(() => {
         if (priority === "assertive") {
           announceAssertive(message);
         } else {
@@ -105,7 +105,7 @@ export function useScreenReaderAnnouncer(
     [],
   );
 
-  const _announceList = useCallback(
+  const announceList = useCallback(
     (
       items: string[],
       separator = ", ",
@@ -113,16 +113,16 @@ export function useScreenReaderAnnouncer(
     ) => {
       if (items?.length === 0) return;
 
-      const _message = items?.join(separator);
+      const message = items?.join(separator);
       announce(message, priority);
     },
     [announce],
   );
 
-  const _announceProgress = useCallback(
+  const announceProgress = useCallback(
     (current: number, total: number, context?: string) => {
-      const _percentage = Math?.round((current / total) * 100);
-      const _message = context
+      const percentage = Math?.round((current / total) * 100);
+      const message = context
         ? `${context}: ${percentage}% complete, ${current} of ${total}`
         : `Progress: ${percentage}% complete, ${current} of ${total}`;
 
@@ -131,7 +131,7 @@ export function useScreenReaderAnnouncer(
     [],
   );
 
-  const _announceStatus = useCallback(
+  const announceStatus = useCallback(
     (status: "loading" | "success" | "error" | "warning", message?: string) => {
       const statusMessages: Record<string, string> = {
         loading: message || "Loading, please wait",
@@ -140,7 +140,7 @@ export function useScreenReaderAnnouncer(
         warning: message || "Warning",
       };
 
-      const _fullMessage = statusMessages[status] || message || "";
+      const fullMessage = statusMessages[status] || message || "";
 
       if (status === "error") {
         announceAssertive(fullMessage);
@@ -151,8 +151,8 @@ export function useScreenReaderAnnouncer(
     [],
   );
 
-  const _clear = useCallback(() => {
-    const _announcer = ScreenReaderAnnouncer?.getInstance();
+  const clear = useCallback(() => {
+    const announcer = ScreenReaderAnnouncer?.getInstance();
     announcer?.clear();
 
     if (debounceTimerRef?.current) {

@@ -869,7 +869,8 @@ export function ContentGenerator() {
       toast({
         title: "Import failed",
         description:
-          (err instanceof Error && err.message) || "Could not analyze that URL",
+          (err instanceof Error && err.message) ||
+          "Could not analyze that URL",
         variant: "destructive",
       });
     } finally {
@@ -1338,7 +1339,7 @@ export function ContentGenerator() {
                           <div className="rounded-md overflow-hidden border">
                             {/* Color palette strip */}
                             <div className="h-2 flex">
-                              {visualSpec.color_palette?.map(
+                              {visualSpec.color_palette.map(
                                 (color: string, i: number) => (
                                   <div
                                     key={i}
@@ -1424,7 +1425,7 @@ export function ContentGenerator() {
                                     topic: vc.topic || contentPrompt || "",
                                     artist_name:
                                       vc.artist_name ||
-                                      urlAnalysis?.artist ||
+                                      urlAnalysis.artist ||
                                       "",
                                     hook: vc.hook || "",
                                     body: vc.body || "",
@@ -1842,7 +1843,7 @@ export function ContentGenerator() {
 
                 {optimizeHashtagsMutation.data && (
                   <div className="space-y-2">
-                    {optimizeHashtagsMutation.data.categories?.map(
+                    {optimizeHashtagsMutation.data.categories.map(
                       (category: HashtagCategory) => (
                         <div key={category.category} className="space-y-1">
                           <div className="flex items-center gap-2">
@@ -1905,7 +1906,7 @@ export function ContentGenerator() {
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                {PACK_OPTIONS.find((p) => p.value === packId)?.description}
+                {PACK_OPTIONS.find((p) => p.value === packId).description}
               </p>
             </div>
 
@@ -2084,7 +2085,7 @@ export function ContentGenerator() {
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium">Trending Topics</h3>
               <Badge variant="secondary">
-                {trendingTopics?.length || 0} trends
+                {trendingTopics.length || 0} trends
               </Badge>
             </div>
 
@@ -2097,7 +2098,7 @@ export function ContentGenerator() {
               </div>
             ) : (
               <div className="space-y-2">
-                {trendingTopics?.map((topic) => (
+                {trendingTopics.map((topic) => (
                   <Card
                     key={topic.id}
                     className="hover:bg-accent transition-colors cursor-pointer"
@@ -2155,7 +2156,7 @@ export function ContentGenerator() {
               </div>
             ) : (
               <div className="space-y-2">
-                {postingTimes?.map((time, index) => (
+                {postingTimes.map((time, index) => (
                   <Card
                     key={index}
                     className={`${
@@ -2238,7 +2239,7 @@ export function ContentGenerator() {
               )}
             </Button>
 
-            {generateABVariantsMutation.data?.variants && (
+            {generateABVariantsMutation.data.variants && (
               <div className="space-y-3">
                 {generateABVariantsMutation.data.variants.map(
                   (variant: ABVariant, index: number) => (

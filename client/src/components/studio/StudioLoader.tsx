@@ -11,16 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { StudioSkeleton } from "./StudioSkeleton";
-import {
-  AlertCircle,
-  RefreshCw,
-  WifiOff,
-  Clock,
-  Plus,
-  Home,
-  AlertTriangle,
-  CheckCircle,
-} from "lucide-react";
+import { AlertCircle, RefreshCw, WifiOff, Clock, Plus, Home, AlertTriangle, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { errorService, captureException } from "@/lib/errorService";
 import { apiRequest } from "@/lib/queryClient";
@@ -78,7 +69,7 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
   const {
     data: projectsData,
     isLoading: projectsLoading,
-
+    
     error: projectsErrorData,
     refetch: refetchProjects,
   } = useQuery({
@@ -101,7 +92,9 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
   // Query for samples with error handling
   const {
     data: samplesData,
-
+    
+    
+    
     refetch: refetchSamples,
   } = useQuery({
     queryKey: ["/api/studio/samples"],
@@ -243,12 +236,12 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
   // Show error state if critical resources failed
   if (hasCriticalError) {
     const isNetworkError =
-      projectsErrorData?.message?.includes("Network") ||
-      projectsErrorData?.message?.includes("fetch");
-    const isTimeoutError = projectsErrorData?.message?.includes("timeout");
+      projectsErrorData.message.includes("Network") ||
+      projectsErrorData.message.includes("fetch");
+    const isTimeoutError = projectsErrorData.message.includes("timeout");
     const isAuthError =
-      projectsErrorData?.message?.includes("401") ||
-      projectsErrorData?.message?.includes("403");
+      projectsErrorData.message.includes("401") ||
+      projectsErrorData.message.includes("403");
 
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-4">

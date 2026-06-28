@@ -50,7 +50,7 @@ function buildDunningEmailHtml(
   step: number,
   updateCardUrl: string,
 ): string {
-  const _urgency = DUNNING_STEPS[step]?.urgency ?? "low";
+  const urgency = DUNNING_STEPS[step].urgency ?? "low";
 
   const bannerColor: Record<string, string> = {
     low: "#f59e0b",
@@ -85,7 +85,7 @@ function buildDunningEmailHtml(
     },
   };
 
-  const _msg = messages[urgency];
+  const msg = messages[urgency];
 
   return `
     <!DOCTYPE html>
@@ -97,9 +97,9 @@ function buildDunningEmailHtml(
           <h1 style="color:#fff;margin:0;font-size:20px;">Max Booster</h1>
         </div>
         <div style="padding:32px;">
-          <h2 style="color:#111;margin-top:0;font-size:22px;">${msg?.heading}</h2>
-          <p style="color:#374151;line-height:1.6;">${msg?.body}</p>
-          <a href="${updateCardUrl}" style="display:inline-block;margin-top:16px;background:${bannerColor[urgency]};color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">${msg?.cta}</a>
+          <h2 style="color:#111;margin-top:0;font-size:22px;">${msg.heading}</h2>
+          <p style="color:#374151;line-height:1.6;">${msg.body}</p>
+          <a href="${updateCardUrl}" style="display:inline-block;margin-top:16px;background:${bannerColor[urgency]};color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:16px;">${msg.cta}</a>
           <p style="color:#9ca3af;font-size:13px;margin-top:32px;">If you believe this is a mistake or need help, reply to this email and we'll sort it out.</p>
         </div>
       </div>
@@ -111,7 +111,7 @@ function buildDunningEmailHtml(
 class DunningService {
   async startSequence(userId: string, invoiceId: string): Promise<void> {
     try {
-      const _existing = await db
+      const existing = await db
         .select()
         .from(dunningState)
         .where(eq(dunningState?.stripeInvoiceId, invoiceId))
@@ -124,7 +124,7 @@ class DunningService {
         return;
       }
 
-      const _nextEmailAt = new Date();
+      const nextEmailAt = new Date();
 
       await db?.insert(dunningState).values({
         userId,
@@ -168,9 +168,9 @@ class DunningService {
 
   async processPendingStepsPaged(limit: number): Promise<number> {
     try {
-      const _now = new Date();
+      const now = new Date();
 
-      const _pending = await db
+      const pending = await db
         .select()
         .from(dunningState)
         .where(
@@ -183,7 +183,7 @@ class DunningService {
 
       let processed = 0;
       for (const record of pending) {
-        const _nextStep = record?.currentStep + 1;
+        const nextStep = record?.currentStep + 1;
         if (nextStep >= DUNNING_STEPS?.length) {
           await db
             .update(dunningState)
@@ -202,8 +202,8 @@ class DunningService {
           record?.currentStep,
         );
 
-        const _nextStepConfig = DUNNING_STEPS[nextStep];
-        const _nextEmailAt = new Date();
+        const nextStepConfig = DUNNING_STEPS[nextStep];
+        const nextEmailAt = new Date();
         nextEmailAt?.setDate(
           nextEmailAt?.getDate() + (nextStepConfig?.delayDays ?? 0),
         );
@@ -229,14 +229,14 @@ class DunningService {
     invoiceId: string,
     step: number,
   ): Promise<void> {
-    const _stepConfig = DUNNING_STEPS[step];
+    const stepConfig = DUNNING_STEPS[step];
     if (!stepConfig) return;
 
-    const _userRows = await db
+    const userRows = await db
       .select({
-        email: users?.email,
-        firstName: users?.firstName,
-        subscriptionTier: users?.subscriptionTier,
+        email: users.email,
+        firstName: users.firstName,
+        subscriptionTier: users.subscriptionTier,
       })
       .from(users)
       .where(eq(users?.id, userId))
@@ -245,10 +245,10 @@ class DunningService {
     if (!userRows?.length || !userRows[0].email) return;
 
     const { email, firstName } = userRows[0];
-    const _displayName = firstName ?? email?.split("@")[0];
-    const _updateCardUrl = `${process?.env.APP_URL ?? "https://maxbooster.app"}/settings/billing?utm_source=dunning&utm_step=${step}`;
+    const displayName = firstName ?? email?.split("@")[0];
+    const updateCardUrl = `${process.env.APP_URL ?? "https://maxbooster.app"}/settings/billing?utm_source=dunning&utm_step=${step}`;
 
-    const _html = buildDunningEmailHtml(displayName, step, updateCardUrl);
+    const html = buildDunningEmailHtml(displayName, step, updateCardUrl);
 
     await emailService?.sendTransactional(email, stepConfig?.subject, html);
 
@@ -258,4 +258,4 @@ class DunningService {
   }
 }
 
-export const _dunningService = new DunningService();
+export const dunningService = new DunningService();

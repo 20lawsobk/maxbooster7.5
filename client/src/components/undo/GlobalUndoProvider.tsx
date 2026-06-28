@@ -309,7 +309,7 @@ export function GlobalUndoProvider({
           name,
           description,
           createdAt: Date.now(),
-          actionId: lastAction?.id || "",
+          actionId: lastAction.id || "",
         };
 
         setState((prev) => ({

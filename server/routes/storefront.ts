@@ -25,27 +25,17 @@ import {
 import Stripe from "stripe";
 import { getBaseUrl } from "../config/defaults";
 import { db } from "../db";
-import {
-  eq,
-  and,
-  count,
-  avg,
-  lte,
-  gte,
-  or,
-  isNull,
-  inArray,
-} from "drizzle-orm";
+import { eq, and, count, avg, lte, gte, or, isNull, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { logger } from "../logger.js";
 import dns from "dns";
 import { validateDomain } from "../modules/domains/dnsValidators.js";
 import { env } from "../config/env.js";
 
-const _dnsPromises = dns?.promises;
-const _PLATFORM_IP = process?.env.DNS_SERVER_IP || "34.111.179.208";
+const dnsPromises = dns?.promises;
+const PLATFORM_IP = process?.env.DNS_SERVER_IP || "34.111.179.208";
 
-const _upload = createHardenedUpload({
+const upload = createHardenedUpload({
   maxFileSize: 200 * 1024 * 1024, // 200MB
   maxFiles: 1,
   allowedMimes: ["image/jpeg", "image/png", "image/gif", "image/webp"],
@@ -53,7 +43,7 @@ const _upload = createHardenedUpload({
   label: "storefront image",
 });
 
-const _router = Router();
+const router = Router();
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) return error?.message;
@@ -66,7 +56,7 @@ function getErrorMessage(error: unknown): string {
  */
 router?.get("/templates", async (_req, res) => {
   try {
-    const _templates = await storefrontService?.getTemplates();
+    const templates = await storefrontService?.getTemplates();
     res?.json(templates);
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error fetching templates:");
@@ -80,18 +70,18 @@ router?.get("/templates", async (_req, res) => {
  * GET /api/storefront/my
  * Get current user's storefronts
  */
-router?.get("/my", async (req, res) => {
+router.get("/my", async (req, res) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const _storefronts = await storefrontService?.getUserStorefronts(
-      req?.user!.id,
+    const storefronts = await storefrontService.getUserStorefronts(
+      req.user!.id,
     );
-    res?.json(storefronts);
+    res.json(storefronts);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching user storefronts:");
+    logger.warn({ err: error }, "Error fetching user storefronts:");
     res
       .status(500)
       .json({ error: getErrorMessage(error) || "Failed to fetch storefronts" });
@@ -102,28 +92,28 @@ router?.get("/my", async (req, res) => {
  * GET /api/storefront/public/:slug
  * Get public storefront by slug (unauthenticated access) - MUST be before /:slug
  */
-router?.get("/public/:slug", async (req, res) => {
+router.get("/public/:slug", async (req, res) => {
   try {
-    const { slug } = req?.params;
+    const { slug } = req.params;
 
-    const _storefront = await storefrontService?.getStorefrontBySlug(slug);
+    const storefront = await storefrontService.getStorefrontBySlug(slug);
 
-    if (!storefront?.isActive || !storefront?.isPublic) {
-      return res?.status(404).json({ error: "Storefront not found" });
+    if (!storefront.isActive || !storefront.isPublic) {
+      return res.status(404).json({ error: "Storefront not found" });
     }
 
-    await storefrontService?.incrementViews(storefront?.id);
+    await storefrontService.incrementViews(storefront.id);
 
-    res?.json(storefront);
+    res.json(storefront);
   } catch (error: unknown) {
-    const _errorMessage =
-      error instanceof Error ? error?.message : "Failed to fetch storefront";
+    const errorMessage =
+      error instanceof Error ? error.message : "Failed to fetch storefront";
     if (errorMessage === "Storefront not found") {
-      return res?.status(404).json({ error: errorMessage });
+      return res.status(404).json({ error: errorMessage });
     }
 
-    logger?.warn({ err: error }, "Error fetching public storefront:");
-    res?.status(500).json({ error: errorMessage });
+    logger.warn({ err: error }, "Error fetching public storefront:");
+    res.status(500).json({ error: errorMessage });
   }
 });
 
@@ -132,16 +122,16 @@ router?.get("/public/:slug", async (req, res) => {
  * Suggest a slug + check managed subdomain availability.
  * MUST be registered before /:slug to avoid being swallowed by the wildcard.
  */
-router?.get("/suggest-url", async (req, res) => {
+router.get("/suggest-url", async (req, res) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
-    const _slug = await storefrontService?.generateRandomSlug();
-    const _baseDomain = process?.env.BASE_DOMAIN || "max-booster.com";
-    // Platform subdomain: each artist's store lives at {slug}.max-booster.com
-    const _suggestedDomain = `${slug}.${baseDomain}`;
-    const _publicUrl = `https://${suggestedDomain}`;
+    const slug = await storefrontService.generateRandomSlug();
+    const baseDomain = process.env.BASE_DOMAIN || "max-booster.com";
+    // Platform subdomain: each artist's store lives at {slug}.max-booster?.com
+    const suggestedDomain = `${slug}.${baseDomain}`;
+    const publicUrl = `https://${suggestedDomain}`;
 
     res?.json({
       slug,
@@ -161,28 +151,28 @@ router?.get("/suggest-url", async (req, res) => {
  */
 router?.get("/check-domain", async (req, res) => {
   try {
-    const _raw = ((req?.query.domain as string) || "").toLowerCase().trim();
+    const raw = ((req?.query.domain as string) || "").toLowerCase().trim();
     if (!raw) {
       return res?.status(400).json({ error: "domain query param required" });
     }
 
-    const _result = validateDomain(raw);
+    const result = validateDomain(raw);
     if (!result?.ok) {
       return res
         .status(200)
-        .json({ available: false, valid: false, reason: result?.error });
+        .json({ available: false, valid: false, reason: result.error });
     }
 
-    const _existing = await db
-      .select({ id: storefrontDomains?.id })
+    const existing = await db
+      .select({ id: storefrontDomains.id })
       .from(storefrontDomains)
       .where(eq(storefrontDomains?.domain, result?.normalized))
       .limit(1);
 
     res?.json({
-      available: existing?.length === 0,
+      available: existing.length === 0,
       valid: true,
-      domain: result?.normalized,
+      domain: result.normalized,
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error checking custom domain:");
@@ -201,13 +191,13 @@ router?.get("/preview/:slug", async (req, res) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
     const { slug } = req?.params;
-    const _storefront = await storefrontService?.getStorefrontBySlug(slug);
+    const storefront = await storefrontService?.getStorefrontBySlug(slug);
     if (storefront?.userId !== req?.user.id) {
       return res?.status(403).json({ error: "Forbidden" });
     }
     res?.json(storefront);
   } catch (error: unknown) {
-    const _errMsg = getErrorMessage(error);
+    const errMsg = getErrorMessage(error);
     if (errMsg === "Storefront not found") {
       return res?.status(404).json({ error: errMsg });
     }
@@ -229,17 +219,17 @@ router?.get("/generate-slug", async (req, res) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _name = typeof req?.query.name === "string" ? req?.query.name : "";
+    const name = typeof req?.query.name === "string" ? req?.query.name : "";
 
     if (!name?.trim()) {
       return res?.status(400).json({ error: "Name is required" });
     }
 
-    const _slug = await storefrontService?.generateSlug(name);
+    const slug = await storefrontService?.generateSlug(name);
     res?.json({ slug });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error generating slug:");
-    const _errorMessage =
+    const errorMessage =
       error instanceof Error ? error?.message : "Failed to generate slug";
     res?.status(500).json({ error: errorMessage });
   }
@@ -253,10 +243,10 @@ router?.get("/:slug", async (req, res) => {
   try {
     const { slug } = req?.params;
 
-    const _storefront = await storefrontService?.getStorefrontBySlug(slug);
+    const storefront = await storefrontService?.getStorefrontBySlug(slug);
     res?.json(storefront);
   } catch (error: unknown) {
-    const _errMsg = getErrorMessage(error);
+    const errMsg = getErrorMessage(error);
 
     if (errMsg === "Storefront not found") {
       return res?.status(404).json({ error: errMsg });
@@ -277,9 +267,9 @@ router?.post("/create", async (req, res) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _validatedData = insertStorefrontSchema?.parse({
+    const validatedData = insertStorefrontSchema?.parse({
       ...req?.body,
-      userId: req?.user!.id,
+      userId: req.user!.id,
     });
 
     if (!storefrontService?.validateSlug(validatedData?.slug)) {
@@ -289,18 +279,18 @@ router?.post("/create", async (req, res) => {
       });
     }
 
-    const _storefront = await storefrontService?.createStorefront({
-      userId: req?.user!.id,
-      name: validatedData?.name,
-      slug: validatedData?.slug,
-      templateId: validatedData?.templateId || undefined,
-      customization: validatedData?.customization || {},
+    const storefront = await storefrontService?.createStorefront({
+      userId: req.user!.id,
+      name: validatedData.name,
+      slug: validatedData.slug,
+      templateId: validatedData.templateId || undefined,
+      customization: validatedData.customization || {},
     });
 
     res?.status(201).json(storefront);
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error creating storefront:");
-    const _errMsg = getErrorMessage(error);
+    const errMsg = getErrorMessage(error);
 
     if (errMsg?.includes("Slug already taken")) {
       return res?.status(409).json({ error: errMsg });
@@ -310,10 +300,10 @@ router?.post("/create", async (req, res) => {
       return res?.status(400).json({ error: errMsg });
     }
 
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error?.issues });
+        .json({ error: "Validation error", details: error.issues });
     }
 
     res?.status(500).json({ error: errMsg || "Failed to create storefront" });
@@ -331,7 +321,7 @@ router?.put("/:id/customize", async (req, res) => {
     }
 
     const { id } = req?.params;
-    const _validatedData = updateStorefrontSchema?.parse(req?.body);
+    const validatedData = updateStorefrontSchema?.parse(req?.body);
 
     if (
       validatedData?.slug &&
@@ -343,7 +333,7 @@ router?.put("/:id/customize", async (req, res) => {
       });
     }
 
-    const _updatedStorefront = await storefrontService?.updateStorefront(
+    const updatedStorefront = await storefrontService?.updateStorefront(
       id,
       req?.user!.id,
       validatedData,
@@ -351,7 +341,7 @@ router?.put("/:id/customize", async (req, res) => {
 
     res?.json(updatedStorefront);
   } catch (error: unknown) {
-    const _errMsg = getErrorMessage(error);
+    const errMsg = getErrorMessage(error);
 
     if (errMsg === "Storefront not found") {
       return res?.status(404).json({ error: errMsg });
@@ -365,10 +355,10 @@ router?.put("/:id/customize", async (req, res) => {
       return res?.status(409).json({ error: errMsg });
     }
 
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error?.issues });
+        .json({ error: "Validation error", details: error.issues });
     }
 
     logger?.warn({ err: error }, "Error updating storefront:");
@@ -393,7 +383,7 @@ router?.patch("/:id/publish", async (req, res) => {
       return res?.status(400).json({ error: "isPublished must be a boolean" });
     }
 
-    const _storefront = await db?.query.storefronts?.findFirst({
+    const storefront = await db?.query.storefronts?.findFirst({
       where: eq(storefronts?.id, id),
     });
 
@@ -445,7 +435,7 @@ router?.delete("/:id", async (req, res) => {
 
     res?.json({ success: true, message: "Storefront deleted successfully" });
   } catch (error: unknown) {
-    const _errMsg = getErrorMessage(error);
+    const errMsg = getErrorMessage(error);
 
     if (errMsg === "Storefront not found") {
       return res?.status(404).json({ error: errMsg });
@@ -471,11 +461,11 @@ router?.get("/:storefrontId/membership-tiers", async (req, res) => {
     }
 
     const { storefrontId } = req?.params;
-    const _tiers = await storefrontService?.getMembershipTiers(storefrontId);
+    const tiers = await storefrontService?.getMembershipTiers(storefrontId);
     res?.json(tiers);
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error fetching membership tiers:");
-    const _errorMessage =
+    const errorMessage =
       error instanceof Error
         ? error?.message
         : "Failed to fetch membership tiers";
@@ -495,34 +485,34 @@ router?.post("/:storefrontId/membership-tiers", async (req, res) => {
 
     const { storefrontId } = req?.params;
 
-    const _validatedData = insertMembershipTierSchema?.parse({
+    const validatedData = insertMembershipTierSchema?.parse({
       ...req?.body,
       storefrontId,
     });
 
-    const _tier = await storefrontService?.createMembershipTier({
+    const tier = await storefrontService?.createMembershipTier({
       storefrontId,
-      name: validatedData?.name,
-      description: validatedData?.description || undefined,
-      priceCents: validatedData?.priceCents,
-      currency: validatedData?.currency || "usd",
-      interval: validatedData?.interval as "month" | "year",
-      benefits: validatedData?.benefits || {},
-      maxSubscribers: validatedData?.maxSubscribers || undefined,
+      name: validatedData.name,
+      description: validatedData.description || undefined,
+      priceCents: validatedData.priceCents,
+      currency: validatedData.currency || "usd",
+      interval: validatedData.interval as "month" | "year",
+      benefits: validatedData.benefits || {},
+      maxSubscribers: validatedData.maxSubscribers || undefined,
     });
 
     res?.status(201).json(tier);
   } catch (error: unknown) {
-    const _errMsg = getErrorMessage(error);
+    const errMsg = getErrorMessage(error);
 
     if (errMsg === "Storefront not found") {
       return res?.status(404).json({ error: errMsg });
     }
 
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error?.issues });
+        .json({ error: "Validation error", details: error.issues });
     }
 
     logger?.warn({ err: error }, "Error creating membership tier:");
@@ -543,9 +533,9 @@ router?.put("/membership-tiers/:tierId", async (req, res) => {
     }
 
     const { tierId } = req?.params;
-    const _validatedData = updateMembershipTierSchema?.parse(req?.body);
+    const validatedData = updateMembershipTierSchema?.parse(req?.body);
 
-    const _tier = await storefrontService?.updateMembershipTier(
+    const tier = await storefrontService?.updateMembershipTier(
       tierId,
       req?.user!.id,
       validatedData,
@@ -553,7 +543,7 @@ router?.put("/membership-tiers/:tierId", async (req, res) => {
 
     res?.json(tier);
   } catch (error: unknown) {
-    const _errMsg = getErrorMessage(error);
+    const errMsg = getErrorMessage(error);
 
     if (errMsg === "Membership tier not found") {
       return res?.status(404).json({ error: errMsg });
@@ -563,10 +553,10 @@ router?.put("/membership-tiers/:tierId", async (req, res) => {
       return res?.status(403).json({ error: errMsg });
     }
 
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error?.issues });
+        .json({ error: "Validation error", details: error.issues });
     }
 
     logger?.warn({ err: error }, "Error updating membership tier:");
@@ -595,7 +585,7 @@ router?.delete("/membership-tiers/:tierId", async (req, res) => {
       message: "Membership tier deleted successfully",
     });
   } catch (error: unknown) {
-    const _errMsg = getErrorMessage(error);
+    const errMsg = getErrorMessage(error);
 
     if (errMsg === "Membership tier not found") {
       return res?.status(404).json({ error: errMsg });
@@ -627,17 +617,17 @@ router?.post("/subscribe/:tierId", async (req, res) => {
     }
 
     const { tierId } = req?.params;
-    const _user = req?.user!;
+    const user = req?.user!;
 
-    const _tierResults = await db
+    const tierResults = await db
       .select({ tier: membershipTiers, storefront: storefronts })
       .from(membershipTiers)
       .leftJoin(storefronts, eq(membershipTiers?.storefrontId, storefronts?.id))
       .where(eq(membershipTiers?.id, tierId))
       .limit(1);
 
-    const _tier = tierResults[0]?.tier;
-    const _storefront = tierResults[0]?.storefront;
+    const tier = tierResults[0]?.tier;
+    const storefront = tierResults[0]?.storefront;
 
     if (!tier) {
       return res?.status(404).json({ error: "Membership tier not found" });
@@ -649,7 +639,7 @@ router?.post("/subscribe/:tierId", async (req, res) => {
         .json({ error: "This membership tier is not currently available" });
     }
 
-    const _existingMemberships = await db
+    const existingMemberships = await db
       .select()
       .from(customerMemberships)
       .where(
@@ -667,21 +657,23 @@ router?.post("/subscribe/:tierId", async (req, res) => {
         .json({ error: "You already have an active membership to this tier" });
     }
 
-    const _stripeKey = env?.STRIPE_SECRET_KEY;
+    const stripeKey = env?.STRIPE_SECRET_KEY;
     if (!stripeKey?.startsWith("sk_")) {
-      return res.status(503).json({
-        error: "Payment service unavailable. Please try again later.",
-      });
+      return res
+        .status(503)
+        .json({
+          error: "Payment service unavailable. Please try again later.",
+        });
     }
 
-    const _stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" as const });
+    const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" as const });
 
     let stripeCustomerId = (user as Record<string, unknown>)
       .stripeCustomerId as string | undefined;
     if (!stripeCustomerId) {
-      const _customer = await stripe?.customers.create({
-        email: user?.email,
-        metadata: { userId: user?.id },
+      const customer = await stripe?.customers.create({
+        email: user.email,
+        metadata: { userId: user.id },
       });
       stripeCustomerId = customer?.id;
       await db
@@ -695,17 +687,17 @@ router?.post("/subscribe/:tierId", async (req, res) => {
       | null
       | undefined;
     if (!stripePriceId) {
-      const _price = await stripe?.prices.create({
-        unit_amount: tier?.priceCents,
-        currency: tier?.currency || "usd",
-        recurring: { interval: tier?.interval as "month" | "year" },
+      const price = await stripe?.prices.create({
+        unit_amount: tier.priceCents,
+        currency: tier.currency || "usd",
+        recurring: { interval: tier.interval as "month" | "year" },
         product_data: {
           name: `${storefront?.name || "Artist"} - ${tier?.name}`,
-          description: tier?.description || undefined,
+          description: tier.description || undefined,
         },
         metadata: {
-          storefrontId: tier?.storefrontId,
-          tierName: tier?.name,
+          storefrontId: tier.storefrontId,
+          tierName: tier.name,
         },
       });
       stripePriceId = price?.id;
@@ -715,11 +707,11 @@ router?.post("/subscribe/:tierId", async (req, res) => {
         .where(eq(membershipTiers?.id, tierId));
     }
 
-    const _appUrl = env?.APP_URL || "https://max-booster.com";
-    const _storefrontSlug = storefront?.slug || "";
-    const _returnBase = `${appUrl}/storefront/${storefrontSlug}`;
+    const appUrl = env?.APP_URL || "https://max-booster.com";
+    const storefrontSlug = storefront?.slug || "";
+    const returnBase = `${appUrl}/storefront/${storefrontSlug}`;
 
-    const _session = await stripe?.checkout.sessions?.create({
+    const session = await stripe?.checkout.sessions?.create({
       customer: stripeCustomerId,
       mode: "subscription",
       line_items: [{ price: stripePriceId, quantity: 1 }],
@@ -727,16 +719,16 @@ router?.post("/subscribe/:tierId", async (req, res) => {
       cancel_url: `${returnBase}?membership=canceled`,
       metadata: {
         type: "storefront_membership",
-        customerId: user?.id,
+        customerId: user.id,
         tierId,
-        storefrontId: tier?.storefrontId,
+        storefrontId: tier.storefrontId,
       },
     });
 
-    res?.json({ checkoutUrl: session?.url });
+    res?.json({ checkoutUrl: session.url });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error creating membership checkout session:");
-    const _errMsg = getErrorMessage(error);
+    const errMsg = getErrorMessage(error);
     res
       .status(500)
       .json({ error: errMsg || "Failed to initiate subscription" });
@@ -755,7 +747,7 @@ router?.post("/memberships/:membershipId/cancel", async (req, res) => {
 
     const { membershipId } = req?.params;
 
-    const _membership = await storefrontService?.cancelMembership(
+    const membership = await storefrontService?.cancelMembership(
       membershipId,
       req?.user!.id,
     );
@@ -763,7 +755,7 @@ router?.post("/memberships/:membershipId/cancel", async (req, res) => {
     res?.json(membership);
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error canceling membership:");
-    const _errMsg = getErrorMessage(error);
+    const errMsg = getErrorMessage(error);
 
     if (errMsg === "Membership not found") {
       return res?.status(404).json({ error: errMsg });
@@ -795,13 +787,13 @@ router?.get("/memberships/my", async (req, res) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _memberships = await storefrontService?.getCustomerMemberships(
+    const memberships = await storefrontService?.getCustomerMemberships(
       req?.user!.id,
     );
     res?.json(memberships);
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error fetching customer memberships:");
-    const _errorMessage =
+    const errorMessage =
       error instanceof Error ? error?.message : "Failed to fetch memberships";
     res?.status(500).json({ error: errorMessage });
   }
@@ -815,13 +807,13 @@ router?.get("/:storefrontId/membership-tiers/public", async (req, res) => {
   try {
     const { storefrontId } = req?.params;
 
-    const _tiers = await storefrontService?.getMembershipTiers(storefrontId);
-    const _publicTiers = tiers?.filter((tier) => tier?.isActive);
+    const tiers = await storefrontService?.getMembershipTiers(storefrontId);
+    const publicTiers = tiers?.filter((tier) => tier?.isActive);
 
     res?.json(publicTiers);
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error fetching public membership tiers:");
-    const _errorMessage =
+    const errorMessage =
       error instanceof Error
         ? error?.message
         : "Failed to fetch membership tiers";
@@ -837,13 +829,13 @@ router?.get("/:storefrontId/listings", async (req, res) => {
   try {
     const { storefrontId } = req?.params;
 
-    const _listings =
+    const listings =
       await storefrontService?.getStorefrontListings(storefrontId);
 
     res?.json(listings);
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error fetching storefront listings:");
-    const _errorMessage =
+    const errorMessage =
       error instanceof Error ? error?.message : "Failed to fetch listings";
     res?.status(500).json({ error: errorMessage });
   }
@@ -865,11 +857,11 @@ router?.post("/generate-subdomain", async (req, res) => {
       return res?.status(400).json({ error: "Name is required" });
     }
 
-    const _subdomain = await storefrontService?.generateSubdomain(name);
+    const subdomain = await storefrontService?.generateSubdomain(name);
     res?.json({ subdomain });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error generating subdomain:");
-    const _errorMessage =
+    const errorMessage =
       error instanceof Error ? error?.message : "Failed to generate subdomain";
     res?.status(500).json({ error: errorMessage });
   }
@@ -888,7 +880,7 @@ router?.get("/check-subdomain/:subdomain", async (req, res) => {
     const { subdomain } = req?.params;
     const { excludeStorefrontId } = req?.query;
 
-    const _isValid = storefrontService?.validateSubdomain(subdomain);
+    const isValid = storefrontService?.validateSubdomain(subdomain);
     if (!isValid) {
       return res?.json({
         available: false,
@@ -897,7 +889,7 @@ router?.get("/check-subdomain/:subdomain", async (req, res) => {
       });
     }
 
-    const _isAvailable = await storefrontService?.isSubdomainAvailable(
+    const isAvailable = await storefrontService?.isSubdomainAvailable(
       subdomain,
       excludeStorefrontId as string | undefined,
     );
@@ -908,7 +900,7 @@ router?.get("/check-subdomain/:subdomain", async (req, res) => {
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error checking subdomain:");
-    const _errorMessage =
+    const errorMessage =
       error instanceof Error ? error?.message : "Failed to check subdomain";
     res?.status(500).json({ error: errorMessage });
   }
@@ -922,7 +914,7 @@ router?.get("/subdomain/:subdomain", async (req, res) => {
   try {
     const { subdomain } = req?.params;
 
-    const _storefront =
+    const storefront =
       await storefrontService?.getStorefrontBySubdomain(subdomain);
 
     if (!storefront) {
@@ -934,7 +926,7 @@ router?.get("/subdomain/:subdomain", async (req, res) => {
     res?.json(storefront);
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error fetching storefront by subdomain:");
-    const _errorMessage =
+    const errorMessage =
       error instanceof Error ? error?.message : "Failed to fetch storefront";
     res?.status(500).json({ error: errorMessage });
   }
@@ -961,7 +953,7 @@ router?.put("/:storefrontId/subdomain", async (req, res) => {
     }
 
     if (subdomain) {
-      const _isAvailable = await storefrontService?.isSubdomainAvailable(
+      const isAvailable = await storefrontService?.isSubdomainAvailable(
         subdomain,
         storefrontId,
       );
@@ -970,7 +962,7 @@ router?.put("/:storefrontId/subdomain", async (req, res) => {
       }
     }
 
-    const _updatedStorefront = await storefrontService?.updateStorefront(
+    const updatedStorefront = await storefrontService?.updateStorefront(
       storefrontId,
       req?.user!.id,
       { subdomain, isSubdomainActive },
@@ -979,7 +971,7 @@ router?.put("/:storefrontId/subdomain", async (req, res) => {
     res?.json(updatedStorefront);
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error updating subdomain:");
-    const _errorMessage =
+    const errorMessage =
       error instanceof Error ? error?.message : "Failed to update subdomain";
     if (errorMessage === "Unauthorized") {
       return res?.status(403).json({ error: errorMessage });
@@ -1002,15 +994,15 @@ router?.put("/:storefrontId/custom-domain", async (req, res) => {
     const { customDomain, isCustomDomainActive } = req?.body;
 
     if (customDomain) {
-      const _domResult = validateDomain(customDomain);
+      const domResult = validateDomain(customDomain);
       if (!domResult?.ok) {
-        return res?.status(400).json({ error: domResult?.error });
+        return res?.status(400).json({ error: domResult.error });
       }
-      const _normalized = domResult?.normalized;
-      const _existingDomain = await db
+      const normalized = domResult?.normalized;
+      const existingDomain = await db
         .select({
-          id: storefrontDomains?.id,
-          storefrontId: storefrontDomains?.storefrontId,
+          id: storefrontDomains.id,
+          storefrontId: storefrontDomains.storefrontId,
         })
         .from(storefrontDomains)
         .where(eq(storefrontDomains?.domain, normalized))
@@ -1019,12 +1011,14 @@ router?.put("/:storefrontId/custom-domain", async (req, res) => {
         existingDomain?.length > 0 &&
         existingDomain[0].storefrontId !== storefrontId
       ) {
-        return res.status(400).json({
-          error: "This domain is already in use by another storefront",
-        });
+        return res
+          .status(400)
+          .json({
+            error: "This domain is already in use by another storefront",
+          });
       }
 
-      const _updatedStorefront = await storefrontService?.updateStorefront(
+      const updatedStorefront = await storefrontService?.updateStorefront(
         storefrontId,
         req?.user!.id,
         {
@@ -1035,7 +1029,7 @@ router?.put("/:storefrontId/custom-domain", async (req, res) => {
       return res?.json(updatedStorefront);
     }
 
-    const _updatedStorefront = await storefrontService?.updateStorefront(
+    const updatedStorefront = await storefrontService?.updateStorefront(
       storefrontId,
       req?.user!.id,
       {
@@ -1046,7 +1040,7 @@ router?.put("/:storefrontId/custom-domain", async (req, res) => {
     res?.json(updatedStorefront);
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error updating custom domain:");
-    const _errorMessage =
+    const errorMessage =
       error instanceof Error ? error?.message : "Failed to update custom domain";
     if (errorMessage === "Unauthorized") {
       return res?.status(403).json({ error: errorMessage });
@@ -1058,7 +1052,7 @@ router?.put("/:storefrontId/custom-domain", async (req, res) => {
 /**
  * POST /api/storefront/:storefrontId/verify-domain
  * Perform DNS verification of the custom domain
- * Checks for CNAME pointing to max-booster.com
+ * Checks for CNAME pointing to max-booster?.com
  */
 router?.post("/:storefrontId/verify-domain", async (req, res) => {
   try {
@@ -1070,9 +1064,9 @@ router?.post("/:storefrontId/verify-domain", async (req, res) => {
 
     const [storefront] = await db
       .select({
-        id: storefronts?.id,
-        userId: storefronts?.userId,
-        customDomain: storefronts?.customDomain,
+        id: storefronts.id,
+        userId: storefronts.userId,
+        customDomain: storefronts.customDomain,
       })
       .from(storefronts)
       .where(eq(storefronts?.id, storefrontId))
@@ -1088,7 +1082,7 @@ router?.post("/:storefrontId/verify-domain", async (req, res) => {
       return res?.status(400).json({ error: "No custom domain configured" });
     }
 
-    const _domain = storefront?.customDomain;
+    const domain = storefront?.customDomain;
     const result: {
       verified: boolean;
       cnameFound: boolean;
@@ -1099,7 +1093,7 @@ router?.post("/:storefrontId/verify-domain", async (req, res) => {
     } = { verified: false, cnameFound: false, aRecordFound: false };
 
     try {
-      const _cnames = await dnsPromises?.resolveCname(domain);
+      const cnames = await dnsPromises?.resolveCname(domain);
       result.cnameFound = cnames?.length > 0;
       result.cnameTarget = cnames[0];
       if (
@@ -1117,7 +1111,7 @@ router?.post("/:storefrontId/verify-domain", async (req, res) => {
 
     if (!result?.verified) {
       try {
-        const _addresses = await dnsPromises?.resolve4(domain);
+        const addresses = await dnsPromises?.resolve4(domain);
         result.aRecordFound = addresses?.length > 0;
         result.aRecords = addresses;
         if (addresses?.includes(PLATFORM_IP)) {
@@ -1162,21 +1156,21 @@ router?.post("/upload-asset", upload?.single("file"), async (req, res) => {
         .json({ error: "Invalid asset type. Must be logo, banner, or avatar" });
     }
 
-    const _category = assetType === "avatar" ? "avatar" : "artwork";
-    const _result = await storeUploadedFile(req?.file, req?.user!.id, category);
+    const category = assetType === "avatar" ? "avatar" : "artwork";
+    const result = await storeUploadedFile(req?.file, req?.user!.id, category);
 
     logger?.info(
       `Uploaded storefront ${assetType} via storeUploadedFile for user ${req?.user!.id}: ${result?.key} (processed: ${result?.processed})`,
     );
 
     res?.json({
-      url: result?.url,
-      key: result?.key,
+      url: result.url,
+      key: result.key,
       assetType,
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error uploading storefront asset:");
-    const _errorMessage =
+    const errorMessage =
       error instanceof Error ? error?.message : "Failed to upload asset";
     res?.status(500).json({ error: errorMessage });
   }
@@ -1188,8 +1182,8 @@ router?.post("/upload-asset", upload?.single("file"), async (req, res) => {
 
 router?.get("/:id/social", async (req, res) => {
   try {
-    const _storefrontId = req?.params.id;
-    const _userId = req?.isAuthenticated() ? req?.user!.id : null;
+    const storefrontId = req?.params.id;
+    const userId = req?.isAuthenticated() ? req?.user!.id : null;
 
     const [likesResult] = await db
       .select({ count: count() })
@@ -1248,10 +1242,10 @@ router?.get("/:id/social", async (req, res) => {
     }
 
     res?.json({
-      likes: likesResult?.count || 0,
-      follows: followsResult?.count || 0,
-      ratingsCount: ratingsResult?.count || 0,
-      avgRating: ratingsResult?.avg ? parseFloat(String(ratingsResult?.avg)) : 0,
+      likes: likesResult.count || 0,
+      follows: followsResult.count || 0,
+      ratingsCount: ratingsResult.count || 0,
+      avgRating: ratingsResult.avg ? parseFloat(String(ratingsResult?.avg)) : 0,
       userLiked,
       userFollowing,
       userRating,
@@ -1266,8 +1260,8 @@ router?.post("/:id/like", async (req, res) => {
   try {
     if (!req?.isAuthenticated())
       return res?.status(401).json({ error: "Login required" });
-    const _storefrontId = req?.params.id;
-    const _userId = req?.user!.id;
+    const storefrontId = req?.params.id;
+    const userId = req?.user!.id;
 
     const [existing] = await db
       .select()
@@ -1298,8 +1292,8 @@ router?.post("/:id/follow", async (req, res) => {
   try {
     if (!req?.isAuthenticated())
       return res?.status(401).json({ error: "Login required" });
-    const _storefrontId = req?.params.id;
-    const _userId = req?.user!.id;
+    const storefrontId = req?.params.id;
+    const userId = req?.user!.id;
 
     const [existing] = await db
       .select()
@@ -1330,8 +1324,8 @@ router?.post("/:id/rate", async (req, res) => {
   try {
     if (!req?.isAuthenticated())
       return res?.status(401).json({ error: "Login required" });
-    const _storefrontId = req?.params.id;
-    const _userId = req?.user!.id;
+    const storefrontId = req?.params.id;
+    const userId = req?.user!.id;
     const { rating, review } = req?.body;
 
     if (!rating || rating < 1 || rating > 5)
@@ -1366,8 +1360,8 @@ router?.post("/:id/rate", async (req, res) => {
 
     res?.json({
       userRating: rating,
-      ratingsCount: ratingsResult?.count || 0,
-      avgRating: ratingsResult?.avg ? parseFloat(String(ratingsResult?.avg)) : 0,
+      ratingsCount: ratingsResult.count || 0,
+      avgRating: ratingsResult.avg ? parseFloat(String(ratingsResult?.avg)) : 0,
     });
   } catch (error) {
     logger?.warn({ err: error }, "Error submitting rating:");
@@ -1384,7 +1378,7 @@ router?.post("/:id/checkout", async (req, res) => {
     if (!req?.isAuthenticated())
       return res?.status(401).json({ error: "Login required to purchase" });
 
-    const _storefrontId = req?.params.id;
+    const storefrontId = req?.params.id;
     const { listingIds, licenseType = "basic" } = req?.body;
 
     if (!listingIds || !Array?.isArray(listingIds) || listingIds?.length === 0) {
@@ -1397,7 +1391,7 @@ router?.post("/:id/checkout", async (req, res) => {
       return res?.status(400).json({ error: "Maximum 20 items per checkout" });
     }
 
-    const _stripeKey = env?.STRIPE_SECRET_KEY;
+    const stripeKey = env?.STRIPE_SECRET_KEY;
     if (!stripeKey) {
       logger?.warn("Stripe secret key is not configured");
       return res
@@ -1406,7 +1400,7 @@ router?.post("/:id/checkout", async (req, res) => {
           error: "Payment processing is not available. Please contact support.",
         });
     }
-    const _stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" as const });
+    const stripe = new Stripe(stripeKey, { apiVersion: "2024-06-20" as const });
 
     const [storefront] = await db
       .select()
@@ -1422,7 +1416,7 @@ router?.post("/:id/checkout", async (req, res) => {
         .json({ error: "Cannot purchase from your own storefront" });
     }
 
-    const _validListings = await db
+    const validListings = await db
       .select()
       .from(listings)
       .where(
@@ -1437,7 +1431,7 @@ router?.post("/:id/checkout", async (req, res) => {
       return res?.status(400).json({ error: "No valid listings found" });
     }
 
-    const _cartItems = validListings?.map((listing) => {
+    const cartItems = validListings?.map((listing) => {
       let priceCents = listing?.priceCents;
       if (listing?.discountPercent && listing?.discountPriceCents != null) {
         if (
@@ -1448,24 +1442,24 @@ router?.post("/:id/checkout", async (req, res) => {
         }
       }
       return {
-        id: listing?.id,
-        title: listing?.title,
+        id: listing.id,
+        title: listing.title,
         priceCents,
-        genre: listing?.genre,
+        genre: listing.genre,
       };
     });
 
-    const _activePromos = await db
+    const activePromos = await db
       .select()
       .from(bogoPromotions)
       .where(getActivePromotionsFilter(storefrontId))
       .limit(50);
 
-    const _customerRedemptions = new Map<string, number>();
+    const customerRedemptions = new Map<string, number>();
     if (req?.user?.id && activePromos?.length > 0) {
-      const _pastOrders = await db
+      const pastOrders = await db
         .select({
-          promoId: storefrontOrders?.appliedPromotionId,
+          promoId: storefrontOrders.appliedPromotionId,
         })
         .from(storefrontOrders)
         .where(
@@ -1485,22 +1479,22 @@ router?.post("/:id/checkout", async (req, res) => {
         }
       }
     }
-    const _bogoResult = applyBogoToCart(
+    const bogoResult = applyBogoToCart(
       cartItems,
       activePromos,
       customerRedemptions,
       licenseType,
     );
 
-    const _bogoLicenseType = bogoResult?.appliedPromotion?.bogoLicenseType;
+    const bogoLicenseType = bogoResult?.appliedPromotion?.bogoLicenseType;
 
-    const _lineItems = cartItems
+    const lineItems = cartItems
       .map((item, index) => {
         let unitAmount = item?.priceCents;
-        const _isBogo =
+        const isBogo =
           bogoResult?.freeItemIndices.includes(index) ||
           bogoResult?.discountedItems.some((d) => d?.index === index);
-        const _itemLicense =
+        const itemLicense =
           isBogo && bogoLicenseType ? bogoLicenseType : licenseType;
         let desc = `${validListings[index].genre || "Beat"} - ${itemLicense} license`;
 
@@ -1508,7 +1502,7 @@ router?.post("/:id/checkout", async (req, res) => {
           unitAmount = 0;
           desc += " (FREE - BOGO Deal)";
         } else {
-          const _discountInfo = bogoResult?.discountedItems.find(
+          const discountInfo = bogoResult?.discountedItems.find(
             (d) => d?.index === index,
           );
           if (discountInfo) {
@@ -1523,38 +1517,38 @@ router?.post("/:id/checkout", async (req, res) => {
           price_data: {
             currency: "usd",
             product_data: {
-              name: item?.title,
+              name: item.title,
               description: desc,
             },
-            unit_amount: Math?.max(unitAmount, 0),
+            unit_amount: Math.max(unitAmount, 0),
           },
           quantity: 1,
         };
       })
       .filter((item) => item?.price_data.unit_amount > 0);
 
-    const _session = await stripe?.checkout.sessions?.create({
+    const session = await stripe?.checkout.sessions?.create({
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      success_url: `${getBaseUrl()}/store/${storefront?.slug || storefrontId}?checkout=success`,
-      cancel_url: `${getBaseUrl()}/store/${storefront?.slug || storefrontId}?checkout=canceled`,
+      success_url: `${getBaseUrl()}/store/${storefront.slug || storefrontId}?checkout=success`,
+      cancel_url: `${getBaseUrl()}/store/${storefront.slug || storefrontId}?checkout=canceled`,
       metadata: {
         type: "storefront_purchase",
-        buyerId: req?.user!.id,
+        buyerId: req.user!.id,
         storefrontId,
-        sellerId: storefront?.userId,
-        listingIds: JSON?.stringify(validListings?.map((l) => l?.id)),
+        sellerId: storefront.userId,
+        listingIds: JSON.stringify(validListings?.map((l) => l?.id)),
         licenseType,
-        promotionId: bogoResult?.appliedPromotion?.id || "",
-        promotionSummary: bogoResult?.summary || "",
+        promotionId: bogoResult.appliedPromotion?.id || "",
+        promotionSummary: bogoResult.summary || "",
       },
     });
 
     for (let i = 0; i < validListings?.length; i++) {
-      const _item = cartItems[i];
-      const _isFree = bogoResult?.freeItemIndices.includes(i);
-      const _discountInfo = bogoResult?.discountedItems.find(
+      const item = cartItems[i];
+      const isFree = bogoResult?.freeItemIndices.includes(i);
+      const discountInfo = bogoResult?.discountedItems.find(
         (d) => d?.index === i,
       );
       let finalAmount = item?.priceCents;
@@ -1570,26 +1564,26 @@ router?.post("/:id/checkout", async (req, res) => {
         finalAmount = item?.priceCents - discountCents;
       }
 
-      const _orderLicenseType =
+      const orderLicenseType =
         (isFree || discountInfo) && bogoLicenseType
           ? bogoLicenseType
           : licenseType;
       await db?.insert(storefrontOrders).values({
-        buyerId: req?.user!.id,
+        buyerId: req.user!.id,
         storefrontId,
-        sellerId: storefront?.userId,
+        sellerId: storefront.userId,
         listingId: validListings[i].id,
         licenseType: orderLicenseType,
         amountCents: finalAmount,
         status: "pending",
-        stripeSessionId: session?.id,
-        appliedPromotionId: bogoResult?.appliedPromotion?.id || null,
+        stripeSessionId: session.id,
+        appliedPromotionId: bogoResult.appliedPromotion?.id || null,
         discountCents,
         isFreeItem: isFree,
       });
     }
 
-    res?.json({ checkoutUrl: session?.url });
+    res?.json({ checkoutUrl: session.url });
   } catch (error) {
     logger?.warn({ err: error }, "Error creating storefront checkout:");
     res?.status(500).json({ error: "Failed to create checkout session" });
@@ -1600,12 +1594,12 @@ router?.get("/:id/orders", async (req, res) => {
   try {
     if (!req?.isAuthenticated())
       return res?.status(401).json({ error: "Unauthorized" });
-    const _storefrontId = req?.params.id;
+    const storefrontId = req?.params.id;
 
-    const _page = Math?.max(1, parseInt(req?.query.page as string) || 1);
-    const _limit = Math?.min(parseInt(req?.query.limit as string) || 50, 200);
-    const _offset = Math?.min((page - 1) * limit, 100_000);
-    const _orders = await db
+    const page = Math?.max(1, parseInt(req?.query.page as string) || 1);
+    const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 200);
+    const offset = Math?.min((page - 1) * limit, 100_000);
+    const orders = await db
       .select()
       .from(storefrontOrders)
       .where(
@@ -1714,7 +1708,7 @@ router?.delete(
 router?.get("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
   try {
     const { listingId } = req?.params;
-    const _tiers = await db
+    const tiers = await db
       .select()
       .from(listingLicenseTiers)
       .where(eq(listingLicenseTiers?.listingId, listingId))
@@ -1762,9 +1756,9 @@ router?.put("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
       .delete(listingLicenseTiers)
       .where(eq(listingLicenseTiers?.listingId, listingId));
 
-    const _insertedTiers = [];
+    const insertedTiers = [];
     for (let i = 0; i < tiers?.length; i++) {
-      const _tier = tiers[i];
+      const tier = tiers[i];
       let discountPriceCents: number | null = null;
       if (
         tier?.discountType === "percent" &&
@@ -1781,38 +1775,38 @@ router?.put("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
         .insert(listingLicenseTiers)
         .values({
           listingId,
-          licenseType: tier?.licenseType,
+          licenseType: tier.licenseType,
           label:
             tier?.label ||
             tier?.licenseType.charAt(0).toUpperCase() +
               tier?.licenseType.slice(1),
-          priceCents: tier?.priceCents,
-          discountType: tier?.discountType || "none",
+          priceCents: tier.priceCents,
+          discountType: tier.discountType || "none",
           discountPercent:
             tier?.discountType === "percent"
               ? tier?.discountPercent || null
               : null,
           discountPriceCents,
-          discountExpiresAt: tier?.discountExpiresAt
+          discountExpiresAt: tier.discountExpiresAt
             ? new Date(tier?.discountExpiresAt)
             : null,
-          bogoEnabled: tier?.bogoEnabled || false,
-          bogoGetType: tier?.bogoEnabled ? tier?.bogoGetType || null : null,
-          bogoGetPercent: tier?.bogoEnabled ? (tier?.bogoGetPercent ?? 100) : 100,
-          fileFormats: tier?.fileFormats || ["mp3"],
-          audioUrls: tier?.audioUrls || {},
-          isActive: tier?.isActive !== false,
-          sortOrder: tier?.sortOrder ?? i,
+          bogoEnabled: tier.bogoEnabled || false,
+          bogoGetType: tier.bogoEnabled ? tier?.bogoGetType || null : null,
+          bogoGetPercent: tier.bogoEnabled ? (tier?.bogoGetPercent ?? 100) : 100,
+          fileFormats: tier.fileFormats || ["mp3"],
+          audioUrls: tier.audioUrls || {},
+          isActive: tier.isActive !== false,
+          sortOrder: tier.sortOrder ?? i,
         })
         .returning();
       insertedTiers?.push(inserted);
     }
 
-    const _existingMeta = (listing?.metadata as Record<string, unknown>) || {};
+    const existingMeta = (listing?.metadata as Record<string, unknown>) || {};
     await db
       .update(listings)
       .set({
-        metadata: { ...existingMeta, hasLicenseTiers: tiers?.length > 0 },
+        metadata: { ...existingMeta, hasLicenseTiers: tiers.length > 0 },
         updatedAt: new Date(),
       })
       .where(eq(listings?.id, listingId));
@@ -1841,7 +1835,7 @@ router?.delete("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
       .delete(listingLicenseTiers)
       .where(eq(listingLicenseTiers?.listingId, listingId));
 
-    const _existingMeta = (listing?.metadata as Record<string, unknown>) || {};
+    const existingMeta = (listing?.metadata as Record<string, unknown>) || {};
     await db
       .update(listings)
       .set({
@@ -1857,7 +1851,7 @@ router?.delete("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
   }
 });
 
-const _tierAudioUpload = createHardenedUpload({
+const tierAudioUpload = createHardenedUpload({
   maxFileSize: 200 * 1024 * 1024, // 200MB
   maxFiles: 1,
   allowedMimes: [
@@ -1897,22 +1891,22 @@ router?.post(
       if (!req?.file)
         return res?.status(400).json({ error: "No audio file provided" });
 
-      const _ext = path?.extname(req?.file.originalname) || ".mp3";
-      const _filename = `${Date?.now()}-${crypto?.randomBytes(8).toString("hex")}${ext}`;
+      const ext = path?.extname(req?.file.originalname) || ".mp3";
+      const filename = `${Date?.now()}-${crypto?.randomBytes(8).toString("hex")}${ext}`;
 
-      const _audioResult = await hybridStorageService?.upload(
+      const audioResult = await hybridStorageService?.upload(
         req?.user!.id,
         filename,
         req?.file.buffer,
         req?.file.mimetype,
         { folder: "tier-audio", forceLocation: "pocket-dimension" as const },
       );
-      const _audioUrl = `/api/marketplace/audio/${audioResult?.key}`;
+      const audioUrl = `/api/marketplace/audio/${audioResult?.key}`;
 
       res?.json({
         url: audioUrl,
         format: format || ext?.replace(".", ""),
-        filename: req?.file.originalname,
+        filename: req.file.originalname,
       });
     } catch (error) {
       logger?.warn({ err: error }, "Error uploading tier audio:");
@@ -1952,38 +1946,38 @@ router?.put("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
       .delete(listingLicenseTiers)
       .where(eq(listingLicenseTiers?.listingId, listingId));
 
-    const _savedTiers = [];
+    const savedTiers = [];
     for (let i = 0; i < tiers?.length; i++) {
-      const _t = tiers[i];
+      const t = tiers[i];
       const [saved] = await db
         .insert(listingLicenseTiers)
         .values({
           listingId,
-          licenseType: t?.licenseType,
-          label: t?.label || t?.licenseType,
-          priceCents: t?.priceCents,
-          discountType: t?.discountType || "none",
-          discountPercent: t?.discountPercent || 0,
+          licenseType: t.licenseType,
+          label: t.label || t?.licenseType,
+          priceCents: t.priceCents,
+          discountType: t.discountType || "none",
+          discountPercent: t.discountPercent || 0,
           discountPriceCents:
             t?.discountType === "percent" && t?.discountPercent
               ? Math?.round(t?.priceCents * (1 - t?.discountPercent / 100))
               : null,
-          discountExpiresAt: t?.discountExpiresAt
+          discountExpiresAt: t.discountExpiresAt
             ? new Date(t?.discountExpiresAt)
             : null,
-          bogoEnabled: t?.bogoEnabled || false,
-          bogoGetType: t?.bogoGetType || null,
-          bogoGetPercent: t?.bogoGetPercent || 100,
-          fileFormats: t?.fileFormats || ["mp3"],
-          audioUrls: t?.audioUrls || {},
-          isActive: t?.isActive !== false,
+          bogoEnabled: t.bogoEnabled || false,
+          bogoGetType: t.bogoGetType || null,
+          bogoGetPercent: t.bogoGetPercent || 100,
+          fileFormats: t.fileFormats || ["mp3"],
+          audioUrls: t.audioUrls || {},
+          isActive: t.isActive !== false,
           sortOrder: i,
         })
         .returning();
       savedTiers?.push(saved);
     }
 
-    const _currentMeta = (listing?.metadata as Record<string, any>) || {};
+    const currentMeta = (listing?.metadata as Record<string, any>) || {};
     await db
       .update(listings)
       .set({
@@ -2024,7 +2018,7 @@ router?.delete("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
       .delete(listingLicenseTiers)
       .where(eq(listingLicenseTiers?.listingId, listingId));
 
-    const _currentMeta = (listing?.metadata as Record<string, any>) || {};
+    const currentMeta = (listing?.metadata as Record<string, any>) || {};
     await db
       .update(listings)
       .set({
@@ -2042,7 +2036,7 @@ router?.delete("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
 router?.get("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
   try {
     const { listingId } = req?.params;
-    const _tiers = await db
+    const tiers = await db
       .select()
       .from(listingLicenseTiers)
       .where(eq(listingLicenseTiers?.listingId, listingId))
@@ -2060,7 +2054,7 @@ router?.get("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
 // ============================================================================
 
 function getActivePromotionsFilter(storefrontId: string) {
-  const _now = new Date();
+  const now = new Date();
   return and(
     eq(bogoPromotions?.storefrontId, storefrontId),
     eq(bogoPromotions?.status, "active"),
@@ -2097,7 +2091,7 @@ function applyBogoToCart(
     };
   }
 
-  const _sortedPromos = [...promotions].sort(
+  const sortedPromos = [...promotions].sort(
     (a, b) => (a?.priority || 0) - (b?.priority || 0),
   );
 
@@ -2114,7 +2108,7 @@ function applyBogoToCart(
       continue;
 
     if (promo?.perCustomerLimit && customerRedemptions) {
-      const _customerUses = customerRedemptions?.get(promo?.id) || 0;
+      const customerUses = customerRedemptions?.get(promo?.id) || 0;
       if (customerUses >= promo?.perCustomerLimit) continue;
     }
 
@@ -2126,7 +2120,7 @@ function applyBogoToCart(
       continue;
     }
 
-    const _totalNeeded = promo?.buyQuantity + promo?.getQuantity;
+    const totalNeeded = promo?.buyQuantity + promo?.getQuantity;
 
     let eligibleItems: Array<{ index: number; priceCents: number }>;
     if (
@@ -2134,7 +2128,7 @@ function applyBogoToCart(
       promo?.applicableListingIds?.length > 0
     ) {
       eligibleItems = cartListings
-        .map((l, i) => ({ index: i, priceCents: l?.priceCents, id: l?.id }))
+        .map((l, i) => ({ index: i, priceCents: l.priceCents, id: l.id }))
         .filter((item) =>
           promo?.applicableListingIds.includes(
             (item as Record<string, unknown>).id,
@@ -2145,7 +2139,7 @@ function applyBogoToCart(
       promo?.applicableGenres?.length > 0
     ) {
       eligibleItems = cartListings
-        .map((l, i) => ({ index: i, priceCents: l?.priceCents, genre: l?.genre }))
+        .map((l, i) => ({ index: i, priceCents: l.priceCents, genre: l.genre }))
         .filter((item) =>
           promo?.applicableGenres.includes(
             (item as Record<string, unknown>).genre,
@@ -2154,25 +2148,25 @@ function applyBogoToCart(
     } else {
       eligibleItems = cartListings?.map((l, i) => ({
         index: i,
-        priceCents: l?.priceCents,
+        priceCents: l.priceCents,
       }));
     }
 
     if (eligibleItems?.length < totalNeeded) continue;
 
-    const _sorted = [...eligibleItems].sort(
+    const sorted = [...eligibleItems].sort(
       (a, b) => a?.priceCents - b?.priceCents,
     );
 
-    const _setsApplicable = Math?.floor(sorted?.length / totalNeeded);
+    const setsApplicable = Math?.floor(sorted?.length / totalNeeded);
     const freeIndices: number[] = [];
     const discountedItems: { index: number; discountPercent: number }[] = [];
     let savings = 0;
-    const _discountPercent = promo?.getDiscountPercent;
+    const discountPercent = promo?.getDiscountPercent;
 
     for (let setIdx = 0; setIdx < setsApplicable; setIdx++) {
-      const _setStart = setIdx * totalNeeded;
-      const _freeOrDiscounted = sorted?.slice(
+      const setStart = setIdx * totalNeeded;
+      const freeOrDiscounted = sorted?.slice(
         setStart,
         setStart + promo?.getQuantity,
       );
@@ -2182,17 +2176,17 @@ function applyBogoToCart(
           freeIndices?.push(item?.index);
           savings += item?.priceCents;
         } else {
-          discountedItems?.push({ index: item?.index, discountPercent });
+          discountedItems?.push({ index: item.index, discountPercent });
           savings += Math?.round((item?.priceCents * discountPercent) / 100);
         }
       }
     }
 
     if (savings > bestResult?.totalSavingsCents) {
-      const _buyLabel = promo?.buyLicenseType
+      const buyLabel = promo?.buyLicenseType
         ? `${promo?.buyQuantity} ${promo?.buyLicenseType}`
         : `${promo?.buyQuantity}`;
-      const _getLabel = promo?.bogoLicenseType
+      const getLabel = promo?.bogoLicenseType
         ? `${promo?.getQuantity} ${promo?.bogoLicenseType}`
         : `${promo?.getQuantity}`;
       let summary: string;
@@ -2223,7 +2217,7 @@ function applyBogoToCart(
 router?.get("/:storefrontId/bogo-promotions", async (req, res) => {
   try {
     const { storefrontId } = req?.params;
-    const _promos = await db
+    const promos = await db
       .select()
       .from(bogoPromotions)
       .where(getActivePromotionsFilter(storefrontId))
@@ -2249,7 +2243,7 @@ router?.get("/:storefrontId/bogo-promotions/all", async (req, res) => {
     if (!storefront || storefront?.userId !== req?.user!.id) {
       return res?.status(403).json({ error: "Not your storefront" });
     }
-    const _promos = await db
+    const promos = await db
       .select()
       .from(bogoPromotions)
       .where(eq(bogoPromotions?.storefrontId, storefrontId))
@@ -2318,7 +2312,7 @@ router?.post("/:storefrontId/bogo-promotions", async (req, res) => {
       .insert(bogoPromotions)
       .values({
         storefrontId,
-        userId: req?.user!.id,
+        userId: req.user!.id,
         name,
         description: description || null,
         promoType: promoType || "buy_x_get_y_free",
@@ -2462,7 +2456,7 @@ router?.post("/:id/checkout/preview", async (req, res) => {
   try {
     if (!req?.isAuthenticated())
       return res?.status(401).json({ error: "Login required" });
-    const _storefrontId = req?.params.id;
+    const storefrontId = req?.params.id;
     const { listingIds, licenseType = "basic" } = req?.body;
 
     if (!listingIds || !Array?.isArray(listingIds) || listingIds?.length === 0) {
@@ -2479,7 +2473,7 @@ router?.post("/:id/checkout/preview", async (req, res) => {
     if (!storefront)
       return res?.status(404).json({ error: "Storefront not found" });
 
-    const _validListings = await db
+    const validListings = await db
       .select()
       .from(listings)
       .where(
@@ -2491,7 +2485,7 @@ router?.post("/:id/checkout/preview", async (req, res) => {
       )
       .limit(50);
 
-    const _cartItems = validListings?.map((l) => {
+    const cartItems = validListings?.map((l) => {
       let priceCents = l?.priceCents;
       if (l?.discountPercent && l?.discountPriceCents != null) {
         if (
@@ -2501,20 +2495,20 @@ router?.post("/:id/checkout/preview", async (req, res) => {
           priceCents = l?.discountPriceCents;
         }
       }
-      return { id: l?.id, title: l?.title, priceCents, genre: l?.genre };
+      return { id: l.id, title: l.title, priceCents, genre: l.genre };
     });
 
-    const _activePromos = await db
+    const activePromos = await db
       .select()
       .from(bogoPromotions)
       .where(getActivePromotionsFilter(storefrontId))
       .limit(50);
 
-    const _customerRedemptions = new Map<string, number>();
+    const customerRedemptions = new Map<string, number>();
     if (req?.user?.id && activePromos?.length > 0) {
-      const _pastOrders = await db
+      const pastOrders = await db
         .select({
-          promoId: storefrontOrders?.appliedPromotionId,
+          promoId: storefrontOrders.appliedPromotionId,
         })
         .from(storefrontOrders)
         .where(
@@ -2534,31 +2528,31 @@ router?.post("/:id/checkout/preview", async (req, res) => {
         }
       }
     }
-    const _bogoResult = applyBogoToCart(
+    const bogoResult = applyBogoToCart(
       cartItems,
       activePromos,
       customerRedemptions,
       licenseType,
     );
 
-    const _subtotalCents = cartItems?.reduce((s, item) => s + item?.priceCents, 0);
+    const subtotalCents = cartItems?.reduce((s, item) => s + item?.priceCents, 0);
 
     res?.json({
-      items: cartItems?.map((item, i) => ({
+      items: cartItems.map((item, i) => ({
         ...item,
-        isFree: bogoResult?.freeItemIndices.includes(i),
+        isFree: bogoResult.freeItemIndices.includes(i),
         discountPercent:
           bogoResult?.discountedItems.find((d) => d?.index === i)
             ?.discountPercent || 0,
       })),
       subtotalCents,
-      discountCents: bogoResult?.totalSavingsCents,
+      discountCents: bogoResult.totalSavingsCents,
       totalCents: subtotalCents - bogoResult?.totalSavingsCents,
-      promotionApplied: bogoResult?.appliedPromotion
+      promotionApplied: bogoResult.appliedPromotion
         ? {
-            id: bogoResult?.appliedPromotion.id,
-            name: bogoResult?.appliedPromotion.name,
-            summary: bogoResult?.summary,
+            id: bogoResult.appliedPromotion.id,
+            name: bogoResult.appliedPromotion.name,
+            summary: bogoResult.summary,
           }
         : null,
     });

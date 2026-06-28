@@ -1,17 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
-import {
-  Flag,
-  Plus,
-  Trash2,
-  Edit2,
-  Play,
-  Copy,
-  Lock,
-  Unlock,
-  Repeat,
-  SkipForward,
-  SkipBack,
-} from "lucide-react";
+import { Flag, Plus, Trash2, Edit2, Play, Copy, Lock, Unlock, Repeat, SkipForward, SkipBack } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -243,7 +231,7 @@ export function FlowStateArrangementMarkers({
 
   const {
     markers: apiMarkers,
-
+    
     error: markersError,
     createMarker,
     updateMarker: updateMarkerApi,
@@ -811,7 +799,7 @@ export function FlowStateArrangementMarkers({
                       const typeInfo = MARKER_TYPES.find((t) => t.type === v);
                       updateMarker({
                         type: v as MarkerType,
-                        color: typeInfo?.color || editingMarker.color,
+                        color: typeInfo.color || editingMarker.color,
                       });
                     }}
                   >

@@ -17,22 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatDistanceToNow, format } from "date-fns";
-import {
-  Activity,
-  UserPlus,
-  UserMinus,
-  Shield,
-  Settings,
-  FileText,
-  Share2,
-  Download,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Filter,
-  RefreshCw,
-} from "lucide-react";
+import { Activity, UserPlus, UserMinus, Shield, Settings, FileText, Share2, Download, AlertTriangle, CheckCircle, XCircle, Clock, Filter, RefreshCw } from "lucide-react";
 
 export type ActivityType =
   | "workspace.created"
@@ -210,11 +195,11 @@ function getActivityDescription(activity: ActivityItem): string {
     case "member.role_changed":
       return `${userName} changed ${metadata?.memberName || "member"}'s role from ${previousValues?.role} to ${newValues?.role}`;
     case "role.created":
-      return `${userName} created the "${newValues?.name}" role`;
+      return `${userName} created the "${newValues.name}" role`;
     case "role.updated":
-      return `${userName} updated the "${newValues?.name || previousValues?.name}" role`;
+      return `${userName} updated the "${newValues.name || previousValues.name}" role`;
     case "role.deleted":
-      return `${userName} deleted the "${previousValues?.name}" role`;
+      return `${userName} deleted the "${previousValues.name}" role`;
     case "project.shared":
       return `${userName} shared a project`;
     case "project.unshared":

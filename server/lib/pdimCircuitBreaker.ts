@@ -34,17 +34,17 @@ let _lastProbeLogAt = 0;
 // long enough not to spam the circuit with probe requests.
 // The ceiling is 120 s so a sustained outage only probes every 2 minutes,
 // reducing log noise 24× vs the previous 5 s initial backoff.
-const _INITIAL_BACKOFF_MS = 5_000;
-const _MAX_BACKOFF_MS = 120_000;
+const INITIAL_BACKOFF_MS = 5_000;
+const MAX_BACKOFF_MS = 120_000;
 
 // Minimum backoff after a force-close — prevents reset to INITIAL_BACKOFF_MS
 // when PlatformAutoFixer catches a brief restart window and then PDIM goes
 // down again immediately.  Set to 4× INITIAL so the next cycle opens with a
 // meaningful delay even if the backoff was small when force-close fired.
-const _MIN_FORCE_CLOSE_BACKOFF_MS = INITIAL_BACKOFF_MS * 4; // 20 s
+const MIN_FORCE_CLOSE_BACKOFF_MS = INITIAL_BACKOFF_MS * 4; // 20 s
 
-let _state: CbState = "CLOSED";
-let _failures = 0;
+let state: CbState = "CLOSED";
+let failures = 0;
 let _openUntil = 0;
 let _backoffMs = INITIAL_BACKOFF_MS;
 let _halfOpenFlight = false;
@@ -81,11 +81,11 @@ let _graceWasActive = true;
 //
 // This is purely event-driven (first success) in the fast case and time-bounded
 // in the slow case, making it safe regardless of PDIM's cold-start duration.
-const _STARTUP_GRACE_MAX_MS = 120_000; // Phase 1 ceiling — 2 minutes
-const _SETTLING_MS = 10_000; // Phase 2 — post-first-success quiet window
-const _POST_GRACE_SLOW_MS = 660_000; // Phase 3 — slow-lane window after cap (11 min)
-const _POST_GRACE_FAILURE_CAP = 800; // Phase 3 — max failures before circuit opens
-const __startedAt = Date?.now();
+const STARTUP_GRACE_MAX_MS = 120_000; // Phase 1 ceiling — 2 minutes
+const SETTLING_MS = 10_000; // Phase 2 — post-first-success quiet window
+const POST_GRACE_SLOW_MS = 660_000; // Phase 3 — slow-lane window after cap (11 min)
+const POST_GRACE_FAILURE_CAP = 800; // Phase 3 — max failures before circuit opens
+const _startedAt = Date?.now();
 // Timestamp of the first cbRecordSuccess() call; 0 if none yet.
 let _firstSuccessAt = 0;
 // Timestamp when Phase 1 cap expired without a first success; 0 = not yet.
@@ -108,31 +108,31 @@ function _inSlowLane(): boolean {
 }
 
 export function cbRecordFailure(): void {
-  const _nowInGrace = _inGracePeriod();
+  const nowInGrace = _inGracePeriod();
 
   // During startup grace: accumulate failure count but never open the circuit.
   // Log a throttled warning so operators can see burst activity without noise.
-  if (nowInGrace && _state === "CLOSED") {
-    _failures++;
-    if (_failures === 5 || _failures === 10 || _failures % 20 === 0) {
-      const _phaseMsg =
+  if (nowInGrace && state === "CLOSED") {
+    failures++;
+    if (failures === 5 || failures === 10 || failures % 20 === 0) {
+      const phaseMsg =
         _firstSuccessAt > 0
           ? `settling (${Math?.ceil((SETTLING_MS - (Date?.now() - _firstSuccessAt)) / 1000)}s remaining)`
           : `waiting for first PDIM success (${Math?.ceil((STARTUP_GRACE_MAX_MS - (Date?.now() - _startedAt)) / 1000)}s cap remaining)`;
       logger?.warn(
-        `[PDIM] ${_failures} startup failures suppressed — ${phaseMsg}`,
+        `[PDIM] ${failures} startup failures suppressed — ${phaseMsg}`,
       );
     }
     return;
   }
 
-  // First call after the grace period ends: the accumulated _failures count
+  // First call after the grace period ends: the accumulated failures count
   // reflects warm-up 500s, not a genuine PDIM outage.  Reset to zero and let
   // the threshold window start fresh.  Also mark the cap-expiry timestamp so
   // Phase 3 (slow lane) can calculate its own deadline.
   if (_graceWasActive && !nowInGrace) {
     _graceWasActive = false;
-    _failures = 0;
+    failures = 0;
     if (_firstSuccessAt === 0) {
       // Cap expired with no success — enter Phase 3 slow lane.
       _capExpiredAt = Date?.now();
@@ -150,61 +150,61 @@ export function cbRecordFailure(): void {
 
   // Phase 3 — slow lane: PDIM took > 120 s but is still waking up.
   // Tolerate up to POST_GRACE_FAILURE_CAP failures before opening.
-  if (_state === "CLOSED" && _inSlowLane()) {
-    _failures++;
-    const _slowRemaining = Math?.ceil(
+  if (state === "CLOSED" && _inSlowLane()) {
+    failures++;
+    const slowRemaining = Math?.ceil(
       (POST_GRACE_SLOW_MS - (Date?.now() - _capExpiredAt)) / 1000,
     );
-    if (_failures === 10 || _failures % 25 === 0) {
+    if (failures === 10 || failures % 25 === 0) {
       logger?.warn(
-        `[PDIM] ${_failures} slow-lane failures (${POST_GRACE_FAILURE_CAP - _failures} remaining before open, ` +
+        `[PDIM] ${failures} slow-lane failures (${POST_GRACE_FAILURE_CAP - failures} remaining before open, ` +
           `${slowRemaining}s window left) — PDIM still waking up`,
       );
     }
-    if (_failures < POST_GRACE_FAILURE_CAP) return; // still tolerated — don't open
+    if (failures < POST_GRACE_FAILURE_CAP) return; // still tolerated — don't open
     // Fell through POST_GRACE_FAILURE_CAP: treat as genuine outage below.
-    logger?.warn(
+    logger.warn(
       `[PDIM] Slow-lane failure cap reached (${POST_GRACE_FAILURE_CAP}) — applying normal threshold`,
     );
   }
 
-  _failures++;
+  failures++;
 
-  const _shouldOpen =
-    (_state === "CLOSED" && _failures >= 5) || _state === "HALF_OPEN"; // failed probe → go back to OPEN
+  const shouldOpen =
+    (state === "CLOSED" && failures >= 5) || state === "HALF_OPEN"; // failed probe → go back to OPEN
 
   if (shouldOpen) {
-    _state = "OPEN";
+    state = "OPEN";
     _halfOpenFlight = false;
-    _openUntil = Date?.now() + _backoffMs;
+    _openUntil = Date.now() + _backoffMs;
     // Only log the first few trips and then every 10th to avoid flooding
     // the console during a sustained multi-minute PDIM outage.
-    if (_failures <= 10 || _failures % 10 === 0) {
-      logger?.warn(
-        `[PDIM] Circuit OPEN — backing off ${_backoffMs / 1000}s after ${_failures} failure(s)`,
+    if (failures <= 10 || failures % 10 === 0) {
+      logger.warn(
+        `[PDIM] Circuit OPEN — backing off ${_backoffMs / 1000}s after ${failures} failure(s)`,
       );
     }
-    _backoffMs = Math?.min(_backoffMs * 2, MAX_BACKOFF_MS);
+    _backoffMs = Math.min(_backoffMs * 2, MAX_BACKOFF_MS);
   }
 }
 
 export function cbRecordSuccess(): void {
-  const _wasOpen = _state !== "CLOSED";
-  _failures = 0;
+  const wasOpen = state !== "CLOSED";
+  failures = 0;
   _backoffMs = INITIAL_BACKOFF_MS;
-  _state = "CLOSED";
+  state = "CLOSED";
   _halfOpenFlight = false;
   // Record the very first success — ends Phase 1 of the grace period and
   // starts the 10-second settling window (Phase 2).
   if (_firstSuccessAt === 0) {
-    _firstSuccessAt = Date?.now();
-    const _warmMs = _firstSuccessAt - _startedAt;
-    logger?.info(
+    _firstSuccessAt = Date.now();
+    const warmMs = _firstSuccessAt - _startedAt;
+    logger.info(
       `[PDIM] First successful response after ${warmMs}ms — entering 10s settling window`,
     );
   }
   if (wasOpen) {
-    logger?.info("[PDIM] Circuit CLOSED — connection restored");
+    logger.info("[PDIM] Circuit CLOSED — connection restored");
   }
 }
 
@@ -213,13 +213,13 @@ export function cbRecordSuccess(): void {
  * Returns false if the circuit is OPEN and the cooldown has not expired.
  */
 export function cbAllowRequest(): boolean {
-  if (_state === "CLOSED") return true;
+  if (state === "CLOSED") return true;
 
-  if (_state === "OPEN") {
-    if (Date?.now() >= _openUntil) {
-      _state = "HALF_OPEN";
+  if (state === "OPEN") {
+    if (Date.now() >= _openUntil) {
+      state = "HALF_OPEN";
       // Only log the probe if we haven't logged one in the past 60 s.
-      const _now = Date?.now();
+      const now = Date?.now();
       if (now - _lastProbeLogAt >= 60_000) {
         _lastProbeLogAt = now;
         logger?.info("[PDIM] Circuit HALF-OPEN — sending probe request");
@@ -229,7 +229,7 @@ export function cbAllowRequest(): boolean {
     }
   }
 
-  if (_state === "HALF_OPEN") {
+  if (state === "HALF_OPEN") {
     if (_halfOpenFlight) return false;
     _halfOpenFlight = true;
     return true;
@@ -240,8 +240,8 @@ export function cbAllowRequest(): boolean {
 
 /** Non-mutating read — safe to call without side effects. */
 export function cbIsOpen(): boolean {
-  if (_state === "OPEN") return Date?.now() < _openUntil;
-  if (_state === "HALF_OPEN") return _halfOpenFlight; // one probe in flight
+  if (state === "OPEN") return Date?.now() < _openUntil;
+  if (state === "HALF_OPEN") return _halfOpenFlight; // one probe in flight
   return false;
 }
 
@@ -264,12 +264,12 @@ export function cbIsPdimUnhealthy(): boolean {
 
 /** Return the current state string for diagnostics and dashboards. */
 export function cbGetState(): CbState {
-  return _state;
+  return state;
 }
 
 /** Return remaining backoff ms if OPEN, 0 otherwise. */
 export function cbGetOpenUntilMs(): number {
-  return _state === "OPEN" ? Math?.max(0, _openUntil - Date?.now()) : 0;
+  return state === "OPEN" ? Math?.max(0, _openUntil - Date?.now()) : 0;
 }
 
 /**
@@ -288,9 +288,9 @@ export function cbGetOpenUntilMs(): number {
  * INITIAL_BACKOFF_MS, so the protection has zero cost on genuine recovery.
  */
 export function cbForceClose(): void {
-  const _wasOpen = _state !== "CLOSED";
-  _state = "CLOSED";
-  _failures = 0;
+  const wasOpen = state !== "CLOSED";
+  state = "CLOSED";
+  failures = 0;
   // Halve accumulated backoff but never go below MIN_FORCE_CLOSE_BACKOFF_MS.
   // If _backoffMs was already at or below the floor (e?.g. initial state),
   // clamp to the floor so a subsequent failure still starts at a meaningful delay.

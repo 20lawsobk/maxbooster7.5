@@ -47,23 +47,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Save,
-  FolderOpen,
-  Trash2,
-  Copy,
-  Share2,
-  MoreHorizontal,
-  BookOpen,
-  Clock,
-  Star,
-  StarOff,
-  Check,
-  Loader2,
-  FileText,
-  Settings,
-  Download,
-} from "lucide-react";
+import { Save, FolderOpen, Trash2, Copy, Share2, MoreHorizontal, BookOpen, Clock, Star, StarOff, Check, Loader2, FileText, Settings, Download } from "lucide-react";
 
 export interface BatchTemplate {
   id: string;
@@ -597,7 +581,7 @@ export function BatchTemplateManager({
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Template</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete "{selectedTemplate?.name}"? This
+                Are you sure you want to delete "{selectedTemplate.name}"? This
                 action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
@@ -627,7 +611,7 @@ export function BatchTemplateManager({
                 Share Template
               </DialogTitle>
               <DialogDescription>
-                Share "{selectedTemplate?.name}" with a team member.
+                Share "{selectedTemplate.name}" with a team member.
               </DialogDescription>
             </DialogHeader>
 

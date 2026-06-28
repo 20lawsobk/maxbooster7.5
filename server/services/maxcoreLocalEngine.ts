@@ -46,7 +46,7 @@ export async function maxcoreLocalInfer(
   _req: MaxCoreInferRequest,
 ): Promise<MaxCoreInferResponse | null> {
   logger?.warn(
-    "[MaxCoreLocal] maxcoreLocalInfer() called — local engine removed. Use MaxCoreAIClient?.infer() for 8TB dataset access.",
+    "[MaxCoreLocal] maxcoreLocalInfer() called — local engine removed. Use MaxCoreAIClient.infer() for 8TB dataset access.",
   );
   return null;
 }
@@ -60,6 +60,6 @@ export function maxcoreLocalHealth() {
     version: "3.0.0",
     source: "remote-only",
     engine: "MaxCoreAI-remote",
-    uptime: process?.uptime(),
+    uptime: process.uptime(),
   };
 }

@@ -71,8 +71,8 @@ export class StudioOneWaveformEngine {
     this?.timeline.attach(canvas);
     this?.timeline.setSampleRate(this?.config.sampleRate);
     this?.timeline.setPlayhead({
-      bpm: this?.config.bpm,
-      timeSignature: this?.config.timeSignature,
+      bpm: this.config.bpm,
+      timeSignature: this.config.timeSignature,
     });
 
     this.initialized = true;
@@ -93,12 +93,12 @@ export class StudioOneWaveformEngine {
     sampleRate?: number,
     channels?: number,
   ): void {
-    const _sr = sampleRate || this?.config.sampleRate;
+    const sr = sampleRate || this?.config.sampleRate;
     this?.peakCache.generatePeakCache(sourceId, audioData, sr, channels || 1);
   }
 
   loadAudioBuffer(sourceId: string, buffer: AudioBuffer): void {
-    const _channelData = buffer?.getChannelData(0);
+    const channelData = buffer?.getChannelData(0);
     this?.peakCache.generatePeakCache(
       sourceId,
       channelData,
@@ -112,13 +112,13 @@ export class StudioOneWaveformEngine {
   }
 
   addClip(clip: ClipRenderData): void {
-    const _currentClips = this?.getClips();
+    const currentClips = this?.getClips();
     currentClips?.push(clip);
     this?.timeline.setClips(currentClips);
   }
 
   removeClip(clipId: string): void {
-    const _currentClips = this?.getClips().filter((c) => c?.id !== clipId);
+    const currentClips = this?.getClips().filter((c) => c?.id !== clipId);
     this?.timeline.setClips(currentClips);
   }
 
@@ -142,23 +142,23 @@ export class StudioOneWaveformEngine {
   }
 
   setBpm(bpm: number): void {
-    this?.config.bpm = bpm;
+    this.config.bpm = bpm;
     this?.timeline.setPlayhead({ bpm });
   }
 
   setTimeSignature(numerator: number, denominator: number): void {
-    this?.config.timeSignature = [numerator, denominator];
+    this.config.timeSignature = [numerator, denominator];
     this?.timeline.setPlayhead({ timeSignature: [numerator, denominator] });
   }
 
   zoomIn(factor: number = 1.5, atPixelX?: number): void {
-    const _x =
+    const x =
       atPixelX ?? (this?.canvas?.getBoundingClientRect().width ?? 500) / 2;
     this?.timeline.zoomAtPoint(factor, x);
   }
 
   zoomOut(factor: number = 1.5, atPixelX?: number): void {
-    const _x =
+    const x =
       atPixelX ?? (this?.canvas?.getBoundingClientRect().width ?? 500) / 2;
     this?.timeline.zoomAtPoint(1 / factor, x);
   }
@@ -204,7 +204,7 @@ export class StudioOneWaveformEngine {
     endSample: number,
     targetWidth: number,
   ): PeakData[] | null {
-    const _result = this?.peakCache.getPeaksForView(
+    const result = this?.peakCache.getPeaksForView(
       sourceId,
       startSample,
       endSample,
@@ -229,19 +229,19 @@ export class StudioOneWaveformEngine {
   }
 
   getStats(): EngineStats {
-    const _cacheStats = this?.peakCache.getCacheStats();
-    const _dataZoom = this?.ndRenderer.getDataZoom();
+    const cacheStats = this?.peakCache.getCacheStats();
+    const dataZoom = this?.ndRenderer.getDataZoom();
 
     return {
-      fps: this?.timeline.getFps(),
-      deltaTime: this?.timeline.getDeltaTime(),
-      cacheUtilization: cacheStats?.utilizationPercent,
-      cacheEntries: cacheStats?.entries,
-      totalCacheBytes: cacheStats?.totalBytes,
+      fps: this.timeline.getFps(),
+      deltaTime: this.timeline.getDeltaTime(),
+      cacheUtilization: cacheStats.utilizationPercent,
+      cacheEntries: cacheStats.entries,
+      totalCacheBytes: cacheStats.totalBytes,
       clipCount: 0,
-      currentZoom: dataZoom?.horizontalZoom,
-      verticalScale: dataZoom?.verticalScale,
-      scrollOffset: this?.timeline.getScrollOffset(),
+      currentZoom: dataZoom.horizontalZoom,
+      verticalScale: dataZoom.verticalScale,
+      scrollOffset: this.timeline.getScrollOffset(),
       isPlaying: false,
       playheadPosition: 0,
     };
@@ -264,7 +264,7 @@ export class StudioOneWaveformEngine {
   }
 }
 
-export const _studioOneWaveformEngine = new StudioOneWaveformEngine();
+export const studioOneWaveformEngine = new StudioOneWaveformEngine();
 
 export {
   PeakCacheEngine,

@@ -18,7 +18,7 @@ import { Router } from "express";
 import { systemIntelligence } from "../../services/systemIntelligence.js";
 import { logger } from "../../logger.js";
 
-const _router = Router();
+const router = Router();
 
 // ─── Full status dashboard ────────────────────────────────────────────────────
 router?.get("/status", (_req, res) => {
@@ -33,7 +33,7 @@ router?.get("/status", (_req, res) => {
 // ─── Plain-language narrative only ───────────────────────────────────────────
 router?.get("/narrative", (_req, res) => {
   try {
-    const _narrative = systemIntelligence?.narrateSystemState();
+    const narrative = systemIntelligence?.narrateSystemState();
     res?.json(narrative);
   } catch (err) {
     logger?.warn("[IntelligenceRoute] /narrative error", { err });
@@ -44,8 +44,8 @@ router?.get("/narrative", (_req, res) => {
 // ─── Actionable insights ──────────────────────────────────────────────────────
 router?.get("/insights", (_req, res) => {
   try {
-    const _insights = systemIntelligence?.getInsights();
-    res?.json({ insights, count: insights?.length, generatedAt: Date?.now() });
+    const insights = systemIntelligence?.getInsights();
+    res?.json({ insights, count: insights.length, generatedAt: Date.now() });
   } catch (err) {
     logger?.warn("[IntelligenceRoute] /insights error", { err });
     res?.status(500).json({ error: "Intelligence layer unavailable" });
@@ -55,7 +55,7 @@ router?.get("/insights", (_req, res) => {
 // ─── Security intelligence report ────────────────────────────────────────────
 router?.get("/security", (_req, res) => {
   try {
-    const _report = systemIntelligence?.getSecurityReport();
+    const report = systemIntelligence?.getSecurityReport();
     res?.json(report);
   } catch (err) {
     logger?.warn("[IntelligenceRoute] /security error", { err });
@@ -66,16 +66,16 @@ router?.get("/security", (_req, res) => {
 // ─── Raw event window ─────────────────────────────────────────────────────────
 router?.get("/events", (req, res) => {
   try {
-    const _limit = Math?.min(
+    const limit = Math?.min(
       500,
       Math?.max(10, parseInt(String(req?.query.limit ?? "100"), 10)),
     );
-    const _events = systemIntelligence?.getEventWindow(limit);
+    const events = systemIntelligence?.getEventWindow(limit);
     res?.json({
       events,
-      count: events?.length,
+      count: events.length,
       windowMinutes: 10,
-      generatedAt: Date?.now(),
+      generatedAt: Date.now(),
     });
   } catch (err) {
     logger?.warn("[IntelligenceRoute] /events error", { err });
@@ -87,8 +87,8 @@ router?.get("/events", (req, res) => {
 // Feed any log snippet or error message and get back a structured Understanding.
 router?.post("/analyze", (req, res) => {
   try {
-    const _body = req?.body as Record<string, unknown>;
-    const _text = typeof body?.text === "string" ? body?.text.slice(0, 2000) : "";
+    const body = req?.body as Record<string, unknown>;
+    const text = typeof body?.text === "string" ? body?.text.slice(0, 2000) : "";
     if (!text) {
       return res
         .status(400)
@@ -97,12 +97,12 @@ router?.post("/analyze", (req, res) => {
 
     // Run full analysis on current state (text is informational — real analysis
     // uses the live event window + system signals)
-    const _understandings = systemIntelligence?.analyzeCurrentState();
-    const _narrative = systemIntelligence?.narrateSystemState();
+    const understandings = systemIntelligence?.analyzeCurrentState();
+    const narrative = systemIntelligence?.narrateSystemState();
 
     // Also look for the most likely class based on the input text
-    const _textLower = text?.toLowerCase();
-    const _hintedClass = /pdim.*5\d\d|5\d\d.*pdim/i?.test(text)
+    const textLower = text?.toLowerCase();
+    const hintedClass = /pdim.*5\d\d|5\d\d.*pdim/i?.test(text)
       ? "pdim_cold_start"
       : /lua.*executor|luaexecutor/i?.test(text)
         ? "lua_executor_saturation"
@@ -118,17 +118,17 @@ router?.post("/analyze", (req, res) => {
                   ? "path_traversal"
                   : null;
 
-    const _hintedUnderstanding = hintedClass
+    const hintedUnderstanding = hintedClass
       ? (understandings?.find((u) => u?.errorClass === hintedClass) ??
         understandings[0])
       : understandings[0];
 
     res?.json({
-      inputText: text?.slice(0, 200) + (text?.length > 200 ? "…" : ""),
+      inputText: text.slice(0, 200) + (text?.length > 200 ? "…" : ""),
       mostLikelyUnderstanding: hintedUnderstanding ?? null,
       allActiveUnderstandings: understandings,
       narrative,
-      analyzedAt: Date?.now(),
+      analyzedAt: Date.now(),
     });
   } catch (err) {
     logger?.warn("[IntelligenceRoute] /analyze error", { err });

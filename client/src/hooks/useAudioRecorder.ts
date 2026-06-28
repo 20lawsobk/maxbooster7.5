@@ -27,16 +27,16 @@ export function useAudioRecorder() {
     inputLevel: 0,
   });
 
-  const _mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const _streamRef = useRef<MediaStream | null>(null);
-  const _audioElementRef = useRef<HTMLAudioElement | null>(null);
-  const _animationFrameRef = useRef<number | null>(null);
-  const _durationIntervalRef = useRef<NodeJS?.Timeout | null>(null);
-  const _startTimeRef = useRef<number>(0);
-  const _analyserRef = useRef<AnalyserNode | null>(null);
-  const _sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const audioElementRef = useRef<HTMLAudioElement | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const durationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = useRef<number>(0);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
 
-  const _startMonitoring = useCallback(
+  const startMonitoring = useCallback(
     async (deviceId?: string) => {
       try {
         if (!isSupported || !context) {
@@ -61,30 +61,30 @@ export function useAudioRecorder() {
               },
         };
 
-        const _stream = await navigator?.mediaDevices.getUserMedia(constraints);
+        const stream = await navigator?.mediaDevices.getUserMedia(constraints);
         streamRef.current = stream;
 
-        const _source = context?.createMediaStreamSource(stream);
+        const source = context?.createMediaStreamSource(stream);
         sourceNodeRef.current = source;
 
-        const _analyser = context?.createAnalyser();
+        const analyser = context?.createAnalyser();
         analyser.fftSize = 256;
         analyser.smoothingTimeConstant = 0.8;
         source?.connect(analyser);
         analyserRef.current = analyser;
 
-        const _dataArray = new Float32Array(analyser?.fftSize);
+        const dataArray = new Float32Array(analyser?.fftSize);
 
-        const _updateLevel = () => {
+        const updateLevel = () => {
           if (analyserRef?.current && streamRef?.current) {
             analyserRef?.current.getFloatTimeDomainData(dataArray);
             let sum = 0;
             for (let i = 0; i < dataArray?.length; i++) {
               sum += dataArray[i] * dataArray[i];
             }
-            const _rms = Math?.sqrt(sum / dataArray?.length);
-            const _db = 20 * Math?.log10(Math?.max(rms, 1e-10));
-            const _normalizedLevel = Math?.max(0, Math?.min(1, (db + 60) / 60));
+            const rms = Math?.sqrt(sum / dataArray?.length);
+            const db = 20 * Math?.log10(Math?.max(rms, 1e-10));
+            const normalizedLevel = Math?.max(0, Math?.min(1, (db + 60) / 60));
             setState((prev) => ({ ...prev, inputLevel: normalizedLevel }));
             animationFrameRef.current = requestAnimationFrame(updateLevel);
           }
@@ -100,7 +100,7 @@ export function useAudioRecorder() {
     [isSupported, context],
   );
 
-  const _stopMonitoring = useCallback(() => {
+  const stopMonitoring = useCallback(() => {
     if (animationFrameRef?.current) {
       cancelAnimationFrame(animationFrameRef?.current);
       animationFrameRef.current = null;
@@ -121,7 +121,7 @@ export function useAudioRecorder() {
     setState((prev) => ({ ...prev, inputLevel: 0 }));
   }, [state?.isRecording]);
 
-  const _startRecording = useCallback(
+  const startRecording = useCallback(
     async (deviceId?: string) => {
       try {
         let stream = streamRef?.current;
@@ -136,11 +136,11 @@ export function useAudioRecorder() {
           throw new Error("No audio stream available");
         }
 
-        const _mimeType = MediaRecorder?.isTypeSupported("audio/webm;codecs=opus")
+        const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
           ? "audio/webm;codecs=opus"
           : "audio/webm";
 
-        const _mediaRecorder = new MediaRecorder(stream, { mimeType });
+        const mediaRecorder = new MediaRecorder(stream, { mimeType });
         const chunks: Blob[] = [];
 
         mediaRecorder.ondataavailable = (event) => {
@@ -150,8 +150,8 @@ export function useAudioRecorder() {
         };
 
         mediaRecorder.onstop = () => {
-          const _blob = new Blob(chunks, { type: mimeType });
-          const _audioUrl = URL?.createObjectURL(blob);
+          const blob = new Blob(chunks, { type: mimeType });
+          const audioUrl = URL?.createObjectURL(blob);
 
           setState((prev) => ({
             ...prev,
@@ -180,7 +180,7 @@ export function useAudioRecorder() {
 
         durationIntervalRef.current = setInterval(() => {
           if (mediaRecorderRef?.current?.state === "recording") {
-            const _duration = (Date?.now() - startTimeRef?.current) / 1000;
+            const duration = (Date?.now() - startTimeRef?.current) / 1000;
             setState((prev) => ({ ...prev, duration }));
           }
         }, 100);
@@ -192,7 +192,7 @@ export function useAudioRecorder() {
     [startMonitoring],
   );
 
-  const _stopRecording = useCallback(() => {
+  const stopRecording = useCallback(() => {
     if (durationIntervalRef?.current) {
       clearInterval(durationIntervalRef?.current);
       durationIntervalRef.current = null;
@@ -213,32 +213,32 @@ export function useAudioRecorder() {
     stopMonitoring();
   }, [stopMonitoring]);
 
-  const _pauseRecording = useCallback(() => {
+  const pauseRecording = useCallback(() => {
     if (mediaRecorderRef?.current && state?.isRecording && !state?.isPaused) {
       mediaRecorderRef?.current.pause();
       setState((prev) => ({ ...prev, isPaused: true }));
     }
   }, [state?.isRecording, state?.isPaused]);
 
-  const _resumeRecording = useCallback(() => {
+  const resumeRecording = useCallback(() => {
     if (mediaRecorderRef?.current && state?.isPaused) {
       mediaRecorderRef?.current.resume();
       setState((prev) => ({ ...prev, isPaused: false }));
     }
   }, [state?.isPaused]);
 
-  const _playRecording = useCallback(() => {
+  const playRecording = useCallback(() => {
     if (state?.audioUrl && !state?.isPlaying) {
       if (!audioElementRef?.current) {
         audioElementRef.current = new Audio();
       }
 
-      const _audio = audioElementRef?.current;
+      const audio = audioElementRef?.current;
       audio.src = state?.audioUrl;
       audio.currentTime = state?.currentTime;
 
       audio.ontimeupdate = () => {
-        setState((prev) => ({ ...prev, currentTime: audio?.currentTime }));
+        setState((prev) => ({ ...prev, currentTime: audio.currentTime }));
       };
 
       audio.onended = () => {
@@ -250,22 +250,22 @@ export function useAudioRecorder() {
     }
   }, [state?.audioUrl, state?.isPlaying, state?.currentTime]);
 
-  const _pausePlayback = useCallback(() => {
+  const pausePlayback = useCallback(() => {
     if (audioElementRef?.current && state?.isPlaying) {
       audioElementRef?.current.pause();
       setState((prev) => ({ ...prev, isPlaying: false }));
     }
   }, [state?.isPlaying]);
 
-  const _stopPlayback = useCallback(() => {
+  const stopPlayback = useCallback(() => {
     if (audioElementRef?.current) {
       audioElementRef?.current.pause();
-      audioElementRef?.current.currentTime = 0;
+      audioElementRef.current.currentTime = 0;
       setState((prev) => ({ ...prev, isPlaying: false, currentTime: 0 }));
     }
   }, []);
 
-  const _clearRecording = useCallback(() => {
+  const clearRecording = useCallback(() => {
     if (state?.audioUrl) {
       URL?.revokeObjectURL(state?.audioUrl);
     }
@@ -278,7 +278,7 @@ export function useAudioRecorder() {
     }));
   }, [state?.audioUrl]);
 
-  const _uploadRecording = useCallback(
+  const uploadRecording = useCallback(
     async (
       projectId: string,
       trackId: string,
@@ -290,8 +290,8 @@ export function useAudioRecorder() {
       }
 
       try {
-        const _formData = new FormData();
-        const _filename = `recording_${Date?.now()}.webm`;
+        const formData = new FormData();
+        const filename = `recording_${Date?.now()}.webm`;
         formData?.append("audio", state?.recordedBlob, filename);
         formData?.append("name", `Recording ${new Date().toLocaleTimeString()}`);
         formData?.append("startTime", startTime?.toString());
@@ -299,8 +299,8 @@ export function useAudioRecorder() {
 
         formData?.append("projectId", projectId);
         formData?.append("trackId", trackId);
-        const _csrfToken = getCsrfTokenFromCookie();
-        const _response = await fetch(`/api/studio/record/upload`, {
+        const csrfToken = getCsrfTokenFromCookie();
+        const response = await fetch(`/api/studio/record/upload`, {
           method: "POST",
           credentials: "include",
           headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
@@ -308,13 +308,13 @@ export function useAudioRecorder() {
         });
 
         if (!response?.ok) {
-          const _errorData = await response
+          const errorData = await response
             .json()
             .catch(() => ({ error: "Upload failed" }));
           throw new Error(errorData?.error || "Failed to upload recording");
         }
 
-        const _result = await response?.json();
+        const result = await response?.json();
         clearRecording();
         return result;
       } catch (error) {

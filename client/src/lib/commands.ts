@@ -34,7 +34,7 @@ import { Command } from "./commands/CommandRegistry";
 
 export const STUDIO_COMMANDS: Command[] = [
   {
-    id: "studio?.play",
+    id: "studio.play",
     name: "Play",
     description: "Start playback",
     category: "transport",
@@ -46,7 +46,7 @@ export const STUDIO_COMMANDS: Command[] = [
     context: ["studio"],
   },
   {
-    id: "studio?.stop",
+    id: "studio.stop",
     name: "Stop",
     description: "Stop playback",
     category: "transport",
@@ -57,7 +57,7 @@ export const STUDIO_COMMANDS: Command[] = [
     context: ["studio"],
   },
   {
-    id: "studio?.record",
+    id: "studio.record",
     name: "Record",
     description: "Toggle recording",
     category: "transport",
@@ -69,7 +69,7 @@ export const STUDIO_COMMANDS: Command[] = [
     context: ["studio"],
   },
   {
-    id: "studio?.loop",
+    id: "studio.loop",
     name: "Toggle Loop",
     description: "Enable/disable loop playback",
     category: "transport",
@@ -81,7 +81,7 @@ export const STUDIO_COMMANDS: Command[] = [
     context: ["studio"],
   },
   {
-    id: "studio?.metronome",
+    id: "studio.metronome",
     name: "Toggle Metronome",
     description: "Enable/disable metronome",
     category: "transport",
@@ -93,7 +93,7 @@ export const STUDIO_COMMANDS: Command[] = [
     context: ["studio"],
   },
   {
-    id: "studio?.add-track",
+    id: "studio.add-track",
     name: "Add Track",
     description: "Add a new track",
     category: "actions",
@@ -105,7 +105,7 @@ export const STUDIO_COMMANDS: Command[] = [
     context: ["studio"],
   },
   {
-    id: "studio?.mixer",
+    id: "studio.mixer",
     name: "Show Mixer",
     description: "Open the mixer panel",
     category: "view",
@@ -117,7 +117,7 @@ export const STUDIO_COMMANDS: Command[] = [
     context: ["studio"],
   },
   {
-    id: "studio?.browser",
+    id: "studio.browser",
     name: "Show Browser",
     description: "Open the browser panel",
     category: "view",
@@ -129,7 +129,7 @@ export const STUDIO_COMMANDS: Command[] = [
     context: ["studio"],
   },
   {
-    id: "studio?.export",
+    id: "studio.export",
     name: "Export Project",
     description: "Export current project",
     category: "file",
@@ -141,7 +141,7 @@ export const STUDIO_COMMANDS: Command[] = [
     context: ["studio"],
   },
   {
-    id: "studio?.zoom-in",
+    id: "studio.zoom-in",
     name: "Zoom In",
     description: "Zoom in on timeline",
     category: "view",
@@ -153,7 +153,7 @@ export const STUDIO_COMMANDS: Command[] = [
     context: ["studio"],
   },
   {
-    id: "studio?.zoom-out",
+    id: "studio.zoom-out",
     name: "Zoom Out",
     description: "Zoom out on timeline",
     category: "view",
@@ -168,7 +168,7 @@ export const STUDIO_COMMANDS: Command[] = [
 
 export const SOCIAL_COMMANDS: Command[] = [
   {
-    id: "social?.new-post",
+    id: "social.new-post",
     name: "New Post",
     description: "Create a new social media post",
     category: "actions",
@@ -180,7 +180,7 @@ export const SOCIAL_COMMANDS: Command[] = [
     context: ["social"],
   },
   {
-    id: "social?.schedule",
+    id: "social.schedule",
     name: "Schedule Post",
     description: "Schedule a post for later",
     category: "actions",
@@ -192,7 +192,7 @@ export const SOCIAL_COMMANDS: Command[] = [
     context: ["social"],
   },
   {
-    id: "social?.calendar",
+    id: "social.calendar",
     name: "View Calendar",
     description: "Open content calendar",
     category: "navigation",
@@ -204,7 +204,7 @@ export const SOCIAL_COMMANDS: Command[] = [
     context: ["social"],
   },
   {
-    id: "social?.analytics",
+    id: "social.analytics",
     name: "Social Analytics",
     description: "View social media analytics",
     category: "navigation",
@@ -216,7 +216,7 @@ export const SOCIAL_COMMANDS: Command[] = [
     context: ["social"],
   },
   {
-    id: "social?.inbox",
+    id: "social.inbox",
     name: "Unified Inbox",
     description: "Open unified social inbox",
     category: "navigation",
@@ -228,7 +228,7 @@ export const SOCIAL_COMMANDS: Command[] = [
     context: ["social"],
   },
   {
-    id: "social?.connect-platform",
+    id: "social.connect-platform",
     name: "Connect Platform",
     description: "Connect a new social platform",
     category: "actions",
@@ -239,7 +239,7 @@ export const SOCIAL_COMMANDS: Command[] = [
     context: ["social"],
   },
   {
-    id: "social?.preview",
+    id: "social.preview",
     name: "Preview Post",
     description: "Preview current post before publishing",
     category: "actions",
@@ -254,19 +254,19 @@ export const SOCIAL_COMMANDS: Command[] = [
 
 export const DISTRIBUTION_COMMANDS: Command[] = [
   {
-    id: "distribution?.new-release",
+    id: "distribution.new-release",
     name: "New Release",
     description: "Create a new release",
     category: "actions",
     keywords: ["create", "publish", "album", "single"],
     shortcut: { key: "n" },
     action: () => {
-      window?.location.href = "/distribution";
+      window.location.href = "/distribution";
     },
     context: ["distribution"],
   },
   {
-    id: "distribution?.status",
+    id: "distribution.status",
     name: "Release Status",
     description: "Check release status",
     category: "navigation",
@@ -277,7 +277,7 @@ export const DISTRIBUTION_COMMANDS: Command[] = [
     context: ["distribution"],
   },
   {
-    id: "distribution?.metadata",
+    id: "distribution.metadata",
     name: "Edit Metadata",
     description: "Edit release metadata",
     category: "actions",
@@ -289,7 +289,7 @@ export const DISTRIBUTION_COMMANDS: Command[] = [
     context: ["distribution"],
   },
   {
-    id: "distribution?.artwork",
+    id: "distribution.artwork",
     name: "Upload Artwork",
     description: "Upload release artwork",
     category: "actions",
@@ -300,7 +300,7 @@ export const DISTRIBUTION_COMMANDS: Command[] = [
     context: ["distribution"],
   },
   {
-    id: "distribution?.submit",
+    id: "distribution.submit",
     name: "Submit Release",
     description: "Submit release for distribution",
     category: "actions",
@@ -315,7 +315,7 @@ export const DISTRIBUTION_COMMANDS: Command[] = [
 
 export const MARKETPLACE_COMMANDS: Command[] = [
   {
-    id: "marketplace?.search",
+    id: "marketplace.search",
     name: "Search Beats",
     description: "Search for beats and samples",
     category: "search",
@@ -327,7 +327,7 @@ export const MARKETPLACE_COMMANDS: Command[] = [
     context: ["marketplace"],
   },
   {
-    id: "marketplace?.upload",
+    id: "marketplace.upload",
     name: "Upload Beat",
     description: "Upload a beat to sell",
     category: "actions",
@@ -339,7 +339,7 @@ export const MARKETPLACE_COMMANDS: Command[] = [
     context: ["marketplace"],
   },
   {
-    id: "marketplace?.my-beats",
+    id: "marketplace.my-beats",
     name: "My Listings",
     description: "View your listed beats",
     category: "navigation",
@@ -350,7 +350,7 @@ export const MARKETPLACE_COMMANDS: Command[] = [
     context: ["marketplace"],
   },
   {
-    id: "marketplace?.cart",
+    id: "marketplace.cart",
     name: "View Cart",
     description: "Open shopping cart",
     category: "navigation",
@@ -362,7 +362,7 @@ export const MARKETPLACE_COMMANDS: Command[] = [
     context: ["marketplace"],
   },
   {
-    id: "marketplace?.favorites",
+    id: "marketplace.favorites",
     name: "View Favorites",
     description: "View saved favorites",
     category: "navigation",
@@ -374,7 +374,7 @@ export const MARKETPLACE_COMMANDS: Command[] = [
     context: ["marketplace"],
   },
   {
-    id: "marketplace?.filters",
+    id: "marketplace.filters",
     name: "Toggle Filters",
     description: "Show/hide search filters",
     category: "view",
@@ -388,7 +388,7 @@ export const MARKETPLACE_COMMANDS: Command[] = [
 
 export const DASHBOARD_COMMANDS: Command[] = [
   {
-    id: "dashboard?.quick-stats",
+    id: "dashboard.quick-stats",
     name: "Quick Stats",
     description: "View performance overview",
     category: "view",
@@ -400,7 +400,7 @@ export const DASHBOARD_COMMANDS: Command[] = [
     context: ["dashboard"],
   },
   {
-    id: "dashboard?.refresh",
+    id: "dashboard.refresh",
     name: "Refresh Data",
     description: "Refresh dashboard data",
     category: "actions",
@@ -412,7 +412,7 @@ export const DASHBOARD_COMMANDS: Command[] = [
     context: ["dashboard"],
   },
   {
-    id: "dashboard?.notifications",
+    id: "dashboard.notifications",
     name: "Notifications",
     description: "View notifications",
     category: "navigation",
@@ -424,19 +424,19 @@ export const DASHBOARD_COMMANDS: Command[] = [
     context: ["dashboard"],
   },
   {
-    id: "dashboard?.new-project",
+    id: "dashboard.new-project",
     name: "New Project",
     description: "Create a new project",
     category: "actions",
     keywords: ["create", "new", "start"],
     shortcut: { key: "n", modifiers: ["cmd"] },
     action: () => {
-      window?.location.href = "/studio";
+      window.location.href = "/studio";
     },
     context: ["dashboard"],
   },
   {
-    id: "dashboard?.upload",
+    id: "dashboard.upload",
     name: "Upload",
     description: "Upload a file",
     category: "actions",
@@ -451,7 +451,7 @@ export const DASHBOARD_COMMANDS: Command[] = [
 
 export const ANALYTICS_COMMANDS: Command[] = [
   {
-    id: "analytics?.date-range",
+    id: "analytics.date-range",
     name: "Change Date Range",
     description: "Select analytics date range",
     category: "actions",
@@ -463,7 +463,7 @@ export const ANALYTICS_COMMANDS: Command[] = [
     context: ["analytics"],
   },
   {
-    id: "analytics?.export",
+    id: "analytics.export",
     name: "Export Report",
     description: "Export analytics report",
     category: "actions",
@@ -475,7 +475,7 @@ export const ANALYTICS_COMMANDS: Command[] = [
     context: ["analytics"],
   },
   {
-    id: "analytics?.compare",
+    id: "analytics.compare",
     name: "Compare Periods",
     description: "Compare different time periods",
     category: "view",
@@ -486,7 +486,7 @@ export const ANALYTICS_COMMANDS: Command[] = [
     context: ["analytics"],
   },
   {
-    id: "analytics?.refresh",
+    id: "analytics.refresh",
     name: "Refresh Data",
     description: "Refresh analytics data",
     category: "actions",
@@ -501,109 +501,109 @@ export const ANALYTICS_COMMANDS: Command[] = [
 
 export const NAVIGATION_COMMANDS: Command[] = [
   {
-    id: "nav?.dashboard",
+    id: "nav.dashboard",
     name: "Go to Dashboard",
     description: "Navigate to dashboard",
     category: "navigation",
     keywords: ["home", "main", "overview"],
     shortcut: { key: "h", modifiers: ["alt"] },
     action: () => {
-      window?.location.href = "/dashboard";
+      window.location.href = "/dashboard";
     },
     context: ["global"],
   },
   {
-    id: "nav?.studio",
+    id: "nav.studio",
     name: "Go to Studio",
     description: "Open the music studio",
     category: "navigation",
     keywords: ["daw", "music", "create", "record"],
     shortcut: { key: "s", modifiers: ["alt"] },
     action: () => {
-      window?.location.href = "/studio";
+      window.location.href = "/studio";
     },
     context: ["global"],
   },
   {
-    id: "nav?.projects",
+    id: "nav.projects",
     name: "Go to Projects",
     description: "View all projects",
     category: "navigation",
     keywords: ["songs", "tracks", "library"],
     shortcut: { key: "p", modifiers: ["alt"] },
     action: () => {
-      window?.location.href = "/projects";
+      window.location.href = "/projects";
     },
     context: ["global"],
   },
   {
-    id: "nav?.analytics",
+    id: "nav.analytics",
     name: "Go to Analytics",
     description: "View streaming analytics",
     category: "navigation",
     keywords: ["stats", "metrics", "streams"],
     shortcut: { key: "a", modifiers: ["alt"] },
     action: () => {
-      window?.location.href = "/analytics";
+      window.location.href = "/analytics";
     },
     context: ["global"],
   },
   {
-    id: "nav?.distribution",
+    id: "nav.distribution",
     name: "Go to Distribution",
     description: "Manage releases",
     category: "navigation",
     keywords: ["release", "publish", "dsp"],
     shortcut: { key: "d", modifiers: ["alt"] },
     action: () => {
-      window?.location.href = "/distribution";
+      window.location.href = "/distribution";
     },
     context: ["global"],
   },
   {
-    id: "nav?.social",
+    id: "nav.social",
     name: "Go to Social Media",
     description: "Manage social media",
     category: "navigation",
     keywords: ["post", "twitter", "instagram"],
     action: () => {
-      window?.location.href = "/social-media";
+      window.location.href = "/social-media";
     },
     context: ["global"],
   },
   {
-    id: "nav?.marketplace",
+    id: "nav.marketplace",
     name: "Go to Marketplace",
     description: "Browse beats",
     category: "navigation",
     keywords: ["beats", "samples", "shop"],
     shortcut: { key: "m", modifiers: ["alt"] },
     action: () => {
-      window?.location.href = "/marketplace";
+      window.location.href = "/marketplace";
     },
     context: ["global"],
   },
   {
-    id: "nav?.royalties",
+    id: "nav.royalties",
     name: "Go to Royalties",
     description: "View earnings",
     category: "navigation",
     keywords: ["earnings", "money", "payments"],
     shortcut: { key: "r", modifiers: ["alt"] },
     action: () => {
-      window?.location.href = "/royalties";
+      window.location.href = "/royalties";
     },
     context: ["global"],
   },
   {
-    id: "nav?.settings",
+    id: "nav.settings",
     name: "Go to Settings",
     description: "Open settings",
     category: "navigation",
     keywords: ["preferences", "account", "config"],
     shortcut: { key: ",", modifiers: ["cmd"] },
     action: () => {
-      window?.location.href = "/settings";
+      window.location.href = "/settings";
     },
     context: ["global"],
   },
@@ -611,19 +611,19 @@ export const NAVIGATION_COMMANDS: Command[] = [
 
 export const GLOBAL_ACTION_COMMANDS: Command[] = [
   {
-    id: "action?.new-project",
+    id: "action.new-project",
     name: "New Project",
     description: "Create a new music project",
     category: "actions",
     keywords: ["create", "start", "song"],
     shortcut: { key: "n", modifiers: ["cmd"] },
     action: () => {
-      window?.location.href = "/studio";
+      window.location.href = "/studio";
     },
     context: ["global"],
   },
   {
-    id: "action?.upload",
+    id: "action.upload",
     name: "Upload File",
     description: "Upload audio or files",
     category: "actions",
@@ -635,7 +635,7 @@ export const GLOBAL_ACTION_COMMANDS: Command[] = [
     context: ["global"],
   },
   {
-    id: "action?.search",
+    id: "action.search",
     name: "Search",
     description: "Global search",
     category: "search",
@@ -647,7 +647,7 @@ export const GLOBAL_ACTION_COMMANDS: Command[] = [
     context: ["global"],
   },
   {
-    id: "action?.toggle-theme",
+    id: "action.toggle-theme",
     name: "Toggle Theme",
     description: "Switch dark/light mode",
     category: "settings",
@@ -658,7 +658,7 @@ export const GLOBAL_ACTION_COMMANDS: Command[] = [
     context: ["global"],
   },
   {
-    id: "action?.shortcuts-help",
+    id: "action.shortcuts-help",
     name: "Keyboard Shortcuts",
     description: "View all shortcuts",
     category: "help",

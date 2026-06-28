@@ -37,39 +37,39 @@ export { buildRdapResponse } from "./MaxBoosterRegistrarProvider.js";
 
 // ── Singleton ──────────────────────────────────────────────────────────────
 
-let _provider: RegistrarProvider | null = null;
+let provider: RegistrarProvider | null = null;
 
 export function getRegistrarProvider(): RegistrarProvider {
-  if (_provider) return _provider;
+  if (provider) return provider;
 
-  const _requested = (
+  const requested = (
     process?.env.REGISTRAR_PROVIDER ?? "maxbooster"
   ).toLowerCase();
 
   switch (requested) {
     case "epp":
-      _provider = new EppRegistrarProvider();
+      provider = new EppRegistrarProvider();
       logger?.info("[RegistrarFactory] Using EPP provider (external registrar)");
       break;
 
     case "maxbooster":
     case "internal":
     default:
-      _provider = new MaxBoosterRegistrarProvider();
+      provider = new MaxBoosterRegistrarProvider();
       logger?.info(
         "[RegistrarFactory] Using Max Booster registrar (built-in DNS + DB)",
       );
       break;
   }
 
-  return _provider;
+  return provider;
 }
 
 /** Replace the provider at runtime (useful for tests or hot-swapping). */
 export function setRegistrarProvider(provider: RegistrarProvider): void {
-  _provider = provider;
+  provider = provider;
   logger?.info(
-    { provider: provider?.name },
+    { provider: provider.name },
     "[RegistrarFactory] Provider overridden",
   );
 }

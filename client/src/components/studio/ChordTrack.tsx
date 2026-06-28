@@ -242,7 +242,7 @@ export function ChordTrack({
     currentTime,
     snapEnabled,
     snapResolution,
-
+    
     projectKey,
     chordDisplayMode,
   } = useStudioStore();

@@ -25,22 +25,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Clock,
-  Calendar,
-  TrendingUp,
-  Users,
-  Sparkles,
-  Globe,
-  Sun,
-  Moon,
-  Sunrise,
-  Sunset,
-  Target,
-  Info,
-  Zap,
-  ThumbsUp,
-} from "lucide-react";
+import { Clock, Calendar, TrendingUp, Users, Sparkles, Globe, Sun, Moon, Sunrise, Sunset, Target, Info, Zap, ThumbsUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type DayOfWeek =
@@ -110,6 +95,7 @@ const timeSlotIcons: Record<TimeSlot, React.ElementType> = {
   evening: Sunset,
   night: Moon,
 };
+
 
 const daysOfWeek: DayOfWeek[] = [
   "monday",

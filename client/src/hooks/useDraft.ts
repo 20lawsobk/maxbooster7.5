@@ -35,7 +35,8 @@ export function useDraft<T = unknown>(
   const {
     formId,
     enabled = true,
-
+    
+    
     expirationMs,
     onSave,
     onRecover,
@@ -47,13 +48,13 @@ export function useDraft<T = unknown>(
   const [hasDraft, setHasDraft] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<number | null>(null);
-  const _isInitialized = useRef(false);
+  const isInitialized = useRef(false);
 
   useEffect(() => {
-    const _init = async () => {
+    const init = async () => {
       try {
         await draftStorage?.init();
-        const _existingDraft = await draftStorage?.getDraft<T>(formId);
+        const existingDraft = await draftStorage?.getDraft<T>(formId);
         if (existingDraft) {
           setDraft(existingDraft);
           setHasDraft(true);
@@ -71,7 +72,7 @@ export function useDraft<T = unknown>(
     }
   }, [formId, enabled, onError]);
 
-  const _save = useCallback(
+  const save = useCallback(
     async (data: T): Promise<Draft<T>> => {
       if (!enabled) {
         throw new Error("Draft saving is disabled");
@@ -79,7 +80,7 @@ export function useDraft<T = unknown>(
 
       setIsSaving(true);
       try {
-        const _savedDraft = await draftStorage?.saveDraft<T>(formId, data, {
+        const savedDraft = await draftStorage?.saveDraft<T>(formId, data, {
           expirationMs,
         });
         setDraft(savedDraft);
@@ -98,9 +99,9 @@ export function useDraft<T = unknown>(
     [formId, enabled, expirationMs, onSave, onError],
   );
 
-  const _recover = useCallback(async (): Promise<T | null> => {
+  const recover = useCallback(async (): Promise<T | null> => {
     try {
-      const _existingDraft = await draftStorage?.getDraft<T>(formId);
+      const existingDraft = await draftStorage?.getDraft<T>(formId);
       if (existingDraft) {
         onRecover?.(existingDraft?.data);
         return existingDraft?.data;
@@ -113,7 +114,7 @@ export function useDraft<T = unknown>(
     }
   }, [formId, onRecover, onError]);
 
-  const _discard = useCallback(async () => {
+  const discard = useCallback(async () => {
     try {
       await draftStorage?.deleteDraft(formId);
       setDraft(null);
@@ -125,13 +126,13 @@ export function useDraft<T = unknown>(
     }
   }, [formId, onError]);
 
-  const _checkConflict = useCallback(
+  const checkConflict = useCallback(
     async (
       serverData: T,
       serverVersion: number,
     ): Promise<DraftConflict<T> | null> => {
       try {
-        const _conflict = await draftStorage?.detectConflict<T>(
+        const conflict = await draftStorage?.detectConflict<T>(
           formId,
           serverData,
           serverVersion,
@@ -168,10 +169,10 @@ export function useAutoSaveDraft<T>(
 ): UseDraftReturn<T> & { debouncedSave: () => void } {
   const { autoSaveDelay = 2000, enabled = true, ...restOptions } = options;
 
-  const _draftReturn = useDraft<T>({ formId, enabled, ...restOptions });
-  const _debouncedData = useDebounce(data, autoSaveDelay);
-  const _lastDataRef = useRef<string>("");
-  const _isInitialized = useRef(false);
+  const draftReturn = useDraft<T>({ formId, enabled, ...restOptions });
+  const debouncedData = useDebounce(data, autoSaveDelay);
+  const lastDataRef = useRef<string>("");
+  const isInitialized = useRef(false);
 
   useEffect(() => {
     if (!enabled || !isInitialized?.current) {
@@ -181,7 +182,7 @@ export function useAutoSaveDraft<T>(
       return;
     }
 
-    const _dataStr = JSON?.stringify(debouncedData);
+    const dataStr = JSON?.stringify(debouncedData);
     if (dataStr === lastDataRef?.current) return;
     if (!debouncedData || dataStr === "{}" || dataStr === "null") return;
 
@@ -195,7 +196,7 @@ export function useAutoSaveDraft<T>(
     }
   }, [draftReturn?.draft]);
 
-  const _debouncedSave = useCallback(() => {
+  const debouncedSave = useCallback(() => {
     if (data) {
       draftReturn?.save(data);
     }

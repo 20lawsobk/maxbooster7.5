@@ -8,11 +8,7 @@ import {
   EXPANDED_EFFECTS,
   ALL_PLUGINS,
 } from "./plugins/index";
-import {
-  getEffectProcessor,
-  getInstrumentSynthesizer,
-  getProcessorInfo,
-} from "./dsp/index";
+import { getEffectProcessor, getInstrumentSynthesizer, getProcessorInfo } from "./dsp/index";
 
 export type {
   PluginCategory,
@@ -99,14 +95,14 @@ class PluginHostService {
     chainPosition: number,
     initialParams?: Record<string, number | boolean | string>,
   ): Promise<PluginInstance> {
-    const _plugin = this?.getPluginById(pluginId);
+    const plugin = this?.getPluginById(pluginId);
     if (!plugin) {
       throw new Error(`Plugin not found: ${pluginId}`);
     }
 
-    const _params = { ...plugin?.defaultPreset, ...initialParams };
+    const params = { ...plugin?.defaultPreset, ...initialParams };
 
-    const _catalogEntry = await db?.query.pluginCatalog?.findFirst({
+    const catalogEntry = await db?.query.pluginCatalog?.findFirst({
       where: eq(pluginCatalog?.slug, plugin?.slug),
     });
 
@@ -127,15 +123,15 @@ class PluginHostService {
       .returning();
 
     const pluginInstance: PluginInstance = {
-      id: instance?.id,
+      id: instance.id,
       pluginId,
       projectId,
       trackId: trackId || undefined,
       chainPosition,
       parameters: params,
       bypassed: false,
-      createdAt: instance?.createdAt || new Date(),
-      updatedAt: instance?.createdAt || new Date(),
+      createdAt: instance.createdAt || new Date(),
+      updatedAt: instance.createdAt || new Date(),
     };
 
     this?.instanceCache.set(instance?.id, pluginInstance);
@@ -149,7 +145,7 @@ class PluginHostService {
       return this?.instanceCache.get(instanceId);
     }
 
-    const _instance = await db?.query.pluginInstances?.findFirst({
+    const instance = await db?.query.pluginInstances?.findFirst({
       where: eq(pluginInstances?.id, instanceId),
     });
 
@@ -158,17 +154,17 @@ class PluginHostService {
     }
 
     const pluginInstance: PluginInstance = {
-      id: instance?.id,
-      pluginId: instance?.pluginId,
-      projectId: instance?.projectId,
-      trackId: instance?.trackId || undefined,
-      chainPosition: instance?.position || 0,
+      id: instance.id,
+      pluginId: instance.pluginId,
+      projectId: instance.projectId,
+      trackId: instance.trackId || undefined,
+      chainPosition: instance.position || 0,
       parameters:
         (instance?.parameters as Record<string, number | boolean | string>) ||
         {},
-      bypassed: instance?.isBypassed || false,
-      createdAt: instance?.createdAt || new Date(),
-      updatedAt: instance?.createdAt || new Date(),
+      bypassed: instance.isBypassed || false,
+      createdAt: instance.createdAt || new Date(),
+      updatedAt: instance.createdAt || new Date(),
     };
 
     this?.instanceCache.set(instanceId, pluginInstance);
@@ -179,12 +175,12 @@ class PluginHostService {
     instanceId: string,
     parameters: Partial<Record<string, number | boolean | string>>,
   ): Promise<PluginInstance> {
-    const _instance = await this?.getInstance(instanceId);
+    const instance = await this?.getInstance(instanceId);
     if (!instance) {
       throw new Error(`Plugin instance not found: ${instanceId}`);
     }
 
-    const _updatedParams = { ...instance?.parameters, ...parameters };
+    const updatedParams = { ...instance?.parameters, ...parameters };
 
     await db
       .update(pluginInstances)
@@ -209,7 +205,7 @@ class PluginHostService {
       .set({ isBypassed: bypassed })
       .where(eq(pluginInstances?.id, instanceId));
 
-    const _cached = this?.instanceCache.get(instanceId);
+    const cached = this?.instanceCache.get(instanceId);
     if (cached) {
       cached.bypassed = bypassed;
     }
@@ -223,42 +219,42 @@ class PluginHostService {
   }
 
   async getProjectInstances(projectId: string): Promise<PluginInstance[]> {
-    const _instances = await db?.query.pluginInstances?.findMany({
+    const instances = await db?.query.pluginInstances?.findMany({
       where: eq(pluginInstances?.projectId, projectId),
     });
 
     return instances?.map((instance) => ({
-      id: instance?.id,
-      pluginId: instance?.pluginId,
-      projectId: instance?.projectId,
-      trackId: instance?.trackId || undefined,
-      chainPosition: instance?.position || 0,
+      id: instance.id,
+      pluginId: instance.pluginId,
+      projectId: instance.projectId,
+      trackId: instance.trackId || undefined,
+      chainPosition: instance.position || 0,
       parameters:
         (instance?.parameters as Record<string, number | boolean | string>) ||
         {},
-      bypassed: instance?.isBypassed || false,
-      createdAt: instance?.createdAt || new Date(),
-      updatedAt: instance?.createdAt || new Date(),
+      bypassed: instance.isBypassed || false,
+      createdAt: instance.createdAt || new Date(),
+      updatedAt: instance.createdAt || new Date(),
     }));
   }
 
   async getTrackInstances(trackId: string): Promise<PluginInstance[]> {
-    const _instances = await db?.query.pluginInstances?.findMany({
+    const instances = await db?.query.pluginInstances?.findMany({
       where: eq(pluginInstances?.trackId, trackId),
     });
 
     const result: PluginInstance[] = instances?.map((instance) => ({
-      id: instance?.id,
-      pluginId: instance?.pluginId,
-      projectId: instance?.projectId,
-      trackId: instance?.trackId || undefined,
-      chainPosition: instance?.position || 0,
+      id: instance.id,
+      pluginId: instance.pluginId,
+      projectId: instance.projectId,
+      trackId: instance.trackId || undefined,
+      chainPosition: instance.position || 0,
       parameters:
         (instance?.parameters as Record<string, number | boolean | string>) ||
         {},
-      bypassed: instance?.isBypassed || false,
-      createdAt: instance?.createdAt || new Date(),
-      updatedAt: instance?.createdAt || new Date(),
+      bypassed: instance.isBypassed || false,
+      createdAt: instance.createdAt || new Date(),
+      updatedAt: instance.createdAt || new Date(),
     }));
 
     return result?.sort((a, b) => a?.chainPosition - b?.chainPosition);
@@ -285,19 +281,19 @@ class PluginHostService {
     durationSec: number,
     sampleRate: number = 48000,
   ): Promise<{ samples: number[][]; sampleRate: number }> {
-    const _instance = await this?.getInstance(instanceId);
+    const instance = await this?.getInstance(instanceId);
     if (!instance) {
       throw new Error(`Plugin instance not found: ${instanceId}`);
     }
 
-    const _plugin = this?.getPluginById(instance?.pluginId);
+    const plugin = this?.getPluginById(instance?.pluginId);
     if (!plugin || plugin?.category !== "instrument") {
       throw new Error("Invalid instrument plugin");
     }
 
-    const _numSamples = Math?.ceil(durationSec * sampleRate);
-    const _leftChannel = new Float32Array(numSamples);
-    const _rightChannel = new Float32Array(numSamples);
+    const numSamples = Math?.ceil(durationSec * sampleRate);
+    const leftChannel = new Float32Array(numSamples);
+    const rightChannel = new Float32Array(numSamples);
 
     for (const note of notes) {
       this?.synthesizeNote(
@@ -310,7 +306,7 @@ class PluginHostService {
       );
     }
 
-    const _volume = (instance?.parameters.volume as number) || 0.8;
+    const volume = (instance?.parameters.volume as number) || 0.8;
     for (let i = 0; i < numSamples; i++) {
       leftChannel[i] *= volume;
       rightChannel[i] *= volume;
@@ -335,50 +331,50 @@ class PluginHostService {
     params: Record<string, number | boolean | string>,
     sampleRate: number,
   ): void {
-    const _frequency = 440 * Math?.pow(2, (note?.note - 69) / 12);
-    const _startSample = Math?.floor(note?.startTime * sampleRate);
-    const _envelope = plugin?.envelope || {
+    const frequency = 440 * Math?.pow(2, (note?.note - 69) / 12);
+    const startSample = Math?.floor(note?.startTime * sampleRate);
+    const envelope = plugin?.envelope || {
       attack: 0.01,
       decay: 0.1,
       sustain: 0.7,
       release: 0.3,
     };
 
-    const _attackSamples = Math?.floor(
+    const attackSamples = Math?.floor(
       ((params?.attack as number) || envelope?.attack) * sampleRate,
     );
-    const _decaySamples = Math?.floor(envelope?.decay * sampleRate);
-    const _releaseSamples = Math?.floor(
+    const decaySamples = Math?.floor(envelope?.decay * sampleRate);
+    const releaseSamples = Math?.floor(
       ((params?.release as number) || envelope?.release) * sampleRate,
     );
-    const _noteDurationSamples = Math?.floor(note?.duration * sampleRate);
-    const _totalSamples = noteDurationSamples + releaseSamples;
+    const noteDurationSamples = Math?.floor(note?.duration * sampleRate);
+    const totalSamples = noteDurationSamples + releaseSamples;
 
-    const _velocityGain = note?.velocity / 127;
+    const velocityGain = note?.velocity / 127;
 
     for (let i = 0; i < totalSamples && startSample + i < left?.length; i++) {
       let envValue = 1;
       if (i < attackSamples) {
         envValue = i / attackSamples;
       } else if (i < attackSamples + decaySamples) {
-        const _decayProgress = (i - attackSamples) / decaySamples;
+        const decayProgress = (i - attackSamples) / decaySamples;
         envValue = 1 - decayProgress * (1 - envelope?.sustain);
       } else if (i < noteDurationSamples) {
         envValue = envelope?.sustain;
       } else {
-        const _releaseProgress = (i - noteDurationSamples) / releaseSamples;
+        const releaseProgress = (i - noteDurationSamples) / releaseSamples;
         envValue = envelope?.sustain * (1 - releaseProgress);
       }
 
       let sample = 0;
-      const _oscillators = plugin?.oscillators || [
+      const oscillators = plugin?.oscillators || [
         { type: "sine" as const, detune: 0, gain: 1 },
       ];
 
       for (const osc of oscillators) {
-        const _detunedFreq = frequency * Math?.pow(2, osc?.detune / 1200);
-        const _phase =
-          (2 * Math?.PI * detunedFreq * (startSample + i)) / sampleRate;
+        const detunedFreq = frequency * Math?.pow(2, osc?.detune / 1200);
+        const phase =
+          (2 * Math.PI * detunedFreq * (startSample + i)) / sampleRate;
 
         let oscSample = 0;
         switch (osc?.type) {
@@ -389,10 +385,10 @@ class PluginHostService {
             oscSample = Math?.sign(Math?.sin(phase));
             break;
           case "sawtooth":
-            oscSample = 2 * ((phase / (2 * Math?.PI)) % 1) - 1;
+            oscSample = 2 * ((phase / (2 * Math.PI)) % 1) - 1;
             break;
           case "triangle":
-            oscSample = 2 * Math?.abs(2 * ((phase / (2 * Math?.PI)) % 1) - 1) - 1;
+            oscSample = 2 * Math?.abs(2 * ((phase / (2 * Math.PI)) % 1) - 1) - 1;
             break;
           case "noise":
             oscSample = Math?.random() * 2 - 1;
@@ -401,8 +397,8 @@ class PluginHostService {
         sample += oscSample * osc?.gain;
       }
 
-      const _finalSample = sample * envValue * velocityGain * 0.3;
-      const _idx = startSample + i;
+      const finalSample = sample * envValue * velocityGain * 0.3;
+      const idx = startSample + i;
       if (idx >= 0 && idx < left?.length) {
         left[idx] += finalSample;
         right[idx] += finalSample;
@@ -419,7 +415,7 @@ class PluginHostService {
     pluginId: string,
   ): Promise<T> {
     let timeoutId: NodeJS.Timeout;
-    const _timeoutPromise = new Promise<never>((_, reject) => {
+    const timeoutPromise = new Promise<never>((_, reject) => {
       timeoutId = setTimeout(() => {
         reject(
           new Error(
@@ -430,7 +426,7 @@ class PluginHostService {
     });
 
     try {
-      const _result = await Promise?.race([promise, timeoutPromise]);
+      const result = await Promise?.race([promise, timeoutPromise]);
       clearTimeout(timeoutId!);
       return result;
     } catch (error) {
@@ -440,7 +436,7 @@ class PluginHostService {
   }
 
   private validateBufferSize(samples: number[][] | Float32Array[]): void {
-    const _totalSize = samples?.reduce(
+    const totalSize = samples?.reduce(
       (sum, channel) => sum + channel?.length * 4,
       0,
     );
@@ -455,7 +451,7 @@ class PluginHostService {
     instanceId: string,
     inputBuffer: { samples: number[][]; sampleRate: number },
   ): Promise<{ samples: number[][]; sampleRate: number }> {
-    const _instance = await this?.getInstance(instanceId);
+    const instance = await this?.getInstance(instanceId);
     if (!instance) {
       throw new Error(`Plugin instance not found: ${instanceId}`);
     }
@@ -464,41 +460,41 @@ class PluginHostService {
       return inputBuffer;
     }
 
-    const _plugin = this?.getPluginById(instance?.pluginId);
+    const plugin = this?.getPluginById(instance?.pluginId);
     if (!plugin || plugin?.category !== "effect") {
       throw new Error("Invalid effect plugin");
     }
 
     this?.validateBufferSize(inputBuffer?.samples);
 
-    const _processInternal = async (): Promise<{
+    const processInternal = async (): Promise<{
       samples: number[][];
       sampleRate: number;
     }> => {
-      const _left = new Float32Array(inputBuffer?.samples[0]);
-      const _right = new Float32Array(
+      const left = new Float32Array(inputBuffer?.samples[0]);
+      const right = new Float32Array(
         inputBuffer?.samples[1] || inputBuffer?.samples[0],
       );
-      const _params = instance?.parameters;
+      const params = instance?.parameters;
 
       try {
-        const _processor = getEffectProcessor(instance?.pluginId);
+        const processor = getEffectProcessor(instance?.pluginId);
         if (processor) {
-          const _result = processor?.process(
+          const result = processor?.process(
             {
               samples: [left, right],
-              sampleRate: inputBuffer?.sampleRate,
+              sampleRate: inputBuffer.sampleRate,
               channels: 2,
             },
             params,
-            { sampleRate: inputBuffer?.sampleRate, tempo: 120 },
+            { sampleRate: inputBuffer.sampleRate, tempo: 120 },
           );
           return {
             samples: [
               Array?.from(result?.samples[0]),
               Array?.from(result?.samples[1]),
             ],
-            sampleRate: result?.sampleRate,
+            sampleRate: result.sampleRate,
           };
         }
 
@@ -537,7 +533,7 @@ class PluginHostService {
 
         return {
           samples: [Array?.from(left), Array?.from(right)],
-          sampleRate: inputBuffer?.sampleRate,
+          sampleRate: inputBuffer.sampleRate,
         };
       } catch (error: unknown) {
         logger?.warn(
@@ -569,7 +565,7 @@ class PluginHostService {
     sampleRate: number;
     channels: number;
   }> {
-    const _processor = getEffectProcessor(pluginId);
+    const processor = getEffectProcessor(pluginId);
     if (!processor) {
       throw new Error(
         `No advanced DSP processor found for plugin: ${pluginId}`,
@@ -587,14 +583,14 @@ class PluginHostService {
     sampleRate: number;
     channels: number;
   }> {
-    const _synth = getInstrumentSynthesizer(pluginId);
+    const synth = getInstrumentSynthesizer(pluginId);
     if (!synth) {
       throw new Error(`No synthesizer found for plugin: ${pluginId}`);
     }
 
-    const _totalDuration =
+    const totalDuration =
       notes?.reduce((max, n) => Math?.max(max, n?.durationMs), 0) + 1000;
-    const _numSamples = Math?.ceil((totalDuration / 1000) * context?.sampleRate);
+    const numSamples = Math?.ceil((totalDuration / 1000) * context?.sampleRate);
     const output: Float32Array[] = [
       new Float32Array(numSamples),
       new Float32Array(numSamples),
@@ -602,10 +598,10 @@ class PluginHostService {
 
     for (const note of notes) {
       synth?.noteOn(note?.frequency, note?.velocity, context);
-      const _noteSamples = Math?.ceil(
+      const noteSamples = Math?.ceil(
         (note?.durationMs / 1000) * context?.sampleRate,
       );
-      const _rendered = synth?.render(noteSamples, context);
+      const rendered = synth?.render(noteSamples, context);
 
       for (
         let i = 0;
@@ -616,11 +612,11 @@ class PluginHostService {
         output[1][i] += rendered?.samples[1][i];
       }
 
-      synth?.noteOff({ sampleRate: context?.sampleRate });
+      synth?.noteOff({ sampleRate: context.sampleRate });
       synth?.reset();
     }
 
-    return { samples: output, sampleRate: context?.sampleRate, channels: 2 };
+    return { samples: output, sampleRate: context.sampleRate, channels: 2 };
   }
 
   getDSPProcessorInfo(): ReturnType<typeof getProcessorInfo> {
@@ -633,21 +629,21 @@ class PluginHostService {
     params: Record<string, number | boolean | string>,
     sampleRate: number,
   ): void {
-    const _mix = (params?.mix as number) || 0.3;
-    const _decay = (params?.decay as number) || 2.0;
-    const _roomSize = (params?.roomSize as number) || 0.5;
-    const _damping = (params?.damping as number) || 0.5;
+    const mix = (params?.mix as number) || 0.3;
+    const decay = (params?.decay as number) || 2.0;
+    const roomSize = (params?.roomSize as number) || 0.5;
+    const damping = (params?.damping as number) || 0.5;
 
-    const _delayLength = Math?.floor(roomSize * 0.1 * sampleRate);
-    const _delayBuffer = new Float32Array(delayLength);
+    const delayLength = Math?.floor(roomSize * 0.1 * sampleRate);
+    const delayBuffer = new Float32Array(delayLength);
     let delayIndex = 0;
 
     for (let i = 0; i < left?.length; i++) {
-      const _dryL = left[i];
-      const _dryR = right[i];
+      const dryL = left[i];
+      const dryR = right[i];
 
-      const _delayed = delayBuffer[delayIndex];
-      const _wetSample = delayed * decay * (1 - damping);
+      const delayed = delayBuffer[delayIndex];
+      const wetSample = delayed * decay * (1 - damping);
 
       delayBuffer[delayIndex] = (dryL + dryR) * 0.5 + wetSample * 0.5;
       delayIndex = (delayIndex + 1) % delayLength;
@@ -663,25 +659,25 @@ class PluginHostService {
     params: Record<string, number | boolean | string>,
     sampleRate: number,
   ): void {
-    const _mix = (params?.mix as number) || 0.3;
-    const _feedback = (params?.feedback as number) || 0.4;
-    const _timeLeft = ((params?.timeLeft as number) || 250) / 1000;
-    const _timeRight = ((params?.timeRight as number) || 375) / 1000;
+    const mix = (params?.mix as number) || 0.3;
+    const feedback = (params?.feedback as number) || 0.4;
+    const timeLeft = ((params?.timeLeft as number) || 250) / 1000;
+    const timeRight = ((params?.timeRight as number) || 375) / 1000;
 
-    const _delaySamplesL = Math?.floor(timeLeft * sampleRate);
-    const _delaySamplesR = Math?.floor(timeRight * sampleRate);
+    const delaySamplesL = Math?.floor(timeLeft * sampleRate);
+    const delaySamplesR = Math?.floor(timeRight * sampleRate);
 
-    const _delayBufferL = new Float32Array(delaySamplesL || 1);
-    const _delayBufferR = new Float32Array(delaySamplesR || 1);
+    const delayBufferL = new Float32Array(delaySamplesL || 1);
+    const delayBufferR = new Float32Array(delaySamplesR || 1);
     let indexL = 0,
       indexR = 0;
 
     for (let i = 0; i < left?.length; i++) {
-      const _dryL = left[i];
-      const _dryR = right[i];
+      const dryL = left[i];
+      const dryR = right[i];
 
-      const _delayedL = delayBufferL[indexL];
-      const _delayedR = delayBufferR[indexR];
+      const delayedL = delayBufferL[indexL];
+      const delayedR = delayBufferR[indexR];
 
       delayBufferL[indexL] = dryL + delayedL * feedback;
       delayBufferR[indexR] = dryR + delayedR * feedback;
@@ -700,28 +696,28 @@ class PluginHostService {
     params: Record<string, number | boolean | string>,
     sampleRate: number,
   ): void {
-    const _mix = (params?.mix as number) || 0.5;
-    const _rate = (params?.rate as number) || 1.0;
-    const _depth = (params?.depth as number) || 0.5;
-    const _baseDelay = ((params?.delay as number) || 7) / 1000;
+    const mix = (params?.mix as number) || 0.5;
+    const rate = (params?.rate as number) || 1.0;
+    const depth = (params?.depth as number) || 0.5;
+    const baseDelay = ((params?.delay as number) || 7) / 1000;
 
-    const _maxDelaySamples = Math?.floor((baseDelay + 0.01) * sampleRate);
-    const _delayBufferL = new Float32Array(maxDelaySamples);
-    const _delayBufferR = new Float32Array(maxDelaySamples);
+    const maxDelaySamples = Math?.floor((baseDelay + 0.01) * sampleRate);
+    const delayBufferL = new Float32Array(maxDelaySamples);
+    const delayBufferR = new Float32Array(maxDelaySamples);
     let writeIndex = 0;
 
     for (let i = 0; i < left?.length; i++) {
-      const _lfo =
-        Math?.sin((2 * Math?.PI * rate * i) / sampleRate) * depth * 0.5 + 0.5;
-      const _delaySamples = Math?.floor((baseDelay * lfo + 0.001) * sampleRate);
-      const _readIndex =
+      const lfo =
+        Math?.sin((2 * Math.PI * rate * i) / sampleRate) * depth * 0.5 + 0.5;
+      const delaySamples = Math?.floor((baseDelay * lfo + 0.001) * sampleRate);
+      const readIndex =
         (writeIndex - delaySamples + maxDelaySamples) % maxDelaySamples;
 
-      const _dryL = left[i];
-      const _dryR = right[i];
+      const dryL = left[i];
+      const dryR = right[i];
 
-      const _chorusL = delayBufferL[readIndex];
-      const _chorusR = delayBufferR[readIndex];
+      const chorusL = delayBufferL[readIndex];
+      const chorusR = delayBufferR[readIndex];
 
       delayBufferL[writeIndex] = dryL;
       delayBufferR[writeIndex] = dryR;
@@ -738,35 +734,35 @@ class PluginHostService {
     params: Record<string, number | boolean | string>,
     sampleRate: number,
   ): void {
-    const _threshold = (params?.threshold as number) || -20;
-    const _ratio = (params?.ratio as number) || 4;
-    const _attackMs = (params?.attack as number) || 10;
-    const _releaseMs = (params?.release as number) || 100;
-    const _makeupGain = (params?.makeupGain as number) || 0;
-    const _mix = (params?.mix as number) || 1.0;
+    const threshold = (params?.threshold as number) || -20;
+    const ratio = (params?.ratio as number) || 4;
+    const attackMs = (params?.attack as number) || 10;
+    const releaseMs = (params?.release as number) || 100;
+    const makeupGain = (params?.makeupGain as number) || 0;
+    const mix = (params?.mix as number) || 1.0;
 
-    const _attackCoeff = Math?.exp(-1 / ((attackMs / 1000) * sampleRate));
-    const _releaseCoeff = Math?.exp(-1 / ((releaseMs / 1000) * sampleRate));
+    const attackCoeff = Math?.exp(-1 / ((attackMs / 1000) * sampleRate));
+    const releaseCoeff = Math?.exp(-1 / ((releaseMs / 1000) * sampleRate));
 
     let envelope = 0;
-    const _thresholdLin = Math?.pow(10, threshold / 20);
-    const _makeupLin = Math?.pow(10, makeupGain / 20);
+    const thresholdLin = Math?.pow(10, threshold / 20);
+    const makeupLin = Math?.pow(10, makeupGain / 20);
 
     for (let i = 0; i < left?.length; i++) {
-      const _inputLevel = Math?.max(Math?.abs(left[i]), Math?.abs(right[i]));
+      const inputLevel = Math?.max(Math?.abs(left[i]), Math?.abs(right[i]));
 
-      const _coeff = inputLevel > envelope ? attackCoeff : releaseCoeff;
+      const coeff = inputLevel > envelope ? attackCoeff : releaseCoeff;
       envelope = envelope * coeff + inputLevel * (1 - coeff);
 
       let gain = 1;
       if (envelope > thresholdLin) {
-        const _overDb = 20 * Math?.log10(envelope / thresholdLin);
-        const _reducedDb = overDb * (1 - 1 / ratio);
+        const overDb = 20 * Math?.log10(envelope / thresholdLin);
+        const reducedDb = overDb * (1 - 1 / ratio);
         gain = Math?.pow(10, -reducedDb / 20);
       }
 
-      const _processedL = left[i] * gain * makeupLin;
-      const _processedR = right[i] * gain * makeupLin;
+      const processedL = left[i] * gain * makeupLin;
+      const processedR = right[i] * gain * makeupLin;
 
       left[i] = left[i] * (1 - mix) + processedL * mix;
       right[i] = right[i] * (1 - mix) + processedR * mix;
@@ -779,7 +775,7 @@ class PluginHostService {
     params: Record<string, number | boolean | string>,
     _sampleRate: number,
   ): void {
-    const _outputGain = Math?.pow(10, ((params?.outputGain as number) || 0) / 20);
+    const outputGain = Math?.pow(10, ((params?.outputGain as number) || 0) / 20);
 
     for (let i = 0; i < left?.length; i++) {
       left[i] *= outputGain;
@@ -793,14 +789,14 @@ class PluginHostService {
     params: Record<string, number | boolean | string>,
     _sampleRate: number,
   ): void {
-    const _ceiling = Math?.pow(10, ((params?.ceiling as number) || -0.3) / 20);
-    const _threshold = Math?.pow(10, ((params?.threshold as number) || -6) / 20);
+    const ceiling = Math?.pow(10, ((params?.ceiling as number) || -0.3) / 20);
+    const threshold = Math?.pow(10, ((params?.threshold as number) || -6) / 20);
 
     for (let i = 0; i < left?.length; i++) {
-      const _maxLevel = Math?.max(Math?.abs(left[i]), Math?.abs(right[i]));
+      const maxLevel = Math?.max(Math?.abs(left[i]), Math?.abs(right[i]));
 
       if (maxLevel > threshold) {
-        const _gain = ceiling / maxLevel;
+        const gain = ceiling / maxLevel;
         left[i] *= gain;
         right[i] *= gain;
       }
@@ -816,15 +812,15 @@ class PluginHostService {
     params: Record<string, number | boolean | string>,
     sampleRate: number,
   ): void {
-    const _threshold = Math?.pow(10, ((params?.threshold as number) || -40) / 20);
-    const _range = Math?.pow(10, ((params?.range as number) || -80) / 20);
-    const _attackMs = (params?.attack as number) || 1;
-    const _holdMs = (params?.hold as number) || 50;
-    const _releaseMs = (params?.release as number) || 100;
+    const threshold = Math?.pow(10, ((params?.threshold as number) || -40) / 20);
+    const range = Math?.pow(10, ((params?.range as number) || -80) / 20);
+    const attackMs = (params?.attack as number) || 1;
+    const holdMs = (params?.hold as number) || 50;
+    const releaseMs = (params?.release as number) || 100;
 
-    const _attackSamples = Math?.floor((attackMs / 1000) * sampleRate);
-    const _holdSamples = Math?.floor((holdMs / 1000) * sampleRate);
-    const _releaseSamples = Math?.floor((releaseMs / 1000) * sampleRate);
+    const attackSamples = Math?.floor((attackMs / 1000) * sampleRate);
+    const holdSamples = Math?.floor((holdMs / 1000) * sampleRate);
+    const releaseSamples = Math?.floor((releaseMs / 1000) * sampleRate);
 
     let gateGain = 0;
     let holdCounter = 0;
@@ -832,7 +828,7 @@ class PluginHostService {
     let stateCounter = 0;
 
     for (let i = 0; i < left?.length; i++) {
-      const _level = Math?.max(Math?.abs(left[i]), Math?.abs(right[i]));
+      const level = Math?.max(Math?.abs(left[i]), Math?.abs(right[i]));
 
       if (level > threshold) {
         if (state === "closed" || state === "release") {
@@ -897,18 +893,18 @@ class PluginHostService {
     params: Record<string, number | boolean | string>,
     _sampleRate: number,
   ): void {
-    const _mode = (params?.mode as string) || "tube";
-    const _drive = (params?.drive as number) || 0.5;
-    const _tone = (params?.tone as number) || 0.5;
-    const _outputGain = Math?.pow(10, ((params?.output as number) || 0) / 20);
-    const _mix = (params?.mix as number) || 1.0;
-    const _bias = (params?.bias as number) || 0;
+    const mode = (params?.mode as string) || "tube";
+    const drive = (params?.drive as number) || 0.5;
+    const tone = (params?.tone as number) || 0.5;
+    const outputGain = Math?.pow(10, ((params?.output as number) || 0) / 20);
+    const mix = (params?.mix as number) || 1.0;
+    const bias = (params?.bias as number) || 0;
 
-    const _driveAmount = 1 + drive * 20;
+    const driveAmount = 1 + drive * 20;
 
     for (let i = 0; i < left?.length; i++) {
-      const _dryL = left[i];
-      const _dryR = right[i];
+      const dryL = left[i];
+      const dryR = right[i];
 
       let wetL = dryL * driveAmount + bias;
       let wetR = dryR * driveAmount + bias;
@@ -931,15 +927,15 @@ class PluginHostService {
           wetR = Math?.sign(wetR) * (1 - Math?.exp(-Math?.abs(wetR * 3)));
           break;
         case "bitcrush":
-          const _bits = Math?.floor(4 + (1 - drive) * 12);
-          const _levels = Math?.pow(2, bits);
+          const bits = Math?.floor(4 + (1 - drive) * 12);
+          const levels = Math?.pow(2, bits);
           wetL = Math?.round(wetL * levels) / levels;
           wetR = Math?.round(wetR * levels) / levels;
           break;
       }
 
       if (tone !== 0.5) {
-        const _toneAlpha = 1 - Math?.abs(tone - 0.5) * 0.3;
+        const toneAlpha = 1 - Math?.abs(tone - 0.5) * 0.3;
         wetL =
           wetL * toneAlpha + wetL * (1 - toneAlpha) * (tone > 0.5 ? 1.2 : 0.8);
         wetR =
@@ -960,13 +956,13 @@ class PluginHostService {
     params: Record<string, number | boolean | string>,
     sampleRate: number,
   ): void {
-    const _rate = (params?.rate as number) || 0.5;
-    const _depth = (params?.depth as number) || 0.7;
-    const _feedback = (params?.feedback as number) || 0.5;
-    const _stages = (params?.stages as number) || 4;
-    const _centerFreq = (params?.centerFreq as number) || 1000;
-    const _spread = (params?.spread as number) || 0.5;
-    const _mix = (params?.mix as number) || 0.5;
+    const rate = (params?.rate as number) || 0.5;
+    const depth = (params?.depth as number) || 0.7;
+    const feedback = (params?.feedback as number) || 0.5;
+    const stages = (params?.stages as number) || 4;
+    const centerFreq = (params?.centerFreq as number) || 1000;
+    const spread = (params?.spread as number) || 0.5;
+    const mix = (params?.mix as number) || 0.5;
 
     const allpassStatesL: number[][] = Array(stages)
       .fill(null)
@@ -978,29 +974,29 @@ class PluginHostService {
     let feedbackR = 0;
 
     for (let i = 0; i < left?.length; i++) {
-      const _lfoPhaseL = (2 * Math?.PI * rate * i) / sampleRate;
-      const _lfoPhaseR = lfoPhaseL + spread * Math?.PI;
+      const lfoPhaseL = (2 * Math.PI * rate * i) / sampleRate;
+      const lfoPhaseR = lfoPhaseL + spread * Math.PI;
 
-      const _lfoL = (Math?.sin(lfoPhaseL) + 1) * 0.5;
-      const _lfoR = (Math?.sin(lfoPhaseR) + 1) * 0.5;
+      const lfoL = (Math?.sin(lfoPhaseL) + 1) * 0.5;
+      const lfoR = (Math?.sin(lfoPhaseR) + 1) * 0.5;
 
-      const _minFreq = centerFreq * 0.5;
-      const _maxFreq = centerFreq * 2;
-      const _freqL = minFreq + (maxFreq - minFreq) * lfoL * depth;
-      const _freqR = minFreq + (maxFreq - minFreq) * lfoR * depth;
+      const minFreq = centerFreq * 0.5;
+      const maxFreq = centerFreq * 2;
+      const freqL = minFreq + (maxFreq - minFreq) * lfoL * depth;
+      const freqR = minFreq + (maxFreq - minFreq) * lfoR * depth;
 
       let inputL = left[i] + feedbackL * feedback;
       let inputR = right[i] + feedbackR * feedback;
 
       for (let s = 0; s < stages; s++) {
-        const _stageFreqL = freqL * (1 + s * 0.3);
-        const _stageFreqR = freqR * (1 + s * 0.3);
+        const stageFreqL = freqL * (1 + s * 0.3);
+        const stageFreqR = freqR * (1 + s * 0.3);
 
-        const _coeffL = (stageFreqL - sampleRate) / (stageFreqL + sampleRate);
-        const _coeffR = (stageFreqR - sampleRate) / (stageFreqR + sampleRate);
+        const coeffL = (stageFreqL - sampleRate) / (stageFreqL + sampleRate);
+        const coeffR = (stageFreqR - sampleRate) / (stageFreqR + sampleRate);
 
-        const _tempL = inputL;
-        const _tempR = inputR;
+        const tempL = inputL;
+        const tempR = inputR;
 
         inputL = allpassStatesL[s][0] + tempL * coeffL;
         allpassStatesL[s][0] = tempL - inputL * coeffL;
@@ -1023,21 +1019,21 @@ class PluginHostService {
     params: Record<string, number | boolean | string>,
     sampleRate: number,
   ): void {
-    const _rate = (params?.rate as number) || 0.3;
-    const _depth = (params?.depth as number) || 0.6;
-    const _baseDelay = ((params?.delay as number) || 5) / 1000;
-    const _feedback = (params?.feedback as number) || 0.5;
-    const _mix = (params?.mix as number) || 0.5;
-    const _stereoPhase = (params?.stereoPhase as number) || 0.25;
-    const _manualMode = (params?.manualMode as boolean) || false;
-    const _manualDelay = ((params?.manualDelay as number) || 5) / 1000;
+    const rate = (params?.rate as number) || 0.3;
+    const depth = (params?.depth as number) || 0.6;
+    const baseDelay = ((params?.delay as number) || 5) / 1000;
+    const feedback = (params?.feedback as number) || 0.5;
+    const mix = (params?.mix as number) || 0.5;
+    const stereoPhase = (params?.stereoPhase as number) || 0.25;
+    const manualMode = (params?.manualMode as boolean) || false;
+    const manualDelay = ((params?.manualDelay as number) || 5) / 1000;
 
-    const _maxDelaySamples = Math?.floor(0.025 * sampleRate);
-    const _delayBufferL = new Float32Array(maxDelaySamples);
-    const _delayBufferR = new Float32Array(maxDelaySamples);
+    const maxDelaySamples = Math?.floor(0.025 * sampleRate);
+    const delayBufferL = new Float32Array(maxDelaySamples);
+    const delayBufferR = new Float32Array(maxDelaySamples);
     let writeIndex = 0;
-    let feedbackSampleL = 0;
-    let feedbackSampleR = 0;
+    let _feedbackSampleL = 0;
+    let _feedbackSampleR = 0;
 
     for (let i = 0; i < left?.length; i++) {
       let delayTimeL: number, delayTimeR: number;
@@ -1046,36 +1042,36 @@ class PluginHostService {
         delayTimeL = manualDelay;
         delayTimeR = manualDelay;
       } else {
-        const _lfoPhaseL = (2 * Math?.PI * rate * i) / sampleRate;
-        const _lfoPhaseR = lfoPhaseL + stereoPhase * 2 * Math?.PI;
+        const lfoPhaseL = (2 * Math.PI * rate * i) / sampleRate;
+        const lfoPhaseR = lfoPhaseL + stereoPhase * 2 * Math.PI;
 
-        const _lfoL = (Math?.sin(lfoPhaseL) + 1) * 0.5;
-        const _lfoR = (Math?.sin(lfoPhaseR) + 1) * 0.5;
+        const lfoL = (Math?.sin(lfoPhaseL) + 1) * 0.5;
+        const lfoR = (Math?.sin(lfoPhaseR) + 1) * 0.5;
 
-        const _minDelay = baseDelay * 0.1;
-        const _maxDelay = baseDelay;
+        const minDelay = baseDelay * 0.1;
+        const maxDelay = baseDelay;
         delayTimeL = minDelay + (maxDelay - minDelay) * lfoL * depth;
         delayTimeR = minDelay + (maxDelay - minDelay) * lfoR * depth;
       }
 
-      const _delaySamplesL = Math?.min(
+      const delaySamplesL = Math?.min(
         delayTimeL * sampleRate,
         maxDelaySamples - 1,
       );
-      const _delaySamplesR = Math?.min(
+      const delaySamplesR = Math?.min(
         delayTimeR * sampleRate,
         maxDelaySamples - 1,
       );
 
-      const _readIndexL =
+      const readIndexL =
         (writeIndex - Math?.floor(delaySamplesL) + maxDelaySamples) %
         maxDelaySamples;
-      const _readIndexR =
+      const readIndexR =
         (writeIndex - Math?.floor(delaySamplesR) + maxDelaySamples) %
         maxDelaySamples;
 
-      const _delayedL = delayBufferL[readIndexL];
-      const _delayedR = delayBufferR[readIndexR];
+      const delayedL = delayBufferL[readIndexL];
+      const delayedR = delayBufferR[readIndexR];
 
       delayBufferL[writeIndex] = left[i] + delayedL * feedback;
       delayBufferR[writeIndex] = right[i] + delayedR * feedback;
@@ -1085,8 +1081,8 @@ class PluginHostService {
 
       writeIndex = (writeIndex + 1) % maxDelaySamples;
 
-      const _wetL = (left[i] + delayedL) * 0.5;
-      const _wetR = (right[i] + delayedR) * 0.5;
+      const wetL = (left[i] + delayedL) * 0.5;
+      const wetR = (right[i] + delayedR) * 0.5;
 
       left[i] = left[i] * (1 - mix) + wetL * mix;
       right[i] = right[i] * (1 - mix) + wetR * mix;
@@ -1100,7 +1096,7 @@ class PluginHostService {
     parameters: Record<string, number | boolean | string>,
     options: { category?: string; isPublic?: boolean } = {},
   ): Promise<PluginPreset> {
-    const _plugin = this?.getPluginById(pluginId);
+    const plugin = this?.getPluginById(pluginId);
     if (!plugin) {
       throw new Error(`Plugin not found: ${pluginId}`);
     }
@@ -1109,30 +1105,30 @@ class PluginHostService {
       .insert(pluginPresets)
       .values({
         userId,
-        pluginId: plugin?.id,
+        pluginId: plugin.id,
         name,
         parameters,
         isFactory: false,
-        metadata: options?.category
-          ? { category: options?.category, isPublic: options?.isPublic || false }
+        metadata: options.category
+          ? { category: options.category, isPublic: options.isPublic || false }
           : null,
       })
       .returning();
 
     return {
-      id: preset?.id,
-      userId: preset?.userId || userId,
-      pluginId: preset?.pluginId || plugin?.id,
-      name: preset?.name,
+      id: preset.id,
+      userId: preset.userId || userId,
+      pluginId: preset.pluginId || plugin?.id,
+      name: preset.name,
       category:
         (preset?.metadata as Record<string, unknown>)?.category || undefined,
-      parameters: preset?.parameters as Record<
+      parameters: preset.parameters as Record<
         string,
         number | boolean | string
       >,
-      isDefault: preset?.isFactory || false,
+      isDefault: preset.isFactory || false,
       isPublic: (preset?.metadata as Record<string, unknown>)?.isPublic || false,
-      createdAt: preset?.createdAt,
+      createdAt: preset.createdAt,
     };
   }
 
@@ -1141,12 +1137,12 @@ class PluginHostService {
     userId: string,
     _options: { includePublic?: boolean; category?: string } = {},
   ): Promise<PluginPreset[]> {
-    const _plugin = this?.getPluginById(pluginId);
+    const plugin = this?.getPluginById(pluginId);
     if (!plugin) {
       throw new Error(`Plugin not found: ${pluginId}`);
     }
 
-    const _presets = await db?.query.pluginPresets?.findMany({
+    const presets = await db?.query.pluginPresets?.findMany({
       where: and(
         eq(pluginPresets?.pluginId, plugin?.id),
         eq(pluginPresets?.userId, userId),
@@ -1155,20 +1151,20 @@ class PluginHostService {
     });
 
     return presets?.map((p) => ({
-      id: p?.id,
-      userId: p?.userId || userId,
-      pluginId: p?.pluginId || pluginId,
-      name: p?.name,
+      id: p.id,
+      userId: p.userId || userId,
+      pluginId: p.pluginId || pluginId,
+      name: p.name,
       category: (p?.metadata as Record<string, unknown>)?.category || undefined,
-      parameters: p?.parameters as Record<string, number | boolean | string>,
-      isDefault: p?.isFactory || false,
+      parameters: p.parameters as Record<string, number | boolean | string>,
+      isDefault: p.isFactory || false,
       isPublic: (p?.metadata as Record<string, unknown>)?.isPublic || false,
-      createdAt: p?.createdAt,
+      createdAt: p.createdAt,
     }));
   }
 
   async loadPreset(presetId: string): Promise<PluginPreset | undefined> {
-    const _preset = await db?.query.pluginPresets?.findFirst({
+    const preset = await db?.query.pluginPresets?.findFirst({
       where: eq(pluginPresets?.id, presetId),
     });
 
@@ -1177,19 +1173,19 @@ class PluginHostService {
     }
 
     return {
-      id: preset?.id,
-      userId: preset?.userId || "",
-      pluginId: preset?.pluginId || "",
-      name: preset?.name,
+      id: preset.id,
+      userId: preset.userId || "",
+      pluginId: preset.pluginId || "",
+      name: preset.name,
       category:
         (preset?.metadata as Record<string, unknown>)?.category || undefined,
-      parameters: preset?.parameters as Record<
+      parameters: preset.parameters as Record<
         string,
         number | boolean | string
       >,
-      isDefault: preset?.isFactory || false,
+      isDefault: preset.isFactory || false,
       isPublic: (preset?.metadata as Record<string, unknown>)?.isPublic || false,
-      createdAt: preset?.createdAt,
+      createdAt: preset.createdAt,
     };
   }
 
@@ -1205,7 +1201,7 @@ class PluginHostService {
     instanceId: string,
     presetId: string,
   ): Promise<PluginInstance> {
-    const _preset = await this?.loadPreset(presetId);
+    const preset = await this?.loadPreset(presetId);
     if (!preset) {
       throw new Error(`Preset not found: ${presetId}`);
     }
@@ -1213,16 +1209,18 @@ class PluginHostService {
     return this?.updateInstanceParameters(instanceId, preset?.parameters);
   }
 
-  getFactoryPresets(pluginId: string): Array<{
+  getFactoryPresets(
+    pluginId: string,
+  ): Array<{
     name: string;
     parameters: Record<string, number | boolean | string>;
   }> {
-    const _plugin = this?.getPluginById(pluginId);
+    const plugin = this?.getPluginById(pluginId);
     if (!plugin) {
       return [];
     }
 
-    const _presets = [{ name: "Default", parameters: plugin?.defaultPreset }];
+    const presets = [{ name: "Default", parameters: plugin.defaultPreset }];
 
     if (plugin?.type === "reverb") {
       presets?.push(
@@ -1822,4 +1820,4 @@ class PluginHostService {
   }
 }
 
-export const _pluginHostService = new PluginHostService();
+export const pluginHostService = new PluginHostService();

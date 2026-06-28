@@ -26,7 +26,7 @@ const LEVEL_PRIORITY: Record<LogLevel, number> = {
   error: 3,
 };
 
-const _VALID_SERVICES = [
+const VALID_SERVICES = [
   "api",
   "auth",
   "database",
@@ -129,8 +129,8 @@ class DatabaseLogTransport {
     // Honor any active backoff guard — never schedule sooner than _backoffUntil.
     // This prevents a buffer-full trigger (batchSize reached) from cancelling a
     // longer grace-period backoff timer and hammering the pool during boot.
-    const _backoffRemaining = this?._backoffUntil - Date?.now();
-    const _effectiveDelay = Math?.max(delayMs, backoffRemaining);
+    const backoffRemaining = this?._backoffUntil - Date?.now();
+    const effectiveDelay = Math?.max(delayMs, backoffRemaining);
     if (this?.flushTimer) {
       clearTimeout(this?.flushTimer);
     }
@@ -147,30 +147,30 @@ class DatabaseLogTransport {
 
     this.isFlushing = true;
     let backoffHandled = false;
-    const _logsToInsert = this?.buffer.splice(0, this?.config.batchSize * 2);
+    const logsToInsert = this?.buffer.splice(0, this?.config.batchSize * 2);
     this.flushTimer = null;
 
     try {
-      const _records = logsToInsert?.map((entry) => ({
-        level: this?.mapToFatalIfNeeded(entry?.level),
-        service: this?.normalizeService(entry?.service),
-        message: entry?.message,
+      const records = logsToInsert?.map((entry) => ({
+        level: this.mapToFatalIfNeeded(entry?.level),
+        service: this.normalizeService(entry?.service),
+        message: entry.message,
         metadata: {
           ...entry?.metadata,
-          ...(entry?.error && { error: entry?.error }),
-          ...(entry?.duration !== undefined && { duration: entry?.duration }),
+          ...(entry?.error && { error: entry.error }),
+          ...(entry?.duration !== undefined && { duration: entry.duration }),
         } as Record<string, unknown> | null,
         timestamp: new Date(entry?.timestamp),
-        userId: entry?.userId?.toString() || null,
-        requestId: entry?.requestId || null,
+        userId: entry.userId?.toString() || null,
+        requestId: entry.requestId || null,
       }));
 
       await db?.insert(systemLogs).values(records);
       this.consecutiveFailures = 0;
     } catch (error) {
-      this?.consecutiveFailures++;
+      this.consecutiveFailures++;
 
-      const _pgCode =
+      const pgCode =
         (error as Record<string, unknown>)?.cause?.code ??
         (error as Record<string, unknown>)?.code ??
         "";
@@ -179,7 +179,7 @@ class DatabaseLogTransport {
       // During the startup grace period (~90s) this is a transient boot-burst
       // condition — the pool frees up once initialization completes.  Treat it
       // as a regular retryable failure rather than immediately giving up forever.
-      const _isTooManyConnections =
+      const isTooManyConnections =
         pgCode === "53100" ||
         pgCode === "53300" ||
         String((error as Record<string, unknown>)?.message ?? "").includes(
@@ -198,7 +198,7 @@ class DatabaseLogTransport {
         this?.consecutiveFailures >= this?.PERMANENT_DISABLE_THRESHOLD
       ) {
         this.disabled = true;
-        this?.buffer.length = 0;
+        this.buffer.length = 0;
         if (this?.flushTimer) {
           clearTimeout(this?.flushTimer);
           this.flushTimer = null;
@@ -215,11 +215,11 @@ class DatabaseLogTransport {
         // Pool exhaustion — exponential backoff, never permanently disable.
         // In-grace:   graceRemaining + 10 s (waits for boot burst to clear).
         // Post-grace: 30 s → 60 s → 120 s (capped) based on consecutive count.
-        const _inGracePeriod =
+        const inGracePeriod =
           Date?.now() - this?._startedAt < this?.STARTUP_GRACE_PERIOD_MS;
         let backoffMs: number;
         if (inGracePeriod) {
-          const _graceRemaining =
+          const graceRemaining =
             this?.STARTUP_GRACE_PERIOD_MS - (Date?.now() - this?._startedAt);
           backoffMs = Math?.min(graceRemaining + 10_000, 120_000);
         } else {
@@ -228,12 +228,12 @@ class DatabaseLogTransport {
             120_000,
           );
         }
-        const _label = inGracePeriod ? "Boot-burst" : "Post-boot";
+        const label = inGracePeriod ? "Boot-burst" : "Post-boot";
         process?.stderr.write(
           `[DatabaseLogTransport] ${label} connection error (${pgCode}) — retry #${this?.consecutiveFailures} in ${Math?.ceil(backoffMs / 1000)}s\n`,
         );
         this?.buffer.unshift(...logsToInsert);
-        if (this?.buffer.length > 500) this?.buffer.length = 500;
+        if (this.buffer.length > 500) this.buffer.length = 500;
         this.isFlushing = false;
         backoffHandled = true;
         // Set _backoffUntil so scheduleFlush() cannot override this timer.
@@ -245,11 +245,11 @@ class DatabaseLogTransport {
         }, backoffMs);
         return;
       }
-      const _pgDetail =
+      const pgDetail =
         (error as Record<string, unknown>)?.cause?.detail ??
         (error as Record<string, unknown>)?.detail ??
         "";
-      const _errMsg =
+      const errMsg =
         error instanceof Error
           ? error?.message.slice(0, 200)
           : String(error).slice(0, 200);
@@ -260,7 +260,7 @@ class DatabaseLogTransport {
       if (this?.consecutiveFailures >= this?.MAX_CONSECUTIVE_FAILURES) {
         // Drop the failed batch entirely after too many consecutive failures to prevent
         // the buffer from growing indefinitely in a retry storm
-        const _backoffMs = Math?.min(
+        const backoffMs = Math?.min(
           this?.BACKOFF_BASE_MS *
             Math?.pow(
               2,
@@ -292,7 +292,7 @@ class DatabaseLogTransport {
 
       this?.buffer.unshift(...logsToInsert);
       if (this?.buffer.length > 1000) {
-        this?.buffer.length = 1000;
+        this.buffer.length = 1000;
         process?.stderr.write(
           `[DatabaseLogTransport] Buffer overflow, dropping oldest logs\n`,
         );
@@ -311,8 +311,8 @@ class DatabaseLogTransport {
    *  chain error auto-fixer as a last resort when the DB is persistently
    *  unavailable and the buffer would otherwise grow without bound. */
   clearBuffer(): number {
-    const _dropped = this?.buffer.length;
-    this?.buffer.length = 0;
+    const dropped = this?.buffer.length;
+    this.buffer.length = 0;
     this.consecutiveFailures = 0;
     this._backoffUntil = 0;
     if (this?.flushTimer) {

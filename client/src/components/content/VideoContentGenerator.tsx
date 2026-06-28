@@ -41,15 +41,7 @@ import {
   type BrowserCapabilities,
 } from "@/lib/video/BrowserCapabilities";
 import { VideoExporter, type ExportProgress } from "@/lib/video/VideoExporter";
-import {
-  type AspectRatio,
-  type PromoTemplateOptions,
-  type SocialTeaserOptions,
-  type ReleaseAnnouncementOptions,
-  type QuoteLyricOptions,
-  DEFAULT_PALETTES,
-  ASPECT_RATIOS,
-} from "@/lib/video/templates/PromoTemplates";
+import { type AspectRatio, type PromoTemplateOptions, type SocialTeaserOptions, type ReleaseAnnouncementOptions, type QuoteLyricOptions, DEFAULT_PALETTES, ASPECT_RATIOS } from "@/lib/video/templates/PromoTemplates";
 
 export type Platform =
   | "twitter"

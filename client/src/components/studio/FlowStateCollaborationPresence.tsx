@@ -1,16 +1,7 @@
 import { logger } from "@/lib/logger";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Crown,
-  Eye,
-  Edit3,
-  Mic,
-  MousePointer2,
-  Wifi,
-  WifiOff,
-  RefreshCw,
-} from "lucide-react";
+import { Crown, Eye, Edit3, Mic, MousePointer2, Wifi, WifiOff, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface Collaborator {

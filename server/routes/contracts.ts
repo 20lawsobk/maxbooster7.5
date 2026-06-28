@@ -8,11 +8,7 @@ import { taxFormService, TaxpayerInfo } from "../services/taxFormService";
 import { logger } from "../logger.js";
 import crypto from "crypto";
 import { db } from "../db";
-import {
-  marketplaceDisputes,
-  contractTemplates,
-  splitSheets,
-} from "@shared/schema";
+import { marketplaceDisputes, contractTemplates, splitSheets } from "@shared/schema";
 import { eq, and, or, desc, notInArray, sql } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
 
@@ -24,18 +20,18 @@ interface SplitParticipant {
   splitPercentage: number;
 }
 
-const _router = Router();
+const router = Router();
 
 router?.get("/templates", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _builtInTemplates = contractTemplateService?.getTemplates();
+    const builtInTemplates = contractTemplateService?.getTemplates();
     const { category } = req?.query;
-    const _userId = req?.user?.id;
+    const userId = req?.user?.id;
 
     let userCustomTemplates: Record<string, unknown>[] = [];
     if (userId) {
       try {
-        const _dbTemplates = await db
+        const dbTemplates = await db
           .select()
           .from(contractTemplates)
           .where(
@@ -46,12 +42,12 @@ router?.get("/templates", requireAuth, async (req: Request, res: Response) => {
           )
           .limit(50);
         userCustomTemplates = dbTemplates?.map((t) => ({
-          id: t?.id,
-          type: t?.content as string,
-          name: t?.name,
-          description: t?.description || "",
-          category: t?.category || "Custom",
-          variables: Array?.isArray(t?.variables) ? t?.variables : [],
+          id: t.id,
+          type: t.content as string,
+          name: t.name,
+          description: t.description || "",
+          category: t.category || "Custom",
+          variables: Array.isArray(t?.variables) ? t?.variables : [],
           isPremium: false,
           isCustom: true,
         }));
@@ -63,14 +59,14 @@ router?.get("/templates", requireAuth, async (req: Request, res: Response) => {
       }
     }
 
-    const _allTemplates = [...builtInTemplates, ...userCustomTemplates];
+    const allTemplates = [...builtInTemplates, ...userCustomTemplates];
 
     if (category) {
-      const _filtered = allTemplates?.filter((t) => t?.category === category);
+      const filtered = allTemplates?.filter((t) => t?.category === category);
       return res?.json({ templates: filtered });
     }
 
-    const _categories = [...new Set(allTemplates?.map((t) => t?.category))];
+    const categories = [...new Set(allTemplates?.map((t) => t?.category))];
     return res?.json({ templates: allTemplates, categories });
   } catch (error) {
     logger?.warn({ err: error }, "Error fetching contract templates:");
@@ -84,7 +80,7 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const { templateId } = req?.params;
-      const _template = contractTemplateService?.getTemplateById(templateId);
+      const template = contractTemplateService?.getTemplateById(templateId);
 
       if (!template) {
         return res?.status(404).json({ error: "Template not found" });
@@ -103,7 +99,7 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { name, description, content, category, variables } = req?.body;
 
       if (!name || !content) {
@@ -136,9 +132,9 @@ router?.put(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { templateId } = req?.params;
-      const _updates = req?.body;
+      const updates = req?.body;
 
       const [updated] = await db
         .update(contractTemplates)
@@ -168,7 +164,7 @@ router?.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { templateId } = req?.params;
 
       const [deleted] = await db
@@ -183,9 +179,11 @@ router?.delete(
         .returning();
 
       if (!deleted) {
-        return res.status(404).json({
-          error: "Template not found or cannot delete default templates",
-        });
+        return res
+          .status(404)
+          .json({
+            error: "Template not found or cannot delete default templates",
+          });
       }
 
       return res?.json({ success: true });
@@ -205,7 +203,7 @@ router?.post("/generate", requireAuth, async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "templateId is required" });
     }
 
-    const _contract = contractTemplateService?.generateContract(
+    const contract = contractTemplateService?.generateContract(
       templateId,
       variables as ContractVariables,
       req?.user!.id,
@@ -224,8 +222,8 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       await contractTemplateService?.waitForInit();
-      const _userId = req?.user!.id;
-      const _contracts = contractTemplateService?.getContractsByUser(userId);
+      const userId = req?.user!.id;
+      const contracts = contractTemplateService?.getContractsByUser(userId);
       return res?.json({ contracts });
     } catch (error) {
       logger?.warn({ err: error }, "Error fetching user contracts:");
@@ -237,7 +235,7 @@ router?.get(
 router?.get("/my", requireAuth, async (req: Request, res: Response) => {
   try {
     await contractTemplateService?.waitForInit();
-    const _contracts = contractTemplateService?.getContractsByUser(req?.user!.id);
+    const contracts = contractTemplateService?.getContractsByUser(req?.user!.id);
     return res?.json({ contracts });
   } catch (error) {
     logger?.warn({ err: error }, "Error fetching user contracts:");
@@ -253,7 +251,7 @@ router?.get("/tax-rates", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "country is required" });
     }
 
-    const _rates = invoiceService?.getTaxRates(
+    const rates = invoiceService?.getTaxRates(
       country as string,
       state as string,
     );
@@ -271,8 +269,8 @@ router?.get("/marketplace-disputes", async (req: Request, res: Response) => {
     }
 
     const { status } = req?.query;
-    const _userId = req?.user!.id;
-    const _isAdmin = isAdminUser(req?.user);
+    const userId = req?.user!.id;
+    const isAdmin = isAdminUser(req?.user);
 
     let disputes;
     if (isAdmin) {
@@ -313,7 +311,7 @@ router?.get("/:contractId", async (req: Request, res: Response) => {
     }
 
     const { contractId } = req?.params;
-    const _contract = contractTemplateService?.getContract(contractId);
+    const contract = contractTemplateService?.getContract(contractId);
 
     if (!contract) {
       return res?.status(404).json({ error: "Contract not found" });
@@ -339,16 +337,16 @@ router?.post("/:contractId/sign", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "partyName is required" });
     }
 
-    const _signatureHash = crypto
+    const signatureHash = crypto
       .createHash("sha256")
       .update(
         `${signature || "electronic-signature"}-${Date?.now()}-${req?.user!.id}`,
       )
       .digest("hex");
 
-    const _ipAddress = req?.ip || req?.socket.remoteAddress || "unknown";
+    const ipAddress = req?.ip || req?.socket.remoteAddress || "unknown";
 
-    const _contract = await contractTemplateService?.signContract(
+    const contract = await contractTemplateService?.signContract(
       contractId,
       partyName,
       {
@@ -371,7 +369,7 @@ router?.get("/:contractId/pdf", async (req: Request, res: Response) => {
     }
 
     const { contractId } = req?.params;
-    const _pdfBuffer = contractTemplateService?.generatePDF(contractId);
+    const pdfBuffer = contractTemplateService?.generatePDF(contractId);
 
     res?.setHeader("Content-Type", "application/pdf");
     res?.setHeader(
@@ -393,13 +391,13 @@ router?.post("/validate", requireAuth, async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "templateId is required" });
     }
 
-    const _validation = contractTemplateService?.validateContractVariables(
+    const validation = contractTemplateService?.validateContractVariables(
       templateId,
       variables as ContractVariables,
     );
 
     return res?.json({
-      outcome: validation?.valid ? "validation_passed" : "validation_errors",
+      outcome: validation.valid ? "validation_passed" : "validation_errors",
       ...validation,
     });
   } catch (error) {
@@ -416,7 +414,7 @@ router?.post("/preview", requireAuth, async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "templateId is required" });
     }
 
-    const _content = contractTemplateService?.getContractPreview(
+    const content = contractTemplateService?.getContractPreview(
       templateId,
       variables as ContractVariables,
     );
@@ -439,7 +437,7 @@ router?.patch(
       const { contractId } = req?.params;
       const { variables } = req?.body;
 
-      const _contract = contractTemplateService?.updateContractDraft(
+      const contract = contractTemplateService?.updateContractDraft(
         contractId,
         variables,
       );
@@ -462,7 +460,7 @@ router?.post(
     try {
       const { contractId } = req?.params;
 
-      const _contract = contractTemplateService?.sendForSignature(contractId);
+      const contract = contractTemplateService?.sendForSignature(contractId);
 
       return res?.json({
         outcome: "signature_requested",
@@ -483,7 +481,7 @@ router?.get(
     try {
       const { contractId } = req?.params;
 
-      const _status = contractTemplateService?.getSignatureStatus(contractId);
+      const status = contractTemplateService?.getSignatureStatus(contractId);
 
       let outcome = "signature_pending";
       if (status?.allSigned) {
@@ -517,7 +515,7 @@ router?.post(
           .json({ error: "partyName and reason are required" });
       }
 
-      const _contract = contractTemplateService?.declineSignature(
+      const contract = contractTemplateService?.declineSignature(
         contractId,
         partyName,
         reason,
@@ -543,7 +541,7 @@ router?.post(
       const { contractId } = req?.params;
       const { reason } = req?.body;
 
-      const _contract = contractTemplateService?.voidContract(
+      const contract = contractTemplateService?.voidContract(
         contractId,
         reason || "No reason provided",
       );
@@ -566,7 +564,7 @@ router?.get(
     try {
       const { contractId } = req?.params;
 
-      const _timeline = contractTemplateService?.getContractTimeline(contractId);
+      const timeline = contractTemplateService?.getContractTimeline(contractId);
 
       return res?.json({
         outcome: "timeline_loaded",
@@ -584,7 +582,7 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _stats = contractTemplateService?.getContractStats(req?.user!.id);
+      const stats = contractTemplateService?.getContractStats(req?.user!.id);
 
       return res?.json({
         outcome: "stats_loaded",
@@ -603,8 +601,8 @@ router?.get("/invoices/list", async (req: Request, res: Response) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _invoices = invoiceService?.getInvoicesByUser(req?.user!.id);
-    const _summary = invoiceService?.getInvoiceSummary(req?.user!.id);
+    const invoices = invoiceService?.getInvoicesByUser(req?.user!.id);
+    const summary = invoiceService?.getInvoiceSummary(req?.user!.id);
 
     return res?.json({ invoices, summary });
   } catch (error) {
@@ -638,8 +636,8 @@ router?.post("/invoices/create", async (req: Request, res: Response) => {
         .json({ error: "from, to, and lineItems are required" });
     }
 
-    const _invoice = invoiceService?.createInvoice({
-      userId: req?.user!.id,
+    const invoice = invoiceService?.createInvoice({
+      userId: req.user!.id,
       type: "sale",
       from,
       to,
@@ -667,7 +665,7 @@ router?.get("/invoices/:invoiceId", async (req: Request, res: Response) => {
     }
 
     const { invoiceId } = req?.params;
-    const _invoice = invoiceService?.getInvoice(invoiceId);
+    const invoice = invoiceService?.getInvoice(invoiceId);
 
     if (!invoice) {
       return res?.status(404).json({ error: "Invoice not found" });
@@ -699,12 +697,12 @@ router?.patch(
         return res?.status(400).json({ error: "status is required" });
       }
 
-      const _existing = invoiceService?.getInvoice(invoiceId);
+      const existing = invoiceService?.getInvoice(invoiceId);
       if (!existing || existing?.userId !== req?.user!.id) {
         return res?.status(404).json({ error: "Invoice not found" });
       }
 
-      const _invoice = invoiceService?.updateInvoiceStatus(invoiceId, status, {
+      const invoice = invoiceService?.updateInvoiceStatus(invoiceId, status, {
         paidDate: status === "paid" ? new Date() : undefined,
         paymentMethod,
       });
@@ -724,11 +722,11 @@ router?.get("/invoices/:invoiceId/pdf", async (req: Request, res: Response) => {
     }
 
     const { invoiceId } = req?.params;
-    const _invoiceCheck = invoiceService?.getInvoice(invoiceId);
+    const invoiceCheck = invoiceService?.getInvoice(invoiceId);
     if (!invoiceCheck || invoiceCheck?.userId !== req?.user!.id) {
       return res?.status(404).json({ error: "Invoice not found" });
     }
-    const _pdfBuffer = invoiceService?.generatePDF(invoiceId);
+    const pdfBuffer = invoiceService?.generatePDF(invoiceId);
 
     res?.setHeader("Content-Type", "application/pdf");
     res?.setHeader(
@@ -748,7 +746,7 @@ router?.get("/invoices/overdue/list", async (req: Request, res: Response) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _overdueInvoices = invoiceService?.getOverdueInvoices(req?.user!.id);
+    const overdueInvoices = invoiceService?.getOverdueInvoices(req?.user!.id);
     return res?.json({ invoices: overdueInvoices });
   } catch (error) {
     logger?.warn({ err: error }, "Error fetching overdue invoices:");
@@ -758,7 +756,7 @@ router?.get("/invoices/overdue/list", async (req: Request, res: Response) => {
 
 router?.get("/tax-forms/available", async (_req: Request, res: Response) => {
   try {
-    const _availableForms = taxFormService?.getAvailableForms();
+    const availableForms = taxFormService?.getAvailableForms();
     return res?.json({ forms: availableForms });
   } catch (error) {
     logger?.warn({ err: error }, "Error fetching available tax forms:");
@@ -823,9 +821,11 @@ router?.post("/tax-forms/generate", async (req: Request, res: Response) => {
         break;
       case "1099-NEC":
         if (!recipientInfo || !amounts) {
-          return res.status(400).json({
-            error: "recipientInfo and amounts are required for 1099-NEC",
-          });
+          return res
+            .status(400)
+            .json({
+              error: "recipientInfo and amounts are required for 1099-NEC",
+            });
         }
         form = taxFormService?.generate1099NEC(
           req?.user!.id,
@@ -837,9 +837,11 @@ router?.post("/tax-forms/generate", async (req: Request, res: Response) => {
         break;
       case "1099-MISC":
         if (!recipientInfo || !amounts) {
-          return res.status(400).json({
-            error: "recipientInfo and amounts are required for 1099-MISC",
-          });
+          return res
+            .status(400)
+            .json({
+              error: "recipientInfo and amounts are required for 1099-MISC",
+            });
         }
         form = taxFormService?.generate1099MISC(
           req?.user!.id,
@@ -851,9 +853,11 @@ router?.post("/tax-forms/generate", async (req: Request, res: Response) => {
         break;
       case "1099-K":
         if (!recipientInfo || !amounts) {
-          return res.status(400).json({
-            error: "recipientInfo and amounts are required for 1099-K",
-          });
+          return res
+            .status(400)
+            .json({
+              error: "recipientInfo and amounts are required for 1099-K",
+            });
         }
         form = taxFormService?.generate1099K(
           req?.user!.id,
@@ -883,7 +887,7 @@ router?.get("/tax-forms/:formId", async (req: Request, res: Response) => {
     }
 
     const { formId } = req?.params;
-    const _form = taxFormService?.getTaxForm(formId);
+    const form = taxFormService?.getTaxForm(formId);
 
     if (!form) {
       return res?.status(404).json({ error: "Tax form not found" });
@@ -905,14 +909,14 @@ router?.post("/tax-forms/:formId/sign", async (req: Request, res: Response) => {
     const { formId } = req?.params;
     const { signature } = req?.body;
 
-    const _signatureHash = crypto
+    const signatureHash = crypto
       .createHash("sha256")
       .update(
         `${signature || "electronic-signature"}-${Date?.now()}-${req?.user!.id}`,
       )
       .digest("hex");
 
-    const _form = taxFormService?.signTaxForm(formId, signatureHash);
+    const form = taxFormService?.signTaxForm(formId, signatureHash);
     return res?.json(form);
   } catch (error) {
     logger?.warn({ err: error }, "Error signing tax form:");
@@ -927,7 +931,7 @@ router?.get("/tax-forms/:formId/pdf", async (req: Request, res: Response) => {
     }
 
     const { formId } = req?.params;
-    const _form = taxFormService?.getTaxForm(formId);
+    const form = taxFormService?.getTaxForm(formId);
 
     if (!form) {
       return res?.status(404).json({ error: "Tax form not found" });
@@ -956,7 +960,7 @@ router?.get("/tax-forms/:formId/pdf", async (req: Request, res: Response) => {
     res?.setHeader("Content-Type", "application/pdf");
     res?.setHeader(
       "Content-Disposition",
-      `attachment; filename="${form?.formType}-${formId}.pdf"`,
+      `attachment; filename="${form.formType}-${formId}.pdf"`,
     );
     return res?.send(pdfBuffer);
   } catch (error) {
@@ -983,7 +987,7 @@ router?.post(
         return res?.status(400).json({ error: "grossAmount is required" });
       }
 
-      const _calculation = taxFormService?.calculateWithholding(
+      const calculation = taxFormService?.calculateWithholding(
         grossAmount,
         isUSPerson ?? true,
         country,
@@ -1029,7 +1033,7 @@ router?.get(
         }
       }
 
-      const _summary = taxFormService?.generateTaxSummary(
+      const summary = taxFormService?.generateTaxSummary(
         req?.user!.id,
         parseInt(taxYear),
         earningsData,
@@ -1052,12 +1056,12 @@ router?.get(
 
       const { taxYear } = req?.params;
 
-      const _summary = taxFormService?.generateTaxSummary(
+      const summary = taxFormService?.generateTaxSummary(
         req?.user!.id,
         parseInt(taxYear),
         [],
       );
-      const _pdfBuffer = taxFormService?.generateTaxSummaryPDF(summary);
+      const pdfBuffer = taxFormService?.generateTaxSummaryPDF(summary);
 
       res?.setHeader("Content-Type", "application/pdf");
       res?.setHeader(
@@ -1078,8 +1082,8 @@ router?.get("/split-sheets/list", async (req: Request, res: Response) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _userId = req?.user!.id;
-    const _rows = await db
+    const userId = req?.user!.id;
+    const rows = await db
       .select()
       .from(splitSheets)
       .where(
@@ -1112,12 +1116,14 @@ router?.post("/split-sheets/create", async (req: Request, res: Response) => {
       !participants ||
       participants?.length === 0
     ) {
-      return res.status(400).json({
-        error: "releaseId, contractName, and participants are required",
-      });
+      return res
+        .status(400)
+        .json({
+          error: "releaseId, contractName, and participants are required",
+        });
     }
 
-    const _totalSplit = participants?.reduce(
+    const totalSplit = participants?.reduce(
       (sum: number, p: SplitParticipant) => sum + p?.splitPercentage,
       0,
     );
@@ -1127,15 +1133,15 @@ router?.post("/split-sheets/create", async (req: Request, res: Response) => {
         .json({ error: "Split percentages must total 100%" });
     }
 
-    const _signatures = participants?.map((p: SplitParticipant) => ({
-      userId: p?.userId,
+    const signatures = participants?.map((p: SplitParticipant) => ({
+      userId: p.userId,
     }));
 
     const [inserted] = await db
       .insert(splitSheets)
       .values({
         releaseId,
-        creatorId: req?.user!.id,
+        creatorId: req.user!.id,
         contractName,
         participants,
         status: "pending_signature",
@@ -1185,7 +1191,7 @@ router?.post(
 
       const { contractId } = req?.params;
       const { signature } = req?.body;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       const [contract] = await db
         .select()
@@ -1197,12 +1203,12 @@ router?.post(
         return res?.status(404).json({ error: "Split sheet not found" });
       }
 
-      const _signatures = contract?.signatures as Array<{
+      const signatures = contract?.signatures as Array<{
         userId: string;
         signedAt?: string;
         signatureHash?: string;
       }>;
-      const _sigIndex = signatures?.findIndex((s) => s?.userId === userId);
+      const sigIndex = signatures?.findIndex((s) => s?.userId === userId);
 
       if (sigIndex === -1) {
         return res
@@ -1210,7 +1216,7 @@ router?.post(
           .json({ error: "You are not a participant in this split sheet" });
       }
 
-      const _signatureHash = crypto
+      const signatureHash = crypto
         .createHash("sha256")
         .update(
           `${signature || "electronic-signature"}-${Date?.now()}-${userId}`,
@@ -1223,8 +1229,8 @@ router?.post(
         signatureHash,
       };
 
-      const _allSigned = signatures?.every((s) => s?.signedAt);
-      const _newStatus = allSigned ? "active" : contract?.status;
+      const allSigned = signatures?.every((s) => s?.signedAt);
+      const newStatus = allSigned ? "active" : contract?.status;
 
       const [updated] = await db
         .update(splitSheets)
@@ -1262,11 +1268,14 @@ router?.post(
         !role ||
         splitPercentage === undefined
       ) {
-        return res.status(400).json({
-          error: "userId, name, email, role, and splitPercentage are required",
-        });
+        return res
+          .status(400)
+          .json({
+            error:
+              "userId, name, email, role, and splitPercentage are required",
+          });
       }
-      const _emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex?.test(email)) {
         return res?.status(400).json({ error: "Invalid email address format" });
       }
@@ -1287,10 +1296,10 @@ router?.post(
           .json({ error: "Only the creator can add participants" });
       }
 
-      const _participants = contract?.participants as SplitParticipant[];
+      const participants = contract?.participants as SplitParticipant[];
       participants?.push({ userId, name, email, role, splitPercentage });
 
-      const _signatures = contract?.signatures as Array<{ userId: string }>;
+      const signatures = contract?.signatures as Array<{ userId: string }>;
       signatures?.push({ userId });
 
       const [updated] = await db
@@ -1325,12 +1334,12 @@ router?.post(
           .json({ error: "participants array is required" });
       }
 
-      const _totalSplit = participants?.reduce(
+      const totalSplit = participants?.reduce(
         (sum: number, p: Record<string, unknown>) =>
           sum + (p?.splitPercentage || 0),
         0,
       );
-      const _isValid = Math?.abs(totalSplit - 100) <= 0.01;
+      const isValid = Math?.abs(totalSplit - 100) <= 0.01;
 
       return res?.json({
         valid: isValid,
@@ -1350,7 +1359,7 @@ router?.post(
 // MARKETPLACE DISPUTE HANDLING
 // =========================================
 
-const _VALID_DISPUTE_TYPES = [
+const VALID_DISPUTE_TYPES = [
   "license_issue",
   "quality_issue",
   "non_delivery",
@@ -1374,11 +1383,11 @@ const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
   closed: [],
 };
 
-const _isAdminUser = (user: Record<string, unknown>): boolean => {
+const isAdminUser = (user: Record<string, unknown>): boolean => {
   return user?.role === "admin" || user?.role === "superadmin";
 };
 
-const _canAccessDispute = (
+const canAccessDispute = (
   dispute: Record<string, unknown>,
   userId: string,
   userRole: string | null,
@@ -1401,9 +1410,11 @@ router?.post("/marketplace-disputes", async (req: Request, res: Response) => {
       req?.body;
 
     if (!orderId || !disputeType || !subject || !description) {
-      return res.status(400).json({
-        error: "orderId, disputeType, subject, and description are required",
-      });
+      return res
+        .status(400)
+        .json({
+          error: "orderId, disputeType, subject, and description are required",
+        });
     }
 
     if (!VALID_DISPUTE_TYPES?.includes(disputeType)) {
@@ -1426,7 +1437,7 @@ router?.post("/marketplace-disputes", async (req: Request, res: Response) => {
         .json({ error: "Description must be 5000 characters or less" });
     }
 
-    const _existingDisputes = await db
+    const existingDisputes = await db
       .select()
       .from(marketplaceDisputes)
       .where(
@@ -1446,21 +1457,21 @@ router?.post("/marketplace-disputes", async (req: Request, res: Response) => {
         });
     }
 
-    const _now = new Date();
-    const _initialEvidence = (evidence || []).map(
+    const now = new Date();
+    const initialEvidence = (evidence || []).map(
       (e: Record<string, unknown>) => ({
-        type: e?.type || "document",
-        url: e?.url,
-        uploadedAt: now?.toISOString(),
-        uploadedBy: req?.user!.id,
+        type: e.type || "document",
+        url: e.url,
+        uploadedAt: now.toISOString(),
+        uploadedBy: req.user!.id,
       }),
     );
 
-    const _initialMessages = [
+    const initialMessages = [
       {
         from: "system",
         message: "Dispute created. Our team will review within 24-48 hours.",
-        sentAt: now?.toISOString(),
+        sentAt: now.toISOString(),
         type: "system" as const,
       },
     ];
@@ -1469,7 +1480,7 @@ router?.post("/marketplace-disputes", async (req: Request, res: Response) => {
       .insert(marketplaceDisputes)
       .values({
         orderId,
-        buyerId: req?.user!.id,
+        buyerId: req.user!.id,
         sellerId: sellerId || "",
         disputeType,
         status: "open",
@@ -1573,15 +1584,15 @@ router?.post(
           });
       }
 
-      const _isAdmin = isAdminUser(req?.user);
-      const _newMessage = {
-        from: req?.user!.id,
-        message: message?.trim(),
+      const isAdmin = isAdminUser(req?.user);
+      const newMessage = {
+        from: req.user!.id,
+        message: message.trim(),
         sentAt: new Date().toISOString(),
         type: isAdmin ? ("admin" as const) : ("user" as const),
       };
 
-      const _updatedMessages = [...(dispute?.messages || []), newMessage];
+      const updatedMessages = [...(dispute?.messages || []), newMessage];
       let newStatus = dispute?.status;
 
       if (
@@ -1672,21 +1683,21 @@ router?.post(
           });
       }
 
-      const _newEvidence = {
+      const newEvidence = {
         type: type || "document",
         url,
         uploadedAt: new Date().toISOString(),
-        uploadedBy: req?.user!.id,
+        uploadedBy: req.user!.id,
       };
 
-      const _isAdmin = isAdminUser(req?.user);
+      const isAdmin = isAdminUser(req?.user);
       let uploaderLabel = "admin";
       if (!isAdmin) {
         uploaderLabel = dispute?.buyerId === req?.user!.id ? "buyer" : "seller";
       }
 
-      const _updatedEvidence = [...(dispute?.evidence || []), newEvidence];
-      const _updatedMessages = [
+      const updatedEvidence = [...(dispute?.evidence || []), newEvidence];
+      const updatedMessages = [
         ...(dispute?.messages || []),
         {
           from: "system",
@@ -1758,13 +1769,13 @@ router?.post(
           });
       }
 
-      const _now = new Date();
-      const _updatedMessages = [
+      const now = new Date();
+      const updatedMessages = [
         ...(dispute?.messages || []),
         {
           from: "system",
           message: `Dispute escalated${reason ? `: ${reason}` : ""}. A senior support representative will review within 24 hours.`,
-          sentAt: now?.toISOString(),
+          sentAt: now.toISOString(),
           type: "system" as const,
         },
       ];
@@ -1810,7 +1821,7 @@ router?.post(
           .json({ error: "Outcome and explanation are required" });
       }
 
-      const _validOutcomes = [
+      const validOutcomes = [
         "refund_full",
         "refund_partial",
         "no_refund",
@@ -1844,7 +1855,7 @@ router?.post(
         return res?.status(404).json({ error: "Dispute not found" });
       }
 
-      const _isAdmin = isAdminUser(req?.user);
+      const isAdmin = isAdminUser(req?.user);
       if (outcome !== "mutual_agreement" && !isAdmin) {
         if (
           dispute?.buyerId !== req?.user!.id &&
@@ -1866,21 +1877,21 @@ router?.post(
           });
       }
 
-      const _now = new Date();
-      const _resolution = {
+      const now = new Date();
+      const resolution = {
         outcome,
         refundAmount: outcome === "refund_partial" ? refundAmount : undefined,
         explanation,
-        resolvedBy: req?.user!.id,
-        resolvedAt: now?.toISOString(),
+        resolvedBy: req.user!.id,
+        resolvedAt: now.toISOString(),
       };
 
-      const _updatedMessages = [
+      const updatedMessages = [
         ...(dispute?.messages || []),
         {
           from: "system",
           message: `Dispute resolved with outcome: ${outcome?.replace(/_/g, " ")}. ${explanation}`,
-          sentAt: now?.toISOString(),
+          sentAt: now.toISOString(),
           type: "system" as const,
         },
       ];
@@ -1944,13 +1955,13 @@ router?.post(
           .json({ error: "Cannot withdraw a resolved or closed dispute" });
       }
 
-      const _now = new Date();
-      const _updatedMessages = [
+      const now = new Date();
+      const updatedMessages = [
         ...(dispute?.messages || []),
         {
           from: "system",
           message: "Dispute withdrawn by buyer.",
-          sentAt: now?.toISOString(),
+          sentAt: now.toISOString(),
           type: "system" as const,
         },
       ];
@@ -1986,8 +1997,8 @@ router?.get(
         return res?.status(401).json({ error: "Unauthorized" });
       }
 
-      const _userId = req?.user!.id;
-      const _isAdmin = isAdminUser(req?.user);
+      const userId = req?.user!.id;
+      const isAdmin = isAdminUser(req?.user);
 
       let userDisputes;
       if (isAdmin) {
@@ -2004,21 +2015,21 @@ router?.get(
           );
       }
 
-      const _stats = {
-        total: userDisputes?.length,
-        open: userDisputes?.filter((d) => d?.status === "open").length,
-        underReview: userDisputes?.filter((d) => d?.status === "under_review")
+      const stats = {
+        total: userDisputes.length,
+        open: userDisputes.filter((d) => d?.status === "open").length,
+        underReview: userDisputes.filter((d) => d?.status === "under_review")
           .length,
-        pendingResponse: userDisputes?.filter(
+        pendingResponse: userDisputes.filter(
           (d) =>
             d?.status === "pending_seller_response" ||
             d?.status === "pending_buyer_response",
         ).length,
-        resolved: userDisputes?.filter((d) => d?.status === "resolved").length,
-        escalated: userDisputes?.filter((d) => d?.status === "escalated").length,
-        closed: userDisputes?.filter((d) => d?.status === "closed").length,
-        asBuyer: userDisputes?.filter((d) => d?.buyerId === userId).length,
-        asSeller: userDisputes?.filter((d) => d?.sellerId === userId).length,
+        resolved: userDisputes.filter((d) => d?.status === "resolved").length,
+        escalated: userDisputes.filter((d) => d?.status === "escalated").length,
+        closed: userDisputes.filter((d) => d?.status === "closed").length,
+        asBuyer: userDisputes.filter((d) => d?.buyerId === userId).length,
+        asSeller: userDisputes.filter((d) => d?.sellerId === userId).length,
       };
 
       return res?.json({ stats });

@@ -12,9 +12,9 @@ import { EventEmitter } from "events";
 // distinct query hits the DB exactly once per cycle rather than on every call.
 // Zero PDIM overhead — fully in-process, no network I/O.
  // 5-minute bucket matches cycle interval
-const __hlCache = new Map<string, { value: unknown; expiresAt: number }>();
+const _hlCache = new Map<string, { value: unknown; expiresAt: number }>();
 function _hlGet<T>(key: string): T | undefined {
-  const _e = _hlCache?.get(key);
+  const e = _hlCache?.get(key);
   if (!e) return undefined;
   if (Date?.now() > e?.expiresAt) {
     _hlCache?.delete(key);
@@ -26,7 +26,7 @@ function _hlSet(key: string, value: unknown): void {
   // Fixed 6-minute TTL: covers 1 full 5-minute cycle plus a 60s buffer.
   // Key is NOT bucketed by wall-clock — same key across successive cycles so
   // cycle 2 reads what cycle 1 cached regardless of alignment.
-  _hlCache?.set(key, { value, expiresAt: Date?.now() + 6 * 60 * 1000 });
+  _hlCache?.set(key, { value, expiresAt: Date.now() + 6 * 60 * 1000 });
 }
 function _hlKey(id: string): string {
   // No wall-clock bucket in the key — TTL alone controls expiry.
@@ -34,23 +34,23 @@ function _hlKey(id: string): string {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-const _OWNER_LEARNING_RATE = 24.0; // 24x faster than average human
-const _OWNER_MULTIPLIER = 3.0; // 3x owner capacity
-const _LEARNING_MULTIPLIER = OWNER_LEARNING_RATE * OWNER_MULTIPLIER; // = 72x
-const _HUMAN_ANALYSIS_DIMENSIONS = 5;
-const _HYPER_ANALYSIS_DIMENSIONS =
+const OWNER_LEARNING_RATE = 24.0; // 24x faster than average human
+const OWNER_MULTIPLIER = 3.0; // 3x owner capacity
+const LEARNING_MULTIPLIER = OWNER_LEARNING_RATE * OWNER_MULTIPLIER; // = 72x
+const HUMAN_ANALYSIS_DIMENSIONS = 5;
+const HYPER_ANALYSIS_DIMENSIONS =
   HUMAN_ANALYSIS_DIMENSIONS * LEARNING_MULTIPLIER;
 
 // Hyper A/B testing — 30 simultaneous variates for signal density
-const _AB_MIN_IMPRESSIONS_PER_VARIATE = 30;
-const _AB_SIGNIFICANCE_THRESHOLD = 0.8;
+const AB_MIN_IMPRESSIONS_PER_VARIATE = 30;
+const AB_SIGNIFICANCE_THRESHOLD = 0.8;
 // AI server for CurriculumTrainer / DiffusionTrainer dispatch
 // PEER_TRAINING_NODE env var is always set to MaxCore — localhost fallback
 // would only apply in an isolated dev environment with no env vars at all.
-const _AI_SERVER_URL =
+const AI_SERVER_URL =
   process?.env.PEER_TRAINING_NODE ||
   process?.env.AI_SERVER_URL ||
-  "https://secure-ai-forge?.replit.app";
+  "https://secure-ai-forge.replit.app";
 
 interface MicroPattern {
   id: string;
@@ -254,7 +254,7 @@ class HyperLearningEngine extends EventEmitter {
    * delta, avoiding a flurry of clearInterval calls from minor pressure fluctuations.
    */
   applyDeadlinePressure(pressure: number): void {
-    const _prev = this?._pressureLevel;
+    const prev = this?._pressureLevel;
     this._pressureLevel = Math?.max(0, pressure);
 
     let targetMs: number;
@@ -304,13 +304,13 @@ class HyperLearningEngine extends EventEmitter {
   }
 
   private async runLearningCycle(): Promise<void> {
-    const _cycleStart = Date?.now();
-    const _cycleId = `hyper_${cycleStart}`;
+    const cycleStart = Date?.now();
+    const cycleId = `hyper_${cycleStart}`;
 
     logger?.info(`🧠 HyperLearning cycle ${cycleId} started`);
 
     try {
-      const _results = await Promise?.all([
+      const results = await Promise?.all([
         this?.runMicroPatternDetection(),
         this?.runCrossPlatformSynthesis(),
         this?.runPredictiveModeling(),
@@ -332,10 +332,10 @@ class HyperLearningEngine extends EventEmitter {
         adaptations,
       ] = results;
 
-      const _cycleEnd = Date?.now();
-      const _actualTimeMs = cycleEnd - cycleStart;
+      const cycleEnd = Date?.now();
+      const actualTimeMs = cycleEnd - cycleStart;
 
-      const _humanEquivalentHours = this?.calculateHumanEquivalent(
+      const humanEquivalentHours = this?.calculateHumanEquivalent(
         microPatterns?.length || 0,
         crossPlatform?.synthesisCount || 0,
         predictions?.length || 0,
@@ -346,13 +346,13 @@ class HyperLearningEngine extends EventEmitter {
         adaptations?.length || 0,
       );
 
-      this?.learningMetrics.actualProcessingTimeMs += actualTimeMs;
-      this?.learningMetrics.humanEquivalentHours += humanEquivalentHours;
-      this?.learningMetrics.learningMultiplier =
+      this.learningMetrics.actualProcessingTimeMs += actualTimeMs;
+      this.learningMetrics.humanEquivalentHours += humanEquivalentHours;
+      this.learningMetrics.learningMultiplier =
         (this?.learningMetrics.humanEquivalentHours * 3600000) /
         Math?.max(1, this?.learningMetrics.actualProcessingTimeMs);
 
-      const _insights = await this?.consolidateInsights(
+      const insights = await this?.consolidateInsights(
         microPatterns,
         crossPlatform,
         predictions,
@@ -379,8 +379,8 @@ class HyperLearningEngine extends EventEmitter {
 
       this?.emit("cycleCompleted", {
         cycleId,
-        insights: insights?.length,
-        learningMultiplier: this?.learningMetrics.learningMultiplier,
+        insights: insights.length,
+        learningMultiplier: this.learningMetrics.learningMultiplier,
         humanEquivalentHours,
         actualTimeMs,
       });
@@ -395,13 +395,13 @@ class HyperLearningEngine extends EventEmitter {
     Date?.now();
 
     try {
-      const _ninetyDaysAgo = new Date();
+      const ninetyDaysAgo = new Date();
       ninetyDaysAgo?.setDate(ninetyDaysAgo?.getDate() - 90);
 
-      const __microKey = _hlKey("micro_all_90d");
+      const microKey = _hlKey("micro_all_90d");
        
       let allData: Record<string, unknown>[] | undefined =
-        _hlGet<Record<string, unknown>[]>(_microKey);
+        _hlGet<Record<string, unknown>[]>(microKey);
       if (!allData) {
         allData = await db
           .select()
@@ -409,7 +409,7 @@ class HyperLearningEngine extends EventEmitter {
           .where(gte(autopilotLearningData?.createdAt, ninetyDaysAgo))
           .orderBy(desc(autopilotLearningData?.engagementRate))
           .limit(10000);
-        _hlSet(_microKey, allData);
+        _hlSet(microKey, allData);
         logger?.info(
           `[HyperLearning] micro_all_90d: ${allData?.length} rows fetched from DB (cached for next cycle)`,
         );
@@ -437,26 +437,26 @@ class HyperLearningEngine extends EventEmitter {
       patterns?.push(...this?.detectAudienceResponsePatterns(allData));
       patterns?.push(...this?.detectViralityPrecursors(allData));
 
-      this?.learningMetrics.microPatternsFound += patterns?.length;
-      this?.learningMetrics.totalDataPointsProcessed += allData?.length;
+      this.learningMetrics.microPatternsFound += patterns?.length;
+      this.learningMetrics.totalDataPointsProcessed += allData?.length;
 
-      const _significantPatterns = patterns?.filter(
+      const significantPatterns = patterns?.filter(
         (p) =>
           p?.confidence > this?.MICRO_PATTERN_THRESHOLD && p?.sampleSize >= 10,
       );
 
       for (const pattern of significantPatterns) {
-        const _key = `${pattern?.type}_${pattern?.pattern}`;
+        const key = `${pattern?.type}_${pattern?.pattern}`;
         if (!this?.microPatternCache.has(key)) {
           // Evict the oldest key when the Map reaches its capacity limit,
           // keeping memory bounded regardless of how many cycles run.
           if (this?.microPatternCache.size >= 500) {
-            const _firstKey = this?.microPatternCache.keys().next().value;
+            const firstKey = this?.microPatternCache.keys().next().value;
             if (firstKey) this?.microPatternCache.delete(firstKey);
           }
           this?.microPatternCache.set(key, []);
         }
-        const _arr = this?.microPatternCache.get(key)!;
+        const arr = this?.microPatternCache.get(key)!;
         arr?.push(pattern);
         // Keep only the 50 most recent observations per key to prevent
         // unbounded growth across long-running HyperLearning cycles.
@@ -481,26 +481,26 @@ class HyperLearningEngine extends EventEmitter {
 
     for (const post of data) {
       if (!post?.contentText) continue;
-      const _length = post?.contentText.length;
-      const _bucket = Math?.floor(length / 50) * 50;
-      const _key = `${bucket}-${bucket + 50}`;
+      const length = post?.contentText.length;
+      const bucket = Math?.floor(length / 50) * 50;
+      const key = `${bucket}-${bucket + 50}`;
 
       if (!buckets?.has(key)) {
         buckets?.set(key, { total: 0, engagement: 0, count: 0 });
       }
-      const _b = buckets?.get(key)!;
-      b?.total += length;
-      b?.engagement += post?.engagementRate || 0;
-      b?.count++;
+      const b = buckets?.get(key)!;
+      b.total += length;
+      b.engagement += post?.engagementRate || 0;
+      b.count++;
     }
 
-    const _avgEngagement =
+    const avgEngagement =
       data?.reduce((s, d) => s + (d?.engagementRate || 0), 0) / data?.length;
 
     buckets?.forEach((stats, range) => {
       if (stats?.count >= 10) {
-        const _bucketAvg = stats?.engagement / stats?.count;
-        const _correlation =
+        const bucketAvg = stats?.engagement / stats?.count;
+        const correlation =
           (bucketAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
 
         if (Math?.abs(correlation) > 0.1) {
@@ -509,8 +509,8 @@ class HyperLearningEngine extends EventEmitter {
             type: "character_count",
             pattern: `Posts with ${range} characters`,
             correlation,
-            sampleSize: stats?.count,
-            confidence: Math?.min(0.95, 0.5 + stats?.count / 100),
+            sampleSize: stats.count,
+            confidence: Math.min(0.95, 0.5 + stats?.count / 100),
             engagementImpact: correlation * 100,
             platformSpecific: false,
             platforms: ["all"],
@@ -526,34 +526,34 @@ class HyperLearningEngine extends EventEmitter {
     data: Record<string, unknown>[],
   ): MicroPattern[] {
     const patterns: MicroPattern[] = [];
-    const _emojiRegex = /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu;
+    const emojiRegex = /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu;
 
     const densityBuckets: Map<string, { engagement: number; count: number }> =
       new Map();
 
     for (const post of data) {
       if (!post?.contentText) continue;
-      const _emojis = post?.contentText.match(emojiRegex) || [];
-      const _density =
+      const emojis = post?.contentText.match(emojiRegex) || [];
+      const density =
         emojis?.length / Math?.max(1, post?.contentText.length / 100);
-      const _bucket = Math?.round(density);
-      const _key = `${bucket}`;
+      const bucket = Math?.round(density);
+      const key = `${bucket}`;
 
       if (!densityBuckets?.has(key)) {
         densityBuckets?.set(key, { engagement: 0, count: 0 });
       }
-      const _b = densityBuckets?.get(key)!;
-      b?.engagement += post?.engagementRate || 0;
-      b?.count++;
+      const b = densityBuckets?.get(key)!;
+      b.engagement += post?.engagementRate || 0;
+      b.count++;
     }
 
-    const _avgEngagement =
+    const avgEngagement =
       data?.reduce((s, d) => s + (d?.engagementRate || 0), 0) / data?.length;
 
     densityBuckets?.forEach((stats, density) => {
       if (stats?.count >= 10) {
-        const _bucketAvg = stats?.engagement / stats?.count;
-        const _correlation =
+        const bucketAvg = stats?.engagement / stats?.count;
+        const correlation =
           (bucketAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
 
         patterns?.push({
@@ -561,8 +561,8 @@ class HyperLearningEngine extends EventEmitter {
           type: "emoji_density",
           pattern: `${density} emojis per 100 characters`,
           correlation,
-          sampleSize: stats?.count,
-          confidence: Math?.min(0.9, 0.4 + stats?.count / 80),
+          sampleSize: stats.count,
+          confidence: Math.min(0.9, 0.4 + stats?.count / 80),
           engagementImpact: correlation * 100,
           platformSpecific: true,
           platforms: ["instagram", "twitter", "tiktok"],
@@ -588,11 +588,11 @@ class HyperLearningEngine extends EventEmitter {
       )
         continue;
 
-      const _text = post?.contentText.toLowerCase();
-      const _firstHashtag = post?.hashtags[0]?.toLowerCase();
+      const text = post?.contentText.toLowerCase();
+      const firstHashtag = post?.hashtags[0]?.toLowerCase();
       if (!firstHashtag) continue;
 
-      const _position = text?.indexOf(`#${firstHashtag}`);
+      const position = text?.indexOf(`#${firstHashtag}`);
       let positionKey: string;
 
       if (position === -1) {
@@ -608,18 +608,18 @@ class HyperLearningEngine extends EventEmitter {
       if (!positions?.has(positionKey)) {
         positions?.set(positionKey, { engagement: 0, count: 0 });
       }
-      const _b = positions?.get(positionKey)!;
-      b?.engagement += post?.engagementRate || 0;
-      b?.count++;
+      const b = positions?.get(positionKey)!;
+      b.engagement += post?.engagementRate || 0;
+      b.count++;
     }
 
-    const _avgEngagement =
+    const avgEngagement =
       data?.reduce((s, d) => s + (d?.engagementRate || 0), 0) / data?.length;
 
     positions?.forEach((stats, position) => {
       if (stats?.count >= 10) {
-        const _posAvg = stats?.engagement / stats?.count;
-        const _correlation =
+        const posAvg = stats?.engagement / stats?.count;
+        const correlation =
           (posAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
 
         patterns?.push({
@@ -627,8 +627,8 @@ class HyperLearningEngine extends EventEmitter {
           type: "hashtag_position",
           pattern: `Hashtags at ${position} of post`,
           correlation,
-          sampleSize: stats?.count,
-          confidence: Math?.min(0.85, 0.45 + stats?.count / 100),
+          sampleSize: stats.count,
+          confidence: Math.min(0.85, 0.45 + stats?.count / 100),
           engagementImpact: correlation * 100,
           platformSpecific: true,
           platforms: ["instagram", "twitter", "linkedin"],
@@ -648,24 +648,24 @@ class HyperLearningEngine extends EventEmitter {
 
     for (const post of data) {
       if (!post?.createdAt) continue;
-      const _date = new Date(post?.createdAt);
-      const _minute = Math?.floor(date?.getMinutes() / 15) * 15;
+      const date = new Date(post?.createdAt);
+      const minute = Math?.floor(date?.getMinutes() / 15) * 15;
 
       if (!minuteBuckets?.has(minute)) {
         minuteBuckets?.set(minute, { engagement: 0, count: 0 });
       }
-      const _b = minuteBuckets?.get(minute)!;
-      b?.engagement += post?.engagementRate || 0;
-      b?.count++;
+      const b = minuteBuckets?.get(minute)!;
+      b.engagement += post?.engagementRate || 0;
+      b.count++;
     }
 
-    const _avgEngagement =
+    const avgEngagement =
       data?.reduce((s, d) => s + (d?.engagementRate || 0), 0) / data?.length;
 
     minuteBuckets?.forEach((stats, minute) => {
       if (stats?.count >= 20) {
-        const _bucketAvg = stats?.engagement / stats?.count;
-        const _correlation =
+        const bucketAvg = stats?.engagement / stats?.count;
+        const correlation =
           (bucketAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
 
         if (Math?.abs(correlation) > 0.05) {
@@ -674,8 +674,8 @@ class HyperLearningEngine extends EventEmitter {
             type: "timing_precision",
             pattern: `Posts at minute :${minute?.toString().padStart(2, "0")}`,
             correlation,
-            sampleSize: stats?.count,
-            confidence: Math?.min(0.8, 0.4 + stats?.count / 150),
+            sampleSize: stats.count,
+            confidence: Math.min(0.8, 0.4 + stats?.count / 150),
             engagementImpact: correlation * 100,
             platformSpecific: false,
             platforms: ["all"],
@@ -694,7 +694,7 @@ class HyperLearningEngine extends EventEmitter {
     const hookTypes: Map<string, { engagement: number; count: number }> =
       new Map();
 
-    const _hookPatterns = [
+    const hookPatterns = [
       {
         name: "question_start",
         regex: /^(what|why|how|when|where|who|which|do you|are you|have you)/i,
@@ -721,7 +721,7 @@ class HyperLearningEngine extends EventEmitter {
 
     for (const post of data) {
       if (!post?.contentText) continue;
-      const _text = post?.contentText.trim();
+      const text = post?.contentText.trim();
 
       let matchedHook = "generic";
       for (const hook of hookPatterns) {
@@ -734,18 +734,18 @@ class HyperLearningEngine extends EventEmitter {
       if (!hookTypes?.has(matchedHook)) {
         hookTypes?.set(matchedHook, { engagement: 0, count: 0 });
       }
-      const _b = hookTypes?.get(matchedHook)!;
-      b?.engagement += post?.engagementRate || 0;
-      b?.count++;
+      const b = hookTypes?.get(matchedHook)!;
+      b.engagement += post?.engagementRate || 0;
+      b.count++;
     }
 
-    const _avgEngagement =
+    const avgEngagement =
       data?.reduce((s, d) => s + (d?.engagementRate || 0), 0) / data?.length;
 
     hookTypes?.forEach((stats, hookType) => {
       if (stats?.count >= 10) {
-        const _hookAvg = stats?.engagement / stats?.count;
-        const _correlation =
+        const hookAvg = stats?.engagement / stats?.count;
+        const correlation =
           (hookAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
 
         patterns?.push({
@@ -753,8 +753,8 @@ class HyperLearningEngine extends EventEmitter {
           type: "hook_structure",
           pattern: `${hookType?.replace(/_/g, " ")} hook`,
           correlation,
-          sampleSize: stats?.count,
-          confidence: Math?.min(0.9, 0.5 + stats?.count / 80),
+          sampleSize: stats.count,
+          confidence: Math.min(0.9, 0.5 + stats?.count / 80),
           engagementImpact: correlation * 100,
           platformSpecific: false,
           platforms: ["all"],
@@ -774,24 +774,24 @@ class HyperLearningEngine extends EventEmitter {
 
     for (const post of data) {
       if (!post?.contentText) continue;
-      const _breaks = (post?.contentText.match(/\n/g) || []).length;
-      const _bucket = Math?.min(breaks, 10);
+      const breaks = (post?.contentText.match(/\n/g) || []).length;
+      const bucket = Math?.min(breaks, 10);
 
       if (!breakBuckets?.has(bucket)) {
         breakBuckets?.set(bucket, { engagement: 0, count: 0 });
       }
-      const _b = breakBuckets?.get(bucket)!;
-      b?.engagement += post?.engagementRate || 0;
-      b?.count++;
+      const b = breakBuckets?.get(bucket)!;
+      b.engagement += post?.engagementRate || 0;
+      b.count++;
     }
 
-    const _avgEngagement =
+    const avgEngagement =
       data?.reduce((s, d) => s + (d?.engagementRate || 0), 0) / data?.length;
 
     breakBuckets?.forEach((stats, breaks) => {
       if (stats?.count >= 15) {
-        const _bucketAvg = stats?.engagement / stats?.count;
-        const _correlation =
+        const bucketAvg = stats?.engagement / stats?.count;
+        const correlation =
           (bucketAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
 
         patterns?.push({
@@ -799,8 +799,8 @@ class HyperLearningEngine extends EventEmitter {
           type: "line_breaks",
           pattern: `${breaks} line breaks in post`,
           correlation,
-          sampleSize: stats?.count,
-          confidence: Math?.min(0.85, 0.4 + stats?.count / 100),
+          sampleSize: stats.count,
+          confidence: Math.min(0.85, 0.4 + stats?.count / 100),
           engagementImpact: correlation * 100,
           platformSpecific: true,
           platforms: ["instagram", "linkedin", "threads"],
@@ -816,7 +816,7 @@ class HyperLearningEngine extends EventEmitter {
   ): MicroPattern[] {
     const patterns: MicroPattern[] = [];
 
-    const _punctuationTypes = [
+    const punctuationTypes = [
       { name: "question_marks", regex: /\?/g },
       { name: "exclamations", regex: /!/g },
       { name: "ellipsis", regex: /\.{3}|…/g },
@@ -829,24 +829,24 @@ class HyperLearningEngine extends EventEmitter {
 
       for (const post of data) {
         if (!post?.contentText) continue;
-        const _matches = post?.contentText.match(pType?.regex) || [];
-        const _bucket = Math?.min(matches?.length, 5);
+        const matches = post?.contentText.match(pType?.regex) || [];
+        const bucket = Math?.min(matches?.length, 5);
 
         if (!buckets?.has(bucket)) {
           buckets?.set(bucket, { engagement: 0, count: 0 });
         }
-        const _b = buckets?.get(bucket)!;
-        b?.engagement += post?.engagementRate || 0;
-        b?.count++;
+        const b = buckets?.get(bucket)!;
+        b.engagement += post?.engagementRate || 0;
+        b.count++;
       }
 
-      const _avgEngagement =
+      const avgEngagement =
         data?.reduce((s, d) => s + (d?.engagementRate || 0), 0) / data?.length;
 
       buckets?.forEach((stats, count) => {
         if (stats?.count >= 15) {
-          const _bucketAvg = stats?.engagement / stats?.count;
-          const _correlation =
+          const bucketAvg = stats?.engagement / stats?.count;
+          const correlation =
             (bucketAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
 
           patterns?.push({
@@ -854,8 +854,8 @@ class HyperLearningEngine extends EventEmitter {
             type: "exclamation_density",
             pattern: `${count} ${pType?.name.replace(/_/g, " ")}`,
             correlation,
-            sampleSize: stats?.count,
-            confidence: Math?.min(0.8, 0.35 + stats?.count / 100),
+            sampleSize: stats.count,
+            confidence: Math.min(0.8, 0.35 + stats?.count / 100),
             engagementImpact: correlation * 100,
             platformSpecific: false,
             platforms: ["all"],
@@ -876,7 +876,7 @@ class HyperLearningEngine extends EventEmitter {
 
     for (const post of data) {
       if (!post?.contentText) continue;
-      const _text = post?.contentText;
+      const text = post?.contentText;
 
       let numberType = "none";
       if (/^\d+[\.\):]/.test(text)) {
@@ -896,18 +896,18 @@ class HyperLearningEngine extends EventEmitter {
       if (!numberTypes?.has(numberType)) {
         numberTypes?.set(numberType, { engagement: 0, count: 0 });
       }
-      const _b = numberTypes?.get(numberType)!;
-      b?.engagement += post?.engagementRate || 0;
-      b?.count++;
+      const b = numberTypes?.get(numberType)!;
+      b.engagement += post?.engagementRate || 0;
+      b.count++;
     }
 
-    const _avgEngagement =
+    const avgEngagement =
       data?.reduce((s, d) => s + (d?.engagementRate || 0), 0) / data?.length;
 
     numberTypes?.forEach((stats, type) => {
       if (stats?.count >= 15) {
-        const _typeAvg = stats?.engagement / stats?.count;
-        const _correlation =
+        const typeAvg = stats?.engagement / stats?.count;
+        const correlation =
           (typeAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
 
         patterns?.push({
@@ -915,8 +915,8 @@ class HyperLearningEngine extends EventEmitter {
           type: "number_usage",
           pattern: `${type?.replace(/_/g, " ")} in content`,
           correlation,
-          sampleSize: stats?.count,
-          confidence: Math?.min(0.85, 0.4 + stats?.count / 100),
+          sampleSize: stats.count,
+          confidence: Math.min(0.85, 0.4 + stats?.count / 100),
           engagementImpact: correlation * 100,
           platformSpecific: false,
           platforms: ["all"],
@@ -934,7 +934,7 @@ class HyperLearningEngine extends EventEmitter {
     const ctaPositions: Map<string, { engagement: number; count: number }> =
       new Map();
 
-    const _ctaPatterns = [
+    const ctaPatterns = [
       /link in bio/i,
       /check out/i,
       /click/i,
@@ -952,14 +952,14 @@ class HyperLearningEngine extends EventEmitter {
 
     for (const post of data) {
       if (!post?.contentText) continue;
-      const _text = post?.contentText;
-      const _textLength = text?.length;
+      const text = post?.contentText;
+      const textLength = text?.length;
 
       let ctaPosition = "none";
       for (const cta of ctaPatterns) {
-        const _match = text?.match(cta);
+        const match = text?.match(cta);
         if (match && match?.index !== undefined) {
-          const _position = match?.index / textLength;
+          const position = match?.index / textLength;
           if (position < 0.25) ctaPosition = "start";
           else if (position > 0.75) ctaPosition = "end";
           else ctaPosition = "middle";
@@ -970,18 +970,18 @@ class HyperLearningEngine extends EventEmitter {
       if (!ctaPositions?.has(ctaPosition)) {
         ctaPositions?.set(ctaPosition, { engagement: 0, count: 0 });
       }
-      const _b = ctaPositions?.get(ctaPosition)!;
-      b?.engagement += post?.engagementRate || 0;
-      b?.count++;
+      const b = ctaPositions?.get(ctaPosition)!;
+      b.engagement += post?.engagementRate || 0;
+      b.count++;
     }
 
-    const _avgEngagement =
+    const avgEngagement =
       data?.reduce((s, d) => s + (d?.engagementRate || 0), 0) / data?.length;
 
     ctaPositions?.forEach((stats, position) => {
       if (stats?.count >= 15) {
-        const _posAvg = stats?.engagement / stats?.count;
-        const _correlation =
+        const posAvg = stats?.engagement / stats?.count;
+        const correlation =
           (posAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
 
         patterns?.push({
@@ -989,8 +989,8 @@ class HyperLearningEngine extends EventEmitter {
           type: "cta_placement",
           pattern: `CTA at ${position} of post`,
           correlation,
-          sampleSize: stats?.count,
-          confidence: Math?.min(0.85, 0.45 + stats?.count / 100),
+          sampleSize: stats.count,
+          confidence: Math.min(0.85, 0.45 + stats?.count / 100),
           engagementImpact: correlation * 100,
           platformSpecific: false,
           platforms: ["all"],
@@ -1008,7 +1008,7 @@ class HyperLearningEngine extends EventEmitter {
     const sentimentBuckets: Map<string, { engagement: number; count: number }> =
       new Map();
 
-    const _positiveWords = [
+    const positiveWords = [
       "amazing",
       "love",
       "great",
@@ -1020,7 +1020,7 @@ class HyperLearningEngine extends EventEmitter {
       "best",
       "excited",
     ];
-    const _negativeWords = [
+    const negativeWords = [
       "hate",
       "terrible",
       "worst",
@@ -1032,7 +1032,7 @@ class HyperLearningEngine extends EventEmitter {
       "angry",
       "sad",
     ];
-    const _urgentWords = [
+    const urgentWords = [
       "now",
       "today",
       "urgent",
@@ -1045,16 +1045,16 @@ class HyperLearningEngine extends EventEmitter {
     ];
 
     for (const post of data) {
-      if (!post?.contentText) continue;
-      const _text = post?.contentText.toLowerCase();
+      if (!post.contentText) continue;
+      const text = post.contentText.toLowerCase();
 
-      const _positiveCount = positiveWords?.filter((w) =>
-        text?.includes(w),
+      const positiveCount = positiveWords.filter((w) =>
+        text.includes(w),
       ).length;
-      const _negativeCount = negativeWords?.filter((w) =>
-        text?.includes(w),
+      const negativeCount = negativeWords.filter((w) =>
+        text.includes(w),
       ).length;
-      const _urgentCount = urgentWords?.filter((w) => text?.includes(w)).length;
+      const urgentCount = urgentWords.filter((w) => text.includes(w)).length;
 
       let sentiment: string;
       if (positiveCount > negativeCount && positiveCount > 0) {
@@ -1067,30 +1067,30 @@ class HyperLearningEngine extends EventEmitter {
         sentiment = "neutral";
       }
 
-      if (!sentimentBuckets?.has(sentiment)) {
-        sentimentBuckets?.set(sentiment, { engagement: 0, count: 0 });
+      if (!sentimentBuckets.has(sentiment)) {
+        sentimentBuckets.set(sentiment, { engagement: 0, count: 0 });
       }
-      const _b = sentimentBuckets?.get(sentiment)!;
-      b?.engagement += post?.engagementRate || 0;
-      b?.count++;
+      const b = sentimentBuckets.get(sentiment)!;
+      b.engagement += post.engagementRate || 0;
+      b.count++;
     }
 
-    const _avgEngagement =
-      data?.reduce((s, d) => s + (d?.engagementRate || 0), 0) / data?.length;
+    const avgEngagement =
+      data.reduce((s, d) => s + (d.engagementRate || 0), 0) / data.length;
 
-    sentimentBuckets?.forEach((stats, sentiment) => {
-      if (stats?.count >= 15) {
-        const _sentAvg = stats?.engagement / stats?.count;
-        const _correlation =
-          (sentAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
+    sentimentBuckets.forEach((stats, sentiment) => {
+      if (stats.count >= 15) {
+        const sentAvg = stats.engagement / stats.count;
+        const correlation =
+          (sentAvg - avgEngagement) / Math.max(0.01, avgEngagement);
 
-        patterns?.push({
+        patterns.push({
           id: `sentiment_${sentiment}`,
           type: "word_sentiment",
           pattern: `${sentiment} sentiment`,
           correlation,
-          sampleSize: stats?.count,
-          confidence: Math?.min(0.9, 0.5 + stats?.count / 80),
+          sampleSize: stats.count,
+          confidence: Math.min(0.9, 0.5 + stats.count / 80),
           engagementImpact: correlation * 100,
           platformSpecific: false,
           platforms: ["all"],
@@ -1108,7 +1108,7 @@ class HyperLearningEngine extends EventEmitter {
     const wordEngagement: Map<string, { engagement: number; count: number }> =
       new Map();
 
-    const _stopWords = new Set([
+    const stopWords = new Set([
       "the",
       "a",
       "an",
@@ -1170,50 +1170,50 @@ class HyperLearningEngine extends EventEmitter {
     ]);
 
     for (const post of data) {
-      if (!post?.contentText) continue;
-      const _words = post?.contentText
+      if (!post.contentText) continue;
+      const words = post.contentText
         .toLowerCase()
         .replace(/[^a-z\s]/g, "")
         .split(/\s+/)
-        .filter((w) => w?.length > 3 && !stopWords?.has(w));
+        .filter((w) => w.length > 3 && !stopWords.has(w));
 
-      const _uniqueWords = [...new Set(words)];
+      const uniqueWords = [...new Set(words)];
       for (const word of uniqueWords) {
-        if (!wordEngagement?.has(word)) {
-          wordEngagement?.set(word, { engagement: 0, count: 0 });
+        if (!wordEngagement.has(word)) {
+          wordEngagement.set(word, { engagement: 0, count: 0 });
         }
-        const _b = wordEngagement?.get(word)!;
-        b?.engagement += post?.engagementRate || 0;
-        b?.count++;
+        const b = wordEngagement.get(word)!;
+        b.engagement += post.engagementRate || 0;
+        b.count++;
       }
     }
 
-    const _avgEngagement =
-      data?.reduce((s, d) => s + (d?.engagementRate || 0), 0) / data?.length;
+    const avgEngagement =
+      data.reduce((s, d) => s + (d.engagementRate || 0), 0) / data.length;
 
-    const _topWords = [...wordEngagement?.entries()]
-      .filter(([_, stats]) => stats?.count >= 20)
+    const topWords = [...wordEngagement.entries()]
+      .filter(([_, stats]) => stats.count >= 20)
       .map(([word, stats]) => ({
         word,
-        avgEngagement: stats?.engagement / stats?.count,
-        count: stats?.count,
+        avgEngagement: stats.engagement / stats.count,
+        count: stats.count,
       }))
-      .sort((a, b) => b?.avgEngagement - a?.avgEngagement)
+      .sort((a, b) => b.avgEngagement - a.avgEngagement)
       .slice(0, 20);
 
     for (const wordData of topWords) {
-      const _correlation =
-        (wordData?.avgEngagement - avgEngagement) /
-        Math?.max(0.01, avgEngagement);
+      const correlation =
+        (wordData.avgEngagement - avgEngagement) /
+        Math.max(0.01, avgEngagement);
 
-      if (Math?.abs(correlation) > 0.15) {
-        patterns?.push({
-          id: `word_${wordData?.word}`,
+      if (Math.abs(correlation) > 0.15) {
+        patterns.push({
+          id: `word_${wordData.word}`,
           type: "word_sentiment",
-          pattern: `Using word "${wordData?.word}"`,
+          pattern: `Using word "${wordData.word}"`,
           correlation,
-          sampleSize: wordData?.count,
-          confidence: Math?.min(0.8, 0.4 + wordData?.count / 150),
+          sampleSize: wordData.count,
+          confidence: Math.min(0.8, 0.4 + wordData.count / 150),
           engagementImpact: correlation * 100,
           platformSpecific: false,
           platforms: ["all"],
@@ -1239,10 +1239,10 @@ class HyperLearningEngine extends EventEmitter {
     > = new Map();
 
     for (const post of data) {
-      if (!post?.createdAt) continue;
-      const _date = new Date(post?.createdAt);
-      const _dayOfMonth = date?.getDate();
-      const _weekOfMonth = Math?.ceil(dayOfMonth / 7);
+      if (!post.createdAt) continue;
+      const date = new Date(post.createdAt);
+      const dayOfMonth = date.getDate();
+      const weekOfMonth = Math.ceil(dayOfMonth / 7);
 
       let dayCategory: string;
       if (dayOfMonth === 1) dayCategory = "first_of_month";
@@ -1252,37 +1252,37 @@ class HyperLearningEngine extends EventEmitter {
       else if (dayOfMonth >= 28) dayCategory = "end_of_month";
       else dayCategory = "late_month";
 
-      if (!dayOfMonthBuckets?.has(dayCategory)) {
-        dayOfMonthBuckets?.set(dayCategory, { engagement: 0, count: 0 });
+      if (!dayOfMonthBuckets.has(dayCategory)) {
+        dayOfMonthBuckets.set(dayCategory, { engagement: 0, count: 0 });
       }
-      dayOfMonthBuckets?.get(dayCategory)!.engagement +=
-        post?.engagementRate || 0;
-      dayOfMonthBuckets?.get(dayCategory)!.count++;
+      dayOfMonthBuckets.get(dayCategory)!.engagement +=
+        post.engagementRate || 0;
+      dayOfMonthBuckets.get(dayCategory)!.count++;
 
-      if (!weekOfMonthBuckets?.has(weekOfMonth)) {
-        weekOfMonthBuckets?.set(weekOfMonth, { engagement: 0, count: 0 });
+      if (!weekOfMonthBuckets.has(weekOfMonth)) {
+        weekOfMonthBuckets.set(weekOfMonth, { engagement: 0, count: 0 });
       }
-      weekOfMonthBuckets?.get(weekOfMonth)!.engagement +=
-        post?.engagementRate || 0;
-      weekOfMonthBuckets?.get(weekOfMonth)!.count++;
+      weekOfMonthBuckets.get(weekOfMonth)!.engagement +=
+        post.engagementRate || 0;
+      weekOfMonthBuckets.get(weekOfMonth)!.count++;
     }
 
-    const _avgEngagement =
-      data?.reduce((s, d) => s + (d?.engagementRate || 0), 0) / data?.length;
+    const avgEngagement =
+      data.reduce((s, d) => s + (d.engagementRate || 0), 0) / data.length;
 
-    dayOfMonthBuckets?.forEach((stats, category) => {
-      if (stats?.count >= 20) {
-        const _catAvg = stats?.engagement / stats?.count;
-        const _correlation =
-          (catAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
+    dayOfMonthBuckets.forEach((stats, category) => {
+      if (stats.count >= 20) {
+        const catAvg = stats.engagement / stats.count;
+        const correlation =
+          (catAvg - avgEngagement) / Math.max(0.01, avgEngagement);
 
-        patterns?.push({
+        patterns.push({
           id: `temporal_${category}`,
           type: "timing_precision",
-          pattern: `Posting during ${category?.replace(/_/g, " ")}`,
+          pattern: `Posting during ${category.replace(/_/g, " ")}`,
           correlation,
-          sampleSize: stats?.count,
-          confidence: Math?.min(0.75, 0.35 + stats?.count / 150),
+          sampleSize: stats.count,
+          confidence: Math.min(0.75, 0.35 + stats.count / 150),
           engagementImpact: correlation * 100,
           platformSpecific: false,
           platforms: ["all"],
@@ -1301,32 +1301,32 @@ class HyperLearningEngine extends EventEmitter {
       new Map();
 
     for (const post of data) {
-      const _mediaType = post?.mediaType || "text_only";
+      const mediaType = post.mediaType || "text_only";
 
-      if (!mediaTypes?.has(mediaType)) {
-        mediaTypes?.set(mediaType, { engagement: 0, count: 0 });
+      if (!mediaTypes.has(mediaType)) {
+        mediaTypes.set(mediaType, { engagement: 0, count: 0 });
       }
-      const _b = mediaTypes?.get(mediaType)!;
-      b?.engagement += post?.engagementRate || 0;
-      b?.count++;
+      const b = mediaTypes.get(mediaType)!;
+      b.engagement += post.engagementRate || 0;
+      b.count++;
     }
 
-    const _avgEngagement =
-      data?.reduce((s, d) => s + (d?.engagementRate || 0), 0) / data?.length;
+    const avgEngagement =
+      data.reduce((s, d) => s + (d.engagementRate || 0), 0) / data.length;
 
-    mediaTypes?.forEach((stats, type) => {
-      if (stats?.count >= 10) {
-        const _typeAvg = stats?.engagement / stats?.count;
-        const _correlation =
-          (typeAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
+    mediaTypes.forEach((stats, type) => {
+      if (stats.count >= 10) {
+        const typeAvg = stats.engagement / stats.count;
+        const correlation =
+          (typeAvg - avgEngagement) / Math.max(0.01, avgEngagement);
 
-        patterns?.push({
+        patterns.push({
           id: `media_${type}`,
           type: "media_aspect",
-          pattern: `${type?.replace(/_/g, " ")} content`,
+          pattern: `${type.replace(/_/g, " ")} content`,
           correlation,
-          sampleSize: stats?.count,
-          confidence: Math?.min(0.9, 0.5 + stats?.count / 60),
+          sampleSize: stats.count,
+          confidence: Math.min(0.9, 0.5 + stats.count / 60),
           engagementImpact: correlation * 100,
           platformSpecific: true,
           platforms: ["instagram", "tiktok", "youtube"],
@@ -1346,10 +1346,10 @@ class HyperLearningEngine extends EventEmitter {
       new Map();
 
     for (const post of data) {
-      const _likes = post?.likes || 0;
-      const _comments = post?.comments || 0;
-      const _shares = post?.shares || 0;
-      const _total = likes + comments + shares;
+      const likes = post.likes || 0;
+      const comments = post.comments || 0;
+      const shares = post.shares || 0;
+      const total = likes + comments + shares;
 
       if (total === 0) continue;
 
@@ -1364,30 +1364,30 @@ class HyperLearningEngine extends EventEmitter {
         responseType = "balanced";
       }
 
-      if (!responseRatios?.has(responseType)) {
-        responseRatios?.set(responseType, { engagement: 0, count: 0 });
+      if (!responseRatios.has(responseType)) {
+        responseRatios.set(responseType, { engagement: 0, count: 0 });
       }
-      const _b = responseRatios?.get(responseType)!;
-      b?.engagement += post?.engagementRate || 0;
-      b?.count++;
+      const b = responseRatios.get(responseType)!;
+      b.engagement += post.engagementRate || 0;
+      b.count++;
     }
 
-    const _avgEngagement =
-      data?.reduce((s, d) => s + (d?.engagementRate || 0), 0) / data?.length;
+    const avgEngagement =
+      data.reduce((s, d) => s + (d.engagementRate || 0), 0) / data.length;
 
-    responseRatios?.forEach((stats, type) => {
-      if (stats?.count >= 15) {
-        const _typeAvg = stats?.engagement / stats?.count;
-        const _correlation =
-          (typeAvg - avgEngagement) / Math?.max(0.01, avgEngagement);
+    responseRatios.forEach((stats, type) => {
+      if (stats.count >= 15) {
+        const typeAvg = stats.engagement / stats.count;
+        const correlation =
+          (typeAvg - avgEngagement) / Math.max(0.01, avgEngagement);
 
-        patterns?.push({
+        patterns.push({
           id: `response_${type}`,
           type: "hook_structure",
-          pattern: `Content with ${type?.replace(/_/g, " ")}`,
+          pattern: `Content with ${type.replace(/_/g, " ")}`,
           correlation,
-          sampleSize: stats?.count,
-          confidence: Math?.min(0.85, 0.45 + stats?.count / 100),
+          sampleSize: stats.count,
+          confidence: Math.min(0.85, 0.45 + stats.count / 100),
           engagementImpact: correlation * 100,
           platformSpecific: false,
           platforms: ["all"],
@@ -1403,20 +1403,20 @@ class HyperLearningEngine extends EventEmitter {
   ): MicroPattern[] {
     const patterns: MicroPattern[] = [];
 
-    const _sortedByEngagement = [...data].sort(
-      (a, b) => (b?.engagementRate || 0) - (a?.engagementRate || 0),
+    const sortedByEngagement = [...data].sort(
+      (a, b) => (b.engagementRate || 0) - (a.engagementRate || 0),
     );
-    const _top10Percent = sortedByEngagement?.slice(
+    const top10Percent = sortedByEngagement.slice(
       0,
-      Math?.ceil(data?.length * 0.1),
+      Math.ceil(data.length * 0.1),
     );
-    const _bottom50Percent = sortedByEngagement?.slice(
-      Math?.ceil(data?.length * 0.5),
+    const bottom50Percent = sortedByEngagement.slice(
+      Math.ceil(data.length * 0.5),
     );
 
-    if (top10Percent?.length < 10) return patterns;
+    if (top10Percent.length < 10) return patterns;
 
-    const _viralCharacteristics = {
+    const viralCharacteristics = {
       avgLength: 0,
       avgHashtags: 0,
       avgEmojis: 0,
@@ -1426,67 +1426,67 @@ class HyperLearningEngine extends EventEmitter {
       numberStart: 0,
     };
 
-    const _nonViralCharacteristics = { ...viralCharacteristics };
-    const _emojiRegex = /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu;
+    const nonViralCharacteristics = { ...viralCharacteristics };
+    const emojiRegex = /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu;
 
     for (const post of top10Percent) {
-      const _text = post?.contentText || "";
-      viralCharacteristics?.avgLength += text?.length;
-      viralCharacteristics?.avgHashtags += (post?.hashtags || []).length;
-      viralCharacteristics?.avgEmojis += (text?.match(emojiRegex) || []).length;
-      if (/\?/.test(text)) viralCharacteristics?.questionRatio++;
-      if (/!/.test(text)) viralCharacteristics?.exclamationRatio++;
-      if (emojiRegex?.test(text?.charAt(0))) viralCharacteristics?.emojiStart++;
-      if (/^\d/.test(text)) viralCharacteristics?.numberStart++;
+      const text = post.contentText || "";
+      viralCharacteristics.avgLength += text.length;
+      viralCharacteristics.avgHashtags += (post.hashtags || []).length;
+      viralCharacteristics.avgEmojis += (text.match(emojiRegex) || []).length;
+      if (/\?/.test(text)) viralCharacteristics.questionRatio++;
+      if (/!/.test(text)) viralCharacteristics.exclamationRatio++;
+      if (emojiRegex.test(text.charAt(0))) viralCharacteristics.emojiStart++;
+      if (/^\d/.test(text)) viralCharacteristics.numberStart++;
     }
 
     for (const post of bottom50Percent) {
-      const _text = post?.contentText || "";
-      nonViralCharacteristics?.avgLength += text?.length;
-      nonViralCharacteristics?.avgHashtags += (post?.hashtags || []).length;
-      nonViralCharacteristics?.avgEmojis += (
-        text?.match(emojiRegex) || []
+      const text = post.contentText || "";
+      nonViralCharacteristics.avgLength += text.length;
+      nonViralCharacteristics.avgHashtags += (post.hashtags || []).length;
+      nonViralCharacteristics.avgEmojis += (
+        text.match(emojiRegex) || []
       ).length;
-      if (/\?/.test(text)) nonViralCharacteristics?.questionRatio++;
-      if (/!/.test(text)) nonViralCharacteristics?.exclamationRatio++;
-      if (emojiRegex?.test(text?.charAt(0))) nonViralCharacteristics?.emojiStart++;
-      if (/^\d/.test(text)) nonViralCharacteristics?.numberStart++;
+      if (/\?/.test(text)) nonViralCharacteristics.questionRatio++;
+      if (/!/.test(text)) nonViralCharacteristics.exclamationRatio++;
+      if (emojiRegex.test(text.charAt(0))) nonViralCharacteristics.emojiStart++;
+      if (/^\d/.test(text)) nonViralCharacteristics.numberStart++;
     }
 
-    Object?.keys(viralCharacteristics).forEach((key) => {
+    Object.keys(viralCharacteristics).forEach((key) => {
       (viralCharacteristics as Record<string, unknown>)[key] /=
-        top10Percent?.length;
+        top10Percent.length;
       (nonViralCharacteristics as Record<string, unknown>)[key] /=
-        bottom50Percent?.length;
+        bottom50Percent.length;
     });
 
-    const _significantDifferences = Object?.keys(viralCharacteristics).filter(
+    const significantDifferences = Object.keys(viralCharacteristics).filter(
       (key) => {
-        const _viral = (viralCharacteristics as Record<string, unknown>)[key];
-        const _nonViral = (nonViralCharacteristics as Record<string, unknown>)[
+        const viral = (viralCharacteristics as Record<string, unknown>)[key];
+        const nonViral = (nonViralCharacteristics as Record<string, unknown>)[
           key
         ];
-        return Math?.abs(viral - nonViral) / Math?.max(0.1, nonViral) > 0.3;
+        return Math.abs(viral - nonViral) / Math.max(0.1, nonViral) > 0.3;
       },
     );
 
     for (const characteristic of significantDifferences) {
-      const _viralValue = (viralCharacteristics as Record<string, unknown>)[
+      const viralValue = (viralCharacteristics as Record<string, unknown>)[
         characteristic
       ];
-      const _nonViralValue = (
+      const nonViralValue = (
         nonViralCharacteristics as Record<string, unknown>
       )[characteristic];
-      const _difference =
-        ((viralValue - nonViralValue) / Math?.max(0.1, nonViralValue)) * 100;
+      const difference =
+        ((viralValue - nonViralValue) / Math.max(0.1, nonViralValue)) * 100;
 
-      patterns?.push({
+      patterns.push({
         id: `viral_precursor_${characteristic}`,
         type: "hook_structure",
-        pattern: `Viral content ${characteristic?.replace(/([A-Z])/g, " $1").toLowerCase()}: ${viralValue?.toFixed(1)} vs ${nonViralValue?.toFixed(1)}`,
+        pattern: `Viral content ${characteristic.replace(/([A-Z])/g, " $1").toLowerCase()}: ${viralValue.toFixed(1)} vs ${nonViralValue.toFixed(1)}`,
         correlation: difference / 100,
-        sampleSize: top10Percent?.length,
-        confidence: Math?.min(0.9, 0.6 + top10Percent?.length / 100),
+        sampleSize: top10Percent.length,
+        confidence: Math.min(0.9, 0.6 + top10Percent.length / 100),
         engagementImpact: difference,
         platformSpecific: false,
         platforms: ["all"],
@@ -1501,82 +1501,82 @@ class HyperLearningEngine extends EventEmitter {
     model: CrossPlatformSynthesis | null;
   }> {
     try {
-      const _ninetyDaysAgo = new Date();
-      ninetyDaysAgo?.setDate(ninetyDaysAgo?.getDate() - 90);
+      const ninetyDaysAgo = new Date();
+      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
-      const __crossKey = _hlKey("cross_platform_90d");
+      const crossKey = _hlKey("cross_platform_90d");
        
       let platformData: Record<string, unknown>[] | undefined =
-        _hlGet<Record<string, unknown>[]>(_crossKey);
+        _hlGet<Record<string, unknown>[]>(crossKey);
       if (!platformData) {
         platformData = await db
           .select({
-            platform: autopilotLearningData?.platform,
-            avgEngagement: avg(autopilotLearningData?.engagementRate),
+            platform: autopilotLearningData.platform,
+            avgEngagement: avg(autopilotLearningData.engagementRate),
             totalPosts: count(),
-            avgImpressions: avg(autopilotLearningData?.impressions),
-            avgLikes: avg(autopilotLearningData?.likes),
-            avgComments: avg(autopilotLearningData?.comments),
-            avgShares: avg(autopilotLearningData?.shares),
+            avgImpressions: avg(autopilotLearningData.impressions),
+            avgLikes: avg(autopilotLearningData.likes),
+            avgComments: avg(autopilotLearningData.comments),
+            avgShares: avg(autopilotLearningData.shares),
           })
           .from(autopilotLearningData)
-          .where(gte(autopilotLearningData?.createdAt, ninetyDaysAgo))
-          .groupBy(autopilotLearningData?.platform);
-        _hlSet(_crossKey, platformData);
-        logger?.info(
-          `[HyperLearning] cross_platform_90d: ${platformData?.length} rows fetched from DB (cached for next cycle)`,
+          .where(gte(autopilotLearningData.createdAt, ninetyDaysAgo))
+          .groupBy(autopilotLearningData.platform);
+        _hlSet(crossKey, platformData);
+        logger.info(
+          `[HyperLearning] cross_platform_90d: ${platformData.length} rows fetched from DB (cached for next cycle)`,
         );
       } else {
-        logger?.info(
-          `[HyperLearning] cross_platform_90d: ${platformData?.length} rows served from process cache`,
+        logger.info(
+          `[HyperLearning] cross_platform_90d: ${platformData.length} rows served from process cache`,
         );
       }
 
-      if (platformData?.length < 2) {
+      if (platformData.length < 2) {
         return { synthesisCount: 0, model: null };
       }
 
       const universalPatterns: UniversalPattern[] = [];
       const platformAmplifiers: Map<string, number[]> = new Map();
 
-      const _allMicroPatterns = [...this?.microPatternCache.values()].flat();
+      const allMicroPatterns = [...this.microPatternCache.values()].flat();
       const platformPatterns: Map<string, MicroPattern[]> = new Map();
 
       for (const pattern of allMicroPatterns) {
-        for (const platform of pattern?.platforms) {
-          if (!platformPatterns?.has(platform)) {
-            platformPatterns?.set(platform, []);
+        for (const platform of pattern.platforms) {
+          if (!platformPatterns.has(platform)) {
+            platformPatterns.set(platform, []);
           }
-          platformPatterns?.get(platform)!.push(pattern);
+          platformPatterns.get(platform)!.push(pattern);
         }
       }
 
       const patternsByType: Map<string, Map<string, MicroPattern>> = new Map();
       for (const pattern of allMicroPatterns) {
-        if (!patternsByType?.has(pattern?.type)) {
-          patternsByType?.set(pattern?.type, new Map());
+        if (!patternsByType.has(pattern.type)) {
+          patternsByType.set(pattern.type, new Map());
         }
-        for (const platform of pattern?.platforms) {
-          patternsByType?.get(pattern?.type)!.set(platform, pattern);
+        for (const platform of pattern.platforms) {
+          patternsByType.get(pattern.type)!.set(platform, pattern);
         }
       }
 
-      patternsByType?.forEach((platformMap, type) => {
-        if (platformMap?.size >= 2) {
-          const _patterns = [...platformMap?.values()];
-          const _avgCorrelation =
-            patterns?.reduce((s, p) => s + p?.correlation, 0) / patterns?.length;
-          const _avgConfidence =
-            patterns?.reduce((s, p) => s + p?.confidence, 0) / patterns?.length;
+      patternsByType.forEach((platformMap, type) => {
+        if (platformMap.size >= 2) {
+          const patterns = [...platformMap.values()];
+          const avgCorrelation =
+            patterns.reduce((s, p) => s + p.correlation, 0) / patterns.length;
+          const avgConfidence =
+            patterns.reduce((s, p) => s + p.confidence, 0) / patterns.length;
 
-          if (avgConfidence > 0.5 && Math?.abs(avgCorrelation) > 0.1) {
-            universalPatterns?.push({
+          if (avgConfidence > 0.5 && Math.abs(avgCorrelation) > 0.1) {
+            universalPatterns.push({
               id: `universal_${type}`,
-              description: `${type?.replace(/_/g, " ")} pattern works across ${platformMap?.size} platforms`,
-              effectiveness: Math?.abs(avgCorrelation),
-              applicablePlatforms: [...platformMap?.keys()],
+              description: `${type.replace(/_/g, " ")} pattern works across ${platformMap.size} platforms`,
+              effectiveness: Math.abs(avgCorrelation),
+              applicablePlatforms: [...platformMap.keys()],
               optimalVariations: new Map(
-                patterns?.map((p) => [p?.platforms[0], p?.pattern]),
+                patterns.map((p) => [p.platforms[0], p.pattern]),
               ),
             });
           }
@@ -1584,12 +1584,12 @@ class HyperLearningEngine extends EventEmitter {
       });
 
       for (const platform of platformData) {
-        const _platformPatternList =
-          platformPatterns?.get(platform?.platform) || [];
-        const _amplifiers = platformPatternList
-          .filter((p) => p?.correlation > 0.1)
-          .map((p) => p?.engagementImpact);
-        platformAmplifiers?.set(platform?.platform, amplifiers);
+        const platformPatternList =
+          platformPatterns.get(platform.platform) || [];
+        const amplifiers = platformPatternList
+          .filter((p) => p.correlation > 0.1)
+          .map((p) => p.engagementImpact);
+        platformAmplifiers.set(platform.platform, amplifiers);
       }
 
       const synthesis: CrossPlatformSynthesis = {
@@ -1597,24 +1597,24 @@ class HyperLearningEngine extends EventEmitter {
         platformSpecificAmplifiers: platformAmplifiers,
         optimalContentMatrix: {
           dimensions: ["hook", "length", "emoji", "hashtag", "timing"],
-          weights: this?.calculateOptimalWeights(allMicroPatterns),
-          optimalCombinations: this?.findOptimalCombinations(allMicroPatterns),
+          weights: this.calculateOptimalWeights(allMicroPatterns),
+          optimalCombinations: this.findOptimalCombinations(allMicroPatterns),
         },
-        audienceBehaviorModel: await this?.buildAudienceBehaviorModel(),
+        audienceBehaviorModel: await this.buildAudienceBehaviorModel(),
       };
 
       this.crossPlatformModel = synthesis;
-      this?.learningMetrics.crossPlatformSyntheses++;
+      this.learningMetrics.crossPlatformSyntheses++;
 
-      return { synthesisCount: universalPatterns?.length, model: synthesis };
+      return { synthesisCount: universalPatterns.length, model: synthesis };
     } catch (error) {
-      logger?.warn({ err: error }, "Cross-platform synthesis failed:");
+      logger.warn({ err: error }, "Cross-platform synthesis failed:");
       return { synthesisCount: 0, model: null };
     }
   }
 
   private calculateOptimalWeights(patterns: MicroPattern[]): number[][] {
-    const _dimensions = [
+    const dimensions = [
       "hook_structure",
       "character_count",
       "emoji_density",
@@ -1623,21 +1623,21 @@ class HyperLearningEngine extends EventEmitter {
     ];
 
     // Pre-compute avg absolute impact for each dimension from real pattern data.
-    const _dimImpacts = dimensions?.map((dim) => {
-      const _dp = patterns?.filter((p) => p?.type === dim);
-      return dp?.length > 0
-        ? dp?.reduce((s, p) => s + Math?.abs(p?.engagementImpact), 0) / dp?.length
+    const dimImpacts = dimensions.map((dim) => {
+      const dp = patterns.filter((p) => p.type === dim);
+      return dp.length > 0
+        ? dp.reduce((s, p) => s + Math.abs(p.engagementImpact), 0) / dp.length
         : 0;
     });
-    const _totalImpact = dimImpacts?.reduce((s, v) => s + v, 0) || 1;
+    const totalImpact = dimImpacts.reduce((s, v) => s + v, 0) || 1;
 
     const weights: number[][] = [];
-    for (let i = 0; i < dimensions?.length; i++) {
+    for (let i = 0; i < dimensions.length; i++) {
       const row: number[] = [];
-      for (let j = 0; j < dimensions?.length; j++) {
+      for (let j = 0; j < dimensions.length; j++) {
         if (i === j) {
           // Diagonal: how strongly this dimension self-predicts engagement.
-          row?.push(Math?.min(1, dimImpacts[i] / 50));
+          row.push(Math.min(1, dimImpacts[i] / 50));
         } else {
           // Off-diagonal: cross-influence weight derived from the relative share
           // of dimension j's impact in the overall pattern landscape.
@@ -1651,7 +1651,9 @@ class HyperLearningEngine extends EventEmitter {
     return weights;
   }
 
-  private findOptimalCombinations(patterns: MicroPattern[]): Array<{
+  private findOptimalCombinations(
+    patterns: MicroPattern[],
+  ): Array<{
     combination: Record<string, string>;
     predictedEngagement: number;
     confidence: number;
@@ -1664,7 +1666,7 @@ class HyperLearningEngine extends EventEmitter {
 
     const topPatternsByType: Map<string, MicroPattern> = new Map();
     for (const pattern of patterns) {
-      const _existing = topPatternsByType?.get(pattern?.type);
+      const existing = topPatternsByType?.get(pattern?.type);
       if (!existing || pattern?.engagementImpact > existing?.engagementImpact) {
         topPatternsByType?.set(pattern?.type, pattern);
       }
@@ -1695,12 +1697,12 @@ class HyperLearningEngine extends EventEmitter {
 
   private async buildAudienceBehaviorModel(): Promise<AudienceBehaviorModel> {
     try {
-      const _thirtyDaysAgo = new Date();
+      const thirtyDaysAgo = new Date();
       thirtyDaysAgo?.setDate(thirtyDaysAgo?.getDate() - 30);
 
-      const _hourlyData = await db
+      const hourlyData = await db
         .select({
-          hour: autopilotLearningData?.postingHour,
+          hour: autopilotLearningData.postingHour,
           avgEngagement: avg(autopilotLearningData?.engagementRate),
           postCount: count(),
         })
@@ -1719,15 +1721,15 @@ class HyperLearningEngine extends EventEmitter {
         end: number;
         intensity: number;
       } | null = null;
-      const _avgEngagement =
+      const avgEngagement =
         hourlyData?.reduce(
           (s, h) => s + parseFloat(String(h?.avgEngagement) || "0"),
           0,
         ) / Math?.max(1, hourlyData?.length);
 
       for (const hourData of hourlyData) {
-        const _hour = hourData?.hour || 0;
-        const _engagement = parseFloat(String(hourData?.avgEngagement) || "0");
+        const hour = hourData?.hour || 0;
+        const engagement = parseFloat(String(hourData?.avgEngagement) || "0");
 
         if (engagement > avgEngagement * 1.2) {
           if (currentPeak && hour === currentPeak?.end + 1) {
@@ -1756,28 +1758,28 @@ class HyperLearningEngine extends EventEmitter {
       // to understand when audience fatigue typically sets in.
       const fatigueCycles: number[] = [];
       if (hourlyData?.length >= 4) {
-        const _sorted = [...hourlyData]
+        const sorted = [...hourlyData]
           .map((h) => h?.hour ?? 0)
           .sort((a, b) => a - b);
         const gaps: number[] = [];
         for (let k = 1; k < sorted?.length; k++)
           gaps?.push(sorted[k] - sorted[k - 1]);
-        const _sortedGaps = gaps?.sort((a, b) => a - b);
-        const _pct = (p: number) =>
+        const sortedGaps = gaps?.sort((a, b) => a - b);
+        const pct = (p: number) =>
           sortedGaps[Math?.floor(sortedGaps?.length * p)] ?? 0;
         [0.25, 0.5, 0.75, 0.9].forEach((p) => {
-          const _v = pct(p);
+          const v = pct(p);
           if (v > 0) fatigueCycles?.push(v);
         });
       }
 
       // engagementVelocityCurve: derived from the hourly engagement distribution
       // normalized so the peak hour = 1.0.  Only include hours with above-mean engagement.
-      const _maxEng = Math?.max(
+      const maxEng = Math?.max(
         ...hourlyData?.map((h) => parseFloat(String(h?.avgEngagement) || "0")),
         0.001,
       );
-      const _velocityCurve = hourlyData
+      const velocityCurve = hourlyData
         .filter(
           (h) => parseFloat(String(h?.avgEngagement) || "0") > avgEngagement,
         )
@@ -1796,20 +1798,20 @@ class HyperLearningEngine extends EventEmitter {
 
       // viralityThresholds: the 90th-percentile engagement per platform from real data.
       // Filled in from the platform-level cross-platform cache when available.
-      const _crossKey = _hlKey("cross_platform_90d");
+      const crossKey = _hlKey("cross_platform_90d");
       const platformData: Record<string, unknown>[] =
         _hlGet<any[]>(crossKey) ?? [];
       const viralityThresholds: Record<string, number> = {};
       for (const row of platformData) {
-        const _p90 = parseFloat(String(row?.avgEngagement) || "0") * 1.5; // approx 90th pct
+        const p90 = parseFloat(String(row?.avgEngagement) || "0") * 1.5; // approx 90th pct
         if (row?.platform && p90 > 0)
-          viralityThresholds[row?.platform] = Math?.round(p90 * 100) / 100;
+          viralityThresholds[row.platform] = Math?.round(p90 * 100) / 100;
       }
 
       return {
         peakActivityWindows,
-        contentFatigueCycles: fatigueCycles?.length > 0 ? fatigueCycles : [],
-        engagementVelocityCurve: velocityCurve?.length > 0 ? velocityCurve : [],
+        contentFatigueCycles: fatigueCycles.length > 0 ? fatigueCycles : [],
+        engagementVelocityCurve: velocityCurve.length > 0 ? velocityCurve : [],
         viralityThresholds,
       };
     } catch (error) {
@@ -1830,16 +1832,16 @@ class HyperLearningEngine extends EventEmitter {
     try {
       // Build timing and content first, then store them so buildCompositePredictiveModel()
       // can read them from this?.predictiveModels during the same cycle.
-      const _timingModel = await this?.buildTimingPredictiveModel();
-      const _contentModel = await this?.buildContentPredictiveModel();
+      const timingModel = await this?.buildTimingPredictiveModel();
+      const contentModel = await this?.buildContentPredictiveModel();
       this?.predictiveModels.set(timingModel?.type, timingModel);
       this?.predictiveModels.set(contentModel?.type, contentModel);
 
-      const _compositeModel = await this?.buildCompositePredictiveModel();
+      const compositeModel = await this?.buildCompositePredictiveModel();
       this?.predictiveModels.set(compositeModel?.type, compositeModel);
 
       models?.push(timingModel, contentModel, compositeModel);
-      this?.learningMetrics.predictionsGenerated += models?.reduce(
+      this.learningMetrics.predictionsGenerated += models?.reduce(
         (s, m) => s + m?.predictions.length,
         0,
       );
@@ -1857,108 +1859,108 @@ class HyperLearningEngine extends EventEmitter {
     // Pull real behavioral data already cached by runBehavioralAnalysis() this cycle.
     // This gives us actual hour×dayOfWeek → avgEngagement derived from the user's own
     // posting history rather than hardcoded morning/evening heuristics.
-    const _behavKey = _hlKey("behavioral_velocity_30d");
+    const behavKey = _hlKey("behavioral_velocity_30d");
     const engVelocity: Record<string, unknown>[] =
       _hlGet<any[]>(behavKey) ?? [];
-    const _hasBehavData = engVelocity?.length > 0;
+    const hasBehavData = engVelocity.length > 0;
 
     // Compute data-derived boosts: for each (hour, day) slot, how much does
     // engagement deviate from the mean across all slots?
-    const _hourSums = new Map<number, { total: number; n: number }>();
-    const _daySums = new Map<number, { total: number; n: number }>();
+    const hourSums = new Map<number, { total: number; n: number }>();
+    const daySums = new Map<number, { total: number; n: number }>();
     let globalSum = 0;
     let globalCount = 0;
 
     for (const row of engVelocity) {
-      const _eng = parseFloat(String(row?.avgEngagement) || "0");
+      const eng = parseFloat(String(row.avgEngagement) || "0");
       if (!isFinite(eng)) continue;
       globalSum += eng;
       globalCount++;
-      if (row?.hour != null) {
-        const _s = hourSums?.get(row?.hour) ?? { total: 0, n: 0 };
-        s?.total += eng;
-        s?.n++;
-        hourSums?.set(row?.hour, s);
+      if (row.hour != null) {
+        const s = hourSums.get(row.hour) ?? { total: 0, n: 0 };
+        s.total += eng;
+        s.n++;
+        hourSums.set(row.hour, s);
       }
-      if (row?.dayOfWeek != null) {
-        const _s = daySums?.get(row?.dayOfWeek) ?? { total: 0, n: 0 };
-        s?.total += eng;
-        s?.n++;
-        daySums?.set(row?.dayOfWeek, s);
+      if (row.dayOfWeek != null) {
+        const s = daySums.get(row.dayOfWeek) ?? { total: 0, n: 0 };
+        s.total += eng;
+        s.n++;
+        daySums.set(row.dayOfWeek, s);
       }
     }
 
-    const _globalMean = globalCount > 0 ? globalSum / globalCount : 0;
-    const _baseEngagement = globalMean > 0 ? globalMean : 3.0; // industry fallback only when no data at all
+    const globalMean = globalCount > 0 ? globalSum / globalCount : 0;
+    const baseEngagement = globalMean > 0 ? globalMean : 3.0; // industry fallback only when no data at all
 
     // Relative boost for each hour: (hourAvg - globalMean) / globalMean, capped ±1.0
-    const _hourBoost = (hour: number): number => {
-      const _s = hourSums?.get(hour);
-      if (!s || s?.n === 0 || globalMean === 0) return 0;
-      return Math?.max(
+    const hourBoost = (hour: number): number => {
+      const s = hourSums.get(hour);
+      if (!s || s.n === 0 || globalMean === 0) return 0;
+      return Math.max(
         -1,
-        Math?.min(1, (s?.total / s?.n - globalMean) / globalMean),
+        Math.min(1, (s.total / s.n - globalMean) / globalMean),
       );
     };
-    const _dayBoost = (dow: number): number => {
-      const _s = daySums?.get(dow);
-      if (!s || s?.n === 0 || globalMean === 0) return 0;
-      return Math?.max(
+    const dayBoost = (dow: number): number => {
+      const s = daySums.get(dow);
+      if (!s || s.n === 0 || globalMean === 0) return 0;
+      return Math.max(
         -1,
-        Math?.min(1, (s?.total / s?.n - globalMean) / globalMean),
+        Math.min(1, (s.total / s.n - globalMean) / globalMean),
       );
     };
 
-    const _timingPatterns = [...this?.microPatternCache.values()]
+    const timingPatterns = [...this.microPatternCache.values()]
       .flat()
-      .filter((p) => p?.type === "timing_precision");
+      .filter((p) => p.type === "timing_precision");
 
     for (let hour = 0; hour < 24; hour++) {
       for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
-        const _relevantPatterns = timingPatterns?.filter(
+        const relevantPatterns = timingPatterns.filter(
           (p) =>
-            p?.pattern.includes(`:${hour?.toString().padStart(2, "0")}`) ||
-            p?.pattern.includes("minute"),
+            p.pattern.includes(`:${hour.toString().padStart(2, "0")}`) ||
+            p.pattern.includes("minute"),
         );
 
-        const _hBoost = hourBoost(hour);
-        const _dBoost = dayBoost(dayOfWeek);
+        const hBoost = hourBoost(hour);
+        const dBoost = dayBoost(dayOfWeek);
         let predictedBoost = hBoost + dBoost;
         const factors: Array<{ factor: string; weight: number }> = [];
 
         if (hBoost !== 0)
-          factors?.push({
+          factors.push({
             factor: `hour_${hour}_engagement_delta`,
             weight: hBoost,
           });
         if (dBoost !== 0)
-          factors?.push({
+          factors.push({
             factor: `day_${dayOfWeek}_engagement_delta`,
             weight: dBoost,
           });
         for (const p of relevantPatterns) {
-          predictedBoost += p?.engagementImpact / 100;
-          factors?.push({ factor: p?.pattern, weight: p?.engagementImpact / 100 });
+          predictedBoost += p.engagementImpact / 100;
+          factors.push({ factor: p.pattern, weight: p.engagementImpact / 100 });
         }
 
         // Confidence scales with how much real data backs this slot
-        const _slotRows = engVelocity?.filter(
-          (r) => r?.hour === hour && r?.dayOfWeek === dayOfWeek,
+        const slotRows = engVelocity.filter(
+          (r) => r.hour === hour && r.dayOfWeek === dayOfWeek,
         );
-        const _slotDataPoints =
-          slotRows?.length > 0
+        const slotDataPoints =
+          slotRows.length > 0
             ? (slotRows[0] as Record<string, unknown>).postCount || 1
             : 0;
-        const _confidence = hasBehavData
-          ? Math?.min(
+        const confidence = hasBehavData
+          ? Math.min(
               0.92,
               0.35 +
                 (slotDataPoints / 50) * 0.5 +
-                relevantPatterns?.length * 0.05,
+                relevantPatterns.length * 0.05,
             )
-          : Math?.min(0.5, 0.2 + relevantPatterns?.length * 0.05);
+          : Math.min(0.5, 0.2 + relevantPatterns.length * 0.05);
 
-        predictions?.push({
+        predictions.push({
           scenario: { hour, dayOfWeek },
           predictedEngagement: baseEngagement * (1 + predictedBoost),
           confidence,
@@ -1969,17 +1971,17 @@ class HyperLearningEngine extends EventEmitter {
 
     // Accuracy reflects actual data coverage: what fraction of 168 possible
     // hour×day slots have at least one real observation?
-    const _coveredSlots = engVelocity?.length;
-    const _coverageRatio = Math?.min(1, coveredSlots / 168);
-    const _patternBonus = Math?.min(0.15, timingPatterns?.length * 0.01);
-    const _accuracy =
-      Math?.round((0.35 + coverageRatio * 0.5 + patternBonus) * 100) / 100;
+    const coveredSlots = engVelocity.length;
+    const coverageRatio = Math.min(1, coveredSlots / 168);
+    const patternBonus = Math.min(0.15, timingPatterns.length * 0.01);
+    const accuracy =
+      Math.round((0.35 + coverageRatio * 0.5 + patternBonus) * 100) / 100;
 
     return {
       type: "timing",
       accuracy,
       predictions: predictions
-        .sort((a, b) => b?.predictedEngagement - a?.predictedEngagement)
+        .sort((a, b) => b.predictedEngagement - a.predictedEngagement)
         .slice(0, 20),
     };
   }
@@ -1987,7 +1989,7 @@ class HyperLearningEngine extends EventEmitter {
   private async buildContentPredictiveModel(): Promise<PredictiveModel> {
     const predictions: PredictiveModel["predictions"] = [];
 
-    const _contentPatterns = [...this?.microPatternCache.values()]
+    const contentPatterns = [...this.microPatternCache.values()]
       .flat()
       .filter((p) =>
         [
@@ -1995,51 +1997,51 @@ class HyperLearningEngine extends EventEmitter {
           "character_count",
           "emoji_density",
           "word_sentiment",
-        ].includes(p?.type),
+        ].includes(p.type),
       );
 
-    const _hookTypes = contentPatterns?.filter(
-      (p) => p?.type === "hook_structure",
+    const hookTypes = contentPatterns.filter(
+      (p) => p.type === "hook_structure",
     );
-    const _lengthPatterns = contentPatterns?.filter(
-      (p) => p?.type === "character_count",
+    const lengthPatterns = contentPatterns.filter(
+      (p) => p.type === "character_count",
     );
-    const _emojiPatterns = contentPatterns?.filter(
-      (p) => p?.type === "emoji_density",
+    const emojiPatterns = contentPatterns.filter(
+      (p) => p.type === "emoji_density",
     );
 
     // Derive base engagement from real data if available, otherwise use 0 as the
     // neutral reference (predictions are expressed as engagement deltas, not
     // absolute percentages, until the DB has enough posts to compute a true mean).
-    const _microKey = _hlKey("micro_all_90d");
+    const microKey = _hlKey("micro_all_90d");
     const allData: Record<string, unknown>[] = _hlGet<any[]>(microKey) ?? [];
-    const _baseEngagement =
-      allData?.length >= 10
-        ? allData?.reduce((s, d) => s + (d?.engagementRate || 0), 0) /
-          allData?.length
+    const baseEngagement =
+      allData.length >= 10
+        ? allData.reduce((s, d) => s + (d.engagementRate || 0), 0) /
+          allData.length
         : 0;
 
-    for (const hook of hookTypes?.slice(0, 5)) {
-      for (const length of lengthPatterns?.slice(0, 3)) {
-        for (const emoji of emojiPatterns?.slice(0, 3)) {
-          const _boost =
-            hook?.engagementImpact / 100 +
-            length?.engagementImpact / 100 +
-            emoji?.engagementImpact / 100;
-          const _avgConfidence =
-            (hook?.confidence + length?.confidence + emoji?.confidence) / 3;
-          predictions?.push({
+    for (const hook of hookTypes.slice(0, 5)) {
+      for (const length of lengthPatterns.slice(0, 3)) {
+        for (const emoji of emojiPatterns.slice(0, 3)) {
+          const boost =
+            hook.engagementImpact / 100 +
+            length.engagementImpact / 100 +
+            emoji.engagementImpact / 100;
+          const avgConfidence =
+            (hook.confidence + length.confidence + emoji.confidence) / 3;
+          predictions.push({
             scenario: {
-              hookType: hook?.pattern,
-              lengthRange: length?.pattern,
-              emojiDensity: emoji?.pattern,
+              hookType: hook.pattern,
+              lengthRange: length.pattern,
+              emojiDensity: emoji.pattern,
             },
             predictedEngagement: baseEngagement + boost,
             confidence: avgConfidence,
             factors: [
-              { factor: hook?.pattern, weight: hook?.engagementImpact / 100 },
-              { factor: length?.pattern, weight: length?.engagementImpact / 100 },
-              { factor: emoji?.pattern, weight: emoji?.engagementImpact / 100 },
+              { factor: hook.pattern, weight: hook.engagementImpact / 100 },
+              { factor: length.pattern, weight: length.engagementImpact / 100 },
+              { factor: emoji.pattern, weight: emoji.engagementImpact / 100 },
             ],
           });
         }
@@ -2047,28 +2049,28 @@ class HyperLearningEngine extends EventEmitter {
     }
 
     // Accuracy derived from how many patterns back the model (more patterns = higher accuracy)
-    const _patternCoverage = Math?.min(1, contentPatterns?.length / 30);
-    const _avgPatternConf =
-      contentPatterns?.length > 0
-        ? contentPatterns?.reduce((s, p) => s + p?.confidence, 0) /
-          contentPatterns?.length
+    const patternCoverage = Math.min(1, contentPatterns.length / 30);
+    const avgPatternConf =
+      contentPatterns.length > 0
+        ? contentPatterns.reduce((s, p) => s + p.confidence, 0) /
+          contentPatterns.length
         : 0;
-    const _accuracy =
-      Math?.round((0.3 + patternCoverage * 0.35 + avgPatternConf * 0.25) * 100) /
+    const accuracy =
+      Math.round((0.3 + patternCoverage * 0.35 + avgPatternConf * 0.25) * 100) /
       100;
 
     return {
       type: "content",
       accuracy,
       predictions: predictions
-        .sort((a, b) => b?.predictedEngagement - a?.predictedEngagement)
+        .sort((a, b) => b.predictedEngagement - a.predictedEngagement)
         .slice(0, 15),
     };
   }
 
   private async buildCompositePredictiveModel(): Promise<PredictiveModel> {
-    const _timingModel = this?.predictiveModels.get("timing");
-    const _contentModel = this?.predictiveModels.get("content");
+    const timingModel = this.predictiveModels.get("timing");
+    const contentModel = this.predictiveModels.get("content");
 
     if (!timingModel || !contentModel) {
       return { type: "composite", accuracy: 0, predictions: [] };
@@ -2076,32 +2078,32 @@ class HyperLearningEngine extends EventEmitter {
 
     const predictions: PredictiveModel["predictions"] = [];
 
-    const _topTimings = timingModel?.predictions.slice(0, 5);
-    const _topContent = contentModel?.predictions.slice(0, 5);
+    const topTimings = timingModel.predictions.slice(0, 5);
+    const topContent = contentModel.predictions.slice(0, 5);
 
     for (const timing of topTimings) {
       for (const content of topContent) {
-        predictions?.push({
+        predictions.push({
           scenario: {
-            ...timing?.scenario,
-            ...content?.scenario,
+            ...timing.scenario,
+            ...content.scenario,
           },
           predictedEngagement:
-            ((timing?.predictedEngagement + content?.predictedEngagement) / 2) *
+            ((timing.predictedEngagement + content.predictedEngagement) / 2) *
             1.1,
-          confidence: (timing?.confidence + content?.confidence) / 2,
-          factors: [...timing?.factors, ...content?.factors],
+          confidence: (timing.confidence + content.confidence) / 2,
+          factors: [...timing.factors, ...content.factors],
         });
       }
     }
 
     // Composite accuracy = harmonic mean of timing and content accuracies,
     // reflecting that the composite is only as good as its weakest model.
-    const _compositeAccuracy =
-      timingModel?.accuracy > 0 && contentModel?.accuracy > 0
-        ? Math?.round(
-            ((2 * timingModel?.accuracy * contentModel?.accuracy) /
-              (timingModel?.accuracy + contentModel?.accuracy)) *
+    const compositeAccuracy =
+      timingModel.accuracy > 0 && contentModel.accuracy > 0
+        ? Math.round(
+            ((2 * timingModel.accuracy * contentModel.accuracy) /
+              (timingModel.accuracy + contentModel.accuracy)) *
               100,
           ) / 100
         : 0;
@@ -2110,47 +2112,47 @@ class HyperLearningEngine extends EventEmitter {
       type: "composite",
       accuracy: compositeAccuracy,
       predictions: predictions
-        .sort((a, b) => b?.predictedEngagement - a?.predictedEngagement)
+        .sort((a, b) => b.predictedEngagement - a.predictedEngagement)
         .slice(0, 10),
     };
   }
 
   private async runBehavioralAnalysis(): Promise<{ patternsFound: number }> {
     try {
-      const _thirtyDaysAgo = new Date();
-      thirtyDaysAgo?.setDate(thirtyDaysAgo?.getDate() - 30);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const __behavKey = _hlKey("behavioral_velocity_30d");
+      const behavKey = _hlKey("behavioral_velocity_30d");
        
       let engagementVelocity: Record<string, unknown>[] | undefined =
-        _hlGet<Record<string, unknown>[]>(_behavKey);
+        _hlGet<Record<string, unknown>[]>(behavKey);
       if (!engagementVelocity) {
         engagementVelocity = await db
           .select({
-            dayOfWeek: autopilotLearningData?.postingDayOfWeek,
-            hour: autopilotLearningData?.postingHour,
-            avgEngagement: avg(autopilotLearningData?.engagementRate),
-            avgImpressions: avg(autopilotLearningData?.impressions),
+            dayOfWeek: autopilotLearningData.postingDayOfWeek,
+            hour: autopilotLearningData.postingHour,
+            avgEngagement: avg(autopilotLearningData.engagementRate),
+            avgImpressions: avg(autopilotLearningData.impressions),
           })
           .from(autopilotLearningData)
-          .where(gte(autopilotLearningData?.createdAt, thirtyDaysAgo))
+          .where(gte(autopilotLearningData.createdAt, thirtyDaysAgo))
           .groupBy(
-            autopilotLearningData?.postingDayOfWeek,
-            autopilotLearningData?.postingHour,
+            autopilotLearningData.postingDayOfWeek,
+            autopilotLearningData.postingHour,
           );
-        _hlSet(_behavKey, engagementVelocity);
-        logger?.info(
-          `[HyperLearning] behavioral_velocity_30d: ${engagementVelocity?.length} rows fetched from DB (cached for next cycle)`,
+        _hlSet(behavKey, engagementVelocity);
+        logger.info(
+          `[HyperLearning] behavioral_velocity_30d: ${engagementVelocity.length} rows fetched from DB (cached for next cycle)`,
         );
       } else {
-        logger?.info(
-          `[HyperLearning] behavioral_velocity_30d: ${engagementVelocity?.length} rows served from process cache`,
+        logger.info(
+          `[HyperLearning] behavioral_velocity_30d: ${engagementVelocity.length} rows served from process cache`,
         );
       }
 
-      return { patternsFound: engagementVelocity?.length };
+      return { patternsFound: engagementVelocity.length };
     } catch (error) {
-      logger?.warn({ err: error }, "Behavioral analysis failed:");
+      logger.warn({ err: error }, "Behavioral analysis failed:");
       return { patternsFound: 0 };
     }
   }
@@ -2163,17 +2165,17 @@ class HyperLearningEngine extends EventEmitter {
       // against the overall distribution so we can identify which content types are
       // performing above/below the benchmark (the closest analogue to competitive data
       // that exists in the system without external data sources).
-      const _ninetyDaysAgo = new Date();
+      const ninetyDaysAgo = new Date();
       ninetyDaysAgo?.setDate(ninetyDaysAgo?.getDate() - 90);
 
-      const _benchKey = _hlKey("competitive_benchmark_90d");
+      const benchKey = _hlKey("competitive_benchmark_90d");
       let benchmarkData: Record<string, unknown>[] | undefined =
         _hlGet<Record<string, unknown>[]>(benchKey);
       if (!benchmarkData) {
         benchmarkData = await db
           .select({
-            platform: autopilotLearningData?.platform,
-            contentType: autopilotLearningData?.contentType,
+            platform: autopilotLearningData.platform,
+            contentType: autopilotLearningData.contentType,
             avgEngagement: avg(autopilotLearningData?.engagementRate),
             postCount: count(),
           })
@@ -2196,7 +2198,7 @@ class HyperLearningEngine extends EventEmitter {
       if (benchmarkData?.length === 0) return { insightsFound: 0 };
 
       // Overall mean engagement across all platform×contentType combos
-      const _overallMean =
+      const overallMean =
         benchmarkData?.reduce(
           (s: number, r: Record<string, unknown>) =>
             s + parseFloat(String(r?.avgEngagement) || "0"),
@@ -2204,13 +2206,13 @@ class HyperLearningEngine extends EventEmitter {
         ) / benchmarkData?.length;
 
       // Insights = combos that beat the mean by ≥15% and have ≥5 posts (statistically meaningful)
-      const _insights = benchmarkData?.filter(
+      const insights = benchmarkData?.filter(
         (r: Record<string, unknown>) =>
           parseFloat(String(r?.avgEngagement) || "0") > overallMean * 1.15 &&
           (r?.postCount ?? 0) >= 5,
       );
 
-      return { insightsFound: insights?.length };
+      return { insightsFound: insights.length };
     } catch (error) {
       logger?.warn({ err: error }, "Competitive intelligence failed:");
       return { insightsFound: 0 };
@@ -2221,10 +2223,10 @@ class HyperLearningEngine extends EventEmitter {
     const emergent: MicroPattern[] = [];
 
     try {
-      const _sevenDaysAgo = new Date();
+      const sevenDaysAgo = new Date();
       sevenDaysAgo?.setDate(sevenDaysAgo?.getDate() - 7);
 
-      const _recentData = await db
+      const recentData = await db
         .select()
         .from(autopilotLearningData)
         .where(gte(autopilotLearningData?.createdAt, sevenDaysAgo))
@@ -2233,14 +2235,14 @@ class HyperLearningEngine extends EventEmitter {
 
       if (recentData?.length < 10) return emergent;
 
-      const _recentAvg =
+      const recentAvg =
         recentData?.reduce((s, d) => s + (d?.engagementRate || 0), 0) /
         recentData?.length;
 
-      const _thirtyDaysAgo = new Date();
+      const thirtyDaysAgo = new Date();
       thirtyDaysAgo?.setDate(thirtyDaysAgo?.getDate() - 30);
 
-      const _olderData = await db
+      const olderData = await db
         .select({
           avgEngagement: avg(autopilotLearningData?.engagementRate),
         })
@@ -2252,9 +2254,9 @@ class HyperLearningEngine extends EventEmitter {
           ),
         );
 
-      const _historicalAvg =
+      const historicalAvg =
         parseFloat(String(olderData[0]?.avgEngagement) || "0") || recentAvg;
-      const _trendDirection =
+      const trendDirection =
         recentAvg > historicalAvg * 1.1
           ? "improving"
           : recentAvg < historicalAvg * 0.9
@@ -2267,7 +2269,7 @@ class HyperLearningEngine extends EventEmitter {
         pattern: `Engagement trend: ${trendDirection} (${((recentAvg / historicalAvg - 1) * 100).toFixed(1)}% change)`,
         correlation:
           (recentAvg - historicalAvg) / Math?.max(0.01, historicalAvg),
-        sampleSize: recentData?.length,
+        sampleSize: recentData.length,
         confidence: 0.7,
         engagementImpact: (recentAvg / historicalAvg - 1) * 100,
         platformSpecific: false,
@@ -2285,25 +2287,25 @@ class HyperLearningEngine extends EventEmitter {
     const results: ABTestResult[] = [];
 
     this?.abTestQueue.forEach((test, id) => {
-      const _minImpressionsRequired =
+      const minImpressionsRequired =
         test?.variants.length * AB_MIN_IMPRESSIONS_PER_VARIATE;
-      const _totalImpressions = test?.variants.reduce(
+      const totalImpressions = test?.variants.reduce(
         (s, v) => s + v?.impressions,
         0,
       );
 
       if (totalImpressions >= minImpressionsRequired) {
-        const _sortedVariants = [...test?.variants].sort(
+        const sortedVariants = [...test?.variants].sort(
           (a, b) => b?.engagementRate - a?.engagementRate,
         );
-        const _winner = sortedVariants[0];
-        const _runnerUp = sortedVariants[1];
+        const winner = sortedVariants[0];
+        const runnerUp = sortedVariants[1];
 
         if (winner?.statisticalSignificance >= AB_SIGNIFICANCE_THRESHOLD) {
           test.winner = winner?.id;
           test.confidenceLevel = winner?.statisticalSignificance;
 
-          const _upliftPct =
+          const upliftPct =
             runnerUp && runnerUp?.engagementRate > 0
               ? (
                   (winner?.engagementRate / runnerUp?.engagementRate - 1) *
@@ -2331,7 +2333,7 @@ class HyperLearningEngine extends EventEmitter {
       }
     });
 
-    this?.learningMetrics.abTestsCompleted += results?.length;
+    this.learningMetrics.abTestsCompleted += results?.length;
     return results;
   }
 
@@ -2340,12 +2342,12 @@ class HyperLearningEngine extends EventEmitter {
     winner: ABTestResult["variants"][number],
   ): Promise<void> {
     try {
-      const _aiKey = process?.env.AI_SERVER_KEY || "";
-      const _payload = {
+      const aiKey = process?.env.AI_SERVER_KEY || "";
+      const payload = {
         content: `AB test winner: ${winner?.id} — ${winner?.engagementRate.toFixed(2)}% engagement`,
         source: "hyper_ab_test",
         trigger: "ab_winner",
-        engagement_rate: winner?.engagementRate,
+        engagement_rate: winner.engagementRate,
         platform: (test as Record<string, unknown>).platform || "unknown",
         content_type: (test as Record<string, unknown>).contentType || "post",
         hook_type: (winner as Record<string, unknown>).hookType || "unknown",
@@ -2353,22 +2355,22 @@ class HyperLearningEngine extends EventEmitter {
         curriculum_hint: "reinforce_winning_visual_style",
         dispatched_at: new Date().toISOString(),
         // Extra context (non-schema fields — MaxCore ignores extras)
-        test_id: test?.testId,
-        winner_id: winner?.id,
-        confidence: winner?.statisticalSignificance,
-        variate_count: test?.variants.length,
-        learnings: test?.learnings,
+        test_id: test.testId,
+        winner_id: winner.id,
+        confidence: winner.statisticalSignificance,
+        variate_count: test.variants.length,
+        learnings: test.learnings,
       };
 
-      const _resp = await fetch(`${AI_SERVER_URL}/api/train/feedback`, {
+      const resp = await fetch(`${AI_SERVER_URL}/api/train/feedback`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${aiKey}`,
           "X-API-Key": aiKey,
         },
-        body: JSON?.stringify(payload),
-        signal: AbortSignal?.timeout(5000),
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(5000),
       });
 
       if (resp?.ok) {
@@ -2388,9 +2390,9 @@ class HyperLearningEngine extends EventEmitter {
     } catch {
       this?.pendingTrainingSignals.push({
         source: "hyper_ab_test",
-        test_id: test?.id,
-        winner_id: winner?.id,
-        queued_at: Date?.now(),
+        test_id: test.id,
+        winner_id: winner.id,
+        queued_at: Date.now(),
       });
       if (this?.pendingTrainingSignals.length > 100)
         this?.pendingTrainingSignals.shift();
@@ -2406,13 +2408,13 @@ class HyperLearningEngine extends EventEmitter {
     let adaptations = 0;
 
     try {
-      const _topMicroPatterns = [...this?.microPatternCache.values()]
+      const topMicroPatterns = [...this?.microPatternCache.values()]
         .flat()
         .filter((p) => p?.confidence > 0.7 && p?.engagementImpact > 10)
         .sort((a, b) => b?.engagementImpact - a?.engagementImpact)
         .slice(0, 10);
 
-      for (const pattern of topMicroPatterns) {
+      for (const _pattern of topMicroPatterns) {
         adaptations++;
       }
 
@@ -2433,14 +2435,14 @@ class HyperLearningEngine extends EventEmitter {
     abTests: number,
     adaptations: number,
   ): number {
-    const _microPatternHours = microPatterns * 0.5;
-    const _synthesisHours = syntheses * 2;
-    const _predictionHours = predictions * 0.25;
-    const _behavioralHours = behavioral * 0.1;
-    const _competitiveHours = competitive * 1;
-    const _emergentHours = emergent * 0.3;
-    const _abTestHours = abTests * 4;
-    const _adaptationHours = adaptations * 0.2;
+    const microPatternHours = microPatterns * 0.5;
+    const synthesisHours = syntheses * 2;
+    const predictionHours = predictions * 0.25;
+    const behavioralHours = behavioral * 0.1;
+    const competitiveHours = competitive * 1;
+    const emergentHours = emergent * 0.3;
+    const abTestHours = abTests * 4;
+    const adaptationHours = adaptations * 0.2;
 
     return (
       microPatternHours +
@@ -2475,9 +2477,9 @@ class HyperLearningEngine extends EventEmitter {
         category: "micro_pattern",
         title: `Micro-Pattern: ${pattern?.pattern}`,
         description: `This pattern affects engagement by ${pattern?.engagementImpact.toFixed(1)}% with ${(pattern?.confidence * 100).toFixed(0)}% confidence`,
-        confidence: pattern?.confidence,
-        impact: Math?.abs(pattern?.engagementImpact),
-        actionability: pattern?.engagementImpact > 0 ? 0.9 : 0.7,
+        confidence: pattern.confidence,
+        impact: Math.abs(pattern?.engagementImpact),
+        actionability: pattern.engagementImpact > 0 ? 0.9 : 0.7,
         automatedActionAvailable: true,
         suggestedAction:
           pattern?.engagementImpact > 0
@@ -2500,7 +2502,7 @@ class HyperLearningEngine extends EventEmitter {
           title: `Universal Pattern: ${universal?.description}`,
           description: `This pattern works across ${universal?.applicablePlatforms.length} platforms with ${(universal?.effectiveness * 100).toFixed(0)}% effectiveness`,
           confidence: 0.8,
-          impact: universal?.effectiveness * 100,
+          impact: universal.effectiveness * 100,
           actionability: 0.95,
           automatedActionAvailable: true,
           suggestedAction: `Apply this pattern across all connected platforms`,
@@ -2512,15 +2514,15 @@ class HyperLearningEngine extends EventEmitter {
     }
 
     for (const model of predictions) {
-      const _topPrediction = model?.predictions[0];
+      const topPrediction = model?.predictions[0];
       if (topPrediction) {
         insights?.push({
           id: `predict_${model?.type}`,
           category: "predictive",
           title: `${model?.type} Prediction`,
           description: `Predicted engagement: ${topPrediction?.predictedEngagement.toFixed(2)}% with ${(topPrediction?.confidence * 100).toFixed(0)}% confidence`,
-          confidence: topPrediction?.confidence,
-          impact: topPrediction?.predictedEngagement,
+          confidence: topPrediction.confidence,
+          impact: topPrediction.predictedEngagement,
           actionability: 0.85,
           automatedActionAvailable: true,
           suggestedAction: `Apply optimal ${model?.type} configuration`,
@@ -2539,7 +2541,7 @@ class HyperLearningEngine extends EventEmitter {
 
     const hyperInsights: HyperInsight[] = [];
 
-    const _topMicroPatterns = [...this?.microPatternCache.values()]
+    const topMicroPatterns = [...this?.microPatternCache.values()]
       .flat()
       .filter((p) => p?.confidence > 0.6)
       .sort(
@@ -2551,10 +2553,10 @@ class HyperLearningEngine extends EventEmitter {
       hyperInsights?.push({
         id: `hyper_${pattern?.id}`,
         category: "micro_pattern",
-        title: pattern?.pattern,
+        title: pattern.pattern,
         description: `${pattern?.engagementImpact > 0 ? "Boosts" : "Reduces"} engagement by ${Math?.abs(pattern?.engagementImpact).toFixed(1)}%`,
-        confidence: pattern?.confidence,
-        impact: Math?.abs(pattern?.engagementImpact),
+        confidence: pattern.confidence,
+        impact: Math.abs(pattern?.engagementImpact),
         actionability: 0.8,
         automatedActionAvailable: true,
         suggestedAction:
@@ -2572,10 +2574,10 @@ class HyperLearningEngine extends EventEmitter {
         hyperInsights?.push({
           id: `universal_${universal?.id}`,
           category: "cross_platform",
-          title: universal?.description,
+          title: universal.description,
           description: `Works across ${universal?.applicablePlatforms.length} platforms`,
           confidence: 0.75,
-          impact: universal?.effectiveness * 100,
+          impact: universal.effectiveness * 100,
           actionability: 0.9,
           automatedActionAvailable: true,
           data: universal,
@@ -2586,15 +2588,15 @@ class HyperLearningEngine extends EventEmitter {
     }
 
     for (const [type, model] of this?.predictiveModels) {
-      const _topPredictions = model?.predictions.slice(0, 3);
+      const topPredictions = model?.predictions.slice(0, 3);
       for (const prediction of topPredictions) {
         hyperInsights?.push({
           id: `predict_${type}_${hyperInsights?.length}`,
           category: "predictive",
           title: `${type} optimization`,
           description: `Predicted ${prediction?.predictedEngagement.toFixed(1)}% engagement`,
-          confidence: prediction?.confidence,
-          impact: prediction?.predictedEngagement,
+          confidence: prediction.confidence,
+          impact: prediction.predictedEngagement,
           actionability: 0.85,
           automatedActionAvailable: true,
           suggestedAction: `Use this ${type} configuration`,
@@ -2620,16 +2622,16 @@ class HyperLearningEngine extends EventEmitter {
     predictedEngagement: number;
     microPatternRecommendations: string[];
   }> {
-    const _timingModel = this?.predictiveModels.get("timing");
-    const _contentModel = this?.predictiveModels.get("content");
+    const timingModel = this?.predictiveModels.get("timing");
+    const contentModel = this?.predictiveModels.get("content");
 
     let optimalTiming = { hour: 18, dayOfWeek: 3, confidence: 0.5 };
     if (timingModel && timingModel?.predictions.length > 0) {
-      const _top = timingModel?.predictions[0];
+      const top = timingModel?.predictions[0];
       optimalTiming = {
-        hour: top?.scenario.hour,
-        dayOfWeek: top?.scenario.dayOfWeek,
-        confidence: top?.confidence,
+        hour: top.scenario.hour,
+        dayOfWeek: top.scenario.dayOfWeek,
+        confidence: top.confidence,
       };
     }
 
@@ -2638,13 +2640,13 @@ class HyperLearningEngine extends EventEmitter {
     let optimalEmojiDensity = "1-2 emojis per 100 characters";
 
     if (contentModel && contentModel?.predictions.length > 0) {
-      const _top = contentModel?.predictions[0];
+      const top = contentModel?.predictions[0];
       optimalHook = top?.scenario.hookType || optimalHook;
       optimalLength = top?.scenario.lengthRange || optimalLength;
       optimalEmojiDensity = top?.scenario.emojiDensity || optimalEmojiDensity;
     }
 
-    const _platformPatterns = [...this?.microPatternCache.values()]
+    const platformPatterns = [...this?.microPatternCache.values()]
       .flat()
       .filter(
         (p) => p?.platforms.includes(platform) || p?.platforms.includes("all"),
@@ -2656,7 +2658,7 @@ class HyperLearningEngine extends EventEmitter {
     // Hashtag count: derive from hashtag_position patterns detected for this platform.
     // If no patterns found (no data yet), return null so callers know we have no data-
     // backed recommendation rather than serving a made-up number.
-    const _hashtagPatterns = [...this?.microPatternCache.values()]
+    const hashtagPatterns = [...this?.microPatternCache.values()]
       .flat()
       .filter(
         (p) =>
@@ -2669,16 +2671,16 @@ class HyperLearningEngine extends EventEmitter {
     let optimalHashtagCount: number | null = null;
     if (hashtagPatterns?.length > 0) {
       // Extract numeric count from pattern strings like "3 hashtags" if present
-      const _firstPattern = hashtagPatterns[0].pattern;
-      const _countMatch = firstPattern?.match(/(\d+)/);
+      const firstPattern = hashtagPatterns[0].pattern;
+      const countMatch = firstPattern?.match(/(\d+)/);
       if (countMatch) optimalHashtagCount = parseInt(countMatch[1], 10);
     }
 
     // Base engagement from real data mean, or null when no data is available yet
-    const _microKey2 = _hlKey("micro_all_90d");
+    const microKey2 = _hlKey("micro_all_90d");
     const allDataBase: Record<string, unknown>[] =
       _hlGet<any[]>(microKey2) ?? [];
-    const _dataMeanEngagement =
+    const dataMeanEngagement =
       allDataBase?.length >= 10
         ? allDataBase?.reduce(
             (s: number, d: Record<string, unknown>) =>
@@ -2686,9 +2688,9 @@ class HyperLearningEngine extends EventEmitter {
             0,
           ) / allDataBase?.length
         : null;
-    const _patternBoostTotal =
+    const patternBoostTotal =
       platformPatterns?.reduce((s, p) => s + p?.engagementImpact, 0) / 100;
-    const _predictedEngagement =
+    const predictedEngagement =
       dataMeanEngagement !== null
         ? dataMeanEngagement + patternBoostTotal
         : patternBoostTotal; // delta-only when no baseline yet
@@ -2700,7 +2702,7 @@ class HyperLearningEngine extends EventEmitter {
       optimalEmojiDensity,
       optimalHashtagCount,
       predictedEngagement,
-      microPatternRecommendations: platformPatterns?.map((p) => p?.pattern),
+      microPatternRecommendations: platformPatterns.map((p) => p?.pattern),
     };
   }
 
@@ -2716,13 +2718,13 @@ class HyperLearningEngine extends EventEmitter {
     crossPlatformSynthesisAvailable: boolean;
   } {
     return {
-      isRunning: this?.isRunning,
-      metrics: this?.getMetrics(),
+      isRunning: this.isRunning,
+      metrics: this.getMetrics(),
       microPatternCount: [...this?.microPatternCache.values()].flat().length,
-      predictiveModelCount: this?.predictiveModels.size,
-      crossPlatformSynthesisAvailable: this?.crossPlatformModel !== null,
+      predictiveModelCount: this.predictiveModels.size,
+      crossPlatformSynthesisAvailable: this.crossPlatformModel !== null,
     };
   }
 }
 
-export const _hyperLearningEngine = new HyperLearningEngine();
+export const hyperLearningEngine = new HyperLearningEngine();

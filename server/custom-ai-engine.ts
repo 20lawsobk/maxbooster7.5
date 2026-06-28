@@ -17,7 +17,7 @@ function seededIndex(seed: string, length: number): number {
  * Seeded Fisher-Yates shuffle — produces a deterministic ordering from a string seed.
  */
 function seededShuffle<T>(arr: T[], seed: string): T[] {
-  const _out = [...arr];
+  const out = [...arr];
   let hash = 2166136261;
   for (let i = 0; i < seed?.length; i++) {
     hash ^= seed?.charCodeAt(i);
@@ -25,7 +25,7 @@ function seededShuffle<T>(arr: T[], seed: string): T[] {
   }
   for (let i = out?.length - 1; i > 0; i--) {
     hash = (hash * 16777619 + i) >>> 0;
-    const _j = hash % (i + 1);
+    const j = hash % (i + 1);
     [out[i], out[j]] = [out[j], out[i]];
   }
   return out;
@@ -87,7 +87,7 @@ type HookType =
   | "teaser"
   | "challenge";
 
-const _PLATFORM_LIMITS = {
+const PLATFORM_LIMITS = {
   twitter: { maxChars: 280, hashtagCount: 3, emojiDensity: "low" },
   instagram: { maxChars: 2200, hashtagCount: 30, emojiDensity: "high" },
   linkedin: { maxChars: 3000, hashtagCount: 5, emojiDensity: "minimal" },
@@ -479,12 +479,12 @@ class CustomAIEngine {
   private learningWeights: Map<string, number> = new Map();
 
   constructor() {
-    this?.initializeDefaultParameters();
-    this?.initializeTemplateLearning();
+    this.initializeDefaultParameters();
+    this.initializeTemplateLearning();
   }
 
   private initializeDefaultParameters(): void {
-    this?.modelParameters.set("content_generation", {
+    this.modelParameters.set("content_generation", {
       temperature: 0.7,
       maxTokens: 150,
       topP: 0.9,
@@ -495,7 +495,7 @@ class CustomAIEngine {
       trendContext: [],
     });
 
-    this?.modelParameters.set("music_analysis", {
+    this.modelParameters.set("music_analysis", {
       bpmTolerance: 2,
       keyConfidenceThreshold: 0.7,
       genreClassificationDepth: 3,
@@ -504,7 +504,7 @@ class CustomAIEngine {
       recentGenreTrends: [],
     });
 
-    this?.modelParameters.set("social_posting", {
+    this.modelParameters.set("social_posting", {
       optimalPostingTimes: [9, 12, 15, 18, 21],
       hashtagDensity: 5,
       contentMixRatio: { video: 0.4, image: 0.4, text: 0.2 },
@@ -516,11 +516,11 @@ class CustomAIEngine {
 
   private initializeTemplateLearning(): void {
     for (const template of CONTENT_TEMPLATES) {
-      const _perfKey = `${template?.id}_default`;
-      this?.templatePerformance.set(perfKey, {
-        templateId: template?.id,
+      const perfKey = `${template.id}_default`;
+      this.templatePerformance.set(perfKey, {
+        templateId: template.id,
         platform: "all",
-        contentType: template?.category,
+        contentType: template.category,
         usageCount: 0,
         totalEngagement: 0,
         avgEngagement: 0,
@@ -529,59 +529,59 @@ class CustomAIEngine {
         lastUsed: "",
         engagementHistory: [],
       });
-      this?.learningWeights.set(template?.id, 1.0);
+      this.learningWeights.set(template.id, 1.0);
     }
   }
 
   updateModelParameters(modelType: string, parameters: ModelParameters): void {
-    const _existing = this?.modelParameters.get(modelType) || {};
-    const _updated = { ...existing, ...parameters };
-    this?.modelParameters.set(modelType, updated);
-    logger?.info(`🔧 Updated ${modelType} parameters:`, parameters);
+    const existing = this.modelParameters.get(modelType) || {};
+    const updated = { ...existing, ...parameters };
+    this.modelParameters.set(modelType, updated);
+    logger.info(`🔧 Updated ${modelType} parameters:`, parameters);
   }
 
   getModelParameters(modelType: string): ModelParameters | undefined {
-    return this?.modelParameters.get(modelType);
+    return this.modelParameters.get(modelType);
   }
 
   getAllModelParameters(): Map<string, ModelParameters> {
-    return new Map(this?.modelParameters);
+    return new Map(this.modelParameters);
   }
 
   recordPerformance(modelType: string, metrics: unknown): void {
-    const _history = this?.performanceHistory.get(modelType) || [];
-    history?.push({
+    const history = this.performanceHistory.get(modelType) || [];
+    history.push({
       ...(metrics as object),
       timestamp: new Date().toISOString(),
     });
 
-    if (history?.length > 100) {
-      history?.shift();
+    if (history.length > 100) {
+      history.shift();
     }
 
-    this?.performanceHistory.set(modelType, history);
+    this.performanceHistory.set(modelType, history);
   }
 
   getPerformanceHistory(modelType: string): unknown[] {
-    return this?.performanceHistory.get(modelType) || [];
+    return this.performanceHistory.get(modelType) || [];
   }
 
   getPerformanceSummary(modelType: string): Record<string, unknown> {
-    const _history = this?.performanceHistory.get(modelType) || [];
-    if (history?.length === 0) {
+    const history = this.performanceHistory.get(modelType) || [];
+    if (history.length === 0) {
       return { records: 0, avgEngagement: 0, avgQuality: 0 };
     }
 
-    const _avgEngagement =
-      history?.reduce((sum, h) => sum + (h?.engagement || 0), 0) / (history?.length || 1);
-    const _avgQuality =
-      history?.reduce((sum, h) => sum + (h?.quality || 0), 0) / (history?.length || 1);
+    const avgEngagement =
+      history.reduce((sum, h) => sum + (h.engagement || 0), 0) / (history.length || 1);
+    const avgQuality =
+      history.reduce((sum, h) => sum + (h.quality || 0), 0) / (history.length || 1);
 
     return {
-      records: history?.length,
-      avgEngagement: avgEngagement?.toFixed(4),
-      avgQuality: avgQuality?.toFixed(4),
-      latestUpdate: history[history?.length - 1]?.timestamp,
+      records: history.length,
+      avgEngagement: avgEngagement.toFixed(4),
+      avgQuality: avgQuality.toFixed(4),
+      latestUpdate: history[history.length - 1].timestamp,
     };
   }
 
@@ -596,42 +596,42 @@ class CustomAIEngine {
       targetAudience,
       businessGoals,
     } = params;
-    const _normalizedPlatform = platform?.toLowerCase();
+    const normalizedPlatform = platform.toLowerCase();
 
-    const _template = this?.selectOptimalTemplate(
+    const template = this.selectOptimalTemplate(
       contentType,
       normalizedPlatform,
     );
-    const _variationIndex = this?.selectVariation(template);
-    const _hook = this?.generateHook(topic, this?.selectHookType(businessGoals));
-    const _hashtags = this?.generateHashtags(
+    const variationIndex = this.selectVariation(template);
+    const hook = this.generateHook(topic, this.selectHookType(businessGoals));
+    const hashtags = this.generateHashtags(
       topic,
       normalizedPlatform,
-      this?.getHashtagCount(normalizedPlatform),
+      this.getHashtagCount(normalizedPlatform),
     );
 
-    let content = this?.buildContentFromTemplate(template, variationIndex, {
+    let content = this.buildContentFromTemplate(template, variationIndex, {
       topic,
       hook,
       brandVoice,
       targetAudience,
     });
 
-    content = this?.optimizeForPlatform(content, normalizedPlatform);
-    content = this?.applyBrandVoice(content, brandVoice);
+    content = this.optimizeForPlatform(content, normalizedPlatform);
+    content = this.applyBrandVoice(content, brandVoice);
 
-    const _callToAction = this?.selectCallToAction(template, businessGoals);
-    const _mediaRecommendation = this?.getMediaRecommendation(
+    const callToAction = this.selectCallToAction(template, businessGoals);
+    const mediaRecommendation = this.getMediaRecommendation(
       normalizedPlatform,
       contentType,
     );
 
-    this?.trackTemplateUsage(template?.id, normalizedPlatform);
+    this.trackTemplateUsage(template.id, normalizedPlatform);
 
-    this?.recordPerformance("content_generation", {
+    this.recordPerformance("content_generation", {
       platform: normalizedPlatform,
       topic,
-      templateId: template?.id,
+      templateId: template.id,
       variationIndex,
       brandVoice,
       contentType,
@@ -644,59 +644,59 @@ class CustomAIEngine {
       hook,
       callToAction,
       mediaRecommendation,
-      templateUsed: template?.id,
+      templateUsed: template.id,
       variationIndex,
     };
   }
 
   generateHook(topic: string, hookType: HookType): string {
-    const _templates = HOOK_TEMPLATES[hookType] || HOOK_TEMPLATES?.teaser;
-    const _selectedTemplate =
+    const templates = HOOK_TEMPLATES[hookType] || HOOK_TEMPLATES.teaser;
+    const selectedTemplate =
       templates[
-        seededIndex(`hook-template:${topic}:${hookType}`, templates?.length)
+        seededIndex(`hook-template:${topic}:${hookType}`, templates.length)
       ];
 
-    let hook = selectedTemplate?.replace(/{topic}/g, topic);
+    let hook = selectedTemplate.replace(/{topic}/g, topic);
 
-    if (hook?.includes("{percentage}")) {
-      const _pctBase = seededIndex(`hook-pct:${topic}:${hookType}`, 40);
-      const _percentage = 60 + pctBase;
-      hook = hook?.replace(/{percentage}/g, percentage?.toString());
+    if (hook.includes("{percentage}")) {
+      const pctBase = seededIndex(`hook-pct:${topic}:${hookType}`, 40);
+      const percentage = 60 + pctBase;
+      hook = hook.replace(/{percentage}/g, percentage.toString());
     }
 
     return hook;
   }
 
   optimizeForPlatform(content: string, platform: string): string {
-    const _limits =
+    const limits =
       PLATFORM_LIMITS[platform as keyof typeof PLATFORM_LIMITS] ||
-      PLATFORM_LIMITS?.instagram;
+      PLATFORM_LIMITS.instagram;
     let optimized = content;
 
     if (platform === "twitter") {
-      if (optimized?.length > limits?.maxChars) {
-        optimized = this?.truncateForTwitter(optimized, limits?.maxChars);
+      if (optimized.length > limits.maxChars) {
+        optimized = this.truncateForTwitter(optimized, limits.maxChars);
       }
-      optimized = this?.removeExcessiveEmojis(optimized);
+      optimized = this.removeExcessiveEmojis(optimized);
     }
 
     if (platform === "instagram") {
-      optimized = this?.addEmojis(optimized, "high");
-      optimized = this?.formatForInstagram(optimized);
+      optimized = this.addEmojis(optimized, "high");
+      optimized = this.formatForInstagram(optimized);
     }
 
     if (platform === "linkedin") {
-      optimized = this?.formatForLinkedIn(optimized);
-      optimized = this?.removeExcessiveEmojis(optimized);
+      optimized = this.formatForLinkedIn(optimized);
+      optimized = this.removeExcessiveEmojis(optimized);
     }
 
     if (platform === "tiktok") {
-      optimized = this?.formatForTikTok(optimized);
-      optimized = this?.addEmojis(optimized, "high");
+      optimized = this.formatForTikTok(optimized);
+      optimized = this.addEmojis(optimized, "high");
     }
 
     if (platform === "facebook") {
-      optimized = this?.formatForFacebook(optimized);
+      optimized = this.formatForFacebook(optimized);
     }
 
     return optimized;
@@ -707,70 +707,70 @@ class CustomAIEngine {
     platform: string,
     count: number = 5,
   ): string[] {
-    const _platformTags =
-      PLATFORM_HASHTAGS[platform] || PLATFORM_HASHTAGS?.instagram;
-    const _contentLower = content?.toLowerCase();
+    const platformTags =
+      PLATFORM_HASHTAGS[platform] || PLATFORM_HASHTAGS.instagram;
+    const contentLower = content.toLowerCase();
 
     let category = "general";
     if (
-      contentLower?.includes("release") ||
-      contentLower?.includes("drop") ||
-      contentLower?.includes("out now")
+      contentLower.includes("release") ||
+      contentLower.includes("drop") ||
+      contentLower.includes("out now")
     ) {
       category = "release";
     } else if (
-      contentLower?.includes("studio") ||
-      contentLower?.includes("recording") ||
-      contentLower?.includes("session")
+      contentLower.includes("studio") ||
+      contentLower.includes("recording") ||
+      contentLower.includes("session")
     ) {
       category = "studio";
     } else if (
-      contentLower?.includes("collab") ||
-      contentLower?.includes("feature") ||
-      contentLower?.includes("community")
+      contentLower.includes("collab") ||
+      contentLower.includes("feature") ||
+      contentLower.includes("community")
     ) {
       category = "engagement";
     } else if (
-      contentLower?.includes("song") ||
-      contentLower?.includes("track") ||
-      contentLower?.includes("music")
+      contentLower.includes("song") ||
+      contentLower.includes("track") ||
+      contentLower.includes("music")
     ) {
       category = "music";
     }
 
-    const _categoryTags = platformTags[category] || platformTags?.general;
-    const _generalTags = platformTags?.general;
+    const categoryTags = platformTags[category] || platformTags.general;
+    const generalTags = platformTags.general;
 
     const selectedTags: string[] = [];
-    const _usedTags = new Set<string>();
+    const usedTags = new Set<string>();
 
-    const _addUniqueTag = (tag: string) => {
-      const _normalizedTag = tag?.toLowerCase();
-      if (!usedTags?.has(normalizedTag) && selectedTags?.length < count) {
-        usedTags?.add(normalizedTag);
-        selectedTags?.push(tag);
+    const addUniqueTag = (tag: string) => {
+      const normalizedTag = tag.toLowerCase();
+      if (!usedTags.has(normalizedTag) && selectedTags.length < count) {
+        usedTags.add(normalizedTag);
+        selectedTags.push(tag);
       }
     };
 
-    const _shuffled = seededShuffle(
+    const shuffled = seededShuffle(
       [...categoryTags],
-      `hashtags:${content?.slice(0, 32)}:${platform}:cat`,
+      `hashtags:${content.slice(0, 32)}:${platform}:cat`,
     );
-    shuffled?.forEach((tag) => addUniqueTag(tag));
+    shuffled.forEach((tag) => addUniqueTag(tag));
 
-    const _shuffledGeneral = seededShuffle(
+    const shuffledGeneral = seededShuffle(
       [...generalTags],
-      `hashtags:${content?.slice(0, 32)}:${platform}:gen`,
+      `hashtags:${content.slice(0, 32)}:${platform}:gen`,
     );
-    shuffledGeneral?.forEach((tag) => addUniqueTag(tag));
+    shuffledGeneral.forEach((tag) => addUniqueTag(tag));
 
-    const _performanceTags = this?.getHighPerformingHashtags(
+    const performanceTags = this.getHighPerformingHashtags(
       platform,
-      count - selectedTags?.length,
+      count - selectedTags.length,
     );
-    performanceTags?.forEach((tag) => addUniqueTag(tag));
+    performanceTags.forEach((tag) => addUniqueTag(tag));
 
-    return selectedTags?.slice(0, count);
+    return selectedTags.slice(0, count);
   }
 
   updatePerformanceData(
@@ -785,13 +785,13 @@ class CustomAIEngine {
       comments?: number;
     },
   ): void {
-    const _template = CONTENT_TEMPLATES[templateIndex] || CONTENT_TEMPLATES[0];
-    const _perfKey = `${template?.id}_${platform}`;
+    const template = CONTENT_TEMPLATES[templateIndex] || CONTENT_TEMPLATES[0];
+    const perfKey = `${template.id}_${platform}`;
 
-    let perf = this?.templatePerformance.get(perfKey);
+    let perf = this.templatePerformance.get(perfKey);
     if (!perf) {
       perf = {
-        templateId: template?.id,
+        templateId: template.id,
         platform,
         contentType,
         usageCount: 0,
@@ -804,38 +804,38 @@ class CustomAIEngine {
       };
     }
 
-    const _engagement =
-      analytics?.engagement ??
-      (analytics?.likes || 0) +
-        (analytics?.shares || 0) * 2 +
-        (analytics?.comments || 0) * 3;
-    const _reach = analytics?.reach || 0;
+    const engagement =
+      analytics.engagement ??
+      (analytics.likes || 0) +
+        (analytics.shares || 0) * 2 +
+        (analytics.comments || 0) * 3;
+    const reach = analytics.reach || 0;
 
-    perf?.usageCount++;
-    perf?.totalEngagement += engagement;
-    perf.avgEngagement = perf?.totalEngagement / perf?.usageCount;
-    perf?.totalReach += reach;
-    perf.avgReach = perf?.totalReach / perf?.usageCount;
+    perf.usageCount++;
+    perf.totalEngagement += engagement;
+    perf.avgEngagement = perf.totalEngagement / perf.usageCount;
+    perf.totalReach += reach;
+    perf.avgReach = perf.totalReach / perf.usageCount;
     perf.lastUsed = new Date().toISOString();
-    perf?.engagementHistory.push(engagement);
+    perf.engagementHistory.push(engagement);
 
-    if (perf?.engagementHistory.length > 50) {
-      perf?.engagementHistory.shift();
+    if (perf.engagementHistory.length > 50) {
+      perf.engagementHistory.shift();
     }
 
-    this?.templatePerformance.set(perfKey, perf);
-    this?.updateLearningWeights(template?.id, engagement);
+    this.templatePerformance.set(perfKey, perf);
+    this.updateLearningWeights(template.id, engagement);
 
-    this?.recordPerformance("content_generation", {
+    this.recordPerformance("content_generation", {
       contentType,
       platform,
       templateIndex,
-      templateId: template?.id,
+      templateId: template.id,
       ...analytics,
     });
 
-    logger?.info(
-      `📊 Updated performance for ${template?.id} on ${platform}: avg engagement ${perf?.avgEngagement.toFixed(2)}`,
+    logger.info(
+      `📊 Updated performance for ${template.id} on ${platform}: avg engagement ${perf.avgEngagement.toFixed(2)}`,
     );
   }
 
@@ -857,61 +857,61 @@ class CustomAIEngine {
       weight: number;
     }> = [];
 
-    this?.templatePerformance.forEach((perf, key) => {
-      if (key?.includes(platform) || key?.includes("default")) {
-        const _template = CONTENT_TEMPLATES?.find(
-          (t) => t?.id === perf?.templateId,
+    this.templatePerformance.forEach((perf, key) => {
+      if (key.includes(platform) || key.includes("default")) {
+        const template = CONTENT_TEMPLATES.find(
+          (t) => t.id === perf.templateId,
         );
         if (template) {
-          platformTemplates?.push({
-            templateId: perf?.templateId,
-            name: template?.name,
-            avgEngagement: perf?.avgEngagement,
-            usageCount: perf?.usageCount,
-            weight: this?.learningWeights.get(perf?.templateId) || 1.0,
+          platformTemplates.push({
+            templateId: perf.templateId,
+            name: template.name,
+            avgEngagement: perf.avgEngagement,
+            usageCount: perf.usageCount,
+            weight: this.learningWeights.get(perf.templateId) || 1.0,
           });
         }
       }
     });
 
     return platformTemplates
-      .sort((a, b) => b?.avgEngagement * b?.weight - a?.avgEngagement * a?.weight)
+      .sort((a, b) => b.avgEngagement * b.weight - a.avgEngagement * a.weight)
       .slice(0, limit);
   }
 
   async analyzeMusicTrack(audioData: unknown): Promise<unknown> {
-    const _modelParams = this?.modelParameters.get("music_analysis") || {};
+    const modelParams = this.modelParameters.get("music_analysis") || {};
 
-    const _keyConfidenceThreshold = modelParams?.keyConfidenceThreshold || 0.7;
-    const _genreDepth = modelParams?.genreClassificationDepth || 3;
-    const _recentTrends = modelParams?.recentGenreTrends || [];
+    const keyConfidenceThreshold = modelParams.keyConfidenceThreshold || 0.7;
+    const genreDepth = modelParams.genreClassificationDepth || 3;
+    const recentTrends = modelParams.recentGenreTrends || [];
 
     // Seed from audioData so the same input always produces the same analysis output.
-    const _dataSeed =
+    const dataSeed =
       typeof audioData === "string"
         ? audioData
-        : JSON?.stringify(audioData ?? "unknown");
+        : JSON.stringify(audioData ?? "unknown");
 
-    const _keys = ["C", "D", "E", "F", "G", "A", "B"];
-    const _moods = ["energetic", "calm", "melancholic", "uplifting"];
-    const _bpmVariance = seededIndex(`bpm:${dataSeed}`, 600); // 0–599 → /10 → 0.0–59.9
-    const _confVariance = seededIndex(`conf:${dataSeed}`, 1000); // 0–999 → /1000
+    const keys = ["C", "D", "E", "F", "G", "A", "B"];
+    const moods = ["energetic", "calm", "melancholic", "uplifting"];
+    const bpmVariance = seededIndex(`bpm:${dataSeed}`, 600); // 0–599 → /10 → 0.0–59.9
+    const confVariance = seededIndex(`conf:${dataSeed}`, 1000); // 0–999 → /1000
 
-    const _analysis = {
+    const analysis = {
       bpm: 120 + bpmVariance / 10,
-      key: keys[seededIndex(`key:${dataSeed}`, keys?.length)],
-      genre: this?.selectGenreWithTrends(recentTrends, genreDepth, dataSeed),
-      mood: moods[seededIndex(`mood:${dataSeed}`, moods?.length)],
+      key: keys[seededIndex(`key:${dataSeed}`, keys.length)],
+      genre: this.selectGenreWithTrends(recentTrends, genreDepth, dataSeed),
+      mood: moods[seededIndex(`mood:${dataSeed}`, moods.length)],
       confidence:
         keyConfidenceThreshold +
         (confVariance / 1000) * (1 - keyConfidenceThreshold),
-      trendAligned: recentTrends?.length > 0,
+      trendAligned: recentTrends.length > 0,
     };
 
-    this?.recordPerformance("music_analysis", {
-      genre: analysis?.genre,
-      confidence: analysis?.confidence,
-      trendsConsidered: recentTrends?.length,
+    this.recordPerformance("music_analysis", {
+      genre: analysis.genre,
+      confidence: analysis.confidence,
+      trendsConsidered: recentTrends.length,
     });
 
     return analysis;
@@ -922,7 +922,7 @@ class CustomAIEngine {
     depth: number,
     seed: string = "",
   ): string {
-    const _allGenres = [
+    const allGenres = [
       "Hip-Hop",
       "Pop",
       "EDM",
@@ -932,54 +932,54 @@ class CustomAIEngine {
       "Jazz",
       "Classical",
     ];
-    const _trendSeed = `genre:${seed}:${recentTrends?.join(":")}`;
+    const trendSeed = `genre:${seed}:${recentTrends.join(":")}`;
 
-    if (recentTrends?.length > 0 && seededIndex(trendSeed, 2) === 1) {
+    if (recentTrends.length > 0 && seededIndex(trendSeed, 2) === 1) {
       return recentTrends[
-        seededIndex(`${trendSeed}:pick`, recentTrends?.length)
+        seededIndex(`${trendSeed}:pick`, recentTrends.length)
       ];
     }
 
-    const _pool = allGenres?.slice(0, Math?.max(1, depth * 2));
-    return pool[seededIndex(`${trendSeed}:all`, pool?.length)];
+    const pool = allGenres.slice(0, Math.max(1, depth * 2));
+    return pool[seededIndex(`${trendSeed}:all`, pool.length)];
   }
 
   async optimizeSocialPosting(
     platform: string,
     _content: unknown,
   ): Promise<unknown> {
-    const _modelParams = this?.modelParameters.get("social_posting") || {};
+    const modelParams = this.modelParameters.get("social_posting") || {};
 
-    const _optimalTimes = modelParams?.optimalPostingTimes || [9, 12, 15, 18, 21];
-    const _platformOpts = modelParams?.platformOptimizations || {};
-    const _contentMix = modelParams?.contentMixRatio || {
+    const optimalTimes = modelParams.optimalPostingTimes || [9, 12, 15, 18, 21];
+    const platformOpts = modelParams.platformOptimizations || {};
+    const contentMix = modelParams.contentMixRatio || {
       video: 0.4,
       image: 0.4,
       text: 0.2,
     };
 
-    const _platformSpecific = platformOpts[platform] || {};
-    const _boostFactor = platformSpecific?.boostFactor || 1.0;
+    const platformSpecific = platformOpts[platform] || {};
+    const boostFactor = platformSpecific.boostFactor || 1.0;
 
-    const _recommendation = {
+    const recommendation = {
       bestPostingTime:
         optimalTimes[
-          seededIndex(`posting-time:${platform}`, optimalTimes?.length)
+          seededIndex(`posting-time:${platform}`, optimalTimes.length)
         ],
-      contentFormat: this?.selectContentFormat(
+      contentFormat: this.selectContentFormat(
         contentMix,
-        platformSpecific?.contentFormatPriority,
+        platformSpecific.contentFormatPriority,
         platform,
       ),
       expectedEngagement: (0.05 * boostFactor).toFixed(4),
-      platformOptimized: !!platformSpecific?.adjustedTiming,
-      engagementHooks: modelParams?.engagementHooks || [],
+      platformOptimized: !!platformSpecific.adjustedTiming,
+      engagementHooks: modelParams.engagementHooks || [],
     };
 
-    this?.recordPerformance("social_posting", {
+    this.recordPerformance("social_posting", {
       platform,
       boostFactor,
-      optimized: recommendation?.platformOptimized,
+      optimized: recommendation.platformOptimized,
     });
 
     return recommendation;
@@ -994,15 +994,15 @@ class CustomAIEngine {
 
     // Weighted deterministic selection seeded by platform so the same platform
     // always maps to the same format unless the mix ratios themselves change.
-    const _weights = [
-      mixRatio?.video,
-      mixRatio?.image,
-      1 - mixRatio?.video - mixRatio?.image,
+    const weights = [
+      mixRatio.video,
+      mixRatio.image,
+      1 - mixRatio.video - mixRatio.image,
     ];
-    const _seed = `content-format:${platformSeed}:${weights?.join(",")}`;
-    const _slot = seededIndex(seed, 20);
-    if (slot < Math?.round(weights[0] * 20)) return "video";
-    if (slot < Math?.round((weights[0] + weights[1]) * 20)) return "image";
+    const seed = `content-format:${platformSeed}:${weights.join(",")}`;
+    const slot = seededIndex(seed, 20);
+    if (slot < Math.round(weights[0] * 20)) return "video";
+    if (slot < Math.round((weights[0] + weights[1]) * 20)) return "image";
     return "text";
   }
 
@@ -1010,17 +1010,17 @@ class CustomAIEngine {
     version: string;
     parameters: ModelParameters;
   } {
-    const _params = this?.modelParameters.get(modelType);
+    const params = this.modelParameters.get(modelType);
     if (!params) {
       throw new Error(`Model type ${modelType} not found`);
     }
 
-    const _snapshot = {
-      version: `snapshot_${Date?.now()}`,
-      parameters: JSON?.parse(JSON?.stringify(params)),
+    const snapshot = {
+      version: `snapshot_${Date.now()}`,
+      parameters: JSON.parse(JSON.stringify(params)),
     };
 
-    logger?.info(`📸 Created snapshot for ${modelType}: ${snapshot?.version}`);
+    logger.info(`📸 Created snapshot for ${modelType}: ${snapshot.version}`);
     return snapshot;
   }
 
@@ -1028,8 +1028,8 @@ class CustomAIEngine {
     modelType: string,
     snapshot: { version: string; parameters: ModelParameters },
   ): void {
-    this?.modelParameters.set(modelType, snapshot?.parameters);
-    logger?.info(`♻️  Restored ${modelType} from snapshot: ${snapshot?.version}`);
+    this.modelParameters.set(modelType, snapshot.parameters);
+    logger.info(`♻️  Restored ${modelType} from snapshot: ${snapshot.version}`);
   }
 
   private selectOptimalTemplate(
@@ -1049,42 +1049,42 @@ class CustomAIEngine {
       studio: "studio_update",
     };
 
-    const _targetCategory =
-      categoryMap[contentType?.toLowerCase()] || contentType?.toLowerCase();
+    const targetCategory =
+      categoryMap[contentType.toLowerCase()] || contentType.toLowerCase();
 
-    const _eligibleTemplates = CONTENT_TEMPLATES?.filter(
-      (t) => t?.category === targetCategory && t?.platforms.includes(platform),
+    const eligibleTemplates = CONTENT_TEMPLATES.filter(
+      (t) => t.category === targetCategory && t.platforms.includes(platform),
     );
 
-    if (eligibleTemplates?.length === 0) {
-      const _fallbackTemplates = CONTENT_TEMPLATES?.filter((t) =>
-        t?.platforms.includes(platform),
+    if (eligibleTemplates.length === 0) {
+      const fallbackTemplates = CONTENT_TEMPLATES.filter((t) =>
+        t.platforms.includes(platform),
       );
-      if (fallbackTemplates?.length === 0) {
+      if (fallbackTemplates.length === 0) {
         return CONTENT_TEMPLATES[0];
       }
-      return this?.selectByWeight(fallbackTemplates);
+      return this.selectByWeight(fallbackTemplates);
     }
 
-    return this?.selectByWeight(eligibleTemplates);
+    return this.selectByWeight(eligibleTemplates);
   }
 
   private selectByWeight(templates: ContentTemplate[]): ContentTemplate {
-    const _weights = templates?.map((t) => this?.learningWeights.get(t?.id) || 1.0);
+    const weights = templates.map((t) => this.learningWeights.get(t.id) || 1.0);
 
-    const _recentPenalty = templates?.map((t) =>
-      this?.recentlyUsedTemplates.includes(t?.id) ? 0.3 : 1.0,
+    const recentPenalty = templates.map((t) =>
+      this.recentlyUsedTemplates.includes(t.id) ? 0.3 : 1.0,
     );
 
-    const _adjustedWeights = weights?.map((w, i) => w * recentPenalty[i]);
-    const _adjustedTotal = adjustedWeights?.reduce((sum, w) => sum + w, 0);
+    const adjustedWeights = weights.map((w, i) => w * recentPenalty[i]);
+    const adjustedTotal = adjustedWeights.reduce((sum, w) => sum + w, 0);
 
     // Seeded weighted selection: deterministic given the same template IDs and weights.
     // This preserves the weighted semantics (high-weight templates are still more likely)
     // while eliminating non-reproducible randomness.
-    const _seed = `template-weight:${templates?.map((t, i) => `${t?.id}:${adjustedWeights[i].toFixed(2)}`).join("|")}`;
+    const seed = `template-weight:${templates.map((t, i) => `${t.id}:${adjustedWeights[i].toFixed(2)}`).join("|")}`;
     let cursor = (seededIndex(seed, 10000) / 10000) * adjustedTotal;
-    for (let i = 0; i < templates?.length; i++) {
+    for (let i = 0; i < templates.length; i++) {
       cursor -= adjustedWeights[i];
       if (cursor <= 0) {
         return templates[i];
@@ -1095,38 +1095,38 @@ class CustomAIEngine {
   }
 
   private selectVariation(template: ContentTemplate): number {
-    const _templateVariations =
-      this?.contentVariationTracker.get(template?.id) || [];
-    const _totalVariations = template?.variations.length + 1;
+    const templateVariations =
+      this.contentVariationTracker.get(template.id) || [];
+    const totalVariations = template.variations.length + 1;
 
-    const _leastUsedIndex = this?.findLeastUsedVariation(
+    const leastUsedIndex = this.findLeastUsedVariation(
       templateVariations,
       totalVariations,
     );
 
-    templateVariations?.push(leastUsedIndex);
-    if (templateVariations?.length > 20) {
-      templateVariations?.shift();
+    templateVariations.push(leastUsedIndex);
+    if (templateVariations.length > 20) {
+      templateVariations.shift();
     }
-    this?.contentVariationTracker.set(template?.id, templateVariations);
+    this.contentVariationTracker.set(template.id, templateVariations);
 
     return leastUsedIndex;
   }
 
   private findLeastUsedVariation(history: number[], total: number): number {
-    const _counts = new Array(total).fill(0);
-    history?.forEach((idx) => {
+    const counts = new Array(total).fill(0);
+    history.forEach((idx) => {
       if (idx < total) counts[idx]++;
     });
 
-    const _minCount = Math?.min(...counts);
-    const _leastUsed = counts?.reduce((acc: number[], count, idx) => {
-      if (count === minCount) acc?.push(idx);
+    const minCount = Math.min(...counts);
+    const leastUsed = counts.reduce((acc: number[], count, idx) => {
+      if (count === minCount) acc.push(idx);
       return acc;
     }, []);
 
     return leastUsed[
-      seededIndex(`least-used:${history?.join(",")}:${total}`, leastUsed?.length)
+      seededIndex(`least-used:${history.join(",")}:${total}`, leastUsed.length)
     ];
   }
 
@@ -1143,7 +1143,7 @@ class CustomAIEngine {
     };
 
     for (const goal of businessGoals) {
-      const _hookType = goalToHook[goal?.toLowerCase()];
+      const hookType = goalToHook[goal.toLowerCase()];
       if (hookType) return hookType;
     }
 
@@ -1156,8 +1156,8 @@ class CustomAIEngine {
     ];
     return hookTypes[
       seededIndex(
-        `hook-type:${businessGoals?.slice().sort().join(":")}`,
-        hookTypes?.length,
+        `hook-type:${businessGoals.slice().sort().join(":")}`,
+        hookTypes.length,
       )
     ];
   }
@@ -1174,49 +1174,49 @@ class CustomAIEngine {
   ): string {
     let contentTemplate =
       variationIndex === 0
-        ? template?.template
-        : template?.variations[variationIndex - 1] || template?.template;
+        ? template.template
+        : template.variations[variationIndex - 1] || template.template;
 
-    const _emojiSetSeed = `emoji-set:${context?.topic}:${template?.id}:${variationIndex}`;
-    const _emojiSet =
-      template?.emojiSets[seededIndex(emojiSetSeed, template?.emojiSets.length)];
-    const _emoji =
-      emojiSet[seededIndex(`emoji:${emojiSetSeed}`, emojiSet?.length)];
-    const _hookFromTemplate =
-      template?.hooks[
+    const emojiSetSeed = `emoji-set:${context.topic}:${template.id}:${variationIndex}`;
+    const emojiSet =
+      template.emojiSets[seededIndex(emojiSetSeed, template.emojiSets.length)];
+    const emoji =
+      emojiSet[seededIndex(`emoji:${emojiSetSeed}`, emojiSet.length)];
+    const hookFromTemplate =
+      template.hooks[
         seededIndex(
-          `hook-from-tpl:${context?.topic}:${template?.id}:${variationIndex}`,
-          template?.hooks.length,
+          `hook-from-tpl:${context.topic}:${template.id}:${variationIndex}`,
+          template.hooks.length,
         )
       ];
 
     contentTemplate = contentTemplate
-      .replace(/{hook}/g, context?.hook || hookFromTemplate)
-      .replace(/{topic}/g, context?.topic)
+      .replace(/{hook}/g, context.hook || hookFromTemplate)
+      .replace(/{topic}/g, context.topic)
       .replace(/{emoji}/g, emoji)
-      .replace(/{title}/g, context?.topic)
+      .replace(/{title}/g, context.topic)
       .replace(/{artist}/g, "We")
-      .replace(/{description}/g, `Check out ${context?.topic}!`)
+      .replace(/{description}/g, `Check out ${context.topic}!`)
       .replace(/{teaser}/g, "More coming soon...")
       .replace(/{status}/g, "Working on something special")
       .replace(/{insight}/g, "The creative process never stops")
-      .replace(/{question}/g, `What do you think about ${context?.topic}?`)
+      .replace(/{question}/g, `What do you think about ${context.topic}?`)
       .replace(/{context}/g, "")
       .replace(/{milestone}/g, "10K streams")
       .replace(/{gratitude}/g, "Thank you all for the support!")
       .replace(/{collaborator}/g, "an amazing artist")
       .replace(/{cta}/g, "");
 
-    return contentTemplate?.trim();
+    return contentTemplate.trim();
   }
 
   private applyBrandVoice(content: string, brandVoice: string): string {
-    const _modifier =
-      BRAND_VOICE_MODIFIERS[brandVoice?.toLowerCase()] ||
-      BRAND_VOICE_MODIFIERS?.casual;
+    const modifier =
+      BRAND_VOICE_MODIFIERS[brandVoice.toLowerCase()] ||
+      BRAND_VOICE_MODIFIERS.casual;
 
-    if (modifier?.tone === "formal") {
-      content = content?.replace(/yo|hey|fam|y'all/gi, "");
+    if (modifier.tone === "formal") {
+      content = content.replace(/yo|hey|fam|y'all/gi, "");
       content = content?.replace(/!!+/g, ".");
       content = content?.replace(/\.\.\./g, ".");
     }
@@ -1232,11 +1232,11 @@ class CustomAIEngine {
   private truncateForTwitter(content: string, maxLength: number): string {
     if (content?.length <= maxLength) return content;
 
-    const _sentences = content?.split(/[.!?]+/);
+    const sentences = content?.split(/[.!?]+/);
     let result = "";
 
     for (const sentence of sentences) {
-      const _trimmed = sentence?.trim();
+      const trimmed = sentence?.trim();
       if (!trimmed) continue;
 
       if ((result + trimmed + "...").length <= maxLength) {
@@ -1254,7 +1254,7 @@ class CustomAIEngine {
   }
 
   private removeExcessiveEmojis(content: string): string {
-    const _commonEmojis = [
+    const commonEmojis = [
       "🔥",
       "✨",
       "💫",
@@ -1309,7 +1309,7 @@ class CustomAIEngine {
     let emojiCount = 0;
 
     for (const emoji of commonEmojis) {
-      const _matches = content?.split(emoji).length - 1;
+      const matches = content?.split(emoji).length - 1;
       emojiCount += matches;
     }
 
@@ -1330,7 +1330,7 @@ class CustomAIEngine {
     content: string,
     density: "low" | "medium" | "high",
   ): string {
-    const _commonEmojis = [
+    const commonEmojis = [
       "🔥",
       "✨",
       "💫",
@@ -1347,12 +1347,12 @@ class CustomAIEngine {
       existingEmojis += content?.split(emoji).length - 1;
     }
 
-    const _targetCount = density === "high" ? 5 : density === "medium" ? 3 : 1;
+    const targetCount = density === "high" ? 5 : density === "medium" ? 3 : 1;
     if (existingEmojis >= targetCount) return content;
 
-    const _emojisToAdd = ["🔥", "✨", "💫", "🎵", "🎧", "💯", "🚀", "⚡"];
-    const _needed = targetCount - existingEmojis;
-    const _selected = emojisToAdd?.slice(0, needed);
+    const emojisToAdd = ["🔥", "✨", "💫", "🎵", "🎧", "💯", "🚀", "⚡"];
+    const needed = targetCount - existingEmojis;
+    const selected = emojisToAdd?.slice(0, needed);
 
     return content + " " + selected?.join("");
   }
@@ -1374,7 +1374,7 @@ class CustomAIEngine {
   private formatForTikTok(content: string): string {
     let formatted = content;
     if (formatted?.length > 150) {
-      const _sentences = formatted?.split(/[.!?]+/);
+      const sentences = formatted?.split(/[.!?]+/);
       formatted = sentences?.slice(0, 2).join("! ") + "!";
     }
     return formatted;
@@ -1385,7 +1385,7 @@ class CustomAIEngine {
   }
 
   private getHashtagCount(platform: string): number {
-    const _limits = PLATFORM_LIMITS[platform as keyof typeof PLATFORM_LIMITS];
+    const limits = PLATFORM_LIMITS[platform as keyof typeof PLATFORM_LIMITS];
     return limits ? Math?.min(limits?.hashtagCount, 10) : 5;
   }
 
@@ -1393,13 +1393,13 @@ class CustomAIEngine {
     template: ContentTemplate,
     businessGoals: string[],
   ): string {
-    const _goalSeed = `cta:${template?.id}:${businessGoals?.slice().sort().join(":")}`;
+    const goalSeed = `cta:${template?.id}:${businessGoals?.slice().sort().join(":")}`;
 
     if (
       businessGoals?.includes("sales") ||
       businessGoals?.includes("conversion")
     ) {
-      const _salesCTAs = template?.callToActions.filter(
+      const salesCTAs = template?.callToActions.filter(
         (cta) =>
           cta?.toLowerCase().includes("stream") ||
           cta?.toLowerCase().includes("link") ||
@@ -1411,7 +1411,7 @@ class CustomAIEngine {
     }
 
     if (businessGoals?.includes("engagement")) {
-      const _engagementCTAs = template?.callToActions.filter(
+      const engagementCTAs = template?.callToActions.filter(
         (cta) =>
           cta?.toLowerCase().includes("comment") ||
           cta?.toLowerCase().includes("drop") ||
@@ -1477,7 +1477,7 @@ class CustomAIEngine {
       },
     };
 
-    const _platformRecs = recommendations[platform] || recommendations?.instagram;
+    const platformRecs = recommendations[platform] || recommendations?.instagram;
     return platformRecs[contentType] || "High-quality image or short video";
   }
 
@@ -1489,10 +1489,10 @@ class CustomAIEngine {
   }
 
   private updateLearningWeights(templateId: string, engagement: number): void {
-    const _currentWeight = this?.learningWeights.get(templateId) || 1.0;
-    const _history = this?.performanceHistory.get("content_generation") || [];
+    const currentWeight = this?.learningWeights.get(templateId) || 1.0;
+    const history = this?.performanceHistory.get("content_generation") || [];
 
-    const _avgEngagement =
+    const avgEngagement =
       history?.length > 0
         ? history?.reduce((sum, h) => sum + (h?.engagement || 0), 0) /
           history?.length
@@ -1509,29 +1509,29 @@ class CustomAIEngine {
       adjustment = -0.05;
     }
 
-    const _newWeight = Math?.max(0.1, Math?.min(3.0, currentWeight + adjustment));
+    const newWeight = Math?.max(0.1, Math?.min(3.0, currentWeight + adjustment));
     this?.learningWeights.set(templateId, newWeight);
   }
 
   private getHighPerformingHashtags(platform: string, count: number): string[] {
-    const _history = this?.performanceHistory.get("content_generation") || [];
+    const history = this?.performanceHistory.get("content_generation") || [];
     const hashtagPerformance: Map<string, { total: number; count: number }> =
       new Map();
 
     history?.forEach((record) => {
       if (record?.platform === platform && record?.hashtags) {
-        const _engagement = record?.engagement || 0;
+        const engagement = record?.engagement || 0;
         record?.hashtags.forEach((tag: string) => {
-          const _current = hashtagPerformance?.get(tag) || { total: 0, count: 0 };
-          current?.total += engagement;
-          current?.count++;
+          const current = hashtagPerformance?.get(tag) || { total: 0, count: 0 };
+          current.total += engagement;
+          current.count++;
           hashtagPerformance?.set(tag, current);
         });
       }
     });
 
-    const _sorted = Array?.from(hashtagPerformance?.entries())
-      .map(([tag, data]) => ({ tag, avgEngagement: data?.total / data?.count }))
+    const sorted = Array?.from(hashtagPerformance?.entries())
+      .map(([tag, data]) => ({ tag, avgEngagement: data.total / data?.count }))
       .sort((a, b) => b?.avgEngagement - a?.avgEngagement);
 
     return sorted?.slice(0, count).map((item) => item?.tag);
@@ -1560,22 +1560,22 @@ class CustomAIEngine {
     totalPerformanceRecords: number;
     topWeightedTemplates: Array<{ id: string; weight: number }>;
   } {
-    const _totalRecords = Array?.from(this?.performanceHistory.values()).reduce(
+    const totalRecords = Array?.from(this?.performanceHistory.values()).reduce(
       (sum, arr) => sum + arr?.length,
       0,
     );
 
-    const _topWeighted = Array?.from(this?.learningWeights.entries())
+    const topWeighted = Array?.from(this?.learningWeights.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([id, weight]) => ({ id, weight }));
 
     return {
-      templatesTracked: this?.templatePerformance.size,
+      templatesTracked: this.templatePerformance.size,
       totalPerformanceRecords: totalRecords,
       topWeightedTemplates: topWeighted,
     };
   }
 }
 
-export const _customAI = new CustomAIEngine();
+export const customAI = new CustomAIEngine();

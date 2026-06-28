@@ -11,15 +11,15 @@ import {
   generateSimulationReport,
 } from "../simulations/autonomousUpgradeSimulation.js";
 
-const _router = Router();
+const router = Router();
 
-const _runOnceCalls = new Map<string, number[]>();
+const runOnceCalls = new Map<string, number[]>();
 function runOnceRateLimit(req: Request, res: Response, next: NextFunction) {
-  const _userId = req?.user?.id || "anon";
-  const _now = Date?.now();
-  const _window = 60 * 1000;
-  const _maxPerMinute = 3;
-  const _calls = (runOnceCalls?.get(userId) || []).filter(
+  const userId = req?.user?.id || "anon";
+  const now = Date?.now();
+  const window = 60 * 1000;
+  const maxPerMinute = 3;
+  const calls = (runOnceCalls?.get(userId) || []).filter(
     (t) => now - t < window,
   );
   if (calls?.length >= maxPerMinute) {
@@ -34,14 +34,14 @@ function runOnceRateLimit(req: Request, res: Response, next: NextFunction) {
   return next();
 }
 
-const _simulationCalls = new Map<string, number>();
+const simulationCalls = new Map<string, number>();
 function simulationRateLimit(req: Request, res: Response, next: NextFunction) {
-  const _userId = req?.user?.id || "anon";
-  const _now = Date?.now();
-  const _cooldownMs = 30 * 1000;
-  const _last = simulationCalls?.get(userId) || 0;
+  const userId = req?.user?.id || "anon";
+  const now = Date?.now();
+  const cooldownMs = 30 * 1000;
+  const last = simulationCalls?.get(userId) || 0;
   if (now - last < cooldownMs) {
-    const _remainingSec = Math?.ceil((cooldownMs - (now - last)) / 1000);
+    const remainingSec = Math?.ceil((cooldownMs - (now - last)) / 1000);
     return res
       .status(429)
       .json({
@@ -57,9 +57,9 @@ function simulationRateLimit(req: Request, res: Response, next: NextFunction) {
 // Periodic sweep removes keys whose windows have fully expired.
 setInterval(
   () => {
-    const _now = Date?.now();
-    const _rlWindow = 60 * 1000;
-    const _simCooldown = 30 * 1000;
+    const now = Date?.now();
+    const rlWindow = 60 * 1000;
+    const simCooldown = 30 * 1000;
     for (const [uid, calls] of runOnceCalls) {
       if (calls?.every((t) => now - t >= rlWindow)) runOnceCalls?.delete(uid);
     }
@@ -72,31 +72,31 @@ setInterval(
 
 router?.get("/status", requireAuth, async (_req, res) => {
   try {
-    const _engineStatus = selfEvolution?.getStatus();
-    const _safetyStatus = selfEvolution?.getProductionSafetyStatus();
-    const _recentChanges = selfEvolution?.getIndustryChanges(10);
-    const _recentUpgrades = selfEvolution?.getUpgradeHistory(10);
+    const engineStatus = selfEvolution?.getStatus();
+    const safetyStatus = selfEvolution?.getProductionSafetyStatus();
+    const recentChanges = selfEvolution?.getIndustryChanges(10);
+    const recentUpgrades = selfEvolution?.getUpgradeHistory(10);
 
     res?.json({
-      isRunning: engineStatus?.isRunning,
-      isCycleRunning: engineStatus?.isCycleRunning,
-      changesDetected: engineStatus?.changesDetected,
-      upgradesGenerated: engineStatus?.upgradesGenerated,
-      upgradesApplied: engineStatus?.upgradesApplied,
-      upgradesRecordedNotApplied: engineStatus?.upgradesRecordedNotApplied,
-      appliedEnhancements: engineStatus?.appliedEnhancements,
+      isRunning: engineStatus.isRunning,
+      isCycleRunning: engineStatus.isCycleRunning,
+      changesDetected: engineStatus.changesDetected,
+      upgradesGenerated: engineStatus.upgradesGenerated,
+      upgradesApplied: engineStatus.upgradesApplied,
+      upgradesRecordedNotApplied: engineStatus.upgradesRecordedNotApplied,
+      appliedEnhancements: engineStatus.appliedEnhancements,
       // Retained for back-compat; now reports genuinely-APPLIED upgrades only.
-      upgradesDeployed: engineStatus?.upgradesDeployed,
-      lastCycle: engineStatus?.lastCycle,
-      lastCycleAt: engineStatus?.lastCycleAt,
-      lastCycleError: engineStatus?.lastCycleError,
-      totalCyclesRun: engineStatus?.totalCyclesRun,
-      intervalHealthy: engineStatus?.intervalHealthy,
-      memoryUsage: engineStatus?.memoryUsage,
+      upgradesDeployed: engineStatus.upgradesDeployed,
+      lastCycle: engineStatus.lastCycle,
+      lastCycleAt: engineStatus.lastCycleAt,
+      lastCycleError: engineStatus.lastCycleError,
+      totalCyclesRun: engineStatus.totalCyclesRun,
+      intervalHealthy: engineStatus.intervalHealthy,
+      memoryUsage: engineStatus.memoryUsage,
       safety: safetyStatus,
       recentChanges,
       recentUpgrades,
-      activePostingKnobs: evolutionRegistry?.getActivePostingFormatKnobs(),
+      activePostingKnobs: evolutionRegistry.getActivePostingFormatKnobs(),
     });
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get auto-updates status:");
@@ -107,25 +107,25 @@ router?.get("/status", requireAuth, async (_req, res) => {
 router?.post("/start", requireAdmin, async (req, res) => {
   try {
     if (!selfEvolution?.canAutoStart()) {
-      const _safetyStatus = selfEvolution?.getProductionSafetyStatus();
+      const safetyStatus = selfEvolution?.getProductionSafetyStatus();
       return res?.status(403).json({
         error: "Auto-evolution is disabled in production for safety.",
-        reason: safetyStatus?.reason,
+        reason: safetyStatus.reason,
         hint: "Use /run-once for a controlled manual cycle, or set ENABLE_SELF_EVOLUTION=true to enable auto-start.",
       });
     }
 
     await selfEvolution?.start();
-    const _status = selfEvolution?.getStatus();
+    const status = selfEvolution?.getStatus();
 
     logger?.info(`[SelfEvolution] Engine started by user ${req?.user!.id}`);
     res?.json({
       success: true,
       message:
         "Self-Evolution Engine activated — monitoring music industry for changes every hour",
-      isRunning: status?.isRunning,
-      changesDetected: status?.changesDetected,
-      upgradesDeployed: status?.upgradesDeployed,
+      isRunning: status.isRunning,
+      changesDetected: status.changesDetected,
+      upgradesDeployed: status.upgradesDeployed,
     });
   } catch (error) {
     logger?.warn({ err: error }, "Failed to start self-evolution engine:");
@@ -136,15 +136,15 @@ router?.post("/start", requireAdmin, async (req, res) => {
 router?.post("/stop", requireAdmin, async (req, res) => {
   try {
     await selfEvolution?.stop();
-    const _status = selfEvolution?.getStatus();
+    const status = selfEvolution?.getStatus();
 
     logger?.info(`[SelfEvolution] Engine stopped by user ${req?.user!.id}`);
     res?.json({
       success: true,
       message: "Self-Evolution Engine paused",
-      isRunning: status?.isRunning,
-      changesDetected: status?.changesDetected,
-      upgradesDeployed: status?.upgradesDeployed,
+      isRunning: status.isRunning,
+      changesDetected: status.changesDetected,
+      upgradesDeployed: status.upgradesDeployed,
     });
   } catch (error) {
     logger?.warn({ err: error }, "Failed to stop self-evolution engine:");
@@ -157,14 +157,14 @@ router?.post("/run-once", requireAdmin, runOnceRateLimit, async (req, res) => {
     logger?.info(
       `[SelfEvolution] Manual evolution cycle triggered by user ${req?.user!.id}`,
     );
-    const _result = await selfEvolution?.triggerManualUpgrade();
+    const result = await selfEvolution?.triggerManualUpgrade();
 
     res?.json({
       success: true,
       message: "Evolution cycle complete",
-      cycleId: result?.cycleId,
-      changesDetected: result?.changesDetected,
-      upgradesDeployed: result?.upgradesDeployed,
+      cycleId: result.cycleId,
+      changesDetected: result.changesDetected,
+      upgradesDeployed: result.upgradesDeployed,
     });
   } catch (error) {
     logger?.warn({ err: error }, "Failed to run evolution cycle:");
@@ -174,9 +174,9 @@ router?.post("/run-once", requireAdmin, runOnceRateLimit, async (req, res) => {
 
 router?.get("/changes", requireAuth, async (req, res) => {
   try {
-    const _limit = Math?.min(parseInt(req?.query.limit as string) || 50, 200);
-    const _changes = selfEvolution?.getIndustryChanges(limit);
-    res?.json({ changes, total: changes?.length });
+    const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 200);
+    const changes = selfEvolution?.getIndustryChanges(limit);
+    res?.json({ changes, total: changes.length });
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get industry changes:");
     res?.status(500).json({ error: "Failed to get industry changes" });
@@ -185,9 +185,9 @@ router?.get("/changes", requireAuth, async (req, res) => {
 
 router?.get("/upgrades", requireAuth, async (req, res) => {
   try {
-    const _limit = Math?.min(parseInt(req?.query.limit as string) || 50, 200);
-    const _upgrades = selfEvolution?.getUpgradeHistory(limit);
-    res?.json({ upgrades, total: upgrades?.length });
+    const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 200);
+    const upgrades = selfEvolution?.getUpgradeHistory(limit);
+    res?.json({ upgrades, total: upgrades.length });
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get upgrade history:");
     res?.status(500).json({ error: "Failed to get upgrade history" });
@@ -203,7 +203,7 @@ router?.post(
       logger?.info(
         `[SelfEvolution] Simulation triggered by user ${req?.user!.id}`,
       );
-      const _scenarios = Math?.min(
+      const scenarios = Math?.min(
         parseInt(req?.query.scenarios as string) || 52,
         200,
       );
@@ -213,7 +213,7 @@ router?.post(
         simulateLongTermAdaptation(scenarios),
       ]);
 
-      const _report = generateSimulationReport(mainResults, longTermResults);
+      const report = generateSimulationReport(mainResults, longTermResults);
 
       res?.json({ success: true, mainResults, longTermResults, report });
     } catch (error) {
@@ -234,8 +234,8 @@ router?.get("/silent-deployment/status", requireAdmin, (_req, res) => {
 
 router?.get("/silent-deployment/history", requireAdmin, (req, res) => {
   try {
-    const _limit = Math?.min(parseInt(req?.query.limit as string) || 20, 100);
-    res?.json({ history: silentDeployment?.getHistory(limit) });
+    const limit = Math?.min(parseInt(req?.query.limit as string) || 20, 100);
+    res?.json({ history: silentDeployment.getHistory(limit) });
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get silent deployment history:");
     res?.status(500).json({ error: "Failed to get silent deployment history" });
@@ -249,7 +249,7 @@ router?.post("/silent-deployment/enable", requireAdmin, (req, res) => {
     res?.json({
       success: true,
       message: "Silent deployment system enabled",
-      status: silentDeployment?.getStatus(),
+      status: silentDeployment.getStatus(),
     });
   } catch (error) {
     logger?.warn({ err: error }, "Failed to enable silent deployment:");
@@ -264,7 +264,7 @@ router?.post("/silent-deployment/disable", requireAdmin, (req, res) => {
     res?.json({
       success: true,
       message: "Silent deployment system disabled",
-      status: silentDeployment?.getStatus(),
+      status: silentDeployment.getStatus(),
     });
   } catch (error) {
     logger?.warn({ err: error }, "Failed to disable silent deployment:");
@@ -287,8 +287,8 @@ router?.post("/industry-monitor/refresh", requireAdmin, async (req, res) => {
       `[IndustryMonitor] Cache cleared and refresh triggered by admin ${req?.user!.id}`,
     );
     industryMonitor?.clearCache();
-    const _changes = await industryMonitor?.fetchLiveChanges();
-    res?.json({ success: true, newChanges: changes?.length, changes });
+    const changes = await industryMonitor?.fetchLiveChanges();
+    res?.json({ success: true, newChanges: changes.length, changes });
   } catch (error) {
     logger?.warn({ err: error }, "Failed to refresh industry monitor:");
     res?.status(500).json({ error: "Failed to refresh industry monitor" });

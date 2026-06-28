@@ -11,25 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import {
-  Play,
-  Pause,
-  Square,
-  Pencil,
-  Eraser,
-  MousePointer2,
-  ZoomIn,
-  ZoomOut,
-  Scissors,
-  Copy,
-  Trash2,
-  Undo2,
-  Redo2,
-  Magnet,
-  Piano,
-  Activity,
-  X,
-} from "lucide-react";
+import { Play, Pause, Square, Pencil, Eraser, MousePointer2, ZoomIn, ZoomOut, Scissors, Copy, Trash2, Undo2, Redo2, Magnet, Piano, Activity, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 

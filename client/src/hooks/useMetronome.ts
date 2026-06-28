@@ -49,16 +49,16 @@ export function useMetronome(initialSettings?: Partial<MetronomeSettings>) {
     currentMeasure: 0,
   });
 
-  const _schedulerRef = useRef<number>();
-  const _nextNoteTimeRef = useRef<number>(0);
-  const _currentBeatRef = useRef<number>(0);
-  const _currentMeasureRef = useRef<number>(0);
+  const schedulerRef = useRef<number>();
+  const nextNoteTimeRef = useRef<number>(0);
+  const currentBeatRef = useRef<number>(0);
+  const currentMeasureRef = useRef<number>(0);
 
   /**
    * Calculate the time between beats based on BPM and subdivision
    */
-  const _getBeatInterval = useCallback(() => {
-    const _secondsPerBeat = 60.0 / settings?.bpm;
+  const getBeatInterval = useCallback(() => {
+    const secondsPerBeat = 60.0 / settings?.bpm;
 
     switch (settings?.subdivision) {
       case "eighth":
@@ -73,15 +73,15 @@ export function useMetronome(initialSettings?: Partial<MetronomeSettings>) {
   /**
    * Create a click sound using Web Audio API
    */
-  const _playClick = useCallback(
+  const playClick = useCallback(
     (time: number, isAccent: boolean = false) => {
       if (!context) return;
 
-      const _osc = context?.createOscillator();
-      const _gainNode = context?.createGain();
+      const osc = context?.createOscillator();
+      const gainNode = context?.createGain();
 
       // Accent (first beat) is higher pitched and louder
-      osc?.frequency.value = isAccent ? 1200 : 800;
+      osc.frequency.value = isAccent ? 1200 : 800;
 
       gainNode?.gain.setValueAtTime(
         settings?.volume * (isAccent ? 1.2 : 1),
@@ -101,33 +101,33 @@ export function useMetronome(initialSettings?: Partial<MetronomeSettings>) {
   /**
    * Schedule the next click
    */
-  const _scheduleClick = useCallback(() => {
+  const scheduleClick = useCallback(() => {
     if (!context) return;
 
-    const _currentTime = context?.currentTime;
-    const _beatInterval = getBeatInterval();
+    const currentTime = context?.currentTime;
+    const beatInterval = getBeatInterval();
 
     // Schedule clicks up to 0.1 seconds ahead
     while (nextNoteTimeRef?.current < currentTime + 0.1) {
-      const _isFirstBeat = currentBeatRef?.current === 0;
-      const _isAccent = settings?.accentFirstBeat && isFirstBeat;
+      const isFirstBeat = currentBeatRef?.current === 0;
+      const isAccent = settings?.accentFirstBeat && isFirstBeat;
 
       playClick(nextNoteTimeRef?.current, isAccent);
 
       // Update beat and measure
-      currentBeatRef?.current++;
+      currentBeatRef.current++;
       if (currentBeatRef?.current >= settings?.timeSignature.numerator) {
         currentBeatRef.current = 0;
-        currentMeasureRef?.current++;
+        currentMeasureRef.current++;
       }
 
-      nextNoteTimeRef?.current += beatInterval;
+      nextNoteTimeRef.current += beatInterval;
 
       // Update state (throttled to avoid too many re-renders)
       setState((prev) => ({
         ...prev,
-        currentBeat: currentBeatRef?.current,
-        currentMeasure: currentMeasureRef?.current,
+        currentBeat: currentBeatRef.current,
+        currentMeasure: currentMeasureRef.current,
       }));
     }
 
@@ -144,7 +144,7 @@ export function useMetronome(initialSettings?: Partial<MetronomeSettings>) {
   /**
    * Start the metronome
    */
-  const _start = useCallback(() => {
+  const start = useCallback(() => {
     if (!context || state?.isPlaying) return;
 
     currentBeatRef.current = 0;
@@ -164,7 +164,7 @@ export function useMetronome(initialSettings?: Partial<MetronomeSettings>) {
   /**
    * Stop the metronome
    */
-  const _stop = useCallback(() => {
+  const stop = useCallback(() => {
     if (schedulerRef?.current) {
       clearTimeout(schedulerRef?.current);
     }
@@ -180,7 +180,7 @@ export function useMetronome(initialSettings?: Partial<MetronomeSettings>) {
   /**
    * Count in before starting recording
    */
-  const _countIn = useCallback(
+  const countIn = useCallback(
     async (onComplete: () => void) => {
       if (!context) return;
 
@@ -195,12 +195,12 @@ export function useMetronome(initialSettings?: Partial<MetronomeSettings>) {
         currentMeasure: 0,
       }));
 
-      const _countInMeasures = settings?.countIn;
-      const _beatsPerMeasure = settings?.timeSignature.numerator;
-      const _totalCountInBeats = countInMeasures * beatsPerMeasure;
+      const countInMeasures = settings?.countIn;
+      const beatsPerMeasure = settings?.timeSignature.numerator;
+      const totalCountInBeats = countInMeasures * beatsPerMeasure;
 
-      const _checkCountInComplete = () => {
-        const _totalBeats =
+      const checkCountInComplete = () => {
+        const totalBeats =
           currentMeasureRef?.current * beatsPerMeasure + currentBeatRef?.current;
 
         if (totalBeats >= totalCountInBeats) {
@@ -226,7 +226,7 @@ export function useMetronome(initialSettings?: Partial<MetronomeSettings>) {
   /**
    * Update settings
    */
-  const _updateSettings = useCallback(
+  const updateSettings = useCallback(
     (newSettings: Partial<MetronomeSettings>) => {
       setSettings((prev) => ({ ...prev, ...newSettings }));
     },
@@ -236,14 +236,14 @@ export function useMetronome(initialSettings?: Partial<MetronomeSettings>) {
   /**
    * Set BPM
    */
-  const _setBPM = useCallback((bpm: number) => {
-    setSettings((prev) => ({ ...prev, bpm: Math?.max(20, Math?.min(300, bpm)) }));
+  const setBPM = useCallback((bpm: number) => {
+    setSettings((prev) => ({ ...prev, bpm: Math.max(20, Math?.min(300, bpm)) }));
   }, []);
 
   /**
    * Set time signature
    */
-  const _setTimeSignature = useCallback(
+  const setTimeSignature = useCallback(
     (numerator: number, denominator: number) => {
       setSettings((prev) => ({
         ...prev,
@@ -256,17 +256,17 @@ export function useMetronome(initialSettings?: Partial<MetronomeSettings>) {
   /**
    * Set volume
    */
-  const _setVolume = useCallback((volume: number) => {
+  const setVolume = useCallback((volume: number) => {
     setSettings((prev) => ({
       ...prev,
-      volume: Math?.max(0, Math?.min(1, volume)),
+      volume: Math.max(0, Math?.min(1, volume)),
     }));
   }, []);
 
   /**
    * Toggle enabled
    */
-  const _toggle = useCallback(() => {
+  const toggle = useCallback(() => {
     setSettings((prev) => ({ ...prev, enabled: !prev?.enabled }));
   }, []);
 

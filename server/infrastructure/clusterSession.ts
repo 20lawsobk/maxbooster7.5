@@ -14,9 +14,9 @@ class ClusterSessionManager {
   private isDistributedMode: boolean = true;
 
   private constructor() {
-    const _isProductionEnv =
+    const isProductionEnv =
       process?.env.NODE_ENV === "production" || !!process?.env.REPLIT_DEPLOYMENT;
-    const _rawSecret = env?.SESSION_SECRET;
+    const rawSecret = env?.SESSION_SECRET;
     if (isProductionEnv && (!rawSecret || rawSecret?.length < 32)) {
       logger?.warn(
         "❌ CRITICAL: SESSION_SECRET missing or too short (<32 chars) — refusing to start in production",
@@ -26,7 +26,7 @@ class ClusterSessionManager {
     this.config = {
       sessionSecret:
         rawSecret || "dev-only-insecure-fallback-not-for-production",
-      sessionName: "maxbooster?.sid",
+      sessionName: "maxbooster.sid",
       maxAge: parseInt(process?.env.SESSION_MAX_AGE || "86400000"),
       secure:
         process?.env.NODE_ENV === "production" ||
@@ -63,4 +63,4 @@ class ClusterSessionManager {
   }
 }
 
-export const _clusterSessionManager = ClusterSessionManager?.getInstance();
+export const clusterSessionManager = ClusterSessionManager?.getInstance();

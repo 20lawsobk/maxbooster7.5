@@ -40,12 +40,12 @@ export interface CollaboratorInfo {
   selection: SelectionState | null;
 }
 
-const _PRESENCE_PREFIX = "presence:project:";
-const _HEARTBEAT_INTERVAL_MS = 15000;
-const _STALE_TIMEOUT_MS = 45000;
-const _AWAY_TIMEOUT_MS = 30000;
+const PRESENCE_PREFIX = "presence:project:";
+const HEARTBEAT_INTERVAL_MS = 15000;
+const STALE_TIMEOUT_MS = 45000;
+const AWAY_TIMEOUT_MS = 30000;
 
-const _USER_COLORS = [
+const USER_COLORS = [
   "#FF6B6B",
   "#4ECDC4",
   "#45B7D1",
@@ -64,8 +64,8 @@ const _USER_COLORS = [
 ];
 
 function generateUserColor(userId: string): string {
-  const _hash = crypto?.createHash("md5").update(userId).digest("hex");
-  const _index = parseInt(hash?.slice(0, 8), 16) % USER_COLORS?.length;
+  const hash = crypto?.createHash("md5").update(userId).digest("hex");
+  const index = parseInt(hash?.slice(0, 8), 16) % USER_COLORS?.length;
   return USER_COLORS[index];
 }
 
@@ -88,8 +88,8 @@ export class PresenceManager {
     displayName: string,
     existingColor?: string,
   ): Promise<PresenceState> {
-    const _connectionId = generateConnectionId();
-    const _now = Date?.now();
+    const connectionId = generateConnectionId();
+    const now = Date?.now();
 
     const presence: PresenceState = {
       userId,
@@ -121,14 +121,14 @@ export class PresenceManager {
     userId: string,
     connectionId?: string,
   ): Promise<void> {
-    const _key = `${userId}:${connectionId || "*"}`;
+    const key = `${userId}:${connectionId || "*"}`;
     this?.stopHeartbeat(key);
 
     try {
-      const _redis = await getRedisClient();
+      const redis = await getRedisClient();
       if (redis) {
-        const _redisKey = this?.getRedisKey(projectId);
-        const _allPresence = await redis?.hGetAll(redisKey);
+        const redisKey = this?.getRedisKey(projectId);
+        const allPresence = await redis?.hGetAll(redisKey);
 
         for (const [fieldKey, _value] of Object?.entries(allPresence)) {
           if (fieldKey?.startsWith(userId)) {
@@ -145,7 +145,7 @@ export class PresenceManager {
       );
     }
 
-    const _projectPresence = this?.localPresence.get(projectId);
+    const projectPresence = this?.localPresence.get(projectId);
     if (projectPresence) {
       for (const [key, presence] of projectPresence?.entries()) {
         if (presence?.userId === userId) {
@@ -169,7 +169,7 @@ export class PresenceManager {
     connectionId: string,
     cursor: CursorPosition,
   ): Promise<void> {
-    const _presence = await this?.getPresence(projectId, userId, connectionId);
+    const presence = await this?.getPresence(projectId, userId, connectionId);
     if (presence) {
       presence.cursor = cursor;
       presence.lastActivity = Date?.now();
@@ -184,7 +184,7 @@ export class PresenceManager {
     connectionId: string,
     selection: SelectionState | null,
   ): Promise<void> {
-    const _presence = await this?.getPresence(projectId, userId, connectionId);
+    const presence = await this?.getPresence(projectId, userId, connectionId);
     if (presence) {
       presence.selection = selection;
       presence.lastActivity = Date?.now();
@@ -199,7 +199,7 @@ export class PresenceManager {
     connectionId: string,
     status: PresenceStatus,
   ): Promise<void> {
-    const _presence = await this?.getPresence(projectId, userId, connectionId);
+    const presence = await this?.getPresence(projectId, userId, connectionId);
     if (presence) {
       presence.status = status;
       presence.lastActivity = Date?.now();
@@ -212,10 +212,10 @@ export class PresenceManager {
     userId: string,
     connectionId: string,
   ): Promise<void> {
-    const _presence = await this?.getPresence(projectId, userId, connectionId);
+    const presence = await this?.getPresence(projectId, userId, connectionId);
     if (presence) {
-      const _now = Date?.now();
-      const _timeSinceActivity = now - presence?.lastActivity;
+      const now = Date?.now();
+      const timeSinceActivity = now - presence?.lastActivity;
 
       if (
         presence?.status === "editing" &&
@@ -230,13 +230,13 @@ export class PresenceManager {
 
   async getCollaborators(projectId: string): Promise<CollaboratorInfo[]> {
     const collaborators: CollaboratorInfo[] = [];
-    const _seen = new Set<string>();
+    const seen = new Set<string>();
 
     try {
-      const _redis = await getRedisClient();
+      const redis = await getRedisClient();
       if (redis) {
-        const _redisKey = this?.getRedisKey(projectId);
-        const _allPresence = await redis?.hGetAll(redisKey);
+        const redisKey = this?.getRedisKey(projectId);
+        const allPresence = await redis?.hGetAll(redisKey);
 
         for (const value of Object?.values(allPresence)) {
           try {
@@ -244,12 +244,12 @@ export class PresenceManager {
             if (!seen?.has(presence?.userId)) {
               seen?.add(presence?.userId);
               collaborators?.push({
-                userId: presence?.userId,
-                displayName: presence?.displayName,
-                color: presence?.color,
-                status: presence?.status,
-                cursor: presence?.cursor,
-                selection: presence?.selection,
+                userId: presence.userId,
+                displayName: presence.displayName,
+                color: presence.color,
+                status: presence.status,
+                cursor: presence.cursor,
+                selection: presence.selection,
               });
             }
           } catch (e) {
@@ -268,18 +268,18 @@ export class PresenceManager {
     }
 
     if (collaborators?.length === 0) {
-      const _projectPresence = this?.localPresence.get(projectId);
+      const projectPresence = this?.localPresence.get(projectId);
       if (projectPresence) {
         for (const presence of projectPresence?.values()) {
           if (!seen?.has(presence?.userId)) {
             seen?.add(presence?.userId);
             collaborators?.push({
-              userId: presence?.userId,
-              displayName: presence?.displayName,
-              color: presence?.color,
-              status: presence?.status,
-              cursor: presence?.cursor,
-              selection: presence?.selection,
+              userId: presence.userId,
+              displayName: presence.displayName,
+              color: presence.color,
+              status: presence.status,
+              cursor: presence.cursor,
+              selection: presence.selection,
             });
           }
         }
@@ -290,7 +290,7 @@ export class PresenceManager {
   }
 
   async getCollaboratorCount(projectId: string): Promise<number> {
-    const _collaborators = await this?.getCollaborators(projectId);
+    const collaborators = await this?.getCollaborators(projectId);
     return collaborators?.length;
   }
 
@@ -298,7 +298,7 @@ export class PresenceManager {
     projectId: string,
     presence: PresenceState,
   ): Promise<void> {
-    const _fieldKey = `${presence?.userId}:${presence?.connectionId}`;
+    const fieldKey = `${presence?.userId}:${presence?.connectionId}`;
 
     let projectPresence = this?.localPresence.get(projectId);
     if (!projectPresence) {
@@ -308,9 +308,9 @@ export class PresenceManager {
     projectPresence?.set(fieldKey, presence);
 
     try {
-      const _redis = await getRedisClient();
+      const redis = await getRedisClient();
       if (redis) {
-        const _redisKey = this?.getRedisKey(projectId);
+        const redisKey = this?.getRedisKey(projectId);
         await redis?.hSet(redisKey, fieldKey, JSON?.stringify(presence));
         await redis?.expire(redisKey, 3600);
       }
@@ -327,18 +327,18 @@ export class PresenceManager {
     userId: string,
     connectionId: string,
   ): Promise<PresenceState | null> {
-    const _fieldKey = `${userId}:${connectionId}`;
+    const fieldKey = `${userId}:${connectionId}`;
 
-    const _projectPresence = this?.localPresence.get(projectId);
+    const projectPresence = this?.localPresence.get(projectId);
     if (projectPresence?.has(fieldKey)) {
       return projectPresence?.get(fieldKey)!;
     }
 
     try {
-      const _redis = await getRedisClient();
+      const redis = await getRedisClient();
       if (redis) {
-        const _redisKey = this?.getRedisKey(projectId);
-        const _data = await redis?.hGet(redisKey, fieldKey);
+        const redisKey = this?.getRedisKey(projectId);
+        const data = await redis?.hGet(redisKey, fieldKey);
         if (data) {
           return JSON?.parse(data);
         }
@@ -358,8 +358,8 @@ export class PresenceManager {
     userId: string,
     connectionId: string,
   ): void {
-    const _key = `${userId}:${connectionId}`;
-    const _interval = setInterval(() => {
+    const key = `${userId}:${connectionId}`;
+    const interval = setInterval(() => {
       this?.heartbeat(projectId, userId, connectionId).catch((err) => {
         logger?.warn({ err: err }, "[Presence] Heartbeat failed:");
       });
@@ -369,7 +369,7 @@ export class PresenceManager {
   }
 
   private stopHeartbeat(key: string): void {
-    const _interval = this?.heartbeatIntervals.get(key);
+    const interval = this?.heartbeatIntervals.get(key);
     if (interval) {
       clearInterval(interval);
       this?.heartbeatIntervals.delete(key);
@@ -377,7 +377,7 @@ export class PresenceManager {
   }
 
   private startStaleCleanup(projectId: string): void {
-    const _interval = setInterval(async () => {
+    const interval = setInterval(async () => {
       try {
         await this?.cleanupStalePresence(projectId);
       } catch {
@@ -389,7 +389,7 @@ export class PresenceManager {
   }
 
   private stopStaleCleanup(projectId: string): void {
-    const _interval = this?.cleanupIntervals.get(projectId);
+    const interval = this?.cleanupIntervals.get(projectId);
     if (interval) {
       clearInterval(interval);
       this?.cleanupIntervals.delete(projectId);
@@ -397,14 +397,14 @@ export class PresenceManager {
   }
 
   private async cleanupStalePresence(projectId: string): Promise<string[]> {
-    const _now = Date?.now();
+    const now = Date?.now();
     const staleUsers: string[] = [];
 
     try {
-      const _redis = await getRedisClient();
+      const redis = await getRedisClient();
       if (redis) {
-        const _redisKey = this?.getRedisKey(projectId);
-        const _allPresence = await redis?.hGetAll(redisKey);
+        const redisKey = this?.getRedisKey(projectId);
+        const allPresence = await redis?.hGetAll(redisKey);
 
         for (const [fieldKey, value] of Object?.entries(allPresence)) {
           try {
@@ -428,7 +428,7 @@ export class PresenceManager {
       );
     }
 
-    const _projectPresence = this?.localPresence.get(projectId);
+    const projectPresence = this?.localPresence.get(projectId);
     if (projectPresence) {
       for (const [key, presence] of projectPresence?.entries()) {
         if (now - presence?.lastActivity > STALE_TIMEOUT_MS) {
@@ -460,4 +460,4 @@ export class PresenceManager {
   }
 }
 
-export const _presenceManager = new PresenceManager();
+export const presenceManager = new PresenceManager();

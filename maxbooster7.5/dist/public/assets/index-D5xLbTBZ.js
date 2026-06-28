@@ -5968,6 +5968,7 @@ class rs {
           estimatedTimeRemaining: null,
         });
         this.isOnline && !this.isPaused;
+
       ) {
         const n = await v.getNextBatch(this.batchSize);
         if (n.length === 0) break;

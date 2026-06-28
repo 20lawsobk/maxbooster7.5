@@ -6,17 +6,17 @@ import { db } from "../db.js";
 import { projects, studioProjects, studioTracks, users } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 
-const _router = Router();
+const router = Router();
 
-const _batchSyncActionSchema = z?.object({
-  id: z?.string(),
-  type: z?.string(),
-  payload: z?.unknown(),
-  metadata: z?.record(z?.string(), z?.unknown()).optional(),
+const batchSyncActionSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  payload: z.unknown(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
-const _batchSyncRequestSchema = z?.object({
-  actions: z?.array(batchSyncActionSchema).min(1).max(50),
+const batchSyncRequestSchema = z.object({
+  actions: z.array(batchSyncActionSchema).min(1).max(50),
 });
 
 interface SyncResult {
@@ -33,7 +33,7 @@ interface ConflictInfo {
 }
 
 // Whitelist of project fields that the client is allowed to update via sync.
-const _ALLOWED_PROJECT_FIELDS = new Set([
+const ALLOWED_PROJECT_FIELDS = new Set([
   "title",
   "description",
   "genre",
@@ -51,7 +51,7 @@ const _ALLOWED_PROJECT_FIELDS = new Set([
 ]);
 
 // Whitelist of studio-project fields allowed via sync.
-const _ALLOWED_STUDIO_PROJECT_FIELDS = new Set([
+const ALLOWED_STUDIO_PROJECT_FIELDS = new Set([
   "name",
   "title",
   "description",
@@ -70,7 +70,7 @@ const _ALLOWED_STUDIO_PROJECT_FIELDS = new Set([
 ]);
 
 // Whitelist of track fields allowed via sync.
-const _ALLOWED_TRACK_FIELDS = new Set([
+const ALLOWED_TRACK_FIELDS = new Set([
   "name",
   "trackType",
   "color",
@@ -107,17 +107,17 @@ const ACTION_HANDLERS: Record<
 > = {
   // ── Projects ─────────────────────────────────────────────────────────────
 
-  "project?.update": async (payload, userId) => {
+  "project.update": async (payload, userId) => {
     try {
-      const _data = payload as {
+      const data = payload as {
         projectId: string;
         changes: Record<string, unknown>;
         isStudio?: boolean;
       };
-      const _changes = data?.changes ?? {};
+      const changes = data?.changes ?? {};
 
       if (data?.isStudio) {
-        const _allowed = pickAllowed(changes, ALLOWED_STUDIO_PROJECT_FIELDS);
+        const allowed = pickAllowed(changes, ALLOWED_STUDIO_PROJECT_FIELDS);
         if (Object?.keys(allowed).length === 0)
           return {
             success: true,
@@ -133,15 +133,15 @@ const ACTION_HANDLERS: Record<
               eq(studioProjects?.userId, userId),
             ),
           )
-          .returning({ id: studioProjects?.id });
+          .returning({ id: studioProjects.id });
 
         return {
           success: true,
-          data: { updated: !!updated, projectId: data?.projectId },
+          data: { updated: !!updated, projectId: data.projectId },
         };
       }
 
-      const _allowed = pickAllowed(changes, ALLOWED_PROJECT_FIELDS);
+      const allowed = pickAllowed(changes, ALLOWED_PROJECT_FIELDS);
       if (Object?.keys(allowed).length === 0)
         return {
           success: true,
@@ -154,78 +154,78 @@ const ACTION_HANDLERS: Record<
         .where(
           and(eq(projects?.id, data?.projectId), eq(projects?.userId, userId)),
         )
-        .returning({ id: projects?.id });
+        .returning({ id: projects.id });
 
       return {
         success: true,
-        data: { updated: !!updated, projectId: data?.projectId },
+        data: { updated: !!updated, projectId: data.projectId },
       };
     } catch (error) {
-      logger?.warn({ err: error }, "[sync] project?.update failed");
+      logger?.warn({ err: error }, "[sync] project.update failed");
       return { success: false, error: String(error) };
     }
   },
 
-  "project?.create": async (payload, userId) => {
+  "project.create": async (payload, userId) => {
     try {
-      const _data = payload as {
+      const data = payload as {
         name?: string;
         title?: string;
         settings?: Record<string, unknown>;
         isStudio?: boolean;
       };
-      const _title = data?.title ?? data?.name ?? "Untitled";
+      const title = data?.title ?? data?.name ?? "Untitled";
 
       if (data?.isStudio) {
         const [created] = await db
           .insert(studioProjects)
           .values({ name: title, userId, status: "active" })
-          .returning({ id: studioProjects?.id });
-        return { success: true, data: { projectId: created?.id } };
+          .returning({ id: studioProjects.id });
+        return { success: true, data: { projectId: created.id } };
       }
 
       const [created] = await db
         .insert(projects)
         .values({ title, userId, status: "draft" })
-        .returning({ id: projects?.id });
+        .returning({ id: projects.id });
 
-      return { success: true, data: { projectId: created?.id } };
+      return { success: true, data: { projectId: created.id } };
     } catch (error) {
-      logger?.warn({ err: error }, "[sync] project?.create failed");
+      logger?.warn({ err: error }, "[sync] project.create failed");
       return { success: false, error: String(error) };
     }
   },
 
   // ── Tracks ────────────────────────────────────────────────────────────────
 
-  "track?.add": async (payload, _userId) => {
+  "track.add": async (payload, userId) => {
     try {
-      const _data = payload as {
+      const data = payload as {
         projectId: string;
         trackData: Record<string, unknown>;
       };
-      const _allowed = pickAllowed(data?.trackData ?? {}, ALLOWED_TRACK_FIELDS);
-      const _name = (allowed?.name as string | undefined) ?? "New Track";
+      const allowed = pickAllowed(data?.trackData ?? {}, ALLOWED_TRACK_FIELDS);
+      const name = (allowed?.name as string | undefined) ?? "New Track";
 
       const [created] = await db
         .insert(studioTracks)
-        .values({ projectId: data?.projectId, name, ...allowed })
-        .returning({ id: studioTracks?.id });
+        .values({ projectId: data.projectId, name, ...allowed })
+        .returning({ id: studioTracks.id });
 
-      return { success: true, data: { trackId: created?.id } };
+      return { success: true, data: { trackId: created.id } };
     } catch (error) {
-      logger?.warn({ err: error }, "[sync] track?.add failed");
+      logger?.warn({ err: error }, "[sync] track.add failed");
       return { success: false, error: String(error) };
     }
   },
 
-  "track?.update": async (payload, _userId) => {
+  "track.update": async (payload, userId) => {
     try {
-      const _data = payload as {
+      const data = payload as {
         trackId: string;
         changes: Record<string, unknown>;
       };
-      const _allowed = pickAllowed(data?.changes ?? {}, ALLOWED_TRACK_FIELDS);
+      const allowed = pickAllowed(data?.changes ?? {}, ALLOWED_TRACK_FIELDS);
       if (Object?.keys(allowed).length === 0)
         return {
           success: true,
@@ -236,47 +236,47 @@ const ACTION_HANDLERS: Record<
         .update(studioTracks)
         .set(allowed)
         .where(eq(studioTracks?.id, data?.trackId))
-        .returning({ id: studioTracks?.id });
+        .returning({ id: studioTracks.id });
 
       return {
         success: true,
-        data: { updated: !!updated, trackId: data?.trackId },
+        data: { updated: !!updated, trackId: data.trackId },
       };
     } catch (error) {
-      logger?.warn({ err: error }, "[sync] track?.update failed");
+      logger?.warn({ err: error }, "[sync] track.update failed");
       return { success: false, error: String(error) };
     }
   },
 
-  "track?.delete": async (payload, _userId) => {
+  "track.delete": async (payload, userId) => {
     try {
-      const _data = payload as { trackId: string };
+      const data = payload as { trackId: string };
 
       await db?.delete(studioTracks).where(eq(studioTracks?.id, data?.trackId));
 
-      return { success: true, data: { deleted: true, trackId: data?.trackId } };
+      return { success: true, data: { deleted: true, trackId: data.trackId } };
     } catch (error) {
-      logger?.warn({ err: error }, "[sync] track?.delete failed");
+      logger?.warn({ err: error }, "[sync] track.delete failed");
       return { success: false, error: String(error) };
     }
   },
 
   // ── Settings ─────────────────────────────────────────────────────────────
 
-  "settings?.update": async (payload, userId) => {
+  "settings.update": async (payload, userId) => {
     try {
-      const _data = payload as { settings: Record<string, unknown> };
-      const _settings = data?.settings ?? {};
+      const data = payload as { settings: Record<string, unknown> };
+      const settings = data?.settings ?? {};
 
       // Merge into the user's JSONB preferences column.
       // Raw SQL merge so we don't blow away keys we don't know about.
       const [existing] = await db
-        .select({ preferences: users?.preferences })
+        .select({ preferences: users.preferences })
         .from(users)
         .where(eq(users?.id, userId))
         .limit(1);
 
-      const _merged = {
+      const merged = {
         ...((existing?.preferences as Record<string, unknown>) ?? {}),
         ...settings,
       };
@@ -288,21 +288,21 @@ const ACTION_HANDLERS: Record<
 
       return { success: true, data: { updated: true } };
     } catch (error) {
-      logger?.warn({ err: error }, "[sync] settings?.update failed");
+      logger?.warn({ err: error }, "[sync] settings.update failed");
       return { success: false, error: String(error) };
     }
   },
 
   // ── Drafts ────────────────────────────────────────────────────────────────
   // Drafts live in the client-side IndexedDB; the server only needs to ACK.
-  "draft?.save": async (_payload, _userId) => {
+  "draft.save": async (_payload, userId) => {
     return { success: true, data: { saved: true } };
   },
 
   // ── Audio ─────────────────────────────────────────────────────────────────
   // Audio files are uploaded separately via multipart. This action ACKs
   // pending metadata so the queue item can be cleared.
-  "audio?.upload": async (_payload, _userId) => {
+  "audio.upload": async (_payload, userId) => {
     return { success: true, data: { acknowledged: true } };
   },
 
@@ -315,12 +315,12 @@ const ACTION_HANDLERS: Record<
 
 router?.post("/batch", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { actions } = batchSyncRequestSchema?.parse(req?.body);
 
     logger?.info("Processing batch sync request", {
       userId,
-      actionCount: actions?.length,
+      actionCount: actions.length,
     });
 
     const results: SyncResult[] = [];
@@ -328,55 +328,55 @@ router?.post("/batch", requireAuth, async (req, res) => {
 
     for (const action of actions) {
       try {
-        const _handler =
+        const handler =
           ACTION_HANDLERS[action?.type] ?? ACTION_HANDLERS["default"];
-        const _result = await handler(action?.payload, userId);
+        const result = await handler(action?.payload, userId);
 
         results?.push({
-          actionId: action?.id,
-          success: result?.success,
+          actionId: action.id,
+          success: result.success,
           ...(result?.success
-            ? { serverResponse: result?.data }
-            : { error: result?.error ?? "Unknown error" }),
+            ? { serverResponse: result.data }
+            : { error: result.error ?? "Unknown error" }),
         });
       } catch (error: unknown) {
-        logger?.warn("Sync action failed", { actionId: action?.id, error });
+        logger?.warn("Sync action failed", { actionId: action.id, error });
         results?.push({
-          actionId: action?.id,
+          actionId: action.id,
           success: false,
           error: error instanceof Error ? error?.message : "Processing failed",
         });
       }
     }
 
-    const _successCount = results?.filter((r) => r?.success).length;
-    const _failCount = results?.filter((r) => !r?.success).length;
+    const successCount = results?.filter((r) => r?.success).length;
+    const failCount = results?.filter((r) => !r?.success).length;
 
     logger?.info("Batch sync completed", {
       userId,
-      total: actions?.length,
+      total: actions.length,
       success: successCount,
       failed: failCount,
-      conflicts: conflicts?.length,
+      conflicts: conflicts.length,
     });
 
     res?.json({
       results,
       conflicts,
       summary: {
-        total: actions?.length,
+        total: actions.length,
         success: successCount,
         failed: failCount,
-        conflicts: conflicts?.length,
+        conflicts: conflicts.length,
       },
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Batch sync request failed:");
 
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res?.status(400).json({
         error: "Invalid request data",
-        details: error?.issues,
+        details: error.issues,
       });
     }
 
@@ -386,11 +386,11 @@ router?.post("/batch", requireAuth, async (req, res) => {
 
 router?.get("/status", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
     res?.json({
       success: true,
-      serverTime: Date?.now(),
+      serverTime: Date.now(),
       userId,
       syncEnabled: true,
     });
@@ -402,7 +402,7 @@ router?.get("/status", requireAuth, async (req, res) => {
 
 router?.post("/resolve-conflict", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { actionId, resolution } = req?.body;
 
     if (!actionId || !["local", "server", "merged"].includes(resolution)) {

@@ -103,7 +103,7 @@ export interface MidiClip {
   loopLength: number;
 }
 
-export const _studioApi = {
+export const studioApi = {
   comping: {
     async createGroup(
       projectId: number,
@@ -117,7 +117,7 @@ export const _studioApi = {
     },
 
     async getGroups(projectId: number): Promise<CompingGroup[]> {
-      const _res = await fetch(
+      const res = await fetch(
         `/api/studio/projects/${projectId}/comping/groups`,
         { credentials: "include" },
       );
@@ -126,7 +126,7 @@ export const _studioApi = {
     },
 
     async getGroup(projectId: number, groupId: number): Promise<CompingGroup> {
-      const _res = await fetch(
+      const res = await fetch(
         `/api/studio/projects/${projectId}/comping/groups/${groupId}`,
         { credentials: "include" },
       );
@@ -175,7 +175,7 @@ export const _studioApi = {
     },
 
     async getLanes(projectId: number, groupId: number): Promise<CompingLane[]> {
-      const _res = await fetch(
+      const res = await fetch(
         `/api/studio/projects/${projectId}/comping/groups/${groupId}/lanes`,
         { credentials: "include" },
       );
@@ -229,7 +229,7 @@ export const _studioApi = {
       projectId: number,
       groupId: number,
     ): Promise<CompingSegment[]> {
-      const _res = await fetch(
+      const res = await fetch(
         `/api/studio/projects/${projectId}/comping/groups/${groupId}/segments`,
         { credentials: "include" },
       );
@@ -272,7 +272,7 @@ export const _studioApi = {
       projectId: number,
       groupId: number,
     ): Promise<CompingVersion[]> {
-      const _res = await fetch(
+      const res = await fetch(
         `/api/studio/projects/${projectId}/comping/groups/${groupId}/versions`,
         { credentials: "include" },
       );
@@ -312,7 +312,7 @@ export const _studioApi = {
 
   markers: {
     async getMarkers(projectId: number): Promise<StudioMarker[]> {
-      const _res = await fetch(`/api/studio/projects/${projectId}/markers`, {
+      const res = await fetch(`/api/studio/projects/${projectId}/markers`, {
         credentials: "include",
       });
       if (!res?.ok) throw new Error("Failed to fetch markers");
@@ -358,7 +358,7 @@ export const _studioApi = {
       projectId: number,
       exportId: string,
     ): Promise<StemExportStatus> {
-      const _res = await fetch(
+      const res = await fetch(
         `/api/studio/projects/${projectId}/stems/status/${exportId}`,
         { credentials: "include" },
       );
@@ -367,7 +367,7 @@ export const _studioApi = {
     },
 
     async downloadStems(projectId: number, exportId: string): Promise<Blob> {
-      const _res = await fetch(
+      const res = await fetch(
         `/api/studio/projects/${projectId}/stems/download/${exportId}`,
         { credentials: "include" },
       );
@@ -376,7 +376,7 @@ export const _studioApi = {
     },
 
     async listExports(projectId: number): Promise<StemExportStatus[]> {
-      const _res = await fetch(`/api/studio/projects/${projectId}/stems/list`, {
+      const res = await fetch(`/api/studio/projects/${projectId}/stems/list`, {
         credentials: "include",
       });
       if (!res?.ok) throw new Error("Failed to list exports");
@@ -397,12 +397,14 @@ export const _studioApi = {
       );
     },
 
-    async getSupportedFormats(projectId: number): Promise<{
+    async getSupportedFormats(
+      projectId: number,
+    ): Promise<{
       formats: string[];
       sampleRates: number[];
       bitDepths: number[];
     }> {
-      const _res = await fetch(
+      const res = await fetch(
         `/api/studio/projects/${projectId}/stems/formats`,
         { credentials: "include" },
       );
@@ -413,7 +415,7 @@ export const _studioApi = {
 
   midi: {
     async getClips(projectId: number, trackId: string): Promise<MidiClip[]> {
-      const _res = await fetch(
+      const res = await fetch(
         `/api/studio/projects/${projectId}/midi/clips?trackId=${trackId}`,
         { credentials: "include" },
       );
@@ -505,7 +507,7 @@ export const _studioApi = {
       projectId: number,
       clipId: string,
     ): Promise<WarpMarker[]> {
-      const _res = await fetch(
+      const res = await fetch(
         `/api/studio/projects/${projectId}/warping/clips/${clipId}/markers`,
         { credentials: "include" },
       );

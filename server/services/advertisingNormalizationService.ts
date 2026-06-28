@@ -14,7 +14,7 @@ export class AdvertisingNormalizationService {
     peaks: unknown[];
     globalPeaks: unknown[];
   }> {
-    const _redis = await getRedisClient();
+    const redis = await getRedisClient();
     if (!redis) {
       throw new Error(
         "[AdvertisingNorm] PDIM/Redis client unavailable — cannot load trained ad patterns",
@@ -84,34 +84,34 @@ export class AdvertisingNormalizationService {
     artistId = "artist-001",
   ): Promise<Record<string, any>> {
     const variants: Record<string, any> = {};
-    const _pdim = await this?.getPdimAdData(artistId);
+    const pdim = await this?.getPdimAdData(artistId);
 
     for (const platform of platforms) {
-      const _limits =
-        this?.platformLimits[platform as keyof typeof this?.platformLimits];
+      const limits =
+        this?.platformLimits[platform as keyof typeof this.platformLimits];
       if (!limits) continue;
 
       variants[platform] = {
-        text: this?.optimizeText(
+        text: this.optimizeText(
           creative?.normalizedContent || creative?.rawContent || "",
           platform,
           limits,
         ),
-        hashtags: this?.extractAndOptimizeHashtags(
+        hashtags: this.extractAndOptimizeHashtags(
           creative?.rawContent || "",
           limits?.hashtagMax,
           platform,
         ),
-        mediaUrls: creative?.assetUrls || [],
+        mediaUrls: creative.assetUrls || [],
         aspectRatio:
           limits?.imageRatio || (limits as Record<string, unknown>).videoRatio,
-        callToAction: this?.generateCTA(platform, pdim?.patterns),
-        optimalPostTime: this?.calculateOptimalPostTime(
+        callToAction: this.generateCTA(platform, pdim?.patterns),
+        optimalPostTime: this.calculateOptimalPostTime(
           platform,
           pdim?.peaks,
           pdim?.globalPeaks,
         ),
-        engagementHooks: this?.generateEngagementHooks(
+        engagementHooks: this.generateEngagementHooks(
           creative?.rawContent || "",
           platform,
           pdim?.patterns,
@@ -129,19 +129,19 @@ export class AdvertisingNormalizationService {
     content: string,
     _assets: string[],
   ): Promise<{ status: string; issues: Record<string, unknown> }> {
-    const _issues = {
-      offensive: this?.detectOffensiveContent(content),
-      spam: this?.detectSpamPatterns(content),
+    const issues = {
+      offensive: this.detectOffensiveContent(content),
+      spam: this.detectSpamPatterns(content),
       copyright: false, // Placeholder - users upload own content
-      brandSafety: this?.checkBrandSafety(content),
-      engagement: this?.validateEngagementQuality(content),
+      brandSafety: this.checkBrandSafety(content),
+      engagement: this.validateEngagementQuality(content),
     };
 
-    const _hasIssues = Object?.entries(issues).some(
+    const hasIssues = Object?.entries(issues).some(
       ([key, value]) => key !== "engagement" && value === true,
     );
 
-    const _status = hasIssues ? "rejected" : "approved";
+    const status = hasIssues ? "rejected" : "approved";
     return { status, issues };
   }
 
@@ -187,13 +187,13 @@ export class AdvertisingNormalizationService {
     platform: string,
   ): string[] {
     // Extract existing hashtags
-    const _existingHashtags = text?.match(/#\w+/g) || [];
+    const existingHashtags = text?.match(/#\w+/g) || [];
 
     // Add platform-optimized discovery hashtags
-    const _platformHashtags = this?.getPlatformOptimizedHashtags(platform);
+    const platformHashtags = this?.getPlatformOptimizedHashtags(platform);
 
     // Combine and deduplicate
-    const _allHashtags = [
+    const allHashtags = [
       ...new Set([...existingHashtags, ...platformHashtags]),
     ];
 
@@ -205,7 +205,7 @@ export class AdvertisingNormalizationService {
    * Get platform-specific hashtags for maximum organic reach
    */
   private getPlatformOptimizedHashtags(platform: string): string[] {
-    const _musicDiscoveryHashtags = {
+    const musicDiscoveryHashtags = {
       instagram: [
         "#NewMusic",
         "#MusicPromotion",
@@ -245,7 +245,7 @@ export class AdvertisingNormalizationService {
     platform: string,
     patterns: Record<string, any> = {},
   ): string {
-    const _platformKey = Object?.keys(patterns).find((k) =>
+    const platformKey = Object?.keys(patterns).find((k) =>
       k?.startsWith(platform),
     );
     if (platformKey && patterns[platformKey]?.top_ctas?.length) {
@@ -272,12 +272,12 @@ export class AdvertisingNormalizationService {
     peaks: unknown[] = [],
     globalPeaks: unknown[] = [],
   ): string {
-    const _artistPeak = peaks?.find(
+    const artistPeak = peaks?.find(
       (p) => p?.platform === platform || p?.platforms?.includes(platform),
     );
     if (artistPeak?.window) return artistPeak?.window;
 
-    const _globalPeak = globalPeaks?.find(
+    const globalPeak = globalPeaks?.find(
       (p) => p?.platform === platform || p?.platforms?.includes(platform),
     );
     if (globalPeak?.window) return globalPeak?.window;
@@ -304,7 +304,7 @@ export class AdvertisingNormalizationService {
   ): string[] {
     const hooks: string[] = [];
 
-    const _platformKey = Object?.keys(patterns).find((k) =>
+    const platformKey = Object?.keys(patterns).find((k) =>
       k?.startsWith(platform),
     );
     if (platformKey && patterns[platformKey]?.top_hooks?.length) {
@@ -326,18 +326,18 @@ export class AdvertisingNormalizationService {
 
   // Content safety checks
   private detectOffensiveContent(text: string): boolean {
-    const _offensivePatterns = /\b(spam|scam|explicit|offensive)\b/i;
+    const offensivePatterns = /\b(spam|scam|explicit|offensive)\b/i;
     return offensivePatterns?.test(text);
   }
 
   private detectSpamPatterns(text: string): boolean {
     // Check for excessive caps
-    const _capsRatio =
+    const capsRatio =
       (text?.match(/[A-Z]/g) || []).length / Math?.max(text?.length, 1);
     if (capsRatio > 0.5) return true;
 
     // Check for excessive exclamation marks
-    const _exclamationCount = (text?.match(/!/g) || []).length;
+    const exclamationCount = (text?.match(/!/g) || []).length;
     if (exclamationCount > 5) return true;
 
     // Check for repetitive text
@@ -347,7 +347,7 @@ export class AdvertisingNormalizationService {
   }
 
   private checkBrandSafety(text: string): boolean {
-    const _unsafePatterns = /\b(violence|hate|illegal)\b/i;
+    const unsafePatterns = /\b(violence|hate|illegal)\b/i;
     return unsafePatterns?.test(text);
   }
 

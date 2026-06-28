@@ -6,17 +6,17 @@ import { useToast } from "@/hooks/use-toast";
 export function useMarkers(projectId: string | null) {
   const { markers, addMarker, updateMarker, deleteMarker } = useStudioStore();
   const { toast } = useToast();
-  const _queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
-  const _markersQuery = useQuery({
+  const markersQuery = useQuery({
     queryKey: ["markers", projectId],
     queryFn: async () => {
       if (!projectId) return { markers: [] };
-      const _response = await apiRequest(
+      const response = await apiRequest(
         "GET",
         `/api/studio/projects/${projectId}/markers`,
       );
-      const _data = await response?.json();
+      const data = await response?.json();
       return data;
     },
     enabled: !!projectId,
@@ -24,7 +24,7 @@ export function useMarkers(projectId: string | null) {
     onSuccess: (data) => {
       // Sync markers from API to Zustand store
       if (data?.markers) {
-        const _currentMarkerIds = new Set(markers?.map((m) => m?.id));
+        const currentMarkerIds = new Set(markers?.map((m) => m?.id));
         new Set(data?.markers.map((m: unknown) => m?.id));
 
         // Add or update markers from API
@@ -32,7 +32,7 @@ export function useMarkers(projectId: string | null) {
           if (!currentMarkerIds?.has(marker?.id)) {
             addMarker(marker);
           } else {
-            const _currentMarker = markers?.find((m) => m?.id === marker?.id);
+            const currentMarker = markers?.find((m) => m?.id === marker?.id);
             if (
               currentMarker &&
               JSON?.stringify(currentMarker) !== JSON?.stringify(marker)
@@ -45,10 +45,10 @@ export function useMarkers(projectId: string | null) {
     },
   });
 
-  const _createMarkerMutation = useMutation({
+  const createMarkerMutation = useMutation({
     mutationFn: async (marker: Omit<Marker, "id">) => {
       if (!projectId) throw new Error("No project selected");
-      const _response = await apiRequest(
+      const response = await apiRequest(
         "POST",
         `/api/studio/projects/${projectId}/markers`,
         marker,
@@ -57,8 +57,8 @@ export function useMarkers(projectId: string | null) {
     },
     onMutate: async (newMarker) => {
       await queryClient?.cancelQueries({ queryKey: ["markers", projectId] });
-      const _previousData = queryClient?.getQueryData(["markers", projectId]);
-      const _tempId = `temp-${Date?.now()}`;
+      const previousData = queryClient?.getQueryData(["markers", projectId]);
+      const tempId = `temp-${Date?.now()}`;
       const optimisticMarker: Marker = { id: tempId, ...newMarker };
       queryClient?.setQueryData(
         ["markers", projectId],
@@ -99,7 +99,7 @@ export function useMarkers(projectId: string | null) {
     },
   });
 
-  const _updateMarkerMutation = useMutation({
+  const updateMarkerMutation = useMutation({
     mutationFn: async ({
       id,
       updates,
@@ -107,7 +107,7 @@ export function useMarkers(projectId: string | null) {
       id: string;
       updates: Partial<Marker>;
     }) => {
-      const _response = await apiRequest(
+      const response = await apiRequest(
         "PATCH",
         `/api/studio/markers/${id}`,
         updates,
@@ -116,8 +116,8 @@ export function useMarkers(projectId: string | null) {
     },
     onMutate: async ({ id, updates }) => {
       await queryClient?.cancelQueries({ queryKey: ["markers", projectId] });
-      const _previousData = queryClient?.getQueryData(["markers", projectId]);
-      const _previousMarker = markers?.find((m) => m?.id === id);
+      const previousData = queryClient?.getQueryData(["markers", projectId]);
+      const previousMarker = markers?.find((m) => m?.id === id);
       queryClient?.setQueryData(
         ["markers", projectId],
         (old: { markers?: Array<Record<string, unknown>> }) => ({
@@ -157,15 +157,15 @@ export function useMarkers(projectId: string | null) {
     },
   });
 
-  const _deleteMarkerMutation = useMutation({
+  const deleteMarkerMutation = useMutation({
     mutationFn: async (id: string) => {
       await apiRequest("DELETE", `/api/studio/markers/${id}`);
       return id;
     },
     onMutate: async (id) => {
       await queryClient?.cancelQueries({ queryKey: ["markers", projectId] });
-      const _previousData = queryClient?.getQueryData(["markers", projectId]);
-      const _previousMarker = markers?.find((m) => m?.id === id);
+      const previousData = queryClient?.getQueryData(["markers", projectId]);
+      const previousMarker = markers?.find((m) => m?.id === id);
       queryClient?.setQueryData(
         ["markers", projectId],
         (old: { markers?: Array<Record<string, unknown>> }) => ({
@@ -196,14 +196,14 @@ export function useMarkers(projectId: string | null) {
   });
 
   return {
-    markers: markersQuery?.data?.markers || markers,
-    isLoading: markersQuery?.isLoading,
-    error: markersQuery?.error,
-    createMarker: createMarkerMutation?.mutate,
-    updateMarker: updateMarkerMutation?.mutate,
-    deleteMarker: deleteMarkerMutation?.mutate,
-    isCreating: createMarkerMutation?.isPending,
-    isUpdating: updateMarkerMutation?.isPending,
-    isDeleting: deleteMarkerMutation?.isPending,
+    markers: markersQuery.data?.markers || markers,
+    isLoading: markersQuery.isLoading,
+    error: markersQuery.error,
+    createMarker: createMarkerMutation.mutate,
+    updateMarker: updateMarkerMutation.mutate,
+    deleteMarker: deleteMarkerMutation.mutate,
+    isCreating: createMarkerMutation.isPending,
+    isUpdating: updateMarkerMutation.isPending,
+    isDeleting: deleteMarkerMutation.isPending,
   };
 }

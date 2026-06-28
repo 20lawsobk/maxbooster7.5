@@ -33,7 +33,7 @@ export function stripeWebhookMiddleware(
   res: Response,
   next: NextFunction,
 ): void {
-  const _webhookSecret = env?.STRIPE_WEBHOOK_SECRET;
+  const webhookSecret = env?.STRIPE_WEBHOOK_SECRET;
 
   if (!webhookSecret) {
     logger?.warn("[Stripe Webhook] STRIPE_WEBHOOK_SECRET is not configured");
@@ -44,7 +44,7 @@ export function stripeWebhookMiddleware(
     return;
   }
 
-  const _signature = req?.headers["stripe-signature"] as string;
+  const signature = req?.headers["stripe-signature"] as string;
 
   if (!signature) {
     logger?.warn("[Stripe Webhook] Missing stripe-signature header");
@@ -56,19 +56,19 @@ export function stripeWebhookMiddleware(
   }
 
   try {
-    const _stripe = new Stripe(env?.STRIPE_SECRET_KEY!, {
+    const stripe = new Stripe(env?.STRIPE_SECRET_KEY!, {
       apiVersion: "2023-10-16",
     });
 
     // Verify the signature using the raw body
-    const _rawBody = (req as Record<string, unknown>).rawBody;
+    const rawBody = (req as Record<string, unknown>).rawBody;
     if (!rawBody) {
       throw new Error(
         "Raw body not available - ensure body parser preserves raw body",
       );
     }
 
-    const _event = stripe?.webhooks.constructEvent(
+    const event = stripe?.webhooks.constructEvent(
       rawBody,
       signature,
       webhookSecret,
@@ -80,8 +80,8 @@ export function stripeWebhookMiddleware(
     // Add to audit log
     addWebhookAudit({
       timestamp: new Date(),
-      eventId: event?.id,
-      eventType: event?.type,
+      eventId: event.id,
+      eventType: event.type,
       success: true,
       customerId: (event?.data.object as Record<string, unknown>).customer,
       amount: (event?.data.object as Record<string, unknown>).amount,
@@ -102,7 +102,7 @@ export function stripeWebhookMiddleware(
       eventId: "unknown",
       eventType: "unknown",
       success: false,
-      error: error?.message,
+      error: error.message,
     });
 
     res?.status(401).json({
@@ -151,13 +151,13 @@ function addWebhookAudit(entry: WebhookAuditEntry): void {
  * Falls back to in-memory Set if Redis is unavailable.
  */
 
-const _STRIPE_IDEMPOTENCY_PREFIX = "stripe:webhook:processed:";
-const _PROCESSED_EVENTS_TTL_SECONDS = 24 * 60 * 60; // 24 hours
+const STRIPE_IDEMPOTENCY_PREFIX = "stripe:webhook:processed:";
+const PROCESSED_EVENTS_TTL_SECONDS = 24 * 60 * 60; // 24 hours
 
 // In-memory fallback for when Redis is unavailable
-const _processedEventsFallback = new Set<string>();
+const processedEventsFallback = new Set<string>();
 
-const _REDIS_TIMEOUT_MS = 500;
+const REDIS_TIMEOUT_MS = 500;
 
 function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
   return Promise?.race([
@@ -169,9 +169,9 @@ function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
 // Check if event has already been successfully processed
 export async function isEventProcessed(eventId: string): Promise<boolean> {
   try {
-    const _redis = await getRedisClient();
+    const redis = await getRedisClient();
     if (redis) {
-      const _val = await withTimeout(
+      const val = await withTimeout(
         (redis as { get(k: string): Promise<string | null> }).get(
           `${STRIPE_IDEMPOTENCY_PREFIX}${eventId}`,
         ),
@@ -200,7 +200,7 @@ export async function markEventProcessed(eventId: string): Promise<void> {
   );
 
   try {
-    const _redis = await getRedisClient();
+    const redis = await getRedisClient();
     if (redis) {
       await withTimeout(
         (
@@ -223,7 +223,7 @@ export async function markEventProcessed(eventId: string): Promise<void> {
 
 // Legacy function for backward compatibility
 export async function checkIdempotency(eventId: string): Promise<boolean> {
-  const _already = await isEventProcessed(eventId);
+  const already = await isEventProcessed(eventId);
   if (already) {
     logger?.info(`[Stripe Webhook] Duplicate event ignored: ${eventId}`);
     return true;
@@ -235,10 +235,10 @@ export async function checkIdempotency(eventId: string): Promise<boolean> {
  * Webhook event handlers
  */
 export interface WebhookHandler {
-  (event: Stripe?.Event): Promise<{ success: boolean; message: string }>;
+  (event: Stripe.Event): Promise<{ success: boolean; message: string }>;
 }
 
-const _webhookHandlers = new Map<string, WebhookHandler>();
+const webhookHandlers = new Map<string, WebhookHandler>();
 
 export function registerWebhookHandler(
   eventType: string,
@@ -249,7 +249,7 @@ export function registerWebhookHandler(
 }
 
 export async function handleWebhookEvent(
-  event: Stripe?.Event,
+  event: Stripe.Event,
 ): Promise<{ success: boolean; message: string }> {
   // SECURITY FIX: Check idempotency BEFORE processing, but only mark as processed AFTER success
   // This ensures failed events can be retried
@@ -258,7 +258,7 @@ export async function handleWebhookEvent(
     return { success: true, message: "Event already processed" };
   }
 
-  const _handler = webhookHandlers?.get(event?.type);
+  const handler = webhookHandlers?.get(event?.type);
 
   if (!handler) {
     logger?.warn(`[Stripe Webhook] No handler for event type: ${event?.type}`);
@@ -268,7 +268,7 @@ export async function handleWebhookEvent(
   }
 
   try {
-    const _result = await handler(event);
+    const result = await handler(event);
 
     // SECURITY FIX: Only mark as processed AFTER successful handling
     // This allows failed events to be retried by Stripe
@@ -288,6 +288,6 @@ export async function handleWebhookEvent(
       { err: error },
       `[Stripe Webhook] Handler error for ${event?.type} (${event?.id}):`,
     );
-    return { success: false, message: error?.message };
+    return { success: false, message: error.message };
   }
 }

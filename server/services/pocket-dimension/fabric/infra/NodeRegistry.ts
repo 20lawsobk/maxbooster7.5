@@ -13,17 +13,17 @@ export class NodeRegistry {
   async registerNode(
     node: Omit<FabricStorageNode, "id" | "lastHeartbeat">,
   ): Promise<FabricStorageNode> {
-    const _id = randomUUID();
-    const _now = new Date();
+    const id = randomUUID();
+    const now = new Date();
     await db?.insert(fabricStorageNodes).values({
       id,
-      region: node?.region,
-      costTier: node?.costTier,
-      backendType: node?.backendType,
-      backendConfig: node?.backendConfig,
+      region: node.region,
+      costTier: node.costTier,
+      backendType: node.backendType,
+      backendConfig: node.backendConfig,
       capacityBytes: String(node?.capacityBytes),
       usedBytes: String(node?.usedBytes),
-      healthy: node?.healthy,
+      healthy: node.healthy,
       lastHeartbeat: now,
     });
     return { ...node, id, lastHeartbeat: now };
@@ -58,7 +58,7 @@ export class NodeRegistry {
   }
 
   async listHealthyNodes(): Promise<FabricStorageNode[]> {
-    const _rows = await db
+    const rows = await db
       .select()
       .from(fabricStorageNodes)
       .where(eq(fabricStorageNodes?.healthy, true));
@@ -66,12 +66,12 @@ export class NodeRegistry {
   }
 
   async listAllNodes(): Promise<FabricStorageNode[]> {
-    const _rows = await db?.select().from(fabricStorageNodes);
+    const rows = await db?.select().from(fabricStorageNodes);
     return rows?.map(this?.rowToNode);
   }
 
   async getNode(id: NodeId): Promise<FabricStorageNode | null> {
-    const _rows = await db
+    const rows = await db
       .select()
       .from(fabricStorageNodes)
       .where(eq(fabricStorageNodes?.id, id));
@@ -82,15 +82,15 @@ export class NodeRegistry {
     row: typeof fabricStorageNodes.$inferSelect,
   ): FabricStorageNode {
     return {
-      id: row?.id,
-      region: row?.region,
-      costTier: row?.costTier as CostTier,
-      backendType: row?.backendType as BackendType,
-      backendConfig: row?.backendConfig as Record<string, any>,
+      id: row.id,
+      region: row.region,
+      costTier: row.costTier as CostTier,
+      backendType: row.backendType as BackendType,
+      backendConfig: row.backendConfig as Record<string, any>,
       capacityBytes: Number(row?.capacityBytes),
       usedBytes: Number(row?.usedBytes),
-      healthy: row?.healthy,
-      lastHeartbeat: row?.lastHeartbeat,
+      healthy: row.healthy,
+      lastHeartbeat: row.lastHeartbeat,
     };
   }
 }

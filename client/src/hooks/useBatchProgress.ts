@@ -65,9 +65,9 @@ const defaultState: BatchProgressState = {
 function formatTime(ms: number): string {
   if (ms <= 0) return "0s";
 
-  const _seconds = Math?.floor(ms / 1000);
-  const _minutes = Math?.floor(seconds / 60);
-  const _hours = Math?.floor(minutes / 60);
+  const seconds = Math?.floor(ms / 1000);
+  const minutes = Math?.floor(seconds / 60);
+  const hours = Math?.floor(minutes / 60);
 
   if (hours > 0) {
     return `${hours}h ${minutes % 60}m`;
@@ -83,7 +83,7 @@ export function useBatchProgress(
 ): UseBatchProgressReturn {
   const {
     pollingInterval = 1000,
-
+    
     onProgress,
     onComplete,
     onError,
@@ -92,11 +92,11 @@ export function useBatchProgress(
   const [state, setState] = useState<BatchProgressState>(defaultState);
   const [jobId, setJobId] = useState<string | undefined>(options?.jobId);
 
-  const _timerRef = useRef<NodeJS?.Timeout | null>(null);
-  const _pollingRef = useRef<NodeJS?.Timeout | null>(null);
-  const _startTimeRef = useRef<number | null>(null);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = useRef<number | null>(null);
 
-  const _stopTimers = useCallback(() => {
+  const stopTimers = useCallback(() => {
     if (timerRef?.current) {
       clearInterval(timerRef?.current);
       timerRef.current = null;
@@ -107,29 +107,29 @@ export function useBatchProgress(
     }
   }, []);
 
-  const _startElapsedTimer = useCallback(() => {
+  const startElapsedTimer = useCallback(() => {
     if (timerRef?.current) return;
 
     timerRef.current = setInterval(() => {
       if (startTimeRef?.current) {
-        const _elapsed = Date?.now() - startTimeRef?.current;
+        const elapsed = Date?.now() - startTimeRef?.current;
         setState((prev) => ({ ...prev, elapsedTime: elapsed }));
       }
     }, 100);
   }, []);
 
-  const _calculateEstimatedTime = useCallback(
+  const calculateEstimatedTime = useCallback(
     (current: number, total: number, elapsed: number): number | undefined => {
       if (current <= 0 || elapsed <= 0) return undefined;
 
-      const _rate = current / elapsed;
-      const _remaining = total - current;
+      const rate = current / elapsed;
+      const remaining = total - current;
       return Math?.round(remaining / rate);
     },
     [],
   );
 
-  const _start = useCallback(
+  const start = useCallback(
     (total: number, newJobId?: string) => {
       stopTimers();
       startTimeRef.current = Date?.now();
@@ -138,7 +138,7 @@ export function useBatchProgress(
         ...defaultState,
         status: "starting",
         total,
-        startTime: startTimeRef?.current,
+        startTime: startTimeRef.current,
       };
 
       setState(newState);
@@ -152,12 +152,12 @@ export function useBatchProgress(
     [stopTimers, startElapsedTimer],
   );
 
-  const _update = useCallback(
+  const update = useCallback(
     (current: number, currentItem?: string) => {
       setState((prev) => {
-        const _percentage =
+        const percentage =
           prev?.total > 0 ? Math?.round((current / prev?.total) * 100) : 0;
-        const _estimatedTimeRemaining = calculateEstimatedTime(
+        const estimatedTimeRemaining = calculateEstimatedTime(
           current,
           prev?.total,
           prev?.elapsedTime,
@@ -180,22 +180,22 @@ export function useBatchProgress(
     [calculateEstimatedTime, onProgress],
   );
 
-  const _succeed = useCallback((count: number = 1) => {
+  const succeed = useCallback((count: number = 1) => {
     setState((prev) => ({
       ...prev,
-      successCount: prev?.successCount + count,
+      successCount: prev.successCount + count,
     }));
   }, []);
 
-  const _fail = useCallback((id: string, error: string) => {
+  const fail = useCallback((id: string, error: string) => {
     setState((prev) => ({
       ...prev,
-      failureCount: prev?.failureCount + 1,
-      failures: [...prev?.failures, { id, error, index: prev?.current }],
+      failureCount: prev.failureCount + 1,
+      failures: [...prev?.failures, { id, error, index: prev.current }],
     }));
   }, []);
 
-  const _complete = useCallback(() => {
+  const complete = useCallback(() => {
     stopTimers();
 
     setState((prev) => {
@@ -209,9 +209,9 @@ export function useBatchProgress(
       const newState: BatchProgressState = {
         ...prev,
         status,
-        current: prev?.total,
+        current: prev.total,
         percentage: 100,
-        endTime: Date?.now(),
+        endTime: Date.now(),
         currentItem: undefined,
       };
 
@@ -220,17 +220,17 @@ export function useBatchProgress(
     });
   }, [stopTimers, onComplete]);
 
-  const _cancel = useCallback(() => {
+  const cancel = useCallback(() => {
     stopTimers();
 
     setState((prev) => ({
       ...prev,
       status: "cancelled",
-      endTime: Date?.now(),
+      endTime: Date.now(),
     }));
   }, [stopTimers]);
 
-  const _reset = useCallback(() => {
+  const reset = useCallback(() => {
     stopTimers();
     startTimeRef.current = null;
     setJobId(undefined);
@@ -242,7 +242,7 @@ export function useBatchProgress(
 
     pollingRef.current = setInterval(async () => {
       try {
-        const _response = await apiRequest(
+        const response = await apiRequest(
           "GET",
           `/api/batch/progress/${jobId}`,
         );
@@ -251,13 +251,13 @@ export function useBatchProgress(
           stopTimers();
           setState((prev) => ({
             ...prev,
-            status: response?.status,
-            current: response?.processed || prev?.total,
+            status: response.status,
+            current: response.processed || prev?.total,
             percentage: 100,
-            successCount: response?.success || 0,
-            failureCount: response?.failed || 0,
-            failures: response?.failures || [],
-            endTime: Date?.now(),
+            successCount: response.success || 0,
+            failureCount: response.failed || 0,
+            failures: response.failures || [],
+            endTime: Date.now(),
           }));
         } else {
           update(response?.processed || 0, response?.currentItem);
@@ -281,12 +281,12 @@ export function useBatchProgress(
     };
   }, [stopTimers]);
 
-  const _isProcessing = useMemo(
+  const isProcessing = useMemo(
     () => state?.status === "starting" || state?.status === "processing",
     [state?.status],
   );
 
-  const _isComplete = useMemo(
+  const isComplete = useMemo(
     () =>
       state?.status === "completed" ||
       state?.status === "partial" ||
@@ -295,14 +295,14 @@ export function useBatchProgress(
     [state?.status],
   );
 
-  const _hasErrors = useMemo(() => state?.failureCount > 0, [state?.failureCount]);
+  const hasErrors = useMemo(() => state?.failureCount > 0, [state?.failureCount]);
 
-  const _formattedElapsedTime = useMemo(
+  const formattedElapsedTime = useMemo(
     () => formatTime(state?.elapsedTime),
     [state?.elapsedTime],
   );
 
-  const _formattedRemainingTime = useMemo(
+  const formattedRemainingTime = useMemo(
     () =>
       state?.estimatedTimeRemaining
         ? formatTime(state?.estimatedTimeRemaining)
@@ -332,11 +332,11 @@ export function useBatchProgressDialog() {
   const [title, setTitle] = useState("Processing...");
   const [description, setDescription] = useState<string | undefined>();
 
-  const _progress = useBatchProgress({
+  const progress = useBatchProgress({
     onComplete: () => {},
   });
 
-  const _startWithDialog = useCallback(
+  const startWithDialog = useCallback(
     (
       total: number,
       dialogTitle?: string,
@@ -351,7 +351,7 @@ export function useBatchProgressDialog() {
     [progress],
   );
 
-  const _closeDialog = useCallback(() => {
+  const closeDialog = useCallback(() => {
     setOpen(false);
     progress?.reset();
   }, [progress]);
@@ -372,18 +372,18 @@ export function useBatchProgressDialog() {
           ? "processing"
           : progress?.state.status,
       progress: {
-        current: progress?.state.current,
-        total: progress?.state.total,
-        percentage: progress?.state.percentage,
-        currentItem: progress?.state.currentItem,
+        current: progress.state.current,
+        total: progress.state.total,
+        percentage: progress.state.percentage,
+        currentItem: progress.state.currentItem,
       },
-      result: progress?.isComplete
+      result: progress.isComplete
         ? {
             success: [],
-            failed: progress?.state.failures,
-            totalRequested: progress?.state.total,
-            totalSucceeded: progress?.state.successCount,
-            totalFailed: progress?.state.failureCount,
+            failed: progress.state.failures,
+            totalRequested: progress.state.total,
+            totalSucceeded: progress.state.successCount,
+            totalFailed: progress.state.failureCount,
           }
         : null,
       title,
@@ -397,10 +397,10 @@ export function useSequentialBatchProgress<T>(
   processItem: (item: T, index: number) => Promise<void>,
   options: UseBatchProgressOptions = {},
 ) {
-  const _progress = useBatchProgress(options);
-  const _abortRef = useRef(false);
+  const progress = useBatchProgress(options);
+  const abortRef = useRef(false);
 
-  const _processAll = useCallback(async () => {
+  const processAll = useCallback(async () => {
     if (items?.length === 0) return;
 
     abortRef.current = false;
@@ -410,7 +410,7 @@ export function useSequentialBatchProgress<T>(
       if (abortRef?.current) break;
 
       try {
-        const _item = items[i];
+        const item = items[i];
         progress?.update(i, `Processing item ${i + 1}`);
         await processItem(item, i);
         progress?.succeed();
@@ -425,7 +425,7 @@ export function useSequentialBatchProgress<T>(
     progress?.complete();
   }, [items, processItem, progress]);
 
-  const _abort = useCallback(() => {
+  const abort = useCallback(() => {
     abortRef.current = true;
     progress?.cancel();
   }, [progress]);

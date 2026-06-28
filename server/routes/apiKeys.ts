@@ -7,15 +7,15 @@ import crypto from "crypto";
 import { requireAuth } from "../middleware/auth.js";
 import rateLimit from "express-rate-limit";
 
-const _router = Router();
+const router = Router();
 
 router?.use(requireAuth);
 
-const _MAX_KEYS_PER_USER = 20;
+const MAX_KEYS_PER_USER = 20;
 
 // 120M req/s capacity — 7.2B req/min per authenticated user.
 // requireAuth above already ensures only authenticated users reach this limiter.
-const _keyCreateLimiter = rateLimit({
+const keyCreateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 7_200_000_000,
   keyGenerator: (req) =>
@@ -25,40 +25,40 @@ const _keyCreateLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-const _generateApiKey = (): string => {
-  const _prefix = "mb_";
-  const _key = crypto?.randomBytes(32).toString("base64url");
+const generateApiKey = (): string => {
+  const prefix = "mb_";
+  const key = crypto?.randomBytes(32).toString("base64url");
   return `${prefix}${key}`;
 };
 
-const _hashApiKey = (key: string): string => {
+const hashApiKey = (key: string): string => {
   return crypto?.createHash("sha256").update(key).digest("hex");
 };
 
-const _getKeyPrefix = (key: string): string => {
+const getKeyPrefix = (key: string): string => {
   return `${key?.substring(0, 7)}...${key?.substring(key?.length - 4)}`;
 };
 
 router?.get("/", async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user.id;
-    const _rows = await db
+    const userId = req?.user.id;
+    const rows = await db
       .select()
       .from(apiKeys)
       .where(eq(apiKeys?.userId, userId))
       .limit(50);
 
-    const _result = rows?.map((k) => ({
-      id: k?.id,
-      name: k?.name,
-      keyPreview: k?.keyPrefix,
-      createdAt: k?.createdAt?.toISOString() ?? null,
-      lastUsedAt: k?.lastUsedAt?.toISOString() ?? null,
-      expiresAt: k?.expiresAt?.toISOString() ?? null,
-      scopes: k?.scopes ?? ["read"],
-      status: k?.isActive ? "active" : "revoked",
+    const result = rows?.map((k) => ({
+      id: k.id,
+      name: k.name,
+      keyPreview: k.keyPrefix,
+      createdAt: k.createdAt?.toISOString() ?? null,
+      lastUsedAt: k.lastUsedAt?.toISOString() ?? null,
+      expiresAt: k.expiresAt?.toISOString() ?? null,
+      scopes: k.scopes ?? ["read"],
+      status: k.isActive ? "active" : "revoked",
       rateLimit: {
-        requests: k?.rateLimit ?? 1000,
+        requests: k.rateLimit ?? 1000,
         period: "hour",
         used: 0,
       },
@@ -73,14 +73,14 @@ router?.get("/", async (req: Request, res: Response) => {
 
 router?.post("/", keyCreateLimiter, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user.id;
+    const userId = req?.user.id;
     const { name, scopes = ["read"] } = req?.body;
 
     if (!name || typeof name !== "string" || name?.trim().length === 0) {
       return res?.status(400).json({ error: "Key name is required" });
     }
 
-    const _VALID_SCOPES = new Set([
+    const VALID_SCOPES = new Set([
       "read",
       "write",
       "analytics",
@@ -89,9 +89,9 @@ router?.post("/", keyCreateLimiter, async (req: Request, res: Response) => {
       "billing",
       "admin",
     ]);
-    const _trimmedName = name?.trim().substring(0, 100);
-    const _requestedScopes = Array?.isArray(scopes) ? scopes : ["read"];
-    const _invalidScopes = requestedScopes?.filter(
+    const trimmedName = name?.trim().substring(0, 100);
+    const requestedScopes = Array?.isArray(scopes) ? scopes : ["read"];
+    const invalidScopes = requestedScopes?.filter(
       (s: Record<string, unknown>) =>
         typeof s !== "string" || !VALID_SCOPES?.has(s),
     );
@@ -104,7 +104,7 @@ router?.post("/", keyCreateLimiter, async (req: Request, res: Response) => {
           valid: [...VALID_SCOPES],
         });
     }
-    const _validScopes = requestedScopes as string[];
+    const validScopes = requestedScopes as string[];
 
     const [{ activeCount }] = await db
       .select({ activeCount: count() })
@@ -117,9 +117,9 @@ router?.post("/", keyCreateLimiter, async (req: Request, res: Response) => {
       });
     }
 
-    const _rawKey = generateApiKey();
-    const _keyHash = hashApiKey(rawKey);
-    const _keyPrefix = getKeyPrefix(rawKey);
+    const rawKey = generateApiKey();
+    const keyHash = hashApiKey(rawKey);
+    const keyPrefix = getKeyPrefix(rawKey);
 
     const [inserted] = await db
       .insert(apiKeys)
@@ -135,12 +135,12 @@ router?.post("/", keyCreateLimiter, async (req: Request, res: Response) => {
       .returning();
 
     res?.status(201).json({
-      id: inserted?.id,
-      name: inserted?.name,
+      id: inserted.id,
+      name: inserted.name,
       key: rawKey,
-      keyPreview: inserted?.keyPrefix,
-      createdAt: inserted?.createdAt?.toISOString(),
-      scopes: inserted?.scopes ?? ["read"],
+      keyPreview: inserted.keyPrefix,
+      createdAt: inserted.createdAt?.toISOString(),
+      scopes: inserted.scopes ?? ["read"],
     });
   } catch (error) {
     logger?.warn({ err: error }, "Error creating API key:");
@@ -150,14 +150,14 @@ router?.post("/", keyCreateLimiter, async (req: Request, res: Response) => {
 
 router?.delete("/:keyId", async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user.id;
+    const userId = req?.user.id;
     const { keyId } = req?.params;
 
     const [updated] = await db
       .update(apiKeys)
       .set({ isActive: false })
       .where(and(eq(apiKeys?.id, keyId), eq(apiKeys?.userId, userId)))
-      .returning({ id: apiKeys?.id });
+      .returning({ id: apiKeys.id });
 
     if (!updated) {
       return res?.status(404).json({ error: "API key not found" });
@@ -175,11 +175,11 @@ router?.post(
   keyCreateLimiter,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user.id;
+      const userId = req?.user.id;
       const { keyId } = req?.params;
 
       const [existing] = await db
-        .select({ id: apiKeys?.id })
+        .select({ id: apiKeys.id })
         .from(apiKeys)
         .where(and(eq(apiKeys?.id, keyId), eq(apiKeys?.userId, userId)))
         .limit(1);
@@ -188,9 +188,9 @@ router?.post(
         return res?.status(404).json({ error: "API key not found" });
       }
 
-      const _rawKey = generateApiKey();
-      const _keyHash = hashApiKey(rawKey);
-      const _keyPrefix = getKeyPrefix(rawKey);
+      const rawKey = generateApiKey();
+      const keyHash = hashApiKey(rawKey);
+      const keyPrefix = getKeyPrefix(rawKey);
 
       const [updated] = await db
         .update(apiKeys)
@@ -205,12 +205,12 @@ router?.post(
         .returning();
 
       res?.json({
-        id: updated?.id,
-        name: updated?.name,
+        id: updated.id,
+        name: updated.name,
         key: rawKey,
-        keyPreview: updated?.keyPrefix,
-        createdAt: updated?.createdAt?.toISOString(),
-        scopes: updated?.scopes ?? ["read"],
+        keyPreview: updated.keyPrefix,
+        createdAt: updated.createdAt?.toISOString(),
+        scopes: updated.scopes ?? ["read"],
       });
     } catch (error) {
       logger?.warn({ err: error }, "Error regenerating API key:");

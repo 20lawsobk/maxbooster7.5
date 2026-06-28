@@ -351,7 +351,7 @@ async function addCompositeIndexes(): Promise<void> {
 
   for (const idx of COMPOSITE_INDEXES) {
     try {
-      const _whereClause = idx?.where ? ` WHERE ${idx?.where}` : "";
+      const whereClause = idx?.where ? ` WHERE ${idx?.where}` : "";
       await db?.execute(
         sql?.raw(
           `CREATE INDEX IF NOT EXISTS ${idx?.name} ON ${idx?.table} (${idx?.columns})${whereClause}`,
@@ -360,7 +360,7 @@ async function addCompositeIndexes(): Promise<void> {
       logger?.info(`  ✓ ${idx?.name}`);
       created++;
     } catch (error: unknown) {
-      const _msg = error instanceof Error ? error?.message : String(error);
+      const msg = error instanceof Error ? error?.message : String(error);
       if (msg?.includes("already exists")) {
         logger?.info(`  - ${idx?.name} (already exists)`);
         skipped++;

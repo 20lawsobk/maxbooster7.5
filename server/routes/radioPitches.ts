@@ -8,13 +8,13 @@ import { queryCache, createCacheKey } from "../lib/queryCache.js";
 import { parsePaginationParams } from "../middleware/pagination.js";
 import { z } from "zod";
 
-const _router = Router();
-const _CACHE_TTL = 300;
+const router = Router();
+const CACHE_TTL = 300;
 
 router?.get("/", requireAuth, async (req, res) => {
   try {
     const { limit, offset } = parsePaginationParams(req);
-    const _items = await db
+    const items = await db
       .select()
       .from(radioPitches)
       .where(eq(radioPitches?.userId, req?.user!.id))
@@ -30,10 +30,10 @@ router?.get("/", requireAuth, async (req, res) => {
 
 router?.get("/stats", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _cacheKey = createCacheKey("stats:radioPitches", userId);
+    const userId = req?.user!.id;
+    const cacheKey = createCacheKey("stats:radioPitches", userId);
 
-    const _stats = await queryCache?.getOrCompute(
+    const stats = await queryCache?.getOrCompute(
       cacheKey,
       async () => {
         const [totals] = await db
@@ -91,9 +91,9 @@ router?.get("/:id", requireAuth, async (req, res) => {
 
 router?.post("/", requireAuth, async (req, res) => {
   try {
-    const _data = insertRadioPitchSchema?.parse({
+    const data = insertRadioPitchSchema?.parse({
       ...req?.body,
-      userId: req?.user!.id,
+      userId: req.user!.id,
     });
     const [item] = await db?.insert(radioPitches).values(data).returning();
     await queryCache?.invalidate(
@@ -116,10 +116,10 @@ router?.post("/", requireAuth, async (req, res) => {
 
 router?.put("/:id", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
 
-    const _existing = await db
+    const existing = await db
       .select()
       .from(radioPitches)
       .where(and(eq(radioPitches?.id, id), eq(radioPitches?.userId, userId)))
@@ -129,8 +129,8 @@ router?.put("/:id", requireAuth, async (req, res) => {
       return res?.status(404).json({ error: "Radio pitch not found" });
     }
 
-    const _parsed = insertRadioPitchSchema?.partial().parse(req?.body);
-    const { status: _status, userId: _userId, ...data } = parsed;
+    const parsed = insertRadioPitchSchema?.partial().parse(req?.body);
+    const { status: _status, userId: _parsedUserId, ...data } = parsed;
     const [item] = await db
       .update(radioPitches)
       .set({ ...data, updatedAt: new Date() })
@@ -155,10 +155,10 @@ router?.put("/:id", requireAuth, async (req, res) => {
 // PATCH /api/radio-pitches/:id/status — record pitch outcome (featured, aired, rejected, etc.)
 router?.patch("/:id/status", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
-    const _statusSchema = z?.object({
-      status: z?.enum([
+    const statusSchema = z.object({
+      status: z.enum([
         "draft",
         "submitted",
         "under_review",
@@ -167,8 +167,8 @@ router?.patch("/:id/status", requireAuth, async (req, res) => {
         "rejected",
         "following_up",
       ]),
-      responseNote: z?.string().max(2000).optional(),
-      featureUrl: z?.string().url().optional(),
+      responseNote: z.string().max(2000).optional(),
+      featureUrl: z.string().url().optional(),
     });
     const { status, responseNote, featureUrl } = statusSchema?.parse(req?.body);
 
@@ -207,10 +207,10 @@ router?.patch("/:id/status", requireAuth, async (req, res) => {
 
 router?.delete("/:id", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
 
-    const _existing = await db
+    const existing = await db
       .select()
       .from(radioPitches)
       .where(and(eq(radioPitches?.id, id), eq(radioPitches?.userId, userId)))

@@ -21,20 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  ZoomIn,
-  ZoomOut,
-  Pencil,
-  Eraser,
-  MousePointer2,
-  Printer,
-  Download,
-  Music,
-  ChevronLeft,
-  ChevronRight,
-  Type,
-  Volume2,
-} from "lucide-react";
+import { ZoomIn, ZoomOut, Pencil, Eraser, MousePointer2, Printer, Download, Music, ChevronLeft, ChevronRight, Type, Volume2 } from "lucide-react";
 import { useStudioStore } from "@/lib/studioStore";
 import { useToast } from "@/hooks/use-toast";
 
@@ -93,6 +80,7 @@ const KEY_SIGNATURES: Record<string, { sharps?: string[]; flats?: string[] }> =
     Cb: { flats: ["B", "E", "A", "D", "G", "C", "F"] },
   };
 
+
 const DYNAMICS = ["ppp", "pp", "p", "mp", "mf", "f", "ff", "fff"];
 
 const NOTE_DURATIONS = [
@@ -103,6 +91,7 @@ const NOTE_DURATIONS = [
   { value: 0.25, label: "16th", symbol: "𝅘𝅥𝅯" },
   { value: 0.125, label: "32nd", symbol: "𝅘𝅥𝅰" },
 ];
+
 
 const STAFF_LINE_SPACING = 10;
 const STAFF_HEIGHT = STAFF_LINE_SPACING * 4;
@@ -175,11 +164,11 @@ const getClefForPitch = (pitch: number): "treble" | "bass" => {
   return pitch >= 60 ? "treble" : "bass";
 };
 
-(pitch: number): string => {
+((pitch: number): string => {
   const octave = Math.floor(pitch / 12) - 1;
   const note = NOTE_NAMES[pitch % 12];
   return `${note}${octave}`;
-};
+});
 
 export function ScoreEditor({
   trackId,

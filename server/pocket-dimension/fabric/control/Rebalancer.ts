@@ -50,19 +50,19 @@ export class Rebalancer {
       }
 
       for (const hotNode of hot) {
-        let migratedBytes = 0;
+        let _migratedBytes = 0;
 
-        const _candidateCold = cold?.filter(
+        const candidateCold = cold?.filter(
           (n) => n?.costTier === hotNode?.costTier || n?.costTier === "archive",
         );
         if (candidateCold?.length === 0) continue;
 
-        const _targetNode = candidateCold[0];
+        const targetNode = candidateCold[0];
         this?.chunkStoreFactory(hotNode?.id);
         this?.chunkStoreFactory(targetNode?.id);
 
-        const _allNodes = await this?.nodeRegistry.listAllNodes();
-        const _hotNodeRow = allNodes?.find((n) => n?.id === hotNode?.id);
+        const allNodes = await this?.nodeRegistry.listAllNodes();
+        const hotNodeRow = allNodes?.find((n) => n?.id === hotNode?.id);
         if (!hotNodeRow) continue;
 
         logger?.info(
@@ -87,15 +87,15 @@ export class Rebalancer {
     fromNodeId: NodeId,
     toNodeId: NodeId,
   ): Promise<void> {
-    const _fromStore = this?.chunkStoreFactory(fromNodeId);
-    const _toStore = this?.chunkStoreFactory(toNodeId);
+    const fromStore = this?.chunkStoreFactory(fromNodeId);
+    const toStore = this?.chunkStoreFactory(toNodeId);
 
-    const _data = await fromStore?.getChunk(chunkId);
+    const data = await fromStore?.getChunk(chunkId);
     await toStore?.putChunk(chunkId, data);
 
-    const _loc = await this?.chunkIndex.getChunkLocation(chunkId);
+    const loc = await this?.chunkIndex.getChunkLocation(chunkId);
     if (loc) {
-      const _newNodeIds = [
+      const newNodeIds = [
         ...loc?.nodeIds.filter((id) => id !== fromNodeId),
         toNodeId,
       ];
@@ -104,7 +104,7 @@ export class Rebalancer {
 
     await fromStore?.deleteChunk(chunkId);
     await this?.nodeRegistry.updateNode(fromNodeId, {
-      usedBytes: Math?.max(
+      usedBytes: Math.max(
         0,
         (await this?.nodeRegistry.getNode(fromNodeId))!.usedBytes -
           (loc?.sizeBytes ?? 0),

@@ -12,6 +12,11 @@ import { advancedSocialAIService } from "./services/advancedSocialAIService.js";
 import { autopilotLearningService } from "./services/autopilotLearningService.js";
 import { evolutionRegistry } from "./services/evolutionRegistry.js";
 
+import {
+  advancedUrlParser,
+  type UrlContentBrief,
+} from "./services/advancedUrlParser.js";
+
 // ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
 function seededIndex(seed: string, length: number): number {
   if (length <= 0) return 0;
@@ -46,6 +51,11 @@ interface AutonomousConfig {
   autoOptimization: boolean;
   crossPlatformSyncing: boolean;
   adaptivePosting: boolean;
+  // Optional artist-supplied links. When present, generation deterministically
+  // picks one per (topic, platform), parses it with the advanced URL parser,
+  // and seeds generation from the link. The UCB1-selected topic is still used
+  // for learning. Empty/absent ⇒ identical topic-only behavior.
+  sourceUrls?: string[];
 }
 
 export class AutonomousAutopilot extends EventEmitter {
@@ -131,7 +141,7 @@ export class AutonomousAutopilot extends EventEmitter {
       return preferredTime || new Date();
     }
 
-    const _slot = autopilotCoordinatorService?.getNextAvailableSlot(
+    const slot = autopilotCoordinatorService?.getNextAvailableSlot(
       this?.userId,
       this?.autopilotType,
       platform,
@@ -150,7 +160,7 @@ export class AutonomousAutopilot extends EventEmitter {
       return null;
     }
 
-    const _post = autopilotCoordinatorService?.registerPost(
+    const post = autopilotCoordinatorService?.registerPost(
       this?.userId,
       this?.autopilotType,
       platform,
@@ -190,7 +200,7 @@ export class AutonomousAutopilot extends EventEmitter {
   }
 
   static createForSocialAndAds(userId: string): AutonomousAutopilot {
-    const _engine = new AutonomousAutopilot(userId);
+    const engine = new AutonomousAutopilot(userId);
     engine?.updateAutonomousConfig({
       enabled: false,
       minPostsPerDay: 3,
@@ -204,7 +214,7 @@ export class AutonomousAutopilot extends EventEmitter {
   }
 
   static createForAutonomousUpdates(userId: string): AutonomousAutopilot {
-    const _engine = new AutonomousAutopilot(userId);
+    const engine = new AutonomousAutopilot(userId);
     engine?.updateAutonomousConfig({
       enabled: false,
       minPostsPerDay: 1,
@@ -218,7 +228,7 @@ export class AutonomousAutopilot extends EventEmitter {
   }
 
   static createForSecurityIT(userId: string): AutonomousAutopilot {
-    const _engine = new AutonomousAutopilot(userId);
+    const engine = new AutonomousAutopilot(userId);
     engine?.updateAutonomousConfig({
       enabled: false,
       minPostsPerDay: 0,
@@ -271,7 +281,7 @@ export class AutonomousAutopilot extends EventEmitter {
     if (initialConfig) {
       this.config = { ...this?.config, ...initialConfig, enabled: true };
     } else {
-      this?.config.enabled = true;
+      this.config.enabled = true;
     }
 
     this.isRunning = true;
@@ -297,7 +307,7 @@ export class AutonomousAutopilot extends EventEmitter {
 
   async stopAutonomousMode(): Promise<void> {
     this.isRunning = false;
-    this?.config.enabled = false;
+    this.config.enabled = false;
 
     if (this?.contentGenerationInterval) {
       clearTimeout(this?.contentGenerationInterval);
@@ -324,12 +334,12 @@ export class AutonomousAutopilot extends EventEmitter {
   // Autonomous Content Generation
   private scheduleAutonomousContentGeneration(): void {
     // Generate content every 2-4 hours with intelligent spacing
-    const _generateContent = async () => {
+    const generateContent = async () => {
       if (!this?.isRunning) return;
 
       try {
         // Minimal connected platforms list; integrate real list via external APIs
-        const _connectedPlatforms = [
+        const connectedPlatforms = [
           { name: "Twitter", isConnected: true },
           { name: "Instagram", isConnected: true },
           { name: "LinkedIn", isConnected: true },
@@ -351,7 +361,7 @@ export class AutonomousAutopilot extends EventEmitter {
     // re-tune the cadence dynamically. A static setInterval, computed once
     // at start(), would stay frozen at the cold-start cadence for the life
     // of the process even when the situation demands much faster posting.
-    const _runLoop = async () => {
+    const runLoop = async () => {
       await generateContent();
       if (!this?.isRunning) return;
       this.contentGenerationInterval = setTimeout(
@@ -366,15 +376,15 @@ export class AutonomousAutopilot extends EventEmitter {
     platform: string,
   ): Promise<boolean> {
     // Check if we've already posted enough today
-    const _today = new Date();
-    today?.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    const _todaysContent = this?.contentPerformanceHistory.filter(
+    const todaysContent = this.contentPerformanceHistory.filter(
       (content) =>
-        content?.platform === platform && new Date(content?.publishedAt) >= today,
+        content.platform === platform && new Date(content.publishedAt) >= today,
     );
 
-    const _dailyPostCount = todaysContent?.length;
+    const dailyPostCount = todaysContent.length;
 
     // Don't exceed max posts per day
     if (dailyPostCount >= this?.config.maxPostsPerDay) {
@@ -382,18 +392,18 @@ export class AutonomousAutopilot extends EventEmitter {
     }
 
     // Compute schedule pressure and broadcast to quality pipeline + HyperLearning
-    const _pressure = this?.computeSchedulePressure(platform);
+    const pressure = this?.computeSchedulePressure(platform);
     this?.broadcastPressure(pressure);
 
-    const _hoursLeft = 24 - new Date().getHours();
-    const _postsNeeded = this?.config.minPostsPerDay - dailyPostCount;
+    const hoursLeft = 24 - new Date().getHours();
+    const postsNeeded = this?.config.minPostsPerDay - dailyPostCount;
 
     // Caffeine Mode: under critical pressure generate on every check — no waiting
     // for the optimal window.  Like a student who has to submit something before
     // the exam starts, even if conditions aren't perfect.
     if (pressure > 1.5 && postsNeeded > 0) {
-      logger?.warn(
-        `⚡ [CaffeineMode] ${platform}: critical pressure (${pressure?.toFixed(2)}) — generating immediately`,
+      logger.warn(
+        `⚡ [CaffeineMode] ${platform}: critical pressure (${pressure.toFixed(2)}) — generating immediately`,
       );
       return true;
     }
@@ -405,16 +415,16 @@ export class AutonomousAutopilot extends EventEmitter {
     // Use optimal timing for regular posts. Precedence: real learned data >
     // self-evolution registry override (from a real detected industry change) >
     // seeded static defaults.
-    const _currentHour = new Date().getHours();
-    let optimalHours = this?.optimalTimingCache.get(platform) || [14];
-    if (!this?.learnedTimingPlatforms.has(platform)) {
+    const currentHour = new Date().getHours();
+    let optimalHours = this.optimalTimingCache.get(platform) || [14];
+    if (!this.learnedTimingPlatforms.has(platform)) {
       try {
-        const _override = evolutionRegistry?.getOptimalHoursOverride(platform);
-        if (override && override?.length > 0) {
+        const override = evolutionRegistry.getOptimalHoursOverride(platform);
+        if (override && override.length > 0) {
           optimalHours = override;
         }
       } catch (err) {
-        logger?.warn(
+        logger.warn(
           { err },
           `[AutonomousAutopilot] Failed to read evolution hours override for ${platform}`,
         );
@@ -422,8 +432,8 @@ export class AutonomousAutopilot extends EventEmitter {
     }
 
     // Under moderate pressure expand the acceptable posting window from ±1 h to ±2 h
-    const _window = pressure > 0.5 ? 2 : 1;
-    return optimalHours?.some((hour) => Math?.abs(hour - currentHour) <= window);
+    const window = pressure > 0.5 ? 2 : 1;
+    return optimalHours.some((hour) => Math.abs(hour - currentHour) <= window);
   }
 
   private async generateAndPublishAutonomousContent(
@@ -431,33 +441,33 @@ export class AutonomousAutopilot extends EventEmitter {
   ): Promise<void> {
     try {
       // Check coordinator for available slot before posting
-      const _scheduledTime = await this?.getCoordinatedSlot(platform);
+      const scheduledTime = await this.getCoordinatedSlot(platform);
 
       // Autonomously select the best topic based on performance history
-      const _topic = this?.selectOptimalTopic();
+      const topic = this.selectOptimalTopic();
 
       // Generate content autonomously
-      const _content = await this?.autonomousContentGeneration({
+      const content = await this.autonomousContentGeneration({
         platform,
         topic,
-        brandPersonality: this?.config.brandPersonality,
-        targetAudience: this?.config.targetAudience,
-        businessVertical: this?.config.businessVertical,
-        objectives: this?.config.contentObjectives,
+        brandPersonality: this.config.brandPersonality,
+        targetAudience: this.config.targetAudience,
+        businessVertical: this.config.businessVertical,
+        objectives: this.config.contentObjectives,
       });
 
       // Register with coordinator before publishing
-      const _coordinatorPostId = await this?.registerPostWithCoordinator(
+      const coordinatorPostId = await this.registerPostWithCoordinator(
         platform,
         scheduledTime,
-        content?.text.substring(0, 100),
+        content.text.substring(0, 100),
       );
 
       // Create content in storage
-      const _savedContent = {
+      const savedContent = {
         id: randomUUID(),
-        body: content?.text,
-        hashtags: content?.hashtags,
+        body: content.text,
+        hashtags: content.hashtags,
         selectedPlatforms: [platform],
         status: "draft",
         contentType: "social_post",
@@ -465,86 +475,108 @@ export class AutonomousAutopilot extends EventEmitter {
       } as Record<string, unknown>;
 
       // Publish immediately (fully autonomous)
-      const _publishResults = await platformAPI?.publishContent(
+      const publishResults = await platformAPI.publishContent(
         savedContent,
         [platform],
-        this?.userId,
+        this.userId,
       );
-      const _successfulPublish = publishResults?.find((r: unknown) => r?.success);
+      const successfulPublish = publishResults.find((r: unknown) => r.success);
 
       if (successfulPublish) {
-        const _realPublishedAt = new Date();
+        const realPublishedAt = new Date();
         savedContent.status = "published";
         (savedContent as Record<string, unknown>).publishedAt = realPublishedAt;
 
         // Seed performance history at PUBLISH time with topic + true publish time
         // so UCB1 topic feedback and optimal-time learning train on the real
         // posting hour, not the +2h analysis hour.
-        this?.contentPerformanceHistory.push({
-          contentId: savedContent?.id,
-          postId: successfulPublish?.postId,
+        this.contentPerformanceHistory.push({
+          contentId: savedContent.id,
+          postId: successfulPublish.postId,
           platform,
           topic,
-          contentText: content?.text,
-          hashtags: content?.hashtags,
+          contentText: content.text,
+          hashtags: content.hashtags,
           publishedAt: realPublishedAt,
           analytics: { engagementRate: 0 },
           analyzed: false,
         });
-        if (this?.contentPerformanceHistory.length > 200) {
-          this?.contentPerformanceHistory.shift();
+        if (this.contentPerformanceHistory.length > 200) {
+          this.contentPerformanceHistory.shift();
         }
 
         // Update coordinator with post status
         if (coordinatorPostId) {
-          autopilotCoordinatorService?.updatePostStatus(
-            this?.userId,
+          autopilotCoordinatorService.updatePostStatus(
+            this.userId,
             coordinatorPostId,
             "posted",
-            successfulPublish?.postId,
+            successfulPublish.postId,
           );
         }
 
         // Schedule autonomous performance analysis
         setTimeout(
           () => {
-            this?.analyzeContentPerformance(
-              savedContent?.id as string,
-              successfulPublish?.postId!,
+            this.analyzeContentPerformance(
+              savedContent.id as string,
+              successfulPublish.postId!,
               platform,
             );
           },
           2 * 60 * 60 * 1000,
         ); // Analyze after 2 hours
 
-        this?.emit("autonomousContentPublished", {
+        this.emit("autonomousContentPublished", {
           content: savedContent,
           platform,
-          postId: successfulPublish?.postId,
+          postId: successfulPublish.postId,
           coordinatorPostId,
         });
 
-        logger?.info(
-          `Autonomous content published to ${platform}: "${content?.text.substring(0, 50)}..." (coordinator: ${coordinatorPostId || "disabled"})`,
+        logger.info(
+          `Autonomous content published to ${platform}: "${content.text.substring(0, 50)}..." (coordinator: ${coordinatorPostId || "disabled"})`,
         );
       } else if (coordinatorPostId) {
         // Update coordinator with failed status
-        autopilotCoordinatorService?.updatePostStatus(
-          this?.userId,
+        autopilotCoordinatorService.updatePostStatus(
+          this.userId,
           coordinatorPostId,
           "failed",
         );
       }
     } catch (error: unknown) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `Autonomous content generation failed for ${platform}:`,
       );
-      this?.emit("autonomousError", {
+      this.emit("autonomousError", {
         type: "content_generation",
         platform,
         error,
       });
+    }
+  }
+
+  // Resolve an optional advanced-URL-parser content brief from configured
+  // source links. Deterministic pick per (topic, platform); undefined when no
+  // links are configured or on any parse/SSRF failure (falls back to topic-only).
+  private async resolveUrlBrief(
+    platform: string,
+    topic: string,
+  ): Promise<UrlContentBrief | undefined> {
+    const urls = this?.config.sourceUrls;
+    if (!urls || urls.length === 0) return undefined;
+    const chosen = urls[seededIndex(`${topic}|${platform}`, urls.length)];
+    try {
+      const parsed = await advancedUrlParser.parseUrl(chosen);
+      return advancedUrlParser.toContentBrief(parsed);
+    } catch (err) {
+      logger?.warn(
+        { err: (err as Error)?.message },
+        `[AutonomousAutopilot] Source URL parse failed for ${platform} — falling back to topic-only generation`,
+      );
+      return undefined;
     }
   }
 
@@ -565,7 +597,7 @@ export class AutonomousAutopilot extends EventEmitter {
     hook?: string;
     cta?: string;
   }> {
-    const _goalsLower = params?.objectives.map((g) => g?.toLowerCase()).join(" ");
+    const goalsLower = params?.objectives.map((g) => g?.toLowerCase()).join(" ");
     let objective: "awareness" | "engagement" | "conversions" | "viral" =
       goalsLower?.includes("sales") ||
       goalsLower?.includes("conversion") ||
@@ -584,7 +616,7 @@ export class AutonomousAutopilot extends EventEmitter {
     // is 'high', steer the objective toward engagement regardless of the
     // configured objectives. Fully reversible (deactivating reverts behavior).
     try {
-      const _posting = evolutionRegistry?.getPostingOptimization(
+      const posting = evolutionRegistry?.getPostingOptimization(
         params?.platform.toLowerCase(),
       );
       if (posting?.engagementTargeting === "high") {
@@ -597,7 +629,7 @@ export class AutonomousAutopilot extends EventEmitter {
       );
     }
 
-    const _voice = params?.brandPersonality.toLowerCase();
+    const voice = params?.brandPersonality.toLowerCase();
     const tone:
       | "professional"
       | "casual"
@@ -626,31 +658,41 @@ export class AutonomousAutopilot extends EventEmitter {
       insights: "storytelling",
       tips: "storytelling",
     };
-    const _contentType =
+    const contentType =
       ctMap[this?.selectContentTypeFromObjectives(params?.objectives)] ??
       "engagement";
 
-    const _advancedResult =
+    // Optional advanced-URL-parser brief from configured source links. The
+    // UCB1-selected params.topic is preserved for learning; the URL brief only
+    // feeds generation. Undefined ⇒ unchanged topic-only behavior.
+    const urlBrief = await this.resolveUrlBrief(params.platform, params.topic);
+
+    const advancedResult =
       await advancedSocialAIService?.generateAdvancedContent({
-        userId: this?.userId,
-        topic: params?.topic,
+        userId: this.userId,
+        topic: urlBrief?.topic ?? params.topic,
         platforms: [params?.platform.toLowerCase()],
         objective,
         tone,
-        targetAudience: params?.targetAudience
+        targetAudience: params.targetAudience
           ?.toLowerCase()
           .replace(/\s+/g, "_"),
-        contentType,
+        contentType: urlBrief?.contentType ?? contentType,
+        ...(urlBrief?.genre ? { genre: urlBrief.genre } : {}),
+        ...(urlBrief?.artistName ? { artistName: urlBrief.artistName } : {}),
+        ...(urlBrief?.promotionContext
+          ? { promotionContext: urlBrief.promotionContext }
+          : {}),
         includeHashtags: true,
         includeEmojis: true,
         variantCount: 3,
       });
 
     return {
-      text: advancedResult?.primary.body,
-      hashtags: advancedResult?.primary.hashtags,
-      hook: advancedResult?.primary.hook,
-      cta: advancedResult?.primary.callToAction,
+      text: advancedResult.primary.body,
+      hashtags: advancedResult.primary.hashtags,
+      hook: advancedResult.primary.hook,
+      cta: advancedResult.primary.callToAction,
     };
   }
 
@@ -671,6 +713,10 @@ export class AutonomousAutopilot extends EventEmitter {
 
     return "tips"; // Default fallback
   }
+
+
+
+
 
   // Autonomous Performance Analysis
   private schedulePerformanceAnalysis(): void {
@@ -694,19 +740,19 @@ export class AutonomousAutopilot extends EventEmitter {
 
   private async performAutonomousAnalysis(): Promise<void> {
     // Analyze recent posts that haven't been analyzed yet
-    const _recentPosts = this?.contentPerformanceHistory
+    const recentPosts = this.contentPerformanceHistory
       .filter(
         (post) =>
-          !post?.analyzed &&
-          Date?.now() - new Date(post?.publishedAt).getTime() > 60 * 60 * 1000,
+          !post.analyzed &&
+          Date.now() - new Date(post.publishedAt).getTime() > 60 * 60 * 1000,
       ) // At least 1 hour old
       .slice(0, 10); // Analyze up to 10 posts at a time
 
     for (const post of recentPosts) {
-      await this?.analyzeContentPerformance(
-        post?.contentId,
-        post?.postId,
-        post?.platform,
+      await this.analyzeContentPerformance(
+        post.contentId,
+        post.postId,
+        post.platform,
       );
     }
   }
@@ -717,10 +763,10 @@ export class AutonomousAutopilot extends EventEmitter {
     platform: string,
   ): Promise<void> {
     try {
-      const _analytics = await platformAPI?.collectEngagementData(
+      const analytics = await platformAPI.collectEngagementData(
         postId,
         platform,
-        this?.userId,
+        this.userId,
       );
 
       if (analytics) {
@@ -728,39 +774,39 @@ export class AutonomousAutopilot extends EventEmitter {
         // The entry was created at publish time with topic + true publishedAt so
         // UCB1 topic feedback and optimal-time learning train on the real
         // posting hour, not the +2h analysis hour.
-        const _existing = this?.contentPerformanceHistory.find(
-          (p) => p?.contentId === contentId,
+        const existing = this.contentPerformanceHistory.find(
+          (p) => p.contentId === contentId,
         );
         if (existing) {
           existing.analytics = analytics;
           existing.analyzed = true;
         } else {
           // Fallback: seed entry was evicted from the 200-cap window.
-          this?.contentPerformanceHistory.push({
+          this.contentPerformanceHistory.push({
             contentId,
             postId,
             platform,
-            publishedAt: new Date(Date?.now() - 2 * 60 * 60 * 1000),
+            publishedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
             analytics,
             analyzed: true,
           });
-          if (this?.contentPerformanceHistory.length > 200) {
-            this?.contentPerformanceHistory.shift();
+          if (this.contentPerformanceHistory.length > 200) {
+            this.contentPerformanceHistory.shift();
           }
         }
 
         // Autonomous learning from performance — pass the seeded context so
         // recordPerformance receives true publish time + topic + content.
-        await this?.learnFromPerformance(analytics, platform, existing);
+        await this.learnFromPerformance(analytics, platform, existing);
 
-        this?.emit("autonomousAnalysisCompleted", {
+        this.emit("autonomousAnalysisCompleted", {
           contentId,
           platform,
           analytics,
         });
       }
     } catch (error: unknown) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `Performance analysis failed for ${contentId}:`,
       );
@@ -771,13 +817,13 @@ export class AutonomousAutopilot extends EventEmitter {
   private scheduleAdaptiveLearning(): void {
     this.adaptationInterval = setInterval(
       async () => {
-        if (!this?.isRunning) return;
+        if (!this.isRunning) return;
 
         try {
-          await this?.performAutonomousAdaptation();
+          await this.performAutonomousAdaptation();
         } catch (error: unknown) {
-          logger?.warn({ err: error }, "Autonomous adaptation failed:");
-          this?.emit("autonomousError", { type: "adaptation", error });
+          logger.warn({ err: error }, "Autonomous adaptation failed:");
+          this.emit("autonomousError", { type: "adaptation", error });
         }
       },
       6 * 60 * 60 * 1000,
@@ -786,45 +832,45 @@ export class AutonomousAutopilot extends EventEmitter {
 
   private async performAutonomousAdaptation(): Promise<void> {
     // Adapt posting frequency based on performance
-    this?.adaptPostingFrequency();
+    this.adaptPostingFrequency();
 
     // Adapt optimal timing based on engagement data
-    this?.adaptOptimalTiming();
+    this.adaptOptimalTiming();
 
     // Adapt content strategy based on topic performance
-    this?.adaptContentStrategy();
+    this.adaptContentStrategy();
 
-    this?.emit("autonomousAdaptationCompleted", {
-      newConfig: this?.config,
-      adaptations: this?.getRecentAdaptations(),
+    this.emit("autonomousAdaptationCompleted", {
+      newConfig: this.config,
+      adaptations: this.getRecentAdaptations(),
     });
 
-    logger?.info("Autonomous adaptation completed");
+    logger.info("Autonomous adaptation completed");
   }
 
   private adaptPostingFrequency(): void {
-    const _recentPerformance = this?.contentPerformanceHistory
+    const recentPerformance = this.contentPerformanceHistory
       .filter(
         (post) =>
-          Date?.now() - new Date(post?.publishedAt).getTime() <
+          Date.now() - new Date(post.publishedAt).getTime() <
           7 * 24 * 60 * 60 * 1000,
       ) // Last 7 days
-      .map((post) => post?.analytics.engagementRate);
+      .map((post) => post.analytics.engagementRate);
 
-    if (recentPerformance?.length > 5) {
-      const _avgEngagement =
-        recentPerformance?.reduce((a, b) => a + b, 0) / (recentPerformance?.length || 1);
+    if (recentPerformance.length > 5) {
+      const avgEngagement =
+        recentPerformance.reduce((a, b) => a + b, 0) / (recentPerformance.length || 1);
 
       if (avgEngagement > 0.05) {
         // High engagement
-        this?.config.maxPostsPerDay = Math?.min(
-          this?.config.maxPostsPerDay + 1,
+        this.config.maxPostsPerDay = Math.min(
+          this.config.maxPostsPerDay + 1,
           12,
         );
       } else if (avgEngagement < 0.01) {
         // Low engagement
-        this?.config.maxPostsPerDay = Math?.max(
-          this?.config.maxPostsPerDay - 1,
+        this.config.maxPostsPerDay = Math.max(
+          this.config.maxPostsPerDay - 1,
           2,
         );
       }
@@ -832,55 +878,55 @@ export class AutonomousAutopilot extends EventEmitter {
   }
 
   private adaptOptimalTiming(): void {
-    const _platformPerformance = new Map<string, Map<number, number>>();
+    const platformPerformance = new Map<string, Map<number, number>>();
 
     // Analyze performance by hour for each platform
-    this?.contentPerformanceHistory.forEach((post) => {
-      const _hour = new Date(post?.publishedAt).getHours();
-      const _platform = post?.platform;
+    this.contentPerformanceHistory.forEach((post) => {
+      const hour = new Date(post.publishedAt).getHours();
+      const platform = post.platform;
 
-      if (!platformPerformance?.has(platform)) {
-        platformPerformance?.set(platform, new Map());
+      if (!platformPerformance.has(platform)) {
+        platformPerformance.set(platform, new Map());
       }
 
-      const _hourlyPerf = platformPerformance?.get(platform)!;
-      const _currentAvg = hourlyPerf?.get(hour) || 0;
-      hourlyPerf?.set(hour, (currentAvg + post?.analytics.engagementRate) / 2);
+      const hourlyPerf = platformPerformance.get(platform)!;
+      const currentAvg = hourlyPerf.get(hour) || 0;
+      hourlyPerf.set(hour, (currentAvg + post.analytics.engagementRate) / 2);
     });
 
     // Update optimal times cache
-    platformPerformance?.forEach((hourlyPerf, platform) => {
-      const _sortedHours = Array?.from(hourlyPerf?.entries())
+    platformPerformance.forEach((hourlyPerf, platform) => {
+      const sortedHours = Array.from(hourlyPerf.entries())
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5)
         .map(([hour]) => hour);
 
-      if (sortedHours?.length > 0) {
-        this?.optimalTimingCache.set(platform, sortedHours);
-        this?.learnedTimingPlatforms.add(platform);
+      if (sortedHours.length > 0) {
+        this.optimalTimingCache.set(platform, sortedHours);
+        this.learnedTimingPlatforms.add(platform);
       }
     });
   }
 
   private adaptContentStrategy(): void {
     // Track which topics perform best and adjust focus
-    const _topicPerformance = new Map<string, number[]>();
+    const topicPerformance = new Map<string, number[]>();
 
-    this?.contentPerformanceHistory.forEach((post) => {
-      if (post?.topic) {
-        if (!topicPerformance?.has(post?.topic)) {
-          topicPerformance?.set(post?.topic, []);
+    this.contentPerformanceHistory.forEach((post) => {
+      if (post.topic) {
+        if (!topicPerformance.has(post.topic)) {
+          topicPerformance.set(post.topic, []);
         }
-        topicPerformance?.get(post?.topic)!.push(post?.analytics.engagementRate);
+        topicPerformance.get(post.topic)!.push(post.analytics.engagementRate);
       }
     });
 
     // Update topic performance map and trial counts for UCB1
-    topicPerformance?.forEach((performances, topic) => {
-      const _avgPerformance =
-        performances?.reduce((a, b) => a + b, 0) / (performances?.length || 1);
-      this?.topicPerformanceMap.set(topic, avgPerformance);
-      this?.topicTrialCountMap.set(topic, performances?.length);
+    topicPerformance.forEach((performances, topic) => {
+      const avgPerformance =
+        performances.reduce((a, b) => a + b, 0) / (performances.length || 1);
+      this.topicPerformanceMap.set(topic, avgPerformance);
+      this.topicTrialCountMap.set(topic, performances.length);
     });
   }
 
@@ -889,85 +935,85 @@ export class AutonomousAutopilot extends EventEmitter {
     platform: string,
     context?: Record<string, unknown>,
   ): Promise<void> {
-    const _a = (analytics ?? {}) as Record<string, unknown>;
-    const _engagementRate = Number(a?.engagementRate ?? 0);
+    const a = (analytics ?? {}) as Record<string, unknown>;
+    const engagementRate = Number(a.engagementRate ?? 0);
 
     // Persist the performance signal to the DB-backed learning store so the
     // optimal-times / hashtag / hook analytics in autopilotLearningService can
     // consume autonomous-mode posts the same way published-mode posts feed it.
     // Best-effort: a learning-store failure must not block the autopilot loop.
     try {
-      const _ctx = (context ?? {}) as Record<string, unknown>;
-      const _realPostedAt =
-        ctx?.publishedAt instanceof Date
-          ? (ctx?.publishedAt as Date)
-          : new Date(Date?.now() - 2 * 60 * 60 * 1000);
-      await autopilotLearningService?.recordPerformance(
-        this?.userId,
+      const ctx = (context ?? {}) as Record<string, unknown>;
+      const realPostedAt =
+        ctx.publishedAt instanceof Date
+          ? (ctx.publishedAt as Date)
+          : new Date(Date.now() - 2 * 60 * 60 * 1000);
+      await autopilotLearningService.recordPerformance(
+        this.userId,
         {
           platform,
           contentType: "tips",
-          hashtags: Array?.isArray(ctx?.hashtags)
-            ? (ctx?.hashtags as string[])
+          hashtags: Array.isArray(ctx.hashtags)
+            ? (ctx.hashtags as string[])
             : [],
           contentText:
-            typeof ctx?.contentText === "string"
-              ? (ctx?.contentText as string)
+            typeof ctx.contentText === "string"
+              ? (ctx.contentText as string)
               : undefined,
           postId:
-            typeof ctx?.postId === "string" ? (ctx?.postId as string) : undefined,
+            typeof ctx.postId === "string" ? (ctx.postId as string) : undefined,
           postedAt: realPostedAt,
           metadata: {
             source: "autonomous-autopilot",
-            topic: typeof ctx?.topic === "string" ? ctx?.topic : undefined,
+            topic: typeof ctx.topic === "string" ? ctx.topic : undefined,
             contentId:
-              typeof ctx?.contentId === "string" ? ctx?.contentId : undefined,
+              typeof ctx.contentId === "string" ? ctx.contentId : undefined,
           },
         },
         {
-          impressions: Number(a?.impressions ?? 0),
-          clicks: Number(a?.clicks ?? 0),
-          shares: Number(a?.shares ?? 0),
-          likes: Number(a?.likes ?? 0),
-          comments: Number(a?.comments ?? 0),
-          saves: Number(a?.saves ?? 0),
-          reach: Number(a?.reach ?? 0),
+          impressions: Number(a.impressions ?? 0),
+          clicks: Number(a.clicks ?? 0),
+          shares: Number(a.shares ?? 0),
+          likes: Number(a.likes ?? 0),
+          comments: Number(a.comments ?? 0),
+          saves: Number(a.saves ?? 0),
+          reach: Number(a.reach ?? 0),
           engagementRate,
         },
       );
     } catch (err) {
-      logger?.warn(
-        { err, userId: this?.userId, platform },
+      logger.warn(
+        { err, userId: this.userId, platform },
         "[AutonomousAutopilot] recordPerformance failed — continuing learning loop",
       );
     }
 
     // Store platform-specific learning data
-    const _platformData = this?.adaptiveLearningData.get(platform) || {
+    const platformData = this.adaptiveLearningData.get(platform) || {
       totalPosts: 0,
       avgEngagement: 0,
       bestPerformingHours: [],
       contentPatterns: {},
     };
 
-    platformData?.totalPosts += 1;
+    platformData.totalPosts += 1;
     platformData.avgEngagement =
-      (platformData?.avgEngagement * (platformData?.totalPosts - 1) +
+      (platformData.avgEngagement * (platformData.totalPosts - 1) +
         engagementRate) /
-      platformData?.totalPosts;
+      platformData.totalPosts;
 
-    this?.adaptiveLearningData.set(platform, platformData);
+    this.adaptiveLearningData.set(platform, platformData);
 
     // Share engagement insights with coordinator for cross-autopilot learning.
     // Use the REAL posting hour from context (the +2h analysis time would skew
     // every cross-autopilot timing insight by the analytics delay).
-    const _ctxForHour = (context ?? {}) as Record<string, unknown>;
-    const _postedHour =
-      ctxForHour?.publishedAt instanceof Date
-        ? (ctxForHour?.publishedAt as Date).getHours()
-        : new Date(Date?.now() - 2 * 60 * 60 * 1000).getHours();
-    const _currentHour = postedHour;
-    await this?.shareInsightWithCoordinator("engagement", {
+    const ctxForHour = (context ?? {}) as Record<string, unknown>;
+    const postedHour =
+      ctxForHour.publishedAt instanceof Date
+        ? (ctxForHour.publishedAt as Date).getHours()
+        : new Date(Date.now() - 2 * 60 * 60 * 1000).getHours();
+    const currentHour = postedHour;
+    await this.shareInsightWithCoordinator("engagement", {
       platform,
       engagementRate,
       hour: currentHour,
@@ -978,8 +1024,8 @@ export class AutonomousAutopilot extends EventEmitter {
     });
 
     // Share timing insights if engagement is above average
-    if (engagementRate > platformData?.avgEngagement) {
-      await this?.shareInsightWithCoordinator("timing", {
+    if (engagementRate > platformData.avgEngagement) {
+      await this.shareInsightWithCoordinator("timing", {
         platform,
         hour: currentHour,
         engagementScore: engagementRate,
@@ -996,19 +1042,19 @@ export class AutonomousAutopilot extends EventEmitter {
     predictedEngagement: number;
   } | null> {
     try {
-      const _prediction = await hyperLearningEngine?.predictOptimalContent(
-        this?.userId,
+      const prediction = await hyperLearningEngine.predictOptimalContent(
+        this.userId,
         platform,
       );
       return {
-        optimalHook: prediction?.optimalHook,
-        optimalLength: prediction?.optimalLength,
-        optimalTiming: prediction?.optimalTiming,
-        microPatternRecommendations: prediction?.microPatternRecommendations,
-        predictedEngagement: prediction?.predictedEngagement,
+        optimalHook: prediction.optimalHook,
+        optimalLength: prediction.optimalLength,
+        optimalTiming: prediction.optimalTiming,
+        microPatternRecommendations: prediction.microPatternRecommendations,
+        predictedEngagement: prediction.predictedEngagement,
       };
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         "HyperLearning optimization unavailable, using standard learning",
       );
       return null;
@@ -1020,21 +1066,21 @@ export class AutonomousAutopilot extends EventEmitter {
     platform: string,
   ): Promise<string> {
     try {
-      const _hyperOptimization =
-        await this?.getHyperLearningOptimizedContent(platform);
+      const hyperOptimization =
+        await this.getHyperLearningOptimizedContent(platform);
       if (!hyperOptimization) return content;
 
       let optimizedContent = content;
 
-      for (const recommendation of hyperOptimization?.microPatternRecommendations.slice(
+      for (const recommendation of hyperOptimization.microPatternRecommendations.slice(
         0,
         3,
       )) {
         if (
-          recommendation?.includes("emoji") &&
-          !content?.match(new RegExp("[\\u{1F600}-\\u{1F64F}]", "u"))
+          recommendation.includes("emoji") &&
+          !content.match(new RegExp("[\\u{1F600}-\\u{1F64F}]", "u"))
         ) {
-          const _emojis = [
+          const emojis = [
             "🎵",
             "🎶",
             "🔥",
@@ -1048,19 +1094,19 @@ export class AutonomousAutopilot extends EventEmitter {
           ];
           optimizedContent =
             emojis[
-              seededIndex(content?.slice(0, 48) + platform, emojis?.length)
+              seededIndex(content.slice(0, 48) + platform, emojis.length)
             ] +
             " " +
             optimizedContent;
         }
-        if (recommendation?.includes("question") && !content?.includes("?")) {
+        if (recommendation.includes("question") && !content.includes("?")) {
           optimizedContent += "\n\nWhat do you think?";
         }
       }
 
       return optimizedContent;
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "Failed to apply HyperLearning optimizations:",
       );
@@ -1073,11 +1119,11 @@ export class AutonomousAutopilot extends EventEmitter {
     learningMultiplier: number;
     microPatternsDetected: number;
   } {
-    const _status = hyperLearningEngine?.getStatus();
+    const status = hyperLearningEngine.getStatus();
     return {
-      enabled: status?.isRunning,
-      learningMultiplier: status?.metrics.learningMultiplier,
-      microPatternsDetected: status?.microPatternCount,
+      enabled: status.isRunning,
+      learningMultiplier: status.metrics.learningMultiplier,
+      microPatternsDetected: status.microPatternCount,
     };
   }
 
@@ -1091,28 +1137,28 @@ export class AutonomousAutopilot extends EventEmitter {
     // Music-artist topics — the prior generic-business defaults
     // ('industry trends', 'leadership', etc.) produced off-brand posts
     // that hurt engagement, so these reflect what performs for working artists.
-    const _defaultTopics = AutonomousAutopilot?.DEFAULT_TOPICS;
+    const defaultTopics = AutonomousAutopilot.DEFAULT_TOPICS;
 
     // Derive per-topic trial count + reward sum directly from history so the
     // arm statistics are never stale relative to the periodic adaptation cycle,
     // and posts that are published-but-not-yet-analysed still count as trials
     // (prevents the cold-start loop from hammering one topic before the ~2h
     // analytics delay records any feedback).
-    const _statsByTopic = new Map<string, { n: number; sum: number }>();
+    const statsByTopic = new Map<string, { n: number; sum: number }>();
     for (const post of this?.contentPerformanceHistory) {
-      const _topic = typeof post?.topic === "string" ? post?.topic : undefined;
+      const topic = typeof post?.topic === "string" ? post?.topic : undefined;
       if (!topic) continue;
-      const _er = Number(
+      const er = Number(
         (post?.analytics as Record<string, unknown> | undefined)
           ?.engagementRate ?? 0,
       );
-      const _s = statsByTopic?.get(topic) || { n: 0, sum: 0 };
-      s?.n += 1;
-      s?.sum += er;
+      const s = statsByTopic?.get(topic) || { n: 0, sum: 0 };
+      s.n += 1;
+      s.sum += er;
       statsByTopic?.set(topic, s);
     }
 
-    const _candidates = new Set<string>([
+    const candidates = new Set<string>([
       ...defaultTopics,
       ...statsByTopic?.keys(),
     ]);
@@ -1121,7 +1167,7 @@ export class AutonomousAutopilot extends EventEmitter {
     // before exploitation begins. Pick deterministically (seeded by userId +
     // remaining-untried count) so exploration order is stable yet spreads
     // across distinct topics as each gets its first post.
-    const _untried = Array?.from(candidates).filter(
+    const untried = Array?.from(candidates).filter(
       (t) => (statsByTopic?.get(t)?.n ?? 0) === 0,
     );
     if (untried?.length > 0) {
@@ -1137,18 +1183,18 @@ export class AutonomousAutopilot extends EventEmitter {
     // score high on the second term. Result: zero wasted impressions, provably
     // maximum long-run engagement. Fully deterministic — no Math?.random().
     // C = 0.25 tuned for engagement-rate reward signals in the 0–1 range.
-    const _UCB1_C = 0.25;
-    const _totalTrials =
+    const UCB1_C = 0.25;
+    const totalTrials =
       Array?.from(statsByTopic?.values()).reduce((s, v) => s + v?.n, 0) || 1;
 
     let bestTopic = defaultTopics[0];
     let bestScore = -Infinity;
     candidates?.forEach((topic) => {
-      const _stat = statsByTopic?.get(topic);
-      const _n = stat?.n || 1;
-      const _avgRate = stat ? stat?.sum / stat?.n : 0;
-      const _explorationBonus = UCB1_C * Math?.sqrt(Math?.log(totalTrials) / n);
-      const _ucb1Score = avgRate + explorationBonus;
+      const stat = statsByTopic?.get(topic);
+      const n = stat?.n || 1;
+      const avgRate = stat ? stat?.sum / stat?.n : 0;
+      const explorationBonus = UCB1_C * Math?.sqrt(Math?.log(totalTrials) / n);
+      const ucb1Score = avgRate + explorationBonus;
       if (ucb1Score > bestScore) {
         bestScore = ucb1Score;
         bestTopic = topic;
@@ -1168,17 +1214,17 @@ export class AutonomousAutopilot extends EventEmitter {
    *   >1.5   = critical (max caffeine — all-nighter mode)
    */
   private computeSchedulePressure(platform: string): number {
-    const _today = new Date();
+    const today = new Date();
     today?.setHours(0, 0, 0, 0);
-    const _postsToday = this?.contentPerformanceHistory.filter(
+    const postsToday = this?.contentPerformanceHistory.filter(
       (c) => c?.platform === platform && new Date(c?.publishedAt) >= today,
     ).length;
-    const _now = new Date();
-    const _hoursLeft = Math?.max(
+    const now = new Date();
+    const hoursLeft = Math?.max(
       0.5,
       24 - now?.getHours() - now?.getMinutes() / 60,
     );
-    const _postsNeeded = Math?.max(0, this?.config.minPostsPerDay - postsToday);
+    const postsNeeded = Math?.max(0, this?.config.minPostsPerDay - postsToday);
     return postsNeeded / hoursLeft;
   }
 
@@ -1188,8 +1234,8 @@ export class AutonomousAutopilot extends EventEmitter {
    * flooding the interval scheduler with redundant updates.
    */
   private broadcastPressure(pressure: number): void {
-    const _tier = pressure > 1.5 ? 3 : pressure > 0.5 ? 2 : pressure > 0 ? 1 : 0;
-    const _pTier =
+    const tier = pressure > 1.5 ? 3 : pressure > 0.5 ? 2 : pressure > 0 ? 1 : 0;
+    const pTier =
       this?._lastBroadcastPressure > 1.5
         ? 3
         : this?._lastBroadcastPressure > 0.5
@@ -1206,13 +1252,13 @@ export class AutonomousAutopilot extends EventEmitter {
 
   // Utility Methods
   private calculateNextGenerationInterval(): number {
-    const _baseInterval = 2 * 60 * 60 * 1000; // 2 hours
-    const _maxInterval = 6 * 60 * 60 * 1000; // 6 hours
-    const _minInterval = 30 * 60 * 1000; // 30 minutes
-    const _caffeineModeInterval = 20 * 60 * 1000; // 20 minutes — critical crunch
+    const baseInterval = 2 * 60 * 60 * 1000; // 2 hours
+    const maxInterval = 6 * 60 * 60 * 1000; // 6 hours
+    const minInterval = 30 * 60 * 1000; // 30 minutes
+    const caffeineModeInterval = 20 * 60 * 1000; // 20 minutes — critical crunch
 
     // Caffeine Mode overrides engagement-based timing when behind schedule
-    const _pressure = this?._lastBroadcastPressure;
+    const pressure = this?._lastBroadcastPressure;
     if (pressure > 1.5) return caffeineModeInterval;
     if (pressure > 0.5) return minInterval;
 
@@ -1220,7 +1266,7 @@ export class AutonomousAutopilot extends EventEmitter {
       return baseInterval; // Standard interval initially
     }
 
-    const _recentAvgEngagement =
+    const recentAvgEngagement =
       this?.contentPerformanceHistory
         .slice(-10)
         .reduce((sum, post) => sum + post?.analytics.engagementRate, 0) / 10;
@@ -1236,14 +1282,14 @@ export class AutonomousAutopilot extends EventEmitter {
 
   private getRecentAdaptations(): unknown[] {
     return [
-      { type: "posting_frequency", value: this?.config.maxPostsPerDay },
+      { type: "posting_frequency", value: this.config.maxPostsPerDay },
       {
         type: "optimal_timing",
-        platforms: Array?.from(this?.optimalTimingCache.keys()),
+        platforms: Array.from(this?.optimalTimingCache.keys()),
       },
       {
         type: "topic_focus",
-        topPerformers: Array?.from(this?.topicPerformanceMap.entries()).slice(
+        topPerformers: Array.from(this?.topicPerformanceMap.entries()).slice(
           0,
           3,
         ),
@@ -1254,9 +1300,9 @@ export class AutonomousAutopilot extends EventEmitter {
   // Status and Monitoring
   async getAutonomousStatus(): Promise<unknown> {
     return {
-      isRunning: this?.isRunning,
-      config: this?.config,
-      totalContentPublished: this?.contentPerformanceHistory.length,
+      isRunning: this.isRunning,
+      config: this.config,
+      totalContentPublished: this.contentPerformanceHistory.length,
       avgEngagementRate:
         this?.contentPerformanceHistory.length > 0
           ? this?.contentPerformanceHistory.reduce(
@@ -1264,13 +1310,13 @@ export class AutonomousAutopilot extends EventEmitter {
               0,
             ) / this?.contentPerformanceHistory.length
           : 0,
-      optimalTimes: Object?.fromEntries(this?.optimalTimingCache),
-      topPerformingTopics: Array?.from(this?.topicPerformanceMap.entries()).slice(
+      optimalTimes: Object.fromEntries(this?.optimalTimingCache),
+      topPerformingTopics: Array.from(this?.topicPerformanceMap.entries()).slice(
         0,
         5,
       ),
-      nextGenerationInterval: this?.calculateNextGenerationInterval(),
-      platformPerformance: Object?.fromEntries(this?.adaptiveLearningData),
+      nextGenerationInterval: this.calculateNextGenerationInterval(),
+      platformPerformance: Object.fromEntries(this?.adaptiveLearningData),
     };
   }
 
@@ -1282,4 +1328,4 @@ export class AutonomousAutopilot extends EventEmitter {
   }
 }
 
-export const _autonomousAutopilot = new AutonomousAutopilot();
+export const autonomousAutopilot = new AutonomousAutopilot();

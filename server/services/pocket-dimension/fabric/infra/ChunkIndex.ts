@@ -15,23 +15,23 @@ export class ChunkIndex {
     await db
       .insert(fabricChunks)
       .values({
-        id: loc?.id,
-        objectId: loc?.objectId,
-        nodeIds: loc?.nodeIds,
+        id: loc.id,
+        objectId: loc.objectId,
+        nodeIds: loc.nodeIds,
         sizeBytes: String(loc?.sizeBytes),
-        checksum: loc?.checksum,
+        checksum: loc.checksum,
         createdAt: new Date(),
       })
       .onConflictDoUpdate({
-        target: fabricChunks?.id,
-        set: { nodeIds: loc?.nodeIds, sizeBytes: String(loc?.sizeBytes) },
+        target: fabricChunks.id,
+        set: { nodeIds: loc.nodeIds, sizeBytes: String(loc?.sizeBytes) },
       });
   }
 
   async getChunkLocation(
     chunkId: ChunkId,
   ): Promise<FabricChunkLocation | null> {
-    const _rows = await db
+    const rows = await db
       .select()
       .from(fabricChunks)
       .where(eq(fabricChunks?.id, chunkId));
@@ -42,11 +42,11 @@ export class ChunkIndex {
     chunkIds: ChunkId[],
   ): Promise<Map<ChunkId, FabricChunkLocation>> {
     if (chunkIds?.length === 0) return new Map();
-    const _rows = await db
+    const rows = await db
       .select()
       .from(fabricChunks)
       .where(inArray(fabricChunks?.id, chunkIds));
-    const _map = new Map<ChunkId, FabricChunkLocation>();
+    const map = new Map<ChunkId, FabricChunkLocation>();
     for (const row of rows) map?.set(row?.id, this?.rowToChunk(row));
     return map;
   }
@@ -56,7 +56,7 @@ export class ChunkIndex {
   }
 
   async getChunksByObject(objectId: ObjectId): Promise<FabricChunkLocation[]> {
-    const _rows = await db
+    const rows = await db
       .select()
       .from(fabricChunks)
       .where(eq(fabricChunks?.objectId, objectId));
@@ -67,12 +67,12 @@ export class ChunkIndex {
     row: typeof fabricChunks.$inferSelect,
   ): FabricChunkLocation {
     return {
-      id: row?.id,
-      objectId: row?.objectId,
-      nodeIds: row?.nodeIds as NodeId[],
+      id: row.id,
+      objectId: row.objectId,
+      nodeIds: row.nodeIds as NodeId[],
       sizeBytes: Number(row?.sizeBytes),
-      checksum: row?.checksum,
-      createdAt: row?.createdAt,
+      checksum: row.checksum,
+      createdAt: row.createdAt,
     };
   }
 }

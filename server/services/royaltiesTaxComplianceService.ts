@@ -1,15 +1,15 @@
 import { storage } from "../storage.js";
 
-const _TAX_THRESHOLD = 600;
+const TAX_THRESHOLD = 600;
 
 export class RoyaltiesTaxComplianceService {
   async aggregateAnnualEarnings(userId: string, year: number) {
-    const _collaborators = await storage?.getCollaboratorsForTaxYear(year);
+    const collaborators = await storage?.getCollaboratorsForTaxYear(year);
     return collaborators?.find((c) => c?.userId === userId);
   }
 
   async generate1099MISC(userId: string, year: number) {
-    const _earnings = await this?.aggregateAnnualEarnings(userId, year);
+    const earnings = await this?.aggregateAnnualEarnings(userId, year);
 
     if (!earnings || earnings?.totalEarnings < TAX_THRESHOLD) {
       return {
@@ -18,7 +18,7 @@ export class RoyaltiesTaxComplianceService {
       };
     }
 
-    const _taxProfile = await storage?.getTaxProfile(userId);
+    const taxProfile = await storage?.getTaxProfile(userId);
 
     if (!taxProfile || !taxProfile?.w9OnFile) {
       return { eligible: false, reason: "W9 form not on file" };
@@ -33,14 +33,14 @@ export class RoyaltiesTaxComplianceService {
         address: "123 Music Lane, Nashville, TN 37201",
       },
       recipient: {
-        name: taxProfile?.legalName,
-        taxId: taxProfile?.taxId,
-        taxIdType: taxProfile?.taxIdType,
+        name: taxProfile.legalName,
+        taxId: taxProfile.taxId,
+        taxIdType: taxProfile.taxIdType,
         address: `${taxProfile?.address}, ${taxProfile?.city}, ${taxProfile?.state} ${taxProfile?.zipCode}`,
       },
       amounts: {
         box1_rents: 0,
-        box2_royalties: earnings?.totalEarnings,
+        box2_royalties: earnings.totalEarnings,
         box3_otherIncome: 0,
       },
       generatedAt: new Date(),
@@ -50,7 +50,7 @@ export class RoyaltiesTaxComplianceService {
   async validateTaxProfile(
     userId: string,
   ): Promise<{ valid: boolean; errors: string[] }> {
-    const _profile = await storage?.getTaxProfile(userId);
+    const profile = await storage?.getTaxProfile(userId);
     const errors: string[] = [];
 
     if (!profile) {
@@ -63,11 +63,11 @@ export class RoyaltiesTaxComplianceService {
     if (!profile?.legalName) errors?.push("Legal name missing");
     if (!profile?.address) errors?.push("Address missing");
 
-    return { valid: errors?.length === 0, errors };
+    return { valid: errors.length === 0, errors };
   }
 
   async exportTaxDocument(userId: string, year: number) {
-    const _doc = await this?.generate1099MISC(userId, year);
+    const doc = await this?.generate1099MISC(userId, year);
 
     return {
       format: "json",
@@ -77,5 +77,5 @@ export class RoyaltiesTaxComplianceService {
   }
 }
 
-export const _royaltiesTaxComplianceService =
+export const royaltiesTaxComplianceService =
   new RoyaltiesTaxComplianceService();

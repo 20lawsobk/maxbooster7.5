@@ -17,14 +17,14 @@ export interface UseKeyboardNavigationOptions {
 }
 
 export interface UseKeyboardNavigationResult<T extends HTMLElement> {
-  containerRef: React?.RefObject<T>;
+  containerRef: React.RefObject<T>;
   focusedIndex: number;
   setFocusedIndex: (index: number) => void;
   focusFirst: () => void;
   focusLast: () => void;
   focusNext: () => void;
   focusPrevious: () => void;
-  handleKeyDown: (event: React?.KeyboardEvent) => void;
+  handleKeyDown: (event: React.KeyboardEvent) => void;
   getItemProps: (index: number) => {
     tabIndex: number;
     "aria-selected"?: boolean;
@@ -50,15 +50,15 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
     typeAheadTimeout = 500,
   } = options;
 
-  const _containerRef = useRef<T>(null);
+  const containerRef = useRef<T>(null);
   const [focusedIndex, setFocusedIndexState] = useState(-1);
-  const _typeAheadBufferRef = useRef("");
-  const _typeAheadTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const typeAheadBufferRef = useRef("");
+  const typeAheadTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const _getNavigableItems = useCallback((): HTMLElement[] => {
+  const getNavigableItems = useCallback((): HTMLElement[] => {
     if (!containerRef?.current) return [];
 
-    const _selector = [
+    const selector = [
       "button:not([disabled])",
       "a[href]",
       "input:not([disabled])",
@@ -74,15 +74,15 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
     return Array?.from(
       containerRef?.current.querySelectorAll<HTMLElement>(selector),
     ).filter((el) => {
-      const _style = window?.getComputedStyle(el);
+      const style = window?.getComputedStyle(el);
       return style?.display !== "none" && style?.visibility !== "hidden";
     });
   }, []);
 
-  const _setFocusedIndex = useCallback(
+  const setFocusedIndex = useCallback(
     (index: number) => {
-      const _items = getNavigableItems();
-      const _clampedIndex = Math?.max(-1, Math?.min(index, items?.length - 1));
+      const items = getNavigableItems();
+      const clampedIndex = Math?.max(-1, Math?.min(index, items?.length - 1));
 
       setFocusedIndexState(clampedIndex);
 
@@ -94,17 +94,17 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
     [getNavigableItems, preventScroll, onFocusChange],
   );
 
-  const _focusFirst = useCallback(() => {
+  const focusFirst = useCallback(() => {
     setFocusedIndex(0);
   }, [setFocusedIndex]);
 
-  const _focusLast = useCallback(() => {
-    const _items = getNavigableItems();
+  const focusLast = useCallback(() => {
+    const items = getNavigableItems();
     setFocusedIndex(items?.length - 1);
   }, [getNavigableItems, setFocusedIndex]);
 
-  const _focusNext = useCallback(() => {
-    const _items = getNavigableItems();
+  const focusNext = useCallback(() => {
+    const items = getNavigableItems();
     if (items?.length === 0) return;
 
     let nextIndex = focusedIndex + 1;
@@ -116,8 +116,8 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
     setFocusedIndex(nextIndex);
   }, [focusedIndex, loop, getNavigableItems, setFocusedIndex]);
 
-  const _focusPrevious = useCallback(() => {
-    const _items = getNavigableItems();
+  const focusPrevious = useCallback(() => {
+    const items = getNavigableItems();
     if (items?.length === 0) return;
 
     let prevIndex = focusedIndex - 1;
@@ -129,11 +129,11 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
     setFocusedIndex(prevIndex);
   }, [focusedIndex, loop, getNavigableItems, setFocusedIndex]);
 
-  const _focusNextRow = useCallback(() => {
-    const _items = getNavigableItems();
+  const focusNextRow = useCallback(() => {
+    const items = getNavigableItems();
     if (items?.length === 0) return;
 
-    const _nextIndex = focusedIndex + columns;
+    const nextIndex = focusedIndex + columns;
 
     if (nextIndex >= items?.length) {
       if (loop) {
@@ -144,16 +144,16 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
     }
   }, [focusedIndex, columns, loop, getNavigableItems, setFocusedIndex]);
 
-  const _focusPreviousRow = useCallback(() => {
-    const _items = getNavigableItems();
+  const focusPreviousRow = useCallback(() => {
+    const items = getNavigableItems();
     if (items?.length === 0) return;
 
-    const _prevIndex = focusedIndex - columns;
+    const prevIndex = focusedIndex - columns;
 
     if (prevIndex < 0) {
       if (loop) {
-        const _lastRowStart = Math?.floor((items?.length - 1) / columns) * columns;
-        const _colOffset = focusedIndex % columns;
+        const lastRowStart = Math?.floor((items?.length - 1) / columns) * columns;
+        const colOffset = focusedIndex % columns;
         setFocusedIndex(Math?.min(lastRowStart + colOffset, items?.length - 1));
       }
     } else {
@@ -161,7 +161,7 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
     }
   }, [focusedIndex, columns, loop, getNavigableItems, setFocusedIndex]);
 
-  const _handleTypeAhead = useCallback(
+  const handleTypeAhead = useCallback(
     (key: string) => {
       if (!typeAheadEnabled) return false;
 
@@ -169,18 +169,18 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
         clearTimeout(typeAheadTimeoutRef?.current);
       }
 
-      typeAheadBufferRef?.current += key?.toLowerCase();
+      typeAheadBufferRef.current += key?.toLowerCase();
 
       typeAheadTimeoutRef.current = setTimeout(() => {
         typeAheadBufferRef.current = "";
       }, typeAheadTimeout);
 
-      const _items = getNavigableItems();
-      const _searchStart = focusedIndex + 1;
+      const items = getNavigableItems();
+      const searchStart = focusedIndex + 1;
 
       for (let i = 0; i < items?.length; i++) {
-        const _index = (searchStart + i) % items?.length;
-        const _text = items[index].textContent?.toLowerCase() || "";
+        const index = (searchStart + i) % items?.length;
+        const text = items[index].textContent?.toLowerCase() || "";
 
         if (text?.startsWith(typeAheadBufferRef?.current)) {
           setFocusedIndex(index);
@@ -199,8 +199,8 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
     ],
   );
 
-  const _handleKeyDown = useCallback(
-    (event: React?.KeyboardEvent) => {
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
       if (!enabled) return;
 
       const { key } = event;
@@ -266,7 +266,7 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
         case "Enter":
         case " ":
           if (focusedIndex >= 0) {
-            const _items = getNavigableItems();
+            const items = getNavigableItems();
             onSelect?.(focusedIndex, items[focusedIndex] || null);
             handled = true;
           }
@@ -307,7 +307,7 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
     ],
   );
 
-  const _getItemProps = useCallback(
+  const getItemProps = useCallback(
     (index: number) => ({
       tabIndex:
         focusedIndex === index || (focusedIndex === -1 && index === 0) ? 0 : -1,

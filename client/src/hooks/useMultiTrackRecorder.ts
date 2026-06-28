@@ -42,11 +42,11 @@ export function useMultiTrackRecorder(
   bufferSize?: number,
 ) {
   const { context, isSupported } = useAudioContext();
-  const _audioDevices = useAudioDevices();
+  const audioDevices = useAudioDevices();
 
   // Use provided device/buffer OR fallback to audioDevices state
-  const _effectiveDeviceId = selectedDeviceId ?? audioDevices?.selectedInput;
-  const _effectiveBufferSize = bufferSize ?? 256;
+  const effectiveDeviceId = selectedDeviceId ?? audioDevices?.selectedInput;
+  const effectiveBufferSize = bufferSize ?? 256;
 
   const [state, setState] = useState<MultiTrackRecordingState>({
     isRecording: false,
@@ -60,29 +60,29 @@ export function useMultiTrackRecorder(
     bufferSize: effectiveBufferSize,
   });
 
-  const _analyzerNodesRef = useRef<Map<string, AnalyserNode>>(new Map());
-  const _animationFrameRef = useRef<number>();
-  const _sessionStartTimeRef = useRef<number>(0);
+  const analyzerNodesRef = useRef<Map<string, AnalyserNode>>(new Map());
+  const animationFrameRef = useRef<number>();
+  const sessionStartTimeRef = useRef<number>(0);
 
-  const _measureLatency = useCallback(async (): Promise<number> => {
+  const measureLatency = useCallback(async (): Promise<number> => {
     if (!context) return 0;
 
-    const _baseLatency = context?.baseLatency || 0;
-    const _outputLatency = context?.outputLatency || 0;
+    const baseLatency = context?.baseLatency || 0;
+    const outputLatency = context?.outputLatency || 0;
 
-    const _totalLatency = (baseLatency + outputLatency) * 1000;
+    const totalLatency = (baseLatency + outputLatency) * 1000;
 
     setState((prev) => ({ ...prev, latencyMs: totalLatency }));
     return totalLatency;
   }, [context]);
 
-  const _startInputMonitoring = useCallback(
+  const startInputMonitoring = useCallback(
     async (trackId: string, _trackName: string) => {
       if (!context || !isSupported) return null;
 
       try {
         // Use selected input device
-        const _stream = await audioDevices?.getInputStream(
+        const stream = await audioDevices?.getInputStream(
           effectiveDeviceId || undefined,
           {
             echoCancellation: true,
@@ -96,29 +96,29 @@ export function useMultiTrackRecorder(
           throw new Error("Failed to get audio stream from selected device");
         }
 
-        const _source = context?.createMediaStreamSource(stream);
-        const _analyser = context?.createAnalyser();
+        const source = context?.createMediaStreamSource(stream);
+        const analyser = context?.createAnalyser();
         analyser.fftSize = 256;
 
         source?.connect(analyser);
         analyzerNodesRef?.current.set(trackId, analyser);
 
-        const _updateInputLevel = () => {
-          const _dataArray = new Uint8Array(analyser?.frequencyBinCount);
+        const updateInputLevel = () => {
+          const dataArray = new Uint8Array(analyser?.frequencyBinCount);
           analyser?.getByteFrequencyData(dataArray);
 
-          const _average =
+          const average =
             dataArray?.reduce((sum, value) => sum + value, 0) / dataArray?.length;
-          const _normalizedLevel = average / 255;
+          const normalizedLevel = average / 255;
 
           setState((prev) => {
-            const _newLevels = new Map(prev?.inputLevels);
+            const newLevels = new Map(prev?.inputLevels);
             newLevels?.set(trackId, normalizedLevel);
             return { ...prev, inputLevels: newLevels };
           });
         };
 
-        const _intervalId = setInterval(updateInputLevel, 50);
+        const intervalId = setInterval(updateInputLevel, 50);
 
         return { stream, source, analyser, intervalId };
       } catch (error: unknown) {
@@ -129,7 +129,7 @@ export function useMultiTrackRecorder(
     [context, isSupported, audioDevices, effectiveDeviceId],
   );
 
-  const _stopInputMonitoring = useCallback(
+  const stopInputMonitoring = useCallback(
     (trackId: string, monitoringData: unknown) => {
       if (monitoringData) {
         if (monitoringData?.stream) {
@@ -144,7 +144,7 @@ export function useMultiTrackRecorder(
 
       analyzerNodesRef?.current.delete(trackId);
       setState((prev) => {
-        const _newLevels = new Map(prev?.inputLevels);
+        const newLevels = new Map(prev?.inputLevels);
         newLevels?.delete(trackId);
         return { ...prev, inputLevels: newLevels };
       });
@@ -152,7 +152,7 @@ export function useMultiTrackRecorder(
     [],
   );
 
-  const _startRecording = useCallback(
+  const startRecording = useCallback(
     async (
       armedTracks: Array<{ id: string; name: string }>,
       options: {
@@ -169,15 +169,15 @@ export function useMultiTrackRecorder(
       }
 
       try {
-        const _sessionId = nanoid();
-        const _takeGroupId = options?.takeGroupId || nanoid();
-        const _takeNumber = options?.takeNumber || 1;
+        const sessionId = nanoid();
+        const takeGroupId = options?.takeGroupId || nanoid();
+        const takeNumber = options?.takeNumber || 1;
 
-        const _newRecorders = new Map<string, TrackRecorder>();
+        const newRecorders = new Map<string, TrackRecorder>();
 
         for (const track of armedTracks) {
           // Use selected input device for recording
-          const _stream = await audioDevices?.getInputStream(
+          const stream = await audioDevices?.getInputStream(
             effectiveDeviceId || undefined,
             {
               echoCancellation: true,
@@ -193,7 +193,7 @@ export function useMultiTrackRecorder(
             );
           }
 
-          const _mediaRecorder = new MediaRecorder(stream, {
+          const mediaRecorder = new MediaRecorder(stream, {
             mimeType: "audio/webm;codecs=opus",
           });
 
@@ -202,15 +202,15 @@ export function useMultiTrackRecorder(
           mediaRecorder.ondataavailable = (event) => {
             if (event?.data.size > 0) {
               audioChunks?.push(event?.data);
-              newRecorders?.get(track?.id)!.audioChunks = audioChunks;
+              newRecorders.get(track.id)!.audioChunks = audioChunks;
             }
           };
 
           mediaRecorder?.start(100);
 
           newRecorders?.set(track?.id, {
-            trackId: track?.id,
-            trackName: track?.name,
+            trackId: track.id,
+            trackName: track.name,
             mediaRecorder,
             stream,
             audioChunks,
@@ -229,18 +229,18 @@ export function useMultiTrackRecorder(
             sessionId,
             takeGroupId,
             takeNumber,
-            startTime: Date?.now(),
-            startPosition: options?.startPosition,
-            punchIn: options?.punchIn,
-            punchOut: options?.punchOut,
-            isLoopRecording: options?.isLoopRecording || false,
+            startTime: Date.now(),
+            startPosition: options.startPosition,
+            punchIn: options.punchIn,
+            punchOut: options.punchOut,
+            isLoopRecording: options.isLoopRecording || false,
           },
           duration: 0,
         }));
 
-        const _updateDuration = () => {
+        const updateDuration = () => {
           if (state?.isRecording) {
-            const _duration = (Date?.now() - sessionStartTimeRef?.current) / 1000;
+            const duration = (Date?.now() - sessionStartTimeRef?.current) / 1000;
             setState((prev) => ({ ...prev, duration }));
             animationFrameRef.current = requestAnimationFrame(updateDuration);
           }
@@ -256,8 +256,8 @@ export function useMultiTrackRecorder(
     [context, isSupported, state?.isRecording, audioDevices, effectiveDeviceId],
   );
 
-  const _stopRecording = useCallback(async (): Promise<Map<string, Blob>> => {
-    const _recordedBlobs = new Map<string, Blob>();
+  const stopRecording = useCallback(async (): Promise<Map<string, Blob>> => {
+    const recordedBlobs = new Map<string, Blob>();
 
     state?.activeRecorders.forEach((recorder, trackId) => {
       if (
@@ -271,7 +271,7 @@ export function useMultiTrackRecorder(
         }
       }
 
-      const _blob = new Blob(recorder?.audioChunks, { type: "audio/webm" });
+      const blob = new Blob(recorder?.audioChunks, { type: "audio/webm" });
       recordedBlobs?.set(trackId, blob);
     });
 
@@ -290,30 +290,30 @@ export function useMultiTrackRecorder(
     return recordedBlobs;
   }, [state?.activeRecorders]);
 
-  const _punchIn = useCallback(async (_currentTime: number) => {
+  const punchIn = useCallback(async (_currentTime: number) => {
     setState((prev) => ({
       ...prev,
       isPunched: true,
     }));
   }, []);
 
-  const _punchOut = useCallback(async () => {
+  const punchOut = useCallback(async () => {
     setState((prev) => ({
       ...prev,
       isPunched: false,
     }));
   }, []);
 
-  const _uploadRecordings = useCallback(
+  const uploadRecordings = useCallback(
     async (
       recordedBlobs: Map<string, Blob>,
       projectId: string,
     ): Promise<Map<string, any>> => {
-      const _uploadResults = new Map<string, any>();
+      const uploadResults = new Map<string, any>();
 
       for (const [trackId, blob] of recordedBlobs) {
         try {
-          const _formData = new FormData();
+          const formData = new FormData();
           formData?.append(
             "audio",
             blob,
@@ -334,8 +334,8 @@ export function useMultiTrackRecorder(
             );
           }
 
-          const _csrfToken = getCsrfTokenFromCookie();
-          const _response = await fetch("/api/studio/record/upload", {
+          const csrfToken = getCsrfTokenFromCookie();
+          const response = await fetch("/api/studio/record/upload", {
             method: "POST",
             credentials: "include",
             headers: csrfToken ? { "x-csrf-token": csrfToken } : {},
@@ -346,7 +346,7 @@ export function useMultiTrackRecorder(
             throw new Error(`Failed to upload recording for track ${trackId}`);
           }
 
-          const _result = await response?.json();
+          const result = await response?.json();
           uploadResults?.set(trackId, result);
         } catch (error: unknown) {
           logger?.error(
@@ -362,9 +362,9 @@ export function useMultiTrackRecorder(
     [state?.currentSession],
   );
 
-  const _compensateLatency = useCallback(
+  const compensateLatency = useCallback(
     (startPosition: number): number => {
-      const _latencySec = state?.latencyMs / 1000;
+      const latencySec = state?.latencyMs / 1000;
       return Math?.max(0, startPosition - latencySec);
     },
     [state?.latencyMs],

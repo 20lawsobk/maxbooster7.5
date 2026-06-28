@@ -7,13 +7,13 @@ import { logger } from "../logger.js";
 import { queryCache, createCacheKey } from "../lib/queryCache.js";
 import { parsePaginationParams } from "../middleware/pagination.js";
 
-const _router = Router();
-const _CACHE_TTL = 300;
+const router = Router();
+const CACHE_TTL = 300;
 
 router?.get("/", requireAuth, async (req, res) => {
   try {
     const { limit, offset } = parsePaginationParams(req);
-    const _items = await db
+    const items = await db
       .select()
       .from(sampleClearances)
       .where(eq(sampleClearances?.userId, req?.user!.id))
@@ -29,10 +29,10 @@ router?.get("/", requireAuth, async (req, res) => {
 
 router?.get("/stats", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _cacheKey = createCacheKey("stats:sampleClearances", userId);
+    const userId = req?.user!.id;
+    const cacheKey = createCacheKey("stats:sampleClearances", userId);
 
-    const _stats = await queryCache?.getOrCompute(
+    const stats = await queryCache?.getOrCompute(
       cacheKey,
       async () => {
         const [totals] = await db
@@ -92,9 +92,9 @@ router?.get("/:id", requireAuth, async (req, res) => {
 
 router?.post("/", requireAuth, async (req, res) => {
   try {
-    const _data = insertSampleClearanceSchema?.parse({
+    const data = insertSampleClearanceSchema?.parse({
       ...req?.body,
-      userId: req?.user!.id,
+      userId: req.user!.id,
       fee:
         req?.body.fee !== "" && req?.body.fee != null
           ? parseFloat(req?.body.fee)
@@ -125,10 +125,10 @@ router?.post("/", requireAuth, async (req, res) => {
 
 router?.put("/:id", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
 
-    const _existing = await db
+    const existing = await db
       .select()
       .from(sampleClearances)
       .where(
@@ -140,7 +140,7 @@ router?.put("/:id", requireAuth, async (req, res) => {
       return res?.status(404).json({ error: "Sample clearance not found" });
     }
 
-    const _parsed = insertSampleClearanceSchema?.partial().parse({
+    const parsed = insertSampleClearanceSchema?.partial().parse({
       ...req?.body,
       fee:
         req?.body.fee !== "" && req?.body.fee != null
@@ -151,7 +151,7 @@ router?.put("/:id", requireAuth, async (req, res) => {
           ? parseFloat(req?.body.royaltyRate)
           : undefined,
     });
-    const { status: _status, userId: _userId, ...data } = parsed;
+    const { status: _status, userId: _parsedUserId, ...data } = parsed;
     const [item] = await db
       .update(sampleClearances)
       .set({ ...data, updatedAt: new Date() })
@@ -179,10 +179,10 @@ router?.put("/:id", requireAuth, async (req, res) => {
 
 router?.delete("/:id", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
 
-    const _existing = await db
+    const existing = await db
       .select()
       .from(sampleClearances)
       .where(

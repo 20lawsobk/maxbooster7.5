@@ -11,9 +11,9 @@ import {
 } from "@shared/types/multimodalGeneration.js";
 import { PLATFORM_RULES } from "@shared/config/platformRules.js";
 
-const _router = Router();
+const router = Router();
 
-const _VALID_PLATFORMS = new Set<Platform>([
+const VALID_PLATFORMS = new Set<Platform>([
   "facebook",
   "instagram",
   "threads",
@@ -24,7 +24,7 @@ const _VALID_PLATFORMS = new Set<Platform>([
   "twitter",
 ]);
 
-const _VALID_PACKS = new Set<PackId>(Object?.keys(PACK_DEFINITIONS) as PackId[]);
+const VALID_PACKS = new Set<PackId>(Object?.keys(PACK_DEFINITIONS) as PackId[]);
 
 // POST /api/multimodal/generate
 // Full multimodal content generation: normalise → plan → workers → package
@@ -33,11 +33,11 @@ router?.post(
   requireAuthOnly,
   async (req: Request, res: Response) => {
     try {
-      const _body = req?.body as Partial<GenerationRequest> & { userId?: string };
+      const body = req?.body as Partial<GenerationRequest> & { userId?: string };
       const userId: string = req?.user?.id || body?.userId || "";
 
       if (!body?.input?.payload) {
-        return res?.status(400).json({ error: "input?.payload is required" });
+        return res?.status(400).json({ error: "input.payload is required" });
       }
       if (!Array?.isArray(body?.platforms) || body?.platforms.length === 0) {
         return res
@@ -45,7 +45,7 @@ router?.post(
           .json({ error: "platforms array is required and must not be empty" });
       }
 
-      const _platforms = body?.platforms.filter((p) =>
+      const platforms = body?.platforms.filter((p) =>
         VALID_PLATFORMS?.has(p as Platform),
       ) as Platform[];
       if (platforms?.length === 0) {
@@ -54,33 +54,33 @@ router?.post(
         });
       }
 
-      const _packId =
+      const packId =
         body?.packId && VALID_PACKS?.has(body?.packId as PackId)
           ? (body?.packId as PackId)
           : undefined;
 
       const genRequest: GenerationRequest = {
-        id: body?.id || randomUUID(),
+        id: body.id || randomUUID(),
         userId,
-        artistProfileId: body?.artistProfileId,
+        artistProfileId: body.artistProfileId,
         input: {
-          modality: body?.input.modality || "text",
-          payload: body?.input.payload,
-          metadata: body?.input.metadata,
+          modality: body.input.modality || "text",
+          payload: body.input.payload,
+          metadata: body.input.metadata,
         },
         platforms,
         packId,
-        intent: body?.intent,
-        constraints: body?.constraints,
+        intent: body.intent,
+        constraints: body.constraints,
       };
 
-      const _pkg = await handleGeneration(genRequest);
+      const pkg = await handleGeneration(genRequest);
       return res?.json(pkg);
     } catch (err) {
       logger?.warn({ err: err }, "[POST /multimodal/generate]");
       return res
         .status(500)
-        .json({ error: err?.message || "Generation failed" });
+        .json({ error: err.message || "Generation failed" });
     }
   },
 );
@@ -99,8 +99,8 @@ router?.get(
   "/platform-rules/:platform",
   requireAuthOnly,
   (req: Request, res: Response) => {
-    const _platform = req?.params.platform as Platform;
-    const _rules = PLATFORM_RULES[platform];
+    const platform = req?.params.platform as Platform;
+    const rules = PLATFORM_RULES[platform];
     if (!rules) {
       return res?.status(404).json({ error: `Unknown platform: ${platform}` });
     }
@@ -110,16 +110,16 @@ router?.get(
 
 // GET /api/multimodal/packs  — list available pack definitions
 router?.get("/packs", requireAuthOnly, (_req: Request, res: Response) => {
-  const _packs = Object?.entries(PACK_DEFINITIONS).map(([id, slots]) => ({
+  const packs = Object?.entries(PACK_DEFINITIONS).map(([id, slots]) => ({
     id,
-    slotCount: slots?.length,
+    slotCount: slots.length,
     platforms: [...new Set(slots?.map((s) => s?.platform))],
     modalities: [...new Set(slots?.map((s) => s?.modality))],
-    slots: slots?.map((s) => ({
-      id: s?.id,
-      platform: s?.platform,
-      modality: s?.modality,
-      purpose: s?.purpose,
+    slots: slots.map((s) => ({
+      id: s.id,
+      platform: s.platform,
+      modality: s.modality,
+      purpose: s.purpose,
     })),
   }));
   return res?.json({ packs });

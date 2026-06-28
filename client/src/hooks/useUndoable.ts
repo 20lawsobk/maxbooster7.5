@@ -34,9 +34,9 @@ export function useUndoable<T, Args extends unknown[]>(
   redoFn?: (...args: Args) => Promise<T>,
 ): UseUndoableReturn<T, Args> {
   const { executeAction } = useUndo();
-  const _isExecutingRef = useRef(false);
+  const isExecutingRef = useRef(false);
 
-  const _execute = useCallback(
+  const execute = useCallback(
     async (...args: Args): Promise<T> => {
       if (isExecutingRef?.current) {
         throw new Error("Action already in progress");
@@ -46,21 +46,21 @@ export function useUndoable<T, Args extends unknown[]>(
 
       try {
         const metadata: ActionMetadata = {
-          timestamp: Date?.now(),
-          module: options?.module,
-          description: options?.description || `${options?.type} action`,
-          category: options?.category,
-          entityId: options?.entityId,
-          entityType: options?.entityType,
+          timestamp: Date.now(),
+          module: options.module,
+          description: options.description || `${options?.type} action`,
+          category: options.category,
+          entityId: options.entityId,
+          entityType: options.entityType,
           isDestructive:
             options?.isDestructive ?? isDestructiveAction(options?.type),
-          requiresConfirmation: options?.requiresConfirmation,
+          requiresConfirmation: options.requiresConfirmation,
         };
 
         let actionResult: T;
 
         const action: Omit<UndoableAction<T>, "id" | "isUndone" | "result"> = {
-          type: options?.type,
+          type: options.type,
           metadata,
           execute: async () => {
             actionResult = await executeFn(...args);
@@ -73,7 +73,7 @@ export function useUndoable<T, Args extends unknown[]>(
           },
           redo: redoFn
             ? async () => {
-                const _result = await redoFn(...args);
+                const result = await redoFn(...args);
                 options?.onRedo?.();
                 return result;
               }
@@ -92,7 +92,7 @@ export function useUndoable<T, Args extends unknown[]>(
 
   return {
     execute,
-    isExecuting: isExecutingRef?.current,
+    isExecuting: isExecutingRef.current,
   };
 }
 
@@ -103,25 +103,25 @@ export function useUndoableWithState<T, S>(
   getCurrentState: () => S,
 ) {
   const { executeAction } = useUndo();
-  const _stateRef = useRef<{ previous: S; current: S } | null>(null);
+  const stateRef = useRef<{ previous: S; current: S } | null>(null);
 
-  const _execute = useCallback(async (): Promise<T> => {
-    const _previousState = getCurrentState();
+  const execute = useCallback(async (): Promise<T> => {
+    const previousState = getCurrentState();
 
     const metadata: ActionMetadata = {
-      timestamp: Date?.now(),
-      module: options?.module,
-      description: options?.description || `${options?.type} action`,
-      category: options?.category,
-      entityId: options?.entityId,
-      entityType: options?.entityType,
-      isDestructive: options?.isDestructive ?? isDestructiveAction(options?.type),
-      requiresConfirmation: options?.requiresConfirmation,
+      timestamp: Date.now(),
+      module: options.module,
+      description: options.description || `${options?.type} action`,
+      category: options.category,
+      entityId: options.entityId,
+      entityType: options.entityType,
+      isDestructive: options.isDestructive ?? isDestructiveAction(options?.type),
+      requiresConfirmation: options.requiresConfirmation,
       previousState,
     };
 
     const action: Omit<UndoableAction<T>, "id" | "isUndone" | "result"> = {
-      type: options?.type,
+      type: options.type,
       metadata,
       execute: async () => {
         const { result, newState } = await executeFn(previousState);
@@ -139,7 +139,7 @@ export function useUndoableWithState<T, S>(
           stateRef?.current?.previous || previousState,
         );
         stateRef.current = {
-          previous: stateRef?.current?.previous || previousState,
+          previous: stateRef.current?.previous || previousState,
           current: newState,
         };
         return result;
@@ -166,20 +166,20 @@ export function useUndoableAsync<T>(
 
   return useCallback(async (): Promise<T> => {
     const metadata: ActionMetadata = {
-      timestamp: Date?.now(),
-      module: options?.module,
-      description: options?.description || `${options?.type} action`,
-      category: options?.category,
-      entityId: options?.entityId,
-      entityType: options?.entityType,
-      isDestructive: options?.isDestructive ?? isDestructiveAction(options?.type),
-      requiresConfirmation: options?.requiresConfirmation,
+      timestamp: Date.now(),
+      module: options.module,
+      description: options.description || `${options?.type} action`,
+      category: options.category,
+      entityId: options.entityId,
+      entityType: options.entityType,
+      isDestructive: options.isDestructive ?? isDestructiveAction(options?.type),
+      requiresConfirmation: options.requiresConfirmation,
     };
 
     let result: T;
 
     const action: Omit<UndoableAction<T>, "id" | "isUndone" | "result"> = {
-      type: options?.type,
+      type: options.type,
       metadata,
       execute: async () => {
         result = await config?.execute();
@@ -188,9 +188,9 @@ export function useUndoableAsync<T>(
       undo: async () => {
         await config?.undo(result!);
       },
-      redo: config?.redo,
+      redo: config.redo,
       canUndo: () => true,
-      canRedo: config?.redo ? () => true : undefined,
+      canRedo: config.redo ? () => true : undefined,
     };
 
     return executeAction(action);
@@ -200,7 +200,7 @@ export function useUndoableAsync<T>(
 export function useUndoableBatch<T>(module: string, description: string) {
   const { executeAction, startGroup, endGroup } = useUndo();
 
-  const _executeBatch = useCallback(
+  const executeBatch = useCallback(
     async (
       actions: Array<{
         type: ActionType;
@@ -210,16 +210,16 @@ export function useUndoableBatch<T>(module: string, description: string) {
         description?: string;
       }>,
     ): Promise<T[]> => {
-      const _groupId = startGroup(description);
+      const groupId = startGroup(description);
       const results: T[] = [];
 
       try {
         for (const actionConfig of actions) {
           const metadata: ActionMetadata = {
-            timestamp: Date?.now(),
+            timestamp: Date.now(),
             module,
-            description: actionConfig?.description || description,
-            category: actionConfig?.category,
+            description: actionConfig.description || description,
+            category: actionConfig.category,
           };
 
           let actionResult: T;
@@ -228,7 +228,7 @@ export function useUndoableBatch<T>(module: string, description: string) {
             UndoableAction<T>,
             "id" | "isUndone" | "result"
           > = {
-            type: actionConfig?.type,
+            type: actionConfig.type,
             metadata,
             execute: async () => {
               actionResult = await actionConfig?.execute();
@@ -240,7 +240,7 @@ export function useUndoableBatch<T>(module: string, description: string) {
             canUndo: () => true,
           };
 
-          const _result = await executeAction(action);
+          const result = await executeAction(action);
           results?.push(result);
         }
 

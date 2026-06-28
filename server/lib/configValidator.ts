@@ -17,7 +17,7 @@ interface ValidationResult {
   errors: string[];
 }
 
-const _isProduction = () =>
+const isProduction = () =>
   process?.env.NODE_ENV === "production" || !!process?.env.REPLIT_DEPLOYMENT;
 
 export function validateScaleConfig(): ValidationResult {
@@ -60,7 +60,7 @@ export function validateScaleConfig(): ValidationResult {
   }
 
   // ── Admission control ─────────────────────────────────────────────────────
-  const _maxConcurrent = parseInt(
+  const maxConcurrent = parseInt(
     process?.env.MAX_CONCURRENT_REQUESTS ?? "5000",
     10,
   );
@@ -81,12 +81,12 @@ export function validateScaleConfig(): ValidationResult {
     warnings?.push(
       "[ScaleConfig] APP_URL is not set. " +
         "Email verification links and OAuth redirect URIs will use a fallback URL. " +
-        "Set APP_URL=https://your-domain?.replit.app for correct email links in production.",
+        "Set APP_URL=https://your-domain.replit.app for correct email links in production.",
     );
   }
 
   // ── BullMQ ────────────────────────────────────────────────────────────────
-  const _bullConcurrency = parseInt(process?.env.BULLMQ_CONCURRENCY ?? "5", 10);
+  const bullConcurrency = parseInt(process?.env.BULLMQ_CONCURRENCY ?? "5", 10);
   if (bullConcurrency > 20) {
     warnings?.push(
       `[ScaleConfig] BULLMQ_CONCURRENCY is ${bullConcurrency}. ` +

@@ -149,8 +149,8 @@ interface WindowedEvent {
   metadata?: Record<string, unknown>;
 }
 
-const _EVENT_WINDOW_MS = 10 * 60_000; // 10 minutes
-const _MAX_WINDOW_SIZE = 2000;
+const EVENT_WINDOW_MS = 10 * 60_000; // 10 minutes
+const MAX_WINDOW_SIZE = 2000;
 
 // ─── Signals extracted from the window ───────────────────────────────────────
 
@@ -194,7 +194,7 @@ interface InferenceRule {
 interface SecurityRule {
   id: SecurityIntent;
   name: string;
-  threatTypes: string[]; // ThreatAssessment?.threatType values that match
+  threatTypes: string[]; // ThreatAssessment.threatType values that match
   indicators: RegExp[]; // Indicator patterns that match
   explain(
     indicators: string[],
@@ -211,13 +211,13 @@ const INFERENCE_RULES: InferenceRule[] = [
     id: "pdim_cold_start",
     name: "PDIM Cold-Start Cascade",
     matches: (s) =>
-      s?.pdim5xxCount > 0 && !s?.pdimHadFirstSuccess && s?.uptimeMs < 120_000,
+      s.pdim5xxCount > 0 && !s.pdimHadFirstSuccess && s.uptimeMs < 120_000,
     confidence: (s) => {
       let c = 0.7;
-      if (s?.uptimeMs < 60_000) c += 0.15;
-      if (!s?.pdimCircuitOpen) c += 0.1; // slow-lane, not open = expected
-      if (s?.seedingFailCount > 0) c += 0.05;
-      return Math?.min(c, 0.97);
+      if (s.uptimeMs < 60_000) c += 0.15;
+      if (!s.pdimCircuitOpen) c += 0.1; // slow-lane, not open = expected
+      if (s.seedingFailCount > 0) c += 0.05;
+      return Math.min(c, 0.97);
     },
     explain: (s) => ({
       what: "PDIM (the key-value store) is still waking up after restart.",
@@ -226,7 +226,7 @@ const INFERENCE_RULES: InferenceRule[] = [
       severity: "negligible",
       expectedResolution:
         "PDIM will complete initialisation within 3–8 minutes of the first request. The circuit-breaker slow-lane absorbs failures silently. All queued operations will resume automatically.",
-      estimatedResolutionMs: Math?.max(0, 480_000 - s?.uptimeMs),
+      estimatedResolutionMs: Math.max(0, 480_000 - s?.uptimeMs),
       recommendedActions: [
         {
           priority: "low",
@@ -262,9 +262,9 @@ const INFERENCE_RULES: InferenceRule[] = [
       s?.uptimeMs < 780_000,
     confidence: (s) => {
       let c = 0.65;
-      if (s?.luaSaturationCount > 0) c += 0.15;
-      if (s?.seedingFailCount > 0) c += 0.1;
-      if (s?.uptimeMs < 480_000) c += 0.05;
+      if (s.luaSaturationCount > 0) c += 0.15;
+      if (s.seedingFailCount > 0) c += 0.1;
+      if (s.uptimeMs < 480_000) c += 0.05;
       return Math?.min(c, 0.92);
     },
     explain: (s) => ({
@@ -274,7 +274,7 @@ const INFERENCE_RULES: InferenceRule[] = [
       severity: "low",
       expectedResolution:
         'Will fully resolve when PDIM\'s first successful response triggers the "warm" transition. Typically 3–6 minutes after the grace window ends.',
-      estimatedResolutionMs: Math?.max(0, 780_000 - s?.uptimeMs),
+      estimatedResolutionMs: Math.max(0, 780_000 - s?.uptimeMs),
       recommendedActions: [
         {
           priority: "low",
@@ -311,9 +311,9 @@ const INFERENCE_RULES: InferenceRule[] = [
       s?.pdim5xxCount > 5 && s?.pdimCircuitOpen && s?.uptimeMs > 600_000,
     confidence: (s) => {
       let c = 0.6;
-      if (s?.uptimeMs > 900_000) c += 0.15; // well past warm-up
-      if (s?.pdim5xxCount > 20) c += 0.1;
-      if (s?.incidentCount > 0) c += 0.1;
+      if (s.uptimeMs > 900_000) c += 0.15; // well past warm-up
+      if (s.pdim5xxCount > 20) c += 0.1;
+      if (s.incidentCount > 0) c += 0.1;
       return Math?.min(c, 0.88);
     },
     explain: (s) => ({
@@ -328,7 +328,7 @@ const INFERENCE_RULES: InferenceRule[] = [
       recommendedActions: [
         {
           priority: "high",
-          action: "Check pocketdimensionstorage?.replit.app deployment status",
+          action: "Check pocketdimensionstorage.replit.app deployment status",
           rationale:
             "PDIM is a separate Replit deployment; it may have been stopped, is restarting, or has an error.",
           automated: false,
@@ -362,7 +362,7 @@ const INFERENCE_RULES: InferenceRule[] = [
     matches: (s) => s?.luaSaturationCount > 0 && s?.luaMaxQueued >= 3,
     confidence: (s) => {
       let c = 0.75;
-      if (s?.pdim5xxCount > 0) c += 0.1; // common concurrent cause
+      if (s.pdim5xxCount > 0) c += 0.1; // common concurrent cause
       if (s?.luaMaxQueued >= 5) c += 0.1;
       return Math?.min(c, 0.92);
     },
@@ -371,10 +371,10 @@ const INFERENCE_RULES: InferenceRule[] = [
       why: "BullMQ, HyperLearning, AIService seeding, and ChainFixer are all issuing concurrent PDIM commands. The single-slot LuaExecutor serialises them, creating a queue when PDIM responses are slow during cold-start.",
       impact:
         "BullMQ job polling is delayed; stale-job detection runs late; some lock timeouts may occur causing BullMQ to re-queue jobs (no data loss).",
-      severity: s?.luaMaxQueued >= 5 ? "medium" : "low",
+      severity: s.luaMaxQueued >= 5 ? "medium" : "low",
       expectedResolution:
         "ChainFixer proactively resets the semaphore when saturation is detected. Queue drains automatically as PDIM warms up and response times improve.",
-      estimatedResolutionMs: s?.pdimHadFirstSuccess ? 60_000 : null,
+      estimatedResolutionMs: s.pdimHadFirstSuccess ? 60_000 : null,
       recommendedActions: [
         {
           priority: "low",
@@ -393,8 +393,8 @@ const INFERENCE_RULES: InferenceRule[] = [
           ? [`${s?.bullmqLockCount} BullMQ lock race(s) (downstream effect)`]
           : []),
       ],
-      isRoutineNoise: s?.uptimeMs < 480_000,
-      requiresHumanAttention: s?.luaMaxQueued >= 8,
+      isRoutineNoise: s.uptimeMs < 480_000,
+      requiresHumanAttention: s.luaMaxQueued >= 8,
     }),
   },
 
@@ -405,8 +405,8 @@ const INFERENCE_RULES: InferenceRule[] = [
     matches: (s) => s?.bullmqLockCount > 0,
     confidence: (s) => {
       let c = 0.8;
-      if (s?.luaSaturationCount > 0) c += 0.1;
-      if (s?.pdim5xxCount > 0) c += 0.05;
+      if (s.luaSaturationCount > 0) c += 0.1;
+      if (s.pdim5xxCount > 0) c += 0.05;
       return Math?.min(c, 0.93);
     },
     explain: (s) => ({
@@ -446,12 +446,12 @@ const INFERENCE_RULES: InferenceRule[] = [
     matches: (s) => s?.memHeapPct > 80 || s?.memPressureEvents > 0,
     confidence: (s) => {
       let c = 0.85;
-      if (s?.memHeapPct > 92) c = 0.95;
+      if (s.memHeapPct > 92) c = 0.95;
       return c;
     },
     explain: (s) => ({
       what: `Heap is at ${s?.memHeapPct}% of the V8 limit.`,
-      why: "High memory usage may indicate a memory leak in a long-running loop, accumulation of cached data without eviction, or large in-memory payloads (e?.g. AI model weights, audio buffers, bulk analytics results).",
+      why: "High memory usage may indicate a memory leak in a long-running loop, accumulation of cached data without eviction, or large in-memory payloads (e.g. AI model weights, audio buffers, bulk analytics results).",
       impact:
         s?.memHeapPct > 92
           ? "Imminent OOM risk — platform auto-fixer has forced a GC cycle."
@@ -463,7 +463,7 @@ const INFERENCE_RULES: InferenceRule[] = [
       estimatedResolutionMs: null,
       recommendedActions: [
         {
-          priority: s?.memHeapPct > 90 ? "high" : "medium",
+          priority: s.memHeapPct > 90 ? "high" : "medium",
           action: "Monitor heap trend over next 5 minutes",
           rationale:
             "If heap is growing linearly (not sawtooth from GC), a leak is likely.",
@@ -487,8 +487,8 @@ const INFERENCE_RULES: InferenceRule[] = [
           ? [`${s?.memPressureEvents} heap warning event(s) in window`]
           : []),
       ],
-      isRoutineNoise: s?.memHeapPct < 85,
-      requiresHumanAttention: s?.memHeapPct > 90,
+      isRoutineNoise: s.memHeapPct < 85,
+      requiresHumanAttention: s.memHeapPct > 90,
     }),
   },
 
@@ -503,7 +503,7 @@ const INFERENCE_RULES: InferenceRule[] = [
       why: "Possible causes: Neon PostgreSQL cold-start (serverless wake-up), table lock contention, a long-running transaction, or a missing index on a newly-queried column.",
       impact:
         "API endpoints that read from the database are slower than normal. HyperLearning analytics queries may time out and return empty results.",
-      severity: s?.dbSlowCount > 10 ? "medium" : "low",
+      severity: s.dbSlowCount > 10 ? "medium" : "low",
       expectedResolution:
         "Neon PostgreSQL cold-starts self-resolve within 10–30 seconds. Persistent slowness requires query analysis.",
       estimatedResolutionMs: 30_000,
@@ -517,8 +517,8 @@ const INFERENCE_RULES: InferenceRule[] = [
         },
       ],
       correlatedSignals: [`${s?.dbSlowCount} slow-query/timeout events`],
-      isRoutineNoise: s?.dbSlowCount <= 3,
-      requiresHumanAttention: s?.dbSlowCount > 10,
+      isRoutineNoise: s.dbSlowCount <= 3,
+      requiresHumanAttention: s.dbSlowCount > 10,
     }),
   },
 
@@ -580,7 +580,7 @@ const INFERENCE_RULES: InferenceRule[] = [
           automated: false,
         },
       ],
-      correlatedSignals: s?.unknownErrors.slice(0, 3),
+      correlatedSignals: s.unknownErrors.slice(0, 3),
       isRoutineNoise: false,
       requiresHumanAttention: true,
     }),
@@ -680,16 +680,16 @@ const SECURITY_RULES: SecurityRule[] = [
       /sleep\(/i,
       /benchmark\(/i,
     ],
-    explain: (indicators, threatLevel, _requestCount) => ({
+    explain: (indicators, threatLevel, requestCount) => ({
       intentLabel:
         "SQL injection — attempting to extract data or execute database commands.",
       attackStage: "exploitation",
-      sophistication: indicators?.some((i) =>
+      sophistication: indicators.some((i) =>
         /sleep|benchmark|waitfor/i?.test(i?.source),
       )
         ? "targeted"
         : "automated",
-      sophisticationLabel: indicators?.some((i) =>
+      sophisticationLabel: indicators.some((i) =>
         /sleep|benchmark|waitfor/i?.test(i?.source),
       )
         ? "Targeted: time-based blind injection suggests a skilled attacker."
@@ -720,7 +720,7 @@ const SECURITY_RULES: SecurityRule[] = [
     name: "XSS Injection Attempt",
     threatTypes: ["xss"],
     indicators: [/<script/i, /javascript:/i, /onerror=/i, /onload=/i],
-    explain: (_indicators, threatLevel, _requestCount) => ({
+    explain: (indicators, threatLevel, requestCount) => ({
       intentLabel:
         "Cross-site scripting — attempting to inject client-side code into responses.",
       attackStage: "exploitation",
@@ -752,7 +752,7 @@ const SECURITY_RULES: SecurityRule[] = [
     name: "Path Traversal Attempt",
     threatTypes: ["path_traversal"],
     indicators: [/\.\.\//i, /%2e%2e/i, /etc\/passwd/i, /windows\/system32/i],
-    explain: (_indicators, threatLevel, _requestCount) => ({
+    explain: (indicators, threatLevel, requestCount) => ({
       intentLabel:
         "Path traversal — attempting to read files outside the web root.",
       attackStage: "exploitation",
@@ -778,7 +778,7 @@ const SECURITY_RULES: SecurityRule[] = [
     name: "Volumetric DoS / DDoS",
     threatTypes: ["ddos", "rate_abuse"],
     indicators: [/rate?.limit/i, /too many request/i],
-    explain: (_indicators, threatLevel, requestCount) => ({
+    explain: (indicators, threatLevel, requestCount) => ({
       intentLabel:
         "Volumetric denial of service — flooding with requests to exhaust server capacity.",
       attackStage: "exploitation",
@@ -810,7 +810,7 @@ const SECURITY_RULES: SecurityRule[] = [
     name: "Unclassified Threat",
     threatTypes: ["unknown"],
     indicators: [],
-    explain: (_indicators, threatLevel, _requestCount) => ({
+    explain: (indicators, threatLevel, requestCount) => ({
       intentLabel:
         "Unclassified threat — does not match known attack pattern taxonomy.",
       attackStage: "reconnaissance",
@@ -843,7 +843,7 @@ class SystemIntelligenceEngine extends EventEmitter {
   private insights: Insight[] = [];
   private _startedAt: number = Date?.now();
   private _firstPdimSuccessAt: number = 0;
-  private _chainFixerFires: Array<{
+  private chainFixerFires: Array<{
     ts: number;
     patternId: string;
     patternName: string;
@@ -871,7 +871,7 @@ class SystemIntelligenceEngine extends EventEmitter {
     });
 
     // Periodic insight refresh
-    const _insightTimer = setInterval(() => this?._refreshInsights(), 60_000);
+    const insightTimer = setInterval(() => this?._refreshInsights(), 60_000);
     insightTimer?.unref();
 
     logger?.info(
@@ -884,7 +884,7 @@ class SystemIntelligenceEngine extends EventEmitter {
 
     // Cache circuit-breaker accessor to avoid require() in hot path
     try {
-      const _cbMod = await import("../lib/pdimCircuitBreaker.js");
+      const cbMod = await import("../lib/pdimCircuitBreaker.js");
       this._cbIsOpen = cbMod?.cbIsOpen;
     } catch {
       /* non-fatal — cbIsOpen defaults to false */
@@ -895,12 +895,12 @@ class SystemIntelligenceEngine extends EventEmitter {
       chainErrorAutoFixer?.on(
         "fixed",
         (ev: { patternId: string; attempt: number }) => {
-          this?._chainFixerFires.push({
-            ts: Date?.now(),
-            patternId: ev?.patternId,
-            patternName: ev?.patternId,
+          this?.chainFixerFires.push({
+            ts: Date.now(),
+            patternId: ev.patternId,
+            patternName: ev.patternId,
           });
-          if (this?._chainFixerFires.length > 200) this?._chainFixerFires.shift();
+          if (this?.chainFixerFires.length > 200) this?.chainFixerFires.shift();
         },
       );
     } catch {
@@ -914,14 +914,14 @@ class SystemIntelligenceEngine extends EventEmitter {
         (inc: { severity: string; title: string }) => {
           this?._addInsight({
             id: `incident_${Date?.now()}`,
-            priority: inc?.severity as Insight["priority"],
+            priority: inc.severity as Insight["priority"],
             title: `Platform Incident: ${inc?.title}`,
             detail:
               "The platform auto-fixer has opened a new incident. Check the Incidents dashboard for details.",
             action:
               "Review incident details and applied patches in the Platform Fixer admin panel.",
             automated: true,
-            since: Date?.now(),
+            since: Date.now(),
           });
         },
       );
@@ -943,12 +943,12 @@ class SystemIntelligenceEngine extends EventEmitter {
           indicators: string[];
           detectionTime: number;
         }) => {
-          this?._threatCount++;
-          const _understanding = this?._classifySecurityThreat(assessment);
+          this._threatCount++;
+          const understanding = this?._classifySecurityThreat(assessment);
           this?.recentSecurityUnderstandings.unshift({
             ...understanding,
             ip: "classified",
-            threatId: assessment?.id,
+            threatId: assessment.id,
           });
           if (this?.recentSecurityUnderstandings.length > 100)
             this?.recentSecurityUnderstandings.pop();
@@ -959,21 +959,21 @@ class SystemIntelligenceEngine extends EventEmitter {
           ) {
             this?._addInsight({
               id: `threat_${assessment?.id}`,
-              priority: assessment?.threatLevel > 0.9 ? "critical" : "high",
+              priority: assessment.threatLevel > 0.9 ? "critical" : "high",
               title: `Security: ${understanding?.intentLabel.split("—")[0].trim()}`,
-              detail: understanding?.reasoning,
+              detail: understanding.reasoning,
               action:
                 understanding?.countermeasures[0]?.action ??
                 "Review threat assessment.",
-              automated: understanding?.countermeasures[0]?.automated ?? false,
-              since: Date?.now(),
+              automated: understanding.countermeasures[0]?.automated ?? false,
+              since: Date.now(),
             });
           }
         },
       );
 
       selfHealingEngine?.on("threat_healed", () => {
-        this?._healedThreats++;
+        this._healedThreats++;
       });
     } catch {
       /* optional */
@@ -983,7 +983,7 @@ class SystemIntelligenceEngine extends EventEmitter {
   // ─── Event window management ───────────────────────────────────────────────
 
   private _ingestLogEntry(entry: LogEntry): void {
-    const _now = Date?.now();
+    const now = Date?.now();
 
     // Detect PDIM first success
     if (
@@ -996,13 +996,13 @@ class SystemIntelligenceEngine extends EventEmitter {
 
     this?.eventWindow.push({
       ts: now,
-      level: entry?.level,
-      message: entry?.message,
-      metadata: entry?.metadata,
+      level: entry.level,
+      message: entry.message,
+      metadata: entry.metadata,
     });
 
     // Prune old entries
-    const _cutoff = now - EVENT_WINDOW_MS;
+    const cutoff = now - EVENT_WINDOW_MS;
     while (this?.eventWindow.length > 0 && this?.eventWindow[0].ts < cutoff) {
       this?.eventWindow.shift();
     }
@@ -1014,8 +1014,8 @@ class SystemIntelligenceEngine extends EventEmitter {
   // ─── Signal extraction ─────────────────────────────────────────────────────
 
   private _extractSignals(): Signals {
-    const _mem = process?.memoryUsage();
-    const _heapPct = Math?.round((mem?.heapUsed / mem?.heapTotal) * 100);
+    const mem = process?.memoryUsage();
+    const heapPct = Math?.round((mem?.heapUsed / mem?.heapTotal) * 100);
 
     let pdim5xxCount = 0;
     let pdim5xxRecentMs = 0;
@@ -1027,10 +1027,10 @@ class SystemIntelligenceEngine extends EventEmitter {
     let dbSlowCount = 0;
     let unknownErrorCount = 0;
     const unknownErrors: string[] = [];
-    const _chainFixerPatternSet = new Set<string>();
+    const chainFixerPatternSet = new Set<string>();
 
     for (const ev of this?.eventWindow) {
-      const _m = ev?.message;
+      const m = ev?.message;
 
       if (/PDIM HTTP 5\d\d|ERR PDIM HTTP 5/i?.test(m)) {
         pdim5xxCount++;
@@ -1038,7 +1038,7 @@ class SystemIntelligenceEngine extends EventEmitter {
       }
       if (/LuaExecutor busy/i?.test(m)) {
         luaSatCount++;
-        const _match = m?.match(/(\d+)\s+queued/);
+        const match = m?.match(/(\d+)\s+queued/);
         if (match)
           luaMaxQueued = Math?.max(luaMaxQueued, parseInt(match[1], 10));
       }
@@ -1055,7 +1055,7 @@ class SystemIntelligenceEngine extends EventEmitter {
         unknownErrorCount++;
         if (unknownErrors?.length < 5) unknownErrors?.push(m?.slice(0, 120));
       }
-      const _fixerMatch = m?.match(/\[ChainFixer\] (.+?) —/);
+      const fixerMatch = m?.match(/\[ChainFixer\] (.+?) —/);
       if (fixerMatch) chainFixerPatternSet?.add(fixerMatch[1]);
     }
 
@@ -1067,8 +1067,8 @@ class SystemIntelligenceEngine extends EventEmitter {
     let incidentCount = 0;
 
     // ChainFixer fires in window (from our subscription)
-    const _windowCutoff = Date?.now() - EVENT_WINDOW_MS;
-    const _chainFixerFires = this?._chainFixerFires.filter(
+    const windowCutoff = Date?.now() - EVENT_WINDOW_MS;
+    const chainFixerFires = this?.chainFixerFires.filter(
       (f) => f?.ts > windowCutoff,
     );
     for (const f of chainFixerFires) chainFixerPatternSet?.add(f?.patternId);
@@ -1076,17 +1076,17 @@ class SystemIntelligenceEngine extends EventEmitter {
     // Determine circuit state using cached accessor (set during _subscribeToSystems)
     let pdimCircuitOpen = false;
     try {
-      if (this?._cbIsOpen) pdimCircuitOpen = this?._cbIsOpen();
+      if (this._cbIsOpen) pdimCircuitOpen = this?._cbIsOpen();
     } catch {
       /* non-fatal */
     }
 
     return {
-      uptimeMs: Date?.now() - this?._startedAt,
+      uptimeMs: Date.now() - this?._startedAt,
       pdim5xxCount,
       pdim5xxRecentMs,
       pdimCircuitOpen,
-      pdimHadFirstSuccess: this?._firstPdimSuccessAt > 0,
+      pdimHadFirstSuccess: this._firstPdimSuccessAt > 0,
       luaSaturationCount: luaSatCount,
       luaMaxQueued,
       bullmqLockCount,
@@ -1095,37 +1095,37 @@ class SystemIntelligenceEngine extends EventEmitter {
       memPressureEvents,
       dbSlowCount,
       routeErrSpikes,
-      chainFixerFires: chainFixerFires?.length,
+      chainFixerFires: chainFixerFires.length,
       chainFixerPatterns: [...chainFixerPatternSet],
       incidentCount,
       incidentTitles,
       unknownErrorCount,
       unknownErrors,
-      securityThreatCount: this?._threatCount,
+      securityThreatCount: this._threatCount,
     };
   }
 
   // ─── Inference engine ──────────────────────────────────────────────────────
 
   analyzeCurrentState(): ErrorUnderstanding[] {
-    const _signals = this?._extractSignals();
+    const signals = this?._extractSignals();
     const results: ErrorUnderstanding[] = [];
 
     for (const rule of INFERENCE_RULES) {
       if (!rule?.matches(signals)) continue;
-      const _confidence = rule?.confidence(signals);
+      const confidence = rule?.confidence(signals);
       if (confidence < 0.4) continue;
 
       results?.push({
-        errorClass: rule?.id,
+        errorClass: rule.id,
         confidence,
-        enrichedAt: Date?.now(),
+        enrichedAt: Date.now(),
         ...rule?.explain(signals),
       });
     }
 
     // Sort by severity then confidence
-    const _SEV_ORDER = {
+    const SEV_ORDER = {
       critical: 5,
       high: 4,
       medium: 3,
@@ -1133,7 +1133,7 @@ class SystemIntelligenceEngine extends EventEmitter {
       negligible: 1,
     };
     results?.sort((a, b) => {
-      const _sd = SEV_ORDER[b?.severity] - SEV_ORDER[a?.severity];
+      const sd = SEV_ORDER[b?.severity] - SEV_ORDER[a?.severity];
       return sd !== 0 ? sd : b?.confidence - a?.confidence;
     });
 
@@ -1149,24 +1149,24 @@ class SystemIntelligenceEngine extends EventEmitter {
     indicators: string[];
     detectionTime: number;
   }): SecurityUnderstanding {
-    const _indicators = assessment?.indicators;
-    const _requestCount = indicators?.length; // proxy for volume
+    const indicators = assessment?.indicators;
+    const requestCount = indicators?.length; // proxy for volume
 
     for (const rule of SECURITY_RULES) {
-      const _typeMatch = rule?.threatTypes.some(
+      const typeMatch = rule?.threatTypes.some(
         (t) =>
           assessment?.threatType.toLowerCase().includes(t) ||
           t?.includes(assessment?.threatType.toLowerCase()),
       );
-      const _indicatorMatch = rule?.indicators.some((pat) =>
+      const indicatorMatch = rule?.indicators.some((pat) =>
         indicators?.some((i) => pat?.test(i)),
       );
 
       if (typeMatch || indicatorMatch) {
         return {
-          threatIntent: rule?.id,
-          confidence: assessment?.confidence,
-          enrichedAt: Date?.now(),
+          threatIntent: rule.id,
+          confidence: assessment.confidence,
+          enrichedAt: Date.now(),
           ...rule?.explain(
             indicators?.map((i) => i),
             assessment?.threatLevel,
@@ -1177,11 +1177,11 @@ class SystemIntelligenceEngine extends EventEmitter {
     }
 
     // Fallback
-    const _fallbackRule = SECURITY_RULES[SECURITY_RULES?.length - 1];
+    const fallbackRule = SECURITY_RULES[SECURITY_RULES?.length - 1];
     return {
       threatIntent: "unknown_threat",
-      confidence: assessment?.confidence,
-      enrichedAt: Date?.now(),
+      confidence: assessment.confidence,
+      enrichedAt: Date.now(),
       ...fallbackRule?.explain(indicators, assessment?.threatLevel, requestCount),
     };
   }
@@ -1189,9 +1189,9 @@ class SystemIntelligenceEngine extends EventEmitter {
   // ─── Narrator ─────────────────────────────────────────────────────────────
 
   narrateSystemState(): SystemNarrative {
-    const _signals = this?._extractSignals();
-    const _understandings = this?.analyzeCurrentState();
-    const _uptimeSec = Math?.round(signals?.uptimeMs / 1000);
+    const signals = this?._extractSignals();
+    const understandings = this?.analyzeCurrentState();
+    const uptimeSec = Math?.round(signals?.uptimeMs / 1000);
 
     // Determine system phase
     let systemPhase: SystemPhase;
@@ -1212,22 +1212,22 @@ class SystemIntelligenceEngine extends EventEmitter {
 
     // Health score: start at 100, subtract for problems
     let healthScore = 100;
-    if (signals?.pdimCircuitOpen) healthScore -= 30;
+    if (signals.pdimCircuitOpen) healthScore -= 30;
     else if (signals?.pdim5xxCount > 0)
       healthScore -= Math?.min(15, signals?.pdim5xxCount);
-    if (signals?.memHeapPct > 90) healthScore -= 20;
-    else if (signals?.memHeapPct > 80) healthScore -= 10;
-    if (signals?.dbSlowCount > 5) healthScore -= 15;
-    if (signals?.unknownErrorCount > 0) healthScore -= 10;
-    if (signals?.incidentCount > 0) healthScore -= signals?.incidentCount * 8;
+    if (signals.memHeapPct > 90) healthScore -= 20;
+    else if (signals.memHeapPct > 80) healthScore -= 10;
+    if (signals.dbSlowCount > 5) healthScore -= 15;
+    if (signals.unknownErrorCount > 0) healthScore -= 10;
+    if (signals.incidentCount > 0) healthScore -= signals?.incidentCount * 8;
     healthScore = Math?.max(0, Math?.min(100, healthScore));
 
     // Trend
     let trend: TrendDirection = "stable";
-    const _recentPdim = this?.eventWindow.filter(
+    const recentPdim = this?.eventWindow.filter(
       (e) => e?.ts > Date?.now() - 2 * 60_000 && /PDIM HTTP 5/i?.test(e?.message),
     ).length;
-    const _olderPdim = this?.eventWindow.filter(
+    const olderPdim = this?.eventWindow.filter(
       (e) =>
         e?.ts <= Date?.now() - 2 * 60_000 &&
         e?.ts > Date?.now() - 5 * 60_000 &&
@@ -1237,7 +1237,7 @@ class SystemIntelligenceEngine extends EventEmitter {
     else if (recentPdim > olderPdim * 1.4) trend = "degrading";
 
     // Headline
-    const _topUnderstanding = understandings[0];
+    const topUnderstanding = understandings[0];
     let headline: string;
     if (systemPhase === "cold_starting") {
       headline =
@@ -1256,8 +1256,8 @@ class SystemIntelligenceEngine extends EventEmitter {
     }
 
     // Body
-    const _noiseCount = understandings?.filter((u) => u?.isRoutineNoise).length;
-    const _actionableCount = understandings?.filter(
+    const noiseCount = understandings?.filter((u) => u?.isRoutineNoise).length;
+    const actionableCount = understandings?.filter(
       (u) => u?.requiresHumanAttention,
     ).length;
 
@@ -1299,7 +1299,7 @@ class SystemIntelligenceEngine extends EventEmitter {
       );
     }
 
-    const _body = bodyParts?.join(" ");
+    const body = bodyParts?.join(" ");
 
     // Key insights
     const keyInsights: string[] = [];
@@ -1360,21 +1360,21 @@ class SystemIntelligenceEngine extends EventEmitter {
       phaseLabel,
       healthScore,
       trend,
-      activeThreats: this?._threatCount - this?._healedThreats,
-      topErrorClass: topUnderstanding?.errorClass ?? null,
-      topErrorDescription: topUnderstanding?.what ?? null,
+      activeThreats: this._threatCount - this?._healedThreats,
+      topErrorClass: topUnderstanding.errorClass ?? null,
+      topErrorDescription: topUnderstanding.what ?? null,
       nextExpectedEvent,
       uptimeSeconds: uptimeSec,
-      generatedAt: Date?.now(),
+      generatedAt: Date.now(),
     };
   }
 
   // ─── Actionable insights ───────────────────────────────────────────────────
 
   private _addInsight(insight: Insight): void {
-    const _existing = this?.insights.findIndex((i) => i?.id === insight?.id);
+    const existing = this?.insights.findIndex((i) => i?.id === insight?.id);
     if (existing !== -1) {
-      this?.insights[existing] = insight;
+      this.insights[existing] = insight;
       return;
     }
     this?.insights.unshift(insight);
@@ -1382,7 +1382,7 @@ class SystemIntelligenceEngine extends EventEmitter {
   }
 
   private _refreshInsights(): void {
-    const _understandings = this?.analyzeCurrentState();
+    const understandings = this?.analyzeCurrentState();
 
     for (const u of understandings) {
       if (u?.requiresHumanAttention && !u?.isRoutineNoise) {
@@ -1396,19 +1396,19 @@ class SystemIntelligenceEngine extends EventEmitter {
                 : u?.severity === "medium"
                   ? "medium"
                   : "low",
-          title: u?.errorClass
+          title: u.errorClass
             .replace(/_/g, " ")
             .replace(/\b\w/g, (c) => c?.toUpperCase()),
-          detail: u?.what + " " + u?.why,
-          action: u?.recommendedActions[0]?.action ?? "Investigate.",
-          automated: u?.recommendedActions[0]?.automated ?? false,
-          since: Date?.now(),
+          detail: u.what + " " + u?.why,
+          action: u.recommendedActions[0]?.action ?? "Investigate.",
+          automated: u.recommendedActions[0]?.automated ?? false,
+          since: Date.now(),
         });
       }
     }
 
     // Prune resolved insights older than 1 hour
-    const _cutoff = Date?.now() - 60 * 60_000;
+    const cutoff = Date?.now() - 60 * 60_000;
     this.insights = this?.insights.filter((i) => i?.since > cutoff);
   }
 
@@ -1420,45 +1420,45 @@ class SystemIntelligenceEngine extends EventEmitter {
   // ─── Admin API data ────────────────────────────────────────────────────────
 
   getStatus() {
-    const _narrative = this?.narrateSystemState();
-    const _understandings = this?.analyzeCurrentState();
-    const _signals = this?._extractSignals();
+    const narrative = this?.narrateSystemState();
+    const understandings = this?.analyzeCurrentState();
+    const signals = this?._extractSignals();
 
     return {
       narrative,
       currentUnderstandings: understandings,
       signals: {
-        uptimeSeconds: Math?.round(signals?.uptimeMs / 1000),
-        pdim5xxInWindow: signals?.pdim5xxCount,
-        pdimCircuitOpen: signals?.pdimCircuitOpen,
-        pdimWarm: signals?.pdimHadFirstSuccess,
-        luaMaxQueued: signals?.luaMaxQueued,
-        bullmqLockRaces: signals?.bullmqLockCount,
-        seedingFailures: signals?.seedingFailCount,
-        heapPercent: signals?.memHeapPct,
-        dbSlowQueries: signals?.dbSlowCount,
-        unknownErrors: signals?.unknownErrorCount,
-        chainFixerFires: signals?.chainFixerFires,
-        openIncidents: signals?.incidentCount,
-        securityThreats: signals?.securityThreatCount,
+        uptimeSeconds: Math.round(signals?.uptimeMs / 1000),
+        pdim5xxInWindow: signals.pdim5xxCount,
+        pdimCircuitOpen: signals.pdimCircuitOpen,
+        pdimWarm: signals.pdimHadFirstSuccess,
+        luaMaxQueued: signals.luaMaxQueued,
+        bullmqLockRaces: signals.bullmqLockCount,
+        seedingFailures: signals.seedingFailCount,
+        heapPercent: signals.memHeapPct,
+        dbSlowQueries: signals.dbSlowCount,
+        unknownErrors: signals.unknownErrorCount,
+        chainFixerFires: signals.chainFixerFires,
+        openIncidents: signals.incidentCount,
+        securityThreats: signals.securityThreatCount,
       },
       security: {
-        totalThreats: this?._threatCount,
-        healedThreats: this?._healedThreats,
-        recentAssessments: this?.recentSecurityUnderstandings.slice(0, 10),
+        totalThreats: this._threatCount,
+        healedThreats: this._healedThreats,
+        recentAssessments: this.recentSecurityUnderstandings.slice(0, 10),
       },
-      insights: this?.getInsights(),
-      generatedAt: Date?.now(),
+      insights: this.getInsights(),
+      generatedAt: Date.now(),
     };
   }
 
   getSecurityReport() {
     return {
-      totalThreatsDetected: this?._threatCount,
-      totalThreatsHealed: this?._healedThreats,
-      activeThreats: Math?.max(0, this?._threatCount - this?._healedThreats),
-      recentAssessments: this?.recentSecurityUnderstandings.slice(0, 20),
-      generatedAt: Date?.now(),
+      totalThreatsDetected: this._threatCount,
+      totalThreatsHealed: this._healedThreats,
+      activeThreats: Math.max(0, this?._threatCount - this?._healedThreats),
+      recentAssessments: this.recentSecurityUnderstandings.slice(0, 20),
+      generatedAt: Date.now(),
     };
   }
 
@@ -1469,4 +1469,4 @@ class SystemIntelligenceEngine extends EventEmitter {
 
 // ─── Singleton ────────────────────────────────────────────────────────────────
 
-export const _systemIntelligence = new SystemIntelligenceEngine();
+export const systemIntelligence = new SystemIntelligenceEngine();

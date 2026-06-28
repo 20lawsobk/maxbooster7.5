@@ -6,42 +6,42 @@ import { eq, and, desc, count, sql } from "drizzle-orm";
 import { z } from "zod";
 import { logger } from "../logger.js";
 
-const _router = Router();
+const router = Router();
 
-const _insertPublishingSchema = z?.object({
-  trackTitle: z?.string().min(1).max(500),
-  iswc: z?.string().max(20).optional(),
-  isrc: z?.string().max(20).optional(),
-  upc: z?.string().max(20).optional(),
-  coWriters: z?.unknown().optional(),
-  publisherName: z?.string().max(500).optional(),
-  proName: z?.string().max(200).optional(),
-  proRegistrationId: z?.string().max(200).optional(),
-  publishingSplit: z?.string().max(50).optional(),
-  writerSplit: z?.string().max(50).optional(),
+const insertPublishingSchema = z.object({
+  trackTitle: z.string().min(1).max(500),
+  iswc: z.string().max(20).optional(),
+  isrc: z.string().max(20).optional(),
+  upc: z.string().max(20).optional(),
+  coWriters: z.unknown().optional(),
+  publisherName: z.string().max(500).optional(),
+  proName: z.string().max(200).optional(),
+  proRegistrationId: z.string().max(200).optional(),
+  publishingSplit: z.string().max(50).optional(),
+  writerSplit: z.string().max(50).optional(),
   copyrightYear: z
     .number()
     .int()
     .min(1800)
     .max(new Date().getFullYear() + 1)
     .optional(),
-  status: z?.enum(["pending", "confirmed", "active", "inactive"]).optional(),
-  notes: z?.string().max(5000).optional(),
+  status: z.enum(["pending", "confirmed", "active", "inactive"]).optional(),
+  notes: z.string().max(5000).optional(),
 });
 
 // GET /api/publishing - list registered works (paginated)
 router?.get("/", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _limit = Math?.min(parseInt(req?.query.limit as string) || 50, 200);
+    const userId = req?.user!.id;
+    const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 200);
     // Cap offset — an unbounded offset forces Postgres to scan and discard rows,
     // becoming a denial-of-service vector at scale (offset=99999999).
-    const _rawOffset = parseInt(req?.query.offset as string) || 0;
-    const _offset = Math?.min(
+    const rawOffset = parseInt(req?.query.offset as string) || 0;
+    const offset = Math?.min(
       Number?.isFinite(rawOffset) && rawOffset >= 0 ? rawOffset : 0,
       100_000,
     );
-    const _works = await db
+    const works = await db
       .select()
       .from(publishingRights)
       .where(eq(publishingRights?.userId, userId))
@@ -61,12 +61,12 @@ router?.get("/", requireAuth, async (req, res) => {
 // POST /api/publishing - register new work
 router?.post("/", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _parsed = insertPublishingSchema?.safeParse(req?.body);
+    const userId = req?.user!.id;
+    const parsed = insertPublishingSchema?.safeParse(req?.body);
     if (!parsed?.success) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: parsed?.error.flatten() });
+        .json({ error: "Validation error", details: parsed.error.flatten() });
     }
     const { status: _status, ...data } = parsed?.data;
     const [work] = await db
@@ -88,13 +88,13 @@ router?.post("/", requireAuth, async (req, res) => {
 // PUT /api/publishing/:id - update registration
 router?.put("/:id", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
-    const _parsed = insertPublishingSchema?.partial().safeParse(req?.body);
+    const parsed = insertPublishingSchema?.partial().safeParse(req?.body);
     if (!parsed?.success) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: parsed?.error.flatten() });
+        .json({ error: "Validation error", details: parsed.error.flatten() });
     }
     const { status: _status, ...updateData } = parsed?.data;
     const [updated] = await db
@@ -115,7 +115,7 @@ router?.put("/:id", requireAuth, async (req, res) => {
 // DELETE /api/publishing/:id - delete record
 router?.delete("/:id", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
     const [deleted] = await db
       .delete(publishingRights)
@@ -134,7 +134,7 @@ router?.delete("/:id", requireAuth, async (req, res) => {
 // GET /api/publishing/stats - aggregate stats via SQL
 router?.get("/stats", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const [stats] = await db
       .select({
         totalWorks: count(),

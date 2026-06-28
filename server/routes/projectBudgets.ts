@@ -11,12 +11,12 @@ import { requireAuth } from "../middleware/auth.js";
 import { logger } from "../logger.js";
 import { parsePaginationParams } from "../middleware/pagination.js";
 
-const _router = Router();
+const router = Router();
 
 router?.get("/", requireAuth, async (req, res) => {
   try {
     const { limit, offset } = parsePaginationParams(req);
-    const _budgets = await db
+    const budgets = await db
       .select()
       .from(projectBudgets)
       .where(eq(projectBudgets?.userId, req?.user!.id))
@@ -53,10 +53,10 @@ router?.get("/:id", requireAuth, async (req, res) => {
 
 router?.get("/:id/items", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
 
-    const _budget = await db
+    const budget = await db
       .select()
       .from(projectBudgets)
       .where(and(eq(projectBudgets?.id, id), eq(projectBudgets?.userId, userId)))
@@ -67,7 +67,7 @@ router?.get("/:id/items", requireAuth, async (req, res) => {
     }
 
     const { limit, offset } = parsePaginationParams(req);
-    const _items = await db
+    const items = await db
       .select()
       .from(budgetLineItems)
       .where(eq(budgetLineItems?.budgetId, id))
@@ -83,9 +83,9 @@ router?.get("/:id/items", requireAuth, async (req, res) => {
 
 router?.post("/", requireAuth, async (req, res) => {
   try {
-    const _data = insertProjectBudgetSchema?.parse({
+    const data = insertProjectBudgetSchema?.parse({
       ...req?.body,
-      userId: req?.user!.id,
+      userId: req.user!.id,
     });
     const [item] = await db?.insert(projectBudgets).values(data).returning();
     res?.status(201).json(item);
@@ -94,7 +94,7 @@ router?.post("/", requireAuth, async (req, res) => {
     if (error?.name === "ZodError") {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error?.flatten() });
+        .json({ error: "Validation error", details: error.flatten() });
     }
     res?.status(500).json({ error: "Failed to create project budget" });
   }
@@ -102,10 +102,10 @@ router?.post("/", requireAuth, async (req, res) => {
 
 router?.put("/:id", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
 
-    const _existing = await db
+    const existing = await db
       .select()
       .from(projectBudgets)
       .where(and(eq(projectBudgets?.id, id), eq(projectBudgets?.userId, userId)))
@@ -115,7 +115,7 @@ router?.put("/:id", requireAuth, async (req, res) => {
       return res?.status(404).json({ error: "Budget not found" });
     }
 
-    const _data = insertProjectBudgetSchema
+    const data = insertProjectBudgetSchema
       .partial()
       .omit({ userId: true })
       .parse(req?.body);
@@ -130,7 +130,7 @@ router?.put("/:id", requireAuth, async (req, res) => {
     if (error?.name === "ZodError") {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error?.flatten() });
+        .json({ error: "Validation error", details: error.flatten() });
     }
     res?.status(500).json({ error: "Failed to update project budget" });
   }
@@ -138,10 +138,10 @@ router?.put("/:id", requireAuth, async (req, res) => {
 
 router?.delete("/:id", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
 
-    const _existing = await db
+    const existing = await db
       .select()
       .from(projectBudgets)
       .where(and(eq(projectBudgets?.id, id), eq(projectBudgets?.userId, userId)))
@@ -164,10 +164,10 @@ router?.delete("/:id", requireAuth, async (req, res) => {
 
 router?.post("/:id/items", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
 
-    const _budget = await db
+    const budget = await db
       .select()
       .from(projectBudgets)
       .where(and(eq(projectBudgets?.id, id), eq(projectBudgets?.userId, userId)))
@@ -177,7 +177,7 @@ router?.post("/:id/items", requireAuth, async (req, res) => {
       return res?.status(404).json({ error: "Budget not found" });
     }
 
-    const _data = insertBudgetLineItemSchema?.parse({
+    const data = insertBudgetLineItemSchema?.parse({
       ...req?.body,
       budgetId: id,
       userId,
@@ -189,7 +189,7 @@ router?.post("/:id/items", requireAuth, async (req, res) => {
     if (error?.name === "ZodError") {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error?.flatten() });
+        .json({ error: "Validation error", details: error.flatten() });
     }
     res?.status(500).json({ error: "Failed to create budget line item" });
   }
@@ -197,10 +197,10 @@ router?.post("/:id/items", requireAuth, async (req, res) => {
 
 router?.put("/items/:id", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
 
-    const _existing = await db
+    const existing = await db
       .select()
       .from(budgetLineItems)
       .where(
@@ -212,7 +212,7 @@ router?.put("/items/:id", requireAuth, async (req, res) => {
       return res?.status(404).json({ error: "Line item not found" });
     }
 
-    const _data = insertBudgetLineItemSchema
+    const data = insertBudgetLineItemSchema
       .partial()
       .omit({ userId: true, budgetId: true })
       .parse(req?.body);
@@ -229,7 +229,7 @@ router?.put("/items/:id", requireAuth, async (req, res) => {
     if (error?.name === "ZodError") {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error?.flatten() });
+        .json({ error: "Validation error", details: error.flatten() });
     }
     res?.status(500).json({ error: "Failed to update budget line item" });
   }
@@ -237,10 +237,10 @@ router?.put("/items/:id", requireAuth, async (req, res) => {
 
 router?.delete("/items/:id", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
 
-    const _existing = await db
+    const existing = await db
       .select()
       .from(budgetLineItems)
       .where(

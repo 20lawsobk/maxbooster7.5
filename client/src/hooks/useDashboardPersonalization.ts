@@ -38,8 +38,8 @@ export interface DashboardPreferences {
 }
 
 export function useDashboardPersonalization() {
-  const _queryClient = useQueryClient();
-  const _widgetViewTimers = useRef<Record<string, number>>({});
+  const queryClient = useQueryClient();
+  const widgetViewTimers = useRef<Record<string, number>>({});
 
   const {
     data: layout,
@@ -55,9 +55,9 @@ export function useDashboardPersonalization() {
     staleTime: 15 * 60 * 1000,
   });
 
-  const _updateLayoutMutation = useMutation({
+  const updateLayoutMutation = useMutation({
     mutationFn: async (updates: Partial<PersonalizedLayout>) => {
-      const _response = await apiRequest(
+      const response = await apiRequest(
         "PUT",
         "/api/personalization/dashboard-layout",
         updates,
@@ -71,7 +71,7 @@ export function useDashboardPersonalization() {
     },
   });
 
-  const _trackWidgetMutation = useMutation({
+  const trackWidgetMutation = useMutation({
     mutationFn: async ({
       widgetId,
       duration,
@@ -79,7 +79,7 @@ export function useDashboardPersonalization() {
       widgetId: string;
       duration: number;
     }) => {
-      const _response = await apiRequest(
+      const response = await apiRequest(
         "POST",
         "/api/personalization/track-widget-view",
         {
@@ -96,17 +96,17 @@ export function useDashboardPersonalization() {
     },
   });
 
-  const _visibleWidgets = useMemo(() => {
+  const visibleWidgets = useMemo(() => {
     return (layout?.widgets || [])
       .filter((w) => w?.visible)
       .sort((a, b) => b?.priority - a?.priority || a?.position - b?.position);
   }, [layout]);
 
-  const _hiddenWidgets = useMemo(() => {
+  const hiddenWidgets = useMemo(() => {
     return (layout?.widgets || []).filter((w) => !w?.visible);
   }, [layout]);
 
-  const _mostUsedWidgets = useMemo(() => {
+  const mostUsedWidgets = useMemo(() => {
     if (!usagePatterns) return [];
     return Object?.entries(usagePatterns as Record<string, WidgetUsageData>)
       .sort(([, a], [, b]) => b?.viewCount - a?.viewCount)
@@ -114,15 +114,15 @@ export function useDashboardPersonalization() {
       .map(([id]) => id);
   }, [usagePatterns]);
 
-  const _startWidgetView = useCallback((widgetId: string) => {
-    widgetViewTimers?.current[widgetId] = Date?.now();
+  const startWidgetView = useCallback((widgetId: string) => {
+    widgetViewTimers.current[widgetId] = Date?.now();
   }, []);
 
-  const _endWidgetView = useCallback(
+  const endWidgetView = useCallback(
     (widgetId: string) => {
-      const _startTime = widgetViewTimers?.current[widgetId];
+      const startTime = widgetViewTimers?.current[widgetId];
       if (startTime) {
-        const _duration = Date?.now() - startTime;
+        const duration = Date?.now() - startTime;
         if (duration > 1000) {
           trackWidgetMutation?.mutate({ widgetId, duration });
         }
@@ -132,11 +132,11 @@ export function useDashboardPersonalization() {
     [trackWidgetMutation],
   );
 
-  const _updateWidgetPosition = useCallback(
+  const updateWidgetPosition = useCallback(
     (widgetId: string, newPosition: number) => {
       if (!layout) return;
 
-      const _widgets = layout?.widgets
+      const widgets = layout?.widgets
         .map((w, _index) => ({
           ...w,
           position:
@@ -153,11 +153,11 @@ export function useDashboardPersonalization() {
     [layout, updateLayoutMutation],
   );
 
-  const _updateWidgetSize = useCallback(
+  const updateWidgetSize = useCallback(
     (widgetId: string, size: "small" | "medium" | "large") => {
       if (!layout) return;
 
-      const _widgets = layout?.widgets.map((w) =>
+      const widgets = layout?.widgets.map((w) =>
         w?.id === widgetId ? { ...w, size } : w,
       );
 
@@ -166,11 +166,11 @@ export function useDashboardPersonalization() {
     [layout, updateLayoutMutation],
   );
 
-  const _toggleWidgetVisibility = useCallback(
+  const toggleWidgetVisibility = useCallback(
     (widgetId: string) => {
       if (!layout) return;
 
-      const _widgets = layout?.widgets.map((w) =>
+      const widgets = layout?.widgets.map((w) =>
         w?.id === widgetId ? { ...w, visible: !w?.visible } : w,
       );
 
@@ -179,20 +179,20 @@ export function useDashboardPersonalization() {
     [layout, updateLayoutMutation],
   );
 
-  const _autoArrangeByUsage = useCallback(async () => {
+  const autoArrangeByUsage = useCallback(async () => {
     if (!layout || !usagePatterns) return;
 
-    const _usageMap = usagePatterns as Record<string, WidgetUsageData>;
-    const _widgets = [...layout?.widgets]
+    const usageMap = usagePatterns as Record<string, WidgetUsageData>;
+    const widgets = [...layout?.widgets]
       .sort((a, b) => {
-        const _aUsage = usageMap[a?.id]?.viewCount || 0;
-        const _bUsage = usageMap[b?.id]?.viewCount || 0;
+        const aUsage = usageMap[a?.id]?.viewCount || 0;
+        const bUsage = usageMap[b?.id]?.viewCount || 0;
         return bUsage - aUsage;
       })
       .map((w, index) => ({
         ...w,
         position: index,
-        priority: Math?.max(0, 10 - index),
+        priority: Math.max(0, 10 - index),
       }));
 
     await updateLayoutMutation?.mutateAsync({
@@ -202,15 +202,15 @@ export function useDashboardPersonalization() {
     });
   }, [layout, usagePatterns, updateLayoutMutation]);
 
-  const _setTheme = useCallback(
+  const setTheme = useCallback(
     (theme: "compact" | "standard" | "expanded") => {
       updateLayoutMutation?.mutate({ theme });
     },
     [updateLayoutMutation],
   );
 
-  const _resetLayout = useCallback(async () => {
-    const _response = await apiRequest(
+  const resetLayout = useCallback(async () => {
+    const response = await apiRequest(
       "POST",
       "/api/personalization/reset-defaults",
     );
@@ -220,7 +220,7 @@ export function useDashboardPersonalization() {
     });
   }, [queryClient]);
 
-  const _saveWidgetPositions = useCallback(
+  const saveWidgetPositions = useCallback(
     (
       positions: Record<
         string,
@@ -229,7 +229,7 @@ export function useDashboardPersonalization() {
     ) => {
       if (!layout) return;
 
-      const _widgets = layout?.widgets.map((w) => ({
+      const widgets = layout?.widgets.map((w) => ({
         ...w,
         position: positions[w?.id]
           ? Object?.values(positions).findIndex((p) => p === positions[w?.id])
@@ -266,7 +266,7 @@ export function useDashboardPersonalization() {
     setTheme,
     resetLayout,
     saveWidgetPositions,
-    isUpdating: updateLayoutMutation?.isPending,
+    isUpdating: updateLayoutMutation.isPending,
   };
 }
 

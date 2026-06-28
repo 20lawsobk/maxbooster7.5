@@ -96,7 +96,7 @@ class ErrorService {
   private setupGlobalHandlers() {
     // Handle unhandled errors
     window?.addEventListener("error", (event) => {
-      const _message = event?.message || "";
+      const message = event?.message || "";
       if (message?.includes("ResizeObserver loop")) {
         return;
       }
@@ -104,9 +104,9 @@ class ErrorService {
         component: "window",
         action: "unhandled-error",
         metadata: {
-          filename: event?.filename,
-          lineno: event?.lineno,
-          colno: event?.colno,
+          filename: event.filename,
+          lineno: event.lineno,
+          colno: event.colno,
         },
       });
       event?.preventDefault();
@@ -118,17 +118,17 @@ class ErrorService {
         component: "promise",
         action: "unhandled-rejection",
         metadata: {
-          promise: event?.promise,
+          promise: event.promise,
         },
       });
       event?.preventDefault();
     });
 
     // Track console errors
-    const _originalConsoleError = console?.error;
+    const originalConsoleError = console?.error;
     console.error = (...args) => {
       originalConsoleError?.apply(console, args);
-      this?.addBreadcrumb("console?.error", { args });
+      this?.addBreadcrumb("console.error", { args });
     };
   }
 
@@ -155,8 +155,8 @@ class ErrorService {
   }
 
   private categorizeError(error: Error | unknown): ErrorCategory {
-    const _errorMessage = error instanceof Error ? error?.message : String(error);
-    const _errorName = error instanceof Error ? error?.name : "";
+    const errorMessage = error instanceof Error ? error?.message : String(error);
+    const errorName = error instanceof Error ? error?.name : "";
 
     // Network errors
     if (
@@ -248,7 +248,7 @@ class ErrorService {
     error: Error | unknown,
     category: ErrorCategory,
   ): ErrorSeverity {
-    const _errorMessage = error instanceof Error ? error?.message : String(error);
+    const errorMessage = error instanceof Error ? error?.message : String(error);
 
     // Critical errors that break core functionality
     if (
@@ -273,8 +273,8 @@ class ErrorService {
     if (
       category === "permission" ||
       category === "storage" ||
-      errorMessage?.includes("deprecated") ||
-      errorMessage?.includes("warning")
+      errorMessage.includes("deprecated") ||
+      errorMessage.includes("warning")
     ) {
       return "warning";
     }
@@ -288,7 +288,7 @@ class ErrorService {
 
   private getUserFriendlyMessage(
     category: ErrorCategory,
-    _error: Error | unknown,
+    error: Error | unknown,
   ): string {
     const messages: Record<ErrorCategory, string> = {
       network:
@@ -328,10 +328,10 @@ class ErrorService {
           label: "Log In",
           type: "primary",
           action: () => {
-            const _returnUrl = encodeURIComponent(
+            const returnUrl = encodeURIComponent(
               window?.location.pathname + window?.location.search,
             );
-            window?.location.href = `/login?returnUrl=${returnUrl}`;
+            window.location.href = `/login?returnUrl=${returnUrl}`;
           },
         });
         break;
@@ -342,7 +342,7 @@ class ErrorService {
           type: "primary",
           action: () => {
             // Focus on first invalid field if available
-            const _firstInvalid = document?.querySelector(
+            const firstInvalid = document?.querySelector(
               '.error, [aria-invalid="true"]',
             );
             if (firstInvalid instanceof HTMLElement) {
@@ -358,7 +358,7 @@ class ErrorService {
           type: "primary",
           action: async () => {
             if ("caches" in window) {
-              const _cacheNames = await caches?.keys();
+              const cacheNames = await caches?.keys();
               await Promise?.all(cacheNames?.map((name) => caches?.delete(name)));
               window?.location.reload();
             }
@@ -387,13 +387,13 @@ class ErrorService {
   }
 
   private checkRateLimit(): boolean {
-    const _now = Date?.now();
+    const now = Date?.now();
     if (now - this?.lastErrorResetTime > this?.errorRateLimit.windowMs) {
       this.errorCount = 0;
       this.lastErrorResetTime = now;
     }
 
-    this?.errorCount++;
+    this.errorCount++;
     return this?.errorCount <= this?.errorRateLimit.max;
   }
 
@@ -414,15 +414,15 @@ class ErrorService {
       return;
     }
 
-    const _category = this?.categorizeError(error);
-    const _severity =
+    const category = this?.categorizeError(error);
+    const severity =
       options?.severity || this?.determineSeverity(error, category);
-    const _isTransient = this?.isTransientError(category);
+    const isTransient = this?.isTransientError(category);
 
     const context: ErrorContext = {
-      route: window?.location.pathname,
+      route: window.location.pathname,
       timestamp: new Date(),
-      userAgent: navigator?.userAgent,
+      userAgent: navigator.userAgent,
       breadcrumbs: [...this?.breadcrumbs],
       stackTrace: error instanceof Error ? error?.stack : undefined,
       ...contextOverrides,
@@ -433,13 +433,13 @@ class ErrorService {
       severity,
       category,
       message: error instanceof Error ? error?.message : String(error),
-      userMessage: this?.getUserFriendlyMessage(category, error),
+      userMessage: this.getUserFriendlyMessage(category, error),
       error,
       context,
-      recoveryActions: this?.getRecoveryActions(category, context),
+      recoveryActions: this.getRecoveryActions(category, context),
       isTransient,
       retryCount: 0,
-      maxRetries: options?.maxRetries || (isTransient ? 3 : 0),
+      maxRetries: options.maxRetries || (isTransient ? 3 : 0),
     };
 
     // Log to console for debugging
@@ -469,13 +469,13 @@ class ErrorService {
   }
 
   private async scheduleRetry(errorReport: ErrorReport) {
-    const _retryCount = errorReport?.retryCount || 0;
-    const _delay =
+    const retryCount = errorReport?.retryCount || 0;
+    const delay =
       this?.retryDelays[Math?.min(retryCount, this?.retryDelays.length - 1)];
 
     setTimeout(() => {
       if (errorReport?.recoveryActions && errorReport?.recoveryActions[0]) {
-        const _retryAction = errorReport?.recoveryActions[0];
+        const retryAction = errorReport?.recoveryActions[0];
         retryAction?.action();
       }
     }, delay);
@@ -511,42 +511,42 @@ class ErrorService {
     if (this?.isReporting || this?.errorQueue.length === 0) return;
 
     this.isReporting = true;
-    const _errors = [...this?.errorQueue];
+    const errors = [...this?.errorQueue];
     this.errorQueue = [];
 
     try {
       const { getCsrfTokenFromCookie: _getCsrf } = await import(
         "@/lib/queryClient"
       );
-      const __csrfToken = _getCsrf();
-      const _response = await fetch("/api/errors", {
+      const _csrfToken = _getCsrf();
+      const response = await fetch("/api/errors", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...(_csrfToken ? { "x-csrf-token": _csrfToken } : {}),
         },
         credentials: "include",
-        body: JSON?.stringify({
-          errors: errors?.map((e) => ({
-            severity: e?.severity,
-            category: e?.category,
-            message: e?.message,
+        body: JSON.stringify({
+          errors: errors.map((e) => ({
+            severity: e.severity,
+            category: e.category,
+            message: e.message,
             context: {
               ...e?.context,
-              timestamp: e?.context.timestamp?.toISOString(),
+              timestamp: e.context.timestamp?.toISOString(),
             },
-            stackTrace: e?.context.stackTrace,
+            stackTrace: e.context.stackTrace,
           })),
         }),
       });
 
       if (!response?.ok) {
-        const _retriable = errors?.filter((e) => (e?.retryCount || 0) < 3);
+        const retriable = errors?.filter((e) => (e?.retryCount || 0) < 3);
         retriable?.forEach((e) => (e.retryCount = (e?.retryCount || 0) + 1));
         this?.errorQueue.push(...retriable);
       }
     } catch (error: unknown) {
-      const _retriable = errors?.filter((e) => (e?.retryCount || 0) < 3);
+      const retriable = errors?.filter((e) => (e?.retryCount || 0) < 3);
       retriable?.forEach((e) => (e.retryCount = (e?.retryCount || 0) + 1));
       this?.errorQueue.push(...retriable);
       logger?.error("Failed to report errors to backend:", error);
@@ -557,18 +557,18 @@ class ErrorService {
 
   private showReportDialog() {
     // Get current error context
-    const _errorContext = {
-      url: window?.location.href,
+    const errorContext = {
+      url: window.location.href,
       timestamp: new Date().toISOString(),
-      userAgent: navigator?.userAgent,
+      userAgent: navigator.userAgent,
       screenResolution: `${window?.screen.width}x${window?.screen.height}`,
       windowSize: `${window?.innerWidth}x${window?.innerHeight}`,
-      breadcrumbs: this?.breadcrumbs.slice(-10),
+      breadcrumbs: this.breadcrumbs.slice(-10),
     };
 
     // Create mailto link with error context
-    const _subject = encodeURIComponent("Error Report - MAX Booster");
-    const _body = encodeURIComponent(
+    const subject = encodeURIComponent("Error Report - MAX Booster");
+    const body = encodeURIComponent(
       `
 Error Report
 ============
@@ -588,7 +588,7 @@ Please describe what you were doing when the error occurred:
     );
 
     window?.open(
-      `mailto:support@maxbooster?.com?subject=${subject}&body=${body}`,
+      `mailto:support@maxbooster.com?subject=${subject}&body=${body}`,
     );
   }
 
@@ -603,7 +603,7 @@ Please describe what you were doing when the error occurred:
     severity: ErrorSeverity = "info",
     context?: Partial<ErrorContext>,
   ) {
-    const _error = new Error(message);
+    const error = new Error(message);
     this?.handleError(error, context, { severity, showToast: true });
   }
 
@@ -616,27 +616,27 @@ Please describe what you were doing when the error occurred:
   // Get current error stats
   getErrorStats() {
     return {
-      queuedErrors: this?.errorQueue.length,
-      breadcrumbs: this?.breadcrumbs.length,
-      errorCount: this?.errorCount,
+      queuedErrors: this.errorQueue.length,
+      breadcrumbs: this.breadcrumbs.length,
+      errorCount: this.errorCount,
     };
   }
 }
 
 // Export singleton instance
-export const _errorService = ErrorService?.getInstance();
+export const errorService = ErrorService?.getInstance();
 
 // Export helper functions for convenience
-export const _captureException = (
+export const captureException = (
   error: Error | unknown,
   context?: Partial<ErrorContext>,
 ) => errorService?.captureException(error, context);
 
-export const _captureMessage = (
+export const captureMessage = (
   message: string,
   severity: ErrorSeverity = "info",
   context?: Partial<ErrorContext>,
 ) => errorService?.captureMessage(message, severity, context);
 
-export const _addBreadcrumb = (action: string, data?: unknown) =>
+export const addBreadcrumb = (action: string, data?: unknown) =>
   errorService?.addBreadcrumb(action, data);

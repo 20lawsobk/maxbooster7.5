@@ -79,7 +79,7 @@ export class EppCommands {
         <contact:id>${id}</contact:id>
         <contact:postalInfo type="int">
           <contact:name>${contact?.name}</contact:name>
-          ${contact.org ? `<contact:org>${contact?.org}</contact:org>` : ""}
+          ${contact?.org ? `<contact:org>${contact?.org}</contact:org>` : ""}
           <contact:addr>
             <contact:street>${contact?.address.street}</contact:street>
             <contact:city>${contact?.address.city}</contact:city>

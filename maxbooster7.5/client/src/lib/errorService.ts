@@ -515,8 +515,9 @@ class ErrorService {
     this.errorQueue = [];
 
     try {
-      const { getCsrfTokenFromCookie: _getCsrf } =
-        await import("@/lib/queryClient");
+      const { getCsrfTokenFromCookie: _getCsrf } = await import(
+        "@/lib/queryClient"
+      );
       const _csrfToken = _getCsrf();
       const response = await fetch("/api/errors", {
         method: "POST",

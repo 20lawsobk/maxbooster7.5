@@ -20,11 +20,11 @@ export function trackError() {
 }
 
 export async function getSecurityMetrics() {
-  const _uptimeSeconds = Math?.floor(process?.uptime());
+  const uptimeSeconds = Math?.floor(process?.uptime());
 
-  const _fifteenMinutesAgo = new Date(Date?.now() - 15 * 60 * 1000);
-  const _yesterday = new Date(Date?.now() - 24 * 60 * 60 * 1000);
-  const _oneHourAgo = new Date(Date?.now() - 60 * 60 * 1000);
+  const fifteenMinutesAgo = new Date(Date?.now() - 15 * 60 * 1000);
+  const yesterday = new Date(Date?.now() - 24 * 60 * 60 * 1000);
+  const oneHourAgo = new Date(Date?.now() - 60 * 60 * 1000);
 
   const [activeSessionsResult] = await db
     .select({ count: count() })
@@ -32,7 +32,7 @@ export async function getSecurityMetrics() {
     .where(gte(sessions?.lastActivity, fifteenMinutesAgo))
     .limit(1);
 
-  const _activeSessions = activeSessionsResult?.count || 0;
+  const activeSessions = activeSessionsResult?.count || 0;
 
   const [totalLoginsResult] = await db
     .select({ count: count() })
@@ -40,7 +40,7 @@ export async function getSecurityMetrics() {
     .where(gte(sessions?.createdAt, yesterday))
     .limit(1);
 
-  const _totalLogins = totalLoginsResult?.count || 0;
+  const totalLogins = totalLoginsResult?.count || 0;
 
   // Count failed password reset attempts as proxy for failed logins
   const [failedLoginsResult] = await db
@@ -49,16 +49,16 @@ export async function getSecurityMetrics() {
     .where(gte(passwordResetTokens?.createdAt, yesterday))
     .limit(1);
 
-  const _failedLogins = failedLoginsResult?.count || 0;
+  const failedLogins = failedLoginsResult?.count || 0;
 
-  const _successRate =
+  const successRate =
     totalLogins > 0 ? ((totalLogins - failedLogins) / totalLogins) * 100 : 100;
 
   // Calculate real metrics from tracked data
-  const _minutesSinceReset = (Date?.now() - lastMetricsReset) / 60000;
-  const _requestsPerMinute =
+  const minutesSinceReset = (Date?.now() - lastMetricsReset) / 60000;
+  const requestsPerMinute =
     minutesSinceReset > 0 ? Math?.round(requestCounter / minutesSinceReset) : 0;
-  const _errorRate =
+  const errorRate =
     requestCounter > 0 ? (errorCounter / requestCounter) * 100 : 0;
 
   // Reset counters every hour to prevent overflow
@@ -68,7 +68,7 @@ export async function getSecurityMetrics() {
     lastMetricsReset = Date?.now();
   }
 
-  const _status =
+  const status =
     errorRate > 10 ? "critical" : errorRate > 5 ? "degraded" : "healthy";
 
   // Count suspicious activity (multiple sessions from same user)
@@ -78,7 +78,7 @@ export async function getSecurityMetrics() {
     .where(gte(sessions?.createdAt, oneHourAgo))
     .limit(1);
 
-  const _suspiciousActivity = Math?.max(
+  const suspiciousActivity = Math?.max(
     0,
     (suspiciousActivityResult?.count || 0) - activeSessions,
   );
@@ -87,29 +87,29 @@ export async function getSecurityMetrics() {
     systemHealth: {
       uptime: uptimeSeconds,
       status,
-      errorRate: Math?.round(errorRate * 100) / 100,
+      errorRate: Math.round(errorRate * 100) / 100,
       requestsPerMinute,
     },
     authentication: {
       totalLogins,
       failedLogins,
-      successRate: Math?.round(successRate * 100) / 100,
+      successRate: Math.round(successRate * 100) / 100,
       activeSessions,
     },
     threats: {
       blockedAttempts: failedLogins,
       suspiciousActivity,
-      rateLimit: Math?.min(suspiciousActivity, 10), // Cap at 10 for display
+      rateLimit: Math.min(suspiciousActivity, 10), // Cap at 10 for display
     },
   };
 }
 
 export async function getBehavioralAlerts() {
-  const _oneHourAgo = new Date(Date?.now() - 60 * 60 * 1000);
+  const oneHourAgo = new Date(Date?.now() - 60 * 60 * 1000);
 
-  const _suspiciousUsers = await db
+  const suspiciousUsers = await db
     .select({
-      userId: sessions?.userId,
+      userId: sessions.userId,
       sessionCount: count(),
     })
     .from(sessions)
@@ -117,7 +117,7 @@ export async function getBehavioralAlerts() {
     .groupBy(sessions?.userId)
     .having(sql`count(*) > 5`);
 
-  const _alerts = [];
+  const alerts = [];
 
   for (const suspiciousUser of suspiciousUsers) {
     const [user] = await db
@@ -129,8 +129,8 @@ export async function getBehavioralAlerts() {
     if (user) {
       alerts?.push({
         id: `alert-${suspiciousUser?.userId}-${Date?.now()}`,
-        userId: suspiciousUser?.userId,
-        username: user?.username || user?.email || "Unknown",
+        userId: suspiciousUser.userId,
+        username: user.username || user?.email || "Unknown",
         type: "unusual_activity" as const,
         severity: "medium" as const,
         timestamp: new Date().toISOString(),
@@ -140,10 +140,10 @@ export async function getBehavioralAlerts() {
     }
   }
 
-  const _oneDayAgo = new Date(Date?.now() - 24 * 60 * 60 * 1000);
-  const _recentPasswordResets = await db
+  const oneDayAgo = new Date(Date?.now() - 24 * 60 * 60 * 1000);
+  const recentPasswordResets = await db
     .select({
-      email: passwordResetTokens?.email,
+      email: passwordResetTokens.email,
       tokenCount: count(),
     })
     .from(passwordResetTokens)
@@ -161,8 +161,8 @@ export async function getBehavioralAlerts() {
     if (user) {
       alerts?.push({
         id: `alert-reset-${user?.id}-${Date?.now()}`,
-        userId: user?.id,
-        username: user?.username || user?.email || "Unknown",
+        userId: user.id,
+        username: user.username || user?.email || "Unknown",
         type: "multiple_failed_logins" as const,
         severity: "high" as const,
         timestamp: new Date().toISOString(),
@@ -176,10 +176,10 @@ export async function getBehavioralAlerts() {
 }
 
 export async function detectSecurityAnomalies() {
-  const _anomalies = [];
+  const anomalies = [];
 
-  const _yesterday = new Date(Date?.now() - 24 * 60 * 60 * 1000);
-  const _twoDaysAgo = new Date(Date?.now() - 48 * 60 * 60 * 1000);
+  const yesterday = new Date(Date?.now() - 24 * 60 * 60 * 1000);
+  const twoDaysAgo = new Date(Date?.now() - 48 * 60 * 60 * 1000);
 
   const [recentSessionsResult] = await db
     .select({ count: count() })
@@ -198,11 +198,11 @@ export async function detectSecurityAnomalies() {
     )
     .limit(1);
 
-  const _recentSessions = recentSessionsResult?.count || 0;
-  const _previousSessions = previousSessionsResult?.count || 0;
+  const recentSessions = recentSessionsResult?.count || 0;
+  const previousSessions = previousSessionsResult?.count || 0;
 
   if (previousSessions > 0) {
-    const _percentageChange =
+    const percentageChange =
       ((recentSessions - previousSessions) / previousSessions) * 100;
 
     if (Math?.abs(percentageChange) > 200) {
@@ -225,7 +225,7 @@ export async function detectSecurityAnomalies() {
     .where(gte(passwordResetTokens?.createdAt, yesterday))
     .limit(1);
 
-  const _passwordResets = passwordResetResult?.count || 0;
+  const passwordResets = passwordResetResult?.count || 0;
 
   if (passwordResets > 10) {
     anomalies?.push({
@@ -243,11 +243,11 @@ export async function detectSecurityAnomalies() {
 }
 
 export async function getPentestResults() {
-  const _hasHttps = isProductionEnv();
-  const _hasSecurityHeaders = true;
+  const hasHttps = isProductionEnv();
+  const hasSecurityHeaders = true;
 
-  const _vulnerabilities = [];
-  const _recommendations = [];
+  const vulnerabilities = [];
+  const recommendations = [];
 
   if (!hasHttps && isProductionEnv()) {
     vulnerabilities?.push({
@@ -295,11 +295,11 @@ export async function getPentestResults() {
     );
   }
 
-  const _summary = {
-    critical: vulnerabilities?.filter((v) => v?.severity === "critical").length,
-    high: vulnerabilities?.filter((v) => v?.severity === "high").length,
-    medium: vulnerabilities?.filter((v) => v?.severity === "medium").length,
-    low: vulnerabilities?.filter((v) => v?.severity === "low").length,
+  const summary = {
+    critical: vulnerabilities.filter((v) => v?.severity === "critical").length,
+    high: vulnerabilities.filter((v) => v?.severity === "high").length,
+    medium: vulnerabilities.filter((v) => v?.severity === "medium").length,
+    low: vulnerabilities.filter((v) => v?.severity === "low").length,
     passed: hasHttps && hasSecurityHeaders ? 2 : hasSecurityHeaders ? 1 : 0,
   };
 

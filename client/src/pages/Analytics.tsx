@@ -36,49 +36,7 @@ import {
   SimpleAreaChart,
   PlatformBreakdown,
 } from "@/components/ui/chart-card";
-import {
-  BarChart3,
-  TrendingUp,
-  Play,
-  DollarSign,
-  Users,
-  Download,
-  RefreshCw,
-  Eye,
-  Heart,
-  Share2,
-  Clock,
-  Globe,
-  Music,
-  Target,
-  Activity,
-  MapPin,
-  Trophy,
-  Flame,
-  Brain,
-  Rocket,
-  CheckCircle,
-  AlertTriangle,
-  Lightbulb,
-  ArrowUp,
-  ArrowDown,
-  TrendingDown,
-  Plus,
-  Bell,
-  Search,
-  Trash2,
-  ChevronDown,
-  Megaphone,
-  Camera,
-  Video,
-  UserMinus,
-  UserPlus,
-  ListMusic,
-  Map,
-  GitBranch,
-  Layers,
-  FileDown,
-} from "lucide-react";
+import { BarChart3, TrendingUp, Play, DollarSign, Users, Download, RefreshCw, Eye, Heart, Share2, Clock, Globe, Music, Target, Activity, MapPin, Trophy, Flame, Brain, Rocket, CheckCircle, AlertTriangle, Lightbulb, ArrowUp, ArrowDown, TrendingDown, Plus, Bell, Search, Trash2, ChevronDown, Megaphone, Camera, Video, UserMinus, UserPlus, ListMusic, Map, GitBranch, Layers, FileDown } from "lucide-react";
 
 import { StreamingAnalytics } from "./analytics/StreamingAnalytics";
 import { RevenueAnalytics } from "./analytics/RevenueAnalytics";
@@ -1840,7 +1798,7 @@ export default function Analytics() {
   });
 
   useEffect(() => {
-    (message: Record<string, unknown>) => {
+    ((message: Record<string, unknown>) => {
       if (message.type === "anomaly_detected") {
         queryClient.invalidateQueries({
           queryKey: ["/api/analytics/anomalies"],
@@ -1854,7 +1812,7 @@ export default function Analytics() {
           description: `${message.metricType} ${message.anomalyType}: ${message.deviationPercentage}% deviation`,
         });
       }
-    };
+    });
     return () => {};
   }, [queryClient, toast]);
 
@@ -2044,7 +2002,9 @@ export default function Analytics() {
           <StatCard
             title="Total Streams"
             value={
-              currentValue("totalStreams") || data?.overview?.totalStreams || 0
+              currentValue("totalStreams") ||
+              data?.overview?.totalStreams ||
+              0
             }
             change={data?.overview?.growthRate || 0}
             trend={
@@ -2062,7 +2022,9 @@ export default function Analytics() {
           <StatCard
             title="Total Revenue"
             value={
-              currentValue("totalRevenue") || data?.overview?.totalRevenue || 0
+              currentValue("totalRevenue") ||
+              data?.overview?.totalRevenue ||
+              0
             }
             change={data?.overview?.growthRate || 0}
             trend={
@@ -2279,7 +2241,7 @@ export default function Analytics() {
               >
                 {analyticsLoading ? (
                   <Skeleton className="h-48 w-full" />
-                ) : data?.streams?.daily && data.streams.daily.length > 0 ? (
+                ) : data.streams?.daily && data.streams.daily.length > 0 ? (
                   <SimpleAreaChart
                     data={data.streams.daily
                       .slice(-14)
@@ -2312,7 +2274,7 @@ export default function Analytics() {
               >
                 {analyticsLoading ? (
                   <Skeleton className="h-48 w-full" />
-                ) : data?.streams?.byPlatform &&
+                ) : data.streams?.byPlatform &&
                   data.streams.byPlatform.length > 0 ? (
                   <PlatformBreakdown
                     platforms={data.streams.byPlatform
@@ -2370,7 +2332,7 @@ export default function Analytics() {
               >
                 {analyticsLoading ? (
                   <Skeleton className="h-48 w-full" />
-                ) : data?.audience?.listenerJourney &&
+                ) : data.audience?.listenerJourney &&
                   data.audience.listenerJourney.length > 0 ? (
                   <SimpleAreaChart
                     data={data.audience.listenerJourney.map(
@@ -2585,21 +2547,19 @@ export default function Analytics() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
-                        {crossPlatformData.data.recommendations.map(
-                          (rec, idx) => (
-                            <div
-                              key={idx}
-                              className="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg"
-                            >
-                              <div className="w-6 h-6 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                                <span className="text-xs font-medium text-blue-600">
-                                  {idx + 1}
-                                </span>
-                              </div>
-                              <p className="text-sm">{rec}</p>
+                        {crossPlatformData.data.recommendations.map((rec, idx) => (
+                          <div
+                            key={idx}
+                            className="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg"
+                          >
+                            <div className="w-6 h-6 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                              <span className="text-xs font-medium text-blue-600">
+                                {idx + 1}
+                              </span>
                             </div>
-                          ),
-                        )}
+                            <p className="text-sm">{rec}</p>
+                          </div>
+                        ))}
                       </div>
                     </CardContent>
                   </Card>
@@ -2649,93 +2609,95 @@ export default function Analytics() {
               </div>
             ) : (triggerCitiesData?.data?.length ?? 0) > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {triggerCitiesData?.data?.map((city, idx) => (
-                  <Card
-                    key={idx}
-                    className={`relative overflow-hidden ${city.isHotspot ? "border-orange-500 border-2" : ""}`}
-                  >
-                    {city.isHotspot && (
-                      <div className="absolute top-2 right-2">
-                        <Badge
-                          variant="destructive"
-                          className="flex items-center gap-1"
-                        >
-                          <Flame className="h-3 w-3" />
-                          Hotspot
-                        </Badge>
-                      </div>
-                    )}
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-5 w-5 text-blue-500" />
-                        <div>
-                          <CardTitle className="text-base">
-                            {city.city}
-                          </CardTitle>
-                          <CardDescription>
-                            {city.country} • {city.region}
-                          </CardDescription>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div>
-                          <p className="text-muted-foreground">Streams</p>
-                          <p className="font-semibold">
-                            {city.streamCount?.toLocaleString()}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Listeners</p>
-                          <p className="font-semibold">
-                            {city.listenerCount?.toLocaleString()}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">
-                          Growth
-                        </span>
-                        <div
-                          className={`flex items-center gap-1 ${city.growthPercentage > 0 ? "text-green-600" : "text-red-600"}`}
-                        >
-                          {city.growthPercentage > 0 ? (
-                            <ArrowUp className="h-4 w-4" />
-                          ) : (
-                            <ArrowDown className="h-4 w-4" />
-                          )}
-                          <span className="font-semibold">
-                            {Math.abs(city.growthPercentage).toFixed(1)}%
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 flex-wrap">
-                        {city.platforms?.map((p: string) => (
+                {triggerCitiesData?.data?.map(
+                  (city, idx) => (
+                    <Card
+                      key={idx}
+                      className={`relative overflow-hidden ${city.isHotspot ? "border-orange-500 border-2" : ""}`}
+                    >
+                      {city.isHotspot && (
+                        <div className="absolute top-2 right-2">
                           <Badge
-                            key={p}
-                            variant="outline"
-                            className="text-xs capitalize"
+                            variant="destructive"
+                            className="flex items-center gap-1"
                           >
-                            {p}
+                            <Flame className="h-3 w-3" />
+                            Hotspot
                           </Badge>
-                        ))}
-                      </div>
-                      <Badge
-                        variant={
-                          city.trendDirection === "rising"
-                            ? "default"
-                            : city.trendDirection === "declining"
-                              ? "destructive"
-                              : "secondary"
-                        }
-                        className="capitalize"
-                      >
-                        {city.trendDirection}
-                      </Badge>
-                    </CardContent>
-                  </Card>
-                ))}
+                        </div>
+                      )}
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-5 w-5 text-blue-500" />
+                          <div>
+                            <CardTitle className="text-base">
+                              {city.city}
+                            </CardTitle>
+                            <CardDescription>
+                              {city.country} • {city.region}
+                            </CardDescription>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <p className="text-muted-foreground">Streams</p>
+                            <p className="font-semibold">
+                              {city.streamCount?.toLocaleString()}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Listeners</p>
+                            <p className="font-semibold">
+                              {city.listenerCount?.toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">
+                            Growth
+                          </span>
+                          <div
+                            className={`flex items-center gap-1 ${city.growthPercentage > 0 ? "text-green-600" : "text-red-600"}`}
+                          >
+                            {city.growthPercentage > 0 ? (
+                              <ArrowUp className="h-4 w-4" />
+                            ) : (
+                              <ArrowDown className="h-4 w-4" />
+                            )}
+                            <span className="font-semibold">
+                              {Math.abs(city.growthPercentage).toFixed(1)}%
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {city.platforms?.map((p: string) => (
+                            <Badge
+                              key={p}
+                              variant="outline"
+                              className="text-xs capitalize"
+                            >
+                              {p}
+                            </Badge>
+                          ))}
+                        </div>
+                        <Badge
+                          variant={
+                            city.trendDirection === "rising"
+                              ? "default"
+                              : city.trendDirection === "declining"
+                                ? "destructive"
+                                : "secondary"
+                          }
+                          className="capitalize"
+                        >
+                          {city.trendDirection}
+                        </Badge>
+                      </CardContent>
+                    </Card>
+                  ),
+                )}
               </div>
             ) : (
               <Card>
@@ -2848,98 +2810,102 @@ export default function Analytics() {
               </div>
             ) : (alertsData?.data?.length ?? 0) > 0 ? (
               <div className="space-y-4">
-                {alertsData?.data?.map((alert) => {
-                  const priorityColors: Record<string, string> = {
-                    critical:
-                      "border-l-4 border-l-red-500 bg-red-50 dark:bg-red-950/20",
-                    high: "border-l-4 border-l-orange-500 bg-orange-50 dark:bg-orange-950/20",
-                    medium:
-                      "border-l-4 border-l-yellow-500 bg-yellow-50 dark:bg-yellow-950/20",
-                    low: "border-l-4 border-l-blue-500 bg-blue-50 dark:bg-blue-950/20",
-                  };
-                  const typeIcons: Record<string, React.ReactNode> = {
-                    milestone: <Trophy className="h-5 w-5 text-yellow-500" />,
-                    playlist_add: <Plus className="h-5 w-5 text-green-500" />,
-                    playlist_remove: (
-                      <Trash2 className="h-5 w-5 text-red-500" />
-                    ),
-                    trigger_city: (
-                      <MapPin className="h-5 w-5 text-orange-500" />
-                    ),
-                    growth_spike: (
-                      <TrendingUp className="h-5 w-5 text-green-500" />
-                    ),
-                    viral_alert: <Rocket className="h-5 w-5 text-purple-500" />,
-                    decline_warning: (
-                      <TrendingDown className="h-5 w-5 text-red-500" />
-                    ),
-                  };
-                  return (
-                    <Card
-                      key={alert.id}
-                      className={`${priorityColors[alert.priority] || ""} ${alert.dismissed ? "opacity-50" : ""}`}
-                    >
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-3">
-                            <div className="mt-1">
-                              {typeIcons[alert.type] || (
-                                <Bell className="h-5 w-5" />
-                              )}
-                            </div>
-                            <div>
-                              <h4 className="font-semibold">{alert.title}</h4>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {alert.message}
-                              </p>
-                              <div className="flex items-center gap-2 mt-2">
-                                <Badge
-                                  variant="outline"
-                                  className="text-xs capitalize"
-                                >
-                                  {alert.type.replace("_", " ")}
-                                </Badge>
-                                <Badge
-                                  variant={
-                                    alert.priority === "critical"
-                                      ? "destructive"
-                                      : "secondary"
-                                  }
-                                  className="text-xs capitalize"
-                                >
-                                  {alert.priority}
-                                </Badge>
-                                {alert.platform && (
+                {alertsData?.data?.map(
+                  (alert) => {
+                    const priorityColors: Record<string, string> = {
+                      critical:
+                        "border-l-4 border-l-red-500 bg-red-50 dark:bg-red-950/20",
+                      high: "border-l-4 border-l-orange-500 bg-orange-50 dark:bg-orange-950/20",
+                      medium:
+                        "border-l-4 border-l-yellow-500 bg-yellow-50 dark:bg-yellow-950/20",
+                      low: "border-l-4 border-l-blue-500 bg-blue-50 dark:bg-blue-950/20",
+                    };
+                    const typeIcons: Record<string, React.ReactNode> = {
+                      milestone: <Trophy className="h-5 w-5 text-yellow-500" />,
+                      playlist_add: <Plus className="h-5 w-5 text-green-500" />,
+                      playlist_remove: (
+                        <Trash2 className="h-5 w-5 text-red-500" />
+                      ),
+                      trigger_city: (
+                        <MapPin className="h-5 w-5 text-orange-500" />
+                      ),
+                      growth_spike: (
+                        <TrendingUp className="h-5 w-5 text-green-500" />
+                      ),
+                      viral_alert: (
+                        <Rocket className="h-5 w-5 text-purple-500" />
+                      ),
+                      decline_warning: (
+                        <TrendingDown className="h-5 w-5 text-red-500" />
+                      ),
+                    };
+                    return (
+                      <Card
+                        key={alert.id}
+                        className={`${priorityColors[alert.priority] || ""} ${alert.dismissed ? "opacity-50" : ""}`}
+                      >
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-3">
+                              <div className="mt-1">
+                                {typeIcons[alert.type] || (
+                                  <Bell className="h-5 w-5" />
+                                )}
+                              </div>
+                              <div>
+                                <h4 className="font-semibold">{alert.title}</h4>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  {alert.message}
+                                </p>
+                                <div className="flex items-center gap-2 mt-2">
                                   <Badge
                                     variant="outline"
                                     className="text-xs capitalize"
                                   >
-                                    {alert.platform}
+                                    {alert.type.replace("_", " ")}
                                   </Badge>
-                                )}
-                                <span className="text-xs text-muted-foreground">
-                                  {new Date(alert.createdAt).toLocaleString()}
-                                </span>
+                                  <Badge
+                                    variant={
+                                      alert.priority === "critical"
+                                        ? "destructive"
+                                        : "secondary"
+                                    }
+                                    className="text-xs capitalize"
+                                  >
+                                    {alert.priority}
+                                  </Badge>
+                                  {alert.platform && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs capitalize"
+                                    >
+                                      {alert.platform}
+                                    </Badge>
+                                  )}
+                                  <span className="text-xs text-muted-foreground">
+                                    {new Date(alert.createdAt).toLocaleString()}
+                                  </span>
+                                </div>
                               </div>
                             </div>
+                            {!alert.dismissed && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() =>
+                                  dismissAlertMutation.mutate(alert.id)
+                                }
+                                disabled={dismissAlertMutation.isPending}
+                              >
+                                Dismiss
+                              </Button>
+                            )}
                           </div>
-                          {!alert.dismissed && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                dismissAlertMutation.mutate(alert.id)
-                              }
-                              disabled={dismissAlertMutation.isPending}
-                            >
-                              Dismiss
-                            </Button>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                        </CardContent>
+                      </Card>
+                    );
+                  },
+                )}
               </div>
             ) : (
               <Card>
@@ -3019,20 +2985,22 @@ export default function Analytics() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {data.fanJourney.journeyInsights.map((insight, idx) => (
-                        <div
-                          key={idx}
-                          className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border"
-                        >
-                          <p className="font-medium">{insight.insight}</p>
-                          <p className="text-sm text-slate-500 mt-1">
-                            Impact: {insight.impact}
-                          </p>
-                          <p className="text-sm text-blue-600 mt-2">
-                            💡 {insight.recommendation}
-                          </p>
-                        </div>
-                      ))}
+                      {data.fanJourney.journeyInsights.map(
+                        (insight, idx) => (
+                          <div
+                            key={idx}
+                            className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border"
+                          >
+                            <p className="font-medium">{insight.insight}</p>
+                            <p className="text-sm text-slate-500 mt-1">
+                              Impact: {insight.impact}
+                            </p>
+                            <p className="text-sm text-blue-600 mt-2">
+                              💡 {insight.recommendation}
+                            </p>
+                          </div>
+                        ),
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -3297,140 +3265,143 @@ export default function Analytics() {
               </div>
             ) : anomalyData?.anomalies && anomalyData.anomalies.length > 0 ? (
               <div className="space-y-4">
-                {anomalyData.anomalies.map((anomaly) => {
-                  const severityColors: Record<string, string> = {
-                    critical: "border-red-500 bg-red-50 dark:bg-red-950/20",
-                    high: "border-orange-500 bg-orange-50 dark:bg-orange-950/20",
-                    medium:
-                      "border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20",
-                    low: "border-blue-500 bg-blue-50 dark:bg-blue-950/20",
-                  };
+                {anomalyData.anomalies.map(
+                  (anomaly) => {
+                    const severityColors: Record<string, string> = {
+                      critical: "border-red-500 bg-red-50 dark:bg-red-950/20",
+                      high: "border-orange-500 bg-orange-50 dark:bg-orange-950/20",
+                      medium:
+                        "border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20",
+                      low: "border-blue-500 bg-blue-50 dark:bg-blue-950/20",
+                    };
 
-                  const severityBadgeColors: Record<string, BadgeVariant> = {
-                    critical: "destructive",
-                    high: "default",
-                    medium: "secondary",
-                    low: "outline",
-                  };
+                    const severityBadgeColors: Record<string, BadgeVariant> = {
+                      critical: "destructive",
+                      high: "default",
+                      medium: "secondary",
+                      low: "outline",
+                    };
 
-                  const anomalyIcons: Record<string, any> = {
-                    spike: ArrowUp,
-                    drop: ArrowDown,
-                    unusual_pattern: Activity,
-                  };
+                    const anomalyIcons: Record<string, any> = {
+                      spike: ArrowUp,
+                      drop: ArrowDown,
+                      unusual_pattern: Activity,
+                    };
 
-                  const AnomalyIcon =
-                    anomalyIcons[anomaly.anomalyType] || Activity;
+                    const AnomalyIcon =
+                      anomalyIcons[anomaly.anomalyType] || Activity;
 
-                  return (
-                    <motion.div
-                      key={anomaly.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <Card
-                        className={`border-2 ${severityColors[anomaly.severity] || ""}`}
-                        data-testid={`anomaly-card-${anomaly.id}`}
+                    return (
+                      <motion.div
+                        key={anomaly.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
                       >
-                        <CardContent className="p-6">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1 space-y-3">
-                              <div className="flex items-center gap-3">
-                                <Badge
-                                  variant={
-                                    severityBadgeColors[anomaly.severity] ||
-                                    "default"
-                                  }
-                                >
-                                  {anomaly.severity}
-                                </Badge>
-                                <Badge variant="outline">
-                                  {anomaly.metricType}
-                                </Badge>
-                                <div className="flex items-center gap-1 text-muted-foreground">
-                                  <AnomalyIcon className="w-4 h-4" />
-                                  <span className="text-sm capitalize">
-                                    {anomaly.anomalyType?.replace("_", " ")}
-                                  </span>
-                                </div>
-                              </div>
-
-                              <div className="grid grid-cols-3 gap-4">
-                                <div>
-                                  <p className="text-xs text-muted-foreground">
-                                    Baseline
-                                  </p>
-                                  <p className="text-lg font-semibold">
-                                    {parseFloat(
-                                      anomaly.baselineValue,
-                                    ).toLocaleString()}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-xs text-muted-foreground">
-                                    Actual
-                                  </p>
-                                  <p className="text-lg font-semibold">
-                                    {parseFloat(
-                                      anomaly.actualValue,
-                                    ).toLocaleString()}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-xs text-muted-foreground">
-                                    Deviation
-                                  </p>
-                                  <p
-                                    className={`text-lg font-semibold ${parseFloat(anomaly.deviationPercentage) > 0 ? "text-green-600" : "text-red-600"}`}
+                        <Card
+                          className={`border-2 ${severityColors[anomaly.severity] || ""}`}
+                          data-testid={`anomaly-card-${anomaly.id}`}
+                        >
+                          <CardContent className="p-6">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 space-y-3">
+                                <div className="flex items-center gap-3">
+                                  <Badge
+                                    variant={
+                                      severityBadgeColors[anomaly.severity] ||
+                                      "default"
+                                    }
                                   >
-                                    {parseFloat(anomaly.deviationPercentage) > 0
-                                      ? "+"
-                                      : ""}
-                                    {parseFloat(
-                                      anomaly.deviationPercentage,
-                                    ).toFixed(1)}
-                                    %
-                                  </p>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                <div className="flex items-center gap-1">
-                                  <Clock className="w-4 h-4" />
-                                  {new Date(
-                                    anomaly.detectedAt,
-                                  ).toLocaleString()}
-                                </div>
-                                {anomaly.acknowledgedAt && (
-                                  <div className="flex items-center gap-1 text-green-600">
-                                    <CheckCircle className="w-4 h-4" />
-                                    Acknowledged
+                                    {anomaly.severity}
+                                  </Badge>
+                                  <Badge variant="outline">
+                                    {anomaly.metricType}
+                                  </Badge>
+                                  <div className="flex items-center gap-1 text-muted-foreground">
+                                    <AnomalyIcon className="w-4 h-4" />
+                                    <span className="text-sm capitalize">
+                                      {anomaly.anomalyType?.replace("_", " ")}
+                                    </span>
                                   </div>
-                                )}
-                              </div>
-                            </div>
+                                </div>
 
-                            {!anomaly.acknowledgedAt && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  acknowledgeMutation.mutate(anomaly.id)
-                                }
-                                disabled={acknowledgeMutation.isPending}
-                                data-testid={`button-acknowledge-${anomaly.id}`}
-                              >
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                                Acknowledge
-                              </Button>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  );
-                })}
+                                <div className="grid grid-cols-3 gap-4">
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">
+                                      Baseline
+                                    </p>
+                                    <p className="text-lg font-semibold">
+                                      {parseFloat(
+                                        anomaly.baselineValue,
+                                      ).toLocaleString()}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">
+                                      Actual
+                                    </p>
+                                    <p className="text-lg font-semibold">
+                                      {parseFloat(
+                                        anomaly.actualValue,
+                                      ).toLocaleString()}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-muted-foreground">
+                                      Deviation
+                                    </p>
+                                    <p
+                                      className={`text-lg font-semibold ${parseFloat(anomaly.deviationPercentage) > 0 ? "text-green-600" : "text-red-600"}`}
+                                    >
+                                      {parseFloat(anomaly.deviationPercentage) >
+                                      0
+                                        ? "+"
+                                        : ""}
+                                      {parseFloat(
+                                        anomaly.deviationPercentage,
+                                      ).toFixed(1)}
+                                      %
+                                    </p>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="w-4 h-4" />
+                                    {new Date(
+                                      anomaly.detectedAt,
+                                    ).toLocaleString()}
+                                  </div>
+                                  {anomaly.acknowledgedAt && (
+                                    <div className="flex items-center gap-1 text-green-600">
+                                      <CheckCircle className="w-4 h-4" />
+                                      Acknowledged
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {!anomaly.acknowledgedAt && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    acknowledgeMutation.mutate(anomaly.id)
+                                  }
+                                  disabled={acknowledgeMutation.isPending}
+                                  data-testid={`button-acknowledge-${anomaly.id}`}
+                                >
+                                  <CheckCircle className="w-4 h-4 mr-2" />
+                                  Acknowledge
+                                </Button>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    );
+                  },
+                )}
               </div>
             ) : (
               <Card>

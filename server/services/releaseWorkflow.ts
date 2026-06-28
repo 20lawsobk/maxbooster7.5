@@ -129,25 +129,25 @@ export class ReleaseWorkflowService {
     setInterval(
       () => {
         // Drop oldest entries when over cap
-        while (this?.auditLog.size > ReleaseWorkflowService?.MAX_AUDIT) {
-          const _k = this?.auditLog.keys().next().value;
+        while (this?.auditLog.size > ReleaseWorkflowService.MAX_AUDIT) {
+          const k = this?.auditLog.keys().next().value;
           if (k !== undefined) this?.auditLog.delete(k);
           else break;
         }
         while (
-          this?.takedownRequests.size > ReleaseWorkflowService?.MAX_TAKEDOWNS
+          this?.takedownRequests.size > ReleaseWorkflowService.MAX_TAKEDOWNS
         ) {
-          const _k = this?.takedownRequests.keys().next().value;
+          const k = this?.takedownRequests.keys().next().value;
           if (k !== undefined) this?.takedownRequests.delete(k);
           else break;
         }
-        while (this?.updateRequests.size > ReleaseWorkflowService?.MAX_UPDATES) {
-          const _k = this?.updateRequests.keys().next().value;
+        while (this?.updateRequests.size > ReleaseWorkflowService.MAX_UPDATES) {
+          const k = this?.updateRequests.keys().next().value;
           if (k !== undefined) this?.updateRequests.delete(k);
           else break;
         }
-        while (this?.stateHistory.size > ReleaseWorkflowService?.MAX_HISTORY) {
-          const _k = this?.stateHistory.keys().next().value;
+        while (this?.stateHistory.size > ReleaseWorkflowService.MAX_HISTORY) {
+          const k = this?.stateHistory.keys().next().value;
           if (k !== undefined) this?.stateHistory.delete(k);
           else break;
         }
@@ -160,7 +160,7 @@ export class ReleaseWorkflowService {
     currentState: ReleaseState,
     targetState: ReleaseState,
   ): boolean {
-    const _allowedTransitions = STATE_TRANSITIONS[currentState];
+    const allowedTransitions = STATE_TRANSITIONS[currentState];
     return allowedTransitions?.includes(targetState) ?? false;
   }
 
@@ -180,12 +180,12 @@ export class ReleaseWorkflowService {
     } = {},
   ): Promise<{ success: boolean; error?: string; newState?: ReleaseState }> {
     try {
-      const _release = await this?.getRelease(releaseId);
+      const release = await this?.getRelease(releaseId);
       if (!release) {
         return { success: false, error: "Release not found" };
       }
 
-      const _currentState = (release?.status as ReleaseState) || "draft";
+      const currentState = (release?.status as ReleaseState) || "draft";
 
       if (!this?.canTransition(currentState, targetState)) {
         return {
@@ -200,11 +200,11 @@ export class ReleaseWorkflowService {
         action: `${currentState}_to_${targetState}`,
         userId,
         timestamp: new Date(),
-        reason: options?.reason,
-        metadata: options?.metadata,
+        reason: options.reason,
+        metadata: options.metadata,
       };
 
-      const _history = this?.stateHistory.get(releaseId) || [];
+      const history = this?.stateHistory.get(releaseId) || [];
       history?.push(transition);
       this?.stateHistory.set(releaseId, history);
 
@@ -214,11 +214,11 @@ export class ReleaseWorkflowService {
         details: {
           from: currentState,
           to: targetState,
-          reason: options?.reason,
-          metadata: options?.metadata,
+          reason: options.reason,
+          metadata: options.metadata,
         },
-        ipAddress: options?.ipAddress,
-        userAgent: options?.userAgent,
+        ipAddress: options.ipAddress,
+        userAgent: options.userAgent,
       });
 
       logger?.info(
@@ -236,7 +236,7 @@ export class ReleaseWorkflowService {
     releaseId: string,
     userId: string,
   ): Promise<{ success: boolean; error?: string }> {
-    const _result = await this?.transition(releaseId, userId, "pending_review", {
+    const result = await this?.transition(releaseId, userId, "pending_review", {
       reason: "Submitted for distribution review",
     });
 
@@ -256,7 +256,7 @@ export class ReleaseWorkflowService {
     reviewerId: string,
     notes?: string,
   ): Promise<{ success: boolean; error?: string }> {
-    const _result = await this?.transition(releaseId, reviewerId, "approved", {
+    const result = await this?.transition(releaseId, reviewerId, "approved", {
       reason: "Approved for distribution",
       metadata: { notes, reviewedBy: reviewerId },
     });
@@ -277,7 +277,7 @@ export class ReleaseWorkflowService {
     reviewerId: string,
     reason: string,
   ): Promise<{ success: boolean; error?: string }> {
-    const _result = await this?.transition(releaseId, reviewerId, "rejected", {
+    const result = await this?.transition(releaseId, reviewerId, "rejected", {
       reason,
       metadata: { rejectionReason: reason, reviewedBy: reviewerId },
     });
@@ -305,12 +305,12 @@ export class ReleaseWorkflowService {
     },
   ): Promise<{ success: boolean; requestId?: string; error?: string }> {
     try {
-      const _release = await this?.getRelease(releaseId);
+      const release = await this?.getRelease(releaseId);
       if (!release) {
         return { success: false, error: "Release not found" };
       }
 
-      const _currentState = release?.status as ReleaseState;
+      const currentState = release?.status as ReleaseState;
       if (!["live", "updated", "update_pending"].includes(currentState)) {
         return {
           success: false,
@@ -318,18 +318,18 @@ export class ReleaseWorkflowService {
         };
       }
 
-      const _requestId = `takedown_${randomBytes(8).toString("hex")}`;
+      const requestId = `takedown_${randomBytes(8).toString("hex")}`;
       const request: TakedownRequest = {
         id: requestId,
         releaseId,
         userId,
-        reason: options?.reason,
-        customReason: options?.customReason,
+        reason: options.reason,
+        customReason: options.customReason,
         requestedAt: new Date(),
         status: "pending",
-        platforms: options?.platforms,
-        urgency: options?.urgency || "normal",
-        notes: options?.notes,
+        platforms: options.platforms,
+        urgency: options.urgency || "normal",
+        notes: options.notes,
       };
 
       this?.takedownRequests.set(requestId, request);
@@ -339,10 +339,10 @@ export class ReleaseWorkflowService {
         userId,
         details: {
           requestId,
-          reason: options?.reason,
-          customReason: options?.customReason,
-          urgency: options?.urgency,
-          platforms: options?.platforms,
+          reason: options.reason,
+          customReason: options.customReason,
+          urgency: options.urgency,
+          platforms: options.platforms,
         },
       });
 
@@ -363,7 +363,7 @@ export class ReleaseWorkflowService {
     action: "approve" | "reject",
     notes?: string,
   ): Promise<{ success: boolean; error?: string }> {
-    const _request = this?.takedownRequests.get(requestId);
+    const request = this?.takedownRequests.get(requestId);
     if (!request) {
       return { success: false, error: "Takedown request not found" };
     }
@@ -378,7 +378,7 @@ export class ReleaseWorkflowService {
     request.notes = notes;
 
     if (action === "approve") {
-      const _transitionResult = await this?.transition(
+      const transitionResult = await this?.transition(
         request?.releaseId,
         processedBy,
         "taken_down",
@@ -411,12 +411,12 @@ export class ReleaseWorkflowService {
     notes?: string,
   ): Promise<{ success: boolean; requestId?: string; error?: string }> {
     try {
-      const _release = await this?.getRelease(releaseId);
+      const release = await this?.getRelease(releaseId);
       if (!release) {
         return { success: false, error: "Release not found" };
       }
 
-      const _currentState = release?.status as ReleaseState;
+      const currentState = release?.status as ReleaseState;
       if (!["live", "updated"].includes(currentState)) {
         return {
           success: false,
@@ -428,7 +428,7 @@ export class ReleaseWorkflowService {
         return { success: false, error: "No changes provided" };
       }
 
-      const _requestId = `update_${randomBytes(8).toString("hex")}`;
+      const requestId = `update_${randomBytes(8).toString("hex")}`;
       const request: UpdateRequest = {
         id: requestId,
         releaseId,
@@ -437,7 +437,7 @@ export class ReleaseWorkflowService {
         requestedAt: new Date(),
         status: "pending",
         notes,
-        affectedPlatforms: this?.determineAffectedPlatforms(changes),
+        affectedPlatforms: this.determineAffectedPlatforms(changes),
       };
 
       this?.updateRequests.set(requestId, request);
@@ -452,7 +452,7 @@ export class ReleaseWorkflowService {
         userId,
         details: {
           requestId,
-          changeCount: changes?.length,
+          changeCount: changes.length,
           changeTypes: [...new Set(changes?.map((c) => c?.changeType))],
         },
       });
@@ -474,7 +474,7 @@ export class ReleaseWorkflowService {
     action: "approve" | "reject",
     notes?: string,
   ): Promise<{ success: boolean; error?: string }> {
-    const _request = this?.updateRequests.get(requestId);
+    const request = this?.updateRequests.get(requestId);
     if (!request) {
       return { success: false, error: "Update request not found" };
     }
@@ -491,13 +491,13 @@ export class ReleaseWorkflowService {
     if (action === "approve") {
       request.status = "processing";
 
-      const _transitionResult = await this?.transition(
+      const transitionResult = await this?.transition(
         request?.releaseId,
         processedBy,
         "updated",
         {
           reason: "Update applied",
-          metadata: { updateRequestId: requestId, changes: request?.changes },
+          metadata: { updateRequestId: requestId, changes: request.changes },
         },
       );
 
@@ -516,15 +516,15 @@ export class ReleaseWorkflowService {
     await this?.logAudit(request?.releaseId, {
       action: `update_${action}ed`,
       userId: processedBy,
-      details: { requestId, notes, action, changes: request?.changes },
+      details: { requestId, notes, action, changes: request.changes },
     });
 
     return { success: true };
   }
 
   private determineAffectedPlatforms(changes: ReleaseChange[]): string[] {
-    const _platforms = new Set<string>();
-    const _allPlatforms = [
+    const platforms = new Set<string>();
+    const allPlatforms = [
       "spotify",
       "appleMusic",
       "amazonMusic",
@@ -567,7 +567,7 @@ export class ReleaseWorkflowService {
       ...entry,
     };
 
-    const _log = this?.auditLog.get(releaseId) || [];
+    const log = this?.auditLog.get(releaseId) || [];
     log?.push(auditEntry);
     this?.auditLog.set(releaseId, log);
 
@@ -636,7 +636,7 @@ export class ReleaseWorkflowService {
     return Array?.from(this?.takedownRequests.values())
       .filter((r) => r?.status === "pending")
       .sort((a, b) => {
-        const _urgencyOrder = { emergency: 0, urgent: 1, normal: 2 };
+        const urgencyOrder = { emergency: 0, urgent: 1, normal: 2 };
         if (a?.urgency !== b?.urgency) {
           return urgencyOrder[a?.urgency] - urgencyOrder[b?.urgency];
         }
@@ -680,23 +680,23 @@ export class ReleaseWorkflowService {
       rejected: 0,
     };
 
-    const _now = new Date();
-    const _dayAgo = new Date(now?.getTime() - 24 * 60 * 60 * 1000);
+    const now = new Date();
+    const dayAgo = new Date(now?.getTime() - 24 * 60 * 60 * 1000);
     let recentActivity = 0;
 
     for (const history of this?.stateHistory.values()) {
       if (history?.length > 0) {
-        const _currentState = history[history?.length - 1].to;
+        const currentState = history[history?.length - 1].to;
         stateCount[currentState]++;
       }
       recentActivity += history?.filter((t) => t?.timestamp >= dayAgo).length;
     }
 
     return {
-      totalReleases: this?.stateHistory.size,
+      totalReleases: this.stateHistory.size,
       byState: stateCount,
-      pendingTakedowns: this?.getPendingTakedowns().length,
-      pendingUpdates: this?.getPendingUpdates().length,
+      pendingTakedowns: this.getPendingTakedowns().length,
+      pendingUpdates: this.getPendingUpdates().length,
       recentActivity,
     };
   }
@@ -752,17 +752,17 @@ export class ReleaseWorkflowService {
       composers: "credits",
     };
 
-    const _allKeys = new Set([
+    const allKeys = new Set([
       ...Object?.keys(oldRelease),
       ...Object?.keys(newRelease),
     ]);
 
     for (const key of allKeys) {
-      const _oldVal = oldRelease[key];
-      const _newVal = newRelease[key];
+      const oldVal = oldRelease[key];
+      const newVal = newRelease[key];
 
       if (JSON?.stringify(oldVal) !== JSON?.stringify(newVal)) {
-        const _changeType = fieldTypeMap[key] || "metadata";
+        const changeType = fieldTypeMap[key] || "metadata";
         changes?.push(this?.createChangeRecord(key, oldVal, newVal, changeType));
       }
     }
@@ -771,4 +771,4 @@ export class ReleaseWorkflowService {
   }
 }
 
-export const _releaseWorkflowService = new ReleaseWorkflowService();
+export const releaseWorkflowService = new ReleaseWorkflowService();

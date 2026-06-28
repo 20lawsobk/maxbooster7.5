@@ -354,7 +354,7 @@ class AITranslationService {
 
     for (const targetLang of request?.targetLanguages) {
       try {
-        const _translated = await this?.translateToLanguage(
+        const translated = await this?.translateToLanguage(
           request?.content,
           request?.headline,
           request?.hashtags || [],
@@ -365,7 +365,7 @@ class AITranslationService {
         );
         results?.push(translated);
       } catch (error) {
-        const _msg = (error as Error)?.message ?? String(error);
+        const msg = (error as Error)?.message ?? String(error);
         logger?.warn(
           `[Translation] Failed to translate to ${targetLang}: ${msg}`,
         );
@@ -385,7 +385,7 @@ class AITranslationService {
     preserveTone: boolean,
     _platform?: string,
   ): Promise<TranslatedContent> {
-    const _langData = LANGUAGE_DATA[targetLang];
+    const langData = LANGUAGE_DATA[targetLang];
     if (!langData) {
       throw new Error(
         `[Translation] Language '${targetLang}' is not supported by the translation engine`,
@@ -411,7 +411,7 @@ class AITranslationService {
       );
     }
 
-    const _translatedHashtags = this?.translateHashtags(
+    const translatedHashtags = this?.translateHashtags(
       hashtags,
       targetLang,
       langData?.hashtagStyle,
@@ -423,13 +423,13 @@ class AITranslationService {
     );
 
     return {
-      language: langData?.name,
+      language: langData.name,
       languageCode: targetLang,
       content: translatedContent,
       headline: translatedHeadline,
       hashtags: translatedHashtags,
-      culturalNotes: langData?.culturalNotes,
-      confidence: this?.calculateConfidence(
+      culturalNotes: langData.culturalNotes,
+      confidence: this.calculateConfidence(
         content,
         translatedContent,
         targetLang,
@@ -438,14 +438,14 @@ class AITranslationService {
   }
 
   private applyPhraseTranslations(text: string, targetLang: string): string {
-    const _langData = LANGUAGE_DATA[targetLang];
+    const langData = LANGUAGE_DATA[targetLang];
     if (!langData) return text;
 
     let result = text;
     for (const [english, translated] of Object?.entries(
       langData?.commonPhrases,
     )) {
-      const _regex = new RegExp(english, "gi");
+      const regex = new RegExp(english, "gi");
       result = result?.replace(regex, translated);
     }
 
@@ -457,7 +457,7 @@ class AITranslationService {
 
     for (const [english, translations] of Object?.entries(MUSIC_TERMS)) {
       if (translations[targetLang]) {
-        const _regex = new RegExp(`\\b${english}\\b`, "gi");
+        const regex = new RegExp(`\\b${english}\\b`, "gi");
         result = result?.replace(regex, translations[targetLang]);
       }
     }
@@ -481,8 +481,8 @@ class AITranslationService {
         adapted = adapted + " 🎵";
       }
     } else if (langData?.emojiCulture === "conservative") {
-      const _emojiRegex = new RegExp("[\\u{1F300}-\\u{1F9FF}]", "gu");
-      const _emojis = adapted?.match(emojiRegex) || [];
+      const emojiRegex = new RegExp("[\\u{1F300}-\\u{1F9FF}]", "gu");
+      const emojis = adapted?.match(emojiRegex) || [];
       if (emojis?.length > 2) {
         let count = 0;
         adapted = adapted?.replace(emojiRegex, (match) => {
@@ -504,20 +504,20 @@ class AITranslationService {
       return hashtags;
     }
 
-    const _langData = LANGUAGE_DATA[targetLang];
+    const langData = LANGUAGE_DATA[targetLang];
     if (!langData) return hashtags;
 
     const translated: string[] = [];
 
     for (const hashtag of hashtags) {
-      const _cleanTag = hashtag?.replace("#", "").toLowerCase();
+      const cleanTag = hashtag?.replace("#", "").toLowerCase();
 
       if (style === "native") {
-        const _nativeTag = this?.translateHashtagContent(cleanTag, targetLang);
+        const nativeTag = this?.translateHashtagContent(cleanTag, targetLang);
         translated?.push(`#${nativeTag}`);
       } else {
         translated?.push(hashtag);
-        const _nativeTag = this?.translateHashtagContent(cleanTag, targetLang);
+        const nativeTag = this?.translateHashtagContent(cleanTag, targetLang);
         if (nativeTag !== cleanTag) {
           translated?.push(`#${nativeTag}`);
         }
@@ -528,13 +528,13 @@ class AITranslationService {
   }
 
   private translateHashtagContent(tag: string, targetLang: string): string {
-    const _langData = LANGUAGE_DATA[targetLang];
+    const langData = LANGUAGE_DATA[targetLang];
     if (!langData) return tag;
 
     for (const [english, translated] of Object?.entries(
       langData?.commonPhrases,
     )) {
-      const _englishNormalized = english?.replace(/\s+/g, "").toLowerCase();
+      const englishNormalized = english?.replace(/\s+/g, "").toLowerCase();
       if (tag?.toLowerCase() === englishNormalized) {
         return translated?.replace(/\s+/g, "");
       }
@@ -593,11 +593,11 @@ class AITranslationService {
   ): number {
     let confidence = 70;
 
-    const _langData = LANGUAGE_DATA[targetLang];
+    const langData = LANGUAGE_DATA[targetLang];
     if (langData) {
       confidence += 10;
 
-      const _phrasesApplied = Object?.keys(langData?.commonPhrases).filter(
+      const phrasesApplied = Object?.keys(langData?.commonPhrases).filter(
         (phrase) => original?.toLowerCase().includes(phrase?.toLowerCase()),
       ).length;
       confidence += Math?.min(phrasesApplied * 3, 10);
@@ -607,13 +607,14 @@ class AITranslationService {
       confidence += 5;
     }
 
-    const _termsTranslated = Object?.keys(MUSIC_TERMS).filter((term) =>
+    const termsTranslated = Object?.keys(MUSIC_TERMS).filter((term) =>
       original?.toLowerCase().includes(term?.toLowerCase()),
     ).length;
     confidence += Math?.min(termsTranslated * 2, 5);
 
     return Math?.min(confidence, 95);
   }
+
 
   getSupportedLanguages(): {
     code: string;
@@ -622,8 +623,8 @@ class AITranslationService {
   }[] {
     return Object?.entries(LANGUAGE_DATA).map(([code, data]) => ({
       code,
-      name: data?.name,
-      nativeName: data?.nativeName,
+      name: data.name,
+      nativeName: data.nativeName,
     }));
   }
 
@@ -633,13 +634,13 @@ class AITranslationService {
     platforms: string[],
     targetLanguages: string[],
   ): Promise<Map<string, Map<string, TranslatedContent>>> {
-    const _results = new Map<string, Map<string, TranslatedContent>>();
+    const results = new Map<string, Map<string, TranslatedContent>>();
 
     for (const platform of platforms) {
-      const _platformTranslations = new Map<string, TranslatedContent>();
+      const platformTranslations = new Map<string, TranslatedContent>();
 
       for (const lang of targetLanguages) {
-        const _translated = await this?.translateToLanguage(
+        const translated = await this?.translateToLanguage(
           content,
           headline,
           [],
@@ -658,4 +659,4 @@ class AITranslationService {
   }
 }
 
-export const _aiTranslationService = new AITranslationService();
+export const aiTranslationService = new AITranslationService();

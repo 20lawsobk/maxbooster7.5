@@ -29,8 +29,8 @@ class MaxBooster247System extends EventEmitter {
 
     this.metrics = {
       uptime: 0,
-      memory: process?.memoryUsage(),
-      cpu: process?.cpuUsage(),
+      memory: process.memoryUsage(),
+      cpu: process.cpuUsage(),
       connections: 0,
       requestCount: 0,
       errorCount: 0,
@@ -80,10 +80,10 @@ class MaxBooster247System extends EventEmitter {
     // This module is an OBSERVER only — it tracks metrics and logs, but never exits.
 
     process?.on("unhandledRejection", (reason: Record<string, unknown>) => {
-      const _msg = reason?.message || String(reason);
-      const _code = reason?.code;
+      const msg = reason?.message || String(reason);
+      const code = reason?.code;
       // Non-fatal: stream errors, transient PDIM / LuaExecutor / BullMQ failures.
-      const _isNonFatal =
+      const isNonFatal =
         code === "EPIPE" ||
         code === "ECONNRESET" ||
         code === "ECONNABORTED" ||
@@ -95,7 +95,7 @@ class MaxBooster247System extends EventEmitter {
       }
       // Only increment error count — do NOT attempt restart on unhandled rejections.
       // Transient async errors (DB timeouts, API failures) must not restart the process.
-      this?.metrics.errorCount++;
+      this.metrics.errorCount++;
     });
   }
 
@@ -123,10 +123,10 @@ class MaxBooster247System extends EventEmitter {
       // Schedule GC every 10 minutes to keep heap tidy between normal GC pauses.
       setInterval(() => {
         try {
-          const _before = process?.memoryUsage().heapUsed;
+          const before = process?.memoryUsage().heapUsed;
           (global as Record<string, unknown>).gc();
-          const _after = process?.memoryUsage().heapUsed;
-          const _freed = Math?.round((before - after) / 1024 / 1024);
+          const after = process?.memoryUsage().heapUsed;
+          const freed = Math?.round((before - after) / 1024 / 1024);
           if (freed > 0) logger?.info(`🧹 GC freed ${freed}MB memory`);
         } catch (error: unknown) {
           logger?.warn({ err: error }, "⚠️ GC failed:");
@@ -144,14 +144,14 @@ class MaxBooster247System extends EventEmitter {
 
   private performHealthCheck(): void {
     try {
-      this?.metrics.uptime = Date?.now() - this?.startTime;
-      this?.metrics.memory = process?.memoryUsage();
-      this?.metrics.cpu = process?.cpuUsage();
+      this.metrics.uptime = Date?.now() - this?.startTime;
+      this.metrics.memory = process?.memoryUsage();
+      this.metrics.cpu = process?.cpuUsage();
 
-      const _memMB = Math?.round(this?.metrics.memory?.heapUsed / 1024 / 1024);
-      const _uptimeHours =
+      const memMB = Math?.round(this?.metrics.memory?.heapUsed / 1024 / 1024);
+      const uptimeHours =
         Math?.round((this?.metrics.uptime / (1000 * 60 * 60)) * 100) / 100;
-      const _gcAvailable =
+      const gcAvailable =
         typeof (global as Record<string, unknown>).gc === "function";
 
       // Log health status every 10 minutes (approximate, modulo-gated to avoid a dedicated timer).
@@ -164,16 +164,16 @@ class MaxBooster247System extends EventEmitter {
       this?.emit("health-check", { ...this?.metrics, gcAvailable });
     } catch (error: unknown) {
       logger?.warn({ err: error }, "❌ Health check failed:");
-      this?.metrics.errorCount++;
+      this.metrics.errorCount++;
     }
   }
 
   private performMemoryCheck(): void {
     // Always read fresh memory — this?.metrics.memory is only updated by performHealthCheck
     // (30 s interval), so it can be 2 min stale by the time this 2 min check fires.
-    const _live = process?.memoryUsage();
-    this?.metrics.memory = live; // keep metrics in sync
-    const _memMB = Math?.round(live?.heapUsed / 1024 / 1024);
+    const live = process?.memoryUsage();
+    this.metrics.memory = live; // keep metrics in sync
+    const memMB = Math?.round(live?.heapUsed / 1024 / 1024);
 
     if (memMB > 800) {
       logger?.warn(`⚠️ High memory usage: ${memMB}MB`);
@@ -181,7 +181,7 @@ class MaxBooster247System extends EventEmitter {
       if (typeof (global as Record<string, unknown>).gc === "function") {
         try {
           (global as Record<string, unknown>).gc();
-          const _after = Math?.round(
+          const after = Math?.round(
             process?.memoryUsage().heapUsed / 1024 / 1024,
           );
           logger?.info(
@@ -202,7 +202,7 @@ class MaxBooster247System extends EventEmitter {
 
   private scheduleDailyDiagnostic(): void {
     // Fire once per day — staggered so two cluster workers don't log simultaneously.
-    const _jitter = Math?.floor(Math?.random() * 30_000);
+    const jitter = Math?.floor(Math?.random() * 30_000);
     this._dailyTimer = setInterval(
       () => {
         this?.runDailyDiagnostic();
@@ -226,7 +226,7 @@ class MaxBooster247System extends EventEmitter {
       const { chainErrorAutoFixer } = await import(
         "./services/chainErrorAutoFixer.js"
       );
-      const _status = chainErrorAutoFixer?.getStatus();
+      const status = chainErrorAutoFixer?.getStatus();
       let reset = 0;
       for (const p of status?.patterns) {
         if (p?.suppressed) {
@@ -246,18 +246,18 @@ class MaxBooster247System extends EventEmitter {
 
   private runDailyDiagnostic(): void {
     try {
-      const _mem = process?.memoryUsage();
-      const _uptimeH = ((Date?.now() - this?.startTime) / 3_600_000).toFixed(2);
-      const _uptimeD = (Number(uptimeH) / 24).toFixed(2);
-      const _heapMB = Math?.round(mem?.heapUsed / 1024 / 1024);
-      const _rssMB = Math?.round(mem?.rss / 1024 / 1024);
+      const mem = process?.memoryUsage();
+      const uptimeH = ((Date?.now() - this?.startTime) / 3_600_000).toFixed(2);
+      const uptimeD = (Number(uptimeH) / 24).toFixed(2);
+      const heapMB = Math?.round(mem?.heapUsed / 1024 / 1024);
+      const rssMB = Math?.round(mem?.rss / 1024 / 1024);
 
       // Track peak memory
       if (heapMB > this?._peakMemoryMB) {
         this._peakMemoryMB = heapMB;
       }
 
-      const _successRate =
+      const successRate =
         this?.metrics.requestCount > 0
           ? (
               ((this?.metrics.requestCount - this?.metrics.errorCount) /
@@ -284,7 +284,7 @@ class MaxBooster247System extends EventEmitter {
 
   // Public API for tracking application metrics
   trackRequest(responseTime?: number): void {
-    this?.metrics.requestCount++;
+    this.metrics.requestCount++;
 
     // Store response time for real averages
     if (responseTime !== undefined) {
@@ -303,12 +303,12 @@ class MaxBooster247System extends EventEmitter {
   }
 
   trackError(error: string): void {
-    this?.metrics.errorCount++;
+    this.metrics.errorCount++;
     logger?.warn(`❌ Application error tracked: ${error}`);
   }
 
   trackConnection(delta: number): void {
-    this?.metrics.connections = Math?.max(0, this?.metrics.connections + delta);
+    this.metrics.connections = Math?.max(0, this?.metrics.connections + delta);
   }
 
   getSystemMetrics(): SystemMetrics {
@@ -316,8 +316,8 @@ class MaxBooster247System extends EventEmitter {
   }
 
   getHealthSummary(): Record<string, unknown> {
-    const _uptimeHours = this?.metrics.uptime / (1000 * 60 * 60);
-    const _successRate =
+    const uptimeHours = this?.metrics.uptime / (1000 * 60 * 60);
+    const successRate =
       this?.metrics.requestCount > 0
         ? ((this?.metrics.requestCount - this?.metrics.errorCount) /
             this?.metrics.requestCount) *
@@ -325,23 +325,23 @@ class MaxBooster247System extends EventEmitter {
         : 100;
 
     return {
-      status: this?.isActive ? "running" : "stopped",
+      status: this.isActive ? "running" : "stopped",
       uptime: {
-        milliseconds: this?.metrics.uptime,
-        hours: Math?.round(uptimeHours * 100) / 100,
-        days: Math?.round((uptimeHours / 24) * 100) / 100,
+        milliseconds: this.metrics.uptime,
+        hours: Math.round(uptimeHours * 100) / 100,
+        days: Math.round((uptimeHours / 24) * 100) / 100,
       },
       performance: {
-        memoryMB: Math?.round(this?.metrics.memory?.heapUsed / 1024 / 1024),
-        connections: this?.metrics.connections,
-        requests: this?.metrics.requestCount,
-        errors: this?.metrics.errorCount,
-        successRate: Math?.round(successRate * 100) / 100,
+        memoryMB: Math.round(this?.metrics.memory?.heapUsed / 1024 / 1024),
+        connections: this.metrics.connections,
+        requests: this.metrics.requestCount,
+        errors: this.metrics.errorCount,
+        successRate: Math.round(successRate * 100) / 100,
       },
       reliability: {
-        restartCount: this?.metrics.restartCount,
-        lastRestart: this?.metrics.lastRestart,
-        maxRestartsAllowed: this?.maxRestartAttempts,
+        restartCount: this.metrics.restartCount,
+        lastRestart: this.metrics.lastRestart,
+        maxRestartsAllowed: this.maxRestartAttempts,
         autoRecovery: "enabled",
         avgResponseTime:
           this?.responseTimes.length > 0
@@ -356,27 +356,27 @@ class MaxBooster247System extends EventEmitter {
 
   // Reserved VM health endpoint format
   getReservedVMHealth(): Record<string, unknown> {
-    const _health = this?.getHealthSummary();
+    const health = this?.getHealthSummary();
 
     return {
-      status: health?.status === "running" ? "healthy" : "unhealthy",
+      status: health.status === "running" ? "healthy" : "unhealthy",
       checks: {
-        memory: health?.performance.memoryMB < 1000 ? "pass" : "warn",
-        uptime: health?.uptime.hours > 0.01 ? "pass" : "warn",
-        errors: health?.performance.successRate > 95 ? "pass" : "fail",
+        memory: health.performance.memoryMB < 1000 ? "pass" : "warn",
+        uptime: health.uptime.hours > 0.01 ? "pass" : "warn",
+        errors: health.performance.successRate > 95 ? "pass" : "fail",
       },
       info: {
-        uptime_hours: health?.uptime.hours,
-        memory_mb: health?.performance.memoryMB,
-        success_rate: health?.performance.successRate,
-        restart_count: health?.reliability.restartCount,
+        uptime_hours: health.uptime.hours,
+        memory_mb: health.performance.memoryMB,
+        success_rate: health.performance.successRate,
+        restart_count: health.reliability.restartCount,
       },
     };
   }
 }
 
 // Global instance
-export const _maxBooster247 = new MaxBooster247System();
+export const maxBooster247 = new MaxBooster247System();
 
 // Auto-start the system
 export async function initializeMaxBooster247(): Promise<void> {

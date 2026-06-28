@@ -48,6 +48,7 @@ interface TrendCache {
   expiresAt: Date;
 }
 
+
 const MUSIC_GENRE_TRENDS: Record<
   string,
   { hashtags: string[]; relatedTopics: string[] }
@@ -347,10 +348,10 @@ class DynamicTrendsService {
     genre?: string,
     region?: string,
   ): Promise<TrendingTopic[]> {
-    const _cacheKey = this?.getCacheKey(platform, genre, region);
+    const cacheKey = this?.getCacheKey(platform, genre, region);
 
     if (this?.isCacheValid() && this?.trendCache) {
-      const _cached = this?.trendCache.data?.filter(
+      const cached = this?.trendCache.data?.filter(
         (t) =>
           (!t?.platform || t?.platform === platform) &&
           (!t?.region || t?.region === region),
@@ -364,9 +365,9 @@ class DynamicTrendsService {
     }
 
     const trends: TrendingTopic[] = [];
-    const _now = new Date();
-    const _dayOfWeek = now?.getDay();
-    const _month = now?.getMonth();
+    const now = new Date();
+    const dayOfWeek = now?.getDay();
+    const month = now?.getMonth();
 
     if (DAY_OF_WEEK_TRENDS[dayOfWeek]) {
       trends?.push(...DAY_OF_WEEK_TRENDS[dayOfWeek]);
@@ -417,7 +418,7 @@ class DynamicTrendsService {
       expiresAt: new Date(Date?.now() + 86400000 * 7),
     });
 
-    const _sortedTrends = trends
+    const sortedTrends = trends
       .sort((a, b) => b?.popularity - a?.popularity)
       .slice(0, 10);
 
@@ -677,7 +678,7 @@ class DynamicTrendsService {
 
     hashtags?.push(...highReach, ...mediumReach, ...nicheHashtags);
 
-    const _uniqueHashtags = hashtags?.reduce((acc, tag) => {
+    const uniqueHashtags = hashtags?.reduce((acc, tag) => {
       if (
         !acc?.some((t) => t?.hashtag.toLowerCase() === tag?.hashtag.toLowerCase())
       ) {
@@ -686,7 +687,7 @@ class DynamicTrendsService {
       return acc;
     }, [] as HashtagData[]);
 
-    const _balanced = this?.balanceHashtagMix(uniqueHashtags, count);
+    const balanced = this?.balanceHashtagMix(uniqueHashtags, count);
 
     return balanced;
   }
@@ -695,15 +696,15 @@ class DynamicTrendsService {
     hashtags: HashtagData[],
     count: number,
   ): HashtagData[] {
-    const _highReach = hashtags?.filter((h) => h?.category === "high-reach");
-    const _mediumReach = hashtags?.filter((h) => h?.category === "medium-reach");
-    const _niche = hashtags?.filter((h) => h?.category === "niche");
+    const highReach = hashtags?.filter((h) => h?.category === "high-reach");
+    const mediumReach = hashtags?.filter((h) => h?.category === "medium-reach");
+    const niche = hashtags?.filter((h) => h?.category === "niche");
 
     const result: HashtagData[] = [];
 
-    const _highCount = Math?.ceil(count * 0.3);
-    const _mediumCount = Math?.ceil(count * 0.4);
-    const _nicheCount = count - highCount - mediumCount;
+    const highCount = Math?.ceil(count * 0.3);
+    const mediumCount = Math?.ceil(count * 0.4);
+    const nicheCount = count - highCount - mediumCount;
 
     result?.push(
       ...highReach
@@ -722,7 +723,7 @@ class DynamicTrendsService {
     );
 
     while (result?.length < count && hashtags?.length > result?.length) {
-      const _remaining = hashtags?.filter((h) => !result?.includes(h));
+      const remaining = hashtags?.filter((h) => !result?.includes(h));
       if (remaining?.length > 0) {
         result?.push(remaining[0]);
       } else {
@@ -738,7 +739,7 @@ class DynamicTrendsService {
     platform: string,
     genre?: string,
   ): Promise<HashtagData[]> {
-    const _contentLower = content?.toLowerCase();
+    const contentLower = content?.toLowerCase();
 
     const detectedThemes: string[] = [];
     if (
@@ -874,7 +875,7 @@ class DynamicTrendsService {
       }
     }
 
-    const _baseHashtags = await this?.getOptimizedHashtags(
+    const baseHashtags = await this?.getOptimizedHashtags(
       platform,
       genre,
       undefined,
@@ -882,7 +883,7 @@ class DynamicTrendsService {
     );
     recommendedHashtags?.push(...baseHashtags);
 
-    const _unique = recommendedHashtags?.reduce((acc, tag) => {
+    const unique = recommendedHashtags?.reduce((acc, tag) => {
       if (
         !acc?.some((t) => t?.hashtag.toLowerCase() === tag?.hashtag.toLowerCase())
       ) {
@@ -900,7 +901,7 @@ class DynamicTrendsService {
   ): Promise<void> {
     try {
       for (const hashtag of hashtags?.slice(0, 10)) {
-        const _existing = await db
+        const existing = await db
           .select()
           .from(hashtagResearch)
           .where(
@@ -914,13 +915,13 @@ class DynamicTrendsService {
         if (existing?.length === 0) {
           await db?.insert(hashtagResearch).values({
             userId,
-            hashtag: hashtag?.hashtag,
-            platform: hashtag?.platform,
-            category: hashtag?.category,
-            popularity: hashtag?.popularity,
-            competition: hashtag?.competition,
-            avgEngagement: hashtag?.avgEngagement,
-            trending: hashtag?.trending,
+            hashtag: hashtag.hashtag,
+            platform: hashtag.platform,
+            category: hashtag.category,
+            popularity: hashtag.popularity,
+            competition: hashtag.competition,
+            avgEngagement: hashtag.avgEngagement,
+            trending: hashtag.trending,
             relatedTags: [],
             lastUpdated: new Date(),
           });
@@ -928,10 +929,10 @@ class DynamicTrendsService {
           await db
             .update(hashtagResearch)
             .set({
-              popularity: hashtag?.popularity,
-              competition: hashtag?.competition,
-              avgEngagement: hashtag?.avgEngagement,
-              trending: hashtag?.trending,
+              popularity: hashtag.popularity,
+              competition: hashtag.competition,
+              avgEngagement: hashtag.avgEngagement,
+              trending: hashtag.trending,
               lastUpdated: new Date(),
             })
             .where(eq(hashtagResearch?.id, existing[0].id));
@@ -943,4 +944,4 @@ class DynamicTrendsService {
   }
 }
 
-export const _dynamicTrendsService = new DynamicTrendsService();
+export const dynamicTrendsService = new DynamicTrendsService();

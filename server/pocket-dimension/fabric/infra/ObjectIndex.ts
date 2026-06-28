@@ -14,8 +14,8 @@ export class ObjectIndex {
     contentHash: string,
     existingId?: string,
   ): Promise<FabricObject> {
-    const _id = existingId ?? randomUUID();
-    const _now = new Date();
+    const id = existingId ?? randomUUID();
+    const now = new Date();
     await db?.insert(fabricObjects).values({
       id,
       volumeId,
@@ -39,7 +39,7 @@ export class ObjectIndex {
   }
 
   async getObject(id: ObjectId): Promise<FabricObject | null> {
-    const _rows = await db
+    const rows = await db
       .select()
       .from(fabricObjects)
       .where(eq(fabricObjects?.id, id));
@@ -47,7 +47,7 @@ export class ObjectIndex {
   }
 
   async listObjects(volumeId: VolumeId): Promise<FabricObject[]> {
-    const _rows = await db
+    const rows = await db
       .select()
       .from(fabricObjects)
       .where(eq(fabricObjects?.volumeId, volumeId));
@@ -60,14 +60,14 @@ export class ObjectIndex {
 
   private rowToObject(row: typeof fabricObjects.$inferSelect): FabricObject {
     return {
-      id: row?.id,
-      volumeId: row?.volumeId,
-      originalName: row?.originalName,
-      contentType: row?.contentType,
+      id: row.id,
+      volumeId: row.volumeId,
+      originalName: row.originalName,
+      contentType: row.contentType,
       sizeBytes: Number(row?.sizeBytes),
-      chunkIds: row?.chunkIds as ChunkId[],
-      contentHash: row?.contentHash,
-      createdAt: row?.createdAt,
+      chunkIds: row.chunkIds as ChunkId[],
+      contentHash: row.contentHash,
+      createdAt: row.createdAt,
     };
   }
 }

@@ -331,7 +331,7 @@ export function useBatchProgress(initialTotal: number = 0) {
       succeeded: 0,
       failed: 0,
       startTime: Date.now(),
-      items: items?.map((item) => ({ ...item, status: "pending" })),
+      items: items.map((item) => ({ ...item, status: "pending" })),
     });
   };
 

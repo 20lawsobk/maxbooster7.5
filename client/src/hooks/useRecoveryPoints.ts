@@ -67,30 +67,30 @@ export function useRecoveryPoints(
   const [isAutoRecoveryEnabled, setIsAutoRecoveryEnabled] =
     useState(initialAutoRecovery);
 
-  const _loadRecoveryPoints = useCallback(async () => {
+  const loadRecoveryPoints = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const _response = await apiRequest("GET", "/api/undo/restore-points");
-      const _data = await response?.json();
+      const response = await apiRequest("GET", "/api/undo/restore-points");
+      const data = await response?.json();
 
       if (data?.success && data?.restorePoints) {
         const points: RecoveryPoint[] = data?.restorePoints.map(
           (rp: Record<string, unknown>) => ({
-            id: rp?.id,
-            name: rp?.name,
-            description: rp?.description,
-            createdAt: rp?.createdAt,
-            actionId: rp?.actionId,
-            module: rp?.module,
-            isAutomatic: rp?.name?.toLowerCase().includes("auto"),
+            id: rp.id,
+            name: rp.name,
+            description: rp.description,
+            createdAt: rp.createdAt,
+            actionId: rp.actionId,
+            module: rp.module,
+            isAutomatic: rp.name?.toLowerCase().includes("auto"),
           }),
         );
         setRecoveryPoints(points);
       }
     } catch (err) {
-      const _error =
+      const error =
         err instanceof Error
           ? err
           : new Error("Failed to load recovery points");
@@ -101,33 +101,33 @@ export function useRecoveryPoints(
     }
   }, [onError]);
 
-  const _createRecoveryPoint = useCallback(
+  const createRecoveryPoint = useCallback(
     async (input: RecoveryPointInput): Promise<RecoveryPoint> => {
       setIsCreating(true);
       setError(null);
 
       try {
-        const _response = await apiRequest(
+        const response = await apiRequest(
           "POST",
           "/api/undo/create-restore-point",
           {
-            name: input?.name,
-            description: input?.description,
+            name: input.name,
+            description: input.description,
           },
         );
-        const _data = await response?.json();
+        const data = await response?.json();
 
         if (!data?.success) {
           throw new Error(data?.message || "Failed to create recovery point");
         }
 
         const newPoint: RecoveryPoint = {
-          id: data?.restorePointId,
-          name: input?.name,
-          description: input?.description,
+          id: data.restorePointId,
+          name: input.name,
+          description: input.description,
           createdAt: new Date().toISOString(),
           actionId: "",
-          isAutomatic: input?.name.toLowerCase().includes("auto"),
+          isAutomatic: input.name.toLowerCase().includes("auto"),
         };
 
         setRecoveryPoints((prev) => [newPoint, ...prev].slice(0, maxPoints));
@@ -135,7 +135,7 @@ export function useRecoveryPoints(
 
         return newPoint;
       } catch (err) {
-        const _error =
+        const error =
           err instanceof Error
             ? err
             : new Error("Failed to create recovery point");
@@ -149,17 +149,17 @@ export function useRecoveryPoints(
     [maxPoints, onRecoveryPointCreated, onError],
   );
 
-  const _restoreToPoint = useCallback(
+  const restoreToPoint = useCallback(
     async (pointId: string): Promise<void> => {
       setIsRestoring(true);
       setError(null);
 
       try {
-        const _response = await apiRequest(
+        const response = await apiRequest(
           "POST",
           `/api/undo/restore/${pointId}`,
         );
-        const _data = await response?.json();
+        const data = await response?.json();
 
         if (!data?.success) {
           throw new Error(data?.message || "Failed to restore to point");
@@ -167,7 +167,7 @@ export function useRecoveryPoints(
 
         onRestored?.(pointId);
       } catch (err) {
-        const _error =
+        const error =
           err instanceof Error ? err : new Error("Failed to restore to point");
         setError(error);
         onError?.(error);
@@ -179,7 +179,7 @@ export function useRecoveryPoints(
     [onRestored, onError],
   );
 
-  const _deleteRecoveryPoint = useCallback(
+  const deleteRecoveryPoint = useCallback(
     async (pointId: string): Promise<void> => {
       setError(null);
 
@@ -187,7 +187,7 @@ export function useRecoveryPoints(
         await apiRequest("DELETE", `/api/undo/restore-points/${pointId}`);
         setRecoveryPoints((prev) => prev?.filter((p) => p?.id !== pointId));
       } catch (err) {
-        const _error =
+        const error =
           err instanceof Error
             ? err
             : new Error("Failed to delete recovery point");
@@ -199,7 +199,7 @@ export function useRecoveryPoints(
     [onError],
   );
 
-  const _clearAllRecoveryPoints = useCallback(async (): Promise<void> => {
+  const clearAllRecoveryPoints = useCallback(async (): Promise<void> => {
     setError(null);
 
     try {
@@ -208,7 +208,7 @@ export function useRecoveryPoints(
       }
       setRecoveryPoints([]);
     } catch (err) {
-      const _error =
+      const error =
         err instanceof Error
           ? err
           : new Error("Failed to clear recovery points");
@@ -218,26 +218,26 @@ export function useRecoveryPoints(
     }
   }, [recoveryPoints, onError]);
 
-  const _enableAutoRecovery = useCallback((enabled: boolean) => {
+  const enableAutoRecovery = useCallback((enabled: boolean) => {
     setIsAutoRecoveryEnabled(enabled);
   }, []);
 
-  const _getPointById = useCallback(
+  const getPointById = useCallback(
     (pointId: string): RecoveryPoint | undefined => {
       return recoveryPoints?.find((p) => p?.id === pointId);
     },
     [recoveryPoints],
   );
 
-  const _getMostRecent = useCallback((): RecoveryPoint | undefined => {
+  const getMostRecent = useCallback((): RecoveryPoint | undefined => {
     return recoveryPoints[0];
   }, [recoveryPoints]);
 
-  const _getAutoRecoveryPoints = useCallback((): RecoveryPoint[] => {
+  const getAutoRecoveryPoints = useCallback((): RecoveryPoint[] => {
     return recoveryPoints?.filter((p) => p?.isAutomatic);
   }, [recoveryPoints]);
 
-  const _getManualRecoveryPoints = useCallback((): RecoveryPoint[] => {
+  const getManualRecoveryPoints = useCallback((): RecoveryPoint[] => {
     return recoveryPoints?.filter((p) => !p?.isAutomatic);
   }, [recoveryPoints]);
 
@@ -250,7 +250,7 @@ export function useRecoveryPoints(
   useEffect(() => {
     if (!isAutoRecoveryEnabled || autoRecoveryInterval <= 0) return;
 
-    const _interval = setInterval(() => {
+    const interval = setInterval(() => {
       createRecoveryPoint({
         name: "Auto-recovery point",
         description: `Automatically created at ${new Date().toLocaleTimeString()}`,
@@ -301,8 +301,8 @@ export function useQuickRestore() {
     autoLoad: true,
   });
 
-  const _quickRestore = useCallback(async () => {
-    const _mostRecent = getMostRecent();
+  const quickRestore = useCallback(async () => {
+    const mostRecent = getMostRecent();
     if (mostRecent) {
       await restoreToPoint(mostRecent?.id);
     }

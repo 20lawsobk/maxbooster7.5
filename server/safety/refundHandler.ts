@@ -48,14 +48,14 @@ interface ChargebackRecord {
 }
 
 // In-memory cache for quick lookup (also persisted to DB)
-const _refundRecords = new Map<string, RefundRecord>();
-const _chargebackRecords = new Map<string, ChargebackRecord>();
+const refundRecords = new Map<string, RefundRecord>();
+const chargebackRecords = new Map<string, ChargebackRecord>();
 
 /**
  * Initialize Stripe instance
  */
 function getStripe(): Stripe {
-  const _secretKey = env?.STRIPE_SECRET_KEY;
+  const secretKey = env?.STRIPE_SECRET_KEY;
   if (!secretKey) {
     throw new Error("STRIPE_SECRET_KEY is not configured");
   }
@@ -72,33 +72,33 @@ export async function processRefund(params: {
   userId: string;
   metadata?: Record<string, any>;
 }): Promise<{ success: boolean; refundId?: string; error?: string }> {
-  const _stripe = getStripe();
+  const stripe = getStripe();
 
   try {
     logger?.info(`[Refund] Processing refund for charge ${params?.chargeId}`);
 
-    const _refund = await stripe?.refunds.create({
-      charge: params?.chargeId,
-      amount: params?.amount, // In cents, omit for full refund
-      reason: params?.reason,
+    const refund = await stripe?.refunds.create({
+      charge: params.chargeId,
+      amount: params.amount, // In cents, omit for full refund
+      reason: params.reason,
       metadata: {
-        userId: params?.userId,
+        userId: params.userId,
         ...params?.metadata,
       },
     });
 
     const record: RefundRecord = {
-      id: crypto?.randomUUID(),
-      stripeChargeId: params?.chargeId,
-      stripeRefundId: refund?.id,
-      userId: params?.userId,
-      amount: refund?.amount,
-      reason: params?.reason,
-      status: refund?.status === "succeeded" ? "succeeded" : "pending",
+      id: crypto.randomUUID(),
+      stripeChargeId: params.chargeId,
+      stripeRefundId: refund.id,
+      userId: params.userId,
+      amount: refund.amount,
+      reason: params.reason,
+      status: refund.status === "succeeded" ? "succeeded" : "pending",
       type: "refund",
       createdAt: new Date(),
-      processedAt: refund?.status === "succeeded" ? new Date() : undefined,
-      metadata: params?.metadata,
+      processedAt: refund.status === "succeeded" ? new Date() : undefined,
+      metadata: params.metadata,
     };
 
     refundRecords?.set(refund?.id, record);
@@ -109,47 +109,47 @@ export async function processRefund(params: {
     );
 
     // Update user's subscription if needed
-    await handlePostRefundActions(params?.userId, refund);
+    await handlePostRefundActions(params.userId, refund);
 
-    return { success: true, refundId: refund?.id };
+    return { success: true, refundId: refund.id };
   } catch (error) {
-    logger?.warn(
+    logger.warn(
       { err: error },
-      `[Refund] Failed to process refund for ${params?.chargeId}:`,
+      `[Refund] Failed to process refund for ${params.chargeId}:`,
     );
-    return { success: false, error: error?.message };
+    return { success: false, error: error.message };
   }
 }
 
 /**
  * Handle chargeback/dispute
  */
-export async function handleDispute(dispute: Stripe?.Dispute): Promise<void> {
-  logger?.warn("═══════════════════════════════════════════════════════");
-  logger?.warn("⚠️ CHARGEBACK/DISPUTE RECEIVED");
-  logger?.warn(`   Dispute ID: ${dispute?.id}`);
-  logger?.warn(`   Charge: ${dispute?.charge}`);
-  logger?.warn(`   Amount: $${(dispute?.amount / 100).toFixed(2)}`);
-  logger?.warn(`   Reason: ${dispute?.reason}`);
-  logger?.warn(`   Status: ${dispute?.status}`);
-  logger?.warn("═══════════════════════════════════════════════════════");
+export async function handleDispute(dispute: Stripe.Dispute): Promise<void> {
+  logger.warn("═══════════════════════════════════════════════════════");
+  logger.warn("⚠️ CHARGEBACK/DISPUTE RECEIVED");
+  logger.warn(`   Dispute ID: ${dispute.id}`);
+  logger.warn(`   Charge: ${dispute.charge}`);
+  logger.warn(`   Amount: $${(dispute.amount / 100).toFixed(2)}`);
+  logger.warn(`   Reason: ${dispute.reason}`);
+  logger.warn(`   Status: ${dispute.status}`);
+  logger.warn("═══════════════════════════════════════════════════════");
 
   const record: ChargebackRecord = {
-    id: crypto?.randomUUID(),
-    stripeDisputeId: dispute?.id,
-    stripeChargeId: dispute?.charge as string,
-    userId: dispute?.metadata?.userId || "unknown",
-    amount: dispute?.amount,
-    reason: dispute?.reason,
-    status: dispute?.status,
-    evidence_due_by: dispute?.evidence_details?.due_by
-      ? new Date(dispute?.evidence_details.due_by * 1000)
+    id: crypto.randomUUID(),
+    stripeDisputeId: dispute.id,
+    stripeChargeId: dispute.charge as string,
+    userId: dispute.metadata.userId || "unknown",
+    amount: dispute.amount,
+    reason: dispute.reason,
+    status: dispute.status,
+    evidence_due_by: dispute.evidence_details.due_by
+      ? new Date(dispute.evidence_details.due_by * 1000)
       : new Date(),
-    createdAt: new Date(dispute?.created * 1000),
+    createdAt: new Date(dispute.created * 1000),
     updatedAt: new Date(),
   };
 
-  chargebackRecords?.set(dispute?.id, record);
+  chargebackRecords.set(dispute.id, record);
   await persistChargebackRecord(record);
 
   // Take immediate action
@@ -161,13 +161,13 @@ export async function handleDispute(dispute: Stripe?.Dispute): Promise<void> {
  */
 async function handleChargebackActions(
   record: ChargebackRecord,
-  dispute: Stripe?.Dispute,
+  dispute: Stripe.Dispute,
 ): Promise<void> {
-  const _stripe = getStripe();
+  const stripe = getStripe();
 
   // 1. Flag the user account
   try {
-    await db?.execute(sql`
+    await db.execute(sql`
       UPDATE users 
       SET chargeback_count = COALESCE(chargeback_count, 0) + 1,
           last_chargeback_at = NOW(),
@@ -175,34 +175,34 @@ async function handleChargebackActions(
             WHEN COALESCE(chargeback_count, 0) >= 2 THEN 'suspended'
             ELSE account_status
           END
-      WHERE stripe_customer_id = ${dispute?.metadata?.customerId}
+      WHERE stripe_customer_id = ${dispute.metadata.customerId}
     `);
   } catch (error) {
-    logger?.warn({ err: error }, "[Chargeback] Failed to update user account:");
+    logger.warn({ err: error }, "[Chargeback] Failed to update user account:");
   }
 
   // 2. Submit evidence if we have it
-  if (dispute?.status === "needs_response") {
+  if (dispute.status === "needs_response") {
     try {
       // Gather evidence (simplified - in production, gather actual evidence)
-      const evidence: Stripe?.DisputeUpdateParams.Evidence = {
+      const evidence: Stripe.DisputeUpdateParams.Evidence = {
         product_description:
           "Digital music distribution and marketing services",
-        customer_name: dispute?.metadata?.customerName,
-        customer_email_address: dispute?.metadata?.customerEmail,
-        service_date: dispute?.metadata?.serviceDate,
+        customer_name: dispute.metadata.customerName,
+        customer_email_address: dispute.metadata.customerEmail,
+        service_date: dispute.metadata.serviceDate,
         uncategorized_text: `
           This is a valid charge for Max Booster music services.
-          The customer signed up on ${dispute?.metadata?.signupDate} and 
+          The customer signed up on ${dispute.metadata.signupDate} and 
           has been actively using the service.
-          Service accessed: ${dispute?.metadata?.lastAccess}
+          Service accessed: ${dispute.metadata.lastAccess}
         `.trim(),
       };
 
-      await stripe?.disputes.update(dispute?.id, { evidence });
-      logger?.info(`[Chargeback] Evidence submitted for dispute ${dispute?.id}`);
+      await stripe.disputes.update(dispute.id, { evidence });
+      logger.info(`[Chargeback] Evidence submitted for dispute ${dispute.id}`);
     } catch (error) {
-      logger?.warn({ err: error }, "[Chargeback] Failed to submit evidence:");
+      logger.warn({ err: error }, "[Chargeback] Failed to submit evidence:");
     }
   }
 
@@ -215,7 +215,7 @@ async function handleChargebackActions(
  */
 async function handlePostRefundActions(
   userId: string,
-  refund: Stripe?.Refund,
+  refund: Stripe.Refund,
 ): Promise<void> {
   try {
     // Update user's refund count
@@ -261,7 +261,7 @@ async function persistRefundRecord(record: RefundRecord): Promise<void> {
     `);
   } catch (error) {
     // Table might not exist yet, log but don't fail
-    logger?.debug("[Refund] Could not persist refund record:", error);
+    logger.debug("[Refund] Could not persist refund record:", error);
   }
 }
 
@@ -272,17 +272,17 @@ async function persistChargebackRecord(
   record: ChargebackRecord,
 ): Promise<void> {
   try {
-    await db?.execute(sql`
+    await db.execute(sql`
       INSERT INTO chargeback_records (
         id, stripe_dispute_id, stripe_charge_id, user_id, amount,
         reason, status, evidence_due_by, created_at, updated_at
       ) VALUES (
-        ${record?.id}, ${record?.stripeDisputeId}, ${record?.stripeChargeId},
-        ${record?.userId}, ${record?.amount}, ${record?.reason}, ${record?.status},
-        ${record?.evidence_due_by}, ${record?.createdAt}, ${record?.updatedAt}
+        ${record.id}, ${record.stripeDisputeId}, ${record.stripeChargeId},
+        ${record.userId}, ${record.amount}, ${record.reason}, ${record.status},
+        ${record.evidence_due_by}, ${record.createdAt}, ${record.updatedAt}
       )
       ON CONFLICT (stripe_dispute_id) DO UPDATE SET
-        status = EXCLUDED?.status,
+        status = EXCLUDED.status,
         updated_at = NOW()
     `);
   } catch (error) {
@@ -296,21 +296,21 @@ async function persistChargebackRecord(
  */
 export function registerRefundWebhookHandlers(): void {
   // Handle refund events
-  registerWebhookHandler("charge?.refunded", async (event) => {
-    const _charge = event?.data.object as Stripe?.Charge;
+  registerWebhookHandler("charge.refunded", async (event) => {
+    const charge = event?.data.object as Stripe.Charge;
     logger?.info(`[Webhook] Charge refunded: ${charge?.id}`);
     return { success: true, message: "Refund recorded" };
   });
 
-  registerWebhookHandler("refund?.created", async (event) => {
-    const _refund = event?.data.object as Stripe?.Refund;
+  registerWebhookHandler("refund.created", async (event) => {
+    const refund = event?.data.object as Stripe.Refund;
     logger?.info(`[Webhook] Refund created: ${refund?.id}`);
     return { success: true, message: "Refund created" };
   });
 
-  registerWebhookHandler("refund?.updated", async (event) => {
-    const _refund = event?.data.object as Stripe?.Refund;
-    const _existingRecord = refundRecords?.get(refund?.id);
+  registerWebhookHandler("refund.updated", async (event) => {
+    const refund = event?.data.object as Stripe.Refund;
+    const existingRecord = refundRecords?.get(refund?.id);
     if (existingRecord) {
       existingRecord.status =
         refund?.status === "succeeded"
@@ -327,15 +327,15 @@ export function registerRefundWebhookHandlers(): void {
   });
 
   // Handle dispute events
-  registerWebhookHandler("charge?.dispute.created", async (event) => {
-    const _dispute = event?.data.object as Stripe?.Dispute;
+  registerWebhookHandler("charge.dispute.created", async (event) => {
+    const dispute = event?.data.object as Stripe.Dispute;
     await handleDispute(dispute);
     return { success: true, message: "Dispute handled" };
   });
 
-  registerWebhookHandler("charge?.dispute.updated", async (event) => {
-    const _dispute = event?.data.object as Stripe?.Dispute;
-    const _existing = chargebackRecords?.get(dispute?.id);
+  registerWebhookHandler("charge.dispute.updated", async (event) => {
+    const dispute = event?.data.object as Stripe.Dispute;
+    const existing = chargebackRecords?.get(dispute?.id);
     if (existing) {
       existing.status = dispute?.status;
       existing.updatedAt = new Date();
@@ -344,9 +344,9 @@ export function registerRefundWebhookHandlers(): void {
     return { success: true, message: "Dispute updated" };
   });
 
-  registerWebhookHandler("charge?.dispute.closed", async (event) => {
-    const _dispute = event?.data.object as Stripe?.Dispute;
-    const _existing = chargebackRecords?.get(dispute?.id);
+  registerWebhookHandler("charge.dispute.closed", async (event) => {
+    const dispute = event?.data.object as Stripe.Dispute;
+    const existing = chargebackRecords?.get(dispute?.id);
     if (existing) {
       existing.status = dispute?.status;
       existing.updatedAt = new Date();
@@ -388,8 +388,8 @@ export function getRefundStats(): {
   }
 
   return {
-    totalRefunds: refundRecords?.size,
-    totalChargebacks: chargebackRecords?.size,
+    totalRefunds: refundRecords.size,
+    totalChargebacks: chargebackRecords.size,
     pendingRefunds,
     pendingChargebacks,
   };

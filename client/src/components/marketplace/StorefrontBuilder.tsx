@@ -34,33 +34,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
-import {
-  Store,
-  Upload,
-  Plus,
-  Trash2,
-  Edit,
-  Eye,
-  Save,
-  Check,
-  CheckCircle,
-  AlertCircle,
-  Sparkles,
-  DollarSign,
-  Users,
-  Crown,
-  ExternalLink,
-  Music,
-  Instagram,
-  Twitter,
-  Youtube,
-  Globe,
-  EyeOff,
-  Video,
-  Megaphone,
-  Shuffle,
-  Copy,
-} from "lucide-react";
+import { Store, Upload, Plus, Trash2, Edit, Eye, Save, Check, CheckCircle, AlertCircle, Sparkles, DollarSign, Users, Crown, ExternalLink, Music, Instagram, Twitter, Youtube, Globe, EyeOff, Video, Megaphone, Shuffle, Copy } from "lucide-react";
 import { BogoPromotionsManager } from "./BogoPromotionsManager";
 import { StorefrontDnsZoneManager } from "./StorefrontDnsZoneManager";
 import { validateFreeDomain, SUPPORTED_TLDS } from "@shared/domainValidation";
@@ -434,8 +408,10 @@ export default function StorefrontBuilder() {
     enabled: !!user,
   });
 
-  const { data: tiers = [] } = useQuery<MembershipTier[]>({
-    queryKey: ["/api/storefront", selectedStorefront?.id, "tiers"],
+  const { data: tiers = [] } = useQuery<
+    MembershipTier[]
+  >({
+    queryKey: ["/api/storefront", selectedStorefront.id, "tiers"],
     enabled: !!selectedStorefront,
     queryFn: async () => {
       const res = await fetch(
@@ -460,7 +436,7 @@ export default function StorefrontBuilder() {
       createdAt: string;
     }>;
   }>({
-    queryKey: ["/api/storefront-domains", selectedStorefront?.id],
+    queryKey: ["/api/storefront-domains", selectedStorefront.id],
     enabled: !!selectedStorefront,
     queryFn: async () => {
       const res = await fetch(
@@ -594,7 +570,7 @@ export default function StorefrontBuilder() {
           : "Your storefront has been hidden from the marketplace.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/storefront/my"] });
-      if (selectedStorefront?.id === variables.storefrontId) {
+      if (selectedStorefront.id === variables.storefrontId) {
         setSelectedStorefront({
           ...selectedStorefront,
           isPublic: variables.isPublished,
@@ -624,7 +600,7 @@ export default function StorefrontBuilder() {
         description: "The storefront has been permanently removed.",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/storefront/my"] });
-      if (selectedStorefront?.id === storefrontToDelete?.id) {
+      if (selectedStorefront.id === storefrontToDelete.id) {
         setSelectedStorefront(null);
       }
       setShowDeleteDialog(false);
@@ -657,7 +633,7 @@ export default function StorefrontBuilder() {
       setShowCampaignResult(data);
       toast({
         title: "Campaign Generated!",
-        description: `Video campaign created with ${data.campaign?.videos?.length || 0} platform videos.`,
+        description: `Video campaign created with ${data.campaign.videos.length || 0} platform videos.`,
       });
     },
     onError: (error: Error) => {
@@ -692,7 +668,7 @@ export default function StorefrontBuilder() {
         });
         queryClient.invalidateQueries({ queryKey: ["/api/storefront/my"] });
         queryClient.invalidateQueries({
-          queryKey: ["/api/storefront-domains", selectedStorefront?.id],
+          queryKey: ["/api/storefront-domains", selectedStorefront.id],
         });
       } else {
         toast({
@@ -726,7 +702,7 @@ export default function StorefrontBuilder() {
     queryFn: () =>
       apiRequest("GET", "/api/dns-manager/zones").then((r) => r.json()),
   });
-  const dnsZones = dnsZonesData?.zones ?? [];
+  const dnsZones = dnsZonesData.zones ?? [];
 
   const addDnsZoneMutation = useMutation({
     mutationFn: (domain: string) =>
@@ -753,8 +729,8 @@ export default function StorefrontBuilder() {
     onError: async (err: Error) => {
       let msg = "Failed to add domain";
       try {
-        const d = await err.response?.json();
-        msg = d?.error ?? msg;
+        const d = await err.response.json();
+        msg = d.error ?? msg;
       } catch {}
       toast({ title: "Error", description: msg, variant: "destructive" });
     },
@@ -766,7 +742,7 @@ export default function StorefrontBuilder() {
     domain: string | null;
     status: string | null;
   }>({
-    queryKey: ["/api/storefront-domains/platform", selectedStorefront?.id],
+    queryKey: ["/api/storefront-domains/platform", selectedStorefront.id],
     queryFn: () =>
       selectedStorefront
         ? apiRequest(
@@ -779,7 +755,7 @@ export default function StorefrontBuilder() {
 
   // Sync claimed domain into state when query resolves
   useEffect(() => {
-    if (existingPlatformData?.domain) {
+    if (existingPlatformData.domain) {
       setClaimedPlatformDomain(existingPlatformData.domain);
     }
   }, [existingPlatformData]);
@@ -799,7 +775,7 @@ export default function StorefrontBuilder() {
         queryClient.invalidateQueries({
           queryKey: [
             "/api/storefront-domains/platform",
-            selectedStorefront?.id,
+            selectedStorefront.id,
           ],
         });
       } else {
@@ -2755,7 +2731,7 @@ export default function StorefrontBuilder() {
           <DialogHeader>
             <DialogTitle>Delete Storefront</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{storefrontToDelete?.name}"? This
+              Are you sure you want to delete "{storefrontToDelete.name}"? This
               will permanently remove the storefront, all its customization, and
               associated data. This action cannot be undone.
             </DialogDescription>
@@ -2910,7 +2886,7 @@ export default function StorefrontBuilder() {
                             : "border-border hover:border-primary/50",
                         ].join(" ")}
                         style={{
-                          background: colors?.background
+                          background: colors.background
                             ? `linear-gradient(135deg, ${colors.background}ee 0%, ${colors.background} 100%)`
                             : undefined,
                         }}
@@ -2936,7 +2912,7 @@ export default function StorefrontBuilder() {
                         {/* Name + premium badge */}
                         <p
                           className="font-semibold text-sm leading-tight mb-0.5"
-                          style={{ color: colors?.text ?? undefined }}
+                          style={{ color: colors.text ?? undefined }}
                         >
                           {template.name}
                           {template.isPremium && (
@@ -2950,7 +2926,7 @@ export default function StorefrontBuilder() {
                         {template.description && (
                           <p
                             className="text-[11px] leading-snug line-clamp-2 opacity-80"
-                            style={{ color: colors?.text ?? undefined }}
+                            style={{ color: colors.text ?? undefined }}
                           >
                             {template.description}
                           </p>

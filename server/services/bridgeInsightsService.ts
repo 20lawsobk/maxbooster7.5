@@ -50,18 +50,18 @@ interface InsightsSummary {
 
 type CrossInsight = SocialToOrganicInsights | OrganicToSocialInsights;
 
-const _TOP_K_PATTERNS = 10;
-const _TOP_K_TRACKS = 5;
-const _TOP_K_ASSETS = 5;
-const _TOP_K_CHANNELS = 5;
-const _TOP_K_INTENTS = 3;
+const TOP_K_PATTERNS = 10;
+const TOP_K_TRACKS = 5;
+const TOP_K_ASSETS = 5;
+const TOP_K_CHANNELS = 5;
+const TOP_K_INTENTS = 3;
 
 class BridgeInsightsService {
   async generateSocialToOrganicInsights(
     userId: string,
   ): Promise<SocialToOrganicInsights | null> {
     try {
-      const _patterns = await db
+      const patterns = await db
         .select()
         .from(socialPatternAggregates)
         .where(eq(socialPatternAggregates?.userId, userId))
@@ -74,25 +74,25 @@ class BridgeInsightsService {
       }
 
       const topHooks: TopHook[] = patterns?.map((pattern) => ({
-        hookType: pattern?.hookType,
-        tone: pattern?.tone,
-        format: pattern?.format,
-        avgMusicImpact: pattern?.avgImpact ?? 0,
+        hookType: pattern.hookType,
+        tone: pattern.tone,
+        format: pattern.format,
+        avgMusicImpact: pattern.avgImpact ?? 0,
       }));
 
-      const _trackImpactMap = new Map<
+      const trackImpactMap = new Map<
         string,
         { totalImpact: number; count: number }
       >();
       for (const pattern of patterns) {
         if (pattern?.trackUsed) {
-          const _existing = trackImpactMap?.get(pattern?.trackUsed);
+          const existing = trackImpactMap?.get(pattern?.trackUsed);
           if (existing) {
-            existing?.totalImpact += pattern?.totalImpact ?? 0;
-            existing?.count += 1;
+            existing.totalImpact += pattern?.totalImpact ?? 0;
+            existing.count += 1;
           } else {
             trackImpactMap?.set(pattern?.trackUsed, {
-              totalImpact: pattern?.totalImpact ?? 0,
+              totalImpact: pattern.totalImpact ?? 0,
               count: 1,
             });
           }
@@ -102,7 +102,7 @@ class BridgeInsightsService {
       const topTracksByImpact: TopTrack[] = Array?.from(trackImpactMap?.entries())
         .map(([trackId, data]) => ({
           trackId,
-          avgImpact: data?.count > 0 ? data?.totalImpact / data?.count : 0,
+          avgImpact: data.count > 0 ? data?.totalImpact / data?.count : 0,
         }))
         .sort((a, b) => b?.avgImpact - a?.avgImpact)
         .slice(0, TOP_K_TRACKS);
@@ -116,8 +116,8 @@ class BridgeInsightsService {
 
       logger?.info("Generated social-to-organic insights", {
         userId,
-        hookCount: topHooks?.length,
-        trackCount: topTracksByImpact?.length,
+        hookCount: topHooks.length,
+        trackCount: topTracksByImpact.length,
       });
 
       return insights;
@@ -134,12 +134,12 @@ class BridgeInsightsService {
     userId: string,
   ): Promise<OrganicToSocialInsights | null> {
     try {
-      const _assets = await db
+      const assets = await db
         .select()
         .from(organicAssets)
         .where(eq(organicAssets?.userId, userId));
 
-      const _channels = await db
+      const channels = await db
         .select()
         .from(organicChannels)
         .where(eq(organicChannels?.userId, userId))
@@ -151,24 +151,24 @@ class BridgeInsightsService {
         return null;
       }
 
-      const _assetTypeRoiMap = new Map<
+      const assetTypeRoiMap = new Map<
         string,
         { totalRoi: number; count: number }
       >();
       for (const asset of assets) {
         // Compute ROI inline to avoid circular dependency
-        const _performance = asset?.performance as AssetPerformance | null;
-        const _revenue = performance?.revenueGenerated ?? 0;
-        const _creationCost = (asset?.creationCostHours ?? 0) * 50; // $50/hour estimate
-        const _distributionCost = asset?.distributionCost ?? 0;
-        const _totalCost = creationCost + distributionCost;
-        const _effectiveRoi =
+        const performance = asset?.performance as AssetPerformance | null;
+        const revenue = performance?.revenueGenerated ?? 0;
+        const creationCost = (asset?.creationCostHours ?? 0) * 50; // $50/hour estimate
+        const distributionCost = asset?.distributionCost ?? 0;
+        const totalCost = creationCost + distributionCost;
+        const effectiveRoi =
           totalCost > 0 ? ((revenue - totalCost) / totalCost) * 100 : 0;
 
-        const _existing = assetTypeRoiMap?.get(asset?.type);
+        const existing = assetTypeRoiMap?.get(asset?.type);
         if (existing) {
-          existing?.totalRoi += effectiveRoi;
-          existing?.count += 1;
+          existing.totalRoi += effectiveRoi;
+          existing.count += 1;
         } else {
           assetTypeRoiMap?.set(asset?.type, {
             totalRoi: effectiveRoi,
@@ -177,33 +177,33 @@ class BridgeInsightsService {
         }
       }
 
-      const _topAssetTypes = Array?.from(assetTypeRoiMap?.entries())
+      const topAssetTypes = Array?.from(assetTypeRoiMap?.entries())
         .map(([type, data]) => ({
           type,
-          avgRoi: data?.count > 0 ? data?.totalRoi / data?.count : 0,
+          avgRoi: data.count > 0 ? data?.totalRoi / data?.count : 0,
         }))
         .sort((a, b) => b?.avgRoi - a?.avgRoi)
         .slice(0, TOP_K_ASSETS);
 
-      const _topChannels = channels?.map((channel) => ({
-        channelType: channel?.type,
-        efficiencyScore: channel?.efficiencyScore ?? 0,
+      const topChannels = channels?.map((channel) => ({
+        channelType: channel.type,
+        efficiencyScore: channel.efficiencyScore ?? 0,
       }));
 
-      const _intentConversionMap = new Map<
+      const intentConversionMap = new Map<
         string,
         { conversions: number; total: number }
       >();
       for (const asset of assets) {
-        const _performance = asset?.performance as AssetPerformance | null;
-        const _conversions = performance?.streamingConversions ?? 0;
-        const _views = performance?.monthlyViews ?? 1;
-        const _conversionRate = views > 0 ? conversions / views : 0;
+        const performance = asset?.performance as AssetPerformance | null;
+        const conversions = performance?.streamingConversions ?? 0;
+        const views = performance?.monthlyViews ?? 1;
+        const conversionRate = views > 0 ? conversions / views : 0;
 
-        const _existing = intentConversionMap?.get(asset?.intent);
+        const existing = intentConversionMap?.get(asset?.intent);
         if (existing) {
-          existing?.conversions += conversionRate;
-          existing?.total += 1;
+          existing.conversions += conversionRate;
+          existing.total += 1;
         } else {
           intentConversionMap?.set(asset?.intent, {
             conversions: conversionRate,
@@ -212,10 +212,10 @@ class BridgeInsightsService {
         }
       }
 
-      const _highValueIntents = Array?.from(intentConversionMap?.entries())
+      const highValueIntents = Array?.from(intentConversionMap?.entries())
         .map(([intent, data]) => ({
           intent,
-          conversionRate: data?.total > 0 ? data?.conversions / data?.total : 0,
+          conversionRate: data.total > 0 ? data?.conversions / data?.total : 0,
         }))
         .sort((a, b) => b?.conversionRate - a?.conversionRate)
         .slice(0, TOP_K_INTENTS);
@@ -230,9 +230,9 @@ class BridgeInsightsService {
 
       logger?.info("Generated organic-to-social insights", {
         userId,
-        assetTypeCount: topAssetTypes?.length,
-        channelCount: topChannels?.length,
-        intentCount: highValueIntents?.length,
+        assetTypeCount: topAssetTypes.length,
+        channelCount: topChannels.length,
+        intentCount: highValueIntents.length,
       });
 
       return insights;
@@ -250,7 +250,7 @@ class BridgeInsightsService {
     insight: CrossInsight,
   ): Promise<AutopilotCrossInsight | null> {
     try {
-      const _insightType =
+      const insightType =
         insight?.exportType === "social_to_organic_insights"
           ? "social_to_organic"
           : "organic_to_social";
@@ -278,7 +278,7 @@ class BridgeInsightsService {
       logger?.info("Saved cross-insight", {
         userId,
         insightType,
-        insightId: inserted?.id,
+        insightId: inserted.id,
       });
       return inserted;
     } catch (error) {
@@ -296,7 +296,7 @@ class BridgeInsightsService {
         .select()
         .from(autopilotCrossInsights)
         .where(
-          sql`${autopilotCrossInsights?.userId} = ${userId} AND ${autopilotCrossInsights?.insightType} = ${type}`,
+          sql`${autopilotCrossInsights.userId} = ${userId} AND ${autopilotCrossInsights.insightType} = ${type}`,
         )
         .orderBy(desc(autopilotCrossInsights?.generatedAt))
         .limit(1);
@@ -342,13 +342,13 @@ class BridgeInsightsService {
         }
       }
 
-      const _uniqueTypes = [...new Set(biasedTypes)];
-      const _uniqueTopics = [...new Set(biasedTopics)];
+      const uniqueTypes = [...new Set(biasedTypes)];
+      const uniqueTopics = [...new Set(biasedTopics)];
 
       logger?.info("Applied social insights to organic strategy", {
         userId,
-        biasedTypeCount: uniqueTypes?.length,
-        biasedTopicCount: uniqueTopics?.length,
+        biasedTypeCount: uniqueTypes.length,
+        biasedTopicCount: uniqueTopics.length,
       });
 
       return {
@@ -410,13 +410,13 @@ class BridgeInsightsService {
         }
       }
 
-      const _uniqueFormats = [...new Set(recommendedFormats)];
-      const _uniqueTones = [...new Set(recommendedTones)];
+      const uniqueFormats = [...new Set(recommendedFormats)];
+      const uniqueTones = [...new Set(recommendedTones)];
 
       logger?.info("Applied organic insights to social strategy", {
         userId,
-        formatCount: uniqueFormats?.length,
-        toneCount: uniqueTones?.length,
+        formatCount: uniqueFormats.length,
+        toneCount: uniqueTones.length,
       });
 
       return {
@@ -480,16 +480,16 @@ class BridgeInsightsService {
 
   async getInsightsSummary(userId: string): Promise<InsightsSummary> {
     try {
-      const _allInsights = await db
+      const allInsights = await db
         .select()
         .from(autopilotCrossInsights)
         .where(eq(autopilotCrossInsights?.userId, userId))
         .orderBy(desc(autopilotCrossInsights?.generatedAt));
 
-      const _socialToOrganicRaw = allInsights?.find(
+      const socialToOrganicRaw = allInsights?.find(
         (i) => i?.insightType === "social_to_organic",
       );
-      const _organicToSocialRaw = allInsights?.find(
+      const organicToSocialRaw = allInsights?.find(
         (i) => i?.insightType === "organic_to_social",
       );
 
@@ -515,7 +515,7 @@ class BridgeInsightsService {
         };
       }
 
-      const _lastSyncedAt =
+      const lastSyncedAt =
         allInsights?.length > 0 ? allInsights[0].generatedAt : null;
 
       return {
@@ -523,7 +523,7 @@ class BridgeInsightsService {
         socialToOrganic,
         organicToSocial,
         lastSyncedAt,
-        insightCount: allInsights?.length,
+        insightCount: allInsights.length,
       };
     } catch (error) {
       logger?.warn("Error fetching insights summary", { userId, error });
@@ -538,4 +538,4 @@ class BridgeInsightsService {
   }
 }
 
-export const _bridgeInsightsService = new BridgeInsightsService();
+export const bridgeInsightsService = new BridgeInsightsService();

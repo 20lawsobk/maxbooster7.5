@@ -11,8 +11,8 @@ interface PaymentBypassConfig {
   reason: string | null;
 }
 
-const _PAYMENT_BYPASS_KEY = "payment_bypass";
-const _DEFAULT_BYPASS_DURATION_HOURS = 2;
+const PAYMENT_BYPASS_KEY = "payment_bypass";
+const DEFAULT_BYPASS_DURATION_HOURS = 2;
 
 class PaymentBypassService {
   private cachedConfig: PaymentBypassConfig | null = null;
@@ -38,7 +38,7 @@ class PaymentBypassService {
         .limit(1);
 
       if (setting?.value) {
-        const _config = setting?.value as PaymentBypassConfig;
+        const config = setting?.value as PaymentBypassConfig;
 
         if (config?.expiresAt && new Date(config?.expiresAt) <= new Date()) {
           logger?.info(
@@ -96,7 +96,7 @@ class PaymentBypassService {
   }
 
   async isPaymentBypassed(): Promise<boolean> {
-    const _now = Date?.now();
+    const now = Date?.now();
 
     if (this?.cachedConfig && now < this?.cacheExpiry) {
       if (!this?.cachedConfig.enabled) {
@@ -104,7 +104,7 @@ class PaymentBypassService {
       }
 
       if (this?.cachedConfig.expiresAt) {
-        const _expiresAt = new Date(this?.cachedConfig.expiresAt).getTime();
+        const expiresAt = new Date(this?.cachedConfig.expiresAt).getTime();
         if (now >= expiresAt) {
           await this?.deactivate("system", "Auto-expired after time limit");
           return false;
@@ -114,7 +114,7 @@ class PaymentBypassService {
       return true;
     }
 
-    const _config = await this?.loadConfig();
+    const config = await this?.loadConfig();
     this.cachedConfig = config;
     this.cacheExpiry = now + this?.CACHE_TTL_MS;
 
@@ -123,7 +123,7 @@ class PaymentBypassService {
     }
 
     if (config?.expiresAt) {
-      const _expiresAt = new Date(config?.expiresAt).getTime();
+      const expiresAt = new Date(config?.expiresAt).getTime();
       if (now >= expiresAt) {
         logger?.info("[PaymentBypass] Bypass has expired, auto-disabling");
         await this?.deactivate("system", "Auto-expired after time limit");
@@ -139,13 +139,13 @@ class PaymentBypassService {
     reason?: string,
     durationHours: number = DEFAULT_BYPASS_DURATION_HOURS,
   ): Promise<PaymentBypassConfig> {
-    const _now = new Date();
-    const _expiresAt = new Date(now?.getTime() + durationHours * 60 * 60 * 1000);
+    const now = new Date();
+    const expiresAt = new Date(now?.getTime() + durationHours * 60 * 60 * 1000);
 
     const config: PaymentBypassConfig = {
       enabled: true,
-      activatedAt: now?.toISOString(),
-      expiresAt: expiresAt?.toISOString(),
+      activatedAt: now.toISOString(),
+      expiresAt: expiresAt.toISOString(),
       activatedBy: adminId,
       reason: reason || `Payment bypass activated for ${durationHours} hours`,
     };
@@ -162,10 +162,10 @@ class PaymentBypassService {
     adminId: string,
     reason?: string,
   ): Promise<PaymentBypassConfig> {
-    const _currentConfig = await this?.loadConfig();
-    const _wasEnabled = currentConfig?.enabled;
+    const currentConfig = await this?.loadConfig();
+    const wasEnabled = currentConfig?.enabled;
 
-    const _config = this?.getDefaultConfig();
+    const config = this?.getDefaultConfig();
     await this?.saveConfig(config, adminId);
 
     if (wasEnabled) {
@@ -183,20 +183,20 @@ class PaymentBypassService {
     timeRemaining: string | null;
     timeRemainingMs: number | null;
   }> {
-    const _config = await this?.loadConfig();
-    const _bypassed = await this?.isPaymentBypassed();
+    const config = await this?.loadConfig();
+    const bypassed = await this?.isPaymentBypassed();
     let timeRemaining: string | null = null;
     let timeRemainingMs: number | null = null;
 
     if (bypassed && config?.expiresAt) {
-      const _expiresAt = new Date(config?.expiresAt);
-      const _now = new Date();
-      const _diffMs = expiresAt?.getTime() - now?.getTime();
+      const expiresAt = new Date(config?.expiresAt);
+      const now = new Date();
+      const diffMs = expiresAt?.getTime() - now?.getTime();
 
       if (diffMs > 0) {
         timeRemainingMs = diffMs;
-        const _hours = Math?.floor(diffMs / (1000 * 60 * 60));
-        const _minutes = Math?.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        const hours = Math?.floor(diffMs / (1000 * 60 * 60));
+        const minutes = Math?.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
         timeRemaining = `${hours}h ${minutes}m`;
       }
     }
@@ -213,14 +213,14 @@ class PaymentBypassService {
     adminId: string,
     additionalHours: number,
   ): Promise<PaymentBypassConfig> {
-    const _config = await this?.loadConfig();
+    const config = await this?.loadConfig();
 
     if (!config?.enabled || !config?.expiresAt) {
       throw new Error("No active bypass to extend");
     }
 
-    const _currentExpiry = new Date(config?.expiresAt);
-    const _newExpiry = new Date(
+    const currentExpiry = new Date(config?.expiresAt);
+    const newExpiry = new Date(
       currentExpiry?.getTime() + additionalHours * 60 * 60 * 1000,
     );
 
@@ -236,4 +236,4 @@ class PaymentBypassService {
   }
 }
 
-export const _paymentBypassService = new PaymentBypassService();
+export const paymentBypassService = new PaymentBypassService();

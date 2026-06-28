@@ -1,35 +1,13 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  GitBranch,
-  GitMerge,
-  GitCommit,
-  Plus,
-  Trash2,
-  Check,
-  ChevronRight,
-  ChevronDown,
-  Clock,
-  Star,
-  StarOff,
-  RotateCcw,
-  ArrowRight,
-  Tag,
-} from "lucide-react";
+import { GitBranch, GitMerge, GitCommit, Plus, Trash2, Check, ChevronRight, ChevronDown, Clock, Star, StarOff, RotateCcw, ArrowRight, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -227,7 +205,7 @@ export function FlowStateVersionBranches({
       isFavorite: false,
       createdAt: new Date(),
       lastModified: new Date(),
-      parentBranchId: activeBranch?.id,
+      parentBranchId: activeBranch.id,
       color: BRANCH_COLORS[branches.length % BRANCH_COLORS.length],
       tags: [],
       commits: [
@@ -258,7 +236,7 @@ export function FlowStateVersionBranches({
       switchBranch("main");
     }
     setBranches((prev) => prev.filter((b) => b.id !== branchId));
-    toast({ title: `Branch "${branch?.name}" deleted` });
+    toast({ title: `Branch "${branch.name}" deleted` });
   };
 
   const toggleFavorite = (branchId: string) => {
@@ -304,13 +282,13 @@ export function FlowStateVersionBranches({
     });
   };
 
-  (branchId: string, tag: string) => {
+  ((branchId: string, tag: string) => {
     setBranches((prev) =>
       prev.map((b) =>
         b.id === branchId ? { ...b, tags: [...b.tags, tag] } : b,
       ),
     );
-  };
+  });
 
   const formatTimeAgo = (date: Date): string => {
     const seconds = Math.floor((Date.now() - date.getTime()) / 1000);

@@ -6,9 +6,9 @@ import { requireAuth } from "../middleware/auth";
 import { logger } from "../logger.js";
 import { z } from "zod";
 
-const _router = Router();
+const router = Router();
 
-const _publishSchema = z?.object({
+const publishSchema = z.object({
   slug: z
     .string()
     .min(1)
@@ -18,7 +18,7 @@ const _publishSchema = z?.object({
       "Slug must contain only lowercase letters, numbers, and hyphens",
     )
     .optional(),
-  isPublic: z?.boolean().optional(),
+  isPublic: z.boolean().optional(),
 });
 
 router?.get("/", requireAuth, async (req, res) => {
@@ -37,8 +37,8 @@ router?.get("/", requireAuth, async (req, res) => {
 
 router?.put("/", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _validatedData = insertPressKitSchema?.parse({ ...req?.body, userId });
+    const userId = req?.user!.id;
+    const validatedData = insertPressKitSchema?.parse({ ...req?.body, userId });
 
     const [existing] = await db
       .select()
@@ -60,10 +60,10 @@ router?.put("/", requireAuth, async (req, res) => {
     res?.json(result);
   } catch (error) {
     logger?.warn({ err: error }, "[PressKit] Failed to update press kit:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error?.flatten() });
+        .json({ error: "Validation error", details: error.flatten() });
     }
     res
       .status(400)
@@ -75,7 +75,7 @@ router?.put("/", requireAuth, async (req, res) => {
 // Upload the file first via POST /api/storage/upload, then pass the returned URL here.
 router?.post("/photo", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { url, caption } = req?.body;
 
     if (!url || typeof url !== "string") {
@@ -98,7 +98,7 @@ router?.post("/photo", requireAuth, async (req, res) => {
       .where(eq(pressKits?.userId, userId))
       .limit(1);
 
-    const _photos = ((pressKit?.photos as unknown[]) || []) as Array<{
+    const photos = ((pressKit?.photos as unknown[]) || []) as Array<{
       url: string;
       caption?: string;
     }>;
@@ -127,8 +127,8 @@ router?.post("/photo", requireAuth, async (req, res) => {
 
 router?.delete("/photo/:index", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _index = parseInt(req?.params.index);
+    const userId = req?.user!.id;
+    const index = parseInt(req?.params.index);
 
     if (isNaN(index) || index < 0) {
       return res?.status(400).json({ error: "Invalid index" });
@@ -142,11 +142,11 @@ router?.delete("/photo/:index", requireAuth, async (req, res) => {
     if (!pressKit)
       return res?.status(404).json({ error: "Press kit not found" });
 
-    const _photos = (pressKit?.photos as unknown[]) || [];
+    const photos = (pressKit?.photos as unknown[]) || [];
     if (index >= photos?.length)
       return res?.status(400).json({ error: "Invalid photo index" });
 
-    const _newPhotos = [...photos];
+    const newPhotos = [...photos];
     newPhotos?.splice(index, 1);
 
     const [updated] = await db
@@ -183,13 +183,13 @@ router?.get("/public/:slug", async (req, res) => {
 
 router?.post("/publish", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _parsed = publishSchema?.safeParse(req?.body);
+    const parsed = publishSchema?.safeParse(req?.body);
     if (!parsed?.success) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: parsed?.error.flatten() });
+        .json({ error: "Validation error", details: parsed.error.flatten() });
     }
 
     const { slug, isPublic } = parsed?.data;

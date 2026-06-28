@@ -1,20 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  X,
-  Volume2,
-  VolumeX,
-  Headphones,
-  Mic,
-  Settings2,
-  ChevronRight,
-  Trash2,
-  Copy,
-  RotateCcw,
-  Layers,
-  ArrowDownToLine,
-  ArrowUpFromLine,
-} from "lucide-react";
+import { X, Volume2, VolumeX, Headphones, Mic, Settings2, ChevronRight, Trash2, Copy, RotateCcw, Layers, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -280,8 +266,8 @@ export function ChannelOverview({
         <motion.div
           className="fixed z-50 shadow-2xl rounded-lg overflow-hidden"
           style={{
-            left: position?.x ?? "50%",
-            top: position?.y ?? "50%",
+            left: position.x ?? "50%",
+            top: position.y ?? "50%",
             transform: position ? "none" : "translate(-50%, -50%)",
             width: "380px",
             maxHeight: "80vh",

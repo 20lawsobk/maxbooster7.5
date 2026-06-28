@@ -19,7 +19,7 @@ import { logger } from "../logger.js";
  */
 
 export class AccountDeletionService {
-  private cronJob: cron?.ScheduledTask | null = null;
+  private cronJob: cron.ScheduledTask | null = null;
   private isRunning = false;
 
   /**
@@ -61,13 +61,13 @@ export class AccountDeletionService {
     }
 
     this.isRunning = true;
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
 
     try {
       logger?.info("🗑️ Starting scheduled account deletion job...");
 
       // Find users scheduled for deletion
-      const _usersToDelete = await db
+      const usersToDelete = await db
         .select()
         .from(users)
         .where(
@@ -87,8 +87,8 @@ export class AccountDeletionService {
         `📋 Found ${usersToDelete?.length} accounts scheduled for deletion`,
       );
 
-      const _results = {
-        processed: usersToDelete?.length,
+      const results = {
+        processed: usersToDelete.length,
         successful: 0,
         failed: 0,
         errors: [] as Array<{ userId: string; error: string }>,
@@ -98,15 +98,15 @@ export class AccountDeletionService {
       for (const user of usersToDelete) {
         try {
           await this?.permanentlyDeleteUser(user?.id, user?.email || "unknown");
-          results?.successful++;
+          results.successful++;
           logger?.info(
             `✅ Successfully deleted account: ${user?.id} (${user?.email})`,
           );
         } catch (error: unknown) {
-          results?.failed++;
-          const _errorMessage =
+          results.failed++;
+          const errorMessage =
             error instanceof Error ? error?.message : "Unknown error";
-          results?.errors.push({ userId: user?.id, error: errorMessage });
+          results?.errors.push({ userId: user.id, error: errorMessage });
           logger?.warn(
             { err: error },
             `❌ Failed to delete account ${user?.id}:`,
@@ -114,7 +114,7 @@ export class AccountDeletionService {
         }
       }
 
-      const _duration = Date?.now() - startTime;
+      const duration = Date?.now() - startTime;
       logger?.info(
         `🗑️ Account deletion job completed in ${duration}ms - ` +
           `Processed: ${results?.processed}, Successful: ${results?.successful}, Failed: ${results?.failed}`,
@@ -214,16 +214,16 @@ export class AccountDeletionService {
       // (so it survives user deletion for compliance audit)
 
       await db?.insert(deletionAuditLogs).values({
-        userId: record?.userId,
-        userEmail: record?.userEmail,
+        userId: record.userId,
+        userEmail: record.userEmail,
         deletionType:
           record?.reason === "scheduled_deletion_after_grace_period"
             ? "scheduled"
             : "manual",
         requestedAt: new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago (estimated)
-        deletedAt: record?.deletedAt,
-        deletedBy: record?.deletedBy || null,
-        reason: record?.reason,
+        deletedAt: record.deletedAt,
+        deletedBy: record.deletedBy || null,
+        reason: record.reason,
         cascadedRecords: null, // Could be expanded to count deleted records
         metadata: null,
       });
@@ -275,7 +275,7 @@ export class AccountDeletionService {
     // Store permanent deletion record for compliance audit (with admin ID)
     await this?.logPermanentDeletion({
       userId,
-      userEmail: user?.email || "unknown",
+      userEmail: user.email || "unknown",
       deletedAt: new Date(),
       reason: `manual_deletion_by_admin: ${reason}`,
       deletedBy: adminId,
@@ -301,11 +301,11 @@ export class AccountDeletionService {
    */
   public getStatus(): { isRunning: boolean; cronActive: boolean } {
     return {
-      isRunning: this?.isRunning,
+      isRunning: this.isRunning,
       cronActive: !!this?.cronJob,
     };
   }
 }
 
 // Singleton instance
-export const _accountDeletionService = new AccountDeletionService();
+export const accountDeletionService = new AccountDeletionService();

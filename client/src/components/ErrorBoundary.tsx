@@ -11,31 +11,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
-import {
-  AlertCircle,
-  Home,
-  RefreshCw,
-  Bug,
-  WifiOff,
-  Shield,
-  Database,
-  Clock,
-  HardDrive,
-  MessageSquare,
-  FileQuestion,
-  ServerCrash,
-  CloudOff,
-  ArrowLeft,
-  Search,
-  Mail,
-  Zap,
-} from "lucide-react";
-import {
-  errorService,
-  ErrorSeverity,
-  ErrorCategory,
-  ErrorRecoveryAction,
-} from "@/lib/errorService";
+import { AlertCircle, Home, RefreshCw, Bug, WifiOff, Shield, Database, Clock, HardDrive, MessageSquare, FileQuestion, ServerCrash, CloudOff, ArrowLeft, Search, Mail, Zap } from "lucide-react";
+import { errorService, ErrorSeverity, ErrorCategory, ErrorRecoveryAction } from "@/lib/errorService";
 
 interface Props {
   children: ReactNode;
@@ -171,10 +148,7 @@ export class ErrorBoundary extends Component<Props, State> {
     return ["network", "timeout", "system"].includes(category);
   }
 
-  private static getUserMessage(
-    category: ErrorCategory,
-    _error: Error,
-  ): string {
+  private static getUserMessage(category: ErrorCategory, _error: Error): string {
     const messages: Record<ErrorCategory, string> = {
       network:
         "We're having trouble connecting to our servers. This could be a temporary network issue.",
@@ -372,9 +346,9 @@ export class ErrorBoundary extends Component<Props, State> {
     const { error, errorInfo } = this.state;
 
     errorService.addBreadcrumb("error-boundary-report", {
-      error: error?.message,
-      stack: error?.stack,
-      componentStack: errorInfo?.componentStack,
+      error: error.message,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack,
     });
 
     errorService.captureException(error || new Error("Unknown error"), {

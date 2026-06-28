@@ -17,10 +17,10 @@ let ffmpegAvailable = false;
 async function initializeFfmpeg() {
   if (ffmpegAvailable) return true;
   try {
-    const _fluentFfmpeg = await import("fluent-ffmpeg");
+    const fluentFfmpeg = await import("fluent-ffmpeg");
     ffmpeg = fluentFfmpeg?.default;
     try {
-      const _ffmpegStatic = await import("ffmpeg-static");
+      const ffmpegStatic = await import("ffmpeg-static");
       if (ffmpegStatic?.default) {
         ffmpeg?.setFfmpegPath(ffmpegStatic?.default);
       }
@@ -80,6 +80,8 @@ interface AudioMetadata {
   format: string;
 }
 
+
+
 export class TimeStretchService {
   private tempDir: string;
 
@@ -100,7 +102,7 @@ export class TimeStretchService {
   }
 
   private async getAudioMetadata(filePath: string): Promise<AudioMetadata> {
-    const _hasFFmpeg = await initializeFfmpeg();
+    const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
       throw new Error(
         "FFmpeg is not available. Time stretch features are disabled in this deployment.",
@@ -112,7 +114,7 @@ export class TimeStretchService {
           reject(new Error(`Failed to probe audio file: ${err?.message}`));
           return;
         }
-        const _audioStream = metadata?.streams.find(
+        const audioStream = metadata?.streams.find(
           (s) => s?.codec_type === "audio",
         );
         if (!audioStream) {
@@ -121,11 +123,11 @@ export class TimeStretchService {
         }
         resolve({
           duration: parseFloat(metadata?.format.duration || "0"),
-          sampleRate: audioStream?.sample_rate
+          sampleRate: audioStream.sample_rate
             ? parseInt(audioStream?.sample_rate)
             : 44100,
-          channels: audioStream?.channels || 2,
-          format: audioStream?.codec_name || "unknown",
+          channels: audioStream.channels || 2,
+          format: audioStream.codec_name || "unknown",
         });
       });
     });
@@ -142,7 +144,7 @@ export class TimeStretchService {
       quality?: WarpAlgorithm["quality"];
     } = {},
   ): Promise<void> {
-    const _hasFFmpeg = await initializeFfmpeg();
+    const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
       throw new Error(
         "FFmpeg is not available. Time stretch features are disabled in this deployment.",
@@ -159,50 +161,50 @@ export class TimeStretchService {
       const filters: string[] = [];
 
       if (algorithm === "rubberband") {
-        const _pitchFactor = Math?.pow(2, pitchShift / 12);
+        const pitchFactor = Math?.pow(2, pitchShift / 12);
         let rubberBandFilter = `rubberband=tempo=${stretchRatio}:pitch=${pitchFactor}`;
         if (preserveFormants) {
           rubberBandFilter += ":formant=preserved";
         }
         filters?.push(rubberBandFilter);
       } else if (algorithm === "wsola") {
-        const _tempoValue = 1 / stretchRatio;
-        filters?.push(`atempo=${Math?.min(Math?.max(tempoValue, 0.5), 2.0)}`);
+        const tempoValue = 1 / stretchRatio;
+        filters.push(`atempo=${Math?.min(Math?.max(tempoValue, 0.5), 2.0)}`);
         if (pitchShift !== 0) {
-          const _pitchFactor = Math?.pow(2, pitchShift / 12);
-          filters?.push(`asetrate=44100*${pitchFactor}`);
-          filters?.push(`aresample=44100`);
+          const pitchFactor = Math?.pow(2, pitchShift / 12);
+          filters.push(`asetrate=44100*${pitchFactor}`);
+          filters.push(`aresample=44100`);
         }
       } else {
-        const _speed = 1 / stretchRatio;
+        const speed = 1 / stretchRatio;
         if (speed >= 0.5 && speed <= 2.0) {
-          filters?.push(`atempo=${speed}`);
+          filters.push(`atempo=${speed}`);
         } else if (speed < 0.5) {
           let remaining = speed;
           while (remaining < 0.5) {
-            filters?.push("atempo=0.5");
+            filters.push("atempo=0.5");
             remaining *= 2;
           }
           if (remaining !== 1.0) {
-            filters?.push(`atempo=${remaining}`);
+            filters.push(`atempo=${remaining}`);
           }
         } else {
           let remaining = speed;
           while (remaining > 2.0) {
-            filters?.push("atempo=2.0");
+            filters.push("atempo=2.0");
             remaining /= 2;
           }
           if (remaining !== 1.0) {
-            filters?.push(`atempo=${remaining}`);
+            filters.push(`atempo=${remaining}`);
           }
         }
 
         if (pitchShift !== 0) {
-          const _pitchFactor = Math?.pow(2, pitchShift / 12);
-          filters?.push(`asetrate=44100*${pitchFactor}`);
-          filters?.push(`aresample=44100`);
+          const pitchFactor = Math?.pow(2, pitchShift / 12);
+          filters.push(`asetrate=44100*${pitchFactor}`);
+          filters.push(`aresample=44100`);
           if (preserveFormants) {
-            filters?.push("aecho=0.8:0.88:60:0.4");
+            filters.push("aecho=0.8:0.88:60:0.4");
           }
         }
       }
@@ -238,10 +240,10 @@ export class TimeStretchService {
       return;
     }
 
-    const _sortedMarkers = [...markers].sort(
+    const sortedMarkers = [...markers].sort(
       (a, b) => a?.sourceTime - b?.sourceTime,
     );
-    const _metadata = await this?.getAudioMetadata(inputPath);
+    const metadata = await this?.getAudioMetadata(inputPath);
     const segments: string[] = [];
     const tempFiles: string[] = [];
 
@@ -250,21 +252,21 @@ export class TimeStretchService {
       let lastTargetTime = 0;
 
       for (let i = 0; i < sortedMarkers?.length; i++) {
-        const _marker = sortedMarkers[i];
-        const _segmentId = randomUUID();
-        const _segmentInput = path?.join(
+        const marker = sortedMarkers[i];
+        const segmentId = randomUUID();
+        const segmentInput = path?.join(
           this?.tempDir,
           `segment_${segmentId}_in?.wav`,
         );
-        const _segmentOutput = path?.join(
+        const segmentOutput = path?.join(
           this?.tempDir,
           `segment_${segmentId}_out?.wav`,
         );
 
         tempFiles?.push(segmentInput, segmentOutput);
 
-        const _segmentDuration = marker?.sourceTime - lastSourceTime;
-        const _targetDuration = marker?.targetTime - lastTargetTime;
+        const segmentDuration = marker?.sourceTime - lastSourceTime;
+        const targetDuration = marker?.targetTime - lastTargetTime;
 
         if (segmentDuration > 0.001) {
           await this?.extractAudioSegment(
@@ -274,7 +276,7 @@ export class TimeStretchService {
             segmentDuration,
           );
 
-          const _stretchRatio = targetDuration / segmentDuration;
+          const stretchRatio = targetDuration / segmentDuration;
           if (
             Math?.abs(stretchRatio - 1.0) > 0.001 ||
             (options?.pitchShift && options?.pitchShift !== 0)
@@ -296,14 +298,14 @@ export class TimeStretchService {
         lastTargetTime = marker?.targetTime;
       }
 
-      const _finalSourceTime =
+      const finalSourceTime =
         sortedMarkers[sortedMarkers?.length - 1].sourceTime;
-      const _remainingDuration = metadata?.duration - finalSourceTime;
+      const remainingDuration = metadata?.duration - finalSourceTime;
 
       if (remainingDuration > 0.001) {
-        const _finalId = randomUUID();
-        const _finalInput = path?.join(this?.tempDir, `segment_${finalId}_in?.wav`);
-        const _finalOutput = path?.join(
+        const finalId = randomUUID();
+        const finalInput = path?.join(this?.tempDir, `segment_${finalId}_in?.wav`);
+        const finalOutput = path?.join(
           this?.tempDir,
           `segment_${finalId}_out?.wav`,
         );
@@ -345,7 +347,7 @@ export class TimeStretchService {
     startTime: number,
     duration: number,
   ): Promise<void> {
-    const _hasFFmpeg = await initializeFfmpeg();
+    const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
       throw new Error(
         "FFmpeg is not available. Audio segment extraction is disabled in this deployment.",
@@ -378,15 +380,15 @@ export class TimeStretchService {
       return;
     }
 
-    const _hasFFmpeg = await initializeFfmpeg();
+    const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
       throw new Error(
         "FFmpeg is not available. Audio concatenation is disabled in this deployment.",
       );
     }
 
-    const _listFile = path?.join(this?.tempDir, `concat_${randomUUID()}.txt`);
-    const _listContent = segments?.map((s) => `file '${s}'`).join("\n");
+    const listFile = path?.join(this?.tempDir, `concat_${randomUUID()}.txt`);
+    const listContent = segments?.map((s) => `file '${s}'`).join("\n");
     await fsPromises?.writeFile(listFile, listContent);
 
     try {
@@ -422,28 +424,28 @@ export class TimeStretchService {
       minTransientGap = 0.05,
       detectBeats = true,
     } = options;
-    const _metadata = await this?.getAudioMetadata(inputPath);
+    const metadata = await this?.getAudioMetadata(inputPath);
     const transients: TransientData[] = [];
 
-    const _peakData = await this?.extractPeakEnvelope(inputPath);
-    const _threshold = this?.calculateAdaptiveThreshold(peakData, sensitivity);
+    const peakData = await this?.extractPeakEnvelope(inputPath);
+    const threshold = this?.calculateAdaptiveThreshold(peakData, sensitivity);
 
     let lastTransientTime = -minTransientGap;
 
     for (let i = 1; i < peakData?.length - 1; i++) {
-      const _time = (i / peakData?.length) * metadata?.duration;
+      const time = (i / peakData?.length) * metadata?.duration;
 
       if (time - lastTransientTime < minTransientGap) {
         continue;
       }
 
-      const _isPeak =
+      const isPeak =
         peakData[i] > peakData[i - 1] &&
         peakData[i] > peakData[i + 1] &&
         peakData[i] > threshold;
 
       if (isPeak) {
-        const _strength = Math?.min(peakData[i] / threshold, 1.0);
+        const strength = Math?.min(peakData[i] / threshold, 1.0);
         transients?.push({
           time,
           strength,
@@ -461,19 +463,19 @@ export class TimeStretchService {
         intervals?.push(transients[i].time - transients[i - 1].time);
       }
 
-      const _avgInterval =
+      const avgInterval =
         intervals?.reduce((a, b) => a + b, 0) / intervals?.length;
       if (avgInterval > 0) {
-        const _rawBpm = 60 / avgInterval;
-        const _bpmCandidates = [rawBpm, rawBpm / 2, rawBpm * 2];
+        const rawBpm = 60 / avgInterval;
+        const bpmCandidates = [rawBpm, rawBpm / 2, rawBpm * 2];
         detectedBpm = bpmCandidates?.find((b) => b >= 60 && b <= 200) || rawBpm;
       }
 
       if (detectedBpm) {
-        const _beatInterval = 60 / detectedBpm;
+        const beatInterval = 60 / detectedBpm;
         for (const transient of transients) {
-          const _beatPosition = transient?.time / beatInterval;
-          const _nearestBeat = Math?.round(beatPosition);
+          const beatPosition = transient?.time / beatInterval;
+          const nearestBeat = Math?.round(beatPosition);
           if (Math?.abs(beatPosition - nearestBeat) < 0.2) {
             transient.suggestedBeat = nearestBeat;
           }
@@ -484,17 +486,17 @@ export class TimeStretchService {
     return {
       transients,
       detectedBpm,
-      duration: metadata?.duration,
+      duration: metadata.duration,
     };
   }
 
   private async extractPeakEnvelope(inputPath: string): Promise<number[]> {
-    const _hasFFmpeg = await initializeFfmpeg();
+    const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
       logger?.warn("FFmpeg not available - using synthetic peak data");
       return this?.generateSyntheticPeaks(inputPath);
     }
-    const _outputFile = path?.join(this?.tempDir, `peaks_${randomUUID()}.raw`);
+    const outputFile = path?.join(this?.tempDir, `peaks_${randomUUID()}.raw`);
 
     try {
       await new Promise<void>((resolve, _reject) => {
@@ -514,8 +516,8 @@ export class TimeStretchService {
       });
 
       if (fs?.existsSync(outputFile)) {
-        const _data = await fsPromises?.readFile(outputFile);
-        const _peaks = Array?.from(data).map((v) => v / 255);
+        const data = await fsPromises?.readFile(outputFile);
+        const peaks = Array?.from(data).map((v) => v / 255);
         await fsPromises?.unlink(outputFile);
         return peaks?.length > 0
           ? peaks
@@ -527,13 +529,13 @@ export class TimeStretchService {
   }
 
   private async generateSyntheticPeaks(inputPath: string): Promise<number[]> {
-    const _metadata = await this?.getAudioMetadata(inputPath);
-    const _numPoints = Math?.ceil(metadata?.duration * 100);
+    const metadata = await this?.getAudioMetadata(inputPath);
+    const numPoints = Math?.ceil(metadata?.duration * 100);
     const peaks: number[] = [];
 
     for (let i = 0; i < numPoints; i++) {
-      const _t = i / numPoints;
-      peaks?.push(0.3 + 0.4 * Math?.random() + 0.3 * Math?.sin(t * Math?.PI * 10));
+      const t = i / numPoints;
+      peaks?.push(0.3 + 0.4 * Math?.random() + 0.3 * Math?.sin(t * Math.PI * 10));
     }
 
     return peaks;
@@ -543,8 +545,8 @@ export class TimeStretchService {
     peakData: number[],
     sensitivity: number,
   ): number {
-    const _sorted = [...peakData].sort((a, b) => b - a);
-    const _percentile = Math?.floor(sorted?.length * (1 - sensitivity * 0.3));
+    const sorted = [...peakData].sort((a, b) => b - a);
+    const percentile = Math?.floor(sorted?.length * (1 - sensitivity * 0.3));
     return sorted[Math?.min(percentile, sorted?.length - 1)] * 0.8;
   }
 
@@ -561,15 +563,15 @@ export class TimeStretchService {
       quality?: WarpAlgorithm["quality"];
     } = {},
   ): Promise<void> {
-    const _relevantMarkers = markers?.filter(
+    const relevantMarkers = markers?.filter(
       (m) => m?.sourceTime >= startTime && m?.sourceTime <= endTime,
     );
 
-    const _segmentInput = path?.join(
+    const segmentInput = path?.join(
       this?.tempDir,
       `preview_${randomUUID()}_in?.wav`,
     );
-    const _segmentDuration = endTime - startTime;
+    const segmentDuration = endTime - startTime;
 
     try {
       await this?.extractAudioSegment(
@@ -579,10 +581,10 @@ export class TimeStretchService {
         segmentDuration,
       );
 
-      const _adjustedMarkers = relevantMarkers?.map((m) => ({
+      const adjustedMarkers = relevantMarkers?.map((m) => ({
         ...m,
-        sourceTime: m?.sourceTime - startTime,
-        targetTime: m?.targetTime - startTime,
+        sourceTime: m.sourceTime - startTime,
+        targetTime: m.targetTime - startTime,
       }));
 
       if (adjustedMarkers?.length > 0) {
@@ -608,7 +610,7 @@ export class TimeStretchService {
     clipId: string,
     userId: string,
   ): Promise<{ storageKey: string; duration: number }> {
-    const _clip = await db?.query.audioClips?.findFirst({
+    const clip = await db?.query.audioClips?.findFirst({
       where: eq(audioClips?.id, clipId),
     });
 
@@ -616,7 +618,7 @@ export class TimeStretchService {
       throw new Error("Audio clip not found");
     }
 
-    const _markers = await db?.query.warpMarkers?.findMany({
+    const markers = await db?.query.warpMarkers?.findMany({
       where: eq(warpMarkers?.clipId, clipId),
       orderBy: [asc(warpMarkers?.sourceTime)],
     });
@@ -625,18 +627,18 @@ export class TimeStretchService {
       throw new Error("No warp markers found for clip");
     }
 
-    const _jobId = randomUUID();
+    const jobId = randomUUID();
     const payload: WarpJobPayload = {
       userId,
       clipId,
-      storageKey: clip?.filePath,
-      markers: markers?.map((m) => ({
-        id: m?.id,
-        sourceTime: m?.sourceTime,
-        targetTime: m?.targetTime,
+      storageKey: clip.filePath,
+      markers: markers.map((m) => ({
+        id: m.id,
+        sourceTime: m.sourceTime,
+        targetTime: m.targetTime,
       })),
-      pitchShift: clip?.pitchShift ?? undefined,
-      preserveFormants: clip?.preserveFormants ?? true,
+      pitchShift: clip.pitchShift ?? undefined,
+      preserveFormants: clip.preserveFormants ?? true,
       algorithm: "phase_vocoder",
       quality: "high",
     };
@@ -648,41 +650,41 @@ export class TimeStretchService {
 
     return {
       storageKey: `${clip?.filePath}_warped`,
-      duration: clip?.duration,
+      duration: clip.duration,
     };
   }
 
   async processWarpJob(payload: WarpJobPayload): Promise<WarpJobResult> {
-    const _tempInput = path?.join(this?.tempDir, `warp_input_${randomUUID()}.wav`);
-    const _tempOutput = path?.join(
+    const tempInput = path?.join(this?.tempDir, `warp_input_${randomUUID()}.wav`);
+    const tempOutput = path?.join(
       this?.tempDir,
       `warp_output_${randomUUID()}.wav`,
     );
 
     try {
-      const _inputBuffer = await storageService?.downloadFile(payload?.storageKey);
+      const inputBuffer = await storageService?.downloadFile(payload?.storageKey);
       await fsPromises?.writeFile(tempInput, inputBuffer);
 
       await this?.processWarpMarkers(tempInput, tempOutput, payload?.markers, {
-        pitchShift: payload?.pitchShift,
-        preserveFormants: payload?.preserveFormants,
-        algorithm: payload?.algorithm,
-        quality: payload?.quality,
+        pitchShift: payload.pitchShift,
+        preserveFormants: payload.preserveFormants,
+        algorithm: payload.algorithm,
+        quality: payload.quality,
       });
 
-      const _outputBuffer = await fsPromises?.readFile(tempOutput);
-      const _newStorageKey = `${payload?.storageKey}_warped_${Date?.now()}`;
+      const outputBuffer = await fsPromises?.readFile(tempOutput);
+      const newStorageKey = `${payload?.storageKey}_warped_${Date?.now()}`;
       await storageService?.uploadFile(newStorageKey, outputBuffer);
 
-      const _metadata = await this?.getAudioMetadata(tempOutput);
+      const metadata = await this?.getAudioMetadata(tempOutput);
 
       return {
         storageKey: newStorageKey,
-        duration: metadata?.duration,
+        duration: metadata.duration,
         format: "wav",
-        markers: payload?.markers.map((m) => ({
-          sourceTime: m?.sourceTime,
-          targetTime: m?.targetTime,
+        markers: payload.markers.map((m) => ({
+          sourceTime: m.sourceTime,
+          targetTime: m.targetTime,
         })),
       };
     } finally {
@@ -696,18 +698,18 @@ export class TimeStretchService {
   async processTransientDetectionJob(
     payload: TransientDetectionPayload,
   ): Promise<TransientDetectionResult> {
-    const _tempInput = path?.join(
+    const tempInput = path?.join(
       this?.tempDir,
       `transient_input_${randomUUID()}.wav`,
     );
 
     try {
-      const _inputBuffer = await storageService?.downloadFile(payload?.storageKey);
+      const inputBuffer = await storageService?.downloadFile(payload?.storageKey);
       await fsPromises?.writeFile(tempInput, inputBuffer);
 
       return await this?.detectTransients(tempInput, {
-        sensitivity: payload?.sensitivity,
-        minTransientGap: payload?.minTransientGap,
+        sensitivity: payload.sensitivity,
+        minTransientGap: payload.minTransientGap,
         detectBeats: true,
       });
     } finally {
@@ -722,9 +724,9 @@ export class TimeStretchService {
     targetBpm: number,
     duration: number,
   ): TempoMapping {
-    const _sourceBeatInterval = 60 / sourceBpm;
-    const _targetBeatInterval = 60 / targetBpm;
-    const _numBeats = Math?.floor(duration / sourceBeatInterval);
+    const sourceBeatInterval = 60 / sourceBpm;
+    const targetBeatInterval = 60 / targetBpm;
+    const numBeats = Math?.floor(duration / sourceBeatInterval);
 
     const beatGrid: number[] = [];
     const barPositions: number[] = [];
@@ -755,17 +757,17 @@ export class TimeStretchService {
 
     for (const transient of transients) {
       if (transient?.suggestedBeat !== undefined) {
-        const _nearestBeatIndex = transient?.suggestedBeat;
+        const nearestBeatIndex = transient?.suggestedBeat;
         if (nearestBeatIndex >= 0 && nearestBeatIndex < beatGrid?.length) {
-          const _targetTime = beatGrid[nearestBeatIndex];
-          const _adjustedTarget =
+          const targetTime = beatGrid[nearestBeatIndex];
+          const adjustedTarget =
             transient?.time + (targetTime - transient?.time) * strength;
 
           markers?.push({
             id: randomUUID(),
-            sourceTime: transient?.time,
+            sourceTime: transient.time,
             targetTime: adjustedTarget,
-            transientStrength: transient?.strength,
+            transientStrength: transient.strength,
           });
         }
       }
@@ -779,4 +781,4 @@ export class TimeStretchService {
   }
 }
 
-export const _timeStretchService = new TimeStretchService();
+export const timeStretchService = new TimeStretchService();

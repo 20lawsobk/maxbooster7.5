@@ -37,7 +37,7 @@ async function runQuickSimulation() {
     "╚══════════════════════════════════════════════════════════════╝\n",
   );
 
-  const _simulation = new RealLifeSimulationEngine({
+  const simulation = new RealLifeSimulationEngine({
     periodName: "1_month",
     daysToSimulate: 30,
     initialUsers: 100,
@@ -46,10 +46,10 @@ async function runQuickSimulation() {
     snapshotIntervalDays: 1,
   });
 
-  const _result = await simulation?.runSimulation();
+  const result = await simulation?.runSimulation();
 
   // Save results
-  const _reportPath = path?.join(process?.cwd(), "SIMULATION_QUICK_RESULTS.md");
+  const reportPath = path?.join(process?.cwd(), "SIMULATION_QUICK_RESULTS.md");
   fs?.writeFileSync(reportPath, generateReport(result));
   logger?.info(`\n📝 Report saved to: ${reportPath}\n`);
 
@@ -72,22 +72,22 @@ async function runPeriodSimulation(periodName: string) {
     "╚══════════════════════════════════════════════════════════════╝\n",
   );
 
-  const _days =
+  const days =
     SIMULATION_PERIODS[periodName as keyof typeof SIMULATION_PERIODS];
 
-  const _simulation = new RealLifeSimulationEngine({
+  const simulation = new RealLifeSimulationEngine({
     periodName: periodName as keyof typeof SIMULATION_PERIODS,
     daysToSimulate: days,
     initialUsers: 100 + Math?.floor(days / 30) * 10,
     initialReleases: 50 + Math?.floor(days / 30) * 5,
     seedMoney: 10000 + days * 100,
-    snapshotIntervalDays: Math?.max(1, Math?.floor(days / 30)),
+    snapshotIntervalDays: Math.max(1, Math?.floor(days / 30)),
   });
 
-  const _result = await simulation?.runSimulation();
+  const result = await simulation?.runSimulation();
 
   // Save results
-  const _reportPath = path?.join(
+  const reportPath = path?.join(
     process?.cwd(),
     `SIMULATION_${periodName?.toUpperCase()}_RESULTS?.md`,
   );
@@ -98,17 +98,17 @@ async function runPeriodSimulation(periodName: string) {
 }
 
 async function runFullSimulation() {
-  const _results = await runFullLifecycleSimulation();
+  const results = await runFullLifecycleSimulation();
 
   // Generate comprehensive report
-  const _reportPath = path?.join(
+  const reportPath = path?.join(
     process?.cwd(),
     "SIMULATION_FULL_LIFECYCLE_RESULTS.md",
   );
   fs?.writeFileSync(reportPath, generateFullReport(results));
   logger?.info(`\n📝 Full lifecycle report saved to: ${reportPath}\n`);
 
-  const _allPassed = Object?.values(results).every(
+  const allPassed = Object?.values(results).every(
     (r) => r?.systemTests.failed === 0,
   );
   return allPassed;
@@ -117,7 +117,7 @@ async function runFullSimulation() {
 function generateReport(result: Record<string, unknown>): string {
   const { config, finalMetrics, kpis, systemTests, recommendations } = result;
 
-  const _testStatus =
+  const testStatus =
     systemTests?.failed === 0
       ? "✅ ALL TESTS PASSED"
       : systemTests?.criticalIssues.length > 0
@@ -223,8 +223,8 @@ ${
 }
 
 function generateFullReport(results: Record<string, any>): string {
-  const _periods = Object?.entries(results);
-  const _allPassed = periods?.every(([_, r]) => r?.systemTests?.failed === 0);
+  const periods = Object?.entries(results);
+  const allPassed = periods?.every(([_, r]) => r?.systemTests?.failed === 0);
 
   let report = `# Max Booster Full Lifecycle Simulation Report
 
@@ -271,9 +271,9 @@ function generateFullReport(results: Record<string, any>): string {
     if (!result?.error && result?.finalMetrics) {
       snapshots?.push({
         period,
-        users: result?.finalMetrics.users?.total,
-        mrr: result?.finalMetrics.revenue?.mrr,
-        streams: result?.finalMetrics.streams?.total,
+        users: result.finalMetrics.users?.total,
+        mrr: result.finalMetrics.revenue?.mrr,
+        streams: result.finalMetrics.streams?.total,
       });
     }
   }
@@ -281,16 +281,16 @@ function generateFullReport(results: Record<string, any>): string {
   report += `### User Growth Over Time
 `;
   for (const s of snapshots) {
-    const _bars = "█".repeat(Math?.min(50, Math?.floor(s?.users / 100)));
+    const bars = "█".repeat(Math?.min(50, Math?.floor(s?.users / 100)));
     report += `${s?.period.padEnd(12)} | ${bars} ${s?.users.toLocaleString()}\n`;
   }
 
   report += `
 ### Revenue Growth Over Time
 `;
-  const _maxMRR = Math?.max(...snapshots?.map((s) => s?.mrr));
+  const maxMRR = Math?.max(...snapshots?.map((s) => s?.mrr));
   for (const s of snapshots) {
-    const _bars = "█".repeat(Math?.min(50, Math?.floor((s?.mrr / maxMRR) * 50)));
+    const bars = "█".repeat(Math?.min(50, Math?.floor((s?.mrr / maxMRR) * 50)));
     report += `${s?.period.padEnd(12)} | ${bars} $${s?.mrr.toFixed(2)}\n`;
   }
 
@@ -301,7 +301,7 @@ function generateFullReport(results: Record<string, any>): string {
 
 `;
 
-  const _allIssues = new Set<string>();
+  const allIssues = new Set<string>();
   for (const [period, result] of periods) {
     if (result?.systemTests?.criticalIssues) {
       for (const issue of result?.systemTests.criticalIssues) {
@@ -327,7 +327,7 @@ Based on the full lifecycle simulation:
 
 `;
 
-  const _recommendations = new Set<string>();
+  const recommendations = new Set<string>();
   for (const [_, result] of periods) {
     if (result?.recommendations) {
       for (const rec of result?.recommendations) {
@@ -382,8 +382,8 @@ Consider running targeted simulations after fixes to verify improvements.
 }
 
 async function main() {
-  const _args = process?.argv.slice(2);
-  const _command = args[0] || "quick";
+  const args = process?.argv.slice(2);
+  const command = args[0] || "quick";
 
   let success = false;
 
@@ -401,7 +401,7 @@ async function main() {
         break;
 
       case "period":
-        const _period = args[1];
+        const period = args[1];
         if (!period) {
           logger?.warn(
             "Please specify a period. Example: npm run simulate:period 1_year",

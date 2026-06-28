@@ -7,7 +7,7 @@ export async function initializeAIInsightsModels() {
   logger?.info("📊 Initializing AI Insights Engine Models...");
 
   try {
-    const _models = [
+    const models = [
       {
         modelName: "time_series_predictor_v1",
         modelType: "insights",
@@ -98,7 +98,7 @@ export async function initializeAIInsightsModels() {
         logger?.info(`   ✓ Created AI Model: ${model?.modelName}`);
       }
 
-      const _versionHash = `${modelData?.modelName}_init`;
+      const versionHash = `${modelData?.modelName}_init`;
       const [existingVersion] = await db
         .select()
         .from(aiModelVersions)
@@ -114,7 +114,7 @@ export async function initializeAIInsightsModels() {
             status: "production",
             accuracy: (modelData?.performance as Record<string, unknown>)
               .accuracy,
-            parameters: modelData?.parameters,
+            parameters: modelData.parameters,
             changelog: "Initial release with professional-grade analytics",
             deployedAt: new Date(),
           })

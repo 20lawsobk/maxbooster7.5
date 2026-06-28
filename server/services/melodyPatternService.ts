@@ -36,7 +36,7 @@ export interface GenerationParams {
   humanize: number;
 }
 
-const _NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+const NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
 
 const SCALE_INTERVALS: Record<string, number[]> = {
   major: [0, 2, 4, 5, 7, 9, 11],
@@ -65,7 +65,7 @@ const SCALE_INTERVALS: Record<string, number[]> = {
   gypsy: [0, 2, 3, 6, 7, 8, 10],
 };
 
-const _INSTRUMENTS = {
+const INSTRUMENTS = {
   melodic: [
     "piano",
     "synth_lead",
@@ -159,7 +159,7 @@ const _INSTRUMENTS = {
   ],
 };
 
-const _GENRES = {
+const GENRES = {
   electronic: {
     genres: [
       "house",
@@ -322,7 +322,7 @@ const _GENRES = {
   },
 };
 
-const _STYLES = [
+const STYLES = [
   "aggressive",
   "ambient",
   "atmospheric",
@@ -432,7 +432,7 @@ class MelodyPatternService {
     for (const [category, genreData] of Object?.entries(GENRES)) {
       for (const genre of genreData?.genres) {
         for (const instrument of INSTRUMENTS?.melodic) {
-          const _key = `${genre}_${instrument}`;
+          const key = `${genre}_${instrument}`;
           this?.trainedPatterns.set(
             key,
             this?.generateTrainedPatterns(
@@ -443,14 +443,14 @@ class MelodyPatternService {
           );
         }
         for (const kit of INSTRUMENTS?.drums) {
-          const _key = `${genre}_${kit}`;
+          const key = `${genre}_${kit}`;
           this?.drumPatterns.set(
             key,
             this?.generateDrumPatterns(genre, kit, genreData?.characteristics),
           );
         }
         for (const perc of INSTRUMENTS?.percussion) {
-          const _key = `${genre}_${perc}`;
+          const key = `${genre}_${perc}`;
           this?.percussionPatterns.set(
             key,
             this?.generatePercussionPatterns(
@@ -475,21 +475,21 @@ class MelodyPatternService {
     characteristics: { swing: number; complexity: number; syncopation: number },
   ): DrumPattern[] {
     const patterns: DrumPattern[] = [];
-    const _patternCount = 6;
+    const patternCount = 6;
 
     for (let i = 0; i < patternCount; i++) {
-      const _steps = 16;
+      const steps = 16;
       const hits: { step: number; velocity: number; element: string }[] = [];
 
-      const _isShaker = ["shaker", "cabasa", "guiro"].includes(instrument);
-      const _isTonal = [
+      const isShaker = ["shaker", "cabasa", "guiro"].includes(instrument);
+      const isTonal = [
         "congas",
         "bongos",
         "timbales",
         "tabla",
         "djembe",
       ].includes(instrument);
-      const _isBell = ["cowbell", "agogo", "triangle"].includes(instrument);
+      const isBell = ["cowbell", "agogo", "triangle"].includes(instrument);
 
       for (let step = 0; step < steps; step++) {
         let hitProbability = 0.3;
@@ -504,7 +504,7 @@ class MelodyPatternService {
         }
 
         if (Math?.random() < hitProbability) {
-          const _velocity =
+          const velocity =
             0.6 + Math?.random() * 0.4 * characteristics?.complexity;
           hits?.push({ step, velocity, element: instrument });
         }
@@ -514,7 +514,7 @@ class MelodyPatternService {
         steps,
         hits,
         tempo: 120,
-        swing: characteristics?.swing,
+        swing: characteristics.swing,
       });
     }
 
@@ -527,18 +527,18 @@ class MelodyPatternService {
     characteristics: { swing: number; complexity: number; syncopation: number },
   ): MelodyPattern[] {
     const patterns: MelodyPattern[] = [];
-    const _patternCount = 8;
+    const patternCount = 8;
 
     for (let i = 0; i < patternCount; i++) {
-      const _noteCount = Math?.floor(4 + characteristics?.complexity * 12);
+      const noteCount = Math?.floor(4 + characteristics?.complexity * 12);
       const notes: number[] = [];
       const durations: number[] = [];
       const velocities: number[] = [];
 
       for (let j = 0; j < noteCount; j++) {
-        const _isBass = instrument?.includes("bass");
-        const _isPad = instrument?.includes("pad");
-        const _isLead =
+        const isBass = instrument?.includes("bass");
+        const isPad = instrument?.includes("pad");
+        const isLead =
           instrument?.includes("lead") || instrument?.includes("synth");
 
         if (isBass) {
@@ -564,7 +564,7 @@ class MelodyPatternService {
         notes,
         durations,
         velocities,
-        octave: this?.getInstrumentOctave(instrument),
+        octave: this.getInstrumentOctave(instrument),
       });
     }
 
@@ -577,15 +577,15 @@ class MelodyPatternService {
     characteristics: { swing: number; complexity: number; syncopation: number },
   ): DrumPattern[] {
     const patterns: DrumPattern[] = [];
-    const _patternCount = 8;
-    const _steps = genre?.includes("dnb") || genre?.includes("drill") ? 32 : 16;
+    const patternCount = 8;
+    const steps = genre?.includes("dnb") || genre?.includes("drill") ? 32 : 16;
 
     for (let i = 0; i < patternCount; i++) {
-      const _kick = this?.generateKickPattern(genre, steps, characteristics);
-      const _snare = this?.generateSnarePattern(genre, steps, characteristics);
-      const _hihat = this?.generateHihatPattern(genre, steps, characteristics);
-      const _clap = this?.generateClapPattern(genre, steps, characteristics);
-      const _percussion = this?.generatePercussionPattern(
+      const kick = this?.generateKickPattern(genre, steps, characteristics);
+      const snare = this?.generateSnarePattern(genre, steps, characteristics);
+      const hihat = this?.generateHihatPattern(genre, steps, characteristics);
+      const clap = this?.generateClapPattern(genre, steps, characteristics);
+      const percussion = this?.generatePercussionPattern(
         genre,
         steps,
         characteristics,
@@ -598,13 +598,13 @@ class MelodyPatternService {
   }
 
   private generateBassNote(_index: number, _syncopation: number): number {
-    const _bassNotes = [0, 3, 5, 7, 10];
+    const bassNotes = [0, 3, 5, 7, 10];
     return bassNotes[Math?.floor(Math?.random() * bassNotes?.length)];
   }
 
   private generateBassDuration(swing: number): number {
-    const _durations = [0.25, 0.5, 1, 2];
-    const _weights = swing > 0.3 ? [0.3, 0.4, 0.2, 0.1] : [0.2, 0.3, 0.3, 0.2];
+    const durations = [0.25, 0.5, 1, 2];
+    const weights = swing > 0.3 ? [0.3, 0.4, 0.2, 0.1] : [0.2, 0.3, 0.3, 0.2];
     return this?.weightedRandom(durations, weights);
   }
 
@@ -617,30 +617,30 @@ class MelodyPatternService {
   }
 
   private generateLeadNote(_index: number, complexity: number): number {
-    const _range = Math?.floor(7 + complexity * 5);
+    const range = Math?.floor(7 + complexity * 5);
     return Math?.floor(Math?.random() * range);
   }
 
   private generateLeadDuration(syncopation: number): number {
-    const _durations = [0.125, 0.25, 0.5, 1];
-    const _weights =
+    const durations = [0.125, 0.25, 0.5, 1];
+    const weights =
       syncopation > 0.5 ? [0.3, 0.4, 0.2, 0.1] : [0.1, 0.3, 0.4, 0.2];
     return this?.weightedRandom(durations, weights);
   }
 
   private generateMelodyNote(_index: number, complexity: number): number {
-    const _range = Math?.floor(5 + complexity * 7);
+    const range = Math?.floor(5 + complexity * 7);
     return Math?.floor(Math?.random() * range);
   }
 
   private generateMelodyDuration(_swing: number): number {
-    const _durations = [0.25, 0.5, 0.75, 1, 1.5, 2];
+    const durations = [0.25, 0.5, 0.75, 1, 1.5, 2];
     return durations[Math?.floor(Math?.random() * durations?.length)];
   }
 
   private generateVelocity(index: number, _complexity: number): number {
-    const _base = 70 + Math?.floor(Math?.random() * 30);
-    const _accent = index % 4 === 0 ? 15 : 0;
+    const base = 70 + Math?.floor(Math?.random() * 30);
+    const accent = index % 4 === 0 ? 15 : 0;
     return Math?.min(127, base + accent);
   }
 
@@ -659,7 +659,7 @@ class MelodyPatternService {
     steps: number,
     chars: { swing: number; complexity: number; syncopation: number },
   ): number[] {
-    const _pattern = new Array(steps).fill(0);
+    const pattern = new Array(steps).fill(0);
 
     if (genre?.includes("house") || genre?.includes("techno")) {
       for (let i = 0; i < steps; i += 4) pattern[i] = 1;
@@ -667,7 +667,7 @@ class MelodyPatternService {
       pattern[0] = 1;
       pattern[6] = chars?.syncopation > 0.5 ? 1 : 0;
       pattern[10] = 1;
-      if (chars?.complexity > 0.6) pattern[14] = 1;
+      if (chars.complexity > 0.6) pattern[14] = 1;
     } else if (genre?.includes("dnb")) {
       pattern[0] = 1;
       pattern[14] = 1;
@@ -691,7 +691,7 @@ class MelodyPatternService {
     steps: number,
     chars: { swing: number; complexity: number; syncopation: number },
   ): number[] {
-    const _pattern = new Array(steps).fill(0);
+    const pattern = new Array(steps).fill(0);
 
     if (genre?.includes("dnb")) {
       pattern[4] = 1;
@@ -716,7 +716,7 @@ class MelodyPatternService {
     steps: number,
     chars: { swing: number; complexity: number; syncopation: number },
   ): number[] {
-    const _pattern = new Array(steps).fill(0);
+    const pattern = new Array(steps).fill(0);
 
     if (genre?.includes("trap") || genre?.includes("drill")) {
       for (let i = 0; i < steps; i++) {
@@ -741,7 +741,7 @@ class MelodyPatternService {
     steps: number,
     chars: { swing: number; complexity: number; syncopation: number },
   ): number[] {
-    const _pattern = new Array(steps).fill(0);
+    const pattern = new Array(steps).fill(0);
     pattern[4] = chars?.complexity > 0.3 ? 1 : 0;
     pattern[12] = chars?.complexity > 0.3 ? 1 : 0;
     return pattern;
@@ -752,12 +752,12 @@ class MelodyPatternService {
     steps: number,
     chars: { swing: number; complexity: number; syncopation: number },
   ): number[] {
-    const _pattern = new Array(steps).fill(0);
+    const pattern = new Array(steps).fill(0);
 
     if (chars?.complexity > 0.5) {
-      const _percussionHits = Math?.floor(chars?.complexity * 6);
+      const percussionHits = Math?.floor(chars?.complexity * 6);
       for (let i = 0; i < percussionHits; i++) {
-        const _pos = Math?.floor(Math?.random() * steps);
+        const pos = Math?.floor(Math?.random() * steps);
         pattern[pos] = Math?.random() * 0.5 + 0.3;
       }
     }
@@ -766,7 +766,7 @@ class MelodyPatternService {
   }
 
   private weightedRandom<T>(values: T[], weights: number[]): T {
-    const _totalWeight = weights?.reduce((a, b) => a + b, 0);
+    const totalWeight = weights?.reduce((a, b) => a + b, 0);
     let random = Math?.random() * totalWeight;
 
     for (let i = 0; i < values?.length; i++) {
@@ -778,15 +778,15 @@ class MelodyPatternService {
   }
 
   public generateMelody(params: GenerationParams): MelodyPattern {
-    const _key = `${params?.genre}_${params?.instrument}`;
+    const key = `${params?.genre}_${params?.instrument}`;
     // When the requested genre has no trained patterns, try the industry-trending
     // genre (sync cache read — never blocks) before falling back to the hard-coded
     // trap baseline.  This makes the fallback path culturally current.
     let patterns = this?.trainedPatterns.get(key);
     if (!patterns || patterns?.length === 0) {
-      const _trending = musicIndustryContextFilter?.getSuggestedGenreSync();
+      const trending = musicIndustryContextFilter?.getSuggestedGenreSync();
       if (trending) {
-        const _trendKey = `${trending?.toLowerCase().replace(/[^a-z]/g, "")}_${params?.instrument}`;
+        const trendKey = `${trending?.toLowerCase().replace(/[^a-z]/g, "")}_${params?.instrument}`;
         patterns = this?.trainedPatterns.get(trendKey);
       }
     }
@@ -796,17 +796,17 @@ class MelodyPatternService {
       return this?.generateFallbackMelody(params);
     }
 
-    const _basePattern = patterns[Math?.floor(Math?.random() * patterns?.length)];
+    const basePattern = patterns[Math?.floor(Math?.random() * patterns?.length)];
     return this?.transformPattern(basePattern, params);
   }
 
   public generateDrums(params: GenerationParams): DrumPattern {
-    const _key = `${params?.genre}_${params?.instrument}`;
+    const key = `${params?.genre}_${params?.instrument}`;
     let patterns = this?.drumPatterns.get(key);
     if (!patterns || patterns?.length === 0) {
-      const _trending = musicIndustryContextFilter?.getSuggestedGenreSync();
+      const trending = musicIndustryContextFilter?.getSuggestedGenreSync();
       if (trending) {
-        const _trendKey = `${trending?.toLowerCase().replace(/[^a-z]/g, "")}_${params?.instrument}`;
+        const trendKey = `${trending?.toLowerCase().replace(/[^a-z]/g, "")}_${params?.instrument}`;
         patterns = this?.drumPatterns.get(trendKey);
       }
     }
@@ -816,17 +816,17 @@ class MelodyPatternService {
       return this?.generateFallbackDrums(params);
     }
 
-    const _basePattern = patterns[Math?.floor(Math?.random() * patterns?.length)];
+    const basePattern = patterns[Math?.floor(Math?.random() * patterns?.length)];
     return this?.applyHumanization(basePattern, params?.humanize);
   }
 
   public generatePercussion(params: GenerationParams): DrumPattern {
-    const _key = `${params?.genre}_${params?.instrument}`;
+    const key = `${params?.genre}_${params?.instrument}`;
     let patterns = this?.percussionPatterns.get(key);
     if (!patterns || patterns?.length === 0) {
-      const _trending = musicIndustryContextFilter?.getSuggestedGenreSync();
+      const trending = musicIndustryContextFilter?.getSuggestedGenreSync();
       if (trending) {
-        const _trendKey = `${trending?.toLowerCase().replace(/[^a-z]/g, "")}_${params?.instrument}`;
+        const trendKey = `${trending?.toLowerCase().replace(/[^a-z]/g, "")}_${params?.instrument}`;
         patterns = this?.percussionPatterns.get(trendKey);
       }
     }
@@ -836,12 +836,12 @@ class MelodyPatternService {
       return this?.generateFallbackPercussion(params);
     }
 
-    const _basePattern = patterns[Math?.floor(Math?.random() * patterns?.length)];
+    const basePattern = patterns[Math?.floor(Math?.random() * patterns?.length)];
     return this?.applyHumanization(basePattern, params?.humanize);
   }
 
   private generateFallbackPercussion(params: GenerationParams): DrumPattern {
-    const _steps = 16;
+    const steps = 16;
     const hits: { step: number; velocity: number; element: string }[] = [];
 
     for (let step = 0; step < steps; step++) {
@@ -849,7 +849,7 @@ class MelodyPatternService {
         hits?.push({
           step,
           velocity: 0.7 + Math?.random() * 0.3,
-          element: params?.instrument || "congas",
+          element: params.instrument || "congas",
         });
       }
     }
@@ -857,30 +857,30 @@ class MelodyPatternService {
     return {
       steps,
       hits,
-      tempo: params?.tempo || 120,
-      swing: params?.swing || 0,
+      tempo: params.tempo || 120,
+      swing: params.swing || 0,
     };
   }
 
   public generateChordProgression(params: GenerationParams): ChordProgression {
-    const _genreCategory = this?.getGenreCategory(params?.genre);
-    const _progressions =
+    const genreCategory = this?.getGenreCategory(params?.genre);
+    const progressions =
       CHORD_PROGRESSIONS[genreCategory] || CHORD_PROGRESSIONS?.pop;
-    const _progression =
+    const progression =
       progressions[Math?.floor(Math?.random() * progressions?.length)];
 
-    const _chords = progression?.map((numeral) =>
+    const chords = progression?.map((numeral) =>
       this?.numeralToChord(numeral, params?.key, params?.scale),
     );
-    const _durations = progression?.map(() => params?.bars / progression?.length);
-    const _voicings = chords?.map((chord) => this?.getVoicing(chord, params?.key));
+    const durations = progression?.map(() => params?.bars / progression?.length);
+    const voicings = chords?.map((chord) => this?.getVoicing(chord, params?.key));
 
     return { chords, durations, voicings };
   }
 
   private generateFallbackMelody(params: GenerationParams): MelodyPattern {
-    const _scaleNotes = SCALE_INTERVALS[params?.scale] || SCALE_INTERVALS?.minor;
-    const _noteCount = Math?.floor(4 + params?.complexity * 12);
+    const scaleNotes = SCALE_INTERVALS[params?.scale] || SCALE_INTERVALS?.minor;
+    const noteCount = Math?.floor(4 + params?.complexity * 12);
     const notes: number[] = [];
     const durations: number[] = [];
     const velocities: number[] = [];
@@ -895,7 +895,7 @@ class MelodyPatternService {
   }
 
   private generateFallbackDrums(_params: GenerationParams): DrumPattern {
-    const _steps = 16;
+    const steps = 16;
     return {
       kick: [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
       snare: [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
@@ -910,18 +910,18 @@ class MelodyPatternService {
     pattern: MelodyPattern,
     params: GenerationParams,
   ): MelodyPattern {
-    const _rootNote = NOTES?.indexOf(params?.key);
-    const _scaleNotes = (
+    const rootNote = NOTES?.indexOf(params?.key);
+    const scaleNotes = (
       SCALE_INTERVALS[params?.scale] || SCALE_INTERVALS?.minor
     ).map((n) => (n + rootNote) % 12);
 
-    const _transformedNotes = pattern?.notes.map((note) => {
-      const _scaleIndex = note % scaleNotes?.length;
+    const transformedNotes = pattern?.notes.map((note) => {
+      const scaleIndex = note % scaleNotes?.length;
       return scaleNotes[scaleIndex];
     });
 
-    const _transformedVelocities = pattern?.velocities.map((v) => {
-      const _humanized = v + (Math?.random() - 0.5) * params?.humanize * 20;
+    const transformedVelocities = pattern?.velocities.map((v) => {
+      const humanized = v + (Math?.random() - 0.5) * params?.humanize * 20;
       return Math?.max(1, Math?.min(127, Math?.round(humanized)));
     });
 
@@ -936,19 +936,19 @@ class MelodyPatternService {
     pattern: DrumPattern,
     humanize: number,
   ): DrumPattern {
-    const _humanizeVelocity = (v: number) => {
+    const humanizeVelocity = (v: number) => {
       if (v === 0) return 0;
-      const _variation = (Math?.random() - 0.5) * humanize * 0.3;
+      const variation = (Math?.random() - 0.5) * humanize * 0.3;
       return Math?.max(0, Math?.min(1, v + variation));
     };
 
     return {
       ...pattern,
-      kick: pattern?.kick.map(humanizeVelocity),
-      snare: pattern?.snare.map(humanizeVelocity),
-      hihat: pattern?.hihat.map(humanizeVelocity),
-      clap: pattern?.clap.map(humanizeVelocity),
-      percussion: pattern?.percussion.map(humanizeVelocity),
+      kick: pattern.kick.map(humanizeVelocity),
+      snare: pattern.snare.map(humanizeVelocity),
+      hihat: pattern.hihat.map(humanizeVelocity),
+      clap: pattern.clap.map(humanizeVelocity),
+      percussion: pattern.percussion.map(humanizeVelocity),
     };
   }
 
@@ -980,23 +980,23 @@ class MelodyPatternService {
       bVI: 8,
     };
 
-    const _interval = numeralMap[numeral] || 0;
-    const _rootIndex = NOTES?.indexOf(key);
-    const _chordRoot = NOTES[(rootIndex + interval) % 12];
-    const _isMinor = numeral === numeral?.toLowerCase();
+    const interval = numeralMap[numeral] || 0;
+    const rootIndex = NOTES?.indexOf(key);
+    const chordRoot = NOTES[(rootIndex + interval) % 12];
+    const isMinor = numeral === numeral?.toLowerCase();
 
     return chordRoot + (isMinor ? "m" : "");
   }
 
-  private getVoicing(chord: string, _key: string): number[] {
-    const _root = chord
+  private getVoicing(chord: string, key: string): number[] {
+    const root = chord
       .replace("m", "")
       .replace("7", "")
       .replace("maj", "")
       .replace("dim", "")
       .replace("aug", "");
-    const _rootMidi = NOTES?.indexOf(root) + 60;
-    const _isMinor = chord?.includes("m");
+    const rootMidi = NOTES?.indexOf(root) + 60;
+    const isMinor = chord?.includes("m");
 
     if (isMinor) {
       return [rootMidi, rootMidi + 3, rootMidi + 7];
@@ -1026,11 +1026,11 @@ class MelodyPatternService {
     percussion: number;
   } {
     return {
-      melody: this?.trainedPatterns.size,
-      drums: this?.drumPatterns.size,
-      percussion: this?.percussionPatterns.size,
+      melody: this.trainedPatterns.size,
+      drums: this.drumPatterns.size,
+      percussion: this.percussionPatterns.size,
     };
   }
 }
 
-export const _melodyPatternService = new MelodyPatternService();
+export const melodyPatternService = new MelodyPatternService();

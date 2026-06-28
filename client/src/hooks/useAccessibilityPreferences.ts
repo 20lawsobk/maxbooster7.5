@@ -19,8 +19,9 @@ export interface AccessibilityPreferences {
   keyboardNavigationEnabled: boolean;
 }
 
+
 export function useAccessibilityPreferences() {
-  const _queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   const {
     reducedMotion,
     highContrast,
@@ -42,9 +43,9 @@ export function useAccessibilityPreferences() {
     retry: 1,
   });
 
-  const _updateMutation = useMutation({
+  const updateMutation = useMutation({
     mutationFn: async (updates: Partial<AccessibilityPreferences>) => {
-      const _response = await apiRequest(
+      const response = await apiRequest(
         "PUT",
         "/api/user/accessibility-preferences",
         updates,
@@ -58,7 +59,7 @@ export function useAccessibilityPreferences() {
     },
   });
 
-  const _syncFromServer = useCallback(() => {
+  const syncFromServer = useCallback(() => {
     if (!serverPreferences) return;
 
     if (serverPreferences?.reducedMotion !== null) {
@@ -81,13 +82,13 @@ export function useAccessibilityPreferences() {
     setColorBlindMode,
   ]);
 
-  const _saveToServer = useCallback(async () => {
+  const saveToServer = useCallback(async () => {
     const preferences: Partial<AccessibilityPreferences> = {
-      reducedMotion: reducedMotion?.prefersReducedMotion,
-      contrastMode: highContrast?.contrastMode,
+      reducedMotion: reducedMotion.prefersReducedMotion,
+      contrastMode: highContrast.contrastMode,
       fontSize,
       colorBlindMode,
-      focusIndicatorWidth: highContrast?.getFocusIndicatorWidth(),
+      focusIndicatorWidth: highContrast.getFocusIndicatorWidth(),
     };
 
     try {
@@ -105,7 +106,7 @@ export function useAccessibilityPreferences() {
     announce,
   ]);
 
-  const _updatePreference = useCallback(
+  const updatePreference = useCallback(
     async <K extends keyof AccessibilityPreferences>(
       key: K,
       value: AccessibilityPreferences[K],
@@ -140,7 +141,7 @@ export function useAccessibilityPreferences() {
     ],
   );
 
-  const _resetPreferences = useCallback(async () => {
+  const resetPreferences = useCallback(async () => {
     resetAllPreferences();
     try {
       await apiRequest("DELETE", "/api/user/accessibility-preferences");
@@ -154,12 +155,12 @@ export function useAccessibilityPreferences() {
   }, [resetAllPreferences, queryClient, announce]);
 
   const currentPreferences: AccessibilityPreferences = {
-    reducedMotion: reducedMotion?.prefersReducedMotion,
-    contrastMode: highContrast?.contrastMode,
+    reducedMotion: reducedMotion.prefersReducedMotion,
+    contrastMode: highContrast.contrastMode,
     fontSize,
     colorBlindMode,
-    focusIndicatorWidth: highContrast?.getFocusIndicatorWidth(),
-    screenReaderOptimized: serverPreferences?.screenReaderOptimized || false,
+    focusIndicatorWidth: highContrast.getFocusIndicatorWidth(),
+    screenReaderOptimized: serverPreferences.screenReaderOptimized || false,
     keyboardNavigationEnabled:
       serverPreferences?.keyboardNavigationEnabled ?? true,
   };
@@ -169,21 +170,21 @@ export function useAccessibilityPreferences() {
     serverPreferences,
     isLoading,
     error,
-    isSaving: updateMutation?.isPending,
+    isSaving: updateMutation.isPending,
     saveToServer,
     syncFromServer,
     updatePreference,
     resetPreferences,
     reducedMotion: {
-      enabled: reducedMotion?.prefersReducedMotion,
-      isSystemPreference: reducedMotion?.isSystemPreference,
+      enabled: reducedMotion.prefersReducedMotion,
+      isSystemPreference: reducedMotion.isSystemPreference,
       setEnabled: (value: boolean | null) =>
         updatePreference("reducedMotion", value),
     },
     highContrast: {
-      mode: highContrast?.contrastMode,
-      isHighContrast: highContrast?.isHighContrast,
-      isSystemPreference: highContrast?.isSystemPreference,
+      mode: highContrast.contrastMode,
+      isHighContrast: highContrast.isHighContrast,
+      isSystemPreference: highContrast.isSystemPreference,
       setMode: (value: ContrastMode | null) =>
         updatePreference("contrastMode", value),
     },

@@ -3,9 +3,9 @@ import { storage } from "../storage";
 import { logger } from "../logger.js";
 import { paymentBypassService } from "../services/paymentBypassService";
 
-const _GRACE_PERIOD_DAYS = 7;
+const GRACE_PERIOD_DAYS = 7;
 
-export const _requirePremium = async (
+export const requirePremium = async (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -17,16 +17,16 @@ export const _requirePremium = async (
     });
   }
 
-  const _userId = req?.user.id;
+  const userId = req?.user.id;
 
   try {
-    const _isBypassed = await paymentBypassService?.isPaymentBypassed();
+    const isBypassed = await paymentBypassService?.isPaymentBypassed();
     if (isBypassed) {
       res?.setHeader("X-Payment-Bypass", "active");
       return next();
     }
 
-    const _user = await storage?.getUser(userId);
+    const user = await storage?.getUser(userId);
 
     if (!user) {
       return res?.status(401).json({
@@ -35,38 +35,38 @@ export const _requirePremium = async (
       });
     }
 
-    const _now = new Date();
+    const now = new Date();
 
     if (user?.role === "admin") {
       return next();
     }
 
-    const _hasLifetimeAccess = user?.subscriptionTier === "lifetime";
+    const hasLifetimeAccess = user?.subscriptionTier === "lifetime";
     if (hasLifetimeAccess) {
       return next();
     }
 
-    const _hasActiveSubscription = user?.subscriptionStatus === "active";
+    const hasActiveSubscription = user?.subscriptionStatus === "active";
     if (hasActiveSubscription) {
       return next();
     }
 
-    const _trialEndDate = user?.trialEndsAt ? new Date(user?.trialEndsAt) : null;
-    const _inActiveTrial = trialEndDate && trialEndDate > now;
+    const trialEndDate = user?.trialEndsAt ? new Date(user?.trialEndsAt) : null;
+    const inActiveTrial = trialEndDate && trialEndDate > now;
     if (inActiveTrial) {
       return next();
     }
 
-    const _subscriptionEndDate = user?.subscriptionEndsAt
+    const subscriptionEndDate = user?.subscriptionEndsAt
       ? new Date(user?.subscriptionEndsAt)
       : null;
     if (subscriptionEndDate) {
-      const _gracePeriodEnd = new Date(subscriptionEndDate);
+      const gracePeriodEnd = new Date(subscriptionEndDate);
       gracePeriodEnd?.setDate(gracePeriodEnd?.getDate() + GRACE_PERIOD_DAYS);
 
-      const _inGracePeriod = now <= gracePeriodEnd;
+      const inGracePeriod = now <= gracePeriodEnd;
       if (inGracePeriod) {
-        const _daysRemaining = Math?.ceil(
+        const daysRemaining = Math?.ceil(
           (gracePeriodEnd?.getTime() - now?.getTime()) / (1000 * 60 * 60 * 24),
         );
         res?.setHeader(
@@ -81,7 +81,7 @@ export const _requirePremium = async (
       error: "Premium subscription required",
       message: "This feature requires an active premium subscription",
       upgradeUrl: "/pricing",
-      subscriptionStatus: user?.subscriptionStatus || "none",
+      subscriptionStatus: user.subscriptionStatus || "none",
       trialExpired: trialEndDate ? trialEndDate < now : false,
     });
   } catch (error: unknown) {

@@ -11,7 +11,7 @@ import {
   formatShortcutKeys,
 } from "./types";
 
-const _STORAGE_KEY = "max-booster-shortcuts";
+const STORAGE_KEY = "max-booster-shortcuts";
 
 interface ShortcutManagerOptions {
   persistConfig?: boolean;
@@ -41,7 +41,7 @@ class ShortcutManagerImpl {
     if (!this?.options.persistConfig) return;
 
     try {
-      const _stored = localStorage?.getItem(STORAGE_KEY);
+      const stored = localStorage?.getItem(STORAGE_KEY);
       if (stored) {
         const configs: ShortcutConfig[] = JSON?.parse(stored);
         configs?.forEach((config) => {
@@ -57,7 +57,7 @@ class ShortcutManagerImpl {
     if (!this?.options.persistConfig) return;
 
     try {
-      const _configs = Array?.from(this?.customConfigs.values());
+      const configs = Array?.from(this?.customConfigs.values());
       localStorage?.setItem(STORAGE_KEY, JSON?.stringify(configs));
     } catch (e) {
       logger?.warn("Failed to save shortcut configs:", e);
@@ -65,23 +65,23 @@ class ShortcutManagerImpl {
   }
 
   register(shortcut: ShortcutDefinition): void {
-    const _customConfig = this?.customConfigs.get(shortcut?.id);
+    const customConfig = this?.customConfigs.get(shortcut?.id);
     if (customConfig) {
       shortcut = {
         ...shortcut,
-        key: customConfig?.key ?? shortcut?.key,
-        modifiers: customConfig?.modifiers ?? shortcut?.modifiers,
-        enabled: customConfig?.enabled ?? shortcut?.enabled ?? true,
+        key: customConfig.key ?? shortcut?.key,
+        modifiers: customConfig.modifiers ?? shortcut?.modifiers,
+        enabled: customConfig.enabled ?? shortcut?.enabled ?? true,
       };
     }
 
-    const _conflicts = this?.detectConflicts(shortcut);
+    const conflicts = this?.detectConflicts(shortcut);
     if (conflicts?.length > 0 && this?.options.onConflict) {
       this?.options.onConflict({
-        shortcutId: shortcut?.id,
+        shortcutId: shortcut.id,
         conflictsWith: conflicts,
-        key: shortcut?.key,
-        modifiers: shortcut?.modifiers || [],
+        key: shortcut.key,
+        modifiers: shortcut.modifiers || [],
       });
     }
 
@@ -131,14 +131,14 @@ class ShortcutManagerImpl {
   }
 
   customize(shortcutId: string, config: Partial<ShortcutConfig>): void {
-    const _shortcut = this?.shortcuts.get(shortcutId);
+    const shortcut = this?.shortcuts.get(shortcutId);
     if (!shortcut) return;
 
     const newConfig: ShortcutConfig = {
       id: shortcutId,
-      key: config?.key ?? shortcut?.key,
-      modifiers: config?.modifiers ?? shortcut?.modifiers,
-      enabled: config?.enabled ?? shortcut?.enabled ?? true,
+      key: config.key ?? shortcut?.key,
+      modifiers: config.modifiers ?? shortcut?.modifiers,
+      enabled: config.enabled ?? shortcut?.enabled ?? true,
     };
 
     this?.customConfigs.set(shortcutId, newConfig);
@@ -166,7 +166,7 @@ class ShortcutManagerImpl {
     this?.shortcuts.forEach((existing, id) => {
       if (id === shortcut?.id) return;
 
-      const _sameContext =
+      const sameContext =
         existing?.context === shortcut?.context ||
         existing?.context === "global" ||
         shortcut?.context === "global";
@@ -174,8 +174,8 @@ class ShortcutManagerImpl {
       if (!sameContext) return;
 
       if (!existing?.key || !shortcut?.key) return;
-      const _sameKey = existing?.key.toLowerCase() === shortcut?.key.toLowerCase();
-      const _sameModifiers = this?.modifiersEqual(
+      const sameKey = existing?.key.toLowerCase() === shortcut?.key.toLowerCase();
+      const sameModifiers = this?.modifiersEqual(
         existing?.modifiers || [],
         shortcut?.modifiers || [],
       );
@@ -193,13 +193,13 @@ class ShortcutManagerImpl {
     b: ShortcutModifier[],
   ): boolean {
     if (a?.length !== b?.length) return false;
-    const _sortedA = [...a].sort();
-    const _sortedB = [...b].sort();
+    const sortedA = [...a].sort();
+    const sortedB = [...b].sort();
     return sortedA?.every((mod, i) => mod === sortedB[i]);
   }
 
   addListener(callback: (event: ShortcutEvent) => void): string {
-    const _id = Math?.random().toString(36).substr(2, 9);
+    const id = Math?.random().toString(36).substr(2, 9);
     this?.listeners.push({ id, callback });
     return id;
   }
@@ -211,8 +211,8 @@ class ShortcutManagerImpl {
   private onKeyDown(event: KeyboardEvent): void {
     if (!this?.enabled) return;
 
-    const _target = event?.target as HTMLElement;
-    const _isInput =
+    const target = event?.target as HTMLElement;
+    const isInput =
       target?.tagName === "INPUT" ||
       target?.tagName === "TEXTAREA" ||
       target?.isContentEditable;
@@ -233,11 +233,11 @@ class ShortcutManagerImpl {
         }
 
         const shortcutEvent: ShortcutEvent = {
-          shortcutId: shortcut?.id,
-          key: shortcut?.key,
-          modifiers: shortcut?.modifiers || [],
-          timestamp: Date?.now(),
-          context: this?.currentContext,
+          shortcutId: shortcut.id,
+          key: shortcut.key,
+          modifiers: shortcut.modifiers || [],
+          timestamp: Date.now(),
+          context: this.currentContext,
         };
 
         if (typeof shortcut?.action === "function") {
@@ -251,7 +251,7 @@ class ShortcutManagerImpl {
   }
 
   getFormattedShortcut(id: string): string {
-    const _shortcut = this?.shortcuts.get(id);
+    const shortcut = this?.shortcuts.get(id);
     if (!shortcut) return "";
     return formatShortcutKeys(shortcut?.key, shortcut?.modifiers);
   }
@@ -286,7 +286,7 @@ export function resetShortcutManager(): void {
 
 export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
   {
-    id: "global?.command-palette",
+    id: "global.command-palette",
     key: "k",
     modifiers: ["cmd"],
     description: "Open command palette",
@@ -295,7 +295,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     action: "openCommandPalette",
   },
   {
-    id: "global?.help",
+    id: "global.help",
     key: "/",
     modifiers: ["cmd"],
     description: "Show keyboard shortcuts",
@@ -304,7 +304,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     action: "showHelp",
   },
   {
-    id: "global?.settings",
+    id: "global.settings",
     key: ",",
     modifiers: ["cmd"],
     description: "Open settings",
@@ -313,7 +313,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     action: "openSettings",
   },
   {
-    id: "global?.search",
+    id: "global.search",
     key: "/",
     description: "Focus search",
     category: "global",
@@ -321,7 +321,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     action: "focusSearch",
   },
   {
-    id: "global?.escape",
+    id: "global.escape",
     key: "Escape",
     description: "Close modal/dialog",
     category: "global",
@@ -330,7 +330,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     allowInInput: true,
   },
   {
-    id: "studio?.play-pause",
+    id: "studio.play-pause",
     key: " ",
     description: "Play/Pause",
     category: "transport",
@@ -338,7 +338,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     action: "togglePlayPause",
   },
   {
-    id: "studio?.record",
+    id: "studio.record",
     key: "r",
     description: "Toggle recording",
     category: "transport",
@@ -346,7 +346,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     action: "toggleRecord",
   },
   {
-    id: "studio?.mute",
+    id: "studio.mute",
     key: "m",
     description: "Mute selected track",
     category: "track",
@@ -354,7 +354,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     action: "toggleMute",
   },
   {
-    id: "studio?.solo",
+    id: "studio.solo",
     key: "s",
     description: "Solo selected track",
     category: "track",
@@ -362,7 +362,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     action: "toggleSolo",
   },
   {
-    id: "studio?.save",
+    id: "studio.save",
     key: "s",
     modifiers: ["cmd"],
     description: "Save project",
@@ -371,7 +371,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     action: "saveProject",
   },
   {
-    id: "studio?.undo",
+    id: "studio.undo",
     key: "z",
     modifiers: ["cmd"],
     description: "Undo",
@@ -380,7 +380,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     action: "undo",
   },
   {
-    id: "studio?.redo",
+    id: "studio.redo",
     key: "z",
     modifiers: ["cmd", "shift"],
     description: "Redo",
@@ -389,7 +389,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     action: "redo",
   },
   {
-    id: "studio?.loop",
+    id: "studio.loop",
     key: "l",
     description: "Toggle loop",
     category: "transport",
@@ -397,7 +397,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     action: "toggleLoop",
   },
   {
-    id: "studio?.metronome",
+    id: "studio.metronome",
     key: "k",
     description: "Toggle metronome",
     category: "transport",
@@ -405,7 +405,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     action: "toggleMetronome",
   },
   {
-    id: "dashboard?.new-project",
+    id: "dashboard.new-project",
     key: "n",
     description: "Create new project",
     category: "actions",
@@ -413,7 +413,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     action: "newProject",
   },
   {
-    id: "dashboard?.upload",
+    id: "dashboard.upload",
     key: "u",
     description: "Upload file",
     category: "actions",
@@ -421,7 +421,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     action: "uploadFile",
   },
   {
-    id: "dashboard?.distribution",
+    id: "dashboard.distribution",
     key: "d",
     description: "Go to distribution",
     category: "navigation",
@@ -429,7 +429,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     action: "goToDistribution",
   },
   {
-    id: "social?.new-post",
+    id: "social.new-post",
     key: "p",
     description: "Create new post",
     category: "actions",
@@ -437,7 +437,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     action: "newPost",
   },
   {
-    id: "social?.schedule",
+    id: "social.schedule",
     key: "s",
     description: "Open scheduler",
     category: "actions",
@@ -445,7 +445,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     action: "openScheduler",
   },
   {
-    id: "social?.analytics",
+    id: "social.analytics",
     key: "a",
     description: "View analytics",
     category: "navigation",
@@ -453,7 +453,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     action: "viewAnalytics",
   },
   {
-    id: "social?.preview",
+    id: "social.preview",
     key: "p",
     description: "Preview post",
     category: "actions",
@@ -461,7 +461,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     action: "previewPost",
   },
   {
-    id: "distribution?.new-release",
+    id: "distribution.new-release",
     key: "n",
     description: "New release",
     category: "actions",
@@ -469,7 +469,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     action: "newRelease",
   },
   {
-    id: "distribution?.submit",
+    id: "distribution.submit",
     key: "Enter",
     description: "Submit release",
     category: "actions",
@@ -477,7 +477,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     action: "submitRelease",
   },
   {
-    id: "analytics?.refresh",
+    id: "analytics.refresh",
     key: "r",
     description: "Refresh data",
     category: "actions",
@@ -485,7 +485,7 @@ export const DEFAULT_SHORTCUTS: ShortcutDefinition[] = [
     action: "refreshData",
   },
   {
-    id: "analytics?.export",
+    id: "analytics.export",
     key: "e",
     description: "Export report",
     category: "actions",

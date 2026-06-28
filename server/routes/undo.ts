@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { randomBytes } from "crypto";
 import { logger } from "../logger";
 
-const _router = Router();
+const router = Router();
 
 interface UndoAction {
   id: string;
@@ -20,7 +20,7 @@ interface UndoAction {
   undoneAt?: Date;
 }
 
-const _actionCache = new Map<string, UndoAction>();
+const actionCache = new Map<string, UndoAction>();
 
 function generateActionId(): string {
   return `action_${Date?.now()}_${randomBytes(4).toString("hex")}`;
@@ -51,7 +51,7 @@ router?.post("/action", async (req: Request, res: Response) => {
 
     const action: UndoAction = {
       id: generateActionId(),
-      userId: req?.user.id,
+      userId: req.user.id,
       type,
       category,
       module,
@@ -66,11 +66,11 @@ router?.post("/action", async (req: Request, res: Response) => {
 
     actionCache?.set(action?.id, action);
 
-    const _userActions = Array?.from(actionCache?.values()).filter(
+    const userActions = Array?.from(actionCache?.values()).filter(
       (a) => a?.userId === req?.user!.id,
     );
     if (userActions?.length > 100) {
-      const _oldest = userActions?.sort(
+      const oldest = userActions?.sort(
         (a, b) => a?.createdAt.getTime() - b?.createdAt.getTime(),
       )[0];
       actionCache?.delete(oldest?.id);
@@ -78,7 +78,7 @@ router?.post("/action", async (req: Request, res: Response) => {
 
     return res?.json({
       success: true,
-      actionId: action?.id,
+      actionId: action.id,
       message: "Action recorded",
     });
   } catch (error) {
@@ -94,7 +94,7 @@ router?.post("/undo/:actionId", async (req: Request, res: Response) => {
     }
 
     const { actionId } = req?.params;
-    const _action = actionCache?.get(actionId);
+    const action = actionCache?.get(actionId);
 
     if (!action) {
       return res?.status(404).json({ error: "Action not found" });
@@ -115,9 +115,9 @@ router?.post("/undo/:actionId", async (req: Request, res: Response) => {
 
     return res?.json({
       success: true,
-      actionId: action?.id,
+      actionId: action.id,
       message: "Action undone",
-      restoredState: action?.previousState,
+      restoredState: action.previousState,
     });
   } catch (error) {
     logger?.warn({ err: error }, "Error undoing action:");
@@ -132,7 +132,7 @@ router?.post("/redo/:actionId", async (req: Request, res: Response) => {
     }
 
     const { actionId } = req?.params;
-    const _action = actionCache?.get(actionId);
+    const action = actionCache?.get(actionId);
 
     if (!action) {
       return res?.status(404).json({ error: "Action not found" });
@@ -153,9 +153,9 @@ router?.post("/redo/:actionId", async (req: Request, res: Response) => {
 
     return res?.json({
       success: true,
-      actionId: action?.id,
+      actionId: action.id,
       message: "Action redone",
-      restoredState: action?.newState,
+      restoredState: action.newState,
     });
   } catch (error) {
     logger?.warn({ err: error }, "Error redoing action:");
@@ -169,13 +169,13 @@ router?.get("/history", async (req: Request, res: Response) => {
       return res?.status(401).json({ error: "Authentication required" });
     }
 
-    const _limit = Math?.min(parseInt(req?.query.limit as string) || 50, 100);
-    const _offset = Math?.min(
+    const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 100);
+    const offset = Math?.min(
       Math?.max(parseInt(req?.query.offset as string) || 0, 0),
       100_000,
     );
-    const _category = req?.query.category as string | undefined;
-    const _module = req?.query.module as string | undefined;
+    const category = req?.query.category as string | undefined;
+    const module = req?.query.module as string | undefined;
 
     let userActions = Array?.from(actionCache?.values())
       .filter((a) => a?.userId === req?.user!.id)
@@ -189,23 +189,23 @@ router?.get("/history", async (req: Request, res: Response) => {
       userActions = userActions?.filter((a) => a?.module === module);
     }
 
-    const _paginatedActions = userActions?.slice(offset, offset + limit);
+    const paginatedActions = userActions?.slice(offset, offset + limit);
 
     return res?.json({
-      actions: paginatedActions?.map((action) => ({
-        id: action?.id,
-        type: action?.type,
-        category: action?.category,
-        module: action?.module,
-        description: action?.description,
-        entityId: action?.entityId,
-        entityType: action?.entityType,
-        isUndone: action?.isUndone,
-        createdAt: action?.createdAt.toISOString(),
-        undoneAt: action?.undoneAt?.toISOString(),
+      actions: paginatedActions.map((action) => ({
+        id: action.id,
+        type: action.type,
+        category: action.category,
+        module: action.module,
+        description: action.description,
+        entityId: action.entityId,
+        entityType: action.entityType,
+        isUndone: action.isUndone,
+        createdAt: action.createdAt.toISOString(),
+        undoneAt: action.undoneAt?.toISOString(),
         canUndo: !action?.isUndone,
       })),
-      total: userActions?.length,
+      total: userActions.length,
       limit,
       offset,
     });
@@ -221,7 +221,7 @@ router?.delete("/history", async (req: Request, res: Response) => {
       return res?.status(401).json({ error: "Authentication required" });
     }
 
-    const _userActionIds = Array?.from(actionCache?.entries())
+    const userActionIds = Array?.from(actionCache?.entries())
       .filter(([_, action]) => action?.userId === req?.user!.id)
       .map(([id]) => id);
 
@@ -230,7 +230,7 @@ router?.delete("/history", async (req: Request, res: Response) => {
     return res?.json({
       success: true,
       message: "History cleared",
-      deletedCount: userActionIds?.length,
+      deletedCount: userActionIds.length,
     });
   } catch (error) {
     logger?.warn({ err: error }, "Error clearing action history:");
@@ -245,7 +245,7 @@ router?.get("/action/:actionId", async (req: Request, res: Response) => {
     }
 
     const { actionId } = req?.params;
-    const _action = actionCache?.get(actionId);
+    const action = actionCache?.get(actionId);
 
     if (!action) {
       return res?.status(404).json({ error: "Action not found" });
@@ -258,18 +258,18 @@ router?.get("/action/:actionId", async (req: Request, res: Response) => {
     }
 
     return res?.json({
-      id: action?.id,
-      type: action?.type,
-      category: action?.category,
-      module: action?.module,
-      description: action?.description,
-      entityId: action?.entityId,
-      entityType: action?.entityType,
-      previousState: action?.previousState,
-      newState: action?.newState,
-      isUndone: action?.isUndone,
-      createdAt: action?.createdAt.toISOString(),
-      undoneAt: action?.undoneAt?.toISOString(),
+      id: action.id,
+      type: action.type,
+      category: action.category,
+      module: action.module,
+      description: action.description,
+      entityId: action.entityId,
+      entityType: action.entityType,
+      previousState: action.previousState,
+      newState: action.newState,
+      isUndone: action.isUndone,
+      createdAt: action.createdAt.toISOString(),
+      undoneAt: action.undoneAt?.toISOString(),
       canUndo: !action?.isUndone,
     });
   } catch (error) {
@@ -303,7 +303,7 @@ router?.post("/record", async (req: Request, res: Response) => {
 
     const action: UndoAction = {
       id: generateActionId(),
-      userId: req?.user.id,
+      userId: req.user.id,
       type,
       category,
       module,
@@ -318,11 +318,11 @@ router?.post("/record", async (req: Request, res: Response) => {
 
     actionCache?.set(action?.id, action);
 
-    const _userActions = Array?.from(actionCache?.values()).filter(
+    const userActions = Array?.from(actionCache?.values()).filter(
       (a) => a?.userId === req?.user!.id,
     );
     if (userActions?.length > 100) {
-      const _oldest = userActions?.sort(
+      const oldest = userActions?.sort(
         (a, b) => a?.createdAt.getTime() - b?.createdAt.getTime(),
       )[0];
       actionCache?.delete(oldest?.id);
@@ -330,7 +330,7 @@ router?.post("/record", async (req: Request, res: Response) => {
 
     return res?.json({
       success: true,
-      actionId: action?.id,
+      actionId: action.id,
       message: "Action recorded successfully",
     });
   } catch (error) {
@@ -346,7 +346,7 @@ router?.post("/revert/:actionId", async (req: Request, res: Response) => {
     }
 
     const { actionId } = req?.params;
-    const _action = actionCache?.get(actionId);
+    const action = actionCache?.get(actionId);
 
     if (!action) {
       return res?.status(404).json({ error: "Action not found" });
@@ -369,9 +369,9 @@ router?.post("/revert/:actionId", async (req: Request, res: Response) => {
 
     return res?.json({
       success: true,
-      actionId: action?.id,
+      actionId: action.id,
       message: "Action reverted successfully",
-      restoredState: action?.previousState,
+      restoredState: action.previousState,
     });
   } catch (error) {
     logger?.warn({ err: error }, "Error reverting action:");
@@ -391,21 +391,21 @@ router?.post("/batch", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "Actions array is required" });
     }
 
-    const _groupId = `group_${Date?.now()}_${randomBytes(4).toString("hex")}`;
+    const groupId = `group_${Date?.now()}_${randomBytes(4).toString("hex")}`;
     const recordedIds: string[] = [];
 
     for (const actionData of actions) {
       const action: UndoAction = {
         id: generateActionId(),
-        userId: req?.user.id,
-        type: actionData?.type,
-        category: actionData?.category || "CRUD",
-        module: actionData?.module,
-        description: actionData?.description,
-        entityId: actionData?.entityId,
-        entityType: actionData?.entityType,
-        previousState: actionData?.previousState,
-        newState: actionData?.newState,
+        userId: req.user.id,
+        type: actionData.type,
+        category: actionData.category || "CRUD",
+        module: actionData.module,
+        description: actionData.description,
+        entityId: actionData.entityId,
+        entityType: actionData.entityType,
+        previousState: actionData.previousState,
+        newState: actionData.newState,
         isUndone: false,
         createdAt: new Date(),
       };
@@ -446,24 +446,24 @@ interface DeletedItem {
   expiresAt: Date;
 }
 
-const _restorePointCache = new Map<string, RestorePoint>();
-const _deletedItemCache = new Map<string, DeletedItem>();
+const restorePointCache = new Map<string, RestorePoint>();
+const deletedItemCache = new Map<string, DeletedItem>();
 
 // Global eviction: max 5K deleted items, max 10K restore points, max 100K action entries.
 // Individual per-user caps are enforced inline, but this is the global safety net.
-const _MAX_DELETED_ITEMS = 5_000;
-const _MAX_RESTORE_POINTS = 10_000;
+const MAX_DELETED_ITEMS = 5_000;
+const MAX_RESTORE_POINTS = 10_000;
  // 30 days
 
 setInterval(
   () => {
-    const _now = Date?.now();
+    const now = Date?.now();
     for (const [id, item] of deletedItemCache?.entries()) {
       if (item?.expiresAt && new Date(item?.expiresAt).getTime() < now)
         deletedItemCache?.delete(id);
     }
     while (deletedItemCache?.size > MAX_DELETED_ITEMS) {
-      const _k = deletedItemCache?.keys().next().value;
+      const k = deletedItemCache?.keys().next().value;
       if (k !== undefined) deletedItemCache?.delete(k);
       else break;
     }
@@ -472,12 +472,12 @@ setInterval(
         restorePointCache?.delete(id);
     }
     while (restorePointCache?.size > MAX_RESTORE_POINTS) {
-      const _k = restorePointCache?.keys().next().value;
+      const k = restorePointCache?.keys().next().value;
       if (k !== undefined) restorePointCache?.delete(k);
       else break;
     }
     while (actionCache?.size > 100_000) {
-      const _k = actionCache?.keys().next().value;
+      const k = actionCache?.keys().next().value;
       if (k !== undefined) actionCache?.delete(k);
       else break;
     }
@@ -519,7 +519,7 @@ router?.post("/track-action", async (req: Request, res: Response) => {
 
     const action: UndoAction = {
       id: generateActionId(),
-      userId: req?.user.id,
+      userId: req.user.id,
       type,
       category,
       module,
@@ -537,8 +537,8 @@ router?.post("/track-action", async (req: Request, res: Response) => {
     if (isDestructive && previousState) {
       const deletedItem: DeletedItem = {
         id: generateDeletedItemId(),
-        userId: req?.user.id,
-        actionId: action?.id,
+        userId: req.user.id,
+        actionId: action.id,
         type: entityType || "unknown",
         name: description,
         data: previousState,
@@ -548,11 +548,11 @@ router?.post("/track-action", async (req: Request, res: Response) => {
       deletedItemCache?.set(deletedItem?.id, deletedItem);
     }
 
-    const _userActions = Array?.from(actionCache?.values()).filter(
+    const userActions = Array?.from(actionCache?.values()).filter(
       (a) => a?.userId === req?.user!.id,
     );
     if (userActions?.length > 100) {
-      const _oldest = userActions?.sort(
+      const oldest = userActions?.sort(
         (a, b) => a?.createdAt.getTime() - b?.createdAt.getTime(),
       )[0];
       actionCache?.delete(oldest?.id);
@@ -560,7 +560,7 @@ router?.post("/track-action", async (req: Request, res: Response) => {
 
     return res?.json({
       success: true,
-      actionId: action?.id,
+      actionId: action.id,
       message: "Action tracked successfully",
     });
   } catch (error) {
@@ -581,28 +581,28 @@ router?.post("/create-restore-point", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "name is required" });
     }
 
-    const _userActions = Array?.from(actionCache?.values())
+    const userActions = Array?.from(actionCache?.values())
       .filter((a) => a?.userId === req?.user!.id)
       .sort((a, b) => b?.createdAt.getTime() - a?.createdAt.getTime());
 
-    const _lastAction = userActions[0];
+    const lastAction = userActions[0];
 
     const restorePoint: RestorePoint = {
       id: generateRestorePointId(),
-      userId: req?.user.id,
+      userId: req.user.id,
       name,
       description,
-      actionId: lastAction?.id || "",
+      actionId: lastAction.id || "",
       createdAt: new Date(),
     };
 
     restorePointCache?.set(restorePoint?.id, restorePoint);
 
-    const _userRestorePoints = Array?.from(restorePointCache?.values()).filter(
+    const userRestorePoints = Array?.from(restorePointCache?.values()).filter(
       (rp) => rp?.userId === req?.user!.id,
     );
     if (userRestorePoints?.length > 20) {
-      const _oldest = userRestorePoints?.sort(
+      const oldest = userRestorePoints?.sort(
         (a, b) => a?.createdAt.getTime() - b?.createdAt.getTime(),
       )[0];
       restorePointCache?.delete(oldest?.id);
@@ -610,7 +610,7 @@ router?.post("/create-restore-point", async (req: Request, res: Response) => {
 
     return res?.json({
       success: true,
-      restorePointId: restorePoint?.id,
+      restorePointId: restorePoint.id,
       message: "Restore point created successfully",
     });
   } catch (error) {
@@ -625,18 +625,18 @@ router?.get("/restore-points", async (req: Request, res: Response) => {
       return res?.status(401).json({ error: "Authentication required" });
     }
 
-    const _userRestorePoints = Array?.from(restorePointCache?.values())
+    const userRestorePoints = Array?.from(restorePointCache?.values())
       .filter((rp) => rp?.userId === req?.user!.id)
       .sort((a, b) => b?.createdAt.getTime() - a?.createdAt.getTime());
 
     return res?.json({
       success: true,
-      restorePoints: userRestorePoints?.map((rp) => ({
-        id: rp?.id,
-        name: rp?.name,
-        description: rp?.description,
-        actionId: rp?.actionId,
-        createdAt: rp?.createdAt.toISOString(),
+      restorePoints: userRestorePoints.map((rp) => ({
+        id: rp.id,
+        name: rp.name,
+        description: rp.description,
+        actionId: rp.actionId,
+        createdAt: rp.createdAt.toISOString(),
       })),
     });
   } catch (error) {
@@ -652,7 +652,7 @@ router?.post("/restore/:pointId", async (req: Request, res: Response) => {
     }
 
     const { pointId } = req?.params;
-    const _restorePoint = restorePointCache?.get(pointId);
+    const restorePoint = restorePointCache?.get(pointId);
 
     if (!restorePoint) {
       return res?.status(404).json({ error: "Restore point not found" });
@@ -664,11 +664,11 @@ router?.post("/restore/:pointId", async (req: Request, res: Response) => {
         .json({ error: "Not authorized to use this restore point" });
     }
 
-    const _userActions = Array?.from(actionCache?.values())
+    const userActions = Array?.from(actionCache?.values())
       .filter((a) => a?.userId === req?.user!.id)
       .sort((a, b) => b?.createdAt.getTime() - a?.createdAt.getTime());
 
-    const _restorePointAction = actionCache?.get(restorePoint?.actionId);
+    const restorePointAction = actionCache?.get(restorePoint?.actionId);
     const undoneActions: string[] = [];
 
     for (const action of userActions) {
@@ -688,7 +688,7 @@ router?.post("/restore/:pointId", async (req: Request, res: Response) => {
       success: true,
       restorePointId: pointId,
       undoneActions,
-      message: `Restored to "${restorePoint?.name}" - ${undoneActions?.length} actions undone`,
+      message: `Restored to "${restorePoint.name}" - ${undoneActions?.length} actions undone`,
     });
   } catch (error) {
     logger?.warn({ err: error }, "Error restoring to point:");
@@ -705,7 +705,7 @@ router?.delete(
       }
 
       const { pointId } = req?.params;
-      const _restorePoint = restorePointCache?.get(pointId);
+      const restorePoint = restorePointCache?.get(pointId);
 
       if (!restorePoint) {
         return res?.status(404).json({ error: "Restore point not found" });
@@ -737,7 +737,7 @@ router?.get("/deleted-items", async (req: Request, res: Response) => {
     }
 
     const { type, limit = 50 } = req?.query;
-    const _now = new Date();
+    const now = new Date();
 
     let userDeletedItems = Array?.from(deletedItemCache?.values()).filter(
       (item) => item?.userId === req?.user!.id && item?.expiresAt > now,
@@ -751,19 +751,19 @@ router?.get("/deleted-items", async (req: Request, res: Response) => {
       (a, b) => b?.deletedAt.getTime() - a?.deletedAt.getTime(),
     );
 
-    const _limitNum = Math?.min(parseInt(limit as string) || 50, 100);
+    const limitNum = Math?.min(parseInt(limit as string) || 50, 100);
 
     return res?.json({
       success: true,
-      items: userDeletedItems?.slice(0, limitNum).map((item) => ({
-        id: item?.id,
-        actionId: item?.actionId,
-        type: item?.type,
-        name: item?.name,
-        deletedAt: item?.deletedAt.toISOString(),
-        expiresAt: item?.expiresAt.toISOString(),
+      items: userDeletedItems.slice(0, limitNum).map((item) => ({
+        id: item.id,
+        actionId: item.actionId,
+        type: item.type,
+        name: item.name,
+        deletedAt: item.deletedAt.toISOString(),
+        expiresAt: item.expiresAt.toISOString(),
       })),
-      total: userDeletedItems?.length,
+      total: userDeletedItems.length,
     });
   } catch (error) {
     logger?.warn({ err: error }, "Error fetching deleted items:");
@@ -778,7 +778,7 @@ router?.post("/recover/:itemId", async (req: Request, res: Response) => {
     }
 
     const { itemId } = req?.params;
-    const _deletedItem = deletedItemCache?.get(itemId);
+    const deletedItem = deletedItemCache?.get(itemId);
 
     if (!deletedItem) {
       return res?.status(404).json({ error: "Deleted item not found" });
@@ -797,7 +797,7 @@ router?.post("/recover/:itemId", async (req: Request, res: Response) => {
         .json({ error: "Item has expired and cannot be recovered" });
     }
 
-    const _action = actionCache?.get(deletedItem?.actionId);
+    const action = actionCache?.get(deletedItem?.actionId);
     if (action) {
       action.isUndone = true;
       action.undoneAt = new Date();
@@ -807,7 +807,7 @@ router?.post("/recover/:itemId", async (req: Request, res: Response) => {
 
     return res?.json({
       success: true,
-      recoveredData: deletedItem?.data,
+      recoveredData: deletedItem.data,
       message: "Item recovered successfully",
     });
   } catch (error) {

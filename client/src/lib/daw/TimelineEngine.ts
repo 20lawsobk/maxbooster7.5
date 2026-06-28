@@ -53,7 +53,7 @@ export interface TimelineEngineState {
   lockedTrackIds: string[];
 }
 
-const _BEATS_PER_BAR = 4;
+const BEATS_PER_BAR = 4;
 
 export class TimelineEngine {
   private state: TimelineEngineState;
@@ -88,8 +88,8 @@ export class TimelineEngine {
   }
 
   beatsToSeconds(beats: number): number {
-    const _position = this?.transport.musicalToSeconds({
-      bar: Math?.floor(beats / BEATS_PER_BAR) + 1,
+    const position = this?.transport.musicalToSeconds({
+      bar: Math.floor(beats / BEATS_PER_BAR) + 1,
       beat: (beats % BEATS_PER_BAR) + 1,
       tick: 0,
       totalBeats: beats,
@@ -98,17 +98,17 @@ export class TimelineEngine {
   }
 
   secondsToBeats(seconds: number): number {
-    const _position = this?.transport.secondsToMusical(seconds);
+    const position = this?.transport.secondsToMusical(seconds);
     return position?.totalBeats;
   }
 
   beatsToSamples(beats: number): number {
-    const _seconds = this?.beatsToSeconds(beats);
+    const seconds = this?.beatsToSeconds(beats);
     return Math?.round(seconds * this?.transport.getState().sampleRate);
   }
 
   samplesToBeats(samples: number): number {
-    const _seconds = samples / this?.transport.getState().sampleRate;
+    const seconds = samples / this?.transport.getState().sampleRate;
     return this?.secondsToBeats(seconds);
   }
 
@@ -117,8 +117,8 @@ export class TimelineEngine {
   }
 
   beatsToBar(beats: number): { bar: number; beat: number } {
-    const _bar = Math?.floor(beats / BEATS_PER_BAR) + 1;
-    const _beat = (beats % BEATS_PER_BAR) + 1;
+    const bar = Math?.floor(beats / BEATS_PER_BAR) + 1;
+    const beat = (beats % BEATS_PER_BAR) + 1;
     return { bar, beat };
   }
 
@@ -127,21 +127,21 @@ export class TimelineEngine {
       return beat;
     }
 
-    const _gridValue = this?.state.quantize?.value;
-    const _quantized = Math?.round(beat / gridValue) * gridValue;
+    const gridValue = this?.state.quantize?.value;
+    const quantized = Math?.round(beat / gridValue) * gridValue;
 
     if (this?.state.quantize?.swing > 0) {
-      const _swingOffset = this?.calculateSwingOffset(quantized);
+      const swingOffset = this?.calculateSwingOffset(quantized);
       return quantized + swingOffset;
     }
 
-    const _strength = this?.state.quantize?.strength;
+    const strength = this?.state.quantize?.strength;
     return beat + (quantized - beat) * strength;
   }
 
   private calculateSwingOffset(beat: number): number {
-    const _gridValue = this?.state.quantize?.value;
-    const _beatInGrid = (beat / gridValue) % 2;
+    const gridValue = this?.state.quantize?.value;
+    const beatInGrid = (beat / gridValue) % 2;
 
     if (beatInGrid >= 0.5 && beatInGrid < 1.5) {
       return (
@@ -155,12 +155,12 @@ export class TimelineEngine {
 
   snapToGrid(beat: number): number {
     if (!this?.state.snapToGrid) return beat;
-    const _grid = this?.state.gridDivision;
+    const grid = this?.state.gridDivision;
     return Math?.round(beat / grid) * grid;
   }
 
   addEvent(event: Omit<TimelineEvent, "id">): string {
-    const _id = `evt_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    const id = `evt_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
     const newEvent: TimelineEvent = { ...event, id };
 
     if (this?.state.snapToGrid) {
@@ -174,15 +174,15 @@ export class TimelineEngine {
   }
 
   removeEvent(eventId: string): TimelineEvent | null {
-    const _index = this?.state.events?.findIndex((e) => e?.id === eventId);
+    const index = this?.state.events?.findIndex((e) => e?.id === eventId);
     if (index === -1) return null;
 
-    const _event = this?.state.events[index];
+    const event = this?.state.events[index];
     if (event?.locked) return null;
 
     if (this?.isTrackLocked(event?.trackId)) return null;
 
-    const _removed = this?.state.events?.splice(index, 1)[0];
+    const removed = this?.state.events?.splice(index, 1)[0];
 
     if (this?.state.editMode === "ripple") {
       this?.rippleDelete(event?.trackId, event?.startBeat, event?.durationBeats);
@@ -197,13 +197,13 @@ export class TimelineEngine {
     newStartBeat: number,
     newTrackId?: string,
   ): boolean {
-    const _event = this?.state.events?.find((e) => e?.id === eventId);
+    const event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event || event?.locked) return false;
     if (this?.isTrackLocked(event?.trackId)) return false;
     if (newTrackId && this?.isTrackLocked(newTrackId)) return false;
 
-    const _oldStartBeat = event?.startBeat;
-    const _oldTrackId = event?.trackId;
+    const oldStartBeat = event?.startBeat;
+    const oldTrackId = event?.trackId;
 
     if (this?.state.snapToGrid) {
       newStartBeat = this?.snapToGrid(newStartBeat);
@@ -226,7 +226,7 @@ export class TimelineEngine {
     newDurationBeats: number,
     fromStart: boolean = false,
   ): boolean {
-    const _event = this?.state.events?.find((e) => e?.id === eventId);
+    const event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event || event?.locked) return false;
     if (this?.isTrackLocked(event?.trackId)) return false;
 
@@ -237,8 +237,8 @@ export class TimelineEngine {
     newDurationBeats = Math?.max(this?.state.gridDivision, newDurationBeats);
 
     if (fromStart) {
-      const _endBeat = event?.startBeat + event?.durationBeats;
-      const _newStartBeat = endBeat - newDurationBeats;
+      const endBeat = event?.startBeat + event?.durationBeats;
+      const newStartBeat = endBeat - newDurationBeats;
       event.startBeat = Math?.max(0, newStartBeat);
     }
 
@@ -251,23 +251,23 @@ export class TimelineEngine {
     eventId: string,
     splitBeat: number,
   ): { leftId: string; rightId: string } | null {
-    const _event = this?.state.events?.find((e) => e?.id === eventId);
+    const event = this?.state.events?.find((e) => e?.id === eventId);
     if (!event || event?.locked) return null;
     if (this?.isTrackLocked(event?.trackId)) return null;
 
-    const _eventEnd = event?.startBeat + event?.durationBeats;
+    const eventEnd = event?.startBeat + event?.durationBeats;
     if (splitBeat <= event?.startBeat || splitBeat >= eventEnd) return null;
 
-    const _leftDuration = splitBeat - event?.startBeat;
-    const _rightDuration = eventEnd - splitBeat;
+    const leftDuration = splitBeat - event?.startBeat;
+    const rightDuration = eventEnd - splitBeat;
 
     event.durationBeats = leftDuration;
 
-    const _rightId = this?.addEvent({
+    const rightId = this?.addEvent({
       ...event,
       startBeat: splitBeat,
       durationBeats: rightDuration,
-      sourceRef: event?.sourceRef,
+      sourceRef: event.sourceRef,
       metadata: { ...event?.metadata, splitFrom: eventId },
     });
 
@@ -280,7 +280,7 @@ export class TimelineEngine {
     fromBeat: number,
     deltaBeat: number,
   ): void {
-    const _trackEvents = this?.state.events?.filter(
+    const trackEvents = this?.state.events?.filter(
       (e) => e?.trackId === trackId && e?.startBeat >= fromBeat,
     );
     for (const event of trackEvents) {
@@ -295,7 +295,7 @@ export class TimelineEngine {
     fromBeat: number,
     durationBeats: number,
   ): void {
-    const _trackEvents = this?.state.events?.filter(
+    const trackEvents = this?.state.events?.filter(
       (e) => e?.trackId === trackId && e?.startBeat > fromBeat,
     );
     for (const event of trackEvents) {
@@ -312,7 +312,7 @@ export class TimelineEngine {
   ): TimelineEvent[] {
     return this?.state.events?.filter((e) => {
       if (trackId && e?.trackId !== trackId) return false;
-      const _eventEnd = e?.startBeat + e?.durationBeats;
+      const eventEnd = e?.startBeat + e?.durationBeats;
       return e?.startBeat < endBeat && eventEnd > startBeat;
     });
   }
@@ -321,14 +321,14 @@ export class TimelineEngine {
     return (
       this?.state.events?.find((e) => {
         if (e?.trackId !== trackId) return false;
-        const _eventEnd = e?.startBeat + e?.durationBeats;
+        const eventEnd = e?.startBeat + e?.durationBeats;
         return beat >= e?.startBeat && beat < eventEnd;
       }) || null
     );
   }
 
   selectEvents(eventIds: string[]): void {
-    this?.state.selectedEventIds = eventIds;
+    this.state.selectedEventIds = eventIds;
     this?.notify();
   }
 
@@ -340,7 +340,7 @@ export class TimelineEngine {
   }
 
   removeFromSelection(eventId: string): void {
-    const _index = this?.state.selectedEventIds?.indexOf(eventId);
+    const index = this?.state.selectedEventIds?.indexOf(eventId);
     if (index !== -1) {
       this?.state.selectedEventIds?.splice(index, 1);
       this?.notify();
@@ -348,7 +348,7 @@ export class TimelineEngine {
   }
 
   clearSelection(): void {
-    this?.state.selectedEventIds = [];
+    this.state.selectedEventIds = [];
     this?.notify();
   }
 
@@ -360,7 +360,7 @@ export class TimelineEngine {
   }
 
   unlockTrack(trackId: string): void {
-    const _index = this?.state.lockedTrackIds?.indexOf(trackId);
+    const index = this?.state.lockedTrackIds?.indexOf(trackId);
     if (index !== -1) {
       this?.state.lockedTrackIds?.splice(index, 1);
       this?.notify();
@@ -372,7 +372,7 @@ export class TimelineEngine {
   }
 
   lockEvent(eventId: string): void {
-    const _event = this?.state.events?.find((e) => e?.id === eventId);
+    const event = this?.state.events?.find((e) => e?.id === eventId);
     if (event) {
       event.locked = true;
       this?.notify();
@@ -380,7 +380,7 @@ export class TimelineEngine {
   }
 
   unlockEvent(eventId: string): void {
-    const _event = this?.state.events?.find((e) => e?.id === eventId);
+    const event = this?.state.events?.find((e) => e?.id === eventId);
     if (event) {
       event.locked = false;
       this?.notify();
@@ -388,8 +388,8 @@ export class TimelineEngine {
   }
 
   addMarker(marker: Omit<TimelineMarker, "id">): string {
-    const _id = `marker_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
-    const _newMarker = { ...marker, id };
+    const id = `marker_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    const newMarker = { ...marker, id };
 
     if (this?.state.snapToGrid) {
       newMarker.beat = this?.snapToGrid(newMarker?.beat);
@@ -402,7 +402,7 @@ export class TimelineEngine {
   }
 
   removeMarker(markerId: string): void {
-    const _index = this?.state.markers?.findIndex((m) => m?.id === markerId);
+    const index = this?.state.markers?.findIndex((m) => m?.id === markerId);
     if (index !== -1) {
       this?.state.markers?.splice(index, 1);
       this?.notify();
@@ -410,8 +410,8 @@ export class TimelineEngine {
   }
 
   addRegion(region: Omit<TimelineRegion, "id">): string {
-    const _id = `region_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
-    const _newRegion = { ...region, id };
+    const id = `region_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    const newRegion = { ...region, id };
 
     if (this?.state.snapToGrid) {
       newRegion.startBeat = this?.snapToGrid(newRegion?.startBeat);
@@ -424,7 +424,7 @@ export class TimelineEngine {
   }
 
   removeRegion(regionId: string): void {
-    const _index = this?.state.regions?.findIndex((r) => r?.id === regionId);
+    const index = this?.state.regions?.findIndex((r) => r?.id === regionId);
     if (index !== -1) {
       this?.state.regions?.splice(index, 1);
       this?.notify();
@@ -432,32 +432,32 @@ export class TimelineEngine {
   }
 
   setQuantize(settings: Partial<QuantizeSettings>): void {
-    this?.state.quantize = { ...this?.state.quantize, ...settings };
+    this.state.quantize = { ...this?.state.quantize, ...settings };
     this?.notify();
   }
 
   setEditMode(mode: EditMode): void {
-    this?.state.editMode = mode;
+    this.state.editMode = mode;
     this?.notify();
   }
 
   setSnapToGrid(enabled: boolean): void {
-    this?.state.snapToGrid = enabled;
+    this.state.snapToGrid = enabled;
     this?.notify();
   }
 
   setGridDivision(division: number): void {
-    this?.state.gridDivision = Math?.max(0.0625, Math?.min(4, division));
+    this.state.gridDivision = Math?.max(0.0625, Math?.min(4, division));
     this?.notify();
   }
 
   setZoom(zoom: number): void {
-    this?.state.zoom = Math?.max(0.1, Math?.min(10, zoom));
+    this.state.zoom = Math?.max(0.1, Math?.min(10, zoom));
     this?.notify();
   }
 
   setScroll(beat: number): void {
-    this?.state.scrollBeat = Math?.max(0, beat);
+    this.state.scrollBeat = Math?.max(0, beat);
     this?.notify();
   }
 
@@ -487,4 +487,4 @@ export class TimelineEngine {
   }
 }
 
-export const _timelineEngine = new TimelineEngine(transportEngine);
+export const timelineEngine = new TimelineEngine(transportEngine);

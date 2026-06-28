@@ -1714,8 +1714,9 @@ export class DatabaseStorage implements IStorage {
 
   async seedPluginCatalog(): Promise<void> {
     const { ALL_PLUGINS } = await import("./services/plugins/index");
-    const { buildFactoryPresetRows } =
-      await import("./services/plugins/pluginEnrichment.js");
+    const { buildFactoryPresetRows } = await import(
+      "./services/plugins/pluginEnrichment.js"
+    );
 
     // Bumped whenever the enrichment layer ships new reference parameters or
     // genre presets. Forces an upsert across all rows (presets._rev mismatch).
@@ -2167,11 +2168,13 @@ export class DatabaseStorage implements IStorage {
         .set({ value: dispatches, updatedAt: new Date() })
         .where(eq(systemSettings.key, key));
     } else {
-      await db.insert(systemSettings).values({
-        key,
-        value: dispatches,
-        description: `Distribution dispatches for release ${releaseId}`,
-      });
+      await db
+        .insert(systemSettings)
+        .values({
+          key,
+          value: dispatches,
+          description: `Distribution dispatches for release ${releaseId}`,
+        });
     }
   }
 

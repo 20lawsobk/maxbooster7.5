@@ -5,10 +5,10 @@ import { logger } from "../logger.js";
 
 import { isProductionEnv } from "../lib/envHelpers.js";
 
-const _APP_DOMAIN = process?.env.APP_URL || "https://max-booster.com";
-const _isDev = !isProductionEnv();
+const APP_DOMAIN = process?.env.APP_URL || "https://max-booster.com";
+const isDev = !isProductionEnv();
 
-const _helmetMiddleware = helmet({
+const helmetMiddleware = helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
@@ -17,16 +17,16 @@ const _helmetMiddleware = helmet({
         // 'unsafe-inline' / 'unsafe-eval' only in development (Vite HMR needs them).
         // In production the compiled bundle has no inline scripts and no eval usage.
         ...(isDev ? ["'unsafe-inline'", "'unsafe-eval'"] : []),
-        "https://js?.stripe.com",
-        "https://www?.googletagmanager.com",
-        "https://connect?.facebook.net",
+        "https://js.stripe.com",
+        "https://www.googletagmanager.com",
+        "https://connect.facebook.net",
       ],
       styleSrc: [
         "'self'",
         "'unsafe-inline'", // CSS-in-JS libraries require this; scoped to styles only
-        "https://fonts?.googleapis.com",
+        "https://fonts.googleapis.com",
       ],
-      fontSrc: ["'self'", "https://fonts?.gstatic.com", "data:"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
       imgSrc: ["'self'", "data:", "blob:", "https:"],
       mediaSrc: ["'self'", "blob:", "data:", "https:"],
       connectSrc: [
@@ -34,14 +34,14 @@ const _helmetMiddleware = helmet({
         APP_DOMAIN,
         "wss:",
         "ws:",
-        "https://api?.stripe.com",
-        "https://api?.labelgrid.com",
-        "https://secure-ai-forge?.replit.app",
-        "https://pocketdimensionstorage?.replit.app",
-        "https://o4510378512613376?.ingest.us?.sentry.io",
+        "https://api.stripe.com",
+        "https://api.labelgrid.com",
+        "https://secure-ai-forge.replit.app",
+        "https://pocketdimensionstorage.replit.app",
+        "https://o4510378512613376.ingest.us.sentry.io",
         ...(isDev ? ["ws://localhost:*", "http://localhost:*"] : []),
       ],
-      frameSrc: ["'self'", "https://js?.stripe.com", "https://hooks?.stripe.com"],
+      frameSrc: ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
       workerSrc: ["'self'", "blob:"],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
@@ -65,11 +65,11 @@ const _helmetMiddleware = helmet({
 // Permissions-Policy restricts which browser feature APIs this origin may use.
 // Helmet v8 does not expose this as a constructor option; set it as a raw header.
 // Deny access to sensors/hardware that Max Booster never legitimately needs.
-const _PERMISSIONS_POLICY =
+const PERMISSIONS_POLICY =
   "camera=(), " +
   "microphone=(), " + // audio is uploaded, not captured in-browser
   "geolocation=(), " +
-  'payment=(self "https://js?.stripe.com"), ' +
+  'payment=(self "https://js.stripe.com"), ' +
   "usb=(), " +
   "accelerometer=(), " +
   "gyroscope=(), " +
@@ -78,13 +78,13 @@ const _PERMISSIONS_POLICY =
   "fullscreen=(self), " + // needed for the media player
   "picture-in-picture=(self)"; // needed for the media player
 
-const _globalRateLimit = rateLimit({
+const globalRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: isDev ? 100_000 : 2000,
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
-    const _ip = req?.ip || "";
+    const ip = req?.ip || "";
     return (
       ip === "127.0.0.1" ||
       ip === "::1" ||

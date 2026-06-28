@@ -10,8 +10,8 @@ export class PocketRegistry {
     name: string,
     policy: PocketPolicy,
   ): Promise<FabricPocket> {
-    const _id = randomUUID();
-    const _now = new Date();
+    const id = randomUUID();
+    const now = new Date();
     await db?.insert(fabricPockets).values({
       id,
       ownerId,
@@ -24,7 +24,7 @@ export class PocketRegistry {
   }
 
   async getPocket(id: PocketId): Promise<FabricPocket | null> {
-    const _rows = await db
+    const rows = await db
       .select()
       .from(fabricPockets)
       .where(eq(fabricPockets?.id, id));
@@ -32,7 +32,7 @@ export class PocketRegistry {
   }
 
   async listPockets(ownerId: string): Promise<FabricPocket[]> {
-    const _rows = await db
+    const rows = await db
       .select()
       .from(fabricPockets)
       .where(eq(fabricPockets?.ownerId, ownerId));
@@ -52,12 +52,12 @@ export class PocketRegistry {
 
   private rowToPocket(row: typeof fabricPockets.$inferSelect): FabricPocket {
     return {
-      id: row?.id,
-      ownerId: row?.ownerId,
-      name: row?.name,
-      policy: row?.policy as unknown as PocketPolicy,
-      createdAt: row?.createdAt,
-      updatedAt: row?.updatedAt,
+      id: row.id,
+      ownerId: row.ownerId,
+      name: row.name,
+      policy: row.policy as unknown as PocketPolicy,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
     };
   }
 }

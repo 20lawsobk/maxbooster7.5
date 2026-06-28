@@ -497,7 +497,7 @@ export function ProjectBoard() {
           <TabsContent value="all">
             {allLoading ? (
               renderSkeletons()
-            ) : allProjects?.length > 0 ? (
+            ) : allProjects.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {allProjects.map(renderProjectCard)}
               </div>
@@ -515,7 +515,7 @@ export function ProjectBoard() {
           <TabsContent value="my">
             {myLoading ? (
               renderSkeletons()
-            ) : myProjects?.length > 0 ? (
+            ) : myProjects.length > 0 ? (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {myProjects.map(renderProjectCard)}
               </div>

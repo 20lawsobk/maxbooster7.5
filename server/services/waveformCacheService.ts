@@ -1,7 +1,7 @@
 import { logger } from "../logger.js";
 import { storageService } from "./storageService.js";
 import wavefilePkg from "wavefile";
-const _WaveFile =
+const WaveFile =
   (wavefilePkg as Record<string, unknown>).WaveFile || wavefilePkg;
 
 export interface WaveformData {
@@ -20,7 +20,7 @@ export interface WaveformCacheEntry {
   expiresAt: Date;
 }
 
-const _waveformCache = new Map<string, WaveformCacheEntry>();
+const waveformCache = new Map<string, WaveformCacheEntry>();
 
 class WaveformCacheService {
   private static instance: WaveformCacheService;
@@ -40,8 +40,8 @@ class WaveformCacheService {
     audioBuffer?: Buffer,
     resolution: number = this?.DEFAULT_RESOLUTION,
   ): Promise<WaveformData> {
-    const _cacheKey = `${audioKey}:${resolution}`;
-    const _cached = waveformCache?.get(cacheKey);
+    const cacheKey = `${audioKey}:${resolution}`;
+    const cached = waveformCache?.get(cacheKey);
 
     if (cached && cached?.expiresAt > new Date()) {
       logger?.debug("Waveform cache hit", { audioKey, resolution });
@@ -65,7 +65,7 @@ class WaveformCacheService {
       }
     }
 
-    const _waveformData = await this?.generateWaveform(buffer, resolution);
+    const waveformData = await this?.generateWaveform(buffer, resolution);
 
     this?.cacheWaveform(cacheKey, audioKey, waveformData);
 
@@ -77,10 +77,10 @@ class WaveformCacheService {
     resolution: number = this?.DEFAULT_RESOLUTION,
   ): Promise<WaveformData> {
     try {
-      const _wav = new WaveFile(audioBuffer);
-      const _samples = wav?.getSamples();
-      const _sampleRate = wav?.fmt.sampleRate;
-      const _channels = wav?.fmt.numChannels;
+      const wav = new WaveFile(audioBuffer);
+      const samples = wav?.getSamples();
+      const sampleRate = wav?.fmt.sampleRate;
+      const channels = wav?.fmt.numChannels;
 
       let leftChannel: Float32Array;
       let rightChannel: Float32Array | null = null;
@@ -94,24 +94,24 @@ class WaveformCacheService {
         leftChannel = new Float32Array(samples);
       }
 
-      const _samplesPerBucket = Math?.floor(leftChannel?.length / resolution);
+      const samplesPerBucket = Math?.floor(leftChannel?.length / resolution);
       const peaks: number[] = [];
       const rms: number[] = [];
 
       for (let i = 0; i < resolution; i++) {
-        const _start = i * samplesPerBucket;
-        const _end = Math?.min(start + samplesPerBucket, leftChannel?.length);
+        const start = i * samplesPerBucket;
+        const end = Math?.min(start + samplesPerBucket, leftChannel?.length);
 
         let maxPeak = 0;
         let sumSquares = 0;
         let count = 0;
 
         for (let j = start; j < end; j++) {
-          const _leftSample = Math?.abs(leftChannel[j]);
-          const _rightSample = rightChannel
+          const leftSample = Math?.abs(leftChannel[j]);
+          const rightSample = rightChannel
             ? Math?.abs(rightChannel[j])
             : leftSample;
-          const _sample = (leftSample + rightSample) / (rightChannel ? 2 : 1);
+          const sample = (leftSample + rightSample) / (rightChannel ? 2 : 1);
 
           if (sample > maxPeak) maxPeak = sample;
           sumSquares += sample * sample;
@@ -122,7 +122,7 @@ class WaveformCacheService {
         rms?.push(count > 0 ? Math?.sqrt(sumSquares / count) : 0);
       }
 
-      const _duration = leftChannel?.length / sampleRate;
+      const duration = leftChannel?.length / sampleRate;
 
       return {
         peaks,
@@ -144,14 +144,14 @@ class WaveformCacheService {
     channels: number,
     resolution: number = this?.DEFAULT_RESOLUTION,
   ): Promise<WaveformData> {
-    const _samplesPerChannel = Math?.floor(pcmData?.length / channels);
-    const _samplesPerBucket = Math?.floor(samplesPerChannel / resolution);
+    const samplesPerChannel = Math?.floor(pcmData?.length / channels);
+    const samplesPerBucket = Math?.floor(samplesPerChannel / resolution);
     const peaks: number[] = [];
     const rms: number[] = [];
 
     for (let i = 0; i < resolution; i++) {
-      const _start = i * samplesPerBucket * channels;
-      const _end = Math?.min(start + samplesPerBucket * channels, pcmData?.length);
+      const start = i * samplesPerBucket * channels;
+      const end = Math?.min(start + samplesPerBucket * channels, pcmData?.length);
 
       let maxPeak = 0;
       let sumSquares = 0;
@@ -162,7 +162,7 @@ class WaveformCacheService {
         for (let c = 0; c < channels; c++) {
           sampleSum += Math?.abs(pcmData[j + c] || 0);
         }
-        const _sample = sampleSum / channels;
+        const sample = sampleSum / channels;
 
         if (sample > maxPeak) maxPeak = sample;
         sumSquares += sample * sample;
@@ -173,7 +173,7 @@ class WaveformCacheService {
       rms?.push(count > 0 ? Math?.sqrt(sumSquares / count) : 0);
     }
 
-    const _duration = samplesPerChannel / sampleRate;
+    const duration = samplesPerChannel / sampleRate;
 
     return {
       peaks,
@@ -186,10 +186,10 @@ class WaveformCacheService {
   }
 
   private generateFallbackWaveform(resolution: number): WaveformData {
-    const _peaks = new Array(resolution)
+    const peaks = new Array(resolution)
       .fill(0)
       .map(() => Math?.random() * 0.5 + 0.1);
-    const _rms = peaks?.map((p) => p * 0.7);
+    const rms = peaks?.map((p) => p * 0.7);
 
     return {
       peaks,
@@ -207,7 +207,7 @@ class WaveformCacheService {
     waveformData: WaveformData,
   ): void {
     if (waveformCache?.size >= this?.MAX_CACHE_SIZE) {
-      const _oldestKey = waveformCache?.keys().next().value;
+      const oldestKey = waveformCache?.keys().next().value;
       if (oldestKey) {
         waveformCache?.delete(oldestKey);
       }
@@ -231,7 +231,7 @@ class WaveformCacheService {
   }
 
   clearExpiredCache(): number {
-    const _now = new Date();
+    const now = new Date();
     let cleared = 0;
 
     for (const [key, entry] of waveformCache) {
@@ -250,11 +250,11 @@ class WaveformCacheService {
 
   getCacheStats(): { size: number; maxSize: number; hitRate: number } {
     return {
-      size: waveformCache?.size,
-      maxSize: this?.MAX_CACHE_SIZE,
+      size: waveformCache.size,
+      maxSize: this.MAX_CACHE_SIZE,
       hitRate: 0,
     };
   }
 }
 
-export const _waveformCacheService = WaveformCacheService?.getInstance();
+export const waveformCacheService = WaveformCacheService?.getInstance();

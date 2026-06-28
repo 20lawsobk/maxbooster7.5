@@ -11,8 +11,8 @@ export interface IdempotencyMiddlewareOptions {
   successOnly?: boolean;
 }
 
-const _IDEMPOTENCY_HEADER = "Idempotency-Key";
-const _X_IDEMPOTENCY_HEADER = "X-Idempotency-Key";
+const IDEMPOTENCY_HEADER = "Idempotency-Key";
+const X_IDEMPOTENCY_HEADER = "X-Idempotency-Key";
 
 interface CachedResponse {
   statusCode: number;
@@ -53,10 +53,10 @@ export function idempotencyMiddleware(
       return next();
     }
 
-    const _fullKey = `${prefix}${req?.method}:${req?.path}:${idempotencyKey}`;
+    const fullKey = `${prefix}${req?.method}:${req?.path}:${idempotencyKey}`;
 
     try {
-      const _cached = await idempotencyService?.get<CachedResponse>(fullKey, {
+      const cached = await idempotencyService?.get<CachedResponse>(fullKey, {
         ttlSeconds: ttl,
         prefix: "idempotency:middleware:",
       });
@@ -84,7 +84,7 @@ export function idempotencyMiddleware(
         return res?.status(cached?.statusCode).json(cached?.body);
       }
 
-      const _canProcess = await idempotencyService?.markProcessing(fullKey, {
+      const canProcess = await idempotencyService?.markProcessing(fullKey, {
         ttlSeconds: 60,
         prefix: "idempotency:middleware:",
       });
@@ -101,35 +101,35 @@ export function idempotencyMiddleware(
         });
       }
 
-      const _originalJson = res?.json.bind(res);
-      const _originalSend = res?.send.bind(res);
+      const originalJson = res?.json.bind(res);
+      const originalSend = res?.send.bind(res);
 
-      const _captureAndCache = async (body: unknown) => {
+      const captureAndCache = async (body: unknown) => {
         await idempotencyService?.clearProcessing(fullKey, {
           prefix: "idempotency:middleware:",
         });
 
-        const _shouldCache = successOnly
+        const shouldCache = successOnly
           ? res?.statusCode >= 200 && res?.statusCode < 300
           : true;
 
         if (shouldCache) {
           const headersToCache: Record<string, string> = {};
-          const _cacheableHeaders = [
+          const cacheableHeaders = [
             "content-type",
             "x-request-id",
             "x-correlation-id",
           ];
 
           cacheableHeaders?.forEach((header) => {
-            const _value = res?.get(header);
+            const value = res?.get(header);
             if (value) {
               headersToCache[header] = value;
             }
           });
 
           const cachedResponse: CachedResponse = {
-            statusCode: res?.statusCode,
+            statusCode: res.statusCode,
             headers: headersToCache,
             body,
             timestamp: new Date().toISOString(),
@@ -188,9 +188,9 @@ export function webhookIdempotency(
     eventType: string,
     handler: () => Promise<unknown>,
   ): Promise<{ processed: boolean; result?: unknown; cached?: boolean }> => {
-    const _key = idempotencyService?.generateWebhookKey(eventId, eventType);
+    const key = idempotencyService?.generateWebhookKey(eventId, eventType);
 
-    const _existingResult = await idempotencyService?.check(key, {
+    const existingResult = await idempotencyService?.check(key, {
       ttlSeconds: ttl,
       prefix,
     });
@@ -199,12 +199,12 @@ export function webhookIdempotency(
       logger?.info(`Webhook already processed: ${eventType} (${eventId})`);
       return {
         processed: true,
-        result: existingResult?.result,
+        result: existingResult.result,
         cached: true,
       };
     }
 
-    const _canProcess = await idempotencyService?.markProcessing(key, {
+    const canProcess = await idempotencyService?.markProcessing(key, {
       ttlSeconds: 300,
       prefix,
     });
@@ -220,7 +220,7 @@ export function webhookIdempotency(
     }
 
     try {
-      const _result = await handler();
+      const result = await handler();
 
       await idempotencyService?.set(
         key,
@@ -250,15 +250,15 @@ export async function checkWebhookIdempotency(
   eventType: string,
   ttl: number = 86400 * 7,
 ): Promise<{ alreadyProcessed: boolean; cachedResult?: unknown }> {
-  const _key = idempotencyService?.generateWebhookKey(eventId, eventType);
-  const _result = await idempotencyService?.check(key, {
+  const key = idempotencyService?.generateWebhookKey(eventId, eventType);
+  const result = await idempotencyService?.check(key, {
     ttlSeconds: ttl,
     prefix: "webhook:",
   });
 
   return {
-    alreadyProcessed: result?.exists,
-    cachedResult: result?.result,
+    alreadyProcessed: result.exists,
+    cachedResult: result.result,
   };
 }
 
@@ -268,7 +268,7 @@ export async function markWebhookProcessed(
   result: unknown,
   ttl: number = 86400 * 7,
 ): Promise<void> {
-  const _key = idempotencyService?.generateWebhookKey(eventId, eventType);
+  const key = idempotencyService?.generateWebhookKey(eventId, eventType);
   await idempotencyService?.set(
     key,
     { success: true, result },
@@ -284,15 +284,15 @@ export async function checkPayoutIdempotency(
   amount: number,
   currency: string,
 ): Promise<{ alreadyProcessed: boolean; cachedResult?: unknown }> {
-  const _key = idempotencyService?.generatePayoutKey(userId, amount, currency);
-  const _result = await idempotencyService?.check(key, {
+  const key = idempotencyService?.generatePayoutKey(userId, amount, currency);
+  const result = await idempotencyService?.check(key, {
     ttlSeconds: 300,
     prefix: "payout:",
   });
 
   return {
-    alreadyProcessed: result?.exists,
-    cachedResult: result?.result,
+    alreadyProcessed: result.exists,
+    cachedResult: result.result,
   };
 }
 
@@ -302,7 +302,7 @@ export async function markPayoutProcessed(
   currency: string,
   result: unknown,
 ): Promise<void> {
-  const _key = idempotencyService?.generatePayoutKey(userId, amount, currency);
+  const key = idempotencyService?.generatePayoutKey(userId, amount, currency);
   await idempotencyService?.set(key, result, {
     ttlSeconds: 3600,
     prefix: "payout:",

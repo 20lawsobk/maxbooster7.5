@@ -11,56 +11,56 @@ import { db } from "../db";
 import { projects } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 
-const _router = Router();
+const router = Router();
 
-const _instantiatePluginSchema = z?.object({
-  trackId: z?.string().optional(),
-  chainPosition: z?.number().int().min(0).default(0),
+const instantiatePluginSchema = z.object({
+  trackId: z.string().optional(),
+  chainPosition: z.number().int().min(0).default(0),
   parameters: z
-    .record(z?.string(), z?.union([z?.number(), z?.boolean(), z?.string()]))
+    .record(z.string(), z.union([z.number(), z.boolean(), z.string()]))
     .optional(),
 });
 
-const _updateParametersSchema = z?.object({
-  parameters: z?.record(
-    z?.string(),
-    z?.union([z?.number(), z?.boolean(), z?.string()]),
+const updateParametersSchema = z.object({
+  parameters: z.record(
+    z.string(),
+    z.union([z.number(), z.boolean(), z.string()]),
   ),
-  bypassed: z?.boolean().optional(),
+  bypassed: z.boolean().optional(),
 });
 
-const _renderInstrumentSchema = z?.object({
-  notes: z?.array(
-    z?.object({
-      note: z?.number().int().min(0).max(127),
-      velocity: z?.number().int().min(0).max(127),
-      duration: z?.number().positive(),
-      startTime: z?.number().min(0),
+const renderInstrumentSchema = z.object({
+  notes: z.array(
+    z.object({
+      note: z.number().int().min(0).max(127),
+      velocity: z.number().int().min(0).max(127),
+      duration: z.number().positive(),
+      startTime: z.number().min(0),
     }),
   ),
-  durationSec: z?.number().positive(),
-  sampleRate: z?.number().int().min(8000).max(192000).optional(),
+  durationSec: z.number().positive(),
+  sampleRate: z.number().int().min(8000).max(192000).optional(),
 });
 
-const _renderEffectSchema = z?.object({
-  samples: z?.array(z?.array(z?.number())),
-  sampleRate: z?.number().int().min(8000).max(192000),
+const renderEffectSchema = z.object({
+  samples: z.array(z.array(z.number())),
+  sampleRate: z.number().int().min(8000).max(192000),
 });
 
-const _savePresetSchema = z?.object({
-  pluginId: z?.string(),
-  name: z?.string().min(1).max(100),
-  parameters: z?.record(
-    z?.string(),
-    z?.union([z?.number(), z?.boolean(), z?.string()]),
+const savePresetSchema = z.object({
+  pluginId: z.string(),
+  name: z.string().min(1).max(100),
+  parameters: z.record(
+    z.string(),
+    z.union([z.number(), z.boolean(), z.string()]),
   ),
-  category: z?.string().max(50).optional(),
-  isPublic: z?.boolean().optional(),
+  category: z.string().max(50).optional(),
+  isPublic: z.boolean().optional(),
 });
 
 router?.get("/", async (req, res) => {
   try {
-    const _category = req?.query.category as PluginCategory | undefined;
+    const category = req?.query.category as PluginCategory | undefined;
 
     let plugins;
     if (category && (category === "instrument" || category === "effect")) {
@@ -71,7 +71,7 @@ router?.get("/", async (req, res) => {
 
     const groupedByType: Record<string, typeof plugins> = {};
     for (const plugin of plugins) {
-      const _pluginType =
+      const pluginType =
         plugin?.type || (plugin?.category === "instrument" ? "synth" : "effect");
       if (!groupedByType[pluginType]) {
         groupedByType[pluginType] = [];
@@ -90,7 +90,7 @@ router?.post("/instantiate/:id", requireAuth, async (req, res) => {
   try {
     const { id: pluginId } = req?.params;
     const { projectId } = req?.query;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
     if (!projectId || typeof projectId !== "string") {
       return res
@@ -98,7 +98,7 @@ router?.post("/instantiate/:id", requireAuth, async (req, res) => {
         .json({ error: "projectId query parameter is required" });
     }
 
-    const _project = await db?.query.projects?.findFirst({
+    const project = await db?.query.projects?.findFirst({
       where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
     });
 
@@ -106,14 +106,14 @@ router?.post("/instantiate/:id", requireAuth, async (req, res) => {
       return res?.status(404).json({ error: "Project not found" });
     }
 
-    const _plugin = pluginHostService?.getPluginById(pluginId);
+    const plugin = pluginHostService?.getPluginById(pluginId);
     if (!plugin) {
       return res?.status(404).json({ error: "Plugin not found" });
     }
 
-    const _data = instantiatePluginSchema?.parse(req?.body);
+    const data = instantiatePluginSchema?.parse(req?.body);
 
-    const _instance = await pluginHostService?.createInstance(
+    const instance = await pluginHostService?.createInstance(
       pluginId,
       projectId,
       data?.trackId,
@@ -125,18 +125,18 @@ router?.post("/instantiate/:id", requireAuth, async (req, res) => {
       success: true,
       instance,
       plugin: {
-        id: plugin?.id,
-        name: plugin?.name,
-        category: plugin?.category,
-        type: plugin?.type,
+        id: plugin.id,
+        name: plugin.name,
+        category: plugin.category,
+        type: plugin.type,
       },
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error instantiating plugin:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error?.issues });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to instantiate plugin" });
   }
@@ -145,7 +145,7 @@ router?.post("/instantiate/:id", requireAuth, async (req, res) => {
 router?.get("/instances", requireAuth, async (req, res) => {
   try {
     const { projectId, trackId } = req?.query;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
     if (!projectId || typeof projectId !== "string") {
       return res
@@ -153,7 +153,7 @@ router?.get("/instances", requireAuth, async (req, res) => {
         .json({ error: "projectId query parameter is required" });
     }
 
-    const _project = await db?.query.projects?.findFirst({
+    const project = await db?.query.projects?.findFirst({
       where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
     });
 
@@ -168,16 +168,16 @@ router?.get("/instances", requireAuth, async (req, res) => {
       instances = await pluginHostService?.getProjectInstances(projectId);
     }
 
-    const _enriched = instances?.map((inst) => {
-      const _plugin = pluginHostService?.getPluginById(inst?.pluginId);
+    const enriched = instances?.map((inst) => {
+      const plugin = pluginHostService?.getPluginById(inst?.pluginId);
       return {
         ...inst,
         plugin: plugin
           ? {
-              id: plugin?.id,
-              name: plugin?.name,
-              category: plugin?.category,
-              type: plugin?.type,
+              id: plugin.id,
+              name: plugin.name,
+              category: plugin.category,
+              type: plugin.type,
             }
           : null,
       };
@@ -196,14 +196,14 @@ router?.get("/instances", requireAuth, async (req, res) => {
 router?.get("/instances/:instanceId", requireAuth, async (req, res) => {
   try {
     const { instanceId } = req?.params;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _instance = await pluginHostService?.getInstance(instanceId);
+    const instance = await pluginHostService?.getInstance(instanceId);
     if (!instance) {
       return res?.status(404).json({ error: "Plugin instance not found" });
     }
 
-    const _project = await db?.query.projects?.findFirst({
+    const project = await db?.query.projects?.findFirst({
       where: and(
         eq(projects?.id, instance?.projectId),
         eq(projects?.userId, userId),
@@ -214,18 +214,18 @@ router?.get("/instances/:instanceId", requireAuth, async (req, res) => {
       return res?.status(403).json({ error: "Unauthorized" });
     }
 
-    const _plugin = pluginHostService?.getPluginById(instance?.pluginId);
+    const plugin = pluginHostService?.getPluginById(instance?.pluginId);
 
     res?.json({
       success: true,
       instance,
       plugin: plugin
         ? {
-            id: plugin?.id,
-            name: plugin?.name,
-            category: plugin?.category,
-            type: plugin?.type,
-            parameters: plugin?.parameters,
+            id: plugin.id,
+            name: plugin.name,
+            category: plugin.category,
+            type: plugin.type,
+            parameters: plugin.parameters,
           }
         : null,
     });
@@ -238,14 +238,14 @@ router?.get("/instances/:instanceId", requireAuth, async (req, res) => {
 router?.put("/instances/:instanceId", requireAuth, async (req, res) => {
   try {
     const { instanceId } = req?.params;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _instance = await pluginHostService?.getInstance(instanceId);
+    const instance = await pluginHostService?.getInstance(instanceId);
     if (!instance) {
       return res?.status(404).json({ error: "Plugin instance not found" });
     }
 
-    const _project = await db?.query.projects?.findFirst({
+    const project = await db?.query.projects?.findFirst({
       where: and(
         eq(projects?.id, instance?.projectId),
         eq(projects?.userId, userId),
@@ -256,9 +256,9 @@ router?.put("/instances/:instanceId", requireAuth, async (req, res) => {
       return res?.status(403).json({ error: "Unauthorized" });
     }
 
-    const _data = updateParametersSchema?.parse(req?.body);
+    const data = updateParametersSchema?.parse(req?.body);
 
-    const _updatedInstance = await pluginHostService?.updateInstanceParameters(
+    const updatedInstance = await pluginHostService?.updateInstanceParameters(
       instanceId,
       data?.parameters,
     );
@@ -274,10 +274,10 @@ router?.put("/instances/:instanceId", requireAuth, async (req, res) => {
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error updating plugin instance:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error?.issues });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to update plugin instance" });
   }
@@ -286,14 +286,14 @@ router?.put("/instances/:instanceId", requireAuth, async (req, res) => {
 router?.delete("/instances/:instanceId", requireAuth, async (req, res) => {
   try {
     const { instanceId } = req?.params;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _instance = await pluginHostService?.getInstance(instanceId);
+    const instance = await pluginHostService?.getInstance(instanceId);
     if (!instance) {
       return res?.status(404).json({ error: "Plugin instance not found" });
     }
 
-    const _project = await db?.query.projects?.findFirst({
+    const project = await db?.query.projects?.findFirst({
       where: and(
         eq(projects?.id, instance?.projectId),
         eq(projects?.userId, userId),
@@ -316,14 +316,14 @@ router?.delete("/instances/:instanceId", requireAuth, async (req, res) => {
 router?.post("/instances/:instanceId/render", requireAuth, async (req, res) => {
   try {
     const { instanceId } = req?.params;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _instance = await pluginHostService?.getInstance(instanceId);
+    const instance = await pluginHostService?.getInstance(instanceId);
     if (!instance) {
       return res?.status(404).json({ error: "Plugin instance not found" });
     }
 
-    const _project = await db?.query.projects?.findFirst({
+    const project = await db?.query.projects?.findFirst({
       where: and(
         eq(projects?.id, instance?.projectId),
         eq(projects?.userId, userId),
@@ -334,7 +334,7 @@ router?.post("/instances/:instanceId/render", requireAuth, async (req, res) => {
       return res?.status(403).json({ error: "Unauthorized" });
     }
 
-    const _plugin = pluginHostService?.getPluginById(instance?.pluginId);
+    const plugin = pluginHostService?.getPluginById(instance?.pluginId);
     if (!plugin) {
       return res?.status(404).json({ error: "Plugin not found" });
     }
@@ -342,7 +342,7 @@ router?.post("/instances/:instanceId/render", requireAuth, async (req, res) => {
     let result;
 
     if (plugin?.category === "instrument") {
-      const _data = renderInstrumentSchema?.parse(req?.body);
+      const data = renderInstrumentSchema?.parse(req?.body);
       result = await pluginHostService?.renderInstrument(
         instanceId,
         data?.notes,
@@ -350,24 +350,24 @@ router?.post("/instances/:instanceId/render", requireAuth, async (req, res) => {
         data?.sampleRate,
       );
     } else {
-      const _data = renderEffectSchema?.parse(req?.body);
+      const data = renderEffectSchema?.parse(req?.body);
       result = await pluginHostService?.processEffect(instanceId, {
-        samples: data?.samples,
-        sampleRate: data?.sampleRate,
+        samples: data.samples,
+        sampleRate: data.sampleRate,
       });
     }
 
     res?.json({
       success: true,
       audio: result,
-      pluginType: plugin?.category,
+      pluginType: plugin.category,
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error rendering audio through plugin:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error?.issues });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to render audio" });
   }
@@ -380,18 +380,18 @@ router?.post(
     try {
       const { instanceId } = req?.params;
       const { presetId } = req?.body;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       if (!presetId || typeof presetId !== "string") {
         return res?.status(400).json({ error: "presetId is required" });
       }
 
-      const _instance = await pluginHostService?.getInstance(instanceId);
+      const instance = await pluginHostService?.getInstance(instanceId);
       if (!instance) {
         return res?.status(404).json({ error: "Plugin instance not found" });
       }
 
-      const _project = await db?.query.projects?.findFirst({
+      const project = await db?.query.projects?.findFirst({
         where: and(
           eq(projects?.id, instance?.projectId),
           eq(projects?.userId, userId),
@@ -402,7 +402,7 @@ router?.post(
         return res?.status(403).json({ error: "Unauthorized" });
       }
 
-      const _updatedInstance = await pluginHostService?.applyPresetToInstance(
+      const updatedInstance = await pluginHostService?.applyPresetToInstance(
         instanceId,
         presetId,
       );
@@ -421,7 +421,7 @@ router?.post(
 router?.get("/presets", requireAuth, async (req, res) => {
   try {
     const { pluginId, category, includePublic } = req?.query;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
     if (!pluginId || typeof pluginId !== "string") {
       return res
@@ -429,26 +429,26 @@ router?.get("/presets", requireAuth, async (req, res) => {
         .json({ error: "pluginId query parameter is required" });
     }
 
-    const _plugin = pluginHostService?.getPluginById(pluginId);
+    const plugin = pluginHostService?.getPluginById(pluginId);
     if (!plugin) {
       return res?.status(404).json({ error: "Plugin not found" });
     }
 
-    const _userPresets = await pluginHostService?.getPresets(pluginId, userId, {
+    const userPresets = await pluginHostService?.getPresets(pluginId, userId, {
       includePublic: includePublic === "true",
       category: category as string | undefined,
     });
 
-    const _factoryPresets = pluginHostService?.getFactoryPresets(pluginId);
+    const factoryPresets = pluginHostService?.getFactoryPresets(pluginId);
 
     res?.json({
       success: true,
       userPresets,
       factoryPresets,
       plugin: {
-        id: plugin?.id,
-        name: plugin?.name,
-        type: plugin?.type,
+        id: plugin.id,
+        name: plugin.name,
+        type: plugin.type,
       },
     });
   } catch (error: unknown) {
@@ -459,17 +459,17 @@ router?.get("/presets", requireAuth, async (req, res) => {
 
 router?.post("/presets", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _data = savePresetSchema?.parse(req?.body);
+    const userId = req?.user!.id;
+    const data = savePresetSchema?.parse(req?.body);
 
-    const _preset = await pluginHostService?.savePreset(
+    const preset = await pluginHostService?.savePreset(
       userId,
       data?.pluginId,
       data?.name,
       data?.parameters,
       {
-        category: data?.category,
-        isPublic: data?.isPublic,
+        category: data.category,
+        isPublic: data.isPublic,
       },
     );
 
@@ -479,10 +479,10 @@ router?.post("/presets", requireAuth, async (req, res) => {
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error saving preset:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error?.issues });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to save preset" });
   }
@@ -492,7 +492,7 @@ router?.get("/presets/:presetId", requireAuth, async (req, res) => {
   try {
     const { presetId } = req?.params;
 
-    const _preset = await pluginHostService?.loadPreset(presetId);
+    const preset = await pluginHostService?.loadPreset(presetId);
     if (!preset) {
       return res?.status(404).json({ error: "Preset not found" });
     }
@@ -510,7 +510,7 @@ router?.get("/presets/:presetId", requireAuth, async (req, res) => {
 router?.delete("/presets/:presetId", requireAuth, async (req, res) => {
   try {
     const { presetId } = req?.params;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
     await pluginHostService?.deletePreset(presetId, userId);
 
@@ -524,21 +524,21 @@ router?.delete("/presets/:presetId", requireAuth, async (req, res) => {
 router?.get("/factory-presets/:id", requireAuth, async (req, res) => {
   try {
     const { id } = req?.params;
-    const _plugin = pluginHostService?.getPluginById(id);
+    const plugin = pluginHostService?.getPluginById(id);
 
     if (!plugin) {
       return res?.status(404).json({ error: "Plugin not found" });
     }
 
-    const _factoryPresets = pluginHostService?.getFactoryPresets(id);
+    const factoryPresets = pluginHostService?.getFactoryPresets(id);
 
     res?.json({
       success: true,
       factoryPresets,
       plugin: {
-        id: plugin?.id,
-        name: plugin?.name,
-        type: plugin?.type,
+        id: plugin.id,
+        name: plugin.name,
+        type: plugin.type,
       },
     });
   } catch (error: unknown) {
@@ -547,32 +547,32 @@ router?.get("/factory-presets/:id", requireAuth, async (req, res) => {
   }
 });
 
-const _abCompareSchema = z?.object({
-  instanceId: z?.string(),
-  slotA: z?.record(z?.string(), z?.union([z?.number(), z?.boolean(), z?.string()])),
-  slotB: z?.record(z?.string(), z?.union([z?.number(), z?.boolean(), z?.string()])),
+const abCompareSchema = z.object({
+  instanceId: z.string(),
+  slotA: z.record(z.string(), z.union([z.number(), z.boolean(), z.string()])),
+  slotB: z.record(z.string(), z.union([z.number(), z.boolean(), z.string()])),
 });
 
-const _bounceSchema = z?.object({
-  projectId: z?.string(),
-  sourceTrackIds: z?.array(z?.string()),
-  startTime: z?.number().min(0),
-  endTime: z?.number().positive(),
-  targetTrackName: z?.string().min(1).max(100).optional(),
-  format: z?.enum(["wav", "mp3", "flac", "ogg"]).default("wav"),
-  sampleRate: z?.number().int().min(8000).max(192000).default(44100),
-  bitDepth: z?.number().int().min(16).max(32).default(24),
-  normalize: z?.boolean().default(false),
-  includeEffects: z?.boolean().default(true),
+const bounceSchema = z.object({
+  projectId: z.string(),
+  sourceTrackIds: z.array(z.string()),
+  startTime: z.number().min(0),
+  endTime: z.number().positive(),
+  targetTrackName: z.string().min(1).max(100).optional(),
+  format: z.enum(["wav", "mp3", "flac", "ogg"]).default("wav"),
+  sampleRate: z.number().int().min(8000).max(192000).default(44100),
+  bitDepth: z.number().int().min(16).max(32).default(24),
+  normalize: z.boolean().default(false),
+  includeEffects: z.boolean().default(true),
 });
 
-const _modulationMatrixSchema = z?.object({
-  projectId: z?.string(),
-  trackId: z?.string().optional(),
-  routings: z?.array(
-    z?.object({
-      id: z?.string().optional(),
-      sourceType: z?.enum([
+const modulationMatrixSchema = z.object({
+  projectId: z.string(),
+  trackId: z.string().optional(),
+  routings: z.array(
+    z.object({
+      id: z.string().optional(),
+      sourceType: z.enum([
         "lfo",
         "envelope",
         "midi",
@@ -581,19 +581,19 @@ const _modulationMatrixSchema = z?.object({
         "random",
         "macro",
       ]),
-      sourceId: z?.string(),
-      sourceParam: z?.string().optional(),
-      targetInstanceId: z?.string(),
-      targetParam: z?.string(),
-      amount: z?.number().min(-1).max(1),
-      bipolar: z?.boolean().default(false),
-      smoothing: z?.number().min(0).max(1).default(0),
-      enabled: z?.boolean().default(true),
+      sourceId: z.string(),
+      sourceParam: z.string().optional(),
+      targetInstanceId: z.string(),
+      targetParam: z.string(),
+      amount: z.number().min(-1).max(1),
+      bipolar: z.boolean().default(false),
+      smoothing: z.number().min(0).max(1).default(0),
+      enabled: z.boolean().default(true),
     }),
   ),
 });
 
-const _abCompareStates = new Map<
+const abCompareStates = new Map<
   string,
   {
     slotA: Record<string, unknown>;
@@ -601,12 +601,12 @@ const _abCompareStates = new Map<
     activeSlot: "A" | "B";
   }
 >();
-const _modulationConfigs = new Map<string, any>();
+const modulationConfigs = new Map<string, any>();
 
 // Both maps are keyed by instanceId/projectId and grow without bound if not capped.
 // Evict oldest entries (insertion order) once the cap is reached.
-const _AB_COMPARE_MAX = 5_000;
-const _MODULATION_MAX = 10_000;
+const AB_COMPARE_MAX = 5_000;
+const MODULATION_MAX = 10_000;
 function capMap<K, V>(m: Map<K, V>, max: number) {
   while (m?.size > max) m?.delete(m?.keys().next().value as K);
 }
@@ -614,14 +614,14 @@ function capMap<K, V>(m: Map<K, V>, max: number) {
 router?.get("/device/ab-compare/:instanceId", requireAuth, async (req, res) => {
   try {
     const { instanceId } = req?.params;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _instance = await pluginHostService?.getInstance(instanceId);
+    const instance = await pluginHostService?.getInstance(instanceId);
     if (!instance) {
       return res?.status(404).json({ error: "Plugin instance not found" });
     }
 
-    const _project = await db?.query.projects?.findFirst({
+    const project = await db?.query.projects?.findFirst({
       where: and(
         eq(projects?.id, instance?.projectId),
         eq(projects?.userId, userId),
@@ -632,18 +632,18 @@ router?.get("/device/ab-compare/:instanceId", requireAuth, async (req, res) => {
       return res?.status(403).json({ error: "Unauthorized" });
     }
 
-    const _state = abCompareStates?.get(instanceId) || {
-      slotA: instance?.parameters || {},
-      slotB: instance?.parameters || {},
+    const state = abCompareStates?.get(instanceId) || {
+      slotA: instance.parameters || {},
+      slotB: instance.parameters || {},
       activeSlot: "A" as const,
     };
 
     res?.json({
       success: true,
       instanceId,
-      slotA: state?.slotA,
-      slotB: state?.slotB,
-      activeSlot: state?.activeSlot,
+      slotA: state.slotA,
+      slotB: state.slotB,
+      activeSlot: state.activeSlot,
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error getting A/B compare state:");
@@ -653,15 +653,15 @@ router?.get("/device/ab-compare/:instanceId", requireAuth, async (req, res) => {
 
 router?.post("/device/ab-compare", requireAuth, async (req, res) => {
   try {
-    const _data = abCompareSchema?.parse(req?.body);
-    const _userId = req?.user!.id;
+    const data = abCompareSchema?.parse(req?.body);
+    const userId = req?.user!.id;
 
-    const _instance = await pluginHostService?.getInstance(data?.instanceId);
+    const instance = await pluginHostService?.getInstance(data?.instanceId);
     if (!instance) {
       return res?.status(404).json({ error: "Plugin instance not found" });
     }
 
-    const _project = await db?.query.projects?.findFirst({
+    const project = await db?.query.projects?.findFirst({
       where: and(
         eq(projects?.id, instance?.projectId),
         eq(projects?.userId, userId),
@@ -673,23 +673,23 @@ router?.post("/device/ab-compare", requireAuth, async (req, res) => {
     }
 
     abCompareStates?.set(data?.instanceId, {
-      slotA: data?.slotA,
-      slotB: data?.slotB,
+      slotA: data.slotA,
+      slotB: data.slotB,
       activeSlot: "A",
     });
     capMap(abCompareStates, AB_COMPARE_MAX);
 
     res?.json({
       success: true,
-      instanceId: data?.instanceId,
+      instanceId: data.instanceId,
       message: "A/B compare slots configured",
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error setting A/B compare:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error?.issues });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to set A/B compare" });
   }
@@ -702,14 +702,14 @@ router?.post(
     try {
       const { instanceId } = req?.params;
       const { slot } = req?.body;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _instance = await pluginHostService?.getInstance(instanceId);
+      const instance = await pluginHostService?.getInstance(instanceId);
       if (!instance) {
         return res?.status(404).json({ error: "Plugin instance not found" });
       }
 
-      const _project = await db?.query.projects?.findFirst({
+      const project = await db?.query.projects?.findFirst({
         where: and(
           eq(projects?.id, instance?.projectId),
           eq(projects?.userId, userId),
@@ -720,15 +720,15 @@ router?.post(
         return res?.status(403).json({ error: "Unauthorized" });
       }
 
-      const _state = abCompareStates?.get(instanceId);
+      const state = abCompareStates?.get(instanceId);
       if (!state) {
         return res
           .status(404)
           .json({ error: "A/B compare not configured for this instance" });
       }
 
-      const _targetSlot = slot || (state?.activeSlot === "A" ? "B" : "A");
-      const _newParams = targetSlot === "A" ? state?.slotA : state?.slotB;
+      const targetSlot = slot || (state?.activeSlot === "A" ? "B" : "A");
+      const newParams = targetSlot === "A" ? state?.slotA : state?.slotB;
 
       await pluginHostService?.updateInstanceParameters(instanceId, newParams);
       state.activeSlot = targetSlot;
@@ -754,18 +754,18 @@ router?.post(
     try {
       const { instanceId } = req?.params;
       const { from, to } = req?.body;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       if (!["A", "B"].includes(from) || !["A", "B"].includes(to)) {
         return res?.status(400).json({ error: "Invalid slot specification" });
       }
 
-      const _instance = await pluginHostService?.getInstance(instanceId);
+      const instance = await pluginHostService?.getInstance(instanceId);
       if (!instance) {
         return res?.status(404).json({ error: "Plugin instance not found" });
       }
 
-      const _project = await db?.query.projects?.findFirst({
+      const project = await db?.query.projects?.findFirst({
         where: and(
           eq(projects?.id, instance?.projectId),
           eq(projects?.userId, userId),
@@ -776,7 +776,7 @@ router?.post(
         return res?.status(403).json({ error: "Unauthorized" });
       }
 
-      const _state = abCompareStates?.get(instanceId);
+      const state = abCompareStates?.get(instanceId);
       if (!state) {
         return res?.status(404).json({ error: "A/B compare not configured" });
       }
@@ -802,10 +802,10 @@ router?.post(
 
 router?.post("/bounce", requireAuth, async (req, res) => {
   try {
-    const _data = bounceSchema?.parse(req?.body);
-    const _userId = req?.user!.id;
+    const data = bounceSchema?.parse(req?.body);
+    const userId = req?.user!.id;
 
-    const _project = await db?.query.projects?.findFirst({
+    const project = await db?.query.projects?.findFirst({
       where: and(eq(projects?.id, data?.projectId), eq(projects?.userId, userId)),
     });
 
@@ -813,22 +813,22 @@ router?.post("/bounce", requireAuth, async (req, res) => {
       return res?.status(404).json({ error: "Project not found" });
     }
 
-    const _bounceId = `bounce_${Date?.now()}_${randomBytes(4).toString("hex")}`;
-    const _fileName = `${data?.targetTrackName || "Bounced Track"}_${bounceId}.${data?.format}`;
+    const bounceId = `bounce_${Date?.now()}_${randomBytes(4).toString("hex")}`;
+    const fileName = `${data?.targetTrackName || "Bounced Track"}_${bounceId}.${data?.format}`;
 
-    const _bouncedTrack = {
+    const bouncedTrack = {
       id: bounceId,
-      name: data?.targetTrackName || "Bounced Track",
-      projectId: data?.projectId,
-      sourceTrackIds: data?.sourceTrackIds,
-      startTime: data?.startTime,
-      endTime: data?.endTime,
-      duration: data?.endTime - data?.startTime,
-      format: data?.format,
-      sampleRate: data?.sampleRate,
-      bitDepth: data?.bitDepth,
-      normalized: data?.normalize,
-      includesEffects: data?.includeEffects,
+      name: data.targetTrackName || "Bounced Track",
+      projectId: data.projectId,
+      sourceTrackIds: data.sourceTrackIds,
+      startTime: data.startTime,
+      endTime: data.endTime,
+      duration: data.endTime - data?.startTime,
+      format: data.format,
+      sampleRate: data.sampleRate,
+      bitDepth: data.bitDepth,
+      normalized: data.normalize,
+      includesEffects: data.includeEffects,
       filePath: `/uploads/bounces/${fileName}`,
       createdAt: new Date().toISOString(),
       status: "completed",
@@ -842,10 +842,10 @@ router?.post("/bounce", requireAuth, async (req, res) => {
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error bouncing track:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error?.issues });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to bounce track" });
   }
@@ -854,9 +854,9 @@ router?.post("/bounce", requireAuth, async (req, res) => {
 router?.get("/bounce/:projectId", requireAuth, async (req, res) => {
   try {
     const { projectId } = req?.params;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _project = await db?.query.projects?.findFirst({
+    const project = await db?.query.projects?.findFirst({
       where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
     });
 
@@ -878,9 +878,9 @@ router?.get("/modulation-matrix/:projectId", requireAuth, async (req, res) => {
   try {
     const { projectId } = req?.params;
     const { trackId } = req?.query;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _project = await db?.query.projects?.findFirst({
+    const project = await db?.query.projects?.findFirst({
       where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
     });
 
@@ -888,14 +888,14 @@ router?.get("/modulation-matrix/:projectId", requireAuth, async (req, res) => {
       return res?.status(404).json({ error: "Project not found" });
     }
 
-    const _key = trackId ? `${projectId}:${trackId}` : projectId;
-    const _config = modulationConfigs?.get(key);
+    const key = trackId ? `${projectId}:${trackId}` : projectId;
+    const config = modulationConfigs?.get(key);
 
     res?.json({
       success: true,
       projectId,
       trackId: trackId || null,
-      routings: config?.routings || [],
+      routings: config.routings || [],
       sources: {
         lfo: [
           { id: "lfo1", name: "LFO 1", rate: 1, shape: "sine" },
@@ -956,10 +956,10 @@ router?.get("/modulation-matrix/:projectId", requireAuth, async (req, res) => {
 
 router?.post("/modulation-matrix", requireAuth, async (req, res) => {
   try {
-    const _data = modulationMatrixSchema?.parse(req?.body);
-    const _userId = req?.user!.id;
+    const data = modulationMatrixSchema?.parse(req?.body);
+    const userId = req?.user!.id;
 
-    const _project = await db?.query.projects?.findFirst({
+    const project = await db?.query.projects?.findFirst({
       where: and(eq(projects?.id, data?.projectId), eq(projects?.userId, userId)),
     });
 
@@ -967,17 +967,17 @@ router?.post("/modulation-matrix", requireAuth, async (req, res) => {
       return res?.status(404).json({ error: "Project not found" });
     }
 
-    const _routingsWithIds = data?.routings.map((routing) => ({
+    const routingsWithIds = data?.routings.map((routing) => ({
       ...routing,
-      id: routing?.id || `mod_${Date?.now()}_${randomBytes(4).toString("hex")}`,
+      id: routing.id || `mod_${Date?.now()}_${randomBytes(4).toString("hex")}`,
     }));
 
-    const _key = data?.trackId
+    const key = data?.trackId
       ? `${data?.projectId}:${data?.trackId}`
       : data?.projectId;
     modulationConfigs?.set(key, {
-      projectId: data?.projectId,
-      trackId: data?.trackId,
+      projectId: data.projectId,
+      trackId: data.trackId,
       routings: routingsWithIds,
       updatedAt: new Date().toISOString(),
     });
@@ -993,10 +993,10 @@ router?.post("/modulation-matrix", requireAuth, async (req, res) => {
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error updating modulation matrix:");
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Invalid request data", details: error?.issues });
+        .json({ error: "Invalid request data", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to update modulation matrix" });
   }
@@ -1009,9 +1009,9 @@ router?.delete(
     try {
       const { projectId, routingId } = req?.params;
       const { trackId } = req?.query;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _project = await db?.query.projects?.findFirst({
+      const project = await db?.query.projects?.findFirst({
         where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
       });
 
@@ -1019,8 +1019,8 @@ router?.delete(
         return res?.status(404).json({ error: "Project not found" });
       }
 
-      const _key = trackId ? `${projectId}:${trackId}` : projectId;
-      const _config = modulationConfigs?.get(key);
+      const key = trackId ? `${projectId}:${trackId}` : projectId;
+      const config = modulationConfigs?.get(key);
 
       if (config) {
         config.routings = config?.routings.filter(
@@ -1041,13 +1041,13 @@ router?.delete(
 router?.get("/:id", requireAuth, async (req, res) => {
   try {
     const { id } = req?.params;
-    const _plugin = pluginHostService?.getPluginById(id);
+    const plugin = pluginHostService?.getPluginById(id);
 
     if (!plugin) {
       return res?.status(404).json({ error: "Plugin not found" });
     }
 
-    const _factoryPresets = pluginHostService?.getFactoryPresets(id);
+    const factoryPresets = pluginHostService?.getFactoryPresets(id);
 
     res?.json({
       success: true,

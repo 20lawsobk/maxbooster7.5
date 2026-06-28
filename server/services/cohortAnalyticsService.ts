@@ -112,7 +112,7 @@ class CohortAnalyticsService {
       limit?: number;
     } = {},
   ): Promise<ListenerCohort[]> {
-    const _conditions = [eq(listenerCohorts?.userId, userId)];
+    const conditions = [eq(listenerCohorts?.userId, userId)];
 
     if (options?.platform) {
       conditions?.push(eq(listenerCohorts?.platform, options?.platform));
@@ -149,7 +149,7 @@ class CohortAnalyticsService {
 
     if (!cohort) return null;
 
-    const _initialSize = cohort?.initialSize || 1;
+    const initialSize = cohort?.initialSize || 1;
     const retention: RetentionData = {
       day1: ((cohort?.day1Retained || 0) / initialSize) * 100,
       day7: ((cohort?.day7Retained || 0) / initialSize) * 100,
@@ -157,19 +157,19 @@ class CohortAnalyticsService {
       day90: ((cohort?.day90Retained || 0) / initialSize) * 100,
     };
 
-    const _loyaltyDistribution = this?.calculateLoyaltyDistribution(
+    const loyaltyDistribution = this?.calculateLoyaltyDistribution(
       initialSize,
       retention,
     );
 
     return {
-      cohortDate: cohort?.cohortDate,
-      cohortLabel: this?.formatCohortLabel(cohort?.cohortDate),
+      cohortDate: cohort.cohortDate,
+      cohortLabel: this.formatCohortLabel(cohort?.cohortDate),
       initialSize,
       retention,
-      avgStreamsPerUser: cohort?.avgStreamsPerUser || 0,
+      avgStreamsPerUser: cohort.avgStreamsPerUser || 0,
       ltv: Number(cohort?.ltv || 0),
-      predictedChurn: cohort?.predictedChurn || 0,
+      predictedChurn: cohort.predictedChurn || 0,
       loyaltyDistribution,
     };
   }
@@ -185,46 +185,46 @@ class CohortAnalyticsService {
     averageCurve: RetentionCurve[];
     benchmarks: RetentionCurve[];
   }> {
-    const _cohorts = await this?.getCohorts(userId, {
-      platform: options?.platform,
-      limit: options?.numCohorts || 12,
+    const cohorts = await this?.getCohorts(userId, {
+      platform: options.platform,
+      limit: options.numCohorts || 12,
     });
 
-    const _cohortsWithCurves = cohorts?.map((cohort) => {
-      const _initialSize = cohort?.initialSize || 1;
+    const cohortsWithCurves = cohorts?.map((cohort) => {
+      const initialSize = cohort?.initialSize || 1;
       return {
-        cohortDate: cohort?.cohortDate,
-        label: this?.formatCohortLabel(cohort?.cohortDate),
+        cohortDate: cohort.cohortDate,
+        label: this.formatCohortLabel(cohort?.cohortDate),
         curve: [
           { day: 0, retained: initialSize, percentage: 100 },
           {
             day: 1,
-            retained: cohort?.day1Retained || 0,
+            retained: cohort.day1Retained || 0,
             percentage: ((cohort?.day1Retained || 0) / initialSize) * 100,
           },
           {
             day: 7,
-            retained: cohort?.day7Retained || 0,
+            retained: cohort.day7Retained || 0,
             percentage: ((cohort?.day7Retained || 0) / initialSize) * 100,
           },
           {
             day: 30,
-            retained: cohort?.day30Retained || 0,
+            retained: cohort.day30Retained || 0,
             percentage: ((cohort?.day30Retained || 0) / initialSize) * 100,
           },
           {
             day: 90,
-            retained: cohort?.day90Retained || 0,
+            retained: cohort.day90Retained || 0,
             percentage: ((cohort?.day90Retained || 0) / initialSize) * 100,
           },
         ],
       };
     });
 
-    const _averageCurve = this?.calculateAverageRetentionCurve(
+    const averageCurve = this?.calculateAverageRetentionCurve(
       cohortsWithCurves?.map((c) => c?.curve),
     );
-    const _benchmarks = this?.getIndustryBenchmarks();
+    const benchmarks = this?.getIndustryBenchmarks();
 
     return {
       cohorts: cohortsWithCurves,
@@ -240,30 +240,30 @@ class CohortAnalyticsService {
       timeframeDays?: number;
     } = {},
   ): Promise<LTVCalculation[]> {
-    const _cohorts = await this?.getCohorts(userId, {
-      platform: options?.platform,
+    const cohorts = await this?.getCohorts(userId, {
+      platform: options.platform,
       limit: 12,
     });
 
     return cohorts?.map((cohort) => {
-      const _totalRevenue = Number(cohort?.totalRevenue || 0);
-      const _avgStreamsPerUser = cohort?.avgStreamsPerUser || 1;
-      const _initialSize = cohort?.initialSize || 1;
-      const _retention90 = ((cohort?.day90Retained || 0) / initialSize) * 100;
+      const totalRevenue = Number(cohort?.totalRevenue || 0);
+      const avgStreamsPerUser = cohort?.avgStreamsPerUser || 1;
+      const initialSize = cohort?.initialSize || 1;
+      const retention90 = ((cohort?.day90Retained || 0) / initialSize) * 100;
 
-      const _avgMonthlyRevenue = totalRevenue / 3;
-      const _avgLifespanMonths = this?.estimateLifespan(retention90);
-      const _ltv = avgMonthlyRevenue * avgLifespanMonths;
-      const _ltvPerStream =
+      const avgMonthlyRevenue = totalRevenue / 3;
+      const avgLifespanMonths = this?.estimateLifespan(retention90);
+      const ltv = avgMonthlyRevenue * avgLifespanMonths;
+      const ltvPerStream =
         totalRevenue / (avgStreamsPerUser * initialSize) || 0;
 
       return {
-        cohortDate: cohort?.cohortDate,
+        cohortDate: cohort.cohortDate,
         avgMonthlyRevenue,
         avgLifespanMonths,
         ltv,
         ltvPerStream,
-        confidenceLevel: Math?.min(95, 50 + initialSize / 100),
+        confidenceLevel: Math.min(95, 50 + initialSize / 100),
       };
     });
   }
@@ -277,20 +277,20 @@ class CohortAnalyticsService {
     predictions: ChurnPrediction[];
     recommendations: string[];
   }> {
-    const _cohorts = await this?.getCohorts(userId, { limit: 6 });
+    const cohorts = await this?.getCohorts(userId, { limit: 6 });
 
-    const _avgChurn =
+    const avgChurn =
       cohorts?.reduce((sum, c) => sum + (c?.predictedChurn || 0), 0) /
         cohorts?.length || 0;
-    const _totalListeners = cohorts?.reduce(
+    const totalListeners = cohorts?.reduce(
       (sum, c) => sum + (c?.initialSize || 0),
       0,
     );
-    const _atRiskListeners = Math?.floor(totalListeners * avgChurn);
+    const atRiskListeners = Math?.floor(totalListeners * avgChurn);
 
     // Derive risk predictions from actual cohort retention curves (no random fabrication)
     const predictions: ChurnPrediction[] = cohorts?.map((c) => {
-      const _churnProb = Math?.min(
+      const churnProb = Math?.min(
         0.99,
         Math?.max(0.01, c?.predictedChurn || avgChurn),
       );
@@ -303,26 +303,26 @@ class CohortAnalyticsService {
               ? "high"
               : "critical";
       // Estimate inactivity from day30 vs day7 retention drop
-      const _day7 = c?.day7Retained ?? c?.initialSize;
-      const _day30 = c?.day30Retained ?? c?.initialSize;
-      const _retentionDrop = day7 > 0 ? 1 - day30 / day7 : 0;
-      const _daysSinceLastStream = Math?.round(retentionDrop * 45); // 0–45 days
-      const _totalStreams = c?.totalStreams ?? 0;
-      const _historicalEngagement =
+      const day7 = c?.day7Retained ?? c?.initialSize;
+      const day30 = c?.day30Retained ?? c?.initialSize;
+      const retentionDrop = day7 > 0 ? 1 - day30 / day7 : 0;
+      const daysSinceLastStream = Math?.round(retentionDrop * 45); // 0–45 days
+      const totalStreams = c?.totalStreams ?? 0;
+      const historicalEngagement =
         c?.initialSize > 0
           ? Math?.round((totalStreams / c?.initialSize) * 10) / 10
           : 0;
       return {
-        userId: c?.cohortMonth || `cohort_${c?.id}`,
-        churnProbability: Math?.round(churnProb * 100) / 100,
+        userId: c.cohortMonth || `cohort_${c?.id}`,
+        churnProbability: Math.round(churnProb * 100) / 100,
         riskLevel,
         daysSinceLastStream,
         historicalEngagement,
-        recommendedAction: this?.getChurnRecommendation(riskLevel),
+        recommendedAction: this.getChurnRecommendation(riskLevel),
       };
     });
 
-    const _recommendations = [
+    const recommendations = [
       "Send personalized re-engagement emails to high-risk listeners",
       "Create exclusive content for loyal fans to increase retention",
       "Analyze drop-off points in listener journey",
@@ -333,7 +333,7 @@ class CohortAnalyticsService {
     return {
       atRiskListeners,
       churnRate: avgChurn * 100,
-      predictions: predictions?.sort(
+      predictions: predictions.sort(
         (a, b) => b?.churnProbability - a?.churnProbability,
       ),
       recommendations,
@@ -356,18 +356,18 @@ class CohortAnalyticsService {
     topPerformingTier: LoyaltyTier;
     recommendations: string[];
   }> {
-    const _cohorts = await this?.getCohorts(userId, {
-      platform: options?.platform,
+    const cohorts = await this?.getCohorts(userId, {
+      platform: options.platform,
       limit: 12,
     });
 
-    const _totalListeners = cohorts?.reduce(
+    const totalListeners = cohorts?.reduce(
       (sum, c) => sum + (c?.initialSize || 0),
       0,
     );
-    const _avgRetention90 =
+    const avgRetention90 =
       cohorts?.reduce((sum, c) => {
-        const _init = c?.initialSize || 1;
+        const init = c?.initialSize || 1;
         return sum + ((c?.day90Retained || 0) / init) * 100;
       }, 0) / cohorts?.length || 0;
 
@@ -381,7 +381,7 @@ class CohortAnalyticsService {
     }[] = [
       {
         tier: "casual",
-        count: Math?.floor(totalListeners * 0.4),
+        count: Math.floor(totalListeners * 0.4),
         percentage: 40,
         avgStreams: 2,
         avgRevenue: 0.008,
@@ -393,7 +393,7 @@ class CohortAnalyticsService {
       },
       {
         tier: "engaged",
-        count: Math?.floor(totalListeners * 0.3),
+        count: Math.floor(totalListeners * 0.3),
         percentage: 30,
         avgStreams: 8,
         avgRevenue: 0.032,
@@ -405,7 +405,7 @@ class CohortAnalyticsService {
       },
       {
         tier: "fan",
-        count: Math?.floor(totalListeners * 0.18),
+        count: Math.floor(totalListeners * 0.18),
         percentage: 18,
         avgStreams: 25,
         avgRevenue: 0.1,
@@ -417,7 +417,7 @@ class CohortAnalyticsService {
       },
       {
         tier: "superfan",
-        count: Math?.floor(totalListeners * 0.09),
+        count: Math.floor(totalListeners * 0.09),
         percentage: 9,
         avgStreams: 60,
         avgRevenue: 0.24,
@@ -429,7 +429,7 @@ class CohortAnalyticsService {
       },
       {
         tier: "advocate",
-        count: Math?.floor(totalListeners * 0.03),
+        count: Math.floor(totalListeners * 0.03),
         percentage: 3,
         avgStreams: 150,
         avgRevenue: 0.6,
@@ -481,10 +481,10 @@ class CohortAnalyticsService {
     retentionTrend: { month: string; retention30: number }[];
     ltvTrend: { month: string; ltv: number }[];
   }> {
-    const _cohorts = await this?.getCohorts(userId, options);
+    const cohorts = await this?.getCohorts(userId, options);
 
-    const _summary = {
-      totalCohorts: cohorts?.length,
+    const summary = {
+      totalCohorts: cohorts.length,
       totalListeners: 0,
       avgRetention30: 0,
       avgLTV: 0,
@@ -496,34 +496,34 @@ class CohortAnalyticsService {
     const ltvTrend: { month: string; ltv: number }[] = [];
 
     for (const cohort of cohorts) {
-      const _analysis = await this?.getCohortAnalysis(userId, cohort?.cohortDate);
+      const analysis = await this?.getCohortAnalysis(userId, cohort?.cohortDate);
       if (analysis) {
         cohortAnalyses?.push(analysis);
-        summary?.totalListeners += analysis?.initialSize;
-        summary?.avgRetention30 += analysis?.retention.day30;
-        summary?.avgLTV += analysis?.ltv;
-        summary?.overallChurnRate += analysis?.predictedChurn;
+        summary.totalListeners += analysis?.initialSize;
+        summary.avgRetention30 += analysis?.retention.day30;
+        summary.avgLTV += analysis?.ltv;
+        summary.overallChurnRate += analysis?.predictedChurn;
 
-        const _monthLabel = this?.formatMonthLabel(cohort?.cohortDate);
+        const monthLabel = this?.formatMonthLabel(cohort?.cohortDate);
         retentionTrend?.push({
           month: monthLabel,
-          retention30: analysis?.retention.day30,
+          retention30: analysis.retention.day30,
         });
-        ltvTrend?.push({ month: monthLabel, ltv: analysis?.ltv });
+        ltvTrend?.push({ month: monthLabel, ltv: analysis.ltv });
       }
     }
 
     if (cohorts?.length > 0) {
-      summary?.avgRetention30 /= cohorts?.length;
-      summary?.avgLTV /= cohorts?.length;
-      summary?.overallChurnRate /= cohorts?.length;
+      summary.avgRetention30 /= cohorts?.length;
+      summary.avgLTV /= cohorts?.length;
+      summary.overallChurnRate /= cohorts?.length;
     }
 
     return {
       summary,
       cohortAnalyses,
-      retentionTrend: retentionTrend?.reverse(),
-      ltvTrend: ltvTrend?.reverse(),
+      retentionTrend: retentionTrend.reverse(),
+      ltvTrend: ltvTrend.reverse(),
     };
   }
 
@@ -532,13 +532,13 @@ class CohortAnalyticsService {
     platform: DSPPlatform,
   ): Promise<ListenerCohort[]> {
     const results: ListenerCohort[] = [];
-    const _now = new Date();
+    const now = new Date();
 
     for (let i = 0; i < 6; i++) {
-      const _cohortDate = new Date(now);
+      const cohortDate = new Date(now);
       cohortDate?.setMonth(cohortDate?.getMonth() - i);
       cohortDate?.setDate(1);
-      const _cohortEnd = new Date(cohortDate);
+      const cohortEnd = new Date(cohortDate);
       cohortEnd?.setMonth(cohortEnd?.getMonth() + 1);
 
       // Query real analytics data for the matching month and platform
@@ -557,28 +557,28 @@ class CohortAnalyticsService {
           ),
         );
 
-      const _initialSize = Math?.max(1, Number(monthData?.totalListeners ?? 0));
-      const _totalStreams = Number(monthData?.totalStreams ?? 0);
-      const _totalRevenue = Number(monthData?.totalRevenue ?? 0);
-      const _avgStreamsPerUser =
+      const initialSize = Math?.max(1, Number(monthData?.totalListeners ?? 0));
+      const totalStreams = Number(monthData?.totalStreams ?? 0);
+      const totalRevenue = Number(monthData?.totalRevenue ?? 0);
+      const avgStreamsPerUser =
         initialSize > 0 ? totalStreams / initialSize : 0;
 
       // Derive retention using industry-standard drop-off curves if no listener-level data
       // Day1: ~70%, Day7: ~50%, Day30: ~35%, Day90: ~20% (Spotify-published benchmarks)
-      const _baseRetention = 0.7;
-      const _predictedChurn = 1 - baseRetention * 0.5; // ~65% 90-day churn (industry avg)
-      const _ltv =
+      const baseRetention = 0.7;
+      const predictedChurn = 1 - baseRetention * 0.5; // ~65% 90-day churn (industry avg)
+      const ltv =
         totalRevenue > 0 && initialSize > 0
           ? totalRevenue / initialSize
           : avgStreamsPerUser * 0.004; // $0.004/stream est
 
-      const _loyaltyTier =
+      const loyaltyTier =
         avgStreamsPerUser > 20
           ? "fan"
           : avgStreamsPerUser > 8
             ? "engaged"
             : "casual";
-      const _sourceChannel =
+      const sourceChannel =
         i === 0
           ? "social"
           : i === 1
@@ -590,24 +590,24 @@ class CohortAnalyticsService {
       const cohortData: InsertListenerCohort = {
         userId,
         cohortDate,
-        cohortWeek: this?.getWeekNumber(cohortDate),
+        cohortWeek: this.getWeekNumber(cohortDate),
         cohortMonth: `${cohortDate?.getFullYear()}-${String(cohortDate?.getMonth() + 1).padStart(2, "0")}`,
         platform,
         initialSize,
-        day1Retained: Math?.floor(initialSize * baseRetention),
-        day7Retained: Math?.floor(initialSize * baseRetention * 0.7),
-        day30Retained: Math?.floor(initialSize * baseRetention * 0.5),
-        day90Retained: Math?.floor(initialSize * baseRetention * 0.3),
+        day1Retained: Math.floor(initialSize * baseRetention),
+        day7Retained: Math.floor(initialSize * baseRetention * 0.7),
+        day30Retained: Math.floor(initialSize * baseRetention * 0.5),
+        day90Retained: Math.floor(initialSize * baseRetention * 0.3),
         totalStreams,
-        avgStreamsPerUser: Math?.round(avgStreamsPerUser * 10) / 10,
+        avgStreamsPerUser: Math.round(avgStreamsPerUser * 10) / 10,
         totalRevenue: String(Math?.round(totalRevenue * 100) / 100),
         ltv: String(Math?.round(ltv * 100) / 100),
-        predictedChurn: Math?.round(predictedChurn * 100) / 100,
+        predictedChurn: Math.round(predictedChurn * 100) / 100,
         loyaltyTier,
         sourceChannel,
       };
 
-      const _cohort = await this?.createCohort(cohortData);
+      const cohort = await this?.createCohort(cohortData);
       results?.push(cohort);
     }
 
@@ -621,37 +621,37 @@ class CohortAnalyticsService {
     initialSize: number,
     retention: RetentionData,
   ): { tier: LoyaltyTier; count: number; percentage: number }[] {
-    const _advocatePercent = retention?.day90 * 0.03;
-    const _superfanPercent = retention?.day90 * 0.09;
-    const _fanPercent = retention?.day30 * 0.18;
-    const _engagedPercent = retention?.day7 * 0.3;
-    const _casualPercent =
+    const advocatePercent = retention?.day90 * 0.03;
+    const superfanPercent = retention?.day90 * 0.09;
+    const fanPercent = retention?.day30 * 0.18;
+    const engagedPercent = retention?.day7 * 0.3;
+    const casualPercent =
       100 - advocatePercent - superfanPercent - fanPercent - engagedPercent;
 
     return [
       {
         tier: "casual",
-        count: Math?.floor((initialSize * casualPercent) / 100),
+        count: Math.floor((initialSize * casualPercent) / 100),
         percentage: casualPercent,
       },
       {
         tier: "engaged",
-        count: Math?.floor((initialSize * engagedPercent) / 100),
+        count: Math.floor((initialSize * engagedPercent) / 100),
         percentage: engagedPercent,
       },
       {
         tier: "fan",
-        count: Math?.floor((initialSize * fanPercent) / 100),
+        count: Math.floor((initialSize * fanPercent) / 100),
         percentage: fanPercent,
       },
       {
         tier: "superfan",
-        count: Math?.floor((initialSize * superfanPercent) / 100),
+        count: Math.floor((initialSize * superfanPercent) / 100),
         percentage: superfanPercent,
       },
       {
         tier: "advocate",
-        count: Math?.floor((initialSize * advocatePercent) / 100),
+        count: Math.floor((initialSize * advocatePercent) / 100),
         percentage: advocatePercent,
       },
     ];
@@ -662,12 +662,12 @@ class CohortAnalyticsService {
   ): RetentionCurve[] {
     if (curves?.length === 0) return this?.getIndustryBenchmarks();
 
-    const _days = [0, 1, 7, 30, 90];
+    const days = [0, 1, 7, 30, 90];
     return days?.map((day) => {
-      const _dayData = curves?.map(
+      const dayData = curves?.map(
         (curve) => curve?.find((c) => c?.day === day)?.percentage || 0,
       );
-      const _avgPercentage =
+      const avgPercentage =
         dayData?.reduce((sum, p) => sum + p, 0) / dayData?.length;
       return { day, retained: 0, percentage: avgPercentage };
     });
@@ -717,13 +717,13 @@ class CohortAnalyticsService {
   }
 
   private getWeekNumber(date: Date): string {
-    const _startOfYear = new Date(date?.getFullYear(), 0, 1);
-    const _days = Math?.floor(
+    const startOfYear = new Date(date?.getFullYear(), 0, 1);
+    const days = Math?.floor(
       (date?.getTime() - startOfYear?.getTime()) / (24 * 60 * 60 * 1000),
     );
-    const _weekNumber = Math?.ceil((days + startOfYear?.getDay() + 1) / 7);
+    const weekNumber = Math?.ceil((days + startOfYear?.getDay() + 1) / 7);
     return `${date?.getFullYear()}-W${String(weekNumber).padStart(2, "0")}`;
   }
 }
 
-export const _cohortAnalyticsService = new CohortAnalyticsService();
+export const cohortAnalyticsService = new CohortAnalyticsService();

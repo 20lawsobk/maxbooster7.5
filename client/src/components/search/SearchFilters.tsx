@@ -248,6 +248,7 @@ export function SearchFilters({
 
   const presets: FilterPreset[] = presetsData?.presets || [];
 
+
   return (
     <Card className={cn("bg-slate-800/50 border-slate-700", className)}>
       <CardHeader className="pb-3">

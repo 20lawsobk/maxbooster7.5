@@ -14,7 +14,7 @@ export interface UseRovingFocusOptions {
 export interface RovingFocusItemProps {
   ref: (element: HTMLElement | null) => void;
   tabIndex: number;
-  onKeyDown: (event: React?.KeyboardEvent) => void;
+  onKeyDown: (event: React.KeyboardEvent) => void;
   onFocus: () => void;
   "data-active": boolean;
   "aria-selected"?: boolean;
@@ -50,21 +50,21 @@ export function useRovingFocus(
       : 0,
   );
 
-  const _itemsRef = useRef<Map<number, HTMLElement>>(new Map());
-  const _isInitializedRef = useRef(false);
+  const itemsRef = useRef<Map<number, HTMLElement>>(new Map());
+  const isInitializedRef = useRef(false);
 
-  const _setActiveIndex = useCallback(
+  const setActiveIndex = useCallback(
     (index: number) => {
       if (!enabled) return;
 
-      const _clampedIndex = Math?.max(0, Math?.min(index, itemCount - 1));
+      const clampedIndex = Math?.max(0, Math?.min(index, itemCount - 1));
 
       if (clampedIndex !== activeIndex) {
         setActiveIndexState(clampedIndex);
         onActiveChange?.(clampedIndex);
       }
 
-      const _element = itemsRef?.current.get(clampedIndex);
+      const element = itemsRef?.current.get(clampedIndex);
       if (element) {
         element?.focus();
       }
@@ -72,22 +72,22 @@ export function useRovingFocus(
     [enabled, itemCount, activeIndex, onActiveChange],
   );
 
-  const _focusActive = useCallback(() => {
-    const _element = itemsRef?.current.get(activeIndex);
+  const focusActive = useCallback(() => {
+    const element = itemsRef?.current.get(activeIndex);
     if (element) {
       element?.focus();
     }
   }, [activeIndex]);
 
-  const _focusFirst = useCallback(() => {
+  const focusFirst = useCallback(() => {
     setActiveIndex(0);
   }, [setActiveIndex]);
 
-  const _focusLast = useCallback(() => {
+  const focusLast = useCallback(() => {
     setActiveIndex(itemCount - 1);
   }, [setActiveIndex, itemCount]);
 
-  const _getNextIndex = useCallback(
+  const getNextIndex = useCallback(
     (currentIndex: number, direction: 1 | -1): number => {
       let nextIndex = currentIndex + direction;
 
@@ -106,24 +106,24 @@ export function useRovingFocus(
     [loop, itemCount],
   );
 
-  const _focusPrevious = useCallback(() => {
+  const focusPrevious = useCallback(() => {
     setActiveIndex(getNextIndex(activeIndex, -1));
   }, [setActiveIndex, getNextIndex, activeIndex]);
 
-  const _focusNext = useCallback(() => {
+  const focusNext = useCallback(() => {
     setActiveIndex(getNextIndex(activeIndex, 1));
   }, [setActiveIndex, getNextIndex, activeIndex]);
 
-  const _handleKeyDown = useCallback(
-    (index: number) => (event: React?.KeyboardEvent) => {
+  const handleKeyDown = useCallback(
+    (index: number) => (event: React.KeyboardEvent) => {
       if (!enabled) return;
 
       const { key } = event;
       let nextIndex: number | null = null;
 
-      const _isHorizontal =
+      const isHorizontal =
         orientation === "horizontal" || orientation === "both";
-      const _isVertical = orientation === "vertical" || orientation === "both";
+      const isVertical = orientation === "vertical" || orientation === "both";
 
       switch (key) {
         case "ArrowRight":
@@ -167,7 +167,7 @@ export function useRovingFocus(
     [enabled, orientation, itemCount, getNextIndex, setActiveIndex],
   );
 
-  const _handleFocus = useCallback(
+  const handleFocus = useCallback(
     (index: number) => () => {
       if (enabled && index !== activeIndex) {
         setActiveIndexState(index);
@@ -177,7 +177,7 @@ export function useRovingFocus(
     [enabled, activeIndex, onActiveChange],
   );
 
-  const _registerItem = useCallback(
+  const registerItem = useCallback(
     (index: number) => (element: HTMLElement | null) => {
       if (element) {
         itemsRef?.current.set(index, element);
@@ -188,7 +188,7 @@ export function useRovingFocus(
     [],
   );
 
-  const _getItemProps = useCallback(
+  const getItemProps = useCallback(
     (index: number): RovingFocusItemProps => ({
       ref: registerItem(index),
       tabIndex: index === activeIndex ? 0 : -1,
@@ -203,7 +203,7 @@ export function useRovingFocus(
   useEffect(() => {
     if (autoFocus && !isInitializedRef?.current && enabled) {
       isInitializedRef.current = true;
-      const _timer = setTimeout(() => {
+      const timer = setTimeout(() => {
         focusActive();
       }, 0);
       return () => clearTimeout(timer);
@@ -229,15 +229,15 @@ export function useRovingFocus(
 }
 
 export function useRovingFocusGroup<T extends HTMLElement = HTMLDivElement>() {
-  const _groupRef = useRef<T>(null);
+  const groupRef = useRef<T>(null);
   const [items, setItems] = useState<HTMLElement[]>([]);
 
   useEffect(() => {
     if (!groupRef?.current) return;
 
-    const _updateItems = () => {
+    const updateItems = () => {
       if (groupRef?.current) {
-        const _focusableItems = Array?.from(
+        const focusableItems = Array?.from(
           groupRef?.current.querySelectorAll<HTMLElement>(
             'button:not([disabled]), [role="tab"], [role="menuitem"], [role="option"], [role="treeitem"]',
           ),
@@ -248,7 +248,7 @@ export function useRovingFocusGroup<T extends HTMLElement = HTMLDivElement>() {
 
     updateItems();
 
-    const _observer = new MutationObserver(updateItems);
+    const observer = new MutationObserver(updateItems);
     observer?.observe(groupRef?.current, {
       childList: true,
       subtree: true,
@@ -257,7 +257,7 @@ export function useRovingFocusGroup<T extends HTMLElement = HTMLDivElement>() {
     return () => observer?.disconnect();
   }, []);
 
-  return { groupRef, items, itemCount: items?.length };
+  return { groupRef, items, itemCount: items.length };
 }
 
 export default useRovingFocus;

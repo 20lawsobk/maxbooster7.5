@@ -1,13 +1,4 @@
-import {
-  AudioBuffer,
-  DSPContext,
-  createBuffer,
-  BiquadFilter,
-  LFO,
-  ADSR,
-  clamp,
-  softClip,
-} from "../core";
+import { AudioBuffer, DSPContext, createBuffer, BiquadFilter, LFO, ADSR, clamp, softClip } from "../core";
 
 export interface SynthesizerEngine {
   noteOn(frequency: number, velocity: number, context: DSPContext): void;
@@ -74,15 +65,15 @@ class FMOperator {
   }
 
   process(modulation: number = 0): number {
-    const _envValue = this?.envelope.process();
-    const _totalMod = modulation + this?.lastOutput * this?.feedback;
-    const _output =
-      Math?.sin(2 * Math?.PI * (this?.phase + totalMod)) *
+    const envValue = this?.envelope.process();
+    const totalMod = modulation + this?.lastOutput * this?.feedback;
+    const output =
+      Math?.sin(2 * Math.PI * (this?.phase + totalMod)) *
       envValue *
       this?.outputLevel;
 
-    this?.phase += this?.phaseIncrement;
-    if (this?.phase >= 1) this?.phase -= 1;
+    this.phase += this?.phaseIncrement;
+    if (this?.phase >= 1) this.phase -= 1;
 
     this.lastOutput = output;
     return output;
@@ -121,15 +112,15 @@ export class DX7BellSynth implements SynthesizerEngine {
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
-    const _ratios = [1, 1.41, 2.83, 5.65, 7.07, 14.14];
-    const _levels = [0.8, 0.5, 0.35, 0.2, 0.1, 0.05];
+    const ratios = [1, 1.41, 2.83, 5.65, 7.07, 14.14];
+    const levels = [0.8, 0.5, 0.35, 0.2, 0.1, 0.05];
 
     for (let i = 0; i < 6; i++) {
       this?.operators[i].setFrequency(frequency, context?.sampleRate);
       this?.operators[i].setRatio(ratios[i]);
       this?.operators[i].setOutputLevel(levels[i] * this?.velocity);
 
-      const _decayScale = 1 + i * 0.3;
+      const decayScale = 1 + i * 0.3;
       this?.operators[i].setEnvelope(
         0.001,
         1.5 / decayScale,
@@ -156,16 +147,16 @@ export class DX7BellSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
+      const envValue = this?.envelope.process();
 
-      const _mod6 = this?.operators[5].process(0) * 2.5;
-      const _mod5 = this?.operators[4].process(mod6) * 2.0;
-      const _mod4 = this?.operators[3].process(mod5) * 1.5;
-      const _mod3 = this?.operators[2].process(0) * 1.8;
-      const _mod2 = this?.operators[1].process(mod4) * 1.2;
+      const mod6 = this?.operators[5].process(0) * 2.5;
+      const mod5 = this?.operators[4].process(mod6) * 2.0;
+      const mod4 = this?.operators[3].process(mod5) * 1.5;
+      const mod3 = this?.operators[2].process(0) * 1.8;
+      const mod2 = this?.operators[1].process(mod4) * 1.2;
 
       let sample = this?.operators[0].process(mod2 + mod3);
 
@@ -173,8 +164,8 @@ export class DX7BellSynth implements SynthesizerEngine {
       sample = this?.lpFilter.process(sample);
       sample *= envValue;
 
-      output?.samples[0][i] = softClip(sample, 0.9);
-      output?.samples[1][i] = softClip(sample, 0.9);
+      output.samples[0][i] = softClip(sample, 0.9);
+      output.samples[1][i] = softClip(sample, 0.9);
     }
 
     return output;
@@ -216,8 +207,8 @@ export class DX7BassSynth implements SynthesizerEngine {
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
-    const _ratios = [1, 1, 2, 3];
-    const _levels = [0.9, 0.7, 0.4, 0.2];
+    const ratios = [1, 1, 2, 3];
+    const levels = [0.9, 0.7, 0.4, 0.2];
 
     for (let i = 0; i < 4; i++) {
       this?.operators[i].setFrequency(frequency, context?.sampleRate);
@@ -247,14 +238,14 @@ export class DX7BassSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
+      const envValue = this?.envelope.process();
 
-      const _mod4 = this?.operators[3].process(0) * 3.0;
-      const _mod3 = this?.operators[2].process(mod4) * 2.5;
-      const _mod2 = this?.operators[1].process(mod3) * 2.0;
+      const mod4 = this?.operators[3].process(0) * 3.0;
+      const mod3 = this?.operators[2].process(mod4) * 2.5;
+      const mod2 = this?.operators[1].process(mod3) * 2.0;
       let sample = this?.operators[0].process(mod2);
 
       sample = this?.hpFilter.process(sample);
@@ -263,8 +254,8 @@ export class DX7BassSynth implements SynthesizerEngine {
       sample *= envValue;
       sample = softClip(sample * 1.4, 0.85);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -313,8 +304,8 @@ export class DX7EPianoSynth implements SynthesizerEngine {
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
-    const _ratios = [1, 1, 14, 7];
-    const _levels = [0.7, 0.5, 0.15, 0.1];
+    const ratios = [1, 1, 14, 7];
+    const levels = [0.7, 0.5, 0.15, 0.1];
 
     for (let i = 0; i < 4; i++) {
       this?.operators[i].setFrequency(frequency, context?.sampleRate);
@@ -362,28 +353,28 @@ export class DX7EPianoSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _tineEnvValue = this?.tineEnvelope.process();
-      const _tremolo = 1 + this?.tremoloLFO.sine() * 0.03;
+      const envValue = this?.envelope.process();
+      const tineEnvValue = this?.tineEnvelope.process();
+      const tremolo = 1 + this?.tremoloLFO.sine() * 0.03;
 
-      const _mod4 = this?.operators[3].process(0) * 1.5;
-      const _mod3 = this?.operators[2].process(mod4) * 2.0;
-      const _mod2 = this?.operators[1].process(0) * 1.2;
+      const mod4 = this?.operators[3].process(0) * 1.5;
+      const mod3 = this?.operators[2].process(mod4) * 2.0;
+      const mod2 = this?.operators[1].process(0) * 1.2;
       let sample = this?.operators[0].process(mod2 + mod3);
 
-      const _tineMod = this?.tineOperators[1].process(0) * 3.0;
-      const _tine = this?.tineOperators[0].process(tineMod) * tineEnvValue;
+      const tineMod = this?.tineOperators[1].process(0) * 3.0;
+      const tine = this?.tineOperators[0].process(tineMod) * tineEnvValue;
       sample += tine;
 
       sample = this?.hpFilter.process(sample);
       sample = this?.lpFilter.process(sample);
       sample *= envValue * tremolo;
 
-      output?.samples[0][i] = softClip(sample, 0.88);
-      output?.samples[1][i] = softClip(sample, 0.88);
+      output.samples[0][i] = softClip(sample, 0.88);
+      output.samples[1][i] = softClip(sample, 0.88);
     }
 
     return output;
@@ -429,8 +420,8 @@ export class DX7BrassSynth implements SynthesizerEngine {
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
-    const _ratios = [1, 1, 2, 3];
-    const _levels = [0.8, 0.6, 0.5, 0.3];
+    const ratios = [1, 1, 2, 3];
+    const levels = [0.8, 0.6, 0.5, 0.3];
 
     for (let i = 0; i < 4; i++) {
       this?.operators[i].setFrequency(frequency, context?.sampleRate);
@@ -463,20 +454,20 @@ export class DX7BrassSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _filterEnvValue = this?.filterEnvelope.process();
+      const envValue = this?.envelope.process();
+      const filterEnvValue = this?.filterEnvelope.process();
       this?.lfo.sine() * 0.003 * envValue;
 
-      const _modAmount = 2.0 + filterEnvValue * 2.5;
-      const _mod4 = this?.operators[3].process(0) * modAmount;
-      const _mod3 = this?.operators[2].process(mod4) * modAmount * 0.8;
-      const _mod2 = this?.operators[1].process(mod3) * modAmount * 0.6;
+      const modAmount = 2.0 + filterEnvValue * 2.5;
+      const mod4 = this?.operators[3].process(0) * modAmount;
+      const mod3 = this?.operators[2].process(mod4) * modAmount * 0.8;
+      const mod2 = this?.operators[1].process(mod3) * modAmount * 0.6;
       let sample = this?.operators[0].process(mod2);
 
-      const _filterFreq = 800 + filterEnvValue * 4000 + this?.velocity * 2000;
+      const filterFreq = 800 + filterEnvValue * 4000 + this?.velocity * 2000;
       this?.lpFilter.setLowpass(
         clamp(filterFreq, 200, 10000),
         1.2,
@@ -487,8 +478,8 @@ export class DX7BrassSynth implements SynthesizerEngine {
       sample = this?.lpFilter.process(sample);
       sample *= envValue;
 
-      output?.samples[0][i] = softClip(sample, 0.9);
-      output?.samples[1][i] = softClip(sample, 0.9);
+      output.samples[0][i] = softClip(sample, 0.9);
+      output.samples[1][i] = softClip(sample, 0.9);
     }
 
     return output;
@@ -537,8 +528,8 @@ export class DX7PadSynth implements SynthesizerEngine {
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
-    const _ratios = [1, 1.002, 2, 2.005, 0.5, 0.498];
-    const _levels = [0.5, 0.5, 0.3, 0.3, 0.4, 0.4];
+    const ratios = [1, 1.002, 2, 2.005, 0.5, 0.498];
+    const levels = [0.5, 0.5, 0.3, 0.3, 0.4, 0.4];
 
     for (let i = 0; i < 6; i++) {
       this?.operators[i].setFrequency(frequency, context?.sampleRate);
@@ -568,29 +559,29 @@ export class DX7PadSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _filterEnvValue = this?.filterEnvelope.process();
+      const envValue = this?.envelope.process();
+      const filterEnvValue = this?.filterEnvelope.process();
 
-      const _modLFO = this?.lfo1.sine();
-      const _panLFO = this?.lfo2.sine();
+      const modLFO = this?.lfo1.sine();
+      const panLFO = this?.lfo2.sine();
       this?.lfo3.sine() * 0.002;
 
-      const _modAmount = 0.8 + modLFO * 0.4;
+      const modAmount = 0.8 + modLFO * 0.4;
 
-      const _mod6 = this?.operators[5].process(0) * modAmount;
-      const _mod5 = this?.operators[4].process(0) * modAmount;
-      const _mod4 = this?.operators[3].process(mod6) * modAmount;
-      const _mod3 = this?.operators[2].process(mod5) * modAmount;
+      const mod6 = this?.operators[5].process(0) * modAmount;
+      const mod5 = this?.operators[4].process(0) * modAmount;
+      const mod4 = this?.operators[3].process(mod6) * modAmount;
+      const mod3 = this?.operators[2].process(mod5) * modAmount;
 
-      const _carrier1 = this?.operators[0].process(mod3 + mod4);
-      const _carrier2 = this?.operators[1].process(mod3 + mod4);
+      const carrier1 = this?.operators[0].process(mod3 + mod4);
+      const carrier2 = this?.operators[1].process(mod3 + mod4);
 
       let sample = (carrier1 + carrier2) * 0.5;
 
-      const _filterFreq = 1000 + filterEnvValue * 2500 + modLFO * 400;
+      const filterFreq = 1000 + filterEnvValue * 2500 + modLFO * 400;
       this?.lpFilter.setLowpass(
         clamp(filterFreq, 200, 8000),
         0.9,
@@ -601,11 +592,11 @@ export class DX7PadSynth implements SynthesizerEngine {
       sample = this?.lpFilter.process(sample);
       sample *= envValue;
 
-      const _panL = 0.5 - panLFO * 0.15;
-      const _panR = 0.5 + panLFO * 0.15;
+      const panL = 0.5 - panLFO * 0.15;
+      const panR = 0.5 + panLFO * 0.15;
 
-      output?.samples[0][i] = softClip(sample * panL * 2, 0.9);
-      output?.samples[1][i] = softClip(sample * panR * 2, 0.9);
+      output.samples[0][i] = softClip(sample * panL * 2, 0.9);
+      output.samples[1][i] = softClip(sample * panR * 2, 0.9);
     }
 
     return output;
@@ -652,8 +643,8 @@ export class DX7LeadSynth implements SynthesizerEngine {
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
-    const _ratios = [1, 1, 3, 4];
-    const _levels = [0.8, 0.6, 0.4, 0.25];
+    const ratios = [1, 1, 3, 4];
+    const levels = [0.8, 0.6, 0.4, 0.25];
 
     for (let i = 0; i < 4; i++) {
       this?.operators[i].setFrequency(frequency, context?.sampleRate);
@@ -685,20 +676,20 @@ export class DX7LeadSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _filterEnvValue = this?.filterEnvelope.process();
+      const envValue = this?.envelope.process();
+      const filterEnvValue = this?.filterEnvelope.process();
       this?.vibratoLFO.sine() * 0.004 * envValue;
 
-      const _modAmount = 2.5 + filterEnvValue * 1.5;
-      const _mod4 = this?.operators[3].process(0) * modAmount;
-      const _mod3 = this?.operators[2].process(mod4) * modAmount * 0.8;
-      const _mod2 = this?.operators[1].process(mod3) * modAmount * 0.6;
+      const modAmount = 2.5 + filterEnvValue * 1.5;
+      const mod4 = this?.operators[3].process(0) * modAmount;
+      const mod3 = this?.operators[2].process(mod4) * modAmount * 0.8;
+      const mod2 = this?.operators[1].process(mod3) * modAmount * 0.6;
       let sample = this?.operators[0].process(mod2);
 
-      const _filterFreq = 2000 + filterEnvValue * 5000 + this?.velocity * 2000;
+      const filterFreq = 2000 + filterEnvValue * 5000 + this?.velocity * 2000;
       this?.lpFilter.setLowpass(
         clamp(filterFreq, 500, 12000),
         1.3,
@@ -709,8 +700,8 @@ export class DX7LeadSynth implements SynthesizerEngine {
       sample = this?.lpFilter.process(sample);
       sample *= envValue;
 
-      output?.samples[0][i] = softClip(sample * 1.1, 0.9);
-      output?.samples[1][i] = softClip(sample * 1.1, 0.9);
+      output.samples[0][i] = softClip(sample * 1.1, 0.9);
+      output.samples[1][i] = softClip(sample * 1.1, 0.9);
     }
 
     return output;
@@ -755,8 +746,8 @@ export class DX7KeysSynth implements SynthesizerEngine {
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
-    const _ratios = [0.5, 1, 2, 3, 4, 6];
-    const _levels = [0.6, 0.8, 0.5, 0.4, 0.3, 0.2];
+    const ratios = [0.5, 1, 2, 3, 4, 6];
+    const levels = [0.6, 0.8, 0.5, 0.4, 0.3, 0.2];
 
     for (let i = 0; i < 6; i++) {
       this?.operators[i].setFrequency(frequency, context?.sampleRate);
@@ -765,7 +756,7 @@ export class DX7KeysSynth implements SynthesizerEngine {
       this?.operators[i].setEnvelope(0.003, 0.08, 0.85, 0.12);
       this?.operators[i].trigger();
 
-      this?.drawbarEnvelopes[i] = new ADSR(
+      this.drawbarEnvelopes[i] = new ADSR(
         0.003,
         0.06 + i * 0.02,
         0.8 - i * 0.05,
@@ -793,15 +784,15 @@ export class DX7KeysSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _rotary = this?.rotaryLFO.sine();
+      const envValue = this?.envelope.process();
+      const rotary = this?.rotaryLFO.sine();
 
       let sample = 0;
       for (let o = 0; o < 6; o++) {
-        const _drawbarEnv = this?.drawbarEnvelopes[o].process();
+        const drawbarEnv = this?.drawbarEnvelopes[o].process();
         sample += this?.operators[o].process(0) * drawbarEnv;
       }
 
@@ -809,12 +800,12 @@ export class DX7KeysSynth implements SynthesizerEngine {
       sample = this?.lpFilter.process(sample);
       sample *= envValue;
 
-      const _rotaryAmount = 0.2;
-      const _sampleL = sample * (1 + rotary * rotaryAmount);
-      const _sampleR = sample * (1 - rotary * rotaryAmount);
+      const rotaryAmount = 0.2;
+      const sampleL = sample * (1 + rotary * rotaryAmount);
+      const sampleR = sample * (1 - rotary * rotaryAmount);
 
-      output?.samples[0][i] = softClip(sampleL, 0.88);
-      output?.samples[1][i] = softClip(sampleR, 0.88);
+      output.samples[0][i] = softClip(sampleL, 0.88);
+      output.samples[1][i] = softClip(sampleR, 0.88);
     }
 
     return output;
@@ -857,8 +848,8 @@ export class DX7PercSynth implements SynthesizerEngine {
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
-    const _ratios = [1, 1.5, 2.3, 3.7];
-    const _levels = [0.8, 0.5, 0.3, 0.15];
+    const ratios = [1, 1.5, 2.3, 3.7];
+    const levels = [0.8, 0.5, 0.3, 0.15];
 
     for (let i = 0; i < 4; i++) {
       this?.operators[i].setFrequency(frequency, context?.sampleRate);
@@ -886,27 +877,27 @@ export class DX7PercSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
+      const envValue = this?.envelope.process();
 
-      const _modAmount = 4.0 * envValue + 1.0;
-      const _mod4 = this?.operators[3].process(0) * modAmount;
-      const _mod3 = this?.operators[2].process(mod4) * modAmount;
-      const _mod2 = this?.operators[1].process(mod3) * modAmount;
+      const modAmount = 4.0 * envValue + 1.0;
+      const mod4 = this?.operators[3].process(0) * modAmount;
+      const mod3 = this?.operators[2].process(mod4) * modAmount;
+      const mod2 = this?.operators[1].process(mod3) * modAmount;
       let sample = this?.operators[0].process(mod2);
 
-      const _noise = (Math?.random() * 2 - 1) * 0.1 * envValue;
-      const _filteredNoise = this?.noiseFilter.process(noise);
+      const noise = (Math?.random() * 2 - 1) * 0.1 * envValue;
+      const filteredNoise = this?.noiseFilter.process(noise);
       sample += filteredNoise;
 
       sample = this?.hpFilter.process(sample);
       sample = this?.lpFilter.process(sample);
       sample *= envValue;
 
-      output?.samples[0][i] = softClip(sample * 1.2, 0.9);
-      output?.samples[1][i] = softClip(sample * 1.2, 0.9);
+      output.samples[0][i] = softClip(sample * 1.2, 0.9);
+      output.samples[1][i] = softClip(sample * 1.2, 0.9);
     }
 
     return output;
@@ -943,13 +934,13 @@ export class FM8Synth implements SynthesizerEngine {
       this?.operators.push(new FMOperator());
       this?.modMatrix.push(new Array(8).fill(0));
     }
-    this?.modMatrix[7][6] = 1.5;
-    this?.modMatrix[6][5] = 1.2;
-    this?.modMatrix[5][4] = 1.0;
-    this?.modMatrix[4][0] = 0.8;
-    this?.modMatrix[3][2] = 1.3;
-    this?.modMatrix[2][1] = 1.1;
-    this?.modMatrix[1][0] = 0.9;
+    this.modMatrix[7][6] = 1.5;
+    this.modMatrix[6][5] = 1.2;
+    this.modMatrix[5][4] = 1.0;
+    this.modMatrix[4][0] = 0.8;
+    this.modMatrix[3][2] = 1.3;
+    this.modMatrix[2][1] = 1.1;
+    this.modMatrix[1][0] = 0.9;
 
     this.envelope = new ADSR(0.02, 0.3, 0.7, 0.3, 44100);
     this.filterEnvelope = new ADSR(0.03, 0.4, 0.5, 0.25, 44100);
@@ -965,8 +956,8 @@ export class FM8Synth implements SynthesizerEngine {
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
-    const _ratios = [1, 1.002, 2, 2.005, 3, 4, 5, 7];
-    const _levels = [0.7, 0.7, 0.5, 0.5, 0.4, 0.3, 0.2, 0.15];
+    const ratios = [1, 1.002, 2, 2.005, 3, 4, 5, 7];
+    const levels = [0.7, 0.7, 0.5, 0.5, 0.4, 0.3, 0.2, 0.15];
 
     for (let i = 0; i < 8; i++) {
       this?.operators[i].setFrequency(frequency, context?.sampleRate);
@@ -1004,13 +995,13 @@ export class FM8Synth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
-    const _opOutputs = new Float32Array(8);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
+    const opOutputs = new Float32Array(8);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _filterEnvValue = this?.filterEnvelope.process();
-      const _modLFO = this?.lfo1.sine();
+      const envValue = this?.envelope.process();
+      const filterEnvValue = this?.filterEnvelope.process();
+      const modLFO = this?.lfo1.sine();
       this?.lfo2.sine() * 0.002;
 
       for (let o = 7; o >= 0; o--) {
@@ -1024,7 +1015,7 @@ export class FM8Synth implements SynthesizerEngine {
 
       let sample = (opOutputs[0] + opOutputs[1]) * 0.5;
 
-      const _filterFreq = 1500 + filterEnvValue * 4000 + this?.velocity * 2000;
+      const filterFreq = 1500 + filterEnvValue * 4000 + this?.velocity * 2000;
       this?.lpFilter.setLowpass(
         clamp(filterFreq, 300, 12000),
         1.2,
@@ -1037,13 +1028,13 @@ export class FM8Synth implements SynthesizerEngine {
       );
 
       sample = this?.hpFilter.process(sample);
-      const _lpOut = this?.lpFilter.process(sample);
-      const _bpOut = this?.bpFilter.process(sample);
+      const lpOut = this?.lpFilter.process(sample);
+      const bpOut = this?.bpFilter.process(sample);
       sample = lpOut * 0.7 + bpOut * 0.3;
       sample *= envValue;
 
-      output?.samples[0][i] = softClip(sample, 0.9);
-      output?.samples[1][i] = softClip(sample, 0.9);
+      output.samples[0][i] = softClip(sample, 0.9);
+      output.samples[1][i] = softClip(sample, 0.9);
     }
 
     return output;
@@ -1097,7 +1088,7 @@ export class ModularFMSynth implements SynthesizerEngine {
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
-    const _levels = [0.7, 0.6, 0.5, 0.4, 0.35, 0.25];
+    const levels = [0.7, 0.6, 0.5, 0.4, 0.35, 0.25];
 
     for (let i = 0; i < 6; i++) {
       this?.operators[i].setFrequency(frequency, context?.sampleRate);
@@ -1135,35 +1126,35 @@ export class ModularFMSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _filterEnvValue = this?.filterEnvelope.process();
+      const envValue = this?.envelope.process();
+      const filterEnvValue = this?.filterEnvelope.process();
 
-      const _ratioMod = this?.lfo1.sine() * 0.05;
-      const _modIndexMod = this?.lfo2.sine() * 0.3;
-      const _panMod = this?.lfo3.sine();
+      const ratioMod = this?.lfo1.sine() * 0.05;
+      const modIndexMod = this?.lfo2.sine() * 0.3;
+      const panMod = this?.lfo3.sine();
 
       for (let o = 0; o < 6; o++) {
-        const _newRatio =
+        const newRatio =
           this?.customRatios[o] * (1 + ratioMod * (o % 2 === 0 ? 1 : -1));
         this?.operators[o].setRatio(newRatio);
       }
 
-      const _modAmount = 1.5 + modIndexMod;
+      const modAmount = 1.5 + modIndexMod;
 
-      const _mod6 = this?.operators[5].process(0) * modAmount;
-      const _mod5 = this?.operators[4].process(mod6) * modAmount;
-      const _mod4 = this?.operators[3].process(0) * modAmount * 0.8;
-      const _mod3 = this?.operators[2].process(mod4 + mod5) * modAmount * 0.6;
+      const mod6 = this?.operators[5].process(0) * modAmount;
+      const mod5 = this?.operators[4].process(mod6) * modAmount;
+      const mod4 = this?.operators[3].process(0) * modAmount * 0.8;
+      const mod3 = this?.operators[2].process(mod4 + mod5) * modAmount * 0.6;
 
-      const _carrier1 = this?.operators[0].process(mod3);
-      const _carrier2 = this?.operators[1].process(mod3);
+      const carrier1 = this?.operators[0].process(mod3);
+      const carrier2 = this?.operators[1].process(mod3);
 
       let sample = (carrier1 + carrier2) * 0.5;
 
-      const _filterFreq = 1200 + filterEnvValue * 3500 + this?.velocity * 1500;
+      const filterFreq = 1200 + filterEnvValue * 3500 + this?.velocity * 1500;
       this?.lpFilter.setLowpass(
         clamp(filterFreq, 200, 10000),
         1.1,
@@ -1174,11 +1165,11 @@ export class ModularFMSynth implements SynthesizerEngine {
       sample = this?.lpFilter.process(sample);
       sample *= envValue;
 
-      const _panL = 0.5 - panMod * 0.2;
-      const _panR = 0.5 + panMod * 0.2;
+      const panL = 0.5 - panMod * 0.2;
+      const panR = 0.5 + panMod * 0.2;
 
-      output?.samples[0][i] = softClip(sample * panL * 2, 0.9);
-      output?.samples[1][i] = softClip(sample * panR * 2, 0.9);
+      output.samples[0][i] = softClip(sample * panL * 2, 0.9);
+      output.samples[1][i] = softClip(sample * panR * 2, 0.9);
     }
 
     return output;

@@ -641,8 +641,9 @@ export class StorefrontService {
       if (templates.length === 0) {
         // Lazy-seed built-in templates so they are always available without a
         // separate migration step.
-        const { seedStorefrontTemplates } =
-          await import("../seed/seedStorefrontTemplates.js");
+        const { seedStorefrontTemplates } = await import(
+          "../seed/seedStorefrontTemplates.js"
+        );
         await seedStorefrontTemplates();
         return db
           .select()

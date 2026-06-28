@@ -24,10 +24,10 @@ import {
   type EngagementScores,
 } from "../services/creativeModelService.js";
 
-const _router = Router();
+const router = Router();
 
 function requireAuth(req: Request, res: Response): number | null {
-  const _userId =
+  const userId =
     (req?.session as Record<string, unknown>)?.userId ??
     (req?.user as Record<string, unknown>)?.id;
   if (!userId) {
@@ -57,7 +57,7 @@ function parseBrief(body: Record<string, unknown>): CreativeBrief | string {
     tone: tone ?? "high_energy",
     offer,
     callToAction: callToAction ?? body?.call_to_action ?? "Learn more",
-    keyMessages: Array?.isArray(keyMessages)
+    keyMessages: Array.isArray(keyMessages)
       ? keyMessages
       : Array?.isArray(body?.key_messages)
         ? body?.key_messages
@@ -69,10 +69,10 @@ function parseBrief(body: Record<string, unknown>): CreativeBrief | string {
 // ─── POST /generate ───────────────────────────────────────────────────────────
 
 router?.post("/generate", async (req: Request, res: Response) => {
-  const _userId = requireAuth(req, res);
+  const userId = requireAuth(req, res);
   if (!userId) return;
 
-  const _brief = parseBrief(req?.body);
+  const brief = parseBrief(req?.body);
   if (typeof brief === "string") {
     return res?.status(400).json({ error: brief });
   }
@@ -81,7 +81,7 @@ router?.post("/generate", async (req: Request, res: Response) => {
   const assetId: string | undefined = req?.body.assetId ?? req?.body.asset_id;
 
   try {
-    const _pkg = await generateCreativePackage({
+    const pkg = await generateCreativePackage({
       brief,
       audioPath,
       userId,
@@ -92,17 +92,17 @@ router?.post("/generate", async (req: Request, res: Response) => {
     logger?.warn("[CreativeModel] /generate error", { err });
     res
       .status(500)
-      .json({ error: "Creative generation failed", detail: err?.message });
+      .json({ error: "Creative generation failed", detail: err.message });
   }
 });
 
 // ─── POST /plan ───────────────────────────────────────────────────────────────
 
 router?.post("/plan", async (req: Request, res: Response) => {
-  const _userId = requireAuth(req, res);
+  const userId = requireAuth(req, res);
   if (!userId) return;
 
-  const _brief = parseBrief(req?.body);
+  const brief = parseBrief(req?.body);
   if (typeof brief === "string") {
     return res?.status(400).json({ error: brief });
   }
@@ -110,27 +110,27 @@ router?.post("/plan", async (req: Request, res: Response) => {
   const audioPath: string = req?.body.audioPath ?? req?.body.audio_path ?? "";
 
   try {
-    const _result = await planCreative(brief, audioPath);
+    const result = await planCreative(brief, audioPath);
     res?.json({ success: true, data: result });
   } catch (err) {
     logger?.warn("[CreativeModel] /plan error", { err });
-    res?.status(500).json({ error: "Planning failed", detail: err?.message });
+    res?.status(500).json({ error: "Planning failed", detail: err.message });
   }
 });
 
 // ─── POST /score ──────────────────────────────────────────────────────────────
 
 router?.post("/score", async (req: Request, res: Response) => {
-  const _userId = requireAuth(req, res);
+  const userId = requireAuth(req, res);
   if (!userId) return;
 
-  const _brief = parseBrief(req?.body);
+  const brief = parseBrief(req?.body);
   if (typeof brief === "string") {
     return res?.status(400).json({ error: brief });
   }
 
   const plan: CreativePlan | undefined = req?.body.plan;
-  const _MAX_SCRIPT_CHARS = 10_000;
+  const MAX_SCRIPT_CHARS = 10_000;
   const script: string = (req?.body.script ?? "")
     .toString()
     .slice(0, MAX_SCRIPT_CHARS);
@@ -140,18 +140,18 @@ router?.post("/score", async (req: Request, res: Response) => {
   }
 
   try {
-    const _scores = await scoreCreative(brief, plan, script);
+    const scores = await scoreCreative(brief, plan, script);
     res?.json({ success: true, data: scores });
   } catch (err) {
     logger?.warn("[CreativeModel] /score error", { err });
-    res?.status(500).json({ error: "Scoring failed", detail: err?.message });
+    res?.status(500).json({ error: "Scoring failed", detail: err.message });
   }
 });
 
 // ─── POST /feedback ───────────────────────────────────────────────────────────
 
 router?.post("/feedback", async (req: Request, res: Response) => {
-  const _userId = requireAuth(req, res);
+  const userId = requireAuth(req, res);
   if (!userId) return;
 
   const { assetId, brief: rawBrief, scores: rawScores, metrics } = req?.body;
@@ -160,7 +160,7 @@ router?.post("/feedback", async (req: Request, res: Response) => {
     return res?.status(400).json({ error: "assetId is required" });
   }
 
-  const _brief = parseBrief(rawBrief ?? {});
+  const brief = parseBrief(rawBrief ?? {});
   if (typeof brief === "string") {
     return res?.status(400).json({ error: `brief.${brief}` });
   }
@@ -178,7 +178,7 @@ router?.post("/feedback", async (req: Request, res: Response) => {
     logger?.warn("[CreativeModel] /feedback error", { err });
     res
       .status(500)
-      .json({ error: "Feedback submission failed", detail: err?.message });
+      .json({ error: "Feedback submission failed", detail: err.message });
   }
 });
 

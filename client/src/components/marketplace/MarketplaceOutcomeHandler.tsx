@@ -4,30 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import {
-  CheckCircle,
-  XCircle,
-  AlertCircle,
-  Upload,
-  Download,
-  Music,
-  Shield,
-  Star,
-  Heart,
-  ThumbsUp,
-  Users,
-  TrendingUp,
-  Clock,
-  RefreshCw,
-  ExternalLink,
-  Copy,
-  FileAudio,
-  Sparkles,
-  Store,
-  BarChart3,
-  Wallet,
-  FileText,
-} from "lucide-react";
+import { CheckCircle, XCircle, AlertCircle, Upload, Download, Music, Shield, Star, Heart, ThumbsUp, Users, TrendingUp, Clock, RefreshCw, ExternalLink, Copy, FileAudio, Sparkles, Store, BarChart3, Wallet, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type OutcomeType =
@@ -684,7 +661,7 @@ export function useMarketplaceOutcome() {
 
     toast({
       title: config.title,
-      description: data?.beatTitle || "Operation completed",
+      description: data.beatTitle || "Operation completed",
       variant: config.variant === "error" ? "destructive" : "default",
     });
   };

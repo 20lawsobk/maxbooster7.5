@@ -1,12 +1,4 @@
-import {
-  AudioBuffer,
-  DSPContext,
-  DSPProcessor,
-  copyBuffer,
-  BiquadFilter,
-  EnvelopeFollower,
-  dbToLinear,
-} from "./core";
+import { AudioBuffer, DSPContext, DSPProcessor, copyBuffer, BiquadFilter, EnvelopeFollower, dbToLinear } from "./core";
 
 export class ParametricEQProcessor implements DSPProcessor {
   private bandsL: BiquadFilter[] = [];
@@ -25,26 +17,26 @@ export class ParametricEQProcessor implements DSPProcessor {
     params: Record<string, number | boolean | string>,
     _context: DSPContext,
   ): AudioBuffer {
-    const _output = copyBuffer(input);
+    const output = copyBuffer(input);
     this.sampleRate = input?.sampleRate;
 
-    const _hpFreq = (params?.hpFreq as number) ?? 20;
-    const _hpEnabled = (params?.hpEnabled as boolean) ?? false;
-    const _lpFreq = (params?.lpFreq as number) ?? 20000;
-    const _lpEnabled = (params?.lpEnabled as boolean) ?? false;
-    const _band1Freq = (params?.band1Freq as number) ?? 100;
-    const _band1Gain = (params?.band1Gain as number) ?? 0;
-    const _band1Q = (params?.band1Q as number) ?? 1;
-    const _band2Freq = (params?.band2Freq as number) ?? 500;
-    const _band2Gain = (params?.band2Gain as number) ?? 0;
-    const _band2Q = (params?.band2Q as number) ?? 1;
-    const _band3Freq = (params?.band3Freq as number) ?? 2000;
-    const _band3Gain = (params?.band3Gain as number) ?? 0;
-    const _band3Q = (params?.band3Q as number) ?? 1;
-    const _band4Freq = (params?.band4Freq as number) ?? 8000;
-    const _band4Gain = (params?.band4Gain as number) ?? 0;
-    const _band4Q = (params?.band4Q as number) ?? 1;
-    const _outputGain = (params?.output as number) ?? 0;
+    const hpFreq = (params?.hpFreq as number) ?? 20;
+    const hpEnabled = (params?.hpEnabled as boolean) ?? false;
+    const lpFreq = (params?.lpFreq as number) ?? 20000;
+    const lpEnabled = (params?.lpEnabled as boolean) ?? false;
+    const band1Freq = (params?.band1Freq as number) ?? 100;
+    const band1Gain = (params?.band1Gain as number) ?? 0;
+    const band1Q = (params?.band1Q as number) ?? 1;
+    const band2Freq = (params?.band2Freq as number) ?? 500;
+    const band2Gain = (params?.band2Gain as number) ?? 0;
+    const band2Q = (params?.band2Q as number) ?? 1;
+    const band3Freq = (params?.band3Freq as number) ?? 2000;
+    const band3Gain = (params?.band3Gain as number) ?? 0;
+    const band3Q = (params?.band3Q as number) ?? 1;
+    const band4Freq = (params?.band4Freq as number) ?? 8000;
+    const band4Gain = (params?.band4Gain as number) ?? 0;
+    const band4Q = (params?.band4Q as number) ?? 1;
+    const outputGain = (params?.output as number) ?? 0;
 
     if (hpEnabled) {
       this?.bandsL[0].setHighpass(hpFreq, 0.707, this?.sampleRate);
@@ -63,7 +55,7 @@ export class ParametricEQProcessor implements DSPProcessor {
     this?.bandsL[5].setPeaking(band4Freq, band4Q, band4Gain, this?.sampleRate);
     this?.bandsR[5].setPeaking(band4Freq, band4Q, band4Gain, this?.sampleRate);
 
-    const _outGainLin = dbToLinear(outputGain);
+    const outGainLin = dbToLinear(outputGain);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       let sampleL = input?.samples[0][i];
@@ -83,8 +75,8 @@ export class ParametricEQProcessor implements DSPProcessor {
         sampleR = this?.bandsR[b].process(sampleR);
       }
 
-      output?.samples[0][i] = sampleL * outGainLin;
-      output?.samples[1][i] = sampleR * outGainLin;
+      output.samples[0][i] = sampleL * outGainLin;
+      output.samples[1][i] = sampleR * outGainLin;
     }
 
     return output;
@@ -116,10 +108,10 @@ export class GraphicEQProcessor implements DSPProcessor {
     params: Record<string, number | boolean | string>,
     _context: DSPContext,
   ): AudioBuffer {
-    const _output = copyBuffer(input);
+    const output = copyBuffer(input);
     this.sampleRate = input?.sampleRate;
 
-    const _gains = [
+    const gains = [
       (params?.band31 as number) ?? 0,
       (params?.band63 as number) ?? 0,
       (params?.band125 as number) ?? 0,
@@ -131,7 +123,7 @@ export class GraphicEQProcessor implements DSPProcessor {
       (params?.band8k as number) ?? 0,
       (params?.band16k as number) ?? 0,
     ];
-    const _q = (params?.q as number) ?? 1.4;
+    const q = (params?.q as number) ?? 1.4;
 
     for (let b = 0; b < 10; b++) {
       this?.bandsL[b].setPeaking(
@@ -157,8 +149,8 @@ export class GraphicEQProcessor implements DSPProcessor {
         sampleR = this?.bandsR[b].process(sampleR);
       }
 
-      output?.samples[0][i] = sampleL;
-      output?.samples[1][i] = sampleR;
+      output.samples[0][i] = sampleL;
+      output.samples[1][i] = sampleR;
     }
 
     return output;
@@ -197,17 +189,17 @@ export class VintageEQProcessor implements DSPProcessor {
     params: Record<string, number | boolean | string>,
     _context: DSPContext,
   ): AudioBuffer {
-    const _output = copyBuffer(input);
+    const output = copyBuffer(input);
     this.sampleRate = input?.sampleRate;
 
-    const _low = (params?.low as number) ?? 0;
-    const _lowFreq = (params?.lowFreq as number) ?? 100;
-    const _mid = (params?.mid as number) ?? 0;
-    const _midFreq = (params?.midFreq as number) ?? 1000;
-    const _high = (params?.high as number) ?? 0;
-    const _highFreq = (params?.highFreq as number) ?? 8000;
-    const _drive = (params?.drive as number) ?? 0.2;
-    const _outputLevel = (params?.output as number) ?? 0;
+    const low = (params?.low as number) ?? 0;
+    const lowFreq = (params?.lowFreq as number) ?? 100;
+    const mid = (params?.mid as number) ?? 0;
+    const midFreq = (params?.midFreq as number) ?? 1000;
+    const high = (params?.high as number) ?? 0;
+    const highFreq = (params?.highFreq as number) ?? 8000;
+    const drive = (params?.drive as number) ?? 0.2;
+    const outputLevel = (params?.output as number) ?? 0;
 
     this?.lowShelfL.setLowShelf(lowFreq, low, this?.sampleRate);
     this?.lowShelfR.setLowShelf(lowFreq, low, this?.sampleRate);
@@ -218,7 +210,7 @@ export class VintageEQProcessor implements DSPProcessor {
     this?.presenceL.setPeaking(3500, 1.5, high * 0.3, this?.sampleRate);
     this?.presenceR.setPeaking(3500, 1.5, high * 0.3, this?.sampleRate);
 
-    const _outGain = dbToLinear(outputLevel);
+    const outGain = dbToLinear(outputLevel);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       let sampleL = input?.samples[0][i];
@@ -238,8 +230,8 @@ export class VintageEQProcessor implements DSPProcessor {
       sampleL = this?.presenceL.process(sampleL);
       sampleR = this?.presenceR.process(sampleR);
 
-      output?.samples[0][i] = sampleL * outGain;
-      output?.samples[1][i] = sampleR * outGain;
+      output.samples[0][i] = sampleL * outGain;
+      output.samples[1][i] = sampleR * outGain;
     }
 
     return output;
@@ -280,19 +272,19 @@ export class LinearPhaseEQProcessor implements DSPProcessor {
     params: Record<string, number | boolean | string>,
     _context: DSPContext,
   ): AudioBuffer {
-    const _output = copyBuffer(input);
+    const output = copyBuffer(input);
     this.sampleRate = input?.sampleRate;
 
-    const _lowGain = dbToLinear((params?.lowGain as number) ?? 0);
-    const _lowFreq = (params?.lowFreq as number) ?? 100;
-    const _midGain = dbToLinear((params?.midGain as number) ?? 0);
-    const _midFreq = (params?.midFreq as number) ?? 1000;
-    const _highGain = dbToLinear((params?.highGain as number) ?? 0);
-    const _highFreq = (params?.highFreq as number) ?? 8000;
+    const lowGain = dbToLinear((params?.lowGain as number) ?? 0);
+    const lowFreq = (params?.lowFreq as number) ?? 100;
+    const midGain = dbToLinear((params?.midGain as number) ?? 0);
+    const midFreq = (params?.midFreq as number) ?? 1000;
+    const highGain = dbToLinear((params?.highGain as number) ?? 0);
+    const highFreq = (params?.highFreq as number) ?? 8000;
 
     for (let i = 0; i < input?.samples[0].length; i++) {
-      this?.buffer[0][this?.position] = input?.samples[0][i];
-      this?.buffer[1][this?.position] = input?.samples[1][i];
+      this.buffer[0][this.position] = input?.samples[0][i];
+      this.buffer[1][this.position] = input?.samples[1][i];
 
 
       let freqNorm = ((this?.position / this?.fftSize) * this?.sampleRate) / 2;
@@ -301,17 +293,17 @@ export class LinearPhaseEQProcessor implements DSPProcessor {
       if (freqNorm < lowFreq) {
         gain *= lowGain;
       } else if (freqNorm < midFreq) {
-        const _t = (freqNorm - lowFreq) / (midFreq - lowFreq);
+        const t = (freqNorm - lowFreq) / (midFreq - lowFreq);
         gain *= lowGain * (1 - t) + midGain * t;
       } else if (freqNorm < highFreq) {
-        const _t = (freqNorm - midFreq) / (highFreq - midFreq);
+        const t = (freqNorm - midFreq) / (highFreq - midFreq);
         gain *= midGain * (1 - t) + highGain * t;
       } else {
         gain *= highGain;
       }
 
-      output?.samples[0][i] = input?.samples[0][i] * gain;
-      output?.samples[1][i] = input?.samples[1][i] * gain;
+      output.samples[0][i] = input?.samples[0][i] * gain;
+      output.samples[1][i] = input?.samples[1][i] * gain;
 
       this.position = (this?.position + 1) % this?.fftSize;
     }
@@ -345,37 +337,37 @@ export class DynamicEQProcessor implements DSPProcessor {
     params: Record<string, number | boolean | string>,
     _context: DSPContext,
   ): AudioBuffer {
-    const _output = copyBuffer(input);
+    const output = copyBuffer(input);
     this.sampleRate = input?.sampleRate;
 
-    const _frequencies = [
+    const frequencies = [
       (params?.freq1 as number) ?? 200,
       (params?.freq2 as number) ?? 1000,
       (params?.freq3 as number) ?? 4000,
       (params?.freq4 as number) ?? 10000,
     ];
-    const _thresholds = [
+    const thresholds = [
       dbToLinear((params?.thresh1 as number) ?? -20),
       dbToLinear((params?.thresh2 as number) ?? -20),
       dbToLinear((params?.thresh3 as number) ?? -20),
       dbToLinear((params?.thresh4 as number) ?? -20),
     ];
-    const _gains = [
+    const gains = [
       (params?.gain1 as number) ?? -6,
       (params?.gain2 as number) ?? -6,
       (params?.gain3 as number) ?? -6,
       (params?.gain4 as number) ?? -6,
     ];
-    const _q = (params?.q as number) ?? 2;
+    const q = (params?.q as number) ?? 2;
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       let sampleL = input?.samples[0][i];
       let sampleR = input?.samples[1][i];
-      const _mono = (sampleL + sampleR) * 0.5;
+      const mono = (sampleL + sampleR) * 0.5;
 
       for (let b = 0; b < 4; b++) {
-        const _level = this?.envelopes[b].process(mono);
-        const _dynamicGain =
+        const level = this?.envelopes[b].process(mono);
+        const dynamicGain =
           level > thresholds[b]
             ? gains[b] * Math?.min(1, (level - thresholds[b]) / thresholds[b])
             : 0;
@@ -396,8 +388,8 @@ export class DynamicEQProcessor implements DSPProcessor {
         sampleR = this?.bandsR[b].process(sampleR);
       }
 
-      output?.samples[0][i] = sampleL;
-      output?.samples[1][i] = sampleR;
+      output.samples[0][i] = sampleL;
+      output.samples[1][i] = sampleR;
     }
 
     return output;
@@ -427,10 +419,10 @@ export class SurgicalEQProcessor implements DSPProcessor {
     params: Record<string, number | boolean | string>,
     _context: DSPContext,
   ): AudioBuffer {
-    const _output = copyBuffer(input);
+    const output = copyBuffer(input);
     this.sampleRate = input?.sampleRate;
 
-    const _configs = [];
+    const configs = [];
     for (let i = 1; i <= 8; i++) {
       configs?.push({
         freq: (params[`freq${i}`] as number) ?? 1000,
@@ -468,8 +460,8 @@ export class SurgicalEQProcessor implements DSPProcessor {
         }
       }
 
-      output?.samples[0][i] = sampleL;
-      output?.samples[1][i] = sampleR;
+      output.samples[0][i] = sampleL;
+      output.samples[1][i] = sampleR;
     }
 
     return output;
@@ -508,18 +500,18 @@ export class AnalogEQProcessor implements DSPProcessor {
     params: Record<string, number | boolean | string>,
     _context: DSPContext,
   ): AudioBuffer {
-    const _output = copyBuffer(input);
+    const output = copyBuffer(input);
     this.sampleRate = input?.sampleRate;
 
-    const _lowGain = (params?.low as number) ?? 0;
-    const _lowFreq = (params?.lowFreq as number) ?? 80;
-    const _lowMidGain = (params?.lowMid as number) ?? 0;
-    const _lowMidFreq = (params?.lowMidFreq as number) ?? 400;
-    const _highMidGain = (params?.highMid as number) ?? 0;
-    const _highMidFreq = (params?.highMidFreq as number) ?? 2500;
-    const _highGain = (params?.high as number) ?? 0;
-    const _highFreq = (params?.highFreq as number) ?? 10000;
-    const _drive = (params?.drive as number) ?? 0.3;
+    const lowGain = (params?.low as number) ?? 0;
+    const lowFreq = (params?.lowFreq as number) ?? 80;
+    const lowMidGain = (params?.lowMid as number) ?? 0;
+    const lowMidFreq = (params?.lowMidFreq as number) ?? 400;
+    const highMidGain = (params?.highMid as number) ?? 0;
+    const highMidFreq = (params?.highMidFreq as number) ?? 2500;
+    const highGain = (params?.high as number) ?? 0;
+    const highFreq = (params?.highFreq as number) ?? 10000;
+    const drive = (params?.drive as number) ?? 0.3;
 
     this?.lowShelfL.setLowShelf(lowFreq, lowGain, this?.sampleRate);
     this?.lowShelfR.setLowShelf(lowFreq, lowGain, this?.sampleRate);
@@ -551,8 +543,8 @@ export class AnalogEQProcessor implements DSPProcessor {
         sampleR += sampleR * sampleR * drive * 0.02;
       }
 
-      output?.samples[0][i] = sampleL;
-      output?.samples[1][i] = sampleR;
+      output.samples[0][i] = sampleL;
+      output.samples[1][i] = sampleR;
     }
 
     return output;
@@ -613,18 +605,18 @@ export class MasteringEQProcessor implements DSPProcessor {
     params: Record<string, number | boolean | string>,
     _context: DSPContext,
   ): AudioBuffer {
-    const _output = copyBuffer(input);
+    const output = copyBuffer(input);
     this.sampleRate = input?.sampleRate;
 
-    const _hpFreq = (params?.hpFreq as number) ?? 20;
-    const _lpFreq = (params?.lpFreq as number) ?? 20000;
-    const _lowGain = (params?.low as number) ?? 0;
-    const _lowMidGain = (params?.lowMid as number) ?? 0;
-    const _midGain = (params?.mid as number) ?? 0;
-    const _highMidGain = (params?.highMid as number) ?? 0;
-    const _highGain = (params?.high as number) ?? 0;
-    const _airGain = (params?.air as number) ?? 0;
-    const _outputLevel = (params?.output as number) ?? 0;
+    const hpFreq = (params?.hpFreq as number) ?? 20;
+    const lpFreq = (params?.lpFreq as number) ?? 20000;
+    const lowGain = (params?.low as number) ?? 0;
+    const lowMidGain = (params?.lowMid as number) ?? 0;
+    const midGain = (params?.mid as number) ?? 0;
+    const highMidGain = (params?.highMid as number) ?? 0;
+    const highGain = (params?.high as number) ?? 0;
+    const airGain = (params?.air as number) ?? 0;
+    const outputLevel = (params?.output as number) ?? 0;
 
     this?.hpFilterL.setHighpass(hpFreq, 0.707, this?.sampleRate);
     this?.hpFilterR.setHighpass(hpFreq, 0.707, this?.sampleRate);
@@ -643,7 +635,7 @@ export class MasteringEQProcessor implements DSPProcessor {
     this?.airL.setHighShelf(16000, airGain, this?.sampleRate);
     this?.airR.setHighShelf(16000, airGain, this?.sampleRate);
 
-    const _outGain = dbToLinear(outputLevel);
+    const outGain = dbToLinear(outputLevel);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       let sampleL = input?.samples[0][i];
@@ -667,8 +659,8 @@ export class MasteringEQProcessor implements DSPProcessor {
       sampleL = this?.airL.process(sampleL);
       sampleR = this?.airR.process(sampleR);
 
-      output?.samples[0][i] = sampleL * outGain;
-      output?.samples[1][i] = sampleR * outGain;
+      output.samples[0][i] = sampleL * outGain;
+      output.samples[1][i] = sampleR * outGain;
     }
 
     return output;
@@ -717,16 +709,16 @@ export class MidSideEQProcessor implements DSPProcessor {
     params: Record<string, number | boolean | string>,
     _context: DSPContext,
   ): AudioBuffer {
-    const _output = copyBuffer(input);
+    const output = copyBuffer(input);
     this.sampleRate = input?.sampleRate;
 
-    const _midLowGain = (params?.midLow as number) ?? 0;
-    const _midMidGain = (params?.midMid as number) ?? 0;
-    const _midHighGain = (params?.midHigh as number) ?? 0;
-    const _sideLowGain = (params?.sideLow as number) ?? 0;
-    const _sideMidGain = (params?.sideMid as number) ?? 0;
-    const _sideHighGain = (params?.sideHigh as number) ?? 0;
-    const _width = (params?.width as number) ?? 1;
+    const midLowGain = (params?.midLow as number) ?? 0;
+    const midMidGain = (params?.midMid as number) ?? 0;
+    const midHighGain = (params?.midHigh as number) ?? 0;
+    const sideLowGain = (params?.sideLow as number) ?? 0;
+    const sideMidGain = (params?.sideMid as number) ?? 0;
+    const sideHighGain = (params?.sideHigh as number) ?? 0;
+    const width = (params?.width as number) ?? 1;
 
     this?.midLow.setLowShelf(150, midLowGain, this?.sampleRate);
     this?.midMid.setPeaking(1000, 1, midMidGain, this?.sampleRate);
@@ -736,8 +728,8 @@ export class MidSideEQProcessor implements DSPProcessor {
     this?.sideHigh.setHighShelf(6000, sideHighGain, this?.sampleRate);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
-      const _left = input?.samples[0][i];
-      const _right = input?.samples[1][i];
+      const left = input?.samples[0][i];
+      const right = input?.samples[1][i];
 
       let mid = (left + right) * 0.5;
       let side = (left - right) * 0.5;
@@ -752,8 +744,8 @@ export class MidSideEQProcessor implements DSPProcessor {
 
       side *= width;
 
-      output?.samples[0][i] = mid + side;
-      output?.samples[1][i] = mid - side;
+      output.samples[0][i] = mid + side;
+      output.samples[1][i] = mid - side;
     }
 
     return output;
@@ -788,22 +780,22 @@ export class TiltEQProcessor implements DSPProcessor {
     params: Record<string, number | boolean | string>,
     _context: DSPContext,
   ): AudioBuffer {
-    const _output = copyBuffer(input);
+    const output = copyBuffer(input);
     this.sampleRate = input?.sampleRate;
 
-    const _tilt = (params?.tilt as number) ?? 0;
-    const _centerFreq = (params?.centerFreq as number) ?? 1000;
-    const _outputLevel = (params?.output as number) ?? 0;
+    const tilt = (params?.tilt as number) ?? 0;
+    const centerFreq = (params?.centerFreq as number) ?? 1000;
+    const outputLevel = (params?.output as number) ?? 0;
 
-    const _lowGain = -tilt;
-    const _highGain = tilt;
+    const lowGain = -tilt;
+    const highGain = tilt;
 
     this?.lowShelfL.setLowShelf(centerFreq * 0.5, lowGain, this?.sampleRate);
     this?.lowShelfR.setLowShelf(centerFreq * 0.5, lowGain, this?.sampleRate);
     this?.highShelfL.setHighShelf(centerFreq * 2, highGain, this?.sampleRate);
     this?.highShelfR.setHighShelf(centerFreq * 2, highGain, this?.sampleRate);
 
-    const _outGain = dbToLinear(outputLevel);
+    const outGain = dbToLinear(outputLevel);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       let sampleL = input?.samples[0][i];
@@ -814,8 +806,8 @@ export class TiltEQProcessor implements DSPProcessor {
       sampleL = this?.highShelfL.process(sampleL);
       sampleR = this?.highShelfR.process(sampleR);
 
-      output?.samples[0][i] = sampleL * outGain;
-      output?.samples[1][i] = sampleR * outGain;
+      output.samples[0][i] = sampleL * outGain;
+      output.samples[1][i] = sampleR * outGain;
     }
 
     return output;

@@ -22,7 +22,7 @@ export type SettledResult<T> =
  * Returns results in input order (analogous to Promise?.allSettled).
  *
  * @example
- *   const _results = await pMap(domains, d => verify(d), 5);
+ *   const results = await pMap(domains, d => verify(d), 5);
  */
 export async function pMap<T, R>(
   items: readonly T[],
@@ -30,13 +30,13 @@ export async function pMap<T, R>(
   concurrency: number,
 ): Promise<Array<SettledResult<R>>> {
   if (items?.length === 0) return [];
-  const _cap = Math?.max(1, Math?.min(concurrency, items?.length));
+  const cap = Math?.max(1, Math?.min(concurrency, items?.length));
   const results: Array<SettledResult<R>> = new Array(items?.length);
   let next = 0;
 
   async function worker(): Promise<void> {
     while (next < items?.length) {
-      const _i = next++;
+      const i = next++;
       try {
         results[i] = { status: "fulfilled", value: await fn(items[i], i) };
       } catch (reason) {
@@ -77,8 +77,8 @@ export async function pBatch<T>(
   options: { batchSize: number; gapMs?: number },
 ): Promise<void> {
   const { batchSize, gapMs = 0 } = options;
-  for (let i = 0; i < items?.length; i += batchSize) {
-    const _chunk = items?.slice(i, i + batchSize);
+  for (let i = 0; i < items.length; i += batchSize) {
+    const chunk = items?.slice(i, i + batchSize);
     await Promise?.allSettled(chunk?.map(fn));
     if (gapMs > 0 && i + batchSize < items?.length) {
       await new Promise((r) => setTimeout(r, gapMs));
@@ -94,14 +94,14 @@ export async function pBatch<T>(
  * Useful for draining a queue multiple items per worker tick.
  *
  * @example
- *   const _posts = await drainN(() => queue?.pop(), 5);
+ *   const posts = await drainN(() => queue?.pop(), 5);
  *   await Promise?.allSettled(posts?.map(p => process(p)));
  */
 export async function drainN<T>(
   popFn: () => Promise<T | null>,
   n: number,
 ): Promise<T[]> {
-  const _attempts = await Promise?.allSettled(
+  const attempts = await Promise?.allSettled(
     Array?.from({ length: n }, () => popFn()),
   );
   return attempts

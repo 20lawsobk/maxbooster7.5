@@ -14,8 +14,8 @@ export class MetricsService {
     tags: Record<string, any> = {},
   ): Promise<void> {
     try {
-      const _now = new Date();
-      const _bucketStart = new Date(Math?.floor(now?.getTime() / 60000) * 60000);
+      const now = new Date();
+      const bucketStart = new Date(Math?.floor(now?.getTime() / 60000) * 60000);
 
       await db
         .insert(systemMetrics)
@@ -25,9 +25,9 @@ export class MetricsService {
           tags,
           bucketStart,
           resolutionSecs: 60,
-          avgValue: value?.toString(),
-          minValue: value?.toString(),
-          maxValue: value?.toString(),
+          avgValue: value.toString(),
+          minValue: value.toString(),
+          maxValue: value.toString(),
           sampleCount: 1,
         })
         .onConflictDoUpdate({
@@ -66,7 +66,7 @@ export class MetricsService {
     }>
   > {
     try {
-      const _conditions = [
+      const conditions = [
         eq(systemMetrics?.metricName, metricName),
         gte(systemMetrics?.bucketStart, startTime),
         lte(systemMetrics?.bucketStart, endTime),
@@ -76,19 +76,19 @@ export class MetricsService {
         conditions?.push(eq(systemMetrics?.source, source));
       }
 
-      const _results = await db
+      const results = await db
         .select({
-          bucketStart: systemMetrics?.bucketStart,
-          avgValue: systemMetrics?.avgValue,
-          minValue: systemMetrics?.minValue,
-          maxValue: systemMetrics?.maxValue,
+          bucketStart: systemMetrics.bucketStart,
+          avgValue: systemMetrics.avgValue,
+          minValue: systemMetrics.minValue,
+          maxValue: systemMetrics.maxValue,
         })
         .from(systemMetrics)
         .where(and(...conditions))
         .orderBy(systemMetrics?.bucketStart);
 
       return results?.map((r) => ({
-        bucketStart: r?.bucketStart!,
+        bucketStart: r.bucketStart!,
         avgValue: parseFloat(r?.avgValue || "0"),
         minValue: parseFloat(r?.minValue || "0"),
         maxValue: parseFloat(r?.maxValue || "0"),
@@ -116,19 +116,19 @@ export class MetricsService {
    */
   async evaluateAlerts(): Promise<void> {
     try {
-      const _activeRules = await db
+      const activeRules = await db
         .select()
         .from(alertRules)
         .where(eq(alertRules?.isActive, true))
         .limit(200);
 
       for (const rule of activeRules) {
-        const _endTime = new Date();
-        const _startTime = new Date(
+        const endTime = new Date();
+        const startTime = new Date(
           endTime?.getTime() - (rule?.durationSecs || 300) * 1000,
         );
 
-        const _metrics = await this?.getMetrics(
+        const metrics = await this?.getMetrics(
           rule?.metricName,
           startTime,
           endTime,
@@ -136,8 +136,8 @@ export class MetricsService {
 
         if (metrics?.length === 0) continue;
 
-        const _latestValue = metrics[metrics?.length - 1].avgValue;
-        const _threshold = parseFloat(rule?.threshold || "0");
+        const latestValue = metrics[metrics?.length - 1].avgValue;
+        const threshold = parseFloat(rule?.threshold || "0");
         let shouldTrigger = false;
 
         switch (rule?.condition) {
@@ -156,7 +156,7 @@ export class MetricsService {
         }
 
         if (shouldTrigger) {
-          const _existingIncidents = await db
+          const existingIncidents = await db
             .select()
             .from(alertIncidents)
             .where(
@@ -169,13 +169,13 @@ export class MetricsService {
 
           if (existingIncidents?.length === 0) {
             await db?.insert(alertIncidents).values({
-              ruleId: rule?.id,
+              ruleId: rule.id,
               status: "triggered",
               context: {
-                metricName: rule?.metricName,
+                metricName: rule.metricName,
                 value: latestValue,
                 threshold,
-                condition: rule?.condition,
+                condition: rule.condition,
               },
             });
 
@@ -208,7 +208,7 @@ export class MetricsService {
    */
   async getActiveIncidents(): Promise<any[]> {
     try {
-      const _incidents = await db
+      const incidents = await db
         .select({
           incident: alertIncidents,
           rule: alertRules,
@@ -226,4 +226,4 @@ export class MetricsService {
   }
 }
 
-export const _metricsService = new MetricsService();
+export const metricsService = new MetricsService();

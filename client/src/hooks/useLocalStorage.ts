@@ -24,7 +24,7 @@ export function useLocalStorage<T>(
 
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
-      const _item = window?.localStorage.getItem(key);
+      const item = window?.localStorage.getItem(key);
       return item ? deserializer(item) : initialValue;
     } catch (error) {
       logger?.error(`[useLocalStorage] Error reading key "${key}":`, error);
@@ -33,26 +33,26 @@ export function useLocalStorage<T>(
     }
   });
 
-  const _keyRef = useRef(key);
+  const keyRef = useRef(key);
   keyRef.current = key;
 
-  const _setValue = useCallback(
+  const setValue = useCallback(
     (value: SetValue<T>) => {
       try {
-        const _valueToStore =
+        const valueToStore =
           value instanceof Function ? value(storedValue) : value;
         setStoredValue(valueToStore);
         window?.localStorage.setItem(keyRef?.current, serializer(valueToStore));
 
         window?.dispatchEvent(
           new StorageEvent("storage", {
-            key: keyRef?.current,
+            key: keyRef.current,
             newValue: serializer(valueToStore),
           }),
         );
       } catch (error) {
         logger?.error(
-          `[useLocalStorage] Error setting key "${keyRef?.current}":`,
+          `[useLocalStorage] Error setting key "${keyRef.current}":`,
           error,
         );
         onError?.(error as Error);
@@ -61,13 +61,13 @@ export function useLocalStorage<T>(
     [storedValue, serializer, onError],
   );
 
-  const _removeValue = useCallback(() => {
+  const removeValue = useCallback(() => {
     try {
       window?.localStorage.removeItem(keyRef?.current);
       setStoredValue(initialValue);
     } catch (error) {
       logger?.error(
-        `[useLocalStorage] Error removing key "${keyRef?.current}":`,
+        `[useLocalStorage] Error removing key "${keyRef.current}":`,
         error,
       );
       onError?.(error as Error);
@@ -77,13 +77,13 @@ export function useLocalStorage<T>(
   useEffect(() => {
     if (!syncTabs) return;
 
-    const _handleStorageChange = (event: StorageEvent) => {
+    const handleStorageChange = (event: StorageEvent) => {
       if (event?.key === keyRef?.current && event?.newValue !== null) {
         try {
           setStoredValue(deserializer(event?.newValue));
         } catch (error) {
           logger?.error(
-            `[useLocalStorage] Error syncing key "${keyRef?.current}":`,
+            `[useLocalStorage] Error syncing key "${keyRef.current}":`,
             error,
           );
           onError?.(error as Error);
@@ -109,7 +109,7 @@ export function useLocalStorageObject<T extends Record<string, unknown>>(
     options,
   );
 
-  const _updateValue = useCallback(
+  const updateValue = useCallback(
     (updates: Partial<T>) => {
       setValue((prev) => ({ ...prev, ...updates }));
     },
@@ -132,7 +132,7 @@ export function useSessionStorage<T>(
 
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
-      const _item = window?.sessionStorage.getItem(key);
+      const item = window?.sessionStorage.getItem(key);
       return item ? deserializer(item) : initialValue;
     } catch (error) {
       logger?.error(`[useSessionStorage] Error reading key "${key}":`, error);
@@ -141,19 +141,19 @@ export function useSessionStorage<T>(
     }
   });
 
-  const _keyRef = useRef(key);
+  const keyRef = useRef(key);
   keyRef.current = key;
 
-  const _setValue = useCallback(
+  const setValue = useCallback(
     (value: SetValue<T>) => {
       try {
-        const _valueToStore =
+        const valueToStore =
           value instanceof Function ? value(storedValue) : value;
         setStoredValue(valueToStore);
         window?.sessionStorage.setItem(keyRef?.current, serializer(valueToStore));
       } catch (error) {
         logger?.error(
-          `[useSessionStorage] Error setting key "${keyRef?.current}":`,
+          `[useSessionStorage] Error setting key "${keyRef.current}":`,
           error,
         );
         onError?.(error as Error);
@@ -162,13 +162,13 @@ export function useSessionStorage<T>(
     [storedValue, serializer, onError],
   );
 
-  const _removeValue = useCallback(() => {
+  const removeValue = useCallback(() => {
     try {
       window?.sessionStorage.removeItem(keyRef?.current);
       setStoredValue(initialValue);
     } catch (error) {
       logger?.error(
-        `[useSessionStorage] Error removing key "${keyRef?.current}":`,
+        `[useSessionStorage] Error removing key "${keyRef.current}":`,
         error,
       );
       onError?.(error as Error);

@@ -1,28 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import {
-  Bell,
-  BellRing,
-  CheckCheck,
-  Settings,
-  Trash2,
-  Loader2,
-  Shield,
-  Music2,
-  MessageSquare,
-  ShoppingBag,
-  DollarSign,
-  Users,
-  Megaphone,
-  Trophy,
-  LayoutDashboard,
-  Heart,
-  Flame,
-  FileText,
-  BarChart2,
-  MapPin,
-} from "lucide-react";
+import { Bell, BellRing, CheckCheck, Settings, Trash2, Loader2, Shield, Music2, MessageSquare, ShoppingBag, DollarSign, Users, Megaphone, Trophy, LayoutDashboard, Heart, Flame, FileText, BarChart2, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -42,11 +21,7 @@ import { logger } from "@/lib/logger";
 import { NotificationItem } from "./NotificationItem";
 import { NotificationBadge } from "./NotificationBadge";
 import { NotificationToastContainer } from "./NotificationToast";
-import type {
-  Notification,
-  NotificationCategory,
-  NotificationPreferences,
-} from "./types";
+import type { Notification, NotificationCategory, NotificationPreferences } from "./types";
 import { categoryConfig, typeToCategory } from "./types";
 
 type TabFilter = "all" | "unread" | NotificationCategory;
@@ -167,7 +142,10 @@ export function NotificationCenter() {
     onError: (error) => logger.error("❌ WebSocket error:", error),
   });
 
-  const { data: notifications = [], isLoading } = useQuery<Notification[]>({
+  const {
+    data: notifications = [],
+    isLoading,
+  } = useQuery<Notification[]>({
     queryKey: ["/api/notifications"],
     refetchInterval: isConnected ? false : 30000,
     enabled: !!user,

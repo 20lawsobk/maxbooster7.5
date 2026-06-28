@@ -110,10 +110,10 @@ class KillSwitchManager extends EventEmitter {
     logger?.warn(`   Triggered by: ${triggeredBy}`);
     logger?.warn("═══════════════════════════════════════════════════════════");
 
-    this?.state.globalKilled = true;
-    this?.state.lastKillTime = new Date();
-    this?.state.killReason = reason;
-    this?.state.killedBy = triggeredBy;
+    this.state.globalKilled = true;
+    this.state.lastKillTime = new Date();
+    this.state.killReason = reason;
+    this.state.killedBy = triggeredBy;
 
     let allSuccess = true;
 
@@ -170,8 +170,8 @@ class KillSwitchManager extends EventEmitter {
     logger?.info(`   Triggered by: ${triggeredBy}`);
     logger?.info("═══════════════════════════════════════════════════════════");
 
-    this?.state.globalKilled = false;
-    this?.state.lastResumeTime = new Date();
+    this.state.globalKilled = false;
+    this.state.lastResumeTime = new Date();
 
     let allSuccess = true;
 
@@ -226,7 +226,7 @@ class KillSwitchManager extends EventEmitter {
     reason: string,
     triggeredBy: string = "system",
   ): boolean {
-    const _callbacks = this?.systemCallbacks.get(systemName);
+    const callbacks = this?.systemCallbacks.get(systemName);
     if (!callbacks) {
       logger?.warn(`[KillSwitch] System not registered: ${systemName}`);
       return false;
@@ -280,7 +280,7 @@ class KillSwitchManager extends EventEmitter {
       return false;
     }
 
-    const _callbacks = this?.systemCallbacks.get(systemName);
+    const callbacks = this?.systemCallbacks.get(systemName);
     if (!callbacks) {
       logger?.warn(`[KillSwitch] System not registered: ${systemName}`);
       return false;
@@ -352,12 +352,12 @@ class KillSwitchManager extends EventEmitter {
 
     // Keep only last 1000 entries
     if (this?.state.auditLog?.length > 1000) {
-      this?.state.auditLog = this?.state.auditLog?.slice(-1000);
+      this.state.auditLog = this?.state.auditLog?.slice(-1000);
     }
   }
 }
 
-export const _killSwitch = KillSwitchManager?.getInstance();
+export const killSwitch = KillSwitchManager?.getInstance();
 
 /**
  * Decorator/wrapper for autonomous operations

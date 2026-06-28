@@ -77,7 +77,7 @@ function getMimeType(format: VideoFormat): string {
       "video/webm;codecs=vp8,opus",
       "video/webm",
     ],
-    mp4: ["video/mp4;codecs=avc1.42E01E,mp4a?.40.2", "video/mp4"],
+    mp4: ["video/mp4;codecs=avc1.42E01E,mp4a.40.2", "video/mp4"],
   };
 
   for (const mimeType of mimeTypes[format]) {
@@ -102,7 +102,7 @@ function getDefaultBitrate(
     "4k": 35_000_000,
   };
 
-  const _fpsMultiplier = frameRate / 30;
+  const fpsMultiplier = frameRate / 30;
   return Math?.round(baseBitrates[resolution] * fpsMultiplier);
 }
 
@@ -139,9 +139,9 @@ export class VideoExporter {
     this.recordedChunks = [];
     this.startTime = performance?.now();
 
-    const _resolution = RESOLUTION_PRESETS[options?.resolution];
+    const resolution = RESOLUTION_PRESETS[options?.resolution];
     const { frameRate, format } = options;
-    const _videoBitrate =
+    const videoBitrate =
       options?.videoBitrate ?? getDefaultBitrate(options?.resolution, frameRate);
 
     if (options?.signal) {
@@ -154,15 +154,15 @@ export class VideoExporter {
       this?.reportProgress(options?.onProgress, {
         phase: "preparing",
         currentFrame: 0,
-        totalFrames: Math?.ceil(project?.duration * frameRate),
+        totalFrames: Math.ceil(project?.duration * frameRate),
         percentage: 0,
         estimatedTimeRemaining: 0,
         elapsedTime: 0,
       });
 
       this.canvas = document?.createElement("canvas");
-      this?.canvas.width = resolution?.width;
-      this?.canvas.height = resolution?.height;
+      this.canvas.width = resolution?.width;
+      this.canvas.height = resolution?.height;
 
       this.stream = this?.canvas.captureStream(frameRate);
       if (!this?.stream) {
@@ -172,7 +172,7 @@ export class VideoExporter {
         );
       }
 
-      const _mimeType = getMimeType(format);
+      const mimeType = getMimeType(format);
 
       const recorderOptions: MediaRecorderOptions = {
         mimeType,
@@ -185,7 +185,7 @@ export class VideoExporter {
 
       this.mediaRecorder = new MediaRecorder(this?.stream, recorderOptions);
 
-      const _videoBlob = await this?.recordFrames(
+      const videoBlob = await this?.recordFrames(
         project,
         frameRenderer,
         resolution,
@@ -202,8 +202,8 @@ export class VideoExporter {
       if (options?.audioUrl) {
         this?.reportProgress(options?.onProgress, {
           phase: "muxing",
-          currentFrame: Math?.ceil(project?.duration * frameRate),
-          totalFrames: Math?.ceil(project?.duration * frameRate),
+          currentFrame: Math.ceil(project?.duration * frameRate),
+          totalFrames: Math.ceil(project?.duration * frameRate),
           percentage: 95,
           estimatedTimeRemaining: 0,
           elapsedTime: (performance?.now() - this?.startTime) / 1000,
@@ -219,8 +219,8 @@ export class VideoExporter {
 
       this?.reportProgress(options?.onProgress, {
         phase: "finalizing",
-        currentFrame: Math?.ceil(project?.duration * frameRate),
-        totalFrames: Math?.ceil(project?.duration * frameRate),
+        currentFrame: Math.ceil(project?.duration * frameRate),
+        totalFrames: Math.ceil(project?.duration * frameRate),
         percentage: 100,
         estimatedTimeRemaining: 0,
         elapsedTime: (performance?.now() - this?.startTime) / 1000,
@@ -230,8 +230,8 @@ export class VideoExporter {
         blob: finalBlob,
         format,
         resolution,
-        duration: project?.duration,
-        fileSize: finalBlob?.size,
+        duration: project.duration,
+        fileSize: finalBlob.size,
       };
     } finally {
       this?.cleanup();
@@ -241,7 +241,7 @@ export class VideoExporter {
   private async recordFrames(
     project: VideoProject,
     frameRenderer: FrameRenderer,
-    _resolution: ResolutionConfig,
+    resolution: ResolutionConfig,
     frameRate: FrameRate,
     onProgress?: (progress: ExportProgress) => void,
   ): Promise<Blob> {
@@ -253,22 +253,22 @@ export class VideoExporter {
         return;
       }
 
-      const _totalFrames = Math?.ceil(project?.duration * frameRate);
+      const totalFrames = Math?.ceil(project?.duration * frameRate);
       let currentFrame = 0;
 
-      this?.mediaRecorder.ondataavailable = (event) => {
+      this.mediaRecorder.ondataavailable = (event) => {
         if (event?.data.size > 0) {
           this?.recordedChunks.push(event?.data);
         }
       };
 
-      this?.mediaRecorder.onstop = () => {
-        const _mimeType = this?.mediaRecorder?.mimeType ?? "video/webm";
-        const _blob = new Blob(this?.recordedChunks, { type: mimeType });
+      this.mediaRecorder.onstop = () => {
+        const mimeType = this?.mediaRecorder?.mimeType ?? "video/webm";
+        const blob = new Blob(this?.recordedChunks, { type: mimeType });
         resolve(blob);
       };
 
-      this?.mediaRecorder.onerror = (event) => {
+      this.mediaRecorder.onerror = (event) => {
         reject(
           new VideoExportError(
             `MediaRecorder error: ${(event as ErrorEvent).message || "Unknown error"}`,
@@ -280,7 +280,7 @@ export class VideoExporter {
 
       this?.mediaRecorder.start();
 
-      const _renderNextFrame = async () => {
+      const renderNextFrame = async () => {
         if (this?.aborted) {
           this?.mediaRecorder?.stop();
           return;
@@ -291,7 +291,7 @@ export class VideoExporter {
           return;
         }
 
-        const _timestamp = currentFrame / frameRate;
+        const timestamp = currentFrame / frameRate;
 
         try {
           await frameRenderer(this?.canvas!, currentFrame, timestamp);
@@ -308,17 +308,17 @@ export class VideoExporter {
 
         currentFrame++;
 
-        const _elapsedTime = (performance?.now() - this?.startTime) / 1000;
-        const _framesPerSecond = currentFrame / elapsedTime;
-        const _remainingFrames = totalFrames - currentFrame;
-        const _estimatedTimeRemaining =
+        const elapsedTime = (performance?.now() - this?.startTime) / 1000;
+        const framesPerSecond = currentFrame / elapsedTime;
+        const remainingFrames = totalFrames - currentFrame;
+        const estimatedTimeRemaining =
           framesPerSecond > 0 ? remainingFrames / framesPerSecond : 0;
 
         this?.reportProgress(onProgress, {
           phase: "rendering",
           currentFrame,
           totalFrames,
-          percentage: Math?.round((currentFrame / totalFrames) * 90),
+          percentage: Math.round((currentFrame / totalFrames) * 90),
           estimatedTimeRemaining,
           elapsedTime,
         });
@@ -339,7 +339,7 @@ export class VideoExporter {
     audioBitrate?: number,
   ): Promise<Blob> {
     try {
-      const _audioResponse = await fetch(audioUrl);
+      const audioResponse = await fetch(audioUrl);
       if (!audioResponse?.ok) {
         throw new VideoExportError(
           `Failed to fetch audio: ${audioResponse?.status} ${audioResponse?.statusText}`,
@@ -347,31 +347,31 @@ export class VideoExporter {
         );
       }
 
-      const _audioContext = new AudioContext();
-      const _audioBuffer = await audioContext?.decodeAudioData(
+      const audioContext = new AudioContext();
+      const audioBuffer = await audioContext?.decodeAudioData(
         await audioResponse?.arrayBuffer(),
       );
 
-      const _offlineContext = new OfflineAudioContext(
+      const offlineContext = new OfflineAudioContext(
         audioBuffer?.numberOfChannels,
         audioBuffer?.length,
         audioBuffer?.sampleRate,
       );
 
-      const _source = offlineContext?.createBufferSource();
+      const source = offlineContext?.createBufferSource();
       source.buffer = audioBuffer;
       source?.connect(offlineContext?.destination);
       source?.start();
 
-      const _renderedBuffer = await offlineContext?.startRendering();
+      const renderedBuffer = await offlineContext?.startRendering();
 
-      const _canvas = document?.createElement("canvas");
+      const canvas = document?.createElement("canvas");
       canvas.width = 1;
       canvas.height = 1;
-      const _stream = canvas?.captureStream(1);
+      const stream = canvas?.captureStream(1);
 
-      const _audioDestination = audioContext?.createMediaStreamDestination();
-      const _bufferSource = audioContext?.createBufferSource();
+      const audioDestination = audioContext?.createMediaStreamDestination();
+      const bufferSource = audioContext?.createBufferSource();
       bufferSource.buffer = renderedBuffer;
       bufferSource?.connect(audioDestination);
 
@@ -379,13 +379,13 @@ export class VideoExporter {
         stream?.addTrack(track);
       }
 
-      const _combinedStream = new MediaStream([
+      const combinedStream = new MediaStream([
         ...stream?.getVideoTracks(),
         ...audioDestination?.stream.getAudioTracks(),
       ]);
 
-      const _mimeType = getMimeType(format);
-      const _recorder = new MediaRecorder(combinedStream, {
+      const mimeType = getMimeType(format);
+      const recorder = new MediaRecorder(combinedStream, {
         mimeType,
         audioBitsPerSecond: audioBitrate ?? 128000,
       });
@@ -489,11 +489,11 @@ export async function exportToFile(
   options: ExportOptions,
   filename?: string,
 ): Promise<void> {
-  const _exporter = new VideoExporter();
-  const _result = await exporter?.export(project, frameRenderer, options);
+  const exporter = new VideoExporter();
+  const result = await exporter?.export(project, frameRenderer, options);
 
-  const _url = URL?.createObjectURL(result?.blob);
-  const _link = document?.createElement("a");
+  const url = URL?.createObjectURL(result?.blob);
+  const link = document?.createElement("a");
   link.href = url;
   link.download = filename ?? `export_${Date?.now()}.${options?.format}`;
   document?.body.appendChild(link);

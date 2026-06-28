@@ -1,4 +1,4 @@
-export const _studioOneTheme = {
+export const studioOneTheme = {
   colors: {
     bg: {
       primary: "#1a1d24",
@@ -102,7 +102,7 @@ export const _studioOneTheme = {
   },
 };
 
-export const _cssVariables = `
+export const cssVariables = `
   :root {
     --s1-bg-primary: ${studioOneTheme?.colors.bg?.primary};
     --s1-bg-secondary: ${studioOneTheme?.colors.bg?.secondary};

@@ -137,9 +137,11 @@ export default function FanHub() {
     queryKey: ["/api/fan-hub/stats"],
   });
 
-  const { data: messages } = useQuery<FanMessage[]>({
-    queryKey: ["/api/fan-hub/messages"],
-  });
+  const { data: messages } = useQuery<FanMessage[]>(
+    {
+      queryKey: ["/api/fan-hub/messages"],
+    },
+  );
 
   // Mutations
   const addFanMutation = useMutation({
@@ -734,7 +736,7 @@ export default function FanHub() {
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
-                              {fan.name?.charAt(0) ||
+                              {fan.name.charAt(0) ||
                                 fan.email.charAt(0).toUpperCase()}
                             </div>
                             <div>

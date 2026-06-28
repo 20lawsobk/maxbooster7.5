@@ -6,44 +6,44 @@ import { eq, and, desc, count, sql } from "drizzle-orm";
 import { z } from "zod";
 import { parsePaginationParams } from "../middleware/pagination.js";
 
-const _router = Router();
+const router = Router();
 
-const _insertSyncSchema = z?.object({
-  trackTitle: z?.string().min(1),
-  artistName: z?.string().min(1),
-  genre: z?.string().optional(),
-  mood: z?.string().optional(),
-  bpm: z?.number().optional(),
-  duration: z?.number().optional(),
-  description: z?.string().optional(),
-  usageType: z?.string().optional(),
-  isExclusive: z?.boolean().default(false),
-  price: z?.string().optional(),
-  previewUrl: z?.string().optional(),
-  submissionTarget: z?.string().optional(),
+const insertSyncSchema = z.object({
+  trackTitle: z.string().min(1),
+  artistName: z.string().min(1),
+  genre: z.string().optional(),
+  mood: z.string().optional(),
+  bpm: z.number().optional(),
+  duration: z.number().optional(),
+  description: z.string().optional(),
+  usageType: z.string().optional(),
+  isExclusive: z.boolean().default(false),
+  price: z.string().optional(),
+  previewUrl: z.string().optional(),
+  submissionTarget: z.string().optional(),
 });
 
 // GET /api/sync-licensing - list user's sync catalog (paginated)
-router?.get("/", requireAuth, async (req, res) => {
+router.get("/", requireAuth, async (req, res) => {
   try {
     const { limit, offset } = parsePaginationParams(req);
-    const _catalog = await db
+    const catalog = await db
       .select()
       .from(syncSubmissions)
-      .where(eq(syncSubmissions?.userId, req?.user!.id))
-      .orderBy(desc(syncSubmissions?.createdAt))
+      .where(eq(syncSubmissions.userId, req.user!.id))
+      .orderBy(desc(syncSubmissions.createdAt))
       .limit(limit)
       .offset(offset);
-    res?.json(catalog);
+    res.json(catalog);
   } catch (error) {
-    res?.status(500).json({ error: "Failed to fetch sync catalog" });
+    res.status(500).json({ error: "Failed to fetch sync catalog" });
   }
 });
 
 // GET /api/sync-licensing/stats - aggregate stats via SQL (no full-table JS scan)
-router?.get("/stats", requireAuth, async (req, res) => {
+router.get("/stats", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req.user!.id;
     const [stats] = await db
       .select({
         totalTracks: count(),
@@ -88,8 +88,8 @@ router?.get("/:id", requireAuth, async (req, res) => {
 // POST /api/sync-licensing - add track to sync catalog
 router?.post("/", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _data = insertSyncSchema?.parse(req?.body);
+    const userId = req?.user!.id;
+    const data = insertSyncSchema?.parse(req?.body);
     const [submission] = await db
       .insert(syncSubmissions)
       .values({
@@ -100,10 +100,10 @@ router?.post("/", requireAuth, async (req, res) => {
       .returning();
     res?.status(201).json(submission);
   } catch (error) {
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error?.issues });
+        .json({ error: "Validation error", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to add to sync catalog" });
   }
@@ -112,9 +112,9 @@ router?.post("/", requireAuth, async (req, res) => {
 // PUT /api/sync-licensing/:id - update listing
 router?.put("/:id", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
-    const _data = insertSyncSchema?.partial().parse(req?.body);
+    const data = insertSyncSchema?.partial().parse(req?.body);
     const [updated] = await db
       .update(syncSubmissions)
       .set({ ...data, updatedAt: new Date() })
@@ -125,10 +125,10 @@ router?.put("/:id", requireAuth, async (req, res) => {
     if (!updated) return res?.status(404).json({ error: "Listing not found" });
     res?.json(updated);
   } catch (error) {
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error?.issues });
+        .json({ error: "Validation error", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to update listing" });
   }
@@ -137,10 +137,10 @@ router?.put("/:id", requireAuth, async (req, res) => {
 // PATCH /api/sync-licensing/:id/status - update license status and optional deal terms
 router?.patch("/:id/status", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
-    const _statusSchema = z?.object({
-      status: z?.enum([
+    const statusSchema = z.object({
+      status: z.enum([
         "available",
         "under_review",
         "negotiating",
@@ -148,8 +148,8 @@ router?.patch("/:id/status", requireAuth, async (req, res) => {
         "rejected",
         "withdrawn",
       ]),
-      licensedTo: z?.string().max(200).optional(),
-      licenseFee: z?.number().min(0).optional(),
+      licensedTo: z.string().max(200).optional(),
+      licenseFee: z.number().min(0).optional(),
     });
     const { status, licensedTo, licenseFee } = statusSchema?.parse(req?.body);
 
@@ -172,10 +172,10 @@ router?.patch("/:id/status", requireAuth, async (req, res) => {
     if (!updated) return res?.status(404).json({ error: "Listing not found" });
     res?.json(updated);
   } catch (error) {
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: error?.issues });
+        .json({ error: "Validation error", details: error.issues });
     }
     res?.status(500).json({ error: "Failed to update license status" });
   }
@@ -184,7 +184,7 @@ router?.patch("/:id/status", requireAuth, async (req, res) => {
 // DELETE /api/sync-licensing/:id - remove from catalog
 router?.delete("/:id", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
     const [deleted] = await db
       .delete(syncSubmissions)

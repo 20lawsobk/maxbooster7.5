@@ -23,13 +23,13 @@ interface FeatureUsageStats {
 }
 
 export function useFeatureUsageTracking() {
-  const _queryClient = useQueryClient();
-  const _currentSession = useRef<UsageSession | null>(null);
-  const _sessionStartTime = useRef<number>(Date?.now());
+  const queryClient = useQueryClient();
+  const currentSession = useRef<UsageSession | null>(null);
+  const sessionStartTime = useRef<number>(Date?.now());
 
-  const _trackFeatureMutation = useMutation({
+  const trackFeatureMutation = useMutation({
     mutationFn: async (feature: string) => {
-      const _response = await apiRequest(
+      const response = await apiRequest(
         "POST",
         "/api/personalization/track-feature",
         { feature },
@@ -48,20 +48,20 @@ export function useFeatureUsageTracking() {
     staleTime: 10 * 60 * 1000,
   });
 
-  const _trackFeature = useCallback(
+  const trackFeature = useCallback(
     (feature: string) => {
       if (
         currentSession?.current &&
         currentSession?.current.feature !== feature
       ) {
-        currentSession?.current.endTime = Date?.now();
-        currentSession?.current.duration =
+        currentSession.current.endTime = Date?.now();
+        currentSession.current.duration =
           currentSession?.current.endTime - currentSession?.current.startTime;
       }
 
       currentSession.current = {
         feature,
-        startTime: Date?.now(),
+        startTime: Date.now(),
       };
 
       trackFeatureMutation?.mutate(feature);
@@ -69,54 +69,54 @@ export function useFeatureUsageTracking() {
     [trackFeatureMutation],
   );
 
-  const _trackPageView = useCallback(
+  const trackPageView = useCallback(
     (pageName: string) => {
       trackFeature(`page:${pageName}`);
     },
     [trackFeature],
   );
 
-  const _trackAction = useCallback(
+  const trackAction = useCallback(
     (actionName: string, _context?: Record<string, any>) => {
       trackFeature(`action:${actionName}`);
     },
     [trackFeature],
   );
 
-  const _trackButtonClick = useCallback(
+  const trackButtonClick = useCallback(
     (buttonId: string, _context?: Record<string, any>) => {
       trackFeature(`button:${buttonId}`);
     },
     [trackFeature],
   );
 
-  const _trackFormSubmit = useCallback(
+  const trackFormSubmit = useCallback(
     (formId: string, success: boolean) => {
       trackFeature(`form:${formId}:${success ? "success" : "failure"}`);
     },
     [trackFeature],
   );
 
-  const _getFeatureUsageStats = useCallback((): FeatureUsageStats | null => {
+  const getFeatureUsageStats = useCallback((): FeatureUsageStats | null => {
     if (!behaviorAnalysis) return null;
 
-    const _analysis = behaviorAnalysis as Record<string, unknown>;
+    const analysis = behaviorAnalysis as Record<string, unknown>;
     return {
-      mostUsedFeatures: analysis?.mostUsedFeatures || [],
+      mostUsedFeatures: analysis.mostUsedFeatures || [],
       recentFeatures:
         analysis?.mostUsedFeatures
           ?.slice(0, 5)
           .map((f: Record<string, unknown>) => f?.feature) || [],
-      sessionDuration: Date?.now() - sessionStartTime?.current,
+      sessionDuration: Date.now() - sessionStartTime?.current,
       featureTimeSpent: {},
     };
   }, [behaviorAnalysis]);
 
-  const _isFrequentlyUsed = useCallback(
+  const isFrequentlyUsed = useCallback(
     (feature: string): boolean => {
       if (!behaviorAnalysis) return false;
-      const _analysis = behaviorAnalysis as Record<string, unknown>;
-      const _featureData = analysis?.mostUsedFeatures?.find(
+      const analysis = behaviorAnalysis as Record<string, unknown>;
+      const featureData = analysis?.mostUsedFeatures?.find(
         (f: Record<string, unknown>) => f?.feature === feature,
       );
       return featureData ? featureData?.count >= 5 : false;
@@ -124,11 +124,11 @@ export function useFeatureUsageTracking() {
     [behaviorAnalysis],
   );
 
-  const _getFeatureUsageCount = useCallback(
+  const getFeatureUsageCount = useCallback(
     (feature: string): number => {
       if (!behaviorAnalysis) return 0;
-      const _analysis = behaviorAnalysis as Record<string, unknown>;
-      const _featureData = analysis?.mostUsedFeatures?.find(
+      const analysis = behaviorAnalysis as Record<string, unknown>;
+      const featureData = analysis?.mostUsedFeatures?.find(
         (f: Record<string, unknown>) => f?.feature === feature,
       );
       return featureData?.count || 0;
@@ -136,10 +136,10 @@ export function useFeatureUsageTracking() {
     [behaviorAnalysis],
   );
 
-  const _getTopFeatures = useCallback(
+  const getTopFeatures = useCallback(
     (count: number = 5): string[] => {
       if (!behaviorAnalysis) return [];
-      const _analysis = behaviorAnalysis as Record<string, unknown>;
+      const analysis = behaviorAnalysis as Record<string, unknown>;
       return (analysis?.mostUsedFeatures || [])
         .slice(0, count)
         .map((f: Record<string, unknown>) => f?.feature);
@@ -148,18 +148,18 @@ export function useFeatureUsageTracking() {
   );
 
   useEffect(() => {
-    const _handleVisibilityChange = () => {
+    const handleVisibilityChange = () => {
       if (document?.hidden && currentSession?.current) {
-        currentSession?.current.endTime = Date?.now();
-        currentSession?.current.duration =
+        currentSession.current.endTime = Date?.now();
+        currentSession.current.duration =
           currentSession?.current.endTime - currentSession?.current.startTime;
       }
     };
 
-    const _handleBeforeUnload = () => {
+    const handleBeforeUnload = () => {
       if (currentSession?.current) {
-        currentSession?.current.endTime = Date?.now();
-        currentSession?.current.duration =
+        currentSession.current.endTime = Date?.now();
+        currentSession.current.duration =
           currentSession?.current.endTime - currentSession?.current.startTime;
       }
     };
@@ -183,7 +183,7 @@ export function useFeatureUsageTracking() {
     isFrequentlyUsed,
     getFeatureUsageCount,
     getTopFeatures,
-    isTracking: trackFeatureMutation?.isPending,
+    isTracking: trackFeatureMutation.isPending,
   };
 }
 
@@ -198,7 +198,7 @@ export function usePageTracking(pageName: string) {
 export function useActionTracking() {
   const { trackAction, trackButtonClick } = useFeatureUsageTracking();
 
-  const _withTracking = useCallback(
+  const withTracking = useCallback(
     <T extends (...args: unknown[]) => any>(
       actionName: string,
       handler: T,

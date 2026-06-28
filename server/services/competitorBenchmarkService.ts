@@ -74,7 +74,7 @@ export class CompetitorBenchmarkService {
     error?: string;
   }> {
     try {
-      const _existing = await db
+      const existing = await db
         .select()
         .from(competitorProfiles)
         .where(
@@ -93,9 +93,9 @@ export class CompetitorBenchmarkService {
         .insert(competitorProfiles)
         .values({
           userId,
-          name: data?.name,
-          handle: data?.handle.toLowerCase(),
-          platforms: data?.platforms || ["twitter", "instagram"],
+          name: data.name,
+          handle: data.handle.toLowerCase(),
+          platforms: data.platforms || ["twitter", "instagram"],
           followers: 0,
           followersGrowth: 0,
           engagementRate: 0,
@@ -111,7 +111,7 @@ export class CompetitorBenchmarkService {
 
       return {
         success: true,
-        competitor: this?.mapToCompetitorMetrics(competitor),
+        competitor: this.mapToCompetitorMetrics(competitor),
       };
     } catch (error) {
       logger?.warn({ err: error }, "Add competitor error:");
@@ -142,7 +142,7 @@ export class CompetitorBenchmarkService {
 
   async getCompetitors(userId: string): Promise<CompetitorMetrics[]> {
     try {
-      const _competitors = await db
+      const competitors = await db
         .select()
         .from(competitorProfiles)
         .where(
@@ -162,16 +162,16 @@ export class CompetitorBenchmarkService {
 
   async getBenchmarkComparison(userId: string): Promise<BenchmarkComparison[]> {
     try {
-      const _competitors = await this?.getCompetitors(userId);
-      const _yourStats = await this?.getYourStats(userId);
+      const competitors = await this?.getCompetitors(userId);
+      const yourStats = await this?.getYourStats(userId);
 
-      const _competitorAvgFollowers =
+      const competitorAvgFollowers =
         competitors?.length > 0
           ? competitors?.reduce((sum, c) => sum + c?.totalFollowers, 0) /
             competitors?.length
           : 0;
 
-      const _competitorAvgEngagement =
+      const competitorAvgEngagement =
         competitors?.length > 0
           ? competitors?.reduce((sum, c) => sum + c?.avgEngagementRate, 0) /
             competitors?.length
@@ -180,10 +180,10 @@ export class CompetitorBenchmarkService {
       const comparisons: BenchmarkComparison[] = [
         {
           metric: "Total Followers",
-          yourValue: yourStats?.totalFollowers,
+          yourValue: yourStats.totalFollowers,
           competitorAvg: competitorAvgFollowers,
           industryAvg: competitorAvgFollowers * 0.8,
-          percentile: this?.calculatePercentile(
+          percentile: this.calculatePercentile(
             yourStats?.totalFollowers,
             competitorAvgFollowers,
           ),
@@ -196,10 +196,10 @@ export class CompetitorBenchmarkService {
         },
         {
           metric: "Engagement Rate",
-          yourValue: yourStats?.engagementRate,
+          yourValue: yourStats.engagementRate,
           competitorAvg: competitorAvgEngagement,
           industryAvg: 3.5,
-          percentile: this?.calculatePercentile(
+          percentile: this.calculatePercentile(
             yourStats?.engagementRate,
             competitorAvgEngagement,
           ),
@@ -207,7 +207,7 @@ export class CompetitorBenchmarkService {
         },
         {
           metric: "Posts Per Week",
-          yourValue: yourStats?.postsPerWeek,
+          yourValue: yourStats.postsPerWeek,
           competitorAvg:
             competitors?.length > 0
               ? competitors?.reduce(
@@ -221,7 +221,7 @@ export class CompetitorBenchmarkService {
         },
         {
           metric: "Average Likes",
-          yourValue: yourStats?.avgLikes,
+          yourValue: yourStats.avgLikes,
           competitorAvg:
             competitors?.length > 0
               ? competitors?.reduce(
@@ -244,33 +244,33 @@ export class CompetitorBenchmarkService {
 
   async getShareOfVoice(userId: string): Promise<ShareOfVoice> {
     try {
-      const _competitors = await this?.getCompetitors(userId);
-      const _yourStats = await this?.getYourStats(userId);
+      const competitors = await this?.getCompetitors(userId);
+      const yourStats = await this?.getYourStats(userId);
 
       // Social mention counts require live social API access — return follower-proportional estimates
-      const _yourReach = yourStats?.totalFollowers;
-      const _competitorTotalReach = competitors?.reduce(
+      const yourReach = yourStats?.totalFollowers;
+      const competitorTotalReach = competitors?.reduce(
         (sum, c) => sum + (c?.totalFollowers || 0),
         0,
       );
-      const _totalReach = yourReach + competitorTotalReach;
-      const _yourSharePct = totalReach > 0 ? (yourReach / totalReach) * 100 : 0;
+      const totalReach = yourReach + competitorTotalReach;
+      const yourSharePct = totalReach > 0 ? (yourReach / totalReach) * 100 : 0;
 
       return {
         yourBrand: {
           mentions: 0, // Requires social listening API
-          percentage: Math?.round(yourSharePct * 10) / 10,
+          percentage: Math.round(yourSharePct * 10) / 10,
           reach: yourReach,
           sentiment: 0.65,
         },
-        competitors: competitors?.slice(0, 5).map((c) => {
-          const _compShare =
+        competitors: competitors.slice(0, 5).map((c) => {
+          const compShare =
             totalReach > 0 ? ((c?.totalFollowers || 0) / totalReach) * 100 : 0;
           return {
-            name: c?.name,
+            name: c.name,
             mentions: 0,
-            percentage: Math?.round(compShare * 10) / 10,
-            reach: c?.totalFollowers || 0,
+            percentage: Math.round(compShare * 10) / 10,
+            reach: c.totalFollowers || 0,
             sentiment: 0,
           };
         }),
@@ -288,27 +288,27 @@ export class CompetitorBenchmarkService {
 
   async getInsights(userId: string): Promise<CompetitorInsight[]> {
     try {
-      const _competitors = await this?.getCompetitors(userId);
-      const _yourStats = await this?.getYourStats(userId);
+      const competitors = await this?.getCompetitors(userId);
+      const yourStats = await this?.getYourStats(userId);
       const insights: CompetitorInsight[] = [];
 
       if (competitors?.length > 0) {
-        const _topCompetitor = competitors[0];
+        const topCompetitor = competitors[0];
         if (topCompetitor?.avgEngagementRate > yourStats?.engagementRate * 1.5) {
           insights?.push({
             id: randomBytes(8).toString("hex"),
             type: "opportunity",
             title: "Engagement Gap Detected",
             description: `${topCompetitor?.name} has ${Math?.round((topCompetitor?.avgEngagementRate / Math?.max(yourStats?.engagementRate, 0.1) - 1) * 100)}% higher engagement rate. Analyze their content strategy for improvements.`,
-            competitorId: topCompetitor?.id,
-            competitorName: topCompetitor?.name,
+            competitorId: topCompetitor.id,
+            competitorName: topCompetitor.name,
             actionable: true,
             priority: "high",
             createdAt: new Date(),
           });
         }
 
-        const _fastGrowingCompetitors = competitors?.filter((c) =>
+        const fastGrowingCompetitors = competitors?.filter((c) =>
           c?.platforms.some((p) => p?.followersGrowth > 10),
         );
         if (fastGrowingCompetitors?.length > 0) {
@@ -364,25 +364,25 @@ export class CompetitorBenchmarkService {
     totalPosts: number;
   }> {
     try {
-      const _sevenDaysAgo = new Date();
+      const sevenDaysAgo = new Date();
       sevenDaysAgo?.setDate(sevenDaysAgo?.getDate() - 7);
 
-      const _recentPosts = await db
+      const recentPosts = await db
         .select()
         .from(posts)
         .where(
           and(eq(posts?.userId, userId), gte(posts?.createdAt, sevenDaysAgo)),
         );
 
-      const _totalPosts = recentPosts?.length;
-      const _postsPerWeek = totalPosts;
+      const totalPosts = recentPosts?.length;
+      const postsPerWeek = totalPosts;
 
       let totalLikes = 0;
       let totalComments = 0;
       let totalShares = 0;
 
       recentPosts?.forEach((post) => {
-        const _engagement = post?.engagement as Record<string, unknown>;
+        const engagement = post?.engagement as Record<string, unknown>;
         if (engagement) {
           totalLikes += engagement?.likes || 0;
           totalComments += engagement?.comments || 0;
@@ -390,10 +390,10 @@ export class CompetitorBenchmarkService {
         }
       });
 
-      const _avgLikes = totalPosts > 0 ? Math?.round(totalLikes / totalPosts) : 0;
-      const _avgComments =
+      const avgLikes = totalPosts > 0 ? Math?.round(totalLikes / totalPosts) : 0;
+      const avgComments =
         totalPosts > 0 ? Math?.round(totalComments / totalPosts) : 0;
-      const _avgShares =
+      const avgShares =
         totalPosts > 0 ? Math?.round(totalShares / totalPosts) : 0;
 
       return {
@@ -424,31 +424,31 @@ export class CompetitorBenchmarkService {
   private mapToCompetitorMetrics(
     profile: Record<string, unknown>,
   ): CompetitorMetrics {
-    const _platformsData = (profile?.platforms as string[]) || [
+    const platformsData = (profile?.platforms as string[]) || [
       "twitter",
       "instagram",
     ];
 
     return {
-      id: profile?.id,
-      name: profile?.name,
-      handle: profile?.handle,
-      platforms: platformsData?.map((platform) => ({
+      id: profile.id,
+      name: profile.name,
+      handle: profile.handle,
+      platforms: platformsData.map((platform) => ({
         platform,
-        followers: profile?.followers || 0,
-        followersGrowth: profile?.followersGrowth || 0,
-        engagementRate: profile?.engagementRate || 0,
-        postsPerWeek: profile?.postsPerWeek || 0,
-        avgLikes: profile?.avgLikes || 0,
-        avgComments: profile?.avgComments || 0,
-        avgShares: profile?.avgShares || 0,
+        followers: profile.followers || 0,
+        followersGrowth: profile.followersGrowth || 0,
+        engagementRate: profile.engagementRate || 0,
+        postsPerWeek: profile.postsPerWeek || 0,
+        avgLikes: profile.avgLikes || 0,
+        avgComments: profile.avgComments || 0,
+        avgShares: profile.avgShares || 0,
       })),
-      totalFollowers: profile?.followers || 0,
-      avgEngagementRate: profile?.engagementRate || 0,
+      totalFollowers: profile.followers || 0,
+      avgEngagementRate: profile.engagementRate || 0,
       contentMix: (profile?.contentMix as Record<string, number>) || {},
       topHashtags: (profile?.topHashtags as string[]) || [],
       postingSchedule: {},
-      lastUpdated: profile?.lastUpdated || new Date(),
+      lastUpdated: profile.lastUpdated || new Date(),
     };
   }
 
@@ -457,7 +457,7 @@ export class CompetitorBenchmarkService {
     competitorAvg: number,
   ): number {
     if (competitorAvg === 0) return 50;
-    const _ratio = yourValue / competitorAvg;
+    const ratio = yourValue / competitorAvg;
     if (ratio >= 2) return 95;
     if (ratio >= 1.5) return 85;
     if (ratio >= 1) return 70;
@@ -467,4 +467,4 @@ export class CompetitorBenchmarkService {
   }
 }
 
-export const _competitorBenchmarkService = new CompetitorBenchmarkService();
+export const competitorBenchmarkService = new CompetitorBenchmarkService();

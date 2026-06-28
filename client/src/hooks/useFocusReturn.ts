@@ -27,8 +27,8 @@ export function useFocusReturn(
     onRestore,
   } = options;
 
-  const _previousFocusRef = useRef<HTMLElement | null>(null);
-  const _isActiveRef = useRef(isActive);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const isActiveRef = useRef(isActive);
 
   useEffect(() => {
     isActiveRef.current = isActive;
@@ -44,7 +44,7 @@ export function useFocusReturn(
   useEffect(() => {
     return () => {
       if (autoRestore && previousFocusRef?.current) {
-        const _element = previousFocusRef?.current;
+        const element = previousFocusRef?.current;
         requestAnimationFrame(() => {
           if (element && typeof element?.focus === "function") {
             try {
@@ -57,12 +57,12 @@ export function useFocusReturn(
     };
   }, [autoRestore, onRestore]);
 
-  const _saveFocus = useCallback(() => {
+  const saveFocus = useCallback(() => {
     previousFocusRef.current = document?.activeElement as HTMLElement | null;
     onSave?.(previousFocusRef?.current);
   }, [onSave]);
 
-  const _restoreFocus = useCallback(
+  const restoreFocus = useCallback(
     (restoreOptions: { preventScroll?: boolean } = {}) => {
       const { preventScroll = true } = restoreOptions;
 
@@ -71,13 +71,13 @@ export function useFocusReturn(
         typeof previousFocusRef?.current.focus === "function"
       ) {
         try {
-          const _element = previousFocusRef?.current;
+          const element = previousFocusRef?.current;
 
           if (document?.body.contains(element)) {
             element?.focus({ preventScroll });
             onRestore?.(element);
           } else {
-            const _fallback = document?.querySelector<HTMLElement>(
+            const fallback = document?.querySelector<HTMLElement>(
               '[data-focus-fallback="true"], main, [role="main"], body',
             );
             if (fallback) {
@@ -91,13 +91,13 @@ export function useFocusReturn(
     [onRestore],
   );
 
-  const _hasSavedFocus = previousFocusRef?.current !== null;
+  const hasSavedFocus = previousFocusRef?.current !== null;
 
-  const _getSavedElement = useCallback(() => {
+  const getSavedElement = useCallback(() => {
     return previousFocusRef?.current;
   }, []);
 
-  const _clearSavedFocus = useCallback(() => {
+  const clearSavedFocus = useCallback(() => {
     previousFocusRef.current = null;
   }, []);
 
@@ -125,7 +125,7 @@ export function useDialogFocusReturn(isOpen: boolean) {
 }
 
 export function useModalFocusReturn(isVisible: boolean) {
-  const _focusReturn = useFocusReturn({
+  const focusReturn = useFocusReturn({
     autoSave: true,
     autoRestore: true,
     isActive: isVisible,

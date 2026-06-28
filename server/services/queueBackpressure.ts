@@ -24,9 +24,9 @@ export class QueueBackpressureManager extends EventEmitter {
     super();
 
     this.config = {
-      maxQueueSize: config?.maxQueueSize || 1000,
-      maxMemoryMB: config?.maxMemoryMB || 1200,
-      checkIntervalMs: config?.checkIntervalMs || 30000,
+      maxQueueSize: config.maxQueueSize || 1000,
+      maxMemoryMB: config.maxMemoryMB || 1200,
+      checkIntervalMs: config.checkIntervalMs || 30000,
     };
 
     logger?.info("🚦 Queue Backpressure Manager initialized");
@@ -72,8 +72,8 @@ export class QueueBackpressureManager extends EventEmitter {
   }
 
   private async _doCheckBackpressure(): Promise<void> {
-    const _memoryUsage = process?.memoryUsage();
-    const _heapUsedMB = memoryUsage?.heapUsed / 1024 / 1024;
+    const memoryUsage = process?.memoryUsage();
+    const heapUsedMB = memoryUsage?.heapUsed / 1024 / 1024;
 
     let shouldActivate = false;
 
@@ -91,7 +91,7 @@ export class QueueBackpressureManager extends EventEmitter {
         active: true,
         reason: "memory_limit",
         memoryUsageMB: heapUsedMB,
-        timestamp: Date?.now(),
+        timestamp: Date.now(),
       };
 
       this?.emit("backpressure:activated", status);
@@ -103,7 +103,7 @@ export class QueueBackpressureManager extends EventEmitter {
 
       const status: BackpressureStatus = {
         active: false,
-        timestamp: Date?.now(),
+        timestamp: Date.now(),
       };
 
       this?.emit("backpressure:deactivated", status);
@@ -124,8 +124,8 @@ export class QueueBackpressureManager extends EventEmitter {
       };
     }
 
-    const _memoryUsage = process?.memoryUsage();
-    const _heapUsedMB = memoryUsage?.heapUsed / 1024 / 1024;
+    const memoryUsage = process?.memoryUsage();
+    const heapUsedMB = memoryUsage?.heapUsed / 1024 / 1024;
     if (heapUsedMB > this?.config.maxMemoryMB * 0.9) {
       return {
         allowed: false,
@@ -140,10 +140,10 @@ export class QueueBackpressureManager extends EventEmitter {
     queueName: string,
     addJobFn: () => Promise<T>,
   ): Promise<T> {
-    const _check = await this?.canAcceptJob(queueName);
+    const check = await this?.canAcceptJob(queueName);
 
     if (!check?.allowed) {
-      const _error = new Error(`Job rejected: ${check?.reason}`);
+      const error = new Error(`Job rejected: ${check?.reason}`);
       (error as Record<string, unknown>).code = "BACKPRESSURE_REJECTION";
       (error as Record<string, unknown>).retryAfter = 30;
       logger?.warn(`🚫 Job rejected for queue ${queueName}: ${check?.reason}`);
@@ -156,13 +156,13 @@ export class QueueBackpressureManager extends EventEmitter {
   async getStatus(): Promise<
     BackpressureStatus & { queueStats?: Record<string, number> }
   > {
-    const _memoryUsage = process?.memoryUsage();
-    const _heapUsedMB = memoryUsage?.heapUsed / 1024 / 1024;
+    const memoryUsage = process?.memoryUsage();
+    const heapUsedMB = memoryUsage?.heapUsed / 1024 / 1024;
 
     return {
-      active: this?.backpressureActive,
+      active: this.backpressureActive,
       memoryUsageMB: heapUsedMB,
-      timestamp: Date?.now(),
+      timestamp: Date.now(),
       queueStats: {},
     };
   }
@@ -174,7 +174,7 @@ export class QueueBackpressureManager extends EventEmitter {
     const status: BackpressureStatus = {
       active: true,
       reason: "manual",
-      timestamp: Date?.now(),
+      timestamp: Date.now(),
     };
 
     this?.emit("backpressure:activated", status);
@@ -186,14 +186,14 @@ export class QueueBackpressureManager extends EventEmitter {
 
     const status: BackpressureStatus = {
       active: false,
-      timestamp: Date?.now(),
+      timestamp: Date.now(),
     };
 
     this?.emit("backpressure:deactivated", status);
   }
 }
 
-export const _queueBackpressure = new QueueBackpressureManager({
+export const queueBackpressure = new QueueBackpressureManager({
   maxQueueSize: 1000,
   maxMemoryMB: 1200,
   checkIntervalMs: 30000,

@@ -1,12 +1,5 @@
 import { db } from "../db";
-import {
-  supportTickets,
-  supportTicketMessages,
-  supportTicketTags,
-  users,
-  type InsertSupportTicket,
-  type UpdateSupportTicket,
-} from "@shared/schema";
+import { supportTickets, supportTicketMessages, supportTicketTags, users, type InsertSupportTicket, type UpdateSupportTicket } from "@shared/schema";
 import { eq, and, desc, or, inArray, sql } from "drizzle-orm";
 import { emailService } from "./emailService";
 import { notificationService } from "./notificationService";
@@ -26,12 +19,12 @@ export class SupportTicketService {
       userId,
       type: "support",
       title: "Support Ticket Created",
-      message: `Your support ticket "${ticketData?.subject}" has been created. Our team will respond shortly.`,
+      message: `Your support ticket "${ticketData.subject}" has been created. Our team will respond shortly.`,
       link: `/support/tickets/${ticket?.id}`,
     });
 
     // Lean auth query: Select ONLY essential columns for 5-10x faster lookups
-    const _user = await db
+    const user = await db
       .select(authUserSelection)
       .from(users)
       .where(eq(users?.id, userId))
@@ -49,21 +42,21 @@ export class SupportTicketService {
   }
 
   async getTicketById(ticketId: string, userId?: string) {
-    const _query = db
+    const query = db
       .select({
         ticket: supportTickets,
         user: {
-          id: users?.id,
-          email: users?.email,
-          firstName: users?.firstName,
-          lastName: users?.lastName,
+          id: users.id,
+          email: users.email,
+          firstName: users.firstName,
+          lastName: users.lastName,
         },
       })
       .from(supportTickets)
       .leftJoin(users, eq(supportTickets?.userId, users?.id))
       .where(eq(supportTickets?.id, ticketId));
 
-    const _result = await query?.limit(1);
+    const result = await query?.limit(1);
 
     if (!result?.length) {
       return null;
@@ -71,7 +64,7 @@ export class SupportTicketService {
 
     if (userId && result[0].ticket?.userId !== userId) {
       // Lean auth query: Select ONLY essential columns for 5-10x faster lookups
-      const _userRecord = await db
+      const userRecord = await db
         .select(authUserSelection)
         .from(users)
         .where(eq(users?.id, userId))
@@ -81,8 +74,8 @@ export class SupportTicketService {
       }
     }
 
-    const _messages = await this?.getTicketMessages(ticketId);
-    const _tags = await this?.getTicketTags(ticketId);
+    const messages = await this?.getTicketMessages(ticketId);
+    const tags = await this?.getTicketTags(ticketId);
 
     return {
       ...result[0].ticket,
@@ -124,7 +117,7 @@ export class SupportTicketService {
       conditions?.push(eq(supportTickets?.category, filters?.category));
     }
 
-    const _tickets = await db
+    const tickets = await db
       .select()
       .from(supportTickets)
       .where(and(...conditions))
@@ -141,7 +134,7 @@ export class SupportTicketService {
   }) {
     let query = db?.select().from(supportTickets);
 
-    const _conditions = [];
+    const conditions = [];
 
     if (filters?.status && filters?.status.length > 0) {
       conditions?.push(
@@ -178,7 +171,7 @@ export class SupportTicketService {
       query = query?.where(and(...conditions));
     }
 
-    const _tickets = await query?.orderBy(
+    const tickets = await query?.orderBy(
       desc(supportTickets?.priority),
       desc(supportTickets?.createdAt),
     );
@@ -191,7 +184,7 @@ export class SupportTicketService {
     userId: string,
     updates: UpdateSupportTicket,
   ) {
-    const _ticket = await db
+    const ticket = await db
       .select()
       .from(supportTickets)
       .where(eq(supportTickets?.id, ticketId))
@@ -203,7 +196,7 @@ export class SupportTicketService {
 
     if (ticket[0].userId !== userId) {
       // Lean auth query: Select ONLY essential columns for 5-10x faster lookups
-      const _userRecord = await db
+      const userRecord = await db
         .select(authUserSelection)
         .from(users)
         .where(eq(users?.id, userId))
@@ -233,7 +226,7 @@ export class SupportTicketService {
       .returning();
 
     // Lean auth query: Select ONLY essential columns for 5-10x faster lookups
-    const _user = await db
+    const user = await db
       .select(authUserSelection)
       .from(users)
       .where(eq(users?.id, ticket[0].userId))
@@ -266,7 +259,7 @@ export class SupportTicketService {
     isStaffReply: boolean = false,
     attachments?: unknown,
   ) {
-    const _ticket = await db
+    const ticket = await db
       .select()
       .from(supportTickets)
       .where(eq(supportTickets?.id, ticketId))
@@ -294,7 +287,7 @@ export class SupportTicketService {
 
     if (isStaffReply) {
       // Lean auth query: Select ONLY essential columns for 5-10x faster lookups
-      const _user = await db
+      const user = await db
         .select(authUserSelection)
         .from(users)
         .where(eq(users?.id, ticket[0].userId))
@@ -322,14 +315,14 @@ export class SupportTicketService {
   }
 
   async getTicketMessages(ticketId: string) {
-    const _messages = await db
+    const messages = await db
       .select({
         message: supportTicketMessages,
         user: {
-          id: users?.id,
-          firstName: users?.firstName,
-          lastName: users?.lastName,
-          isAdmin: users?.isAdmin,
+          id: users.id,
+          firstName: users.firstName,
+          lastName: users.lastName,
+          isAdmin: users.isAdmin,
         },
       })
       .from(supportTicketMessages)
@@ -341,7 +334,7 @@ export class SupportTicketService {
   }
 
   async addTags(ticketId: string, tags: string[]) {
-    const _tagRecords = tags?.map((tag) => ({
+    const tagRecords = tags?.map((tag) => ({
       ticketId,
       tag,
     }));
@@ -357,16 +350,16 @@ export class SupportTicketService {
   }
 
   async getTicketStats() {
-    const _stats = await db
+    const stats = await db
       .select({
-        status: supportTickets?.status,
-        priority: supportTickets?.priority,
+        status: supportTickets.status,
+        priority: supportTickets.priority,
         count: sql<number>`count(*)::int`,
       })
       .from(supportTickets)
       .groupBy(supportTickets?.status, supportTickets?.priority);
 
-    const _avgResponseTime = await db
+    const avgResponseTime = await db
       .select({
         avgMinutes: sql<number>`
           AVG(EXTRACT(EPOCH FROM (${supportTickets?.resolvedAt} - ${supportTickets?.createdAt})) / 60)::int
@@ -375,7 +368,7 @@ export class SupportTicketService {
       .from(supportTickets)
       .where(sql`${supportTickets?.resolvedAt} IS NOT NULL`);
 
-    const _satisfaction = await db
+    const satisfaction = await db
       .select({
         avgSatisfaction: sql<number>`AVG(${supportTickets?.satisfaction})::numeric(3,2)`,
       })
@@ -390,4 +383,4 @@ export class SupportTicketService {
   }
 }
 
-export const _supportTicketService = new SupportTicketService();
+export const supportTicketService = new SupportTicketService();

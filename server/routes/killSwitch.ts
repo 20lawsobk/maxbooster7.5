@@ -10,11 +10,11 @@ import { killSwitch, AutonomousSystemName } from "../safety/killSwitch";
 import { require2FA } from "../middleware/auth.js";
 import { logger } from "../logger.js";
 
-const _router = Router();
+const router = Router();
 
 // Middleware to require admin role
-const _requireAdmin = (req: Request, res: Response, next: Function) => {
-  const _user = req?.user as Record<string, unknown>;
+const requireAdmin = (req: Request, res: Response, next: Function) => {
+  const user = req?.user as Record<string, unknown>;
   if (!user || user?.role !== "admin") {
     logger?.warn(
       `[KillSwitch] Unauthorized access attempt by user: ${user?.id || "anonymous"}`,
@@ -37,18 +37,18 @@ router?.use(requireAdmin as Record<string, unknown>, require2FA);
  */
 router?.get("/status", requireAdmin, (_req: Request, res: Response) => {
   try {
-    const _state = killSwitch?.getState();
+    const state = killSwitch?.getState();
 
     res?.json({
       success: true,
       data: {
-        globalKilled: state?.globalKilled,
-        systemStates: Object?.fromEntries(state?.systemStates),
-        lastKillTime: state?.lastKillTime,
-        lastResumeTime: state?.lastResumeTime,
-        killReason: state?.killReason,
-        killedBy: state?.killedBy,
-        auditLog: state?.auditLog.slice(-20),
+        globalKilled: state.globalKilled,
+        systemStates: Object.fromEntries(state?.systemStates),
+        lastKillTime: state.lastKillTime,
+        lastResumeTime: state.lastResumeTime,
+        killReason: state.killReason,
+        killedBy: state.killedBy,
+        auditLog: state.auditLog.slice(-20),
       },
     });
   } catch (error) {
@@ -65,7 +65,7 @@ router?.get("/status", requireAdmin, (_req: Request, res: Response) => {
  */
 router?.post("/kill-all", requireAdmin, (req: Request, res: Response) => {
   try {
-    const _user = req?.user as Record<string, unknown>;
+    const user = req?.user as Record<string, unknown>;
     const { reason } = req?.body;
 
     if (!reason || typeof reason !== "string" || reason?.length < 5) {
@@ -76,14 +76,14 @@ router?.post("/kill-all", requireAdmin, (req: Request, res: Response) => {
       });
     }
 
-    const _success = killSwitch?.killAll(reason, user?.email || user?.id);
+    const success = killSwitch?.killAll(reason, user?.email || user?.id);
 
     res?.json({
       success,
       message: success
         ? "All autonomous systems have been stopped"
         : "Some systems failed to stop - check logs",
-      state: killSwitch?.getState(),
+      state: killSwitch.getState(),
     });
   } catch (error) {
     logger?.warn({ err: error }, "[KillSwitch] Failed to kill all:");
@@ -99,7 +99,7 @@ router?.post("/kill-all", requireAdmin, (req: Request, res: Response) => {
  */
 router?.post("/resume-all", requireAdmin, (req: Request, res: Response) => {
   try {
-    const _user = req?.user as Record<string, unknown>;
+    const user = req?.user as Record<string, unknown>;
     const { reason } = req?.body;
 
     if (!reason || typeof reason !== "string" || reason?.length < 5) {
@@ -109,14 +109,14 @@ router?.post("/resume-all", requireAdmin, (req: Request, res: Response) => {
       });
     }
 
-    const _success = killSwitch?.resumeAll(reason, user?.email || user?.id);
+    const success = killSwitch?.resumeAll(reason, user?.email || user?.id);
 
     res?.json({
       success,
       message: success
         ? "All autonomous systems have been resumed"
         : "Some systems failed to resume - check logs",
-      state: killSwitch?.getState(),
+      state: killSwitch.getState(),
     });
   } catch (error) {
     logger?.warn({ err: error }, "[KillSwitch] Failed to resume all:");
@@ -130,8 +130,8 @@ router?.post("/resume-all", requireAdmin, (req: Request, res: Response) => {
  */
 router?.post("/kill/:system", requireAdmin, (req: Request, res: Response) => {
   try {
-    const _user = req?.user as Record<string, unknown>;
-    const _systemName = req?.params.system as AutonomousSystemName;
+    const user = req?.user as Record<string, unknown>;
+    const systemName = req?.params.system as AutonomousSystemName;
     const { reason } = req?.body;
 
     if (!reason || typeof reason !== "string" || reason?.length < 5) {
@@ -141,7 +141,7 @@ router?.post("/kill/:system", requireAdmin, (req: Request, res: Response) => {
       });
     }
 
-    const _success = killSwitch?.killSystem(
+    const success = killSwitch?.killSystem(
       systemName,
       reason,
       user?.email || user?.id,
@@ -152,7 +152,7 @@ router?.post("/kill/:system", requireAdmin, (req: Request, res: Response) => {
       message: success
         ? `System ${systemName} has been stopped`
         : `Failed to stop ${systemName}`,
-      state: killSwitch?.getState(),
+      state: killSwitch.getState(),
     });
   } catch (error) {
     logger?.warn(
@@ -169,8 +169,8 @@ router?.post("/kill/:system", requireAdmin, (req: Request, res: Response) => {
  */
 router?.post("/resume/:system", requireAdmin, (req: Request, res: Response) => {
   try {
-    const _user = req?.user as Record<string, unknown>;
-    const _systemName = req?.params.system as AutonomousSystemName;
+    const user = req?.user as Record<string, unknown>;
+    const systemName = req?.params.system as AutonomousSystemName;
     const { reason } = req?.body;
 
     if (!reason || typeof reason !== "string" || reason?.length < 5) {
@@ -180,7 +180,7 @@ router?.post("/resume/:system", requireAdmin, (req: Request, res: Response) => {
       });
     }
 
-    const _success = killSwitch?.resumeSystem(
+    const success = killSwitch?.resumeSystem(
       systemName,
       reason,
       user?.email || user?.id,
@@ -191,7 +191,7 @@ router?.post("/resume/:system", requireAdmin, (req: Request, res: Response) => {
       message: success
         ? `System ${systemName} has been resumed`
         : `Failed to resume ${systemName}`,
-      state: killSwitch?.getState(),
+      state: killSwitch.getState(),
     });
   } catch (error) {
     logger?.warn(
@@ -208,13 +208,13 @@ router?.post("/resume/:system", requireAdmin, (req: Request, res: Response) => {
  */
 router?.get("/audit-log", requireAdmin, (req: Request, res: Response) => {
   try {
-    const _limit = Math?.min(parseInt(req?.query.limit as string) || 100, 500);
-    const _auditLog = killSwitch?.getAuditLog(limit);
+    const limit = Math?.min(parseInt(req?.query.limit as string) || 100, 500);
+    const auditLog = killSwitch?.getAuditLog(limit);
 
     res?.json({
       success: true,
       data: auditLog,
-      total: auditLog?.length,
+      total: auditLog.length,
     });
   } catch (error) {
     logger?.warn({ err: error }, "[KillSwitch] Failed to get audit log:");

@@ -1,16 +1,4 @@
-import {
-  AudioBuffer,
-  DSPContext,
-  createBuffer,
-  BiquadFilter,
-  DelayLine,
-  LFO,
-  Oscillator,
-  ADSR,
-  clamp,
-  softClip,
-  hardClip,
-} from "../core";
+import { AudioBuffer, DSPContext, createBuffer, BiquadFilter, DelayLine, LFO, Oscillator, ADSR, clamp, softClip, hardClip } from "../core";
 
 export interface SynthesizerEngine {
   noteOn(frequency: number, velocity: number, context: DSPContext): void;
@@ -34,22 +22,22 @@ class Wavetable {
     generator: (phase: number, harmonics: number) => number,
     harmonics: number = 64,
   ): void {
-    const _table = new Float32Array(this?.tableSize);
+    const table = new Float32Array(this?.tableSize);
     for (let i = 0; i < this?.tableSize; i++) {
-      const _phase = i / this?.tableSize;
+      const phase = i / this?.tableSize;
       table[i] = generator(phase, harmonics);
     }
     this?.tables.push(table);
-    this?.numTables++;
+    this.numTables++;
   }
 
   generateSaw(harmonics: number = 64): void {
     this?.addTable((phase, h) => {
       let value = 0;
       for (let k = 1; k <= h; k++) {
-        value += Math?.sin(2 * Math?.PI * k * phase) / k;
+        value += Math?.sin(2 * Math.PI * k * phase) / k;
       }
-      return (value * 2) / Math?.PI;
+      return (value * 2) / Math.PI;
     }, harmonics);
   }
 
@@ -57,9 +45,9 @@ class Wavetable {
     this?.addTable((phase, h) => {
       let value = 0;
       for (let k = 1; k <= h; k += 2) {
-        value += Math?.sin(2 * Math?.PI * k * phase) / k;
+        value += Math?.sin(2 * Math.PI * k * phase) / k;
       }
-      return (value * 4) / Math?.PI;
+      return (value * 4) / Math.PI;
     }, harmonics);
   }
 
@@ -67,15 +55,15 @@ class Wavetable {
     this?.addTable((phase, h) => {
       let value = 0;
       for (let k = 1; k <= h; k += 2) {
-        const _sign = ((k - 1) / 2) % 2 === 0 ? 1 : -1;
-        value += (sign * Math?.sin(2 * Math?.PI * k * phase)) / (k * k);
+        const sign = ((k - 1) / 2) % 2 === 0 ? 1 : -1;
+        value += (sign * Math?.sin(2 * Math.PI * k * phase)) / (k * k);
       }
-      return (value * 8) / (Math?.PI * Math?.PI);
+      return (value * 8) / (Math.PI * Math.PI);
     }, harmonics);
   }
 
   generateSine(): void {
-    this?.addTable((phase) => Math?.sin(2 * Math?.PI * phase), 1);
+    this?.addTable((phase) => Math?.sin(2 * Math.PI * phase), 1);
   }
 
   generatePWM(width: number): void {
@@ -84,17 +72,17 @@ class Wavetable {
 
   generateFormant(formantFreq: number): void {
     this?.addTable((phase) => {
-      const _carrier = Math?.sin(2 * Math?.PI * phase);
-      const _formant = Math?.sin(2 * Math?.PI * phase * formantFreq);
+      const carrier = Math?.sin(2 * Math.PI * phase);
+      const formant = Math?.sin(2 * Math.PI * phase * formantFreq);
       return carrier * (0.5 + 0.5 * formant);
     }, 32);
   }
 
   generateDigital(): void {
     this?.addTable((phase) => {
-      const _bits = 8;
-      const _quantized =
-        Math?.floor(Math?.sin(2 * Math?.PI * phase) * (1 << (bits - 1))) /
+      const bits = 8;
+      const quantized =
+        Math?.floor(Math?.sin(2 * Math.PI * phase) * (1 << (bits - 1))) /
         (1 << (bits - 1));
       return quantized;
     }, 32);
@@ -105,7 +93,7 @@ class Wavetable {
       let value = 0;
       for (let k = 0; k < harmonicAmplitudes?.length; k++) {
         value +=
-          Math?.sin(2 * Math?.PI * (k + 1) * phase) * harmonicAmplitudes[k];
+          Math?.sin(2 * Math.PI * (k + 1) * phase) * harmonicAmplitudes[k];
       }
       return value;
     }, harmonicAmplitudes?.length);
@@ -114,20 +102,20 @@ class Wavetable {
   sample(phase: number, tablePosition: number): number {
     if (this?.numTables === 0) return 0;
 
-    const _tableIdx = clamp(tablePosition, 0, 1) * (this?.numTables - 1);
-    const _table1Idx = Math?.floor(tableIdx);
-    const _table2Idx = Math?.min(table1Idx + 1, this?.numTables - 1);
-    const _tableFrac = tableIdx - table1Idx;
+    const tableIdx = clamp(tablePosition, 0, 1) * (this?.numTables - 1);
+    const table1Idx = Math?.floor(tableIdx);
+    const table2Idx = Math?.min(table1Idx + 1, this?.numTables - 1);
+    const tableFrac = tableIdx - table1Idx;
 
-    const _sampleIdx = (phase * this?.tableSize) % this?.tableSize;
-    const _idx1 = Math?.floor(sampleIdx);
-    const _idx2 = (idx1 + 1) % this?.tableSize;
-    const _frac = sampleIdx - idx1;
+    const sampleIdx = (phase * this?.tableSize) % this?.tableSize;
+    const idx1 = Math?.floor(sampleIdx);
+    const idx2 = (idx1 + 1) % this?.tableSize;
+    const frac = sampleIdx - idx1;
 
-    const _sample1 =
+    const sample1 =
       this?.tables[table1Idx][idx1] * (1 - frac) +
       this?.tables[table1Idx][idx2] * frac;
-    const _sample2 =
+    const sample2 =
       this?.tables[table2Idx][idx1] * (1 - frac) +
       this?.tables[table2Idx][idx2] * frac;
 
@@ -158,9 +146,9 @@ class WavetableOscillator {
   }
 
   process(): number {
-    const _sample = this?.wavetable.sample(this?.phase, this?.tablePosition);
-    this?.phase += this?.phaseIncrement;
-    if (this?.phase >= 1) this?.phase -= 1;
+    const sample = this?.wavetable.sample(this?.phase, this?.tablePosition);
+    this.phase += this?.phaseIncrement;
+    if (this?.phase >= 1) this.phase -= 1;
     return sample;
   }
 
@@ -237,25 +225,25 @@ export class SerumSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _filterEnvValue = this?.filterEnvelope.process();
+      const envValue = this?.envelope.process();
+      const filterEnvValue = this?.filterEnvelope.process();
 
-      const _morphValue = (this?.morphLFO.sine() + 1) * 0.5;
-      const _filterMod = this?.filterLFO.sine();
+      const morphValue = (this?.morphLFO.sine() + 1) * 0.5;
+      const filterMod = this?.filterLFO.sine();
 
       this?.osc1.setTablePosition(morphValue);
       this?.osc2.setTablePosition(1 - morphValue);
 
-      const _osc1Out = this?.osc1.process() * 0.5;
-      const _osc2Out = this?.osc2.process() * 0.4;
-      const _subOut = this?.subOsc.sine() * 0.3;
+      const osc1Out = this?.osc1.process() * 0.5;
+      const osc2Out = this?.osc2.process() * 0.4;
+      const subOut = this?.subOsc.sine() * 0.3;
 
       let sample = osc1Out + osc2Out + subOut;
 
-      const _filterFreq =
+      const filterFreq =
         1000 + filterEnvValue * 5000 + filterMod * 500 + this?.velocity * 2000;
       this?.lpFilter.setLowpass(
         clamp(filterFreq, 200, 12000),
@@ -267,8 +255,8 @@ export class SerumSynth implements SynthesizerEngine {
       sample = this?.lpFilter.process(sample);
       sample *= envValue * this?.velocity;
 
-      output?.samples[0][i] = softClip(sample, 0.9);
-      output?.samples[1][i] = softClip(sample, 0.9);
+      output.samples[0][i] = softClip(sample, 0.9);
+      output.samples[1][i] = softClip(sample, 0.9);
     }
 
     return output;
@@ -304,7 +292,7 @@ export class MassiveSynth implements SynthesizerEngine {
 
   constructor() {
     for (let i = 0; i < 3; i++) {
-      const _wt = new Wavetable();
+      const wt = new Wavetable();
       wt?.generateSaw();
       wt?.generateSquare();
       wt?.generateDigital();
@@ -325,7 +313,7 @@ export class MassiveSynth implements SynthesizerEngine {
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
-    const _detuneAmounts = [-0.02, 0, 0.02];
+    const detuneAmounts = [-0.02, 0, 0.02];
     for (let i = 0; i < 3; i++) {
       this?.oscillators[i].setFrequency(
         frequency * (1 + detuneAmounts[i] * 0.01),
@@ -351,12 +339,12 @@ export class MassiveSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _filterEnvValue = this?.filterEnvelope.process();
-      const _lfoValue = (this?.lfo.sine() + 1) * 0.5;
+      const envValue = this?.envelope.process();
+      const filterEnvValue = this?.filterEnvelope.process();
+      const lfoValue = (this?.lfo.sine() + 1) * 0.5;
 
       for (let o = 0; o < 3; o++) {
         this?.oscillators[o].setTablePosition(0.2 + lfoValue * 0.3);
@@ -368,7 +356,7 @@ export class MassiveSynth implements SynthesizerEngine {
       }
       sample /= 3;
 
-      const _filterFreq = 300 + filterEnvValue * 3000 + this?.velocity * 1500;
+      const filterFreq = 300 + filterEnvValue * 3000 + this?.velocity * 1500;
       this?.lpFilter.setLowpass(
         clamp(filterFreq, 100, 8000),
         3.5 + filterEnvValue * 2,
@@ -381,8 +369,8 @@ export class MassiveSynth implements SynthesizerEngine {
       sample *= envValue * this?.velocity;
       sample = softClip(sample * 1.5, 0.85);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -473,22 +461,22 @@ export class SynthwaveSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _filterEnvValue = this?.filterEnvelope.process();
+      const envValue = this?.envelope.process();
+      const filterEnvValue = this?.filterEnvelope.process();
 
-      const _chorusMod = this?.chorusLFO.sine();
-      const _filterMod = this?.filterLFO.sine();
+      const chorusMod = this?.chorusLFO.sine();
+      const filterMod = this?.filterLFO.sine();
 
-      const _osc1Out = this?.osc1.process() * 0.5;
-      const _osc2Out = this?.osc2.process() * 0.2;
-      const _arpOut = this?.arpOsc.pulse(0.5) * 0.15;
+      const osc1Out = this?.osc1.process() * 0.5;
+      const osc2Out = this?.osc2.process() * 0.2;
+      const arpOut = this?.arpOsc.pulse(0.5) * 0.15;
 
       let sample = osc1Out + osc2Out + arpOut;
 
-      const _filterFreq =
+      const filterFreq =
         1500 + filterEnvValue * 4000 + filterMod * 800 + this?.velocity * 1500;
       this?.lpFilter.setLowpass(
         clamp(filterFreq, 300, 10000),
@@ -502,17 +490,17 @@ export class SynthwaveSynth implements SynthesizerEngine {
       this?.chorusDelay1.write(sample);
       this?.chorusDelay2.write(sample);
 
-      const _delayTime1 = 400 + chorusMod * 150;
-      const _delayTime2 = 450 - chorusMod * 150;
+      const delayTime1 = 400 + chorusMod * 150;
+      const delayTime2 = 450 - chorusMod * 150;
 
-      const _chorus1 = this?.chorusDelay1.readInterpolated(delayTime1) * 0.25;
-      const _chorus2 = this?.chorusDelay2.readInterpolated(delayTime2) * 0.25;
+      const chorus1 = this?.chorusDelay1.readInterpolated(delayTime1) * 0.25;
+      const chorus2 = this?.chorusDelay2.readInterpolated(delayTime2) * 0.25;
 
-      const _sampleL = sample * 0.7 + chorus1;
-      const _sampleR = sample * 0.7 + chorus2;
+      const sampleL = sample * 0.7 + chorus1;
+      const sampleR = sample * 0.7 + chorus2;
 
-      output?.samples[0][i] = softClip(sampleL * envValue * this?.velocity, 0.9);
-      output?.samples[1][i] = softClip(sampleR * envValue * this?.velocity, 0.9);
+      output.samples[0][i] = softClip(sampleL * envValue * this?.velocity, 0.9);
+      output.samples[1][i] = softClip(sampleR * envValue * this?.velocity, 0.9);
     }
 
     return output;
@@ -576,7 +564,7 @@ export class VocalWavetableSynth implements SynthesizerEngine {
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
-    const _detuneAmounts = [-0.05, -0.02, 0.02, 0.05];
+    const detuneAmounts = [-0.05, -0.02, 0.02, 0.05];
     for (let i = 0; i < 4; i++) {
       this?.oscillators[i].setFrequency(
         frequency * (1 + detuneAmounts[i] * 0.01),
@@ -585,9 +573,9 @@ export class VocalWavetableSynth implements SynthesizerEngine {
       this?.oscillators[i].setTablePosition(0.2);
     }
 
-    const _formantFreqs = [800, 1200, 2500, 3200, 4500];
-    const _formantQs = [8, 6, 5, 4, 3];
-    const _formantGains = [4, 3, 2, 1.5, 1];
+    const formantFreqs = [800, 1200, 2500, 3200, 4500];
+    const formantQs = [8, 6, 5, 4, 3];
+    const formantGains = [4, 3, 2, 1.5, 1];
     for (let i = 0; i < 5; i++) {
       this?.formantFilters[i].setPeaking(
         formantFreqs[i],
@@ -612,11 +600,11 @@ export class VocalWavetableSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _morphValue = (this?.morphLFO.sine() + 1) * 0.5;
+      const envValue = this?.envelope.process();
+      const morphValue = (this?.morphLFO.sine() + 1) * 0.5;
       this?.vibratoLFO.sine() * 0.003 * envValue;
 
       for (let o = 0; o < 4; o++) {
@@ -626,8 +614,8 @@ export class VocalWavetableSynth implements SynthesizerEngine {
       let sampleL = 0;
       let sampleR = 0;
       for (let o = 0; o < 4; o++) {
-        const _osc = this?.oscillators[o].process();
-        const _pan = (o - 1.5) / 2;
+        const osc = this?.oscillators[o].process();
+        const pan = (o - 1.5) / 2;
         sampleL += osc * (1 - pan * 0.3);
         sampleR += osc * (1 + pan * 0.3);
       }
@@ -647,8 +635,8 @@ export class VocalWavetableSynth implements SynthesizerEngine {
       sampleL *= envValue * this?.velocity;
       sampleR *= envValue * this?.velocity;
 
-      output?.samples[0][i] = softClip(sampleL, 0.88);
-      output?.samples[1][i] = softClip(sampleR, 0.88);
+      output.samples[0][i] = softClip(sampleL, 0.88);
+      output.samples[1][i] = softClip(sampleR, 0.88);
     }
 
     return output;
@@ -707,7 +695,7 @@ export class OrganicWavetableSynth implements SynthesizerEngine {
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
-    const _detuneAmounts = [-0.08, -0.04, -0.01, 0.01, 0.04, 0.08];
+    const detuneAmounts = [-0.08, -0.04, -0.01, 0.01, 0.04, 0.08];
     for (let i = 0; i < 6; i++) {
       this?.oscillators[i].setFrequency(
         frequency * (1 + detuneAmounts[i] * 0.01),
@@ -735,13 +723,13 @@ export class OrganicWavetableSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _breathEnvValue = this?.breathEnvelope.process();
+      const envValue = this?.envelope.process();
+      const breathEnvValue = this?.breathEnvelope.process();
 
-      const _morphValue = (this?.morphLFO.sine() + 1) * 0.5;
+      const morphValue = (this?.morphLFO.sine() + 1) * 0.5;
       this?.breathLFO.sine() * 0.1 * breathEnvValue;
 
       for (let o = 0; o < 6; o++) {
@@ -751,15 +739,15 @@ export class OrganicWavetableSynth implements SynthesizerEngine {
       let sampleL = 0;
       let sampleR = 0;
       for (let o = 0; o < 6; o++) {
-        const _osc = this?.oscillators[o].process();
-        const _pan = (o - 2.5) / 3;
+        const osc = this?.oscillators[o].process();
+        const pan = (o - 2.5) / 3;
         sampleL += osc * (1 - pan * 0.35);
         sampleR += osc * (1 + pan * 0.35);
       }
       sampleL /= 6;
       sampleR /= 6;
 
-      const _breath = (Math?.random() * 2 - 1) * breathEnvValue * 0.08;
+      const breath = (Math?.random() * 2 - 1) * breathEnvValue * 0.08;
       sampleL += breath;
       sampleR += breath;
 
@@ -773,8 +761,8 @@ export class OrganicWavetableSynth implements SynthesizerEngine {
       sampleL *= envValue * this?.velocity;
       sampleR *= envValue * this?.velocity;
 
-      output?.samples[0][i] = softClip(sampleL, 0.9);
-      output?.samples[1][i] = softClip(sampleR, 0.9);
+      output.samples[0][i] = softClip(sampleL, 0.9);
+      output.samples[1][i] = softClip(sampleR, 0.9);
     }
 
     return output;
@@ -831,7 +819,7 @@ export class DigitalWavetableSynth implements SynthesizerEngine {
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
-    const _detuneAmounts = [-0.01, 0, 0.01];
+    const detuneAmounts = [-0.01, 0, 0.01];
     for (let i = 0; i < 3; i++) {
       this?.oscillators[i].setFrequency(
         frequency * (1 + detuneAmounts[i] * 0.01),
@@ -858,12 +846,12 @@ export class DigitalWavetableSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _filterEnvValue = this?.filterEnvelope.process();
-      const _morphValue = (this?.morphLFO.sine() + 1) * 0.5;
+      const envValue = this?.envelope.process();
+      const filterEnvValue = this?.filterEnvelope.process();
+      const morphValue = (this?.morphLFO.sine() + 1) * 0.5;
 
       for (let o = 0; o < 3; o++) {
         this?.oscillators[o].setTablePosition(morphValue);
@@ -875,12 +863,12 @@ export class DigitalWavetableSynth implements SynthesizerEngine {
       }
       sample /= 3;
 
-      const _bits = 6;
-      const _quantized =
+      const bits = 6;
+      const quantized =
         Math?.floor(sample * (1 << (bits - 1))) / (1 << (bits - 1));
       sample = sample * 0.7 + quantized * 0.3;
 
-      const _filterFreq = 1500 + filterEnvValue * 5000 + this?.velocity * 2000;
+      const filterFreq = 1500 + filterEnvValue * 5000 + this?.velocity * 2000;
       this?.lpFilter.setLowpass(
         clamp(filterFreq, 300, 12000),
         2 + filterEnvValue * 2,
@@ -892,8 +880,8 @@ export class DigitalWavetableSynth implements SynthesizerEngine {
       sample = this?.bitcrushFilter.process(sample);
       sample *= envValue * this?.velocity;
 
-      output?.samples[0][i] = hardClip(sample, 0.9);
-      output?.samples[1][i] = hardClip(sample, 0.9);
+      output.samples[0][i] = hardClip(sample, 0.9);
+      output.samples[1][i] = hardClip(sample, 0.9);
     }
 
     return output;
@@ -976,25 +964,25 @@ export class PPGSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _filterEnvValue = this?.filterEnvelope.process();
+      const envValue = this?.envelope.process();
+      const filterEnvValue = this?.filterEnvelope.process();
 
-      const _morphValue = (this?.morphLFO.sine() + 1) * 0.5;
-      const _pwmValue = this?.pwmLFO.sine() * 0.1;
+      const morphValue = (this?.morphLFO.sine() + 1) * 0.5;
+      const pwmValue = this?.pwmLFO.sine() * 0.1;
 
       this?.oscillators[0].setTablePosition(morphValue);
       this?.oscillators[1].setTablePosition(
         clamp(morphValue + 0.2 + pwmValue, 0, 1),
       );
 
-      const _osc1 = this?.oscillators[0].process() * 0.5;
-      const _osc2 = this?.oscillators[1].process() * 0.5;
+      const osc1 = this?.oscillators[0].process() * 0.5;
+      const osc2 = this?.oscillators[1].process() * 0.5;
       let sample = osc1 + osc2;
 
-      const _filterFreq = 1200 + filterEnvValue * 4000 + this?.velocity * 1500;
+      const filterFreq = 1200 + filterEnvValue * 4000 + this?.velocity * 1500;
       this?.lpFilter.setLowpass(
         clamp(filterFreq, 200, 10000),
         1.8 + filterEnvValue * 1.5,
@@ -1005,8 +993,8 @@ export class PPGSynth implements SynthesizerEngine {
       sample = this?.lpFilter.process(sample);
       sample *= envValue * this?.velocity;
 
-      output?.samples[0][i] = softClip(sample, 0.9);
-      output?.samples[1][i] = softClip(sample, 0.9);
+      output.samples[0][i] = softClip(sample, 0.9);
+      output.samples[1][i] = softClip(sample, 0.9);
     }
 
     return output;
@@ -1090,18 +1078,18 @@ export class MicrotonalSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _filterEnvValue = this?.filterEnvelope.process();
+      const envValue = this?.envelope.process();
+      const filterEnvValue = this?.filterEnvelope.process();
 
-      const _morphValue = (this?.morphLFO.sine() + 1) * 0.5;
-      const _microtonalShift = this?.microtonalLFO.sine() * 0.01;
+      const morphValue = (this?.morphLFO.sine() + 1) * 0.5;
+      const microtonalShift = this?.microtonalLFO.sine() * 0.01;
 
       for (let o = 0; o < 5; o++) {
         this?.oscillators[o].setTablePosition(morphValue);
-        const _shiftedFreq =
+        const shiftedFreq =
           this?.frequency *
           this?.microtonalRatios[o] *
           (1 + microtonalShift * (o % 2 === 0 ? 1 : -1));
@@ -1110,15 +1098,15 @@ export class MicrotonalSynth implements SynthesizerEngine {
 
       let sampleL = 0;
       let sampleR = 0;
-      const _levels = [0.4, 0.25, 0.2, 0.15, 0.1];
+      const levels = [0.4, 0.25, 0.2, 0.15, 0.1];
       for (let o = 0; o < 5; o++) {
-        const _osc = this?.oscillators[o].process() * levels[o];
-        const _pan = (o - 2) / 2.5;
+        const osc = this?.oscillators[o].process() * levels[o];
+        const pan = (o - 2) / 2.5;
         sampleL += osc * (1 - pan * 0.3);
         sampleR += osc * (1 + pan * 0.3);
       }
 
-      const _filterFreq = 1500 + filterEnvValue * 3000 + this?.velocity * 1500;
+      const filterFreq = 1500 + filterEnvValue * 3000 + this?.velocity * 1500;
       this?.lpFilter.setLowpass(
         clamp(filterFreq, 200, 8000),
         1.2,
@@ -1133,8 +1121,8 @@ export class MicrotonalSynth implements SynthesizerEngine {
       sampleL *= envValue * this?.velocity;
       sampleR *= envValue * this?.velocity;
 
-      output?.samples[0][i] = softClip(sampleL, 0.9);
-      output?.samples[1][i] = softClip(sampleR, 0.9);
+      output.samples[0][i] = softClip(sampleL, 0.9);
+      output.samples[1][i] = softClip(sampleR, 0.9);
     }
 
     return output;
@@ -1222,26 +1210,26 @@ export class HybridSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _filterEnvValue = this?.filterEnvelope.process();
+      const envValue = this?.envelope.process();
+      const filterEnvValue = this?.filterEnvelope.process();
 
-      const _morphValue = (this?.morphLFO.sine() + 1) * 0.5;
-      const _filterMod = this?.filterLFO.sine();
+      const morphValue = (this?.morphLFO.sine() + 1) * 0.5;
+      const filterMod = this?.filterLFO.sine();
 
       this?.wtOscillators[0].setTablePosition(morphValue);
       this?.wtOscillators[1].setTablePosition(clamp(morphValue + 0.3, 0, 1));
 
-      const _wt1 = this?.wtOscillators[0].process() * 0.4;
-      const _wt2 = this?.wtOscillators[1].process() * 0.35;
-      const _sub = this?.subOsc.sine() * 0.25;
-      const _noise = this?.noiseOsc.noise() * 0.03 * filterEnvValue;
+      const wt1 = this?.wtOscillators[0].process() * 0.4;
+      const wt2 = this?.wtOscillators[1].process() * 0.35;
+      const sub = this?.subOsc.sine() * 0.25;
+      const noise = this?.noiseOsc.noise() * 0.03 * filterEnvValue;
 
       let sample = wt1 + wt2 + sub + noise;
 
-      const _filterFreq =
+      const filterFreq =
         1000 + filterEnvValue * 4500 + filterMod * 500 + this?.velocity * 2000;
       this?.lpFilter.setLowpass(
         clamp(filterFreq, 200, 12000),
@@ -1255,14 +1243,14 @@ export class HybridSynth implements SynthesizerEngine {
       );
 
       sample = this?.hpFilter.process(sample);
-      const _lpOut = this?.lpFilter.process(sample);
-      const _bpOut = this?.bpFilter.process(sample);
+      const lpOut = this?.lpFilter.process(sample);
+      const bpOut = this?.bpFilter.process(sample);
       sample = lpOut * 0.8 + bpOut * 0.2;
 
       sample *= envValue * this?.velocity;
 
-      output?.samples[0][i] = softClip(sample, 0.9);
-      output?.samples[1][i] = softClip(sample, 0.9);
+      output.samples[0][i] = softClip(sample, 0.9);
+      output.samples[1][i] = softClip(sample, 0.9);
     }
 
     return output;
@@ -1338,12 +1326,12 @@ export class GranularWavetableSynth implements SynthesizerEngine {
     this.grainSize = Math?.floor(context?.sampleRate / 20);
 
     for (let i = 0; i < 8; i++) {
-      const _detune = 1 + (Math?.random() - 0.5) * 0.02;
+      const detune = 1 + (Math?.random() - 0.5) * 0.02;
       this?.grains[i].osc?.setFrequency(frequency * detune, context?.sampleRate);
       this?.grains[i].osc?.setTablePosition(Math?.random());
-      this?.grains[i].phase = Math?.random();
-      this?.grains[i].amp = 0;
-      this?.grains[i].pan = (Math?.random() * 2 - 1) * 0.5;
+      this.grains[i].phase = Math?.random();
+      this.grains[i].amp = 0;
+      this.grains[i].pan = (Math?.random() * 2 - 1) * 0.5;
     }
 
     this?.grainLFO.setFrequency(0.15, context?.sampleRate);
@@ -1364,17 +1352,17 @@ export class GranularWavetableSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const _envValue = this?.envelope.process();
-      const _filterEnvValue = this?.filterEnvelope.process();
+      const envValue = this?.envelope.process();
+      const filterEnvValue = this?.filterEnvelope.process();
 
-      const _positionMod = (this?.positionLFO.sine() + 1) * 0.5;
-      const _grainMod = this?.grainLFO.sine();
+      const positionMod = (this?.positionLFO.sine() + 1) * 0.5;
+      const grainMod = this?.grainLFO.sine();
 
-      this?.grainCounter++;
-      const _triggerInterval = Math?.floor(this?.grainSize / this?.grainDensity);
+      this.grainCounter++;
+      const triggerInterval = Math?.floor(this?.grainSize / this?.grainDensity);
 
       if (this?.grainCounter >= triggerInterval) {
         this.grainCounter = 0;
@@ -1396,13 +1384,13 @@ export class GranularWavetableSynth implements SynthesizerEngine {
 
       for (const grain of this?.grains) {
         if (grain?.amp > 0.001) {
-          const _grainEnv = Math?.sin(grain?.phase * Math?.PI);
-          const _grainSample = grain?.osc.process() * grain?.amp * grainEnv;
+          const grainEnv = Math?.sin(grain?.phase * Math.PI);
+          const grainSample = grain?.osc.process() * grain?.amp * grainEnv;
 
           sampleL += grainSample * (1 - grain?.pan * 0.5);
           sampleR += grainSample * (1 + grain?.pan * 0.5);
 
-          grain?.phase += 1 / this?.grainSize;
+          grain.phase += 1 / this?.grainSize;
           if (grain?.phase >= 1) {
             grain.amp = 0;
             grain.phase = 0;
@@ -1413,7 +1401,7 @@ export class GranularWavetableSynth implements SynthesizerEngine {
       sampleL /= 4;
       sampleR /= 4;
 
-      const _filterFreq = 1500 + filterEnvValue * 3500 + grainMod * 500;
+      const filterFreq = 1500 + filterEnvValue * 3500 + grainMod * 500;
       this?.lpFilter.setLowpass(
         clamp(filterFreq, 200, 10000),
         1.0,
@@ -1428,8 +1416,8 @@ export class GranularWavetableSynth implements SynthesizerEngine {
       sampleL *= envValue * this?.velocity;
       sampleR *= envValue * this?.velocity;
 
-      output?.samples[0][i] = softClip(sampleL, 0.9);
-      output?.samples[1][i] = softClip(sampleR, 0.9);
+      output.samples[0][i] = softClip(sampleL, 0.9);
+      output.samples[1][i] = softClip(sampleR, 0.9);
     }
 
     return output;

@@ -8,9 +8,9 @@ import { requireAuth } from "../middleware/auth.js";
 import { z } from "zod";
 import { parsePaginationParams } from "../middleware/pagination.js";
 
-const _router = Router();
+const router = Router();
 
-const _VALID_CATEGORIES = [
+const VALID_CATEGORIES = [
   "clothing",
   "accessories",
   "music",
@@ -18,7 +18,7 @@ const _VALID_CATEGORIES = [
   "art",
   "other",
 ] as const;
-const _VALID_ORDER_STATUSES = [
+const VALID_ORDER_STATUSES = [
   "pending",
   "processing",
   "shipped",
@@ -27,39 +27,39 @@ const _VALID_ORDER_STATUSES = [
   "refunded",
 ] as const;
 
-const _createMerchSchema = z?.object({
-  name: z?.string().min(1).max(200),
-  description: z?.string().max(2000).optional(),
-  price: z?.number().min(0).max(1_000_000),
-  salePrice: z?.number().min(0).max(1_000_000).nullable().optional(),
-  imageUrl: z?.string().url().max(2048).optional().or(z?.literal("")),
-  category: z?.enum(VALID_CATEGORIES).optional().default("clothing"),
-  variants: z?.array(z?.record(z?.string(), z?.unknown())).optional().default([]),
-  inventory: z?.number().int().min(0).optional().default(0),
-  sku: z?.string().max(100).optional(),
-  isActive: z?.boolean().optional().default(true),
-  isDigital: z?.boolean().optional().default(false),
+const createMerchSchema = z.object({
+  name: z.string().min(1).max(200),
+  description: z.string().max(2000).optional(),
+  price: z.number().min(0).max(1_000_000),
+  salePrice: z.number().min(0).max(1_000_000).nullable().optional(),
+  imageUrl: z.string().url().max(2048).optional().or(z.literal("")),
+  category: z.enum(VALID_CATEGORIES).optional().default("clothing"),
+  variants: z.array(z.record(z.string(), z.unknown())).optional().default([]),
+  inventory: z.number().int().min(0).optional().default(0),
+  sku: z.string().max(100).optional(),
+  isActive: z.boolean().optional().default(true),
+  isDigital: z.boolean().optional().default(false),
   downloadUrl: z
     .string()
     .url()
     .max(2048)
     .optional()
-    .or(z?.literal(""))
+    .or(z.literal(""))
     .nullable(),
 });
 
-const _updateMerchSchema = createMerchSchema?.partial();
+const updateMerchSchema = createMerchSchema?.partial();
 
-const _updateOrderSchema = z?.object({
-  status: z?.enum(VALID_ORDER_STATUSES).optional(),
-  trackingNumber: z?.string().max(200).nullable().optional(),
+const updateOrderSchema = z.object({
+  status: z.enum(VALID_ORDER_STATUSES).optional(),
+  trackingNumber: z.string().max(200).nullable().optional(),
 });
 
 // GET /api/merch - list user's merch items
 router?.get("/", requireAuth, async (req: Request, res: Response) => {
   try {
     const { limit, offset } = parsePaginationParams(req);
-    const _items = await db
+    const items = await db
       .select()
       .from(merchItems)
       .where(eq(merchItems?.userId, req?.user!.id))
@@ -77,30 +77,30 @@ router?.get("/", requireAuth, async (req: Request, res: Response) => {
 // POST /api/merch - create merch item
 router?.post("/", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _parsed = createMerchSchema?.safeParse(req?.body);
+    const parsed = createMerchSchema?.safeParse(req?.body);
     if (!parsed?.success) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: parsed?.error.flatten() });
+        .json({ error: "Validation error", details: parsed.error.flatten() });
     }
 
-    const _data = parsed?.data;
+    const data = parsed?.data;
     const [item] = await db
       .insert(merchItems)
       .values({
-        userId: req?.user!.id,
-        name: data?.name,
-        description: data?.description,
+        userId: req.user!.id,
+        name: data.name,
+        description: data.description,
         price: String(data?.price),
-        salePrice: data?.salePrice != null ? String(data?.salePrice) : null,
-        imageUrl: data?.imageUrl || null,
-        category: data?.category,
-        variants: data?.variants,
-        inventory: data?.inventory,
-        sku: data?.sku,
-        isActive: data?.isActive,
-        isDigital: data?.isDigital,
-        downloadUrl: data?.downloadUrl || null,
+        salePrice: data.salePrice != null ? String(data?.salePrice) : null,
+        imageUrl: data.imageUrl || null,
+        category: data.category,
+        variants: data.variants,
+        inventory: data.inventory,
+        sku: data.sku,
+        isActive: data.isActive,
+        isDigital: data.isDigital,
+        downloadUrl: data.downloadUrl || null,
         soldCount: 0,
       })
       .returning();
@@ -121,14 +121,14 @@ router?.put(
     try {
       const { id } = req?.params;
 
-      const _parsed = updateMerchSchema?.safeParse(req?.body);
+      const parsed = updateMerchSchema?.safeParse(req?.body);
       if (!parsed?.success) {
         return res
           .status(400)
-          .json({ error: "Validation error", details: parsed?.error.flatten() });
+          .json({ error: "Validation error", details: parsed.error.flatten() });
       }
 
-      const _existing = await db
+      const existing = await db
         .select()
         .from(merchItems)
         .where(and(eq(merchItems?.id, id), eq(merchItems?.userId, req?.user!.id)))
@@ -138,7 +138,7 @@ router?.put(
         return res?.status(404).json({ error: "Merch item not found" });
       }
 
-      const _data = parsed?.data;
+      const data = parsed?.data;
       const allowedUpdates: Record<string, unknown> = {};
       if (data?.name !== undefined) allowedUpdates.name = data?.name;
       if (data?.description !== undefined)
@@ -186,7 +186,7 @@ router?.delete(
   async (req: Request, res: Response) => {
     try {
       const { id } = req?.params;
-      const _existing = await db
+      const existing = await db
         .select()
         .from(merchItems)
         .where(and(eq(merchItems?.id, id), eq(merchItems?.userId, req?.user!.id)))
@@ -212,7 +212,7 @@ router?.delete(
 router?.get("/orders", requireAuth, async (req: Request, res: Response) => {
   try {
     const { limit, offset } = parsePaginationParams(req);
-    const _orders = await db
+    const orders = await db
       .select()
       .from(merchOrders)
       .where(eq(merchOrders?.userId, req?.user!.id))
@@ -232,14 +232,14 @@ router?.put("/orders/:id", requireAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req?.params;
 
-    const _parsed = updateOrderSchema?.safeParse(req?.body);
+    const parsed = updateOrderSchema?.safeParse(req?.body);
     if (!parsed?.success) {
       return res
         .status(400)
-        .json({ error: "Validation error", details: parsed?.error.flatten() });
+        .json({ error: "Validation error", details: parsed.error.flatten() });
     }
 
-    const _existing = await db
+    const existing = await db
       .select()
       .from(merchOrders)
       .where(and(eq(merchOrders?.id, id), eq(merchOrders?.userId, req?.user!.id)))
@@ -272,7 +272,7 @@ router?.put("/orders/:id", requireAuth, async (req: Request, res: Response) => {
 // GET /api/merch/stats - revenue, orders, bestsellers, inventory alerts
 router?.get("/stats", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
     const [orderStats] = await db
       .select({
@@ -282,7 +282,7 @@ router?.get("/stats", requireAuth, async (req: Request, res: Response) => {
       .from(merchOrders)
       .where(eq(merchOrders?.userId, userId));
 
-    const _startOfMonth = new Date();
+    const startOfMonth = new Date();
     startOfMonth?.setDate(1);
     startOfMonth?.setHours(0, 0, 0, 0);
 
@@ -298,14 +298,14 @@ router?.get("/stats", requireAuth, async (req: Request, res: Response) => {
         ),
       );
 
-    const _topItems = await db
+    const topItems = await db
       .select()
       .from(merchItems)
       .where(eq(merchItems?.userId, userId))
       .orderBy(desc(merchItems?.soldCount))
       .limit(5);
 
-    const _lowInventoryItems = await db
+    const lowInventoryItems = await db
       .select()
       .from(merchItems)
       .where(
@@ -322,7 +322,7 @@ router?.get("/stats", requireAuth, async (req: Request, res: Response) => {
       totalOrders: Number(orderStats?.totalOrders || 0),
       ordersThisMonth: Number(monthlyOrders?.count || 0),
       bestSellers: topItems,
-      inventoryAlerts: lowInventoryItems?.length,
+      inventoryAlerts: lowInventoryItems.length,
       lowInventoryItems,
     });
   } catch (error) {

@@ -3,20 +3,11 @@ import { getCsrfTokenFromCookie } from "../lib/queryClient";
 import { useCallback, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useStudioStore } from "@/stores/studioStore";
-import type {
-  TrackType,
-  MidiClip,
-  Track,
-  ViewState,
-  MixerState,
-  PluginInstance,
-  TrackSend,
-  AutomationLane,
-} from "@/stores/studioStore";
+import type { TrackType, MidiClip, Track, ViewState, MixerState, PluginInstance, TrackSend, AutomationLane } from "@/stores/studioStore";
 
-const _SYNC_DEBOUNCE_MS = 2000;
-const _DAW_STATE_VERSION = 1;
-const _PROJECT_QUERY_KEYS = [
+const SYNC_DEBOUNCE_MS = 2000;
+const DAW_STATE_VERSION = 1;
+const PROJECT_QUERY_KEYS = [
   "/api/projects",
   "/api/studio/projects",
   "/api/studio/start-hub/summary",
@@ -134,15 +125,15 @@ interface SerializedDAWState {
 }
 
 export function useProjectSync(projectId: string | null) {
-  const _queryClient = useQueryClient();
-  const _store = useStudioStore();
-  const _syncTimeoutRef = useRef<NodeJS?.Timeout | null>(null);
-  const _lastSyncRef = useRef<number>(0);
-  const _stateVersionRef = useRef<number>(0);
+  const queryClient = useQueryClient();
+  const store = useStudioStore();
+  const syncTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSyncRef = useRef<number>(0);
+  const stateVersionRef = useRef<number>(0);
 
-  const _getStoreState = useCallback(() => useStudioStore?.getState(), []);
+  const getStoreState = useCallback(() => useStudioStore?.getState(), []);
 
-  const _invalidateProjectQueries = useCallback(() => {
+  const invalidateProjectQueries = useCallback(() => {
     PROJECT_QUERY_KEYS?.forEach((key) => {
       queryClient?.invalidateQueries({ queryKey: [key] });
     });
@@ -153,221 +144,221 @@ export function useProjectSync(projectId: string | null) {
     }
   }, [queryClient, projectId]);
 
-  const _serializeTrack = (track: Track): SerializedTrack => {
+  const serializeTrack = (track: Track): SerializedTrack => {
     return {
-      id: track?.id,
-      name: track?.name,
-      type: track?.type,
-      color: track?.color,
-      volume: track?.volume,
-      pan: track?.pan,
-      muted: track?.muted,
-      solo: track?.solo,
-      armed: track?.armed,
-      frozen: track?.frozen,
-      height: track?.height,
-      collapsed: track?.collapsed,
-      inputSource: track?.inputSource,
-      outputTarget: track?.outputTarget,
-      plugins: track?.plugins,
-      sends: track?.sends,
-      audioClips: track?.audioClips.map((clip) => ({
-        id: clip?.id,
-        trackId: clip?.trackId,
-        name: clip?.name,
-        startTime: clip?.startTime,
-        duration: clip?.duration,
-        offset: clip?.offset,
-        gain: clip?.gain,
-        fadeIn: clip?.fadeIn,
-        fadeOut: clip?.fadeOut,
-        color: clip?.color,
-        sourceUrl: clip?.sourceUrl,
-        muted: clip?.muted,
-        locked: clip?.locked,
+      id: track.id,
+      name: track.name,
+      type: track.type,
+      color: track.color,
+      volume: track.volume,
+      pan: track.pan,
+      muted: track.muted,
+      solo: track.solo,
+      armed: track.armed,
+      frozen: track.frozen,
+      height: track.height,
+      collapsed: track.collapsed,
+      inputSource: track.inputSource,
+      outputTarget: track.outputTarget,
+      plugins: track.plugins,
+      sends: track.sends,
+      audioClips: track.audioClips.map((clip) => ({
+        id: clip.id,
+        trackId: clip.trackId,
+        name: clip.name,
+        startTime: clip.startTime,
+        duration: clip.duration,
+        offset: clip.offset,
+        gain: clip.gain,
+        fadeIn: clip.fadeIn,
+        fadeOut: clip.fadeOut,
+        color: clip.color,
+        sourceUrl: clip.sourceUrl,
+        muted: clip.muted,
+        locked: clip.locked,
       })),
-      midiClips: track?.midiClips,
-      automationLanes: track?.automationLanes,
+      midiClips: track.midiClips,
+      automationLanes: track.automationLanes,
     };
   };
 
-  const _serializeFullState = useCallback((): SerializedDAWState => {
-    const _state = getStoreState();
-    stateVersionRef?.current += 1;
+  const serializeFullState = useCallback((): SerializedDAWState => {
+    const state = getStoreState();
+    stateVersionRef.current += 1;
 
     return {
       version: DAW_STATE_VERSION,
       savedAt: new Date().toISOString(),
-      tracks: state?.tracks.map(serializeTrack),
+      tracks: state.tracks.map(serializeTrack),
       masterTrack: serializeTrack(state?.masterTrack),
       transport: {
-        position: state?.transport.position,
-        loopStart: state?.transport.loopStart,
-        loopEnd: state?.transport.loopEnd,
-        tempo: state?.transport.tempo,
-        timeSignatureNumerator: state?.transport.timeSignatureNumerator,
-        timeSignatureDenominator: state?.transport.timeSignatureDenominator,
-        isLooping: state?.transport.isLooping,
-        metronomeEnabled: state?.transport.metronomeEnabled,
-        countInEnabled: state?.transport.countInEnabled,
-        countInBars: state?.transport.countInBars,
-        prerollEnabled: state?.transport.prerollEnabled,
-        prerollBars: state?.transport.prerollBars,
+        position: state.transport.position,
+        loopStart: state.transport.loopStart,
+        loopEnd: state.transport.loopEnd,
+        tempo: state.transport.tempo,
+        timeSignatureNumerator: state.transport.timeSignatureNumerator,
+        timeSignatureDenominator: state.transport.timeSignatureDenominator,
+        isLooping: state.transport.isLooping,
+        metronomeEnabled: state.transport.metronomeEnabled,
+        countInEnabled: state.transport.countInEnabled,
+        countInBars: state.transport.countInBars,
+        prerollEnabled: state.transport.prerollEnabled,
+        prerollBars: state.transport.prerollBars,
       },
       view: {
-        zoom: state?.view.zoom,
-        scrollX: state?.view.scrollX,
-        scrollY: state?.view.scrollY,
-        snapToGrid: state?.view.snapToGrid,
-        gridSize: state?.view.gridSize,
-        showMixer: state?.view.showMixer,
-        showPluginBrowser: state?.view.showPluginBrowser,
-        showPianoRoll: state?.view.showPianoRoll,
-        selectedTrackIds: state?.view.selectedTrackIds,
-        selectedClipIds: state?.view.selectedClipIds,
-        focusedTrackId: state?.view.focusedTrackId,
-        editMode: state?.view.editMode,
-        timeDisplay: state?.view.timeDisplay,
-        showWaveforms: state?.view.showWaveforms,
-        showAutomation: state?.view.showAutomation,
+        zoom: state.view.zoom,
+        scrollX: state.view.scrollX,
+        scrollY: state.view.scrollY,
+        snapToGrid: state.view.snapToGrid,
+        gridSize: state.view.gridSize,
+        showMixer: state.view.showMixer,
+        showPluginBrowser: state.view.showPluginBrowser,
+        showPianoRoll: state.view.showPianoRoll,
+        selectedTrackIds: state.view.selectedTrackIds,
+        selectedClipIds: state.view.selectedClipIds,
+        focusedTrackId: state.view.focusedTrackId,
+        editMode: state.view.editMode,
+        timeDisplay: state.view.timeDisplay,
+        showWaveforms: state.view.showWaveforms,
+        showAutomation: state.view.showAutomation,
       },
       mixer: { ...state?.mixer },
       project: {
-        sampleRate: state?.project.sampleRate,
-        bitDepth: state?.project.bitDepth,
-        duration: state?.project.duration,
+        sampleRate: state.project.sampleRate,
+        bitDepth: state.project.bitDepth,
+        duration: state.project.duration,
       },
     };
   }, [getStoreState]);
 
-  const _deserializeAndRestoreState = useCallback(
+  const deserializeAndRestoreState = useCallback(
     (dawState: SerializedDAWState) => {
       if (dawState?.transport) {
         store?.setTransport({
-          position: dawState?.transport.position ?? 0,
-          loopStart: dawState?.transport.loopStart ?? 0,
-          loopEnd: dawState?.transport.loopEnd ?? 16,
-          tempo: dawState?.transport.tempo ?? 120,
+          position: dawState.transport.position ?? 0,
+          loopStart: dawState.transport.loopStart ?? 0,
+          loopEnd: dawState.transport.loopEnd ?? 16,
+          tempo: dawState.transport.tempo ?? 120,
           timeSignatureNumerator:
             dawState?.transport.timeSignatureNumerator ?? 4,
           timeSignatureDenominator:
             dawState?.transport.timeSignatureDenominator ?? 4,
-          isLooping: dawState?.transport.isLooping ?? false,
-          metronomeEnabled: dawState?.transport.metronomeEnabled ?? false,
-          countInEnabled: dawState?.transport.countInEnabled ?? false,
-          countInBars: dawState?.transport.countInBars ?? 1,
-          prerollEnabled: dawState?.transport.prerollEnabled ?? false,
-          prerollBars: dawState?.transport.prerollBars ?? 1,
+          isLooping: dawState.transport.isLooping ?? false,
+          metronomeEnabled: dawState.transport.metronomeEnabled ?? false,
+          countInEnabled: dawState.transport.countInEnabled ?? false,
+          countInBars: dawState.transport.countInBars ?? 1,
+          prerollEnabled: dawState.transport.prerollEnabled ?? false,
+          prerollBars: dawState.transport.prerollBars ?? 1,
         });
       }
 
       if (dawState?.view) {
         store?.setView({
-          zoom: dawState?.view.zoom ?? 1,
-          scrollX: dawState?.view.scrollX ?? 0,
-          scrollY: dawState?.view.scrollY ?? 0,
-          snapToGrid: dawState?.view.snapToGrid ?? true,
-          gridSize: dawState?.view.gridSize ?? 0.25,
-          showMixer: dawState?.view.showMixer ?? true,
-          showPluginBrowser: dawState?.view.showPluginBrowser ?? false,
-          showPianoRoll: dawState?.view.showPianoRoll ?? false,
-          selectedTrackIds: dawState?.view.selectedTrackIds ?? [],
-          selectedClipIds: dawState?.view.selectedClipIds ?? [],
-          focusedTrackId: dawState?.view.focusedTrackId ?? null,
-          editMode: dawState?.view.editMode ?? "select",
-          timeDisplay: dawState?.view.timeDisplay ?? "bars",
-          showWaveforms: dawState?.view.showWaveforms ?? true,
-          showAutomation: dawState?.view.showAutomation ?? false,
+          zoom: dawState.view.zoom ?? 1,
+          scrollX: dawState.view.scrollX ?? 0,
+          scrollY: dawState.view.scrollY ?? 0,
+          snapToGrid: dawState.view.snapToGrid ?? true,
+          gridSize: dawState.view.gridSize ?? 0.25,
+          showMixer: dawState.view.showMixer ?? true,
+          showPluginBrowser: dawState.view.showPluginBrowser ?? false,
+          showPianoRoll: dawState.view.showPianoRoll ?? false,
+          selectedTrackIds: dawState.view.selectedTrackIds ?? [],
+          selectedClipIds: dawState.view.selectedClipIds ?? [],
+          focusedTrackId: dawState.view.focusedTrackId ?? null,
+          editMode: dawState.view.editMode ?? "select",
+          timeDisplay: dawState.view.timeDisplay ?? "bars",
+          showWaveforms: dawState.view.showWaveforms ?? true,
+          showAutomation: dawState.view.showAutomation ?? false,
         });
       }
 
       if (dawState?.mixer) {
         store?.setMixer({
-          visible: dawState?.mixer.visible ?? true,
-          channelWidth: dawState?.mixer.channelWidth ?? 80,
-          showSends: dawState?.mixer.showSends ?? true,
-          showInserts: dawState?.mixer.showInserts ?? true,
-          showEQ: dawState?.mixer.showEQ ?? false,
-          soloMode: dawState?.mixer.soloMode ?? "additive",
-          prefaderMetering: dawState?.mixer.prefaderMetering ?? false,
+          visible: dawState.mixer.visible ?? true,
+          channelWidth: dawState.mixer.channelWidth ?? 80,
+          showSends: dawState.mixer.showSends ?? true,
+          showInserts: dawState.mixer.showInserts ?? true,
+          showEQ: dawState.mixer.showEQ ?? false,
+          soloMode: dawState.mixer.soloMode ?? "additive",
+          prefaderMetering: dawState.mixer.prefaderMetering ?? false,
         });
       }
 
       if (dawState?.project) {
         store?.setProject({
-          sampleRate: dawState?.project.sampleRate ?? 48000,
-          bitDepth: dawState?.project.bitDepth ?? 32,
-          duration: dawState?.project.duration ?? 300,
+          sampleRate: dawState.project.sampleRate ?? 48000,
+          bitDepth: dawState.project.bitDepth ?? 32,
+          duration: dawState.project.duration ?? 300,
         });
       }
 
       if (dawState?.tracks) {
         const restoredTracks: Track[] = dawState?.tracks.map(
           (serializedTrack, _index) => ({
-            id: serializedTrack?.id,
-            name: serializedTrack?.name,
-            type: serializedTrack?.type,
-            color: serializedTrack?.color || "#3b82f6",
-            volume: serializedTrack?.volume ?? 0,
-            pan: serializedTrack?.pan ?? 0,
-            muted: serializedTrack?.muted ?? false,
-            solo: serializedTrack?.solo ?? false,
-            armed: serializedTrack?.armed ?? false,
-            frozen: serializedTrack?.frozen ?? false,
-            height: serializedTrack?.height ?? 80,
-            collapsed: serializedTrack?.collapsed ?? false,
-            inputSource: serializedTrack?.inputSource ?? null,
-            outputTarget: serializedTrack?.outputTarget ?? "master",
+            id: serializedTrack.id,
+            name: serializedTrack.name,
+            type: serializedTrack.type,
+            color: serializedTrack.color || "#3b82f6",
+            volume: serializedTrack.volume ?? 0,
+            pan: serializedTrack.pan ?? 0,
+            muted: serializedTrack.muted ?? false,
+            solo: serializedTrack.solo ?? false,
+            armed: serializedTrack.armed ?? false,
+            frozen: serializedTrack.frozen ?? false,
+            height: serializedTrack.height ?? 80,
+            collapsed: serializedTrack.collapsed ?? false,
+            inputSource: serializedTrack.inputSource ?? null,
+            outputTarget: serializedTrack.outputTarget ?? "master",
             meterLevel: { left: 0, right: 0 },
             plugins: (serializedTrack?.plugins || []).map((p) => ({
-              id: p?.id,
-              pluginId: p?.pluginId,
-              pluginSlug: p?.pluginSlug,
-              name: p?.name,
-              bypassed: p?.bypassed ?? false,
-              parameters: p?.parameters || {},
-              presetName: p?.presetName,
+              id: p.id,
+              pluginId: p.pluginId,
+              pluginSlug: p.pluginSlug,
+              name: p.name,
+              bypassed: p.bypassed ?? false,
+              parameters: p.parameters || {},
+              presetName: p.presetName,
             })),
             audioClips: (serializedTrack?.audioClips || []).map((c) => ({
-              id: c?.id,
-              trackId: serializedTrack?.id,
-              name: c?.name,
-              startTime: c?.startTime,
-              duration: c?.duration,
-              offset: c?.offset ?? 0,
-              gain: c?.gain != null ? c?.gain : 1,
-              fadeIn: c?.fadeIn ?? 0,
-              fadeOut: c?.fadeOut ?? 0,
-              color: c?.color,
-              sourceUrl: c?.sourceUrl,
-              muted: c?.muted ?? false,
-              locked: c?.locked ?? false,
+              id: c.id,
+              trackId: serializedTrack.id,
+              name: c.name,
+              startTime: c.startTime,
+              duration: c.duration,
+              offset: c.offset ?? 0,
+              gain: c.gain != null ? c?.gain : 1,
+              fadeIn: c.fadeIn ?? 0,
+              fadeOut: c.fadeOut ?? 0,
+              color: c.color,
+              sourceUrl: c.sourceUrl,
+              muted: c.muted ?? false,
+              locked: c.locked ?? false,
             })),
             midiClips: (serializedTrack?.midiClips || []).map((c) => ({
-              id: c?.id,
-              trackId: serializedTrack?.id,
-              name: c?.name,
-              startTime: c?.startTime,
-              duration: c?.duration,
-              notes: c?.notes || [],
-              color: c?.color,
-              muted: c?.muted ?? false,
-              locked: c?.locked ?? false,
+              id: c.id,
+              trackId: serializedTrack.id,
+              name: c.name,
+              startTime: c.startTime,
+              duration: c.duration,
+              notes: c.notes || [],
+              color: c.color,
+              muted: c.muted ?? false,
+              locked: c.locked ?? false,
             })),
             sends: (serializedTrack?.sends || []).map((s) => ({
-              id: s?.id,
-              targetTrackId: s?.targetTrackId,
-              gain: s?.gain ?? 0,
-              preFader: s?.preFader ?? false,
-              muted: s?.muted ?? false,
+              id: s.id,
+              targetTrackId: s.targetTrackId,
+              gain: s.gain ?? 0,
+              preFader: s.preFader ?? false,
+              muted: s.muted ?? false,
             })),
             automationLanes: (serializedTrack?.automationLanes || []).map(
               (l) => ({
-                id: l?.id,
-                parameterId: l?.parameterId,
-                parameterName: l?.parameterName,
-                visible: l?.visible ?? true,
-                points: l?.points || [],
+                id: l.id,
+                parameterId: l.parameterId,
+                parameterName: l.parameterName,
+                visible: l.visible ?? true,
+                points: l.points || [],
               }),
             ),
           }),
@@ -377,46 +368,46 @@ export function useProjectSync(projectId: string | null) {
       }
 
       if (dawState?.masterTrack) {
-        const _mt = dawState?.masterTrack;
+        const mt = dawState?.masterTrack;
         const restoredMaster: Track = {
-          id: mt?.id || "master",
-          name: mt?.name || "Master",
+          id: mt.id || "master",
+          name: mt.name || "Master",
           type: "master",
-          color: mt?.color || "#64748b",
-          volume: mt?.volume ?? 0,
-          pan: mt?.pan ?? 0,
-          muted: mt?.muted ?? false,
-          solo: mt?.solo ?? false,
+          color: mt.color || "#64748b",
+          volume: mt.volume ?? 0,
+          pan: mt.pan ?? 0,
+          muted: mt.muted ?? false,
+          solo: mt.solo ?? false,
           armed: false,
           frozen: false,
-          height: mt?.height ?? 80,
-          collapsed: mt?.collapsed ?? false,
-          outputTarget: mt?.outputTarget || "output",
+          height: mt.height ?? 80,
+          collapsed: mt.collapsed ?? false,
+          outputTarget: mt.outputTarget || "output",
           meterLevel: { left: -60, right: -60 },
           plugins: (mt?.plugins || []).map((p) => ({
-            id: p?.id,
-            pluginId: p?.pluginId,
-            pluginSlug: p?.pluginSlug,
-            name: p?.name,
-            bypassed: p?.bypassed ?? false,
-            parameters: p?.parameters || {},
-            presetName: p?.presetName,
+            id: p.id,
+            pluginId: p.pluginId,
+            pluginSlug: p.pluginSlug,
+            name: p.name,
+            bypassed: p.bypassed ?? false,
+            parameters: p.parameters || {},
+            presetName: p.presetName,
           })),
           audioClips: [],
           midiClips: [],
           sends: (mt?.sends || []).map((s) => ({
-            id: s?.id,
-            targetTrackId: s?.targetTrackId,
-            gain: s?.gain ?? 0,
-            preFader: s?.preFader ?? false,
-            muted: s?.muted ?? false,
+            id: s.id,
+            targetTrackId: s.targetTrackId,
+            gain: s.gain ?? 0,
+            preFader: s.preFader ?? false,
+            muted: s.muted ?? false,
           })),
           automationLanes: (mt?.automationLanes || []).map((l) => ({
-            id: l?.id,
-            parameterId: l?.parameterId,
-            parameterName: l?.parameterName,
-            visible: l?.visible ?? true,
-            points: l?.points || [],
+            id: l.id,
+            parameterId: l.parameterId,
+            parameterName: l.parameterName,
+            visible: l.visible ?? true,
+            points: l.points || [],
           })),
         };
 
@@ -426,15 +417,15 @@ export function useProjectSync(projectId: string | null) {
     [store],
   );
 
-  const _saveFullState = useCallback(async (): Promise<boolean> => {
+  const saveFullState = useCallback(async (): Promise<boolean> => {
     if (!projectId) return false;
 
     try {
-      const _dawState = serializeFullState();
-      const _state = getStoreState();
+      const dawState = serializeFullState();
+      const state = getStoreState();
 
-      const _csrfToken = getCsrfTokenFromCookie();
-      const _response = await fetch(
+      const csrfToken = getCsrfTokenFromCookie();
+      const response = await fetch(
         `/api/studio/projects/${projectId}/save-daw-state`,
         {
           method: "POST",
@@ -443,14 +434,14 @@ export function useProjectSync(projectId: string | null) {
             "Content-Type": "application/json",
             ...(csrfToken ? { "x-csrf-token": csrfToken } : {}),
           },
-          body: JSON?.stringify({
-            dawState: JSON?.stringify(dawState),
-            title: state?.project.name,
-            tempo: dawState?.transport.tempo,
+          body: JSON.stringify({
+            dawState: JSON.stringify(dawState),
+            title: state.project.name,
+            tempo: dawState.transport.tempo,
             timeSignature: `${dawState?.transport.timeSignatureNumerator}/${dawState?.transport.timeSignatureDenominator}`,
-            sampleRate: dawState?.project.sampleRate,
-            bitDepth: dawState?.project.bitDepth,
-            version: stateVersionRef?.current,
+            sampleRate: dawState.project.sampleRate,
+            bitDepth: dawState.project.bitDepth,
+            version: stateVersionRef.current,
           }),
         },
       );
@@ -475,11 +466,11 @@ export function useProjectSync(projectId: string | null) {
     }
   }, [projectId, getStoreState, serializeFullState, invalidateProjectQueries]);
 
-  const _loadFullState = useCallback(async (): Promise<boolean> => {
+  const loadFullState = useCallback(async (): Promise<boolean> => {
     if (!projectId) return false;
 
     try {
-      const _response = await fetch(
+      const response = await fetch(
         `/api/studio/projects/${projectId}/daw-state`,
         { credentials: "include" },
       );
@@ -489,7 +480,7 @@ export function useProjectSync(projectId: string | null) {
         return false;
       }
 
-      const _data = await response?.json();
+      const data = await response?.json();
 
       if (data?.dawState) {
         try {
@@ -501,7 +492,7 @@ export function useProjectSync(projectId: string | null) {
           if (dawState?.version && dawState?.tracks) {
             store?.setProject({
               id: projectId,
-              name: data?.project?.title || "Untitled",
+              name: data.project?.title || "Untitled",
             });
 
             deserializeAndRestoreState(dawState);
@@ -528,17 +519,17 @@ export function useProjectSync(projectId: string | null) {
     }
   }, [projectId, store, deserializeAndRestoreState]);
 
-  const _syncToBackend = useCallback(async () => {
+  const syncToBackend = useCallback(async () => {
     if (!projectId) return;
 
-    const _now = Date?.now();
+    const now = Date?.now();
     if (now - lastSyncRef?.current < SYNC_DEBOUNCE_MS) return;
     lastSyncRef.current = now;
 
     await saveFullState();
   }, [projectId, saveFullState]);
 
-  const _debouncedSync = useCallback(() => {
+  const debouncedSync = useCallback(() => {
     if (syncTimeoutRef?.current) {
       clearTimeout(syncTimeoutRef?.current);
     }
@@ -548,15 +539,15 @@ export function useProjectSync(projectId: string | null) {
   useEffect(() => {
     if (!projectId) return;
 
-    const _unsubscribe = useStudioStore?.subscribe(
+    const unsubscribe = useStudioStore?.subscribe(
       (state) => ({
-        tracks: state?.tracks,
-        tempo: state?.transport.tempo,
-        isLooping: state?.transport.isLooping,
-        timeSignature: state?.transport.timeSignature,
-        view: state?.view,
-        mixer: state?.mixer,
-        masterTrack: state?.masterTrack,
+        tracks: state.tracks,
+        tempo: state.transport.tempo,
+        isLooping: state.transport.isLooping,
+        timeSignature: state.transport.timeSignature,
+        view: state.view,
+        mixer: state.mixer,
+        masterTrack: state.masterTrack,
       }),
       () => {
         debouncedSync();
@@ -572,26 +563,26 @@ export function useProjectSync(projectId: string | null) {
     };
   }, [projectId, debouncedSync]);
 
-  const _forceSave = useCallback(async () => {
+  const forceSave = useCallback(async () => {
     if (syncTimeoutRef?.current) {
       clearTimeout(syncTimeoutRef?.current);
     }
     await saveFullState();
   }, [saveFullState]);
 
-  const _refreshFromBackend = useCallback(async () => {
+  const refreshFromBackend = useCallback(async () => {
     if (!projectId) return;
 
     try {
-      const _response = await fetch(`/api/studio/projects/${projectId}`, {
+      const response = await fetch(`/api/studio/projects/${projectId}`, {
         credentials: "include",
       });
       if (response?.ok) {
-        const _data = await response?.json();
+        const data = await response?.json();
         if (data?.project) {
           store?.setProject({
-            id: data?.project.id,
-            name: data?.project.title || "Untitled",
+            id: data.project.id,
+            name: data.project.title || "Untitled",
           });
         }
       }
@@ -600,12 +591,12 @@ export function useProjectSync(projectId: string | null) {
     }
   }, [projectId, store]);
 
-  const _loadProjectData = useCallback(async () => {
+  const loadProjectData = useCallback(async () => {
     if (!projectId) return false;
 
     store?.resetForNewProject();
 
-    const _fullStateLoaded = await loadFullState();
+    const fullStateLoaded = await loadFullState();
     if (fullStateLoaded) {
       return true;
     }
@@ -627,18 +618,18 @@ export function useProjectSync(projectId: string | null) {
         return false;
       }
 
-      const _projectData = await projectRes?.json();
-      const _tracksData = await tracksRes?.json();
+      const projectData = await projectRes?.json();
+      const tracksData = await tracksRes?.json();
 
       if (projectData) {
         store?.setProject({
           id: projectId,
-          name: projectData?.title || projectData?.project?.title || "Untitled",
+          name: projectData.title || projectData?.project?.title || "Untitled",
         });
 
         if (projectData?.bpm || projectData?.project?.bpm) {
           store?.setTransport({
-            tempo: projectData?.bpm || projectData?.project?.bpm || 120,
+            tempo: projectData.bpm || projectData?.project?.bpm || 120,
           });
         }
       }
@@ -647,39 +638,39 @@ export function useProjectSync(projectId: string | null) {
         tracksData?.tracks || tracksData || [];
       const backendClips: BackendClip[] = tracksData?.clips || [];
 
-      const _currentState = getStoreState();
-      const _existingTrackIds = new Set(currentState?.tracks.map((t) => t?.id));
+      const currentState = getStoreState();
+      const existingTrackIds = new Set(currentState?.tracks.map((t) => t?.id));
 
-      const _normalizeAudioUrl = (url: string): string => {
+      const normalizeAudioUrl = (url: string): string => {
         if (!url) return url;
         if (url?.startsWith("/api/")) return url;
         if (url?.startsWith("http")) return url;
-        const _cleanPath = url?.replace(/^\/+/, "");
+        const cleanPath = url?.replace(/^\/+/, "");
         return `/api/marketplace/audio/${cleanPath}`;
       };
 
       for (const track of backendTracks) {
         if (!existingTrackIds?.has(track?.id)) {
-          const _trackType = (track?.trackType ||
+          const trackType = (track?.trackType ||
             track?.type ||
             "audio") as TrackType;
-          const _newTrackId = store?.addTrack(trackType, track?.name);
+          const newTrackId = store?.addTrack(trackType, track?.name);
 
-          const _trackClips = backendClips?.filter((c) => c?.trackId === track?.id);
+          const trackClips = backendClips?.filter((c) => c?.trackId === track?.id);
           for (const clip of trackClips) {
-            const _normalizedPath = normalizeAudioUrl(clip?.filePath);
-            const _clipDuration = clip?.duration > 0 ? clip?.duration : 0;
+            const normalizedPath = normalizeAudioUrl(clip?.filePath);
+            const clipDuration = clip?.duration > 0 ? clip?.duration : 0;
             store?.addAudioClip(newTrackId, {
               trackId: newTrackId,
-              name: clip?.name || "Audio Clip",
+              name: clip.name || "Audio Clip",
               sourceUrl: normalizedPath,
-              startTime: clip?.startTime || 0,
+              startTime: clip.startTime || 0,
               duration: clipDuration,
-              offset: clip?.offset || 0,
-              gain: clip?.gain || 1,
-              fadeIn: clip?.fadeIn || 0,
-              fadeOut: clip?.fadeOut || 0,
-              color: track?.color || "#3b82f6",
+              offset: clip.offset || 0,
+              gain: clip.gain || 1,
+              fadeIn: clip.fadeIn || 0,
+              fadeOut: clip.fadeOut || 0,
+              color: track.color || "#3b82f6",
               muted: false,
               locked: false,
             });
@@ -716,6 +707,6 @@ export function useProjectSync(projectId: string | null) {
     refreshFromBackend,
     loadProjectData,
     invalidateProjectQueries,
-    stateVersion: stateVersionRef?.current,
+    stateVersion: stateVersionRef.current,
   };
 }

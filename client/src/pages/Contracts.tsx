@@ -35,22 +35,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import {
-  FileText,
-  Plus,
-  Download,
-  Send,
-  CheckCircle,
-  Clock,
-  PenTool,
-  Eye,
-  Users,
-  Filter,
-  AlertTriangle,
-  XCircle,
-  Ban,
-  RotateCcw,
-} from "lucide-react";
+import { FileText, Plus, Download, Send, CheckCircle, Clock, PenTool, Eye, Users, Filter, AlertTriangle, XCircle, Ban, RotateCcw } from "lucide-react";
 import { format } from "date-fns";
 import {
   ContractOutcomeHandler,
@@ -1056,10 +1041,10 @@ export default function Contracts() {
                         return {
                           name: p.name,
                           role: p.role,
-                          status: sig?.signedAt
+                          status: sig.signedAt
                             ? ("signed" as const)
                             : ("pending" as const),
-                          signedAt: sig?.signedAt,
+                          signedAt: sig.signedAt,
                         };
                       })
                     }

@@ -257,8 +257,8 @@ class ContractTemplateService {
   private static readonly MAX_CONTRACTS = 100_000;
 
   private cacheContract(id: string, contract: GeneratedContract): void {
-    while (this?.contracts.size >= ContractTemplateService?.MAX_CONTRACTS) {
-      const _oldestKey = this?.contracts.keys().next().value;
+    while (this?.contracts.size >= ContractTemplateService.MAX_CONTRACTS) {
+      const oldestKey = this?.contracts.keys().next().value;
       if (oldestKey !== undefined) {
         this?.contracts.delete(oldestKey);
       } else {
@@ -280,29 +280,29 @@ class ContractTemplateService {
 
   private async loadFromDatabase(): Promise<void> {
     try {
-      const _rows = await db?.select().from(generatedContracts);
+      const rows = await db?.select().from(generatedContracts);
       for (const row of rows) {
         const contract: GeneratedContract = {
-          id: row?.id,
-          templateId: row?.templateId,
-          type: row?.type as GeneratedContract["type"],
-          title: row?.title,
-          content: row?.content,
+          id: row.id,
+          templateId: row.templateId,
+          type: row.type as GeneratedContract["type"],
+          title: row.title,
+          content: row.content,
           variables: (row?.variables ?? {}) as ContractVariables,
-          createdBy: row?.userId,
+          createdBy: row.userId,
           parties: (row?.parties ?? []) as GeneratedContract["parties"],
           signatures: ((row?.signatures ?? []) as Record<string, unknown>[]).map(
             (s: Record<string, unknown>) => ({
-              partyName: s?.partyName,
-              signedAt: s?.signedAt ? new Date(s?.signedAt) : undefined,
-              signatureHash: s?.signatureHash,
-              ipAddress: s?.ipAddress,
+              partyName: s.partyName,
+              signedAt: s.signedAt ? new Date(s?.signedAt) : undefined,
+              signatureHash: s.signatureHash,
+              ipAddress: s.ipAddress,
             }),
           ),
-          status: row?.status as GeneratedContract["status"],
-          createdAt: row?.createdAt ?? new Date(),
-          expiresAt: row?.expiresAt ?? undefined,
-          pdfUrl: row?.pdfUrl ?? undefined,
+          status: row.status as GeneratedContract["status"],
+          createdAt: row.createdAt ?? new Date(),
+          expiresAt: row.expiresAt ?? undefined,
+          pdfUrl: row.pdfUrl ?? undefined,
         };
         this?.cacheContract(contract?.id, contract);
       }
@@ -313,38 +313,38 @@ class ContractTemplateService {
   }
 
   private persistToDb(contract: GeneratedContract): void {
-    const _row = {
-      id: contract?.id,
-      userId: contract?.createdBy,
-      templateId: contract?.templateId,
-      type: contract?.type,
-      title: contract?.title,
-      status: contract?.status,
-      content: contract?.content,
-      variables: contract?.variables as Record<string, any>,
-      parties: contract?.parties,
-      signatures: contract?.signatures.map((s) => ({
-        partyName: s?.partyName,
-        signedAt: s?.signedAt ? s?.signedAt.toISOString() : undefined,
-        signatureHash: s?.signatureHash,
-        ipAddress: s?.ipAddress,
+    const row = {
+      id: contract.id,
+      userId: contract.createdBy,
+      templateId: contract.templateId,
+      type: contract.type,
+      title: contract.title,
+      status: contract.status,
+      content: contract.content,
+      variables: contract.variables as Record<string, any>,
+      parties: contract.parties,
+      signatures: contract.signatures.map((s) => ({
+        partyName: s.partyName,
+        signedAt: s.signedAt ? s?.signedAt.toISOString() : undefined,
+        signatureHash: s.signatureHash,
+        ipAddress: s.ipAddress,
       })),
-      createdAt: contract?.createdAt,
-      expiresAt: contract?.expiresAt ?? null,
-      pdfUrl: contract?.pdfUrl ?? null,
+      createdAt: contract.createdAt,
+      expiresAt: contract.expiresAt ?? null,
+      pdfUrl: contract.pdfUrl ?? null,
     };
     db?.insert(generatedContracts)
       .values(row)
       .onConflictDoUpdate({
-        target: generatedContracts?.id,
+        target: generatedContracts.id,
         set: {
-          status: row?.status,
-          content: row?.content,
-          variables: row?.variables,
-          parties: row?.parties,
-          signatures: row?.signatures,
-          expiresAt: row?.expiresAt,
-          pdfUrl: row?.pdfUrl,
+          status: row.status,
+          content: row.content,
+          variables: row.variables,
+          parties: row.parties,
+          signatures: row.signatures,
+          expiresAt: row.expiresAt,
+          pdfUrl: row.pdfUrl,
         },
       })
       .catch((err) =>
@@ -369,27 +369,27 @@ class ContractTemplateService {
     variables: ContractVariables,
     createdBy: string,
   ): GeneratedContract {
-    const _template = this?.getTemplateById(templateId);
+    const template = this?.getTemplateById(templateId);
     if (!template) {
       throw new Error(`Template ${templateId} not found`);
     }
 
-    const _content = this?.generateContractContent(template?.type, variables);
-    const _parties = this?.extractParties(template?.type, variables);
+    const content = this?.generateContractContent(template?.type, variables);
+    const parties = this?.extractParties(template?.type, variables);
 
     const contract: GeneratedContract = {
       id: `contract_${randomBytes(6).toString("hex")}`,
       templateId,
-      type: template?.type,
+      type: template.type,
       title: `${template?.name} - ${variables?.beatTitle || variables?.projectTitle || "Untitled"}`,
       content,
       variables,
       createdBy,
       parties,
-      signatures: parties?.map((p) => ({ partyName: p?.name })),
+      signatures: parties.map((p) => ({ partyName: p.name })),
       status: "draft",
       createdAt: new Date(),
-      expiresAt: variables?.expirationDate,
+      expiresAt: variables.expirationDate,
     };
 
     this?.cacheContract(contract?.id, contract);
@@ -407,16 +407,16 @@ class ContractTemplateService {
     const parties: Array<{ name: string; role: string }> = [];
 
     if (variables?.artistName) {
-      parties?.push({ name: variables?.artistName, role: "Artist/Licensee" });
+      parties?.push({ name: variables.artistName, role: "Artist/Licensee" });
     }
     if (variables?.producerName) {
-      parties?.push({ name: variables?.producerName, role: "Producer/Licensor" });
+      parties?.push({ name: variables.producerName, role: "Producer/Licensor" });
     }
 
     if (type === "split_sheet" && variables?.splits) {
       for (const split of variables?.splits) {
         if (!parties?.find((p) => p?.name === split?.name)) {
-          parties?.push({ name: split?.name, role: split?.role });
+          parties?.push({ name: split.name, role: split.role });
         }
       }
     }
@@ -428,10 +428,10 @@ class ContractTemplateService {
     type: ContractType,
     vars: ContractVariables,
   ): string {
-    const _effectiveDate = vars?.effectiveDate
+    const effectiveDate = vars?.effectiveDate
       ? new Date(vars?.effectiveDate).toLocaleDateString()
       : new Date().toLocaleDateString();
-    const _currency = vars?.currency || "USD";
+    const currency = vars?.currency || "USD";
 
     switch (type) {
       case "non_exclusive_license":
@@ -509,7 +509,7 @@ Payment is due upon execution of this Agreement.
 
 6. CREDIT
 Artist agrees to credit Producer as follows in all uses:
-"Produced by ${vars?.producerName || "[PRODUCER NAME]"}"
+"Produced by ${vars.producerName || "[PRODUCER NAME]"}"
 
 7. OWNERSHIP
 Producer retains all ownership rights to the Beat. This license grants usage rights only and does not transfer ownership.
@@ -576,15 +576,15 @@ Artist receives:
 - Derivative Works: Allowed
 
 5. ROYALTIES
-${vars?.royaltyPercentage ? `Producer shall receive ${vars?.royaltyPercentage}% of net profits from the New Song.` : "No ongoing royalties are owed to Producer beyond the purchase price."}
+${vars.royaltyPercentage ? `Producer shall receive ${vars.royaltyPercentage}% of net profits from the New Song.` : "No ongoing royalties are owed to Producer beyond the purchase price."}
 
 6. PAYMENT
-Exclusive Purchase Price: ${currency} ${vars?.purchasePrice?.toLocaleString() || "0.00"}
+Exclusive Purchase Price: ${currency} ${vars.purchasePrice.toLocaleString() || "0.00"}
 Payment Terms: Full payment due upon execution
 
 7. CREDIT
 Artist agrees to credit Producer as:
-"Produced by ${vars?.producerName || "[PRODUCER NAME]"}"
+"Produced by ${vars.producerName || "[PRODUCER NAME]"}"
 
 8. WARRANTIES AND REPRESENTATIONS
 Producer warrants:
@@ -641,7 +641,7 @@ Artist may NOT:
 
 4. CREDIT REQUIREMENT (MANDATORY)
 Artist MUST credit Producer as follows in ALL uses:
-"Produced by ${vars?.producerName || "[PRODUCER NAME]"}"
+"Produced by ${vars.producerName || "[PRODUCER NAME]"}"
 "Beat available at [PRODUCER'S WEBSITE]"
 
 5. TERM
@@ -653,20 +653,20 @@ Artist may upgrade to a paid license at any time to unlock commercial rights.
 ACKNOWLEDGMENT
 By downloading this Beat, Artist agrees to all terms above.
 
-Producer: ${vars?.producerName || "[PRODUCER NAME]"}
+Producer: ${vars.producerName || "[PRODUCER NAME]"}
 Date: ${effectiveDate}
 `;
   }
 
   private generateNDA(vars: ContractVariables, effectiveDate: string): string {
-    const _periodYears = vars?.confidentialPeriodYears || 2;
+    const periodYears = vars.confidentialPeriodYears || 2;
     return `
 MUTUAL NON-DISCLOSURE AGREEMENT
 
 This Mutual Non-Disclosure Agreement ("Agreement") is entered into as of ${effectiveDate} by and between:
 
-PARTY A: ${vars?.artistName || "[PARTY A NAME]"}
-PARTY B: ${vars?.producerName || "[PARTY B NAME]"}
+PARTY A: ${vars.artistName || "[PARTY A NAME]"}
+PARTY B: ${vars.producerName || "[PARTY B NAME]"}
 
 Collectively referred to as "the Parties."
 
@@ -715,10 +715,10 @@ This Agreement shall be governed by the laws of the State of [STATE].
 IN WITNESS WHEREOF, the Parties have executed this Agreement as of the Effective Date.
 
 PARTY A: _________________________ Date: _____________
-${vars?.artistName || "[PARTY A NAME]"}
+${vars.artistName || "[PARTY A NAME]"}
 
 PARTY B: _________________________ Date: _____________
-${vars?.producerName || "[PARTY B NAME]"}
+${vars.producerName || "[PARTY B NAME]"}
 `;
   }
 
@@ -727,17 +727,17 @@ ${vars?.producerName || "[PARTY B NAME]"}
     effectiveDate: string,
     currency: string,
   ): string {
-    const _totalPayment = (vars?.sessionRate || 0) * (vars?.sessionHours || 1);
+    const totalPayment = (vars.sessionRate || 0) * (vars.sessionHours || 1);
     return `
 SESSION MUSICIAN AGREEMENT
 
 This Session Musician Agreement ("Agreement") is entered into as of ${effectiveDate} by and between:
 
-HIRING PARTY: ${vars?.artistName || "[HIRING PARTY]"} ("Artist")
-SESSION MUSICIAN: ${vars?.producerName || "[MUSICIAN NAME]"} ("Musician")
+HIRING PARTY: ${vars.artistName || "[HIRING PARTY]"} ("Artist")
+SESSION MUSICIAN: ${vars.producerName || "[MUSICIAN NAME]"} ("Musician")
 
 1. PROJECT INFORMATION
-Project Title: ${vars?.projectTitle || "[PROJECT TITLE]"}
+Project Title: ${vars.projectTitle || "[PROJECT TITLE]"}
 Recording Session Details: As scheduled by Artist
 
 2. SERVICES
@@ -748,17 +748,17 @@ Musician agrees to provide professional musical services including:
 - Re-recording if reasonably requested
 
 3. COMPENSATION
-Session Rate: ${currency} ${vars?.sessionRate?.toLocaleString() || "0.00"} per hour
-Estimated Hours: ${vars?.sessionHours || 1}
-Total Estimated Payment: ${currency} ${totalPayment?.toLocaleString()}
+Session Rate: ${currency} ${vars.sessionRate.toLocaleString() || "0.00"} per hour
+Estimated Hours: ${vars.sessionHours || 1}
+Total Estimated Payment: ${currency} ${totalPayment.toLocaleString()}
 
 Payment Terms: 50% due upon signing, 50% upon completion of services
 
 ${
-  vars?.royaltyPercentage
+  vars.royaltyPercentage
     ? `
 4. ROYALTIES
-In addition to session fees, Musician shall receive ${vars?.royaltyPercentage}% of net royalties from the recording.
+In addition to session fees, Musician shall receive ${vars.royaltyPercentage}% of net royalties from the recording.
 `
     : `
 4. WORK FOR HIRE
@@ -806,7 +806,7 @@ ${vars?.producerName || "[MUSICIAN NAME]"}
     effectiveDate: string,
     currency: string,
   ): string {
-    const _totalFee = (vars?.mixingFee || 0) + (vars?.masteringFee || 0);
+    const totalFee = (vars?.mixingFee || 0) + (vars?.masteringFee || 0);
     return `
 MIXING AND MASTERING ENGINEER AGREEMENT
 
@@ -855,8 +855,8 @@ Payment Schedule:
 
 6. CREDITS
 Engineer shall receive credit as:
-"Mixed by ${vars?.producerName || "[ENGINEER NAME]"}"
-"Mastered by ${vars?.producerName || "[ENGINEER NAME]"}"
+"Mixed by ${vars.producerName || "[ENGINEER NAME]"}"
+"Mastered by ${vars.producerName || "[ENGINEER NAME]"}"
 
 7. RIGHTS
 - Client retains full ownership of all recordings
@@ -885,11 +885,11 @@ ${vars?.producerName || "[ENGINEER NAME]"}
     vars: ContractVariables,
     effectiveDate: string,
   ): string {
-    const _splits = vars?.splits || [];
-    const _splitsTable = splits
+    const splits = vars?.splits || [];
+    const splitsTable = splits
       .map((s) => `| ${s?.name} | ${s?.role} | ${s?.percentage}% |`)
       .join("\n");
-    const _totalPercentage = splits?.reduce((sum, s) => sum + s?.percentage, 0);
+    const totalPercentage = splits?.reduce((sum, s) => sum + s?.percentage, 0);
 
     return `
 ROYALTY SPLIT SHEET
@@ -933,7 +933,7 @@ ${
   splits
     .map(
       (s) => `
-${s?.name} (${s?.role})
+${s.name} (${s.role})
 Signature: _________________________ Date: _____________
 PRO: _____________ IPI#: _____________
 `,
@@ -958,20 +958,20 @@ SYNCHRONIZATION LICENSE AGREEMENT
 
 This Synchronization License Agreement ("Agreement") is entered into as of ${effectiveDate} by and between:
 
-LICENSOR: ${vars?.producerName || "[RIGHTS HOLDER]"} ("Licensor")
-LICENSEE: ${vars?.artistName || "[PRODUCTION COMPANY]"} ("Licensee")
+LICENSOR: ${vars.producerName || "[RIGHTS HOLDER]"} ("Licensor")
+LICENSEE: ${vars.artistName || "[PRODUCTION COMPANY]"} ("Licensee")
 
 1. LICENSED WORK
-Song/Beat Title: ${vars?.beatTitle || "[TITLE]"}
-Composer(s): ${vars?.producerName || "[COMPOSER]"}
+Song/Beat Title: ${vars.beatTitle || "[TITLE]"}
+Composer(s): ${vars.producerName || "[COMPOSER]"}
 Publisher(s): [PUBLISHER]
 
 2. LICENSED USE
-Project Title: ${vars?.projectTitle || "[PROJECT TITLE]"}
-Project Type: ${vars?.projectType || "[FILM/TV/COMMERCIAL/VIDEO GAME]"}
+Project Title: ${vars.projectTitle || "[PROJECT TITLE]"}
+Project Type: ${vars.projectType || "[FILM/TV/COMMERCIAL/VIDEO GAME]"}
 Usage: Background music / Featured performance / Theme
 Duration of Use: [DURATION] seconds/minutes
-Territory: ${vars?.territory || "Worldwide"}
+Territory: ${vars.territory || "Worldwide"}
 
 3. GRANT OF RIGHTS
 Licensor grants Licensee the non-exclusive right to:
@@ -981,7 +981,7 @@ Licensor grants Licensee the non-exclusive right to:
 - Use the Work in trailers, promos, and advertisements for the Project
 
 4. FEES
-Synchronization Fee: ${currency} ${vars?.syncFee?.toLocaleString() || "[FEE]"}
+Synchronization Fee: ${currency} ${vars.syncFee.toLocaleString() || "[FEE]"}
 Master Use Fee: ${currency} [MASTER FEE] (if applicable)
 Total: ${currency} [TOTAL]
 
@@ -995,7 +995,7 @@ This license shall be effective for:
 
 6. CREDITS
 Licensee agrees to include the following credit:
-"[SONG TITLE]" by ${vars?.producerName || "[COMPOSER]"}
+"[SONG TITLE]" by ${vars.producerName || "[COMPOSER]"}
 Published by [PUBLISHER]
 
 7. RESTRICTIONS
@@ -1022,10 +1022,10 @@ Each party agrees to indemnify the other against claims arising from breach of w
 This Agreement shall be governed by the laws of [JURISDICTION].
 
 LICENSOR: _________________________ Date: _____________
-${vars?.producerName || "[RIGHTS HOLDER]"}
+${vars.producerName || "[RIGHTS HOLDER]"}
 
 LICENSEE: _________________________ Date: _____________
-${vars?.artistName || "[PRODUCTION COMPANY]"}
+${vars.artistName || "[PRODUCTION COMPANY]"}
 `;
   }
 
@@ -1039,12 +1039,12 @@ WORK FOR HIRE AGREEMENT
 
 This Work For Hire Agreement ("Agreement") is entered into as of ${effectiveDate} by and between:
 
-HIRING PARTY: ${vars?.artistName || "[HIRING PARTY]"} ("Client")
-CONTRACTOR: ${vars?.producerName || "[CONTRACTOR]"} ("Contractor")
+HIRING PARTY: ${vars.artistName || "[HIRING PARTY]"} ("Client")
+CONTRACTOR: ${vars.producerName || "[CONTRACTOR]"} ("Contractor")
 
 1. ENGAGEMENT
 Client hereby engages Contractor to create the following work:
-Project: ${vars?.projectTitle || "[PROJECT DESCRIPTION]"}
+Project: ${vars.projectTitle || "[PROJECT DESCRIPTION]"}
 
 2. WORK FOR HIRE DECLARATION
 The parties agree that any and all work created by Contractor under this Agreement shall be considered "work made for hire" as defined by the Copyright Act of 1976.
@@ -1056,7 +1056,7 @@ In the event any work is not deemed a "work for hire," Contractor hereby irrevoc
 - All moral rights (to the extent waivable)
 
 3. COMPENSATION
-Total Fee: ${currency} ${vars?.purchasePrice?.toLocaleString() || "[AMOUNT]"}
+Total Fee: ${currency} ${vars.purchasePrice.toLocaleString() || "[AMOUNT]"}
 
 Payment Schedule:
 - Upon signing: ${currency} [AMOUNT]
@@ -1154,12 +1154,12 @@ Producer receives royalty points as specified above.
 
 B. PUBLISHING
 For beats/compositions created by Producer:
-- Producer: ${vars?.publishingPercentage || 50}%
-- Artist: ${100 - (vars?.publishingPercentage || 50)}%
+- Producer: ${vars.publishingPercentage || 50}%
+- Artist: ${100 - (vars.publishingPercentage || 50)}%
 
 5. CREDITS
 Producer shall receive credit on all releases:
-"Produced by ${vars?.producerName || "[PRODUCER NAME]"}"
+"Produced by ${vars.producerName || "[PRODUCER NAME]"}"
 
 6. ACCOUNTING
 Artist shall provide semi-annual royalty statements.
@@ -1211,12 +1211,12 @@ ${vars?.producerName || "[PRODUCER NAME]"}
     partyName: string,
     signatureData: { signatureHash: string; ipAddress: string },
   ): Promise<GeneratedContract> {
-    const _contract = this?.contracts.get(contractId);
+    const contract = this?.contracts.get(contractId);
     if (!contract) {
       throw new Error("Contract not found");
     }
 
-    const _signatureIndex = contract?.signatures.findIndex(
+    const signatureIndex = contract?.signatures.findIndex(
       (s) => s?.partyName === partyName,
     );
     if (signatureIndex === -1) {
@@ -1227,15 +1227,15 @@ ${vars?.producerName || "[PRODUCER NAME]"}
       throw new Error("Party has already signed");
     }
 
-    contract?.signatures[signatureIndex] = {
+    contract.signatures[signatureIndex] = {
       ...contract?.signatures[signatureIndex],
       signedAt: new Date(),
-      signatureHash: signatureData?.signatureHash,
-      ipAddress: signatureData?.ipAddress,
+      signatureHash: signatureData.signatureHash,
+      ipAddress: signatureData.ipAddress,
     };
 
-    const _allSigned = contract?.signatures.every((s) => s?.signedAt);
-    const _someSigned = contract?.signatures.some((s) => s?.signedAt);
+    const allSigned = contract?.signatures.every((s) => s?.signedAt);
+    const someSigned = contract?.signatures.some((s) => s?.signedAt);
 
     if (allSigned) {
       contract.status = "fully_executed";
@@ -1252,15 +1252,15 @@ ${vars?.producerName || "[PRODUCER NAME]"}
   }
 
   generatePDF(contractId: string): Buffer {
-    const _contract = this?.contracts.get(contractId);
+    const contract = this?.contracts.get(contractId);
     if (!contract) {
       throw new Error("Contract not found");
     }
 
-    const _doc = new jsPDF();
-    const _pageWidth = doc?.internal.pageSize?.getWidth();
-    const _margin = 20;
-    const _lineHeight = 7;
+    const doc = new jsPDF();
+    const pageWidth = doc?.internal.pageSize?.getWidth();
+    const margin = 20;
+    const lineHeight = 7;
     let y = margin;
 
     doc?.setFontSize(16);
@@ -1271,14 +1271,14 @@ ${vars?.producerName || "[PRODUCER NAME]"}
     doc?.setFontSize(10);
     doc?.setFont("helvetica", "normal");
 
-    const _lines = contract?.content.split("\n");
+    const lines = contract?.content.split("\n");
     for (const line of lines) {
       if (y > doc?.internal.pageSize?.getHeight() - margin) {
         doc?.addPage();
         y = margin;
       }
 
-      const _trimmedLine = line?.trim();
+      const trimmedLine = line?.trim();
 
       if (trimmedLine?.match(/^[A-Z0-9]+\./)) {
         doc?.setFont("helvetica", "bold");
@@ -1288,7 +1288,7 @@ ${vars?.producerName || "[PRODUCER NAME]"}
         doc?.setFont("helvetica", "normal");
       }
 
-      const _splitLines = doc?.splitTextToSize(
+      const splitLines = doc?.splitTextToSize(
         trimmedLine,
         pageWidth - margin * 2,
       );
@@ -1357,7 +1357,7 @@ ${vars?.producerName || "[PRODUCER NAME]"}
     errors: string[];
     warnings: string[];
   } {
-    const _template = this?.getTemplateById(templateId);
+    const template = this?.getTemplateById(templateId);
     if (!template) {
       return { valid: false, errors: ["Template not found"], warnings: [] };
     }
@@ -1366,7 +1366,7 @@ ${vars?.producerName || "[PRODUCER NAME]"}
     const warnings: string[] = [];
 
     for (const requiredVar of template?.variables) {
-      const _value = variables[requiredVar as keyof ContractVariables];
+      const value = variables[requiredVar as keyof ContractVariables];
       if (value === undefined || value === null || value === "") {
         if (
           ["artistName", "producerName", "beatTitle", "projectTitle"].includes(
@@ -1398,7 +1398,7 @@ ${vars?.producerName || "[PRODUCER NAME]"}
     }
 
     if (variables?.splits) {
-      const _totalSplit = variables?.splits.reduce(
+      const totalSplit = variables?.splits.reduce(
         (sum, s) => sum + s?.percentage,
         0,
       );
@@ -1410,21 +1410,21 @@ ${vars?.producerName || "[PRODUCER NAME]"}
     }
 
     if (variables?.effectiveDate && variables?.expirationDate) {
-      const _effective = new Date(variables?.effectiveDate);
-      const _expiration = new Date(variables?.expirationDate);
+      const effective = new Date(variables?.effectiveDate);
+      const expiration = new Date(variables?.expirationDate);
       if (expiration <= effective) {
         errors?.push("Expiration date must be after effective date");
       }
     }
 
-    return { valid: errors?.length === 0, errors, warnings };
+    return { valid: errors.length === 0, errors, warnings };
   }
 
   updateContractDraft(
     contractId: string,
     variables: Partial<ContractVariables>,
   ): GeneratedContract {
-    const _contract = this?.contracts.get(contractId);
+    const contract = this?.contracts.get(contractId);
     if (!contract) {
       throw new Error("Contract not found");
     }
@@ -1433,24 +1433,24 @@ ${vars?.producerName || "[PRODUCER NAME]"}
       throw new Error("Can only update contracts in draft status");
     }
 
-    const _updatedVariables = { ...contract?.variables, ...variables };
-    const _template = this?.getTemplateById(contract?.templateId);
+    const updatedVariables = { ...contract?.variables, ...variables };
+    const template = this?.getTemplateById(contract?.templateId);
     if (!template) {
       throw new Error("Template not found");
     }
 
-    const _content = this?.generateContractContent(
+    const content = this?.generateContractContent(
       template?.type,
       updatedVariables,
     );
-    const _parties = this?.extractParties(template?.type, updatedVariables);
+    const parties = this?.extractParties(template?.type, updatedVariables);
 
     const updatedContract: GeneratedContract = {
       ...contract,
       content,
       variables: updatedVariables,
       parties,
-      signatures: parties?.map((p) => ({ partyName: p?.name })),
+      signatures: parties.map((p) => ({ partyName: p.name })),
     };
 
     this?.cacheContract(contractId, updatedContract);
@@ -1460,7 +1460,7 @@ ${vars?.producerName || "[PRODUCER NAME]"}
   }
 
   sendForSignature(contractId: string): GeneratedContract {
-    const _contract = this?.contracts.get(contractId);
+    const contract = this?.contracts.get(contractId);
     if (!contract) {
       throw new Error("Contract not found");
     }
@@ -1481,12 +1481,12 @@ ${vars?.producerName || "[PRODUCER NAME]"}
     partyName: string,
     reason: string,
   ): GeneratedContract {
-    const _contract = this?.contracts.get(contractId);
+    const contract = this?.contracts.get(contractId);
     if (!contract) {
       throw new Error("Contract not found");
     }
 
-    const _signatureIndex = contract?.signatures.findIndex(
+    const signatureIndex = contract?.signatures.findIndex(
       (s) => s?.partyName === partyName,
     );
     if (signatureIndex === -1) {
@@ -1503,7 +1503,7 @@ ${vars?.producerName || "[PRODUCER NAME]"}
   }
 
   voidContract(contractId: string, reason: string): GeneratedContract {
-    const _contract = this?.contracts.get(contractId);
+    const contract = this?.contracts.get(contractId);
     if (!contract) {
       throw new Error("Contract not found");
     }
@@ -1525,7 +1525,7 @@ ${vars?.producerName || "[PRODUCER NAME]"}
     actor?: string;
     details?: string;
   }> {
-    const _contract = this?.contracts.get(contractId);
+    const contract = this?.contracts.get(contractId);
     if (!contract) {
       throw new Error("Contract not found");
     }
@@ -1539,8 +1539,8 @@ ${vars?.producerName || "[PRODUCER NAME]"}
 
     timeline?.push({
       event: "contract_created",
-      timestamp: contract?.createdAt,
-      actor: contract?.createdBy,
+      timestamp: contract.createdAt,
+      actor: contract.createdBy,
       details: `Contract created from template: ${contract?.templateId}`,
     });
 
@@ -1549,14 +1549,14 @@ ${vars?.producerName || "[PRODUCER NAME]"}
         timeline?.push({
           event: "signature_added",
           timestamp: new Date(sig?.signedAt),
-          actor: sig?.partyName,
+          actor: sig.partyName,
           details: `Signed from IP: ${sig?.ipAddress?.substring(0, 8)}...`,
         });
       }
     }
 
     if (contract?.status === "fully_executed") {
-      const _lastSignature = contract?.signatures
+      const lastSignature = contract?.signatures
         .filter((s) => s?.signedAt)
         .sort(
           (a, b) =>
@@ -1588,32 +1588,32 @@ ${vars?.producerName || "[PRODUCER NAME]"}
     }>;
     allSigned: boolean;
   } {
-    const _contract = this?.contracts.get(contractId);
+    const contract = this?.contracts.get(contractId);
     if (!contract) {
       throw new Error("Contract not found");
     }
 
-    const _signers = contract?.parties.map((party) => {
-      const _signature = contract?.signatures.find(
+    const signers = contract?.parties.map((party) => {
+      const signature = contract?.signatures.find(
         (s) => s?.partyName === party?.name,
       );
       return {
-        name: party?.name,
-        role: party?.role,
+        name: party.name,
+        role: party.role,
         status: (signature?.signedAt ? "signed" : "pending") as
           | "signed"
           | "pending",
-        signedAt: signature?.signedAt
+        signedAt: signature.signedAt
           ? new Date(signature?.signedAt)
           : undefined,
       };
     });
 
-    const _signed = signers?.filter((s) => s?.status === "signed").length;
-    const _pending = signers?.filter((s) => s?.status === "pending").length;
+    const signed = signers?.filter((s) => s?.status === "signed").length;
+    const pending = signers?.filter((s) => s?.status === "pending").length;
 
     return {
-      total: signers?.length,
+      total: signers.length,
       signed,
       pending,
       signers,
@@ -1630,25 +1630,25 @@ ${vars?.producerName || "[PRODUCER NAME]"}
     voided: number;
     expired: number;
   } {
-    const _userContracts = this?.getContractsByUser(userId);
+    const userContracts = this?.getContractsByUser(userId);
     return {
-      total: userContracts?.length,
-      draft: userContracts?.filter((c) => c?.status === "draft").length,
-      pendingSignature: userContracts?.filter(
+      total: userContracts.length,
+      draft: userContracts.filter((c) => c?.status === "draft").length,
+      pendingSignature: userContracts.filter(
         (c) => c?.status === "pending_signature",
       ).length,
-      partiallySigned: userContracts?.filter(
+      partiallySigned: userContracts.filter(
         (c) => c?.status === "partially_signed",
       ).length,
-      fullyExecuted: userContracts?.filter((c) => c?.status === "fully_executed")
+      fullyExecuted: userContracts.filter((c) => c?.status === "fully_executed")
         .length,
-      voided: userContracts?.filter((c) => c?.status === "voided").length,
-      expired: userContracts?.filter((c) => c?.status === "expired").length,
+      voided: userContracts.filter((c) => c?.status === "voided").length,
+      expired: userContracts.filter((c) => c?.status === "expired").length,
     };
   }
 
   getContractPreview(templateId: string, variables: ContractVariables): string {
-    const _template = this?.getTemplateById(templateId);
+    const template = this?.getTemplateById(templateId);
     if (!template) {
       throw new Error("Template not found");
     }
@@ -1657,4 +1657,4 @@ ${vars?.producerName || "[PRODUCER NAME]"}
   }
 }
 
-export const _contractTemplateService = new ContractTemplateService();
+export const contractTemplateService = new ContractTemplateService();

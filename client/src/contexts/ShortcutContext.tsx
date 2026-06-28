@@ -16,10 +16,7 @@ import {
   DEFAULT_COMMANDS,
   type CommandRegistry,
 } from "@/lib/commands/CommandRegistry";
-import {
-  ShortcutDefinition,
-  ShortcutContext as ShortcutContextType,
-} from "@/lib/shortcuts/types";
+import { ShortcutDefinition, ShortcutContext as ShortcutContextType } from "@/lib/shortcuts/types";
 import { Command } from "@/lib/commands/CommandRegistry";
 
 interface ShortcutContextValue {

@@ -42415,6 +42415,7 @@ class Im {
     for (
       this.state.versions.unshift(n);
       this.state.versions.length > this.state.maxVersions;
+
     )
       this.state.versions.pop();
     return (this.notify(), n.id);
@@ -43994,6 +43995,7 @@ class Bm {
     for (
       ;
       this.currentCacheBytes + t > this.maxCacheSize && this.cache.size > 0;
+
     ) {
       let o = null,
         r = 1 / 0;
@@ -54077,28 +54079,30 @@ function sd({
                     {
                       className:
                         "absolute inset-x-1 bottom-1 top-5 flex flex-col gap-px overflow-hidden pointer-events-none",
-                      children: i.notes?.slice(0, 8).map((k, f) =>
-                        e.jsxDEV(
-                          "div",
-                          {
-                            className: "h-1.5 rounded-sm",
-                            style: {
-                              backgroundColor: o,
-                              width: `${(k.duration / i.duration) * 100}%`,
-                              marginLeft: `${(k.startTime / i.duration) * 100}%`,
+                      children: i.notes
+                        ?.slice(0, 8)
+                        .map((k, f) =>
+                          e.jsxDEV(
+                            "div",
+                            {
+                              className: "h-1.5 rounded-sm",
+                              style: {
+                                backgroundColor: o,
+                                width: `${(k.duration / i.duration) * 100}%`,
+                                marginLeft: `${(k.startTime / i.duration) * 100}%`,
+                              },
                             },
-                          },
-                          f,
-                          !1,
-                          {
-                            fileName:
-                              "/home/runner/workspace/client/src/components/studio/StudioOneDAW.tsx",
-                            lineNumber: 3782,
-                            columnNumber: 15,
-                          },
-                          this,
+                            f,
+                            !1,
+                            {
+                              fileName:
+                                "/home/runner/workspace/client/src/components/studio/StudioOneDAW.tsx",
+                              lineNumber: 3782,
+                              columnNumber: 15,
+                            },
+                            this,
+                          ),
                         ),
-                      ),
                     },
                     void 0,
                     !1,

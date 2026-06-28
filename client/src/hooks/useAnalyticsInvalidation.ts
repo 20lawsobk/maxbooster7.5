@@ -1,7 +1,7 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 
-const _ANALYTICS_PREFIXES = [
+const ANALYTICS_PREFIXES = [
   "/api/analytics/",
   "/api/analytics-alerts/",
   "/api/dashboard/",
@@ -10,7 +10,7 @@ const _ANALYTICS_PREFIXES = [
   "/api/admin/analytics",
 ];
 
-const _DASHBOARD_KEYS = [
+const DASHBOARD_KEYS = [
   "/api/dashboard/comprehensive",
   "/api/analytics/dashboard",
   "/api/ai/insights",
@@ -18,15 +18,15 @@ const _DASHBOARD_KEYS = [
   "/api/artist-progress/dashboard",
 ];
 
-const _REVENUE_KEYS = ["/api/marketplace/sales-analytics", "/api/royalties"];
+const REVENUE_KEYS = ["/api/marketplace/sales-analytics", "/api/royalties"];
 
-const _DISTRIBUTION_KEYS = [
+const DISTRIBUTION_KEYS = [
   "/api/distribution/analytics/growth",
   "/api/distribution/hyperfollow/analytics",
   "/api/distribution/streaming-trends",
 ];
 
-const _ADVERTISING_KEYS = [
+const ADVERTISING_KEYS = [
   "/api/advertising/audience-segments",
   "/api/advertising/lookalike-audiences",
   "/api/advertising/roas/audience-segments",
@@ -35,13 +35,13 @@ const _ADVERTISING_KEYS = [
 ];
 
 export function useAnalyticsInvalidation() {
-  const _queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
-  const _invalidateByPrefixes = useCallback(
+  const invalidateByPrefixes = useCallback(
     (prefixes: string[]) => {
       queryClient?.invalidateQueries({
         predicate: (query) => {
-          const _key = query?.queryKey[0];
+          const key = query?.queryKey[0];
           if (typeof key !== "string") return false;
           return prefixes?.some((prefix) => key?.startsWith(prefix));
         },
@@ -50,7 +50,7 @@ export function useAnalyticsInvalidation() {
     [queryClient],
   );
 
-  const _invalidateKeys = useCallback(
+  const invalidateKeys = useCallback(
     (keys: string[]) => {
       keys?.forEach((key) => {
         queryClient?.invalidateQueries({ queryKey: [key], exact: false });
@@ -59,40 +59,40 @@ export function useAnalyticsInvalidation() {
     [queryClient],
   );
 
-  const _invalidateDashboard = useCallback(() => {
+  const invalidateDashboard = useCallback(() => {
     invalidateKeys(DASHBOARD_KEYS);
     invalidateByPrefixes(["/api/analytics/dashboard", "/api/dashboard/"]);
   }, [invalidateKeys, invalidateByPrefixes]);
 
-  const _invalidateOnProjectChange = useCallback(() => {
+  const invalidateOnProjectChange = useCallback(() => {
     invalidateByPrefixes([...ANALYTICS_PREFIXES]);
   }, [invalidateByPrefixes]);
 
-  const _invalidateOnDistributionChange = useCallback(() => {
+  const invalidateOnDistributionChange = useCallback(() => {
     invalidateByPrefixes([...ANALYTICS_PREFIXES]);
     invalidateKeys(DISTRIBUTION_KEYS);
   }, [invalidateByPrefixes, invalidateKeys]);
 
-  const _invalidateOnSocialChange = useCallback(() => {
+  const invalidateOnSocialChange = useCallback(() => {
     invalidateByPrefixes([...ANALYTICS_PREFIXES]);
   }, [invalidateByPrefixes]);
 
-  const _invalidateOnMarketplaceChange = useCallback(() => {
+  const invalidateOnMarketplaceChange = useCallback(() => {
     invalidateByPrefixes([...ANALYTICS_PREFIXES]);
     invalidateKeys(REVENUE_KEYS);
   }, [invalidateByPrefixes, invalidateKeys]);
 
-  const _invalidateOnRevenueChange = useCallback(() => {
+  const invalidateOnRevenueChange = useCallback(() => {
     invalidateByPrefixes([...ANALYTICS_PREFIXES]);
     invalidateKeys(REVENUE_KEYS);
   }, [invalidateByPrefixes, invalidateKeys]);
 
-  const _invalidateOnCampaignChange = useCallback(() => {
+  const invalidateOnCampaignChange = useCallback(() => {
     invalidateByPrefixes([...ANALYTICS_PREFIXES]);
     invalidateKeys(ADVERTISING_KEYS);
   }, [invalidateByPrefixes, invalidateKeys]);
 
-  const _invalidateAll = useCallback(() => {
+  const invalidateAll = useCallback(() => {
     invalidateByPrefixes([...ANALYTICS_PREFIXES]);
     invalidateKeys([
       ...REVENUE_KEYS,

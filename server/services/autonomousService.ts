@@ -21,7 +21,7 @@ import {
   teardownRepeatableJobs,
 } from "./autonomousJobScheduler.js";
 
-const _METRICS_CACHE_KEY = "autonomous:metrics";
+const METRICS_CACHE_KEY = "autonomous:metrics";
 let _lastPersistWarnAt = 0; // rate-limits persist-failure log to once per 60 s
 let _lastLoadWarnAt = 0; // rate-limits load-failure log to once per 60 s
 
@@ -100,6 +100,9 @@ export class AutonomousService extends EventEmitter {
     this?.loadMetricsFromCache();
   }
 
+
+
+
   private async loadMetricsFromCache(): Promise<void> {
     // If PDIM circuit is OPEN at startup, the load will fail for every attempt.
     // Skip silently and schedule a retry — in-memory defaults are already in place.
@@ -108,7 +111,7 @@ export class AutonomousService extends EventEmitter {
       return;
     }
     try {
-      const _cached =
+      const cached =
         await distributedCache?.get<AutonomousMetrics>(METRICS_CACHE_KEY);
       if (cached) {
         this.metrics = { ...cached, lastUpdated: new Date(cached?.lastUpdated) };
@@ -118,7 +121,7 @@ export class AutonomousService extends EventEmitter {
       // Only warn when PDIM is genuinely UP but the cache operation fails unexpectedly.
       // Rate-limit to once per 60 s to prevent flooding on sustained outages.
       if (!cbIsOpen()) {
-        const _now = Date?.now();
+        const now = Date?.now();
         if (now - _lastLoadWarnAt >= 60_000) {
           _lastLoadWarnAt = now;
           logger?.warn(
@@ -135,10 +138,10 @@ export class AutonomousService extends EventEmitter {
       await distributedCache?.set(METRICS_CACHE_KEY, this?.metrics, 3600);
     } catch (err) {
       // Rate-limit to once per 60 s so a sustained PDIM outage doesn't flood logs.
-      const _now = Date?.now();
+      const now = Date.now();
       if (now - _lastPersistWarnAt >= 60_000) {
         _lastPersistWarnAt = now;
-        logger?.warn(
+        logger.warn(
           { err: err },
           "[AUTONOMOUS] Could not persist metrics to cache:",
         );
@@ -190,47 +193,47 @@ export class AutonomousService extends EventEmitter {
   private async loadAutonomousWhitelist(): Promise<void> {
     try {
       this.autonomousWhitelist = new Set();
-      if (process?.env.ADMIN_USER_IDS) {
-        const _adminIds = process?.env.ADMIN_USER_IDS?.split(",");
-        adminIds?.forEach((id) => this?.autonomousWhitelist.add(id?.trim()));
+      if (process.env.ADMIN_USER_IDS) {
+        const adminIds = process.env.ADMIN_USER_IDS.split(",");
+        adminIds.forEach((id) => this.autonomousWhitelist.add(id.trim()));
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error loading autonomous whitelist:");
+      logger.warn({ err: error }, "Error loading autonomous whitelist:");
     }
   }
 
   isAutonomousEnabled(userId: string): boolean {
-    return this?.autonomousMode || this?.autonomousWhitelist.has(userId);
+    return this.autonomousMode || this.autonomousWhitelist.has(userId);
   }
 
   async setAutonomousMode(userId: string, enabled: boolean): Promise<void> {
     if (enabled) {
-      this?.autonomousWhitelist.add(userId);
+      this.autonomousWhitelist.add(userId);
     } else {
-      this?.autonomousWhitelist.delete(userId);
+      this.autonomousWhitelist.delete(userId);
     }
     // NOTE: there is no `autonomousEnabled` column on the users table, so writing
     // it produced an empty `UPDATE users SET  WHERE ...` and threw a SQL syntax
     // error on every call. The whitelist is in-memory (rehydrated at startup from
     // the ADMIN_USER_IDS env var). Persisting per-user autonomous state would
     // require a schema column; until then we keep this in-memory only.
-    this?.emit("autonomousModeChanged", { userId, enabled });
+    this.emit("autonomousModeChanged", { userId, enabled });
   }
 
   async configure(
     userId: string,
     updates: Partial<AutonomousConfig>,
   ): Promise<AutonomousConfig> {
-    if (!this?.isAutonomousEnabled(userId)) {
+    if (!this.isAutonomousEnabled(userId)) {
       throw new Error("Autonomous mode not enabled for this user");
     }
-    this.config = { ...this?.config, ...updates };
-    this?.emit("configUpdated", { userId, config: this?.config });
-    return this?.config;
+    this.config = { ...this.config, ...updates };
+    this.emit("configUpdated", { userId, config: this.config });
+    return this.config;
   }
 
   getMetrics(): AutonomousMetrics {
-    return { ...this?.metrics };
+    return { ...this.metrics };
   }
 
   async postContent(
@@ -239,14 +242,14 @@ export class AutonomousService extends EventEmitter {
     platforms: string[],
   ): Promise<{ success: boolean; postId?: string; requiresApproval: boolean }> {
     try {
-      const _isAutonomous = this?.isAutonomousEnabled(userId);
+      const isAutonomous = this.isAutonomousEnabled(userId);
 
       if (isAutonomous) {
-        logger?.info(
+        logger.info(
           `[AUTONOMOUS] Publishing content directly for user ${userId}`,
         );
 
-        const _post = await storage?.createSocialPost({
+        const post = await storage.createSocialPost({
           ...content,
           userId,
           platforms,
@@ -256,23 +259,23 @@ export class AutonomousService extends EventEmitter {
           approvedAt: new Date(),
         } as Record<string, unknown>);
 
-        await socialQueueService?.schedulePost(post?.id, new Date());
-        await this?.dispatchAutonomousContent(post?.id);
+        await socialQueueService.schedulePost(post.id, new Date());
+        await this.dispatchAutonomousContent(post.id);
 
-        this?.metrics.postsPublished++;
-        this?.metrics.lastUpdated = new Date();
+        this.metrics.postsPublished++;
+        this.metrics.lastUpdated = new Date();
 
         return {
           success: true,
-          postId: post?.id,
+          postId: post.id,
           requiresApproval: false,
         };
       } else {
-        logger?.info(
+        logger.info(
           `[APPROVAL] Routing content through approval for user ${userId}`,
         );
 
-        const _post = await storage?.createSocialPost({
+        const post = await storage.createSocialPost({
           ...content,
           userId,
           platforms,
@@ -280,26 +283,26 @@ export class AutonomousService extends EventEmitter {
           approvalStatus: "pending",
         } as Record<string, unknown>);
 
-        await approvalService?.submitForApproval({
+        await approvalService.submitForApproval({
           type: "social_post",
-          itemId: post?.id,
+          itemId: post.id,
           userId,
-          metadata: { platforms, content: content?.content },
+          metadata: { platforms, content: content.content },
         });
 
-        this?.metrics.postsScheduled++;
+        this.metrics.postsScheduled++;
 
         return {
           success: true,
-          postId: post?.id,
+          postId: post.id,
           requiresApproval: true,
         };
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error in autonomous posting:");
+      logger.warn({ err: error }, "Error in autonomous posting:");
       return {
         success: false,
-        requiresApproval: !this?.isAutonomousEnabled(userId),
+        requiresApproval: !this.isAutonomousEnabled(userId),
       };
     }
   }
@@ -313,10 +316,10 @@ export class AutonomousService extends EventEmitter {
     requiresApproval: boolean;
   }> {
     try {
-      const _isAutonomous = this?.isAutonomousEnabled(userId);
+      const isAutonomous = this.isAutonomousEnabled(userId);
 
       if (isAutonomous) {
-        logger?.info(
+        logger.info(
           `[AUTONOMOUS] Launching campaign directly for user ${userId}`,
         );
 
@@ -324,7 +327,7 @@ export class AutonomousService extends EventEmitter {
         // already 'active'/'running' and is what actually flips status to
         // 'active' once posts succeed. Creating as 'active' here would make
         // activation a no-op and silently skip dispatch.
-        const _newCampaign = await storage?.createAdCampaign({
+        const newCampaign = await storage?.createAdCampaign({
           ...campaign,
           userId,
           status: "draft",
@@ -336,7 +339,7 @@ export class AutonomousService extends EventEmitter {
         // NOTE: the real dispatch method is activateCampaign(campaignId, userId)
         // — there is no startCampaign(). Posting only happens when the user has
         // connected social accounts; log (non-fatally) when it does not.
-        const _dispatch = await advertisingDispatchService?.activateCampaign(
+        const dispatch = await advertisingDispatchService?.activateCampaign(
           newCampaign?.id,
           userId,
         );
@@ -352,12 +355,12 @@ export class AutonomousService extends EventEmitter {
           ),
         );
 
-        this?.metrics.campaignsLaunched++;
-        this?.metrics.lastUpdated = new Date();
+        this.metrics.campaignsLaunched++;
+        this.metrics.lastUpdated = new Date();
 
         return {
           success: true,
-          campaignId: newCampaign?.id,
+          campaignId: newCampaign.id,
           requiresApproval: false,
         };
       } else {
@@ -365,7 +368,7 @@ export class AutonomousService extends EventEmitter {
           `[APPROVAL] Routing campaign through approval for user ${userId}`,
         );
 
-        const _newCampaign = await storage?.createAdCampaign({
+        const newCampaign = await storage?.createAdCampaign({
           ...campaign,
           userId,
           status: "draft",
@@ -382,7 +385,7 @@ export class AutonomousService extends EventEmitter {
 
         return {
           success: true,
-          campaignId: newCampaign?.id,
+          campaignId: newCampaign.id,
           requiresApproval: true,
         };
       }
@@ -407,45 +410,45 @@ export class AutonomousService extends EventEmitter {
 
       logger?.info(`[AUTO-CONTENT] Generating optimized content for ${userId}`);
 
-      const _variants = await contentVariantGenerator?.generateVariants({
+      const variants = await contentVariantGenerator?.generateVariants({
         topic,
         platforms,
         count: 5,
         styles: ["engaging", "professional", "casual", "viral", "educational"],
       });
 
-      const _scoredVariants = await Promise?.all(
+      const scoredVariants = await Promise?.all(
         variants?.map(async (variant: Record<string, unknown>) => {
-          const _viralScore = await viralScoringService?.calculateViralScore({
-            content: variant?.content,
-            platform: variant?.platform,
-            hashtags: variant?.hashtags,
+          const viralScore = await viralScoringService?.calculateViralScore({
+            content: variant.content,
+            platform: variant.platform,
+            hashtags: variant.hashtags,
           });
           return { ...variant, viralScore };
         }),
       );
 
-      const _bestVariant = scoredVariants?.sort(
+      const bestVariant = scoredVariants?.sort(
         (a, b) => b?.viralScore - a?.viralScore,
       )[0];
 
-      const _optimalTiming = await timingOptimizer?.getOptimalPostingTime({
+      const optimalTiming = await timingOptimizer?.getOptimalPostingTime({
         userId,
         platforms,
         contentType: "generated",
       });
 
-      this?.metrics.contentVariantsGenerated += variants?.length;
-      this?.metrics.viralScoresComputed += scoredVariants?.length;
-      this?.metrics.aiDecisionsMade++;
-      this?.metrics.lastUpdated = new Date();
+      this.metrics.contentVariantsGenerated += variants?.length;
+      this.metrics.viralScoresComputed += scoredVariants?.length;
+      this.metrics.aiDecisionsMade++;
+      this.metrics.lastUpdated = new Date();
 
       return {
         success: true,
-        contentId: bestVariant?.id,
-        variants: scoredVariants?.map((v: Record<string, unknown>) => v?.content),
-        viralScore: bestVariant?.viralScore,
-        optimalTiming: optimalTiming?.recommendedTime,
+        contentId: bestVariant.id,
+        variants: scoredVariants.map((v: Record<string, unknown>) => v?.content),
+        viralScore: bestVariant.viralScore,
+        optimalTiming: optimalTiming.recommendedTime,
         platforms,
       };
     } catch (error: unknown) {
@@ -465,13 +468,13 @@ export class AutonomousService extends EventEmitter {
 
       logger?.info(`[AUTO-DISTRIBUTE] Processing release for ${userId}`);
 
-      const _release = await distributionService?.createRelease({
+      const release = await distributionService?.createRelease({
         ...releaseData,
         userId,
         status: "processing",
       } as Record<string, unknown>);
 
-      const _providers = [
+      const providers = [
         "spotify",
         "apple_music",
         "amazon_music",
@@ -479,11 +482,11 @@ export class AutonomousService extends EventEmitter {
         "tidal",
         "deezer",
       ];
-      const _dispatchResults = [];
+      const dispatchResults = [];
 
       for (const provider of providers) {
         try {
-          const _result = await distributionService?.submitToProvider(
+          const result = await distributionService?.submitToProvider(
             release?.id,
             provider,
             userId,
@@ -494,18 +497,18 @@ export class AutonomousService extends EventEmitter {
         }
       }
 
-      const _successfulDispatches = dispatchResults?.filter((r) => r?.success);
+      const successfulDispatches = dispatchResults?.filter((r) => r?.success);
 
-      const _estimatedReach = successfulDispatches?.length * 50000;
-      const _royaltyProjection = estimatedReach * 0.004;
+      const estimatedReach = successfulDispatches?.length * 50000;
+      const royaltyProjection = estimatedReach * 0.004;
 
-      this?.metrics.releasesDistributed++;
-      this?.metrics.lastUpdated = new Date();
+      this.metrics.releasesDistributed++;
+      this.metrics.lastUpdated = new Date();
 
       return {
         success: true,
-        releaseId: release?.id,
-        dispatchedTo: successfulDispatches?.map((r) => r?.provider),
+        releaseId: release.id,
+        dispatchedTo: successfulDispatches.map((r) => r?.provider),
         estimatedReach,
         royaltyProjection,
       };
@@ -533,7 +536,7 @@ export class AutonomousService extends EventEmitter {
       logger?.info("[AUTO-IMAGE] Processing image with Sharp");
 
       let processor = sharp(imageBuffer);
-      const _metadata = await processor?.metadata();
+      const metadata = await processor?.metadata();
 
       if (options?.resize) {
         processor = processor?.resize(
@@ -550,8 +553,8 @@ export class AutonomousService extends EventEmitter {
         processor = processor?.normalize().sharpen();
       }
 
-      const _format = options?.format || "webp";
-      const _quality = options?.quality || 85;
+      const format = options?.format || "webp";
+      const quality = options?.quality || 85;
 
       let outputBuffer: Buffer;
       switch (format) {
@@ -573,35 +576,35 @@ export class AutonomousService extends EventEmitter {
 
       const thumbnails: string[] = [];
       if (options?.generateThumbnails) {
-        const _thumbnailSizes = [
+        const thumbnailSizes = [
           { width: 100, height: 100 },
           { width: 300, height: 300 },
           { width: 600, height: 600 },
         ];
 
         for (const size of thumbnailSizes) {
-          const _thumbBuffer = await sharp(imageBuffer)
+          const thumbBuffer = await sharp(imageBuffer)
             .resize(size?.width, size?.height, { fit: "cover" })
             .webp({ quality: 80 })
             .toBuffer();
 
-          const _base64 = thumbBuffer?.toString("base64");
+          const base64 = thumbBuffer?.toString("base64");
           thumbnails?.push(`data:image/webp;base64,${base64}`);
         }
       }
 
-      this?.metrics.imagesProcessed++;
-      this?.metrics.lastUpdated = new Date();
+      this.metrics.imagesProcessed++;
+      this.metrics.lastUpdated = new Date();
 
       return {
         success: true,
         processedUrl: `data:image/${format};base64,${outputBuffer?.toString("base64")}`,
         thumbnails,
         dimensions: {
-          width: options?.resize?.width || metadata?.width || 0,
-          height: options?.resize?.height || metadata?.height || 0,
+          width: options.resize?.width || metadata?.width || 0,
+          height: options.resize?.height || metadata?.height || 0,
         },
-        optimizedSize: outputBuffer?.length,
+        optimizedSize: outputBuffer.length,
       };
     } catch (error: unknown) {
       logger?.warn({ err: error }, "Error in auto image processing:");
@@ -613,7 +616,7 @@ export class AutonomousService extends EventEmitter {
     imageBuffer: Buffer,
     _releaseType: "single" | "EP" | "album",
   ): Promise<AutoImageResult> {
-    const _standardSize = 3000;
+    const standardSize = 3000;
 
     return this?.autoProcessImage(imageBuffer, {
       resize: { width: standardSize, height: standardSize },
@@ -642,11 +645,11 @@ export class AutonomousService extends EventEmitter {
       linkedin: { width: 1200, height: 627, format: "png" },
     };
 
-    const _specs = platformSpecs[platform] || platformSpecs?.instagram_post;
+    const specs = platformSpecs[platform] || platformSpecs?.instagram_post;
 
     return this?.autoProcessImage(imageBuffer, {
-      resize: { width: specs?.width, height: specs?.height },
-      format: specs?.format,
+      resize: { width: specs.width, height: specs.height },
+      format: specs.format,
       quality: 95,
       optimize: true,
     });
@@ -665,14 +668,14 @@ export class AutonomousService extends EventEmitter {
 
       logger?.info(`[AUTO-ANALYTICS] Generating insights for ${userId}`);
 
-      const _analyticsData = await storage?.getAnalyticsData(userId);
+      const analyticsData = await storage?.getAnalyticsData(userId);
 
-      const _insights = {
-        totalEngagement: analyticsData?.totalEngagement || 0,
-        growthRate: analyticsData?.growthRate || 0,
-        topPerformingContent: analyticsData?.topContent || [],
-        audienceInsights: analyticsData?.audienceData || {},
-        revenueMetrics: analyticsData?.revenue || {},
+      const insights = {
+        totalEngagement: analyticsData.totalEngagement || 0,
+        growthRate: analyticsData.growthRate || 0,
+        topPerformingContent: analyticsData.topContent || [],
+        audienceInsights: analyticsData.audienceData || {},
+        revenueMetrics: analyticsData.revenue || {},
       };
 
       const recommendations: string[] = [];
@@ -690,16 +693,16 @@ export class AutonomousService extends EventEmitter {
       recommendations?.push("Cross-promote content across all platforms");
       recommendations?.push("Schedule posts during optimal engagement windows");
 
-      const _predictions = {
-        projectedGrowth: insights?.growthRate * 1.15,
-        estimatedReach: insights?.totalEngagement * 12,
+      const predictions = {
+        projectedGrowth: insights.growthRate * 1.15,
+        estimatedReach: insights.totalEngagement * 12,
         revenueProjection: (insights?.revenueMetrics.monthly || 0) * 1.2,
         viralPotential: 0.35 + insights?.growthRate / 100,
       };
 
-      this?.metrics.analyticsGenerated++;
-      this?.metrics.aiDecisionsMade++;
-      this?.metrics.lastUpdated = new Date();
+      this.metrics.analyticsGenerated++;
+      this.metrics.aiDecisionsMade++;
+      this.metrics.lastUpdated = new Date();
 
       return {
         success: true,
@@ -726,7 +729,7 @@ export class AutonomousService extends EventEmitter {
 
       logger?.info(`[AUTO-GROWTH] Optimizing growth for ${userId}`);
 
-      const _algorithmInsights = await algorithmIntelligence?.analyzeAlgorithm({
+      const algorithmInsights = await algorithmIntelligence?.analyzeAlgorithm({
         platforms: ["instagram", "tiktok", "twitter", "youtube"],
         timeframe: "7d",
       });
@@ -750,11 +753,11 @@ export class AutonomousService extends EventEmitter {
       optimizations?.push("Reply to all comments within 1 hour");
       optimizations?.push("Post during algorithm boost windows");
 
-      const _viralScore =
+      const viralScore =
         await viralScoringService?.getUserViralPotential(userId);
 
-      this?.metrics.aiDecisionsMade++;
-      this?.metrics.lastUpdated = new Date();
+      this.metrics.aiDecisionsMade++;
+      this.metrics.lastUpdated = new Date();
 
       return {
         success: true,
@@ -780,26 +783,26 @@ export class AutonomousService extends EventEmitter {
       logger?.info(`[AUTO-SCHEDULE] Creating week schedule for ${userId}`);
 
       const scheduledPosts: Record<string, unknown>[] = [];
-      const _now = new Date();
+      const now = new Date();
 
       for (let i = 0; i < contentPlan?.length; i++) {
-        const _plan = contentPlan[i];
+        const plan = contentPlan[i];
 
-        const _contentResult = await this?.autoGenerateContent(
+        const contentResult = await this?.autoGenerateContent(
           userId,
           plan?.topic,
           plan?.platforms,
         );
 
         if (contentResult?.success) {
-          const _scheduledDate = new Date(now);
+          const scheduledDate = new Date(now);
           scheduledDate?.setDate(scheduledDate?.getDate() + Math?.floor(i / 3));
           scheduledDate?.setHours(9 + (i % 3) * 4);
 
-          const _postResult = await this?.postContent(
+          const postResult = await this?.postContent(
             userId,
             {
-              content: contentResult?.variants?.[0],
+              content: contentResult.variants?.[0],
               scheduledAt: scheduledDate,
             } as Record<string, unknown>,
             plan?.platforms,
@@ -807,20 +810,20 @@ export class AutonomousService extends EventEmitter {
 
           if (postResult?.success) {
             scheduledPosts?.push({
-              postId: postResult?.postId,
+              postId: postResult.postId,
               scheduledAt: scheduledDate,
-              topic: plan?.topic,
-              platforms: plan?.platforms,
-              viralScore: contentResult?.viralScore,
+              topic: plan.topic,
+              platforms: plan.platforms,
+              viralScore: contentResult.viralScore,
             });
           }
         }
       }
 
-      const _totalReach = scheduledPosts?.length * 5000;
+      const totalReach = scheduledPosts?.length * 5000;
 
-      this?.metrics.postsScheduled += scheduledPosts?.length;
-      this?.metrics.lastUpdated = new Date();
+      this.metrics.postsScheduled += scheduledPosts?.length;
+      this.metrics.lastUpdated = new Date();
 
       return {
         success: true,
@@ -835,7 +838,7 @@ export class AutonomousService extends EventEmitter {
 
   private async dispatchAutonomousContent(postId: string): Promise<void> {
     try {
-      const _post = await storage?.getSocialPost(postId);
+      const post = await storage?.getSocialPost(postId);
       if (!post) return;
 
       for (const platform of post?.platforms || []) {
@@ -858,13 +861,13 @@ export class AutonomousService extends EventEmitter {
 
   async runCampaignOptimization(campaignId: string): Promise<void> {
     try {
-      const _campaign = await storage?.getAdCampaign(campaignId);
+      const campaign = await storage?.getAdCampaign(campaignId);
       if (!campaign || campaign?.status !== "active") {
         await removeCampaignOptimization(campaignId);
         return;
       }
 
-      const _metrics =
+      const metrics =
         await advertisingDispatchService?.getCampaignMetrics(campaignId);
 
       if (metrics?.ctr < 0.01) {
@@ -879,30 +882,30 @@ export class AutonomousService extends EventEmitter {
         await advertisingDispatchService?.optimizeBidding(campaignId);
       }
 
-      this?.metrics.campaignsOptimized++;
-      this?.metrics.lastUpdated = new Date();
+      this.metrics.campaignsOptimized++;
+      this.metrics.lastUpdated = new Date();
 
       logger?.info(
         `[AUTONOMOUS] Campaign ${campaignId} optimized - CTR: ${metrics?.ctr}, ROAS: ${metrics?.roas}`,
       );
 
       if (campaign?.userId) {
-        const _roasLabel =
+        const roasLabel =
           metrics?.roas >= 2
             ? `ROAS ${metrics?.roas.toFixed(1)}x`
             : `CTR ${(metrics?.ctr * 100).toFixed(2)}%`;
         notificationService
           .send({
-            userId: campaign?.userId,
+            userId: campaign.userId,
             type: "ad_campaign_optimized",
             title: "🚀 Campaign Automatically Optimized",
-            message: `Your campaign "${campaign?.name || campaignId}" was optimized by the AI. ${roasLabel}. Targeting, creative, and bidding updated.`,
+            message: `Your campaign "${campaign.name || campaignId}" was optimized by the AI. ${roasLabel}. Targeting, creative, and bidding updated.`,
             link: `/campaigns/${campaignId}`,
             metadata: {
               campaignId,
-              ctr: metrics?.ctr,
-              roas: metrics?.roas,
-              conversionRate: metrics?.conversionRate,
+              ctr: metrics.ctr,
+              roas: metrics.roas,
+              conversionRate: metrics.conversionRate,
             },
           })
           .catch((err) =>
@@ -922,10 +925,10 @@ export class AutonomousService extends EventEmitter {
 
   async runContentDispatch(): Promise<void> {
     try {
-      const _autonomousUsers = Array?.from(this?.autonomousWhitelist);
+      const autonomousUsers = Array?.from(this?.autonomousWhitelist);
 
       for (const userId of autonomousUsers) {
-        const _pendingPosts = await storage?.getPendingSocialPosts(userId);
+        const pendingPosts = await storage?.getPendingSocialPosts(userId);
 
         for (const post of pendingPosts) {
           if (post?.scheduledAt && new Date(post?.scheduledAt) <= new Date()) {
@@ -933,7 +936,7 @@ export class AutonomousService extends EventEmitter {
           }
         }
 
-        const _activeCampaigns = await storage?.getActiveAdCampaigns(userId);
+        const activeCampaigns = await storage?.getActiveAdCampaigns(userId);
         for (const campaign of activeCampaigns) {
           if (campaign?.approvalStatus === "auto-approved") {
             await advertisingDispatchService?.optimizeCampaign(campaign?.id);
@@ -950,7 +953,7 @@ export class AutonomousService extends EventEmitter {
 
   async runPeriodicAnalytics(): Promise<void> {
     try {
-      const _autonomousUsers = Array?.from(this?.autonomousWhitelist);
+      const autonomousUsers = Array?.from(this?.autonomousWhitelist);
 
       for (const userId of autonomousUsers) {
         await this?.autoAnalyzePerformance(userId);
@@ -1000,16 +1003,16 @@ export class AutonomousService extends EventEmitter {
     activeOperations: number;
   } {
     return {
-      isRunning: this?.isRunning,
-      config: this?.config,
-      metrics: this?.metrics,
-      activeUsers: this?.autonomousWhitelist.size,
-      activeOperations: this?.isRunning ? 3 : 0,
+      isRunning: this.isRunning,
+      config: this.config,
+      metrics: this.metrics,
+      activeUsers: this.autonomousWhitelist.size,
+      activeOperations: this.isRunning ? 3 : 0,
     };
   }
 }
 
-export const _autonomousService = new AutonomousService();
+export const autonomousService = new AutonomousService();
 
 // startAutonomousOperations() is NOT called here at module-load time.
 // It is called explicitly by server/index?.ts on worker 0 only (isBgWorker guard).

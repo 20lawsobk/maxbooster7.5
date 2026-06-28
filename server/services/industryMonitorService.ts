@@ -5,10 +5,10 @@
  * Replaces all simulated/deterministic monitoring in the self-evolution engine.
  *
  * Live sources:
- *  - Music Business Worldwide  (musicbusinessworldwide.com)
- *  - Digital Music News        (digitalmusicnews.com)
- *  - Music Ally                (musically.com)
- *  - MusicRadar                (musicradar.com)
+ *  - Music Business Worldwide  (musicbusinessworldwide?.com)
+ *  - Digital Music News        (digitalmusicnews?.com)
+ *  - Music Ally                (musically?.com)
+ *  - MusicRadar                (musicradar?.com)
  *  - Spotify Newsroom          (newsroom?.spotify.com)
  *  - Meta Creators Newsroom    (about?.fb.com)
  *
@@ -70,12 +70,12 @@ interface CachedResult {
 const RSS_FEEDS: Array<{ url: string; name: string; followRedirect: boolean }> =
   [
     {
-      url: "https://www?.musicbusinessworldwide.com/feed/",
+      url: "https://www.musicbusinessworldwide.com/feed/",
       name: "Music Business Worldwide",
       followRedirect: false,
     },
     {
-      url: "https://www?.digitalmusicnews.com/feed/",
+      url: "https://www.digitalmusicnews.com/feed/",
       name: "Digital Music News",
       followRedirect: false,
     },
@@ -85,50 +85,50 @@ const RSS_FEEDS: Array<{ url: string; name: string; followRedirect: boolean }> =
       followRedirect: false,
     },
     {
-      url: "https://www?.musicradar.com/rss",
+      url: "https://www.musicradar.com/rss",
       name: "MusicRadar",
       followRedirect: true,
     },
     {
-      url: "https://newsroom?.spotify.com/rss/",
+      url: "https://newsroom.spotify.com/rss/",
       name: "Spotify Newsroom",
       followRedirect: true,
     },
     {
-      url: "https://about?.fb.com/news/tag/creators/feed/",
+      url: "https://about.fb.com/news/tag/creators/feed/",
       name: "Meta Creators",
       followRedirect: true,
     },
     // Indie artist / music career intelligence — critical for competitive leadership
     {
-      url: "https://www?.hypebot.com/hypebot/atom.xml",
+      url: "https://www.hypebot.com/hypebot/atom.xml",
       name: "Hypebot",
       followRedirect: true,
     },
     {
-      url: "https://blog?.landr.com/feed/",
+      url: "https://blog.landr.com/feed/",
       name: "Landr Blog",
       followRedirect: true,
     },
     {
-      url: "https://blog?.distrokid.com/feed",
+      url: "https://blog.distrokid.com/feed",
       name: "DistroKid Blog",
       followRedirect: true,
     },
     {
-      url: "https://www?.tunecore.com/blog/feed/",
+      url: "https://www.tunecore.com/blog/feed/",
       name: "TuneCore Blog",
       followRedirect: true,
     },
   ];
 
-const _TAVILY_API = "https://api?.tavily.com/search";
-const _EXA_API = "https://api?.exa.ai/search";
+const TAVILY_API = "https://api.tavily.com/search";
+const EXA_API = "https://api.exa.ai/search";
 
-const _CACHE_TTL_MS = 60 * 60 * 1000;
-const _FETCH_TIMEOUT_MS = 10_000;
+const CACHE_TTL_MS = 60 * 60 * 1000;
+const FETCH_TIMEOUT_MS = 10_000;
 
-const _MUSIC_INDUSTRY_QUERIES = [
+const MUSIC_INDUSTRY_QUERIES = [
   "streaming platform API changes music 2024 2025",
   "DAW software update release music production",
   "Spotify Apple Music algorithm change artists",
@@ -154,7 +154,7 @@ class IndustryMonitorService {
 
   async fetchLiveChanges(): Promise<LiveIndustryChange[]> {
     if (this?.cache && Date?.now() - this?.cache.fetchedAt < CACHE_TTL_MS) {
-      const _fresh = this?.cache.changes?.filter((c) => !this?.seenIds.has(c?.id));
+      const fresh = this?.cache.changes?.filter((c) => !this?.seenIds.has(c?.id));
       for (const c of fresh) this?.seenIds.add(c?.id);
       return fresh;
     }
@@ -168,10 +168,10 @@ class IndustryMonitorService {
 
     const all: LiveIndustryChange[] = [...rssChanges, ...searchChanges];
 
-    const _unique = this?.deduplicateByHash(all);
-    this.cache = { changes: unique, fetchedAt: Date?.now() };
+    const unique = this?.deduplicateByHash(all);
+    this.cache = { changes: unique, fetchedAt: Date.now() };
 
-    const _fresh = unique?.filter((c) => !this?.seenIds.has(c?.id));
+    const fresh = unique?.filter((c) => !this?.seenIds.has(c?.id));
     for (const c of fresh) this?.seenIds.add(c?.id);
 
     logger?.info(
@@ -181,7 +181,7 @@ class IndustryMonitorService {
   }
 
   private async fetchAllRssFeeds(): Promise<LiveIndustryChange[]> {
-    const _results = await Promise?.allSettled(
+    const results = await Promise?.allSettled(
       RSS_FEEDS?.map((feed) => this?.fetchRssFeed(feed?.url, feed?.name)),
     );
 
@@ -212,18 +212,18 @@ class IndustryMonitorService {
     url: string,
     feedName: string,
   ): Promise<LiveIndustryChange[]> {
-    const _controller = new AbortController();
-    const _timeout = setTimeout(() => controller?.abort(), FETCH_TIMEOUT_MS);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller?.abort(), FETCH_TIMEOUT_MS);
 
     try {
-      const _res = await fetch(url, {
-        signal: controller?.signal,
+      const res = await fetch(url, {
+        signal: controller.signal,
         headers: { "User-Agent": "MaxBooster-IndustryMonitor/1.0" },
         redirect: "follow",
       });
 
       if (!res?.ok) throw new Error(`HTTP ${res?.status}`);
-      const _xml = await res?.text();
+      const xml = await res?.text();
       return this?.parseRss(xml, feedName, url);
     } finally {
       clearTimeout(timeout);
@@ -238,8 +238,8 @@ class IndustryMonitorService {
     const changes: LiveIndustryChange[] = [];
 
     try {
-      const _parsed = this?.parser.parse(xml);
-      const _channel = parsed?.rss?.channel;
+      const parsed = this?.parser.parse(xml);
+      const channel = parsed?.rss?.channel;
       if (!channel) return changes;
 
       const items: RssItem[] = Array?.isArray(channel?.item)
@@ -249,38 +249,38 @@ class IndustryMonitorService {
           : [];
 
       for (const item of items?.slice(0, 20)) {
-        const _title = this?.stripHtml(String(item?.title || "")).trim();
-        const _description = this?.stripHtml(String(item?.description || ""))
+        const title = this?.stripHtml(String(item?.title || "")).trim();
+        const description = this?.stripHtml(String(item?.description || ""))
           .trim()
           .slice(0, 500);
-        const _link = String(item?.link || "");
-        const _pubDate = item?.pubDate
+        const link = String(item?.link || "");
+        const pubDate = item?.pubDate
           ? new Date(String(item?.pubDate))
           : new Date();
 
         if (!title || title?.length < 5) continue;
 
-        const _classification = this?.classifyArticle(title, description);
+        const classification = this?.classifyArticle(title, description);
         if (!classification) continue;
 
-        const _rawId =
+        const rawId =
           typeof item?.guid === "object"
             ? item?.guid["#text"]
             : item?.guid || link || title;
-        const _id = `live_${crypto?.createHash("sha256").update(String(rawId)).digest("hex").slice(0, 16)}`;
+        const id = `live_${crypto?.createHash("sha256").update(String(rawId)).digest("hex").slice(0, 16)}`;
 
         changes?.push({
           id,
-          source: classification?.source,
-          category: classification?.category,
+          source: classification.source,
+          category: classification.category,
           title: `[${feedName}] ${title}`,
           description: description || title,
           detectedAt: isNaN(pubDate?.getTime()) ? new Date() : pubDate,
-          urgency: classification?.urgency,
-          affectedModules: classification?.modules,
-          competitiveImpact: classification?.impact,
-          implementationComplexity: classification?.complexity,
-          estimatedImplementationHours: classification?.hours,
+          urgency: classification.urgency,
+          affectedModules: classification.modules,
+          competitiveImpact: classification.impact,
+          implementationComplexity: classification.complexity,
+          estimatedImplementationHours: classification.hours,
           sourceUrl: link,
           feedSource: feedName,
         });
@@ -296,8 +296,8 @@ class IndustryMonitorService {
   }
 
   private async fetchSearchIntelligence(): Promise<LiveIndustryChange[]> {
-    const _tavilyKey = process?.env.TAVILY_API_KEY;
-    const _exaKey = process?.env.EXA_API_KEY;
+    const tavilyKey = process?.env.TAVILY_API_KEY;
+    const exaKey = process?.env.EXA_API_KEY;
 
     if (!tavilyKey && !exaKey) return [];
 
@@ -341,18 +341,18 @@ class IndustryMonitorService {
     query: string,
     apiKey: string,
   ): Promise<LiveIndustryChange[]> {
-    const _controller = new AbortController();
-    const _timeout = setTimeout(() => controller?.abort(), FETCH_TIMEOUT_MS);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller?.abort(), FETCH_TIMEOUT_MS);
 
     try {
-      const _res = await fetch(TAVILY_API, {
+      const res = await fetch(TAVILY_API, {
         method: "POST",
-        signal: controller?.signal,
+        signal: controller.signal,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${apiKey}`,
         },
-        body: JSON?.stringify({
+        body: JSON.stringify({
           query,
           max_results: 5,
           search_depth: "basic",
@@ -361,28 +361,28 @@ class IndustryMonitorService {
       });
 
       if (!res?.ok) throw new Error(`Tavily HTTP ${res?.status}`);
-      const _data = (await res?.json()) as {
+      const data = (await res?.json()) as {
         results?: Array<{ title: string; content: string; url: string }>;
       };
 
       return (data?.results || [])
         .map((r) => {
-          const _classification = this?.classifyArticle(r?.title, r?.content);
+          const classification = this?.classifyArticle(r?.title, r?.content);
           if (!classification) return null;
-          const _id = `tavily_${crypto?.createHash("sha256").update(r?.url).digest("hex").slice(0, 16)}`;
+          const id = `tavily_${crypto?.createHash("sha256").update(r?.url).digest("hex").slice(0, 16)}`;
           return {
             id,
-            source: classification?.source,
-            category: classification?.category,
+            source: classification.source,
+            category: classification.category,
             title: `[Search] ${r?.title}`,
-            description: r?.content.slice(0, 500),
+            description: r.content.slice(0, 500),
             detectedAt: new Date(),
-            urgency: classification?.urgency,
-            affectedModules: classification?.modules,
-            competitiveImpact: classification?.impact,
-            implementationComplexity: classification?.complexity,
-            estimatedImplementationHours: classification?.hours,
-            sourceUrl: r?.url,
+            urgency: classification.urgency,
+            affectedModules: classification.modules,
+            competitiveImpact: classification.impact,
+            implementationComplexity: classification.complexity,
+            estimatedImplementationHours: classification.hours,
+            sourceUrl: r.url,
             feedSource: "Tavily Search",
           } satisfies LiveIndustryChange;
         })
@@ -396,15 +396,15 @@ class IndustryMonitorService {
     query: string,
     apiKey: string,
   ): Promise<LiveIndustryChange[]> {
-    const _controller = new AbortController();
-    const _timeout = setTimeout(() => controller?.abort(), FETCH_TIMEOUT_MS);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller?.abort(), FETCH_TIMEOUT_MS);
 
     try {
-      const _res = await fetch(EXA_API, {
+      const res = await fetch(EXA_API, {
         method: "POST",
-        signal: controller?.signal,
+        signal: controller.signal,
         headers: { "Content-Type": "application/json", "x-api-key": apiKey },
-        body: JSON?.stringify({
+        body: JSON.stringify({
           query,
           numResults: 5,
           type: "neural",
@@ -413,29 +413,29 @@ class IndustryMonitorService {
       });
 
       if (!res?.ok) throw new Error(`Exa HTTP ${res?.status}`);
-      const _data = (await res?.json()) as {
+      const data = (await res?.json()) as {
         results?: Array<{ title: string; text?: string; url: string }>;
       };
 
       return (data?.results || [])
         .map((r) => {
-          const _text = r?.text || "";
-          const _classification = this?.classifyArticle(r?.title, text);
+          const text = r?.text || "";
+          const classification = this?.classifyArticle(r?.title, text);
           if (!classification) return null;
-          const _id = `exa_${crypto?.createHash("sha256").update(r?.url).digest("hex").slice(0, 16)}`;
+          const id = `exa_${crypto?.createHash("sha256").update(r?.url).digest("hex").slice(0, 16)}`;
           return {
             id,
-            source: classification?.source,
-            category: classification?.category,
+            source: classification.source,
+            category: classification.category,
             title: `[Search] ${r?.title}`,
-            description: text?.slice(0, 500),
+            description: text.slice(0, 500),
             detectedAt: new Date(),
-            urgency: classification?.urgency,
-            affectedModules: classification?.modules,
-            competitiveImpact: classification?.impact,
-            implementationComplexity: classification?.complexity,
-            estimatedImplementationHours: classification?.hours,
-            sourceUrl: r?.url,
+            urgency: classification.urgency,
+            affectedModules: classification.modules,
+            competitiveImpact: classification.impact,
+            implementationComplexity: classification.complexity,
+            estimatedImplementationHours: classification.hours,
+            sourceUrl: r.url,
             feedSource: "Exa Search",
           } satisfies LiveIndustryChange;
         })
@@ -457,7 +457,7 @@ class IndustryMonitorService {
     complexity: LiveIndustryChange["implementationComplexity"];
     hours: number;
   } | null {
-    const _text = `${title} ${description}`.toLowerCase();
+    const text = `${title} ${description}`.toLowerCase();
 
     // Security — highest priority, check first
     if (
@@ -612,7 +612,7 @@ class IndustryMonitorService {
       )
     ) {
       if (/update|release|version|feature|add|launch|new/.test(text)) {
-        const _isAI = /ai |artificial intelligence|machine learning|neural/.test(
+        const isAI = /ai |artificial intelligence|machine learning|neural/.test(
           text,
         );
         return {
@@ -917,7 +917,7 @@ class IndustryMonitorService {
   private deduplicateByHash(
     changes: LiveIndustryChange[],
   ): LiveIndustryChange[] {
-    const _seen = new Set<string>();
+    const seen = new Set<string>();
     return changes?.filter((c) => {
       if (seen?.has(c?.id)) return false;
       seen?.add(c?.id);
@@ -949,27 +949,27 @@ class IndustryMonitorService {
    * Phase 0 competitive leadership check.
    */
   getCompetitiveIntelligence(): LiveIndustryChange[] {
-    if (!this?.cache) return [];
-    return this?.cache.changes
-      .filter((c) => c?.source === "competitor")
-      .sort((a, b) => b?.competitiveImpact - a?.competitiveImpact);
+    if (!this.cache) return [];
+    return this.cache.changes
+      .filter((c) => c.source === "competitor")
+      .sort((a, b) => b.competitiveImpact - a.competitiveImpact);
   }
 
   getStatus(): Record<string, unknown> {
-    const _competitive = this?.getCompetitiveIntelligence();
+    const competitive = this.getCompetitiveIntelligence();
     return {
-      cacheAge: this?.cache
-        ? Math?.round((Date?.now() - this?.cache.fetchedAt) / 1000) + "s"
+      cacheAge: this.cache
+        ? Math.round((Date.now() - this.cache.fetchedAt) / 1000) + "s"
         : "empty",
-      cachedItems: this?.cache?.changes?.length ?? 0,
-      competitorItems: competitive?.length,
+      cachedItems: this.cache?.changes?.length ?? 0,
+      competitorItems: competitive.length,
       topCompetitorThreat: competitive[0]?.title ?? null,
-      seenIds: this?.seenIds.size,
-      feeds: RSS_FEEDS?.length,
+      seenIds: this.seenIds.size,
+      feeds: RSS_FEEDS.length,
       tavilyEnabled: !!process?.env.TAVILY_API_KEY,
       exaEnabled: !!process?.env.EXA_API_KEY,
     };
   }
 }
 
-export const _industryMonitor = new IndustryMonitorService();
+export const industryMonitor = new IndustryMonitorService();

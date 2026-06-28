@@ -144,7 +144,7 @@ export class TimelineRenderer {
     this?.resizeCanvas();
 
     if (typeof ResizeObserver !== "undefined") {
-      const _observer = new ResizeObserver(() => this?.resizeCanvas());
+      const observer = new ResizeObserver(() => this?.resizeCanvas());
       observer?.observe(canvas);
     }
   }
@@ -152,31 +152,31 @@ export class TimelineRenderer {
   private resizeCanvas(): void {
     if (!this?.canvas || !this?.ctx) return;
 
-    const _dpr = this?.config.devicePixelRatio;
-    const _rect = this?.canvas.getBoundingClientRect();
+    const dpr = this?.config.devicePixelRatio;
+    const rect = this?.canvas.getBoundingClientRect();
 
     this.containerWidth = rect?.width;
     this.containerHeight = rect?.height;
 
-    this?.canvas.width = rect?.width * dpr;
-    this?.canvas.height = rect?.height * dpr;
+    this.canvas.width = rect?.width * dpr;
+    this.canvas.height = rect?.height * dpr;
     this?.ctx.scale(dpr, dpr);
 
     if (this?.offscreenCanvas && this?.offscreenCtx) {
-      this?.offscreenCanvas.width = rect?.width * dpr;
-      this?.offscreenCanvas.height = rect?.height * dpr;
+      this.offscreenCanvas.width = rect?.width * dpr;
+      this.offscreenCanvas.height = rect?.height * dpr;
       this?.offscreenCtx.scale(dpr, dpr);
     }
 
-    this?.canvas.style.width = `${rect?.width}px`;
-    this?.canvas.style.height = `${rect?.height}px`;
+    this.canvas.style.width = `${rect?.width}px`;
+    this.canvas.style.height = `${rect?.height}px`;
   }
 
   startRenderLoop(): void {
     if (this?.isRunning) return;
     this.isRunning = true;
-    this?.frameTiming.lastFrameTime = performance?.now();
-    this?.frameTiming.fpsUpdateTime = performance?.now();
+    this.frameTiming.lastFrameTime = performance?.now();
+    this.frameTiming.fpsUpdateTime = performance?.now();
     this?.renderFrame(performance?.now());
   }
 
@@ -191,21 +191,21 @@ export class TimelineRenderer {
   private renderFrame = (timestamp: number): void => {
     if (!this?.isRunning) return;
 
-    this?.frameTiming.deltaTime =
+    this.frameTiming.deltaTime =
       (timestamp - this?.frameTiming.lastFrameTime) / 1000;
-    this?.frameTiming.lastFrameTime = timestamp;
-    this?.frameTiming.frameCount++;
+    this.frameTiming.lastFrameTime = timestamp;
+    this.frameTiming.frameCount++;
 
     if (timestamp - this?.frameTiming.fpsUpdateTime >= 1000) {
-      this?.frameTiming.fps = this?.frameTiming.frameCount;
-      this?.frameTiming.frameCount = 0;
-      this?.frameTiming.fpsUpdateTime = timestamp;
+      this.frameTiming.fps = this?.frameTiming.frameCount;
+      this.frameTiming.frameCount = 0;
+      this.frameTiming.fpsUpdateTime = timestamp;
     }
 
     this?.updateScrollPosition();
 
     if (this?.playhead.isPlaying) {
-      this?.playhead.position += this?.frameTiming.deltaTime;
+      this.playhead.position += this?.frameTiming.deltaTime;
       this?.autoScrollToPlayhead();
     }
 
@@ -215,41 +215,41 @@ export class TimelineRenderer {
   };
 
   private updateScrollPosition(): void {
-    const _diff = this?.scroll.targetOffset - this?.scroll.currentOffset;
+    const diff = this?.scroll.targetOffset - this?.scroll.currentOffset;
     if (Math?.abs(diff) > 0.001) {
-      this?.scroll.currentOffset += diff * this?.scroll.smoothingFactor;
+      this.scroll.currentOffset += diff * this?.scroll.smoothingFactor;
     } else {
-      this?.scroll.currentOffset = this?.scroll.targetOffset;
+      this.scroll.currentOffset = this?.scroll.targetOffset;
     }
   }
 
   private autoScrollToPlayhead(): void {
-    const _viewInfo = this?.ndRenderer.getViewportForZoom(
+    const viewInfo = this?.ndRenderer.getViewportForZoom(
       this?.viewDuration,
       this?.containerWidth,
       this?.scroll.currentOffset,
       this?.ndRenderer.getDataZoom().horizontalZoom,
     );
 
-    const _visibleDuration = viewInfo?.endTime - viewInfo?.startTime;
-    const _edgeThreshold = visibleDuration * 0.85;
+    const visibleDuration = viewInfo?.endTime - viewInfo?.startTime;
+    const edgeThreshold = visibleDuration * 0.85;
 
     if (this?.playhead.position > viewInfo?.startTime + edgeThreshold) {
-      this?.scroll.targetOffset = this?.playhead.position - visibleDuration * 0.1;
+      this.scroll.targetOffset = this?.playhead.position - visibleDuration * 0.1;
     }
   }
 
   private drawFrame(): void {
-    const _ctx = this?.offscreenCtx || this?.ctx;
+    const ctx = this?.offscreenCtx || this?.ctx;
     if (!ctx) return;
 
-    const _w = this?.containerWidth;
-    const _h = this?.containerHeight;
+    const w = this?.containerWidth;
+    const h = this?.containerHeight;
 
     ctx.fillStyle = this?.config.backgroundColor;
     ctx?.fillRect(0, 0, w, h);
 
-    const _viewInfo = this?.ndRenderer.getViewportForZoom(
+    const viewInfo = this?.ndRenderer.getViewportForZoom(
       this?.viewDuration,
       w,
       this?.scroll.currentOffset,
@@ -278,18 +278,18 @@ export class TimelineRenderer {
     height: number,
   ): void {
     const { bpm, timeSignature } = this?.playhead;
-    const _secondsPerBeat = 60 / bpm;
-    const _secondsPerBar = secondsPerBeat * timeSignature[0];
+    const secondsPerBeat = 60 / bpm;
+    const secondsPerBar = secondsPerBeat * timeSignature[0];
 
     ctx.strokeStyle = this?.config.gridColor;
     ctx.lineWidth = 1;
 
-    const _firstBar = Math?.floor(viewInfo?.startTime / secondsPerBar);
-    const _lastBar = Math?.ceil(viewInfo?.endTime / secondsPerBar);
+    const firstBar = Math?.floor(viewInfo?.startTime / secondsPerBar);
+    const lastBar = Math?.ceil(viewInfo?.endTime / secondsPerBar);
 
     for (let bar = firstBar; bar <= lastBar; bar++) {
-      const _barTime = bar * secondsPerBar;
-      const _x = (barTime - viewInfo?.startTime) * viewInfo?.pixelsPerSecond;
+      const barTime = bar * secondsPerBar;
+      const x = (barTime - viewInfo?.startTime) * viewInfo?.pixelsPerSecond;
 
       if (x < 0 || x > width) continue;
 
@@ -301,8 +301,8 @@ export class TimelineRenderer {
 
       ctx.globalAlpha = 0.1;
       for (let beat = 1; beat < timeSignature[0]; beat++) {
-        const _beatTime = barTime + beat * secondsPerBeat;
-        const _beatX =
+        const beatTime = barTime + beat * secondsPerBeat;
+        const beatX =
           (beatTime - viewInfo?.startTime) * viewInfo?.pixelsPerSecond;
         if (beatX < 0 || beatX > width) continue;
 
@@ -322,15 +322,15 @@ export class TimelineRenderer {
     viewInfo: { startTime: number; endTime: number; pixelsPerSecond: number },
     height: number,
   ): void {
-    const _clipEndTime = clip?.startTime + clip?.duration;
+    const clipEndTime = clip?.startTime + clip?.duration;
     if (clipEndTime < viewInfo?.startTime || clip?.startTime > viewInfo?.endTime)
       return;
 
-    const _clipX =
+    const clipX =
       (clip?.startTime - viewInfo?.startTime) * viewInfo?.pixelsPerSecond;
-    const _clipW = clip?.duration * viewInfo?.pixelsPerSecond;
-    const _clipH = height;
-    const _centerY = clipH / 2;
+    const clipW = clip?.duration * viewInfo?.pixelsPerSecond;
+    const clipH = height;
+    const centerY = clipH / 2;
 
     ctx?.save();
     ctx?.beginPath();
@@ -345,13 +345,13 @@ export class TimelineRenderer {
       y: 0,
       width: clipW,
       height: clipH,
-      startTime: clip?.sourceOffset,
-      endTime: clip?.sourceOffset + clip?.duration,
-      pixelsPerSecond: viewInfo?.pixelsPerSecond,
-      verticalScale: this?.ndRenderer.getDataZoom().verticalScale * clip?.gain,
+      startTime: clip.sourceOffset,
+      endTime: clip.sourceOffset + clip?.duration,
+      pixelsPerSecond: viewInfo.pixelsPerSecond,
+      verticalScale: this.ndRenderer.getDataZoom().verticalScale * clip?.gain,
     };
 
-    const _result = this?.ndRenderer.renderWaveform(
+    const result = this?.ndRenderer.renderWaveform(
       clip?.sourceId,
       this?.sampleRate,
       viewport,
@@ -392,8 +392,8 @@ export class TimelineRenderer {
     centerY: number,
     clipH: number,
   ): void {
-    const _path = result?.path;
-    const _waveColor = clip?.muted ? "#555" : clip?.color;
+    const path = result?.path;
+    const waveColor = clip?.muted ? "#555" : clip?.color;
 
     ctx.fillStyle = clip?.muted ? "rgba(85, 85, 85, 0.2)" : `${clip?.color}30`;
     ctx?.beginPath();
@@ -445,7 +445,7 @@ export class TimelineRenderer {
     height: number,
     centerY: number,
   ): void {
-    const _fadePath = this?.ndRenderer.computeFadePath(fade, height, centerY);
+    const fadePath = this?.ndRenderer.computeFadePath(fade, height, centerY);
 
     ctx.fillStyle = this?.config.fadeColor;
     ctx?.beginPath();
@@ -483,11 +483,11 @@ export class TimelineRenderer {
     ctx.globalAlpha = 0.6;
 
     for (const t of transients) {
-      const _timeSec = t?.position / this?.sampleRate;
-      const _absTime = clip?.startTime + timeSec - clip?.sourceOffset;
-      const _x = (absTime - viewInfo?.startTime) * viewInfo?.pixelsPerSecond;
+      const timeSec = t?.position / this?.sampleRate;
+      const absTime = clip?.startTime + timeSec - clip?.sourceOffset;
+      const x = (absTime - viewInfo?.startTime) * viewInfo?.pixelsPerSecond;
 
-      const _markerHeight = height * 0.3 * t?.strength;
+      const markerHeight = height * 0.3 * t?.strength;
       ctx?.beginPath();
       ctx?.moveTo(x, 0);
       ctx?.lineTo(x, markerHeight);
@@ -514,7 +514,7 @@ export class TimelineRenderer {
     )
       return;
 
-    const _x =
+    const x =
       (this?.playhead.position - viewInfo?.startTime) * viewInfo?.pixelsPerSecond;
 
     ctx.strokeStyle = this?.config.playheadColor;
@@ -550,33 +550,33 @@ export class TimelineRenderer {
   }
 
   scrollTo(offset: number): void {
-    this?.scroll.targetOffset = Math?.max(0, offset);
+    this.scroll.targetOffset = Math?.max(0, offset);
   }
 
   scrollBy(delta: number): void {
-    this?.scroll.targetOffset = Math?.max(0, this?.scroll.targetOffset + delta);
+    this.scroll.targetOffset = Math?.max(0, this?.scroll.targetOffset + delta);
   }
 
   zoomAtPoint(factor: number, pixelX: number): void {
-    const _viewInfo = this?.ndRenderer.getViewportForZoom(
+    const viewInfo = this?.ndRenderer.getViewportForZoom(
       this?.viewDuration,
       this?.containerWidth,
       this?.scroll.currentOffset,
       this?.ndRenderer.getDataZoom().horizontalZoom,
     );
 
-    const _timeAtCursor =
+    const timeAtCursor =
       viewInfo?.startTime +
       (pixelX / this?.containerWidth) * (viewInfo?.endTime - viewInfo?.startTime);
 
-    const _currentZoom = this?.ndRenderer.getDataZoom().horizontalZoom;
-    const _newZoom = Math?.max(0.01, Math?.min(1000, currentZoom * factor));
+    const currentZoom = this?.ndRenderer.getDataZoom().horizontalZoom;
+    const newZoom = Math?.max(0.01, Math?.min(1000, currentZoom * factor));
     this?.ndRenderer.setHorizontalZoom(newZoom);
 
-    const _newVisibleDuration = this?.viewDuration / newZoom;
-    const _cursorRatio = pixelX / this?.containerWidth;
-    this?.scroll.targetOffset = timeAtCursor - cursorRatio * newVisibleDuration;
-    this?.scroll.currentOffset = this?.scroll.targetOffset;
+    const newVisibleDuration = this?.viewDuration / newZoom;
+    const cursorRatio = pixelX / this?.containerWidth;
+    this.scroll.targetOffset = timeAtCursor - cursorRatio * newVisibleDuration;
+    this.scroll.currentOffset = this?.scroll.targetOffset;
   }
 
   getRenderer(): NonDestructiveRenderer {

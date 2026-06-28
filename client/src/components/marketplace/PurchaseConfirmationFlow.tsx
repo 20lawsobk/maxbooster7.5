@@ -8,22 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  CreditCard,
-  Download,
-  FileText,
-  Lock,
-  Music,
-  Shield,
-  Loader2,
-  CheckCircle,
-  AlertCircle,
-  Copy,
-  Sparkles,
-} from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, CreditCard, Download, FileText, Lock, Music, Shield, Loader2, CheckCircle, AlertCircle, Copy, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Beat {

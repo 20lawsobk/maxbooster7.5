@@ -6,7 +6,7 @@ import { logger } from "../logger.js";
 import crypto from "crypto";
 import { requireAuth } from "../middleware/auth.js";
 
-const _router = Router();
+const router = Router();
 
 router?.use(requireAuth);
 
@@ -22,9 +22,9 @@ interface RecoveryCodeStore {
   lastUsedAt?: string | null;
 }
 
-const _generateRecoveryCode = (): string => {
-  const _chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  const _bytes = crypto?.randomBytes(8);
+const generateRecoveryCode = (): string => {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = crypto?.randomBytes(8);
   let code = "";
   for (let i = 0; i < 8; i++) {
     if (i === 4) code += "-";
@@ -33,7 +33,7 @@ const _generateRecoveryCode = (): string => {
   return code;
 };
 
-const _hashCode = (code: string): string => {
+const hashCode = (code: string): string => {
   return crypto
     .createHash("sha256")
     .update(code?.toUpperCase().replace(/-/g, ""))
@@ -42,12 +42,12 @@ const _hashCode = (code: string): string => {
 
 async function getStore(userId: string): Promise<RecoveryCodeStore | null> {
   const [row] = await db
-    .select({ preferences: users?.preferences })
+    .select({ preferences: users.preferences })
     .from(users)
     .where(eq(users?.id, userId))
     .limit(1);
 
-  const _prefs = (row?.preferences ?? {}) as Record<string, any>;
+  const prefs = (row?.preferences ?? {}) as Record<string, any>;
   return (prefs?.twoFactorRecoveryCodes as RecoveryCodeStore) ?? null;
 }
 
@@ -56,12 +56,12 @@ async function saveStore(
   store: RecoveryCodeStore,
 ): Promise<void> {
   const [row] = await db
-    .select({ preferences: users?.preferences })
+    .select({ preferences: users.preferences })
     .from(users)
     .where(eq(users?.id, userId))
     .limit(1);
 
-  const _prefs = (row?.preferences ?? {}) as Record<string, any>;
+  const prefs = (row?.preferences ?? {}) as Record<string, any>;
   prefs.twoFactorRecoveryCodes = store;
 
   await db
@@ -72,8 +72,8 @@ async function saveStore(
 
 router?.get("/status", async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user.id;
-    const _store = await getStore(userId);
+    const userId = req?.user.id;
+    const store = await getStore(userId);
 
     if (!store) {
       return res?.json({
@@ -83,14 +83,14 @@ router?.get("/status", async (req: Request, res: Response) => {
       });
     }
 
-    const _codesRemaining = store?.codes.filter((c) => !c?.used).length;
+    const codesRemaining = store?.codes.filter((c) => !c?.used).length;
 
     res?.json({
       enabled: true,
       codesRemaining,
-      totalCodes: store?.codes.length,
-      lastGeneratedAt: store?.generatedAt,
-      lastUsedAt: store?.lastUsedAt ?? null,
+      totalCodes: store.codes.length,
+      lastGeneratedAt: store.generatedAt,
+      lastUsedAt: store.lastUsedAt ?? null,
     });
   } catch (error) {
     logger?.warn({ err: error }, "Error fetching recovery codes status:");
@@ -100,7 +100,7 @@ router?.get("/status", async (req: Request, res: Response) => {
 
 router?.post("/generate", async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user.id;
+    const userId = req?.user.id;
 
     const rawCodes: string[] = [];
     for (let i = 0; i < 10; i++) {
@@ -108,7 +108,7 @@ router?.post("/generate", async (req: Request, res: Response) => {
     }
 
     const store: RecoveryCodeStore = {
-      codes: rawCodes?.map((code) => ({
+      codes: rawCodes.map((code) => ({
         code: hashCode(code),
         used: false,
         usedAt: null,
@@ -121,7 +121,7 @@ router?.post("/generate", async (req: Request, res: Response) => {
 
     res?.json({
       codes: rawCodes,
-      generatedAt: store?.generatedAt,
+      generatedAt: store.generatedAt,
     });
   } catch (error) {
     logger?.warn({ err: error }, "Error generating recovery codes:");
@@ -131,20 +131,20 @@ router?.post("/generate", async (req: Request, res: Response) => {
 
 router?.post("/verify", async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user.id;
+    const userId = req?.user.id;
     const { code } = req?.body;
 
     if (!code || typeof code !== "string") {
       return res?.status(400).json({ error: "Recovery code is required" });
     }
 
-    const _store = await getStore(userId);
+    const store = await getStore(userId);
     if (!store) {
       return res?.status(400).json({ error: "No recovery codes set up" });
     }
 
-    const _codeHash = hashCode(code);
-    const _match = store?.codes.find((c) => c?.code === codeHash && !c?.used);
+    const codeHash = hashCode(code);
+    const match = store?.codes.find((c) => c?.code === codeHash && !c?.used);
 
     if (!match) {
       return res
@@ -158,7 +158,7 @@ router?.post("/verify", async (req: Request, res: Response) => {
 
     await saveStore(userId, store);
 
-    const _codesRemaining = store?.codes.filter((c) => !c?.used).length;
+    const codesRemaining = store?.codes.filter((c) => !c?.used).length;
 
     res?.json({
       success: true,

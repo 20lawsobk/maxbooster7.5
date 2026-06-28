@@ -30,10 +30,10 @@ export interface PushContext {
   [key: string]: unknown;
 }
 
-const _ICON = "/icons/icon-192x192.png";
-const _BADGE = "/icons/icon-72x72.png";
+const ICON = "/icons/icon-192x192.png";
+const BADGE = "/icons/icon-72x72.png";
 
-const _VIBRATE = {
+const VIBRATE = {
   subtle: [50],
   normal: [100, 50, 100],
   alert: [200, 100, 200],
@@ -59,9 +59,9 @@ export function buildPushPayload(
     silent: false,
     requireInteraction: false,
     renotify: false,
-    vibrate: VIBRATE?.normal,
+    vibrate: VIBRATE.normal,
     data: { type, ...ctx },
-    timestamp: Date?.now(),
+    timestamp: Date.now(),
   };
 
   switch (type) {
@@ -71,17 +71,17 @@ export function buildPushPayload(
       return {
         ...base,
         title: "❤️ New Like",
-        body: ctx?.actorName
-          ? `${ctx?.actorName} liked your post${ctx?.contentTitle ? `: "${ctx?.contentTitle}"` : "."}`
+        body: ctx.actorName
+          ? `${ctx?.actorName} liked your post${ctx?.contentTitle ? `: "${ctx.contentTitle}"` : "."}`
           : "Someone liked your post.",
-        url: ctx?.url || "/social",
+        url: ctx.url || "/social",
         tag: "social_like",
         category: "direct_interaction",
         actions: [
           { action: "open", title: "View Post" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.subtle,
+        vibrate: VIBRATE.subtle,
         requireInteraction: false,
       };
 
@@ -89,51 +89,51 @@ export function buildPushPayload(
       return {
         ...base,
         title: "💬 New Comment",
-        body: ctx?.actorName
-          ? `${ctx?.actorName}: "${ctx?.contentPreview || "commented on your post"}"`
+        body: ctx.actorName
+          ? `${ctx?.actorName}: "${ctx.contentPreview || "commented on your post"}"`
           : "Someone commented on your post.",
-        url: ctx?.url || "/social",
+        url: ctx.url || "/social",
         tag: "social_comment",
         category: "direct_interaction",
         actions: [
           { action: "reply", title: "Reply" },
           { action: "open", title: "View" },
         ],
-        vibrate: VIBRATE?.normal,
+        vibrate: VIBRATE.normal,
       };
 
     case "social_reply":
       return {
         ...base,
         title: "↩️ New Reply",
-        body: ctx?.actorName
-          ? `${ctx?.actorName} replied: "${ctx?.contentPreview || "to your comment"}"`
+        body: ctx.actorName
+          ? `${ctx?.actorName} replied: "${ctx.contentPreview || "to your comment"}"`
           : "Someone replied to your comment.",
-        url: ctx?.url || "/social",
+        url: ctx.url || "/social",
         tag: "social_reply",
         category: "direct_interaction",
         actions: [
           { action: "reply", title: "Reply" },
           { action: "open", title: "View Thread" },
         ],
-        vibrate: VIBRATE?.normal,
+        vibrate: VIBRATE.normal,
       };
 
     case "social_mention":
       return {
         ...base,
         title: "📢 You Were Mentioned",
-        body: ctx?.actorName
-          ? `${ctx?.actorName} mentioned you${ctx?.contentPreview ? `: "${ctx?.contentPreview}"` : "."}`
+        body: ctx.actorName
+          ? `${ctx?.actorName} mentioned you${ctx?.contentPreview ? `: "${ctx.contentPreview}"` : "."}`
           : "Someone mentioned you in a post.",
-        url: ctx?.url || "/social",
+        url: ctx.url || "/social",
         tag: "social_mention",
         category: "direct_interaction",
         actions: [
           { action: "open", title: "View Post" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.alert,
+        vibrate: VIBRATE.alert,
         requireInteraction: false,
       };
 
@@ -141,17 +141,17 @@ export function buildPushPayload(
       return {
         ...base,
         title: "✉️ New Message",
-        body: ctx?.actorName
-          ? `${ctx?.actorName}: "${ctx?.contentPreview || "Sent you a message"}"`
+        body: ctx.actorName
+          ? `${ctx?.actorName}: "${ctx.contentPreview || "Sent you a message"}"`
           : "You have a new direct message.",
-        url: ctx?.url || "/social",
+        url: ctx.url || "/social",
         tag: `social_dm_${ctx?.actorName || "unknown"}`,
         category: "direct_interaction",
         actions: [
           { action: "reply", title: "Reply" },
           { action: "open", title: "View" },
         ],
-        vibrate: VIBRATE?.alert,
+        vibrate: VIBRATE.alert,
         requireInteraction: true,
         renotify: true,
       };
@@ -160,34 +160,34 @@ export function buildPushPayload(
       return {
         ...base,
         title: "👤 New Follower",
-        body: ctx?.actorName
+        body: ctx.actorName
           ? `${ctx?.actorName} started following you.`
           : "You have a new follower.",
-        url: ctx?.url || "/social",
+        url: ctx.url || "/social",
         tag: "social_follow",
         category: "direct_interaction",
         actions: [
           { action: "open", title: "View Profile" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.subtle,
+        vibrate: VIBRATE.subtle,
       };
 
     case "social_share":
       return {
         ...base,
         title: "🔁 Post Shared",
-        body: ctx?.actorName
+        body: ctx.actorName
           ? `${ctx?.actorName} shared your post.`
           : "Someone shared your post.",
-        url: ctx?.url || "/social",
+        url: ctx.url || "/social",
         tag: "social_share",
         category: "direct_interaction",
         actions: [
           { action: "open", title: "View Post" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.subtle,
+        vibrate: VIBRATE.subtle,
       };
 
     // ── Platform-Generated ─────────────────────────────────────────────────────
@@ -196,7 +196,7 @@ export function buildPushPayload(
       return {
         ...base,
         title: "👥 People You May Know",
-        body: ctx?.actorName
+        body: ctx.actorName
           ? `${ctx?.actorName} and others are on Max Booster.`
           : "Discover artists and producers like you.",
         url: "/social",
@@ -206,7 +206,7 @@ export function buildPushPayload(
           { action: "open", title: "Explore" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.subtle,
+        vibrate: VIBRATE.subtle,
         requireInteraction: false,
       };
 
@@ -214,8 +214,8 @@ export function buildPushPayload(
       return {
         ...base,
         title: "🔥 Trending Now",
-        body: ctx?.contentTitle
-          ? `"${ctx?.contentTitle}" is trending${ctx?.platform ? ` on ${ctx?.platform}` : ""}.`
+        body: ctx.contentTitle
+          ? `"${ctx.contentTitle}" is trending${ctx?.platform ? ` on ${ctx?.platform}` : ""}.`
           : "Check out what's trending on the platform.",
         url: "/social",
         tag: "platform_trending",
@@ -224,15 +224,15 @@ export function buildPushPayload(
           { action: "open", title: "View Trend" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.subtle,
+        vibrate: VIBRATE.subtle,
       };
 
     case "platform_group_activity":
       return {
         ...base,
         title: "👥 New Group Activity",
-        body: ctx?.contentTitle
-          ? `New activity in ${ctx?.contentTitle}.`
+        body: ctx.contentTitle
+          ? `New activity in ${ctx.contentTitle}.`
           : "There's new activity in a group you follow.",
         url: "/social",
         tag: "platform_group",
@@ -241,24 +241,24 @@ export function buildPushPayload(
           { action: "open", title: "View Group" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.subtle,
+        vibrate: VIBRATE.subtle,
       };
 
     case "platform_event_invite":
       return {
         ...base,
         title: "📅 Event Invitation",
-        body: ctx?.contentTitle
-          ? `You\'re invited to: ${ctx?.contentTitle}.`
+        body: ctx.contentTitle
+          ? `You\'re invited to: ${ctx.contentTitle}.`
           : "You've been invited to an event.",
-        url: ctx?.url || "/social",
+        url: ctx.url || "/social",
         tag: "platform_event",
         category: "platform_generated",
         actions: [
           { action: "accept", title: "Accept" },
           { action: "open", title: "View" },
         ],
-        vibrate: VIBRATE?.normal,
+        vibrate: VIBRATE.normal,
         requireInteraction: true,
       };
 
@@ -266,7 +266,7 @@ export function buildPushPayload(
       return {
         ...base,
         title: "🎂 Birthday Reminder",
-        body: ctx?.actorName
+        body: ctx.actorName
           ? `Today is ${ctx?.actorName}\'s birthday! Send them a message.`
           : "Someone in your network has a birthday today.",
         url: "/social",
@@ -276,7 +276,7 @@ export function buildPushPayload(
           { action: "open", title: "Send Message" },
           { action: "dismiss", title: "Maybe Later" },
         ],
-        vibrate: VIBRATE?.subtle,
+        vibrate: VIBRATE.subtle,
       };
 
     // ── Content-Based ──────────────────────────────────────────────────────────
@@ -285,56 +285,56 @@ export function buildPushPayload(
       return {
         ...base,
         title: "📝 New Post",
-        body: ctx?.actorName
-          ? `${ctx?.actorName} just posted${ctx?.contentTitle ? `: "${ctx?.contentTitle}"` : "."}`
+        body: ctx.actorName
+          ? `${ctx.actorName} just posted${ctx.contentTitle ? `: "${ctx.contentTitle}"` : "."}`
           : "New content from someone you follow.",
-        url: ctx?.url || "/social",
-        tag: `content_post_${ctx?.actorName || ""}`,
+        url: ctx.url || "/social",
+        tag: `content_post_${ctx.actorName || ""}`,
         category: "content_based",
         actions: [
           { action: "open", title: "View Post" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.subtle,
-        image: ctx?.imageUrl,
+        vibrate: VIBRATE.subtle,
+        image: ctx.imageUrl,
       };
 
     case "content_live_stream":
       return {
         ...base,
         title: "🔴 Going Live Now",
-        body: ctx?.actorName
-          ? `${ctx?.actorName} is live${ctx?.contentTitle ? `: ${ctx?.contentTitle}` : "!"}`
+        body: ctx.actorName
+          ? `${ctx.actorName} is live${ctx.contentTitle ? `: ${ctx.contentTitle}` : "!"}`
           : "Someone you follow just went live.",
-        url: ctx?.url || "/social",
-        tag: `content_live_${ctx?.actorName || ""}`,
+        url: ctx.url || "/social",
+        tag: `content_live_${ctx.actorName || ""}`,
         category: "content_based",
         actions: [
           { action: "open", title: "Watch Now" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.alert,
+        vibrate: VIBRATE.alert,
         requireInteraction: true,
         renotify: true,
-        image: ctx?.imageUrl,
+        image: ctx.imageUrl,
       };
 
     case "content_recommended":
       return {
         ...base,
         title: "✨ Recommended For You",
-        body: ctx?.contentTitle
-          ? `Check out: "${ctx?.contentTitle}"`
+        body: ctx.contentTitle
+          ? `Check out: "${ctx.contentTitle}"`
           : "We found content you might enjoy.",
-        url: ctx?.url || "/social",
+        url: ctx.url || "/social",
         tag: "content_recommended",
         category: "content_based",
         actions: [
           { action: "open", title: "View" },
           { action: "dismiss", title: "Not Interested" },
         ],
-        vibrate: VIBRATE?.subtle,
-        image: ctx?.imageUrl,
+        vibrate: VIBRATE.subtle,
+        image: ctx.imageUrl,
       };
 
     // ── Engagement & Activity Summaries ────────────────────────────────────────
@@ -343,8 +343,8 @@ export function buildPushPayload(
       return {
         ...base,
         title: "📊 Activity Summary",
-        body: ctx?.count
-          ? `You have ${ctx?.count} new interaction${ctx?.count !== 1 ? "s" : ""} since your last visit.`
+        body: ctx.count
+          ? `You have ${ctx.count} new interaction${ctx.count !== 1 ? "s" : ""} since your last visit.`
           : "Here's a summary of your recent activity.",
         url: "/notifications",
         tag: "engagement_digest",
@@ -353,7 +353,7 @@ export function buildPushPayload(
           { action: "open", title: "View All" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.subtle,
+        vibrate: VIBRATE.subtle,
       };
 
     case "engagement_milestone":
@@ -361,43 +361,43 @@ export function buildPushPayload(
       return {
         ...base,
         title: "🎉 Post Performing Well",
-        body: ctx?.contentTitle
-          ? `"${ctx?.contentTitle}" is getting lots of engagement!`
+        body: ctx.contentTitle
+          ? `"${ctx.contentTitle}" is getting lots of engagement!`
           : ctx?.milestone
             ? `Your post reached ${ctx?.milestone} interactions!`
             : "One of your posts is trending with your audience.",
-        url: ctx?.url || "/social",
+        url: ctx.url || "/social",
         tag: "engagement_milestone",
         category: "engagement_summary",
         actions: [
           { action: "open", title: "View Post" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.normal,
+        vibrate: VIBRATE.normal,
       };
 
     case "engagement_story_reaction":
       return {
         ...base,
         title: "👀 Story Reaction",
-        body: ctx?.actorName
+        body: ctx.actorName
           ? `${ctx?.actorName} reacted to your story.`
           : "People are reacting to your story.",
-        url: ctx?.url || "/social",
+        url: ctx.url || "/social",
         tag: "engagement_story",
         category: "engagement_summary",
         actions: [
           { action: "open", title: "View Story" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.subtle,
+        vibrate: VIBRATE.subtle,
       };
 
     case "follower_milestone":
       return {
         ...base,
         title: "🌟 Follower Milestone",
-        body: ctx?.milestone
+        body: ctx.milestone
           ? `You hit ${ctx?.milestone} followers! Keep up the great work.`
           : "You reached a new follower milestone!",
         url: "/social",
@@ -407,7 +407,7 @@ export function buildPushPayload(
           { action: "open", title: "View Profile" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.alert,
+        vibrate: VIBRATE.alert,
       };
 
     // ── Security & Account ─────────────────────────────────────────────────────
@@ -416,7 +416,7 @@ export function buildPushPayload(
       return {
         ...base,
         title: "🔐 New Login Detected",
-        body: ctx?.location
+        body: ctx.location
           ? `A new login to your account from ${ctx?.location}. If this wasn\'t you, secure your account immediately.`
           : "A new login to your account was detected. Verify it was you.",
         url: "/settings",
@@ -426,7 +426,7 @@ export function buildPushPayload(
           { action: "open", title: "Review" },
           { action: "dismiss", title: "Was Me" },
         ],
-        vibrate: VIBRATE?.urgent,
+        vibrate: VIBRATE.urgent,
         requireInteraction: true,
       };
 
@@ -442,7 +442,7 @@ export function buildPushPayload(
           { action: "open", title: "Review Account" },
           { action: "dismiss", title: "I Changed It" },
         ],
-        vibrate: VIBRATE?.urgent,
+        vibrate: VIBRATE.urgent,
         requireInteraction: true,
       };
 
@@ -458,7 +458,7 @@ export function buildPushPayload(
           { action: "open", title: "Review Now" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.urgent,
+        vibrate: VIBRATE.urgent,
         requireInteraction: true,
       };
 
@@ -474,7 +474,7 @@ export function buildPushPayload(
           { action: "open", title: "View Settings" },
           { action: "dismiss", title: "Got It" },
         ],
-        vibrate: VIBRATE?.normal,
+        vibrate: VIBRATE.normal,
       };
 
     case "security_2fa_disabled":
@@ -489,7 +489,7 @@ export function buildPushPayload(
           { action: "open", title: "Re-enable 2FA" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.alert,
+        vibrate: VIBRATE.alert,
         requireInteraction: true,
       };
 
@@ -507,7 +507,7 @@ export function buildPushPayload(
           { action: "open", title: "Review" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.alert,
+        vibrate: VIBRATE.alert,
         requireInteraction: true,
       };
 
@@ -523,7 +523,7 @@ export function buildPushPayload(
           { action: "open", title: "View Profile" },
           { action: "dismiss", title: "Got It" },
         ],
-        vibrate: VIBRATE?.normal,
+        vibrate: VIBRATE.normal,
       };
 
     // ── Location-Based ─────────────────────────────────────────────────────────
@@ -532,27 +532,27 @@ export function buildPushPayload(
       return {
         ...base,
         title: "📍 Events Near You",
-        body: ctx?.contentTitle
+        body: ctx.contentTitle
           ? `${ctx?.contentTitle} is happening near you.`
           : ctx?.location
-            ? `There\'s an event near ${ctx?.location} you might like.`
+            ? `There\'s an event near ${ctx.location} you might like.`
             : "There are music events happening in your area.",
-        url: ctx?.url || "/social",
+        url: ctx.url || "/social",
         tag: "location_event",
         category: "location_based",
         actions: [
           { action: "open", title: "View on Map" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.subtle,
+        vibrate: VIBRATE.subtle,
       };
 
     case "location_trending_local":
       return {
         ...base,
         title: "📍 Trending in Your Area",
-        body: ctx?.contentTitle
-          ? `"${ctx?.contentTitle}" is trending ${ctx?.location ? `in ${ctx?.location}` : "near you"}.`
+        body: ctx.contentTitle
+          ? `"${ctx.contentTitle}" is trending ${ctx.location ? `in ${ctx.location}` : "near you"}.`
           : "See what's trending in music around you.",
         url: "/social",
         tag: "location_trending",
@@ -561,7 +561,7 @@ export function buildPushPayload(
           { action: "open", title: "View Trends" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.subtle,
+        vibrate: VIBRATE.subtle,
       };
 
     // ── Distribution ───────────────────────────────────────────────────────────
@@ -570,17 +570,17 @@ export function buildPushPayload(
       return {
         ...base,
         title: "🚀 Release Is Live!",
-        body: ctx?.contentTitle
-          ? `"${ctx?.contentTitle}" is now live on streaming platforms!`
+        body: ctx.contentTitle
+          ? `"${ctx.contentTitle}" is now live on streaming platforms!`
           : "Your music release is now live!",
-        url: ctx?.url || "/distribution",
+        url: ctx.url || "/distribution",
         tag: "release_live",
         category: "distribution",
         actions: [
           { action: "open", title: "View Release" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.alert,
+        vibrate: VIBRATE.alert,
         requireInteraction: true,
       };
 
@@ -589,34 +589,34 @@ export function buildPushPayload(
       return {
         ...base,
         title: "🎵 Stream Milestone",
-        body: ctx?.contentTitle
-          ? `"${ctx?.contentTitle}" hit ${ctx?.milestone || "a new"} streams!`
+        body: ctx.contentTitle
+          ? `"${ctx.contentTitle}" hit ${ctx?.milestone || "a new"} streams!`
           : `You reached ${ctx?.milestone || "a new stream milestone"}!`,
-        url: ctx?.url || "/distribution",
+        url: ctx.url || "/distribution",
         tag: "stream_milestone",
         category: "distribution",
         actions: [
           { action: "open", title: "View Stats" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.alert,
+        vibrate: VIBRATE.alert,
       };
 
     case "release_rejected":
       return {
         ...base,
         title: "❌ Release Update",
-        body: ctx?.contentTitle
-          ? `"${ctx?.contentTitle}" needs attention before it can be published.`
+        body: ctx.contentTitle
+          ? `"${ctx.contentTitle}" needs attention before it can be published.`
           : "One of your releases requires your attention.",
-        url: ctx?.url || "/distribution",
+        url: ctx.url || "/distribution",
         tag: "release_rejected",
         category: "distribution",
         actions: [
           { action: "open", title: "Review Now" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.alert,
+        vibrate: VIBRATE.alert,
         requireInteraction: true,
       };
 
@@ -624,68 +624,68 @@ export function buildPushPayload(
       return {
         ...base,
         title: "📤 Release Submitted",
-        body: ctx?.contentTitle
-          ? `"${ctx?.contentTitle}" has been submitted for distribution.`
+        body: ctx.contentTitle
+          ? `"${ctx.contentTitle}" has been submitted for distribution.`
           : "Your release has been submitted successfully.",
-        url: ctx?.url || "/distribution",
+        url: ctx.url || "/distribution",
         tag: "release_submitted",
         category: "distribution",
         actions: [
           { action: "open", title: "Track Status" },
           { action: "dismiss", title: "Got It" },
         ],
-        vibrate: VIBRATE?.normal,
+        vibrate: VIBRATE.normal,
       };
 
     case "release_processing":
       return {
         ...base,
         title: "⚙️ Processing Release",
-        body: ctx?.contentTitle
-          ? `"${ctx?.contentTitle}" is being processed for distribution.`
+        body: ctx.contentTitle
+          ? `"${ctx.contentTitle}" is being processed for distribution.`
           : "Your release is being processed.",
-        url: ctx?.url || "/distribution",
+        url: ctx.url || "/distribution",
         tag: "release_processing",
         category: "distribution",
         actions: [
           { action: "open", title: "View Progress" },
           { action: "dismiss", title: "Got It" },
         ],
-        vibrate: VIBRATE?.subtle,
+        vibrate: VIBRATE.subtle,
       };
 
     case "upload_complete":
       return {
         ...base,
         title: "✅ Upload Complete",
-        body: ctx?.contentTitle
-          ? `"${ctx?.contentTitle}" finished uploading.`
+        body: ctx.contentTitle
+          ? `"${ctx.contentTitle}" finished uploading.`
           : "Your upload has completed successfully.",
-        url: ctx?.url || "/studio",
+        url: ctx.url || "/studio",
         tag: "upload_complete",
         category: "distribution",
         actions: [
           { action: "open", title: "View File" },
           { action: "dismiss", title: "Got It" },
         ],
-        vibrate: VIBRATE?.normal,
+        vibrate: VIBRATE.normal,
       };
 
     case "ai_processing_complete":
       return {
         ...base,
         title: "🤖 AI Task Complete",
-        body: ctx?.contentTitle
-          ? `AI finished processing: "${ctx?.contentTitle}"`
+        body: ctx.contentTitle
+          ? `AI finished processing: "${ctx.contentTitle}"`
           : "Your AI-powered task has completed.",
-        url: ctx?.url || "/studio",
+        url: ctx.url || "/studio",
         tag: "ai_complete",
         category: "distribution",
         actions: [
           { action: "open", title: "View Result" },
           { action: "dismiss", title: "Got It" },
         ],
-        vibrate: VIBRATE?.normal,
+        vibrate: VIBRATE.normal,
       };
 
     // ── Royalties ──────────────────────────────────────────────────────────────
@@ -695,7 +695,7 @@ export function buildPushPayload(
       return {
         ...base,
         title: "💰 Payment Received",
-        body: ctx?.amount
+        body: ctx.amount
           ? `You received ${ctx?.amount} in royalty earnings!`
           : "Your royalty payout has been processed.",
         url: "/royalties",
@@ -705,7 +705,7 @@ export function buildPushPayload(
           { action: "open", title: "View Earnings" },
           { action: "dismiss", title: "Got It" },
         ],
-        vibrate: VIBRATE?.alert,
+        vibrate: VIBRATE.alert,
       };
 
     case "payout_failed":
@@ -721,7 +721,7 @@ export function buildPushPayload(
           { action: "open", title: "Fix Now" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.urgent,
+        vibrate: VIBRATE.urgent,
         requireInteraction: true,
       };
 
@@ -737,7 +737,7 @@ export function buildPushPayload(
           { action: "open", title: "View Statement" },
           { action: "dismiss", title: "Later" },
         ],
-        vibrate: VIBRATE?.normal,
+        vibrate: VIBRATE.normal,
       };
 
     // ── Collaboration ──────────────────────────────────────────────────────────
@@ -746,17 +746,17 @@ export function buildPushPayload(
       return {
         ...base,
         title: "🤝 Collaboration Invite",
-        body: ctx?.actorName
-          ? `${ctx?.actorName} invited you to collaborate${ctx?.contentTitle ? ` on "${ctx?.contentTitle}"` : "."}`
+        body: ctx.actorName
+          ? `${ctx?.actorName} invited you to collaborate${ctx?.contentTitle ? ` on "${ctx.contentTitle}"` : "."}`
           : "You have a new collaboration invitation.",
-        url: ctx?.url || "/collaboration",
+        url: ctx.url || "/collaboration",
         tag: "collab_invite",
         category: "collaboration",
         actions: [
           { action: "open", title: "View Invite" },
           { action: "dismiss", title: "Later" },
         ],
-        vibrate: VIBRATE?.normal,
+        vibrate: VIBRATE.normal,
         requireInteraction: true,
       };
 
@@ -764,51 +764,51 @@ export function buildPushPayload(
       return {
         ...base,
         title: "✅ Invite Accepted",
-        body: ctx?.actorName
+        body: ctx.actorName
           ? `${ctx?.actorName} accepted your collaboration invite!`
           : "Your collaboration invite was accepted.",
-        url: ctx?.url || "/collaboration",
+        url: ctx.url || "/collaboration",
         tag: "collab_accepted",
         category: "collaboration",
         actions: [
           { action: "open", title: "Start Collaborating" },
           { action: "dismiss", title: "Got It" },
         ],
-        vibrate: VIBRATE?.normal,
+        vibrate: VIBRATE.normal,
       };
 
     case "collaboration_comment":
       return {
         ...base,
         title: "💬 Collaboration Comment",
-        body: ctx?.actorName
-          ? `${ctx?.actorName} commented on your project${ctx?.contentTitle ? `: "${ctx?.contentTitle}"` : "."}`
+        body: ctx.actorName
+          ? `${ctx?.actorName} commented on your project${ctx?.contentTitle ? `: "${ctx.contentTitle}"` : "."}`
           : "Someone commented on your collaboration.",
-        url: ctx?.url || "/collaboration",
+        url: ctx.url || "/collaboration",
         tag: "collab_comment",
         category: "collaboration",
         actions: [
           { action: "reply", title: "Reply" },
           { action: "open", title: "View" },
         ],
-        vibrate: VIBRATE?.normal,
+        vibrate: VIBRATE.normal,
       };
 
     case "collaboration_mention":
       return {
         ...base,
         title: "📢 Mentioned in Project",
-        body: ctx?.actorName
+        body: ctx.actorName
           ? `${ctx?.actorName} mentioned you in a collaboration.`
           : "You were mentioned in a collaboration.",
-        url: ctx?.url || "/collaboration",
+        url: ctx.url || "/collaboration",
         tag: "collab_mention",
         category: "collaboration",
         actions: [
           { action: "open", title: "View" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.normal,
+        vibrate: VIBRATE.normal,
       };
 
     // ── Marketplace ────────────────────────────────────────────────────────────
@@ -817,8 +817,8 @@ export function buildPushPayload(
       return {
         ...base,
         title: "🛍️ Purchase Complete",
-        body: ctx?.contentTitle
-          ? `You successfully purchased "${ctx?.contentTitle}".`
+        body: ctx.contentTitle
+          ? `You successfully purchased "${ctx.contentTitle}".`
           : "Your marketplace purchase is confirmed.",
         url: "/marketplace",
         tag: "marketplace_purchase",
@@ -827,15 +827,15 @@ export function buildPushPayload(
           { action: "open", title: "View Purchase" },
           { action: "dismiss", title: "Got It" },
         ],
-        vibrate: VIBRATE?.normal,
+        vibrate: VIBRATE.normal,
       };
 
     case "marketplace_sale":
       return {
         ...base,
         title: "💵 New Sale",
-        body: ctx?.contentTitle
-          ? `Someone purchased "${ctx?.contentTitle}"${ctx?.amount ? ` for ${ctx?.amount}` : ""}!`
+        body: ctx.contentTitle
+          ? `Someone purchased "${ctx.contentTitle}"${ctx?.amount ? ` for ${ctx?.amount}` : ""}!`
           : "You just made a sale on the marketplace.",
         url: "/marketplace",
         tag: "marketplace_sale",
@@ -844,15 +844,15 @@ export function buildPushPayload(
           { action: "open", title: "View Sale" },
           { action: "dismiss", title: "Got It" },
         ],
-        vibrate: VIBRATE?.alert,
+        vibrate: VIBRATE.alert,
       };
 
     case "marketplace_offer":
       return {
         ...base,
         title: "💬 New Offer",
-        body: ctx?.contentTitle
-          ? `You received an offer on "${ctx?.contentTitle}".`
+        body: ctx.contentTitle
+          ? `You received an offer on "${ctx.contentTitle}".`
           : "You have a new offer on the marketplace.",
         url: "/marketplace",
         tag: "marketplace_offer",
@@ -861,7 +861,7 @@ export function buildPushPayload(
           { action: "open", title: "View Offer" },
           { action: "dismiss", title: "Later" },
         ],
-        vibrate: VIBRATE?.normal,
+        vibrate: VIBRATE.normal,
         requireInteraction: true,
       };
 
@@ -869,8 +869,8 @@ export function buildPushPayload(
       return {
         ...base,
         title: "⭐ New Review",
-        body: ctx?.contentTitle
-          ? `Someone left a review on "${ctx?.contentTitle}".`
+        body: ctx.contentTitle
+          ? `Someone left a review on "${ctx.contentTitle}".`
           : "You received a new marketplace review.",
         url: "/marketplace",
         tag: "marketplace_review",
@@ -879,15 +879,15 @@ export function buildPushPayload(
           { action: "open", title: "View Review" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.normal,
+        vibrate: VIBRATE.normal,
       };
 
     case "beat_play_milestone":
       return {
         ...base,
         title: "🎧 Beat Milestone",
-        body: ctx?.contentTitle
-          ? `"${ctx?.contentTitle}" just hit ${ctx?.milestone || "a new"} plays!`
+        body: ctx.contentTitle
+          ? `"${ctx.contentTitle}" just hit ${ctx?.milestone || "a new"} plays!`
           : "One of your beats reached a play milestone!",
         url: "/marketplace",
         tag: "beat_milestone",
@@ -896,7 +896,7 @@ export function buildPushPayload(
           { action: "open", title: "View Beat" },
           { action: "dismiss", title: "Dismiss" },
         ],
-        vibrate: VIBRATE?.normal,
+        vibrate: VIBRATE.normal,
       };
 
     // ── Achievements ───────────────────────────────────────────────────────────
@@ -905,8 +905,8 @@ export function buildPushPayload(
       return {
         ...base,
         title: "🏆 Achievement Unlocked",
-        body: ctx?.contentTitle
-          ? `You earned: "${ctx?.contentTitle}"!`
+        body: ctx.contentTitle
+          ? `You earned: "${ctx.contentTitle}"!`
           : "You just unlocked a new achievement!",
         url: "/dashboard",
         tag: "achievement",
@@ -915,15 +915,15 @@ export function buildPushPayload(
           { action: "open", title: "View Achievement" },
           { action: "dismiss", title: "Got It" },
         ],
-        vibrate: VIBRATE?.alert,
+        vibrate: VIBRATE.alert,
       };
 
     case "streak_milestone":
       return {
         ...base,
         title: "🔥 Streak Milestone",
-        body: ctx?.milestone
-          ? `You\'re on a ${ctx?.milestone}-day streak! Keep going!`
+        body: ctx.milestone
+          ? `You\'re on a ${ctx.milestone}-day streak! Keep going!`
           : "You reached a new streak milestone!",
         url: "/dashboard",
         tag: "streak",
@@ -932,7 +932,7 @@ export function buildPushPayload(
           { action: "open", title: "View Streak" },
           { action: "dismiss", title: "Got It" },
         ],
-        vibrate: VIBRATE?.normal,
+        vibrate: VIBRATE.normal,
       };
 
     // ── Subscriptions ──────────────────────────────────────────────────────────
@@ -949,7 +949,7 @@ export function buildPushPayload(
           { action: "open", title: "Renew Now" },
           { action: "dismiss", title: "Remind Later" },
         ],
-        vibrate: VIBRATE?.alert,
+        vibrate: VIBRATE.alert,
         requireInteraction: true,
       };
 
@@ -965,7 +965,7 @@ export function buildPushPayload(
           { action: "open", title: "View Account" },
           { action: "dismiss", title: "Got It" },
         ],
-        vibrate: VIBRATE?.normal,
+        vibrate: VIBRATE.normal,
       };
 
     // ── System ─────────────────────────────────────────────────────────────────
@@ -976,8 +976,8 @@ export function buildPushPayload(
         ...base,
         title: "📣 Platform Update",
         body:
-          ctx?.contentTitle ||
-          ctx?.contentPreview ||
+          ctx.contentTitle ||
+          ctx.contentPreview ||
           "A new update is available on Max Booster.",
         url: "/dashboard",
         tag: "system_update",
@@ -986,7 +986,7 @@ export function buildPushPayload(
           { action: "open", title: "Learn More" },
           { action: "dismiss", title: "Got It" },
         ],
-        vibrate: VIBRATE?.subtle,
+        vibrate: VIBRATE.subtle,
       };
 
     case "system_maintenance":
@@ -994,7 +994,7 @@ export function buildPushPayload(
         ...base,
         title: "🔧 Scheduled Maintenance",
         body:
-          ctx?.contentTitle ||
+          ctx.contentTitle ||
           "Max Booster will undergo scheduled maintenance soon.",
         url: "/dashboard",
         tag: "system_maintenance",
@@ -1003,7 +1003,7 @@ export function buildPushPayload(
           { action: "open", title: "View Details" },
           { action: "dismiss", title: "Got It" },
         ],
-        vibrate: VIBRATE?.normal,
+        vibrate: VIBRATE.normal,
         requireInteraction: true,
       };
 
@@ -1019,7 +1019,7 @@ export function buildPushPayload(
           { action: "open", title: "Manage Storage" },
           { action: "dismiss", title: "Later" },
         ],
-        vibrate: VIBRATE?.alert,
+        vibrate: VIBRATE.alert,
         requireInteraction: true,
       };
 
@@ -1027,42 +1027,42 @@ export function buildPushPayload(
       return {
         ...base,
         title: "📅 Post Scheduled",
-        body: ctx?.contentTitle
-          ? `"${ctx?.contentTitle}" is scheduled${ctx?.platform ? ` for ${ctx?.platform}` : ""}.`
+        body: ctx.contentTitle
+          ? `"${ctx.contentTitle}" is scheduled${ctx?.platform ? ` for ${ctx?.platform}` : ""}.`
           : "Your post has been scheduled successfully.",
-        url: ctx?.url || "/social",
+        url: ctx.url || "/social",
         tag: "post_scheduled",
         category: "social_media",
         actions: [
           { action: "open", title: "View Schedule" },
           { action: "dismiss", title: "Got It" },
         ],
-        vibrate: VIBRATE?.subtle,
+        vibrate: VIBRATE.subtle,
       };
 
     case "social_post_published":
       return {
         ...base,
         title: "✅ Post Published",
-        body: ctx?.contentTitle
-          ? `"${ctx?.contentTitle}" is now live${ctx?.platform ? ` on ${ctx?.platform}` : ""}!`
+        body: ctx.contentTitle
+          ? `"${ctx.contentTitle}" is now live${ctx?.platform ? ` on ${ctx?.platform}` : ""}!`
           : "Your scheduled post has been published.",
-        url: ctx?.url || "/social",
+        url: ctx.url || "/social",
         tag: "post_published",
         category: "social_media",
         actions: [
           { action: "open", title: "View Post" },
           { action: "dismiss", title: "Got It" },
         ],
-        vibrate: VIBRATE?.normal,
+        vibrate: VIBRATE.normal,
       };
 
     case "ad_campaign_created":
       return {
         ...base,
         title: "📢 Campaign Created",
-        body: ctx?.contentTitle
-          ? `Ad campaign "${ctx?.contentTitle}" is now active.`
+        body: ctx.contentTitle
+          ? `Ad campaign "${ctx.contentTitle}" is now active.`
           : "Your advertising campaign is now running.",
         url: "/advertising",
         tag: "ad_campaign",
@@ -1071,15 +1071,15 @@ export function buildPushPayload(
           { action: "open", title: "View Campaign" },
           { action: "dismiss", title: "Got It" },
         ],
-        vibrate: VIBRATE?.normal,
+        vibrate: VIBRATE.normal,
       };
 
     case "ad_campaign_milestone":
       return {
         ...base,
         title: "📊 Campaign Milestone",
-        body: ctx?.contentTitle
-          ? `"${ctx?.contentTitle}" reached ${ctx?.milestone || "a new milestone"}!`
+        body: ctx.contentTitle
+          ? `"${ctx.contentTitle}" reached ${ctx?.milestone || "a new milestone"}!`
           : "Your ad campaign hit a performance milestone.",
         url: "/advertising",
         tag: "ad_milestone",
@@ -1088,7 +1088,7 @@ export function buildPushPayload(
           { action: "open", title: "View Stats" },
           { action: "dismiss", title: "Got It" },
         ],
-        vibrate: VIBRATE?.normal,
+        vibrate: VIBRATE.normal,
       };
 
     default:
@@ -1117,6 +1117,6 @@ export function buildSilentPayload(
     renotify: false,
     vibrate: [],
     data: { silent: true, reason },
-    timestamp: Date?.now(),
+    timestamp: Date.now(),
   };
 }

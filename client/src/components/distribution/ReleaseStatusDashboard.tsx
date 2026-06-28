@@ -166,10 +166,10 @@ export function ReleaseStatusDashboard({
     useState<PlatformStatus | null>(null);
 
   // Fetch release status
-  const { data: statusData, isLoading } = useQuery<{
-    statuses: PlatformStatus[];
-    overallProgress: number;
-  }>({
+  const {
+    data: statusData,
+    isLoading,
+  } = useQuery<{ statuses: PlatformStatus[]; overallProgress: number }>({
     queryKey: [`/api/distribution/releases/${releaseId}/status`],
   });
 
@@ -337,7 +337,7 @@ export function ReleaseStatusDashboard({
                   <div className="flex items-center gap-3">
                     <div
                       className="w-10 h-10 rounded-full flex items-center justify-center"
-                      style={{ backgroundColor: config?.color ?? "#6366f1" }}
+                      style={{ backgroundColor: config.color ?? "#6366f1" }}
                     >
                       {Icon ? (
                         <Icon className="h-5 w-5 text-white" />

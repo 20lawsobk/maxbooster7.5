@@ -18,29 +18,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import {
-  Sparkles,
-  BarChart3,
-  Share2,
-  Megaphone,
-  DollarSign,
-  Check,
-  ArrowRight,
-  Play,
-  Star,
-  Music,
-  Shield,
-  Menu,
-  ChevronLeft,
-  ChevronRight,
-  Zap,
-  Brain,
-  Globe,
-  Cpu,
-  Rocket,
-  Crown,
-  Activity,
-} from "lucide-react";
+import { Sparkles, BarChart3, Share2, Megaphone, DollarSign, Check, ArrowRight, Play, Star, Music, Shield, Menu, ChevronLeft, ChevronRight, Zap, Brain, Globe, Cpu, Rocket, Crown, Activity } from "lucide-react";
 
 const demoSlides = [
   {
@@ -180,6 +158,7 @@ const plans = [
     popular: false,
   },
 ];
+
 
 function useScrollReveal() {
   useEffect(() => {

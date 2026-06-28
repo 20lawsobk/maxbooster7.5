@@ -11,7 +11,7 @@ interface AuthenticatedRequest extends Request {
   user?: { id: string; role?: string };
 }
 
-const _router = Router();
+const router = Router();
 
 function sanitizeError(err: unknown): string {
   if (process?.env.NODE_ENV !== "production" && !process?.env.REPLIT_DEPLOYMENT) {
@@ -27,7 +27,7 @@ router?.post(
     try {
       const { name, policy } = req?.body;
       if (!name) return res?.status(400).json({ error: "name is required" });
-      const _pocket = await fabricStorage?.createPocket(
+      const pocket = await fabricStorage?.createPocket(
         req?.user!.id,
         name,
         policy || {},
@@ -45,7 +45,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _pockets = await fabricStorage?.listPockets(req?.user!.id);
+      const pockets = await fabricStorage?.listPockets(req?.user!.id);
       res?.json(pockets);
     } catch (err) {
       logger?.warn({ err: err }, "[FabricRoute] listPockets:");
@@ -59,7 +59,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _pocket = await fabricStorage?.getPocket(req?.params.pocketId);
+      const pocket = await fabricStorage?.getPocket(req?.params.pocketId);
       if (!pocket) return res?.status(404).json({ error: "Pocket not found" });
       if (pocket?.ownerId !== req?.user!.id)
         return res?.status(403).json({ error: "Forbidden" });
@@ -76,13 +76,13 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _pocket = await fabricStorage?.getPocket(req?.params.pocketId);
+      const pocket = await fabricStorage?.getPocket(req?.params.pocketId);
       if (!pocket) return res?.status(404).json({ error: "Pocket not found" });
       if (pocket?.ownerId !== req?.user!.id)
         return res?.status(403).json({ error: "Forbidden" });
       const { name, type } = req?.body;
       if (!name) return res?.status(400).json({ error: "name is required" });
-      const _volume = await fabricStorage?.createVolume(
+      const volume = await fabricStorage?.createVolume(
         req?.params.pocketId,
         name,
         type || "objects",
@@ -100,11 +100,11 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _pocket = await fabricStorage?.getPocket(req?.params.pocketId);
+      const pocket = await fabricStorage?.getPocket(req?.params.pocketId);
       if (!pocket) return res?.status(404).json({ error: "Pocket not found" });
       if (pocket?.ownerId !== req?.user!.id)
         return res?.status(403).json({ error: "Forbidden" });
-      const _volumes = await fabricStorage?.listVolumes(req?.params.pocketId);
+      const volumes = await fabricStorage?.listVolumes(req?.params.pocketId);
       res?.json(volumes);
     } catch (err) {
       logger?.warn({ err: err }, "[FabricRoute] listVolumes:");
@@ -118,21 +118,21 @@ router?.put(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _pocket = await fabricStorage?.getPocket(req?.params.pocketId);
+      const pocket = await fabricStorage?.getPocket(req?.params.pocketId);
       if (!pocket) return res?.status(404).json({ error: "Pocket not found" });
       if (pocket?.ownerId !== req?.user!.id)
         return res?.status(403).json({ error: "Forbidden" });
 
       const chunks: Buffer[] = [];
       for await (const chunk of req) chunks?.push(chunk as Buffer);
-      const _data = Buffer?.concat(chunks);
+      const data = Buffer?.concat(chunks);
 
-      const _originalName =
+      const originalName =
         (req?.headers["x-original-name"] as string) || "untitled";
-      const _contentType =
+      const contentType =
         req?.headers["content-type"] || "application/octet-stream";
 
-      const _objectId = await fabricStorage?.putObject(
+      const objectId = await fabricStorage?.putObject(
         req?.params.pocketId,
         req?.params.volumeId,
         data,
@@ -152,11 +152,11 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _pocket = await fabricStorage?.getPocket(req?.params.pocketId);
+      const pocket = await fabricStorage?.getPocket(req?.params.pocketId);
       if (!pocket) return res?.status(404).json({ error: "Pocket not found" });
       if (pocket?.ownerId !== req?.user!.id)
         return res?.status(403).json({ error: "Forbidden" });
-      const _objects = await fabricStorage?.listObjects(req?.params.volumeId);
+      const objects = await fabricStorage?.listObjects(req?.params.volumeId);
       res?.json(objects);
     } catch (err) {
       logger?.warn({ err: err }, "[FabricRoute] listObjects:");
@@ -170,12 +170,12 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _pocket = await fabricStorage?.getPocket(req?.params.pocketId);
+      const pocket = await fabricStorage?.getPocket(req?.params.pocketId);
       if (!pocket) return res?.status(404).json({ error: "Pocket not found" });
       if (pocket?.ownerId !== req?.user!.id)
         return res?.status(403).json({ error: "Forbidden" });
 
-      const _result = await fabricStorage?.getObject(req?.params.objectId);
+      const result = await fabricStorage?.getObject(req?.params.objectId);
       if (!result) return res?.status(404).json({ error: "Object not found" });
 
       res?.setHeader("Content-Type", result?.object.contentType);
@@ -194,7 +194,7 @@ router?.delete(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _pocket = await fabricStorage?.getPocket(req?.params.pocketId);
+      const pocket = await fabricStorage?.getPocket(req?.params.pocketId);
       if (!pocket) return res?.status(404).json({ error: "Pocket not found" });
       if (pocket?.ownerId !== req?.user!.id)
         return res?.status(403).json({ error: "Forbidden" });
@@ -216,7 +216,7 @@ router?.post(
         return res?.status(403).json({ error: "Admin only" });
       const { region, costTier, backendType, backendConfig, capacityBytes } =
         req?.body;
-      const _node = await fabricNodeRegistry?.registerNode({
+      const node = await fabricNodeRegistry?.registerNode({
         region: region || "us-east",
         costTier: costTier || "standard",
         backendType: backendType || "pocket-dimension",
@@ -240,7 +240,7 @@ router?.get(
     try {
       if (req?.user?.role !== "admin")
         return res?.status(403).json({ error: "Admin only" });
-      const _nodes = await fabricNodeRegistry?.listAllNodes();
+      const nodes = await fabricNodeRegistry?.listAllNodes();
       res?.json(nodes);
     } catch (err) {
       logger?.warn({ err: err }, "[FabricRoute] listNodes:");
@@ -254,7 +254,7 @@ router?.get(
   requireAuth,
   async (_req: AuthenticatedRequest, res: Response) => {
     try {
-      const _stats = await fabricStorage?.getStats();
+      const stats = await fabricStorage?.getStats();
       res?.json(stats);
     } catch (err) {
       logger?.warn({ err: err }, "[FabricRoute] getStats:");
@@ -270,25 +270,25 @@ router?.get(
     try {
       if (req?.user?.role !== "admin")
         return res?.status(403).json({ error: "Admin only" });
-      const _nodes = await fabricNodeRegistry?.listAllNodes();
-      const _pdNodes = nodes?.filter((n) => n?.backendType === "pocket-dimension");
-      const _status = autoClusterManager?.getStatus();
+      const nodes = await fabricNodeRegistry?.listAllNodes();
+      const pdNodes = nodes?.filter((n) => n?.backendType === "pocket-dimension");
+      const status = autoClusterManager?.getStatus();
       res?.json({
         cluster: {
-          totalNodes: pdNodes?.length,
-          healthyNodes: pdNodes?.filter((n) => n?.healthy).length,
-          nodes: pdNodes?.map((n) => ({
-            id: n?.id,
+          totalNodes: pdNodes.length,
+          healthyNodes: pdNodes.filter((n) => n?.healthy).length,
+          nodes: pdNodes.map((n) => ({
+            id: n.id,
             pocketName: (n?.backendConfig as Record<string, unknown>).pocketName,
-            region: n?.region,
-            healthy: n?.healthy,
+            region: n.region,
+            healthy: n.healthy,
             utilizationPercent:
               n?.capacityBytes > 0
                 ? ((n?.usedBytes / n?.capacityBytes) * 100).toFixed(1)
                 : "0.0",
-            usedBytes: n?.usedBytes,
-            capacityBytes: n?.capacityBytes,
-            lastHeartbeat: n?.lastHeartbeat,
+            usedBytes: n.usedBytes,
+            capacityBytes: n.capacityBytes,
+            lastHeartbeat: n.lastHeartbeat,
           })),
         },
         autoScaler: status,
@@ -308,7 +308,7 @@ router?.post(
       if (req?.user?.role !== "admin")
         return res?.status(403).json({ error: "Admin only" });
       logger?.info("[FabricRoute] Manual cluster evaluation triggered");
-      const _result = await autoClusterManager?.evaluate();
+      const result = await autoClusterManager?.evaluate();
       res?.json({ triggered: true, ...result });
     } catch (err) {
       logger?.warn({ err: err }, "[FabricRoute] cluster/evaluate:");

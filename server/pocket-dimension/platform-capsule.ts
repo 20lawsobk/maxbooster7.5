@@ -132,7 +132,7 @@ class PlatformCapsuleBuilder {
    * Build a complete platform capsule
    */
   async build(options: CapsuleBuildOptions): Promise<CapsuleMetadata> {
-    const _capsuleId = `capsule-${options?.version}-${Date?.now()}`;
+    const capsuleId = `capsule-${options?.version}-${Date?.now()}`;
     logger?.info(`\n🧬 PLATFORM CAPSULE BUILDER`);
     logger?.info(`   Creating capsule: ${capsuleId}`);
     logger?.info(`   Version: ${options?.version}`);
@@ -140,19 +140,19 @@ class PlatformCapsuleBuilder {
 
     // Create the pocket dimension for this capsule
     this.pocket = await pocketManager?.openPocket(capsuleId, {
-      encryptionKey: options?.encrypt ? options?.encryptionKey : undefined,
+      encryptionKey: options.encrypt ? options?.encryptionKey : undefined,
       compressionLevel: 9,
       enableDeduplication: true,
     });
 
     // Collect all files
     logger?.info("📦 Collecting files...");
-    const _files = await this?.collectFiles(options);
+    const files = await this?.collectFiles(options);
     logger?.info(`   Found ${files?.length} files to package`);
 
     // Create manifest
     logger?.info("📋 Building manifest...");
-    const _manifest = await this?.buildManifest(files, options);
+    const manifest = await this?.buildManifest(files, options);
 
     // Write files to pocket dimension
     logger?.info("💾 Writing to pocket dimension...");
@@ -160,8 +160,8 @@ class PlatformCapsuleBuilder {
     let processedFiles = 0;
 
     for (const file of files) {
-      const _content = await fs?.readFile(file?.fullPath);
-      const _relativePath = file?.relativePath;
+      const content = await fs?.readFile(file?.fullPath);
+      const relativePath = file?.relativePath;
 
       await this?.pocket.write(relativePath, content);
       totalSize += content?.length;
@@ -173,7 +173,7 @@ class PlatformCapsuleBuilder {
     }
 
     // Serialize manifest with consistent formatting for checksum
-    const _manifestJson = JSON?.stringify(manifest, null, 2);
+    const manifestJson = JSON?.stringify(manifest, null, 2);
 
     // Write manifest
     await this?.pocket.write(
@@ -182,13 +182,13 @@ class PlatformCapsuleBuilder {
     );
 
     // Get compression stats
-    const _stats = this?.pocket.getStats();
-    const _compressionRatio = stats?.compressedSize / stats?.originalSize;
+    const stats = this?.pocket.getStats();
+    const compressionRatio = stats?.compressedSize / stats?.originalSize;
 
     // Create metadata - IMPORTANT: hash the exact same string that was written
     const metadata: CapsuleMetadata = {
       id: capsuleId,
-      version: options?.version,
+      version: options.version,
       name: "Max Booster Platform",
       description:
         options?.description || `Max Booster Platform v${options?.version}`,
@@ -196,20 +196,20 @@ class PlatformCapsuleBuilder {
       createdBy: "Platform Capsule Builder",
       platform: {
         name: "Max Booster",
-        version: options?.version,
-        nodeVersion: process?.version,
+        version: options.version,
+        nodeVersion: process.version,
       },
       contents: {
-        totalFiles: files?.length,
+        totalFiles: files.length,
         totalSize,
-        compressedSize: stats?.compressedSize,
+        compressedSize: stats.compressedSize,
         compressionRatio,
       },
       checksums: {
-        manifest: this?.hash(manifestJson),
-        content: this?.hash(files?.map((f) => f?.hash).join("")),
+        manifest: this.hash(manifestJson),
+        content: this.hash(files?.map((f) => f?.hash).join("")),
       },
-      encrypted: options?.encrypt || false,
+      encrypted: options.encrypt || false,
     };
 
     // Write metadata
@@ -258,16 +258,16 @@ class PlatformCapsuleBuilder {
     }> = [];
 
     // Default exclude patterns
-    const _excludePatterns = [
+    const excludePatterns = [
       "node_modules",
       ".git",
       ".subatomic",
       "pocket-dimensions",
       ".env",
-      ".env?.local",
+      ".env.local",
       "*.log",
       ".DS_Store",
-      "thumbs?.db",
+      "thumbs.db",
       ...(options?.excludePatterns || []),
     ];
 
@@ -280,15 +280,15 @@ class PlatformCapsuleBuilder {
     }
 
     // Recursive file collection
-    const _collect = async (
+    const collect = async (
       dir: string,
       baseDir?: string,
       targetPrefix?: string,
     ) => {
-      const _entries = await fs?.readdir(dir, { withFileTypes: true });
+      const entries = await fs?.readdir(dir, { withFileTypes: true });
 
       for (const entry of entries) {
-        const _fullPath = path?.join(dir, entry?.name);
+        const fullPath = path?.join(dir, entry?.name);
         let relativePath: string;
 
         if (baseDir && targetPrefix) {
@@ -304,24 +304,24 @@ class PlatformCapsuleBuilder {
         // Check exclusions (skip for prod modules since they're pre-filtered)
         if (
           !targetPrefix &&
-          this?.shouldExclude(relativePath, excludePatterns)
+          this.shouldExclude(relativePath, excludePatterns)
         ) {
           continue;
         }
 
-        if (entry?.isDirectory()) {
+        if (entry.isDirectory()) {
           await collect(fullPath, baseDir, targetPrefix);
-        } else if (entry?.isFile()) {
-          const _stat = await fs?.stat(fullPath);
-          const _content = await fs?.readFile(fullPath);
-          const _hash = this?.hash(content);
-          const _ext = path?.extname(entry?.name).toLowerCase();
-          const _type = FILE_TYPES[ext] || "data";
+        } else if (entry.isFile()) {
+          const stat = await fs.stat(fullPath);
+          const content = await fs.readFile(fullPath);
+          const hash = this.hash(content);
+          const ext = path.extname(entry.name).toLowerCase();
+          const type = FILE_TYPES[ext] || "data";
 
-          files?.push({
+          files.push({
             fullPath,
             relativePath,
-            size: stat?.size,
+            size: stat.size,
             hash,
             type,
           });
@@ -329,51 +329,51 @@ class PlatformCapsuleBuilder {
       }
     };
 
-    await collect(this?.projectRoot);
+    await collect(this.projectRoot);
 
     // Include production node_modules tarball if specified (FAST - just 1 file)
-    if (options?.includeProdTarball) {
-      logger?.info(
+    if (options.includeProdTarball) {
+      logger.info(
         "   Including production dependencies tarball (optimized)...",
       );
       try {
-        const _tarballPath = options?.includeProdTarball;
-        const _stats = await fs?.stat(tarballPath);
-        if (stats?.isFile()) {
-          const _content = await fs?.readFile(tarballPath);
-          const _hash = this?.hash(content);
-          files?.push({
+        const tarballPath = options.includeProdTarball;
+        const stats = await fs.stat(tarballPath);
+        if (stats.isFile()) {
+          const content = await fs.readFile(tarballPath);
+          const hash = this.hash(content);
+          files.push({
             fullPath: tarballPath,
-            relativePath: "__dependencies__/node_modules?.tar.gz",
-            size: stats?.size,
+            relativePath: "__dependencies__/node_modules.tar.gz",
+            size: stats.size,
             hash,
             type: "binary",
           });
-          logger?.info(
-            `   Added tarball: ${(stats?.size / 1024 / 1024).toFixed(2)} MB (1 file instead of 60k+)`,
+          logger.info(
+            `   Added tarball: ${(stats.size / 1024 / 1024).toFixed(2)} MB (1 file instead of 60k+)`,
           );
         }
       } catch (error) {
-        logger?.warn(
+        logger.warn(
           { err: error },
           "   Warning: Could not include production tarball:",
         );
       }
     }
     // Legacy: Include production node_modules directory if specified
-    else if (options?.includeProdModules) {
-      logger?.info("   Including production node_modules...");
+    else if (options.includeProdModules) {
+      logger.info("   Including production node_modules...");
       try {
-        const _prodModulesDir = options?.includeProdModules;
-        const _stats = await fs?.stat(prodModulesDir);
-        if (stats?.isDirectory()) {
+        const prodModulesDir = options.includeProdModules;
+        const stats = await fs.stat(prodModulesDir);
+        if (stats.isDirectory()) {
           await collect(prodModulesDir, prodModulesDir, "node_modules");
-          logger?.info(
-            `   Added ${files?.filter((f) => f?.relativePath.startsWith("node_modules")).length} files from production modules`,
+          logger.info(
+            `   Added ${files.filter((f) => f.relativePath.startsWith("node_modules")).length} files from production modules`,
           );
         }
       } catch (error) {
-        logger?.warn(
+        logger.warn(
           { err: error },
           "   Warning: Could not include production modules:",
         );
@@ -387,17 +387,17 @@ class PlatformCapsuleBuilder {
    * Check if path should be excluded
    */
   private shouldExclude(relativePath: string, patterns: string[]): boolean {
-    const _normalized = relativePath?.replace(/\\/g, "/");
+    const normalized = relativePath.replace(/\\/g, "/");
 
     for (const pattern of patterns) {
       // Simple pattern matching
-      if (pattern?.startsWith("*")) {
+      if (pattern.startsWith("*")) {
         // Wildcard extension match
-        const _ext = pattern?.slice(1);
-        if (normalized?.endsWith(ext)) return true;
+        const ext = pattern.slice(1);
+        if (normalized.endsWith(ext)) return true;
       } else if (
-        normalized?.includes(pattern) ||
-        normalized?.startsWith(pattern)
+        normalized.includes(pattern) ||
+        normalized.startsWith(pattern)
       ) {
         return true;
       }
@@ -418,40 +418,40 @@ class PlatformCapsuleBuilder {
     }>,
     _options: CapsuleBuildOptions,
   ): Promise<CapsuleManifest> {
-    // Read package?.json for dependencies
+    // Read package.json for dependencies
     let packageJson: Record<string, unknown> = {};
     try {
-      const _content = await fs?.readFile(
-        path?.join(this?.projectRoot, "package.json"),
+      const content = await fs.readFile(
+        path.join(this.projectRoot, "package.json"),
         "utf-8",
       );
-      packageJson = JSON?.parse(content);
+      packageJson = JSON.parse(content);
     } catch {
-      // No package?.json
+      // No package.json
     }
 
     // Get unique directories
-    const _directories = [
-      ...new Set(files?.map((f) => path?.dirname(f?.relativePath))),
+    const directories = [
+      ...new Set(files.map((f) => path.dirname(f.relativePath))),
     ];
 
     return {
-      files: files?.map((f) => ({
-        path: f?.relativePath,
-        size: f?.size,
-        hash: f?.hash,
-        type: f?.type as "source" | "asset" | "config" | "data" | "binary",
+      files: files.map((f) => ({
+        path: f.relativePath,
+        size: f.size,
+        hash: f.hash,
+        type: f.type as "source" | "asset" | "config" | "data" | "binary",
       })),
       directories,
-      entryPoint: packageJson?.main || "server/index.ts",
-      buildCommand: packageJson?.scripts?.build,
-      startCommand: packageJson?.scripts?.start || "npm start",
+      entryPoint: packageJson.main || "server/index.ts",
+      buildCommand: packageJson.scripts.build,
+      startCommand: packageJson.scripts.start || "npm start",
       environment: {
         NODE_ENV: "production",
       },
       dependencies: {
-        node: process?.version,
-        npm: packageJson?.dependencies || {},
+        node: process.version,
+        npm: packageJson.dependencies || {},
       },
     };
   }
@@ -470,67 +470,67 @@ class PlatformCapsuleLoader {
   private storagePath: string;
 
   constructor() {
-    this.storagePath = path?.join(process?.cwd(), "pocket-dimensions");
+    this.storagePath = path.join(process.cwd(), "pocket-dimensions");
   }
 
   /**
    * Extract capsule to filesystem (Extract & Boot mode)
    */
   async extractToPath(capsuleId: string, targetPath: string): Promise<void> {
-    logger?.info(`\n🚀 EXTRACTING CAPSULE: ${capsuleId}`);
-    logger?.info(`   Target: ${targetPath}\n`);
+    logger.info(`\n🚀 EXTRACTING CAPSULE: ${capsuleId}`);
+    logger.info(`   Target: ${targetPath}\n`);
 
-    const _pocket = await pocketManager?.openPocket(capsuleId);
+    const pocket = await pocketManager.openPocket(capsuleId);
 
     // Read metadata
-    const _metadataBuffer = await pocket?.read("__capsule__/metadata.json");
-    const metadata: CapsuleMetadata = JSON?.parse(metadataBuffer?.toString());
+    const metadataBuffer = await pocket.read("__capsule__/metadata.json");
+    const metadata: CapsuleMetadata = JSON.parse(metadataBuffer.toString());
 
     // Read manifest
-    const _manifestBuffer = await pocket?.read("__capsule__/manifest.json");
-    const manifest: CapsuleManifest = JSON?.parse(manifestBuffer?.toString());
+    const manifestBuffer = await pocket.read("__capsule__/manifest.json");
+    const manifest: CapsuleManifest = JSON.parse(manifestBuffer.toString());
 
     // Verify integrity
-    const _manifestHash = createHash("sha256")
-      .update(JSON?.stringify(manifest))
+    const manifestHash = createHash("sha256")
+      .update(JSON.stringify(manifest))
       .digest("hex");
 
-    if (manifestHash !== metadata?.checksums.manifest) {
+    if (manifestHash !== metadata.checksums.manifest) {
       throw new Error("Capsule integrity check failed - manifest corrupted");
     }
 
     // Create target directory
-    await fs?.mkdir(targetPath, { recursive: true });
+    await fs.mkdir(targetPath, { recursive: true });
 
     // Create all directories first
-    for (const dir of manifest?.directories) {
-      await fs?.mkdir(path?.join(targetPath, dir), { recursive: true });
+    for (const dir of manifest.directories) {
+      await fs.mkdir(path.join(targetPath, dir), { recursive: true });
     }
 
     // Extract all files
     let extracted = 0;
-    for (const file of manifest?.files) {
-      if (file?.path.startsWith("__capsule__")) continue;
+    for (const file of manifest.files) {
+      if (file.path.startsWith("__capsule__")) continue;
 
-      const _content = await pocket?.read(file?.path);
-      const _targetFile = path?.join(targetPath, file?.path);
+      const content = await pocket.read(file.path);
+      const targetFile = path.join(targetPath, file.path);
 
       // Ensure directory exists
-      await fs?.mkdir(path?.dirname(targetFile), { recursive: true });
-      await fs?.writeFile(targetFile, content);
+      await fs.mkdir(path.dirname(targetFile), { recursive: true });
+      await fs.writeFile(targetFile, content);
 
       extracted++;
       if (extracted % 50 === 0) {
-        logger?.info(
-          `   Extracted ${extracted}/${manifest?.files.length} files...`,
+        logger.info(
+          `   Extracted ${extracted}/${manifest.files.length} files...`,
         );
       }
     }
 
-    logger?.info(`\n✅ EXTRACTION COMPLETE`);
-    logger?.info(`   Files: ${extracted}`);
-    logger?.info(`   Location: ${targetPath}`);
-    logger?.info(`\n   To run: cd ${targetPath} && npm install && npm start\n`);
+    logger.info(`\n✅ EXTRACTION COMPLETE`);
+    logger.info(`   Files: ${extracted}`);
+    logger.info(`   Location: ${targetPath}`);
+    logger.info(`\n   To run: cd ${targetPath} && npm install && npm start\n`);
   }
 
   /**
@@ -538,11 +538,11 @@ class PlatformCapsuleLoader {
    * Returns a virtual FS interface that reads directly from pocket
    */
   async createVirtualFS(capsuleId: string): Promise<VirtualCapsuleFS> {
-    const _pocket = await pocketManager?.openPocket(capsuleId);
+    const pocket = await pocketManager.openPocket(capsuleId);
 
     // Read manifest
-    const _manifestBuffer = await pocket?.read("__capsule__/manifest.json");
-    const manifest: CapsuleManifest = JSON?.parse(manifestBuffer?.toString());
+    const manifestBuffer = await pocket.read("__capsule__/manifest.json");
+    const manifest: CapsuleManifest = JSON.parse(manifestBuffer.toString());
 
     return new VirtualCapsuleFS(pocket, manifest);
   }
@@ -551,9 +551,9 @@ class PlatformCapsuleLoader {
    * Get capsule metadata without full extraction
    */
   async getMetadata(capsuleId: string): Promise<CapsuleMetadata> {
-    const _pocket = await pocketManager?.openPocket(capsuleId);
-    const _metadataBuffer = await pocket?.read("__capsule__/metadata.json");
-    return JSON?.parse(metadataBuffer?.toString());
+    const pocket = await pocketManager.openPocket(capsuleId);
+    const metadataBuffer = await pocket.read("__capsule__/metadata.json");
+    return JSON.parse(metadataBuffer.toString());
   }
 
   /**
@@ -563,12 +563,12 @@ class PlatformCapsuleLoader {
     const capsules: CapsuleMetadata[] = [];
 
     // First check pocketManager for open capsules
-    const _openPockets = pocketManager?.listPockets();
+    const openPockets = pocketManager.listPockets();
     for (const pocketId of openPockets) {
-      if (pocketId?.startsWith("capsule-")) {
+      if (pocketId.startsWith("capsule-")) {
         try {
-          const _metadata = await this?.getMetadata(pocketId);
-          capsules?.push(metadata);
+          const metadata = await this.getMetadata(pocketId);
+          capsules.push(metadata);
         } catch {
           // Not a valid capsule
         }
@@ -577,33 +577,33 @@ class PlatformCapsuleLoader {
 
     // Then scan the storage directory for persisted capsules
     try {
-      await fs?.mkdir(this?.storagePath, { recursive: true });
-      const _dirs = await fs?.readdir(this?.storagePath);
+      await fs.mkdir(this.storagePath, { recursive: true });
+      const dirs = await fs.readdir(this.storagePath);
 
       for (const dir of dirs) {
-        if (dir?.startsWith("capsule-") && !openPockets?.includes(dir)) {
+        if (dir.startsWith("capsule-") && !openPockets.includes(dir)) {
           try {
-            path?.join(this?.storagePath, dir, "__capsule__");
-            path?.join(
-              this?.storagePath,
+            path.join(this.storagePath, dir, "__capsule__");
+            path.join(
+              this.storagePath,
               dir,
               "metadata.json",
             );
 
             // Check if this is a capsule by looking for capsule metadata in the pocket
-            const _pocket = await pocketManager?.openPocket(dir);
+            const pocket = await pocketManager.openPocket(dir);
             try {
-              const _metadataBuffer = await pocket?.read(
+              const metadataBuffer = await pocket.read(
                 "__capsule__/metadata.json",
               );
-              const metadata: CapsuleMetadata = JSON?.parse(
-                metadataBuffer?.toString(),
+              const metadata: CapsuleMetadata = JSON.parse(
+                metadataBuffer.toString(),
               );
-              capsules?.push(metadata);
+              capsules.push(metadata);
             } catch {
               // Not a valid capsule
             }
-            await pocket?.close();
+            await pocket.close();
           } catch {
             // Skip invalid directories
           }
@@ -627,7 +627,7 @@ class PlatformCapsuleLoader {
     await pocketManager?.closePocket(capsuleId);
 
     // Delete the capsule directory from storage
-    const _capsulePath = path?.join(this?.storagePath, capsuleId);
+    const capsulePath = path?.join(this?.storagePath, capsuleId);
     try {
       await fs?.rm(capsulePath, { recursive: true, force: true });
       logger?.info(`Capsule ${capsuleId} deleted successfully`);
@@ -659,7 +659,7 @@ class VirtualCapsuleFS {
     }
 
     // Read from pocket
-    const _content = await this?.pocket.read(filePath);
+    const content = await this?.pocket.read(filePath);
 
     // Cache for future access
     this?.cache.set(filePath, content);
@@ -671,7 +671,7 @@ class VirtualCapsuleFS {
     filePath: string,
     encoding: BufferEncoding = "utf-8",
   ): Promise<string> {
-    const _buffer = await this?.readFile(filePath);
+    const buffer = await this?.readFile(filePath);
     return buffer?.toString(encoding);
   }
 
@@ -680,7 +680,7 @@ class VirtualCapsuleFS {
   }
 
   listDir(dirPath: string): string[] {
-    const _normalized = dirPath?.endsWith("/") ? dirPath : dirPath + "/";
+    const normalized = dirPath?.endsWith("/") ? dirPath : dirPath + "/";
     return this?.manifest.files
       .filter((f) => f?.path.startsWith(normalized))
       .map((f) => f?.path.slice(normalized?.length).split("/")[0])
@@ -695,7 +695,7 @@ class VirtualCapsuleFS {
     let cacheSize = 0;
     this?.cache.forEach((buf) => (cacheSize += buf?.length));
     return {
-      cachedFiles: this?.cache.size,
+      cachedFiles: this.cache.size,
       cacheSize,
     };
   }
@@ -706,15 +706,15 @@ class VirtualCapsuleFS {
 }
 
 // Export singleton instances
-export const _capsuleBuilder = new PlatformCapsuleBuilder();
-export const _capsuleLoader = new PlatformCapsuleLoader();
+export const capsuleBuilder = new PlatformCapsuleBuilder();
+export const capsuleLoader = new PlatformCapsuleLoader();
 
 // Convenience function to build current platform into a capsule
 export async function packagePlatform(
   version: string,
   options?: Partial<CapsuleBuildOptions>,
 ): Promise<CapsuleMetadata> {
-  const _builder = new PlatformCapsuleBuilder();
+  const builder = new PlatformCapsuleBuilder();
   return builder?.build({
     version,
     description: `Max Booster Platform v${version} - Packaged into Pocket Dimension`,

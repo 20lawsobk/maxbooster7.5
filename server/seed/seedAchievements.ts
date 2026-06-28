@@ -3,7 +3,7 @@ import { achievements } from "../../shared/schema";
 import { count, inArray } from "drizzle-orm";
 import { logger } from "../logger.js";
 
-const _defaultAchievements = [
+const defaultAchievements = [
   {
     name: "First Upload",
     description: "Upload your first track to the platform",
@@ -170,7 +170,7 @@ export async function seedAchievements() {
   logger?.info("Seeding achievements...");
 
   try {
-    const _names = defaultAchievements?.map((a) => a?.name);
+    const names = defaultAchievements?.map((a) => a?.name);
     const [{ total }] = await db
       .select({ total: count() })
       .from(achievements)
@@ -182,13 +182,13 @@ export async function seedAchievements() {
       return;
     }
 
-    const _existing = await db
-      .select({ name: achievements?.name })
+    const existing = await db
+      .select({ name: achievements.name })
       .from(achievements)
       .where(inArray(achievements?.name, names));
-    const _existingNames = new Set(existing?.map((r) => r?.name));
+    const existingNames = new Set(existing?.map((r) => r?.name));
 
-    const _toInsert = defaultAchievements
+    const toInsert = defaultAchievements
       .filter((a) => !existingNames?.has(a?.name))
       .map((a) => ({ ...a, isActive: true }));
 
@@ -205,7 +205,7 @@ export async function seedAchievements() {
 }
 
 
-const _isMainModule =
+const isMainModule =
   process?.argv[1] &&
   (process?.argv[1].endsWith("seedAchievements.ts") ||
     process?.argv[1].includes("seedAchievements"));

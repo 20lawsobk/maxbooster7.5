@@ -237,7 +237,7 @@ const TEMPLATE_PRESETS: Map<string, TemplatePreset[]> = new Map([
         name: "Modern Dark",
         description: "Sleek dark theme with vibrant accents",
         templateId: "release-announcement",
-        palette: DEFAULT_PALETTES?.modern,
+        palette: DEFAULT_PALETTES.modern,
         backgroundConfig: { type: "gradient", gradientAngle: 135 },
       },
       {
@@ -245,7 +245,7 @@ const TEMPLATE_PRESETS: Map<string, TemplatePreset[]> = new Map([
         name: "Neon Glow",
         description: "Electric neon aesthetics with glow effects",
         templateId: "release-announcement",
-        palette: DEFAULT_PALETTES?.neon,
+        palette: DEFAULT_PALETTES.neon,
         backgroundConfig: { type: "solid" },
         animationStyle: "glitch",
       },
@@ -254,7 +254,7 @@ const TEMPLATE_PRESETS: Map<string, TemplatePreset[]> = new Map([
         name: "Minimal Light",
         description: "Clean, minimalist light theme",
         templateId: "release-announcement",
-        palette: DEFAULT_PALETTES?.minimal,
+        palette: DEFAULT_PALETTES.minimal,
         backgroundConfig: { type: "solid" },
       },
       {
@@ -262,7 +262,7 @@ const TEMPLATE_PRESETS: Map<string, TemplatePreset[]> = new Map([
         name: "Vintage Warmth",
         description: "Warm, nostalgic vintage vibes",
         templateId: "release-announcement",
-        palette: DEFAULT_PALETTES?.vintage,
+        palette: DEFAULT_PALETTES.vintage,
         backgroundConfig: { type: "gradient", gradientAngle: 180 },
       },
     ],
@@ -275,7 +275,7 @@ const TEMPLATE_PRESETS: Map<string, TemplatePreset[]> = new Map([
         name: "Electric Energy",
         description: "High-energy electric theme for tours",
         templateId: "tour-event",
-        palette: DEFAULT_PALETTES?.electric,
+        palette: DEFAULT_PALETTES.electric,
         backgroundConfig: { type: "gradient", gradientAngle: 180 },
       },
       {
@@ -283,7 +283,7 @@ const TEMPLATE_PRESETS: Map<string, TemplatePreset[]> = new Map([
         name: "Modern Professional",
         description: "Professional modern aesthetic",
         templateId: "tour-event",
-        palette: DEFAULT_PALETTES?.modern,
+        palette: DEFAULT_PALETTES.modern,
         backgroundConfig: { type: "solid" },
       },
     ],
@@ -296,7 +296,7 @@ const TEMPLATE_PRESETS: Map<string, TemplatePreset[]> = new Map([
         name: "Neon Typography",
         description: "Glowing neon text effect",
         templateId: "quote-lyric",
-        palette: DEFAULT_PALETTES?.neon,
+        palette: DEFAULT_PALETTES.neon,
         backgroundConfig: { type: "solid" },
         animationStyle: "neon",
       },
@@ -305,7 +305,7 @@ const TEMPLATE_PRESETS: Map<string, TemplatePreset[]> = new Map([
         name: "Minimal Elegance",
         description: "Clean, elegant typography",
         templateId: "quote-lyric",
-        palette: DEFAULT_PALETTES?.minimal,
+        palette: DEFAULT_PALETTES.minimal,
         backgroundConfig: { type: "solid" },
         animationStyle: "minimal",
       },
@@ -314,7 +314,7 @@ const TEMPLATE_PRESETS: Map<string, TemplatePreset[]> = new Map([
         name: "Pastel Dreams",
         description: "Soft pastel colors with gentle animations",
         templateId: "quote-lyric",
-        palette: DEFAULT_PALETTES?.pastel,
+        palette: DEFAULT_PALETTES.pastel,
         backgroundConfig: { type: "gradient", gradientAngle: 135 },
       },
     ],
@@ -327,7 +327,7 @@ const TEMPLATE_PRESETS: Map<string, TemplatePreset[]> = new Map([
         name: "Digital Clock",
         description: "Retro digital display style",
         templateId: "countdown-timer",
-        palette: DEFAULT_PALETTES?.neon,
+        palette: DEFAULT_PALETTES.neon,
         backgroundConfig: { type: "solid" },
         animationStyle: "digital",
       },
@@ -336,7 +336,7 @@ const TEMPLATE_PRESETS: Map<string, TemplatePreset[]> = new Map([
         name: "Minimal Timer",
         description: "Clean, modern countdown",
         templateId: "countdown-timer",
-        palette: DEFAULT_PALETTES?.modern,
+        palette: DEFAULT_PALETTES.modern,
         backgroundConfig: { type: "gradient" },
         animationStyle: "minimal",
       },
@@ -350,7 +350,7 @@ const TEMPLATE_PRESETS: Map<string, TemplatePreset[]> = new Map([
         name: "Viral Hook",
         description: "Optimized for maximum engagement",
         templateId: "social-teaser",
-        palette: DEFAULT_PALETTES?.electric,
+        palette: DEFAULT_PALETTES.electric,
         backgroundConfig: { type: "gradient" },
       },
       {
@@ -358,7 +358,7 @@ const TEMPLATE_PRESETS: Map<string, TemplatePreset[]> = new Map([
         name: "Clean Modern",
         description: "Professional, clean aesthetic",
         templateId: "social-teaser",
-        palette: DEFAULT_PALETTES?.modern,
+        palette: DEFAULT_PALETTES.modern,
         backgroundConfig: { type: "solid" },
       },
     ],
@@ -394,7 +394,7 @@ export class TemplateManager {
   }
 
   searchTemplates(query: string): TemplateMetadata[] {
-    const _lowerQuery = query?.toLowerCase();
+    const lowerQuery = query?.toLowerCase();
     return this?.getAllTemplates().filter(
       (t) =>
         t?.name.toLowerCase().includes(lowerQuery) ||
@@ -427,7 +427,7 @@ export class TemplateManager {
 
   getPreset(presetId: string): TemplatePreset | undefined {
     for (const presets of TEMPLATE_PRESETS?.values()) {
-      const _preset = presets?.find((p) => p?.id === presetId);
+      const preset = presets?.find((p) => p?.id === presetId);
       if (preset) return preset;
     }
     return undefined;
@@ -438,25 +438,25 @@ export class TemplateManager {
     options: Partial<PromoTemplateOptions>,
     customization?: TemplateCustomization,
   ): CompiledTemplate {
-    const _metadata = this?.getTemplate(templateId);
+    const metadata = this?.getTemplate(templateId);
     if (!metadata) {
       throw new Error(`Template not found: ${templateId}`);
     }
 
-    const _baseOptions = this?.createBaseOptions(
+    const baseOptions = this?.createBaseOptions(
       metadata,
       options,
       customization,
     );
-    const _fullOptions = this?.mergeTemplateOptions(
+    const fullOptions = this?.mergeTemplateOptions(
       metadata?.type,
       baseOptions,
       options,
     );
 
-    const _compiled = compileTemplate(fullOptions);
+    const compiled = compileTemplate(fullOptions);
 
-    const _cacheKey = this?.generateCacheKey(fullOptions);
+    const cacheKey = this?.generateCacheKey(fullOptions);
     this?.compiledCache.set(cacheKey, compiled);
 
     return compiled;
@@ -467,7 +467,7 @@ export class TemplateManager {
     options: Partial<PromoTemplateOptions>,
     customization?: TemplateCustomization,
   ): CompiledTemplate {
-    const _preset = this?.getPreset(presetId);
+    const preset = this?.getPreset(presetId);
     if (!preset) {
       throw new Error(`Preset not found: ${presetId}`);
     }
@@ -490,31 +490,31 @@ export class TemplateManager {
     options: Partial<PromoTemplateOptions>,
     customization?: TemplateCustomization,
   ): Partial<PromoTemplateOptions> {
-    const _aspectRatio =
+    const aspectRatio =
       customization?.aspectRatio ||
       options?.aspectRatio ||
       metadata?.supportedAspectRatios[0];
-    const _palette = this?.mergePalette(
+    const palette = this?.mergePalette(
       DEFAULT_PALETTES?.modern,
       customization?.palette,
     );
 
     return {
-      id: options?.id || `${metadata?.id}_${Date?.now()}`,
-      name: options?.name || metadata?.name,
+      id: options.id || `${metadata?.id}_${Date?.now()}`,
+      name: options.name || metadata?.name,
       aspectRatio,
       duration:
         customization?.duration || options?.duration || metadata?.defaultDuration,
-      fps: customization?.fps || options?.fps || 30,
+      fps: customization.fps || options?.fps || 30,
       palette,
-      background: this?.mergeBackground(customization?.background, palette),
-      logo: customization?.logo
+      background: this.mergeBackground(customization?.background, palette),
+      logo: customization.logo
         ? this?.mergeLogoConfig(customization?.logo)
         : options?.logo,
-      callToAction: customization?.callToAction
+      callToAction: customization.callToAction
         ? this?.mergeCTAConfig(customization?.callToAction)
         : options?.callToAction,
-      audioReactive: customization?.audioReactive
+      audioReactive: customization.audioReactive
         ? this?.mergeAudioReactive(customization?.audioReactive)
         : options?.audioReactive,
     };
@@ -572,27 +572,27 @@ export class TemplateManager {
   ): ReleaseAnnouncementOptions {
     return {
       type: "release",
-      id: base?.id!,
-      name: base?.name!,
-      aspectRatio: base?.aspectRatio!,
-      duration: base?.duration!,
-      fps: base?.fps,
-      palette: base?.palette!,
-      background: base?.background!,
-      logo: base?.logo,
-      callToAction: base?.callToAction,
-      audioReactive: base?.audioReactive,
-      artistName: options?.artistName || "Artist Name",
-      releaseName: options?.releaseName || "Release Title",
-      releaseType: options?.releaseType || "single",
-      releaseDate: options?.releaseDate || "Coming Soon",
-      coverArtUrl: options?.coverArtUrl,
-      preorderUrl: options?.preorderUrl,
-      streamingPlatforms: options?.streamingPlatforms,
-      featuredArtists: options?.featuredArtists,
-      trackCount: options?.trackCount,
-      tagline: options?.tagline,
-      animation: options?.animation,
+      id: base.id!,
+      name: base.name!,
+      aspectRatio: base.aspectRatio!,
+      duration: base.duration!,
+      fps: base.fps,
+      palette: base.palette!,
+      background: base.background!,
+      logo: base.logo,
+      callToAction: base.callToAction,
+      audioReactive: base.audioReactive,
+      artistName: options.artistName || "Artist Name",
+      releaseName: options.releaseName || "Release Title",
+      releaseType: options.releaseType || "single",
+      releaseDate: options.releaseDate || "Coming Soon",
+      coverArtUrl: options.coverArtUrl,
+      preorderUrl: options.preorderUrl,
+      streamingPlatforms: options.streamingPlatforms,
+      featuredArtists: options.featuredArtists,
+      trackCount: options.trackCount,
+      tagline: options.tagline,
+      animation: options.animation,
     };
   }
 
@@ -602,23 +602,23 @@ export class TemplateManager {
   ): TourEventOptions {
     return {
       type: "tour",
-      id: base?.id!,
-      name: base?.name!,
-      aspectRatio: base?.aspectRatio!,
-      duration: base?.duration!,
-      fps: base?.fps,
-      palette: base?.palette!,
-      background: base?.background!,
-      logo: base?.logo,
-      callToAction: base?.callToAction,
-      audioReactive: base?.audioReactive,
-      tourName: options?.tourName || "Tour Name",
-      artistName: options?.artistName || "Artist Name",
-      dates: options?.dates || [],
-      ticketUrl: options?.ticketUrl,
-      vipPackageAvailable: options?.vipPackageAvailable,
-      supportingActs: options?.supportingActs,
-      animation: options?.animation,
+      id: base.id!,
+      name: base.name!,
+      aspectRatio: base.aspectRatio!,
+      duration: base.duration!,
+      fps: base.fps,
+      palette: base.palette!,
+      background: base.background!,
+      logo: base.logo,
+      callToAction: base.callToAction,
+      audioReactive: base.audioReactive,
+      tourName: options.tourName || "Tour Name",
+      artistName: options.artistName || "Artist Name",
+      dates: options.dates || [],
+      ticketUrl: options.ticketUrl,
+      vipPackageAvailable: options.vipPackageAvailable,
+      supportingActs: options.supportingActs,
+      animation: options.animation,
     };
   }
 
@@ -628,26 +628,26 @@ export class TemplateManager {
   ): BehindTheScenesOptions {
     return {
       type: "bts",
-      id: base?.id!,
-      name: base?.name!,
-      aspectRatio: base?.aspectRatio!,
-      duration: base?.duration!,
-      fps: base?.fps,
-      palette: base?.palette!,
-      background: base?.background!,
-      logo: base?.logo,
-      callToAction: base?.callToAction,
-      audioReactive: base?.audioReactive,
-      title: options?.title || "Behind The Scenes",
-      subtitle: options?.subtitle,
-      mediaClips: options?.mediaClips || [],
-      artistName: options?.artistName || "Artist Name",
-      projectName: options?.projectName,
-      location: options?.location,
-      date: options?.date,
-      filmGrain: options?.filmGrain,
-      vintageEffect: options?.vintageEffect,
-      animation: options?.animation,
+      id: base.id!,
+      name: base.name!,
+      aspectRatio: base.aspectRatio!,
+      duration: base.duration!,
+      fps: base.fps,
+      palette: base.palette!,
+      background: base.background!,
+      logo: base.logo,
+      callToAction: base.callToAction,
+      audioReactive: base.audioReactive,
+      title: options.title || "Behind The Scenes",
+      subtitle: options.subtitle,
+      mediaClips: options.mediaClips || [],
+      artistName: options.artistName || "Artist Name",
+      projectName: options.projectName,
+      location: options.location,
+      date: options.date,
+      filmGrain: options.filmGrain,
+      vintageEffect: options.vintageEffect,
+      animation: options.animation,
     };
   }
 
@@ -657,24 +657,24 @@ export class TemplateManager {
   ): QuoteLyricOptions {
     return {
       type: "quote",
-      id: base?.id!,
-      name: base?.name!,
-      aspectRatio: base?.aspectRatio!,
-      duration: base?.duration!,
-      fps: base?.fps,
-      palette: base?.palette!,
-      background: base?.background!,
-      logo: base?.logo,
-      callToAction: base?.callToAction,
-      audioReactive: base?.audioReactive,
-      quote: options?.quote || "Your quote here",
-      attribution: options?.attribution,
-      artistName: options?.artistName || "Artist Name",
-      songTitle: options?.songTitle,
-      albumTitle: options?.albumTitle,
-      quotationStyle: options?.quotationStyle || "minimal",
-      backgroundBlur: options?.backgroundBlur,
-      animation: options?.animation,
+      id: base.id!,
+      name: base.name!,
+      aspectRatio: base.aspectRatio!,
+      duration: base.duration!,
+      fps: base.fps,
+      palette: base.palette!,
+      background: base.background!,
+      logo: base.logo,
+      callToAction: base.callToAction,
+      audioReactive: base.audioReactive,
+      quote: options.quote || "Your quote here",
+      attribution: options.attribution,
+      artistName: options.artistName || "Artist Name",
+      songTitle: options.songTitle,
+      albumTitle: options.albumTitle,
+      quotationStyle: options.quotationStyle || "minimal",
+      backgroundBlur: options.backgroundBlur,
+      animation: options.animation,
     };
   }
 
@@ -684,28 +684,28 @@ export class TemplateManager {
   ): CountdownTimerOptions {
     return {
       type: "countdown",
-      id: base?.id!,
-      name: base?.name!,
-      aspectRatio: base?.aspectRatio!,
-      duration: base?.duration!,
-      fps: base?.fps,
-      palette: base?.palette!,
-      background: base?.background!,
-      logo: base?.logo,
-      callToAction: base?.callToAction,
-      audioReactive: base?.audioReactive,
-      title: options?.title || "Coming Soon",
+      id: base.id!,
+      name: base.name!,
+      aspectRatio: base.aspectRatio!,
+      duration: base.duration!,
+      fps: base.fps,
+      palette: base.palette!,
+      background: base.background!,
+      logo: base.logo,
+      callToAction: base.callToAction,
+      audioReactive: base.audioReactive,
+      title: options.title || "Coming Soon",
       targetDate:
         options?.targetDate ||
         new Date(Date?.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-      eventName: options?.eventName || "New Release",
-      artistName: options?.artistName || "Artist Name",
-      timerStyle: options?.timerStyle || "digital",
-      showLabels: options?.showLabels !== false,
-      urgencyThreshold: options?.urgencyThreshold,
-      completionMessage: options?.completionMessage,
-      coverArtUrl: options?.coverArtUrl,
-      animation: options?.animation,
+      eventName: options.eventName || "New Release",
+      artistName: options.artistName || "Artist Name",
+      timerStyle: options.timerStyle || "digital",
+      showLabels: options.showLabels !== false,
+      urgencyThreshold: options.urgencyThreshold,
+      completionMessage: options.completionMessage,
+      coverArtUrl: options.coverArtUrl,
+      animation: options.animation,
     };
   }
 
@@ -715,22 +715,22 @@ export class TemplateManager {
   ): SplitScreenOptions {
     return {
       type: "split",
-      id: base?.id!,
-      name: base?.name!,
-      aspectRatio: base?.aspectRatio!,
-      duration: base?.duration!,
-      fps: base?.fps,
-      palette: base?.palette!,
-      background: base?.background!,
-      logo: base?.logo,
-      callToAction: base?.callToAction,
-      audioReactive: base?.audioReactive,
-      leftContent: options?.leftContent || { title: "Before" },
-      rightContent: options?.rightContent || { title: "After" },
-      dividerStyle: options?.dividerStyle || "solid",
-      dividerColor: options?.dividerColor,
-      comparisonType: options?.comparisonType || "before-after",
-      animation: options?.animation,
+      id: base.id!,
+      name: base.name!,
+      aspectRatio: base.aspectRatio!,
+      duration: base.duration!,
+      fps: base.fps,
+      palette: base.palette!,
+      background: base.background!,
+      logo: base.logo,
+      callToAction: base.callToAction,
+      audioReactive: base.audioReactive,
+      leftContent: options.leftContent || { title: "Before" },
+      rightContent: options.rightContent || { title: "After" },
+      dividerStyle: options.dividerStyle || "solid",
+      dividerColor: options.dividerColor,
+      comparisonType: options.comparisonType || "before-after",
+      animation: options.animation,
     };
   }
 
@@ -740,27 +740,27 @@ export class TemplateManager {
   ): SocialTeaserOptions {
     return {
       type: "teaser",
-      id: base?.id!,
-      name: base?.name!,
-      aspectRatio: base?.aspectRatio!,
-      duration: base?.duration!,
-      fps: base?.fps,
-      palette: base?.palette!,
-      background: base?.background!,
-      logo: base?.logo,
-      callToAction: base?.callToAction,
-      audioReactive: base?.audioReactive,
-      hookText: options?.hookText || "You won't believe this...",
-      mainContent: options?.mainContent || "Main content here",
-      artistName: options?.artistName || "Artist Name",
-      contentType: options?.contentType || "announcement",
-      teaserLength: options?.teaserLength || 15,
-      audioPreviewUrl: options?.audioPreviewUrl,
-      coverArtUrl: options?.coverArtUrl,
-      hashtags: options?.hashtags,
-      mentionHandle: options?.mentionHandle,
-      swipeUpText: options?.swipeUpText,
-      animation: options?.animation,
+      id: base.id!,
+      name: base.name!,
+      aspectRatio: base.aspectRatio!,
+      duration: base.duration!,
+      fps: base.fps,
+      palette: base.palette!,
+      background: base.background!,
+      logo: base.logo,
+      callToAction: base.callToAction,
+      audioReactive: base.audioReactive,
+      hookText: options.hookText || "You won't believe this...",
+      mainContent: options.mainContent || "Main content here",
+      artistName: options.artistName || "Artist Name",
+      contentType: options.contentType || "announcement",
+      teaserLength: options.teaserLength || 15,
+      audioPreviewUrl: options.audioPreviewUrl,
+      coverArtUrl: options.coverArtUrl,
+      hashtags: options.hashtags,
+      mentionHandle: options.mentionHandle,
+      swipeUpText: options.swipeUpText,
+      animation: options.animation,
     };
   }
 
@@ -769,13 +769,13 @@ export class TemplateManager {
     override?: Partial<ColorPalette>,
   ): ColorPalette {
     return {
-      primary: override?.primary || base?.primary,
-      secondary: override?.secondary || base?.secondary,
-      accent: override?.accent || base?.accent,
-      background: override?.background || base?.background,
-      text: override?.text || base?.text,
-      textSecondary: override?.textSecondary || base?.textSecondary,
-      overlay: override?.overlay || base?.overlay,
+      primary: override.primary || base?.primary,
+      secondary: override.secondary || base?.secondary,
+      accent: override.accent || base?.accent,
+      background: override.background || base?.background,
+      text: override.text || base?.text,
+      textSecondary: override.textSecondary || base?.textSecondary,
+      overlay: override.overlay || base?.overlay,
     };
   }
 
@@ -784,31 +784,31 @@ export class TemplateManager {
     palette?: ColorPalette,
   ): BackgroundConfig {
     return {
-      type: override?.type || "gradient",
-      color: override?.color || palette?.background,
+      type: override.type || "gradient",
+      color: override.color || palette?.background,
       gradientColors:
         override?.gradientColors ||
         (palette ? [palette?.primary, palette?.secondary] : undefined),
-      gradientAngle: override?.gradientAngle || 135,
-      imageUrl: override?.imageUrl,
-      videoUrl: override?.videoUrl,
-      blur: override?.blur || 0,
-      opacity: override?.opacity || 1,
-      overlay: override?.overlay || palette?.overlay,
-      parallax: override?.parallax || false,
-      audioReactive: override?.audioReactive || false,
-      audioReactiveIntensity: override?.audioReactiveIntensity || 0.5,
+      gradientAngle: override.gradientAngle || 135,
+      imageUrl: override.imageUrl,
+      videoUrl: override.videoUrl,
+      blur: override.blur || 0,
+      opacity: override.opacity || 1,
+      overlay: override.overlay || palette?.overlay,
+      parallax: override.parallax || false,
+      audioReactive: override.audioReactive || false,
+      audioReactiveIntensity: override.audioReactiveIntensity || 0.5,
     };
   }
 
   private mergeLogoConfig(override: Partial<LogoConfig>): LogoConfig {
     return {
-      imageUrl: override?.imageUrl,
-      position: override?.position || "bottom-right",
-      customPosition: override?.customPosition,
-      size: override?.size || 80,
-      opacity: override?.opacity || 0.9,
-      animation: override?.animation,
+      imageUrl: override.imageUrl,
+      position: override.position || "bottom-right",
+      customPosition: override.customPosition,
+      size: override.size || 80,
+      opacity: override.opacity || 0.9,
+      animation: override.animation,
     };
   }
 
@@ -816,17 +816,17 @@ export class TemplateManager {
     override: Partial<CallToActionConfig>,
   ): CallToActionConfig {
     return {
-      text: override?.text || "Learn More",
-      subtext: override?.subtext,
-      style: override?.style || "button",
-      position: override?.position || "bottom",
-      customPosition: override?.customPosition,
-      backgroundColor: override?.backgroundColor,
-      textColor: override?.textColor,
-      borderRadius: override?.borderRadius,
-      animation: override?.animation,
-      url: override?.url,
-      icon: override?.icon,
+      text: override.text || "Learn More",
+      subtext: override.subtext,
+      style: override.style || "button",
+      position: override.position || "bottom",
+      customPosition: override.customPosition,
+      backgroundColor: override.backgroundColor,
+      textColor: override.textColor,
+      borderRadius: override.borderRadius,
+      animation: override.animation,
+      url: override.url,
+      icon: override.icon,
     };
   }
 
@@ -834,11 +834,11 @@ export class TemplateManager {
     override: Partial<AudioReactiveConfig>,
   ): AudioReactiveConfig {
     return {
-      enabled: override?.enabled !== false,
-      sensitivity: override?.sensitivity || 0.5,
-      smoothing: override?.smoothing || 0.8,
-      frequencyRange: override?.frequencyRange || "bass",
-      targets: override?.targets || [],
+      enabled: override.enabled !== false,
+      sensitivity: override.sensitivity || 0.5,
+      smoothing: override.smoothing || 0.8,
+      frequencyRange: override.frequencyRange || "bass",
+      targets: override.targets || [],
     };
   }
 
@@ -852,19 +852,19 @@ export class TemplateManager {
   ): ExportedTemplateConfig {
     return {
       version: "1.0.0",
-      templateId: compiled?.id,
+      templateId: compiled.id,
       options,
       customizations: {
-        palette: options?.palette,
-        background: options?.background,
-        aspectRatio: options?.aspectRatio,
-        duration: options?.duration,
-        fps: options?.fps,
-        logo: options?.logo,
-        callToAction: options?.callToAction,
-        audioReactive: options?.audioReactive,
+        palette: options.palette,
+        background: options.background,
+        aspectRatio: options.aspectRatio,
+        duration: options.duration,
+        fps: options.fps,
+        logo: options.logo,
+        callToAction: options.callToAction,
+        audioReactive: options.audioReactive,
       },
-      createdAt: compiled?.metadata.createdAt,
+      createdAt: compiled.metadata.createdAt,
       exportedAt: new Date().toISOString(),
     };
   }
@@ -881,28 +881,28 @@ export class TemplateManager {
     compiled: CompiledTemplate,
     config: TemplatePreviewConfig,
   ): Promise<ImageData[]> {
-    const _cacheKey = `preview_${compiled?.id}_${config?.width}x${config?.height}_${config?.quality}`;
+    const cacheKey = `preview_${compiled?.id}_${config?.width}x${config?.height}_${config?.quality}`;
 
     if (this?.previewCache.has(cacheKey)) {
       return this?.previewCache.get(cacheKey)!;
     }
 
-    const _canvas = document?.createElement("canvas");
+    const canvas = document?.createElement("canvas");
     canvas.width = config?.width;
     canvas.height = config?.height;
-    const _ctx = canvas?.getContext("2d");
+    const ctx = canvas?.getContext("2d");
 
     if (!ctx) {
       throw new Error("Failed to create canvas context for preview");
     }
 
     const frames: ImageData[] = [];
-    const _frameDuration = compiled?.duration / config?.frames;
-    const _scaleX = config?.width / compiled?.width;
-    const _scaleY = config?.height / compiled?.height;
+    const frameDuration = compiled?.duration / config?.frames;
+    const scaleX = config?.width / compiled?.width;
+    const scaleY = config?.height / compiled?.height;
 
     for (let i = 0; i < config?.frames; i++) {
-      const _currentTime = i * frameDuration;
+      const currentTime = i * frameDuration;
 
       ctx?.clearRect(0, 0, config?.width, config?.height);
       ctx?.save();
@@ -941,7 +941,7 @@ export class TemplateManager {
   ): void {
     ctx?.save();
 
-    const _transform = layer?.transform;
+    const transform = layer?.transform;
     ctx?.translate(
       transform?.x + width * transform?.anchorX,
       transform?.y + height * transform?.anchorY,
@@ -953,7 +953,7 @@ export class TemplateManager {
     let opacity = layer?.opacity;
     for (const anim of layer?.animations) {
       if (currentTime >= anim?.startTime && currentTime <= anim?.endTime) {
-        const _progress =
+        const progress =
           (currentTime - anim?.startTime) / (anim?.endTime - anim?.startTime);
         if (anim?.property === "opacity") {
           opacity = anim?.from + (anim?.to - anim?.from) * progress;
@@ -989,15 +989,15 @@ export class TemplateManager {
     height: number,
   ): void {
     if (config?.type === "gradient" && Array?.isArray(config?.gradientColors)) {
-      const _angle = (config?.gradientAngle as number) || 135;
-      const _radians = (angle * Math?.PI) / 180;
-      const _x1 = width / 2 - Math?.cos(radians) * width;
-      const _y1 = height / 2 - Math?.sin(radians) * height;
-      const _x2 = width / 2 + Math?.cos(radians) * width;
-      const _y2 = height / 2 + Math?.sin(radians) * height;
+      const angle = (config?.gradientAngle as number) || 135;
+      const radians = (angle * Math.PI) / 180;
+      const x1 = width / 2 - Math?.cos(radians) * width;
+      const y1 = height / 2 - Math?.sin(radians) * height;
+      const x2 = width / 2 + Math?.cos(radians) * width;
+      const y2 = height / 2 + Math?.sin(radians) * height;
 
-      const _gradient = ctx?.createLinearGradient(x1, y1, x2, y2);
-      const _colors = config?.gradientColors as string[];
+      const gradient = ctx?.createLinearGradient(x1, y1, x2, y2);
+      const colors = config?.gradientColors as string[];
       colors?.forEach((color, i) => {
         gradient?.addColorStop(i / (colors?.length - 1), color);
       });
@@ -1012,9 +1012,9 @@ export class TemplateManager {
     ctx: CanvasRenderingContext2D,
     config: Record<string, unknown>,
   ): void {
-    const _font = (config?.font as string) || "Inter";
-    const _fontSize = (config?.fontSize as number) || 24;
-    const _fontWeight = (config?.fontWeight as string) || "400";
+    const font = (config?.font as string) || "Inter";
+    const fontSize = (config?.fontSize as number) || 24;
+    const fontWeight = (config?.fontWeight as string) || "400";
 
     ctx.font = `${fontWeight} ${fontSize}px ${font}`;
     ctx.fillStyle = (config?.color as string) || "#ffffff";
@@ -1027,10 +1027,10 @@ export class TemplateManager {
     ctx: CanvasRenderingContext2D,
     config: Record<string, unknown>,
   ): void {
-    const _shapeType = config?.type as string;
-    const _fill = config?.fill as string;
-    const _width = (config?.width as number) || 100;
-    const _height = (config?.height as number) || 100;
+    const shapeType = config?.type as string;
+    const fill = config?.fill as string;
+    const width = (config?.width as number) || 100;
+    const height = (config?.height as number) || 100;
 
     if (fill) {
       ctx.fillStyle = fill;
@@ -1042,7 +1042,7 @@ export class TemplateManager {
         break;
       case "circle":
         ctx?.beginPath();
-        ctx?.arc(0, 0, (config?.radius as number) || 50, 0, Math?.PI * 2);
+        ctx?.arc(0, 0, (config?.radius as number) || 50, 0, Math.PI * 2);
         ctx?.fill();
         break;
     }
@@ -1061,9 +1061,9 @@ export class TemplateManager {
     >;
     for (const [key, value] of Object?.entries(ASPECT_RATIOS)) {
       result[key as AspectRatio] = {
-        width: value?.width,
-        height: value?.height,
-        name: value?.name,
+        width: value.width,
+        height: value.height,
+        name: value.name,
       };
     }
     return result;
@@ -1080,13 +1080,13 @@ export class TemplateManager {
 
   getCacheStats(): { compiledCount: number; previewCount: number } {
     return {
-      compiledCount: this?.compiledCache.size,
-      previewCount: this?.previewCache.size,
+      compiledCount: this.compiledCache.size,
+      previewCount: this.previewCache.size,
     };
   }
 }
 
-export const _templateManager = new TemplateManager();
+export const templateManager = new TemplateManager();
 
 export {
   ASPECT_RATIOS,

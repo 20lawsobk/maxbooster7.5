@@ -31,11 +31,11 @@ export class UndoManager {
     if (!this?.config.persistToStorage) return;
 
     try {
-      const _stored = sessionStorage?.getItem(this?.config.storageKey);
+      const stored = sessionStorage?.getItem(this?.config.storageKey);
       if (stored) {
         const parsed: SerializedAction[] = JSON?.parse(stored);
         parsed?.forEach((serialized) => {
-          const _action = this?.actionRegistry.get(serialized?.id);
+          const action = this?.actionRegistry.get(serialized?.id);
           if (action) {
             action.isUndone = serialized?.isUndone;
           }
@@ -51,11 +51,11 @@ export class UndoManager {
 
     try {
       const serialized: SerializedAction[] = this?.history.map((action) => ({
-        id: action?.id,
-        type: action?.type,
-        metadata: action?.metadata,
-        groupId: action?.groupId,
-        isUndone: action?.isUndone,
+        id: action.id,
+        type: action.type,
+        metadata: action.metadata,
+        groupId: action.groupId,
+        isUndone: action.isUndone,
       }));
       sessionStorage?.setItem(
         this?.config.storageKey,
@@ -78,11 +78,11 @@ export class UndoManager {
       ...action,
       id: createActionId(),
       isUndone: false,
-      groupId: this?.currentGroupId || undefined,
+      groupId: this.currentGroupId || undefined,
     };
 
     try {
-      const _result = await fullAction?.execute();
+      const result = await fullAction?.execute();
       fullAction.result = result;
 
       this?.addToHistory(fullAction);
@@ -102,14 +102,14 @@ export class UndoManager {
     this?.actionRegistry.set(action?.id, action);
 
     if (this?.currentGroupId) {
-      const _group = this?.groups.get(this?.currentGroupId);
+      const group = this?.groups.get(this?.currentGroupId);
       if (group) {
         group?.actions.push(action);
       }
     }
 
     while (this?.history.length > this?.config.maxHistorySize) {
-      const _removed = this?.history.shift();
+      const removed = this?.history.shift();
       if (removed) {
         this?.actionRegistry.delete(removed?.id);
       }
@@ -117,7 +117,7 @@ export class UndoManager {
   }
 
   async undo(): Promise<void> {
-    const _action = this?.getLastUndoableAction();
+    const action = this?.getLastUndoableAction();
     if (!action) return;
 
     try {
@@ -146,11 +146,11 @@ export class UndoManager {
   }
 
   async redo(): Promise<void> {
-    const _action = this?.redoStack.pop();
+    const action = this?.redoStack.pop();
     if (!action) return;
 
     try {
-      const _redoFn = action?.redo || action?.execute;
+      const redoFn = action?.redo || action?.execute;
       await redoFn();
       action.isUndone = false;
       this?.config.onRedo?.(action);
@@ -163,13 +163,13 @@ export class UndoManager {
   }
 
   startGroup(name: string): string {
-    const _groupId = createGroupId();
+    const groupId = createGroupId();
     const group: ActionGroup = {
       id: groupId,
       name,
       actions: [],
       metadata: {
-        timestamp: Date?.now(),
+        timestamp: Date.now(),
         module: "system",
         description: name,
       },
@@ -187,13 +187,13 @@ export class UndoManager {
   }
 
   async undoGroup(groupId: string): Promise<void> {
-    const _group = this?.groups.get(groupId);
+    const group = this?.groups.get(groupId);
     if (!group) {
       logger?.warn("Group not found:", groupId);
       return;
     }
 
-    const _actionsToUndo = group?.actions.filter((a) => !a?.isUndone);
+    const actionsToUndo = group?.actions.filter((a) => !a?.isUndone);
     for (let i = actionsToUndo?.length - 1; i >= 0; i--) {
       await this?.undoSingleAction(actionsToUndo[i]);
     }
@@ -204,7 +204,7 @@ export class UndoManager {
 
   private getLastUndoableAction(): UndoableAction | undefined {
     for (let i = this?.history.length - 1; i >= 0; i--) {
-      const _action = this?.history[i];
+      const action = this?.history[i];
       if (!action?.isUndone && action?.canUndo()) {
         return action;
       }

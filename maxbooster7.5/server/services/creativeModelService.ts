@@ -310,8 +310,9 @@ let _styleSelector:
 
 async function getPlanner() {
   if (!_planner) {
-    const { CreativePlannerModel } =
-      await import("../../shared/ml/models/CreativePlannerModel.js");
+    const { CreativePlannerModel } = await import(
+      "../../shared/ml/models/CreativePlannerModel.js"
+    );
     _planner = new CreativePlannerModel();
     await _planner.initialize();
   }
@@ -319,8 +320,9 @@ async function getPlanner() {
 }
 async function getAligner() {
   if (!_aligner) {
-    const { BeatSyncAlignmentModel } =
-      await import("../../shared/ml/models/BeatSyncAlignmentModel.js");
+    const { BeatSyncAlignmentModel } = await import(
+      "../../shared/ml/models/BeatSyncAlignmentModel.js"
+    );
     _aligner = new BeatSyncAlignmentModel();
     await _aligner.initialize();
   }
@@ -328,8 +330,9 @@ async function getAligner() {
 }
 async function getScorer() {
   if (!_scorer) {
-    const { VideoCreativeScorer } =
-      await import("../../shared/ml/models/VideoCreativeScorer.js");
+    const { VideoCreativeScorer } = await import(
+      "../../shared/ml/models/VideoCreativeScorer.js"
+    );
     _scorer = new VideoCreativeScorer();
     await _scorer.initialize();
   }
@@ -337,8 +340,9 @@ async function getScorer() {
 }
 async function getStyleSelector() {
   if (!_styleSelector) {
-    const { KeyframeStyleSelector } =
-      await import("../../shared/ml/models/KeyframeStyleSelector.js");
+    const { KeyframeStyleSelector } = await import(
+      "../../shared/ml/models/KeyframeStyleSelector.js"
+    );
     _styleSelector = new KeyframeStyleSelector();
     await _styleSelector.initialize();
   }

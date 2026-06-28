@@ -47,6 +47,7 @@ interface ProjectSettingsDialogProps {
   }) => void;
 }
 
+
 const TIME_SIGNATURES = [
   { value: "4/4", label: "4/4" },
   { value: "3/4", label: "3/4" },
@@ -105,11 +106,6 @@ export function ProjectSettingsDialog({
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!projectId) return null;
-
-      const [numerator, denominator] = form.timeSignature
-        .split("/")
-        .map(Number);
-
       const csrfToken = getCsrfTokenFromCookie();
       const response = await fetch(`/api/studio/projects/${projectId}`, {
         method: "PUT",
@@ -127,48 +123,35 @@ export function ProjectSettingsDialog({
           bitDepth: form.bitDepth,
         }),
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to update project settings");
-      }
-
-      return { numerator, denominator };
+      if (!response.ok) return null;
+      return true;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       queryClient.invalidateQueries({ queryKey: ["/api/studio/projects"] });
-
-      if (data) {
-        onUpdate({
-          name: form.name,
-          description: form.description,
-          tempo: form.tempo,
-          timeSignatureNumerator: data.numerator,
-          timeSignatureDenominator: data.denominator,
-          sampleRate: form.sampleRate,
-          bitDepth: form.bitDepth,
-        });
-      }
-
-      toast({
-        title: "Settings Saved",
-        description: "Project settings have been updated.",
-      });
-
-      onOpenChange(false);
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to save project settings.",
-        variant: "destructive",
-      });
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    saveMutation.mutate();
+    const [numerator, denominator] = form.timeSignature.split("/").map(Number);
+    onUpdate({
+      name: form.name,
+      description: form.description,
+      tempo: form.tempo,
+      timeSignatureNumerator: numerator || 4,
+      timeSignatureDenominator: denominator || 4,
+      sampleRate: form.sampleRate,
+      bitDepth: form.bitDepth,
+    });
+    toast({
+      title: "Settings Saved",
+      description: "Project settings have been updated.",
+    });
+    onOpenChange(false);
+    if (projectId) {
+      saveMutation.mutate();
+    }
   };
 
   const isSubmitting = saveMutation.isPending;

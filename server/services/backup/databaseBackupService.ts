@@ -5,11 +5,11 @@ import fsPromises from "fs/promises";
 import { storageService } from "../storageService.js";
 import { env } from "../../config/env.js";
 
-const _BACKUP_PREFIX = "database-backups";
-const _BACKUP_INDEX_KEY = `${BACKUP_PREFIX}/index?.json`;
-const _MAX_BACKUPS = 7;
-const _RPO_TARGET = 24;
-const _RTO_TARGET = 30;
+const BACKUP_PREFIX = "database-backups";
+const BACKUP_INDEX_KEY = `${BACKUP_PREFIX}/index?.json`;
+const MAX_BACKUPS = 7;
+const RPO_TARGET = 24;
+const RTO_TARGET = 30;
 
 interface BackupEntry {
   name: string;
@@ -20,7 +20,7 @@ interface BackupEntry {
 
 async function loadIndex(): Promise<BackupEntry[]> {
   try {
-    const _buf = await storageService?.downloadFile(BACKUP_INDEX_KEY);
+    const buf = await storageService?.downloadFile(BACKUP_INDEX_KEY);
     return JSON?.parse(buf?.toString("utf-8")) as BackupEntry[];
   } catch {
     return [];
@@ -36,7 +36,7 @@ async function saveIndex(entries: BackupEntry[]): Promise<void> {
 }
 
 export class DatabaseBackupService {
-  private backupSchedule: cron?.ScheduledTask | null = null;
+  private backupSchedule: cron.ScheduledTask | null = null;
   private isInitialized = false;
 
   async initialize() {
@@ -51,7 +51,7 @@ export class DatabaseBackupService {
       process?.env.ENABLE_BACKUPS !== "true"
     ) {
       logger?.info("ℹ️  Database backups disabled (not in production)");
-      logger?.info("   Set ENABLE_BACKUPS=true to enable in development");
+      logger.info("   Set ENABLE_BACKUPS=true to enable in development");
       return;
     }
 
@@ -87,17 +87,17 @@ export class DatabaseBackupService {
       throw new Error("DATABASE_URL not configured");
     }
 
-    const _timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const _name = `backup-${timestamp}.sql`;
-    const _key = `${BACKUP_PREFIX}/${name}`;
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const name = `backup-${timestamp}.sql`;
+    const key = `${BACKUP_PREFIX}/${name}`;
 
-    const _tmpPath = `/tmp/${name}`;
+    const tmpPath = `/tmp/${name}`;
 
     await new Promise<void>((resolve, reject) => {
-      const _pgDump = spawn("pg_dump", [env?.DATABASE_URL!], {
-        env: process?.env,
+      const pgDump = spawn("pg_dump", [env?.DATABASE_URL!], {
+        env: process.env,
       });
-      const _writeStream = fs?.createWriteStream(tmpPath);
+      const writeStream = fs?.createWriteStream(tmpPath);
       let errorOutput = "";
       let pipelineDone = false;
       let exited = false;
@@ -154,13 +154,13 @@ export class DatabaseBackupService {
     // and use async readFile so we don't block the event loop. The hard cap
     // protects the process — once dumps approach this size, the upload path
     // must be migrated to multipart/streaming via storageService?.uploadStream.
-    const _stats = await fs?.promises.stat(tmpPath);
-    const _sizeBytes = stats?.size;
-    const _sizeMB = (sizeBytes / 1024 / 1024).toFixed(2);
+    const stats = await fs?.promises.stat(tmpPath);
+    const sizeBytes = stats?.size;
+    const sizeMB = (sizeBytes / 1024 / 1024).toFixed(2);
 
     // Hard guard: anything bigger than 1 GiB will likely OOM Replit
     // containers. Better to fail loudly than silently kill the process.
-    const _HARD_CAP_BYTES = 1024 * 1024 * 1024;
+    const HARD_CAP_BYTES = 1024 * 1024 * 1024;
     if (sizeBytes > HARD_CAP_BYTES) {
       await fs?.promises.unlink(tmpPath).catch(() => undefined);
       throw new Error(
@@ -177,14 +177,14 @@ export class DatabaseBackupService {
       );
     }
 
-    const _sqlBuffer = await fs?.promises.readFile(tmpPath);
+    const sqlBuffer = await fs?.promises.readFile(tmpPath);
     await fs?.promises.unlink(tmpPath).catch(() => undefined);
 
     await storageService?.uploadFile(sqlBuffer, key, "application/sql");
 
     logger?.info(`✅ Backup stored in Pocket Dimension: ${name} (${sizeMB} MB)`);
 
-    const _index = await loadIndex();
+    const index = await loadIndex();
     index?.push({ name, key, date: new Date().toISOString(), size: sizeBytes });
     await saveIndex(index);
 
@@ -193,13 +193,13 @@ export class DatabaseBackupService {
 
   private async cleanOldBackups(): Promise<void> {
     try {
-      const _index = await loadIndex();
-      const _sorted = [...index].sort(
+      const index = await loadIndex();
+      const sorted = [...index].sort(
         (a, b) => new Date(b?.date).getTime() - new Date(a?.date).getTime(),
       );
 
       if (sorted?.length > MAX_BACKUPS) {
-        const _toDelete = sorted?.slice(MAX_BACKUPS);
+        const toDelete = sorted?.slice(MAX_BACKUPS);
         for (const entry of toDelete) {
           try {
             await storageService?.deleteFile(entry?.key);
@@ -217,14 +217,14 @@ export class DatabaseBackupService {
   }
 
   async restoreBackup(key: string): Promise<void> {
-    const _tmpPath = `/tmp/restore-${Date?.now()}.sql`;
+    const tmpPath = `/tmp/restore-${Date?.now()}.sql`;
     try {
-      const _buf = await storageService?.downloadFile(key);
+      const buf = await storageService?.downloadFile(key);
       await fsPromises?.writeFile(tmpPath, buf);
 
       await new Promise<void>((resolve, reject) => {
-        const _psql = spawn("psql", [env?.DATABASE_URL || "", "-f", tmpPath], {
-          env: process?.env,
+        const psql = spawn("psql", [env?.DATABASE_URL || "", "-f", tmpPath], {
+          env: process.env,
         });
         let errorOutput = "";
         psql?.stderr.on("data", (d) => {
@@ -253,14 +253,14 @@ export class DatabaseBackupService {
     { name: string; date: Date; size: number; key: string }[]
   > {
     try {
-      const _index = await loadIndex();
+      const index = await loadIndex();
       return index
         .sort((a, b) => new Date(b?.date).getTime() - new Date(a?.date).getTime())
         .map((e) => ({
-          name: e?.name,
+          name: e.name,
           date: new Date(e?.date),
-          size: e?.size,
-          key: e?.key,
+          size: e.size,
+          key: e.key,
         }));
     } catch (error: unknown) {
       logger?.warn({ err: error }, "Error listing backups:");
@@ -286,4 +286,4 @@ export class DatabaseBackupService {
   }
 }
 
-export const _databaseBackupService = new DatabaseBackupService();
+export const databaseBackupService = new DatabaseBackupService();

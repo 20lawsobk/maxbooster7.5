@@ -138,8 +138,8 @@ class TaxFormService {
   private static readonly MAX_TAX_FORMS = 100_000;
 
   private cacheTaxForm(id: string, form: GeneratedTaxForm): void {
-    if (this?.taxForms.size >= TaxFormService?.MAX_TAX_FORMS) {
-      const _oldest = this?.taxForms.keys().next().value;
+    if (this?.taxForms.size >= TaxFormService.MAX_TAX_FORMS) {
+      const oldest = this?.taxForms.keys().next().value;
       if (oldest !== undefined) this?.taxForms.delete(oldest);
     }
     this?.taxForms.set(id, form);
@@ -152,16 +152,16 @@ class TaxFormService {
   } | null = null;
 
   private async getTreatyRatesFromDB(): Promise<Record<string, number>> {
-    const _now = Date?.now();
+    const now = Date?.now();
     if (this?._treatyCache && now < this?._treatyCache.expiresAt) {
       return this?._treatyCache.data;
     }
     try {
-      const _rows = await db?.select().from(taxTreatyRates).limit(300);
+      const rows = await db?.select().from(taxTreatyRates).limit(300);
       const map: Record<string, number> = {};
       for (const row of rows) {
         if (row?.hasTreaty) {
-          map[row?.countryCode] = row?.treatyRate;
+          map[row.countryCode] = row?.treatyRate;
         }
       }
       this._treatyCache = { data: map, expiresAt: now + 3600_000 };
@@ -187,16 +187,16 @@ class TaxFormService {
     hasValidW9?: boolean,
     hasBackupWithholding?: boolean,
   ): Promise<WithholdingCalculation> {
-    const _dbTreatyRates = await this?.getTreatyRatesFromDB();
+    const dbTreatyRates = await this?.getTreatyRatesFromDB();
 
     if (isUSPerson) {
       if (hasBackupWithholding || !hasValidW9) {
-        const _rate = withholdingRates?.backup_withholding;
-        const _withholdingAmount = grossAmount * (rate / 100);
+        const rate = withholdingRates?.backup_withholding;
+        const withholdingAmount = grossAmount * (rate / 100);
         return {
           grossAmount,
           withholdingRate: rate,
-          withholdingAmount: Math?.round(withholdingAmount * 100) / 100,
+          withholdingAmount: Math.round(withholdingAmount * 100) / 100,
           netAmount: grossAmount - withholdingAmount,
           reason: hasBackupWithholding
             ? "Backup withholding applied (missing or invalid TIN)"
@@ -213,24 +213,24 @@ class TaxFormService {
     }
 
     if (hasTreatyBenefits && country && dbTreatyRates[country] !== undefined) {
-      const _rate = dbTreatyRates[country];
-      const _withholdingAmount = grossAmount * (rate / 100);
+      const rate = dbTreatyRates[country];
+      const withholdingAmount = grossAmount * (rate / 100);
       return {
         grossAmount,
         withholdingRate: rate,
-        withholdingAmount: Math?.round(withholdingAmount * 100) / 100,
+        withholdingAmount: Math.round(withholdingAmount * 100) / 100,
         netAmount: grossAmount - withholdingAmount,
         reason: `Treaty rate applied for ${country}`,
         treatyApplied: true,
       };
     }
 
-    const _rate = withholdingRates?.default_foreign;
-    const _withholdingAmount = grossAmount * (rate / 100);
+    const rate = withholdingRates?.default_foreign;
+    const withholdingAmount = grossAmount * (rate / 100);
     return {
       grossAmount,
       withholdingRate: rate,
-      withholdingAmount: Math?.round(withholdingAmount * 100) / 100,
+      withholdingAmount: Math.round(withholdingAmount * 100) / 100,
       netAmount: grossAmount - withholdingAmount,
       reason: "Standard 30% withholding for foreign payee",
     };
@@ -246,24 +246,24 @@ class TaxFormService {
   ): WithholdingCalculation {
     if (isUSPerson) {
       if (hasBackupWithholding) {
-        const _rate = withholdingRates?.backup_withholding;
-        const _withholdingAmount = grossAmount * (rate / 100);
+        const rate = withholdingRates?.backup_withholding;
+        const withholdingAmount = grossAmount * (rate / 100);
         return {
           grossAmount,
           withholdingRate: rate,
-          withholdingAmount: Math?.round(withholdingAmount * 100) / 100,
+          withholdingAmount: Math.round(withholdingAmount * 100) / 100,
           netAmount: grossAmount - withholdingAmount,
           reason: "Backup withholding applied (missing or invalid TIN)",
         };
       }
 
       if (!hasValidW9) {
-        const _rate = withholdingRates?.backup_withholding;
-        const _withholdingAmount = grossAmount * (rate / 100);
+        const rate = withholdingRates?.backup_withholding;
+        const withholdingAmount = grossAmount * (rate / 100);
         return {
           grossAmount,
           withholdingRate: rate,
-          withholdingAmount: Math?.round(withholdingAmount * 100) / 100,
+          withholdingAmount: Math.round(withholdingAmount * 100) / 100,
           netAmount: grossAmount - withholdingAmount,
           reason: "Backup withholding - W-9 not on file",
         };
@@ -279,24 +279,24 @@ class TaxFormService {
     }
 
     if (hasTreatyBenefits && country && treatyRates[country] !== undefined) {
-      const _rate = treatyRates[country];
-      const _withholdingAmount = grossAmount * (rate / 100);
+      const rate = treatyRates[country];
+      const withholdingAmount = grossAmount * (rate / 100);
       return {
         grossAmount,
         withholdingRate: rate,
-        withholdingAmount: Math?.round(withholdingAmount * 100) / 100,
+        withholdingAmount: Math.round(withholdingAmount * 100) / 100,
         netAmount: grossAmount - withholdingAmount,
         reason: `Treaty rate applied for ${country}`,
         treatyApplied: true,
       };
     }
 
-    const _rate = withholdingRates?.default_foreign;
-    const _withholdingAmount = grossAmount * (rate / 100);
+    const rate = withholdingRates?.default_foreign;
+    const withholdingAmount = grossAmount * (rate / 100);
     return {
       grossAmount,
       withholdingRate: rate,
-      withholdingAmount: Math?.round(withholdingAmount * 100) / 100,
+      withholdingAmount: Math.round(withholdingAmount * 100) / 100,
       netAmount: grossAmount - withholdingAmount,
       reason: "Standard 30% withholding for non-US persons",
     };
@@ -360,9 +360,9 @@ class TaxFormService {
       recipientInfo,
       status: "draft",
       amounts: {
-        box1_nonemployee_compensation: amounts?.nonemployeeCompensation,
-        box4_federal_withholding: amounts?.federalWithholding || 0,
-        box5_state_tax_withheld: amounts?.stateWithholding || 0,
+        box1_nonemployee_compensation: amounts.nonemployeeCompensation,
+        box4_federal_withholding: amounts.federalWithholding || 0,
+        box5_state_tax_withheld: amounts.stateWithholding || 0,
       },
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -402,18 +402,18 @@ class TaxFormService {
       recipientInfo,
       status: "draft",
       amounts: {
-        box1_rents: amounts?.rents || 0,
-        box2_royalties: amounts?.royalties || 0,
-        box3_other_income: amounts?.otherIncome || 0,
-        box4_federal_withholding: amounts?.federalWithholding || 0,
-        box5_fishing_boat_proceeds: amounts?.fishingBoatProceeds || 0,
-        box6_medical_payments: amounts?.medicalPayments || 0,
-        box8_substitute_payments: amounts?.substitutePayments || 0,
-        box9_crop_insurance: amounts?.cropInsuranceProceeds || 0,
-        box10_gross_proceeds_attorney: amounts?.grossProceedsAttorney || 0,
-        box12_section_409a: amounts?.section409ADeferrals || 0,
-        box13_excess_golden_parachute: amounts?.excessGoldenParachute || 0,
-        box14_nqdc: amounts?.nqdc || 0,
+        box1_rents: amounts.rents || 0,
+        box2_royalties: amounts.royalties || 0,
+        box3_other_income: amounts.otherIncome || 0,
+        box4_federal_withholding: amounts.federalWithholding || 0,
+        box5_fishing_boat_proceeds: amounts.fishingBoatProceeds || 0,
+        box6_medical_payments: amounts.medicalPayments || 0,
+        box8_substitute_payments: amounts.substitutePayments || 0,
+        box9_crop_insurance: amounts.cropInsuranceProceeds || 0,
+        box10_gross_proceeds_attorney: amounts.grossProceedsAttorney || 0,
+        box12_section_409a: amounts.section409ADeferrals || 0,
+        box13_excess_golden_parachute: amounts.excessGoldenParachute || 0,
+        box14_nqdc: amounts.nqdc || 0,
       },
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -446,17 +446,17 @@ class TaxFormService {
       recipientInfo,
       status: "draft",
       amounts: {
-        box1a_gross_amount: amounts?.grossAmount,
-        box1b_card_not_present: amounts?.cardNotPresent || 0,
-        box3_number_of_transactions: amounts?.transactionsByMonth.reduce(
+        box1a_gross_amount: amounts.grossAmount,
+        box1b_card_not_present: amounts.cardNotPresent || 0,
+        box3_number_of_transactions: amounts.transactionsByMonth.reduce(
           (a, b) => a + b,
           0,
         ),
-        box4_federal_withholding: amounts?.federalWithholding || 0,
-        box6_state_tax_withheld: amounts?.stateWithholding || 0,
+        box4_federal_withholding: amounts.federalWithholding || 0,
+        box6_state_tax_withheld: amounts.stateWithholding || 0,
         ...amounts?.transactionsByMonth.reduce(
           (acc, val, idx) => {
-            acc[`box5${String?.fromCharCode(97 + idx)}_month_${idx + 1}`] = val;
+            acc[`box5${String.fromCharCode(97 + idx)}_month_${idx + 1}`] = val;
             return acc;
           },
           {} as Record<string, number>,
@@ -488,7 +488,7 @@ class TaxFormService {
   }
 
   signTaxForm(formId: string, signatureHash: string): GeneratedTaxForm {
-    const _form = this?.taxForms.get(formId);
+    const form = this?.taxForms.get(formId);
     if (!form) {
       throw new Error("Tax form not found");
     }
@@ -514,20 +514,20 @@ class TaxFormService {
       withholding: number;
     }>,
   ): TaxSummary {
-    const _forms = this?.getTaxFormsByYear(userId, taxYear);
+    const forms = this?.getTaxFormsByYear(userId, taxYear);
 
-    const _bySource = earnings?.map((e) => ({
+    const bySource = earnings?.map((e) => ({
       ...e,
-      netAmount: e?.grossAmount - e?.fees - e?.withholding,
+      netAmount: e.grossAmount - e?.fees - e?.withholding,
     }));
 
-    const _totalEarnings = bySource?.reduce((sum, e) => sum + e?.grossAmount, 0);
-    const _totalWithholding = bySource?.reduce(
+    const totalEarnings = bySource?.reduce((sum, e) => sum + e?.grossAmount, 0);
+    const totalWithholding = bySource?.reduce(
       (sum, e) => sum + e?.withholding,
       0,
     );
-    const _platformFees = bySource?.reduce((sum, e) => sum + e?.fees, 0);
-    const _netEarnings = bySource?.reduce((sum, e) => sum + e?.netAmount, 0);
+    const platformFees = bySource?.reduce((sum, e) => sum + e?.fees, 0);
+    const netEarnings = bySource?.reduce((sum, e) => sum + e?.netAmount, 0);
 
     return {
       userId,
@@ -542,14 +542,14 @@ class TaxFormService {
   }
 
   generateW9PDF(formId: string): Buffer {
-    const _form = this?.taxForms.get(formId);
+    const form = this?.taxForms.get(formId);
     if (!form || form?.formType !== "W-9") {
       throw new Error("W-9 form not found");
     }
 
-    const _doc = new jsPDF();
-    const _pageWidth = doc?.internal.pageSize?.getWidth();
-    const _margin = 15;
+    const doc = new jsPDF();
+    const pageWidth = doc?.internal.pageSize?.getWidth();
+    const margin = 15;
     let y = margin;
 
     doc?.setFontSize(16);
@@ -580,7 +580,7 @@ class TaxFormService {
     doc?.line(margin, y, pageWidth - margin, y);
     y += 8;
 
-    const _info = form?.taxpayerInfo;
+    const info = form?.taxpayerInfo;
 
     doc?.setFontSize(10);
     doc?.setFont("helvetica", "bold");
@@ -609,7 +609,7 @@ class TaxFormService {
     );
     y += 6;
 
-    const _classifications = [
+    const classifications = [
       {
         value: "individual",
         label: "Individual/sole proprietor or single-member LLC",
@@ -624,7 +624,7 @@ class TaxFormService {
 
     doc?.setFont("helvetica", "normal");
     for (const cls of classifications) {
-      const _isChecked = info?.taxClassification === cls?.value;
+      const isChecked = info?.taxClassification === cls?.value;
       doc?.rect(margin, y - 3, 4, 4);
       if (isChecked) {
         doc?.text("X", margin + 0.8, y);
@@ -645,7 +645,7 @@ class TaxFormService {
     doc?.text("6  City, state, and ZIP code", margin, y);
     y += 6;
     doc?.setFont("helvetica", "normal");
-    const _cityStateZip = `${info?.address?.city || ""}, ${info?.address?.state || ""} ${info?.address?.postalCode || ""}`;
+    const cityStateZip = `${info?.address?.city || ""}, ${info?.address?.state || ""} ${info?.address?.postalCode || ""}`;
     doc?.text(cityStateZip, margin, y);
     y += 15;
 
@@ -677,13 +677,13 @@ class TaxFormService {
 
     doc?.setFont("helvetica", "normal");
     doc?.setFontSize(8);
-    const _certText = `Under penalties of perjury, I certify that:
+    const certText = `Under penalties of perjury, I certify that:
 1. The number shown on this form is my correct taxpayer identification number, and
 2. I am not subject to backup withholding, and
-3. I am a U?.S. citizen or other U?.S. person, and
+3. I am a U.S. citizen or other U.S. person, and
 4. The FATCA code(s) entered on this form (if any) indicating that I am exempt from FATCA reporting is correct.`;
 
-    const _certLines = doc?.splitTextToSize(certText, pageWidth - margin * 2);
+    const certLines = doc?.splitTextToSize(certText, pageWidth - margin * 2);
     doc?.text(certLines, margin, y);
     y += certLines?.length * 4 + 15;
 
@@ -694,7 +694,7 @@ class TaxFormService {
 
     doc?.line(margin, y + 5, margin + 80, y + 5);
     doc?.setFont("helvetica", "normal");
-    doc?.text("Signature of U?.S. person", margin, y + 10);
+    doc?.text("Signature of U.S. person", margin, y + 10);
 
     doc?.line(margin + 100, y + 5, margin + 150, y + 5);
     doc?.text("Date", margin + 100, y + 10);
@@ -723,14 +723,14 @@ class TaxFormService {
   }
 
   generateW8BENPDF(formId: string): Buffer {
-    const _form = this?.taxForms.get(formId);
+    const form = this?.taxForms.get(formId);
     if (!form || form?.formType !== "W-8BEN") {
       throw new Error("W-8BEN form not found");
     }
 
-    const _doc = new jsPDF();
-    const _pageWidth = doc?.internal.pageSize?.getWidth();
-    const _margin = 15;
+    const doc = new jsPDF();
+    const pageWidth = doc?.internal.pageSize?.getWidth();
+    const margin = 15;
     let y = margin;
 
     doc?.setFontSize(16);
@@ -765,7 +765,7 @@ class TaxFormService {
     doc?.line(margin, y, pageWidth - margin, y);
     y += 8;
 
-    const _info = form?.taxpayerInfo;
+    const info = form?.taxpayerInfo;
 
     doc?.setFontSize(9);
     doc?.setFont("helvetica", "bold");
@@ -865,12 +865,12 @@ class TaxFormService {
 
     doc?.setFont("helvetica", "normal");
     doc?.setFontSize(8);
-    const _certText = `Under penalties of perjury, I declare that I have examined the information on this form and to the best of my knowledge and belief it is true, correct, and complete. I further certify under penalties of perjury that:
+    const certText = `Under penalties of perjury, I declare that I have examined the information on this form and to the best of my knowledge and belief it is true, correct, and complete. I further certify under penalties of perjury that:
 • I am the individual that is the beneficial owner (or am authorized to sign for the individual that is the beneficial owner) of all the income to which this form relates
-• The person named on line 1 of this form is not a U?.S. person
+• The person named on line 1 of this form is not a U.S. person
 • The income to which this form relates is not effectively connected with the conduct of a trade or business in the United States`;
 
-    const _certLines = doc?.splitTextToSize(certText, pageWidth - margin * 2);
+    const certLines = doc?.splitTextToSize(certText, pageWidth - margin * 2);
     doc?.text(certLines, margin, y);
     y += certLines?.length * 4 + 15;
 
@@ -905,14 +905,14 @@ class TaxFormService {
   }
 
   generate1099PDF(formId: string): Buffer {
-    const _form = this?.taxForms.get(formId);
+    const form = this?.taxForms.get(formId);
     if (!form || !form?.formType.startsWith("1099")) {
       throw new Error("1099 form not found");
     }
 
-    const _doc = new jsPDF();
-    const _pageWidth = doc?.internal.pageSize?.getWidth();
-    const _margin = 15;
+    const doc = new jsPDF();
+    const pageWidth = doc?.internal.pageSize?.getWidth();
+    const margin = 15;
     let y = margin;
 
     doc?.setFontSize(14);
@@ -931,7 +931,7 @@ class TaxFormService {
     doc?.line(margin, y, pageWidth - margin, y);
     y += 8;
 
-    const _payerInfo = form?.taxpayerInfo;
+    const payerInfo = form?.taxpayerInfo;
     doc?.setFontSize(9);
     doc?.setFont("helvetica", "bold");
     doc?.text(
@@ -940,37 +940,37 @@ class TaxFormService {
       y,
     );
     y += 5;
-    doc?.setFont("helvetica", "normal");
-    doc?.text(payerInfo?.name || "", margin, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(payerInfo.name || "", margin, y);
     y += 4;
-    if (payerInfo?.address) {
-      doc?.text(payerInfo?.address.street || "", margin, y);
+    if (payerInfo.address) {
+      doc.text(payerInfo.address.street || "", margin, y);
       y += 4;
-      doc?.text(
-        `${payerInfo?.address.city || ""}, ${payerInfo?.address.state || ""} ${payerInfo?.address.postalCode || ""}`,
+      doc.text(
+        `${payerInfo.address.city || ""}, ${payerInfo.address.state || ""} ${payerInfo.address.postalCode || ""}`,
         margin,
         y,
       );
     }
     y += 8;
 
-    doc?.setFont("helvetica", "bold");
-    doc?.text("PAYER'S TIN", margin, y);
+    doc.setFont("helvetica", "bold");
+    doc.text("PAYER'S TIN", margin, y);
     y += 5;
     doc?.setFont("helvetica", "normal");
     doc?.text(this?.maskTIN(payerInfo?.tin || ""), margin, y);
     y += 10;
 
-    const _recipientInfo = form?.recipientInfo;
+    const recipientInfo = form?.recipientInfo;
     doc?.setFont("helvetica", "bold");
     doc?.text("RECIPIENT'S name", margin, y);
     y += 5;
-    doc?.setFont("helvetica", "normal");
-    doc?.text(recipientInfo?.name || "", margin, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(recipientInfo.name || "", margin, y);
     y += 8;
 
-    doc?.setFont("helvetica", "bold");
-    doc?.text("RECIPIENT'S TIN", margin, y);
+    doc.setFont("helvetica", "bold");
+    doc.text("RECIPIENT'S TIN", margin, y);
     y += 5;
     doc?.setFont("helvetica", "normal");
     doc?.text(this?.maskTIN(recipientInfo?.tin || ""), margin, y);
@@ -999,11 +999,11 @@ class TaxFormService {
     doc?.text("AMOUNTS REPORTED", margin, y);
     y += 8;
 
-    const _amounts = form?.amounts || {};
-    const _amountEntries = Object?.entries(amounts).filter(([_, v]) => v > 0);
+    const amounts = form?.amounts || {};
+    const amountEntries = Object?.entries(amounts).filter(([_, v]) => v > 0);
 
     for (const [key, value] of amountEntries) {
-      const _label = key?.replace(/_/g, " ").replace(/box\d+\s?/, "Box ");
+      const label = key?.replace(/_/g, " ").replace(/box\d+\s?/, "Box ");
       doc?.setFont("helvetica", "normal");
       doc?.text(`${label}:`, margin, y);
       doc?.text(
@@ -1030,9 +1030,9 @@ class TaxFormService {
   }
 
   generateTaxSummaryPDF(summary: TaxSummary): Buffer {
-    const _doc = new jsPDF();
-    const _pageWidth = doc?.internal.pageSize?.getWidth();
-    const _margin = 15;
+    const doc = new jsPDF();
+    const pageWidth = doc?.internal.pageSize?.getWidth();
+    const margin = 15;
     let y = margin;
 
     doc?.setFontSize(16);
@@ -1046,13 +1046,13 @@ class TaxFormService {
     doc?.text("Earnings Overview", margin, y);
     y += 10;
 
-    const _formatCurrency = (val: number) =>
+    const formatCurrency = (val: number) =>
       `$${val?.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
     doc?.setFontSize(10);
     doc?.setFont("helvetica", "normal");
 
-    const _summaryData = [
+    const summaryData = [
       ["Total Gross Earnings", formatCurrency(summary?.totalEarnings)],
       ["Platform Fees", `(${formatCurrency(summary?.platformFees)})`],
       ["Tax Withholding", `(${formatCurrency(summary?.totalWithholding)})`],
@@ -1077,7 +1077,7 @@ class TaxFormService {
     doc?.text("Earnings by Source", margin, y);
     y += 10;
 
-    const _sourceData = summary?.bySource.map((s) => [
+    const sourceData = summary?.bySource.map((s) => [
       s?.source,
       s?.description,
       formatCurrency(s?.grossAmount),
@@ -1109,7 +1109,7 @@ class TaxFormService {
       doc?.text("Tax Forms on File", margin, y);
       y += 10;
 
-      const _formData = summary?.forms.map((f) => [
+      const formData = summary?.forms.map((f) => [
         f?.formType,
         f?.status,
         f?.signatureDate
@@ -1190,4 +1190,4 @@ class TaxFormService {
   }
 }
 
-export const _taxFormService = new TaxFormService();
+export const taxFormService = new TaxFormService();

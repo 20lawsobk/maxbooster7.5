@@ -7,7 +7,7 @@ import {
   WORKFLOW_TEMPLATES,
 } from "../services/musicWorkflowAutomationService.js";
 
-const _router = Router();
+const router = Router();
 
 // GET /api/music-workflow-automations/templates
 // Returns all available workflow templates (static, no auth needed)
@@ -24,16 +24,16 @@ router?.get("/templates", async (_req: Request, res: Response) => {
 // Returns the current user's enabled/config state for all templates
 router?.get("/", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
-    const _userAutomations =
+    const userId = req?.user!.id;
+    const userAutomations =
       await musicWorkflowAutomationService?.getUserAutomations(userId);
 
-    const _combined = WORKFLOW_TEMPLATES?.map((template) => {
-      const _userState = userAutomations[template?.id];
+    const combined = WORKFLOW_TEMPLATES?.map((template) => {
+      const userState = userAutomations[template?.id];
       return {
         ...template,
-        enabled: userState?.enabled ?? false,
-        config: userState?.config ?? template?.defaultConfig,
+        enabled: userState.enabled ?? false,
+        config: userState.config ?? template?.defaultConfig,
       };
     });
 
@@ -53,11 +53,11 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { templateId } = req?.params;
       const { config } = req?.body;
 
-      const _template = WORKFLOW_TEMPLATES?.find((t) => t?.id === templateId);
+      const template = WORKFLOW_TEMPLATES?.find((t) => t?.id === templateId);
       if (!template) {
         return res?.status(404).json({ error: "Template not found" });
       }
@@ -81,10 +81,10 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { templateId } = req?.params;
 
-      const _template = WORKFLOW_TEMPLATES?.find((t) => t?.id === templateId);
+      const template = WORKFLOW_TEMPLATES?.find((t) => t?.id === templateId);
       if (!template) {
         return res?.status(404).json({ error: "Template not found" });
       }
@@ -107,7 +107,7 @@ router?.put(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { templateId } = req?.params;
       const { config } = req?.body;
 
@@ -115,7 +115,7 @@ router?.put(
         return res?.status(400).json({ error: "config object required" });
       }
 
-      const _template = WORKFLOW_TEMPLATES?.find((t) => t?.id === templateId);
+      const template = WORKFLOW_TEMPLATES?.find((t) => t?.id === templateId);
       if (!template) {
         return res?.status(404).json({ error: "Template not found" });
       }
@@ -137,14 +137,14 @@ router?.put(
 // Manually fire an event (for testing automations from the UI)
 router?.post("/trigger", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
-    const _schema = z?.object({
-      eventType: z?.string().min(1),
-      data: z?.record(z?.string(), z?.any()).optional(),
+    const userId = req?.user!.id;
+    const schema = z.object({
+      eventType: z.string().min(1),
+      data: z.record(z.string(), z.any()).optional(),
     });
-    const _parsed = schema?.safeParse(req?.body);
+    const parsed = schema?.safeParse(req?.body);
     if (!parsed?.success) {
-      return res?.status(400).json({ error: parsed?.error.issues[0].message });
+      return res?.status(400).json({ error: parsed.error.issues[0].message });
     }
 
     const { eventType, data = {} } = parsed?.data;
@@ -166,8 +166,8 @@ router?.post("/trigger", requireAuth, async (req: Request, res: Response) => {
 // GET /api/music-workflow-automations/stats
 router?.get("/stats", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
-    const _stats = await musicWorkflowAutomationService?.getStats(userId);
+    const userId = req?.user!.id;
+    const stats = await musicWorkflowAutomationService?.getStats(userId);
     res?.json(stats);
   } catch (err) {
     logger?.warn({ err: err }, "[MusicWorkflow] Error fetching stats:");
@@ -178,11 +178,11 @@ router?.get("/stats", requireAuth, async (req: Request, res: Response) => {
 // GET /api/music-workflow-automations/logs
 router?.get("/logs", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
-    const _templateId = req?.query.templateId as string | undefined;
-    const _limit = Math?.min(Number(req?.query.limit ?? 50), 200);
+    const userId = req?.user!.id;
+    const templateId = req?.query.templateId as string | undefined;
+    const limit = Math?.min(Number(req?.query.limit ?? 50), 200);
 
-    const _logs = await musicWorkflowAutomationService?.getExecutionLogs(
+    const logs = await musicWorkflowAutomationService?.getExecutionLogs(
       userId,
       templateId,
       limit,

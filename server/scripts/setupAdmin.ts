@@ -32,8 +32,8 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
 async function setupAdmin() {
-  const _adminEmail = process?.env.ADMIN_EMAIL;
-  const _adminPassword = process?.env.ADMIN_PASSWORD;
+  const adminEmail = process?.env.ADMIN_EMAIL;
+  const adminPassword = process?.env.ADMIN_PASSWORD;
 
   if (!adminEmail || !adminPassword) {
     console?.error(
@@ -57,10 +57,10 @@ async function setupAdmin() {
 
   try {
     let adminId: string;
-    const _hashedPassword = await bcrypt?.hash(adminPassword, 12);
+    const hashedPassword = await bcrypt?.hash(adminPassword, 12);
 
     // Check if admin already exists
-    const _existingAdmin = await db
+    const existingAdmin = await db
       .select()
       .from(users)
       .where(eq(users?.email, adminEmail))
@@ -112,7 +112,7 @@ async function setupAdmin() {
     // ========================================================================
     // STOREFRONT
     // ========================================================================
-    const _existingStorefront = await db
+    const existingStorefront = await db
       .select()
       .from(storefronts)
       .where(eq(storefronts?.userId, adminId))
@@ -133,7 +133,7 @@ async function setupAdmin() {
             instagram: "https://instagram.com/blawzmusic",
             twitter: "https://twitter.com/blawzmusic",
             youtube: "https://youtube.com/@blawzmusic",
-            spotify: "https://open?.spotify.com/artist/blawzmusic",
+            spotify: "https://open.spotify.com/artist/blawzmusic",
           },
           bio: "Official store for B-Lawz Music. Premium beats, exclusive content, and more.",
         },
@@ -147,7 +147,7 @@ async function setupAdmin() {
     // ========================================================================
     // WORKSPACE
     // ========================================================================
-    const _existingWorkspace = await db
+    const existingWorkspace = await db
       .select()
       .from(workspaces)
       .where(eq(workspaces?.ownerId, adminId))
@@ -187,7 +187,7 @@ async function setupAdmin() {
     // ========================================================================
     // PROJECTS (Studio)
     // ========================================================================
-    const _existingProjects = await db
+    const existingProjects = await db
       .select()
       .from(projects)
       .where(eq(projects?.userId, adminId))
@@ -244,7 +244,7 @@ async function setupAdmin() {
     // ========================================================================
     // RELEASES
     // ========================================================================
-    const _existingReleases = await db
+    const existingReleases = await db
       .select()
       .from(releases)
       .where(eq(releases?.userId, adminId))
@@ -305,7 +305,7 @@ async function setupAdmin() {
     // ========================================================================
     // SOCIAL ACCOUNTS
     // ========================================================================
-    const _existingSocial = await db
+    const existingSocial = await db
       .select()
       .from(socialAccounts)
       .where(eq(socialAccounts?.userId, adminId))
@@ -357,7 +357,7 @@ async function setupAdmin() {
           platform: "spotify",
           platformUserId: "artist_blawz",
           username: "B-Lawz Music",
-          profileUrl: "https://open?.spotify.com/artist/blawzmusic",
+          profileUrl: "https://open.spotify.com/artist/blawzmusic",
           followerCount: 12500,
           isActive: true,
           metadata: { verified: true, monthlyListeners: 45000 },
@@ -381,30 +381,30 @@ async function setupAdmin() {
     // ========================================================================
     // ANALYTICS DATA (Last 30 days)
     // ========================================================================
-    const _existingAnalytics = await db
+    const existingAnalytics = await db
       .select()
       .from(analytics)
       .where(eq(analytics?.userId, adminId))
       .limit(1);
     if (existingAnalytics?.length === 0) {
-      const _analyticsData = [];
-      const _today = new Date();
+      const analyticsData = [];
+      const today = new Date();
 
       for (let i = 30; i >= 0; i--) {
-        const _date = new Date(today);
+        const date = new Date(today);
         date?.setDate(date?.getDate() - i);
 
         // Generate realistic varying data
-        const _baseStreams = 1500 + Math?.floor(Math?.random() * 500);
-        const _weekendBoost =
+        const baseStreams = 1500 + Math?.floor(Math?.random() * 500);
+        const weekendBoost =
           date?.getDay() === 0 || date?.getDay() === 6 ? 1.3 : 1;
 
         analyticsData?.push({
           userId: adminId,
           date: date,
-          streams: Math?.floor(baseStreams * weekendBoost),
+          streams: Math.floor(baseStreams * weekendBoost),
           revenue: parseFloat((baseStreams * weekendBoost * 0.004).toFixed(2)),
-          totalListeners: Math?.floor(baseStreams * weekendBoost * 0.7),
+          totalListeners: Math.floor(baseStreams * weekendBoost * 0.7),
           followers: 12500 + (30 - i) * 15,
           platform: "all",
           metadata: {
@@ -424,7 +424,7 @@ async function setupAdmin() {
     // ========================================================================
     // BEATS (Marketplace Listings)
     // ========================================================================
-    const _existingBeats = await db
+    const existingBeats = await db
       .select()
       .from(beats)
       .where(eq(beats?.userId, adminId))
@@ -482,7 +482,7 @@ async function setupAdmin() {
     // ========================================================================
     // LISTINGS (Products)
     // ========================================================================
-    const _existingListings = await db
+    const existingListings = await db
       .select()
       .from(listings)
       .where(eq(listings?.userId, adminId))
@@ -529,7 +529,7 @@ async function setupAdmin() {
     // ========================================================================
     // BRAND VOICE
     // ========================================================================
-    const _existingVoice = await db
+    const existingVoice = await db
       .select()
       .from(userBrandVoices)
       .where(eq(userBrandVoices?.userId, adminId))
@@ -557,7 +557,7 @@ async function setupAdmin() {
     // ========================================================================
     // HYPERFOLLOW PAGE
     // ========================================================================
-    const _existingHyperFollow = await db
+    const existingHyperFollow = await db
       .select()
       .from(hyperFollowPages)
       .where(eq(hyperFollowPages?.userId, adminId))
@@ -569,12 +569,12 @@ async function setupAdmin() {
         slug: "blawz-midnight-sessions",
         imageUrl: "/assets/releases/midnight-sessions.jpg",
         links: {
-          spotify: "https://open?.spotify.com/album/midnight-sessions",
-          appleMusic: "https://music?.apple.com/album/midnight-sessions",
+          spotify: "https://open.spotify.com/album/midnight-sessions",
+          appleMusic: "https://music.apple.com/album/midnight-sessions",
           youtubeMusic:
-            "https://music?.youtube.com/playlist?list=midnight-sessions",
+            "https://music.youtube.com/playlist?list=midnight-sessions",
           tidal: "https://tidal.com/album/midnight-sessions",
-          amazonMusic: "https://music?.amazon.com/albums/midnight-sessions",
+          amazonMusic: "https://music.amazon.com/albums/midnight-sessions",
           soundcloud:
             "https://soundcloud.com/blawzmusic/sets/midnight-sessions",
         },
@@ -587,15 +587,15 @@ async function setupAdmin() {
     // ========================================================================
     // CONTENT CALENDAR
     // ========================================================================
-    const _existingCalendar = await db
+    const existingCalendar = await db
       .select()
       .from(contentCalendar)
       .where(eq(contentCalendar?.userId, adminId))
       .limit(1);
     if (existingCalendar?.length === 0) {
-      const _futureDate1 = new Date();
+      const futureDate1 = new Date();
       futureDate1?.setDate(futureDate1?.getDate() + 3);
-      const _futureDate2 = new Date();
+      const futureDate2 = new Date();
       futureDate2?.setDate(futureDate2?.getDate() + 7);
 
       await db?.insert(contentCalendar).values([
@@ -635,7 +635,7 @@ async function setupAdmin() {
     // ========================================================================
     // WELCOME NOTIFICATION
     // ========================================================================
-    const _existingNotification = await db
+    const existingNotification = await db
       .select()
       .from(notifications)
       .where(eq(notifications?.userId, adminId))

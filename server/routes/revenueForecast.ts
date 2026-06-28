@@ -5,10 +5,10 @@ import { revenueForecastService } from "../services/revenueForecastService";
 import { logger } from "../logger";
 import { z } from "zod";
 
-const _router = Router();
+const router = Router();
 
-const _generateForecastSchema = z?.object({
-  months: z?.number().min(1).max(24).optional().default(12),
+const generateForecastSchema = z.object({
+  months: z.number().min(1).max(24).optional().default(12),
 });
 
 router?.get(
@@ -16,11 +16,11 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       logger?.info(`Fetching stored forecasts for user ${userId}`);
 
-      const _forecasts = await revenueForecastService?.getStoredForecasts(userId);
+      const forecasts = await revenueForecastService?.getStoredForecasts(userId);
 
       res?.json({
         success: true,
@@ -38,11 +38,11 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       logger?.info(`Getting revenue projections for user ${userId}`);
 
-      const _projections =
+      const projections =
         await revenueForecastService?.getRevenueProjections(userId);
 
       res?.json({
@@ -61,11 +61,11 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       logger?.info(`Fetching forecast accuracy for user ${userId}`);
 
-      const _accuracy = await revenueForecastService?.compareToActual(userId);
+      const accuracy = await revenueForecastService?.compareToActual(userId);
 
       res?.json({
         success: true,
@@ -83,11 +83,11 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       logger?.info(`Calculating stream-to-revenue rate for user ${userId}`);
 
-      const _rate =
+      const rate =
         await revenueForecastService?.calculateStreamToRevenueRate(userId);
 
       res?.json({
@@ -109,12 +109,12 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { months } = generateForecastSchema?.parse(req?.body);
 
       logger?.info(`Generating ${months}-month forecast for user ${userId}`);
 
-      const _forecast = await revenueForecastService?.generateForecast(
+      const forecast = await revenueForecastService?.generateForecast(
         userId,
         months,
       );
@@ -136,10 +136,10 @@ router?.delete(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { id } = req?.params;
 
-      const _deleted = await revenueForecastService?.deleteForecastById(
+      const deleted = await revenueForecastService?.deleteForecastById(
         userId,
         id,
       );

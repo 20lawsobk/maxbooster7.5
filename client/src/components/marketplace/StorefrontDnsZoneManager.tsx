@@ -50,35 +50,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Globe,
-  Plus,
-  Trash2,
-  Edit,
-  RefreshCw,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  Copy,
-  Server,
-  ChevronRight,
-  ArrowLeft,
-  Shield,
-  Zap,
-  Info,
-  Search,
-  Star,
-  Sparkles,
-  ExternalLink,
-  XCircle,
-  Link2,
-  Link2Off,
-  ShoppingBag,
-  ArrowUpRight,
-  Download,
-  FileText,
-  TriangleAlert,
-} from "lucide-react";
+import { Globe, Plus, Trash2, Edit, RefreshCw, CheckCircle2, Clock, AlertCircle, Copy, Server, ChevronRight, ArrowLeft, Shield, Zap, Info, Search, Star, Sparkles, ExternalLink, XCircle, Link2, Link2Off, ShoppingBag, ArrowUpRight, Download, FileText, TriangleAlert } from "lucide-react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -458,7 +430,7 @@ function DnsZoneEditor({
         r.json(),
       ),
   });
-  const records: DnsRecord[] = recordsData?.records ?? [];
+  const records: DnsRecord[] = recordsData.records ?? [];
 
   // ── Storefront URL link ──────────────────────────────────────────────────
   const { data: linkData } = useQuery({
@@ -474,7 +446,7 @@ function DnsZoneEditor({
     storefrontName: string;
     storefrontSlug: string;
     status: string;
-  } | null = linkData?.linked ?? null;
+  } | null = linkData.linked ?? null;
 
   const linkQKey = ["/api/dns-manager/zones", zone.id, "storefront-link"];
 
@@ -513,8 +485,8 @@ function DnsZoneEditor({
     onError: async (err: Error) => {
       let msg = "Failed to link domain";
       try {
-        const d = await err.response?.json();
-        msg = d?.error ?? msg;
+        const d = await err.response.json();
+        msg = d.error ?? msg;
       } catch {}
       toast({ title: "Error", description: msg, variant: "destructive" });
     },
@@ -547,8 +519,8 @@ function DnsZoneEditor({
     onError: async (err: Error) => {
       let msg = "Failed to unlink domain";
       try {
-        const d = await err.response?.json();
-        msg = d?.error ?? msg;
+        const d = await err.response.json();
+        msg = d.error ?? msg;
       } catch {}
       toast({ title: "Error", description: msg, variant: "destructive" });
     },
@@ -603,8 +575,8 @@ function DnsZoneEditor({
     onError: async (err: Error) => {
       let msg = "Transfer failed";
       try {
-        const d = await err.response?.json();
-        msg = d?.error ?? msg;
+        const d = await err.response.json();
+        msg = d.error ?? msg;
       } catch {}
       toast({ title: "Error", description: msg, variant: "destructive" });
     },
@@ -663,9 +635,9 @@ function DnsZoneEditor({
       name: r.name,
       value: r.value,
       ttl: r.ttl,
-      priority: r.priority?.toString() ?? "",
-      weight: r.weight?.toString() ?? "",
-      port: r.port?.toString() ?? "",
+      priority: r.priority.toString() ?? "",
+      weight: r.weight.toString() ?? "",
+      port: r.port.toString() ?? "",
       tag: r.tag ?? "",
     });
     setShowRecordDialog(true);
@@ -711,8 +683,8 @@ function DnsZoneEditor({
     onError: async (err: Error) => {
       let msg = "Failed to save record";
       try {
-        const d = await err.response?.json();
-        msg = d?.error ?? msg;
+        const d = await err.response.json();
+        msg = d.error ?? msg;
       } catch {}
       toast({ title: "Error", description: msg, variant: "destructive" });
     },
@@ -1634,7 +1606,7 @@ function DnsZoneEditor({
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              {pendingDeleteAction?.label}
+              {pendingDeleteAction.label}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1642,7 +1614,7 @@ function DnsZoneEditor({
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={() => {
-                pendingDeleteAction?.onConfirm();
+                pendingDeleteAction.onConfirm();
                 setPendingDeleteAction(null);
               }}
             >
@@ -1688,10 +1660,10 @@ export function StorefrontDnsZoneManager({
     queryFn: () =>
       apiRequest("GET", "/api/dns-manager/usage").then((r) => r.json()),
   });
-  const domainLimit: number = usageData?.limit ?? 2;
-  const domainsUsed: number = usageData?.used ?? 0;
-  const domainsRemaining: number = usageData?.remaining ?? 2;
-  const hasSubscription: boolean = usageData?.hasSubscription ?? false;
+  const domainLimit: number = usageData.limit ?? 2;
+  const domainsUsed: number = usageData.used ?? 0;
+  const domainsRemaining: number = usageData.remaining ?? 2;
+  const hasSubscription: boolean = usageData.hasSubscription ?? false;
   const atLimit: boolean = domainsRemaining <= 0;
 
   // Domain search query
@@ -1705,7 +1677,7 @@ export function StorefrontDnsZoneManager({
     enabled: searchName.length >= 2,
     staleTime: 30_000,
   });
-  const searchResults: DomainSearchResult[] = searchData?.results ?? [];
+  const searchResults: DomainSearchResult[] = searchData.results ?? [];
 
   // My claimed domains
   const { data: myDomainsData, isLoading: myDomainsLoading } = useQuery({
@@ -1715,7 +1687,7 @@ export function StorefrontDnsZoneManager({
         r.json(),
       ),
   });
-  const myDomains: ClaimedDomain[] = myDomainsData?.domains ?? [];
+  const myDomains: ClaimedDomain[] = myDomainsData.domains ?? [];
 
   // DNS zones (for the DNS manager tab)
   const { data: zonesData, isLoading: zonesLoading } = useQuery({
@@ -1723,7 +1695,7 @@ export function StorefrontDnsZoneManager({
     queryFn: () =>
       apiRequest("GET", "/api/dns-manager/zones").then((r) => r.json()),
   });
-  const zones: DnsZone[] = zonesData?.zones ?? [];
+  const zones: DnsZone[] = zonesData.zones ?? [];
 
   function copy(text: string, label: string) {
     navigator.clipboard.writeText(text);
@@ -1782,8 +1754,8 @@ export function StorefrontDnsZoneManager({
     onError: async (err: Error) => {
       let msg = "Could not claim domain";
       try {
-        const d = await err.response?.json();
-        msg = d?.error ?? msg;
+        const d = await err.response.json();
+        msg = d.error ?? msg;
       } catch {}
       toast({ title: "Error", description: msg, variant: "destructive" });
     },
@@ -1830,8 +1802,8 @@ export function StorefrontDnsZoneManager({
     onError: async (err: Error) => {
       let msg = "Failed to add domain";
       try {
-        const d = await err.response?.json();
-        msg = d?.error ?? msg;
+        const d = await err.response.json();
+        msg = d.error ?? msg;
       } catch {}
       toast({ title: "Error", description: msg, variant: "destructive" });
     },

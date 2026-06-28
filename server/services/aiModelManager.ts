@@ -54,10 +54,10 @@ class AIModelManager {
    * CRITICAL: Per-user isolation prevents cross-tenant data leakage
    */
   async getSocialAutopilot(userId: string): Promise<SocialMediaAutopilotAI> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
 
     // Check cache first
-    const _cached = this?.socialModels.get(userId);
+    const cached = this?.socialModels.get(userId);
     if (cached) {
       cached.lastAccessed = new Date();
       logger?.debug(`Using cached Social AI model for user ${userId}`);
@@ -66,7 +66,7 @@ class AIModelManager {
       aiModelTelemetry?.recordModelLoad({
         userId,
         modelType: "social",
-        loadTimeMs: Date?.now() - startTime,
+        loadTimeMs: Date.now() - startTime,
         cacheHit: true,
         timestamp: new Date(),
       });
@@ -75,10 +75,10 @@ class AIModelManager {
     }
 
     // Create new model instance for this user
-    const _model = new SocialMediaAutopilotAI();
+    const model = new SocialMediaAutopilotAI();
 
     // Try to load persisted model from database
-    const _persistedModel = await storage?.getUserAIModel(
+    const persistedModel = await storage?.getUserAIModel(
       userId,
       "social_autopilot",
     );
@@ -110,7 +110,7 @@ class AIModelManager {
     // rather than starting from random weights.
     if (!persistedModel) {
       try {
-        const _baseState = loadSocialBaseState();
+        const baseState = loadSocialBaseState();
         if (baseState?.state) {
           model?.deserializeMetadata(baseState?.state);
           logger?.info(
@@ -120,7 +120,7 @@ class AIModelManager {
           // Re-train on the base history to rebuild TF platform models and mark isTrained=true.
           // deserializeMetadata only restores scalers/stats — the TF weights are not persisted,
           // so we must run trainOnUserEngagementData to build them and flip isTrained.
-          const _baseHistory = baseState?.state.trainingHistory;
+          const baseHistory = baseState?.state.trainingHistory;
           if (Array?.isArray(baseHistory) && baseHistory?.length >= 50) {
             await model?.trainOnUserEngagementData(baseHistory);
             await this?.persistSocialModel(userId, model);
@@ -138,16 +138,16 @@ class AIModelManager {
 
       // Train on user's own data on top of the base state if enough data exists
       try {
-        const _posts = await storage?.getUserSocialPosts(userId);
-        if (posts && posts?.length >= 50) {
-          await model?.trainOnUserEngagementData(posts);
-          await this?.persistSocialModel(userId, model);
-          logger?.info(
-            `✅ Trained and persisted Social AI model for user ${userId} (${posts?.length} posts)`,
+        const posts = await storage.getUserSocialPosts(userId);
+        if (posts && posts.length >= 50) {
+          await model.trainOnUserEngagementData(posts);
+          await this.persistSocialModel(userId, model);
+          logger.info(
+            `✅ Trained and persisted Social AI model for user ${userId} (${posts.length} posts)`,
           );
         }
       } catch (error) {
-        logger?.warn(
+        logger.warn(
           { err: error },
           `Could not train Social AI for user ${userId}:`,
         );
@@ -155,13 +155,13 @@ class AIModelManager {
     }
 
     // Add to cache
-    this?.addToSocialCache(userId, model, !!persistedModel);
+    this.addToSocialCache(userId, model, !!persistedModel);
 
     // Record cache miss and model load
-    aiModelTelemetry?.recordModelLoad({
+    aiModelTelemetry.recordModelLoad({
       userId,
       modelType: "social",
-      loadTimeMs: Date?.now() - startTime,
+      loadTimeMs: Date.now() - startTime,
       cacheHit: false,
       timestamp: new Date(),
     });
@@ -176,51 +176,51 @@ class AIModelManager {
   async getAdvertisingAutopilot(
     userId: string,
   ): Promise<AdvertisingAutopilotAI_v3> {
-    const _startTime = Date?.now();
+    const startTime = Date.now();
 
     // Check cache first
-    const _cached = this?.advertisingModels.get(userId);
+    const cached = this.advertisingModels.get(userId);
     if (cached) {
       cached.lastAccessed = new Date();
-      logger?.debug(`Using cached Advertising AI model for user ${userId}`);
+      logger.debug(`Using cached Advertising AI model for user ${userId}`);
 
       // Record cache hit
-      aiModelTelemetry?.recordModelLoad({
+      aiModelTelemetry.recordModelLoad({
         userId,
         modelType: "advertising",
-        loadTimeMs: Date?.now() - startTime,
+        loadTimeMs: Date.now() - startTime,
         cacheHit: true,
         timestamp: new Date(),
       });
 
-      return cached?.model;
+      return cached.model;
     }
 
     // Create new model instance for this user
-    const _model = new AdvertisingAutopilotAI_v3();
+    const model = new AdvertisingAutopilotAI_v3();
 
     // Try to load persisted model from database
-    const _persistedModel = await storage?.getUserAIModel(
+    const persistedModel = await storage.getUserAIModel(
       userId,
       "advertising_autopilot",
     );
     if (persistedModel) {
       try {
-        await this?.loadModelWeights(model, persistedModel?.weights);
+        await this.loadModelWeights(model, persistedModel.weights);
 
         // CRITICAL: Restore per-user metadata to prevent cross-tenant data leakage
-        if (persistedModel?.metadata) {
-          model?.deserializeMetadata(persistedModel?.metadata);
-          logger?.info(
+        if (persistedModel.metadata) {
+          model.deserializeMetadata(persistedModel.metadata);
+          logger.info(
             `✅ Loaded persisted Advertising AI model for user ${userId} (with metadata)`,
           );
         } else {
-          logger?.info(
+          logger.info(
             `✅ Loaded persisted Advertising AI model for user ${userId} (weights only)`,
           );
         }
       } catch (error) {
-        logger?.warn(
+        logger.warn(
           { err: error },
           `Failed to load persisted model for user ${userId}, using fresh model:`,
         );
@@ -232,7 +232,7 @@ class AIModelManager {
     // using algorithm exploitation, funnel replication, and cross-platform burst coordination.
     if (!persistedModel) {
       try {
-        const _baseState = loadAdvertisingBaseState();
+        const baseState = loadAdvertisingBaseState();
         if (baseState?.state) {
           model?.deserializeMetadata(baseState?.state);
           logger?.info(
@@ -248,7 +248,7 @@ class AIModelManager {
 
       // Train on user's own campaigns on top of the base state if enough data exists
       try {
-        const _campaigns = await storage?.getOrganicCampaigns(userId);
+        const campaigns = await storage?.getOrganicCampaigns(userId);
         if (campaigns && campaigns?.length >= 30) {
           await model?.trainOnOrganicCampaigns(campaigns);
           await this?.persistAdvertisingModel(userId, model);
@@ -271,7 +271,7 @@ class AIModelManager {
     aiModelTelemetry?.recordModelLoad({
       userId,
       modelType: "advertising",
-      loadTimeMs: Date?.now() - startTime,
+      loadTimeMs: Date.now() - startTime,
       cacheHit: false,
       timestamp: new Date(),
     });
@@ -284,7 +284,7 @@ class AIModelManager {
    * Call this after training to ensure model state is persisted
    */
   async saveSocialModel(userId: string): Promise<void> {
-    const _cached = this?.socialModels.get(userId);
+    const cached = this?.socialModels.get(userId);
     if (!cached) {
       throw new Error(`No Social AI model found in cache for user ${userId}`);
     }
@@ -296,7 +296,7 @@ class AIModelManager {
    * Call this after training to ensure model state is persisted
    */
   async saveAdvertisingModel(userId: string): Promise<void> {
-    const _cached = this?.advertisingModels.get(userId);
+    const cached = this?.advertisingModels.get(userId);
     if (!cached) {
       throw new Error(
         `No Advertising AI model found in cache for user ${userId}`,
@@ -314,8 +314,8 @@ class AIModelManager {
     model: SocialMediaAutopilotAI,
   ): Promise<void> {
     try {
-      const _weights = await this?.extractModelWeights(model);
-      const _metadata = model?.serializeMetadata();
+      const weights = await this?.extractModelWeights(model);
+      const metadata = model?.serializeMetadata();
 
       await storage?.saveUserAIModel(
         userId,
@@ -343,8 +343,8 @@ class AIModelManager {
     model: AdvertisingAutopilotAI_v3,
   ): Promise<void> {
     try {
-      const _weights = await this?.extractModelWeights(model);
-      const _metadata = model?.serializeMetadata();
+      const weights = await this?.extractModelWeights(model);
+      const metadata = model?.serializeMetadata();
 
       await storage?.saveUserAIModel(
         userId,
@@ -420,7 +420,7 @@ class AIModelManager {
     }
 
     if (oldestKey && oldestEntry) {
-      const _idleTimeMs = Date?.now() - oldestEntry?.lastAccessed.getTime();
+      const idleTimeMs = Date?.now() - oldestEntry?.lastAccessed.getTime();
       this?.socialModels.delete(oldestKey);
       logger?.debug(`Evicted Social AI model for user ${oldestKey} (LRU)`);
 
@@ -450,7 +450,7 @@ class AIModelManager {
     }
 
     if (oldestKey && oldestEntry) {
-      const _idleTimeMs = Date?.now() - oldestEntry?.lastAccessed.getTime();
+      const idleTimeMs = Date?.now() - oldestEntry?.lastAccessed.getTime();
       this?.advertisingModels.delete(oldestKey);
       logger?.debug(`Evicted Advertising AI model for user ${oldestKey} (LRU)`);
 
@@ -472,13 +472,13 @@ class AIModelManager {
   private startEvictionScheduler() {
     this.evictionInterval = setInterval(
       () => {
-        const _now = new Date();
-        const _thirtyMinutesAgo = new Date(now?.getTime() - 30 * 60 * 1000);
+        const now = new Date();
+        const thirtyMinutesAgo = new Date(now?.getTime() - 30 * 60 * 1000);
 
         // Evict stale social models
         for (const [key, entry] of this?.socialModels.entries()) {
           if (entry?.lastAccessed < thirtyMinutesAgo) {
-            const _idleTimeMs = now?.getTime() - entry?.lastAccessed.getTime();
+            const idleTimeMs = now?.getTime() - entry?.lastAccessed.getTime();
             this?.socialModels.delete(key);
             logger?.debug(`Evicted stale Social AI model for user ${key}`);
 
@@ -496,7 +496,7 @@ class AIModelManager {
         // Evict stale advertising models
         for (const [key, entry] of this?.advertisingModels.entries()) {
           if (entry?.lastAccessed < thirtyMinutesAgo) {
-            const _idleTimeMs = now?.getTime() - entry?.lastAccessed.getTime();
+            const idleTimeMs = now?.getTime() - entry?.lastAccessed.getTime();
             this?.advertisingModels.delete(key);
             logger?.debug(`Evicted stale Advertising AI model for user ${key}`);
 
@@ -529,13 +529,13 @@ class AIModelManager {
       };
 
       if (model?.getWeights && typeof model?.getWeights === "function") {
-        const _tensorWeights = await model?.getWeights();
+        const tensorWeights = await model?.getWeights();
         if (tensorWeights && Array?.isArray(tensorWeights)) {
           weights.tensors = await Promise?.all(
             tensorWeights?.map(async (tensor: Record<string, unknown>) => ({
-              shape: tensor?.shape,
-              dtype: tensor?.dtype,
-              data: Array?.from(await tensor?.data()),
+              shape: tensor.shape,
+              dtype: tensor.dtype,
+              data: Array.from(await tensor?.data()),
             })),
           );
         }
@@ -558,7 +558,7 @@ class AIModelManager {
       return {
         version: "1.0",
         timestamp: new Date().toISOString(),
-        modelState: model?.serializeState ? model?.serializeState() : null,
+        modelState: model.serializeState ? model?.serializeState() : null,
       };
     }
   }
@@ -578,13 +578,13 @@ class AIModelManager {
         model?.setWeights &&
         typeof model?.setWeights === "function"
       ) {
-        const _tf = await import("@tensorflow/tfjs");
-        const _tensorWeights = weights?.tensors.map(
+        const tf = await import("@tensorflow/tfjs");
+        const tensorWeights = weights?.tensors.map(
           (w: Record<string, unknown>) => tf?.tensor(w?.data, w?.shape, w?.dtype),
         );
         await model?.setWeights(tensorWeights);
         tensorWeights?.forEach((t: Record<string, unknown>) => t?.dispose());
-        logger?.debug("Loaded TensorFlow?.js tensor weights");
+        logger?.debug("Loaded TensorFlow.js tensor weights");
       }
 
       if (
@@ -622,15 +622,15 @@ class AIModelManager {
   getCacheStats() {
     return {
       socialModels: {
-        count: this?.socialModels.size,
-        max: this?.MAX_SOCIAL_MODELS,
-        trained: Array?.from(this?.socialModels.values()).filter((e) => e?.trained)
+        count: this.socialModels.size,
+        max: this.MAX_SOCIAL_MODELS,
+        trained: Array.from(this?.socialModels.values()).filter((e) => e?.trained)
           .length,
       },
       advertisingModels: {
-        count: this?.advertisingModels.size,
-        max: this?.MAX_ADVERTISING_MODELS,
-        trained: Array?.from(this?.advertisingModels.values()).filter(
+        count: this.advertisingModels.size,
+        max: this.MAX_ADVERTISING_MODELS,
+        trained: Array.from(this?.advertisingModels.values()).filter(
           (e) => e?.trained,
         ).length,
       },
@@ -678,4 +678,4 @@ class AIModelManager {
 }
 
 // Export singleton instance
-export const _aiModelManager = new AIModelManager();
+export const aiModelManager = new AIModelManager();

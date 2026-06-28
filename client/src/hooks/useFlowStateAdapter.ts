@@ -117,8 +117,8 @@ export interface UseFlowStateAdapterReturn {
 export function useFlowStateAdapter(
   projectId: string | null,
 ): UseFlowStateAdapterReturn {
-  const _audioEngineRef = useRef<AudioEngine | null>(null);
-  const _meterAnimationRef = useRef<number>();
+  const audioEngineRef = useRef<AudioEngine | null>(null);
+  const meterAnimationRef = useRef<number>();
 
   const [meterLevels, setMeterLevels] = useState<Map<string, [number, number]>>(
     new Map(),
@@ -161,9 +161,9 @@ export function useFlowStateAdapter(
     setTrackArmed: setStoreTrackArmed,
   } = useStudioStore();
 
-  const _queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
-  const _createTrackMutation = useMutation({
+  const createTrackMutation = useMutation({
     mutationFn: async ({
       name,
       trackType,
@@ -192,7 +192,7 @@ export function useFlowStateAdapter(
     },
   });
 
-  const _deleteTrackMutation = useMutation({
+  const deleteTrackMutation = useMutation({
     mutationFn: async (trackId: string) => {
       return await apiRequest("DELETE", `/api/studio/tracks/${trackId}`, {});
     },
@@ -207,18 +207,18 @@ export function useFlowStateAdapter(
     },
   });
 
-  const _duplicateTrackMutation = useMutation({
+  const duplicateTrackMutation = useMutation({
     mutationFn: async (trackId: string) => {
-      const _trackToDuplicate = storeTracks?.find((t) => t?.id === trackId);
+      const trackToDuplicate = storeTracks?.find((t) => t?.id === trackId);
       if (!trackToDuplicate || !projectId)
         throw new Error("Track or project not found");
       return await apiRequest("POST", "/api/studio/tracks", {
         projectId,
         name: `${trackToDuplicate?.name} (Copy)`,
-        trackType: trackToDuplicate?.trackType,
-        color: trackToDuplicate?.color,
-        volume: trackToDuplicate?.volume,
-        pan: trackToDuplicate?.pan,
+        trackType: trackToDuplicate.trackType,
+        color: trackToDuplicate.color,
+        volume: trackToDuplicate.volume,
+        pan: trackToDuplicate.pan,
       });
     },
     onSuccess: () => {
@@ -246,11 +246,11 @@ export function useFlowStateAdapter(
       return;
     }
 
-    const _updateMeters = () => {
+    const updateMeters = () => {
       if (audioEngineRef?.current) {
-        const _levels = new Map<string, [number, number]>();
+        const levels = new Map<string, [number, number]>();
         storeTracks?.forEach((track) => {
-          const _trackLevels = audioEngineRef?.current!.getTrackMeterLevels(
+          const trackLevels = audioEngineRef?.current!.getTrackMeterLevels(
             track?.id,
           );
           if (trackLevels) {
@@ -259,7 +259,7 @@ export function useFlowStateAdapter(
         });
         setMeterLevels(levels);
 
-        const _master = audioEngineRef?.current.getMasterMeterLevels();
+        const master = audioEngineRef?.current.getMasterMeterLevels();
         if (master) {
           setMasterMeterLevels(master);
         }
@@ -280,7 +280,7 @@ export function useFlowStateAdapter(
     generateAISuggestions();
   }, [context?.mode, context?.selectedTrackIds, isPlaying, currentTime]);
 
-  const _generateAISuggestions = useCallback(() => {
+  const generateAISuggestions = useCallback(() => {
     const newSuggestions: AICoProducerSuggestion[] = [];
 
     if (context?.mode === "mix") {
@@ -341,21 +341,21 @@ export function useFlowStateAdapter(
     setSuggestions(newSuggestions);
   }, [context?.mode, context?.selectedTrackIds]);
 
-  const _tracks = useMemo<FlowStateTrack[]>(() => {
+  const tracks = useMemo<FlowStateTrack[]>(() => {
     if (!storeTracks || !Array?.isArray(storeTracks)) {
       return [];
     }
     return storeTracks?.map((track, index) => ({
-      id: track?.id,
-      name: track?.name,
-      type: track?.trackType as FlowStateTrack["type"],
-      color: track?.color || `hsl(${(index * 40) % 360}, 70%, 50%)`,
-      volume: track?.volume ?? 0.8,
-      pan: track?.pan ?? 0,
-      mute: track?.mute ?? false,
-      solo: track?.solo ?? false,
-      armed: track?.armed ?? false,
-      meterLevel: meterLevels?.get(track?.id) || [0, 0],
+      id: track.id,
+      name: track.name,
+      type: track.trackType as FlowStateTrack["type"],
+      color: track.color || `hsl(${(index * 40) % 360}, 70%, 50%)`,
+      volume: track.volume ?? 0.8,
+      pan: track.pan ?? 0,
+      mute: track.mute ?? false,
+      solo: track.solo ?? false,
+      armed: track.armed ?? false,
+      meterLevel: meterLevels.get(track?.id) || [0, 0],
       clips: [],
       spatialPosition: {
         x: (track?.pan ?? 0) * 5,
@@ -365,7 +365,7 @@ export function useFlowStateAdapter(
     }));
   }, [storeTracks, meterLevels]);
 
-  const _transport = useMemo<FlowStateTransport>(
+  const transport = useMemo<FlowStateTransport>(
     () => ({
       isPlaying,
       isRecording,
@@ -390,21 +390,21 @@ export function useFlowStateAdapter(
     ],
   );
 
-  const _play = useCallback(() => {
+  const play = useCallback(() => {
     if (audioEngineRef?.current) {
       audioEngineRef?.current.play();
       setIsPlaying(true);
     }
   }, [setIsPlaying]);
 
-  const _pause = useCallback(() => {
+  const pause = useCallback(() => {
     if (audioEngineRef?.current) {
       audioEngineRef?.current.pause();
       setIsPlaying(false);
     }
   }, [setIsPlaying]);
 
-  const _stop = useCallback(() => {
+  const stop = useCallback(() => {
     if (audioEngineRef?.current) {
       audioEngineRef?.current.stop();
       setIsPlaying(false);
@@ -412,22 +412,22 @@ export function useFlowStateAdapter(
     }
   }, [setIsPlaying, setCurrentTime]);
 
-  const _record = useCallback(() => {
+  const record = useCallback(() => {
     setIsRecording(!isRecording);
     if (!isRecording && !isPlaying) {
       play();
     }
   }, [isRecording, isPlaying, setIsRecording, play]);
 
-  const _toggleLoop = useCallback(() => {
+  const toggleLoop = useCallback(() => {
     setLoopEnabled(!loopEnabled);
   }, [loopEnabled, setLoopEnabled]);
 
-  const _toggleMetronome = useCallback(() => {
+  const toggleMetronome = useCallback(() => {
     setMetronomeEnabled(!metronomeEnabled);
   }, [metronomeEnabled, setMetronomeEnabled]);
 
-  const _seek = useCallback(
+  const seek = useCallback(
     (time: number) => {
       if (audioEngineRef?.current) {
         audioEngineRef?.current.seek(time);
@@ -437,14 +437,14 @@ export function useFlowStateAdapter(
     [setCurrentTime],
   );
 
-  const _setTempo = useCallback(
+  const setTempo = useCallback(
     (bpm: number) => {
       setStoreTempo(bpm);
     },
     [setStoreTempo],
   );
 
-  const _setTrackVolume = useCallback(
+  const setTrackVolume = useCallback(
     (trackId: string, volume: number) => {
       setStoreTrackVolume(trackId, volume);
       if (audioEngineRef?.current) {
@@ -454,7 +454,7 @@ export function useFlowStateAdapter(
     [setStoreTrackVolume],
   );
 
-  const _setTrackPan = useCallback(
+  const setTrackPan = useCallback(
     (trackId: string, pan: number) => {
       setStoreTrackPan(trackId, pan);
       if (audioEngineRef?.current) {
@@ -464,11 +464,11 @@ export function useFlowStateAdapter(
     [setStoreTrackPan],
   );
 
-  const _toggleTrackMute = useCallback(
+  const toggleTrackMute = useCallback(
     (trackId: string) => {
-      const _track = storeTracks?.find((t) => t?.id === trackId);
+      const track = storeTracks?.find((t) => t?.id === trackId);
       if (track) {
-        const _newMute = !track?.isMuted;
+        const newMute = !track?.isMuted;
         setStoreTrackMute(trackId, newMute);
         if (audioEngineRef?.current) {
           audioEngineRef?.current.setTrackMute(trackId, newMute);
@@ -478,11 +478,11 @@ export function useFlowStateAdapter(
     [storeTracks, setStoreTrackMute],
   );
 
-  const _toggleTrackSolo = useCallback(
+  const toggleTrackSolo = useCallback(
     (trackId: string) => {
-      const _track = storeTracks?.find((t) => t?.id === trackId);
+      const track = storeTracks?.find((t) => t?.id === trackId);
       if (track) {
-        const _newSolo = !track?.isSolo;
+        const newSolo = !track?.isSolo;
         setStoreTrackSolo(trackId, newSolo);
         if (audioEngineRef?.current) {
           audioEngineRef?.current.setTrackSolo(trackId, newSolo);
@@ -492,9 +492,9 @@ export function useFlowStateAdapter(
     [storeTracks, setStoreTrackSolo],
   );
 
-  const _toggleTrackArm = useCallback(
+  const toggleTrackArm = useCallback(
     (trackId: string) => {
-      const _track = storeTracks?.find((t) => t?.id === trackId);
+      const track = storeTracks?.find((t) => t?.id === trackId);
       if (track) {
         setStoreTrackArmed(trackId, !track?.isArmed);
       }
@@ -502,7 +502,7 @@ export function useFlowStateAdapter(
     [storeTracks, setStoreTrackArmed],
   );
 
-  const _selectTrack = useCallback((trackId: string, addToSelection = false) => {
+  const selectTrack = useCallback((trackId: string, addToSelection = false) => {
     setContext((prev) => ({
       ...prev,
       selectionType: "track",
@@ -512,7 +512,7 @@ export function useFlowStateAdapter(
     }));
   }, []);
 
-  const _selectClip = useCallback((clipId: string, addToSelection = false) => {
+  const selectClip = useCallback((clipId: string, addToSelection = false) => {
     setContext((prev) => ({
       ...prev,
       selectionType: "clip",
@@ -522,7 +522,7 @@ export function useFlowStateAdapter(
     }));
   }, []);
 
-  const _clearSelection = useCallback(() => {
+  const clearSelection = useCallback(() => {
     setContext((prev) => ({
       ...prev,
       selectionType: "none",
@@ -532,23 +532,23 @@ export function useFlowStateAdapter(
     }));
   }, []);
 
-  const _setMode = useCallback((mode: FlowStateMode) => {
+  const setMode = useCallback((mode: FlowStateMode) => {
     setContext((prev) => ({ ...prev, mode }));
   }, []);
 
-  const _setZoom = useCallback((level: number) => {
+  const setZoom = useCallback((level: number) => {
     setContext((prev) => ({
       ...prev,
-      zoomLevel: Math?.max(0.1, Math?.min(10, level)),
+      zoomLevel: Math.max(0.1, Math?.min(10, level)),
     }));
   }, []);
 
-  const _setScroll = useCallback((position: number) => {
-    setContext((prev) => ({ ...prev, scrollPosition: Math?.max(0, position) }));
+  const setScroll = useCallback((position: number) => {
+    setContext((prev) => ({ ...prev, scrollPosition: Math.max(0, position) }));
   }, []);
 
-  const _getMeterLevels = useCallback(() => meterLevels, [meterLevels]);
-  const _getMasterMeterLevels = useCallback(
+  const getMeterLevels = useCallback(() => meterLevels, [meterLevels]);
+  const getMasterMeterLevels = useCallback(
     () => masterMeterLevels,
     [masterMeterLevels],
   );
@@ -575,7 +575,7 @@ export function useFlowStateAdapter(
     midi: "#a855f7",
   };
 
-  const _addTrack = useCallback(
+  const addTrack = useCallback(
     (type: string, name: string) => {
       if (!projectId) {
         logger?.warn(
@@ -583,14 +583,14 @@ export function useFlowStateAdapter(
         );
         return;
       }
-      const _backendType = trackTypeMap[type] || "audio";
-      const _color = trackColorMap[type] || "#3b82f6";
+      const backendType = trackTypeMap[type] || "audio";
+      const color = trackColorMap[type] || "#3b82f6";
       createTrackMutation?.mutate({ name, trackType: backendType, color });
     },
     [projectId, createTrackMutation],
   );
 
-  const _duplicateTrack = useCallback(
+  const duplicateTrack = useCallback(
     (trackId: string) => {
       if (!projectId) {
         logger?.warn(
@@ -603,7 +603,7 @@ export function useFlowStateAdapter(
     [projectId, duplicateTrackMutation],
   );
 
-  const _deleteTrack = useCallback(
+  const deleteTrack = useCallback(
     (trackId: string) => {
       deleteTrackMutation?.mutate(trackId);
     },

@@ -3,14 +3,14 @@ import { databaseBackupService } from "../services/backup/databaseBackupService.
 import { requireAdmin } from "../middleware/auth.js";
 import { logger } from "../logger.js";
 
-const _router = Router();
+const router = Router();
 
 // Backup service is initialized manually in server/index?.ts only when DATABASE_URL is valid
 
 // Create manual backup (admin only)
 router?.post("/create", requireAdmin, async (_req, res) => {
   try {
-    const _backupFile = await databaseBackupService?.createBackup();
+    const backupFile = await databaseBackupService?.createBackup();
     res?.json({ success: true, backupFile });
   } catch (error) {
     logger?.warn({ err: error }, "[Backup] Failed to create backup:");
@@ -21,7 +21,7 @@ router?.post("/create", requireAdmin, async (_req, res) => {
 // List all backups (admin only)
 router?.get("/list", requireAdmin, async (_req, res) => {
   try {
-    const _backups = await databaseBackupService?.listBackups();
+    const backups = await databaseBackupService?.listBackups();
     res?.json({ backups });
   } catch (error) {
     logger?.warn({ err: error }, "[Backup] Failed to list backups:");
@@ -32,7 +32,7 @@ router?.get("/list", requireAdmin, async (_req, res) => {
 // Get backup metrics (admin only)
 router?.get("/metrics", requireAdmin, async (_req, res) => {
   try {
-    const _metrics = databaseBackupService?.getBackupMetrics();
+    const metrics = databaseBackupService?.getBackupMetrics();
     res?.json(metrics);
   } catch (error) {
     logger?.warn({ err: error }, "[Backup] Failed to get backup metrics:");

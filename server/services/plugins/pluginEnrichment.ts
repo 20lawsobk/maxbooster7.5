@@ -43,7 +43,7 @@ import { GENRE_IDS, type Genre } from "./genres.js";
 type ParamFactory = () => PluginParameter[];
 
 // Helper builders to keep the data dense.
-const _f = (
+const f = (
   id: string,
   name: string,
   defaultValue: number,
@@ -63,7 +63,7 @@ const _f = (
   automatable: true,
 });
 
-const _i = (
+const i = (
   id: string,
   name: string,
   defaultValue: number,
@@ -81,7 +81,7 @@ const _i = (
   automatable: false,
 });
 
-const _b = (
+const b = (
   id: string,
   name: string,
   defaultValue: boolean,
@@ -93,7 +93,7 @@ const _b = (
   automatable: false,
 });
 
-const _c = (
+const c = (
   id: string,
   name: string,
   defaultValue: string,
@@ -109,11 +109,11 @@ const _c = (
 
 // Parametric EQ band (filter-type, freq, gain, Q).  Industry standard
 // is 8 fully-configurable bands plus high-pass / low-pass; we expose 8.
-const _eqBands = (count: number): PluginParameter[] => {
+const eqBands = (count: number): PluginParameter[] => {
   const out: PluginParameter[] = [];
   for (let n = 1; n <= count; n++) {
-    out?.push(b(`band${n}On`, `Band ${n} On`, n <= 4));
-    out?.push(
+    out.push(b(`band${n}On`, `Band ${n} On`, n <= 4));
+    out.push(
       c(
         `band${n}Type`,
         `Band ${n} Type`,
@@ -130,7 +130,7 @@ const _eqBands = (count: number): PluginParameter[] => {
         ],
       ),
     );
-    out?.push(
+    out.push(
       f(
         `band${n}Freq`,
         `Band ${n} Freq`,
@@ -140,18 +140,18 @@ const _eqBands = (count: number): PluginParameter[] => {
         "Hz",
       ),
     );
-    out?.push(f(`band${n}Gain`, `Band ${n} Gain`, 0, -24, 24, "dB", 0.1));
-    out?.push(f(`band${n}Q`, `Band ${n} Q`, 0.7, 0.1, 24, "", 0.01));
+    out.push(f(`band${n}Gain`, `Band ${n} Gain`, 0, -24, 24, "dB", 0.1));
+    out.push(f(`band${n}Q`, `Band ${n} Q`, 0.7, 0.1, 24, "", 0.01));
   }
   return out;
 };
 
 // Multiband compressor band (xover, threshold, ratio, attack, release, makeup).
-(count: number, xovers: number[]): PluginParameter[] => {
+((count: number, xovers: number[]): PluginParameter[] => {
   const out: PluginParameter[] = [];
   for (let n = 1; n <= count; n++) {
     if (n < count)
-      out?.push(
+      out.push(
         f(
           `xover${n}`,
           `Crossover ${n}`,
@@ -161,18 +161,18 @@ const _eqBands = (count: number): PluginParameter[] => {
           "Hz",
         ),
       );
-    out?.push(b(`band${n}On`, `Band ${n} On`, true));
-    out?.push(b(`band${n}Solo`, `Band ${n} Solo`, false));
-    out?.push(b(`band${n}Bypass`, `Band ${n} Bypass`, false));
-    out?.push(f(`band${n}Threshold`, `Band ${n} Threshold`, -18, -60, 0, "dB"));
-    out?.push(f(`band${n}Ratio`, `Band ${n} Ratio`, 2, 1, 20));
-    out?.push(f(`band${n}Attack`, `Band ${n} Attack`, 10, 0.1, 200, "ms"));
-    out?.push(f(`band${n}Release`, `Band ${n} Release`, 100, 1, 2000, "ms"));
-    out?.push(f(`band${n}Knee`, `Band ${n} Knee`, 6, 0, 24, "dB"));
-    out?.push(f(`band${n}Makeup`, `Band ${n} Makeup`, 0, -12, 24, "dB"));
+    out.push(b(`band${n}On`, `Band ${n} On`, true));
+    out.push(b(`band${n}Solo`, `Band ${n} Solo`, false));
+    out.push(b(`band${n}Bypass`, `Band ${n} Bypass`, false));
+    out.push(f(`band${n}Threshold`, `Band ${n} Threshold`, -18, -60, 0, "dB"));
+    out.push(f(`band${n}Ratio`, `Band ${n} Ratio`, 2, 1, 20));
+    out.push(f(`band${n}Attack`, `Band ${n} Attack`, 10, 0.1, 200, "ms"));
+    out.push(f(`band${n}Release`, `Band ${n} Release`, 100, 1, 2000, "ms"));
+    out.push(f(`band${n}Knee`, `Band ${n} Knee`, 6, 0, 24, "dB"));
+    out.push(f(`band${n}Makeup`, `Band ${n} Makeup`, 0, -12, 24, "dB"));
   }
   return out;
-};
+});
 
 const REFERENCE: Partial<
   Record<EffectType | InstrumentType | string, ParamFactory>
@@ -859,7 +859,7 @@ const REFERENCE: Partial<
 type Preset = Record<string, number | boolean | string>;
 type GenrePresets = Partial<Record<Genre, Preset>>;
 
-const _fillForAll = (
+const fillForAll = (
   base: Preset,
   perGenre: Partial<Record<Genre, Preset>>,
 ): GenrePresets => {
@@ -1916,37 +1916,37 @@ const GENRE_PRESETS: Partial<Record<string, GenrePresets>> = {
 export function enrichPlugin(plugin: PluginDefinition): PluginDefinition {
   if (plugin?.enriched) return plugin;
 
-  const _referenceFn = REFERENCE[plugin?.type];
-  const _refParams = referenceFn ? referenceFn() : [];
+  const referenceFn = REFERENCE[plugin?.type];
+  const refParams = referenceFn ? referenceFn() : [];
 
   // Add any missing reference parameters (preserve existing values/ranges).
-  const _existing = new Set(plugin?.parameters.map((p) => p?.id));
-  const _additions = refParams?.filter((p) => !existing?.has(p?.id));
-  const _mergedParams = [...plugin?.parameters, ...additions];
+  const existing = new Set(plugin?.parameters.map((p) => p?.id));
+  const additions = refParams?.filter((p) => !existing?.has(p?.id));
+  const mergedParams = [...plugin?.parameters, ...additions];
 
   // Backfill defaultPreset for newly added parameters.
   const mergedDefault: Record<string, number | boolean | string> = {
     ...plugin?.defaultPreset,
   };
   for (const p of additions) {
-    if (!(p?.id in mergedDefault)) mergedDefault[p?.id] = p?.defaultValue;
+    if (!(p.id in mergedDefault)) mergedDefault[p.id] = p?.defaultValue;
   }
 
   // Attach genre presets, gated to ids that actually exist on this plugin.
-  const _typePresets = GENRE_PRESETS[plugin?.type];
+  const typePresets = GENRE_PRESETS[plugin?.type];
   let genrePresets:
     | Record<string, Record<string, number | boolean | string>>
     | undefined;
   if (typePresets) {
-    const _validIds = new Set(mergedParams?.map((p) => p?.id));
+    const validIds = new Set(mergedParams?.map((p) => p?.id));
     genrePresets = {};
     for (const [genre, preset] of Object?.entries(typePresets)) {
       if (!preset) continue;
       const filtered: Record<string, number | boolean | string> = {};
       for (const [k, v] of Object?.entries(preset)) {
-        if (validIds?.has(k)) filtered[k] = v;
+        if (validIds.has(k)) filtered[k] = v;
       }
-      if (Object?.keys(filtered).length > 0) genrePresets[genre] = filtered;
+      if (Object.keys(filtered).length > 0) genrePresets[genre] = filtered;
     }
     if (Object?.keys(genrePresets).length === 0) genrePresets = undefined;
   }
@@ -1984,7 +1984,7 @@ export function buildFactoryPresetRows(plugins: PluginDefinition[]): Array<{
     if (!p?.genrePresets) continue;
     for (const [genre, params] of Object?.entries(p?.genrePresets)) {
       out?.push({
-        pluginSlug: p?.slug,
+        pluginSlug: p.slug,
         name: `Genre: ${genre}`,
         parameters: { ...p?.defaultPreset, ...params },
         metadata: { genre, factory: true },
@@ -2002,8 +2002,8 @@ export function enrichmentCoverage(plugins: PluginDefinition[]): {
   typesEnriched: string[];
   typesPassThrough: string[];
 } {
-  const _typesEnriched = new Set<string>();
-  const _typesPassThrough = new Set<string>();
+  const typesEnriched = new Set<string>();
+  const typesPassThrough = new Set<string>();
   let enriched = 0;
   let withGenrePresets = 0;
   for (const p of plugins) {
@@ -2015,7 +2015,7 @@ export function enrichmentCoverage(plugins: PluginDefinition[]): {
       withGenrePresets++;
   }
   return {
-    total: plugins?.length,
+    total: plugins.length,
     enriched,
     withGenrePresets,
     typesEnriched: [...typesEnriched].sort(),

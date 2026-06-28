@@ -1,19 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Music,
-  Sparkles,
-  Play,
-  Pause,
-  Plus,
-  Check,
-  RefreshCw,
-  ChevronRight,
-  Wand2,
-  Lightbulb,
-  Heart,
-  Copy,
-} from "lucide-react";
+import { Music, Sparkles, Play, Pause, Plus, Check, RefreshCw, ChevronRight, Wand2, Lightbulb, Heart, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

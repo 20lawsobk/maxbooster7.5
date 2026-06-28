@@ -7,7 +7,7 @@ import {
 
 export const GLOBAL_SHORTCUTS: ShortcutDefinition[] = [
   {
-    id: "global?.command-palette",
+    id: "global.command-palette",
     key: "k",
     modifiers: ["cmd"],
     description: "Open command palette",
@@ -17,7 +17,7 @@ export const GLOBAL_SHORTCUTS: ShortcutDefinition[] = [
     allowInInput: true,
   },
   {
-    id: "global?.shortcuts-help",
+    id: "global.shortcuts-help",
     key: "/",
     modifiers: ["cmd"],
     description: "Show keyboard shortcuts",
@@ -26,7 +26,7 @@ export const GLOBAL_SHORTCUTS: ShortcutDefinition[] = [
     action: "showShortcutsHelp",
   },
   {
-    id: "global?.settings",
+    id: "global.settings",
     key: ",",
     modifiers: ["cmd"],
     description: "Open settings",
@@ -35,7 +35,7 @@ export const GLOBAL_SHORTCUTS: ShortcutDefinition[] = [
     action: "openSettings",
   },
   {
-    id: "global?.search",
+    id: "global.search",
     key: "f",
     modifiers: ["cmd"],
     description: "Global search",
@@ -44,7 +44,7 @@ export const GLOBAL_SHORTCUTS: ShortcutDefinition[] = [
     action: "openSearch",
   },
   {
-    id: "global?.new-project",
+    id: "global.new-project",
     key: "n",
     modifiers: ["cmd"],
     description: "New project",
@@ -53,7 +53,7 @@ export const GLOBAL_SHORTCUTS: ShortcutDefinition[] = [
     action: "newProject",
   },
   {
-    id: "global?.escape",
+    id: "global.escape",
     key: "Escape",
     description: "Close modal/dialog",
     category: "global",
@@ -65,7 +65,7 @@ export const GLOBAL_SHORTCUTS: ShortcutDefinition[] = [
 
 export const NAVIGATION_SHORTCUTS: ShortcutDefinition[] = [
   {
-    id: "nav?.dashboard",
+    id: "nav.dashboard",
     key: "h",
     modifiers: ["alt"],
     description: "Go to Dashboard",
@@ -74,7 +74,7 @@ export const NAVIGATION_SHORTCUTS: ShortcutDefinition[] = [
     action: "navigateDashboard",
   },
   {
-    id: "nav?.studio",
+    id: "nav.studio",
     key: "s",
     modifiers: ["alt"],
     description: "Go to Studio",
@@ -83,7 +83,7 @@ export const NAVIGATION_SHORTCUTS: ShortcutDefinition[] = [
     action: "navigateStudio",
   },
   {
-    id: "nav?.projects",
+    id: "nav.projects",
     key: "p",
     modifiers: ["alt"],
     description: "Go to Projects",
@@ -92,7 +92,7 @@ export const NAVIGATION_SHORTCUTS: ShortcutDefinition[] = [
     action: "navigateProjects",
   },
   {
-    id: "nav?.analytics",
+    id: "nav.analytics",
     key: "a",
     modifiers: ["alt"],
     description: "Go to Analytics",
@@ -101,7 +101,7 @@ export const NAVIGATION_SHORTCUTS: ShortcutDefinition[] = [
     action: "navigateAnalytics",
   },
   {
-    id: "nav?.distribution",
+    id: "nav.distribution",
     key: "d",
     modifiers: ["alt"],
     description: "Go to Distribution",
@@ -110,7 +110,7 @@ export const NAVIGATION_SHORTCUTS: ShortcutDefinition[] = [
     action: "navigateDistribution",
   },
   {
-    id: "nav?.marketplace",
+    id: "nav.marketplace",
     key: "m",
     modifiers: ["alt"],
     description: "Go to Marketplace",
@@ -119,7 +119,7 @@ export const NAVIGATION_SHORTCUTS: ShortcutDefinition[] = [
     action: "navigateMarketplace",
   },
   {
-    id: "nav?.royalties",
+    id: "nav.royalties",
     key: "r",
     modifiers: ["alt"],
     description: "Go to Royalties",
@@ -131,7 +131,7 @@ export const NAVIGATION_SHORTCUTS: ShortcutDefinition[] = [
 
 export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
   {
-    id: "studio?.play-pause",
+    id: "studio.play-pause",
     key: " ",
     description: "Play/Pause",
     category: "transport",
@@ -139,7 +139,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "togglePlayPause",
   },
   {
-    id: "studio?.stop",
+    id: "studio.stop",
     key: "s",
     description: "Stop",
     category: "transport",
@@ -147,7 +147,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "stop",
   },
   {
-    id: "studio?.record",
+    id: "studio.record",
     key: "r",
     description: "Toggle recording",
     category: "transport",
@@ -155,7 +155,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "toggleRecord",
   },
   {
-    id: "studio?.loop",
+    id: "studio.loop",
     key: "l",
     description: "Toggle loop",
     category: "transport",
@@ -163,7 +163,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "toggleLoop",
   },
   {
-    id: "studio?.metronome",
+    id: "studio.metronome",
     key: "c",
     description: "Toggle metronome",
     category: "transport",
@@ -171,7 +171,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "toggleMetronome",
   },
   {
-    id: "studio?.save",
+    id: "studio.save",
     key: "s",
     modifiers: ["cmd"],
     description: "Save project",
@@ -180,7 +180,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "saveProject",
   },
   {
-    id: "studio?.undo",
+    id: "studio.undo",
     key: "z",
     modifiers: ["cmd"],
     description: "Undo",
@@ -189,7 +189,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "undo",
   },
   {
-    id: "studio?.redo",
+    id: "studio.redo",
     key: "z",
     modifiers: ["cmd", "shift"],
     description: "Redo",
@@ -198,7 +198,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "redo",
   },
   {
-    id: "studio?.cut",
+    id: "studio.cut",
     key: "x",
     modifiers: ["cmd"],
     description: "Cut",
@@ -207,7 +207,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "cut",
   },
   {
-    id: "studio?.copy",
+    id: "studio.copy",
     key: "c",
     modifiers: ["cmd"],
     description: "Copy",
@@ -216,7 +216,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "copy",
   },
   {
-    id: "studio?.paste",
+    id: "studio.paste",
     key: "v",
     modifiers: ["cmd"],
     description: "Paste",
@@ -225,7 +225,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "paste",
   },
   {
-    id: "studio?.delete",
+    id: "studio.delete",
     key: "Delete",
     description: "Delete selected",
     category: "editing",
@@ -233,7 +233,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "deleteSelected",
   },
   {
-    id: "studio?.duplicate",
+    id: "studio.duplicate",
     key: "d",
     modifiers: ["cmd"],
     description: "Duplicate",
@@ -242,7 +242,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "duplicate",
   },
   {
-    id: "studio?.split",
+    id: "studio.split",
     key: "b",
     description: "Split at playhead",
     category: "editing",
@@ -250,7 +250,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "splitClip",
   },
   {
-    id: "studio?.quantize",
+    id: "studio.quantize",
     key: "q",
     description: "Quantize",
     category: "editing",
@@ -258,7 +258,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "quantize",
   },
   {
-    id: "studio?.mute",
+    id: "studio.mute",
     key: "m",
     description: "Mute track",
     category: "track",
@@ -266,7 +266,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "toggleMute",
   },
   {
-    id: "studio?.solo",
+    id: "studio.solo",
     key: "o",
     description: "Solo track",
     category: "track",
@@ -274,7 +274,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "toggleSolo",
   },
   {
-    id: "studio?.add-track",
+    id: "studio.add-track",
     key: "t",
     modifiers: ["cmd"],
     description: "Add track",
@@ -283,7 +283,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "addTrack",
   },
   {
-    id: "studio?.zoom-in",
+    id: "studio.zoom-in",
     key: "=",
     modifiers: ["cmd"],
     description: "Zoom in",
@@ -292,7 +292,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "zoomIn",
   },
   {
-    id: "studio?.zoom-out",
+    id: "studio.zoom-out",
     key: "-",
     modifiers: ["cmd"],
     description: "Zoom out",
@@ -301,7 +301,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "zoomOut",
   },
   {
-    id: "studio?.zoom-fit",
+    id: "studio.zoom-fit",
     key: "0",
     modifiers: ["cmd"],
     description: "Zoom to fit",
@@ -310,7 +310,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "zoomToFit",
   },
   {
-    id: "studio?.mixer",
+    id: "studio.mixer",
     key: "x",
     modifiers: ["shift"],
     description: "Toggle mixer",
@@ -319,7 +319,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "toggleMixer",
   },
   {
-    id: "studio?.browser",
+    id: "studio.browser",
     key: "b",
     modifiers: ["shift"],
     description: "Toggle browser",
@@ -328,7 +328,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "toggleBrowser",
   },
   {
-    id: "studio?.export",
+    id: "studio.export",
     key: "e",
     modifiers: ["cmd", "shift"],
     description: "Export project",
@@ -337,7 +337,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "exportProject",
   },
   {
-    id: "studio?.home",
+    id: "studio.home",
     key: "Home",
     description: "Go to start",
     category: "transport",
@@ -345,7 +345,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "goToStart",
   },
   {
-    id: "studio?.end",
+    id: "studio.end",
     key: "End",
     description: "Go to end",
     category: "transport",
@@ -353,7 +353,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "goToEnd",
   },
   {
-    id: "studio?.skip-back",
+    id: "studio.skip-back",
     key: ",",
     description: "Skip back",
     category: "transport",
@@ -361,7 +361,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "skipBack",
   },
   {
-    id: "studio?.skip-forward",
+    id: "studio.skip-forward",
     key: ".",
     description: "Skip forward",
     category: "transport",
@@ -369,7 +369,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "skipForward",
   },
   {
-    id: "studio?.snap-toggle",
+    id: "studio.snap-toggle",
     key: "n",
     description: "Toggle snap",
     category: "editing",
@@ -377,7 +377,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
     action: "toggleSnap",
   },
   {
-    id: "studio?.select-all",
+    id: "studio.select-all",
     key: "a",
     modifiers: ["cmd"],
     description: "Select all",
@@ -389,7 +389,7 @@ export const STUDIO_SHORTCUTS: ShortcutDefinition[] = [
 
 export const DASHBOARD_SHORTCUTS: ShortcutDefinition[] = [
   {
-    id: "dashboard?.new-project",
+    id: "dashboard.new-project",
     key: "n",
     description: "Create new project",
     category: "actions",
@@ -397,7 +397,7 @@ export const DASHBOARD_SHORTCUTS: ShortcutDefinition[] = [
     action: "newProject",
   },
   {
-    id: "dashboard?.upload",
+    id: "dashboard.upload",
     key: "u",
     description: "Upload file",
     category: "actions",
@@ -405,7 +405,7 @@ export const DASHBOARD_SHORTCUTS: ShortcutDefinition[] = [
     action: "uploadFile",
   },
   {
-    id: "dashboard?.refresh",
+    id: "dashboard.refresh",
     key: "r",
     modifiers: ["cmd"],
     description: "Refresh data",
@@ -414,7 +414,7 @@ export const DASHBOARD_SHORTCUTS: ShortcutDefinition[] = [
     action: "refreshData",
   },
   {
-    id: "dashboard?.distribution",
+    id: "dashboard.distribution",
     key: "d",
     description: "Go to distribution",
     category: "navigation",
@@ -422,7 +422,7 @@ export const DASHBOARD_SHORTCUTS: ShortcutDefinition[] = [
     action: "goToDistribution",
   },
   {
-    id: "dashboard?.notifications",
+    id: "dashboard.notifications",
     key: "n",
     modifiers: ["shift"],
     description: "View notifications",
@@ -434,7 +434,7 @@ export const DASHBOARD_SHORTCUTS: ShortcutDefinition[] = [
 
 export const SOCIAL_SHORTCUTS: ShortcutDefinition[] = [
   {
-    id: "social?.new-post",
+    id: "social.new-post",
     key: "n",
     description: "Create new post",
     category: "actions",
@@ -442,7 +442,7 @@ export const SOCIAL_SHORTCUTS: ShortcutDefinition[] = [
     action: "newPost",
   },
   {
-    id: "social?.schedule",
+    id: "social.schedule",
     key: "s",
     description: "Open scheduler",
     category: "actions",
@@ -450,7 +450,7 @@ export const SOCIAL_SHORTCUTS: ShortcutDefinition[] = [
     action: "openScheduler",
   },
   {
-    id: "social?.inbox",
+    id: "social.inbox",
     key: "i",
     description: "View inbox",
     category: "navigation",
@@ -458,7 +458,7 @@ export const SOCIAL_SHORTCUTS: ShortcutDefinition[] = [
     action: "viewInbox",
   },
   {
-    id: "social?.analytics",
+    id: "social.analytics",
     key: "a",
     description: "View analytics",
     category: "navigation",
@@ -466,7 +466,7 @@ export const SOCIAL_SHORTCUTS: ShortcutDefinition[] = [
     action: "viewAnalytics",
   },
   {
-    id: "social?.calendar",
+    id: "social.calendar",
     key: "c",
     description: "View calendar",
     category: "navigation",
@@ -477,7 +477,7 @@ export const SOCIAL_SHORTCUTS: ShortcutDefinition[] = [
 
 export const MARKETPLACE_SHORTCUTS: ShortcutDefinition[] = [
   {
-    id: "marketplace?.search",
+    id: "marketplace.search",
     key: "f",
     modifiers: ["cmd"],
     description: "Search beats",
@@ -486,7 +486,7 @@ export const MARKETPLACE_SHORTCUTS: ShortcutDefinition[] = [
     action: "searchBeats",
   },
   {
-    id: "marketplace?.upload",
+    id: "marketplace.upload",
     key: "u",
     description: "Upload beat",
     category: "actions",
@@ -494,7 +494,7 @@ export const MARKETPLACE_SHORTCUTS: ShortcutDefinition[] = [
     action: "uploadBeat",
   },
   {
-    id: "marketplace?.favorites",
+    id: "marketplace.favorites",
     key: "f",
     description: "View favorites",
     category: "navigation",
@@ -502,7 +502,7 @@ export const MARKETPLACE_SHORTCUTS: ShortcutDefinition[] = [
     action: "viewFavorites",
   },
   {
-    id: "marketplace?.cart",
+    id: "marketplace.cart",
     key: "c",
     description: "View cart",
     category: "navigation",
@@ -510,7 +510,7 @@ export const MARKETPLACE_SHORTCUTS: ShortcutDefinition[] = [
     action: "viewCart",
   },
   {
-    id: "marketplace?.filters",
+    id: "marketplace.filters",
     key: "t",
     description: "Toggle filters",
     category: "view",
@@ -518,7 +518,7 @@ export const MARKETPLACE_SHORTCUTS: ShortcutDefinition[] = [
     action: "toggleFilters",
   },
   {
-    id: "marketplace?.play-pause",
+    id: "marketplace.play-pause",
     key: " ",
     description: "Play/Pause preview",
     category: "actions",
@@ -529,7 +529,7 @@ export const MARKETPLACE_SHORTCUTS: ShortcutDefinition[] = [
 
 export const ANALYTICS_SHORTCUTS: ShortcutDefinition[] = [
   {
-    id: "analytics?.date-range",
+    id: "analytics.date-range",
     key: "d",
     description: "Change date range",
     category: "actions",
@@ -537,7 +537,7 @@ export const ANALYTICS_SHORTCUTS: ShortcutDefinition[] = [
     action: "changeDateRange",
   },
   {
-    id: "analytics?.export",
+    id: "analytics.export",
     key: "e",
     modifiers: ["cmd"],
     description: "Export report",
@@ -546,7 +546,7 @@ export const ANALYTICS_SHORTCUTS: ShortcutDefinition[] = [
     action: "exportReport",
   },
   {
-    id: "analytics?.refresh",
+    id: "analytics.refresh",
     key: "r",
     modifiers: ["cmd"],
     description: "Refresh data",
@@ -555,7 +555,7 @@ export const ANALYTICS_SHORTCUTS: ShortcutDefinition[] = [
     action: "refreshData",
   },
   {
-    id: "analytics?.compare",
+    id: "analytics.compare",
     key: "c",
     description: "Compare periods",
     category: "view",

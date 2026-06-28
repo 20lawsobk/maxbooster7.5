@@ -159,10 +159,12 @@ router.post("/", requireAuth, async (req, res) => {
   } catch (error: unknown) {
     logger.warn({ err: error }, "[Songwriting] Failed to create session:");
     if (error instanceof Error && error.name === "ZodError") {
-      return res.status(400).json({
-        error: "Validation error",
-        details: (error as Record<string, unknown>).flatten(),
-      });
+      return res
+        .status(400)
+        .json({
+          error: "Validation error",
+          details: (error as Record<string, unknown>).flatten(),
+        });
     }
     res.status(500).json({ error: "Failed to create songwriting session" });
   }
@@ -204,10 +206,12 @@ router.put("/:id", requireAuth, async (req, res) => {
   } catch (error: unknown) {
     logger.warn({ err: error }, "[Songwriting] Failed to update session:");
     if (error instanceof Error && error.name === "ZodError") {
-      return res.status(400).json({
-        error: "Validation error",
-        details: (error as Record<string, unknown>).flatten(),
-      });
+      return res
+        .status(400)
+        .json({
+          error: "Validation error",
+          details: (error as Record<string, unknown>).flatten(),
+        });
     }
     res.status(500).json({ error: "Failed to update songwriting session" });
   }

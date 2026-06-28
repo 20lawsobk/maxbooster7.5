@@ -28,7 +28,7 @@ export class AIMixer {
     trackId: string,
     source: AudioBufferSourceNode | MediaElementAudioSourceNode,
   ): TrackChannel {
-    const _channel = new TrackChannel(this?.context, trackId);
+    const channel = new TrackChannel(this?.context, trackId);
     channel?.connect(source, this?.masterBus);
     this?.tracks.set(trackId, channel);
     return channel;
@@ -47,10 +47,10 @@ export class AIMixer {
     };
 
     // Step 1: Analyze all tracks
-    const _trackAnalysis = await this?.analyzeAllTracks();
+    const trackAnalysis = await this?.analyzeAllTracks();
 
     // Step 2: Detect instrument types and frequency content
-    const _instrumentMap = this?.detectInstruments(trackAnalysis);
+    const instrumentMap = this?.detectInstruments(trackAnalysis);
 
     // Step 3: Apply automatic gain staging
     this?.applyGainStaging(trackAnalysis, mixResult);
@@ -78,31 +78,31 @@ export class AIMixer {
    * Analyze all tracks
    */
   private async analyzeAllTracks(): Promise<Map<string, TrackAnalysis>> {
-    const _analysis = new Map<string, TrackAnalysis>();
+    const analysis = new Map<string, TrackAnalysis>();
 
     for (const [trackId, channel] of this?.tracks) {
-      const _buffer = await channel?.getBuffer();
+      const buffer = await channel?.getBuffer();
       if (!buffer) continue;
 
-      const _dynamicRange = this?.analyzer.analyzeDynamicRange(buffer);
-      const _lufs = this?.analyzer.calculateLUFS(buffer);
-      const _clipping = this?.analyzer.detectClipping(buffer);
+      const dynamicRange = this?.analyzer.analyzeDynamicRange(buffer);
+      const lufs = this?.analyzer.calculateLUFS(buffer);
+      const clipping = this?.analyzer.detectClipping(buffer);
 
       // Get frequency analysis
-      const _tempSource = this?.context.createBufferSource();
+      const tempSource = this?.context.createBufferSource();
       tempSource.buffer = buffer;
-      const _freqData = this?.analyzer.getFrequencyData(tempSource);
+      const freqData = this?.analyzer.getFrequencyData(tempSource);
 
       analysis?.set(trackId, {
         trackId,
-        peak: dynamicRange?.peak,
-        rms: dynamicRange?.rms,
+        peak: dynamicRange.peak,
+        rms: dynamicRange.rms,
         lufs,
-        dynamicRange: dynamicRange?.dynamicRange,
-        hasClipping: clipping?.hasClipping,
-        dominantFrequency: freqData?.dominantFrequency,
-        frequencyPeaks: freqData?.peaks,
-        averageLevel: freqData?.averageLevel,
+        dynamicRange: dynamicRange.dynamicRange,
+        hasClipping: clipping.hasClipping,
+        dominantFrequency: freqData.dominantFrequency,
+        frequencyPeaks: freqData.peaks,
+        averageLevel: freqData.averageLevel,
       });
     }
 
@@ -115,10 +115,10 @@ export class AIMixer {
   private detectInstruments(
     analysis: Map<string, TrackAnalysis>,
   ): Map<string, InstrumentType> {
-    const _instruments = new Map<string, InstrumentType>();
+    const instruments = new Map<string, InstrumentType>();
 
     for (const [trackId, data] of analysis) {
-      const _freq = data?.dominantFrequency;
+      const freq = data?.dominantFrequency;
 
       // Simple frequency-based detection
       if (freq < 150) {
@@ -164,16 +164,16 @@ export class AIMixer {
     };
 
     for (const [trackId, data] of analysis) {
-      const _channel = this?.tracks.get(trackId);
+      const channel = this?.tracks.get(trackId);
       if (!channel) continue;
 
       // Calculate required gain adjustment
-      const _currentLUFS = data?.lufs;
-      const _targetLUFS = targetLevels?.other; // Default if not detected
-      const _gainAdjustment = targetLUFS - currentLUFS;
+      const currentLUFS = data?.lufs;
+      const targetLUFS = targetLevels?.other; // Default if not detected
+      const gainAdjustment = targetLUFS - currentLUFS;
 
       // Apply gain with limiting to prevent clipping
-      const _finalGain = Math?.max(-12, Math?.min(12, gainAdjustment));
+      const finalGain = Math?.max(-12, Math?.min(12, gainAdjustment));
       channel?.setGain(Math?.pow(10, finalGain / 20));
 
       result?.adjustments.push({
@@ -189,15 +189,15 @@ export class AIMixer {
    * Apply intelligent EQ based on frequency masking
    */
   private applyIntelligentEQ(
-    _analysis: Map<string, TrackAnalysis>,
+    analysis: Map<string, TrackAnalysis>,
     instruments: Map<string, InstrumentType>,
     result: MixResult,
   ): void {
     for (const [trackId, instrument] of instruments) {
-      const _channel = this?.tracks.get(trackId);
+      const channel = this?.tracks.get(trackId);
       if (!channel) continue;
 
-      const _eq = channel?.getEQ();
+      const eq = channel?.getEQ();
 
       switch (instrument) {
         case "kick":
@@ -267,11 +267,11 @@ export class AIMixer {
     result: MixResult,
   ): void {
     for (const [trackId, data] of analysis) {
-      const _channel = this?.tracks.get(trackId);
-      const _instrument = instruments?.get(trackId);
+      const channel = this?.tracks.get(trackId);
+      const instrument = instruments?.get(trackId);
       if (!channel) continue;
 
-      const _compressor = channel?.getCompressor();
+      const compressor = channel?.getCompressor();
 
       // Set compression based on dynamic range and instrument
       if (data?.dynamicRange > 20) {
@@ -326,13 +326,13 @@ export class AIMixer {
     result: MixResult,
   ): void {
     // Center important elements
-    const _centerElements = ["kick", "snare", "bass", "vocal"];
+    const centerElements = ["kick", "snare", "bass", "vocal"];
 
     let panPosition = -0.7; // Start from left
-    const _panIncrement = 1.4 / (instruments?.size - centerElements?.length);
+    const panIncrement = 1.4 / (instruments?.size - centerElements?.length);
 
     for (const [trackId, instrument] of instruments) {
-      const _channel = this?.tracks.get(trackId);
+      const channel = this?.tracks.get(trackId);
       if (!channel) continue;
 
       if (centerElements?.includes(instrument)) {
@@ -364,10 +364,10 @@ export class AIMixer {
     result: MixResult,
   ): void {
     for (const [trackId, instrument] of instruments) {
-      const _channel = this?.tracks.get(trackId);
+      const channel = this?.tracks.get(trackId);
       if (!channel) continue;
 
-      const _reverb = channel?.getReverb();
+      const reverb = channel?.getReverb();
 
       // Apply reverb based on instrument
       switch (instrument) {
@@ -425,13 +425,13 @@ export class AIMixer {
    */
   private optimizeLoudness(result: MixResult): void {
     // Target -14 LUFS for streaming platforms
-    const _targetLUFS = -14;
+    const targetLUFS = -14;
 
     // Analyze master bus output
     // This would need actual buffer analysis in production
-    const _currentLUFS = -18; // Placeholder
+    const currentLUFS = -18; // Placeholder
 
-    const _adjustment = targetLUFS - currentLUFS;
+    const adjustment = targetLUFS - currentLUFS;
     this?.masterBus.gain?.setValueAtTime(
       Math?.pow(10, adjustment / 20),
       this?.context.currentTime,
@@ -458,7 +458,7 @@ export class AIMixer {
     for (const channel of this?.tracks.values()) {
       channel?.reset();
     }
-    this?.masterBus.gain.value = 1;
+    this.masterBus.gain.value = 1;
   }
 
   /**
@@ -516,11 +516,11 @@ class TrackChannel {
   }
 
   setGain(value: number): void {
-    this?.output.gain.value = value;
+    this.output.gain.value = value;
   }
 
   setPan(value: number): void {
-    this?.panner.pan.value = value;
+    this.panner.pan.value = value;
   }
 
   getEQ(): EQPlugin {
@@ -544,8 +544,8 @@ class TrackChannel {
   }
 
   reset(): void {
-    this?.output.gain.value = 1;
-    this?.panner.pan.value = 0;
+    this.output.gain.value = 1;
+    this.panner.pan.value = 0;
     this?.eq.reset();
     this?.compressor.setParameters({ bypass: true });
     this?.reverb.setMix(0);
@@ -596,4 +596,3 @@ interface MixResult {
   recommendations: string[];
 }
 
-export { AIMixer, type MixResult, type InstrumentType };

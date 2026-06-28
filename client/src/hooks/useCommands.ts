@@ -10,7 +10,7 @@ export interface UseCommandsOptions {
 export function useCommands(options: UseCommandsOptions) {
   const { registerCommand, unregisterCommand, executeCommand, searchCommands } =
     useShortcuts();
-  const _registeredIdsRef = useRef<string[]>([]);
+  const registeredIdsRef = useRef<string[]>([]);
   const { commands, enabled = true } = options;
 
   useEffect(() => {
@@ -29,14 +29,14 @@ export function useCommands(options: UseCommandsOptions) {
     };
   }, [commands, enabled, registerCommand, unregisterCommand]);
 
-  const _execute = useCallback(
+  const execute = useCallback(
     async (commandId: string) => {
       await executeCommand(commandId);
     },
     [executeCommand],
   );
 
-  const _search = useCallback(
+  const search = useCallback(
     (query: string) => {
       return searchCommands(query);
     },
@@ -46,20 +46,20 @@ export function useCommands(options: UseCommandsOptions) {
   return {
     execute,
     search,
-    registeredIds: registeredIdsRef?.current,
+    registeredIds: registeredIdsRef.current,
   };
 }
 
 export function useCommand(command: Omit<Command, "id"> & { id?: string }) {
   const { registerCommand, unregisterCommand, executeCommand } = useShortcuts();
-  const _idRef = useRef(
+  const idRef = useRef(
     command?.id || `cmd-${Math?.random().toString(36).substr(2, 9)}`,
   );
 
   useEffect(() => {
     const fullCommand: Command = {
       ...command,
-      id: idRef?.current,
+      id: idRef.current,
     };
     registerCommand(fullCommand);
 
@@ -68,24 +68,24 @@ export function useCommand(command: Omit<Command, "id"> & { id?: string }) {
     };
   }, [command?.name, command?.action]);
 
-  const _execute = useCallback(async () => {
+  const execute = useCallback(async () => {
     await executeCommand(idRef?.current);
   }, [executeCommand]);
 
-  return { execute, id: idRef?.current };
+  return { execute, id: idRef.current };
 }
 
 export function useCommandExecution() {
   const { executeCommand, searchCommands, recentCommands } = useShortcuts();
 
-  const _execute = useCallback(
+  const execute = useCallback(
     async (commandId: string) => {
       await executeCommand(commandId);
     },
     [executeCommand],
   );
 
-  const _search = useCallback(
+  const search = useCallback(
     (query: string) => {
       return searchCommands(query);
     },

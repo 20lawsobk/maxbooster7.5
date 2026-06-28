@@ -506,8 +506,10 @@ export default function MerchStore() {
 
   const avgOrderValue =
     ordersArr.length > 0
-      ? ordersArr.reduce((s: number, o) => s + parseFloat(o.total || "0"), 0) /
-        ordersArr.length
+      ? ordersArr.reduce(
+          (s: number, o) => s + parseFloat(o.total || "0"),
+          0,
+        ) / ordersArr.length
       : 0;
 
   const totalCatRev = categoryRevenue.reduce((s, x) => s + x.rev, 0) || 1;
@@ -641,7 +643,7 @@ export default function MerchStore() {
                     <CardContent className="h-48" />
                   </Card>
                 ))
-              ) : filteredItems?.length === 0 ? (
+              ) : (filteredItems?.length ?? 0) === 0 ? (
                 <div className="col-span-full flex flex-col items-center justify-center py-16 text-center border rounded-lg bg-muted/10">
                   <Package className="h-14 w-14 text-muted-foreground mb-4 opacity-30" />
                   <h3 className="text-lg font-semibold">No products yet</h3>
@@ -1058,43 +1060,45 @@ export default function MerchStore() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {stats?.bestSellers?.map((item, i: number) => (
-                        <div
-                          key={item.id}
-                          className="flex items-center justify-between"
-                        >
-                          <div className="flex items-center gap-3">
-                            <span className="text-muted-foreground text-sm w-4">
-                              {i + 1}.
-                            </span>
-                            <div className="h-10 w-10 bg-muted rounded flex items-center justify-center overflow-hidden">
-                              {item.imageUrl ? (
-                                <img
-                                  src={item.imageUrl}
-                                  alt=""
-                                  className="h-full w-full object-cover"
-                                />
-                              ) : (
-                                <Package className="h-5 w-5 text-muted-foreground" />
-                              )}
+                      {stats?.bestSellers?.map(
+                        (item, i: number) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center justify-between"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-muted-foreground text-sm w-4">
+                                {i + 1}.
+                              </span>
+                              <div className="h-10 w-10 bg-muted rounded flex items-center justify-center overflow-hidden">
+                                {item.imageUrl ? (
+                                  <img
+                                    src={item.imageUrl}
+                                    alt=""
+                                    className="h-full w-full object-cover"
+                                  />
+                                ) : (
+                                  <Package className="h-5 w-5 text-muted-foreground" />
+                                )}
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium">
+                                  {item.name}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {item.soldCount} units sold
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <div className="text-sm font-medium">
-                                {item.name}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {item.soldCount} units sold
-                              </div>
+                            <div className="text-sm font-bold text-green-500">
+                              $
+                              {(
+                                parseFloat(item.price) * item.soldCount
+                              ).toFixed(2)}
                             </div>
                           </div>
-                          <div className="text-sm font-bold text-green-500">
-                            $
-                            {(parseFloat(item.price) * item.soldCount).toFixed(
-                              2,
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                        ),
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -1115,30 +1119,32 @@ export default function MerchStore() {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {stats?.lowInventoryItems?.map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex items-center justify-between p-3 rounded-lg bg-destructive/5 border border-destructive/20"
-                        >
-                          <div className="flex items-center gap-3">
-                            <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0" />
-                            <div>
-                              <div className="text-sm font-medium">
-                                {item.name}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {item.inventory} remaining
+                      {stats?.lowInventoryItems?.map(
+                        (item) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center justify-between p-3 rounded-lg bg-destructive/5 border border-destructive/20"
+                          >
+                            <div className="flex items-center gap-3">
+                              <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0" />
+                              <div>
+                                <div className="text-sm font-medium">
+                                  {item.name}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {item.inventory} remaining
+                                </div>
                               </div>
                             </div>
+                            <Badge
+                              variant="outline"
+                              className="text-destructive border-destructive/30"
+                            >
+                              Restock
+                            </Badge>
                           </div>
-                          <Badge
-                            variant="outline"
-                            className="text-destructive border-destructive/30"
-                          >
-                            Restock
-                          </Badge>
-                        </div>
-                      ))}
+                        ),
+                      )}
                     </div>
                   )}
                 </CardContent>

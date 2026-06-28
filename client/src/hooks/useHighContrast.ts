@@ -29,7 +29,7 @@ export interface ContrastColors {
   warning: string;
 }
 
-const _STORAGE_KEY = "max-booster-contrast-mode";
+const STORAGE_KEY = "max-booster-contrast-mode";
 
 const NORMAL_COLORS: ContrastColors = {
   text: "hsl(var(--foreground))",
@@ -81,7 +81,7 @@ function getSystemContrastPreference(): ContrastMode {
 
 function getStoredPreference(): ContrastMode | null {
   if (typeof window === "undefined") return null;
-  const _stored = localStorage?.getItem(STORAGE_KEY);
+  const stored = localStorage?.getItem(STORAGE_KEY);
   if (stored === "normal" || stored === "high" || stored === "more") {
     return stored;
   }
@@ -103,10 +103,10 @@ export function useHighContrast(
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const _highQuery = window?.matchMedia("(prefers-contrast: high)");
-    const _moreQuery = window?.matchMedia("(prefers-contrast: more)");
+    const highQuery = window?.matchMedia("(prefers-contrast: high)");
+    const moreQuery = window?.matchMedia("(prefers-contrast: more)");
 
-    const _handleChange = () => {
+    const handleChange = () => {
       setSystemPreference(getSystemContrastPreference());
     };
 
@@ -119,16 +119,16 @@ export function useHighContrast(
     };
   }, []);
 
-  const _contrastMode = useMemo(() => {
+  const contrastMode = useMemo(() => {
     if (userPreference !== null) return userPreference;
     if (defaultMode !== undefined) return defaultMode;
     return systemPreference;
   }, [userPreference, defaultMode, systemPreference]);
 
-  const _isHighContrast = contrastMode !== "normal";
-  const _isSystemPreference = userPreference === null;
+  const isHighContrast = contrastMode !== "normal";
+  const isSystemPreference = userPreference === null;
 
-  const _setContrastMode = useCallback((mode: ContrastMode | null) => {
+  const setContrastMode = useCallback((mode: ContrastMode | null) => {
     setUserPreference(mode);
     if (mode === null) {
       localStorage?.removeItem(STORAGE_KEY);
@@ -137,7 +137,7 @@ export function useHighContrast(
     }
   }, []);
 
-  const _getFocusIndicatorWidth = useCallback((): number => {
+  const getFocusIndicatorWidth = useCallback((): number => {
     switch (contrastMode) {
       case "more":
         return 4;
@@ -148,7 +148,7 @@ export function useHighContrast(
     }
   }, [contrastMode]);
 
-  const _getBorderWidth = useCallback((): number => {
+  const getBorderWidth = useCallback((): number => {
     switch (contrastMode) {
       case "more":
         return 2;
@@ -159,7 +159,7 @@ export function useHighContrast(
     }
   }, [contrastMode]);
 
-  const _getContrastColors = useCallback((): ContrastColors => {
+  const getContrastColors = useCallback((): ContrastColors => {
     switch (contrastMode) {
       case "more":
         return MORE_CONTRAST_COLORS;
@@ -173,12 +173,12 @@ export function useHighContrast(
   useEffect(() => {
     if (typeof document === "undefined") return;
 
-    const _root = document?.documentElement;
+    const root = document?.documentElement;
 
     root?.classList.remove("contrast-normal", "contrast-high", "contrast-more");
     root?.classList.add(`contrast-${contrastMode}`);
 
-    const _colors = getContrastColors();
+    const colors = getContrastColors();
     root?.style.setProperty(
       "--a11y-focus-width",
       `${getFocusIndicatorWidth()}px`,

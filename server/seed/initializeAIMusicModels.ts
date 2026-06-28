@@ -7,7 +7,7 @@ export async function initializeAIMusicModels() {
   logger?.info("🎵 Initializing AI Music Intelligence Models...");
 
   try {
-    const _models = [
+    const models = [
       {
         modelName: "stem_separator_v1",
         modelType: "music_processing",
@@ -56,7 +56,7 @@ export async function initializeAIMusicModels() {
       {
         modelName: "lufs_meter_v1",
         modelType: "music_analysis",
-        description: "ITU-R BS?.1770-4 compliant LUFS loudness measurement",
+        description: "ITU-R BS.1770-4 compliant LUFS loudness measurement",
         version: "1.0.0",
         status: "active",
         capabilities: ["lufs_measurement", "true_peak", "dynamic_range"],
@@ -167,7 +167,7 @@ export async function initializeAIMusicModels() {
         logger?.info(`   ✓ Created AI Model: ${model?.modelName}`);
       }
 
-      const _versionHash = `${modelData?.modelName}_init`;
+      const versionHash = `${modelData?.modelName}_init`;
       const [existingVersion] = await db
         .select()
         .from(aiModelVersions)
@@ -183,7 +183,7 @@ export async function initializeAIMusicModels() {
             status: "production",
             accuracy: (modelData?.performance as Record<string, unknown>)
               .accuracy,
-            parameters: modelData?.parameters,
+            parameters: modelData.parameters,
             changelog:
               "Initial release with professional-grade audio processing",
             deployedAt: new Date(),

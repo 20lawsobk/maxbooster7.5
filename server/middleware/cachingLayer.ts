@@ -32,14 +32,14 @@ class InMemoryCache {
   }
 
   private generateEtag(data: Record<string, unknown>): string {
-    const _str = typeof data === "string" ? data : JSON?.stringify(data);
+    const str = typeof data === "string" ? data : JSON?.stringify(data);
     let hash = 0;
     for (let i = 0; i < str?.length; i++) {
-      const _char = str?.charCodeAt(i);
+      const char = str?.charCodeAt(i);
       hash = (hash << 5) - hash + char;
       hash = hash & hash;
     }
-    return `"${Math?.abs(hash).toString(16)}"`;
+    return `"${Math.abs(hash).toString(16)}"`;
   }
 
   set(
@@ -50,7 +50,7 @@ class InMemoryCache {
     if (!this?.config.enabled) return;
 
     if (this?.cache.size >= this?.config.maxEntries) {
-      const _oldest = this?.accessOrder.shift();
+      const oldest = this?.accessOrder.shift();
       if (oldest) {
         this?.cache.delete(oldest);
       }
@@ -58,12 +58,12 @@ class InMemoryCache {
 
     this?.cache.set(key, {
       data,
-      timestamp: Date?.now(),
-      etag: this?.generateEtag(data),
+      timestamp: Date.now(),
+      etag: this.generateEtag(data),
       contentType,
     });
 
-    const _existingIndex = this?.accessOrder.indexOf(key);
+    const existingIndex = this?.accessOrder.indexOf(key);
     if (existingIndex > -1) {
       this?.accessOrder.splice(existingIndex, 1);
     }
@@ -73,21 +73,21 @@ class InMemoryCache {
   get(key: string): CacheEntry | null {
     if (!this?.config.enabled) return null;
 
-    const _entry = this?.cache.get(key);
+    const entry = this?.cache.get(key);
     if (!entry) {
-      this?.misses++;
+      this.misses++;
       return null;
     }
 
     if (Date?.now() - entry?.timestamp > this?.config.ttlMs) {
       this?.cache.delete(key);
-      this?.misses++;
+      this.misses++;
       return null;
     }
 
-    this?.hits++;
+    this.hits++;
 
-    const _index = this?.accessOrder.indexOf(key);
+    const index = this?.accessOrder.indexOf(key);
     if (index > -1) {
       this?.accessOrder.splice(index, 1);
       this?.accessOrder.push(key);
@@ -113,7 +113,7 @@ class InMemoryCache {
 
     for (const key of keysToDelete) {
       this?.cache.delete(key);
-      const _index = this?.accessOrder.indexOf(key);
+      const index = this?.accessOrder.indexOf(key);
       if (index > -1) {
         this?.accessOrder.splice(index, 1);
       }
@@ -126,7 +126,7 @@ class InMemoryCache {
   }
 
   private cleanup(): void {
-    const _now = Date?.now();
+    const now = Date?.now();
     const keysToDelete: string[] = [];
 
     for (const [key, entry] of this?.cache.entries()) {
@@ -137,7 +137,7 @@ class InMemoryCache {
 
     for (const key of keysToDelete) {
       this?.cache.delete(key);
-      const _index = this?.accessOrder.indexOf(key);
+      const index = this?.accessOrder.indexOf(key);
       if (index > -1) {
         this?.accessOrder.splice(index, 1);
       }
@@ -145,27 +145,27 @@ class InMemoryCache {
   }
 
   getStats(): { hits: number; misses: number; hitRate: number; size: number } {
-    const _total = this?.hits + this?.misses;
+    const total = this?.hits + this?.misses;
     return {
-      hits: this?.hits,
-      misses: this?.misses,
+      hits: this.hits,
+      misses: this.misses,
       hitRate: total > 0 ? this?.hits / total : 0,
-      size: this?.cache.size,
+      size: this.cache.size,
     };
   }
 }
 
-const _globalCache = new InMemoryCache({
+const globalCache = new InMemoryCache({
   ttlMs: 30000,
   maxEntries: 10000,
 });
 
-const _shortTermCache = new InMemoryCache({
+const shortTermCache = new InMemoryCache({
   ttlMs: 5000,
   maxEntries: 5000,
 });
 
-const _longTermCache = new InMemoryCache({
+const longTermCache = new InMemoryCache({
   ttlMs: 300000,
   maxEntries: 2000,
 });
@@ -177,19 +177,19 @@ interface CachingMiddlewareOptions {
   cacheInstance?: InMemoryCache;
 }
 
-export const _createCachingMiddleware = (
+export const createCachingMiddleware = (
   options: CachingMiddlewareOptions = {},
 ): RequestHandler => {
-  const _cache = options?.cacheInstance || globalCache;
+  const cache = options?.cacheInstance || globalCache;
 
-  const _generateKey =
+  const generateKey =
     options?.keyGenerator ||
     ((req: Request) => {
-      const _userId = (req as Record<string, unknown>).user?.id || "anonymous";
+      const userId = (req as Record<string, unknown>).user?.id || "anonymous";
       return `${req?.method}:${req?.originalUrl}:${userId}`;
     });
 
-  const _shouldCache =
+  const shouldCache =
     options?.shouldCache ||
     ((req: Request) => {
       return req?.method === "GET" && !req?.originalUrl.includes("/auth/");
@@ -201,11 +201,11 @@ export const _createCachingMiddleware = (
       return;
     }
 
-    const _key = generateKey(req);
-    const _cached = cache?.get(key);
+    const key = generateKey(req);
+    const cached = cache?.get(key);
 
     if (cached) {
-      const _clientEtag = req?.headers["if-none-match"];
+      const clientEtag = req?.headers["if-none-match"];
 
       if (clientEtag === cached?.etag) {
         res?.status(304).end();
@@ -214,7 +214,7 @@ export const _createCachingMiddleware = (
 
       res?.setHeader("X-Cache", "HIT");
       res?.setHeader("ETag", cached?.etag);
-      res?.setHeader("Cache-Control", "private, max-age=30");
+      res.setHeader("Cache-Control", "private, max-age=30");
       res?.setHeader("Content-Type", cached?.contentType);
 
       if (typeof cached?.data === "object") {
@@ -227,8 +227,8 @@ export const _createCachingMiddleware = (
 
     res?.setHeader("X-Cache", "MISS");
 
-    const _originalJson = res?.json.bind(res);
-    const _originalSend = res?.send.bind(res);
+    const originalJson = res?.json.bind(res);
+    const originalSend = res?.send.bind(res);
 
     res.json = (data: Record<string, unknown>) => {
       if (res?.statusCode >= 200 && res?.statusCode < 300) {
@@ -239,7 +239,7 @@ export const _createCachingMiddleware = (
 
     res.send = (data: Record<string, unknown>) => {
       if (res?.statusCode >= 200 && res?.statusCode < 300) {
-        const _contentType =
+        const contentType =
           (res?.getHeader("Content-Type") as string) || "text/html";
         cache?.set(key, data, contentType);
       }
@@ -250,16 +250,16 @@ export const _createCachingMiddleware = (
   };
 };
 
-export const _apiResponseCache = createCachingMiddleware({
+export const apiResponseCache = createCachingMiddleware({
   cacheInstance: shortTermCache,
   keyGenerator: (req) => {
-    const _userId = (req as Record<string, unknown>).user?.id || "anon";
+    const userId = (req as Record<string, unknown>).user?.id || "anon";
     return `api:${req?.originalUrl}:${userId}`;
   },
   shouldCache: (req) => {
     if (req?.method !== "GET") return false;
 
-    const _noCachePaths = [
+    const noCachePaths = [
       "/api/auth",
       "/api/user/profile",
       "/api/notifications",
@@ -270,11 +270,11 @@ export const _apiResponseCache = createCachingMiddleware({
   },
 });
 
-export const _staticDataCache = createCachingMiddleware({
+export const staticDataCache = createCachingMiddleware({
   cacheInstance: longTermCache,
   keyGenerator: (req) => `static:${req?.originalUrl}`,
   shouldCache: (req) => {
-    const _staticPaths = [
+    const staticPaths = [
       "/api/distribution/platforms",
       "/api/marketplace/categories",
       "/api/genres",
@@ -298,19 +298,19 @@ export const noCacheMiddleware: RequestHandler = (_req, res, next) => {
   next();
 };
 
-export const _getCacheStats = () => ({
-  global: globalCache?.getStats(),
-  shortTerm: shortTermCache?.getStats(),
-  longTerm: longTermCache?.getStats(),
+export const getCacheStats = () => ({
+  global: globalCache.getStats(),
+  shortTerm: shortTermCache.getStats(),
+  longTerm: longTermCache.getStats(),
 });
 
-export const _invalidateCache = (pattern: string | RegExp) => {
+export const invalidateCache = (pattern: string | RegExp) => {
   globalCache?.invalidate(pattern);
   shortTermCache?.invalidate(pattern);
   longTermCache?.invalidate(pattern);
 };
 
-export const _clearAllCaches = () => {
+export const clearAllCaches = () => {
   globalCache?.clear();
   shortTermCache?.clear();
   longTermCache?.clear();

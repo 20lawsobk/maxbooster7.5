@@ -11,8 +11,8 @@ import { logger } from "../logger.js";
 import fs from "fs";
 import path from "path";
 
-const _INDEX_CACHE_FILE = path?.join(process?.cwd(), "dist", ".db-indexes-ok");
-const _INDEX_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const INDEX_CACHE_FILE = path?.join(process?.cwd(), "dist", ".db-indexes-ok");
+const INDEX_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 interface IndexDefinition {
   name: string;
@@ -403,9 +403,9 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
 
   // Fast path: if all indexes were verified on a previous boot and the stamp file
   // is fresh (<24h) and reflects the current index count, skip the DB round-trip.
-  const _expectedCount = REQUIRED_INDEXES?.length;
+  const expectedCount = REQUIRED_INDEXES?.length;
   try {
-    const _raw = fs?.readFileSync(INDEX_CACHE_FILE, "utf8").trim();
+    const raw = fs?.readFileSync(INDEX_CACHE_FILE, "utf8").trim();
     const { count, ts } = JSON?.parse(raw);
     if (count === expectedCount && Date?.now() - ts < INDEX_CACHE_TTL_MS) {
       logger?.info(
@@ -414,7 +414,7 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
       return {
         success: true,
         created: [],
-        skipped: REQUIRED_INDEXES?.map((i) => i?.name),
+        skipped: REQUIRED_INDEXES.map((i) => i?.name),
         failed: [],
       };
     }
@@ -429,14 +429,14 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
   // Single batched query: fetch all existing index names in one round-trip instead
   // of 51 sequential SELECT queries.  On repeat boots (all indexes exist) this
   // cuts index verification from ~6 seconds to < 200 ms.
-  const _allNames = REQUIRED_INDEXES?.map((i) => i?.name);
+  const allNames = REQUIRED_INDEXES?.map((i) => i?.name);
   let existingSet = new Set<string>();
   try {
-    const _namesSql = sql?.join(
+    const namesSql = sql?.join(
       allNames?.map((n) => sql`${n}`),
       sql`, `,
     );
-    const _batchResult = await db?.execute(
+    const batchResult = await db?.execute(
       sql`SELECT indexname FROM pg_indexes WHERE schemaname = 'public' AND indexname IN (${namesSql})`,
     );
     existingSet = new Set<string>(
@@ -462,7 +462,7 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
 
     try {
       // Table existence check (only reached when index is missing)
-      const _tableExists = await db?.execute(sql`
+      const tableExists = await db?.execute(sql`
         SELECT 1 FROM information_schema?.tables
         WHERE table_schema = 'public' AND table_name = ${index?.table}
       `);
@@ -470,15 +470,15 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
       if (tableExists?.rows.length === 0) {
         skipped?.push(index?.name);
         logger?.warn(
-          `   ⚠️ ${index?.name} - table '${index?.table}' doesn't exist`,
+          `   ⚠️ ${index?.name} - table '${index.table}' doesn't exist`,
         );
         continue;
       }
 
       // Create the missing index (values come from the hardcoded constant — no user input)
-      const _indexNameId = sql?.identifier(index?.name);
-      const _tableId = sql?.identifier(index?.table);
-      const _columnsId = sql?.join(
+      const indexNameId = sql?.identifier(index?.name);
+      const tableId = sql?.identifier(index?.table);
+      const columnsId = sql?.join(
         index?.columns.map((c) => sql?.identifier(c)),
         sql`, `,
       );
@@ -502,7 +502,7 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
         skipped?.push(index?.name);
         logger?.warn(`   ⚠️ ${index?.name} - ${error?.message}`);
       } else {
-        failed?.push({ name: index?.name, error: error?.message });
+        failed?.push({ name: index.name, error: error.message });
         logger?.warn(`   ✗ ${index?.name} - ${error?.message}`);
       }
     }
@@ -516,7 +516,7 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
   logger?.info("   ✓ Database indexes verified");
   logger?.info("════════════════════════════════════════════════════════");
 
-  const _success = failed?.length === 0;
+  const success = failed?.length === 0;
 
   // Write a stamp so the next boot can skip the DB round-trip entirely.
   // Only cache when all indexes are present and no failures occurred.
@@ -525,7 +525,7 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
       fs?.mkdirSync(path?.dirname(INDEX_CACHE_FILE), { recursive: true });
       fs?.writeFileSync(
         INDEX_CACHE_FILE,
-        JSON?.stringify({ count: expectedCount, ts: Date?.now() }),
+        JSON?.stringify({ count: expectedCount, ts: Date.now() }),
       );
     } catch {
       // Non-fatal — next boot will just re-check normally.
@@ -552,7 +552,7 @@ export async function getIndexStatus(): Promise<{
 
   for (const index of REQUIRED_INDEXES) {
     try {
-      const _result = await db?.execute(sql`
+      const result = await db?.execute(sql`
         SELECT 1 FROM pg_indexes 
         WHERE indexname = ${index?.name}
       `);

@@ -45,13 +45,13 @@ export function useScreenReaderAnnounce(
     defaultPriority = "polite",
   } = options;
 
-  const _debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const _delayTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const delayTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
 
   useEffect(() => {
     return () => {
       if (clearOnUnmount) {
-        const _announcer = ScreenReaderAnnouncer?.getInstance();
+        const announcer = ScreenReaderAnnouncer?.getInstance();
         announcer?.clear();
       }
 
@@ -64,7 +64,7 @@ export function useScreenReaderAnnounce(
     };
   }, [clearOnUnmount]);
 
-  const _announce = useCallback(
+  const announce = useCallback(
     (message: string, priority: AnnouncementPriority = defaultPriority) => {
       if (!message?.trim()) return;
 
@@ -83,21 +83,21 @@ export function useScreenReaderAnnounce(
     [debounceMs, defaultPriority],
   );
 
-  const _announcePoliteWrapper = useCallback((message: string) => {
+  const announcePoliteWrapper = useCallback((message: string) => {
     announcePolite(message);
   }, []);
 
-  const _announceAssertiveWrapper = useCallback((message: string) => {
+  const announceAssertiveWrapper = useCallback((message: string) => {
     announceAssertive(message);
   }, []);
 
-  const _announceWithDelay = useCallback(
+  const announceWithDelay = useCallback(
     (
       message: string,
       delayMs: number,
       priority: AnnouncementPriority = defaultPriority,
     ) => {
-      const _timer = setTimeout(() => {
+      const timer = setTimeout(() => {
         if (priority === "assertive") {
           announceAssertive(message);
         } else {
@@ -111,7 +111,7 @@ export function useScreenReaderAnnounce(
     [defaultPriority],
   );
 
-  const _announceList = useCallback(
+  const announceList = useCallback(
     (
       items: string[],
       options: { separator?: string; priority?: AnnouncementPriority } = {},
@@ -119,16 +119,16 @@ export function useScreenReaderAnnounce(
       if (items?.length === 0) return;
 
       const { separator = ", ", priority = defaultPriority } = options;
-      const _message = items?.join(separator);
+      const message = items?.join(separator);
       announce(message, priority);
     },
     [announce, defaultPriority],
   );
 
-  const _announceProgress = useCallback(
+  const announceProgress = useCallback(
     (current: number, total: number, context?: string) => {
-      const _percentage = Math?.round((current / total) * 100);
-      const _message = context
+      const percentage = Math?.round((current / total) * 100);
+      const message = context
         ? `${context}: ${percentage}% complete, ${current} of ${total}`
         : `Progress: ${percentage}% complete, ${current} of ${total}`;
 
@@ -137,7 +137,7 @@ export function useScreenReaderAnnounce(
     [],
   );
 
-  const _announceStatus = useCallback(
+  const announceStatus = useCallback(
     (status: "loading" | "success" | "error" | "warning", message?: string) => {
       const statusMessages: Record<string, string> = {
         loading: message || "Loading, please wait",
@@ -146,7 +146,7 @@ export function useScreenReaderAnnounce(
         warning: message || "Warning",
       };
 
-      const _fullMessage = statusMessages[status] || message || "";
+      const fullMessage = statusMessages[status] || message || "";
 
       if (status === "error") {
         announceAssertive(fullMessage);
@@ -157,17 +157,17 @@ export function useScreenReaderAnnounce(
     [],
   );
 
-  const _announceNavigation = useCallback((pageName: string) => {
+  const announceNavigation = useCallback((pageName: string) => {
     announcePolite(`Navigated to ${pageName}`);
   }, []);
 
-  const _announceAction = useCallback((action: string, target?: string) => {
-    const _message = target ? `${action}: ${target}` : action;
+  const announceAction = useCallback((action: string, target?: string) => {
+    const message = target ? `${action}: ${target}` : action;
     announcePolite(message);
   }, []);
 
-  const _clear = useCallback(() => {
-    const _announcer = ScreenReaderAnnouncer?.getInstance();
+  const clear = useCallback(() => {
+    const announcer = ScreenReaderAnnouncer?.getInstance();
     announcer?.clear();
 
     if (debounceTimerRef?.current) {

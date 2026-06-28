@@ -34,10 +34,10 @@ import { DSP_POLICIES } from "./services/dspPolicyChecker";
 
 export async function initializeAdmin() {
   try {
-    const _adminEmail = process?.env.ADMIN_EMAIL || process?.env.Admin_Email;
-    const _adminPassword =
+    const adminEmail = process?.env.ADMIN_EMAIL || process?.env.Admin_Email;
+    const adminPassword =
       process?.env.ADMIN_PASSWORD || process?.env.Admin_Password;
-    const _adminUsername =
+    const adminUsername =
       process?.env.ADMIN_USERNAME || process?.env.Admin_Username;
 
     if (!adminEmail) {
@@ -78,7 +78,7 @@ export async function initializeAdmin() {
       logger?.info(`✅ Admin account exists: ${adminEmail}`);
 
       // Sync password, role, subscription, and ensure onboarding is complete
-      const _hashedPassword = await bcrypt?.hash(adminPassword, 12);
+      const hashedPassword = await bcrypt?.hash(adminPassword, 12);
       await db
         .update(users)
         .set({
@@ -115,7 +115,7 @@ export async function initializeAdmin() {
       logger?.info("🔐 Creating admin account...");
       isNewAdmin = true;
 
-      const _hashedPassword = await bcrypt?.hash(adminPassword, 12);
+      const hashedPassword = await bcrypt?.hash(adminPassword, 12);
 
       admin = await storage?.createUser({
         username: adminUsername,
@@ -229,8 +229,8 @@ async function initializeAdminResources(
       .where(eq(storefronts?.userId, adminId));
 
     if (!existingStorefront) {
-      const _adminUsername = process?.env.ADMIN_USERNAME || "blawz";
-      const _slug = adminUsername?.toLowerCase().replace(/[^a-z0-9]/g, "-");
+      const adminUsername = process?.env.ADMIN_USERNAME || "blawz";
+      const slug = adminUsername?.toLowerCase().replace(/[^a-z0-9]/g, "-");
 
       await db?.insert(storefronts).values({
         userId: adminId,
@@ -251,7 +251,7 @@ async function initializeAdminResources(
           instagram: "https://instagram.com/blawzmusic",
           twitter: "https://twitter.com/blawzmusic",
           youtube: "https://youtube.com/@blawzmusic",
-          spotify: "https://open?.spotify.com/artist/blawzmusic",
+          spotify: "https://open.spotify.com/artist/blawzmusic",
         },
         seoSettings: {
           title: "B-Lawz Music - Premium Beats & Instrumentals",
@@ -275,13 +275,13 @@ async function initializeAdminResources(
     }
 
     // 4. Check and initialize default license templates
-    const _existingLicenses = await db
+    const existingLicenses = await db
       .select()
       .from(licenseTemplates)
       .where(eq(licenseTemplates?.userId, adminId));
 
     if (existingLicenses?.length === 0) {
-      const _defaultLicenses = [
+      const defaultLicenses = [
         {
           userId: adminId,
           name: "Basic Lease",
@@ -356,13 +356,13 @@ async function initializeAdminResources(
     }
 
     // 5. Check and initialize default contract templates
-    const _existingContractTemplates = await db
+    const existingContractTemplates = await db
       .select()
       .from(contractTemplates)
       .where(eq(contractTemplates?.userId, adminId));
 
     if (existingContractTemplates?.length === 0) {
-      const _defaultContractTemplates = [
+      const defaultContractTemplates = [
         {
           userId: adminId,
           name: "Non-Exclusive Beat License",
@@ -541,15 +541,15 @@ async function initializeAdminResources(
       .where(eq(storefronts?.userId, adminId));
 
     if (adminStorefront) {
-      const _existingTiers = await db
+      const existingTiers = await db
         .select()
         .from(membershipTiers)
         .where(eq(membershipTiers?.storefrontId, adminStorefront?.id));
 
       if (existingTiers?.length === 0) {
-        const _defaultTiers = [
+        const defaultTiers = [
           {
-            storefrontId: adminStorefront?.id,
+            storefrontId: adminStorefront.id,
             name: "Beat Club",
             description:
               "Access to exclusive beats, 2 free downloads per month, and early access to new releases.",
@@ -566,7 +566,7 @@ async function initializeAdminResources(
             isActive: true,
           },
           {
-            storefrontId: adminStorefront?.id,
+            storefrontId: adminStorefront.id,
             name: "Producer Pro",
             description:
               "Full access to the entire beat catalog with unlimited downloads, stems, and trackouts.",
@@ -585,7 +585,7 @@ async function initializeAdminResources(
             isActive: true,
           },
           {
-            storefrontId: adminStorefront?.id,
+            storefrontId: adminStorefront.id,
             name: "Label Partner",
             description:
               "Enterprise-level access for labels and management companies. Bulk licensing, priority support, and custom terms.",
@@ -625,37 +625,37 @@ async function initializeAdminResources(
 
 async function seedPluginCatalog() {
   try {
-    logger?.info("🎛️ Seeding plugin catalog...");
-    await storage?.seedPluginCatalog();
-    logger?.info("✅ Plugin catalog seeded");
+    logger.info("🎛️ Seeding plugin catalog...");
+    await storage.seedPluginCatalog();
+    logger.info("✅ Plugin catalog seeded");
   } catch (error) {
-    logger?.warn("Plugin catalog seeding skipped");
+    logger.warn("Plugin catalog seeding skipped");
   }
 
   try {
     await seedStudioTemplates();
   } catch (error) {
-    logger?.warn("Template seeding skipped");
+    logger.warn("Template seeding skipped");
   }
 
   try {
     await seedStorefrontTemplates();
   } catch (error) {
-    logger?.warn("Storefront template seeding skipped");
+    logger.warn("Storefront template seeding skipped");
   }
 }
 
 async function seedStudioTemplates() {
   // Check if templates already exist
-  const _existingTemplates = await db?.select().from(studioTemplates).limit(1);
-  if (existingTemplates?.length > 0) {
-    logger?.info("   ✓ Studio templates already seeded");
+  const existingTemplates = await db.select().from(studioTemplates).limit(1);
+  if (existingTemplates.length > 0) {
+    logger.info("   ✓ Studio templates already seeded");
     return;
   }
 
-  logger?.info("📋 Seeding studio templates...");
+  logger.info("📋 Seeding studio templates...");
 
-  const _builtInTemplates = [
+  const builtInTemplates = [
     {
       id: randomBytes(8).toString("hex"),
       name: "Empty Song",
@@ -831,10 +831,10 @@ async function seedStudioTemplates() {
   ];
 
   for (const template of builtInTemplates) {
-    await db?.insert(studioTemplates).values(template);
+    await db.insert(studioTemplates).values(template);
   }
 
-  logger?.info(`   ✓ Seeded ${builtInTemplates?.length} built-in templates`);
+  logger.info(`   ✓ Seeded ${builtInTemplates.length} built-in templates`);
 }
 
 /**
@@ -843,18 +843,18 @@ async function seedStudioTemplates() {
  */
 async function seedStorefrontTemplates() {
   // Check if templates already exist
-  const _existingTemplates = await db
+  const existingTemplates = await db
     .select()
     .from(storefrontTemplates)
     .limit(1);
-  if (existingTemplates?.length > 0) {
-    logger?.info("   ✓ Storefront templates already seeded");
+  if (existingTemplates.length > 0) {
+    logger.info("   ✓ Storefront templates already seeded");
     return;
   }
 
-  logger?.info("🏪 Seeding storefront templates...");
+  logger.info("🏪 Seeding storefront templates...");
 
-  const _marketplaceTemplates = [
+  const marketplaceTemplates = [
     // === PREMIUM TIER (High-Converting, Pro Designs) ===
     {
       id: randomBytes(8).toString("hex"),
@@ -1553,11 +1553,11 @@ async function seedStorefrontTemplates() {
   ];
 
   for (const template of marketplaceTemplates) {
-    await db?.insert(storefrontTemplates).values(template);
+    await db.insert(storefrontTemplates).values(template);
   }
 
-  logger?.info(
-    `   ✓ Seeded ${marketplaceTemplates?.length} storefront templates`,
+  logger.info(
+    `   ✓ Seeded ${marketplaceTemplates.length} storefront templates`,
   );
 }
 
@@ -1570,12 +1570,12 @@ export async function bootstrapAdmin() {
  */
 export async function seedDSPProviders() {
   try {
-    logger?.info("🔧 Syncing DSP providers...");
+    logger.info("🔧 Syncing DSP providers...");
 
-    const _dspList = Object?.entries(DSP_POLICIES).map(([slug, policy]) => ({
+    const dspList = Object.entries(DSP_POLICIES).map(([slug, policy]) => ({
       id: `dsp_${slug}`,
-      name: policy?.name,
-      slug: slug?.toLowerCase(),
+      name: policy.name,
+      slug: slug.toLowerCase(),
       isActive: true,
       metadata: {
         category: getCategoryFromSlug(slug),
@@ -1584,12 +1584,12 @@ export async function seedDSPProviders() {
         requirements: {
           isrc: true,
           upc: true,
-          metadata: policy?.metadata?.requiredFields || ["title", "artist"],
-          audioFormats: policy?.audio?.formats || ["WAV", "FLAC"],
+          metadata: policy.metadata.requiredFields || ["title", "artist"],
+          audioFormats: policy.audio.formats || ["WAV", "FLAC"],
         },
         deliveryMethod: "api",
-        coverArtRequirements: policy?.coverArt,
-        audioRequirements: policy?.audio,
+        coverArtRequirements: policy.coverArt,
+        audioRequirements: policy.audio,
       },
     }));
 
@@ -1598,35 +1598,35 @@ export async function seedDSPProviders() {
         .insert(dspProviders)
         .values(dsp)
         .onConflictDoUpdate({
-          target: dspProviders?.id,
-          set: { isActive: true, name: dsp?.name, metadata: dsp?.metadata },
+          target: dspProviders.id,
+          set: { isActive: true, name: dsp.name, metadata: dsp.metadata },
         });
     }
 
     // Bulk-activate any DSP providers that may have been inserted as inactive
-    // by previous seeding runs (e?.g. via onConflictDoNothing).  This ensures ALL
+    // by previous seeding runs (e.g. via onConflictDoNothing).  This ensures ALL
     // platforms stored in the DB are active and accessible through LabelGrid.
     await db
       .update(dspProviders)
       .set({ isActive: true })
       .where(sql`is_active IS DISTINCT FROM true`);
 
-    logger?.info(`✅ Seeded/activated ${dspList?.length} DSP providers`);
+    logger.info(`✅ Seeded/activated ${dspList.length} DSP providers`);
   } catch (error) {
-    logger?.warn("Failed to seed DSP providers:", error?.message);
+    logger.warn("Failed to seed DSP providers:", error.message);
   }
 }
 
 function getCategoryFromSlug(slug: string): string {
-  const _socialPlatforms = [
+  const socialPlatforms = [
     "tiktok",
     "instagram",
     "snapchat",
     "facebook",
     "youtube",
   ];
-  const _electronicPlatforms = ["beatport", "traxsource", "juno"];
-  const _regionalPlatforms = [
+  const electronicPlatforms = ["beatport", "traxsource", "juno"];
+  const regionalPlatforms = [
     "netease",
     "qq",
     "jiosaavn",
@@ -1637,18 +1637,18 @@ function getCategoryFromSlug(slug: string): string {
     "vk",
   ];
 
-  if (socialPlatforms?.some((p) => slug?.toLowerCase().includes(p)))
+  if (socialPlatforms.some((p) => slug.toLowerCase().includes(p)))
     return "social";
-  if (electronicPlatforms?.some((p) => slug?.toLowerCase().includes(p)))
+  if (electronicPlatforms.some((p) => slug.toLowerCase().includes(p)))
     return "electronic";
-  if (regionalPlatforms?.some((p) => slug?.toLowerCase().includes(p)))
+  if (regionalPlatforms.some((p) => slug.toLowerCase().includes(p)))
     return "regional";
 
   return "streaming";
 }
 
 /**
- * Seed distribution platforms from the comprehensive distributionPlatforms?.ts file
+ * Seed distribution platforms from the comprehensive distributionPlatforms.ts file
  * This provides 100+ DSP platforms matching DistroKid's full offering
  */
 async function seedDistributionPlatformsFromFile() {
@@ -1706,41 +1706,41 @@ async function seedAIModels() {
 
 async function seedSystemSettings() {
   try {
-    const _existing = await db?.select().from(systemSettings);
+    const existing = await db?.select().from(systemSettings);
     if (existing?.length > 0) {
       logger?.info("   ✓ System settings already seeded");
       return;
     }
 
-    const _defaults = [
+    const defaults = [
       {
         key: "platform_name",
-        value: JSON?.stringify("Max Booster"),
+        value: JSON.stringify("Max Booster"),
         description: "Platform display name",
       },
       {
         key: "maintenance_mode",
-        value: JSON?.stringify(false),
+        value: JSON.stringify(false),
         description: "Enable/disable maintenance mode",
       },
       {
         key: "user_registration_enabled",
-        value: JSON?.stringify(true),
+        value: JSON.stringify(true),
         description: "Allow new user registrations",
       },
       {
         key: "max_upload_size_mb",
-        value: JSON?.stringify(500),
+        value: JSON.stringify(500),
         description: "Maximum file upload size in MB",
       },
       {
         key: "default_currency",
-        value: JSON?.stringify("USD"),
+        value: JSON.stringify("USD"),
         description: "Default platform currency",
       },
       {
         key: "currency_rates",
-        value: JSON?.stringify({
+        value: JSON.stringify({
           USD: 1,
           EUR: 0.92,
           GBP: 0.79,
@@ -1752,72 +1752,72 @@ async function seedSystemSettings() {
       },
       {
         key: "stripe_enabled",
-        value: JSON?.stringify(true),
+        value: JSON.stringify(true),
         description: "Enable Stripe payment processing",
       },
       {
         key: "email_notifications_enabled",
-        value: JSON?.stringify(true),
+        value: JSON.stringify(true),
         description: "Enable email notifications globally",
       },
       {
         key: "api_rate_limit",
-        value: JSON?.stringify(1000),
+        value: JSON.stringify(1000),
         description: "API rate limit per hour per user",
       },
       {
         key: "max_social_accounts",
-        value: JSON?.stringify(20),
+        value: JSON.stringify(20),
         description: "Maximum connected social accounts per user",
       },
       {
         key: "autopilot_enabled",
-        value: JSON?.stringify(true),
+        value: JSON.stringify(true),
         description: "Enable autopilot posting system",
       },
       {
         key: "distribution_auto_submit",
-        value: JSON?.stringify(false),
+        value: JSON.stringify(false),
         description: "Auto-submit releases after validation",
       },
       {
         key: "default_royalty_rate",
-        value: JSON?.stringify(0.004),
+        value: JSON.stringify(0.004),
         description: "Default per-stream royalty rate in USD",
       },
       {
         key: "min_payout_threshold",
-        value: JSON?.stringify(10),
+        value: JSON.stringify(10),
         description: "Minimum balance for payout in USD",
       },
       {
         key: "payout_schedule",
-        value: JSON?.stringify("monthly"),
+        value: JSON.stringify("monthly"),
         description: "Default payout schedule (weekly/monthly/quarterly)",
       },
       {
         key: "max_collaborators_per_release",
-        value: JSON?.stringify(20),
+        value: JSON.stringify(20),
         description: "Maximum collaborators per release",
       },
       {
         key: "ai_features_enabled",
-        value: JSON?.stringify(true),
+        value: JSON.stringify(true),
         description: "Enable AI-powered features",
       },
       {
         key: "analytics_retention_days",
-        value: JSON?.stringify(365),
+        value: JSON.stringify(365),
         description: "Days to retain analytics data",
       },
       {
         key: "session_timeout_hours",
-        value: JSON?.stringify(24),
+        value: JSON.stringify(24),
         description: "User session timeout in hours",
       },
       {
         key: "two_factor_required",
-        value: JSON?.stringify(false),
+        value: JSON.stringify(false),
         description: "Require 2FA for all users",
       },
     ];
@@ -1833,13 +1833,13 @@ async function seedSystemSettings() {
 
 async function seedAlertRules() {
   try {
-    const _existing = await db?.select().from(alertRules);
+    const existing = await db?.select().from(alertRules);
     if (existing?.length > 0) {
       logger?.info("   ✓ Alert rules already seeded");
       return;
     }
 
-    const _defaults = [
+    const defaults = [
       {
         name: "High Error Rate",
         condition: "error_rate > threshold",

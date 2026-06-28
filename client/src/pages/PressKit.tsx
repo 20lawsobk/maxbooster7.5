@@ -147,7 +147,7 @@ export default function PressKit() {
       ...data,
       genres,
       socialLinks,
-      isPublic: pressKit?.isPublic ?? false,
+      isPublic: pressKit.isPublic ?? false,
     });
   };
 
@@ -322,14 +322,16 @@ export default function PressKit() {
                     Photos
                   </h3>
                   <div className="grid grid-cols-2 gap-4">
-                    {pressKit?.photos?.map((p: PressKitPhoto, i: number) => (
-                      <img
-                        key={i}
-                        src={p.url}
-                        alt={`Press ${i}`}
-                        className="rounded-lg border aspect-video object-cover"
-                      />
-                    ))}
+                    {pressKit?.photos?.map(
+                      (p: PressKitPhoto, i: number) => (
+                        <img
+                          key={i}
+                          src={p.url}
+                          alt={`Press ${i}`}
+                          className="rounded-lg border aspect-video object-cover"
+                        />
+                      ),
+                    )}
                   </div>
                 </section>
               </div>

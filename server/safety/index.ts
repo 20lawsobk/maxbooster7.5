@@ -115,33 +115,33 @@ export async function initializeSafetySystems(): Promise<{
   // 1. Validate environment (non-strict mode - log but don't fail)
   try {
     const { validateEnvironment } = await import("./envValidation");
-    const _envResult = validateEnvironment(false);
-    if (!envResult?.valid) {
-      errors?.push(...envResult?.errors);
+    const envResult = validateEnvironment(false);
+    if (!envResult.valid) {
+      errors.push(...envResult.errors);
     }
   } catch (error) {
-    errors?.push(`Environment validation failed: ${error?.message}`);
-    logger?.warn({ err: error }, "[Safety] Environment validation error:");
+    errors.push(`Environment validation failed: ${error.message}`);
+    logger.warn({ err: error }, "[Safety] Environment validation error:");
   }
 
   // 2. Initialize audit logger
   try {
     const { initAuditLogger } = await import("./auditLogger");
     await initAuditLogger();
-    logger?.info("   ✓ Audit logger initialized");
+    logger.info("   ✓ Audit logger initialized");
   } catch (error) {
-    errors?.push(`Audit logger failed: ${error?.message}`);
-    logger?.warn({ err: error }, "[Safety] Audit logger error:");
+    errors.push(`Audit logger failed: ${error.message}`);
+    logger.warn({ err: error }, "[Safety] Audit logger error:");
   }
 
   // 3. Create database indexes
   try {
     const { createRequiredIndexes } = await import("./databaseIndexes");
-    const _indexResult = await createRequiredIndexes();
-    if (!indexResult?.success) {
-      logger?.warn("   ⚠ Some database indexes failed to create");
+    const indexResult = await createRequiredIndexes();
+    if (!indexResult.success) {
+      logger.warn("   ⚠ Some database indexes failed to create");
     } else {
-      logger?.info("   ✓ Database indexes verified");
+      logger.info("   ✓ Database indexes verified");
     }
   } catch (error) {
     // Non-critical - log but don't fail
@@ -161,7 +161,7 @@ export async function initializeSafetySystems(): Promise<{
   // 5. Initialize kill switch (always succeeds)
   try {
     const { killSwitch } = await import("./killSwitch");
-    const _state = killSwitch?.getState();
+    const state = killSwitch?.getState();
     logger?.info(
       `   ✓ Kill switch ready (global killed: ${state?.globalKilled})`,
     );
@@ -170,7 +170,7 @@ export async function initializeSafetySystems(): Promise<{
     logger?.warn({ err: error }, "[Safety] Kill switch error:");
   }
 
-  const _success = errors?.length === 0;
+  const success = errors?.length === 0;
 
   logger?.info("────────────────────────────────────────────────────────");
   if (success) {

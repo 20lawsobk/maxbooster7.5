@@ -25,21 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  Eye,
-  Download,
-  Trash2,
-  Shield,
-  Globe,
-  Users,
-  Lock,
-  FileText,
-  CheckCircle,
-  AlertTriangle,
-  Loader2,
-  Clock,
-  Info,
-} from "lucide-react";
+import { Eye, Download, Trash2, Shield, Globe, Users, Lock, FileText, CheckCircle, AlertTriangle, Loader2, Clock, Info } from "lucide-react";
 
 interface PrivacySettings {
   profileVisibility: "public" | "private" | "connections";
@@ -501,7 +487,7 @@ export function PrivacySettings() {
                 <Download className="h-4 w-4 mr-2" />
                 Download
               </Button>
-            ) : exportStatus?.status === "pending" ? (
+            ) : exportStatus.status === "pending" ? (
               <Button disabled>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 Processing

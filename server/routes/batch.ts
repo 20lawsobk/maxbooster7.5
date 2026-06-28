@@ -14,7 +14,7 @@ import {
 } from "@shared/schema";
 import { logger } from "../logger.js";
 
-const _router = Router();
+const router = Router();
 
 interface BatchRequest {
   ids: string[];
@@ -38,8 +38,8 @@ function createBatchResult(
     success: successIds,
     failed: failures,
     totalRequested,
-    totalSucceeded: successIds?.length,
-    totalFailed: failures?.length,
+    totalSucceeded: successIds.length,
+    totalFailed: failures.length,
   };
 }
 
@@ -54,31 +54,31 @@ router?.post("/releases/submit", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "No IDs provided" });
     }
 
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const __settled0 = await Promise?.allSettled(
+    const _settled0 = await Promise?.allSettled(
       ids?.map(async (id) => {
-        const _result = await db
+        const result = await db
           .update(distroReleases)
           .set({ status: "pending" })
           .where(
             and(eq(distroReleases?.id, id), eq(distroReleases?.artistId, userId)),
           )
-          .returning({ id: distroReleases?.id });
+          .returning({ id: distroReleases.id });
         if (result?.length === 0)
           throw new Error("Release not found or access denied");
         return id;
       }),
     );
     for (let _i = 0; _i < _settled0?.length; _i++) {
-      const __r = _settled0[_i];
-      if (_r?.status === "fulfilled") successIds?.push(_r?.value);
+      const r = _settled0[_i];
+      if (r?.status === "fulfilled") successIds?.push(r?.value);
       else
         failures?.push({
           id: ids[_i],
-          error: _r?.reason?.message || "Failed to submit release",
+          error: r.reason?.message || "Failed to submit release",
         });
     }
 
@@ -100,31 +100,31 @@ router?.post("/releases/takedown", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "No IDs provided" });
     }
 
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const __settled1 = await Promise?.allSettled(
+    const _settled1 = await Promise?.allSettled(
       ids?.map(async (id) => {
-        const _result = await db
+        const result = await db
           .update(distroReleases)
           .set({ status: "takedown" })
           .where(
             and(eq(distroReleases?.id, id), eq(distroReleases?.artistId, userId)),
           )
-          .returning({ id: distroReleases?.id });
+          .returning({ id: distroReleases.id });
         if (result?.length === 0)
           throw new Error("Release not found or access denied");
         return id;
       }),
     );
     for (let _i = 0; _i < _settled1?.length; _i++) {
-      const __r = _settled1[_i];
-      if (_r?.status === "fulfilled") successIds?.push(_r?.value);
+      const r = _settled1[_i];
+      if (r?.status === "fulfilled") successIds?.push(r?.value);
       else
         failures?.push({
           id: ids[_i],
-          error: _r?.reason?.message || "Failed to takedown release",
+          error: r.reason?.message || "Failed to takedown release",
         });
     }
 
@@ -146,7 +146,7 @@ router?.put("/releases/update", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "No IDs provided" });
     }
 
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const allowedUpdate: Record<string, unknown> = {};
     if (data?.title && typeof data?.title === "string")
       allowedUpdate.title = data?.title;
@@ -158,27 +158,27 @@ router?.put("/releases/update", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const __settled2 = await Promise?.allSettled(
+    const _settled2 = await Promise?.allSettled(
       ids?.map(async (id) => {
-        const _result = await db
+        const result = await db
           .update(distroReleases)
           .set(allowedUpdate)
           .where(
             and(eq(distroReleases?.id, id), eq(distroReleases?.artistId, userId)),
           )
-          .returning({ id: distroReleases?.id });
+          .returning({ id: distroReleases.id });
         if (result?.length === 0)
           throw new Error("Release not found or access denied");
         return id;
       }),
     );
     for (let _i = 0; _i < _settled2?.length; _i++) {
-      const __r = _settled2[_i];
-      if (_r?.status === "fulfilled") successIds?.push(_r?.value);
+      const r = _settled2[_i];
+      if (r?.status === "fulfilled") successIds?.push(r?.value);
       else
         failures?.push({
           id: ids[_i],
-          error: _r?.reason?.message || "Failed to update release",
+          error: r.reason?.message || "Failed to update release",
         });
     }
 
@@ -200,31 +200,31 @@ router?.post("/releases/delete", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "No IDs provided" });
     }
 
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const __settled3 = await Promise?.allSettled(
+    const _settled3 = await Promise?.allSettled(
       ids?.map(async (id) => {
-        const _result = await db
+        const result = await db
           .update(distroReleases)
           .set({ status: "deleted" })
           .where(
             and(eq(distroReleases?.id, id), eq(distroReleases?.artistId, userId)),
           )
-          .returning({ id: distroReleases?.id });
+          .returning({ id: distroReleases.id });
         if (result?.length === 0)
           throw new Error("Release not found or access denied");
         return id;
       }),
     );
     for (let _i = 0; _i < _settled3?.length; _i++) {
-      const __r = _settled3[_i];
-      if (_r?.status === "fulfilled") successIds?.push(_r?.value);
+      const r = _settled3[_i];
+      if (r?.status === "fulfilled") successIds?.push(r?.value);
       else
         failures?.push({
           id: ids[_i],
-          error: _r?.reason?.message || "Failed to delete release",
+          error: r.reason?.message || "Failed to delete release",
         });
     }
 
@@ -246,32 +246,32 @@ router?.post("/posts/schedule", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "No IDs provided" });
     }
 
-    const _userId = req?.user!.id;
-    const _scheduledAt = data?.scheduledTime
+    const userId = req?.user!.id;
+    const scheduledAt = data?.scheduledTime
       ? new Date(data?.scheduledTime)
       : new Date();
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const __settled4 = await Promise?.allSettled(
+    const _settled4 = await Promise?.allSettled(
       ids?.map(async (id) => {
-        const _result = await db
+        const result = await db
           .update(posts)
           .set({ scheduledAt, status: "scheduled" })
           .where(and(eq(posts?.id, id), eq(posts?.userId, userId)))
-          .returning({ id: posts?.id });
+          .returning({ id: posts.id });
         if (result?.length === 0)
           throw new Error("Post not found or access denied");
         return id;
       }),
     );
     for (let _i = 0; _i < _settled4?.length; _i++) {
-      const __r = _settled4[_i];
-      if (_r?.status === "fulfilled") successIds?.push(_r?.value);
+      const r = _settled4[_i];
+      if (r?.status === "fulfilled") successIds?.push(r?.value);
       else
         failures?.push({
           id: ids[_i],
-          error: _r?.reason?.message || "Failed to schedule post",
+          error: r.reason?.message || "Failed to schedule post",
         });
     }
 
@@ -293,28 +293,28 @@ router?.post("/posts/delete", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "No IDs provided" });
     }
 
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const __settled5 = await Promise?.allSettled(
+    const _settled5 = await Promise?.allSettled(
       ids?.map(async (id) => {
-        const _result = await db
+        const result = await db
           .delete(posts)
           .where(and(eq(posts?.id, id), eq(posts?.userId, userId)))
-          .returning({ id: posts?.id });
+          .returning({ id: posts.id });
         if (result?.length === 0)
           throw new Error("Post not found or access denied");
         return id;
       }),
     );
     for (let _i = 0; _i < _settled5?.length; _i++) {
-      const __r = _settled5[_i];
-      if (_r?.status === "fulfilled") successIds?.push(_r?.value);
+      const r = _settled5[_i];
+      if (r?.status === "fulfilled") successIds?.push(r?.value);
       else
         failures?.push({
           id: ids[_i],
-          error: _r?.reason?.message || "Failed to delete post",
+          error: r.reason?.message || "Failed to delete post",
         });
     }
 
@@ -336,7 +336,7 @@ router?.put("/posts/update", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "No IDs provided" });
     }
 
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const allowedUpdate: Record<string, unknown> = {};
     if (data?.content && typeof data?.content === "string")
       allowedUpdate.content = data?.content;
@@ -348,25 +348,25 @@ router?.put("/posts/update", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const __settled6 = await Promise?.allSettled(
+    const _settled6 = await Promise?.allSettled(
       ids?.map(async (id) => {
-        const _result = await db
+        const result = await db
           .update(posts)
           .set(allowedUpdate)
           .where(and(eq(posts?.id, id), eq(posts?.userId, userId)))
-          .returning({ id: posts?.id });
+          .returning({ id: posts.id });
         if (result?.length === 0)
           throw new Error("Post not found or access denied");
         return id;
       }),
     );
     for (let _i = 0; _i < _settled6?.length; _i++) {
-      const __r = _settled6[_i];
-      if (_r?.status === "fulfilled") successIds?.push(_r?.value);
+      const r = _settled6[_i];
+      if (r?.status === "fulfilled") successIds?.push(r?.value);
       else
         failures?.push({
           id: ids[_i],
-          error: _r?.reason?.message || "Failed to update post",
+          error: r.reason?.message || "Failed to update post",
         });
     }
 
@@ -388,13 +388,13 @@ router?.post("/files/delete", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "No IDs provided" });
     }
 
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const __settled7 = await Promise?.allSettled(
+    const _settled7 = await Promise?.allSettled(
       ids?.map(async (id) => {
-        const _result = await db
+        const result = await db
           .update(userStorageFiles)
           .set({ deletedAt: new Date() })
           .where(
@@ -403,19 +403,19 @@ router?.post("/files/delete", async (req: Request, res: Response) => {
               eq(userStorageFiles?.userId, userId),
             ),
           )
-          .returning({ id: userStorageFiles?.id });
+          .returning({ id: userStorageFiles.id });
         if (result?.length === 0)
           throw new Error("File not found or access denied");
         return id;
       }),
     );
     for (let _i = 0; _i < _settled7?.length; _i++) {
-      const __r = _settled7[_i];
-      if (_r?.status === "fulfilled") successIds?.push(_r?.value);
+      const r = _settled7[_i];
+      if (r?.status === "fulfilled") successIds?.push(r?.value);
       else
         failures?.push({
           id: ids[_i],
-          error: _r?.reason?.message || "Failed to delete file",
+          error: r.reason?.message || "Failed to delete file",
         });
     }
 
@@ -437,14 +437,14 @@ router?.post("/files/move", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "No IDs provided" });
     }
 
-    const _userId = req?.user!.id;
-    const _targetFolder = typeof data?.folder === "string" ? data?.folder : "/";
+    const userId = req?.user!.id;
+    const targetFolder = typeof data?.folder === "string" ? data?.folder : "/";
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const __settled8 = await Promise?.allSettled(
+    const _settled8 = await Promise?.allSettled(
       ids?.map(async (id) => {
-        const _result = await db
+        const result = await db
           .update(userStorageFiles)
           .set({ folder: targetFolder })
           .where(
@@ -453,19 +453,19 @@ router?.post("/files/move", async (req: Request, res: Response) => {
               eq(userStorageFiles?.userId, userId),
             ),
           )
-          .returning({ id: userStorageFiles?.id });
+          .returning({ id: userStorageFiles.id });
         if (result?.length === 0)
           throw new Error("File not found or access denied");
         return id;
       }),
     );
     for (let _i = 0; _i < _settled8?.length; _i++) {
-      const __r = _settled8[_i];
-      if (_r?.status === "fulfilled") successIds?.push(_r?.value);
+      const r = _settled8[_i];
+      if (r?.status === "fulfilled") successIds?.push(r?.value);
       else
         failures?.push({
           id: ids[_i],
-          error: _r?.reason?.message || "Failed to move file",
+          error: r.reason?.message || "Failed to move file",
         });
     }
 
@@ -487,14 +487,14 @@ router?.post("/files/download", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "No IDs provided" });
     }
 
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const __settled9 = await Promise?.allSettled(
+    const _settled9 = await Promise?.allSettled(
       ids?.map(async (id) => {
         const [file] = await db
-          .select({ id: userStorageFiles?.id })
+          .select({ id: userStorageFiles.id })
           .from(userStorageFiles)
           .where(
             and(
@@ -509,16 +509,16 @@ router?.post("/files/download", async (req: Request, res: Response) => {
       }),
     );
     for (let _i = 0; _i < _settled9?.length; _i++) {
-      const __r = _settled9[_i];
-      if (_r?.status === "fulfilled") successIds?.push(_r?.value);
+      const r = _settled9[_i];
+      if (r?.status === "fulfilled") successIds?.push(r?.value);
       else
         failures?.push({
           id: ids[_i],
-          error: _r?.reason?.message || "Failed to prepare download",
+          error: r.reason?.message || "Failed to prepare download",
         });
     }
 
-    const _downloadUrl =
+    const downloadUrl =
       successIds?.length > 0
         ? `/api/files/bulk-download?ids=${successIds?.join(",")}`
         : null;
@@ -544,7 +544,7 @@ router?.put("/files/update", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "No IDs provided" });
     }
 
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const allowedUpdate: Record<string, unknown> = {};
     if (data?.isPublic !== undefined)
       allowedUpdate.isPublic = Boolean(data?.isPublic);
@@ -556,9 +556,9 @@ router?.put("/files/update", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const __settled10 = await Promise?.allSettled(
+    const _settled10 = await Promise?.allSettled(
       ids?.map(async (id) => {
-        const _result = await db
+        const result = await db
           .update(userStorageFiles)
           .set(allowedUpdate)
           .where(
@@ -567,19 +567,19 @@ router?.put("/files/update", async (req: Request, res: Response) => {
               eq(userStorageFiles?.userId, userId),
             ),
           )
-          .returning({ id: userStorageFiles?.id });
+          .returning({ id: userStorageFiles.id });
         if (result?.length === 0)
           throw new Error("File not found or access denied");
         return id;
       }),
     );
     for (let _i = 0; _i < _settled10?.length; _i++) {
-      const __r = _settled10[_i];
-      if (_r?.status === "fulfilled") successIds?.push(_r?.value);
+      const r = _settled10[_i];
+      if (r?.status === "fulfilled") successIds?.push(r?.value);
       else
         failures?.push({
           id: ids[_i],
-          error: _r?.reason?.message || "Failed to update file",
+          error: r.reason?.message || "Failed to update file",
         });
     }
 
@@ -601,7 +601,7 @@ router?.put("/marketplace/update", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "No IDs provided" });
     }
 
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const allowedUpdate: Record<string, unknown> = {};
     if (data?.title && typeof data?.title === "string")
       allowedUpdate.title = data?.title;
@@ -615,25 +615,25 @@ router?.put("/marketplace/update", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const __settled11 = await Promise?.allSettled(
+    const _settled11 = await Promise?.allSettled(
       ids?.map(async (id) => {
-        const _result = await db
+        const result = await db
           .update(listings)
           .set(allowedUpdate)
           .where(and(eq(listings?.id, id), eq(listings?.userId, userId)))
-          .returning({ id: listings?.id });
+          .returning({ id: listings.id });
         if (result?.length === 0)
           throw new Error("Listing not found or access denied");
         return id;
       }),
     );
     for (let _i = 0; _i < _settled11?.length; _i++) {
-      const __r = _settled11[_i];
-      if (_r?.status === "fulfilled") successIds?.push(_r?.value);
+      const r = _settled11[_i];
+      if (r?.status === "fulfilled") successIds?.push(r?.value);
       else
         failures?.push({
           id: ids[_i],
-          error: _r?.reason?.message || "Failed to update listing",
+          error: r.reason?.message || "Failed to update listing",
         });
     }
 
@@ -655,29 +655,29 @@ router?.post("/marketplace/delete", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "No IDs provided" });
     }
 
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const __settled12 = await Promise?.allSettled(
+    const _settled12 = await Promise?.allSettled(
       ids?.map(async (id) => {
-        const _result = await db
+        const result = await db
           .update(listings)
           .set({ isPublished: false })
           .where(and(eq(listings?.id, id), eq(listings?.userId, userId)))
-          .returning({ id: listings?.id });
+          .returning({ id: listings.id });
         if (result?.length === 0)
           throw new Error("Listing not found or access denied");
         return id;
       }),
     );
     for (let _i = 0; _i < _settled12?.length; _i++) {
-      const __r = _settled12[_i];
-      if (_r?.status === "fulfilled") successIds?.push(_r?.value);
+      const r = _settled12[_i];
+      if (r?.status === "fulfilled") successIds?.push(r?.value);
       else
         failures?.push({
           id: ids[_i],
-          error: _r?.reason?.message || "Failed to delete listing",
+          error: r.reason?.message || "Failed to delete listing",
         });
     }
 
@@ -699,17 +699,17 @@ router?.post("/analytics/export", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "No IDs provided" });
     }
 
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _rows = await db
+    const rows = await db
       .select({
-        id: analytics?.id,
-        platform: analytics?.platform,
-        date: analytics?.date,
-        streams: analytics?.streams,
-        revenue: analytics?.revenue,
-        totalListeners: analytics?.totalListeners,
-        followers: analytics?.followers,
+        id: analytics.id,
+        platform: analytics.platform,
+        date: analytics.date,
+        streams: analytics.streams,
+        revenue: analytics.revenue,
+        totalListeners: analytics.totalListeners,
+        followers: analytics.followers,
       })
       .from(analytics)
       .where(
@@ -717,24 +717,24 @@ router?.post("/analytics/export", async (req: Request, res: Response) => {
       )
       .orderBy(desc(analytics?.date));
 
-    const _exportId = `export_${Date?.now()}`;
+    const exportId = `export_${Date?.now()}`;
 
     batchJobs?.set(exportId, {
       status: "completed",
-      processed: rows?.length,
-      total: rows?.length,
-      success: rows?.length,
+      processed: rows.length,
+      total: rows.length,
+      success: rows.length,
       failed: 0,
       failures: [],
-      startTime: Date?.now(),
+      startTime: Date.now(),
       exportData: rows as unknown as Record<string, unknown>[],
     });
 
     res?.json({
       success: ids,
       failed: [],
-      totalRequested: ids?.length,
-      totalSucceeded: ids?.length,
+      totalRequested: ids.length,
+      totalSucceeded: ids.length,
       totalFailed: 0,
       exportId,
       downloadUrl: `/api/batch/analytics/export/${exportId}/download`,
@@ -754,14 +754,14 @@ router?.get(
       }
 
       const { exportId } = req?.params;
-      const _job = batchJobs?.get(exportId);
+      const job = batchJobs?.get(exportId);
 
       if (!job || !job?.exportData) {
         return res?.status(404).json({ error: "Export not found or expired" });
       }
 
-      const _rows = job?.exportData;
-      const _headers = [
+      const rows = job?.exportData;
+      const headers = [
         "id",
         "platform",
         "date",
@@ -770,12 +770,12 @@ router?.get(
         "totalListeners",
         "followers",
       ];
-      const _csvLines = [
+      const csvLines = [
         headers?.join(","),
         ...rows?.map((r) =>
           headers
             .map((h) => {
-              const _val = r[h];
+              const val = r[h];
               if (val === null || val === undefined) return "";
               if (val instanceof Date) return val?.toISOString();
               return String(val).replace(/,/g, ";");
@@ -808,11 +808,11 @@ router?.post("/analytics/compare", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "No IDs provided" });
     }
 
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _analyticsData = await db
+    const analyticsData = await db
       .select({
-        platform: analytics?.platform,
+        platform: analytics.platform,
         streams: sql<number>`COALESCE(SUM(${analytics?.streams}), 0)`,
         revenue: sql<number>`COALESCE(SUM(${analytics?.revenue}), 0)`,
         listeners: sql<number>`COALESCE(SUM(${analytics?.totalListeners}), 0)`,
@@ -821,27 +821,27 @@ router?.post("/analytics/compare", async (req: Request, res: Response) => {
       .where(eq(analytics?.userId, userId))
       .groupBy(analytics?.platform);
 
-    const _analyticsMap = new Map(analyticsData?.map((a) => [a?.platform, a]));
+    const analyticsMap = new Map(analyticsData?.map((a) => [a?.platform, a]));
 
-    const _comparisonData = ids?.map((id) => {
-      const _data = analyticsMap?.get(id);
-      const _streamCount = Number(data?.streams) || 0;
-      const _rev = Number(data?.revenue) || 0;
-      const _listeners = Number(data?.listeners) || 0;
-      const _engagement =
+    const comparisonData = ids?.map((id) => {
+      const data = analyticsMap?.get(id);
+      const streamCount = Number(data?.streams) || 0;
+      const rev = Number(data?.revenue) || 0;
+      const listeners = Number(data?.listeners) || 0;
+      const engagement =
         streamCount > 0 && listeners > 0
           ? Math?.round((streamCount / listeners) * 100) / 100
           : 0;
       return { id, streams: streamCount, revenue: rev, engagement };
     });
 
-    const _succeeded = comparisonData?.map((d) => d?.id);
+    const succeeded = comparisonData?.map((d) => d?.id);
 
     res?.json({
       success: succeeded,
       failed: [],
-      totalRequested: ids?.length,
-      totalSucceeded: succeeded?.length,
+      totalRequested: ids.length,
+      totalSucceeded: succeeded.length,
       totalFailed: 0,
       comparisonData,
     });
@@ -868,10 +868,10 @@ const batchJobs: Map<
 
 // Prevent unbounded memory growth: evict jobs that are done or older than 30 min.
 // Without this, every batch/analytics export leaks a Map entry forever.
-const _BATCH_JOB_TTL_MS = 30 * 60 * 1000;
+const BATCH_JOB_TTL_MS = 30 * 60 * 1000;
 setInterval(
   () => {
-    const _cutoff = Date?.now() - BATCH_JOB_TTL_MS;
+    const cutoff = Date?.now() - BATCH_JOB_TTL_MS;
     for (const [id, job] of batchJobs) {
       if (
         job?.startTime < cutoff ||
@@ -895,34 +895,34 @@ router?.post("/tracks/move", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "No IDs provided" });
     }
 
-    const _targetProjectId =
+    const targetProjectId =
       typeof data?.targetProjectId === "string" ? data?.targetProjectId : null;
-    const _newOrder = typeof data?.order === "number" ? data?.order : null;
+    const newOrder = typeof data?.order === "number" ? data?.order : null;
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const __settled13 = await Promise?.allSettled(
+    const _settled13 = await Promise?.allSettled(
       ids?.map(async (id) => {
         const updatePayload: Record<string, unknown> = {};
         if (targetProjectId) updatePayload.projectId = targetProjectId;
         if (newOrder !== null) updatePayload.order = newOrder;
         if (Object?.keys(updatePayload).length === 0) return id;
-        const _result = await db
+        const result = await db
           .update(studioTracks)
           .set(updatePayload)
           .where(eq(studioTracks?.id, id))
-          .returning({ id: studioTracks?.id });
+          .returning({ id: studioTracks.id });
         if (result?.length === 0) throw new Error("Track not found");
         return id;
       }),
     );
     for (let _i = 0; _i < _settled13?.length; _i++) {
-      const __r = _settled13[_i];
-      if (_r?.status === "fulfilled") successIds?.push(_r?.value);
+      const r = _settled13[_i];
+      if (r?.status === "fulfilled") successIds?.push(r?.value);
       else
         failures?.push({
           id: ids[_i],
-          error: _r?.reason?.message || "Failed to move track",
+          error: r.reason?.message || "Failed to move track",
         });
     }
 
@@ -944,19 +944,19 @@ router?.post("/tracks/tag", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "No IDs provided" });
     }
 
-    const _tags = Array?.isArray(data?.tags) ? data?.tags : [];
+    const tags = Array?.isArray(data?.tags) ? data?.tags : [];
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const __settled14 = await Promise?.allSettled(
+    const _settled14 = await Promise?.allSettled(
       ids?.map(async (id) => {
         const [existing] = await db
-          .select({ metadata: studioTracks?.metadata })
+          .select({ metadata: studioTracks.metadata })
           .from(studioTracks)
           .where(eq(studioTracks?.id, id))
           .limit(1);
         if (!existing) throw new Error("Track not found");
-        const _existingMeta =
+        const existingMeta =
           (existing?.metadata as Record<string, unknown>) || {};
         await db
           .update(studioTracks)
@@ -966,12 +966,12 @@ router?.post("/tracks/tag", async (req: Request, res: Response) => {
       }),
     );
     for (let _i = 0; _i < _settled14?.length; _i++) {
-      const __r = _settled14[_i];
-      if (_r?.status === "fulfilled") successIds?.push(_r?.value);
+      const r = _settled14[_i];
+      if (r?.status === "fulfilled") successIds?.push(r?.value);
       else
         failures?.push({
           id: ids[_i],
-          error: _r?.reason?.message || "Failed to tag track",
+          error: r.reason?.message || "Failed to tag track",
         });
     }
 
@@ -993,14 +993,14 @@ router?.post("/tracks/export", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "No IDs provided" });
     }
 
-    const _userId = req?.user!.id;
-    const _format = typeof data?.format === "string" ? data?.format : "wav";
-    const _bitDepth = typeof data?.bitDepth === "number" ? data?.bitDepth : 24;
-    const _sampleRate =
+    const userId = req?.user!.id;
+    const format = typeof data?.format === "string" ? data?.format : "wav";
+    const bitDepth = typeof data?.bitDepth === "number" ? data?.bitDepth : 24;
+    const sampleRate =
       typeof data?.sampleRate === "number" ? data?.sampleRate : 44100;
 
     const [firstTrack] = await db
-      .select({ projectId: studioTracks?.projectId })
+      .select({ projectId: studioTracks.projectId })
       .from(studioTracks)
       .where(eq(studioTracks?.id, ids[0]))
       .limit(1);
@@ -1012,7 +1012,7 @@ router?.post("/tracks/export", async (req: Request, res: Response) => {
     const [exportRecord] = await db
       .insert(stemExports)
       .values({
-        projectId: firstTrack?.projectId,
+        projectId: firstTrack.projectId,
         userId,
         name: `Batch export ${new Date().toISOString()}`,
         format,
@@ -1026,21 +1026,21 @@ router?.post("/tracks/export", async (req: Request, res: Response) => {
     batchJobs?.set(exportRecord?.id, {
       status: "processing",
       processed: 0,
-      total: ids?.length,
+      total: ids.length,
       success: 0,
       failed: 0,
       failures: [],
-      startTime: Date?.now(),
+      startTime: Date.now(),
     });
 
     res?.json({
       success: ids,
       failed: [],
-      totalRequested: ids?.length,
-      totalSucceeded: ids?.length,
+      totalRequested: ids.length,
+      totalSucceeded: ids.length,
       totalFailed: 0,
-      exportId: exportRecord?.id,
-      jobId: exportRecord?.id,
+      exportId: exportRecord.id,
+      jobId: exportRecord.id,
     });
   } catch (error) {
     logger?.warn("Batch track export error:", error?.message || error);
@@ -1062,23 +1062,23 @@ router?.post("/tracks/delete", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const __settled15 = await Promise?.allSettled(
+    const _settled15 = await Promise?.allSettled(
       ids?.map(async (id) => {
-        const _result = await db
+        const result = await db
           .delete(studioTracks)
           .where(eq(studioTracks?.id, id))
-          .returning({ id: studioTracks?.id });
+          .returning({ id: studioTracks.id });
         if (result?.length === 0) throw new Error("Track not found");
         return id;
       }),
     );
     for (let _i = 0; _i < _settled15?.length; _i++) {
-      const __r = _settled15[_i];
-      if (_r?.status === "fulfilled") successIds?.push(_r?.value);
+      const r = _settled15[_i];
+      if (r?.status === "fulfilled") successIds?.push(r?.value);
       else
         failures?.push({
           id: ids[_i],
-          error: _r?.reason?.message || "Failed to delete track",
+          error: r.reason?.message || "Failed to delete track",
         });
     }
 
@@ -1100,7 +1100,7 @@ router?.put("/beats/update", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "No IDs provided" });
     }
 
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const allowedUpdate: Record<string, unknown> = {};
     if (data?.title && typeof data?.title === "string")
       allowedUpdate.title = data?.title;
@@ -1115,25 +1115,25 @@ router?.put("/beats/update", async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const __settled16 = await Promise?.allSettled(
+    const _settled16 = await Promise?.allSettled(
       ids?.map(async (id) => {
-        const _result = await db
+        const result = await db
           .update(beats)
           .set(allowedUpdate)
           .where(and(eq(beats?.id, id), eq(beats?.userId, userId)))
-          .returning({ id: beats?.id });
+          .returning({ id: beats.id });
         if (result?.length === 0)
           throw new Error("Beat not found or access denied");
         return id;
       }),
     );
     for (let _i = 0; _i < _settled16?.length; _i++) {
-      const __r = _settled16[_i];
-      if (_r?.status === "fulfilled") successIds?.push(_r?.value);
+      const r = _settled16[_i];
+      if (r?.status === "fulfilled") successIds?.push(r?.value);
       else
         failures?.push({
           id: ids[_i],
-          error: _r?.reason?.message || "Failed to update beat",
+          error: r.reason?.message || "Failed to update beat",
         });
     }
 
@@ -1155,29 +1155,29 @@ router?.post("/beats/delete", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "No IDs provided" });
     }
 
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const __settled17 = await Promise?.allSettled(
+    const _settled17 = await Promise?.allSettled(
       ids?.map(async (id) => {
-        const _result = await db
+        const result = await db
           .update(beats)
           .set({ isPublished: false })
           .where(and(eq(beats?.id, id), eq(beats?.userId, userId)))
-          .returning({ id: beats?.id });
+          .returning({ id: beats.id });
         if (result?.length === 0)
           throw new Error("Beat not found or access denied");
         return id;
       }),
     );
     for (let _i = 0; _i < _settled17?.length; _i++) {
-      const __r = _settled17[_i];
-      if (_r?.status === "fulfilled") successIds?.push(_r?.value);
+      const r = _settled17[_i];
+      if (r?.status === "fulfilled") successIds?.push(r?.value);
       else
         failures?.push({
           id: ids[_i],
-          error: _r?.reason?.message || "Failed to delete beat",
+          error: r.reason?.message || "Failed to delete beat",
         });
     }
 
@@ -1199,13 +1199,13 @@ router?.post("/posts/approve", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "No IDs provided" });
     }
 
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    const __settled18 = await Promise?.allSettled(
+    const _settled18 = await Promise?.allSettled(
       ids?.map(async (id) => {
-        const _result = await db
+        const result = await db
           .update(posts)
           .set({
             approvalStatus: "approved",
@@ -1213,18 +1213,18 @@ router?.post("/posts/approve", async (req: Request, res: Response) => {
             reviewedAt: new Date(),
           })
           .where(eq(posts?.id, id))
-          .returning({ id: posts?.id });
+          .returning({ id: posts.id });
         if (result?.length === 0) throw new Error("Post not found");
         return id;
       }),
     );
     for (let _i = 0; _i < _settled18?.length; _i++) {
-      const __r = _settled18[_i];
-      if (_r?.status === "fulfilled") successIds?.push(_r?.value);
+      const r = _settled18[_i];
+      if (r?.status === "fulfilled") successIds?.push(r?.value);
       else
         failures?.push({
           id: ids[_i],
-          error: _r?.reason?.message || "Failed to approve post",
+          error: r.reason?.message || "Failed to approve post",
         });
     }
 
@@ -1242,7 +1242,7 @@ router?.get("/progress/:jobId", async (req: Request, res: Response) => {
     }
 
     const { jobId } = req?.params;
-    const _job = batchJobs?.get(jobId);
+    const job = batchJobs?.get(jobId);
 
     if (!job) {
       return res?.status(404).json({ error: "Job not found" });
@@ -1250,14 +1250,14 @@ router?.get("/progress/:jobId", async (req: Request, res: Response) => {
 
     res?.json({
       jobId,
-      status: job?.status,
-      processed: job?.processed,
-      total: job?.total,
-      success: job?.success,
-      failed: job?.failed,
-      failures: job?.failures,
-      currentItem: job?.currentItem,
-      elapsedMs: Date?.now() - job?.startTime,
+      status: job.status,
+      processed: job.processed,
+      total: job.total,
+      success: job.success,
+      failed: job.failed,
+      failures: job.failures,
+      currentItem: job.currentItem,
+      elapsedMs: Date.now() - job?.startTime,
     });
   } catch (error) {
     logger?.warn("Get batch progress error:", error?.message || error);
@@ -1271,15 +1271,15 @@ router?.get("/templates", async (req: Request, res: Response) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _userId = req?.user.id;
-    const _resource = req?.query.resource as string | undefined;
+    const userId = req?.user.id;
+    const resource = req?.query.resource as string | undefined;
 
-    const _conditions = [eq(batchTemplates?.userId, userId)];
+    const conditions = [eq(batchTemplates?.userId, userId)];
     if (resource) {
       conditions?.push(eq(batchTemplates?.resource, resource));
     }
 
-    const _rows = await db
+    const rows = await db
       .select()
       .from(batchTemplates)
       .where(and(...conditions))
@@ -1299,7 +1299,7 @@ router?.post("/templates", async (req: Request, res: Response) => {
       return res?.status(401).json({ error: "Unauthorized" });
     }
 
-    const _userId = req?.user.id;
+    const userId = req?.user.id;
     const { name, description, resource, action, configuration } = req?.body;
 
     if (!name || !resource || !configuration) {
@@ -1334,10 +1334,10 @@ router?.put("/templates/:id", async (req: Request, res: Response) => {
     }
 
     const { id } = req?.params;
-    const _userId = req?.user.id;
+    const userId = req?.user.id;
 
     const [existing] = await db
-      .select({ id: batchTemplates?.id, userId: batchTemplates?.userId })
+      .select({ id: batchTemplates.id, userId: batchTemplates.userId })
       .from(batchTemplates)
       .where(eq(batchTemplates?.id, id))
       .limit(1);
@@ -1380,12 +1380,12 @@ router?.delete("/templates/:id", async (req: Request, res: Response) => {
     }
 
     const { id } = req?.params;
-    const _userId = req?.user.id;
+    const userId = req?.user.id;
 
     const [deleted] = await db
       .delete(batchTemplates)
       .where(and(eq(batchTemplates?.id, id), eq(batchTemplates?.userId, userId)))
-      .returning({ id: batchTemplates?.id });
+      .returning({ id: batchTemplates.id });
 
     if (!deleted) {
       return res?.status(404).json({ error: "Template not found" });
@@ -1406,7 +1406,7 @@ router?.post("/templates/:id/share", async (req: Request, res: Response) => {
 
     const { id } = req?.params;
     const { email } = req?.body;
-    const _userId = req?.user.id;
+    const userId = req?.user.id;
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res?.status(400).json({ error: "Valid email address is required" });
@@ -1426,13 +1426,13 @@ router?.post("/templates/:id/share", async (req: Request, res: Response) => {
       .insert(batchTemplates)
       .values({
         userId,
-        name: original?.name,
-        description: original?.description,
-        resource: original?.resource,
-        action: original?.action,
-        configuration: original?.configuration as Record<string, unknown>,
+        name: original.name,
+        description: original.description,
+        resource: original.resource,
+        action: original.action,
+        configuration: original.configuration as Record<string, unknown>,
         isShared: true,
-        sharedBy: req?.user.email || req?.user.username,
+        sharedBy: req.user.email || req?.user.username,
         usageCount: 0,
       })
       .returning();

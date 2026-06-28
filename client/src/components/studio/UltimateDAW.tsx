@@ -8,39 +8,7 @@ import {
 } from "react";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Play,
-  Pause,
-  Square,
-  Circle,
-  SkipBack,
-  Repeat,
-  Wand2,
-  Sparkles,
-  Brain,
-  Music,
-  Mic,
-  Scissors,
-  Undo,
-  Redo,
-  Save,
-  Download,
-  Grid3X3,
-  Box,
-  Sliders,
-  Activity,
-  Gauge,
-  Radio,
-  MousePointer,
-  Move,
-  Pencil,
-  Eraser,
-  Plus,
-  Library,
-  Piano,
-  LayoutGrid,
-  Type,
-} from "lucide-react";
+import { Play, Pause, Square, Circle, SkipBack, Repeat, Wand2, Sparkles, Brain, Music, Mic, Scissors, Undo, Redo, Save, Download, Grid3X3, Box, Sliders, Activity, Gauge, Radio, MousePointer, Move, Pencil, Eraser, Plus, Library, Piano, LayoutGrid, Type } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -223,10 +191,12 @@ export function UltimateDAW({
   onExport,
 }: UltimateDAWProps) {
   const store = useUnifiedStore();
-  const { tracks, masterTrack, transport, canUndo, canRedo } = store;
+  const { tracks, masterTrack, transport,   canUndo, canRedo } =
+    store;
 
   const { toast } = useToast();
-  const { forceSave, loadProjectData } = useProjectSync(projectId);
+  const { forceSave,  loadProjectData } =
+    useProjectSync(projectId);
   const [mode, setMode] = useState<FlowStateMode>("create");
   const [isLoadingProject, setIsLoadingProject] = useState(false);
   const projectLoadedRef = useRef<string | null>(null);
@@ -351,9 +321,9 @@ export function UltimateDAW({
           bars: 8,
           instrumentType: "synth",
           instrumentCategory: "melodic",
-          tempo: params?.tempo || transport.tempo,
-          key: params?.key || musicalKey,
-          scale: params?.scale || scale,
+          tempo: params.tempo || transport.tempo,
+          key: params.key || musicalKey,
+          scale: params.scale || scale,
         });
         const response = await res.json();
         if (response.audioFilePath) {
@@ -382,7 +352,7 @@ export function UltimateDAW({
           bars: 8,
           instrumentType: "drums",
           instrumentCategory: "drums",
-          tempo: params?.tempo || transport.tempo,
+          tempo: params.tempo || transport.tempo,
         });
         const response = await res.json();
         if (response.audioFilePath) {
@@ -412,8 +382,8 @@ export function UltimateDAW({
           instrumentType: "bass",
           instrumentCategory: "melodic",
           tempo: transport.tempo,
-          key: params?.key || musicalKey,
-          scale: params?.scale || scale,
+          key: params.key || musicalKey,
+          scale: params.scale || scale,
         });
         const response = await res.json();
         if (response.audioFilePath) {

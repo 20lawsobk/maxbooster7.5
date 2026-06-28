@@ -138,19 +138,19 @@ export function Timeline({
     setRangeSelection,
     clearRangeSelection,
     projectDuration,
-
+    
     expandTimelineIfNeeded,
     fitTimelineToContents,
     autoExpandEnabled,
     autoscrollPaused,
     pauseAutoscroll,
-
+    
     adaptiveSnapEnabled,
     showSyncPoints,
     translucentEventsEnabled,
     loopToolEnabled,
     timeStretchEnabled,
-
+    
     setHorizontalDropMode,
     getAdaptiveSnapInterval,
   } = useStudioStore();
@@ -201,6 +201,7 @@ export function Timeline({
 
   // Tempo Detection State
   const {
+    
     isAnalyzingTempo,
     analyzingClipId,
     addTempoMap,
@@ -445,7 +446,7 @@ export function Timeline({
       const mouseTime = pixelsToTime(mouseX);
 
       const clips = trackClips.get(draggingClip.trackId);
-      const clip = clips?.find((c) => c.id === draggingClip.clipId);
+      const clip = clips.find((c) => c.id === draggingClip.clipId);
       if (!clip) return;
 
       const clipDuration = clip.duration;
@@ -521,7 +522,7 @@ export function Timeline({
       mouseTime = snapToGrid(mouseTime);
 
       const clips = trackClips.get(resizingClip.trackId);
-      const clip = clips?.find((c) => c.id === resizingClip.clipId);
+      const clip = clips.find((c) => c.id === resizingClip.clipId);
       if (!clip) return;
 
       let newStartTime = clip.startTime;

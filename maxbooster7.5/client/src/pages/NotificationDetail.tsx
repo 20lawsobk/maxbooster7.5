@@ -77,6 +77,7 @@ export default function NotificationDetail() {
     if (notification && !notification.isRead) {
       markAsReadMutation.mutate();
     }
+     
   }, [notification?.id]);
 
   const category: NotificationCategory =

@@ -364,8 +364,8 @@ class ViralScoringService {
   };
 
   constructor() {
-    this?.initializeTrends();
-    this?.initializeViralPatterns();
+    this.initializeTrends();
+    this.initializeViralPatterns();
   }
 
   private async getRedis(): Promise<RedisClientType | null> {
@@ -487,7 +487,7 @@ class ViralScoringService {
       },
     ];
     this.lastTrendUpdate = new Date();
-    logger?.info("✅ Viral scoring trends initialized");
+    logger.info("✅ Viral scoring trends initialized");
   }
 
   private async initializeViralPatterns(): Promise<void> {
@@ -554,35 +554,35 @@ class ViralScoringService {
         examples: ["10 things I learned after 1M streams"],
       },
     ];
-    logger?.info("✅ Viral patterns initialized");
+    logger.info("✅ Viral patterns initialized");
   }
 
   async scoreContent(content: ContentData): Promise<ViralScore> {
-    const _cacheKey = `${this?.CACHE_PREFIX}score:${content?.id || randomBytes(8).toString("hex")}`;
+    const cacheKey = `${this.CACHE_PREFIX}score:${content.id || randomBytes(8).toString("hex")}`;
 
-    const _redis = await this?.getRedis();
-    if (redis && content?.id) {
+    const redis = await this.getRedis();
+    if (redis && content.id) {
       try {
-        const _cached = await redis?.get(cacheKey);
-        if (cached) return JSON?.parse(cached);
+        const cached = await redis.get(cacheKey);
+        if (cached) return JSON.parse(cached);
       } catch {
         /* intentional: Redis cache miss → falls through to live calculation */
       }
     }
 
-    const _factors = await this?.analyzeFactors(content);
-    const _platformScores = this?.calculatePlatformScores(content, factors);
-    const _recommendations = this?.generateRecommendations(content, factors);
+    const factors = await this.analyzeFactors(content);
+    const platformScores = this.calculatePlatformScores(content, factors);
+    const recommendations = this.generateRecommendations(content, factors);
 
-    const _overall = this?.calculateOverallScore(
+    const overall = this.calculateOverallScore(
       factors,
-      content?.platform,
+      content.platform,
       content,
     );
-    const _confidence = this?.calculateConfidence(content, factors);
-    const _predictedEngagement = this?.predictEngagement(
+    const confidence = this.calculateConfidence(content, factors);
+    const predictedEngagement = this.predictEngagement(
       overall,
-      content?.platform,
+      content.platform,
       content,
     );
 
@@ -595,17 +595,17 @@ class ViralScoringService {
       predictedEngagement,
     };
 
-    if (redis && content?.id) {
+    if (redis && content.id) {
       try {
-        await redis?.setEx(cacheKey, this?.REDIS_TTL, JSON?.stringify(result));
+        await redis.setEx(cacheKey, this.REDIS_TTL, JSON.stringify(result));
       } catch {
         /* intentional: best-effort Redis cache write */
       }
     }
 
-    logger?.info(
-      `📊 Viral score calculated: ${overall}/100 for ${content?.platform}`,
-      { contentId: content?.id },
+    logger.info(
+      `📊 Viral score calculated: ${overall}/100 for ${content.platform}`,
+      { contentId: content.id },
     );
     return result;
   }
@@ -613,21 +613,21 @@ class ViralScoringService {
   private async analyzeFactors(
     content: ContentData,
   ): Promise<ViralScore["factors"]> {
-    const _hookStrength = this?.analyzeHookStrength(
-      content?.caption,
-      content?.platform,
+    const hookStrength = this.analyzeHookStrength(
+      content.caption,
+      content.platform,
     );
-    const _emotionalResonance = this?.analyzeEmotionalResonance(
-      content?.caption,
-      content?.platform,
+    const emotionalResonance = this.analyzeEmotionalResonance(
+      content.caption,
+      content.platform,
     );
-    const _trendAlignment = await this?.analyzeTrendAlignment(content);
-    const _hashtagOptimization = this?.analyzeHashtagOptimization(
-      content?.hashtags,
-      content?.platform,
+    const trendAlignment = await this.analyzeTrendAlignment(content);
+    const hashtagOptimization = this.analyzeHashtagOptimization(
+      content.hashtags,
+      content.platform,
     );
-    const _visualAppeal = this?.estimateVisualAppeal(content);
-    const _audioQuality = this?.estimateAudioQuality(content);
+    const visualAppeal = this.estimateVisualAppeal(content);
+    const audioQuality = this.estimateAudioQuality(content);
 
     return {
       hookStrength,
@@ -640,24 +640,24 @@ class ViralScoringService {
   }
 
   private analyzeHookStrength(caption: string, platform: string): number {
-    if (!caption || caption?.length === 0) return 15;
+    if (!caption || caption.length === 0) return 15;
 
     let score = 35;
     // Analyze first 80 chars — most people stop reading after that
-    const _first80Chars = caption?.substring(0, 80);
-    const _firstLine = caption?.split("\n")[0];
+    const first80Chars = caption.substring(0, 80);
+    const firstLine = caption.split("\n")[0];
 
     // Test each hook pattern, take highest match
-    for (const { pattern, score: patternScore } of this?.hookPatterns) {
-      if (pattern?.test(first80Chars)) {
-        score = Math?.max(score, patternScore);
+    for (const { pattern, score: patternScore } of this.hookPatterns) {
+      if (pattern.test(first80Chars)) {
+        score = Math.max(score, patternScore);
       }
     }
 
     // Optimal first-line length — sweet spot is 25-65 chars
-    if (firstLine?.length >= 25 && firstLine?.length <= 65) {
+    if (firstLine.length >= 25 && firstLine.length <= 65) {
       score += 6;
-    } else if (firstLine?.length >= 10 && firstLine?.length < 25) {
+    } else if (firstLine.length >= 10 && firstLine.length < 25) {
       score += 3;
     }
 
@@ -666,27 +666,27 @@ class ViralScoringService {
 
     // Quotes signal authority / storytelling
     if (
-      first80Chars?.includes('"') ||
-      first80Chars?.includes("\u2018") ||
-      first80Chars?.includes("\u201c")
+      first80Chars.includes('"') ||
+      first80Chars.includes("\u2018") ||
+      first80Chars.includes("\u201c")
     ) {
       score += 5;
     }
 
     // Platform-specific hook adjustments
-    if (platform === "twitter" && firstLine?.length <= 120) score += 5;
-    if (platform === "linkedin" && /^(how|why|the [0-9]|i )/i?.test(firstLine))
+    if (platform === "twitter" && firstLine.length <= 120) score += 5;
+    if (platform === "linkedin" && /^(how|why|the [0-9]|i )/i.test(firstLine))
       score += 8;
     if (platform === "youtube" && /\d/.test(firstLine)) score += 5; // Numbers in YT titles
 
     // All-caps words (FIRE, HUGE) — moderate boost, diminishing with overuse
-    const _capsWords = (first80Chars?.match(/\b[A-Z]{2,}\b/g) || []).length;
+    const capsWords = (first80Chars.match(/\b[A-Z]{2,}\b/g) || []).length;
     if (capsWords === 1) score += 4;
     else if (capsWords === 2) score += 2;
 
     // ── Curiosity Gap Detection (+12 max) ─────────────────────────────────────
     // Information gap patterns consistently achieve 30-50% higher CTR
-    const _curiosityPatterns = [
+    const curiosityPatterns = [
       /nobody (told|shows|talks about|expected)/i,
       /they don't want (you|us) to know/i,
       /the (secret|reason|truth) (behind|about|is)/i,
@@ -696,10 +696,10 @@ class ViralScoringService {
       /the (algorithm|label|industry) tried to/i,
       /something hidden in/i,
     ];
-    const _curiosityMatches = curiosityPatterns?.filter((p) =>
-      p?.test(first80Chars),
+    const curiosityMatches = curiosityPatterns.filter((p) =>
+      p.test(first80Chars),
     ).length;
-    score += Math?.min(12, curiosityMatches * 8);
+    score += Math.min(12, curiosityMatches * 8);
 
     // ── Platform-Native Language Detection (+8) ───────────────────────────────
     const platformNativePatterns: Record<string, RegExp[]> = {
@@ -718,60 +718,60 @@ class ViralScoringService {
       ],
       youtube: [/^(here's what most|i need to tell you|what's up everyone)/i],
     };
-    const _nativePatterns = platformNativePatterns[platform] || [];
-    if (nativePatterns?.some((p) => p?.test(first80Chars))) score += 8;
+    const nativePatterns = platformNativePatterns[platform] || [];
+    if (nativePatterns.some((p) => p.test(first80Chars))) score += 8;
 
     // ── Self-Identification Hook Detection (+7) ───────────────────────────────
     if (
-      /for (the|everyone|anyone) (who|that)|if you'?ve? (ever|always)/i?.test(
+      /for (the|everyone|anyone) (who|that)|if you'?ve? (ever|always)/i.test(
         first80Chars,
       )
     )
       score += 7;
 
-    return Math?.min(100, Math?.max(0, score));
+    return Math.min(100, Math.max(0, score));
   }
 
   private analyzeEmotionalResonance(caption: string, platform: string): number {
     if (!caption) return 25;
 
-    const _lowerCaption = caption?.toLowerCase();
+    const lowerCaption = caption.toLowerCase();
     let score = 30;
     let triggersFound = 0;
     let totalWeight = 0;
 
-    for (const { keyword, weight } of this?.emotionalTriggers) {
-      if (lowerCaption?.includes(keyword)) {
+    for (const { keyword, weight } of this.emotionalTriggers) {
+      if (lowerCaption.includes(keyword)) {
         totalWeight += weight;
         triggersFound++;
       }
     }
 
     // Diminishing returns on trigger stacking
-    if (triggersFound >= 1) score += Math?.min(35, totalWeight * 1.5);
+    if (triggersFound >= 1) score += Math.min(35, totalWeight * 1.5);
     if (triggersFound >= 3) score += 8; // Bonus for emotional density
     if (triggersFound >= 5) score += 5; // Slight additional bonus
 
     // Emoji analysis — sweet spot is 2-4 for most platforms
-    const _emojiCount = (caption?.match(/[\u{1F300}-\u{1FAFF}]/gu) || []).length;
+    const emojiCount = (caption.match(/[\u{1F300}-\u{1FAFF}]/gu) || []).length;
     if (emojiCount >= 1 && emojiCount <= 4) score += 9;
     else if (emojiCount === 5) score += 6;
     else if (emojiCount > 5 && emojiCount <= 8) score += 3;
     else if (emojiCount > 8) score -= 3; // Spam signal
 
     // Exclamation points — 1-2 is authentic, 3+ feels desperate
-    const _exclamationCount = (caption?.match(/!/g) || []).length;
+    const exclamationCount = (caption.match(/!/g) || []).length;
     if (exclamationCount === 1) score += 6;
     else if (exclamationCount === 2) score += 4;
     else if (exclamationCount > 3) score -= 4;
 
     // Questions increase engagement intent (comment baiting)
-    const _questionCount = (caption?.match(/\?/g) || []).length;
+    const questionCount = (caption.match(/\?/g) || []).length;
     if (questionCount >= 1) score += 5;
 
     // Personal pronouns increase connection (I, we, you, your)
-    const _personalPronouns = (
-      lowerCaption?.match(/\b(i |my |we |you |your )\b/g) || []
+    const personalPronouns = (
+      lowerCaption.match(/\b(i |my |we |you |your )\b/g) || []
     ).length;
     if (personalPronouns >= 2) score += 5;
 
@@ -779,9 +779,9 @@ class ViralScoringService {
     if (platform === "linkedin") {
       // LinkedIn rewards professional vulnerability + insights
       if (
-        lowerCaption?.includes("lesson") ||
-        lowerCaption?.includes("learned") ||
-        lowerCaption?.includes("mistake")
+        lowerCaption.includes("lesson") ||
+        lowerCaption.includes("learned") ||
+        lowerCaption.includes("mistake")
       ) {
         score += 8;
       }
@@ -790,16 +790,16 @@ class ViralScoringService {
     // ── Emotional Arc Detection (+15 max) ──────────────────────────────────────
     // Hook → Context → Tension → Resolution arc in body dramatically boosts
     // watch/read time (research: 2.8x higher completion rate vs flat content)
-    const _hasTension =
-      /almost (quit|gave up|didn't)|wasn't sure|hard (to|day|time|stretch)|darkest|second?.guess|going to walk away/i?.test(
+    const hasTension =
+      /almost (quit|gave up|didn't)|wasn't sure|hard (to|day|time|stretch)|darkest|second.guess|going to walk away/i.test(
         lowerCaption,
       );
-    const _hasResolution =
-      /(finally|then it (clicked|hit)|ended up|turned out|glad i did|worth it|now i (know|realize)|what brought me back)/i?.test(
+    const hasResolution =
+      /(finally|then it (clicked|hit)|ended up|turned out|glad i did|worth it|now i (know|realize)|what brought me back)/i.test(
         lowerCaption,
       );
-    const _hasContext =
-      /(this (track|song|record|single)|when (i|we)|the (story|moment|night|day|making))/i?.test(
+    const hasContext =
+      /(this (track|song|record|single)|when (i|we)|the (story|moment|night|day|making))/i.test(
         lowerCaption,
       );
     if (hasTension) score += 8;
@@ -809,73 +809,73 @@ class ViralScoringService {
 
     // ── Self-Identification Phrases (+8) ─────────────────────────────────────
     if (
-      /for (the|everyone who|anyone who|the artists|the people|the fans)/i?.test(
+      /for (the|everyone who|anyone who|the artists|the people|the fans)/i.test(
         lowerCaption,
       )
     )
       score += 8;
-    if (/if you'?ve? (ever|always)|this one is for/i?.test(lowerCaption))
+    if (/if you'?ve? (ever|always)|this one is for/i.test(lowerCaption))
       score += 6;
 
-    return Math?.min(100, Math?.max(0, score));
+    return Math.min(100, Math.max(0, score));
   }
 
   private async analyzeTrendAlignment(content: ContentData): Promise<number> {
     let score = 38;
-    const _captionLower = content?.caption.toLowerCase();
-    const _hashtagsLower = content?.hashtags.map((h) => h?.toLowerCase());
+    const captionLower = content.caption.toLowerCase();
+    const hashtagsLower = content.hashtags.map((h) => h.toLowerCase());
 
-    for (const trend of this?.trendingTopics) {
-      const _topicWords = trend?.topic.toLowerCase().split(" ");
-      const _matchCount = topicWords?.filter((w) =>
-        captionLower?.includes(w),
+    for (const trend of this.trendingTopics) {
+      const topicWords = trend.topic.toLowerCase().split(" ");
+      const matchCount = topicWords.filter((w) =>
+        captionLower.includes(w),
       ).length;
 
-      if (matchCount === topicWords?.length) {
-        score += trend?.score * 0.28; // Full topic match
-      } else if (matchCount >= Math?.ceil(topicWords?.length / 2)) {
-        score += trend?.score * 0.14; // Partial match
+      if (matchCount === topicWords.length) {
+        score += trend.score * 0.28; // Full topic match
+      } else if (matchCount >= Math.ceil(topicWords.length / 2)) {
+        score += trend.score * 0.14; // Partial match
       }
 
       // Hashtag matching — exact match bonus
-      for (const trendHashtag of trend?.hashtags) {
+      for (const trendHashtag of trend.hashtags) {
         if (
-          hashtagsLower?.some(
+          hashtagsLower.some(
             (h) =>
-              h === trendHashtag?.toLowerCase() ||
-              h?.replace("#", "") === trendHashtag?.replace("#", ""),
+              h === trendHashtag.toLowerCase() ||
+              h.replace("#", "") === trendHashtag.replace("#", ""),
           )
         ) {
-          score += trend?.score * 0.12;
+          score += trend.score * 0.12;
           break; // Only count once per trend
         }
       }
     }
 
     // Genre-based viral potential multiplier
-    if (content?.musicGenre) {
-      const _genreKey = content?.musicGenre.toLowerCase();
-      const _genreMultiplier = this?.genreViralMultipliers[genreKey] || 1.0;
+    if (content.musicGenre) {
+      const genreKey = content.musicGenre.toLowerCase();
+      const genreMultiplier = this.genreViralMultipliers[genreKey] || 1.0;
       score *= genreMultiplier;
     }
 
     // Scheduled during peak — bonus for timing awareness
-    if (content?.scheduledTime) {
-      const _hour = content?.scheduledTime.getHours();
-      const _day = content?.scheduledTime.getDay();
+    if (content.scheduledTime) {
+      const hour = content.scheduledTime.getHours();
+      const day = content.scheduledTime.getDay();
       // Peak engagement windows get bonus
       if ((hour >= 18 && hour <= 22) || (hour >= 7 && hour <= 9)) score += 8;
       if (day === 0 || day === 6) score += 5; // Weekend content gets more views
     }
 
-    return Math?.min(100, Math?.max(0, Math?.round(score)));
+    return Math.min(100, Math.max(0, Math.round(score)));
   }
 
   private analyzeHashtagOptimization(
     hashtags: string[],
     platform: string,
   ): number {
-    const _optimal = this?.platformOptimalHashtags[platform] || {
+    const optimal = this.platformOptimalHashtags[platform] || {
       min: 3,
       max: 10,
       niches: 2,
@@ -884,24 +884,24 @@ class ViralScoringService {
     let score = 45;
 
     // Count-based scoring — more nuanced penalty curve
-    if (hashtags?.length >= optimal?.min && hashtags?.length <= optimal?.max) {
+    if (hashtags.length >= optimal.min && hashtags.length <= optimal.max) {
       score += 28;
-    } else if (hashtags?.length === optimal?.min - 1) {
+    } else if (hashtags.length === optimal.min - 1) {
       score += 15; // Just under — mild penalty
     } else if (
-      hashtags?.length > optimal?.max &&
-      hashtags?.length <= optimal?.max + 3
+      hashtags.length > optimal.max &&
+      hashtags.length <= optimal.max + 3
     ) {
       score += 10; // Slightly over — small penalty
-    } else if (hashtags?.length < optimal?.min - 1) {
+    } else if (hashtags.length < optimal.min - 1) {
       score -= 15;
-    } else if (hashtags?.length > optimal?.max + 3) {
+    } else if (hashtags.length > optimal.max + 3) {
       score -= 12; // Spam signal
     }
 
     // Music niche hashtags — critical for music artist discoverability
-    const _musicNicheHashtags = hashtags?.filter((h) => {
-      const _lowH = h?.toLowerCase().replace("#", "");
+    const musicNicheHashtags = hashtags.filter((h) => {
+      const lowH = h.toLowerCase().replace("#", "");
       return [
         "music",
         "producer",
@@ -920,14 +920,14 @@ class ViralScoringService {
         "drill",
         "newmusic",
         "musicbusiness",
-      ].some((k) => lowH?.includes(k));
+      ].some((k) => lowH.includes(k));
     });
-    if (musicNicheHashtags?.length >= optimal?.musicMin) score += 14;
-    if (musicNicheHashtags?.length >= optimal?.niches) score += 8;
+    if (musicNicheHashtags.length >= optimal.musicMin) score += 14;
+    if (musicNicheHashtags.length >= optimal.niches) score += 8;
 
     // Discovery booster hashtags — platform-specific
-    const _discoveryHashtags = hashtags?.filter((h) => {
-      const _lowH = h?.toLowerCase();
+    const discoveryHashtags = hashtags.filter((h) => {
+      const lowH = h.toLowerCase();
       if (platform === "tiktok")
         return [
           "#fyp",
@@ -944,116 +944,116 @@ class ViralScoringService {
         return ["#shorts", "#youtubeshorts", "#viral"].includes(lowH);
       return ["#trending", "#viral"].includes(lowH);
     });
-    if (discoveryHashtags?.length >= 1 && discoveryHashtags?.length <= 2)
+    if (discoveryHashtags.length >= 1 && discoveryHashtags.length <= 2)
       score += 10;
-    else if (discoveryHashtags?.length > 2) score += 5; // Diminishing returns
+    else if (discoveryHashtags.length > 2) score += 5; // Diminishing returns
 
     // Mix diversity check — variety is rewarded
-    const _uniqueThemes = new Set(
-      hashtags?.map((h) => {
-        const _l = h?.toLowerCase();
-        if (l?.includes("music") || l?.includes("beat") || l?.includes("rap"))
+    const uniqueThemes = new Set(
+      hashtags.map((h) => {
+        const l = h.toLowerCase();
+        if (l.includes("music") || l.includes("beat") || l.includes("rap"))
           return "music";
-        if (l?.includes("fyp") || l?.includes("viral") || l?.includes("trend"))
+        if (l.includes("fyp") || l.includes("viral") || l.includes("trend"))
           return "discovery";
-        if (l?.includes("life") || l?.includes("day") || l?.includes("bts"))
+        if (l.includes("life") || l.includes("day") || l.includes("bts"))
           return "lifestyle";
         return "other";
       }),
     ).size;
     if (uniqueThemes >= 2) score += 5;
 
-    return Math?.min(100, Math?.max(0, score));
+    return Math.min(100, Math.max(0, score));
   }
 
   private estimateVisualAppeal(content: ContentData): number {
     let score = 45;
 
     // Content type hierarchy — video/reel dominates all platforms
-    if (content?.contentType === "reel") {
+    if (content.contentType === "reel") {
       score += 22;
-    } else if (content?.contentType === "video") {
+    } else if (content.contentType === "video") {
       score += 18;
-    } else if (content?.contentType === "carousel") {
+    } else if (content.contentType === "carousel") {
       score += 15; // IG carousels get re-shown to non-engagers
-    } else if (content?.contentType === "story") {
+    } else if (content.contentType === "story") {
       score += 10;
-    } else if (content?.contentType === "image") {
+    } else if (content.contentType === "image") {
       score += 8;
     }
 
     // Media URL present = actual media attached
-    if (content?.mediaUrl) score += 10;
+    if (content.mediaUrl) score += 10;
 
     // Duration optimization — fine-tuned per platform
-    if (content?.duration && content?.platform) {
-      const _optimal = this?.optimalDurations[content?.platform];
+    if (content.duration && content.platform) {
+      const optimal = this.optimalDurations[content.platform];
       if (optimal) {
         if (
-          content?.duration >= optimal?.min &&
-          content?.duration <= optimal?.max
+          content.duration >= optimal.min &&
+          content.duration <= optimal.max
         ) {
           // Closer to peak = higher bonus
-          const _distFromPeak = Math?.abs(content?.duration - optimal?.peak);
-          const _maxDist = Math?.max(
-            optimal?.peak - optimal?.min,
-            optimal?.max - optimal?.peak,
+          const distFromPeak = Math.abs(content.duration - optimal.peak);
+          const maxDist = Math.max(
+            optimal.peak - optimal.min,
+            optimal.max - optimal.peak,
           );
-          const _peakBonus = Math?.round(15 * (1 - distFromPeak / maxDist));
-          score += Math?.max(5, peakBonus);
-        } else if (content?.duration < optimal?.min * 0.7) {
+          const peakBonus = Math.round(15 * (1 - distFromPeak / maxDist));
+          score += Math.max(5, peakBonus);
+        } else if (content.duration < optimal.min * 0.7) {
           score -= 10; // Too short for meaningful content
-        } else if (content?.duration > optimal?.max * 1.5) {
+        } else if (content.duration > optimal.max * 1.5) {
           score -= 8; // Too long risks drop-off
         }
       }
     }
 
-    return Math?.min(100, Math?.max(0, score));
+    return Math.min(100, Math.max(0, score));
   }
 
   private estimateAudioQuality(content: ContentData): number {
     let score = 40;
 
     // Music/audio presence is fundamental
-    if (content?.hasAudio) {
+    if (content.hasAudio) {
       score += 22;
     }
 
     // Genre viral multiplier applied to audio score
-    if (content?.musicGenre) {
-      const _genreKey = content?.musicGenre.toLowerCase();
-      const _genreBonus =
-        ((this?.genreViralMultipliers[genreKey] || 1.0) - 1.0) * 30;
-      score += Math?.max(10, genreBonus + 10); // Minimum 10 bonus for any genre
+    if (content.musicGenre) {
+      const genreKey = content.musicGenre.toLowerCase();
+      const genreBonus =
+        ((this.genreViralMultipliers[genreKey] || 1.0) - 1.0) * 30;
+      score += Math.max(10, genreBonus + 10); // Minimum 10 bonus for any genre
     }
 
     // Platform-specific audio weighting
-    if (content?.platform === "tiktok" && content?.hasAudio) {
+    if (content.platform === "tiktok" && content.hasAudio) {
       score += 15; // Audio is primary discovery vector on TikTok
-    } else if (content?.platform === "instagram" && content?.hasAudio) {
+    } else if (content.platform === "instagram" && content.hasAudio) {
       score += 10; // Reels audio trend participation
-    } else if (content?.platform === "youtube" && content?.hasAudio) {
+    } else if (content.platform === "youtube" && content.hasAudio) {
       score += 8; // Watch time boosted by good audio
     }
 
     // Music artist benefit — audio content gets native platform promotion
     if (
-      content?.musicGenre &&
-      (content?.platform === "tiktok" || content?.platform === "instagram")
+      content.musicGenre &&
+      (content.platform === "tiktok" || content.platform === "instagram")
     ) {
       score += 5; // Artist content gets surfaced in music discovery
     }
 
-    return Math?.min(100, Math?.max(0, score));
+    return Math.min(100, Math.max(0, score));
   }
 
   private calculatePlatformScores(
     content: ContentData,
     factors: ViralScore["factors"],
   ): ViralScore["platformScores"] {
-    const _calculateForPlatform = (platform: string): number => {
-      const _weights = this?.platformWeights[platform] || {
+    const calculateForPlatform = (platform: string): number => {
+      const weights = this.platformWeights[platform] || {
         hook: 0.25,
         trend: 0.2,
         engagement: 0.2,
@@ -1062,25 +1062,25 @@ class ViralScoringService {
       };
 
       let score = 0;
-      score += factors?.hookStrength * (weights?.hook || 0);
-      score += factors?.trendAlignment * (weights?.trend || 0);
-      score += factors?.hashtagOptimization * (weights?.hashtags || 0);
-      score += factors?.visualAppeal * (weights?.visual || 0);
-      score += factors?.emotionalResonance * (weights?.engagement || 0);
-      score += factors?.audioQuality * (weights?.audio || 0);
-      score += factors?.visualAppeal * (weights?.content || 0);
+      score += factors.hookStrength * (weights.hook || 0);
+      score += factors.trendAlignment * (weights.trend || 0);
+      score += factors.hashtagOptimization * (weights.hashtags || 0);
+      score += factors.visualAppeal * (weights.visual || 0);
+      score += factors.emotionalResonance * (weights.engagement || 0);
+      score += factors.audioQuality * (weights.audio || 0);
+      score += factors.visualAppeal * (weights.content || 0);
 
       // Native platform bonus — content made for this platform performs better
-      if (platform === content?.platform) score += 6;
+      if (platform === content.platform) score += 6;
 
       // Music content bonus on audio-first platforms
       if (
-        content?.hasAudio &&
+        content.hasAudio &&
         (platform === "tiktok" || platform === "instagram")
       )
         score += 4;
 
-      return Math?.min(100, Math?.max(0, Math?.round(score)));
+      return Math.min(100, Math.max(0, Math.round(score)));
     };
 
     return {
@@ -1093,54 +1093,54 @@ class ViralScoringService {
 
   private scoreSpecificity(caption: string): number {
     let score = 40;
-    const _lower = caption?.toLowerCase();
+    const lower = caption.toLowerCase();
 
     // Numeric specificity — numbers signal credibility and accuracy
-    const _numbers = (caption?.match(/\d+/g) || []).length;
-    score += Math?.min(15, numbers * 4);
+    const numbers = (caption.match(/\d+/g) || []).length;
+    score += Math.min(15, numbers * 4);
 
     // Music metric specificity (stream counts, chart positions, playlist placements)
-    if (/\d+(k|m)\s*(streams?|plays?|followers?|listeners?)/i?.test(lower))
+    if (/\d+(k|m)\s*(streams?|plays?|followers?|listeners?)/i.test(lower))
       score += 12;
-    if (/(charted|playlisted|curated|playlist\s+by)/i?.test(lower)) score += 8;
-    if (/(#\d+|number (one|two|three|\d+))/i?.test(lower)) score += 8;
+    if (/(charted|playlisted|curated|playlist\s+by)/i.test(lower)) score += 8;
+    if (/(#\d+|number (one|two|three|\d+))/i.test(lower)) score += 8;
 
     // Time specificity (concrete moments > vague "recently")
     if (
-      /(3am|2am|4am|midnight|last (night|monday|friday|week)|this morning|tonight|yesterday)/i?.test(
+      /(3am|2am|4am|midnight|last (night|monday|friday|week)|this morning|tonight|yesterday)/i.test(
         lower,
       )
     )
       score += 8;
-    if (/(month|day|week|year) ago|in \d{4}/i?.test(lower)) score += 5;
+    if (/(month|day|week|year) ago|in \d{4}/i.test(lower)) score += 5;
 
     // Named song/album titles (quoted content)
     if (/"[^"]{2,}"|'[^']{2,}'/.test(lower)) score += 8;
 
     // Sensory/physical location details
     if (
-      /(studio|booth|mic|headphones|control room|track \d+|session \d+|verse \d+)/i?.test(
+      /(studio|booth|mic|headphones|control room|track \d+|session \d+|verse \d+)/i.test(
         lower,
       )
     )
       score += 5;
 
     // Voice memo / creative origin specificity
-    if (/(voice memo|phone recording|wrote this on|started as)/i?.test(lower))
+    if (/(voice memo|phone recording|wrote this on|started as)/i.test(lower))
       score += 6;
 
     // Anti-generic penalty
-    const _genericCount = [
+    const genericCount = [
       "new music",
       "check it out",
       "excited to share",
       "something special",
       "hard work pays off",
       "blessed",
-    ].filter((p) => lower?.includes(p)).length;
+    ].filter((p) => lower.includes(p)).length;
     score -= genericCount * 5;
 
-    return Math?.max(0, Math?.min(100, score));
+    return Math.max(0, Math.min(100, score));
   }
 
   private calculateOverallScore(
@@ -1148,7 +1148,7 @@ class ViralScoringService {
     platform: string,
     content: ContentData,
   ): number {
-    const _weights = this?.platformWeights[platform] || {
+    const weights = this.platformWeights[platform] || {
       hook: 0.22,
       trend: 0.18,
       engagement: 0.18,
@@ -1158,32 +1158,32 @@ class ViralScoringService {
     };
 
     let score = 0;
-    score += factors?.hookStrength * (weights?.hook || 0.22);
-    score += factors?.emotionalResonance * (weights?.engagement || 0.18);
-    score += factors?.trendAlignment * (weights?.trend || 0.18);
-    score += factors?.hashtagOptimization * (weights?.hashtags || 0.14);
-    score += factors?.visualAppeal * (weights?.visual || 0.14);
-    score += factors?.audioQuality * (weights?.audio || 0.14);
+    score += factors.hookStrength * (weights.hook || 0.22);
+    score += factors.emotionalResonance * (weights.engagement || 0.18);
+    score += factors.trendAlignment * (weights.trend || 0.18);
+    score += factors.hashtagOptimization * (weights.hashtags || 0.14);
+    score += factors.visualAppeal * (weights.visual || 0.14);
+    score += factors.audioQuality * (weights.audio || 0.14);
 
     // ── Specificity bonus (subtle adjustment — rewards concrete content) ──────
-    const _specificity = this?.scoreSpecificity(content?.caption);
-    const _specificityBonus = (specificity - 50) * 0.06; // ±3 points max
+    const specificity = this.scoreSpecificity(content.caption);
+    const specificityBonus = (specificity - 50) * 0.06; // ±3 points max
     score += specificityBonus;
 
     // ── Content formula detection bonus ───────────────────────────────────────
-    const _lowerCaption = content?.caption.toLowerCase();
-    if (/nobody (told|talks|shows)/i?.test(lowerCaption)) score += 2.5; // Curiosity gap
-    if (/from .+ to|before.*after|used to.*now/i?.test(lowerCaption)) score += 2; // Before/after
-    if (/pov:|tell me why|not me /i?.test(lowerCaption)) score += 2; // Relatable moment
+    const lowerCaption = content.caption.toLowerCase();
+    if (/nobody (told|talks|shows)/i.test(lowerCaption)) score += 2.5; // Curiosity gap
+    if (/from .+ to|before.*after|used to.*now/i.test(lowerCaption)) score += 2; // Before/after
+    if (/pov:|tell me why|not me /i.test(lowerCaption)) score += 2; // Relatable moment
 
     // ── Genre multiplier applied to final score (subtle — avoids inflation) ──
-    if (content?.musicGenre) {
-      const _multiplier =
-        this?.genreViralMultipliers[content?.musicGenre.toLowerCase()] || 1.0;
+    if (content.musicGenre) {
+      const multiplier =
+        this.genreViralMultipliers[content.musicGenre.toLowerCase()] || 1.0;
       score *= 1 + (multiplier - 1) * 0.3; // 30% of genre boost applied to overall
     }
 
-    return Math?.min(100, Math?.max(0, Math?.round(score)));
+    return Math.min(100, Math.max(0, Math.round(score)));
   }
 
   private calculateConfidence(
@@ -1193,23 +1193,23 @@ class ViralScoringService {
     let confidence = 0.45;
 
     // Data completeness boosts confidence
-    if (content?.caption && content?.caption.length > 80) confidence += 0.12;
-    else if (content?.caption && content?.caption.length > 30) confidence += 0.06;
-    if (content?.hashtags.length >= 3) confidence += 0.1;
-    if (content?.mediaUrl) confidence += 0.1;
-    if (content?.targetAudience) confidence += 0.08;
-    if (content?.musicGenre) confidence += 0.07;
-    if (content?.duration) confidence += 0.05;
-    if (content?.scheduledTime) confidence += 0.05;
+    if (content.caption && content.caption.length > 80) confidence += 0.12;
+    else if (content.caption && content.caption.length > 30) confidence += 0.06;
+    if (content.hashtags.length >= 3) confidence += 0.1;
+    if (content.mediaUrl) confidence += 0.1;
+    if (content.targetAudience) confidence += 0.08;
+    if (content.musicGenre) confidence += 0.07;
+    if (content.duration) confidence += 0.05;
+    if (content.scheduledTime) confidence += 0.05;
 
     // High average factor score increases confidence
-    const _avgFactor =
-      Object?.values(factors).reduce((a, b) => a + b, 0) /
-      Object?.values(factors).length;
+    const avgFactor =
+      Object.values(factors).reduce((a, b) => a + b, 0) /
+      Object.values(factors).length;
     if (avgFactor > 70) confidence += 0.1;
     else if (avgFactor > 55) confidence += 0.06;
 
-    return Math?.min(0.98, confidence);
+    return Math.min(0.98, confidence);
   }
 
   private predictEngagement(
@@ -1230,7 +1230,7 @@ class ViralScoringService {
       linkedin: { likes: 150, shares: 35, comments: 20 },
     };
 
-    const _multiplier = baseMultipliers[platform] || baseMultipliers?.instagram;
+    const multiplier = baseMultipliers[platform] || baseMultipliers.instagram;
 
     // Score multiplier: exponential at high scores (viral threshold)
     let scoreMultiplier = overallScore / 50;
@@ -1243,37 +1243,37 @@ class ViralScoringService {
     else if (overallScore < 40) scoreMultiplier *= 0.5; // Underperforming
 
     // Genre multiplier on predictions
-    if (content?.musicGenre) {
-      const _genreBoost =
-        this?.genreViralMultipliers[content?.musicGenre.toLowerCase()] || 1.0;
+    if (content.musicGenre) {
+      const genreBoost =
+        this.genreViralMultipliers[content.musicGenre.toLowerCase()] || 1.0;
       scoreMultiplier *= genreBoost;
     }
 
     // Variance widens at higher scores (viral content is harder to predict)
-    const _variance =
+    const variance =
       overallScore >= 80 ? 0.5 : overallScore >= 60 ? 0.35 : 0.25;
 
     return {
       likes: {
-        min: Math?.max(
+        min: Math.max(
           1,
-          Math?.round(multiplier?.likes * scoreMultiplier * (1 - variance)),
+          Math.round(multiplier.likes * scoreMultiplier * (1 - variance)),
         ),
-        max: Math?.round(multiplier?.likes * scoreMultiplier * (1 + variance)),
+        max: Math.round(multiplier.likes * scoreMultiplier * (1 + variance)),
       },
       shares: {
-        min: Math?.max(
+        min: Math.max(
           0,
-          Math?.round(multiplier?.shares * scoreMultiplier * (1 - variance)),
+          Math.round(multiplier.shares * scoreMultiplier * (1 - variance)),
         ),
-        max: Math?.round(multiplier?.shares * scoreMultiplier * (1 + variance)),
+        max: Math.round(multiplier.shares * scoreMultiplier * (1 + variance)),
       },
       comments: {
-        min: Math?.max(
+        min: Math.max(
           0,
-          Math?.round(multiplier?.comments * scoreMultiplier * (1 - variance)),
+          Math.round(multiplier.comments * scoreMultiplier * (1 - variance)),
         ),
-        max: Math?.round(multiplier?.comments * scoreMultiplier * (1 + variance)),
+        max: Math.round(multiplier.comments * scoreMultiplier * (1 + variance)),
       },
     };
   }
@@ -1285,110 +1285,110 @@ class ViralScoringService {
     const recommendations: string[] = [];
 
     // Hook improvement — most impactful single change
-    if (factors?.hookStrength < 65) {
-      const _hookSuggestions = [
+    if (factors.hookStrength < 65) {
+      const hookSuggestions = [
         'Rewrite your first line: "The #1 mistake artists make with [topic]..." performs 3x better than generic openers',
         'Lead with a result: "I gained 10K followers in 30 days doing this..." creates immediate curiosity',
         'Use POV format: "POV: You just signed your first deal..." stops scrollers cold',
       ];
-      recommendations?.push(
-        hookSuggestions[Math?.floor(Math?.random() * hookSuggestions?.length)],
+      recommendations.push(
+        hookSuggestions[Math.floor(Math.random() * hookSuggestions.length)],
       );
     }
 
-    if (factors?.emotionalResonance < 55) {
-      recommendations?.push(
+    if (factors.emotionalResonance < 55) {
+      recommendations.push(
         'Add emotional triggers: words like "secret", "game-changer", or "nobody tells you" boost engagement by 20-40%',
       );
     }
 
-    if (factors?.trendAlignment < 55) {
-      recommendations?.push(
+    if (factors.trendAlignment < 55) {
+      recommendations.push(
         'Align with current music trends: studio session content, beat reveals, and "rate my music" formats are peaking',
       );
     }
 
-    if (factors?.hashtagOptimization < 65) {
-      const _optimal = this?.platformOptimalHashtags[content?.platform] || {
+    if (factors.hashtagOptimization < 65) {
+      const optimal = this.platformOptimalHashtags[content.platform] || {
         min: 3,
         max: 8,
       };
-      recommendations?.push(
-        `Hashtag strategy: use ${optimal?.min}-${optimal?.max} tags total — mix #fyp/#viral (discovery) with niche music tags`,
+      recommendations.push(
+        `Hashtag strategy: use ${optimal.min}-${optimal.max} tags total — mix #fyp/#viral (discovery) with niche music tags`,
       );
     }
 
-    if (factors?.audioQuality < 60 && content?.platform === "tiktok") {
-      recommendations?.push(
+    if (factors.audioQuality < 60 && content.platform === "tiktok") {
+      recommendations.push(
         "Audio is the #1 TikTok discovery vector — use trending sounds or release originals to tap the sound graph",
       );
     }
 
     if (
-      factors?.visualAppeal < 60 &&
-      (content?.contentType === "video" || content?.contentType === "reel")
+      factors.visualAppeal < 60 &&
+      (content.contentType === "video" || content.contentType === "reel")
     ) {
-      recommendations?.push(
-        `Optimal ${content?.platform} video: ${this?.optimalDurations[content?.platform]?.peak || 45}s with a hook in the first 2-3 seconds`,
+      recommendations.push(
+        `Optimal ${content.platform} video: ${this.optimalDurations[content.platform].peak || 45}s with a hook in the first 2-3 seconds`,
       );
     }
 
-    if (!content?.targetAudience) {
-      recommendations?.push(
+    if (!content.targetAudience) {
+      recommendations.push(
         "Define your target audience — content built for 18-24 hip-hop fans performs very differently than 25-35 R&B fans",
       );
     }
 
-    if (recommendations?.length === 0) {
-      recommendations?.push(
+    if (recommendations.length === 0) {
+      recommendations.push(
         "Strong content! A/B test 2 hook variations — even 80+ scoring content often has a better version",
       );
     }
 
-    return recommendations?.slice(0, 5);
+    return recommendations.slice(0, 5);
   }
 
   async predictViralPotential(content: ContentData): Promise<number> {
-    const _score = await this?.scoreContent(content);
-    return score?.overall;
+    const score = await this.scoreContent(content);
+    return score.overall;
   }
 
   async suggestImprovements(content: ContentData): Promise<Improvement[]> {
-    const _score = await this?.scoreContent(content);
+    const score = await this.scoreContent(content);
     const improvements: Improvement[] = [];
 
-    if (score?.factors.hookStrength < 75) {
-      improvements?.push({
+    if (score.factors.hookStrength < 75) {
+      improvements.push({
         id: randomBytes(8).toString("hex"),
         category: "hook",
-        priority: score?.factors.hookStrength < 50 ? "high" : "medium",
+        priority: score.factors.hookStrength < 50 ? "high" : "medium",
         suggestion:
           "Rewrite your opening to maximize curiosity gap or emotional investment",
         expectedImpact:
-          18 + Math?.round((75 - score?.factors.hookStrength) * 0.35),
+          18 + Math.round((75 - score.factors.hookStrength) * 0.35),
         implementation:
           'Best formats: "The #1 mistake..." | "Nobody tells you..." | "How I went from X to Y..." | "POV: you..."',
       });
     }
 
-    if (score?.factors.hashtagOptimization < 75) {
-      improvements?.push({
+    if (score.factors.hashtagOptimization < 75) {
+      improvements.push({
         id: randomBytes(8).toString("hex"),
         category: "hashtags",
-        priority: score?.factors.hashtagOptimization < 45 ? "high" : "medium",
+        priority: score.factors.hashtagOptimization < 45 ? "high" : "medium",
         suggestion: "Restructure hashtag strategy for better discoverability",
         expectedImpact:
-          12 + Math?.round((75 - score?.factors.hashtagOptimization) * 0.22),
+          12 + Math.round((75 - score.factors.hashtagOptimization) * 0.22),
         implementation:
           "Formula: 1-2 mega tags (#fyp/#viral) + 3-5 niche music tags + 1-2 community tags",
       });
     }
 
-    if (score?.factors.trendAlignment < 65) {
-      improvements?.push({
+    if (score.factors.trendAlignment < 65) {
+      improvements.push({
         id: randomBytes(8).toString("hex"),
         category: "content",
-        priority: score?.factors.trendAlignment < 40 ? "high" : "medium",
+        priority: score.factors.trendAlignment < 40 ? "high" : "medium",
         suggestion: "Increase relevance to current music industry trends",
         expectedImpact: 22,
         implementation:
@@ -1431,30 +1431,30 @@ class ViralScoringService {
     });
 
     return improvements?.sort((a, b) => {
-      const _priorityOrder = { high: 0, medium: 1, low: 2 };
+      const priorityOrder = { high: 0, medium: 1, low: 2 };
       return priorityOrder[a?.priority] - priorityOrder[b?.priority];
     });
   }
 
   async compareVariants(variants: ContentData[]): Promise<VariantComparison> {
-    const _scoredVariants = await Promise?.all(
+    const scoredVariants = await Promise?.all(
       variants?.map(async (variant) => {
-        const _score = await this?.scoreContent(variant);
+        const score = await this?.scoreContent(variant);
         return {
           variant,
           score,
-          id: variant?.id || randomBytes(8).toString("hex"),
+          id: variant.id || randomBytes(8).toString("hex"),
         };
       }),
     );
 
     const comparison: VariantComparison = {
-      variants: scoredVariants?.map(({ id, score, variant }) => ({
+      variants: scoredVariants.map(({ id, score, variant }) => ({
         id,
-        score: score?.overall,
-        strengths: this?.identifyStrengths(score),
-        weaknesses: this?.identifyWeaknesses(score),
-        recommendedPlatform: this?.getRecommendedPlatform(score?.platformScores),
+        score: score.overall,
+        strengths: this.identifyStrengths(score),
+        weaknesses: this.identifyWeaknesses(score),
+        recommendedPlatform: this.getRecommendedPlatform(score?.platformScores),
       })),
       winner: "",
       reasoning: "",
@@ -1465,14 +1465,14 @@ class ViralScoringService {
       },
     };
 
-    const _sortedVariants = [...scoredVariants].sort(
+    const sortedVariants = [...scoredVariants].sort(
       (a, b) => b?.score.overall - a?.score.overall,
     );
     comparison.winner = sortedVariants[0].id;
 
-    const _topScore = sortedVariants[0].score?.overall;
-    const _secondScore = sortedVariants[1]?.score?.overall || 0;
-    const _scoreDifference = topScore - secondScore;
+    const topScore = sortedVariants[0].score?.overall;
+    const secondScore = sortedVariants[1]?.score?.overall || 0;
+    const scoreDifference = topScore - secondScore;
 
     if (scoreDifference < 8 && sortedVariants?.length > 1) {
       comparison.abTestRecommendation = {
@@ -1534,4 +1534,4 @@ class ViralScoringService {
   }
 }
 
-export const _viralScoringService = new ViralScoringService();
+export const viralScoringService = new ViralScoringService();

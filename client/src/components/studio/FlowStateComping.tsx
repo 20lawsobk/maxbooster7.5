@@ -1,20 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  ChevronDown,
-  ChevronRight,
-  Check,
-  Star,
-  StarOff,
-  Trash2,
-  Copy,
-  Volume2,
-  VolumeX,
-  Headphones,
-  MoreVertical,
-  Layers,
-  GitMerge,
-} from "lucide-react";
+import { ChevronDown, ChevronRight, Check, Star, StarOff, Trash2, Copy, Volume2, VolumeX, Headphones, MoreVertical, Layers, GitMerge } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

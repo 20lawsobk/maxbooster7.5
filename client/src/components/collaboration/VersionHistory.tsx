@@ -1,20 +1,6 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  History,
-  Clock,
-  RotateCcw,
-  Trash2,
-  GitCompare,
-  Save,
-  AlertTriangle,
-  Check,
-  ChevronRight,
-  Download,
-  Eye,
-  Loader2,
-  Cloud,
-} from "lucide-react";
+import { History, Clock, RotateCcw, Trash2, GitCompare, Save, AlertTriangle, Check, ChevronRight, Download, Eye, Loader2, Cloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -567,7 +553,7 @@ export function VersionHistory({
               Delete Version
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{versionToDelete?.name}"? This
+              Are you sure you want to delete "{versionToDelete.name}"? This
               action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>

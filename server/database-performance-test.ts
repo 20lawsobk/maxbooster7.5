@@ -44,24 +44,24 @@ class DatabasePerformanceTest {
     logger?.info("📊 Testing User Project Queries...");
 
     // Test getUserProjects with index optimization
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
 
     try {
       // Simulate getUserProjects query - should use idx_projects_user_updated
-      const _result = await db
+      const result = await db
         .select()
         .from(projects)
         .where(eq(projects?.userId, "test-user-1"))
         .orderBy(desc(projects?.updatedAt))
         .limit(50);
 
-      const _executionTime = Date?.now() - startTime;
+      const executionTime = Date?.now() - startTime;
 
       this?.metrics.push({
         testName: "getUserProjects",
         executionTime,
         queryType: "SELECT",
-        recordsAffected: result?.length,
+        recordsAffected: result.length,
         indexUsed: true, // Should use idx_projects_user_updated
       });
 
@@ -76,17 +76,17 @@ class DatabasePerformanceTest {
   private async testAnalyticsDashboard(): Promise<void> {
     logger?.info("📈 Testing Analytics Dashboard Queries...");
 
-    const _startDate = new Date("2025-01-01");
-    const _endDate = new Date("2025-01-31");
+    const startDate = new Date("2025-01-01");
+    const endDate = new Date("2025-01-31");
 
     // Test analytics with date range - should use idx_analytics_user_date
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
 
     try {
-      const _result = await db
+      const result = await db
         .select({
-          date: analytics?.date,
-          platform: analytics?.platform,
+          date: analytics.date,
+          platform: analytics.platform,
           streams: sql<number>`SUM(${analytics?.streams})`,
           revenue: sql<number>`SUM(${analytics?.revenue})`,
         })
@@ -101,13 +101,13 @@ class DatabasePerformanceTest {
         .groupBy(analytics?.date, analytics?.platform)
         .orderBy(desc(analytics?.date));
 
-      const _executionTime = Date?.now() - startTime;
+      const executionTime = Date?.now() - startTime;
 
       this?.metrics.push({
         testName: "Analytics Dashboard",
         executionTime,
         queryType: "SELECT",
-        recordsAffected: result?.length,
+        recordsAffected: result.length,
         indexUsed: true, // Should use idx_analytics_user_date
       });
 
@@ -123,23 +123,23 @@ class DatabasePerformanceTest {
     logger?.info("🎵 Testing Distribution System Queries...");
 
     // Test getUserReleases - should use idx_releases_user_updated
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
 
     try {
-      const _result = await db
+      const result = await db
         .select()
         .from(releases)
         .where(eq(releases?.userId, 1))
         .orderBy(desc(releases?.updatedAt))
         .limit(25);
 
-      const _executionTime = Date?.now() - startTime;
+      const executionTime = Date?.now() - startTime;
 
       this?.metrics.push({
         testName: "getUserReleases",
         executionTime,
         queryType: "SELECT",
-        recordsAffected: result?.length,
+        recordsAffected: result.length,
         indexUsed: true, // Should use idx_releases_user_updated
       });
 
@@ -151,12 +151,12 @@ class DatabasePerformanceTest {
     }
 
     // Test distribution analytics with earnings join
-    const _startTime2 = Date?.now();
+    const startTime2 = Date?.now();
 
     try {
-      const _result = await db
+      const result = await db
         .select({
-          platform: earnings?.platform,
+          platform: earnings.platform,
           streams: sql<number>`COALESCE(SUM(${earnings?.streams}), 0)`,
           totalEarnings: sql<number>`COALESCE(SUM(${earnings?.amount}), 0)`,
         })
@@ -165,13 +165,13 @@ class DatabasePerformanceTest {
         .where(eq(releases?.userId, 1))
         .groupBy(earnings?.platform);
 
-      const _executionTime2 = Date?.now() - startTime2;
+      const executionTime2 = Date?.now() - startTime2;
 
       this?.metrics.push({
         testName: "Distribution Analytics",
         executionTime: executionTime2,
         queryType: "JOIN",
-        recordsAffected: result?.length,
+        recordsAffected: result.length,
         indexUsed: true, // Should use idx_earnings_user_platform_date
       });
 
@@ -187,10 +187,10 @@ class DatabasePerformanceTest {
     logger?.info("🔍 Testing Search Operations...");
 
     // Test full-text search - should use idx_projects_title_search
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
 
     try {
-      const _result = await db?.execute(sql`
+      const result = await db?.execute(sql`
         SELECT title, description, genre
         FROM projects 
         WHERE to_tsvector('english', title || ' ' || COALESCE(description, '')) 
@@ -199,13 +199,13 @@ class DatabasePerformanceTest {
         LIMIT 20
       `);
 
-      const _executionTime = Date?.now() - startTime;
+      const executionTime = Date?.now() - startTime;
 
       this?.metrics.push({
         testName: "Full-text Search",
         executionTime,
         queryType: "SELECT",
-        recordsAffected: result?.rows?.length || 0,
+        recordsAffected: result.rows?.length || 0,
         indexUsed: true, // Should use idx_projects_title_search
       });
 
@@ -221,28 +221,28 @@ class DatabasePerformanceTest {
     logger?.info("💰 Testing Financial Reporting Queries...");
 
     // Test earnings report - should use idx_earnings_user_report_date
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
 
     try {
-      const _result = await db
+      const result = await db
         .select({
-          platform: earnings?.platform,
-          amount: earnings?.amount,
-          streams: earnings?.streams,
-          reportDate: earnings?.reportDate,
+          platform: earnings.platform,
+          amount: earnings.amount,
+          streams: earnings.streams,
+          reportDate: earnings.reportDate,
         })
         .from(earnings)
         .where(eq(earnings?.userId, 1))
         .orderBy(desc(earnings?.reportDate))
         .limit(100);
 
-      const _executionTime = Date?.now() - startTime;
+      const executionTime = Date?.now() - startTime;
 
       this?.metrics.push({
         testName: "Financial Report",
         executionTime,
         queryType: "SELECT",
-        recordsAffected: result?.length,
+        recordsAffected: result.length,
         indexUsed: true, // Should use idx_earnings_user_report_date
       });
 
@@ -257,12 +257,12 @@ class DatabasePerformanceTest {
   private async testConcurrentQueries(): Promise<void> {
     logger?.info("⚡ Testing Concurrent Query Performance...");
 
-    const _concurrentPromises = [];
-    const _startTime = Date?.now();
+    const concurrentPromises = [];
+    const startTime = Date?.now();
 
     // Simulate 10 concurrent user sessions
     for (let i = 0; i < 10; i++) {
-      const _promise = db
+      const promise = db
         .select()
         .from(projects)
         .where(eq(projects?.userId, `user-${i}`))
@@ -273,10 +273,10 @@ class DatabasePerformanceTest {
     }
 
     try {
-      const _results = await Promise?.all(concurrentPromises);
-      const _executionTime = Date?.now() - startTime;
+      const results = await Promise?.all(concurrentPromises);
+      const executionTime = Date?.now() - startTime;
 
-      const _totalRecords = results?.reduce(
+      const totalRecords = results?.reduce(
         (sum, result) => sum + result?.length,
         0,
       );
@@ -301,11 +301,11 @@ class DatabasePerformanceTest {
     logger?.info("\n📊 Database Performance Test Results");
     logger?.info("====================================\n");
 
-    const _fastQueries = this?.metrics.filter((m) => m?.executionTime < 50);
-    const _mediumQueries = this?.metrics.filter(
+    const fastQueries = this?.metrics.filter((m) => m?.executionTime < 50);
+    const mediumQueries = this?.metrics.filter(
       (m) => m?.executionTime >= 50 && m?.executionTime < 200,
     );
-    const _slowQueries = this?.metrics.filter((m) => m?.executionTime >= 200);
+    const slowQueries = this?.metrics.filter((m) => m?.executionTime >= 200);
 
     logger?.info("Performance Summary:");
     logger?.info(`⚡ Fast queries (<50ms): ${fastQueries?.length}`);
@@ -314,7 +314,7 @@ class DatabasePerformanceTest {
 
     logger?.info("Detailed Results:");
     this?.metrics.forEach((metric) => {
-      const _icon =
+      const icon =
         metric?.executionTime < 50
           ? "⚡"
           : metric?.executionTime < 200
@@ -327,7 +327,7 @@ class DatabasePerformanceTest {
       );
     });
 
-    const _avgExecutionTime =
+    const avgExecutionTime =
       this?.metrics.reduce((sum, m) => sum + m?.executionTime, 0) /
       this?.metrics.length;
 

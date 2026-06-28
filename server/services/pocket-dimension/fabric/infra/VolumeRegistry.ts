@@ -10,8 +10,8 @@ export class VolumeRegistry {
     name: string,
     type: VolumeType,
   ): Promise<FabricVolume> {
-    const _id = randomUUID();
-    const _now = new Date();
+    const id = randomUUID();
+    const now = new Date();
     await db
       .insert(fabricVolumes)
       .values({ id, pocketId, name, type, createdAt: now });
@@ -19,7 +19,7 @@ export class VolumeRegistry {
   }
 
   async getVolume(id: VolumeId): Promise<FabricVolume | null> {
-    const _rows = await db
+    const rows = await db
       .select()
       .from(fabricVolumes)
       .where(eq(fabricVolumes?.id, id));
@@ -27,7 +27,7 @@ export class VolumeRegistry {
   }
 
   async listVolumes(pocketId: PocketId): Promise<FabricVolume[]> {
-    const _rows = await db
+    const rows = await db
       .select()
       .from(fabricVolumes)
       .where(eq(fabricVolumes?.pocketId, pocketId));
@@ -40,11 +40,11 @@ export class VolumeRegistry {
 
   private rowToVolume(row: typeof fabricVolumes.$inferSelect): FabricVolume {
     return {
-      id: row?.id,
-      pocketId: row?.pocketId,
-      name: row?.name,
-      type: row?.type as VolumeType,
-      createdAt: row?.createdAt,
+      id: row.id,
+      pocketId: row.pocketId,
+      name: row.name,
+      type: row.type as VolumeType,
+      createdAt: row.createdAt,
     };
   }
 }

@@ -24,41 +24,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  SkeletonCard,
-  SkeletonChart,
-  SkeletonList,
-} from "@/components/ui/skeleton-loader";
+import { SkeletonCard, SkeletonChart, SkeletonList } from "@/components/ui/skeleton-loader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAnalyticsInvalidation } from "@/hooks/useAnalyticsInvalidation";
 import { apiRequest } from "@/lib/queryClient";
-import {
-  DollarSign,
-  Music,
-  TrendingUp,
-  Upload,
-  Sparkles,
-  Activity,
-  Zap,
-  Brain,
-  Rocket,
-  Crown,
-  Globe,
-  Calendar,
-  ArrowUp,
-  ArrowDown,
-  Plus,
-  AlertTriangle,
-  CheckCircle,
-  Info,
-  Lightbulb,
-  Lock,
-} from "lucide-react";
+import { DollarSign, Music, TrendingUp, Upload, Sparkles, Activity, Zap, Brain, Rocket, Crown, Globe, Calendar, ArrowUp, ArrowDown, Plus, AlertTriangle, CheckCircle, Info, Lightbulb, Lock } from "lucide-react";
 import { useLocation } from "wouter";
 import type { User } from "@shared/schema";
 
-type DashboardUserPersona = "artist" | "producer" | "label" | "manager" | null;
+type DashboardUserPersona =
+  | "artist"
+  | "producer"
+  | "label"
+  | "manager"
+  | null;
 
 interface CountdownProgress {
   completed: number;
@@ -274,8 +254,8 @@ function DashboardContent({ user }: { user: User }) {
   // Check if user has paid subscription
   const hasPaidSubscription = Boolean(
     user.subscriptionTier &&
-    user.subscriptionTier !== "" &&
-    user.subscriptionTier !== "trial",
+      user.subscriptionTier !== "" &&
+      user.subscriptionTier !== "trial",
   );
 
   // Check onboarding status
@@ -305,11 +285,10 @@ function DashboardContent({ user }: { user: User }) {
     meta: { silentError: true }, // Background polls must never show a red banner
   });
 
-  const { data: projectsData, isLoading: projectsLoading } =
-    useQuery<ProjectsResponse>({
-      queryKey: ["/api/projects"],
-      staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
-    });
+  const { data: projectsData, isLoading: projectsLoading } = useQuery<ProjectsResponse>({
+    queryKey: ["/api/projects"],
+    staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
+  });
 
   const projects = projectsData?.data || [];
 
@@ -318,12 +297,11 @@ function DashboardContent({ user }: { user: User }) {
     staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
   });
 
-  const { data: aiInsights, isLoading: aiInsightsLoading } =
-    useQuery<AiInsightsResponse>({
-      queryKey: ["/api/ai/insights"],
-      enabled: hasPaidSubscription, // Only fetch if user has paid subscription
-      staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
-    });
+  const { data: aiInsights, isLoading: aiInsightsLoading } = useQuery<AiInsightsResponse>({
+    queryKey: ["/api/ai/insights"],
+    enabled: hasPaidSubscription, // Only fetch if user has paid subscription
+    staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
+  });
 
   // Quick action mutations
   const createProjectMutation = useMutation({
@@ -1063,7 +1041,7 @@ function DashboardContent({ user }: { user: User }) {
                       <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-950/20 dark:to-violet-950/20 rounded-lg">
                         <div className="text-2xl font-bold text-purple-600">
                           {(
-                            aiInsights.predictions?.viralPotential * 100 || 0
+                            aiInsights?.predictions?.viralPotential * 100 || 0
                           ).toFixed(0)}
                           %
                         </div>

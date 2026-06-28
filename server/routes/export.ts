@@ -8,7 +8,7 @@ import { getBaseUrl } from "../config/defaults.js";
 import { shareLinks as shareLinksTable } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 
-const _router = Router();
+const router = Router();
 
 // ============================================================================
 // TYPES & INTERFACES
@@ -44,6 +44,7 @@ interface ExportJob {
   expiresAt?: Date;
 }
 
+
 interface ExportHistoryItem {
   id: string;
   userId: string;
@@ -64,20 +65,20 @@ interface ExportHistoryItem {
 }
 
 // In-memory storage (in production, use database)
-const _exportJobs = new Map<string, ExportJob>();
+const exportJobs = new Map<string, ExportJob>();
 const exportHistory: ExportHistoryItem[] = [];
 
 // Prevent unbounded memory growth: remove terminal-state jobs after 30 minutes.
 // exportJobs had set() calls but no delete() anywhere — every export leaked.
-const _EXPORT_JOB_TTL_MS = 30 * 60 * 1000;
+const EXPORT_JOB_TTL_MS = 30 * 60 * 1000;
 setInterval(
   () => {
-    const _cutoff = Date?.now() - EXPORT_JOB_TTL_MS;
+    const cutoff = Date?.now() - EXPORT_JOB_TTL_MS;
     for (const [id, job] of exportJobs) {
-      const _terminal = ["complete", "failed", "cancelled", "expired"].includes(
+      const terminal = ["complete", "failed", "cancelled", "expired"].includes(
         job?.status,
       );
-      const _tooOld =
+      const tooOld =
         (job?.createdAt ? new Date(job?.createdAt).getTime() : 0) < cutoff;
       if (terminal || tooOld) exportJobs?.delete(id);
     }
@@ -89,45 +90,45 @@ setInterval(
 // VALIDATION SCHEMAS
 // ============================================================================
 
-const _audioExportSchema = z?.object({
-  format: z?.enum(["wav", "mp3", "flac", "aiff", "ogg", "aac"]),
-  sampleRate: z?.number().min(8000).max(192000),
-  bitDepth: z?.number().refine((v) => [16, 24, 32].includes(v)),
-  bitrate: z?.number().min(64).max(320),
-  normalize: z?.boolean(),
-  dither: z?.boolean(),
-  exportType: z?.enum(["mixdown", "stems", "tracks"]),
-  selectedTracks: z?.array(z?.string()).optional(),
-  includeEffects: z?.boolean().optional(),
-  preserveVolumePan: z?.boolean().optional(),
-  addEffectTail: z?.boolean().optional(),
-  fileName: z?.string().min(1).max(255),
+const audioExportSchema = z.object({
+  format: z.enum(["wav", "mp3", "flac", "aiff", "ogg", "aac"]),
+  sampleRate: z.number().min(8000).max(192000),
+  bitDepth: z.number().refine((v) => [16, 24, 32].includes(v)),
+  bitrate: z.number().min(64).max(320),
+  normalize: z.boolean(),
+  dither: z.boolean(),
+  exportType: z.enum(["mixdown", "stems", "tracks"]),
+  selectedTracks: z.array(z.string()).optional(),
+  includeEffects: z.boolean().optional(),
+  preserveVolumePan: z.boolean().optional(),
+  addEffectTail: z.boolean().optional(),
+  fileName: z.string().min(1).max(255),
 });
 
-const _dataExportSchema = z?.object({
-  format: z?.enum(["csv", "pdf", "xlsx", "json"]),
-  category: z?.enum(["analytics", "royalties", "contracts", "backup"]),
+const dataExportSchema = z.object({
+  format: z.enum(["csv", "pdf", "xlsx", "json"]),
+  category: z.enum(["analytics", "royalties", "contracts", "backup"]),
   dateRange: z
     .object({
-      start: z?.string(),
-      end: z?.string(),
+      start: z.string(),
+      end: z.string(),
     })
     .nullable()
     .optional(),
-  includeCharts: z?.boolean().optional(),
-  anonymize: z?.boolean().optional(),
-  compress: z?.boolean().optional(),
+  includeCharts: z.boolean().optional(),
+  anonymize: z.boolean().optional(),
+  compress: z.boolean().optional(),
 });
 
-const _shareLinkSchema = z?.object({
-  resourceType: z?.enum(["audio", "project", "stems", "analytics", "document"]),
-  resourceId: z?.string(),
-  name: z?.string(),
-  expiresAt: z?.string().nullable().optional(),
-  password: z?.string().nullable().optional(),
-  maxDownloads: z?.number().nullable().optional(),
-  requiresEmail: z?.boolean().optional(),
-  allowedEmails: z?.array(z?.string()).nullable().optional(),
+const shareLinkSchema = z.object({
+  resourceType: z.enum(["audio", "project", "stems", "analytics", "document"]),
+  resourceId: z.string(),
+  name: z.string(),
+  expiresAt: z.string().nullable().optional(),
+  password: z.string().nullable().optional(),
+  maxDownloads: z.number().nullable().optional(),
+  requiresEmail: z.boolean().optional(),
+  allowedEmails: z.array(z.string()).nullable().optional(),
 });
 
 // ============================================================================
@@ -135,7 +136,7 @@ const _shareLinkSchema = z?.object({
 // ============================================================================
 
 function generateShortCode(): string {
-  const _chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
 
   return Array?.from(bytes as Uint8Array)
     .map((b: number) => chars[b % chars?.length])
@@ -143,10 +144,10 @@ function generateShortCode(): string {
 }
 
 function simulateExportProgress(jobId: string): void {
-  const _job = exportJobs?.get(jobId);
+  const job = exportJobs?.get(jobId);
   if (!job) return;
 
-  const _stages = [
+  const stages = [
     { name: "Preparing files...", progress: 10 },
     { name: "Loading audio data...", progress: 25 },
     { name: "Processing tracks...", progress: 45 },
@@ -158,8 +159,8 @@ function simulateExportProgress(jobId: string): void {
 
   let stageIndex = 0;
 
-  const _interval = setInterval(() => {
-    const _currentJob = exportJobs?.get(jobId);
+  const interval = setInterval(() => {
+    const currentJob = exportJobs?.get(jobId);
     if (
       !currentJob ||
       currentJob?.status === "cancelled" ||
@@ -170,7 +171,7 @@ function simulateExportProgress(jobId: string): void {
     }
 
     if (stageIndex < stages?.length) {
-      const _stage = stages[stageIndex];
+      const stage = stages[stageIndex];
       currentJob.progress = stage?.progress;
       currentJob.stage = stage?.name;
       currentJob.status = stage?.progress === 100 ? "complete" : "processing";
@@ -178,9 +179,9 @@ function simulateExportProgress(jobId: string): void {
       if (stage?.progress === 100) {
         currentJob.completedTime = new Date();
         currentJob.downloadUrl = `/api/export/download/${jobId}`;
-        const _trackCount = currentJob?.tracks?.length || 1;
-        const _durationSec = currentJob?.duration || 180;
-        const _qualityMultiplier =
+        const trackCount = currentJob?.tracks?.length || 1;
+        const durationSec = currentJob?.duration || 180;
+        const qualityMultiplier =
           currentJob?.format === "wav"
             ? 176400
             : currentJob?.format === "flac"
@@ -192,21 +193,21 @@ function simulateExportProgress(jobId: string): void {
 
         // Add to history
         exportHistory?.unshift({
-          id: currentJob?.id,
-          userId: currentJob?.userId,
-          name: currentJob?.name,
-          type: currentJob?.type === "stems" ? "stems" : "audio",
-          format: currentJob?.format,
+          id: currentJob.id,
+          userId: currentJob.userId,
+          name: currentJob.name,
+          type: currentJob.type === "stems" ? "stems" : "audio",
+          format: currentJob.format,
           status: "completed",
-          createdAt: currentJob?.startTime || new Date(),
-          completedAt: currentJob?.completedTime,
+          createdAt: currentJob.startTime || new Date(),
+          completedAt: currentJob.completedTime,
           expiresAt: new Date(Date?.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-          fileSize: currentJob?.fileSize,
-          downloadUrl: currentJob?.downloadUrl,
+          fileSize: currentJob.fileSize,
+          downloadUrl: currentJob.downloadUrl,
           downloadCount: 0,
-          settings: currentJob?.settings,
-          projectId: currentJob?.projectId,
-          projectName: currentJob?.projectName,
+          settings: currentJob.settings,
+          projectId: currentJob.projectId,
+          projectName: currentJob.projectName,
         });
         // Keep history bounded: drop the oldest entries once over cap.
         if (exportHistory?.length > 10_000) exportHistory?.splice(10_000);
@@ -230,26 +231,26 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _validation = audioExportSchema?.safeParse(req?.body);
+      const validation = audioExportSchema?.safeParse(req?.body);
       if (!validation?.success) {
         return res?.status(400).json({
           success: false,
-          error: validation?.error.message,
+          error: validation.error.message,
         });
       }
 
-      const _options = validation?.data;
-      const _jobId = randomBytes(8).toString("hex");
-      const _jobName = options?.fileName || `Export_${Date?.now()}`;
+      const options = validation?.data;
+      const jobId = randomBytes(8).toString("hex");
+      const jobName = options?.fileName || `Export_${Date?.now()}`;
 
       const job: ExportJob = {
         id: jobId,
         userId,
         name: jobName,
-        type: options?.exportType === "stems" ? "stems" : "audio",
-        format: options?.format,
+        type: options.exportType === "stems" ? "stems" : "audio",
+        format: options.format,
         status: "queued",
         progress: 0,
         stage: "Queued",
@@ -263,7 +264,7 @@ router?.post(
 
       // Start processing simulation
       setTimeout(() => {
-        const _currentJob = exportJobs?.get(jobId);
+        const currentJob = exportJobs?.get(jobId);
         if (currentJob) {
           currentJob.status = "preparing";
           currentJob.stage = "Preparing export...";
@@ -271,7 +272,7 @@ router?.post(
         }
       }, 500);
 
-      const _estimatedSeconds =
+      const estimatedSeconds =
         options?.exportType === "stems"
           ? (options?.selectedTracks?.length || 8) * 15
           : 30;
@@ -295,9 +296,9 @@ router?.post(
 router?.get("/jobs/:jobId", requireAuth, async (req: Request, res: Response) => {
   try {
     const { jobId } = req?.params;
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _job = exportJobs?.get(jobId);
+    const job = exportJobs?.get(jobId);
     if (!job) {
       return res?.status(404).json({ error: "Export job not found" });
     }
@@ -316,9 +317,9 @@ router?.get("/jobs/:jobId", requireAuth, async (req: Request, res: Response) => 
 // Get all active export jobs for user
 router?.get("/jobs", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _userJobs = Array?.from(exportJobs?.values())
+    const userJobs = Array?.from(exportJobs?.values())
       .filter((job) => job?.userId === userId)
       .sort(
         (a, b) => (b?.startTime?.getTime() || 0) - (a?.startTime?.getTime() || 0),
@@ -338,9 +339,9 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { jobId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _job = exportJobs?.get(jobId);
+      const job = exportJobs?.get(jobId);
       if (!job) {
         return res?.status(404).json({ error: "Export job not found" });
       }
@@ -369,9 +370,9 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { jobId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _job = exportJobs?.get(jobId);
+      const job = exportJobs?.get(jobId);
       if (!job) {
         return res?.status(404).json({ error: "Export job not found" });
       }
@@ -387,11 +388,11 @@ router?.post(
       job.status = "queued";
       job.progress = 0;
       job.error = undefined;
-      job?.retryCount++;
+      job.retryCount++;
       job.startTime = new Date();
 
       setTimeout(() => {
-        const _currentJob = exportJobs?.get(jobId);
+        const currentJob = exportJobs?.get(jobId);
         if (currentJob) {
           currentJob.status = "preparing";
           simulateExportProgress(jobId);
@@ -413,18 +414,18 @@ router?.post(
 // Start data export
 router?.post("/data", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _validation = dataExportSchema?.safeParse(req?.body);
+    const validation = dataExportSchema?.safeParse(req?.body);
     if (!validation?.success) {
       return res?.status(400).json({
         success: false,
-        error: validation?.error.message,
+        error: validation.error.message,
       });
     }
 
-    const _options = validation?.data;
-    const _jobId = randomBytes(8).toString("hex");
+    const options = validation?.data;
+    const jobId = randomBytes(8).toString("hex");
     const categoryNames: Record<string, string> = {
       analytics: "Analytics Export",
       royalties: "Royalty Statement",
@@ -437,7 +438,7 @@ router?.post("/data", requireAuth, async (req: Request, res: Response) => {
       userId,
       name: categoryNames[options?.category] || "Data Export",
       type: "data",
-      format: options?.format,
+      format: options.format,
       status: "queued",
       progress: 0,
       stage: "Queued",
@@ -450,14 +451,14 @@ router?.post("/data", requireAuth, async (req: Request, res: Response) => {
 
     // Start processing
     setTimeout(() => {
-      const _currentJob = exportJobs?.get(jobId);
+      const currentJob = exportJobs?.get(jobId);
       if (currentJob) {
         currentJob.status = "preparing";
         simulateExportProgress(jobId);
       }
     }, 500);
 
-    const _estimatedSeconds = options?.category === "backup" ? 120 : 30;
+    const estimatedSeconds = options?.category === "backup" ? 120 : 30;
 
     res?.json({
       success: true,
@@ -480,7 +481,7 @@ router?.post("/data", requireAuth, async (req: Request, res: Response) => {
 // Get export history
 router?.get("/history", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { type, status, limit = "50", offset = "0" } = req?.query;
 
     let filtered = exportHistory?.filter((item) => item?.userId === userId);
@@ -493,16 +494,16 @@ router?.get("/history", requireAuth, async (req: Request, res: Response) => {
       filtered = filtered?.filter((item) => item?.status === status);
     }
 
-    const _limitNum = Math?.min(
+    const limitNum = Math?.min(
       Math?.max(parseInt(limit as string) || 50, 1),
       1000,
     );
-    const _offsetNum = Math?.min(
+    const offsetNum = Math?.min(
       Math?.max(parseInt(offset as string) || 0, 0),
       100_000,
     );
 
-    const _paginated = filtered?.slice(offsetNum, offsetNum + limitNum);
+    const paginated = filtered?.slice(offsetNum, offsetNum + limitNum);
 
     res?.json(paginated);
   } catch (error: unknown) {
@@ -518,9 +519,9 @@ router?.delete(
   async (req: Request, res: Response) => {
     try {
       const { id } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _index = exportHistory?.findIndex(
+      const index = exportHistory?.findIndex(
         (item) => item?.id === id && item?.userId === userId,
       );
       if (index === -1) {
@@ -546,37 +547,37 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _validation = shareLinkSchema?.safeParse(req?.body);
+      const validation = shareLinkSchema?.safeParse(req?.body);
       if (!validation?.success) {
         return res
           .status(400)
-          .json({ success: false, error: validation?.error.message });
+          .json({ success: false, error: validation.error.message });
       }
 
-      const _options = validation?.data;
-      const _shortCode = generateShortCode();
-      const _baseUrl = getBaseUrl();
-      const _url = `${baseUrl}/share/${shortCode}`;
+      const options = validation?.data;
+      const shortCode = generateShortCode();
+      const baseUrl = getBaseUrl();
+      const url = `${baseUrl}/share/${shortCode}`;
 
       const [inserted] = await db
         .insert(shareLinksTable)
         .values({
           shortCode,
           url,
-          name: options?.name,
-          resourceType: options?.resourceType,
-          resourceId: options?.resourceId,
+          name: options.name,
+          resourceType: options.resourceType,
+          resourceId: options.resourceId,
           userId,
-          expiresAt: options?.expiresAt ? new Date(options?.expiresAt) : null,
+          expiresAt: options.expiresAt ? new Date(options?.expiresAt) : null,
           isPasswordProtected: !!options?.password,
-          maxDownloads: options?.maxDownloads || null,
+          maxDownloads: options.maxDownloads || null,
           downloadCount: 0,
           viewCount: 0,
           isActive: true,
-          requiresEmail: options?.requiresEmail || false,
-          allowedEmails: options?.allowedEmails || null,
+          requiresEmail: options.requiresEmail || false,
+          allowedEmails: options.allowedEmails || null,
         })
         .returning();
 
@@ -591,9 +592,9 @@ router?.post(
 // Get all share links for user
 router?.get("/share-links", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _rows = await db
+    const rows = await db
       .select()
       .from(shareLinksTable)
       .where(eq(shareLinksTable?.userId, userId))
@@ -633,16 +634,16 @@ router?.get("/share/:shortCode", async (req: Request, res: Response) => {
 
     await db
       .update(shareLinksTable)
-      .set({ viewCount: link?.viewCount + 1, lastAccessedAt: new Date() })
+      .set({ viewCount: link.viewCount + 1, lastAccessedAt: new Date() })
       .where(eq(shareLinksTable?.id, link?.id));
 
     res?.json({
-      id: link?.id,
-      name: link?.name,
-      resourceType: link?.resourceType,
-      isPasswordProtected: link?.isPasswordProtected,
-      requiresEmail: link?.requiresEmail,
-      allowedEmails: link?.allowedEmails
+      id: link.id,
+      name: link.name,
+      resourceType: link.resourceType,
+      isPasswordProtected: link.isPasswordProtected,
+      requiresEmail: link.requiresEmail,
+      allowedEmails: link.allowedEmails
         ? (link?.allowedEmails as string[]).length
         : null,
     });
@@ -677,7 +678,7 @@ router?.post("/share/:shortCode/verify", async (req: Request, res: Response) => 
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         return res?.status(400).json({ error: "Valid email address required" });
       }
-      const _allowed = link?.allowedEmails as string[] | null;
+      const allowed = link?.allowedEmails as string[] | null;
       if (
         allowed &&
         allowed?.length > 0 &&
@@ -728,7 +729,7 @@ router?.get(
       await db
         .update(shareLinksTable)
         .set({
-          downloadCount: link?.downloadCount + 1,
+          downloadCount: link.downloadCount + 1,
           lastAccessedAt: new Date(),
         })
         .where(eq(shareLinksTable?.id, link?.id));
@@ -736,7 +737,7 @@ router?.get(
       res?.json({
         success: true,
         message: "Download initiated",
-        fileName: link?.name,
+        fileName: link.name,
       });
     } catch (error: unknown) {
       logger?.warn({ err: error }, "Error downloading via share link:");
@@ -752,10 +753,10 @@ router?.delete(
   async (req: Request, res: Response) => {
     try {
       const { id } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       const [link] = await db
-        .select({ id: shareLinksTable?.id, userId: shareLinksTable?.userId })
+        .select({ id: shareLinksTable.id, userId: shareLinksTable.userId })
         .from(shareLinksTable)
         .where(eq(shareLinksTable?.id, id))
         .limit(1);
@@ -787,11 +788,11 @@ router?.patch(
   async (req: Request, res: Response) => {
     try {
       const { id } = req?.params;
-      const _userId = req?.user!.id;
-      const _updates = req?.body;
+      const userId = req?.user!.id;
+      const updates = req?.body;
 
       const [link] = await db
-        .select({ id: shareLinksTable?.id, userId: shareLinksTable?.userId })
+        .select({ id: shareLinksTable.id, userId: shareLinksTable.userId })
         .from(shareLinksTable)
         .where(eq(shareLinksTable?.id, id))
         .limit(1);
@@ -839,9 +840,9 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const { jobId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _job = exportJobs?.get(jobId);
+      const job = exportJobs?.get(jobId);
       if (!job) {
         return res?.status(404).json({ error: "Export not found" });
       }
@@ -855,9 +856,9 @@ router?.get(
       }
 
       // Update download count in history
-      const _historyItem = exportHistory?.find((h) => h?.id === jobId);
+      const historyItem = exportHistory?.find((h) => h?.id === jobId);
       if (historyItem) {
-        historyItem?.downloadCount++;
+        historyItem.downloadCount++;
       }
 
       // In production, stream actual file
@@ -865,7 +866,7 @@ router?.get(
         success: true,
         message: "Download initiated",
         fileName: `${job?.name}.${job?.format}`,
-        fileSize: job?.fileSize,
+        fileSize: job.fileSize,
       });
     } catch (error: unknown) {
       logger?.warn({ err: error }, "Error downloading export:");
@@ -881,24 +882,24 @@ router?.get(
 // Start batch export
 router?.post("/batch", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { outputs, projectId, projectName } = req?.body;
 
     if (!outputs || !Array?.isArray(outputs) || outputs?.length === 0) {
       return res?.status(400).json({ error: "No outputs specified" });
     }
 
-    const _batchId = randomBytes(8).toString("hex");
+    const batchId = randomBytes(8).toString("hex");
     const jobs: ExportJob[] = [];
 
     for (const output of outputs) {
-      const _jobId = randomBytes(8).toString("hex");
+      const jobId = randomBytes(8).toString("hex");
       const job: ExportJob = {
         id: jobId,
         userId,
-        name: output?.name,
-        type: output?.type === "stems" ? "stems" : "audio",
-        format: output?.format,
+        name: output.name,
+        type: output.type === "stems" ? "stems" : "audio",
+        format: output.format,
         status: "queued",
         progress: 0,
         stage: "Queued",
@@ -917,7 +918,7 @@ router?.post("/batch", requireAuth, async (req: Request, res: Response) => {
     let delay = 500;
     for (const job of jobs) {
       setTimeout(() => {
-        const _currentJob = exportJobs?.get(job?.id);
+        const currentJob = exportJobs?.get(job?.id);
         if (currentJob && currentJob?.status === "queued") {
           currentJob.status = "preparing";
           simulateExportProgress(job?.id);
@@ -929,8 +930,8 @@ router?.post("/batch", requireAuth, async (req: Request, res: Response) => {
     res?.json({
       success: true,
       batchId,
-      jobIds: jobs?.map((j) => j?.id),
-      totalJobs: jobs?.length,
+      jobIds: jobs.map((j) => j?.id),
+      totalJobs: jobs.length,
     });
   } catch (error: unknown) {
     logger?.warn({ err: error }, "Error starting batch export:");
@@ -944,10 +945,10 @@ router?.post("/batch", requireAuth, async (req: Request, res: Response) => {
 
 router?.post("/analytics", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { format, sections, filters, dateRange, includeCharts } = req?.body;
 
-    const _jobId = randomBytes(8).toString("hex");
+    const jobId = randomBytes(8).toString("hex");
 
     const job: ExportJob = {
       id: jobId,
@@ -966,7 +967,7 @@ router?.post("/analytics", requireAuth, async (req: Request, res: Response) => {
     exportJobs?.set(jobId, job);
 
     setTimeout(() => {
-      const _currentJob = exportJobs?.get(jobId);
+      const currentJob = exportJobs?.get(jobId);
       if (currentJob) {
         currentJob.status = "preparing";
         simulateExportProgress(jobId);
@@ -988,7 +989,7 @@ router?.post("/analytics", requireAuth, async (req: Request, res: Response) => {
 // REPORT GENERATION ENDPOINTS
 // ============================================================================
 
-const _reportTypes = [
+const reportTypes = [
   "royalties",
   "analytics",
   "invoice",
@@ -997,17 +998,17 @@ const _reportTypes = [
 ] as const;
 type ReportType = (typeof reportTypes)[number];
 
-const _reportTypeSchema = z?.object({
-  format: z?.enum(["pdf", "xlsx", "csv"]).default("pdf"),
+const reportTypeSchema = z.object({
+  format: z.enum(["pdf", "xlsx", "csv"]).default("pdf"),
   period: z
     .object({
-      start: z?.string(),
-      end: z?.string(),
+      start: z.string(),
+      end: z.string(),
     })
     .optional(),
-  entityId: z?.string().optional(),
-  options: z?.record(z?.string(), z?.unknown()).optional(),
-  emailDelivery: z?.boolean().default(false),
+  entityId: z.string().optional(),
+  options: z.record(z.string(), z.unknown()).optional(),
+  emailDelivery: z.boolean().default(false),
 });
 
 router?.post(
@@ -1016,7 +1017,7 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { type } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       if (!reportTypes?.includes(type as ReportType)) {
         return res?.status(400).json({
@@ -1024,16 +1025,16 @@ router?.post(
         });
       }
 
-      const _validation = reportTypeSchema?.safeParse(req?.body);
+      const validation = reportTypeSchema?.safeParse(req?.body);
       if (!validation?.success) {
         return res?.status(400).json({
           success: false,
-          error: validation?.error.message,
+          error: validation.error.message,
         });
       }
 
-      const _options = validation?.data;
-      const _jobId = randomBytes(8).toString("hex");
+      const options = validation?.data;
+      const jobId = randomBytes(8).toString("hex");
 
       const reportNames: Record<ReportType, string> = {
         royalties: "Royalty Statement",
@@ -1048,7 +1049,7 @@ router?.post(
         userId,
         name: reportNames[type as ReportType],
         type: "data",
-        format: options?.format,
+        format: options.format,
         status: "queued",
         progress: 0,
         stage: "Generating document...",
@@ -1063,14 +1064,14 @@ router?.post(
       exportJobs?.set(jobId, job);
 
       setTimeout(() => {
-        const _currentJob = exportJobs?.get(jobId);
+        const currentJob = exportJobs?.get(jobId);
         if (currentJob) {
           currentJob.status = "preparing";
           simulateExportProgress(jobId);
         }
       }, 500);
 
-      const _estimatedSeconds =
+      const estimatedSeconds =
         type === "tax" ? 60 : type === "contract" ? 45 : 30;
 
       res?.json({
@@ -1079,7 +1080,7 @@ router?.post(
         reportType: type,
         estimatedTime: estimatedSeconds,
         downloadUrl: `/api/export/download/${jobId}`,
-        emailDelivery: options?.emailDelivery,
+        emailDelivery: options.emailDelivery,
       });
     } catch (error: unknown) {
       logger?.warn({ err: error }, "Error generating report:");
@@ -1092,8 +1093,8 @@ router?.post(
 // CHART IMAGE EXPORT
 // ============================================================================
 
-const _chartExportSchema = z?.object({
-  chartType: z?.enum([
+const chartExportSchema = z.object({
+  chartType: z.enum([
     "streams",
     "revenue",
     "audience",
@@ -1101,37 +1102,37 @@ const _chartExportSchema = z?.object({
     "demographics",
     "comparison",
   ]),
-  format: z?.enum(["png", "svg", "pdf"]).default("png"),
-  resolution: z?.enum(["standard", "high", "ultra"]).default("high"),
-  background: z?.enum(["transparent", "white", "dark"]).default("dark"),
+  format: z.enum(["png", "svg", "pdf"]).default("png"),
+  resolution: z.enum(["standard", "high", "ultra"]).default("high"),
+  background: z.enum(["transparent", "white", "dark"]).default("dark"),
   dateRange: z
     .object({
-      start: z?.string(),
-      end: z?.string(),
+      start: z.string(),
+      end: z.string(),
     })
     .optional(),
   dimensions: z
     .object({
-      width: z?.number().min(400).max(4000).default(1200),
-      height: z?.number().min(300).max(3000).default(800),
+      width: z.number().min(400).max(4000).default(1200),
+      height: z.number().min(300).max(3000).default(800),
     })
     .optional(),
 });
 
 router?.post("/chart", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _validation = chartExportSchema?.safeParse(req?.body);
+    const validation = chartExportSchema?.safeParse(req?.body);
     if (!validation?.success) {
       return res?.status(400).json({
         success: false,
-        error: validation?.error.message,
+        error: validation.error.message,
       });
     }
 
-    const _options = validation?.data;
-    const _jobId = randomBytes(8).toString("hex");
+    const options = validation?.data;
+    const jobId = randomBytes(8).toString("hex");
 
     const resolutionMultipliers: Record<string, number> = {
       standard: 1,
@@ -1144,7 +1145,7 @@ router?.post("/chart", requireAuth, async (req: Request, res: Response) => {
       userId,
       name: `${options?.chartType} Chart Export`,
       type: "data",
-      format: options?.format,
+      format: options.format,
       status: "queued",
       progress: 0,
       stage: "Rendering chart...",
@@ -1164,7 +1165,7 @@ router?.post("/chart", requireAuth, async (req: Request, res: Response) => {
     exportJobs?.set(jobId, job);
 
     setTimeout(() => {
-      const _currentJob = exportJobs?.get(jobId);
+      const currentJob = exportJobs?.get(jobId);
       if (currentJob) {
         currentJob.status = "preparing";
         simulateExportProgress(jobId);
@@ -1174,8 +1175,8 @@ router?.post("/chart", requireAuth, async (req: Request, res: Response) => {
     res?.json({
       success: true,
       jobId,
-      chartType: options?.chartType,
-      format: options?.format,
+      chartType: options.chartType,
+      format: options.format,
       downloadUrl: `/api/export/download/${jobId}`,
     });
   } catch (error: unknown) {
@@ -1189,60 +1190,60 @@ router?.post("/chart", requireAuth, async (req: Request, res: Response) => {
 // ============================================================================
 
 
-const _bulkExportSchema = z?.object({
+const bulkExportSchema = z.object({
   items: z
     .array(
-      z?.object({
-        id: z?.string(),
-        type: z?.enum(["audio", "document", "analytics", "report"]),
-        format: z?.string().optional(),
+      z.object({
+        id: z.string(),
+        type: z.enum(["audio", "document", "analytics", "report"]),
+        format: z.string().optional(),
       }),
     )
     .min(1)
     .max(100),
-  settings: z?.object({
+  settings: z.object({
     format: z
       .object({
-        useUnifiedFormat: z?.boolean().default(true),
-        format: z?.string().optional(),
-        zipCompression: z?.boolean().default(true),
+        useUnifiedFormat: z.boolean().default(true),
+        format: z.string().optional(),
+        zipCompression: z.boolean().default(true),
       })
       .optional(),
     quality: z
       .object({
-        sampleRate: z?.number().optional(),
-        bitDepth: z?.number().optional(),
-        bitrate: z?.number().optional(),
-        channels: z?.enum(["mono", "stereo"]).optional(),
+        sampleRate: z.number().optional(),
+        bitDepth: z.number().optional(),
+        bitrate: z.number().optional(),
+        channels: z.enum(["mono", "stereo"]).optional(),
       })
       .optional(),
-    emailNotification: z?.boolean().default(true),
-    projectId: z?.string().optional(),
+    emailNotification: z.boolean().default(true),
+    projectId: z.string().optional(),
   }),
 });
 
 router?.post("/bulk", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _validation = bulkExportSchema?.safeParse(req?.body);
+    const validation = bulkExportSchema?.safeParse(req?.body);
     if (!validation?.success) {
       return res?.status(400).json({
         success: false,
-        error: validation?.error.message,
+        error: validation.error.message,
       });
     }
 
     const { items, settings } = validation?.data;
-    const _jobId = randomBytes(8).toString("hex");
-    const _isLargeExport = items?.length > 20;
+    const jobId = randomBytes(8).toString("hex");
+    const isLargeExport = items?.length > 20;
 
     const job: ExportJob = {
       id: jobId,
       userId,
       name: `Bulk Export (${items?.length} items)`,
       type: "batch",
-      format: settings?.format?.zipCompression ? "zip" : "mixed",
+      format: settings.format?.zipCompression ? "zip" : "mixed",
       status: "queued",
       progress: 0,
       stage: "Preparing bulk export...",
@@ -1258,23 +1259,23 @@ router?.post("/bulk", requireAuth, async (req: Request, res: Response) => {
     exportJobs?.set(jobId, job);
 
     setTimeout(() => {
-      const _currentJob = exportJobs?.get(jobId);
+      const currentJob = exportJobs?.get(jobId);
       if (currentJob) {
         currentJob.status = "preparing";
         simulateExportProgress(jobId);
       }
     }, 500);
 
-    const _estimatedSeconds = items?.length * 5 + 30;
+    const estimatedSeconds = items?.length * 5 + 30;
 
     res?.json({
       success: true,
       jobId,
-      totalItems: items?.length,
+      totalItems: items.length,
       status: "queued",
       estimatedTime: estimatedSeconds,
       downloadUrl: `/api/export/download/${jobId}`,
-      emailNotification: settings?.emailNotification && isLargeExport,
+      emailNotification: settings.emailNotification && isLargeExport,
       message: isLargeExport
         ? "Large export queued. You will receive an email when complete."
         : "Export started.",
@@ -1292,9 +1293,9 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const { jobId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _job = exportJobs?.get(jobId);
+      const job = exportJobs?.get(jobId);
       if (!job) {
         return res?.status(404).json({ error: "Export not found" });
       }
@@ -1311,7 +1312,7 @@ router?.get(
         success: true,
         message: "ZIP download initiated",
         fileName: `${job?.name.replace(/[^a-zA-Z0-9]/g, "_")}.zip`,
-        fileSize: job?.fileSize,
+        fileSize: job.fileSize,
         itemCount:
           (job?.settings as Record<string, unknown>)?.items?.length || 0,
       });
@@ -1326,18 +1327,18 @@ router?.get(
 // AUDIO EXPORT WITH MASTERING
 // ============================================================================
 
-const _masteredExportSchema = z?.object({
-  format: z?.enum(["wav", "mp3", "flac", "aiff"]),
+const masteredExportSchema = z.object({
+  format: z.enum(["wav", "mp3", "flac", "aiff"]),
   preset: z
     .enum(["streaming", "cd", "vinyl", "broadcast", "archival"])
     .optional(),
   processing: z
     .object({
-      normalize: z?.boolean().default(true),
-      normalizeTarget: z?.number().min(-24).max(0).default(-14),
-      limiter: z?.boolean().default(true),
-      limiterCeiling: z?.number().min(-6).max(0).default(-1),
-      dither: z?.boolean().default(false),
+      normalize: z.boolean().default(true),
+      normalizeTarget: z.number().min(-24).max(0).default(-14),
+      limiter: z.boolean().default(true),
+      limiterCeiling: z.number().min(-6).max(0).default(-1),
+      dither: z.boolean().default(false),
       ditherType: z
         .enum(["none", "triangular", "noise-shaped"])
         .default("none"),
@@ -1345,13 +1346,13 @@ const _masteredExportSchema = z?.object({
     .optional(),
   quality: z
     .object({
-      sampleRate: z?.number().default(48000),
-      bitDepth: z?.number().default(24),
-      bitrate: z?.number().default(320),
-      channels: z?.enum(["mono", "stereo"]).default("stereo"),
+      sampleRate: z.number().default(48000),
+      bitDepth: z.number().default(24),
+      bitrate: z.number().default(320),
+      channels: z.enum(["mono", "stereo"]).default("stereo"),
     })
     .optional(),
-  fileName: z?.string().min(1).max(255),
+  fileName: z.string().min(1).max(255),
 });
 
 router?.post(
@@ -1360,22 +1361,22 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _validation = masteredExportSchema?.safeParse(req?.body);
+      const validation = masteredExportSchema?.safeParse(req?.body);
       if (!validation?.success) {
         return res?.status(400).json({
           success: false,
-          error: validation?.error.message,
+          error: validation.error.message,
         });
       }
 
-      const _options = validation?.data;
-      const _jobId = randomBytes(8).toString("hex");
+      const options = validation?.data;
+      const jobId = randomBytes(8).toString("hex");
 
       const presetSettings: Record<
         string,
-        Partial<typeof options?.processing>
+        Partial<typeof options.processing>
       > = {
         streaming: {
           normalize: true,
@@ -1404,16 +1405,16 @@ router?.post(
         archival: { normalize: false, dither: false },
       };
 
-      const _effectiveProcessing = options?.preset
+      const effectiveProcessing = options?.preset
         ? { ...options?.processing, ...presetSettings[options?.preset] }
         : options?.processing;
 
       const job: ExportJob = {
         id: jobId,
         userId,
-        name: options?.fileName || `Mastered_${Date?.now()}`,
+        name: options.fileName || `Mastered_${Date?.now()}`,
         type: "audio",
-        format: options?.format,
+        format: options.format,
         status: "queued",
         progress: 0,
         stage: "Preparing mastered export...",
@@ -1423,7 +1424,7 @@ router?.post(
           ...options,
           processing: effectiveProcessing,
           isMastered: true,
-          preset: options?.preset,
+          preset: options.preset,
         },
         projectId,
       };
@@ -1431,7 +1432,7 @@ router?.post(
       exportJobs?.set(jobId, job);
 
       setTimeout(() => {
-        const _currentJob = exportJobs?.get(jobId);
+        const currentJob = exportJobs?.get(jobId);
         if (currentJob) {
           currentJob.status = "preparing";
           simulateExportProgress(jobId);
@@ -1441,7 +1442,7 @@ router?.post(
       res?.json({
         success: true,
         jobId,
-        preset: options?.preset,
+        preset: options.preset,
         estimatedTime: 60,
       });
     } catch (error: unknown) {
@@ -1455,31 +1456,31 @@ router?.post(
 // STEMS EXPORT
 // ============================================================================
 
-const _stemsExportSchema = z?.object({
-  format: z?.enum(["wav", "flac", "aiff"]),
+const stemsExportSchema = z.object({
+  format: z.enum(["wav", "flac", "aiff"]),
   tracks: z
     .array(
-      z?.object({
-        id: z?.string(),
-        name: z?.string(),
-        mute: z?.boolean().optional(),
-        solo: z?.boolean().optional(),
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        mute: z.boolean().optional(),
+        solo: z.boolean().optional(),
       }),
     )
     .min(1),
-  includeEffects: z?.boolean().default(true),
-  preserveVolumePan: z?.boolean().default(true),
-  addEffectTail: z?.boolean().default(true),
+  includeEffects: z.boolean().default(true),
+  preserveVolumePan: z.boolean().default(true),
+  addEffectTail: z.boolean().default(true),
   namingConvention: z
     .enum(["track-name", "numbered", "custom"])
     .default("track-name"),
   quality: z
     .object({
-      sampleRate: z?.number().default(48000),
-      bitDepth: z?.number().default(24),
+      sampleRate: z.number().default(48000),
+      bitDepth: z.number().default(24),
     })
     .optional(),
-  bundleAsZip: z?.boolean().default(true),
+  bundleAsZip: z.boolean().default(true),
 });
 
 router?.post(
@@ -1488,25 +1489,25 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { projectId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _validation = stemsExportSchema?.safeParse(req?.body);
+      const validation = stemsExportSchema?.safeParse(req?.body);
       if (!validation?.success) {
         return res?.status(400).json({
           success: false,
-          error: validation?.error.message,
+          error: validation.error.message,
         });
       }
 
-      const _options = validation?.data;
-      const _jobId = randomBytes(8).toString("hex");
+      const options = validation?.data;
+      const jobId = randomBytes(8).toString("hex");
 
       const job: ExportJob = {
         id: jobId,
         userId,
         name: `Stems Export (${options?.tracks.length} tracks)`,
         type: "stems",
-        format: options?.bundleAsZip ? "zip" : options?.format,
+        format: options.bundleAsZip ? "zip" : options?.format,
         status: "queued",
         progress: 0,
         stage: "Preparing stems export...",
@@ -1519,19 +1520,19 @@ router?.post(
       exportJobs?.set(jobId, job);
 
       setTimeout(() => {
-        const _currentJob = exportJobs?.get(jobId);
+        const currentJob = exportJobs?.get(jobId);
         if (currentJob) {
           currentJob.status = "preparing";
           simulateExportProgress(jobId);
         }
       }, 500);
 
-      const _estimatedSeconds = options?.tracks.length * 15 + 30;
+      const estimatedSeconds = options?.tracks.length * 15 + 30;
 
       res?.json({
         success: true,
         jobId,
-        trackCount: options?.tracks.length,
+        trackCount: options.tracks.length,
         estimatedTime: estimatedSeconds,
       });
     } catch (error: unknown) {
@@ -1551,9 +1552,9 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const { exportId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
-      const _job = exportJobs?.get(exportId);
+      const job = exportJobs?.get(exportId);
       if (!job) {
         return res?.status(404).json({ error: "Export not found" });
       }
@@ -1562,22 +1563,22 @@ router?.get(
         return res?.status(403).json({ error: "Access denied" });
       }
 
-      const _response = {
-        id: job?.id,
-        name: job?.name,
-        type: job?.type,
-        format: job?.format,
-        status: job?.status,
-        progress: job?.progress,
-        stage: job?.stage,
-        startTime: job?.startTime,
-        estimatedEndTime: job?.estimatedEndTime,
-        completedTime: job?.completedTime,
-        fileSize: job?.fileSize,
-        downloadUrl: job?.status === "complete" ? job?.downloadUrl : undefined,
-        error: job?.error,
-        canRetry: job?.status === "failed" && job?.retryCount < 3,
-        retryCount: job?.retryCount,
+      const response = {
+        id: job.id,
+        name: job.name,
+        type: job.type,
+        format: job.format,
+        status: job.status,
+        progress: job.progress,
+        stage: job.stage,
+        startTime: job.startTime,
+        estimatedEndTime: job.estimatedEndTime,
+        completedTime: job.completedTime,
+        fileSize: job.fileSize,
+        downloadUrl: job.status === "complete" ? job?.downloadUrl : undefined,
+        error: job.error,
+        canRetry: job.status === "failed" && job?.retryCount < 3,
+        retryCount: job.retryCount,
       };
 
       res?.json(response);
@@ -1598,10 +1599,10 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { jobId } = req?.params;
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
       const { email } = req?.body;
 
-      const _job = exportJobs?.get(jobId);
+      const job = exportJobs?.get(jobId);
       if (!job) {
         return res?.status(404).json({ error: "Export not found" });
       }

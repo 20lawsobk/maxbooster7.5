@@ -30,7 +30,7 @@ const LEVEL_PRIORITY: Record<LogLevel, number> = {
   error: 3,
 };
 
-const _COLORS = {
+const COLORS = {
   reset: "\x1b[0m",
   bright: "\x1b[1m",
   dim: "\x1b[2m",
@@ -44,10 +44,10 @@ const _COLORS = {
 };
 
 const LEVEL_COLORS: Record<LogLevel, string> = {
-  debug: COLORS?.gray,
-  info: COLORS?.green,
-  warn: COLORS?.yellow,
-  error: COLORS?.red,
+  debug: COLORS.gray,
+  info: COLORS.green,
+  warn: COLORS.yellow,
+  error: COLORS.red,
 };
 
 const LEVEL_ICONS: Record<LogLevel, string> = {
@@ -82,14 +82,14 @@ class StructuredLogger {
     userId?: number;
     duration?: number;
   } {
-    const _ctx = requestContext?.getContext();
+    const ctx = requestContext?.getContext();
     if (!ctx) {
       return {};
     }
     return {
-      requestId: ctx?.requestId,
-      userId: ctx?.userId,
-      duration: ctx?.startTime ? Date?.now() - ctx?.startTime : undefined,
+      requestId: ctx.requestId,
+      userId: ctx.userId,
+      duration: ctx.startTime ? Date?.now() - ctx?.startTime : undefined,
     };
   }
 
@@ -98,20 +98,20 @@ class StructuredLogger {
       return JSON?.stringify(entry);
     }
 
-    const _color = LEVEL_COLORS[entry?.level];
-    const _icon = LEVEL_ICONS[entry?.level];
-    const _timestamp = new Date(entry?.timestamp).toLocaleTimeString();
-    const _reqId = entry?.requestId
+    const color = LEVEL_COLORS[entry?.level];
+    const icon = LEVEL_ICONS[entry?.level];
+    const timestamp = new Date(entry?.timestamp).toLocaleTimeString();
+    const reqId = entry?.requestId
       ? `${COLORS?.dim}[${entry?.requestId.substring(0, 8)}]${COLORS?.reset}`
       : "";
-    const _svc = entry?.service
+    const svc = entry?.service
       ? `${COLORS?.cyan}[${entry?.service}]${COLORS?.reset}`
       : "";
-    const _dur =
+    const dur =
       entry?.duration !== undefined
         ? `${COLORS?.dim}(${entry?.duration}ms)${COLORS?.reset}`
         : "";
-    const _usr = entry?.userId
+    const usr = entry?.userId
       ? `${COLORS?.magenta}user:${entry?.userId}${COLORS?.reset}`
       : "";
 
@@ -127,7 +127,7 @@ class StructuredLogger {
         output += ` ${COLORS?.dim}(${entry?.error.code})${COLORS?.reset}`;
       }
       if (entry?.error.stack) {
-        const _stackLines = entry?.error.stack?.split("\n").slice(1, 6);
+        const stackLines = entry?.error.stack?.split("\n").slice(1, 6);
         output += `\n${COLORS?.dim}${stackLines?.join("\n")}${COLORS?.reset}`;
       }
     }
@@ -145,17 +145,17 @@ class StructuredLogger {
       return;
     }
 
-    const _ctx = this?.getRequestContext();
-    const _errorObj = error ? this?.formatError(error) : undefined;
+    const ctx = this?.getRequestContext();
+    const errorObj = error ? this?.formatError(error) : undefined;
 
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),
       level,
       message,
-      requestId: ctx?.requestId,
-      userId: ctx?.userId,
-      service: this?.service,
-      duration: ctx?.duration,
+      requestId: ctx.requestId,
+      userId: ctx.userId,
+      service: this.service,
+      duration: ctx.duration,
       metadata: { ...this?.defaultMetadata, ...metadata },
       error: errorObj,
     };
@@ -164,7 +164,7 @@ class StructuredLogger {
       delete entry?.metadata;
     }
 
-    const _formattedMessage = this?.formatMessage(entry);
+    const formattedMessage = this?.formatMessage(entry);
 
     if (level === "error") {
       process?.stderr.write(formattedMessage + "\n");
@@ -174,7 +174,7 @@ class StructuredLogger {
 
     for (const transport of globalTransports) {
       try {
-        const _result = transport(entry);
+        const result = transport(entry);
         if (result instanceof Promise) {
           result?.catch((err) => {
             process?.stderr.write(`[LogTransport Error] ${err?.message}\n`);
@@ -195,8 +195,8 @@ class StructuredLogger {
   } {
     if (error instanceof Error) {
       return {
-        message: error?.message,
-        stack: error?.stack,
+        message: error.message,
+        stack: error.stack,
         code: (error as Record<string, unknown>).code,
       };
     }
@@ -204,11 +204,11 @@ class StructuredLogger {
       return { message: error };
     }
     if (typeof error === "object" && error !== null) {
-      const _err = error as Record<string, unknown>;
+      const err = error as Record<string, unknown>;
       return {
         message: String(err?.message || JSON?.stringify(error)),
-        stack: err?.stack as string | undefined,
-        code: err?.code as string | undefined,
+        stack: err.stack as string | undefined,
+        code: err.code as string | undefined,
       };
     }
     return { message: String(error) };
@@ -240,7 +240,7 @@ class StructuredLogger {
 
   child(options: LoggerOptions): StructuredLogger {
     return new StructuredLogger({
-      service: options?.service || this?.service,
+      service: options.service || this?.service,
       defaultMetadata: { ...this?.defaultMetadata, ...options?.defaultMetadata },
     });
   }
@@ -250,20 +250,20 @@ class StructuredLogger {
   }
 
   time(label: string): () => void {
-    const _start = process?.hrtime.bigint();
+    const start = process?.hrtime.bigint();
     return () => {
-      const _end = process?.hrtime.bigint();
-      const _durationMs = Number(end - start) / 1_000_000;
+      const end = process?.hrtime.bigint();
+      const durationMs = Number(end - start) / 1_000_000;
       this?.info(`${label} completed`, {
-        durationMs: Math?.round(durationMs * 100) / 100,
+        durationMs: Math.round(durationMs * 100) / 100,
       });
     };
   }
 
   measure<T>(label: string, fn: () => T): T {
-    const _end = this?.time(label);
+    const end = this?.time(label);
     try {
-      const _result = fn();
+      const result = fn();
       if (result instanceof Promise) {
         return result?.finally(end) as T;
       }
@@ -276,17 +276,17 @@ class StructuredLogger {
   }
 
   static createMemorySnapshot(): Record<string, number> {
-    const _usage = process?.memoryUsage();
+    const usage = process?.memoryUsage();
     return {
-      heapUsedMB: Math?.round((usage?.heapUsed / 1024 / 1024) * 100) / 100,
-      heapTotalMB: Math?.round((usage?.heapTotal / 1024 / 1024) * 100) / 100,
-      rssMB: Math?.round((usage?.rss / 1024 / 1024) * 100) / 100,
-      externalMB: Math?.round((usage?.external / 1024 / 1024) * 100) / 100,
+      heapUsedMB: Math.round((usage?.heapUsed / 1024 / 1024) * 100) / 100,
+      heapTotalMB: Math.round((usage?.heapTotal / 1024 / 1024) * 100) / 100,
+      rssMB: Math.round((usage?.rss / 1024 / 1024) * 100) / 100,
+      externalMB: Math.round((usage?.external / 1024 / 1024) * 100) / 100,
     };
   }
 }
 
-export const _structuredLogger = new StructuredLogger({
+export const structuredLogger = new StructuredLogger({
   service: "max-booster",
 });
 
@@ -299,7 +299,7 @@ export function addLogTransport(transport: LogTransport): void {
 }
 
 export function removeLogTransport(transport: LogTransport): boolean {
-  const _index = globalTransports?.indexOf(transport);
+  const index = globalTransports?.indexOf(transport);
   if (index > -1) {
     globalTransports?.splice(index, 1);
     return true;

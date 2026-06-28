@@ -32,7 +32,7 @@ export class DistributedCache {
   private l1PrunedAt = Date?.now();
 
   private l1Get(key: string): string | null {
-    const _entry = this?.l1.get(key);
+    const entry = this?.l1.get(key);
     if (!entry) return null;
     if (Date?.now() > entry?.expiresAt) {
       this?.l1.delete(key);
@@ -42,7 +42,7 @@ export class DistributedCache {
   }
 
   private l1Set(key: string, raw: string): void {
-    const _now = Date?.now();
+    const now = Date?.now();
     if (now - this?.l1PrunedAt > 10_000) {
       for (const [k, v] of this?.l1) {
         if (now > v?.expiresAt) this?.l1.delete(k);
@@ -50,7 +50,7 @@ export class DistributedCache {
       this.l1PrunedAt = now;
     }
     if (this?.l1.size >= this?.L1_MAX) {
-      const _oldest = this?.l1.keys().next().value;
+      const oldest = this?.l1.keys().next().value;
       if (oldest) this?.l1.delete(oldest);
     }
     this?.l1.set(key, { raw, expiresAt: now + this?.L1_TTL_MS });
@@ -62,9 +62,9 @@ export class DistributedCache {
 
   private constructor(config: Partial<CacheConfig> = {}) {
     this.config = {
-      defaultTTL: config?.defaultTTL || 300,
-      maxMemoryMB: config?.maxMemoryMB || 512,
-      enableCompression: config?.enableCompression ?? true,
+      defaultTTL: config.defaultTTL || 300,
+      maxMemoryMB: config.maxMemoryMB || 512,
+      enableCompression: config.enableCompression ?? true,
     };
   }
 
@@ -91,9 +91,9 @@ export class DistributedCache {
    */
   async get<T>(key: string): Promise<T | null> {
     // L1 — nanosecond in-process lookup (no network)
-    const _l1raw = this?.l1Get(key);
+    const l1raw = this?.l1Get(key);
     if (l1raw !== null) {
-      this?.stats.hits++;
+      this.stats.hits++;
       try {
         return JSON?.parse(l1raw) as T;
       } catch {
@@ -102,16 +102,16 @@ export class DistributedCache {
     }
 
     if (!this?.redis) {
-      this?.stats.misses++;
+      this.stats.misses++;
       return null;
     }
 
     // Timeout guard: under PDIM congestion the ioredis call can hang indefinitely.
     // After 500 ms we treat the result as a cache miss and let the fetcher run.
     // This is safe: the data path (fetcher → DB) always works without cache.
-    const _PDIM_GET_TIMEOUT_MS = 500;
+    const PDIM_GET_TIMEOUT_MS = 500;
     try {
-      const _value = await Promise?.race([
+      const value = await Promise?.race([
         this?.redis.get(key),
         new Promise<null>((resolve) =>
           setTimeout(() => resolve(null), PDIM_GET_TIMEOUT_MS),
@@ -119,10 +119,10 @@ export class DistributedCache {
       ]);
       if (value) {
         this?.l1Set(key, value);
-        this?.stats.hits++;
+        this.stats.hits++;
         return JSON?.parse(value) as T;
       }
-      this?.stats.misses++;
+      this.stats.misses++;
       return null;
     } catch (err: unknown) {
       // PDIM circuit open or network error — treat as cache miss, never throw
@@ -130,7 +130,7 @@ export class DistributedCache {
         { err },
         "[DistributedCache] get() failed — treating as cache miss",
       );
-      this?.stats.misses++;
+      this.stats.misses++;
       return null;
     }
   }
@@ -140,7 +140,7 @@ export class DistributedCache {
    * (routes) are not affected when PDIM is unavailable.
    */
   async set<T>(key: string, value: T, ttlSeconds?: number): Promise<void> {
-    const _ttl = ttlSeconds || this?.config.defaultTTL;
+    const ttl = ttlSeconds || this?.config.defaultTTL;
     let serialized: string;
     try {
       serialized = JSON?.stringify(value);
@@ -150,7 +150,7 @@ export class DistributedCache {
 
     // Always populate L1 on write — works even if Redis is down
     this?.l1Set(key, serialized);
-    this?.stats.size++;
+    this.stats.size++;
 
     if (!this?.redis) return;
     try {
@@ -175,16 +175,16 @@ export class DistributedCache {
 
   async invalidatePattern(pattern: string): Promise<number> {
     // Evict matching L1 entries synchronously — always works
-    const _regex = new RegExp(pattern?.replace(/\*/g, ".*"));
+    const regex = new RegExp(pattern?.replace(/\*/g, ".*"));
     for (const key of this?.l1.keys()) {
       if (regex?.test(key)) this?.l1.delete(key);
     }
 
     if (!this?.redis) return 0;
     try {
-      const _keys = await this?.redis.keys(`cache:${pattern}`);
+      const keys = await this?.redis.keys(`cache:${pattern}`);
       if (keys?.length > 0) {
-        const _stripped = keys?.map((k) => k?.replace(/^cache:/, ""));
+        const stripped = keys?.map((k) => k?.replace(/^cache:/, ""));
         await this?.redis.del(...stripped);
         return stripped?.length;
       }
@@ -207,13 +207,13 @@ export class DistributedCache {
     ttlSeconds?: number,
   ): Promise<T> {
     try {
-      const _cached = await this?.get<T>(key);
+      const cached = await this?.get<T>(key);
       if (cached !== null) return cached;
     } catch {
       // Defensive: get() is already non-throwing, but belt-and-suspenders
     }
 
-    const _value = await fetcher();
+    const value = await fetcher();
 
     // Fire-and-forget cache write — must not delay or fail the response
     this?.set(key, value, ttlSeconds).catch(() => {});
@@ -228,10 +228,10 @@ export class DistributedCache {
     lockTtlSeconds: number = 10,
     _attempt: number = 0,
   ): Promise<T> {
-    const _MAX_WAIT_ATTEMPTS = 50;
+    const MAX_WAIT_ATTEMPTS = 50;
 
     // 1. Check cache — return hit
-    const _cached = await this?.get<T>(key);
+    const cached = await this?.get<T>(key);
     if (cached !== null) return cached;
 
     if (!this?.redis) {
@@ -239,7 +239,7 @@ export class DistributedCache {
       return fetcher();
     }
 
-    const _lockKey = `lock:${key}`;
+    const lockKey = `lock:${key}`;
 
     let acquired: string | null = null;
     try {
@@ -276,7 +276,7 @@ export class DistributedCache {
 
     // 4. Lock acquired — run fetcher, cache result, release
     try {
-      const _value = await fetcher();
+      const value = await fetcher();
       await this?.set(key, value, ttlSeconds);
       return value;
     } finally {
@@ -292,12 +292,12 @@ export class DistributedCache {
     } catch (err: unknown) {
       logger?.warn({ err }, "[DistributedCache] flush() failed");
     }
-    this?.stats.size = 0;
+    this.stats.size = 0;
   }
 
   getStats(): CacheStats & { mode: string; hitRate: string } {
-    const _total = this?.stats.hits + this?.stats.misses;
-    const _hitRate =
+    const total = this?.stats.hits + this?.stats.misses;
+    const hitRate =
       total > 0 ? ((this?.stats.hits / total) * 100).toFixed(2) : "0.00";
     return {
       ...this?.stats,
@@ -318,4 +318,4 @@ export class DistributedCache {
   }
 }
 
-export const _distributedCache = DistributedCache?.getInstance();
+export const distributedCache = DistributedCache?.getInstance();

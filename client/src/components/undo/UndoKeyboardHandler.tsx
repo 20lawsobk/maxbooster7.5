@@ -140,7 +140,12 @@ export function useUndoKeyboardShortcuts(
   options: Omit<UndoKeyboardHandlerProps, "children"> = {},
 ) {
   const { undo, redo, canUndo, canRedo } = useUndo();
-  const { enabled = true, onUndo, onRedo, excludeInputs = true } = options;
+  const {
+    enabled = true,
+    onUndo,
+    onRedo,
+    excludeInputs = true,
+  } = options;
 
   const isInputElement = useCallback((target: EventTarget | null): boolean => {
     if (!target || !(target instanceof HTMLElement)) return false;

@@ -27,21 +27,21 @@ class HealthRegistry {
   }
 
   async check(name: string): Promise<SubsystemHealth> {
-    const _cached = this?.cache.get(name);
+    const cached = this?.cache.get(name);
     if (cached && Date?.now() - cached?.lastChecked < this?.cacheTtlMs)
       return cached;
-    const _probe = this?.probes.get(name);
+    const probe = this?.probes.get(name);
     if (!probe) {
       return {
         name,
         status: "unknown",
-        lastChecked: Date?.now(),
+        lastChecked: Date.now(),
         detail: "no probe registered",
       };
     }
-    const _start = Date?.now();
+    const start = Date?.now();
     try {
-      const _r = await Promise?.race([
+      const r = await Promise?.race([
         probe(),
         new Promise<Omit<SubsystemHealth, "name" | "lastChecked">>((_, rej) =>
           setTimeout(() => rej(new Error("probe timeout")), 3_000),
@@ -50,8 +50,8 @@ class HealthRegistry {
       const result: SubsystemHealth = {
         name,
         ...r,
-        lastChecked: Date?.now(),
-        latencyMs: Date?.now() - start,
+        lastChecked: Date.now(),
+        latencyMs: Date.now() - start,
       };
       this?.cache.set(name, result);
       return result;
@@ -61,13 +61,13 @@ class HealthRegistry {
       // "down" (dependency definitively failed).  This prevents PDIM congestion
       // — which causes slow pings but not hard errors — from flipping the
       // overall readiness status to "down" and returning HTTP 503.
-      const _isTimeout = (err as Error)?.message === "probe timeout";
+      const isTimeout = (err as Error)?.message === "probe timeout";
       const result: SubsystemHealth = {
         name,
         status: isTimeout ? "degraded" : "down",
         detail: (err as Error)?.message ?? "probe failed",
-        lastChecked: Date?.now(),
-        latencyMs: Date?.now() - start,
+        lastChecked: Date.now(),
+        latencyMs: Date.now() - start,
       };
       this?.cache.set(name, result);
       return result;
@@ -78,8 +78,8 @@ class HealthRegistry {
     status: HealthStatus;
     subsystems: SubsystemHealth[];
   }> {
-    const _names = Array?.from(this?.probes.keys());
-    const _results = await Promise?.all(names?.map((n) => this?.check(n)));
+    const names = Array?.from(this?.probes.keys());
+    const results = await Promise?.all(names?.map((n) => this?.check(n)));
     let status: HealthStatus = "ok";
     for (const r of results) {
       if (r?.status === "down") {
@@ -93,7 +93,7 @@ class HealthRegistry {
   }
 }
 
-export const _healthRegistry = new HealthRegistry();
+export const healthRegistry = new HealthRegistry();
 
 export function registerCoreProbes(): void {
   // DB probe
@@ -112,7 +112,7 @@ export function registerCoreProbes(): void {
   healthRegistry?.register("redis", async () => {
     try {
       const { getRedisClient } = await import("./redisConnectionFactory.js");
-      const _client = await getRedisClient();
+      const client = await getRedisClient();
       if (!client) return { status: "degraded", detail: "no client" };
       await (client as Record<string, unknown>).ping?.();
       return { status: "ok" };
@@ -124,13 +124,13 @@ export function registerCoreProbes(): void {
   // Audit subsystem probe
   healthRegistry?.register("audit", async () => {
     try {
-      const _mod = await import("../audit-system.js");
-      const _audit =
+      const mod = await import("../audit-system.js");
+      const audit =
         (mod as Record<string, unknown>).default?.getInstance?.() ??
         (mod as Record<string, unknown>).AuditSystem?.getInstance?.();
       if (!audit) return { status: "unknown", detail: "not initialized" };
-      const _results = audit?.getAuditResults?.() ?? audit?.auditResults;
-      const _score = results?.overallScore ?? 0;
+      const results = audit?.getAuditResults?.() ?? audit?.auditResults;
+      const score = results?.overallScore ?? 0;
       if (score === 0) return { status: "degraded", detail: "no audit yet" };
       if (score < 60)
         return { status: "degraded", detail: `low score ${score}` };
@@ -143,12 +143,12 @@ export function registerCoreProbes(): void {
   // Automation subsystem probe
   healthRegistry?.register("automation", async () => {
     try {
-      const _mod = await import("../automation-system.js");
-      const _auto =
+      const mod = await import("../automation-system.js");
+      const auto =
         (mod as Record<string, unknown>).default?.getInstance?.() ??
         (mod as Record<string, unknown>).AutomationSystem?.getInstance?.();
       if (!auto) return { status: "unknown", detail: "not initialized" };
-      const _m = auto?.getMetrics?.();
+      const m = auto?.getMetrics?.();
       return { status: "ok", detail: `workflows=${m?.totalWorkflows ?? 0}` };
     } catch (e) {
       return { status: "unknown", detail: (e as Error).message };

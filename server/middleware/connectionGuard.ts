@@ -7,10 +7,10 @@ export class ConnectionGuard {
   static async checkCapacity(_req: Request, res: Response, next: NextFunction) {
     try {
       // Check pool utilization
-      const _activeConnections = pool?.totalCount;
-      const _maxPoolUtilization =
+      const activeConnections = pool?.totalCount;
+      const maxPoolUtilization =
         config?.monitoring.poolUtilizationThreshold / 100;
-      const _utilization = activeConnections / config?.database.poolSize;
+      const utilization = activeConnections / config?.database.poolSize;
 
       if (utilization >= maxPoolUtilization) {
         logger?.warn(

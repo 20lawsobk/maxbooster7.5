@@ -1,12 +1,12 @@
 import { useEffect, useRef } from "react";
 
-const _POLL_INTERVAL_MS = 5 * 60 * 1000;
+const POLL_INTERVAL_MS = 5 * 60 * 1000;
 
 export function useAutoUpdate() {
-  const _knownBuildId = useRef<string | null>(null);
+  const knownBuildId = useRef<string | null>(null);
 
   useEffect(() => {
-    if (import?.meta.env?.DEV) {
+    if (import.meta.env?.DEV) {
       return;
     }
 
@@ -14,10 +14,10 @@ export function useAutoUpdate() {
 
     async function checkVersion() {
       try {
-        const _res = await fetch("/api/version", { cache: "no-store" });
+        const res = await fetch("/api/version", { cache: "no-store" });
         if (!res?.ok) return;
-        const _data = await res?.json();
-        const _currentId = data?.buildId as string;
+        const data = await res?.json();
+        const currentId = data?.buildId as string;
 
         if (knownBuildId?.current === null) {
           knownBuildId.current = currentId;

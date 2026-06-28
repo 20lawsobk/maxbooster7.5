@@ -63,8 +63,7 @@ const variantIcons = {
 };
 
 interface ToastProps
-  extends
-    React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root>,
+  extends React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root>,
     VariantProps<typeof toastVariants> {
   showProgress?: boolean;
   duration?: number;

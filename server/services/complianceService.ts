@@ -69,33 +69,33 @@ export class ComplianceService {
   }): Promise<ComplianceReport> {
     logger?.info("📋 Generating SOC2 Type II compliance report...");
 
-    const _reportId = `SOC2-${crypto?.randomBytes(8).toString("hex")}`;
-    const _controls = await storage?.getControlsByStandard("SOC2");
+    const reportId = `SOC2-${crypto?.randomBytes(8).toString("hex")}`;
+    const controls = await storage?.getControlsByStandard("SOC2");
 
-    const _implementedControls = controls?.filter(
+    const implementedControls = controls?.filter(
       (c) => c?.status === "implemented",
     );
-    const _partialControls = controls?.filter((c) => c?.status === "partial");
-    const _plannedControls = controls?.filter((c) => c?.status === "planned");
+    const partialControls = controls?.filter((c) => c?.status === "partial");
+    const plannedControls = controls?.filter((c) => c?.status === "planned");
 
-    const _overallScore = this?.calculateComplianceScore(controls);
+    const overallScore = this?.calculateComplianceScore(controls);
 
-    const _findings = await this?.assessSOC2Controls(controls);
-    const _gapAnalysis = await this?.generateGapAnalysis("SOC2");
-    const _evidenceSummary = await this?.getEvidenceSummary(controls);
+    const findings = await this?.assessSOC2Controls(controls);
+    const gapAnalysis = await this?.generateGapAnalysis("SOC2");
+    const evidenceSummary = await this?.getEvidenceSummary(controls);
 
-    const _executiveSummary = `Max Booster has achieved ${overallScore}% compliance with SOC2 Trust Service Criteria. 
+    const executiveSummary = `Max Booster has achieved ${overallScore}% compliance with SOC2 Trust Service Criteria. 
 Of ${controls?.length} controls assessed, ${implementedControls?.length} are fully implemented, ${partialControls?.length} are partially implemented, 
 and ${plannedControls?.length} are planned. The platform demonstrates strong security foundations with comprehensive access controls, 
 encryption, monitoring, and incident response capabilities.`;
 
-    const _recommendations = this?.generateSOC2Recommendations(
+    const recommendations = this?.generateSOC2Recommendations(
       findings,
       gapAnalysis,
     );
-    const _certificationReadiness =
+    const certificationReadiness =
       this?.assessCertificationReadiness(overallScore);
-    const _nextSteps = this?.generateNextSteps("SOC2", overallScore);
+    const nextSteps = this?.generateNextSteps("SOC2", overallScore);
 
     const report: ComplianceReport = {
       standard: "SOC2",
@@ -103,10 +103,10 @@ encryption, monitoring, and incident response capabilities.`;
       reportId,
       executiveSummary,
       overallScore,
-      controlsAssessed: controls?.length,
-      controlsPassed: implementedControls?.length,
+      controlsAssessed: controls.length,
+      controlsPassed: implementedControls.length,
       controlsFailed: 0,
-      controlsPartial: partialControls?.length,
+      controlsPartial: partialControls.length,
       findings,
       gapAnalysis,
       recommendations,
@@ -130,10 +130,10 @@ encryption, monitoring, and incident response capabilities.`;
             ? "needs_improvement"
             : "failed",
       overallScore,
-      passedControls: implementedControls?.length,
+      passedControls: implementedControls.length,
       failedControls: 0,
-      partialControls: partialControls?.length,
-      totalControls: controls?.length,
+      partialControls: partialControls.length,
+      totalControls: controls.length,
       recommendations: recommendations as Record<string, unknown>,
       reportPath: `/compliance/reports/${reportId}.json`,
     });
@@ -148,33 +148,33 @@ encryption, monitoring, and incident response capabilities.`;
   async generateISO27001Report(): Promise<ComplianceReport> {
     logger?.info("📋 Generating ISO 27001 compliance report...");
 
-    const _reportId = `ISO27001-${crypto?.randomBytes(8).toString("hex")}`;
-    const _controls = await storage?.getControlsByStandard("ISO27001");
+    const reportId = `ISO27001-${crypto?.randomBytes(8).toString("hex")}`;
+    const controls = await storage?.getControlsByStandard("ISO27001");
 
-    const _implementedControls = controls?.filter(
+    const implementedControls = controls?.filter(
       (c) => c?.status === "implemented",
     );
-    const _partialControls = controls?.filter((c) => c?.status === "partial");
+    const partialControls = controls?.filter((c) => c?.status === "partial");
     controls?.filter((c) => c?.status === "planned");
 
-    const _overallScore = this?.calculateComplianceScore(controls);
+    const overallScore = this?.calculateComplianceScore(controls);
 
-    const _findings = await this?.assessISO27001Controls(controls);
-    const _gapAnalysis = await this?.generateGapAnalysis("ISO27001");
-    const _evidenceSummary = await this?.getEvidenceSummary(controls);
+    const findings = await this?.assessISO27001Controls(controls);
+    const gapAnalysis = await this?.generateGapAnalysis("ISO27001");
+    const evidenceSummary = await this?.getEvidenceSummary(controls);
 
-    const _executiveSummary = `Max Booster has achieved ${overallScore}% compliance with ISO 27001:2022 standards. 
+    const executiveSummary = `Max Booster has achieved ${overallScore}% compliance with ISO 27001:2022 standards. 
 The Information Security Management System (ISMS) demonstrates robust controls across organizational security, 
 asset management, access control, cryptography, operations security, and communications security. 
 ${implementedControls?.length} of ${controls?.length} required controls are fully implemented.`;
 
-    const _recommendations = this?.generateISO27001Recommendations(
+    const recommendations = this?.generateISO27001Recommendations(
       findings,
       gapAnalysis,
     );
-    const _certificationReadiness =
+    const certificationReadiness =
       this?.assessCertificationReadiness(overallScore);
-    const _nextSteps = this?.generateNextSteps("ISO27001", overallScore);
+    const nextSteps = this?.generateNextSteps("ISO27001", overallScore);
 
     const report: ComplianceReport = {
       standard: "ISO27001",
@@ -182,10 +182,10 @@ ${implementedControls?.length} of ${controls?.length} required controls are full
       reportId,
       executiveSummary,
       overallScore,
-      controlsAssessed: controls?.length,
-      controlsPassed: implementedControls?.length,
+      controlsAssessed: controls.length,
+      controlsPassed: implementedControls.length,
       controlsFailed: 0,
-      controlsPartial: partialControls?.length,
+      controlsPartial: partialControls.length,
       findings,
       gapAnalysis,
       recommendations,
@@ -209,10 +209,10 @@ ${implementedControls?.length} of ${controls?.length} required controls are full
             ? "needs_improvement"
             : "failed",
       overallScore,
-      passedControls: implementedControls?.length,
+      passedControls: implementedControls.length,
       failedControls: 0,
-      partialControls: partialControls?.length,
-      totalControls: controls?.length,
+      partialControls: partialControls.length,
+      totalControls: controls.length,
       recommendations: recommendations as Record<string, unknown>,
       reportPath: `/compliance/reports/${reportId}.json`,
     });
@@ -227,33 +227,33 @@ ${implementedControls?.length} of ${controls?.length} required controls are full
   async generateGDPRReport(): Promise<ComplianceReport> {
     logger?.info("📋 Generating GDPR compliance report...");
 
-    const _reportId = `GDPR-${crypto?.randomBytes(8).toString("hex")}`;
-    const _controls = await storage?.getControlsByStandard("GDPR");
+    const reportId = `GDPR-${crypto?.randomBytes(8).toString("hex")}`;
+    const controls = await storage?.getControlsByStandard("GDPR");
 
-    const _implementedControls = controls?.filter(
+    const implementedControls = controls?.filter(
       (c) => c?.status === "implemented",
     );
-    const _partialControls = controls?.filter((c) => c?.status === "partial");
+    const partialControls = controls?.filter((c) => c?.status === "partial");
     controls?.filter((c) => c?.status === "planned");
 
-    const _overallScore = this?.calculateComplianceScore(controls);
+    const overallScore = this?.calculateComplianceScore(controls);
 
-    const _findings = await this?.assessGDPRControls(controls);
-    const _gapAnalysis = await this?.generateGapAnalysis("GDPR");
-    const _evidenceSummary = await this?.getEvidenceSummary(controls);
+    const findings = await this?.assessGDPRControls(controls);
+    const gapAnalysis = await this?.generateGapAnalysis("GDPR");
+    const evidenceSummary = await this?.getEvidenceSummary(controls);
 
-    const _executiveSummary = `Max Booster has achieved ${overallScore}% compliance with GDPR (General Data Protection Regulation). 
+    const executiveSummary = `Max Booster has achieved ${overallScore}% compliance with GDPR (General Data Protection Regulation). 
 The platform implements key data protection principles including lawfulness, fairness, transparency, purpose limitation, 
 data minimization, accuracy, storage limitation, integrity, and confidentiality. Data subject rights (access, rectification, 
 erasure, portability) are supported with ${implementedControls?.length} of ${controls?.length} controls fully implemented.`;
 
-    const _recommendations = this?.generateGDPRRecommendations(
+    const recommendations = this?.generateGDPRRecommendations(
       findings,
       gapAnalysis,
     );
-    const _certificationReadiness =
+    const certificationReadiness =
       this?.assessCertificationReadiness(overallScore);
-    const _nextSteps = this?.generateNextSteps("GDPR", overallScore);
+    const nextSteps = this?.generateNextSteps("GDPR", overallScore);
 
     const report: ComplianceReport = {
       standard: "GDPR",
@@ -261,10 +261,10 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
       reportId,
       executiveSummary,
       overallScore,
-      controlsAssessed: controls?.length,
-      controlsPassed: implementedControls?.length,
+      controlsAssessed: controls.length,
+      controlsPassed: implementedControls.length,
       controlsFailed: 0,
-      controlsPartial: partialControls?.length,
+      controlsPartial: partialControls.length,
       findings,
       gapAnalysis,
       recommendations,
@@ -288,10 +288,10 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
             ? "needs_improvement"
             : "failed",
       overallScore,
-      passedControls: implementedControls?.length,
+      passedControls: implementedControls.length,
       failedControls: 0,
-      partialControls: partialControls?.length,
-      totalControls: controls?.length,
+      partialControls: partialControls.length,
+      totalControls: controls.length,
       recommendations: recommendations as Record<string, unknown>,
       reportPath: `/compliance/reports/${reportId}.json`,
     });
@@ -329,40 +329,40 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
     total: number;
     percentage: number;
   }> {
-    const _controls = await storage?.getControlsByStandard(standard);
+    const controls = await storage?.getControlsByStandard(standard);
 
-    const _implemented = controls?.filter(
+    const implemented = controls?.filter(
       (c) => c?.status === "implemented",
     ).length;
-    const _partial = controls?.filter((c) => c?.status === "partial").length;
-    const _planned = controls?.filter((c) => c?.status === "planned").length;
-    const _total = controls?.length;
-    const _percentage = total > 0 ? Math?.round((implemented / total) * 100) : 0;
+    const partial = controls?.filter((c) => c?.status === "partial").length;
+    const planned = controls?.filter((c) => c?.status === "planned").length;
+    const total = controls?.length;
+    const percentage = total > 0 ? Math?.round((implemented / total) * 100) : 0;
 
     return { implemented, partial, planned, total, percentage };
   }
 
   async generateGapAnalysis(standard: string): Promise<GapAnalysisItem[]> {
-    const _controls = await storage?.getControlsByStandard(standard);
+    const controls = await storage?.getControlsByStandard(standard);
     const gaps: GapAnalysisItem[] = [];
 
     for (const control of controls) {
       if (control?.status !== "implemented") {
-        const _evidence = await storage?.getEvidenceByControl(control?.id);
+        const evidence = await storage?.getEvidenceByControl(control?.id);
 
         gaps?.push({
-          controlId: control?.controlId,
-          title: control?.title,
-          category: control?.category,
-          currentStatus: control?.status,
+          controlId: control.controlId,
+          title: control.title,
+          category: control.category,
+          currentStatus: control.status,
           requiredStatus: "implemented",
-          gap: this?.describeGap(control?.status),
-          priority: control?.priority || "medium",
-          estimatedEffort: this?.estimateEffort(
+          gap: this.describeGap(control?.status),
+          priority: control.priority || "medium",
+          estimatedEffort: this.estimateEffort(
             control?.category,
             control?.status,
           ),
-          remediationSteps: this?.generateRemediationSteps(
+          remediationSteps: this.generateRemediationSteps(
             control,
             evidence?.length,
           ),
@@ -371,7 +371,7 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
     }
 
     gaps?.sort((a, b) => {
-      const _priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+      const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
       return (
         priorityOrder[a?.priority as keyof typeof priorityOrder] -
         priorityOrder[b?.priority as keyof typeof priorityOrder]
@@ -387,16 +387,16 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
     const findings: Finding[] = [];
 
     for (const control of controls) {
-      const _evidence = await storage?.getEvidenceByControl(control?.id);
+      const evidence = await storage?.getEvidenceByControl(control?.id);
 
       findings?.push({
-        controlId: control?.controlId,
-        title: control?.title,
-        status: control?.status,
-        severity: this?.mapStatusToSeverity(control?.status),
-        description: control?.description,
-        evidence: evidence?.map((e) => e?.title),
-        recommendation: control?.remediationPlan || undefined,
+        controlId: control.controlId,
+        title: control.title,
+        status: control.status,
+        severity: this.mapStatusToSeverity(control?.status),
+        description: control.description,
+        evidence: evidence.map((e) => e?.title),
+        recommendation: control.remediationPlan || undefined,
       });
     }
 
@@ -409,16 +409,16 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
     const findings: Finding[] = [];
 
     for (const control of controls) {
-      const _evidence = await storage?.getEvidenceByControl(control?.id);
+      const evidence = await storage?.getEvidenceByControl(control?.id);
 
       findings?.push({
-        controlId: control?.controlId,
-        title: control?.title,
-        status: control?.status,
-        severity: this?.mapStatusToSeverity(control?.status),
-        description: control?.description,
-        evidence: evidence?.map((e) => e?.title),
-        recommendation: control?.remediationPlan || undefined,
+        controlId: control.controlId,
+        title: control.title,
+        status: control.status,
+        severity: this.mapStatusToSeverity(control?.status),
+        description: control.description,
+        evidence: evidence.map((e) => e?.title),
+        recommendation: control.remediationPlan || undefined,
       });
     }
 
@@ -431,16 +431,16 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
     const findings: Finding[] = [];
 
     for (const control of controls) {
-      const _evidence = await storage?.getEvidenceByControl(control?.id);
+      const evidence = await storage?.getEvidenceByControl(control?.id);
 
       findings?.push({
-        controlId: control?.controlId,
-        title: control?.title,
-        status: control?.status,
-        severity: this?.mapStatusToSeverity(control?.status),
-        description: control?.description,
-        evidence: evidence?.map((e) => e?.title),
-        recommendation: control?.remediationPlan || undefined,
+        controlId: control.controlId,
+        title: control.title,
+        status: control.status,
+        severity: this.mapStatusToSeverity(control?.status),
+        description: control.description,
+        evidence: evidence.map((e) => e?.title),
+        recommendation: control.remediationPlan || undefined,
       });
     }
 
@@ -456,7 +456,7 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
     const evidenceByType: Record<string, number> = {};
 
     for (const control of controls) {
-      const _evidence = await storage?.getEvidenceByControl(control?.id);
+      const evidence = await storage?.getEvidenceByControl(control?.id);
       totalEvidence += evidence?.length;
 
       for (const e of evidence) {
@@ -466,12 +466,12 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
           manualEvidence++;
         }
 
-        evidenceByType[e?.evidenceType] =
+        evidenceByType[e.evidenceType] =
           (evidenceByType[e?.evidenceType] || 0) + 1;
       }
     }
 
-    const _expiringEvidence = (await storage?.getExpiringEvidence(30)).length;
+    const expiringEvidence = (await storage?.getExpiringEvidence(30)).length;
 
     return {
       totalEvidence,
@@ -483,18 +483,18 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
   }
 
   private async collectAuditLogEvidence(): Promise<number> {
-    const _controls = await storage?.listComplianceControls({
+    const controls = await storage?.listComplianceControls({
       category: "Security",
     });
     let collected = 0;
 
     for (const control of controls) {
       if (control?.automatedCheck) {
-        const _validUntil = new Date();
+        const validUntil = new Date();
         validUntil?.setDate(validUntil?.getDate() + 90);
 
         await storage?.createComplianceEvidence({
-          controlId: control?.id,
+          controlId: control.id,
           evidenceType: "audit_log",
           title: `Audit logs for ${control?.title}`,
           description:
@@ -517,17 +517,17 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
   }
 
   private async collectSecurityEventEvidence(): Promise<number> {
-    const _controls = await storage?.listComplianceControls({
+    const controls = await storage?.listComplianceControls({
       category: "Security",
     });
     let collected = 0;
 
     for (const control of controls?.slice(0, 5)) {
-      const _validUntil = new Date();
+      const validUntil = new Date();
       validUntil?.setDate(validUntil?.getDate() + 30);
 
       await storage?.createComplianceEvidence({
-        controlId: control?.id,
+        controlId: control.id,
         evidenceType: "audit_log",
         title: `Security events monitoring for ${control?.title}`,
         description:
@@ -549,17 +549,17 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
   }
 
   private async collectBackupEvidence(): Promise<number> {
-    const _controls = await storage?.listComplianceControls({
+    const controls = await storage?.listComplianceControls({
       category: "Availability",
     });
     let collected = 0;
 
     for (const control of controls?.slice(0, 3)) {
-      const _validUntil = new Date();
+      const validUntil = new Date();
       validUntil?.setDate(validUntil?.getDate() + 90);
 
       await storage?.createComplianceEvidence({
-        controlId: control?.id,
+        controlId: control.id,
         evidenceType: "backup_log",
         title: `Database backup logs for ${control?.title}`,
         description:
@@ -581,7 +581,7 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
   }
 
   private async collectAccessControlEvidence(): Promise<number> {
-    const _controls = await storage?.listComplianceControls({
+    const controls = await storage?.listComplianceControls({
       category: "Security",
     });
     let collected = 0;
@@ -589,11 +589,11 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
     for (const control of controls
       .filter((c) => c?.title.toLowerCase().includes("access"))
       .slice(0, 3)) {
-      const _validUntil = new Date();
+      const validUntil = new Date();
       validUntil?.setDate(validUntil?.getDate() + 60);
 
       await storage?.createComplianceEvidence({
-        controlId: control?.id,
+        controlId: control.id,
         evidenceType: "access_review",
         title: `Access control list for ${control?.title}`,
         description:
@@ -615,17 +615,17 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
   }
 
   private async collectEncryptionEvidence(): Promise<number> {
-    const _controls = await storage?.listComplianceControls({
+    const controls = await storage?.listComplianceControls({
       category: "Confidentiality",
     });
     let collected = 0;
 
     for (const control of controls?.slice(0, 2)) {
-      const _validUntil = new Date();
+      const validUntil = new Date();
       validUntil?.setDate(validUntil?.getDate() + 180);
 
       await storage?.createComplianceEvidence({
-        controlId: control?.id,
+        controlId: control.id,
         evidenceType: "audit_log",
         title: `Encryption verification for ${control?.title}`,
         description:
@@ -647,18 +647,18 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
   }
 
   private async collectPenTestEvidence(): Promise<number> {
-    const _controls = await storage?.listComplianceControls({
+    const controls = await storage?.listComplianceControls({
       category: "Security",
     });
 
     if (controls?.length === 0) return 0;
 
-    const _control = controls[0];
-    const _validUntil = new Date();
+    const control = controls[0];
+    const validUntil = new Date();
     validUntil?.setDate(validUntil?.getDate() + 365);
 
     await storage?.createComplianceEvidence({
-      controlId: control?.id,
+      controlId: control.id,
       evidenceType: "penetration_test",
       title: "Automated penetration testing results",
       description:
@@ -679,13 +679,13 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
   private calculateComplianceScore(controls: ComplianceControl[]): number {
     if (controls?.length === 0) return 0;
 
-    const _weights = {
+    const weights = {
       implemented: 1.0,
       partial: 0.5,
       planned: 0.0,
     };
 
-    const _totalWeight = controls?.reduce((sum, control) => {
+    const totalWeight = controls?.reduce((sum, control) => {
       return sum + (weights[control?.status as keyof typeof weights] || 0);
     }, 0);
 
@@ -755,12 +755,12 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
   }
 
   private generateSOC2Recommendations(
-    _findings: Finding[],
+    findings: Finding[],
     gaps: GapAnalysisItem[],
   ): string[] {
     const recommendations: string[] = [];
 
-    const _highPriorityGaps = gaps?.filter(
+    const highPriorityGaps = gaps?.filter(
       (g) => g?.priority === "high" || g?.priority === "critical",
     );
 
@@ -790,12 +790,12 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
   }
 
   private generateISO27001Recommendations(
-    _findings: Finding[],
+    findings: Finding[],
     gaps: GapAnalysisItem[],
   ): string[] {
     const recommendations: string[] = [];
 
-    const _highPriorityGaps = gaps?.filter(
+    const highPriorityGaps = gaps?.filter(
       (g) => g?.priority === "high" || g?.priority === "critical",
     );
 
@@ -824,12 +824,12 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
   }
 
   private generateGDPRRecommendations(
-    _findings: Finding[],
+    findings: Finding[],
     gaps: GapAnalysisItem[],
   ): string[] {
     const recommendations: string[] = [];
 
-    const _highPriorityGaps = gaps?.filter(
+    const highPriorityGaps = gaps?.filter(
       (g) => g?.priority === "high" || g?.priority === "critical",
     );
 
@@ -920,4 +920,4 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
   }
 }
 
-export const _complianceService = ComplianceService?.getInstance();
+export const complianceService = ComplianceService?.getInstance();

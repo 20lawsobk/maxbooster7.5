@@ -3,7 +3,7 @@ import fs from "fs";
 
 // Optional sharp support with graceful fallback
 let sharpModule: Record<string, unknown> | null = null;
-let sharpAvailable = false;
+let _sharpAvailable = false;
 
 async function getSharp() {
   if (sharpModule !== null) return sharpModule;
@@ -775,7 +775,7 @@ export class DSPPolicyChecker {
     release: ReleaseToCheck,
     dsp: string,
   ): Promise<ComplianceResult> {
-    const _policy = this?.getPolicy(dsp);
+    const policy = this?.getPolicy(dsp);
     if (!policy) {
       return {
         dsp,
@@ -796,23 +796,23 @@ export class DSPPolicyChecker {
     const errors: ComplianceError[] = [];
     const warnings: ComplianceWarning[] = [];
 
-    const _metadataErrors = this?.checkMetadataCompliance(release, policy);
+    const metadataErrors = this?.checkMetadataCompliance(release, policy);
     errors?.push(...metadataErrors);
 
-    const _coverArtResult = await this?.checkCoverArtCompliance(release, policy);
+    const coverArtResult = await this?.checkCoverArtCompliance(release, policy);
     errors?.push(...coverArtResult?.errors);
     warnings?.push(...coverArtResult?.warnings);
 
-    const _audioErrors = this?.checkAudioCompliance(release, policy);
+    const audioErrors = this?.checkAudioCompliance(release, policy);
     errors?.push(...audioErrors);
 
-    const _timingResult = this?.checkReleaseTiming(release, policy);
+    const timingResult = this?.checkReleaseTiming(release, policy);
     errors?.push(...timingResult?.errors);
     warnings?.push(...timingResult?.warnings);
 
     return {
       dsp,
-      compliant: errors?.length === 0,
+      compliant: errors.length === 0,
       errors,
       warnings,
       checkedAt: new Date(),
@@ -824,7 +824,7 @@ export class DSPPolicyChecker {
     policy: DSPPolicy,
   ): ComplianceError[] {
     const errors: ComplianceError[] = [];
-    const _meta = policy?.metadata;
+    const meta = policy?.metadata;
 
     if (!release?.title) {
       errors?.push({
@@ -839,7 +839,7 @@ export class DSPPolicyChecker {
         field: "title",
         message: `Title exceeds maximum length of ${meta?.maxTitleLength} characters`,
         requirement: `Maximum ${meta?.maxTitleLength} characters`,
-        currentValue: release?.title.length,
+        currentValue: release.title.length,
       });
     }
 
@@ -856,7 +856,7 @@ export class DSPPolicyChecker {
         field: "artist",
         message: `Artist name exceeds maximum length of ${meta?.maxArtistLength} characters`,
         requirement: `Maximum ${meta?.maxArtistLength} characters`,
-        currentValue: release?.artist.length,
+        currentValue: release.artist.length,
       });
     }
 
@@ -866,11 +866,11 @@ export class DSPPolicyChecker {
         field: "label",
         message: `Label name exceeds maximum length of ${meta?.maxLabelLength} characters`,
         requirement: `Maximum ${meta?.maxLabelLength} characters`,
-        currentValue: release?.label.length,
+        currentValue: release.label.length,
       });
     }
 
-    const _titleLower = (release?.title || "").toLowerCase();
+    const titleLower = (release?.title || "").toLowerCase();
     for (const term of meta?.bannedTerms) {
       if (titleLower?.includes(term?.toLowerCase())) {
         errors?.push({
@@ -884,14 +884,14 @@ export class DSPPolicyChecker {
 
     if (release?.tracks) {
       for (let i = 0; i < release?.tracks.length; i++) {
-        const _track = release?.tracks[i];
+        const track = release?.tracks[i];
         if (track?.title && track?.title.length > meta?.maxTitleLength) {
           errors?.push({
             category: "metadata",
             field: `tracks[${i}].title`,
             message: `Track title exceeds maximum length`,
             requirement: `Maximum ${meta?.maxTitleLength} characters`,
-            currentValue: track?.title.length,
+            currentValue: track.title.length,
           });
         }
 
@@ -901,7 +901,7 @@ export class DSPPolicyChecker {
             field: `tracks[${i}].lyrics`,
             message: `Lyrics exceed maximum length`,
             requirement: `Maximum ${meta?.maxLyricsLength} characters`,
-            currentValue: track?.lyrics.length,
+            currentValue: track.lyrics.length,
           });
         }
       }
@@ -916,7 +916,7 @@ export class DSPPolicyChecker {
   ): Promise<{ errors: ComplianceError[]; warnings: ComplianceWarning[] }> {
     const errors: ComplianceError[] = [];
     const warnings: ComplianceWarning[] = [];
-    const _art = policy?.coverArt;
+    const art = policy?.coverArt;
 
     if (
       !release?.coverArtPath &&
@@ -936,22 +936,22 @@ export class DSPPolicyChecker {
 
     if (release?.coverArtPath && fs?.existsSync(release?.coverArtPath)) {
       try {
-        const _sharpInstance = await getSharp();
+        const sharpInstance = await getSharp();
         if (!sharpInstance) {
           logger?.warn(
             "Sharp not available - skipping cover art validation for file path",
           );
         } else {
-          const _imageInfo = await sharpInstance(
+          const imageInfo = await sharpInstance(
             release?.coverArtPath,
           ).metadata();
-          const _stats = fs?.statSync(release?.coverArtPath);
+          const stats = fs?.statSync(release?.coverArtPath);
 
           metadata = {
-            width: imageInfo?.width,
-            height: imageInfo?.height,
-            format: imageInfo?.format,
-            fileSize: stats?.size,
+            width: imageInfo.width,
+            height: imageInfo.height,
+            format: imageInfo.format,
+            fileSize: stats.size,
           };
         }
       } catch (error) {
@@ -963,20 +963,20 @@ export class DSPPolicyChecker {
       if (metadata?.width && metadata?.width < art?.minWidth) {
         errors?.push({
           category: "coverArt",
-          field: "coverArt?.width",
+          field: "coverArt.width",
           message: `Cover art width (${metadata?.width}px) is below minimum (${art?.minWidth}px)`,
           requirement: `Minimum width: ${art?.minWidth}px`,
-          currentValue: metadata?.width,
+          currentValue: metadata.width,
         });
       }
 
       if (metadata?.height && metadata?.height < art?.minHeight) {
         errors?.push({
           category: "coverArt",
-          field: "coverArt?.height",
+          field: "coverArt.height",
           message: `Cover art height (${metadata?.height}px) is below minimum (${art?.minHeight}px)`,
           requirement: `Minimum height: ${art?.minHeight}px`,
-          currentValue: metadata?.height,
+          currentValue: metadata.height,
         });
       }
 
@@ -987,7 +987,7 @@ export class DSPPolicyChecker {
       ) {
         errors?.push({
           category: "coverArt",
-          field: "coverArt?.aspectRatio",
+          field: "coverArt.aspectRatio",
           message: `Cover art must be square (1:1 aspect ratio). Current: ${metadata?.width}x${metadata?.height}`,
           requirement: "Aspect ratio must be 1:1",
           currentValue: `${metadata?.width}x${metadata?.height}`,
@@ -995,11 +995,11 @@ export class DSPPolicyChecker {
       }
 
       if (metadata?.format) {
-        const _format = metadata?.format.toLowerCase();
+        const format = metadata?.format.toLowerCase();
         if (!art?.formats.includes(format)) {
           errors?.push({
             category: "coverArt",
-            field: "coverArt?.format",
+            field: "coverArt.format",
             message: `Cover art format "${format}" is not accepted`,
             requirement: `Accepted formats: ${art?.formats.join(", ")}`,
             currentValue: format,
@@ -1010,17 +1010,17 @@ export class DSPPolicyChecker {
       if (metadata?.fileSize && metadata?.fileSize > art?.maxFileSize) {
         errors?.push({
           category: "coverArt",
-          field: "coverArt?.fileSize",
+          field: "coverArt.fileSize",
           message: `Cover art file size (${Math?.round(metadata?.fileSize / 1024 / 1024)}MB) exceeds maximum`,
           requirement: `Maximum file size: ${Math?.round(art?.maxFileSize / 1024 / 1024)}MB`,
-          currentValue: metadata?.fileSize,
+          currentValue: metadata.fileSize,
         });
       }
 
       if (metadata?.width && metadata?.width < 3000) {
         warnings?.push({
           category: "coverArt",
-          field: "coverArt?.width",
+          field: "coverArt.width",
           message: "Cover art resolution could be higher for best quality",
           suggestion:
             "Use 3000x3000 pixels for optimal quality across all platforms",
@@ -1036,17 +1036,17 @@ export class DSPPolicyChecker {
     policy: DSPPolicy,
   ): ComplianceError[] {
     const errors: ComplianceError[] = [];
-    const _audio = policy?.audio;
+    const audio = policy?.audio;
 
     if (!release?.audioFiles || release?.audioFiles.length === 0) {
       return errors;
     }
 
     for (let i = 0; i < release?.audioFiles.length; i++) {
-      const _file = release?.audioFiles[i];
+      const file = release?.audioFiles[i];
 
       if (file?.format) {
-        const _format = file?.format.toLowerCase();
+        const format = file?.format.toLowerCase();
         if (!audio?.formats.includes(format)) {
           errors?.push({
             category: "audio",
@@ -1065,7 +1065,7 @@ export class DSPPolicyChecker {
             field: `audioFiles[${i}].bitDepth`,
             message: `Bit depth (${file?.bitDepth}) is below minimum (${audio?.minBitDepth})`,
             requirement: `Minimum bit depth: ${audio?.minBitDepth}`,
-            currentValue: file?.bitDepth,
+            currentValue: file.bitDepth,
           });
         }
         if (file?.bitDepth > audio?.maxBitDepth) {
@@ -1074,7 +1074,7 @@ export class DSPPolicyChecker {
             field: `audioFiles[${i}].bitDepth`,
             message: `Bit depth (${file?.bitDepth}) exceeds maximum (${audio?.maxBitDepth})`,
             requirement: `Maximum bit depth: ${audio?.maxBitDepth}`,
-            currentValue: file?.bitDepth,
+            currentValue: file.bitDepth,
           });
         }
       }
@@ -1085,7 +1085,7 @@ export class DSPPolicyChecker {
           field: `audioFiles[${i}].sampleRate`,
           message: `Sample rate ${file?.sampleRate}Hz is not accepted`,
           requirement: `Accepted sample rates: ${audio?.sampleRates.join(", ")}Hz`,
-          currentValue: file?.sampleRate,
+          currentValue: file.sampleRate,
         });
       }
 
@@ -1096,7 +1096,7 @@ export class DSPPolicyChecker {
             field: `audioFiles[${i}].duration`,
             message: `Track duration (${file?.duration}s) is below minimum (${audio?.minDuration}s)`,
             requirement: `Minimum duration: ${audio?.minDuration} seconds`,
-            currentValue: file?.duration,
+            currentValue: file.duration,
           });
         }
         if (file?.duration > audio?.maxDuration) {
@@ -1105,7 +1105,7 @@ export class DSPPolicyChecker {
             field: `audioFiles[${i}].duration`,
             message: `Track duration (${file?.duration}s) exceeds maximum (${audio?.maxDuration}s)`,
             requirement: `Maximum duration: ${audio?.maxDuration} seconds`,
-            currentValue: file?.duration,
+            currentValue: file.duration,
           });
         }
       }
@@ -1116,7 +1116,7 @@ export class DSPPolicyChecker {
           field: `audioFiles[${i}].truePeak`,
           message: `True peak (${file?.truePeak}dB) exceeds maximum (${audio?.truePeakMax}dB)`,
           requirement: `Maximum true peak: ${audio?.truePeakMax}dB`,
-          currentValue: file?.truePeak,
+          currentValue: file.truePeak,
         });
       }
     }
@@ -1130,7 +1130,7 @@ export class DSPPolicyChecker {
   ): { errors: ComplianceError[]; warnings: ComplianceWarning[] } {
     const errors: ComplianceError[] = [];
     const warnings: ComplianceWarning[] = [];
-    const _timing = policy?.releaseTiming;
+    const timing = policy?.releaseTiming;
 
     if (!release?.releaseDate) {
       errors?.push({
@@ -1142,9 +1142,9 @@ export class DSPPolicyChecker {
       return { errors, warnings };
     }
 
-    const _releaseDate = new Date(release?.releaseDate);
-    const _now = new Date();
-    const _daysUntilRelease = Math?.floor(
+    const releaseDate = new Date(release?.releaseDate);
+    const now = new Date();
+    const daysUntilRelease = Math?.floor(
       (releaseDate?.getTime() - now?.getTime()) / (1000 * 60 * 60 * 24),
     );
 
@@ -1154,7 +1154,7 @@ export class DSPPolicyChecker {
         field: "releaseDate",
         message: "Release date is in the past",
         requirement: "Release date must be in the future",
-        currentValue: releaseDate?.toISOString(),
+        currentValue: releaseDate.toISOString(),
       });
     } else if (daysUntilRelease < timing?.minLeadTime) {
       errors?.push({
@@ -1176,9 +1176,9 @@ export class DSPPolicyChecker {
       });
     }
 
-    const _dayOfWeek = releaseDate?.getDay();
+    const dayOfWeek = releaseDate?.getDay();
     if (dayOfWeek !== timing?.preferredReleaseDay) {
-      const _days = [
+      const days = [
         "Sunday",
         "Monday",
         "Tuesday",
@@ -1217,7 +1217,7 @@ export class DSPPolicyChecker {
     timing: string[];
     additional: string[];
   } | null {
-    const _policy = this?.getPolicy(dsp);
+    const policy = this?.getPolicy(dsp);
     if (!policy) return null;
 
     return {
@@ -1248,9 +1248,9 @@ export class DSPPolicyChecker {
         `Maximum future date: ${policy?.releaseTiming.maxFutureDate} days`,
         `Preferred release day: ${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][policy?.releaseTiming.preferredReleaseDay]}`,
       ],
-      additional: policy?.additionalRequirements,
+      additional: policy.additionalRequirements,
     };
   }
 }
 
-export const _dspPolicyChecker = new DSPPolicyChecker();
+export const dspPolicyChecker = new DSPPolicyChecker();

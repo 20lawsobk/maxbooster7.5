@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { collaborationService } from "../services/collaborationService";
 import { logger } from "../logger";
 
-const _router = Router();
+const router = Router();
 
 router?.get("/connections", async (req: Request, res: Response) => {
   if (!req?.user) {
@@ -10,7 +10,7 @@ router?.get("/connections", async (req: Request, res: Response) => {
   }
 
   try {
-    const _connections = await collaborationService?.getConnections(req?.user.id);
+    const connections = await collaborationService?.getConnections(req?.user.id);
     return res?.json(connections);
   } catch (error) {
     logger?.warn("Error fetching connections:", error);
@@ -24,7 +24,7 @@ router?.get("/connections/pending", async (req: Request, res: Response) => {
   }
 
   try {
-    const _requests = await collaborationService?.getPendingRequests(req?.user.id);
+    const requests = await collaborationService?.getPendingRequests(req?.user.id);
     return res?.json(requests);
   } catch (error) {
     logger?.warn("Error fetching pending requests:", error);
@@ -44,7 +44,7 @@ router?.post("/connect", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "User ID is required" });
     }
 
-    const _connection = await collaborationService?.sendConnectionRequest(
+    const connection = await collaborationService?.sendConnectionRequest(
       req?.user.id,
       userId,
       message,
@@ -62,7 +62,7 @@ router?.post("/accept/:id", async (req: Request, res: Response) => {
   }
 
   try {
-    const _connection = await collaborationService?.acceptConnection(
+    const connection = await collaborationService?.acceptConnection(
       req?.params.id,
       req?.user.id,
     );
@@ -79,7 +79,7 @@ router?.post("/decline/:id", async (req: Request, res: Response) => {
   }
 
   try {
-    const _connection = await collaborationService?.declineConnection(
+    const connection = await collaborationService?.declineConnection(
       req?.params.id,
       req?.user.id,
     );
@@ -110,8 +110,8 @@ router?.get("/suggestions", async (req: Request, res: Response) => {
   }
 
   try {
-    const _limit = Math?.min(parseInt(req?.query.limit as string) || 10, 100);
-    const _suggestions = await collaborationService?.getSuggestedCollaborators(
+    const limit = Math?.min(parseInt(req?.query.limit as string) || 10, 100);
+    const suggestions = await collaborationService?.getSuggestedCollaborators(
       req?.user.id,
       limit,
     );
@@ -124,12 +124,12 @@ router?.get("/suggestions", async (req: Request, res: Response) => {
 
 router?.get("/projects", async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user?.id;
-    const _genre = req?.query.genre as string | undefined;
-    const _status = req?.query.status as string | undefined;
-    const _ownOnly = req?.query.ownOnly === "true";
+    const userId = req?.user?.id;
+    const genre = req?.query.genre as string | undefined;
+    const status = req?.query.status as string | undefined;
+    const ownOnly = req?.query.ownOnly === "true";
 
-    const _projects = await collaborationService?.getProjects(userId, {
+    const projects = await collaborationService?.getProjects(userId, {
       genre,
       status,
       ownOnly,
@@ -154,7 +154,7 @@ router?.post("/projects", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "Project title is required" });
     }
 
-    const _project = await collaborationService?.createProject(req?.user.id, {
+    const project = await collaborationService?.createProject(req?.user.id, {
       title,
       description,
       genre,
@@ -175,7 +175,7 @@ router?.post("/projects/:id/join", async (req: Request, res: Response) => {
   }
 
   try {
-    const _member = await collaborationService?.joinProject(
+    const member = await collaborationService?.joinProject(
       req?.user.id,
       req?.params.id,
       "member",
@@ -203,15 +203,15 @@ router?.post("/projects/:id/leave", async (req: Request, res: Response) => {
 
 router?.get("/search", async (req: Request, res: Response) => {
   try {
-    const _query = (req?.query.q as string) || "";
-    const _genre = req?.query.genre as string | undefined;
-    const _location = req?.query.location as string | undefined;
-    const _skills = req?.query.skills
+    const query = (req?.query.q as string) || "";
+    const genre = req?.query.genre as string | undefined;
+    const location = req?.query.location as string | undefined;
+    const skills = req?.query.skills
       ? (req?.query.skills as string).split(",")
       : undefined;
-    const _limit = Math?.min(parseInt(req?.query.limit as string) || 20, 200);
+    const limit = Math?.min(parseInt(req?.query.limit as string) || 20, 200);
 
-    const _artists = await collaborationService?.searchArtists(
+    const artists = await collaborationService?.searchArtists(
       query,
       { genre, location, skills },
       limit,
@@ -231,7 +231,7 @@ router?.get(
     }
 
     try {
-      const _status = await collaborationService?.getConnectionStatus(
+      const status = await collaborationService?.getConnectionStatus(
         req?.user.id,
         req?.params.userId,
       );

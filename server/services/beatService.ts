@@ -9,7 +9,7 @@ export class BeatService {
     licenseType: "standard" | "exclusive",
   ) {
     try {
-      const _beat = await storage?.getBeat(beatId);
+      const beat = await storage?.getBeat(beatId);
       if (!beat) {
         throw new Error("Beat not found");
       }
@@ -18,14 +18,14 @@ export class BeatService {
         throw new Error("Exclusive license already sold");
       }
 
-      const _price =
+      const price =
         licenseType === "standard" ? beat?.standardPrice : beat?.exclusivePrice;
       if (!price) {
         throw new Error("License not available");
       }
 
       // Create Stripe payment intent
-      const _paymentIntent = await stripeService?.createBeatPurchaseIntent(
+      const paymentIntent = await stripeService?.createBeatPurchaseIntent(
         beatId,
         buyerId,
         licenseType,
@@ -34,7 +34,7 @@ export class BeatService {
 
       return {
         success: true,
-        paymentIntent: paymentIntent?.client_secret,
+        paymentIntent: paymentIntent.client_secret,
         licenseType,
         price,
       };
@@ -54,12 +54,12 @@ export class BeatService {
   ) {
     try {
       // Create sale record
-      const _sale = await storage?.createBeatSale({
+      const sale = await storage?.createBeatSale({
         beatId,
         buyerId,
         sellerId,
         licenseType,
-        price: price?.toString(),
+        price: price.toString(),
         stripePaymentIntentId: paymentIntentId,
       });
 
@@ -69,7 +69,7 @@ export class BeatService {
       }
 
       // Generate license agreement
-      const _licenseAgreement = await this?.generateLicenseAgreement(
+      const licenseAgreement = await this?.generateLicenseAgreement(
         sale,
         licenseType,
       );
@@ -90,7 +90,7 @@ export class BeatService {
     licenseType: "standard" | "exclusive",
   ) {
     // Generate legal license agreement based on license type
-    const _terms =
+    const terms =
       licenseType === "standard"
         ? {
             commercialUse: true,
@@ -114,7 +114,7 @@ export class BeatService {
 
   async getBeatAnalytics(beatId: string, userId: string) {
     try {
-      const _analytics = await storage?.getBeatAnalytics(beatId, userId);
+      const analytics = await storage?.getBeatAnalytics(beatId, userId);
       return analytics;
     } catch (error: unknown) {
       logger?.warn({ err: error }, "Beat analytics error:");
@@ -123,4 +123,4 @@ export class BeatService {
   }
 }
 
-export const _beatService = new BeatService();
+export const beatService = new BeatService();

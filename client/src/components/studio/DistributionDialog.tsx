@@ -115,10 +115,11 @@ export function DistributionDialog({
     },
   });
 
-  const { data: existingPackage } = useQuery<DistributionPackage>({
-    queryKey: [`/api/distribution/packages/${projectId}`],
-    enabled: open && !!projectId,
-  });
+  const { data: existingPackage } =
+    useQuery<DistributionPackage>({
+      queryKey: [`/api/distribution/packages/${projectId}`],
+      enabled: open && !!projectId,
+    });
 
   const { data: packageTracks = [], isLoading: tracksLoading } = useQuery<
     DistributionTrack[]
@@ -345,7 +346,7 @@ export function DistributionDialog({
         // Error already shown by mutation, abort save
         return;
       }
-    } else if (existingPackage?.artworkUrl) {
+    } else if (existingPackage.artworkUrl) {
       // Keep existing artwork URL if no new file
       uploadedArtworkUrl = existingPackage.artworkUrl;
     }
@@ -354,7 +355,7 @@ export function DistributionDialog({
   };
 
   const handleAutoFillTracks = async () => {
-    if (!existingPackage?.id) {
+    if (!existingPackage.id) {
       toast({
         title: "Info",
         description: "Please save album info first",
@@ -381,7 +382,7 @@ export function DistributionDialog({
   };
 
   const handleExport = async () => {
-    if (!existingPackage?.id) {
+    if (!existingPackage.id) {
       toast({
         title: "Info",
         description: "Please save the distribution package first",
@@ -634,7 +635,7 @@ export function DistributionDialog({
               <Button
                 onClick={handleAutoFillTracks}
                 variant="outline"
-                disabled={!existingPackage?.id || addTrackMutation.isPending}
+                disabled={!existingPackage.id || addTrackMutation.isPending}
                 data-testid="button-autofill-tracks"
               >
                 {addTrackMutation.isPending && (
@@ -752,7 +753,7 @@ export function DistributionDialog({
                   artwork, and README.
                 </p>
 
-                {existingPackage?.status && (
+                {existingPackage.status && (
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium">Status:</span>
                     <span
@@ -789,7 +790,7 @@ export function DistributionDialog({
                   <Button
                     onClick={handleExport}
                     disabled={
-                      !existingPackage?.id ||
+                      !existingPackage.id ||
                       exportMutation.isPending ||
                       !rightsConfirmed
                     }

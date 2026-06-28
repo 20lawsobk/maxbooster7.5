@@ -33,20 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Bookmark,
-  Plus,
-  Save,
-  Trash2,
-  Edit,
-  MoreHorizontal,
-  Star,
-  StarOff,
-  Check,
-  Filter,
-  Loader2,
-  ChevronDown,
-} from "lucide-react";
+import { Bookmark, Plus, Save, Trash2, Edit, MoreHorizontal, Star, StarOff, Check, Filter, Loader2, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -200,7 +187,7 @@ export function FilterPresetsManager({
     savePresetMutation.mutate({
       name: presetName.trim(),
       filters: currentFilters,
-      id: editingPreset?.id,
+      id: editingPreset.id,
     });
   };
 
@@ -210,12 +197,15 @@ export function FilterPresetsManager({
     setShowSaveDialog(true);
   };
 
-  (key: string, value: Record<string, unknown>): string => {
+  ((
+    key: string,
+    value: Record<string, unknown>,
+  ): string => {
     if (key.includes("price")) return `$${value}`;
     if (key.includes("bpm")) return `${value} BPM`;
     if (typeof value === "boolean") return value ? "Yes" : "No";
     return String(value);
-  };
+  });
 
   if (compact) {
     return (

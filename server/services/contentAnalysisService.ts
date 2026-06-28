@@ -6,7 +6,7 @@
  * This service powers both autopilots' learning from actual content,
  * not just engagement metrics
  *
- * NO EXTERNAL AI APIS - All custom TensorFlow?.js models and algorithms
+ * NO EXTERNAL AI APIS - All custom TensorFlow.js models and algorithms
  * All computer vision, NLP, and analysis done with custom implementations
  */
 
@@ -23,36 +23,36 @@ import { logger } from "../logger";
 // moment the TCP socket is opened, not just at pre-flight validation time.
 // This closes the DNS-rebinding TOCTOU window left by a hostname-only check.
 //
-// Also covers IPv4-mapped IPv6 (::ffff:a?.b.c?.d) which a plain regex on the
+// Also covers IPv4-mapped IPv6 (::ffff:a.b.c.d) which a plain regex on the
 // IPv6 string cannot safely handle.
 
-const _PRIVATE_IPV4_RE =
+const PRIVATE_IPV4_RE =
   /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.|0\.)/;
 
-const _PRIVATE_IPV6_RE =
+const PRIVATE_IPV6_RE =
   /^(::1$|fc[0-9a-f]{2}:|fd[0-9a-f]{2}:|fe[89ab][0-9a-f]:|::$)/i;
 
 /**
  * Normalise an IP address string and return true if it is private / reserved.
  * Handles plain IPv4, plain IPv6, IPv6 bracket-quoted forms, and
- * IPv4-mapped-IPv6 (::ffff:a?.b.c?.d or compact hex variants).
+ * IPv4-mapped-IPv6 (::ffff:a.b.c.d or compact hex variants).
  */
 function isReservedIp(raw: string): boolean {
-  let addr = raw?.toLowerCase();
+  let addr = raw.toLowerCase();
 
   // Strip surrounding IPv6 brackets that Node can occasionally surface.
-  if (addr?.startsWith("[") && addr?.endsWith("]")) {
-    addr = addr?.slice(1, -1);
+  if (addr.startsWith("[") && addr.endsWith("]")) {
+    addr = addr.slice(1, -1);
   }
 
   // IPv4-mapped IPv6: ::ffff:<IPv4> — extract and re-check the IPv4 part.
-  if (addr?.startsWith("::ffff:")) {
-    const _embedded = addr?.slice(7);
+  if (addr.startsWith("::ffff:")) {
+    const embedded = addr.slice(7);
     // It could be dotted-decimal (::ffff:127.0.0.1) or condensed hex
     // (::ffff:7f00:1).  If it looks like a valid dotted IPv4, check that.
     // Otherwise treat the whole address as suspicious / private to be safe.
     if (netIsIPv4(embedded)) {
-      return embedded === "0.0.0.0" || PRIVATE_IPV4_RE?.test(embedded);
+      return embedded === "0.0.0.0" || PRIVATE_IPV4_RE.test(embedded);
     }
     // Hex-only form — conservatively block it since we cannot safely
     // decode arbitrary hex quads inline.
@@ -60,14 +60,14 @@ function isReservedIp(raw: string): boolean {
   }
 
   if (addr === "localhost" || addr === "0.0.0.0") return true;
-  if (PRIVATE_IPV4_RE?.test(addr)) return true;
-  if (PRIVATE_IPV6_RE?.test(addr)) return true;
+  if (PRIVATE_IPV4_RE.test(addr)) return true;
+  if (PRIVATE_IPV6_RE.test(addr)) return true;
   return false;
 }
 
 /**
- * Drop-in replacement for dns?.lookup that rejects private/reserved addresses.
- * Typed as net?.LookupFunction so it can be passed directly to http/https Agent
+ * Drop-in replacement for dns.lookup that rejects private/reserved addresses.
+ * Typed as net.LookupFunction so it can be passed directly to http/https Agent
  * without unsafe casts.
  */
 const safeDnsLookup: LookupFunction = (hostname, _options, callback) => {
@@ -76,30 +76,30 @@ const safeDnsLookup: LookupFunction = (hostname, _options, callback) => {
       callback(err, "", 4);
       return;
     }
-    const addrs: LookupAddress[] = Array?.isArray(addresses)
+    const addrs: LookupAddress[] = Array.isArray(addresses)
       ? addresses
       : [{ address: String(addresses), family: 4 }];
 
     for (const entry of addrs) {
-      if (isReservedIp(entry?.address)) {
-        const _ssrfErr = Object?.assign(
-          new Error(`SSRF blocked: ${entry?.address} is a reserved address`),
+      if (isReservedIp(entry.address)) {
+        const ssrfErr = Object.assign(
+          new Error(`SSRF blocked: ${entry.address} is a reserved address`),
           { code: "ECONNREFUSED" },
         ) as NodeJS.ErrnoException;
-        callback(ssrfErr, "", entry?.family);
+        callback(ssrfErr, "", entry.family);
         return;
       }
     }
 
-    const _first = addrs[0];
-    callback(null, first?.address, first?.family);
+    const first = addrs[0];
+    callback(null, first.address, first.family);
   });
 };
 
-const _safeHttpAgent = new HttpAgent({ lookup: safeDnsLookup });
-const _safeHttpsAgent = new HttpsAgent({ lookup: safeDnsLookup });
+const safeHttpAgent = new HttpAgent({ lookup: safeDnsLookup });
+const safeHttpsAgent = new HttpsAgent({ lookup: safeDnsLookup });
 
-const _SAFE_AXIOS_AGENTS = {
+const SAFE_AXIOS_AGENTS = {
   httpAgent: safeHttpAgent,
   httpsAgent: safeHttpsAgent,
 } as const;
@@ -107,17 +107,17 @@ const _SAFE_AXIOS_AGENTS = {
 
 // Optional sharp support with graceful fallback
 let sharpModule: typeof import("sharp") | null = null;
-let sharpAvailable = false;
+let _sharpAvailable = false;
 
 async function getSharp() {
   if (sharpModule !== null) return sharpModule;
   try {
     sharpModule = (await import("sharp")).default;
     sharpAvailable = true;
-    logger?.info("Sharp module loaded for content analysis");
+    logger.info("Sharp module loaded for content analysis");
     return sharpModule;
   } catch (error) {
-    logger?.warn("Sharp not available - image analysis will use fallbacks");
+    logger.warn("Sharp not available - image analysis will use fallbacks");
     sharpModule = false;
     return null;
   }
@@ -137,11 +137,11 @@ async function initTensorFlow(): Promise<boolean> {
     try {
       tf = await import("@tensorflow/tfjs");
       tfAvailable = true;
-      logger?.info("[ContentAnalysis] TensorFlow?.js loaded successfully");
+      logger.info("[ContentAnalysis] TensorFlow.js loaded successfully");
       return true;
     } catch (error) {
-      logger?.warn(
-        "[ContentAnalysis] TensorFlow?.js not available - using fallback analysis",
+      logger.warn(
+        "[ContentAnalysis] TensorFlow.js not available - using fallback analysis",
       );
       tf = null;
       tfAvailable = false;
@@ -409,7 +409,7 @@ export class ContentAnalysisService {
       return null;
     }
 
-    const _model = tf?.sequential({
+    const model = tf?.sequential({
       layers: [
         tf?.layers.conv2d({
           inputShape: [224, 224, 3],
@@ -446,7 +446,7 @@ export class ContentAnalysisService {
       return null;
     }
 
-    const _model = tf?.sequential({
+    const model = tf?.sequential({
       layers: [
         tf?.layers.conv2d({
           inputShape: [224, 224, 3],
@@ -480,7 +480,7 @@ export class ContentAnalysisService {
       return null;
     }
 
-    const _model = tf?.sequential({
+    const model = tf?.sequential({
       layers: [
         tf?.layers.conv2d({
           inputShape: [224, 224, 1],
@@ -512,62 +512,62 @@ export class ContentAnalysisService {
 
     try {
       // Download and process image
-      const _imageBuffer = await this?.fetchImage(imageUrl);
+      const imageBuffer = await this?.fetchImage(imageUrl);
 
       // Extract colors using custom algorithm
-      const _colors = await this?.extractDominantColors(imageBuffer);
+      const colors = await this?.extractDominantColors(imageBuffer);
 
       // Analyze composition using custom computer vision
-      const _composition = await this?.analyzeComposition(imageBuffer);
+      const composition = await this?.analyzeComposition(imageBuffer);
 
       // Detect faces using custom model
-      const _faceAnalysis = await this?.detectFaces(imageBuffer);
+      const faceAnalysis = await this?.detectFaces(imageBuffer);
 
       // Detect text using custom OCR-like approach
-      const _textAnalysis = await this?.detectText(imageBuffer);
+      const textAnalysis = await this?.detectText(imageBuffer);
 
       // Analyze visual features
-      const _visualFeatures = await this?.extractVisualFeatures(imageBuffer);
+      const visualFeatures = await this?.extractVisualFeatures(imageBuffer);
 
       const result: ImageAnalysisResult = {
         colors: {
-          dominant: colors?.dominant,
-          palette: colors?.palette,
-          mood: colors?.mood,
+          dominant: colors.dominant,
+          palette: colors.palette,
+          mood: colors.mood,
         },
         composition: {
-          layout: composition?.layout,
-          visualWeight: composition?.visualWeight,
-          complexity: composition?.complexity,
+          layout: composition.layout,
+          visualWeight: composition.visualWeight,
+          complexity: composition.complexity,
         },
         content: {
-          hasFaces: faceAnalysis?.hasFaces,
-          faceCount: faceAnalysis?.count,
-          hasText: textAnalysis?.hasText,
-          textAmount: textAnalysis?.amount,
-          mainSubject: visualFeatures?.mainSubject,
-          objects: visualFeatures?.objects,
-          scene: visualFeatures?.scene,
+          hasFaces: faceAnalysis.hasFaces,
+          faceCount: faceAnalysis.count,
+          hasText: textAnalysis.hasText,
+          textAmount: textAnalysis.amount,
+          mainSubject: visualFeatures.mainSubject,
+          objects: visualFeatures.objects,
+          scene: visualFeatures.scene,
         },
         branding: {
-          hasLogo: textAnalysis?.hasText && composition?.complexity > 0.6,
-          brandingStrength: visualFeatures?.brandingStrength,
-          professionalQuality: visualFeatures?.professionalQuality,
+          hasLogo: textAnalysis.hasText && composition?.complexity > 0.6,
+          brandingStrength: visualFeatures.brandingStrength,
+          professionalQuality: visualFeatures.professionalQuality,
         },
         engagement: {
-          attentionGrabbing: this?.calculateAttentionScore(
+          attentionGrabbing: this.calculateAttentionScore(
             colors,
             composition,
             faceAnalysis,
           ),
-          emotionalImpact: this?.calculateEmotionalImpact(colors, faceAnalysis),
-          shareability: this?.calculateShareability(
+          emotionalImpact: this.calculateEmotionalImpact(colors, faceAnalysis),
+          shareability: this.calculateShareability(
             colors,
             composition,
             visualFeatures,
           ),
         },
-        vibe: this?.calculateVibe(colors, composition, visualFeatures),
+        vibe: this.calculateVibe(colors, composition, visualFeatures),
         confidence: 0.85,
       };
 
@@ -582,7 +582,7 @@ export class ContentAnalysisService {
    * Fetch image from URL
    */
   private async fetchImage(url: string): Promise<Buffer> {
-    const _response = await axios?.get(url, {
+    const response = await axios?.get(url, {
       responseType: "arraybuffer",
       timeout: 10000,
       maxRedirects: 0,
@@ -599,7 +599,7 @@ export class ContentAnalysisService {
     palette: string[];
     mood: "vibrant" | "muted" | "dark" | "light" | "neutral";
   }> {
-    const _sharpInstance = await getSharp();
+    const sharpInstance = await getSharp();
     if (!sharpInstance) {
       return {
         dominant: ["#4A90E2", "#F5A623", "#50E3C2"],
@@ -610,36 +610,36 @@ export class ContentAnalysisService {
 
     try {
       // Resize image for faster processing
-      const _resized = await sharpInstance(imageBuffer)
+      const resized = await sharpInstance(imageBuffer)
         .resize(100, 100, { fit: "cover" })
         .raw()
         .toBuffer({ resolveWithObject: true });
 
-      const _pixels = resized?.data;
+      const pixels = resized?.data;
 
       // Sample pixels for k-means clustering
       const samples: number[][] = [];
-      for (let i = 0; i < pixels?.length; i += 12) {
+      for (let i = 0; i < pixels.length; i += 12) {
         // Sample every 4th pixel
         samples?.push([pixels[i], pixels[i + 1], pixels[i + 2]]);
       }
 
       // Perform k-means clustering to find 5 dominant colors
-      const _clusters = this?.kMeansClustering(samples, 5);
+      const clusters = this?.kMeansClustering(samples, 5);
 
       // Convert to hex colors
-      const _dominantColors = clusters?.map((cluster) =>
+      const dominantColors = clusters?.map((cluster) =>
         this?.rgbToHex(cluster[0], cluster[1], cluster[2]),
       );
 
       // Calculate overall brightness and saturation
-      const _avgBrightness =
+      const avgBrightness =
         clusters?.reduce((sum, c) => sum + (c[0] + c[1] + c[2]) / 3, 0) /
         clusters?.length;
-      const _avgSaturation =
+      const avgSaturation =
         clusters?.reduce((sum, c) => {
-          const _max = Math?.max(c[0], c[1], c[2]);
-          const _min = Math?.min(c[0], c[1], c[2]);
+          const max = Math?.max(c[0], c[1], c[2]);
+          const min = Math?.min(c[0], c[1], c[2]);
           return sum + (max - min);
         }, 0) / clusters?.length;
 
@@ -651,7 +651,7 @@ export class ContentAnalysisService {
       else if (avgBrightness > 180) mood = "light";
 
       return {
-        dominant: dominantColors?.slice(0, 3),
+        dominant: dominantColors.slice(0, 3),
         palette: dominantColors,
         mood,
       };
@@ -687,7 +687,7 @@ export class ContentAnalysisService {
         let closestCentroid = 0;
 
         for (let i = 0; i < k; i++) {
-          const _dist = this?.euclideanDistance(point, centroids[i]);
+          const dist = this?.euclideanDistance(point, centroids[i]);
           if (dist < minDist) {
             minDist = dist;
             closestCentroid = i;
@@ -729,7 +729,7 @@ export class ContentAnalysisService {
       "#" +
       [r, g, b]
         .map((x) => {
-          const _hex = Math?.round(x).toString(16);
+          const hex = Math?.round(x).toString(16);
           return hex?.length === 1 ? "0" + hex : hex;
         })
         .join("")
@@ -744,7 +744,7 @@ export class ContentAnalysisService {
     visualWeight: "balanced" | "heavy-top" | "heavy-bottom" | "left" | "right";
     complexity: number;
   }> {
-    const _sharpInstance = await getSharp();
+    const sharpInstance = await getSharp();
     if (!sharpInstance) {
       return {
         layout: "centered",
@@ -755,7 +755,7 @@ export class ContentAnalysisService {
 
     try {
       // Apply edge detection (Sobel filter)
-      const _edges = await sharpInstance(imageBuffer)
+      const edges = await sharpInstance(imageBuffer)
         .resize(300, 300)
         .grayscale()
         .convolve({
@@ -767,21 +767,21 @@ export class ContentAnalysisService {
         .toBuffer();
 
       // Analyze edge density in different regions
-      const _gridSize = 3;
-      const _cellWidth = 100;
-      const _cellHeight = 100;
+      const gridSize = 3;
+      const cellWidth = 100;
+      const cellHeight = 100;
       const regionDensities: number[][] = [];
 
       for (let y = 0; y < gridSize; y++) {
         regionDensities[y] = [];
         for (let x = 0; x < gridSize; x++) {
           let density = 0;
-          const _startX = x * cellWidth;
-          const _startY = y * cellHeight;
+          const startX = x * cellWidth;
+          const startY = y * cellHeight;
 
           for (let py = startY; py < startY + cellHeight; py++) {
             for (let px = startX; px < startX + cellWidth; px++) {
-              const _idx = py * 300 + px;
+              const idx = py * 300 + px;
               if (edges[idx] > 128) density++;
             }
           }
@@ -791,9 +791,9 @@ export class ContentAnalysisService {
       }
 
       // Determine layout
-      const _centerDensity = regionDensities[1][1];
-      const _avgDensity = regionDensities?.flat().reduce((a, b) => a + b) / 9;
-      const _maxDensity = Math?.max(...regionDensities?.flat());
+      const centerDensity = regionDensities[1][1];
+      const avgDensity = regionDensities?.flat().reduce((a, b) => a + b) / 9;
+      const maxDensity = Math?.max(...regionDensities?.flat());
 
       let layout: "centered" | "rule-of-thirds" | "symmetric" | "dynamic" =
         "centered";
@@ -808,22 +808,22 @@ export class ContentAnalysisService {
       else layout = "dynamic";
 
       // Determine visual weight
-      const _topHalf =
+      const topHalf =
         (regionDensities[0][0] +
           regionDensities[0][1] +
           regionDensities[0][2]) /
         3;
-      const _bottomHalf =
+      const bottomHalf =
         (regionDensities[2][0] +
           regionDensities[2][1] +
           regionDensities[2][2]) /
         3;
-      const _leftHalf =
+      const leftHalf =
         (regionDensities[0][0] +
           regionDensities[1][0] +
           regionDensities[2][0]) /
         3;
-      const _rightHalf =
+      const rightHalf =
         (regionDensities[0][2] +
           regionDensities[1][2] +
           regionDensities[2][2]) /
@@ -841,7 +841,7 @@ export class ContentAnalysisService {
       else if (rightHalf > leftHalf * 1.3) visualWeight = "right";
 
       // Calculate complexity (edge density)
-      const _complexity = Math?.min(1, avgDensity * 2);
+      const complexity = Math?.min(1, avgDensity * 2);
 
       return { layout, visualWeight, complexity };
     } catch (error) {
@@ -865,33 +865,33 @@ export class ContentAnalysisService {
       return { hasFaces: false, count: 0 };
     }
 
-    const _sharpInstance = await getSharp();
+    const sharpInstance = await getSharp();
     if (!sharpInstance) {
       return { hasFaces: false, count: 0 };
     }
 
     try {
-      const _processed = await sharpInstance(imageBuffer)
+      const processed = await sharpInstance(imageBuffer)
         .resize(224, 224)
         .raw()
         .toBuffer();
 
-      const _imageTensor = tf
+      const imageTensor = tf
         .tensor3d(new Uint8Array(processed), [224, 224, 3])
         .div(255.0)
         .expandDims(0);
 
-      const _prediction = this?.faceDetectionModel.predict(imageTensor) as Record<
+      const prediction = this?.faceDetectionModel.predict(imageTensor) as Record<
         string,
         unknown
       >;
-      const _hasFacesProbability = (await prediction?.data())[0];
+      const hasFacesProbability = (await prediction?.data())[0];
 
       imageTensor?.dispose();
       prediction?.dispose();
 
-      const _hasFaces = hasFacesProbability > 0.5;
-      const _count = hasFaces ? Math?.ceil(hasFacesProbability * 2) : 0;
+      const hasFaces = hasFacesProbability > 0.5;
+      const count = hasFaces ? Math?.ceil(hasFacesProbability * 2) : 0;
 
       return { hasFaces, count };
     } catch (error) {
@@ -907,14 +907,14 @@ export class ContentAnalysisService {
     hasText: boolean;
     amount: "none" | "minimal" | "moderate" | "heavy";
   }> {
-    const _sharpInstance = await getSharp();
+    const sharpInstance = await getSharp();
     if (!sharpInstance) {
       return { hasText: false, amount: "none" };
     }
 
     try {
       // Convert to grayscale and apply threshold
-      const _processed = await sharpInstance(imageBuffer)
+      const processed = await sharpInstance(imageBuffer)
         .resize(224, 224)
         .grayscale()
         .normalize()
@@ -923,15 +923,15 @@ export class ContentAnalysisService {
 
       // Look for horizontal edge patterns characteristic of text
       let textPixels = 0;
-      const _threshold = 128;
+      const threshold = 128;
 
       for (let i = 0; i < processed?.length - 1; i++) {
-        const _diff = Math?.abs(processed[i] - processed[i + 1]);
+        const diff = Math?.abs(processed[i] - processed[i + 1]);
         if (diff > threshold) textPixels++;
       }
 
-      const _textDensity = textPixels / processed?.length;
-      const _hasText = textDensity > 0.1;
+      const textDensity = textPixels / processed?.length;
+      const hasText = textDensity > 0.1;
 
       let amount: "none" | "minimal" | "moderate" | "heavy" = "none";
       if (textDensity > 0.3) amount = "heavy";
@@ -955,7 +955,7 @@ export class ContentAnalysisService {
     brandingStrength: number;
     professionalQuality: number;
   }> {
-    const _sharpInstance = await getSharp();
+    const sharpInstance = await getSharp();
     if (!sharpInstance) {
       return {
         mainSubject: "content",
@@ -968,10 +968,10 @@ export class ContentAnalysisService {
 
     try {
       // Analyze image metadata and quality
-      const _metadata = await sharpInstance(imageBuffer).metadata();
+      const metadata = await sharpInstance(imageBuffer).metadata();
 
-      const _professionalQuality = Math?.min(1, (metadata?.width || 1000) / 1000);
-      const _brandingStrength = (metadata?.density || 72) > 100 ? 0.8 : 0.5;
+      const professionalQuality = Math?.min(1, (metadata?.width || 1000) / 1000);
+      const brandingStrength = (metadata?.density || 72) > 100 ? 0.8 : 0.5;
 
       return {
         mainSubject: "promotional content",
@@ -1006,7 +1006,7 @@ export class ContentAnalysisService {
     if (colors?.mood === "vibrant") score += 0.2;
 
     // Faces are highly attention-grabbing
-    if (faces?.hasFaces) score += 0.2;
+    if (faces.hasFaces) score += 0.2;
 
     // Dynamic composition is more engaging
     if (composition?.layout === "dynamic") score += 0.1;
@@ -1037,8 +1037,8 @@ export class ContentAnalysisService {
     let score = 0.5;
 
     if (colors?.mood === "vibrant") score += 0.15;
-    if (composition?.complexity > 0.6) score += 0.15;
-    if (features?.professionalQuality > 0.8) score += 0.2;
+    if (composition.complexity > 0.6) score += 0.15;
+    if (features.professionalQuality > 0.8) score += 0.2;
 
     return Math?.min(1, score);
   }
@@ -1080,7 +1080,7 @@ export class ContentAnalysisService {
       const result: VideoAnalysisResult = {
         duration,
         scenes: {
-          count: Math?.ceil(duration / 3), // Estimate
+          count: Math.ceil(duration / 3), // Estimate
           avgDuration: 3,
           transitions:
             duration < 15 ? "fast" : duration < 60 ? "moderate" : "slow",
@@ -1146,14 +1146,14 @@ export class ContentAnalysisService {
 
       const result: AudioAnalysisResult = {
         music: {
-          tempo: metadata?.tempo || 120,
-          key: metadata?.key || "C",
-          mode: metadata?.mode || "major",
-          genre: metadata?.genre || ["pop", "electronic"],
-          energy: metadata?.energy || 0.7,
-          danceability: metadata?.danceability || 0.8,
-          valence: metadata?.valence || 0.6,
-          acousticness: metadata?.acousticness || 0.3,
+          tempo: metadata.tempo || 120,
+          key: metadata.key || "C",
+          mode: metadata.mode || "major",
+          genre: metadata.genre || ["pop", "electronic"],
+          energy: metadata.energy || 0.7,
+          danceability: metadata.danceability || 0.8,
+          valence: metadata.valence || 0.6,
+          acousticness: metadata.acousticness || 0.3,
         },
         production: {
           quality: 0.85,
@@ -1187,7 +1187,7 @@ export class ContentAnalysisService {
 
     try {
       // Fetch and analyze website HTML
-      const _response = await axios?.get(url, {
+      const response = await axios?.get(url, {
         timeout: 10000,
         maxRedirects: 0,
         ...SAFE_AXIOS_AGENTS,
@@ -1196,7 +1196,7 @@ export class ContentAnalysisService {
         },
       });
 
-      const _html = response?.data.toString();
+      const html = response?.data.toString();
       return this?.analyzeHTMLCustom(html);
     } catch (error) {
       logger?.warn({ err: error }, "Website analysis error:");
@@ -1209,10 +1209,10 @@ export class ContentAnalysisService {
    */
   private analyzeHTMLCustom(html: string): WebsiteAnalysisResult {
     // Extract colors from CSS and inline styles
-    const _colors = this?.extractColorsFromHTML(html);
+    const colors = this?.extractColorsFromHTML(html);
 
     // Count CTAs (call-to-action buttons)
-    const _ctaWords = [
+    const ctaWords = [
       "buy",
       "subscribe",
       "download",
@@ -1228,13 +1228,13 @@ export class ContentAnalysisService {
     }
 
     // Detect headline
-    const _h1Match = html?.match(/<h1[^>]*>(.*?)<\/h1>/i);
-    const _headline = h1Match
+    const h1Match = html?.match(/<h1[^>]*>(.*?)<\/h1>/i);
+    const headline = h1Match
       ? h1Match[1].replace(/<[^>]+>/g, "").substring(0, 100)
       : "Boost Your Music Career";
 
     // Check for social proof
-    const _socialProofKeywords = [
+    const socialProofKeywords = [
       "testimonial",
       "review",
       "customer",
@@ -1242,7 +1242,7 @@ export class ContentAnalysisService {
       "star",
       "⭐",
     ];
-    const _socialProof = socialProofKeywords?.some((keyword) =>
+    const socialProof = socialProofKeywords?.some((keyword) =>
       html?.toLowerCase().includes(keyword),
     );
 
@@ -1257,23 +1257,23 @@ export class ContentAnalysisService {
     if (socialProof) trustSignals?.push("Social proof");
 
     // Check mobile optimization
-    const _mobileOptimized =
+    const mobileOptimized =
       html?.includes("viewport") ||
       html?.includes("responsive") ||
       html?.includes("@media");
 
     // Check for urgency/scarcity
-    const _urgency =
+    const urgency =
       html?.toLowerCase().includes("limited") ||
       html?.toLowerCase().includes("now") ||
       html?.toLowerCase().includes("today");
-    const _scarcity =
+    const scarcity =
       html?.toLowerCase().includes("spots") ||
       html?.toLowerCase().includes("exclusive") ||
       html?.toLowerCase().includes("only");
 
     // Analyze layout
-    const _isSinglePage =
+    const isSinglePage =
       !html?.includes("<nav") || html?.split("<a href").length < 10;
 
     return {
@@ -1301,7 +1301,7 @@ export class ContentAnalysisService {
         aboveTheFold: ["hero", ...(ctaCount > 0 ? ["cta"] : [])],
         urgency,
         scarcity,
-        guarantees: html?.toLowerCase().includes("guarantee"),
+        guarantees: html.toLowerCase().includes("guarantee"),
         conversionOptimization:
           (ctaCount > 0 ? 0.3 : 0) +
           (socialProof ? 0.2 : 0) +
@@ -1310,7 +1310,7 @@ export class ContentAnalysisService {
       },
       branding: {
         consistent: true,
-        professional: html?.includes("logo") || html?.includes("brand"),
+        professional: html.includes("logo") || html?.includes("brand"),
         memorable: 0.7,
       },
       confidence: 0.75,
@@ -1321,10 +1321,10 @@ export class ContentAnalysisService {
    * Extract colors from HTML/CSS
    */
   private extractColorsFromHTML(html: string): string[] {
-    const _colors = new Set<string>();
+    const colors = new Set<string>();
 
     // Extract hex colors
-    const _hexMatches = html?.match(/#[0-9A-Fa-f]{6}/g);
+    const hexMatches = html?.match(/#[0-9A-Fa-f]{6}/g);
     if (hexMatches) {
       hexMatches
         .slice(0, 5)
@@ -1332,12 +1332,12 @@ export class ContentAnalysisService {
     }
 
     // Extract RGB colors and convert to hex
-    const _rgbMatches = html?.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/g);
+    const rgbMatches = html?.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/g);
     if (rgbMatches) {
       rgbMatches?.slice(0, 3).forEach((rgb) => {
-        const _match = rgb?.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+        const match = rgb?.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
         if (match) {
-          const _hex = this?.rgbToHex(
+          const hex = this?.rgbToHex(
             parseInt(match[1]),
             parseInt(match[2]),
             parseInt(match[3]),
@@ -1362,23 +1362,23 @@ export class ContentAnalysisService {
     await this?.ensureInitialized();
 
     try {
-      const _sentences = text?.split(/[.!?]+/).filter((s) => s?.trim().length > 0);
-      const _paragraphs = text?.split(/\n\n+/).filter((p) => p?.trim().length > 0);
-      const _words = text?.split(/\s+/).filter((w) => w?.length > 0);
+      const sentences = text?.split(/[.!?]+/).filter((s) => s?.trim().length > 0);
+      const paragraphs = text?.split(/\n\n+/).filter((p) => p?.trim().length > 0);
+      const words = text?.split(/\s+/).filter((w) => w?.length > 0);
 
       // Extract hashtags and mentions
-      const _hashtags = (text?.match(/#\w+/g) || []).map((h) => h?.substring(1));
-      const _mentions = (text?.match(/@\w+/g) || []).map((m) => m?.substring(1));
+      const hashtags = (text?.match(/#\w+/g) || []).map((h) => h?.substring(1));
+      const mentions = (text?.match(/@\w+/g) || []).map((m) => m?.substring(1));
 
       // Calculate readability (simplified Flesch score)
-      const _avgWordsPerSentence = words?.length / Math?.max(sentences?.length, 1);
-      const _readability = Math?.max(
+      const avgWordsPerSentence = words?.length / Math?.max(sentences?.length, 1);
+      const readability = Math?.max(
         0,
         Math?.min(100, 100 - avgWordsPerSentence * 2),
       );
 
       // Detect call to action
-      const _ctaWords = [
+      const ctaWords = [
         "click",
         "buy",
         "get",
@@ -1390,42 +1390,42 @@ export class ContentAnalysisService {
         "comment",
         "like",
       ];
-      const _hasCallToAction = ctaWords?.some((word) =>
+      const hasCallToAction = ctaWords?.some((word) =>
         text?.toLowerCase().includes(word),
       );
 
       const result: TextAnalysisResult = {
         structure: {
-          length: text?.length,
-          sentences: sentences?.length,
-          paragraphs: paragraphs?.length,
+          length: text.length,
+          sentences: sentences.length,
+          paragraphs: paragraphs.length,
           readability,
         },
         tone: {
           sentiment: "positive",
           emotion: ["excited", "enthusiastic"],
-          formality: text?.includes("!") ? "casual" : "professional",
+          formality: text.includes("!") ? "casual" : "professional",
           energy: (text?.match(/!+/g) || []).length > 0 ? 0.8 : 0.5,
         },
         content: {
           mainTopics: [],
-          keywords: words?.slice(0, 10),
+          keywords: words.slice(0, 10),
           hashtagsUsed: hashtags,
           mentionsUsed: mentions,
           hasCallToAction,
           callToActionStrength: hasCallToAction ? 0.7 : 0.2,
         },
         engagement: {
-          questionEngagement: text?.includes("?"),
+          questionEngagement: text.includes("?"),
           personalConnection:
             text?.toLowerCase().includes("you") ||
             text?.toLowerCase().includes("your"),
-          storytelling: sentences?.length > 3,
-          viralPotential: hashtags?.length > 2 && text?.includes("!") ? 0.7 : 0.4,
+          storytelling: sentences.length > 3,
+          viralPotential: hashtags.length > 2 && text?.includes("!") ? 0.7 : 0.4,
         },
         quality: {
           clarity: readability / 100,
-          authenticity: text?.length > 50 ? 0.7 : 0.5,
+          authenticity: text.length > 50 ? 0.7 : 0.5,
           persuasiveness: hasCallToAction ? 0.7 : 0.4,
         },
         confidence: 0.8,
@@ -1487,7 +1487,7 @@ export class ContentAnalysisService {
         valueProposition: "AI-powered tools for independent artists",
         ctaCount: 2,
         ctaClarity: 0.8,
-        socialProof: html?.includes("testimonial") || html?.includes("review"),
+        socialProof: html.includes("testimonial") || html?.includes("review"),
         trustSignals: ["secure", "trusted"],
       },
       ux: {
@@ -1505,7 +1505,7 @@ export class ContentAnalysisService {
         scarcity:
           html?.toLowerCase().includes("spots") ||
           html?.toLowerCase().includes("exclusive"),
-        guarantees: html?.toLowerCase().includes("guarantee"),
+        guarantees: html.toLowerCase().includes("guarantee"),
         conversionOptimization: 0.7,
       },
       branding: {
@@ -1518,4 +1518,4 @@ export class ContentAnalysisService {
   }
 }
 
-export const _contentAnalysisService = new ContentAnalysisService();
+export const contentAnalysisService = new ContentAnalysisService();

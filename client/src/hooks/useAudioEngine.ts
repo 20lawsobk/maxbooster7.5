@@ -65,14 +65,14 @@ export function useAudioEngine(): AudioEngineHook {
   const [sampleRate, setSampleRate] = useState(48000);
   const [latency, setLatency] = useState(0);
 
-  const _positionRef = useRef({ sample: 0, time: 0 });
-  const _positionUpdateScheduledRef = useRef(false);
+  const positionRef = useRef({ sample: 0, time: 0 });
+  const positionUpdateScheduledRef = useRef(false);
 
   useEffect(() => {
-    const _unsubscribe = audioWorkletEngine?.on((event) => {
+    const unsubscribe = audioWorkletEngine?.on((event) => {
       switch (event?.type) {
         case "state-change":
-          const _data = event?.data as {
+          const data = event?.data as {
             initialized?: boolean;
             isPlaying?: boolean;
           };
@@ -84,32 +84,32 @@ export function useAudioEngine(): AudioEngineHook {
           if (data?.isPlaying !== undefined) {
             setPlaybackState((prev) => ({
               ...prev,
-              isPlaying: data?.isPlaying!,
+              isPlaying: data.isPlaying!,
             }));
           }
           break;
 
         case "position-update":
-          const _pos = event?.data as { sample: number; time: number };
+          const pos = event?.data as { sample: number; time: number };
           positionRef.current = pos;
           if (!positionUpdateScheduledRef?.current) {
             positionUpdateScheduledRef.current = true;
             requestAnimationFrame(() => {
               positionUpdateScheduledRef.current = false;
-              const _latestPos = positionRef?.current;
+              const latestPos = positionRef?.current;
               setPlaybackState((prev) => ({
                 ...prev,
-                currentSample: latestPos?.sample,
-                currentTime: latestPos?.time,
+                currentSample: latestPos.sample,
+                currentTime: latestPos.time,
               }));
             });
           }
           break;
 
         case "metering-update":
-          const _meters = event?.data as MeteringData[];
+          const meters = event?.data as MeteringData[];
           setMeteringData((prev) => {
-            const _next = new Map(prev);
+            const next = new Map(prev);
             meters?.forEach((m) => next?.set(m?.trackId, m));
             return next;
           });
@@ -122,7 +122,7 @@ export function useAudioEngine(): AudioEngineHook {
     };
   }, []);
 
-  const _initialize = useCallback(async () => {
+  const initialize = useCallback(async () => {
     if (isInitialized) return;
     await audioWorkletEngine?.initialize({
       sampleRate: 48000,
@@ -132,106 +132,106 @@ export function useAudioEngine(): AudioEngineHook {
     });
   }, [isInitialized]);
 
-  const _play = useCallback(() => {
+  const play = useCallback(() => {
     audioWorkletEngine?.play();
   }, []);
 
-  const _pause = useCallback(() => {
+  const pause = useCallback(() => {
     audioWorkletEngine?.pause();
   }, []);
 
-  const _stop = useCallback(() => {
+  const stop = useCallback(() => {
     audioWorkletEngine?.stop();
   }, []);
 
-  const _setPosition = useCallback((sample: number) => {
+  const setPosition = useCallback((sample: number) => {
     audioWorkletEngine?.setPosition(sample);
   }, []);
 
-  const _setPositionTime = useCallback((seconds: number) => {
-    const _sample = Math?.round(seconds * audioWorkletEngine?.getSampleRate());
+  const setPositionTime = useCallback((seconds: number) => {
+    const sample = Math?.round(seconds * audioWorkletEngine?.getSampleRate());
     audioWorkletEngine?.setPosition(sample);
   }, []);
 
-  const _setLoop = useCallback(
+  const setLoop = useCallback(
     (enabled: boolean, startSample?: number, endSample?: number) => {
       audioWorkletEngine?.setLoop(enabled, startSample, endSample);
     },
     [],
   );
 
-  const _createTrack = useCallback((trackId: string) => {
+  const createTrack = useCallback((trackId: string) => {
     audioWorkletEngine?.createTrack(trackId);
   }, []);
 
-  const _removeTrack = useCallback((trackId: string) => {
+  const removeTrack = useCallback((trackId: string) => {
     audioWorkletEngine?.removeTrack(trackId);
   }, []);
 
-  const _setTrackVolume = useCallback((trackId: string, volume: number) => {
+  const setTrackVolume = useCallback((trackId: string, volume: number) => {
     audioWorkletEngine?.setTrackVolume(trackId, volume);
   }, []);
 
-  const _setTrackPan = useCallback((trackId: string, pan: number) => {
+  const setTrackPan = useCallback((trackId: string, pan: number) => {
     audioWorkletEngine?.setTrackPan(trackId, pan);
   }, []);
 
-  const _setTrackMute = useCallback((trackId: string, muted: boolean) => {
+  const setTrackMute = useCallback((trackId: string, muted: boolean) => {
     audioWorkletEngine?.setTrackMute(trackId, muted);
   }, []);
 
-  const _setTrackSolo = useCallback((trackId: string, solo: boolean) => {
+  const setTrackSolo = useCallback((trackId: string, solo: boolean) => {
     audioWorkletEngine?.setTrackSolo(trackId, solo);
   }, []);
 
-  const _setMasterVolume = useCallback((volume: number) => {
+  const setMasterVolume = useCallback((volume: number) => {
     audioWorkletEngine?.setMasterVolume(volume);
   }, []);
 
-  const _scheduleClip = useCallback((clip: ScheduledClip) => {
+  const scheduleClip = useCallback((clip: ScheduledClip) => {
     audioWorkletEngine?.scheduleClip(clip);
   }, []);
 
-  const _removeClip = useCallback((clipId: string) => {
+  const removeClip = useCallback((clipId: string) => {
     audioWorkletEngine?.removeClip(clipId);
   }, []);
 
-  const _loadAudioFile = useCallback(async (url: string) => {
+  const loadAudioFile = useCallback(async (url: string) => {
     return audioWorkletEngine?.loadAudioFile(url);
   }, []);
 
-  const _loadAudioBlob = useCallback(async (blob: Blob) => {
+  const loadAudioBlob = useCallback(async (blob: Blob) => {
     return audioWorkletEngine?.loadAudioBlob(blob);
   }, []);
 
-  const _extractPeakData = useCallback(
+  const extractPeakData = useCallback(
     (buffer: AudioBuffer, samplesPerPeak: number = 256) => {
       return audioWorkletEngine?.extractPeakData(buffer, samplesPerPeak);
     },
     [],
   );
 
-  const _extractPeakCache = useCallback((buffer: AudioBuffer) => {
+  const extractPeakCache = useCallback((buffer: AudioBuffer) => {
     return audioWorkletEngine?.extractPeakCache(buffer);
   }, []);
 
-  const _getTrackMeter = useCallback(
+  const getTrackMeter = useCallback(
     (trackId: string) => {
       return meteringData?.get(trackId);
     },
     [meteringData],
   );
 
-  const _getMasterMeter = useCallback(() => {
+  const getMasterMeter = useCallback(() => {
     return meteringData?.get("master");
   }, [meteringData]);
 
   return {
     isInitialized,
-    isPlaying: playbackState?.isPlaying,
-    isRecording: playbackState?.isRecording,
-    currentTime: playbackState?.currentTime,
-    currentSample: playbackState?.currentSample,
+    isPlaying: playbackState.isPlaying,
+    isRecording: playbackState.isRecording,
+    currentTime: playbackState.currentTime,
+    currentSample: playbackState.currentSample,
     sampleRate,
     latency,
     meteringData,

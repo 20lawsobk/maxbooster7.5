@@ -3,10 +3,10 @@ import { RequestHandler, Request, Response, NextFunction } from "express";
 import { logger } from "../logger.js";
 import { isProductionEnv } from "../lib/envHelpers.js";
 
-export const _CSRF_COOKIE = "csrf-token";
-export const _CSRF_HEADER = "x-csrf-token";
+export const CSRF_COOKIE = "csrf-token";
+export const CSRF_HEADER = "x-csrf-token";
 
-const _isProduction = isProductionEnv();
+const isProduction = isProductionEnv();
 
 function safeCompare(a: string, b: string): boolean {
   if (typeof a !== "string" || typeof b !== "string") {
@@ -31,12 +31,12 @@ export const csrfProtection: RequestHandler = (
     return next();
   }
 
-  const _cookieToken = req?.cookies?.[CSRF_COOKIE];
-  const _headerToken = (req?.headers[CSRF_HEADER] as string) || req?.body?._csrf;
+  const cookieToken = req?.cookies?.[CSRF_COOKIE];
+  const headerToken = (req?.headers[CSRF_HEADER] as string) || req?.body?._csrf;
 
   if (!cookieToken) {
     logger?.warn(
-      { ip: req?.ip, userAgent: req?.get("user-agent") },
+      { ip: req.ip, userAgent: req.get("user-agent") },
       `CSRF validation failed: Missing CSRF cookie - ${req?.method} ${req?.path}`,
     );
     return res?.status(403).json({
@@ -47,7 +47,7 @@ export const csrfProtection: RequestHandler = (
 
   if (!headerToken) {
     logger?.warn(
-      { ip: req?.ip, userAgent: req?.get("user-agent") },
+      { ip: req.ip, userAgent: req.get("user-agent") },
       `CSRF validation failed: Missing CSRF header/body token - ${req?.method} ${req?.path}`,
     );
     return res?.status(403).json({
@@ -59,7 +59,7 @@ export const csrfProtection: RequestHandler = (
 
   if (!safeCompare(cookieToken, headerToken)) {
     logger?.warn(
-      { ip: req?.ip, userAgent: req?.get("user-agent") },
+      { ip: req.ip, userAgent: req.get("user-agent") },
       `CSRF validation failed: Token mismatch - ${req?.method} ${req?.path}`,
     );
     return res?.status(403).json({
@@ -77,7 +77,7 @@ export const generateCsrfToken: RequestHandler = (
   next: NextFunction,
 ) => {
   if (!req?.cookies?.[CSRF_COOKIE]) {
-    const _token = randomBytes(32).toString("hex");
+    const token = randomBytes(32).toString("hex");
     res?.cookie(CSRF_COOKIE, token, {
       httpOnly: false,
       secure: isProduction,
@@ -115,7 +115,7 @@ export const refreshCsrfToken: RequestHandler = (
   _req: Request,
   res: Response,
 ) => {
-  const _token = randomBytes(32).toString("hex");
+  const token = randomBytes(32).toString("hex");
   res?.cookie(CSRF_COOKIE, token, {
     httpOnly: false,
     secure: isProduction,
@@ -127,7 +127,7 @@ export const refreshCsrfToken: RequestHandler = (
   res?.json({ csrfToken: token });
 };
 
-const _CSRF_EXEMPT_PATHS = [
+const CSRF_EXEMPT_PATHS = [
   "/api/webhooks/",
   "/api/stripe/webhook",
   "/api/auth/login",
@@ -160,8 +160,8 @@ export const csrfProtectionWithExemptions: RequestHandler = (
 ) => {
   // Use originalUrl (never rewritten by Express mount logic) so the check is
   // reliable regardless of which router or sub-app this middleware runs inside.
-  const _urlPath = (req?.originalUrl || req?.path || "").split("?")[0];
-  const _isExempt = CSRF_EXEMPT_PATHS?.some((p) => urlPath?.startsWith(p));
+  const urlPath = (req?.originalUrl || req?.path || "").split("?")[0];
+  const isExempt = CSRF_EXEMPT_PATHS?.some((p) => urlPath?.startsWith(p));
 
   if (isExempt) {
     return next();
@@ -170,10 +170,10 @@ export const csrfProtectionWithExemptions: RequestHandler = (
   // Secondary escape-hatch: server-to-server calls authenticated with the
   // BOOSTERSTATE_SECRET bearer token never carry a browser CSRF cookie.
   // The secret is only known to internal services, so accepting it here is safe.
-  const _internalSecret = process?.env.BOOSTERSTATE_SECRET;
+  const internalSecret = process?.env.BOOSTERSTATE_SECRET;
   if (internalSecret) {
-    const _auth = req?.headers["authorization"] as string | undefined;
-    const _provided = auth?.startsWith("Bearer ") ? auth?.slice(7) : "";
+    const auth = req?.headers["authorization"] as string | undefined;
+    const provided = auth?.startsWith("Bearer ") ? auth?.slice(7) : "";
     if (provided && provided === internalSecret) {
       return next();
     }

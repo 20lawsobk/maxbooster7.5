@@ -52,63 +52,63 @@ class PostDeploySelfTest {
 
   // Test database connectivity and migrations
   async testDatabase(): Promise<SelfTestResult> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
     try {
       // Test basic connectivity
       await db?.execute(sql`SELECT 1`);
 
       // Check if key tables exist
-      const _result = await db?.execute(sql`
+      const result = await db?.execute(sql`
         SELECT table_name 
         FROM information_schema?.tables 
         WHERE table_schema = 'public' 
         AND table_name IN ('users', 'sessions', 'projects')
       `);
 
-      const _tables = (result?.rows as { table_name: string }[]).map(
+      const tables = (result?.rows as { table_name: string }[]).map(
         (r) => r?.table_name,
       );
 
       return {
         name: "database",
-        status: tables?.length >= 3 ? "pass" : "fail",
-        durationMs: Date?.now() - startTime,
-        details: { tables, count: tables?.length },
+        status: tables.length >= 3 ? "pass" : "fail",
+        durationMs: Date.now() - startTime,
+        details: { tables, count: tables.length },
       };
     } catch (error) {
       return {
         name: "database",
         status: "fail",
-        durationMs: Date?.now() - startTime,
+        durationMs: Date.now() - startTime,
         error: error instanceof Error ? error?.message : String(error),
       };
     }
   }
 
   async testRedis(): Promise<SelfTestResult> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
     try {
       const { getRedisClient } = await import(
         "./lib/redisConnectionFactory.js"
       );
-      const _client = await getRedisClient();
+      const client = await getRedisClient();
 
-      const _testKey = `selftest:${Date?.now()}`;
+      const testKey = `selftest:${Date?.now()}`;
       await client?.setex(testKey, 10, "test");
-      const _value = await client?.get(testKey);
+      const value = await client?.get(testKey);
       await client?.del(testKey);
 
       return {
         name: "pdim",
         status: value === "test" ? "pass" : "fail",
-        durationMs: Date?.now() - startTime,
+        durationMs: Date.now() - startTime,
         details: { valueMatch: value === "test" },
       };
     } catch (error) {
       return {
         name: "pdim",
         status: "fail",
-        durationMs: Date?.now() - startTime,
+        durationMs: Date.now() - startTime,
         error: error instanceof Error ? error?.message : String(error),
       };
     }
@@ -116,38 +116,38 @@ class PostDeploySelfTest {
 
   // Test TensorFlow?.js inference capability
   async testTensorFlow(): Promise<SelfTestResult> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
     try {
-      const _tf = await import("@tensorflow/tfjs").catch(() => null);
+      const tf = await import("@tensorflow/tfjs").catch(() => null);
 
       if (!tf) {
         return {
           name: "tensorflow",
           status: "skip",
-          durationMs: Date?.now() - startTime,
-          details: { reason: "TensorFlow?.js not available" },
+          durationMs: Date.now() - startTime,
+          details: { reason: "TensorFlow.js not available" },
         };
       }
 
       // Simple inference test
-      const _tensor = tf?.tensor2d([
+      const tensor = tf?.tensor2d([
         [1, 2],
         [3, 4],
       ]);
-      const _result = tensor?.sum().dataSync()[0];
+      const result = tensor?.sum().dataSync()[0];
       tensor?.dispose();
 
       return {
         name: "tensorflow",
         status: result === 10 ? "pass" : "fail",
-        durationMs: Date?.now() - startTime,
+        durationMs: Date.now() - startTime,
         details: { expectedSum: 10, actualSum: result },
       };
     } catch (error) {
       return {
         name: "tensorflow",
         status: "fail",
-        durationMs: Date?.now() - startTime,
+        durationMs: Date.now() - startTime,
         error: error instanceof Error ? error?.message : String(error),
       };
     }
@@ -155,26 +155,26 @@ class PostDeploySelfTest {
 
   // Test memory status
   async testMemory(): Promise<SelfTestResult> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
     try {
-      const _memUsage = process?.memoryUsage();
-      const _heapUsedMB = memUsage?.heapUsed / (1024 * 1024);
-      const _heapTotalMB = memUsage?.heapTotal / (1024 * 1024);
-      const _rssMB = memUsage?.rss / (1024 * 1024);
+      const memUsage = process?.memoryUsage();
+      const heapUsedMB = memUsage?.heapUsed / (1024 * 1024);
+      const heapTotalMB = memUsage?.heapTotal / (1024 * 1024);
+      const rssMB = memUsage?.rss / (1024 * 1024);
 
       // Warning if heap usage > 80%
-      const _heapPercent = (heapUsedMB / heapTotalMB) * 100;
-      const _status = heapPercent < 80 ? "pass" : "fail";
+      const heapPercent = (heapUsedMB / heapTotalMB) * 100;
+      const status = heapPercent < 80 ? "pass" : "fail";
 
       return {
         name: "memory",
         status,
-        durationMs: Date?.now() - startTime,
+        durationMs: Date.now() - startTime,
         details: {
-          heapUsedMB: Math?.round(heapUsedMB),
-          heapTotalMB: Math?.round(heapTotalMB),
-          heapPercent: Math?.round(heapPercent),
-          rssMB: Math?.round(rssMB),
+          heapUsedMB: Math.round(heapUsedMB),
+          heapTotalMB: Math.round(heapTotalMB),
+          heapPercent: Math.round(heapPercent),
+          rssMB: Math.round(rssMB),
           gcAvailable:
             typeof (global as Record<string, unknown>).gc === "function",
         },
@@ -183,7 +183,7 @@ class PostDeploySelfTest {
       return {
         name: "memory",
         status: "fail",
-        durationMs: Date?.now() - startTime,
+        durationMs: Date.now() - startTime,
         error: error instanceof Error ? error?.message : String(error),
       };
     }
@@ -191,9 +191,9 @@ class PostDeploySelfTest {
 
   // Test critical file paths
   async testFilePaths(): Promise<SelfTestResult> {
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
     try {
-      const _criticalPaths = ["dist/index.js", "package.json"];
+      const criticalPaths = ["dist/index.js", "package.json"];
 
       const missing: string[] = [];
       for (const path of criticalPaths) {
@@ -204,15 +204,15 @@ class PostDeploySelfTest {
 
       return {
         name: "file_paths",
-        status: missing?.length === 0 ? "pass" : "fail",
-        durationMs: Date?.now() - startTime,
-        details: { missing, checked: criticalPaths?.length },
+        status: missing.length === 0 ? "pass" : "fail",
+        durationMs: Date.now() - startTime,
+        details: { missing, checked: criticalPaths.length },
       };
     } catch (error) {
       return {
         name: "file_paths",
         status: "fail",
-        durationMs: Date?.now() - startTime,
+        durationMs: Date.now() - startTime,
         error: error instanceof Error ? error?.message : String(error),
       };
     }
@@ -226,7 +226,7 @@ class PostDeploySelfTest {
     }
 
     this.isRunning = true;
-    const _runStartTime = Date?.now();
+    const runStartTime = Date?.now();
 
     logger?.info("🔬 Starting post-deploy self-test...");
 
@@ -234,7 +234,7 @@ class PostDeploySelfTest {
     this?.runGC();
 
     // Run all tests in parallel
-    const _results = await Promise?.all([
+    const results = await Promise?.all([
       this?.testDatabase(),
       this?.testRedis(),
       this?.testTensorFlow(),
@@ -245,13 +245,13 @@ class PostDeploySelfTest {
     // Run GC after tests
     this?.runGC();
 
-    const _passed = results?.filter((r) => r?.status === "pass").length;
-    const _failed = results?.filter((r) => r?.status === "fail").length;
-    const _skipped = results?.filter((r) => r?.status === "skip").length;
+    const passed = results?.filter((r) => r?.status === "pass").length;
+    const failed = results?.filter((r) => r?.status === "fail").length;
+    const skipped = results?.filter((r) => r?.status === "skip").length;
 
     // Determine recommendation
     let recommendation: "healthy" | "degraded" | "rollback";
-    const _dbTest = results?.find((r) => r?.name === "database");
+    const dbTest = results?.find((r) => r?.name === "database");
 
     if (dbTest?.status === "fail") {
       recommendation = "rollback"; // Database failure is critical
@@ -263,7 +263,7 @@ class PostDeploySelfTest {
 
     this.lastReport = {
       runAt: new Date(),
-      durationMs: Date?.now() - runStartTime,
+      durationMs: Date.now() - runStartTime,
       passed,
       failed,
       skipped,
@@ -309,7 +309,7 @@ class PostDeploySelfTest {
 }
 
 // Singleton instance
-export const _postDeploySelfTest = new PostDeploySelfTest();
+export const postDeploySelfTest = new PostDeploySelfTest();
 
 // GC Enforcement utilities
 export function setupGCEnforcement(): void {
@@ -325,10 +325,10 @@ export function setupGCEnforcement(): void {
   // Periodic GC every 5 minutes
   setInterval(
     () => {
-      const _before = process?.memoryUsage().heapUsed;
+      const before = process?.memoryUsage().heapUsed;
       (global as Record<string, unknown>).gc();
-      const _after = process?.memoryUsage().heapUsed;
-      const _freedMB = (before - after) / (1024 * 1024);
+      const after = process?.memoryUsage().heapUsed;
+      const freedMB = (before - after) / (1024 * 1024);
 
       if (freedMB > 10) {
         logger?.info(`🧹 GC freed ${freedMB?.toFixed(2)} MB`);
@@ -339,8 +339,8 @@ export function setupGCEnforcement(): void {
 
   // Emergency GC when memory pressure is detected
   setInterval(() => {
-    const _memUsage = process?.memoryUsage();
-    const _heapPercent = (memUsage?.heapUsed / memUsage?.heapTotal) * 100;
+    const memUsage = process?.memoryUsage();
+    const heapPercent = (memUsage?.heapUsed / memUsage?.heapTotal) * 100;
 
     if (heapPercent > 85) {
       logger?.warn(
@@ -355,8 +355,8 @@ export function setupGCEnforcement(): void {
 export function setupSelfTestEndpoint(app: import("express").Express): void {
   app?.get("/api/health/selftest", async (_req, res) => {
     try {
-      const _report = await postDeploySelfTest?.runAllTests();
-      const _statusCode = report?.recommendation === "rollback" ? 503 : 200;
+      const report = await postDeploySelfTest?.runAllTests();
+      const statusCode = report?.recommendation === "rollback" ? 503 : 200;
       res?.status(statusCode).json(report);
     } catch (error) {
       res?.status(500).json({
@@ -366,7 +366,7 @@ export function setupSelfTestEndpoint(app: import("express").Express): void {
   });
 
   app?.get("/api/health/selftest/last", (_req, res) => {
-    const _report = postDeploySelfTest?.getLastReport();
+    const report = postDeploySelfTest?.getLastReport();
     if (report) {
       res?.json(report);
     } else {

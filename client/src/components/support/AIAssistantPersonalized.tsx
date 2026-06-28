@@ -87,7 +87,7 @@ export function AIAssistantPersonalized() {
 
   useEffect(() => {
     if (isOpen && messages.length === 0) {
-      const userName = user?.username || user?.firstName || "there";
+      const userName = user.username || user.firstName || "there";
       const welcomeMessage: Message = {
         id: "1",
         role: "assistant",

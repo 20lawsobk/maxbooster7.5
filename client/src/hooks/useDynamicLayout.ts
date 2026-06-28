@@ -78,29 +78,29 @@ function calculateColumns(width: number): number {
 }
 
 function calculateGap(width: number): number {
-  const _minGap = 12;
-  const _maxGap = 32;
-  const _minWidth = 320;
-  const _maxWidth = 1920;
+  const minGap = 12;
+  const maxGap = 32;
+  const minWidth = 320;
+  const maxWidth = 1920;
 
-  const _clampedWidth = Math?.max(minWidth, Math?.min(maxWidth, width));
-  const _ratio = (clampedWidth - minWidth) / (maxWidth - minWidth);
+  const clampedWidth = Math?.max(minWidth, Math?.min(maxWidth, width));
+  const ratio = (clampedWidth - minWidth) / (maxWidth - minWidth);
   return Math?.round(minGap + ratio * (maxGap - minGap));
 }
 
 function calculatePadding(width: number): number {
-  const _minPadding = 12;
-  const _maxPadding = 48;
-  const _minWidth = 320;
-  const _maxWidth = 1920;
+  const minPadding = 12;
+  const maxPadding = 48;
+  const minWidth = 320;
+  const maxWidth = 1920;
 
-  const _clampedWidth = Math?.max(minWidth, Math?.min(maxWidth, width));
-  const _ratio = (clampedWidth - minWidth) / (maxWidth - minWidth);
+  const clampedWidth = Math?.max(minWidth, Math?.min(maxWidth, width));
+  const ratio = (clampedWidth - minWidth) / (maxWidth - minWidth);
   return Math?.round(minPadding + ratio * (maxPadding - minPadding));
 }
 
 function calculateFontSizes(width: number) {
-  const _scale = Math?.max(0.85, Math?.min(1.15, width / 1200));
+  const scale = Math?.max(0.85, Math?.min(1.15, width / 1200));
 
   return {
     xs: `${Math?.round(10 * scale)}px`,
@@ -114,34 +114,34 @@ function calculateFontSizes(width: number) {
 }
 
 export function useDynamicLayout(): DynamicLayoutResult {
-  const _containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({
     width: typeof window !== "undefined" ? window?.innerWidth : 1200,
     height: typeof window !== "undefined" ? window?.innerHeight : 800,
   });
 
   useEffect(() => {
-    const _container = containerRef?.current;
+    const container = containerRef?.current;
 
-    const _updateDimensions = (width: number, height: number) => {
+    const updateDimensions = (width: number, height: number) => {
       if (width > 0 && height > 0) {
         setDimensions({ width, height });
       }
     };
 
     if (container) {
-      const _resizeObserver = new ResizeObserver((entries) => {
+      const resizeObserver = new ResizeObserver((entries) => {
         for (const entry of entries) {
           const { width, height } = entry?.contentRect;
           updateDimensions(width, height);
         }
       });
       resizeObserver?.observe(container);
-      const _rect = container?.getBoundingClientRect();
+      const rect = container?.getBoundingClientRect();
       updateDimensions(rect?.width, rect?.height);
       return () => resizeObserver?.disconnect();
     } else {
-      const _handleResize = () => {
+      const handleResize = () => {
         updateDimensions(window?.innerWidth, window?.innerHeight);
       };
       handleResize();
@@ -151,38 +151,38 @@ export function useDynamicLayout(): DynamicLayoutResult {
   }, []);
 
   const { width, height } = dimensions;
-  const _breakpoint = useMemo(() => getBreakpoint(width), [width]);
-  const _columns = useMemo(() => calculateColumns(width), [width]);
-  const _gap = useMemo(() => calculateGap(width), [width]);
-  const _padding = useMemo(() => calculatePadding(width), [width]);
-  const _fontSize = useMemo(() => calculateFontSizes(width), [width]);
+  const breakpoint = useMemo(() => getBreakpoint(width), [width]);
+  const columns = useMemo(() => calculateColumns(width), [width]);
+  const gap = useMemo(() => calculateGap(width), [width]);
+  const padding = useMemo(() => calculatePadding(width), [width]);
+  const fontSize = useMemo(() => calculateFontSizes(width), [width]);
 
-  const _getGridCols = useCallback(
+  const getGridCols = useCallback(
     (maxCols: number = 6): number => {
       return Math?.min(columns, maxCols);
     },
     [columns],
   );
 
-  const _getCardWidth = useCallback(
+  const getCardWidth = useCallback(
     (minWidth: number = 280, maxWidth: number = 400): string => {
-      const _cols = columns;
-      const _availableWidth = width - padding * 2 - (cols - 1) * gap;
-      const _cardWidth = Math?.floor(availableWidth / cols);
-      const _clampedWidth = Math?.max(minWidth, Math?.min(maxWidth, cardWidth));
+      const cols = columns;
+      const availableWidth = width - padding * 2 - (cols - 1) * gap;
+      const cardWidth = Math?.floor(availableWidth / cols);
+      const clampedWidth = Math?.max(minWidth, Math?.min(maxWidth, cardWidth));
       return `${clampedWidth}px`;
     },
     [columns, width, padding, gap],
   );
 
-  const _getSpacing = useCallback(
+  const getSpacing = useCallback(
     (base: number = 1): number => {
       return Math?.round(gap * base);
     },
     [gap],
   );
 
-  const _clamp = useCallback(
+  const clamp = useCallback(
     (min: number, preferred: number, max: number): number => {
       return Math?.max(min, Math?.min(max, preferred));
     },

@@ -1,6 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 
-const _PRESIGNED_URL_THRESHOLD_BYTES = 5 * 1024 * 1024; // 5 MB
+const PRESIGNED_URL_THRESHOLD_BYTES = 5 * 1024 * 1024; // 5 MB
 
 /**
  * Rejects direct Express uploads that exceed the threshold and instructs
@@ -19,8 +19,8 @@ export function requirePresignedForLargeUploads(
   res: Response,
   next: NextFunction,
 ): void {
-  const _transferEncoding = req?.headers["transfer-encoding"];
-  const _contentLengthHeader = req?.headers["content-length"];
+  const transferEncoding = req?.headers["transfer-encoding"];
+  const contentLengthHeader = req?.headers["content-length"];
 
   // Chunked transfer: no Content-Length, so we cannot enforce the limit
   // after the fact without buffering the entire body.  Reject early.
@@ -36,7 +36,7 @@ export function requirePresignedForLargeUploads(
 
   // Standard request: check Content-Length header.
   if (contentLengthHeader) {
-    const _contentLength = parseInt(contentLengthHeader, 10);
+    const contentLength = parseInt(contentLengthHeader, 10);
     if (
       !isNaN(contentLength) &&
       contentLength > PRESIGNED_URL_THRESHOLD_BYTES

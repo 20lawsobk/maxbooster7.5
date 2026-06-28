@@ -8,7 +8,7 @@ export async function publishStorefront(
   userId: string,
 ): Promise<void> {
   const [sf] = await db
-    .select({ id: storefronts?.id, userId: storefronts?.userId })
+    .select({ id: storefronts.id, userId: storefronts.userId })
     .from(storefronts)
     .where(eq(storefronts?.id, storefrontId))
     .limit(1);
@@ -31,7 +31,7 @@ export async function unpublishStorefront(
   userId: string,
 ): Promise<void> {
   const [sf] = await db
-    .select({ id: storefronts?.id, userId: storefronts?.userId })
+    .select({ id: storefronts.id, userId: storefronts.userId })
     .from(storefronts)
     .where(eq(storefronts?.id, storefrontId))
     .limit(1);

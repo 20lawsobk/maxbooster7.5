@@ -25,10 +25,10 @@ import { eq } from "drizzle-orm";
 import { storageService } from "./storageService.js";
 import { logger } from "../logger.js";
 
-const _execFileAsync = promisify(execFile);
+const execFileAsync = promisify(execFile);
 
-const _LOCAL_STORAGE_DIR = path?.resolve("./uploads/files");
-const _PYTHON_SCRIPT = path?.resolve("./server/services/audioSeparator.py");
+const LOCAL_STORAGE_DIR = path?.resolve("./uploads/files");
+const PYTHON_SCRIPT = path?.resolve("./server/services/audioSeparator.py");
 
 /** Resolve the on-disk path of a storage key. */
 function localFilePath(key: string): string {
@@ -41,7 +41,7 @@ async function runSeparator(
   outputDir: string,
   stems: boolean,
 ): Promise<{ mp3: string | null; stems: Record<string, string> }> {
-  const _args = [PYTHON_SCRIPT, inputWav, outputDir];
+  const args = [PYTHON_SCRIPT, inputWav, outputDir];
   if (stems) args?.push("--stems");
 
   const { stdout, stderr } = await execFileAsync("python3", args, {
@@ -67,9 +67,9 @@ async function uploadLocalFile(
   category: string,
   contentType: string,
 ): Promise<{ key: string; url: string }> {
-  const _buffer = await fsPromises?.readFile(filePath);
-  const _filename = path?.basename(filePath);
-  const _key = await storageService?.uploadFile(
+  const buffer = await fsPromises?.readFile(filePath);
+  const filename = path?.basename(filePath);
+  const key = await storageService?.uploadFile(
     buffer,
     category,
     filename,
@@ -95,7 +95,7 @@ const STEM_TYPES: Record<string, string> = {
  */
 function resolveModes(licenseType?: string): { mp3: boolean; stems: boolean } {
   if (!licenseType) return { mp3: true, stems: true };
-  const _lt = licenseType?.toLowerCase();
+  const lt = licenseType?.toLowerCase();
   return {
     mp3: true, // all tiers get MP3
     stems: lt === "unlimited" || lt === "exclusive",
@@ -114,7 +114,7 @@ export interface AudioSeparationResult {
  *
  * @param listingId  UUID of the beat listing in the DB
  * @param userId     Producer's user ID
- * @param audioKey   Storage key for the uploaded WAV (e?.g. "beats/uuid/filename?.wav")
+ * @param audioKey   Storage key for the uploaded WAV (e?.g. "beats/uuid/filename.wav")
  * @param licenseType Primary license type from the upload form
  */
 export async function processUploadedBeat(
@@ -123,7 +123,7 @@ export async function processUploadedBeat(
   audioKey: string,
   licenseType?: string,
 ): Promise<AudioSeparationResult> {
-  const _localWavPath = localFilePath(audioKey);
+  const localWavPath = localFilePath(audioKey);
 
   if (
     !(await fsPromises
@@ -135,16 +135,16 @@ export async function processUploadedBeat(
     return { stemsAvailable: false };
   }
 
-  const _modes = resolveModes(licenseType);
-  const _tmpDir = path?.join(os?.tmpdir(), `audio_sep_${listingId}`);
+  const modes = resolveModes(licenseType);
+  const tmpDir = path?.join(os?.tmpdir(), `audio_sep_${listingId}`);
   await fsPromises?.mkdir(tmpDir, { recursive: true });
 
   logger?.info(
-    `[AudioSeparator] Processing beat ${listingId} — MP3=${modes?.mp3} stems=${modes?.stems}`,
+    `[AudioSeparator] Processing beat ${listingId} — MP3=${modes.mp3} stems=${modes?.stems}`,
   );
 
   try {
-    const _output = await runSeparator(localWavPath, tmpDir, modes?.stems);
+    const output = await runSeparator(localWavPath, tmpDir, modes?.stems);
 
     const result: AudioSeparationResult = { stemsAvailable: false };
 
@@ -169,7 +169,7 @@ export async function processUploadedBeat(
     // ── Upload stems ───────────────────────────────────────────────────────
     if (modes?.stems && Object?.keys(output?.stems).length > 0) {
       const stemUrls: Record<string, string> = {};
-      const _stemInserts = [];
+      const stemInserts = [];
 
       for (const [name, filePath] of Object?.entries(output?.stems)) {
         if (
@@ -179,7 +179,7 @@ export async function processUploadedBeat(
             .catch(() => false))
         )
           continue;
-        const _fileSize = (await fsPromises?.stat(filePath)).size;
+        const fileSize = (await fsPromises?.stat(filePath)).size;
         const {  url } = await uploadLocalFile(
           filePath,
           "beats-stems",
@@ -190,7 +190,7 @@ export async function processUploadedBeat(
         stemInserts?.push({
           listingId,
           userId,
-          stemName: name?.charAt(0).toUpperCase() + name?.slice(1),
+          stemName: name.charAt(0).toUpperCase() + name?.slice(1),
           stemType: STEM_TYPES[name] ?? "other",
           fileUrl: url,
           fileSize,
@@ -214,20 +214,20 @@ export async function processUploadedBeat(
     }
 
     // ── Update listings row ────────────────────────────────────────────────
-    const _listingRow = await db
-      .select({ metadata: listings?.metadata })
+    const listingRow = await db
+      .select({ metadata: listings.metadata })
       .from(listings)
       .where(eq(listings?.id, listingId))
       .limit(1);
 
-    const _existingMeta =
+    const existingMeta =
       (listingRow[0]?.metadata as Record<string, unknown>) ?? {};
-    const _updatedMeta = {
+    const updatedMeta = {
       ...existingMeta,
-      mp3Key: result?.mp3Key,
-      mp3Url: result?.mp3Url,
-      stemsAvailable: result?.stemsAvailable,
-      stemCount: Object?.keys(result?.stemUrls ?? {}).length,
+      mp3Key: result.mp3Key,
+      mp3Url: result.mp3Url,
+      stemsAvailable: result.stemsAvailable,
+      stemCount: Object.keys(result?.stemUrls ?? {}).length,
     };
 
     const updatePayload: Record<string, unknown> = { metadata: updatedMeta };
@@ -244,17 +244,17 @@ export async function processUploadedBeat(
 
     // ── Update any existing listingLicenseTiers rows ───────────────────────
     if (result?.mp3Url || result?.stemUrls) {
-      const _tiers = await db
+      const tiers = await db
         .select()
         .from(listingLicenseTiers)
         .where(eq(listingLicenseTiers?.listingId, listingId));
 
       for (const tier of tiers) {
-        const _lt = (tier?.licenseType ?? "").toLowerCase();
-        const _existingUrls = (tier?.audioUrls as Record<string, string>) ?? {};
+        const lt = (tier?.licenseType ?? "").toLowerCase();
+        const existingUrls = (tier?.audioUrls as Record<string, string>) ?? {};
         const newUrls: Record<string, string> = { ...existingUrls };
 
-        if (result?.mp3Url) newUrls.mp3 = result?.mp3Url;
+        if (result.mp3Url) newUrls.mp3 = result?.mp3Url;
 
         if (
           result?.stemsAvailable &&

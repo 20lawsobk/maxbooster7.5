@@ -1,13 +1,6 @@
 import { useState, useRef } from "react";
 import { motion, Reorder } from "framer-motion";
-import {
-  Volume2,
-  ChevronDown,
-  ChevronRight,
-  Music,
-  Mic,
-  Piano,
-} from "lucide-react";
+import { Volume2, ChevronDown, ChevronRight, Music, Mic, Piano } from "lucide-react";
 
 interface Track {
   id: string;

@@ -1,17 +1,6 @@
 import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
-import {
-  Download,
-  FileAudio,
-  Check,
-  Layers,
-  Music,
-  Mic2,
-  Drum,
-  Guitar,
-  Piano,
-  RefreshCw,
-} from "lucide-react";
+import { Download, FileAudio, Check, Layers, Music, Mic2, Drum, Guitar, Piano, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -627,7 +616,7 @@ export function FlowStateBatchExport({
                               <Check className="w-3 h-3 mr-1" />
                               Complete
                             </Badge>
-                          ) : progress?.status === "processing" ? (
+                          ) : progress.status === "processing" ? (
                             <Badge className="bg-blue-500/20 text-blue-400 animate-pulse">
                               <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
                               Exporting

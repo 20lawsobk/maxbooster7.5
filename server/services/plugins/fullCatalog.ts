@@ -6,12 +6,12 @@ import {
 import MB_PLUGINS from "./mbCatalog.js";
 import { enrichAll } from "./pluginEnrichment.js";
 
-const _mbIds = new Set(MB_PLUGINS?.map((p: PluginDefinition) => p?.id));
+const mbIds = new Set(MB_PLUGINS?.map((p: PluginDefinition) => p?.id));
 
-const _builtInInstruments = BUILT_IN_INSTRUMENTS?.filter(
+const builtInInstruments = BUILT_IN_INSTRUMENTS?.filter(
   (p: PluginDefinition) => !mbIds?.has(p?.id),
 );
-const _builtInEffects = BUILT_IN_EFFECTS?.filter(
+const builtInEffects = BUILT_IN_EFFECTS?.filter(
   (p: PluginDefinition) => !mbIds?.has(p?.id),
 );
 

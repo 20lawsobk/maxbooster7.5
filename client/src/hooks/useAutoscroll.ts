@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { useStudioStore, type AutoscrollMode } from "@/lib/studioStore";
 
 interface UseAutoscrollOptions {
-  containerRef: React?.RefObject<HTMLElement>;
+  containerRef: React.RefObject<HTMLElement>;
   duration: number;
   zoom: number;
 }
@@ -15,39 +15,39 @@ export function useAutoscroll({
   const { currentTime, isPlaying, autoscrollMode, setScrollPosition } =
     useStudioStore();
   useRef(0);
-  const _animationFrameRef = useRef<number | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
 
-  const _getContainerWidth = useCallback(() => {
+  const getContainerWidth = useCallback(() => {
     return containerRef?.current?.clientWidth || 800;
   }, [containerRef]);
 
-  const _getScrollableWidth = useCallback(() => {
-    const _baseWidth = 800;
+  const getScrollableWidth = useCallback(() => {
+    const baseWidth = 800;
     return baseWidth * zoom;
   }, [zoom]);
 
-  const _timeToPixels = useCallback(
+  const timeToPixels = useCallback(
     (time: number) => {
-      const _scrollableWidth = getScrollableWidth();
+      const scrollableWidth = getScrollableWidth();
       return (time / duration) * scrollableWidth;
     },
     [duration, getScrollableWidth],
   );
 
-  const _updateScroll = useCallback(() => {
+  const updateScroll = useCallback(() => {
     if (!containerRef?.current || !isPlaying || autoscrollMode === "off") {
       return;
     }
 
-    const _container = containerRef?.current;
-    const _containerWidth = getContainerWidth();
-    const _playheadPosition = timeToPixels(currentTime);
+    const container = containerRef?.current;
+    const containerWidth = getContainerWidth();
+    const playheadPosition = timeToPixels(currentTime);
 
     switch (autoscrollMode) {
       case "turnover": {
-        const _currentScroll = container?.scrollLeft;
-        const _visibleEnd = currentScroll + containerWidth;
-        const _pageMargin = containerWidth * 0.1;
+        const currentScroll = container?.scrollLeft;
+        const visibleEnd = currentScroll + containerWidth;
+        const pageMargin = containerWidth * 0.1;
         if (playheadPosition > visibleEnd - pageMargin) {
           container.scrollLeft = playheadPosition - pageMargin;
           setScrollPosition(container?.scrollLeft);
@@ -59,15 +59,15 @@ export function useAutoscroll({
       }
 
       case "continuous-centered": {
-        const _targetScroll = playheadPosition - containerWidth / 2;
+        const targetScroll = playheadPosition - containerWidth / 2;
         container.scrollLeft = Math?.max(0, targetScroll);
         setScrollPosition(container?.scrollLeft);
         break;
       }
 
       case "continuous-left": {
-        const _leftMargin = containerWidth * 0.1;
-        const _targetScroll = playheadPosition - leftMargin;
+        const leftMargin = containerWidth * 0.1;
+        const targetScroll = playheadPosition - leftMargin;
         container.scrollLeft = Math?.max(0, targetScroll);
         setScrollPosition(container?.scrollLeft);
         break;
@@ -92,7 +92,7 @@ export function useAutoscroll({
       return;
     }
 
-    const _animate = () => {
+    const animate = () => {
       updateScroll();
       animationFrameRef.current = requestAnimationFrame(animate);
     };
@@ -113,12 +113,12 @@ export function useAutoscroll({
     }
   }, [currentTime, isPlaying, autoscrollMode, updateScroll]);
 
-  const _scrollToTime = useCallback(
+  const scrollToTime = useCallback(
     (time: number) => {
       if (!containerRef?.current) return;
-      const _containerWidth = getContainerWidth();
-      const _position = timeToPixels(time);
-      containerRef?.current.scrollLeft = Math?.max(
+      const containerWidth = getContainerWidth();
+      const position = timeToPixels(time);
+      containerRef.current.scrollLeft = Math?.max(
         0,
         position - containerWidth / 2,
       );
@@ -127,7 +127,7 @@ export function useAutoscroll({
     [containerRef, getContainerWidth, timeToPixels, setScrollPosition],
   );
 
-  const _getPlayheadStyle = useCallback(() => {
+  const getPlayheadStyle = useCallback(() => {
     if (autoscrollMode === "off" || !isPlaying) {
       return {
         position: "absolute" as const,

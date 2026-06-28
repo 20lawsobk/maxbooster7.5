@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from "express";
 
-const _paidRouter = Router();
+const paidRouter = Router();
 
 // Middleware to require paid subscription
 function requirePaid(req: Request, res: Response, next: NextFunction) {

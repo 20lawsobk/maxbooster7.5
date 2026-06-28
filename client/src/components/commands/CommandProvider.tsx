@@ -5,10 +5,8 @@ import {
 } from "@/contexts/ShortcutContext";
 import { CommandPalette } from "./CommandPalette";
 
-export interface CommandProviderProps extends Omit<
-  ShortcutProviderProps,
-  "children"
-> {
+export interface CommandProviderProps
+  extends Omit<ShortcutProviderProps, "children"> {
   children: React.ReactNode;
   showCommandPalette?: boolean;
 }

@@ -207,7 +207,7 @@ export function createVisualizer(
 export function createVisualizerFromPreset(
   presetName: string,
 ): BaseVisualizer | null {
-  const _preset = VISUALIZER_PRESETS[presetName];
+  const preset = VISUALIZER_PRESETS[presetName];
   if (!preset) return null;
 
   return createVisualizer(preset?.type, preset?.options);

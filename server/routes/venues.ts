@@ -8,13 +8,13 @@ import { logger } from "../logger.js";
 import { queryCache, createCacheKey } from "../lib/queryCache.js";
 import { parsePaginationParams } from "../middleware/pagination.js";
 
-const _router = Router();
-const _CACHE_TTL = 300;
+const router = Router();
+const CACHE_TTL = 300;
 
 router?.get("/", requireAuth, async (req, res) => {
   try {
     const { limit, offset } = parsePaginationParams(req);
-    const _items = await db
+    const items = await db
       .select()
       .from(venueContacts)
       .where(eq(venueContacts?.userId, req?.user!.id))
@@ -30,10 +30,10 @@ router?.get("/", requireAuth, async (req, res) => {
 
 router?.get("/stats", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _cacheKey = createCacheKey("stats:venues", userId);
+    const userId = req?.user!.id;
+    const cacheKey = createCacheKey("stats:venues", userId);
 
-    const _stats = await queryCache?.getOrCompute(
+    const stats = await queryCache?.getOrCompute(
       cacheKey,
       async () => {
         const [totals] = await db
@@ -48,8 +48,8 @@ router?.get("/stats", requireAuth, async (req, res) => {
           .from(venueContacts)
           .where(eq(venueContacts?.userId, userId));
 
-        const _total = Number(totals?.total);
-        const _totalCapacity = Number(totals?.totalCapacity);
+        const total = Number(totals?.total);
+        const totalCapacity = Number(totals?.totalCapacity);
         return {
           total,
           prospects: Number(totals?.prospects),
@@ -92,9 +92,9 @@ router?.get("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
 
 router?.post("/", requireAuth, async (req, res) => {
   try {
-    const _data = insertVenueContactSchema?.parse({
+    const data = insertVenueContactSchema?.parse({
       ...req?.body,
-      userId: req?.user!.id,
+      userId: req.user!.id,
     });
     const [item] = await db?.insert(venueContacts).values(data).returning();
     await queryCache?.invalidate(createCacheKey("stats:venues", req?.user!.id));
@@ -115,10 +115,10 @@ router?.post("/", requireAuth, async (req, res) => {
 
 router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
 
-    const _existing = await db
+    const existing = await db
       .select()
       .from(venueContacts)
       .where(and(eq(venueContacts?.id, id), eq(venueContacts?.userId, userId)))
@@ -128,7 +128,7 @@ router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
       return res?.status(404).json({ error: "Venue contact not found" });
     }
 
-    const _data = insertVenueContactSchema?.partial().parse(req?.body);
+    const data = insertVenueContactSchema?.partial().parse(req?.body);
     const [item] = await db
       .update(venueContacts)
       .set({ ...data, updatedAt: new Date() })
@@ -152,10 +152,10 @@ router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
 
 router?.delete("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { id } = req?.params;
 
-    const _existing = await db
+    const existing = await db
       .select()
       .from(venueContacts)
       .where(and(eq(venueContacts?.id, id), eq(venueContacts?.userId, userId)))

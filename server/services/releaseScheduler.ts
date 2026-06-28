@@ -160,9 +160,9 @@ class ReleaseScheduler {
   }
 
   getNextFriday(fromDate: Date = new Date()): Date {
-    const _date = new Date(fromDate);
-    const _dayOfWeek = date?.getDay();
-    const _daysUntilFriday =
+    const date = new Date(fromDate);
+    const dayOfWeek = date?.getDay();
+    const daysUntilFriday =
       dayOfWeek <= 5 ? 5 - dayOfWeek : 5 + (7 - dayOfWeek);
 
     date?.setDate(date?.getDate() + daysUntilFriday);
@@ -176,29 +176,29 @@ class ReleaseScheduler {
     adjusted: boolean;
     reason?: string;
   } {
-    const _dayOfWeek = requestedDate?.getDay();
+    const dayOfWeek = requestedDate?.getDay();
 
     if (dayOfWeek === 5) {
       return { date: requestedDate, adjusted: false };
     }
 
-    const _nextFriday = this?.getNextFriday(requestedDate);
-    const _prevFriday = new Date(nextFriday);
+    const nextFriday = this?.getNextFriday(requestedDate);
+    const prevFriday = new Date(nextFriday);
     prevFriday?.setDate(prevFriday?.getDate() - 7);
 
-    const _now = new Date();
+    const now = new Date();
 
     if (prevFriday > now) {
-      const _daysToPrev = Math?.abs(
+      const daysToPrev = Math?.abs(
         (requestedDate?.getTime() - prevFriday?.getTime()) /
           (1000 * 60 * 60 * 24),
       );
-      const _daysToNext = Math?.abs(
+      const daysToNext = Math?.abs(
         (nextFriday?.getTime() - requestedDate?.getTime()) /
           (1000 * 60 * 60 * 24),
       );
 
-      const _closerFriday = daysToPrev <= daysToNext ? prevFriday : nextFriday;
+      const closerFriday = daysToPrev <= daysToNext ? prevFriday : nextFriday;
 
       return {
         date: closerFriday,
@@ -219,32 +219,32 @@ class ReleaseScheduler {
     platforms: string[],
   ): { valid: boolean; issues: { platform: string; issue: string }[] } {
     const issues: { platform: string; issue: string }[] = [];
-    const _now = new Date();
-    const _daysUntilRelease = Math?.ceil(
+    const now = new Date();
+    const daysUntilRelease = Math?.ceil(
       (scheduledDate?.getTime() - now?.getTime()) / (1000 * 60 * 60 * 24),
     );
 
     for (const platform of platforms) {
-      const _window = PLATFORM_WINDOWS[platform?.toLowerCase()];
+      const window = PLATFORM_WINDOWS[platform?.toLowerCase()];
       if (!window) continue;
 
       if (daysUntilRelease < window?.minLeadDays) {
         issues?.push({
-          platform: window?.platform,
+          platform: window.platform,
           issue: `Requires at least ${window?.minLeadDays} days lead time (${daysUntilRelease} days provided)`,
         });
       }
 
       if (daysUntilRelease > window?.maxFutureDays) {
         issues?.push({
-          platform: window?.platform,
+          platform: window.platform,
           issue: `Cannot schedule more than ${window?.maxFutureDays} days in advance`,
         });
       }
     }
 
     return {
-      valid: issues?.length === 0,
+      valid: issues.length === 0,
       issues,
     };
   }
@@ -254,7 +254,7 @@ class ReleaseScheduler {
     let finalDate = new Date(request?.scheduledDate);
 
     if (request?.optimizeForFriday !== false) {
-      const _optimization = this?.optimizeForFriday(finalDate);
+      const optimization = this?.optimizeForFriday(finalDate);
       if (optimization?.adjusted) {
         finalDate = optimization?.date;
         warnings?.push(
@@ -263,8 +263,8 @@ class ReleaseScheduler {
       }
     }
 
-    const _platforms = request?.platforms || Object?.keys(PLATFORM_WINDOWS);
-    const _validation = this?.validateScheduleForPlatforms(finalDate, platforms);
+    const platforms = request?.platforms || Object?.keys(PLATFORM_WINDOWS);
+    const validation = this?.validateScheduleForPlatforms(finalDate, platforms);
 
     if (!validation?.valid) {
       for (const issue of validation?.issues) {
@@ -272,21 +272,21 @@ class ReleaseScheduler {
       }
     }
 
-    const _maxLeadTime = Math?.max(
+    const maxLeadTime = Math?.max(
       ...platforms?.map(
         (p) => PLATFORM_WINDOWS[p?.toLowerCase()]?.minLeadDays || 7,
       ),
     );
 
-    const _now = new Date();
-    const _daysUntilRelease = Math?.ceil(
+    const now = new Date();
+    const daysUntilRelease = Math?.ceil(
       (finalDate?.getTime() - now?.getTime()) / (1000 * 60 * 60 * 24),
     );
 
     if (daysUntilRelease < maxLeadTime) {
-      const _minDate = new Date(now);
+      const minDate = new Date(now);
       minDate?.setDate(minDate?.getDate() + maxLeadTime);
-      const _adjustedFriday = this?.getNextFriday(minDate);
+      const adjustedFriday = this?.getNextFriday(minDate);
 
       finalDate = adjustedFriday;
       warnings?.push(
@@ -301,7 +301,7 @@ class ReleaseScheduler {
     }[] = [];
 
     for (const platform of platforms) {
-      const _window = PLATFORM_WINDOWS[platform?.toLowerCase()];
+      const window = PLATFORM_WINDOWS[platform?.toLowerCase()];
       if (!window) {
         platformSchedules?.push({
           platform,
@@ -311,13 +311,13 @@ class ReleaseScheduler {
         continue;
       }
 
-      const _effectiveDate = this?.convertToTimezone(finalDate, window?.timezone);
-      const _daysToRelease = Math?.ceil(
+      const effectiveDate = this?.convertToTimezone(finalDate, window?.timezone);
+      const daysToRelease = Math?.ceil(
         (effectiveDate?.getTime() - now?.getTime()) / (1000 * 60 * 60 * 24),
       );
 
       platformSchedules?.push({
-        platform: window?.platform,
+        platform: window.platform,
         effectiveDate,
         status:
           daysToRelease >= window?.minLeadDays
@@ -327,7 +327,7 @@ class ReleaseScheduler {
     }
 
     try {
-      const _workflowResult = await releaseWorkflowService?.schedule(
+      const workflowResult = await releaseWorkflowService?.schedule(
         request?.releaseId,
         request?.userId,
         finalDate,
@@ -339,7 +339,7 @@ class ReleaseScheduler {
           scheduledDate: finalDate,
           warnings,
           platformSchedules,
-          error: workflowResult?.error,
+          error: workflowResult.error,
         };
       }
 
@@ -354,13 +354,13 @@ class ReleaseScheduler {
       for (const schedule of platformSchedules) {
         if (schedule?.status === "scheduled") {
           await db?.insert(releaseScheduledActions).values({
-            releaseId: request?.releaseId,
+            releaseId: request.releaseId,
             actionType: "platform_publish",
-            scheduledFor: schedule?.effectiveDate,
+            scheduledFor: schedule.effectiveDate,
             timezone:
               PLATFORM_WINDOWS[schedule?.platform.toLowerCase()]?.timezone ||
               "UTC",
-            platforms: { platform: schedule?.platform },
+            platforms: { platform: schedule.platform },
             status: "pending",
           });
         }
@@ -399,7 +399,7 @@ class ReleaseScheduler {
     error?: string;
   }> {
     try {
-      const _release = await db
+      const release = await db
         .select()
         .from(releases)
         .where(eq(releases?.id, request?.releaseId))
@@ -409,7 +409,7 @@ class ReleaseScheduler {
         return { success: false, error: "Release not found" };
       }
 
-      const _releaseDate = release[0].releaseDate;
+      const releaseDate = release[0].releaseDate;
       if (!releaseDate || releaseDate <= new Date()) {
         return {
           success: false,
@@ -420,13 +420,13 @@ class ReleaseScheduler {
       const [campaign] = await db
         .insert(preSaveCampaigns)
         .values({
-          releaseId: request?.releaseId,
-          userId: request?.userId,
-          name: request?.name,
-          startDate: request?.startDate,
+          releaseId: request.releaseId,
+          userId: request.userId,
+          name: request.name,
+          startDate: request.startDate,
           endDate: releaseDate,
-          platforms: request?.platforms,
-          artwork: request?.artwork,
+          platforms: request.platforms,
+          artwork: request.artwork,
           landingPageUrl: `/presave/${request?.releaseId}`,
           status: "active",
         })
@@ -438,7 +438,7 @@ class ReleaseScheduler {
 
       return {
         success: true,
-        campaignId: campaign?.id,
+        campaignId: campaign.id,
         landingPageUrl:
           campaign?.landingPageUrl || `/presave/${request?.releaseId}`,
       };
@@ -452,7 +452,7 @@ class ReleaseScheduler {
   }
 
   async getCountdown(releaseId: string): Promise<CountdownInfo | null> {
-    const _release = await db
+    const release = await db
       .select()
       .from(releases)
       .where(eq(releases?.id, releaseId))
@@ -462,17 +462,17 @@ class ReleaseScheduler {
       return null;
     }
 
-    const _now = new Date();
-    const _releaseDate = new Date(release[0].releaseDate);
-    const _diff = releaseDate?.getTime() - now?.getTime();
-    const _isPast = diff < 0;
+    const now = new Date();
+    const releaseDate = new Date(release[0].releaseDate);
+    const diff = releaseDate?.getTime() - now?.getTime();
+    const isPast = diff < 0;
 
-    const _absDiff = Math?.abs(diff);
-    const _days = Math?.floor(absDiff / (1000 * 60 * 60 * 24));
-    const _hours = Math?.floor(
+    const absDiff = Math?.abs(diff);
+    const days = Math?.floor(absDiff / (1000 * 60 * 60 * 24));
+    const hours = Math?.floor(
       (absDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
     );
-    const _minutes = Math?.floor((absDiff % (1000 * 60 * 60)) / (1000 * 60));
+    const minutes = Math?.floor((absDiff % (1000 * 60 * 60)) / (1000 * 60));
 
     return {
       releaseId,
@@ -490,9 +490,9 @@ class ReleaseScheduler {
     userId: string,
     limit: number = 10,
   ): Promise<CountdownInfo[]> {
-    const _now = new Date();
+    const now = new Date();
 
-    const _upcomingReleases = await db
+    const upcomingReleases = await db
       .select()
       .from(releases)
       .where(and(eq(releases?.userId, userId), gte(releases?.releaseDate, now)))
@@ -503,7 +503,7 @@ class ReleaseScheduler {
 
     for (const release of upcomingReleases) {
       if (release?.releaseDate) {
-        const _countdown = await this?.getCountdown(release?.id);
+        const countdown = await this?.getCountdown(release?.id);
         if (countdown) {
           countdowns?.push(countdown);
         }
@@ -517,11 +517,11 @@ class ReleaseScheduler {
     processed: number;
     errors: number;
   }> {
-    const _now = new Date();
+    const now = new Date();
     let processed = 0;
     let errors = 0;
 
-    const _pendingActions = await db
+    const pendingActions = await db
       .select()
       .from(releaseScheduledActions)
       .where(
@@ -581,8 +581,8 @@ class ReleaseScheduler {
   }
 
   private convertToTimezone(date: Date, timezone: string): Date {
-    const _offset = TIMEZONE_OFFSETS[timezone] || 0;
-    const _utcDate = new Date(date?.getTime());
+    const offset = TIMEZONE_OFFSETS[timezone] || 0;
+    const utcDate = new Date(date?.getTime());
     utcDate?.setHours(utcDate?.getHours() + offset);
     return utcDate;
   }
@@ -595,10 +595,10 @@ class ReleaseScheduler {
     date: Date;
     reason: string;
   } {
-    const _nextFriday = this?.getNextFriday();
+    const nextFriday = this?.getNextFriday();
     nextFriday?.setHours(0, 0, 0, 0);
 
-    const _offset = TIMEZONE_OFFSETS[timezone] || 0;
+    const offset = TIMEZONE_OFFSETS[timezone] || 0;
     nextFriday?.setHours(nextFriday?.getHours() - offset);
 
     return {
@@ -616,14 +616,14 @@ class ReleaseScheduler {
     let limitingPlatform = "default";
 
     for (const platform of platforms) {
-      const _window = PLATFORM_WINDOWS[platform?.toLowerCase()];
+      const window = PLATFORM_WINDOWS[platform?.toLowerCase()];
       if (window && window?.minLeadDays > maxLeadTime) {
         maxLeadTime = window?.minLeadDays;
         limitingPlatform = window?.platform;
       }
     }
 
-    const _recommendedDays = maxLeadTime + 7;
+    const recommendedDays = maxLeadTime + 7;
 
     return {
       days: recommendedDays,
@@ -632,4 +632,4 @@ class ReleaseScheduler {
   }
 }
 
-export const _releaseScheduler = new ReleaseScheduler();
+export const releaseScheduler = new ReleaseScheduler();

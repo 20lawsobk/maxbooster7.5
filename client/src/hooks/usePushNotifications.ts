@@ -6,10 +6,10 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const _padding = "=".repeat((4 - (base64String?.length % 4)) % 4);
-  const _base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const _rawData = window?.atob(base64);
-  const _outputArray = new Uint8Array(rawData?.length);
+  const padding = "=".repeat((4 - (base64String?.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window?.atob(base64);
+  const outputArray = new Uint8Array(rawData?.length);
   for (let i = 0; i < rawData?.length; ++i) {
     outputArray[i] = rawData?.charCodeAt(i);
   }
@@ -25,7 +25,7 @@ export type PushPermissionState =
 export function usePushNotifications() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const _queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   const [permissionState, setPermissionState] =
     useState<PushPermissionState>("prompt");
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -57,7 +57,7 @@ export function usePushNotifications() {
     if (!user || !("serviceWorker" in navigator)) return;
 
     navigator?.serviceWorker.ready?.then(async (registration) => {
-      const _subscription = await registration?.pushManager.getSubscription();
+      const subscription = await registration?.pushManager.getSubscription();
       setIsSubscribed(!!subscription);
     });
   }, [user]);
@@ -69,7 +69,7 @@ export function usePushNotifications() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
 
-    const _handleSWMessage = (event: MessageEvent) => {
+    const handleSWMessage = (event: MessageEvent) => {
       if (!event?.data) return;
       if (event?.data.type === "PUSH_SUBSCRIPTION_RENEWED") {
         setIsSubscribed(true);
@@ -88,17 +88,17 @@ export function usePushNotifications() {
       navigator?.serviceWorker.removeEventListener("message", handleSWMessage);
   }, [queryClient]);
 
-  const _saveSubscriptionMutation = useMutation({
+  const saveSubscriptionMutation = useMutation({
     mutationFn: async (subscription: PushSubscription) => {
-      const _json = subscription?.toJSON();
-      const _response = await apiRequest(
+      const json = subscription?.toJSON();
+      const response = await apiRequest(
         "POST",
         "/api/notifications/push-subscriptions",
         {
-          endpoint: json?.endpoint,
+          endpoint: json.endpoint,
           keys: {
-            p256dh: json?.keys?.p256dh,
-            auth: json?.keys?.auth,
+            p256dh: json.keys?.p256dh,
+            auth: json.keys?.auth,
           },
         },
       );
@@ -111,9 +111,9 @@ export function usePushNotifications() {
     },
   });
 
-  const _removeSubscriptionMutation = useMutation({
+  const removeSubscriptionMutation = useMutation({
     mutationFn: async (endpoint?: string) => {
-      const _response = await apiRequest(
+      const response = await apiRequest(
         "DELETE",
         "/api/notifications/push-subscriptions",
         {
@@ -129,9 +129,9 @@ export function usePushNotifications() {
     },
   });
 
-  const _testPushMutation = useMutation({
+  const testPushMutation = useMutation({
     mutationFn: async () => {
-      const _response = await apiRequest(
+      const response = await apiRequest(
         "POST",
         "/api/notifications/push-test",
         {},
@@ -140,7 +140,7 @@ export function usePushNotifications() {
     },
   });
 
-  const _subscribe = useCallback(async (): Promise<boolean> => {
+  const subscribe = useCallback(async (): Promise<boolean> => {
     if (!vapidKey?.publicKey) {
       toast({
         title: "Push Not Available",
@@ -162,7 +162,7 @@ export function usePushNotifications() {
     setIsLoading(true);
 
     try {
-      const _permission = await Notification?.requestPermission();
+      const permission = await Notification?.requestPermission();
       setPermissionState(permission as PushPermissionState);
 
       if (permission !== "granted") {
@@ -174,7 +174,7 @@ export function usePushNotifications() {
         return false;
       }
 
-      const _registration = await navigator?.serviceWorker.ready;
+      const registration = await navigator?.serviceWorker.ready;
       let subscription = await registration?.pushManager.getSubscription();
 
       if (!subscription) {
@@ -207,16 +207,16 @@ export function usePushNotifications() {
     }
   }, [vapidKey, toast, saveSubscriptionMutation]);
 
-  const _unsubscribe = useCallback(async (): Promise<boolean> => {
+  const unsubscribe = useCallback(async (): Promise<boolean> => {
     setIsLoading(true);
 
     try {
       if ("serviceWorker" in navigator) {
-        const _registration = await navigator?.serviceWorker.ready;
-        const _subscription = await registration?.pushManager.getSubscription();
+        const registration = await navigator?.serviceWorker.ready;
+        const subscription = await registration?.pushManager.getSubscription();
 
         if (subscription) {
-          const _endpoint = subscription?.endpoint;
+          const endpoint = subscription?.endpoint;
           await subscription?.unsubscribe();
           await removeSubscriptionMutation?.mutateAsync(endpoint);
         } else {
@@ -247,9 +247,9 @@ export function usePushNotifications() {
     }
   }, [toast, removeSubscriptionMutation]);
 
-  const _sendTestNotification = useCallback(async () => {
+  const sendTestNotification = useCallback(async () => {
     try {
-      const _result = await testPushMutation?.mutateAsync();
+      const result = await testPushMutation?.mutateAsync();
       if (result?.sent > 0) {
         toast({
           title: "Test Sent",

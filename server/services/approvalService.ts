@@ -65,7 +65,7 @@ export class ApprovalService {
     status: ApprovalStatus,
     hook: (event: StateTransitionEvent) => Promise<void>,
   ) {
-    const _hooks = this?.stateTransitionHooks.get(status) || [];
+    const hooks = this?.stateTransitionHooks.get(status) || [];
     hooks?.push(hook);
     this?.stateTransitionHooks.set(status, hooks);
   }
@@ -73,7 +73,7 @@ export class ApprovalService {
   private async triggerTransitionHooks(
     event: StateTransitionEvent,
   ): Promise<void> {
-    const _hooks = this?.stateTransitionHooks.get(event?.toStatus) || [];
+    const hooks = this?.stateTransitionHooks.get(event?.toStatus) || [];
     for (const hook of hooks) {
       try {
         await hook(event);
@@ -85,10 +85,10 @@ export class ApprovalService {
 
   async getUserRole(userId: string): Promise<UserRole> {
     try {
-      const _result = await db?.execute<{ role: string | null }>(
+      const result = await db?.execute<{ role: string | null }>(
         sql`SELECT role FROM users WHERE id = ${userId} LIMIT 1`,
       );
-      const _user = result?.rows?.[0];
+      const user = result?.rows?.[0];
       if (user?.role === "admin") {
         return "admin";
       }
@@ -103,8 +103,8 @@ export class ApprovalService {
   }
 
   async checkPermission(userId: string, action: string): Promise<boolean> {
-    const _userRole = await this?.getUserRole(userId);
-    const _permissions = this?.rolePermissions[userRole] || [];
+    const userRole = await this?.getUserRole(userId);
+    const permissions = this?.rolePermissions[userRole] || [];
     return permissions?.includes(action);
   }
 
@@ -118,7 +118,7 @@ export class ApprovalService {
         return res?.status(401).json({ error: "Unauthorized" });
       }
 
-      const _hasPermission = await this?.checkPermission(
+      const hasPermission = await this?.checkPermission(
         req?.user.id,
         requiredAction,
       );
@@ -137,7 +137,7 @@ export class ApprovalService {
     currentStatus: ApprovalStatus,
     newStatus: ApprovalStatus,
   ): Promise<boolean> {
-    const _allowedTransitions = this?.stateTransitions[currentStatus] || [];
+    const allowedTransitions = this?.stateTransitions[currentStatus] || [];
     return allowedTransitions?.includes(newStatus);
   }
 
@@ -156,8 +156,8 @@ export class ApprovalService {
       return { valid: false, error: "Post not found" };
     }
 
-    const _currentStatus = post?.approvalStatus as ApprovalStatus;
-    const _canTransition = await this?.canTransition(currentStatus, newStatus);
+    const currentStatus = post?.approvalStatus as ApprovalStatus;
+    const canTransition = await this?.canTransition(currentStatus, newStatus);
 
     if (!canTransition) {
       return {
@@ -174,13 +174,13 @@ export class ApprovalService {
     userId: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const _validation = await this?.validateStateTransition(
+      const validation = await this?.validateStateTransition(
         postId,
         "pending_review",
         userId,
       );
       if (!validation?.valid) {
-        return { success: false, error: validation?.error };
+        return { success: false, error: validation.error };
       }
 
       const [post] = await db
@@ -201,7 +201,7 @@ export class ApprovalService {
         postId,
         userId,
         action: "submit_for_review",
-        fromStatus: post?.approvalStatus as ApprovalStatus,
+        fromStatus: post.approvalStatus as ApprovalStatus,
         toStatus: "pending_review",
       });
 
@@ -220,13 +220,13 @@ export class ApprovalService {
     comment?: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const _validation = await this?.validateStateTransition(
+      const validation = await this?.validateStateTransition(
         postId,
         "approved",
         userId,
       );
       if (!validation?.valid) {
-        return { success: false, error: validation?.error };
+        return { success: false, error: validation.error };
       }
 
       const [post] = await db
@@ -249,7 +249,7 @@ export class ApprovalService {
         postId,
         userId,
         action: "approve",
-        fromStatus: post?.approvalStatus as ApprovalStatus,
+        fromStatus: post.approvalStatus as ApprovalStatus,
         toStatus: "approved",
         comment,
       });
@@ -270,13 +270,13 @@ export class ApprovalService {
     comment?: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const _validation = await this?.validateStateTransition(
+      const validation = await this?.validateStateTransition(
         postId,
         "rejected",
         userId,
       );
       if (!validation?.valid) {
-        return { success: false, error: validation?.error };
+        return { success: false, error: validation.error };
       }
 
       const [post] = await db
@@ -299,7 +299,7 @@ export class ApprovalService {
         postId,
         userId,
         action: "reject",
-        fromStatus: post?.approvalStatus as ApprovalStatus,
+        fromStatus: post.approvalStatus as ApprovalStatus,
         toStatus: "rejected",
         comment: `${reason}${comment ? ` - ${comment}` : ""}`,
       });
@@ -320,13 +320,13 @@ export class ApprovalService {
     comment?: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const _validation = await this?.validateStateTransition(
+      const validation = await this?.validateStateTransition(
         postId,
         "scheduled",
         userId,
       );
       if (!validation?.valid) {
-        return { success: false, error: validation?.error };
+        return { success: false, error: validation.error };
       }
 
       const [post] = await db
@@ -356,19 +356,19 @@ export class ApprovalService {
         postId,
         userId,
         action: "schedule",
-        fromStatus: post?.approvalStatus as ApprovalStatus,
+        fromStatus: post.approvalStatus as ApprovalStatus,
         toStatus: "scheduled",
         comment,
-        metadata: { scheduledAt: scheduledAt?.toISOString() },
+        metadata: { scheduledAt: scheduledAt.toISOString() },
       });
 
       await this?.triggerTransitionHooks({
         postId,
-        fromStatus: post?.approvalStatus as ApprovalStatus,
+        fromStatus: post.approvalStatus as ApprovalStatus,
         toStatus: "scheduled",
         userId,
         timestamp: new Date(),
-        metadata: { scheduledAt: scheduledAt?.toISOString() },
+        metadata: { scheduledAt: scheduledAt.toISOString() },
       });
 
       await this?.notifyPostCreator(
@@ -391,13 +391,13 @@ export class ApprovalService {
     comment?: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const _validation = await this?.validateStateTransition(
+      const validation = await this?.validateStateTransition(
         postId,
         "published",
         userId,
       );
       if (!validation?.valid) {
-        return { success: false, error: validation?.error };
+        return { success: false, error: validation.error };
       }
 
       const [post] = await db
@@ -419,14 +419,14 @@ export class ApprovalService {
         postId,
         userId,
         action: "publish",
-        fromStatus: post?.approvalStatus as ApprovalStatus,
+        fromStatus: post.approvalStatus as ApprovalStatus,
         toStatus: "published",
         comment,
       });
 
       await this?.triggerTransitionHooks({
         postId,
-        fromStatus: post?.approvalStatus as ApprovalStatus,
+        fromStatus: post.approvalStatus as ApprovalStatus,
         toStatus: "published",
         userId,
         timestamp: new Date(),
@@ -450,13 +450,13 @@ export class ApprovalService {
   }): Promise<void> {
     try {
       await db?.insert(approvalHistory).values({
-        postId: params?.postId,
-        userId: params?.userId,
-        action: params?.action,
-        fromStatus: params?.fromStatus,
-        toStatus: params?.toStatus,
-        comment: params?.comment,
-        metadata: params?.metadata || {},
+        postId: params.postId,
+        userId: params.userId,
+        action: params.action,
+        fromStatus: params.fromStatus,
+        toStatus: params.toStatus,
+        comment: params.comment,
+        metadata: params.metadata || {},
       });
     } catch (error: unknown) {
       logger?.warn({ err: error }, "Log approval action error:");
@@ -465,17 +465,17 @@ export class ApprovalService {
 
   async getApprovalHistory(postId: string): Promise<any[]> {
     try {
-      const _history = await db
+      const history = await db
         .select({
-          id: approvalHistory?.id,
-          userId: approvalHistory?.userId,
-          action: approvalHistory?.action,
-          fromStatus: approvalHistory?.fromStatus,
-          toStatus: approvalHistory?.toStatus,
-          comment: approvalHistory?.comment,
-          createdAt: approvalHistory?.createdAt,
-          userEmail: users?.email,
-          userName: users?.firstName,
+          id: approvalHistory.id,
+          userId: approvalHistory.userId,
+          action: approvalHistory.action,
+          fromStatus: approvalHistory.fromStatus,
+          toStatus: approvalHistory.toStatus,
+          comment: approvalHistory.comment,
+          createdAt: approvalHistory.createdAt,
+          userEmail: users.email,
+          userName: users.firstName,
         })
         .from(approvalHistory)
         .leftJoin(users, eq(approvalHistory?.userId, users?.id))
@@ -492,13 +492,13 @@ export class ApprovalService {
 
   async getPendingApprovals(userId: string): Promise<any[]> {
     try {
-      const _userRole = await this?.getUserRole(userId);
+      const userRole = await this?.getUserRole(userId);
 
       if (!["reviewer", "manager", "admin"].includes(userRole)) {
         return [];
       }
 
-      const _result = await db?.execute<{
+      const result = await db?.execute<{
         id: string;
         user_id: string;
         campaign_id: string | null;
@@ -515,22 +515,22 @@ export class ApprovalService {
         sql`SELECT id, user_id, campaign_id, platform, content, media_urls, status, approval_status, submitted_by, reviewed_by, scheduled_at, created_at FROM posts WHERE approval_status = 'pending_review' ORDER BY created_at DESC`,
       );
 
-      const _pendingPosts = result?.rows || [];
+      const pendingPosts = result?.rows || [];
 
-      const _enrichedPosts = await Promise?.all(
+      const enrichedPosts = await Promise?.all(
         pendingPosts?.map(async (post) => {
           let submitterEmail = null;
           let submitterName = null;
 
           if (post?.submitted_by) {
             try {
-              const _userResult = await db?.execute<{
+              const userResult = await db?.execute<{
                 email: string;
                 first_name: string | null;
               }>(
                 sql`SELECT email, first_name FROM users WHERE id = ${post?.submitted_by} LIMIT 1`,
               );
-              const _submitter = userResult?.rows?.[0];
+              const submitter = userResult?.rows?.[0];
               if (submitter) {
                 submitterEmail = submitter?.email;
                 submitterName = submitter?.first_name;
@@ -541,15 +541,15 @@ export class ApprovalService {
           }
 
           return {
-            id: post?.id,
-            campaignId: post?.campaign_id,
-            platform: post?.platform,
-            content: post?.content,
-            mediaUrls: post?.media_urls,
-            approvalStatus: post?.approval_status,
-            submittedBy: post?.submitted_by,
-            scheduledAt: post?.scheduled_at,
-            createdAt: post?.created_at,
+            id: post.id,
+            campaignId: post.campaign_id,
+            platform: post.platform,
+            content: post.content,
+            mediaUrls: post.media_urls,
+            approvalStatus: post.approval_status,
+            submittedBy: post.submitted_by,
+            scheduledAt: post.scheduled_at,
+            createdAt: post.created_at,
             submitterEmail,
             submitterName,
           };
@@ -568,8 +568,8 @@ export class ApprovalService {
     submitterId: string,
   ): Promise<void> {
     try {
-      const _reviewers = await db
-        .select({ id: users?.id, email: users?.email })
+      const reviewers = await db
+        .select({ id: users.id, email: users.email })
         .from(users)
         .where(
           or(
@@ -588,12 +588,12 @@ export class ApprovalService {
       for (const reviewer of reviewers) {
         if (reviewer?.id !== submitterId) {
           await notificationService?.createNotification({
-            userId: reviewer?.id,
+            userId: reviewer.id,
             type: "approval_request",
             title: "New Post Awaiting Review",
             message: `A new ${post?.platform} post has been submitted for review`,
             link: `/social/approvals/${postId}`,
-            metadata: { postId, platform: post?.platform },
+            metadata: { postId, platform: post.platform },
           });
         }
       }
@@ -617,14 +617,14 @@ export class ApprovalService {
 
       if (!post?.submittedBy) return;
 
-      const _title = status === "approved" ? "Post Approved" : "Post Rejected";
-      const _message =
+      const title = status === "approved" ? "Post Approved" : "Post Rejected";
+      const message =
         status === "approved"
           ? `Your ${post?.platform} post has been approved and is ready to publish`
           : `Your ${post?.platform} post has been rejected. Reason: ${comment}`;
 
       await notificationService?.createNotification({
-        userId: post?.submittedBy,
+        userId: post.submittedBy,
         type: status === "approved" ? "approval_approved" : "approval_rejected",
         title,
         message,
@@ -638,22 +638,22 @@ export class ApprovalService {
 
   async getUserPosts(userId: string, status?: ApprovalStatus): Promise<any[]> {
     try {
-      const _userRole = await this?.getUserRole(userId);
+      const userRole = await this?.getUserRole(userId);
       let query = db
         .select({
-          id: posts?.id,
-          campaignId: posts?.campaignId,
-          platform: posts?.platform,
-          content: posts?.content,
-          mediaUrls: posts?.mediaUrls,
-          approvalStatus: posts?.approvalStatus,
-          status: posts?.status,
-          submittedBy: posts?.submittedBy,
-          reviewedBy: posts?.reviewedBy,
-          reviewedAt: posts?.reviewedAt,
-          rejectionReason: posts?.rejectionReason,
-          scheduledAt: posts?.scheduledAt,
-          createdAt: posts?.createdAt,
+          id: posts.id,
+          campaignId: posts.campaignId,
+          platform: posts.platform,
+          content: posts.content,
+          mediaUrls: posts.mediaUrls,
+          approvalStatus: posts.approvalStatus,
+          status: posts.status,
+          submittedBy: posts.submittedBy,
+          reviewedBy: posts.reviewedBy,
+          reviewedAt: posts.reviewedAt,
+          rejectionReason: posts.rejectionReason,
+          scheduledAt: posts.scheduledAt,
+          createdAt: posts.createdAt,
         })
         .from(posts);
 
@@ -667,10 +667,10 @@ export class ApprovalService {
         conditions?.push(eq(posts?.approvalStatus, status));
       }
 
-      const _baseQuery =
+      const baseQuery =
         conditions?.length > 0 ? query?.where(and(...conditions)) : query;
 
-      const _results = await (baseQuery as Record<string, unknown>)
+      const results = await (baseQuery as Record<string, unknown>)
         .orderBy(desc(posts?.createdAt))
         .limit(500);
       return results;
@@ -681,4 +681,4 @@ export class ApprovalService {
   }
 }
 
-export const _approvalService = new ApprovalService();
+export const approvalService = new ApprovalService();

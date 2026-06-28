@@ -20,12 +20,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  CreditCard,
-  AlertTriangle,
-  RefreshCw,
-  CheckCircle,
-} from "lucide-react";
+import { CreditCard, AlertTriangle, RefreshCw, CheckCircle } from "lucide-react";
 
 interface PaymentError {
   message: string;

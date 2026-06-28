@@ -8,12 +8,12 @@ import { smartDefaultsEngine } from "../services/smartDefaultsEngine";
 import { logger } from "../logger";
 import { requireAuth } from "../middleware/auth.js";
 
-const _router = Router();
+const router = Router();
 
 router?.get("/user", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user.id;
-    const _preferences = await userPreferencesService?.getUserPreferences(userId);
+    const userId = req?.user.id;
+    const preferences = await userPreferencesService?.getUserPreferences(userId);
 
     if (!preferences) {
       return res?.json(
@@ -30,10 +30,10 @@ router?.get("/user", requireAuth, async (req: Request, res: Response) => {
 
 router?.put("/user", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user.id;
-    const _updates = req?.body;
+    const userId = req?.user.id;
+    const updates = req?.body;
 
-    const _updated = await userPreferencesService?.updateUserPreferences(
+    const updated = await userPreferencesService?.updateUserPreferences(
       userId,
       updates,
     );
@@ -61,9 +61,9 @@ router?.get("/defaults/:artistType", async (req: Request, res: Response) => {
       return res?.status(400).json({ error: "Invalid artist type" });
     }
 
-    const _genreArray = genres ? (genres as string).split(",") : [];
+    const genreArray = genres ? (genres as string).split(",") : [];
 
-    const _defaults = await smartDefaultsEngine?.getInitialSettings(
+    const defaults = await smartDefaultsEngine?.getInitialSettings(
       artistType as ArtistType,
       genreArray,
       careerStage as CareerStage,
@@ -81,8 +81,8 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user.id;
-      const _recommendations =
+      const userId = req?.user.id;
+      const recommendations =
         await userPreferencesService?.getPreferenceRecommendations(userId);
       return res?.json(recommendations);
     } catch (error) {
@@ -94,7 +94,7 @@ router?.get(
 
 router?.post("/learn", requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req?.user.id;
+    const userId = req?.user.id;
     const { eventType, context } = req?.body;
 
     if (!eventType) {
@@ -119,8 +119,8 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user.id;
-      const _defaults = await smartDefaultsEngine?.getSmartDefaults(userId);
+      const userId = req?.user.id;
+      const defaults = await smartDefaultsEngine?.getSmartDefaults(userId);
       return res?.json(defaults);
     } catch (error) {
       logger?.warn({ err: error }, "Error fetching smart defaults:");
@@ -134,8 +134,8 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user.id;
-      const _suggestions =
+      const userId = req?.user.id;
+      const suggestions =
         await smartDefaultsEngine?.getSchedulingSuggestions(userId);
       return res?.json(suggestions);
     } catch (error) {
@@ -152,8 +152,8 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user.id;
-      const _recommendations =
+      const userId = req?.user.id;
+      const recommendations =
         await smartDefaultsEngine?.getDistributionRecommendations(userId);
       return res?.json(recommendations);
     } catch (error) {
@@ -167,7 +167,7 @@ router?.get(
 
 router?.get("/genre-templates", async (_req: Request, res: Response) => {
   try {
-    const _templates = smartDefaultsEngine?.getAllGenreTemplates();
+    const templates = smartDefaultsEngine?.getAllGenreTemplates();
     return res?.json(templates);
   } catch (error) {
     logger?.warn({ err: error }, "Error fetching genre templates:");
@@ -178,7 +178,7 @@ router?.get("/genre-templates", async (_req: Request, res: Response) => {
 router?.get("/genre-templates/:genre", async (req: Request, res: Response) => {
   try {
     const { genre } = req?.params;
-    const _template = smartDefaultsEngine?.getGenreTemplate(genre);
+    const template = smartDefaultsEngine?.getGenreTemplate(genre);
     return res?.json(template);
   } catch (error) {
     logger?.warn({ err: error }, "Error fetching genre template:");
@@ -191,8 +191,8 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user.id;
-      const _layout = await userPreferencesService?.getDashboardLayout(userId);
+      const userId = req?.user.id;
+      const layout = await userPreferencesService?.getDashboardLayout(userId);
       return res?.json(layout);
     } catch (error) {
       logger?.warn({ err: error }, "Error fetching dashboard layout:");
@@ -208,8 +208,8 @@ router?.put(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const _userId = req?.user.id;
-      const _layout = req?.body;
+      const userId = req?.user.id;
+      const layout = req?.body;
 
       await userPreferencesService?.saveDashboardLayout(userId, layout);
       return res?.json({ success: true });

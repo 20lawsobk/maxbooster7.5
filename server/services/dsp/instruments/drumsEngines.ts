@@ -1,16 +1,4 @@
-import {
-  AudioBuffer,
-  DSPContext,
-  createBuffer,
-  BiquadFilter,
-  OnePoleFilter,
-  DelayLine,
-  Oscillator,
-  ADSR,
-  msToSamples,
-  softClip,
-  hardClip,
-} from "../core";
+import { AudioBuffer, DSPContext, createBuffer, BiquadFilter, OnePoleFilter, DelayLine, Oscillator, ADSR, msToSamples, softClip, hardClip } from "../core";
 
 export interface SynthesizerEngine {
   noteOn(frequency: number, velocity: number, context: DSPContext): void;
@@ -28,13 +16,13 @@ class NoiseGenerator {
   }
 
   pink(): number {
-    const _white = this?.white();
+    const white = this?.white();
     this.lastValue = 0.99 * this?.lastValue + 0.01 * white;
     return this?.lastValue * 20;
   }
 
   brown(): number {
-    const _white = this?.white();
+    const white = this?.white();
     this.lastValue = 0.97 * this?.lastValue + 0.03 * white;
     return this?.lastValue * 10;
   }
@@ -145,51 +133,51 @@ export class AcousticDrumsSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
       let sample = 0;
 
       if (this?.drumType === "kick") {
-        const _kickEnv = this?.kickEnvelope.process();
-        const _pitchEnv = this?.pitchEnvelope.process();
-        const _kickFreq = 55 + pitchEnv * 100;
+        const kickEnv = this?.kickEnvelope.process();
+        const pitchEnv = this?.pitchEnvelope.process();
+        const kickFreq = 55 + pitchEnv * 100;
         this?.kickOsc.setFrequency(kickFreq, this?.sampleRate);
         sample = this?.kickOsc.sine() * kickEnv;
         sample += this?.noise.brown() * kickEnv * 0.05;
         sample = this?.kickFilter.process(sample);
         sample = this?.bodyFilter.process(sample);
       } else if (this?.drumType === "snare") {
-        const _snareEnv = this?.snareEnvelope.process();
-        const _toneComp = this?.snareOsc.sine() * 0.4;
-        const _noiseComp = this?.noise.white() * 0.6;
+        const snareEnv = this?.snareEnvelope.process();
+        const toneComp = this?.snareOsc.sine() * 0.4;
+        const noiseComp = this?.noise.white() * 0.6;
         sample = (toneComp + noiseComp) * snareEnv;
         sample = this?.snareFilter.process(sample);
       } else if (this?.drumType === "tom") {
-        const _kickEnv = this?.kickEnvelope.process();
-        const _pitchEnv = this?.pitchEnvelope.process();
-        const _tomFreq = this?.frequency * 0.8 + pitchEnv * this?.frequency * 0.5;
+        const kickEnv = this?.kickEnvelope.process();
+        const pitchEnv = this?.pitchEnvelope.process();
+        const tomFreq = this?.frequency * 0.8 + pitchEnv * this?.frequency * 0.5;
         this?.kickOsc.setFrequency(tomFreq, this?.sampleRate);
         sample = this?.kickOsc.sine() * kickEnv;
         sample += this?.noise.brown() * kickEnv * 0.08;
         sample = this?.kickFilter.process(sample);
       } else {
-        const _hihatEnv = this?.hihatEnvelope.process();
+        const hihatEnv = this?.hihatEnvelope.process();
         sample = this?.noise.white() * hihatEnv;
         sample = this?.hihatFilter.process(sample);
       }
 
       sample *= this?.velocity;
       this?.roomDelay.write(sample);
-      const _roomSample = this?.roomDelay.readInterpolated(
+      const roomSample = this?.roomDelay.readInterpolated(
         msToSamples(25, this?.sampleRate),
       );
-      const _roomProcessed = this?.roomFilter.process(roomSample) * 0.15;
+      const roomProcessed = this?.roomFilter.process(roomSample) * 0.15;
 
       sample = softClip(sample + roomProcessed, 0.95);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -305,35 +293,35 @@ export class ElectronicDrumsSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
       let sample = 0;
 
       if (this?.drumType === "kick") {
-        const _kickEnv = this?.kickEnvelope.process();
-        const _pitchEnv = this?.pitchEnvelope.process();
-        const _kickFreq = 45 + pitchEnv * 150;
+        const kickEnv = this?.kickEnvelope.process();
+        const pitchEnv = this?.pitchEnvelope.process();
+        const kickFreq = 45 + pitchEnv * 150;
         this?.kickOsc.setFrequency(kickFreq, this?.sampleRate);
         sample = this?.kickOsc.sine() * kickEnv * 1.4;
         sample = this?.kickFilter.process(sample);
         sample = softClip(sample * 1.3, 0.98);
       } else if (this?.drumType === "snare") {
-        const _snareEnv = this?.snareEnvelope.process();
+        const snareEnv = this?.snareEnvelope.process();
         this?.snareOsc.setFrequency(200 + snareEnv * 50, this?.sampleRate);
-        const _toneComp = this?.snareOsc.sine() * 0.35;
-        const _noiseComp = this?.noise.white() * 0.65;
+        const toneComp = this?.snareOsc.sine() * 0.35;
+        const noiseComp = this?.noise.white() * 0.65;
         sample = (toneComp + noiseComp) * snareEnv;
         sample = this?.snareFilter.process(sample);
         sample = this?.distortionFilter.process(sample);
       } else if (this?.drumType === "clap") {
-        const _snareEnv = this?.snareEnvelope.process();
-        const _clapNoise = this?.noise.white();
-        const _clapMod = Math?.sin(i * 0.15) > 0 ? 1 : 0.3;
+        const snareEnv = this?.snareEnvelope.process();
+        const clapNoise = this?.noise.white();
+        const clapMod = Math?.sin(i * 0.15) > 0 ? 1 : 0.3;
         sample = clapNoise * snareEnv * clapMod;
         sample = this?.snareFilter.process(sample);
       } else {
-        const _hihatEnv = this?.hihatEnvelope.process();
+        const hihatEnv = this?.hihatEnvelope.process();
         sample = this?.noise.white() * hihatEnv;
         sample = this?.hihatFilter.process(sample);
         sample *= 0.6;
@@ -342,8 +330,8 @@ export class ElectronicDrumsSynth implements SynthesizerEngine {
       sample *= this?.velocity;
       sample = hardClip(sample, 0.98);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -449,30 +437,30 @@ export class BreakbeatDrumsSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
       let sample = 0;
 
       if (this?.drumType === "kick") {
-        const _kickEnv = this?.kickEnvelope.process();
-        const _pitchEnv = this?.pitchEnvelope.process();
-        const _kickFreq = 60 + pitchEnv * 80;
+        const kickEnv = this?.kickEnvelope.process();
+        const pitchEnv = this?.pitchEnvelope.process();
+        const kickFreq = 60 + pitchEnv * 80;
         this?.kickOsc.setFrequency(kickFreq, this?.sampleRate);
         sample = this?.kickOsc.sine() * kickEnv;
         sample += this?.noise.brown() * kickEnv * 0.1;
         sample = this?.kickFilter.process(sample);
         sample = this?.saturationFilter.process(sample);
       } else if (this?.drumType === "snare") {
-        const _snareEnv = this?.snareEnvelope.process();
-        const _toneComp = this?.snareOsc.sine() * 0.3;
-        const _noiseComp = this?.noise.white() * 0.7;
+        const snareEnv = this?.snareEnvelope.process();
+        const toneComp = this?.snareOsc.sine() * 0.3;
+        const noiseComp = this?.noise.white() * 0.7;
         sample = (toneComp + noiseComp) * snareEnv;
         sample = this?.snareFilter.process(sample);
         sample = this?.snareBody.process(sample);
         sample = softClip(sample * 1.2, 0.9);
       } else {
-        const _hihatEnv = this?.hihatEnvelope.process();
+        const hihatEnv = this?.hihatEnvelope.process();
         sample = this?.noise.white() * hihatEnv;
         sample = this?.hihatFilter.process(sample);
         sample *= 0.7;
@@ -481,9 +469,9 @@ export class BreakbeatDrumsSynth implements SynthesizerEngine {
       sample *= this?.velocity;
       sample = softClip(sample, 0.92);
 
-      const _stereoWidth = 0.02;
-      output?.samples[0][i] = sample * (1 + stereoWidth);
-      output?.samples[1][i] = sample * (1 - stereoWidth);
+      const stereoWidth = 0.02;
+      output.samples[0][i] = sample * (1 + stereoWidth);
+      output.samples[1][i] = sample * (1 - stereoWidth);
     }
 
     return output;
@@ -580,7 +568,7 @@ export class TrapDrumsSynth implements SynthesizerEngine {
       this?.snareEnvelope.trigger();
     } else {
       this.drumType = "hihat";
-      const _isRoll = frequency > 1500;
+      const isRoll = frequency > 1500;
       this?.hihatFilter.setHighpass(
         isRoll ? 10000 : 7000,
         2,
@@ -606,37 +594,37 @@ export class TrapDrumsSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
       let sample = 0;
 
       if (this?.drumType === "kick") {
-        const _kickEnv = this?.kickEnvelope.process();
-        const _subEnv = this?.subEnvelope.process();
-        const _pitchEnv = this?.pitchEnvelope.process();
+        const kickEnv = this?.kickEnvelope.process();
+        const subEnv = this?.subEnvelope.process();
+        const pitchEnv = this?.pitchEnvelope.process();
 
-        const _kickFreq = 40 + pitchEnv * 180;
+        const kickFreq = 40 + pitchEnv * 180;
         this?.kickOsc.setFrequency(kickFreq, this?.sampleRate);
-        const _kickSample = this?.kickOsc.sine() * kickEnv * 0.7;
+        const kickSample = this?.kickOsc.sine() * kickEnv * 0.7;
 
-        const _subFreq = 35 + pitchEnv * 30;
+        const subFreq = 35 + pitchEnv * 30;
         this?.subOsc.setFrequency(subFreq, this?.sampleRate);
-        const _subSample = this?.subOsc.sine() * subEnv * 0.8;
+        const subSample = this?.subOsc.sine() * subEnv * 0.8;
 
         sample =
           this?.kickFilter.process(kickSample) +
           this?.subFilter.process(subSample);
         sample = softClip(sample * 1.4, 0.98);
       } else if (this?.drumType === "snare") {
-        const _snareEnv = this?.snareEnvelope.process();
+        const snareEnv = this?.snareEnvelope.process();
         this?.snareOsc.setFrequency(210 + snareEnv * 40, this?.sampleRate);
-        const _toneComp = this?.snareOsc.sine() * 0.3;
-        const _noiseComp = this?.noise.white() * 0.7;
+        const toneComp = this?.snareOsc.sine() * 0.3;
+        const noiseComp = this?.noise.white() * 0.7;
         sample = (toneComp + noiseComp) * snareEnv;
         sample = this?.snareFilter.process(sample);
       } else {
-        const _hihatEnv = this?.hihatEnvelope.process();
+        const hihatEnv = this?.hihatEnvelope.process();
         sample = this?.noise.white() * hihatEnv;
         sample = this?.hihatFilter.process(sample);
         sample *= 0.5;
@@ -645,8 +633,8 @@ export class TrapDrumsSynth implements SynthesizerEngine {
       sample *= this?.velocity;
       sample = hardClip(sample, 0.98);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -768,32 +756,32 @@ export class JazzDrumsSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
       let sample = 0;
 
       if (this?.drumType === "kick") {
-        const _kickEnv = this?.kickEnvelope.process();
+        const kickEnv = this?.kickEnvelope.process();
         sample = this?.kickOsc.sine() * kickEnv;
         sample += this?.noise.brown() * kickEnv * 0.04;
         sample = this?.kickFilter.process(sample);
         sample = this?.warmthFilter.process(sample);
       } else if (this?.drumType === "snare") {
-        const _snareEnv = this?.snareEnvelope.process();
-        const _toneComp = this?.snareOsc.sine() * 0.35;
-        const _wireComp = this?.noise.pink() * 0.65;
+        const snareEnv = this?.snareEnvelope.process();
+        const toneComp = this?.snareOsc.sine() * 0.35;
+        const wireComp = this?.noise.pink() * 0.65;
         sample = (toneComp + wireComp) * snareEnv;
         sample = this?.snareFilter.process(sample);
       } else if (this?.drumType === "brush") {
-        const _brushEnv = this?.brushEnvelope.process();
+        const brushEnv = this?.brushEnvelope.process();
         sample = this?.noise.pink() * brushEnv;
         sample = this?.brushFilter.process(sample);
         sample *= 0.6;
       } else {
-        const _rideEnv = this?.rideEnvelope.process();
-        const _bellTone =
-          Math?.sin((2 * Math?.PI * 3000 * i) / this?.sampleRate) * 0.2;
+        const rideEnv = this?.rideEnvelope.process();
+        const bellTone =
+          Math?.sin((2 * Math.PI * 3000 * i) / this?.sampleRate) * 0.2;
         sample = (this?.noise.white() * 0.3 + bellTone) * rideEnv;
         sample = this?.rideFilter.process(sample);
         sample *= 0.5;
@@ -802,8 +790,8 @@ export class JazzDrumsSynth implements SynthesizerEngine {
       sample *= this?.velocity * 0.8;
       sample = softClip(sample, 0.85);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -938,15 +926,15 @@ export class RockDrumsSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
       let sample = 0;
 
       if (this?.drumType === "kick") {
-        const _kickEnv = this?.kickEnvelope.process();
-        const _pitchEnv = this?.pitchEnvelope.process();
-        const _kickFreq = 55 + pitchEnv * 90;
+        const kickEnv = this?.kickEnvelope.process();
+        const pitchEnv = this?.pitchEnvelope.process();
+        const kickFreq = 55 + pitchEnv * 90;
         this?.kickOsc.setFrequency(kickFreq, this?.sampleRate);
         sample = this?.kickOsc.sine() * kickEnv;
         sample += this?.noise.brown() * kickEnv * 0.06;
@@ -954,23 +942,23 @@ export class RockDrumsSynth implements SynthesizerEngine {
         sample = this?.kickBoost.process(sample);
         sample = softClip(sample * 1.3, 0.95);
       } else if (this?.drumType === "snare") {
-        const _snareEnv = this?.snareEnvelope.process();
-        const _toneComp = this?.snareOsc.sine() * 0.35;
-        const _noiseComp = this?.noise.white() * 0.65;
+        const snareEnv = this?.snareEnvelope.process();
+        const toneComp = this?.snareOsc.sine() * 0.35;
+        const noiseComp = this?.noise.white() * 0.65;
         sample = (toneComp + noiseComp) * snareEnv;
         sample = this?.snareFilter.process(sample);
         sample = this?.snareSnap.process(sample);
         sample = softClip(sample * 1.2, 0.92);
       } else if (this?.drumType === "tom") {
-        const _tomEnv = this?.tomEnvelope.process();
-        const _pitchEnv = this?.pitchEnvelope.process();
-        const _tomFreq = this?.frequency * 0.6 + pitchEnv * this?.frequency * 0.4;
+        const tomEnv = this?.tomEnvelope.process();
+        const pitchEnv = this?.pitchEnvelope.process();
+        const tomFreq = this?.frequency * 0.6 + pitchEnv * this?.frequency * 0.4;
         this?.tomOsc.setFrequency(tomFreq, this?.sampleRate);
         sample = this?.tomOsc.sine() * tomEnv;
         sample += this?.noise.brown() * tomEnv * 0.1;
         sample = this?.tomFilter.process(sample);
       } else {
-        const _crashEnv = this?.crashEnvelope.process();
+        const crashEnv = this?.crashEnvelope.process();
         sample = this?.noise.white() * crashEnv;
         sample = this?.crashFilter.process(sample);
         sample *= 0.6;
@@ -979,8 +967,8 @@ export class RockDrumsSynth implements SynthesizerEngine {
       sample *= this?.velocity;
       sample = hardClip(sample, 0.98);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -1095,36 +1083,36 @@ export class PercussionSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
       let sample = 0;
-      const _envValue = this?.envelope.process();
+      const envValue = this?.envelope.process();
 
       if (this?.percType === "conga") {
-        const _pitchEnv = this?.pitchEnvelope.process();
-        const _freq = this?.frequency + pitchEnv * this?.frequency * 0.5;
+        const pitchEnv = this?.pitchEnvelope.process();
+        const freq = this?.frequency + pitchEnv * this?.frequency * 0.5;
         this?.congaOsc.setFrequency(freq, this?.sampleRate);
         sample = this?.congaOsc.sine() * envValue;
         sample += this?.noise.brown() * envValue * 0.15;
         sample = this?.bodyFilter.process(sample);
         sample = this?.toneFilter.process(sample);
       } else if (this?.percType === "bongo") {
-        const _pitchEnv = this?.pitchEnvelope.process();
-        const _freq = this?.frequency + pitchEnv * this?.frequency * 0.6;
+        const pitchEnv = this?.pitchEnvelope.process();
+        const freq = this?.frequency + pitchEnv * this?.frequency * 0.6;
         this?.bongoOsc.setFrequency(freq, this?.sampleRate);
         sample = this?.bongoOsc.sine() * envValue;
         sample += this?.noise.white() * envValue * 0.1;
         sample = this?.bodyFilter.process(sample);
         sample = this?.toneFilter.process(sample);
       } else if (this?.percType === "cowbell") {
-        const _tone1 = this?.congaOsc.sine();
-        const _tone2 = this?.bongoOsc.sine();
+        const tone1 = this?.congaOsc.sine();
+        const tone2 = this?.bongoOsc.sine();
         sample = (tone1 * 0.6 + tone2 * 0.4) * envValue;
         sample = this?.toneFilter.process(sample);
         sample = hardClip(sample * 1.5, 0.9);
       } else if (this?.percType === "tambourine") {
-        const _jingle = this?.noise.white();
+        const jingle = this?.noise.white();
         sample = jingle * envValue;
         sample = this?.resonanceFilter.process(sample);
         sample *= 0.5;
@@ -1137,8 +1125,8 @@ export class PercussionSynth implements SynthesizerEngine {
       sample *= this?.velocity;
       sample = softClip(sample, 0.92);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -1203,7 +1191,7 @@ export class IndustrialDrumsSynth implements SynthesizerEngine {
       );
     } else if (frequency < 300) {
       this.hitType = "anvil";
-      const _ratios = [1, 1.47, 2.09, 2.56];
+      const ratios = [1, 1.47, 2.09, 2.56];
       this?.metalOsc1.setFrequency(frequency * ratios[0], context?.sampleRate);
       this?.metalOsc2.setFrequency(frequency * ratios[1], context?.sampleRate);
       this?.metalOsc3.setFrequency(frequency * ratios[2], context?.sampleRate);
@@ -1217,7 +1205,7 @@ export class IndustrialDrumsSynth implements SynthesizerEngine {
       );
     } else if (frequency < 800) {
       this.hitType = "pipe";
-      const _ratios = [1, 2.76, 5.4];
+      const ratios = [1, 2.76, 5.4];
       this?.metalOsc1.setFrequency(frequency * ratios[0], context?.sampleRate);
       this?.metalOsc2.setFrequency(frequency * ratios[1], context?.sampleRate);
       this?.metalOsc3.setFrequency(frequency * ratios[2], context?.sampleRate);
@@ -1225,7 +1213,7 @@ export class IndustrialDrumsSynth implements SynthesizerEngine {
       this.envelope = new ADSR(0.001, 0.3, 0.12, 0.4, context?.sampleRate);
     } else {
       this.hitType = "clang";
-      const _ratios = [1, 1.32, 1.87, 2.43];
+      const ratios = [1, 1.32, 1.87, 2.43];
       this?.metalOsc1.setFrequency(frequency * ratios[0], context?.sampleRate);
       this?.metalOsc2.setFrequency(frequency * ratios[1], context?.sampleRate);
       this?.metalOsc3.setFrequency(frequency * ratios[2], context?.sampleRate);
@@ -1244,12 +1232,12 @@ export class IndustrialDrumsSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
       let sample = 0;
-      const _envValue = this?.envelope.process();
-      const _hitValue = this?.hitEnvelope.process();
+      const envValue = this?.envelope.process();
+      const hitValue = this?.hitEnvelope.process();
 
       if (this?.hitType === "slam") {
         sample = this?.metalOsc1.sine() * envValue * 0.8;
@@ -1259,24 +1247,24 @@ export class IndustrialDrumsSynth implements SynthesizerEngine {
         sample = this?.distortionFilter.process(sample);
         sample = hardClip(sample * 2, 0.95);
       } else if (this?.hitType === "anvil") {
-        const _tone1 = this?.metalOsc1.sine() * 0.4;
-        const _tone2 = this?.metalOsc2.sine() * 0.3;
-        const _tone3 = this?.metalOsc3.sine() * 0.2;
+        const tone1 = this?.metalOsc1.sine() * 0.4;
+        const tone2 = this?.metalOsc2.sine() * 0.3;
+        const tone3 = this?.metalOsc3.sine() * 0.2;
         sample = (tone1 + tone2 + tone3) * envValue;
         sample += this?.noise.white() * hitValue * 0.4;
         sample = this?.metalFilter.process(sample);
         sample = hardClip(sample * 1.5, 0.9);
       } else if (this?.hitType === "pipe") {
-        const _tone1 = this?.metalOsc1.sine() * 0.5;
-        const _tone2 = this?.metalOsc2.sine() * 0.25;
-        const _tone3 = this?.metalOsc3.sine() * 0.15;
+        const tone1 = this?.metalOsc1.sine() * 0.5;
+        const tone2 = this?.metalOsc2.sine() * 0.25;
+        const tone3 = this?.metalOsc3.sine() * 0.15;
         sample = (tone1 + tone2 + tone3) * envValue;
         sample += this?.noise.white() * hitValue * 0.3;
         sample = this?.resonanceFilter.process(sample);
       } else {
-        const _tone1 = this?.metalOsc1.sine() * 0.35;
-        const _tone2 = this?.metalOsc2.sine() * 0.3;
-        const _tone3 = this?.metalOsc3.sine() * 0.25;
+        const tone1 = this?.metalOsc1.sine() * 0.35;
+        const tone2 = this?.metalOsc2.sine() * 0.3;
+        const tone3 = this?.metalOsc3.sine() * 0.25;
         sample = (tone1 + tone2 + tone3) * envValue;
         sample += this?.noise.white() * hitValue * 0.35;
         sample = this?.metalFilter.process(sample);
@@ -1285,8 +1273,8 @@ export class IndustrialDrumsSynth implements SynthesizerEngine {
       sample *= this?.velocity;
       sample = softClip(sample, 0.95);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -1395,38 +1383,38 @@ export class LoFiDrumsSynth implements SynthesizerEngine {
   }
 
   private bitcrush(sample: number, bits: number): number {
-    const _levels = Math?.pow(2, bits);
+    const levels = Math?.pow(2, bits);
     return Math?.round(sample * levels) / levels;
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
       let sample = 0;
 
       if (this?.drumType === "kick") {
-        const _kickEnv = this?.kickEnvelope.process();
-        const _pitchEnv = this?.pitchEnvelope.process();
-        const _kickFreq = 55 + pitchEnv * 70;
+        const kickEnv = this?.kickEnvelope.process();
+        const pitchEnv = this?.pitchEnvelope.process();
+        const kickFreq = 55 + pitchEnv * 70;
         this?.kickOsc.setFrequency(kickFreq, this?.sampleRate);
         sample = this?.kickOsc.sine() * kickEnv;
         sample += this?.noise.brown() * kickEnv * 0.08;
         sample = this?.kickFilter.process(sample);
       } else if (this?.drumType === "snare") {
-        const _snareEnv = this?.snareEnvelope.process();
-        const _toneComp = this?.snareOsc.sine() * 0.35;
-        const _noiseComp = this?.noise.white() * 0.65;
+        const snareEnv = this?.snareEnvelope.process();
+        const toneComp = this?.snareOsc.sine() * 0.35;
+        const noiseComp = this?.noise.white() * 0.65;
         sample = (toneComp + noiseComp) * snareEnv;
         sample = this?.snareFilter.process(sample);
       } else {
-        const _hihatEnv = this?.hihatEnvelope.process();
+        const hihatEnv = this?.hihatEnvelope.process();
         sample = this?.noise.white() * hihatEnv;
         sample = this?.hihatFilter.process(sample);
         sample *= 0.6;
       }
 
-      this?.sampleCounter++;
+      this.sampleCounter++;
       if (this?.sampleCounter >= this?.crushRate) {
         this.sampleHold = sample;
         this.sampleCounter = 0;
@@ -1441,8 +1429,8 @@ export class LoFiDrumsSynth implements SynthesizerEngine {
       sample *= this?.velocity;
       sample = softClip(sample, 0.88);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;
@@ -1569,66 +1557,66 @@ export class OrchestralDrumsSynth implements SynthesizerEngine {
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
-    const _output = createBuffer(numSamples, 2, context?.sampleRate);
+    const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
       let sample = 0;
 
       if (this?.drumType === "bassdrum") {
-        const _envValue = this?.bassDrumEnvelope.process();
-        const _pitchEnv = this?.pitchEnvelope.process();
-        const _freq = 45 + pitchEnv * 30;
+        const envValue = this?.bassDrumEnvelope.process();
+        const pitchEnv = this?.pitchEnvelope.process();
+        const freq = 45 + pitchEnv * 30;
         this?.bassDrumOsc.setFrequency(freq, this?.sampleRate);
         sample = this?.bassDrumOsc.sine() * envValue;
         sample += this?.noise.brown() * envValue * 0.15;
         sample = this?.bassDrumFilter.process(sample);
         sample = this?.bodyResonance.process(sample);
       } else if (this?.drumType === "timpani") {
-        const _envValue = this?.timpaniEnvelope.process();
-        const _pitchEnv = this?.pitchEnvelope.process();
-        const _freq = this?.frequency + pitchEnv * this?.frequency * 0.3;
+        const envValue = this?.timpaniEnvelope.process();
+        const pitchEnv = this?.pitchEnvelope.process();
+        const freq = this?.frequency + pitchEnv * this?.frequency * 0.3;
         this?.timpaniOsc.setFrequency(freq, this?.sampleRate);
         sample = this?.timpaniOsc.sine() * envValue;
-        const _overtone =
-          Math?.sin((2 * Math?.PI * freq * 1.5 * i) / this?.sampleRate) * 0.2;
+        const overtone =
+          Math?.sin((2 * Math.PI * freq * 1.5 * i) / this?.sampleRate) * 0.2;
         sample += overtone * envValue;
         sample += this?.noise.brown() * envValue * 0.08;
         sample = this?.timpaniFilter.process(sample);
         sample = this?.bodyResonance.process(sample);
       } else if (this?.drumType === "triangle") {
-        const _envValue = this?.cymbalEnvelope.process();
-        const _tone1 = Math?.sin(
-          (2 * Math?.PI * this?.frequency * i) / this?.sampleRate,
+        const envValue = this?.cymbalEnvelope.process();
+        const tone1 = Math?.sin(
+          (2 * Math.PI * this?.frequency * i) / this?.sampleRate,
         );
-        const _tone2 =
+        const tone2 =
           Math?.sin(
-            (2 * Math?.PI * this?.frequency * 2.13 * i) / this?.sampleRate,
+            (2 * Math.PI * this?.frequency * 2.13 * i) / this?.sampleRate,
           ) * 0.5;
-        const _tone3 =
+        const tone3 =
           Math?.sin(
-            (2 * Math?.PI * this?.frequency * 3.47 * i) / this?.sampleRate,
+            (2 * Math.PI * this?.frequency * 3.47 * i) / this?.sampleRate,
           ) * 0.3;
         sample = (tone1 + tone2 + tone3) * envValue;
         sample = this?.timpaniFilter.process(sample);
         sample *= 0.5;
       } else {
-        const _envValue = this?.cymbalEnvelope.process();
+        const envValue = this?.cymbalEnvelope.process();
         sample = this?.noise.white() * envValue;
         sample = this?.cymbalFilter.process(sample);
         sample *= 0.5;
       }
 
       this?.roomDelay.write(sample);
-      const _roomSample = this?.roomDelay.readInterpolated(
+      const roomSample = this?.roomDelay.readInterpolated(
         msToSamples(40, this?.sampleRate),
       );
-      const _roomProcessed = this?.roomFilter.process(roomSample) * 0.2;
+      const roomProcessed = this?.roomFilter.process(roomSample) * 0.2;
 
       sample *= this?.velocity;
       sample = softClip(sample + roomProcessed, 0.92);
 
-      output?.samples[0][i] = sample;
-      output?.samples[1][i] = sample;
+      output.samples[0][i] = sample;
+      output.samples[1][i] = sample;
     }
 
     return output;

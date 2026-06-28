@@ -30,9 +30,9 @@ async function main() {
   try {
     // Run main 4 scenario simulation
     logger?.info("📊 Running Main Scenarios (A, B, C, D)...\n");
-    const _startTime = Date?.now();
-    const _mainResults = await simulateAutonomousUpgrade();
-    const _mainExecutionTime = Date?.now() - startTime;
+    const startTime = Date?.now();
+    const mainResults = await simulateAutonomousUpgrade();
+    const mainExecutionTime = Date?.now() - startTime;
 
     logger?.info("✅ Main Scenarios Complete!\n");
     logger?.info(`Execution Time: ${mainExecutionTime}ms\n`);
@@ -55,9 +55,9 @@ async function main() {
 
     logger?.info("Main Scenario Results:");
     mainResults?.scenarios.forEach((scenario, _i) => {
-      const _status = scenario?.success ? "✅" : "❌";
-      const _detectionMins = (scenario?.detectionTime / (60 * 1000)).toFixed(0);
-      const _upgradeHours = (scenario?.upgradeTime / (60 * 60 * 1000)).toFixed(1);
+      const status = scenario?.success ? "✅" : "❌";
+      const detectionMins = (scenario?.detectionTime / (60 * 1000)).toFixed(0);
+      const upgradeHours = (scenario?.upgradeTime / (60 * 60 * 1000)).toFixed(1);
       logger?.info(`  ${status} ${scenario?.id}: ${scenario?.name}`);
       logger?.info(
         `     Detection: ${detectionMins}min, Upgrade: ${upgradeHours}h, Quality: ${scenario?.algorithmQuality.toFixed(0)}%`,
@@ -67,9 +67,9 @@ async function main() {
 
     // Run long-term simulation (1 year, 52 scenarios)
     logger?.info("📅 Running Long-Term Simulation (1 Year, 52+ Scenarios)...\n");
-    const _longTermStartTime = Date?.now();
-    const _longTermResults = await simulateLongTermAdaptation(52);
-    const _longTermExecutionTime = Date?.now() - longTermStartTime;
+    const longTermStartTime = Date?.now();
+    const longTermResults = await simulateLongTermAdaptation(52);
+    const longTermExecutionTime = Date?.now() - longTermStartTime;
 
     logger?.info("✅ Long-Term Simulation Complete!\n");
     logger?.info(`Execution Time: ${longTermExecutionTime}ms\n`);
@@ -105,10 +105,10 @@ async function main() {
 
     // Generate comprehensive verification report
     logger?.info("📝 Generating Verification Report...\n");
-    const _report = generateSimulationReport(mainResults, longTermResults);
+    const report = generateSimulationReport(mainResults, longTermResults);
 
     // Save to AUTONOMOUS_UPGRADE_VERIFICATION?.md
-    const _reportPath = path?.join(
+    const reportPath = path?.join(
       process?.cwd(),
       "AUTONOMOUS_UPGRADE_VERIFICATION.md",
     );
@@ -119,7 +119,7 @@ async function main() {
     logger?.info("═══════════════════════════════════════════════════════\n");
     logger?.info("🎯 VERIFICATION CHECKLIST:\n");
 
-    const _checks = [
+    const checks = [
       {
         name: "Detection Speed SLA",
         passed:
@@ -164,11 +164,11 @@ async function main() {
     ];
 
     checks?.forEach((check) => {
-      const _status = check?.passed ? "✅" : "❌";
+      const status = check?.passed ? "✅" : "❌";
       logger?.info(`  ${status} ${check?.name}: ${check?.requirement}`);
     });
 
-    const _allPass = checks?.every((c) => c?.passed);
+    const allPass = checks?.every((c) => c?.passed);
 
     logger?.info("\n═══════════════════════════════════════════════════════\n");
     logger?.info("🏁 FINAL VERDICT:\n");

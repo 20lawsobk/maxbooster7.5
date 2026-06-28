@@ -47,9 +47,9 @@ export function getInfrastructureStatus(): {
   scaling: Record<string, unknown>;
 } {
   return {
-    cache: distributedCache?.getStats(),
-    sessions: clusterSessionManager?.getStatus(),
-    circuitBreakers: circuitBreakerRegistry?.getAllStats(),
-    scaling: autoScalingManager?.getMetrics(),
+    cache: distributedCache.getStats(),
+    sessions: clusterSessionManager.getStatus(),
+    circuitBreakers: circuitBreakerRegistry.getAllStats(),
+    scaling: autoScalingManager.getMetrics(),
   };
 }

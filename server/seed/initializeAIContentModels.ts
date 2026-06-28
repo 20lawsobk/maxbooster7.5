@@ -7,7 +7,7 @@ export async function initializeAIContentModels() {
   logger?.info("🚀 Initializing AI Content Models...");
 
   try {
-    const _models = [
+    const models = [
       {
         modelName: "content_multilingual_v1",
         modelType: "content_generation",
@@ -137,12 +137,12 @@ export async function initializeAIContentModels() {
       const [version] = await db
         .insert(aiModelVersions)
         .values({
-          modelId: model?.id,
+          modelId: model.id,
           versionNumber: 1,
           versionHash: `${modelData?.modelName}_init`,
           status: "production",
           accuracy: (modelData?.performance as Record<string, unknown>).accuracy,
-          parameters: modelData?.parameters,
+          parameters: modelData.parameters,
           changelog: "Initial release",
           deployedAt: new Date(),
         })

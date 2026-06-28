@@ -13,18 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Box,
-  Headphones,
-  Volume2,
-  Move3d,
-  RotateCcw,
-  Eye,
-  EyeOff,
-  Plus,
-  Trash2,
-  Speaker,
-} from "lucide-react";
+import { Box, Headphones, Volume2, Move3d, RotateCcw, Eye, EyeOff, Plus, Trash2, Speaker } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export type SpeakerConfiguration = "2.0" | "5.1" | "7.1" | "7.1.4" | "atmos";

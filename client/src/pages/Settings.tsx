@@ -18,38 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import {
-  User,
-  Lock,
-  Bell,
-  Palette,
-  Shield,
-  CreditCard,
-  Download,
-  Trash2,
-  Upload,
-  Eye,
-  Link as LinkIcon,
-  RefreshCw,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  XCircle,
-  Loader2,
-  Crown,
-  Calendar,
-  Receipt,
-  Zap,
-  ArrowUpRight,
-  ArrowDownRight,
-  Info,
-  DollarSign,
-  TrendingUp,
-  HardDrive,
-  Headphones,
-  Check,
-  Keyboard,
-} from "lucide-react";
+import { User, Lock, Bell, Palette, Shield, CreditCard, Download, Trash2, Upload, Eye, Link as LinkIcon, RefreshCw, AlertTriangle, CheckCircle, Clock, XCircle, Loader2, Crown, Calendar, Receipt, Zap, ArrowUpRight, ArrowDownRight, Info, DollarSign, TrendingUp, HardDrive, Headphones, Check, Keyboard } from "lucide-react";
 import { ShortcutCustomizer } from "@/components/shortcuts/ShortcutCustomizer";
 import {
   Dialog,
@@ -201,7 +170,9 @@ export default function Settings() {
   const { user, isLoading: authLoading } = useRequireSubscription();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { trackProfileComplete } = useOnboardingProgress();
+  const {
+    trackProfileComplete,
+  } = useOnboardingProgress();
   const [location, navigate] = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -302,12 +273,11 @@ export default function Settings() {
   });
 
   // Query for billing history
-  const { data: billingHistory = [], isLoading: billingLoading } = useQuery<
-    BillingHistoryItem[]
-  >({
-    queryKey: ["/api/billing/history"],
-    enabled: !!user,
-  });
+  const { data: billingHistory = [], isLoading: billingLoading } =
+    useQuery<BillingHistoryItem[]>({
+      queryKey: ["/api/billing/history"],
+      enabled: !!user,
+    });
 
   // Query for refunds
   const { data: refundsData, isLoading: refundsLoading } =
@@ -323,10 +293,10 @@ export default function Settings() {
   });
 
   const [profileData, setProfileData] = useState({
-    firstName: user?.firstName || "",
-    lastName: user?.lastName || "",
+    firstName: user.firstName || "",
+    lastName: user.lastName || "",
     artistName: ((user as Record<string, unknown>)?.artistName as string) || "",
-    email: user?.email || "",
+    email: user.email || "",
     bio: "",
     website: "",
     location: "",
@@ -776,10 +746,10 @@ export default function Settings() {
     }
   };
 
-  (sessionId: string) => {
+  ((sessionId: string) => {
     setSessionToTerminate(sessionId);
     setTerminateSessionOpen(true);
-  };
+  });
 
   const handleTerminateSession = async () => {
     if (!sessionToTerminate) return;
@@ -1792,86 +1762,90 @@ export default function Settings() {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {billingHistory.map((billing) => (
-                          <div
-                            key={billing.id || billing.invoiceId}
-                            className="flex items-center justify-between p-4 bg-muted/10 rounded-lg border border-muted/20 hover:bg-muted/20 transition-colors"
-                            data-testid={`billing-${billing.invoiceId}`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div
-                                className={`p-2 rounded-full ${
-                                  billing.status === "paid"
-                                    ? "bg-green-100 dark:bg-green-900/30"
-                                    : billing.status === "pending"
-                                      ? "bg-yellow-100 dark:bg-yellow-900/30"
-                                      : billing.status === "failed"
-                                        ? "bg-red-100 dark:bg-red-900/30"
-                                        : "bg-muted"
-                                }`}
-                              >
-                                {billing.status === "paid" ? (
-                                  <CheckCircle className="h-4 w-4 text-green-600" />
-                                ) : billing.status === "pending" ? (
-                                  <Clock className="h-4 w-4 text-yellow-600" />
-                                ) : billing.status === "failed" ? (
-                                  <XCircle className="h-4 w-4 text-red-600" />
-                                ) : (
-                                  <Receipt className="h-4 w-4 text-muted-foreground" />
-                                )}
+                        {billingHistory.map(
+                          (billing) => (
+                            <div
+                              key={billing.id || billing.invoiceId}
+                              className="flex items-center justify-between p-4 bg-muted/10 rounded-lg border border-muted/20 hover:bg-muted/20 transition-colors"
+                              data-testid={`billing-${billing.invoiceId}`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className={`p-2 rounded-full ${
+                                    billing.status === "paid"
+                                      ? "bg-green-100 dark:bg-green-900/30"
+                                      : billing.status === "pending"
+                                        ? "bg-yellow-100 dark:bg-yellow-900/30"
+                                        : billing.status === "failed"
+                                          ? "bg-red-100 dark:bg-red-900/30"
+                                          : "bg-muted"
+                                  }`}
+                                >
+                                  {billing.status === "paid" ? (
+                                    <CheckCircle className="h-4 w-4 text-green-600" />
+                                  ) : billing.status === "pending" ? (
+                                    <Clock className="h-4 w-4 text-yellow-600" />
+                                  ) : billing.status === "failed" ? (
+                                    <XCircle className="h-4 w-4 text-red-600" />
+                                  ) : (
+                                    <Receipt className="h-4 w-4 text-muted-foreground" />
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="font-medium">
+                                    {new Date(billing.date).toLocaleDateString(
+                                      "en-US",
+                                      {
+                                        year: "numeric",
+                                        month: "long",
+                                        day: "numeric",
+                                      },
+                                    )}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground flex items-center gap-2">
+                                    {billing.description || billing.invoiceId}
+                                    {billing.status && (
+                                      <Badge
+                                        variant={
+                                          billing.status === "paid"
+                                            ? "default"
+                                            : billing.status === "failed"
+                                              ? "destructive"
+                                              : "secondary"
+                                        }
+                                        className="text-xs"
+                                      >
+                                        {billing.status
+                                          .charAt(0)
+                                          .toUpperCase() +
+                                          billing.status.slice(1)}
+                                      </Badge>
+                                    )}
+                                  </p>
+                                </div>
                               </div>
-                              <div>
-                                <p className="font-medium">
-                                  {new Date(billing.date).toLocaleDateString(
-                                    "en-US",
-                                    {
-                                      year: "numeric",
-                                      month: "long",
-                                      day: "numeric",
-                                    },
-                                  )}
+                              <div className="flex items-center gap-3">
+                                <p className="font-semibold text-lg">
+                                  $
+                                  {typeof billing.amount === "number"
+                                    ? billing.amount.toFixed(2)
+                                    : billing.amount}
                                 </p>
-                                <p className="text-sm text-muted-foreground flex items-center gap-2">
-                                  {billing.description || billing.invoiceId}
-                                  {billing.status && (
-                                    <Badge
-                                      variant={
-                                        billing.status === "paid"
-                                          ? "default"
-                                          : billing.status === "failed"
-                                            ? "destructive"
-                                            : "secondary"
-                                      }
-                                      className="text-xs"
-                                    >
-                                      {billing.status.charAt(0).toUpperCase() +
-                                        billing.status.slice(1)}
-                                    </Badge>
-                                  )}
-                                </p>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() =>
+                                    handleDownloadInvoice(billing.invoiceId)
+                                  }
+                                  title="Download Invoice"
+                                  data-testid={`button-download-invoice-${billing.invoiceId}`}
+                                >
+                                  <Download className="w-4 h-4" />
+                                </Button>
                               </div>
                             </div>
-                            <div className="flex items-center gap-3">
-                              <p className="font-semibold text-lg">
-                                $
-                                {typeof billing.amount === "number"
-                                  ? billing.amount.toFixed(2)
-                                  : billing.amount}
-                              </p>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() =>
-                                  handleDownloadInvoice(billing.invoiceId)
-                                }
-                                title="Download Invoice"
-                                data-testid={`button-download-invoice-${billing.invoiceId}`}
-                              >
-                                <Download className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
+                          ),
+                        )}
                       </div>
                     )}
                   </div>
@@ -1919,70 +1893,72 @@ export default function Settings() {
                           </div>
                         ) : (
                           <div className="space-y-3">
-                            {refundsData.refunds.map((refund) => (
-                              <div
-                                key={refund.id}
-                                className="flex items-center justify-between p-4 bg-muted/10 rounded-lg border border-muted/20"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <div
-                                    className={`p-2 rounded-full ${
-                                      refund.statusColor === "green"
-                                        ? "bg-green-100 dark:bg-green-900/30"
-                                        : refund.statusColor === "yellow"
-                                          ? "bg-yellow-100 dark:bg-yellow-900/30"
-                                          : refund.statusColor === "red"
-                                            ? "bg-red-100 dark:bg-red-900/30"
-                                            : "bg-blue-100 dark:bg-blue-900/30"
-                                    }`}
-                                  >
-                                    {refund.status === "succeeded" ? (
-                                      <CheckCircle className="h-4 w-4 text-green-600" />
-                                    ) : refund.status === "pending" ? (
-                                      <Clock className="h-4 w-4 text-yellow-600" />
-                                    ) : refund.status === "failed" ? (
-                                      <XCircle className="h-4 w-4 text-red-600" />
-                                    ) : (
-                                      <RefreshCw className="h-4 w-4 text-blue-600" />
-                                    )}
-                                  </div>
-                                  <div>
-                                    <p className="font-medium">
-                                      {new Date(
-                                        refund.created,
-                                      ).toLocaleDateString("en-US", {
-                                        year: "numeric",
-                                        month: "long",
-                                        day: "numeric",
-                                      })}
-                                    </p>
-                                    <p className="text-sm text-muted-foreground flex items-center gap-2">
-                                      {refund.description}
-                                      <Badge
-                                        variant={
-                                          refund.status === "succeeded"
-                                            ? "default"
-                                            : refund.status === "failed"
-                                              ? "destructive"
-                                              : "secondary"
-                                        }
-                                        className="text-xs"
-                                      >
-                                        {refund.statusDisplay}
-                                      </Badge>
-                                    </p>
-                                    {refund.reason && (
-                                      <p className="text-xs text-muted-foreground mt-1">
-                                        Reason: {refund.reason}
+                            {refundsData.refunds.map(
+                              (refund) => (
+                                <div
+                                  key={refund.id}
+                                  className="flex items-center justify-between p-4 bg-muted/10 rounded-lg border border-muted/20"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div
+                                      className={`p-2 rounded-full ${
+                                        refund.statusColor === "green"
+                                          ? "bg-green-100 dark:bg-green-900/30"
+                                          : refund.statusColor === "yellow"
+                                            ? "bg-yellow-100 dark:bg-yellow-900/30"
+                                            : refund.statusColor === "red"
+                                              ? "bg-red-100 dark:bg-red-900/30"
+                                              : "bg-blue-100 dark:bg-blue-900/30"
+                                      }`}
+                                    >
+                                      {refund.status === "succeeded" ? (
+                                        <CheckCircle className="h-4 w-4 text-green-600" />
+                                      ) : refund.status === "pending" ? (
+                                        <Clock className="h-4 w-4 text-yellow-600" />
+                                      ) : refund.status === "failed" ? (
+                                        <XCircle className="h-4 w-4 text-red-600" />
+                                      ) : (
+                                        <RefreshCw className="h-4 w-4 text-blue-600" />
+                                      )}
+                                    </div>
+                                    <div>
+                                      <p className="font-medium">
+                                        {new Date(
+                                          refund.created,
+                                        ).toLocaleDateString("en-US", {
+                                          year: "numeric",
+                                          month: "long",
+                                          day: "numeric",
+                                        })}
                                       </p>
-                                    )}
+                                      <p className="text-sm text-muted-foreground flex items-center gap-2">
+                                        {refund.description}
+                                        <Badge
+                                          variant={
+                                            refund.status === "succeeded"
+                                              ? "default"
+                                              : refund.status === "failed"
+                                                ? "destructive"
+                                                : "secondary"
+                                          }
+                                          className="text-xs"
+                                        >
+                                          {refund.statusDisplay}
+                                        </Badge>
+                                      </p>
+                                      {refund.reason && (
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          Reason: {refund.reason}
+                                        </p>
+                                      )}
+                                    </div>
                                   </div>
+                                  <p className="font-semibold text-lg text-green-600">
+                                    +${refund.amount.toFixed(2)}
+                                  </p>
                                 </div>
-                                <p className="font-semibold text-lg text-green-600">
-                                  +${refund.amount.toFixed(2)}
-                                </p>
-                              </div>
-                            ))}
+                              ),
+                            )}
                           </div>
                         )}
                       </div>
@@ -2274,53 +2250,55 @@ export default function Settings() {
                         Upgrade Options
                       </h4>
                       <div className="grid gap-3">
-                        {subscriptionData.upgradeOptions.map((option) => (
-                          <div
-                            key={option.tier}
-                            className="p-4 rounded-lg border bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800"
-                          >
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <h5 className="font-medium">
-                                  {option.name} Plan
-                                </h5>
-                                <p className="text-sm text-muted-foreground">
-                                  {option.period === "once"
-                                    ? `$${option.price} one-time`
-                                    : `$${option.price}/${option.period}`}
-                                  {option.savings && (
-                                    <span className="text-green-600 ml-2">
-                                      Save ${option.savings}/year
-                                    </span>
-                                  )}
-                                </p>
+                        {subscriptionData.upgradeOptions.map(
+                          (option) => (
+                            <div
+                              key={option.tier}
+                              className="p-4 rounded-lg border bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h5 className="font-medium">
+                                    {option.name} Plan
+                                  </h5>
+                                  <p className="text-sm text-muted-foreground">
+                                    {option.period === "once"
+                                      ? `$${option.price} one-time`
+                                      : `$${option.price}/${option.period}`}
+                                    {option.savings && (
+                                      <span className="text-green-600 ml-2">
+                                        Save ${option.savings}/year
+                                      </span>
+                                    )}
+                                  </p>
+                                </div>
+                                <Button
+                                  size="sm"
+                                  onClick={() => {
+                                    setPlanComparisonOpen(false);
+                                    navigate(`/subscribe?plan=${option.tier}`);
+                                  }}
+                                >
+                                  Upgrade
+                                  <ArrowUpRight className="h-3 w-3 ml-1" />
+                                </Button>
                               </div>
-                              <Button
-                                size="sm"
-                                onClick={() => {
-                                  setPlanComparisonOpen(false);
-                                  navigate(`/subscribe?plan=${option.tier}`);
-                                }}
-                              >
-                                Upgrade
-                                <ArrowUpRight className="h-3 w-3 ml-1" />
-                              </Button>
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {option.features
+                                  ?.slice(0, 3)
+                                  .map((feature: string, index: number) => (
+                                    <Badge
+                                      key={index}
+                                      variant="secondary"
+                                      className="text-xs"
+                                    >
+                                      {feature}
+                                    </Badge>
+                                  ))}
+                              </div>
                             </div>
-                            <div className="mt-2 flex flex-wrap gap-2">
-                              {option.features
-                                ?.slice(0, 3)
-                                .map((feature: string, index: number) => (
-                                  <Badge
-                                    key={index}
-                                    variant="secondary"
-                                    className="text-xs"
-                                  >
-                                    {feature}
-                                  </Badge>
-                                ))}
-                            </div>
-                          </div>
-                        ))}
+                          ),
+                        )}
                       </div>
                     </div>
                   )}
@@ -2334,46 +2312,50 @@ export default function Settings() {
                         Downgrade Options
                       </h4>
                       <div className="grid gap-3">
-                        {subscriptionData.downgradeOptions.map((option) => (
-                          <div
-                            key={option.tier}
-                            className="p-4 rounded-lg border bg-orange-50/50 dark:bg-orange-900/10 border-orange-200 dark:border-orange-800"
-                          >
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <h5 className="font-medium">
-                                  {option.name} Plan
-                                </h5>
-                                <p className="text-sm text-muted-foreground">
-                                  {option.price === 0
-                                    ? "Free"
-                                    : `$${option.price}/${option.period}`}
-                                </p>
+                        {subscriptionData.downgradeOptions.map(
+                          (option) => (
+                            <div
+                              key={option.tier}
+                              className="p-4 rounded-lg border bg-orange-50/50 dark:bg-orange-900/10 border-orange-200 dark:border-orange-800"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h5 className="font-medium">
+                                    {option.name} Plan
+                                  </h5>
+                                  <p className="text-sm text-muted-foreground">
+                                    {option.price === 0
+                                      ? "Free"
+                                      : `$${option.price}/${option.period}`}
+                                  </p>
+                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setPlanComparisonOpen(false);
+                                    if (option.tier === "free") {
+                                      setCancelSubscriptionOpen(true);
+                                    } else {
+                                      navigate(
+                                        `/subscribe?plan=${option.tier}`,
+                                      );
+                                    }
+                                  }}
+                                >
+                                  Downgrade
+                                  <ArrowDownRight className="h-3 w-3 ml-1" />
+                                </Button>
                               </div>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setPlanComparisonOpen(false);
-                                  if (option.tier === "free") {
-                                    setCancelSubscriptionOpen(true);
-                                  } else {
-                                    navigate(`/subscribe?plan=${option.tier}`);
-                                  }
-                                }}
-                              >
-                                Downgrade
-                                <ArrowDownRight className="h-3 w-3 ml-1" />
-                              </Button>
+                              <p className="text-xs text-orange-600 dark:text-orange-400 mt-2">
+                                You may lose access to:{" "}
+                                {subscriptionData.planBenefits.cloudStorage}{" "}
+                                storage, {subscriptionData.planBenefits.support}{" "}
+                                support
+                              </p>
                             </div>
-                            <p className="text-xs text-orange-600 dark:text-orange-400 mt-2">
-                              You may lose access to:{" "}
-                              {subscriptionData.planBenefits.cloudStorage}{" "}
-                              storage, {subscriptionData.planBenefits.support}{" "}
-                              support
-                            </p>
-                          </div>
-                        ))}
+                          ),
+                        )}
                       </div>
                     </div>
                   )}

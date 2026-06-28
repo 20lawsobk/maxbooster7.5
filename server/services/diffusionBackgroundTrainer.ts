@@ -30,18 +30,18 @@ import os from "os";
 import { fileURLToPath } from "url";
 import { logger } from "../logger.js";
 
-const ___metaUrl = (import?.meta as Record<string, unknown>)?.url as
+const __metaUrl = (import.meta as Record<string, unknown>)?.url as
   | string
   | undefined;
-const ___filename = __metaUrl
+const __filename = __metaUrl
   ? fileURLToPath(__metaUrl)
   : path?.resolve(process?.argv[1] ?? "");
-const ___dirname = path?.dirname(__filename);
+const __dirname = path?.dirname(__filename);
 
-const _SYNTH_SCRIPT = path?.join(__dirname, "diffusion", "synthesizer.py");
-const _META_PATH = path?.join(__dirname, "diffusion", "meta.json");
-const _MEMORY_PATH = path?.join(__dirname, "diffusion", "memory.json");
-const _STATUS_PATH = path?.join(os?.tmpdir(), "diffusion_bg_status.json");
+const SYNTH_SCRIPT = path?.join(__dirname, "diffusion", "synthesizer.py");
+const META_PATH = path?.join(__dirname, "diffusion", "meta.json");
+const MEMORY_PATH = path?.join(__dirname, "diffusion", "memory.json");
+const STATUS_PATH = path?.join(os?.tmpdir(), "diffusion_bg_status.json");
 
 const TIER_SEQUENCE: Array<"quick" | "medium" | "deep"> = [
   "quick",
@@ -85,7 +85,7 @@ let _proc: ChildProcess | null = null;
 let _stopFlag: boolean = false;
 let _loopTimer: NodeJS.Timeout | null = null;
 
-const _MAX_LOG_LINES = 50;
+const MAX_LOG_LINES = 50;
 
 function _appendLog(line: string) {
   state?.logTail.push(line);
@@ -101,14 +101,14 @@ function _getTier(sessionIndex: number): "quick" | "medium" | "deep" {
 function _syncMemoryStats() {
   try {
     if (fs?.existsSync(MEMORY_PATH)) {
-      const _raw = JSON?.parse(fs?.readFileSync(MEMORY_PATH, "utf8"));
-      const _s = raw?.state ?? {};
+      const raw = JSON?.parse(fs?.readFileSync(MEMORY_PATH, "utf8"));
+      const s = raw?.state ?? {};
       state.totalSessions = s?.total_sessions ?? state?.totalSessions;
       state.totalSteps = s?.total_steps ?? state?.totalSteps;
       state.replayBuffer = (raw?.replay_buffer ?? []).length;
     }
     if (fs?.existsSync(META_PATH)) {
-      const _meta = JSON?.parse(fs?.readFileSync(META_PATH, "utf8"));
+      const meta = JSON?.parse(fs?.readFileSync(META_PATH, "utf8"));
       state.lastLoss = meta?.final_loss ?? state?.lastLoss;
     }
   } catch {
@@ -138,17 +138,17 @@ function _runSession(tier: "quick" | "medium" | "deep"): Promise<boolean> {
     state.currentTier = tier;
     state.startedAt = Date?.now();
     _appendLog(
-      `[BgTrainer] Session ${state?.session + 1} starting  tier=${tier}`,
+      `[BgTrainer] Session ${state.session + 1} starting  tier=${tier}`,
     );
     _saveStatus();
 
-    const _args = [SYNTH_SCRIPT, "--train-only", "--tier", tier];
+    const args = [SYNTH_SCRIPT, "--train-only", "--tier", tier];
     _proc = spawn(PYTHON, args, {
       stdio: ["ignore", "pipe", "pipe"],
       detached: false,
     });
 
-    state.pid = _proc.pid ?? null;
+    state.pid = _proc?.pid ?? null;
     state.running = true;
 
     _proc?.stdout?.on("data", (d: Buffer) => {
@@ -179,7 +179,7 @@ function _runSession(tier: "quick" | "medium" | "deep"): Promise<boolean> {
       state.pid = null;
       _syncMemoryStats();
       if (code === 0) {
-        state?.session++;
+        state.session++;
         _appendLog(
           `[BgTrainer] Session ${state?.session} complete ✓  ` +
             `loss=${state?.lastLoss?.toFixed(4) ?? "?"}  ` +
@@ -209,8 +209,8 @@ async function _trainingLoop() {
   _appendLog("[BgTrainer] Background self-training loop started");
 
   while (!_stopFlag) {
-    const _tier = _getTier(state?.session);
-    const _ok = await _runSession(tier);
+    const tier = _getTier(state?.session);
+    const ok = await _runSession(tier);
 
     if (!ok && !_stopFlag) {
       _appendLog("[BgTrainer] Session failed — retrying in 60s");
@@ -238,15 +238,42 @@ function _sleep(ms: number): Promise<void> {
 /** Check whether the MaxCore Diffusion Gateway (port 8008) is responding. */
 async function _isMaxCoreGatewayRunning(): Promise<boolean> {
   try {
-    const _ctrl = new AbortController();
-    const _timer = setTimeout(() => ctrl?.abort(), 4_000);
-    const _res = await fetch("http://localhost:8008/health", {
-      signal: ctrl?.signal,
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl?.abort(), 4_000);
+    const res = await fetch("http://localhost:8008/health", {
+      signal: ctrl.signal,
     });
     clearTimeout(timer);
     if (!res?.ok) return false;
-    const _data = await res?.json().catch(() => null);
+    const data = await res?.json().catch(() => null);
     return !!(data && (data as Record<string, unknown>).status === "ok");
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Check whether the external MaxCore AI server is reachable.
+ * When it is, we defer diffusion training to MaxCore rather than running the
+ * local Python synthesizer — MaxCore IS the authoritative training source.
+ */
+async function _isExternalMaxCoreReachable(): Promise<boolean> {
+  const mcUrl = (process?.env.AI_SERVER_URL || "").replace(/\/+$/, "");
+  const mcKey = process?.env.AI_SERVER_KEY || "";
+  if (!mcUrl || !mcKey) return false;
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl?.abort(), 5_000);
+    const res = await fetch(`${mcUrl}/api/health`, {
+      headers: {
+        Authorization: `Bearer ${mcKey}`,
+        "X-API-Key": mcKey,
+      },
+      signal: ctrl.signal,
+      redirect: "manual",
+    });
+    clearTimeout(timer);
+    return res?.ok;
   } catch {
     return false;
   }
@@ -256,10 +283,10 @@ async function _isMaxCoreGatewayRunning(): Promise<boolean> {
  * Start the background self-training loop.
  * Safe to call multiple times — won't start a second loop if already running.
  *
- * MaxCore is the primary diffusion training source. If the MaxCore Diffusion
- * Gateway (port 8008) is already running this session, we defer to it and do
- * NOT start a competing local process. The local loop only runs as a fallback
- * when the Gateway is unavailable.
+ * Priority order:
+ *   1. Local MaxCore Diffusion Gateway (port 8008) — if running, defer to it.
+ *   2. External MaxCore AI server — if reachable, defer to it (it IS MaxCore).
+ *   3. Local Python synthesizer fallback — only when neither above is available.
  */
 export async function startBackgroundTraining(): Promise<void> {
   if (state?.running) {
@@ -267,22 +294,38 @@ export async function startBackgroundTraining(): Promise<void> {
     return;
   }
 
-  // ── MaxCore Gateway check ────────────────────────────────────────────────
-  // The MaxCore Diffusion Gateway (api_server_v4.py on port 8008) is the
-  // authoritative diffusion training source. If it is online, we yield to it
-  // and skip the local synthesizer — running both would conflict on the same
-  // weights_v4?.npz file and waste CPU resources.
-  const _gatewayUp = await _isMaxCoreGatewayRunning();
+  // ── 1. Local Gateway check (port 8008) ──────────────────────────────────
+  // The MaxCore Diffusion Gateway workflow runs a training simulation loop and
+  // relays generate/render calls to external MaxCore.  If it is online we yield
+  // to it — running both would conflict on the same weights file and waste CPU.
+  const gatewayUp = await _isMaxCoreGatewayRunning();
   if (gatewayUp) {
     logger?.info(
       "[DiffBG] MaxCore Diffusion Gateway detected on port 8008 — " +
+        "deferring diffusion training to Gateway (local synthesizer will not run)",
+    );
+    return;
+  }
+
+  // ── 2. External MaxCore check ────────────────────────────────────────────
+  // In production the Gateway workflow may not be running as a separate
+  // process, but the external MaxCore AI server (secure-ai-forge.replit.app)
+  // is the authoritative training + inference source.  If it is reachable we
+  // defer to it — local Python training would be redundant and wasteful.
+  const externalMcUp = await _isExternalMaxCoreReachable();
+  if (externalMcUp) {
+    logger?.info(
+      "[DiffBG] External MaxCore AI server reachable — " +
         "deferring diffusion training to MaxCore (local synthesizer will not run)",
     );
     return;
   }
 
+  // ── 3. Local Python fallback ─────────────────────────────────────────────
+  // Neither the local Gateway nor the external MaxCore server responded.
+  // Start the local synthesizer so training continues offline.
   logger?.info(
-    "[DiffBG] MaxCore Diffusion Gateway not available — " +
+    "[DiffBG] MaxCore not reachable — " +
       "starting local fallback self-training loop",
   );
 
@@ -344,12 +387,12 @@ export function getBackgroundStatus(): BgStatus & { eta: string } {
     medium: 110,
     deep: 275,
   };
-  const _elapsedMin = state?.startedAt
+  const elapsedMin = state?.startedAt
     ? Math?.round((Date?.now() - state?.startedAt) / 60_000)
     : 0;
-  const _totalMin = tierMins[state?.currentTier] ?? 60;
-  const _remaining = Math?.max(0, totalMin - elapsedMin);
-  const _eta = state?.running
+  const totalMin = tierMins[state?.currentTier] ?? 60;
+  const remaining = Math?.max(0, totalMin - elapsedMin);
+  const eta = state?.running
     ? `~${remaining}min remaining in current ${state?.currentTier} session`
     : "not running";
 

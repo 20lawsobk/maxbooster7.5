@@ -192,7 +192,7 @@ This policy is reviewed annually and updated as needed to address:
 Date: November 11, 2025
 
 **Acknowledged by:**  
-Employee Signature: **\*\*\*\***\_\_\_**\*\*\*\***  
-Date: **\*\*\*\***\_\_\_**\*\*\*\***
+Employee Signature: ********\_\_\_********  
+Date: ********\_\_\_********
 
 I acknowledge that I have read, understood, and agree to comply with this Acceptable Use Policy.

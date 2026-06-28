@@ -7,15 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import {
-  CheckCircle2,
-  Calendar,
-  ListTodo,
-  Clock,
-  AlertCircle,
-  Sparkles,
-  Plus,
-} from "lucide-react";
+import { CheckCircle2, Calendar, ListTodo, Clock, AlertCircle, Sparkles, Plus } from "lucide-react";
 
 interface Task {
   id: string;

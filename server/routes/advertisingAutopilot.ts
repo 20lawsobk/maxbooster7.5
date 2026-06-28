@@ -8,45 +8,45 @@ import { db } from "../db";
 import { adCampaigns } from "@shared/schema";
 import { eq, count, gt, desc, and, isNotNull } from "drizzle-orm";
 
-const _router = Router();
+const router = Router();
 
 // Advertising Autopilot Configuration Schema
-const _advertisingAutopilotConfigSchema = z?.object({
-  enabled: z?.boolean(),
-  platforms: z?.array(z?.string()).optional(),
+const advertisingAutopilotConfigSchema = z.object({
+  enabled: z.boolean(),
+  platforms: z.array(z.string()).optional(),
   campaignObjective: z
     .enum(["awareness", "engagement", "conversions", "traffic", "viral"])
     .optional(),
   campaignFrequency: z
     .enum(["hourly", "daily", "twice-daily", "weekly"])
     .optional(),
-  brandVoice: z?.string().optional(),
-  contentTypes: z?.array(z?.string()).optional(),
-  mediaTypes: z?.array(z?.string()).optional(),
-  targetAudience: z?.string().optional(),
-  ageMin: z?.number().min(13).max(100).optional(),
-  ageMax: z?.number().min(13).max(100).optional(),
-  interests: z?.array(z?.string()).optional(),
-  locations: z?.array(z?.string()).optional(),
-  budgetOptimization: z?.boolean().optional(),
-  dailyBudgetLimit: z?.number().min(0).optional(),
-  viralOptimization: z?.boolean().optional(),
-  algorithmicTargeting: z?.boolean().optional(),
-  autoPublish: z?.boolean().optional(),
-  optimalTimesOnly: z?.boolean().optional(),
-  crossPlatformCampaigns: z?.boolean().optional(),
-  engagementThreshold: z?.number().min(0).max(1).optional(),
-  minConfidenceThreshold: z?.number().min(0).max(1).default(0.7),
-  autoAnalyzeBeforePosting: z?.boolean().default(true),
+  brandVoice: z.string().optional(),
+  contentTypes: z.array(z.string()).optional(),
+  mediaTypes: z.array(z.string()).optional(),
+  targetAudience: z.string().optional(),
+  ageMin: z.number().min(13).max(100).optional(),
+  ageMax: z.number().min(13).max(100).optional(),
+  interests: z.array(z.string()).optional(),
+  locations: z.array(z.string()).optional(),
+  budgetOptimization: z.boolean().optional(),
+  dailyBudgetLimit: z.number().min(0).optional(),
+  viralOptimization: z.boolean().optional(),
+  algorithmicTargeting: z.boolean().optional(),
+  autoPublish: z.boolean().optional(),
+  optimalTimesOnly: z.boolean().optional(),
+  crossPlatformCampaigns: z.boolean().optional(),
+  engagementThreshold: z.number().min(0).max(1).optional(),
+  minConfidenceThreshold: z.number().min(0).max(1).default(0.7),
+  autoAnalyzeBeforePosting: z.boolean().default(true),
 });
 
 // Get advertising autopilot status
 router?.get("/status", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _now = new Date();
+    const userId = req?.user!.id;
+    const now = new Date();
 
-    const _config = await storage
+    const config = await storage
       .getAdvertisingAutopilotConfig(userId)
       .catch(() => null);
 
@@ -56,7 +56,7 @@ router?.get("/status", requireAuth, async (req, res) => {
       viralSuccessRate = 0,
       organicReachMultiplier = 1;
     try {
-      const _advertisingModel =
+      const advertisingModel =
         await aiModelManager?.getAdvertisingAutopilot(userId);
       modelTrained = advertisingModel?.getIsTrained();
       modelVersion = advertisingModel?.getVersion();
@@ -77,7 +77,7 @@ router?.get("/status", requireAuth, async (req, res) => {
         .from(adCampaigns)
         .where(eq(adCampaigns?.userId, userId)),
       db
-        .select({ startDate: adCampaigns?.startDate })
+        .select({ startDate: adCampaigns.startDate })
         .from(adCampaigns)
         .where(
           and(
@@ -96,10 +96,10 @@ router?.get("/status", requireAuth, async (req, res) => {
         .limit(10),
     ]).catch(() => [[], [], []]);
 
-    const _totalCampaigns = Number(
+    const totalCampaigns = Number(
       (totalRow as { value?: number }[])[0]?.value ?? 0,
     );
-    const _nextScheduledCampaign =
+    const nextScheduledCampaign =
       (nextCampaignRow as { startDate?: string }[])[0]?.startDate ?? null;
 
     // Aggregate reach and engagement from campaign performance JSON
@@ -107,20 +107,20 @@ router?.get("/status", requireAuth, async (req, res) => {
     let engagementRateSum = 0;
     let engagementRateCount = 0;
     for (const c of recentCampaignRows as Record<string, unknown>[]) {
-      const _perf = c?.performance as Record<string, unknown>;
+      const perf = c?.performance as Record<string, unknown>;
       if (perf) {
         totalReach += Number(perf?.reach || perf?.impressions || 0);
-        const _rate = perf?.engagementRate || perf?.engagement_rate;
+        const rate = perf?.engagementRate || perf?.engagement_rate;
         if (rate != null) {
           engagementRateSum += Number(rate);
           engagementRateCount++;
         }
       }
     }
-    const _avgEngagementRate =
+    const avgEngagementRate =
       engagementRateCount > 0 ? engagementRateSum / engagementRateCount : 0;
 
-    const _recentActivity = (
+    const recentActivity = (
       recentCampaignRows as Record<string, unknown>[]
     ).map((c: Record<string, unknown>) => ({
       status:
@@ -129,13 +129,13 @@ router?.get("/status", requireAuth, async (req, res) => {
           : c?.status === "failed"
             ? "failed"
             : "scheduled",
-      title: c?.name || "Campaign",
+      title: c.name || "Campaign",
       description: `${c?.platform || "multi-platform"} • ${c?.objective || "awareness"}`,
-      time: c?.startDate || c?.createdAt,
+      time: c.startDate || c?.createdAt,
     }));
 
     res?.json({
-      isRunning: config?.enabled || false,
+      isRunning: config.enabled || false,
       config: config || {
         enabled: false,
         platforms: [],
@@ -186,7 +186,7 @@ router?.get("/status", requireAuth, async (req, res) => {
 // Start advertising autopilot
 router?.post("/start", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
     // Get or create config
     let config = await storage?.getAdvertisingAutopilotConfig(userId);
@@ -237,9 +237,9 @@ router?.post("/start", requireAuth, async (req, res) => {
 // Stop advertising autopilot
 router?.post("/stop", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _config = await storage?.getAdvertisingAutopilotConfig(userId);
+    const config = await storage?.getAdvertisingAutopilotConfig(userId);
     if (config) {
       config.enabled = false;
       await storage?.saveAdvertisingAutopilotConfig(userId, config);
@@ -260,8 +260,8 @@ router?.post("/stop", requireAuth, async (req, res) => {
 // Configure advertising autopilot
 router?.post("/configure", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _config = advertisingAutopilotConfigSchema?.parse(req?.body);
+    const userId = req?.user!.id;
+    const config = advertisingAutopilotConfigSchema?.parse(req?.body);
 
     await storage?.saveAdvertisingAutopilotConfig(userId, config);
 
@@ -273,10 +273,10 @@ router?.post("/configure", requireAuth, async (req, res) => {
       config,
     });
   } catch (error) {
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       res
         .status(400)
-        .json({ error: "Invalid configuration", details: error?.issues });
+        .json({ error: "Invalid configuration", details: error.issues });
       return;
     }
     logger?.warn({ err: error }, "Failed to configure advertising autopilot:");
@@ -287,17 +287,17 @@ router?.post("/configure", requireAuth, async (req, res) => {
 // Generate campaign recommendations
 router?.post("/recommend", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
     const { objective, includeMultimodal } = req?.body;
 
     // Get AI model
-    const _advertisingModel =
+    const advertisingModel =
       await aiModelManager?.getAdvertisingAutopilot(userId);
 
     // Get multimodal features if enabled
     let multimodalFeatures = null;
     if (includeMultimodal !== false) {
-      const _recentAnalyzedContent = await storage?.getRecentAnalyzedContent(
+      const recentAnalyzedContent = await storage?.getRecentAnalyzedContent(
         userId,
         10,
       );
@@ -307,7 +307,7 @@ router?.post("/recommend", requireAuth, async (req, res) => {
     }
 
     // Generate campaign recommendations
-    const _recommendations =
+    const recommendations =
       await advertisingModel?.generateCampaignRecommendations(
         objective || "awareness",
         multimodalFeatures,
@@ -329,45 +329,45 @@ router?.post("/recommend", requireAuth, async (req, res) => {
 // Get AI performance metrics
 router?.get("/performance", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _advertisingModel =
+    const advertisingModel =
       await aiModelManager?.getAdvertisingAutopilot(userId);
-    const _organicReachMultiplier =
+    const organicReachMultiplier =
       advertisingModel?.getAvgOrganicReachMultiplier();
-    const _audienceSegments = advertisingModel?.getAudienceSegments();
+    const audienceSegments = advertisingModel?.getAudienceSegments();
 
     // Compute estimated savings from real organicReachMultiplier
     // Industry avg CPM for paid social ads: ~$8-12. We use $10 as baseline.
     // Estimated monthly posts across active campaigns
-    const _activeCampaigns = await db
-      .select({ id: adCampaigns?.id })
+    const activeCampaigns = await db
+      .select({ id: adCampaigns.id })
       .from(adCampaigns)
       .where(
         and(eq(adCampaigns?.userId, userId), eq(adCampaigns?.status, "active")),
       )
       .limit(100);
-    const _numCampaigns = activeCampaigns?.length;
+    const numCampaigns = activeCampaigns?.length;
 
     // Baseline: if artist had 0 campaigns, show neutral
-    const _multiplier = organicReachMultiplier || 1.0;
-    const _pctBetter = Math?.round((multiplier - 1) * 100);
+    const multiplier = organicReachMultiplier || 1.0;
+    const pctBetter = Math?.round((multiplier - 1) * 100);
     // Each campaign is estimated to generate ~50k impressions/month organically
-    const _estimatedMonthlyImpressions = numCampaigns * 50000;
+    const estimatedMonthlyImpressions = numCampaigns * 50000;
     // What those impressions would cost as paid ads at $10 CPM
-    const _equivalentPaidSpend = (estimatedMonthlyImpressions / 1000) * 10;
-    const _annualSavings = Math?.round(equivalentPaidSpend * 12);
+    const equivalentPaidSpend = (estimatedMonthlyImpressions / 1000) * 10;
+    const annualSavings = Math?.round(equivalentPaidSpend * 12);
     // Revenue uplift: each campaign that outperforms paid avg generates ~10% more conversions
-    const _conversionUplift =
+    const conversionUplift =
       numCampaigns > 0 ? Math?.round(numCampaigns * multiplier * 500) : 0;
 
     res?.json({
       success: true,
       organicReachMultiplier: multiplier,
-      viralSuccessRate: advertisingModel?.getViralSuccessRate() || 0,
-      trained: advertisingModel?.getIsTrained(),
+      viralSuccessRate: advertisingModel.getViralSuccessRate() || 0,
+      trained: advertisingModel.getIsTrained(),
       audienceSegments: audienceSegments || [],
-      totalSegments: audienceSegments?.length || 0,
+      totalSegments: audienceSegments.length || 0,
       activeCampaigns: numCampaigns,
       performance: {
         vsOrganicBaseline:
@@ -394,8 +394,8 @@ router?.get("/performance", requireAuth, async (req, res) => {
 // Get campaigns - returns empty array when no real data exists
 router?.get("/campaigns", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _campaigns = (await storage?.getAdvertisingCampaigns?.(userId)) || [];
+    const userId = req?.user!.id;
+    const campaigns = (await storage?.getAdvertisingCampaigns?.(userId)) || [];
     res?.json(campaigns);
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get campaigns:");
@@ -406,8 +406,8 @@ router?.get("/campaigns", requireAuth, async (req, res) => {
 // Get AI insights - returns empty state when no real data exists
 router?.get("/ai-insights", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _insights = (await storage?.getAdvertisingInsights?.(userId)) || null;
+    const userId = req?.user!.id;
+    const insights = (await storage?.getAdvertisingInsights?.(userId)) || null;
     res?.json(
       insights ?? { campaigns: [], totalSpend: 0, totalRevenue: 0, roas: 0 },
     );
@@ -420,8 +420,8 @@ router?.get("/ai-insights", requireAuth, async (req, res) => {
 // Get audience segments - returns empty array when no real data exists
 router?.get("/audience-segments", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _segments = (await storage?.getAudienceSegments?.(userId)) || [];
+    const userId = req?.user!.id;
+    const segments = (await storage?.getAudienceSegments?.(userId)) || [];
     res?.json(segments);
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get audience segments:");
@@ -432,8 +432,8 @@ router?.get("/audience-segments", requireAuth, async (req, res) => {
 // Get creative fatigue data - returns empty array when no real data exists
 router?.get("/creative-fatigue", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _fatigue = (await storage?.getCreativeFatigue?.(userId)) || [];
+    const userId = req?.user!.id;
+    const fatigue = (await storage?.getCreativeFatigue?.(userId)) || [];
     res?.json(fatigue);
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get creative fatigue:");
@@ -444,8 +444,8 @@ router?.get("/creative-fatigue", requireAuth, async (req, res) => {
 // Get bidding strategies - returns empty array when no real data exists
 router?.get("/bidding-strategies", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _strategies = (await storage?.getBiddingStrategies?.(userId)) || [];
+    const userId = req?.user!.id;
+    const strategies = (await storage?.getBiddingStrategies?.(userId)) || [];
     res?.json(strategies);
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get bidding strategies:");
@@ -456,8 +456,8 @@ router?.get("/bidding-strategies", requireAuth, async (req, res) => {
 // Get lookalike audiences - returns empty array when no real data exists
 router?.get("/lookalike-audiences", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _audiences = (await storage?.getLookalikeAudiences?.(userId)) || [];
+    const userId = req?.user!.id;
+    const audiences = (await storage?.getLookalikeAudiences?.(userId)) || [];
     res?.json(audiences);
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get lookalike audiences:");
@@ -468,8 +468,8 @@ router?.get("/lookalike-audiences", requireAuth, async (req, res) => {
 // Get forecasts - returns null when no real data exists
 router?.get("/forecasts", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _forecasts = (await storage?.getAdvertisingForecasts?.(userId)) || null;
+    const userId = req?.user!.id;
+    const forecasts = (await storage?.getAdvertisingForecasts?.(userId)) || null;
     res?.json(forecasts ?? []);
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get forecasts:");
@@ -480,8 +480,8 @@ router?.get("/forecasts", requireAuth, async (req, res) => {
 // Get competitor insights - returns empty array when no real data exists
 router?.get("/competitor-insights", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _insights = (await storage?.getCompetitorInsights?.(userId)) || [];
+    const userId = req?.user!.id;
+    const insights = (await storage?.getCompetitorInsights?.(userId)) || [];
     res?.json(insights);
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get competitor insights:");
@@ -492,8 +492,8 @@ router?.get("/competitor-insights", requireAuth, async (req, res) => {
 // Get A/B tests - returns empty array when no real data exists
 router?.get("/ab-tests", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _tests = (await storage?.getABTests?.(userId)) || [];
+    const userId = req?.user!.id;
+    const tests = (await storage?.getABTests?.(userId)) || [];
     res?.json(tests);
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get A/B tests:");
@@ -504,8 +504,8 @@ router?.get("/ab-tests", requireAuth, async (req, res) => {
 // Get creative variants - returns empty array when no real data exists
 router?.get("/creative-variants", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _variants = (await storage?.getCreativeVariants?.(userId)) || [];
+    const userId = req?.user!.id;
+    const variants = (await storage?.getCreativeVariants?.(userId)) || [];
     res?.json(variants);
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get creative variants:");
@@ -516,8 +516,8 @@ router?.get("/creative-variants", requireAuth, async (req, res) => {
 // Get ROAS campaigns - returns empty array when no real data exists
 router?.get("/roas/campaigns", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _campaigns = (await storage?.getRoasCampaigns?.(userId)) || [];
+    const userId = req?.user!.id;
+    const campaigns = (await storage?.getRoasCampaigns?.(userId)) || [];
     res?.json(campaigns);
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get ROAS campaigns:");
@@ -528,8 +528,8 @@ router?.get("/roas/campaigns", requireAuth, async (req, res) => {
 // Get ROAS audience segments - returns empty array when no real data exists
 router?.get("/roas/audience-segments", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _segments = (await storage?.getRoasAudienceSegments?.(userId)) || [];
+    const userId = req?.user!.id;
+    const segments = (await storage?.getRoasAudienceSegments?.(userId)) || [];
     res?.json(segments);
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get ROAS audience segments:");
@@ -540,8 +540,8 @@ router?.get("/roas/audience-segments", requireAuth, async (req, res) => {
 // Get ROAS forecast data - returns empty array when no real data exists
 router?.get("/roas/forecast", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _forecast = (await storage?.getRoasForecast?.(userId)) || [];
+    const userId = req?.user!.id;
+    const forecast = (await storage?.getRoasForecast?.(userId)) || [];
     res?.json(forecast);
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get ROAS forecast:");
@@ -552,8 +552,8 @@ router?.get("/roas/forecast", requireAuth, async (req, res) => {
 // Get budget optimization data - returns empty array when no real data exists
 router?.get("/roas/budget-optimization", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _data = (await storage?.getBudgetOptimization?.(userId)) || [];
+    const userId = req?.user!.id;
+    const data = (await storage?.getBudgetOptimization?.(userId)) || [];
     res?.json(data);
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get budget optimization:");
@@ -564,8 +564,8 @@ router?.get("/roas/budget-optimization", requireAuth, async (req, res) => {
 // Get creative fatigue analysis - returns empty array when no real data exists
 router?.get("/roas/creative-fatigue-analysis", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _data = (await storage?.getCreativeFatigueAnalysis?.(userId)) || [];
+    const userId = req?.user!.id;
+    const data = (await storage?.getCreativeFatigueAnalysis?.(userId)) || [];
     res?.json(data);
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get creative fatigue analysis:");
@@ -576,8 +576,8 @@ router?.get("/roas/creative-fatigue-analysis", requireAuth, async (req, res) => 
 // Get budget pacing campaigns - returns empty array when no real data exists
 router?.get("/budget-pacing/campaigns", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _campaigns = (await storage?.getBudgetPacingCampaigns?.(userId)) || [];
+    const userId = req?.user!.id;
+    const campaigns = (await storage?.getBudgetPacingCampaigns?.(userId)) || [];
     res?.json(campaigns);
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get budget pacing campaigns:");
@@ -588,8 +588,8 @@ router?.get("/budget-pacing/campaigns", requireAuth, async (req, res) => {
 // Get budget pacing history - returns empty array when no real data exists
 router?.get("/budget-pacing/history", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _history = (await storage?.getBudgetPacingHistory?.(userId)) || [];
+    const userId = req?.user!.id;
+    const history = (await storage?.getBudgetPacingHistory?.(userId)) || [];
     res?.json(history);
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get budget pacing history:");
@@ -600,8 +600,8 @@ router?.get("/budget-pacing/history", requireAuth, async (req, res) => {
 // Get attribution data - returns empty array when no real data exists
 router?.get("/attribution", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _data = (await storage?.getAttributionData?.(userId)) || [];
+    const userId = req?.user!.id;
+    const data = (await storage?.getAttributionData?.(userId)) || [];
     res?.json(data);
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get attribution data:");
@@ -612,8 +612,8 @@ router?.get("/attribution", requireAuth, async (req, res) => {
 // Get cross-channel attribution - returns empty array when no real data exists
 router?.get("/cross-channel-attribution", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _data = (await storage?.getCrossChannelAttribution?.(userId)) || [];
+    const userId = req?.user!.id;
+    const data = (await storage?.getCrossChannelAttribution?.(userId)) || [];
     res?.json(data);
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get cross-channel attribution:");
@@ -624,8 +624,8 @@ router?.get("/cross-channel-attribution", requireAuth, async (req, res) => {
 // Get social listening keywords - returns empty array when no real data exists
 router?.get("/social-listening/keywords", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _keywords = (await storage?.getSocialListeningKeywords?.(userId)) || [];
+    const userId = req?.user!.id;
+    const keywords = (await storage?.getSocialListeningKeywords?.(userId)) || [];
     res?.json({ keywords });
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get social listening keywords:");
@@ -636,8 +636,8 @@ router?.get("/social-listening/keywords", requireAuth, async (req, res) => {
 // Get social listening trending - returns empty array when no real data exists
 router?.get("/social-listening/trending", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _trending = (await storage?.getSocialListeningTrending?.(userId)) || [];
+    const userId = req?.user!.id;
+    const trending = (await storage?.getSocialListeningTrending?.(userId)) || [];
     res?.json({ trending });
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get social listening trending:");
@@ -648,8 +648,8 @@ router?.get("/social-listening/trending", requireAuth, async (req, res) => {
 // Get social listening influencers - returns empty array when no real data exists
 router?.get("/social-listening/influencers", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _influencers =
+    const userId = req?.user!.id;
+    const influencers =
       (await storage?.getSocialListeningInfluencers?.(userId)) || [];
     res?.json({ influencers });
   } catch (error) {
@@ -663,8 +663,8 @@ router?.get("/social-listening/influencers", requireAuth, async (req, res) => {
 // Get social listening alerts - returns empty array when no real data exists
 router?.get("/social-listening/alerts", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _alerts = (await storage?.getSocialListeningAlerts?.(userId)) || [];
+    const userId = req?.user!.id;
+    const alerts = (await storage?.getSocialListeningAlerts?.(userId)) || [];
     res?.json({ alerts });
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get social listening alerts:");
@@ -675,8 +675,8 @@ router?.get("/social-listening/alerts", requireAuth, async (req, res) => {
 // Get competitors - returns empty array when no real data exists
 router?.get("/competitors", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _competitors = (await storage?.getCompetitors?.(userId)) || [];
+    const userId = req?.user!.id;
+    const competitors = (await storage?.getCompetitors?.(userId)) || [];
     res?.json({ competitors });
   } catch (error) {
     logger?.warn({ err: error }, "Failed to get competitors:");
@@ -687,8 +687,8 @@ router?.get("/competitors", requireAuth, async (req, res) => {
 // Get your social stats - returns empty stats when no real data exists
 router?.get("/your-stats", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _stats = (await storage?.getUserSocialStats?.(userId)) || {
+    const userId = req?.user!.id;
+    const stats = (await storage?.getUserSocialStats?.(userId)) || {
       totalFollowers: 0,
       avgEngagement: 0,
       shareOfVoice: 0,

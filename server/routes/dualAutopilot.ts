@@ -10,120 +10,120 @@ import { db } from "../db.js";
 import { fanSegments } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 
-const _router = Router();
+const router = Router();
 
-const _dailyLoopSchema = z?.object({
-  date: z?.string().datetime().optional(),
+const dailyLoopSchema = z.object({
+  date: z.string().datetime().optional(),
 });
 
-const _createSegmentSchema = z?.object({
-  name: z?.string().min(1).max(255),
-  tasteVector: z?.object({
-    artists: z?.array(z?.string()).optional(),
-    genres: z?.array(z?.string()).optional(),
-    moods: z?.array(z?.string()).optional(),
+const createSegmentSchema = z.object({
+  name: z.string().min(1).max(255),
+  tasteVector: z.object({
+    artists: z.array(z.string()).optional(),
+    genres: z.array(z.string()).optional(),
+    moods: z.array(z.string()).optional(),
   }),
 });
 
-const _updateSegmentSchema = z?.object({
-  signals: z?.object({
-    avgWatchTime: z?.number().optional(),
-    commentFrequency: z?.number().optional(),
-    saveRate: z?.number().optional(),
-    dmIntentScore: z?.number().optional(),
+const updateSegmentSchema = z.object({
+  signals: z.object({
+    avgWatchTime: z.number().optional(),
+    commentFrequency: z.number().optional(),
+    saveRate: z.number().optional(),
+    dmIntentScore: z.number().optional(),
   }),
 });
 
-const _createContentSchema = z?.object({
-  type: z?.string().min(1),
-  format: z?.string().min(1),
-  hookType: z?.string().min(1),
-  tone: z?.string().min(1),
-  platform: z?.string().min(1),
-  trackUsed: z?.string().optional(),
-  postingTime: z?.string().datetime().optional(),
-  lengthSeconds: z?.number().int().positive().optional(),
+const createContentSchema = z.object({
+  type: z.string().min(1),
+  format: z.string().min(1),
+  hookType: z.string().min(1),
+  tone: z.string().min(1),
+  platform: z.string().min(1),
+  trackUsed: z.string().optional(),
+  postingTime: z.string().datetime().optional(),
+  lengthSeconds: z.number().int().positive().optional(),
 });
 
-const _updateContentPerformanceSchema = z?.object({
-  views: z?.number().int().nonnegative().optional(),
-  likes: z?.number().int().nonnegative().optional(),
-  comments: z?.number().int().nonnegative().optional(),
-  shares: z?.number().int().nonnegative().optional(),
-  saves: z?.number().int().nonnegative().optional(),
-  profileVisits: z?.number().int().nonnegative().optional(),
-  followerGain: z?.number().int().nonnegative().optional(),
-  playlistAdds: z?.number().int().nonnegative().optional(),
-  highIntentDms: z?.number().int().nonnegative().optional(),
+const updateContentPerformanceSchema = z.object({
+  views: z.number().int().nonnegative().optional(),
+  likes: z.number().int().nonnegative().optional(),
+  comments: z.number().int().nonnegative().optional(),
+  shares: z.number().int().nonnegative().optional(),
+  saves: z.number().int().nonnegative().optional(),
+  profileVisits: z.number().int().nonnegative().optional(),
+  followerGain: z.number().int().nonnegative().optional(),
+  playlistAdds: z.number().int().nonnegative().optional(),
+  highIntentDms: z.number().int().nonnegative().optional(),
 });
 
-const _weeklyLoopSchema = z?.object({
-  weekStart: z?.string().datetime().optional(),
-  timeBudgetHours: z?.number().positive().default(20),
+const weeklyLoopSchema = z.object({
+  weekStart: z.string().datetime().optional(),
+  timeBudgetHours: z.number().positive().default(20),
 });
 
-const _createAssetSchema = z?.object({
-  type: z?.string().min(1),
-  topic: z?.string().min(1),
-  intent: z?.string().min(1),
-  creationCostHours: z?.number().nonnegative().optional(),
-  distributionCost: z?.number().nonnegative().optional(),
+const createAssetSchema = z.object({
+  type: z.string().min(1),
+  topic: z.string().min(1),
+  intent: z.string().min(1),
+  creationCostHours: z.number().nonnegative().optional(),
+  distributionCost: z.number().nonnegative().optional(),
 });
 
-const _updateAssetPerformanceSchema = z?.object({
-  monthlyViews: z?.number().int().nonnegative().optional(),
-  monthlyClickthrough: z?.number().nonnegative().optional(),
-  streamingConversions: z?.number().int().nonnegative().optional(),
-  playlistAdds: z?.number().int().nonnegative().optional(),
-  emailSignups: z?.number().int().nonnegative().optional(),
-  revenueGenerated: z?.number().nonnegative().optional(),
+const updateAssetPerformanceSchema = z.object({
+  monthlyViews: z.number().int().nonnegative().optional(),
+  monthlyClickthrough: z.number().nonnegative().optional(),
+  streamingConversions: z.number().int().nonnegative().optional(),
+  playlistAdds: z.number().int().nonnegative().optional(),
+  emailSignups: z.number().int().nonnegative().optional(),
+  revenueGenerated: z.number().nonnegative().optional(),
 });
 
-const _createChannelSchema = z?.object({
-  name: z?.string().min(1).max(255),
-  type: z?.string().min(1),
-  estimatedMonthlyReach: z?.number().int().nonnegative().optional(),
-  audienceQualityScore: z?.number().min(0).max(1).optional(),
+const createChannelSchema = z.object({
+  name: z.string().min(1).max(255),
+  type: z.string().min(1),
+  estimatedMonthlyReach: z.number().int().nonnegative().optional(),
+  audienceQualityScore: z.number().min(0).max(1).optional(),
 });
 
-const _updateChannelEfficiencySchema = z?.object({
-  efficiencyScore: z?.number().min(0).max(1),
+const updateChannelEfficiencySchema = z.object({
+  efficiencyScore: z.number().min(0).max(1),
 });
 
-const _applyOrganicInsightsSchema = z?.object({
-  topHooks: z?.array(
-    z?.object({
-      hookType: z?.string(),
-      tone: z?.string(),
-      format: z?.string(),
-      avgMusicImpact: z?.number(),
+const applyOrganicInsightsSchema = z.object({
+  topHooks: z.array(
+    z.object({
+      hookType: z.string(),
+      tone: z.string(),
+      format: z.string(),
+      avgMusicImpact: z.number(),
     }),
   ),
-  topTracksByImpact: z?.array(
-    z?.object({
-      trackId: z?.string(),
-      avgImpact: z?.number(),
+  topTracksByImpact: z.array(
+    z.object({
+      trackId: z.string(),
+      avgImpact: z.number(),
     }),
   ),
 });
 
-const _applySocialInsightsSchema = z?.object({
-  topAssetTypes: z?.array(
-    z?.object({
-      type: z?.string(),
-      avgRoi: z?.number(),
+const applySocialInsightsSchema = z.object({
+  topAssetTypes: z.array(
+    z.object({
+      type: z.string(),
+      avgRoi: z.number(),
     }),
   ),
-  topChannels: z?.array(
-    z?.object({
-      channelType: z?.string(),
-      efficiencyScore: z?.number(),
+  topChannels: z.array(
+    z.object({
+      channelType: z.string(),
+      efficiencyScore: z.number(),
     }),
   ),
-  highValueIntents: z?.array(
-    z?.object({
-      intent: z?.string(),
-      conversionRate: z?.number(),
+  highValueIntents: z.array(
+    z.object({
+      intent: z.string(),
+      conversionRate: z.number(),
     }),
   ),
 });
@@ -134,24 +134,24 @@ router?.post(
   requirePremium,
   async (req, res) => {
     try {
-      const _userId = req?.user!.id;
-      const _parsed = dailyLoopSchema?.parse(req?.body);
-      const _date = parsed?.date ? new Date(parsed?.date) : new Date();
+      const userId = req?.user!.id;
+      const parsed = dailyLoopSchema?.parse(req?.body);
+      const date = parsed?.date ? new Date(parsed?.date) : new Date();
 
-      const _schedule = await socialFanbaseService?.dailySocialLoop(userId, date);
+      const schedule = await socialFanbaseService?.dailySocialLoop(userId, date);
 
       res?.json({
         success: true,
         data: schedule,
       });
     } catch (error) {
-      if (error instanceof z?.ZodError) {
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
           .json({
             success: false,
             error: "Validation error",
-            details: error?.issues,
+            details: error.issues,
           });
       }
       logger?.warn({ err: error }, "Error in daily social loop:");
@@ -164,10 +164,10 @@ router?.post(
 
 router?.get("/fanbase/music-impact", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _limit = Math?.min(parseInt(req?.query.limit as string) || 50, 500);
+    const userId = req?.user!.id;
+    const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 500);
 
-    const _metrics = await socialFanbaseService?.getMusicImpactMetrics(
+    const metrics = await socialFanbaseService?.getMusicImpactMetrics(
       userId,
       limit,
     );
@@ -186,10 +186,10 @@ router?.get("/fanbase/music-impact", requireAuth, async (req, res) => {
 
 router?.post("/fanbase/segments", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _parsed = createSegmentSchema?.parse(req?.body);
+    const userId = req?.user!.id;
+    const parsed = createSegmentSchema?.parse(req?.body);
 
-    const _segment = await socialFanbaseService?.createSegment(
+    const segment = await socialFanbaseService?.createSegment(
       userId,
       parsed?.name,
       parsed?.tasteVector,
@@ -206,13 +206,13 @@ router?.post("/fanbase/segments", requireAuth, async (req, res) => {
       data: segment,
     });
   } catch (error) {
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({
           success: false,
           error: "Validation error",
-          details: error?.issues,
+          details: error.issues,
         });
     }
     logger?.warn({ err: error }, "Error creating fan segment:");
@@ -224,9 +224,9 @@ router?.post("/fanbase/segments", requireAuth, async (req, res) => {
 
 router?.get("/fanbase/segments", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _segments = await socialFanbaseService?.getFanSegments(userId);
+    const segments = await socialFanbaseService?.getFanSegments(userId);
 
     res?.json({
       success: true,
@@ -242,10 +242,10 @@ router?.get("/fanbase/segments", requireAuth, async (req, res) => {
 
 router?.put("/fanbase/segments/:id", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _segmentId = req?.params.id;
+    const userId = req?.user!.id;
+    const segmentId = req?.params.id;
     const [owned] = await db
-      .select({ id: fanSegments?.id })
+      .select({ id: fanSegments.id })
       .from(fanSegments)
       .where(and(eq(fanSegments?.id, segmentId), eq(fanSegments?.userId, userId)))
       .limit(1);
@@ -253,9 +253,9 @@ router?.put("/fanbase/segments/:id", requireAuth, async (req, res) => {
       return res
         .status(404)
         .json({ success: false, error: "Segment not found" });
-    const _parsed = updateSegmentSchema?.parse(req?.body);
+    const parsed = updateSegmentSchema?.parse(req?.body);
 
-    const _segment = await socialFanbaseService?.updateSegmentBehavior(
+    const segment = await socialFanbaseService?.updateSegmentBehavior(
       segmentId,
       parsed?.signals,
     );
@@ -271,13 +271,13 @@ router?.put("/fanbase/segments/:id", requireAuth, async (req, res) => {
       data: segment,
     });
   } catch (error) {
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({
           success: false,
           error: "Validation error",
-          details: error?.issues,
+          details: error.issues,
         });
     }
     logger?.warn({ err: error }, "Error updating fan segment:");
@@ -289,10 +289,10 @@ router?.put("/fanbase/segments/:id", requireAuth, async (req, res) => {
 
 router?.delete("/fanbase/segments/:id", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _segmentId = req?.params.id;
+    const userId = req?.user!.id;
+    const segmentId = req?.params.id;
     const [owned] = await db
-      .select({ id: fanSegments?.id })
+      .select({ id: fanSegments.id })
       .from(fanSegments)
       .where(and(eq(fanSegments?.id, segmentId), eq(fanSegments?.userId, userId)))
       .limit(1);
@@ -301,13 +301,15 @@ router?.delete("/fanbase/segments/:id", requireAuth, async (req, res) => {
         .status(404)
         .json({ success: false, error: "Segment not found" });
 
-    const _deleted = await socialFanbaseService?.deleteSegment(segmentId);
+    const deleted = await socialFanbaseService?.deleteSegment(segmentId);
 
     if (!deleted) {
-      return res.status(404).json({
-        success: false,
-        error: "Segment not found or failed to delete",
-      });
+      return res
+        .status(404)
+        .json({
+          success: false,
+          error: "Segment not found or failed to delete",
+        });
     }
 
     res?.json({
@@ -324,9 +326,9 @@ router?.delete("/fanbase/segments/:id", requireAuth, async (req, res) => {
 
 router?.get("/fanbase/patterns", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _patterns = await socialFanbaseService?.getPatternAggregates(userId);
+    const patterns = await socialFanbaseService?.getPatternAggregates(userId);
 
     res?.json({
       success: true,
@@ -342,12 +344,12 @@ router?.get("/fanbase/patterns", requireAuth, async (req, res) => {
 
 router?.post("/fanbase/content", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _parsed = createContentSchema?.parse(req?.body);
+    const userId = req?.user!.id;
+    const parsed = createContentSchema?.parse(req?.body);
 
-    const _content = await socialFanbaseService?.createContent(userId, {
+    const content = await socialFanbaseService?.createContent(userId, {
       ...parsed,
-      postingTime: parsed?.postingTime
+      postingTime: parsed.postingTime
         ? new Date(parsed?.postingTime)
         : undefined,
     });
@@ -363,13 +365,13 @@ router?.post("/fanbase/content", requireAuth, async (req, res) => {
       data: content,
     });
   } catch (error) {
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({
           success: false,
           error: "Validation error",
-          details: error?.issues,
+          details: error.issues,
         });
     }
     logger?.warn({ err: error }, "Error creating autopilot content:");
@@ -384,10 +386,10 @@ router?.put(
   requireAuth,
   async (req, res) => {
     try {
-      const _contentId = req?.params.id;
-      const _parsed = updateContentPerformanceSchema?.parse(req?.body);
+      const contentId = req?.params.id;
+      const parsed = updateContentPerformanceSchema?.parse(req?.body);
 
-      const _content = await socialFanbaseService?.updateContentPerformance(
+      const content = await socialFanbaseService?.updateContentPerformance(
         contentId,
         parsed,
       );
@@ -403,13 +405,13 @@ router?.put(
         data: content,
       });
     } catch (error) {
-      if (error instanceof z?.ZodError) {
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
           .json({
             success: false,
             error: "Validation error",
-            details: error?.issues,
+            details: error.issues,
           });
       }
       logger?.warn({ err: error }, "Error updating content performance:");
@@ -425,10 +427,10 @@ router?.put(
 
 router?.get("/fanbase/content/top", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _limit = Math?.min(parseInt(req?.query.limit as string) || 10, 100);
+    const userId = req?.user!.id;
+    const limit = Math?.min(parseInt(req?.query.limit as string) || 10, 100);
 
-    const _content = await socialFanbaseService?.getTopPerformingContent(
+    const content = await socialFanbaseService?.getTopPerformingContent(
       userId,
       limit,
     );
@@ -454,7 +456,7 @@ router?.post(
   requirePremium,
   async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       await socialFanbaseService?.compressToLongTermMemory(userId);
 
@@ -477,7 +479,7 @@ router?.post(
   requirePremium,
   async (req, res) => {
     try {
-      const _userId = req?.user!.id;
+      const userId = req?.user!.id;
 
       await socialFanbaseService?.applyTimeDecay(userId);
 
@@ -500,13 +502,13 @@ router?.post(
   requirePremium,
   async (req, res) => {
     try {
-      const _userId = req?.user!.id;
-      const _parsed = weeklyLoopSchema?.parse(req?.body);
-      const _weekStart = parsed?.weekStart
+      const userId = req?.user!.id;
+      const parsed = weeklyLoopSchema?.parse(req?.body);
+      const weekStart = parsed?.weekStart
         ? new Date(parsed?.weekStart)
         : new Date();
 
-      const _state = await organicCompoundingService?.weeklyOrganicLoop(
+      const state = await organicCompoundingService?.weeklyOrganicLoop(
         userId,
         weekStart,
         parsed?.timeBudgetHours,
@@ -517,13 +519,13 @@ router?.post(
         data: state,
       });
     } catch (error) {
-      if (error instanceof z?.ZodError) {
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
           .json({
             success: false,
             error: "Validation error",
-            details: error?.issues,
+            details: error.issues,
           });
       }
       logger?.warn({ err: error }, "Error in weekly organic loop:");
@@ -536,10 +538,10 @@ router?.post(
 
 router?.post("/organic/assets", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _parsed = createAssetSchema?.parse(req?.body);
+    const userId = req?.user!.id;
+    const parsed = createAssetSchema?.parse(req?.body);
 
-    const _asset = await organicCompoundingService?.createAsset(userId, {
+    const asset = await organicCompoundingService?.createAsset(userId, {
       id: undefined as Record<string, unknown>,
       ...parsed,
     });
@@ -549,13 +551,13 @@ router?.post("/organic/assets", requireAuth, async (req, res) => {
       data: asset,
     });
   } catch (error) {
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({
           success: false,
           error: "Validation error",
-          details: error?.issues,
+          details: error.issues,
         });
     }
     logger?.warn({ err: error }, "Error creating organic asset:");
@@ -567,9 +569,9 @@ router?.post("/organic/assets", requireAuth, async (req, res) => {
 
 router?.get("/organic/assets", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _assets = await organicCompoundingService?.getAssets(userId);
+    const assets = await organicCompoundingService?.getAssets(userId);
 
     res?.json({
       success: true,
@@ -585,10 +587,10 @@ router?.get("/organic/assets", requireAuth, async (req, res) => {
 
 router?.put("/organic/assets/:id/performance", requireAuth, async (req, res) => {
   try {
-    const _assetId = req?.params.id;
-    const _parsed = updateAssetPerformanceSchema?.parse(req?.body);
+    const assetId = req?.params.id;
+    const parsed = updateAssetPerformanceSchema?.parse(req?.body);
 
-    const _asset = await organicCompoundingService?.updateAssetPerformance(
+    const asset = await organicCompoundingService?.updateAssetPerformance(
       assetId,
       parsed as Record<string, unknown>,
     );
@@ -602,13 +604,13 @@ router?.put("/organic/assets/:id/performance", requireAuth, async (req, res) => 
       data: asset,
     });
   } catch (error) {
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({
           success: false,
           error: "Validation error",
-          details: error?.issues,
+          details: error.issues,
         });
     }
     logger?.warn({ err: error }, "Error updating asset performance:");
@@ -620,10 +622,10 @@ router?.put("/organic/assets/:id/performance", requireAuth, async (req, res) => 
 
 router?.get("/organic/assets/top", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _limit = Math?.min(parseInt(req?.query.limit as string) || 10, 100);
+    const userId = req?.user!.id;
+    const limit = Math?.min(parseInt(req?.query.limit as string) || 10, 100);
 
-    const _assets = await organicCompoundingService?.getTopPerformingAssets(
+    const assets = await organicCompoundingService?.getTopPerformingAssets(
       userId,
       limit,
     );
@@ -642,10 +644,10 @@ router?.get("/organic/assets/top", requireAuth, async (req, res) => {
 
 router?.post("/organic/channels", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _parsed = createChannelSchema?.parse(req?.body);
+    const userId = req?.user!.id;
+    const parsed = createChannelSchema?.parse(req?.body);
 
-    const _channel = await organicCompoundingService?.createChannel(userId, {
+    const channel = await organicCompoundingService?.createChannel(userId, {
       id: undefined as Record<string, unknown>,
       ...parsed,
     });
@@ -655,13 +657,13 @@ router?.post("/organic/channels", requireAuth, async (req, res) => {
       data: channel,
     });
   } catch (error) {
-    if (error instanceof z?.ZodError) {
+    if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({
           success: false,
           error: "Validation error",
-          details: error?.issues,
+          details: error.issues,
         });
     }
     logger?.warn({ err: error }, "Error creating organic channel:");
@@ -673,9 +675,9 @@ router?.post("/organic/channels", requireAuth, async (req, res) => {
 
 router?.get("/organic/channels", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _channels = await organicCompoundingService?.getChannels(userId);
+    const channels = await organicCompoundingService?.getChannels(userId);
 
     res?.json({
       success: true,
@@ -694,10 +696,10 @@ router?.put(
   requireAuth,
   async (req, res) => {
     try {
-      const _channelId = req?.params.id;
-      const _parsed = updateChannelEfficiencySchema?.parse(req?.body);
+      const channelId = req?.params.id;
+      const parsed = updateChannelEfficiencySchema?.parse(req?.body);
 
-      const _channel = await organicCompoundingService?.updateChannelEfficiency(
+      const channel = await organicCompoundingService?.updateChannelEfficiency(
         channelId,
         parsed?.efficiencyScore,
       );
@@ -713,13 +715,13 @@ router?.put(
         data: channel,
       });
     } catch (error) {
-      if (error instanceof z?.ZodError) {
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
           .json({
             success: false,
             error: "Validation error",
-            details: error?.issues,
+            details: error.issues,
           });
       }
       logger?.warn({ err: error }, "Error updating channel efficiency:");
@@ -732,10 +734,10 @@ router?.put(
 
 router?.get("/organic/roi/:assetId", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _assetId = req?.params.assetId;
+    const userId = req?.user!.id;
+    const assetId = req?.params.assetId;
 
-    const _history = await organicCompoundingService?.getRoiHistory(
+    const history = await organicCompoundingService?.getRoiHistory(
       userId,
       assetId,
     );
@@ -754,10 +756,10 @@ router?.get("/organic/roi/:assetId", requireAuth, async (req, res) => {
 
 router?.get("/organic/lifetime/:assetId", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
-    const _assetId = req?.params.assetId;
+    const userId = req?.user!.id;
+    const assetId = req?.params.assetId;
 
-    const _stats = await organicCompoundingService?.getLifetimeStats(
+    const stats = await organicCompoundingService?.getLifetimeStats(
       userId,
       assetId,
     );
@@ -782,9 +784,9 @@ router?.get("/organic/lifetime/:assetId", requireAuth, async (req, res) => {
 
 router?.get("/organic/compounding-metrics", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _metrics =
+    const metrics =
       await organicCompoundingService?.getCompoundingMetrics(userId);
 
     res?.json({
@@ -801,9 +803,9 @@ router?.get("/organic/compounding-metrics", requireAuth, async (req, res) => {
 
 router?.post("/insights/sync", requireAuth, requirePremium, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _result = await bridgeInsightsService?.syncInsights(userId);
+    const result = await bridgeInsightsService?.syncInsights(userId);
 
     res?.json({
       success: true,
@@ -817,9 +819,9 @@ router?.post("/insights/sync", requireAuth, requirePremium, async (req, res) => 
 
 router?.get("/insights/social-to-organic", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _insights = await bridgeInsightsService?.getLatestInsights(
+    const insights = await bridgeInsightsService?.getLatestInsights(
       userId,
       "social_to_organic",
     );
@@ -841,9 +843,9 @@ router?.get("/insights/social-to-organic", requireAuth, async (req, res) => {
 
 router?.get("/insights/organic-to-social", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _insights = await bridgeInsightsService?.getLatestInsights(
+    const insights = await bridgeInsightsService?.getLatestInsights(
       userId,
       "organic_to_social",
     );
@@ -865,9 +867,9 @@ router?.get("/insights/organic-to-social", requireAuth, async (req, res) => {
 
 router?.get("/insights/summary", requireAuth, async (req, res) => {
   try {
-    const _userId = req?.user!.id;
+    const userId = req?.user!.id;
 
-    const _summary = await bridgeInsightsService?.getInsightsSummary(userId);
+    const summary = await bridgeInsightsService?.getInsightsSummary(userId);
 
     res?.json({
       success: true,
@@ -887,16 +889,16 @@ router?.post(
   requirePremium,
   async (req, res) => {
     try {
-      const _userId = req?.user!.id;
-      const _parsed = applyOrganicInsightsSchema?.parse(req?.body);
+      const userId = req?.user!.id;
+      const parsed = applyOrganicInsightsSchema?.parse(req?.body);
 
-      const _result = await bridgeInsightsService?.applyInsightsToOrganic(
+      const result = await bridgeInsightsService?.applyInsightsToOrganic(
         userId,
         {
           exportType: "social_to_organic_insights",
           artistId: userId,
-          topHooks: parsed?.topHooks,
-          topTracksByImpact: parsed?.topTracksByImpact,
+          topHooks: parsed.topHooks,
+          topTracksByImpact: parsed.topTracksByImpact,
         },
       );
 
@@ -905,13 +907,13 @@ router?.post(
         data: result,
       });
     } catch (error) {
-      if (error instanceof z?.ZodError) {
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
           .json({
             success: false,
             error: "Validation error",
-            details: error?.issues,
+            details: error.issues,
           });
       }
       logger?.warn({ err: error }, "Error applying insights to organic:");
@@ -928,15 +930,15 @@ router?.post(
   requirePremium,
   async (req, res) => {
     try {
-      const _userId = req?.user!.id;
-      const _parsed = applySocialInsightsSchema?.parse(req?.body);
+      const userId = req?.user!.id;
+      const parsed = applySocialInsightsSchema?.parse(req?.body);
 
-      const _result = await bridgeInsightsService?.applyInsightsToSocial(userId, {
+      const result = await bridgeInsightsService?.applyInsightsToSocial(userId, {
         exportType: "organic_to_social_insights",
         artistId: userId,
-        topAssetTypes: parsed?.topAssetTypes,
-        topChannels: parsed?.topChannels,
-        highValueIntents: parsed?.highValueIntents,
+        topAssetTypes: parsed.topAssetTypes,
+        topChannels: parsed.topChannels,
+        highValueIntents: parsed.highValueIntents,
       });
 
       res?.json({
@@ -944,13 +946,13 @@ router?.post(
         data: result,
       });
     } catch (error) {
-      if (error instanceof z?.ZodError) {
+      if (error instanceof z.ZodError) {
         return res
           .status(400)
           .json({
             success: false,
             error: "Validation error",
-            details: error?.issues,
+            details: error.issues,
           });
       }
       logger?.warn({ err: error }, "Error applying insights to social:");

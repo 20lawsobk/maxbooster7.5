@@ -11,7 +11,7 @@ import { instantPayoutService } from "./instantPayoutService";
 import { env } from "../config/env.js";
 import { isProductionEnv } from "../lib/envHelpers.js";
 
-// Support both production and testing Stripe keys (same logic as routes?.ts)
+// Support both production and testing Stripe keys (same logic as routes.ts)
 let actualStripeKey: string | undefined;
 if (isProductionEnv()) {
   // Production: Only use STRIPE_SECRET_KEY
@@ -28,7 +28,7 @@ if (isProductionEnv()) {
 }
 
 if (!actualStripeKey) {
-  logger?.warn("❌ STRIPE CONFIGURATION ERROR in stripeService?.ts:");
+  logger?.warn("❌ STRIPE CONFIGURATION ERROR in stripeService.ts:");
   logger?.warn("   Missing or invalid Stripe secret key.");
   logger?.warn(
     "   Expected: STRIPE_SECRET_KEY (production) or TESTING_STRIPE_SECRET_KEY (development)",
@@ -39,8 +39,8 @@ if (!actualStripeKey) {
   );
 }
 
-const _stripe = new Stripe(actualStripeKey, {
-  apiVersion: "2026-01-28?.clover",
+const stripe = new Stripe(actualStripeKey, {
+  apiVersion: "2026-01-28.clover",
 });
 
 export class StripeService {
@@ -55,23 +55,23 @@ export class StripeService {
       }
 
       if (user?.stripeSubscriptionId && tier !== "lifetime") {
-        const _result = await executeStripeOperation(
+        const result = await executeStripeOperation(
           () =>
             stripe?.subscriptions.retrieve(user?.stripeSubscriptionId!, {
-              expand: ["latest_invoice?.payment_intent"],
+              expand: ["latest_invoice.payment_intent"],
             }),
           { cacheKey: `subscription:${user?.stripeSubscriptionId}` },
         );
-        const _subscription = result?.data;
-        const _latestInvoice =
-          subscription?.latest_invoice as Stripe?.Invoice | null;
-        const _paymentIntent = latestInvoice
+        const subscription = result?.data;
+        const latestInvoice =
+          subscription?.latest_invoice as Stripe.Invoice | null;
+        const paymentIntent = latestInvoice
           ? ((latestInvoice as Record<string, unknown>)
-              .payment_intent as Stripe?.PaymentIntent | null)
+              .payment_intent as Stripe.PaymentIntent | null)
           : null;
         return {
-          subscriptionId: subscription?.id,
-          clientSecret: paymentIntent?.client_secret,
+          subscriptionId: subscription.id,
+          clientSecret: paymentIntent.client_secret,
         };
       }
 
@@ -81,10 +81,10 @@ export class StripeService {
 
       let customerId = user?.stripeCustomerId;
       if (!customerId) {
-        const _result = await executeStripeOperation(() =>
+        const result = await executeStripeOperation(() =>
           stripe?.customers.create({
-            email: user?.email!,
-            name: user?.firstName
+            email: user.email!,
+            name: user.firstName
               ? `${user?.firstName} ${user?.lastName || ""}`.trim()
               : undefined,
           }),
@@ -94,10 +94,10 @@ export class StripeService {
       }
 
       // Get price ID based on tier
-      const _priceId = this?.getPriceId(tier);
+      const priceId = this?.getPriceId(tier);
 
       if (tier === "lifetime") {
-        const _result = await executeStripeOperation(() =>
+        const result = await executeStripeOperation(() =>
           stripe?.paymentIntents.create({
             amount: 69900,
             currency: "usd",
@@ -110,31 +110,31 @@ export class StripeService {
         );
 
         return {
-          clientSecret: result?.data.client_secret,
+          clientSecret: result.data.client_secret,
           tier: "lifetime",
         };
       } else {
-        const _result = await executeStripeOperation(() =>
+        const result = await executeStripeOperation(() =>
           stripe?.subscriptions.create({
             customer: customerId,
             items: [{ price: priceId }],
             payment_behavior: "default_incomplete",
-            expand: ["latest_invoice?.payment_intent"],
+            expand: ["latest_invoice.payment_intent"],
           }),
         );
-        const _subscription = result?.data;
+        const subscription = result?.data;
 
         await storage?.updateUserStripeInfo(userId, customerId, subscription?.id);
 
-        const _latestInvoice =
-          subscription?.latest_invoice as Stripe?.Invoice | null;
-        const _paymentIntent = latestInvoice
+        const latestInvoice =
+          subscription?.latest_invoice as Stripe.Invoice | null;
+        const paymentIntent = latestInvoice
           ? ((latestInvoice as Record<string, unknown>)
-              .payment_intent as Stripe?.PaymentIntent | null)
+              .payment_intent as Stripe.PaymentIntent | null)
           : null;
         return {
-          subscriptionId: subscription?.id,
-          clientSecret: paymentIntent?.client_secret,
+          subscriptionId: subscription.id,
+          clientSecret: paymentIntent.client_secret,
         };
       }
     } catch (error: unknown) {
@@ -150,9 +150,9 @@ export class StripeService {
     price: number,
   ) {
     try {
-      const _result = await executeStripeOperation(() =>
+      const result = await executeStripeOperation(() =>
         stripe?.paymentIntents.create({
-          amount: Math?.round(price * 100),
+          amount: Math.round(price * 100),
           currency: "usd",
           metadata: {
             beatId,
@@ -171,45 +171,45 @@ export class StripeService {
 
   private getPriceId(tier: "monthly" | "yearly" | "lifetime"): string {
     // Get actual Stripe price IDs created during server initialization
-    const _priceIds = getStripePriceIds();
+    const priceIds = getStripePriceIds();
     return priceIds[tier];
   }
 
-  async handleWebhook(event: Stripe?.Event) {
+  async handleWebhook(event: Stripe.Event) {
     try {
       switch (event?.type) {
         // Subscription & payment events
-        case "payment_intent?.succeeded":
-          const _paymentIntent = event?.data.object as Stripe?.PaymentIntent;
+        case "payment_intent.succeeded":
+          const paymentIntent = event?.data.object as Stripe.PaymentIntent;
           await this?.handlePaymentSuccess(paymentIntent);
           break;
-        case "invoice?.payment_succeeded":
-          const _invoice = event?.data.object as Stripe?.Invoice;
+        case "invoice.payment_succeeded":
+          const invoice = event?.data.object as Stripe.Invoice;
           await this?.handleSubscriptionPayment(invoice);
           break;
-        case "customer?.subscription.deleted":
-          const _subscription = event?.data.object as Stripe?.Subscription;
+        case "customer.subscription.deleted":
+          const subscription = event?.data.object as Stripe.Subscription;
           await this?.handleSubscriptionCanceled(subscription);
           break;
 
         // Marketplace payout events (Transfers)
-        case "transfer?.created":
-        case "transfer?.paid":
-        case "transfer?.failed":
-        case "transfer?.reversed":
+        case "transfer.created":
+        case "transfer.paid":
+        case "transfer.failed":
+        case "transfer.reversed":
           await instantPayoutService?.handleTransferWebhook(event);
           break;
 
         // Stripe Connect account events
-        case "account?.updated":
-        case "account?.application.deauthorized":
+        case "account.updated":
+        case "account.application.deauthorized":
           await instantPayoutService?.handleAccountWebhook(event);
           break;
 
         // Manual payout events (for withdrawals)
-        case "payout?.paid":
-        case "payout?.failed":
-        case "payout?.canceled":
+        case "payout.paid":
+        case "payout.failed":
+        case "payout.canceled":
           await instantPayoutService?.handlePayoutWebhook(event);
           break;
 
@@ -222,7 +222,7 @@ export class StripeService {
     }
   }
 
-  private async handlePaymentSuccess(paymentIntent: Stripe?.PaymentIntent) {
+  private async handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
     const {
       userId,
       tier,
@@ -256,7 +256,7 @@ export class StripeService {
         sellerId,
         listingId,
         stemFileUrl: stemFileUrl || "",
-        amountCents: paymentIntent?.amount,
+        amountCents: paymentIntent.amount,
       });
     } else if (beatId && buyerId && licenseType) {
       // Beat purchase webhook handler reserved for future beat-specific purchases
@@ -277,19 +277,19 @@ export class StripeService {
     const [order] = await db
       .insert(orders)
       .values({
-        buyerId: data?.buyerId,
-        sellerId: data?.sellerId,
+        buyerId: data.buyerId,
+        sellerId: data.sellerId,
         listingId: parseInt(data?.listingId),
         licenseType: "stem_purchase",
-        amountCents: data?.amountCents,
+        amountCents: data.amountCents,
         currency: "usd",
         status: "completed",
-        downloadUrl: data?.stemFileUrl,
+        downloadUrl: data.stemFileUrl,
       })
       .returning();
 
     // Generate download token
-    const _downloadToken = crypto?.randomBytes(32).toString("hex");
+    const downloadToken = crypto?.randomBytes(32).toString("hex");
 
     // stemOrders table not yet in schema — download token stored in order downloadUrl
     logger?.debug(
@@ -307,12 +307,12 @@ export class StripeService {
     );
   }
 
-  private async handleSubscriptionPayment(invoice: Stripe?.Invoice) {
-    const _invoiceSubscription = (invoice as Record<string, unknown>)
+  private async handleSubscriptionPayment(invoice: Stripe.Invoice) {
+    const invoiceSubscription = (invoice as Record<string, unknown>)
       .subscription;
     if (invoice?.customer && invoiceSubscription) {
-      const _customerId = invoice?.customer as string;
-      const _subscriptionId =
+      const customerId = invoice?.customer as string;
+      const subscriptionId =
         typeof invoiceSubscription === "string"
           ? invoiceSubscription
           : invoiceSubscription?.id;
@@ -326,22 +326,22 @@ export class StripeService {
 
       if (user && subscriptionId) {
         // Update subscription status
-        const _subscription =
+        const subscription =
           await stripe?.subscriptions.retrieve(subscriptionId);
-        const _tier =
+        const tier =
           subscription?.items.data[0].price?.recurring?.interval === "year"
             ? "yearly"
             : "monthly";
         await storage?.updateUser(user?.id, {
           subscriptionTier: tier,
-          subscriptionStatus: subscription?.status,
+          subscriptionStatus: subscription.status,
         });
       }
     }
   }
 
-  private async handleSubscriptionCanceled(subscription: Stripe?.Subscription) {
-    const _customerId = subscription?.customer as string;
+  private async handleSubscriptionCanceled(subscription: Stripe.Subscription) {
+    const customerId = subscription?.customer as string;
     const [user] = await db
       .select()
       .from(users)
@@ -386,8 +386,8 @@ export class StripeService {
         return { success: false, error: "No payment found for order" };
       }
 
-      const _amountCents = params?.amountCents || Math?.round(order?.amount * 100);
-      const _refundType =
+      const amountCents = params?.amountCents || Math?.round(order?.amount * 100);
+      const refundType =
         params?.amountCents &&
         params?.amountCents < Math?.round(order?.amount * 100)
           ? "partial"
@@ -398,14 +398,14 @@ export class StripeService {
       const [refundRecord] = await db
         .insert(refunds)
         .values({
-          orderId: params?.orderId,
-          userId: params?.userId,
-          sellerId: params?.sellerId || order?.sellerId,
+          orderId: params.orderId,
+          userId: params.userId,
+          sellerId: params.sellerId || order?.sellerId,
           amountCents,
-          currency: order?.currency || "usd",
-          reason: params?.reason,
+          currency: order.currency || "usd",
+          reason: params.reason,
           status: "pending",
-          initiatedBy: params?.initiatedBy || "customer",
+          initiatedBy: params.initiatedBy || "customer",
           refundType,
         })
         .returning();
@@ -413,10 +413,10 @@ export class StripeService {
       // Step 2: call Stripe BEFORE the local ledger transaction. If Stripe
       // fails, mark the row failed and bail out — no ledger / notification
       // writes happen, so the books stay consistent.
-      let stripeRefund: Stripe?.Refund;
+      let stripeRefund: Stripe.Refund;
       let chargeId: string;
       try {
-        const _paymentIntent = await stripe?.paymentIntents.retrieve(
+        const paymentIntent = await stripe?.paymentIntents.retrieve(
           order?.stripePaymentIntentId,
         );
         chargeId = paymentIntent?.latest_charge as string;
@@ -425,11 +425,11 @@ export class StripeService {
           {
             charge: chargeId,
             amount: amountCents,
-            reason: this?.mapRefundReason(params?.reason),
+            reason: this.mapRefundReason(params?.reason),
             metadata: {
-              orderId: params?.orderId,
-              refundId: refundRecord?.id,
-              initiatedBy: params?.initiatedBy || "customer",
+              orderId: params.orderId,
+              refundId: refundRecord.id,
+              initiatedBy: params.initiatedBy || "customer",
             },
           },
           // Idempotency: Stripe will dedupe on this key for 24h, so a retry
@@ -437,7 +437,7 @@ export class StripeService {
           { idempotencyKey: `refund:${refundRecord?.id}` },
         );
       } catch (stripeError: unknown) {
-        const __stripeErrMsg =
+        const _stripeErrMsg =
           stripeError instanceof Error
             ? stripeError?.message
             : String(stripeError);
@@ -452,44 +452,44 @@ export class StripeService {
       // if any fails, Postgres rolls back the whole tx so the local state
       // matches Stripe's view (which has the successful refund).
       try {
-        await db?.transaction(async (tx) => {
+        await db.transaction(async (tx) => {
           await tx
             .update(refunds)
             .set({
-              status: stripeRefund?.status as string,
-              stripeRefundId: stripeRefund?.id,
+              status: stripeRefund.status as string,
+              stripeRefundId: stripeRefund.id,
               stripeChargeId: chargeId,
               processedAt: new Date(),
             })
-            .where(eq(refunds?.id, refundRecord?.id));
+            .where(eq(refunds.id, refundRecord.id));
 
-          await tx?.insert(ledgerEntries).values({
-            userId: params?.userId,
+          await tx.insert(ledgerEntries).values({
+            userId: params.userId,
             entryType: "refund",
             amountCents,
-            currency: order?.currency || "usd",
+            currency: order.currency || "usd",
             referenceType: "refund",
-            referenceId: refundRecord?.id,
-            description: `Refund for order ${params?.orderId}`,
+            referenceId: refundRecord.id,
+            description: `Refund for order ${params.orderId}`,
           });
 
-          await tx?.insert(notifications).values({
-            userId: params?.userId,
+          await tx.insert(notifications).values({
+            userId: params.userId,
             type: "refund",
             title: "Refund Processed",
             message: `Your refund of $${(amountCents / 100).toFixed(2)} has been processed and will appear in 5-10 business days.`,
-            metadata: { refundId: refundRecord?.id, orderId: params?.orderId },
+            metadata: { refundId: refundRecord.id, orderId: params.orderId },
           });
         });
       } catch (ledgerError: unknown) {
         // Stripe accepted the refund but the ledger tx failed. Surface a loud
         // alert — manual reconciliation is required (the refund webhook will
         // also retry the status update independently).
-        logger?.warn(
+        logger.warn(
           {
             err: ledgerError,
-            refundId: refundRecord?.id,
-            stripeRefundId: stripeRefund?.id,
+            refundId: refundRecord.id,
+            stripeRefundId: stripeRefund.id,
           },
           "🚨 Stripe refund succeeded but ledger transaction failed — manual reconcile required",
         );
@@ -499,39 +499,39 @@ export class StripeService {
             status: "reconcile_required",
             failureReason:
               ledgerError instanceof Error
-                ? ledgerError?.message
+                ? ledgerError.message
                 : String(ledgerError),
           })
-          .where(eq(refunds?.id, refundRecord?.id))
+          .where(eq(refunds.id, refundRecord.id))
           .catch(() => undefined);
         return {
           success: false,
-          refundId: refundRecord?.id,
-          stripeRefundId: stripeRefund?.id,
+          refundId: refundRecord.id,
+          stripeRefundId: stripeRefund.id,
           error:
             "Refund processed by Stripe but ledger update failed; flagged for reconciliation",
         };
       }
 
-      logger?.info(
+      logger.info(
         {
-          refundId: refundRecord?.id,
-          stripeRefundId: stripeRefund?.id,
+          refundId: refundRecord.id,
+          stripeRefundId: stripeRefund.id,
         },
         "Refund created successfully",
       );
 
       return {
         success: true,
-        refundId: refundRecord?.id,
-        stripeRefundId: stripeRefund?.id,
+        refundId: refundRecord.id,
+        stripeRefundId: stripeRefund.id,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Error creating refund:");
+      logger.warn({ err: error }, "Error creating refund:");
       return {
         success: false,
         error:
-          (error instanceof Error ? error?.message : undefined) ||
+          (error instanceof Error ? error.message : undefined) ||
           "Failed to create refund",
       };
     }
@@ -541,21 +541,21 @@ export class StripeService {
     reason?: string,
   ): "duplicate" | "fraudulent" | "requested_by_customer" | undefined {
     if (!reason) return "requested_by_customer";
-    const _lower = reason?.toLowerCase();
-    if (lower?.includes("duplicate")) return "duplicate";
-    if (lower?.includes("fraud")) return "fraudulent";
+    const lower = reason.toLowerCase();
+    if (lower.includes("duplicate")) return "duplicate";
+    if (lower.includes("fraud")) return "fraudulent";
     return "requested_by_customer";
   }
 
   /**
    * Handle refund webhook events
    */
-  async handleRefundWebhook(refund: Stripe?.Refund) {
+  async handleRefundWebhook(refund: Stripe.Refund) {
     try {
-      const _refundId = refund?.metadata?.refundId;
+      const refundId = refund.metadata.refundId;
       if (!refundId) {
-        logger?.warn(
-          { stripeRefundId: refund?.id },
+        logger.warn(
+          { stripeRefundId: refund.id },
           "Refund webhook without refundId metadata",
         );
         return;
@@ -564,18 +564,18 @@ export class StripeService {
       await db
         .update(refunds)
         .set({
-          status: refund?.status as string,
-          processedAt: refund?.status === "succeeded" ? new Date() : undefined,
-          failureReason: refund?.failure_reason || undefined,
+          status: refund.status as string,
+          processedAt: refund.status === "succeeded" ? new Date() : undefined,
+          failureReason: refund.failure_reason || undefined,
         })
-        .where(eq(refunds?.id, refundId));
+        .where(eq(refunds.id, refundId));
 
-      logger?.info(
-        { refundId, status: refund?.status },
+      logger.info(
+        { refundId, status: refund.status },
         "Refund status updated from webhook",
       );
     } catch (error) {
-      logger?.warn({ err: error }, "Error handling refund webhook:");
+      logger.warn({ err: error }, "Error handling refund webhook:");
     }
   }
 
@@ -587,7 +587,7 @@ export class StripeService {
       const [refund] = await db
         .select()
         .from(refunds)
-        .where(eq(refunds?.id, refundId))
+        .where(eq(refunds.id, refundId))
         .limit(1);
 
       if (!refund) {
@@ -596,7 +596,7 @@ export class StripeService {
 
       return refund;
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting refund status:");
+      logger.warn({ err: error }, "Error getting refund status:");
       throw error;
     }
   }
@@ -606,15 +606,15 @@ export class StripeService {
    */
   async getOrderRefunds(orderId: string) {
     try {
-      const _orderRefunds = await db
+      const orderRefunds = await db
         .select()
         .from(refunds)
-        .where(eq(refunds?.orderId, orderId))
-        .orderBy(desc(refunds?.createdAt));
+        .where(eq(refunds.orderId, orderId))
+        .orderBy(desc(refunds.createdAt));
 
       return orderRefunds;
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting order refunds:");
+      logger.warn({ err: error }, "Error getting order refunds:");
       throw error;
     }
   }
@@ -624,21 +624,21 @@ export class StripeService {
    */
   async generateTaxFormData(userId: string, taxYear: number) {
     try {
-      const _startOfYear = new Date(`${taxYear}-01-01T00:00:00Z`);
-      const _endOfYear = new Date(`${taxYear}-12-31T23:59:59Z`);
+      const startOfYear = new Date(`${taxYear}-01-01T00:00:00Z`);
+      const endOfYear = new Date(`${taxYear}-12-31T23:59:59Z`);
 
-      const _earningsResult = await db?.execute(
+      const earningsResult = await db.execute(
         sql`SELECT 
               COALESCE(SUM(amount), 0) as total_gross,
               COUNT(*) as transaction_count
             FROM orders 
             WHERE seller_id = ${userId} 
             AND status = 'completed'
-            AND created_at >= ${startOfYear?.toISOString()}
-            AND created_at <= ${endOfYear?.toISOString()}`,
+            AND created_at >= ${startOfYear.toISOString()}
+            AND created_at <= ${endOfYear.toISOString()}`,
       );
 
-      const _payoutsResult = await db?.execute(
+      const payoutsResult = await db.execute(
         sql`SELECT COALESCE(SUM(amount_cents), 0) as total_payouts
             FROM instant_payouts 
             WHERE user_id = ${userId} 
@@ -653,21 +653,21 @@ export class StripeService {
         .where(eq(users?.id, userId))
         .limit(1);
 
-      const _totalGross = Number(earningsResult?.rows?.[0]?.total_gross || 0);
-      const _transactionCount = Number(
+      const totalGross = Number(earningsResult?.rows?.[0]?.total_gross || 0);
+      const transactionCount = Number(
         earningsResult?.rows?.[0]?.transaction_count || 0,
       );
-      const _totalPayouts =
+      const totalPayouts =
         Number(payoutsResult?.rows?.[0]?.total_payouts || 0) / 100;
 
-      const _requires1099 = totalGross >= 600 || transactionCount >= 200;
+      const requires1099 = totalGross >= 600 || transactionCount >= 200;
 
-      const _formData = {
+      const formData = {
         payerName: "Max Booster Platform",
         payeeName: user
           ? `${user?.firstName || ""} ${user?.lastName || ""}`.trim()
           : "Unknown",
-        payeeEmail: user?.email || "",
+        payeeEmail: user.email || "",
         taxYear,
         grossAmount: totalGross,
         transactionCount,
@@ -695,7 +695,7 @@ export class StripeService {
           await db
             .update(taxForms)
             .set({
-              totalEarningsCents: Math?.round(totalGross * 100),
+              totalEarningsCents: Math.round(totalGross * 100),
               formData,
               status: "generated",
               generatedAt: new Date(),
@@ -706,7 +706,7 @@ export class StripeService {
             userId,
             formType: "1099-K",
             taxYear,
-            totalEarningsCents: Math?.round(totalGross * 100),
+            totalEarningsCents: Math.round(totalGross * 100),
             formData,
             status: "generated",
             generatedAt: new Date(),
@@ -722,4 +722,4 @@ export class StripeService {
   }
 }
 
-export const _stripeService = new StripeService();
+export const stripeService = new StripeService();

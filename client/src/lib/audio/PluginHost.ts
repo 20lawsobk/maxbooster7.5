@@ -169,7 +169,7 @@ export class PluginHost {
    * Routes mb-* plugin slugs to the appropriate Web Audio API processor.
    */
   createPlugin(type: string): BasePlugin | null {
-    const _resolved = this?.resolveType(type);
+    const resolved = this?.resolveType(type);
     switch (resolved) {
       case "compressor":
         return new CompressorPlugin(this?.context);
@@ -202,7 +202,7 @@ export class PluginHost {
    * Create a plugin chain for a track
    */
   createChain(trackId: string): PluginChain {
-    const _chain = new PluginChain(this?.context, trackId);
+    const chain = new PluginChain(this?.context, trackId);
     this?.chains.set(trackId, chain);
     return chain;
   }
@@ -222,10 +222,10 @@ export class PluginHost {
     pluginType: string,
     position?: number,
   ): BasePlugin | null {
-    const _chain = this?.chains.get(trackId);
+    const chain = this?.chains.get(trackId);
     if (!chain) return null;
 
-    const _plugin = this?.createPlugin(pluginType);
+    const plugin = this?.createPlugin(pluginType);
     if (!plugin) return null;
 
     chain?.addPlugin(plugin, position);
@@ -296,7 +296,7 @@ export class PluginChain {
    * Remove plugin from chain
    */
   removePlugin(plugin: BasePlugin): void {
-    const _index = this?.plugins.indexOf(plugin);
+    const index = this?.plugins.indexOf(plugin);
     if (index >= 0) {
       this?.plugins.splice(index, 1);
       plugin?.destroy();
@@ -308,7 +308,7 @@ export class PluginChain {
    * Move plugin in chain
    */
   movePlugin(plugin: BasePlugin, newPosition: number): void {
-    const _index = this?.plugins.indexOf(plugin);
+    const index = this?.plugins.indexOf(plugin);
     if (index >= 0) {
       this?.plugins.splice(index, 1);
       this?.plugins.splice(newPosition, 0, plugin);
@@ -365,10 +365,10 @@ export class PluginChain {
    */
   getState(): PluginChainState {
     return {
-      trackId: this?.trackId,
-      plugins: this?.plugins.map((plugin) => ({
-        name: plugin?.getName(),
-        parameters: plugin?.getParameters(),
+      trackId: this.trackId,
+      plugins: this.plugins.map((plugin) => ({
+        name: plugin.getName(),
+        parameters: plugin.getParameters(),
       })),
     };
   }

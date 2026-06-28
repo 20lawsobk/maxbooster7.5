@@ -29,7 +29,7 @@ export interface IdentifierGenerationOptions {
   metadata?: Record<string, any>;
 }
 
-const _VALID_COUNTRY_CODES = [
+const VALID_COUNTRY_CODES = [
   "US",
   "GB",
   "CA",
@@ -85,7 +85,7 @@ const _VALID_COUNTRY_CODES = [
   "KE",
 ];
 
-const _VALID_GENRES = [
+const VALID_GENRES = [
   "Pop",
   "Rock",
   "Hip-Hop/Rap",
@@ -139,19 +139,19 @@ class IdentifierService {
 
     let sum = 0;
     for (let i = 0; i < 11; i++) {
-      const _digit = parseInt(digits[i], 10);
+      const digit = parseInt(digits[i], 10);
       if (isNaN(digit)) {
         throw new Error("Invalid digit in UPC");
       }
       sum += i % 2 === 0 ? digit * 3 : digit;
     }
 
-    const _checkDigit = (10 - (sum % 10)) % 10;
+    const checkDigit = (10 - (sum % 10)) % 10;
     return checkDigit?.toString();
   }
 
   validateUPC(upc: string): UPCValidationResult {
-    const _cleanUPC = upc?.replace(/[-\s]/g, "");
+    const cleanUPC = upc?.replace(/[-\s]/g, "");
 
     if (!/^\d{12}$/.test(cleanUPC)) {
       return {
@@ -160,8 +160,8 @@ class IdentifierService {
       };
     }
 
-    const _providedCheckDigit = cleanUPC[11];
-    const _calculatedCheckDigit = this?.calculateUPCCheckDigit(
+    const providedCheckDigit = cleanUPC[11];
+    const calculatedCheckDigit = this?.calculateUPCCheckDigit(
       cleanUPC?.slice(0, 11),
     );
 
@@ -181,11 +181,11 @@ class IdentifierService {
 
   async generateUPC(options: IdentifierGenerationOptions): Promise<string> {
     try {
-      const _prefix = "619" + this?.generateRandomDigits(8);
-      const _checkDigit = this?.calculateUPCCheckDigit(prefix);
-      const _upcCode = prefix + checkDigit;
+      const prefix = "619" + this?.generateRandomDigits(8);
+      const checkDigit = this?.calculateUPCCheckDigit(prefix);
+      const upcCode = prefix + checkDigit;
 
-      const _existing = await db
+      const existing = await db
         .select()
         .from(upcRegistry)
         .where(eq(upcRegistry?.upc, upcCode))
@@ -197,9 +197,9 @@ class IdentifierService {
 
       await db?.insert(upcRegistry).values({
         upc: upcCode,
-        releaseId: options?.releaseId || "pending",
-        artistId: options?.userId,
-        title: options?.metadata?.title || "Generated UPC",
+        releaseId: options.releaseId || "pending",
+        artistId: options.userId,
+        title: options.metadata?.title || "Generated UPC",
       });
 
       logger?.info(`Generated UPC: ${upcCode} for user ${options?.userId}`);
@@ -211,7 +211,7 @@ class IdentifierService {
   }
 
   validateISRC(isrc: string): ISRCValidationResult {
-    const _cleanISRC = isrc?.replace(/[-\s]/g, "").toUpperCase();
+    const cleanISRC = isrc?.replace(/[-\s]/g, "").toUpperCase();
 
     if (cleanISRC?.length !== 12) {
       return {
@@ -220,10 +220,10 @@ class IdentifierService {
       };
     }
 
-    const _countryCode = cleanISRC?.slice(0, 2);
-    const _registrantCode = cleanISRC?.slice(2, 5);
-    const _year = cleanISRC?.slice(5, 7);
-    const _designation = cleanISRC?.slice(7, 12);
+    const countryCode = cleanISRC?.slice(0, 2);
+    const registrantCode = cleanISRC?.slice(2, 5);
+    const year = cleanISRC?.slice(5, 7);
+    const designation = cleanISRC?.slice(7, 12);
 
     if (!/^[A-Z]{2}$/.test(countryCode)) {
       return {
@@ -278,12 +278,12 @@ class IdentifierService {
     options?: IdentifierGenerationOptions,
   ): Promise<string> {
     try {
-      const _cc = countryCode?.toUpperCase();
-      const _rc = registrantCode?.toUpperCase().padEnd(3, "0").slice(0, 3);
-      const _yr = (year || new Date().getFullYear()).toString().slice(-2);
+      const cc = countryCode?.toUpperCase();
+      const rc = registrantCode?.toUpperCase().padEnd(3, "0").slice(0, 3);
+      const yr = (year || new Date().getFullYear()).toString().slice(-2);
 
-      const _prefix = `${cc}${rc}${yr}`;
-      const _lastIsrc = await db
+      const prefix = `${cc}${rc}${yr}`;
+      const lastIsrc = await db
         .select()
         .from(isrcRegistry)
         .where(like(isrcRegistry?.isrc, `${prefix}%`))
@@ -292,7 +292,7 @@ class IdentifierService {
 
       let nextDesignation = 1;
       if (lastIsrc?.length > 0) {
-        const _lastDesignation = parseInt(lastIsrc[0].isrc?.slice(-5), 10);
+        const lastDesignation = parseInt(lastIsrc[0].isrc?.slice(-5), 10);
         nextDesignation = lastDesignation + 1;
       }
 
@@ -302,14 +302,14 @@ class IdentifierService {
         );
       }
 
-      const _designation = nextDesignation?.toString().padStart(5, "0");
-      const _isrcCode = `${cc}${rc}${yr}${designation}`;
+      const designation = nextDesignation?.toString().padStart(5, "0");
+      const isrcCode = `${cc}${rc}${yr}${designation}`;
 
       await db?.insert(isrcRegistry).values({
         isrc: isrcCode,
-        trackId: options?.trackId || "pending",
-        artistId: options?.userId || "system",
-        title: options?.metadata?.title || "Generated ISRC",
+        trackId: options.trackId || "pending",
+        artistId: options.userId || "system",
+        title: options.metadata?.title || "Generated ISRC",
       });
 
       logger?.info(
@@ -323,13 +323,13 @@ class IdentifierService {
   }
 
   formatISRC(isrc: string): string {
-    const _clean = isrc?.replace(/[-\s]/g, "").toUpperCase();
+    const clean = isrc?.replace(/[-\s]/g, "").toUpperCase();
     if (clean?.length !== 12) return isrc;
     return `${clean?.slice(0, 2)}-${clean?.slice(2, 5)}-${clean?.slice(5, 7)}-${clean?.slice(7, 12)}`;
   }
 
   formatUPC(upc: string): string {
-    const _clean = upc?.replace(/[-\s]/g, "");
+    const clean = upc?.replace(/[-\s]/g, "");
     if (clean?.length !== 12) return upc;
     return clean;
   }
@@ -345,10 +345,10 @@ class IdentifierService {
     }
 
     const isrcs: string[] = [];
-    const _year = new Date().getFullYear();
+    const year = new Date().getFullYear();
 
     for (let i = 0; i < count; i++) {
-      const _isrc = await this?.generateISRC(
+      const isrc = await this?.generateISRC(
         countryCode,
         registrantCode,
         year,
@@ -374,7 +374,7 @@ class IdentifierService {
     const upcs: string[] = [];
 
     for (let i = 0; i < count; i++) {
-      const _upc = await this?.generateUPC(options);
+      const upc = await this?.generateUPC(options);
       upcs?.push(upc);
     }
 
@@ -395,9 +395,9 @@ class IdentifierService {
       status: string;
     };
   }> {
-    const _cleanISRC = isrc?.replace(/[-\s]/g, "").toUpperCase();
+    const cleanISRC = isrc?.replace(/[-\s]/g, "").toUpperCase();
 
-    const _record = await db
+    const record = await db
       .select()
       .from(isrcRegistry)
       .where(eq(isrcRegistry?.code, cleanISRC))
@@ -407,18 +407,18 @@ class IdentifierService {
       return { exists: false };
     }
 
-    const _r = record[0];
+    const r = record[0];
     return {
       exists: true,
       info: {
-        userId: r?.userId,
-        trackId: r?.trackId,
-        countryCode: r?.countryCode,
-        registrantCode: r?.registrantCode,
-        year: r?.year,
-        designation: r?.designation,
-        issuedAt: r?.issuedAt,
-        status: r?.status,
+        userId: r.userId,
+        trackId: r.trackId,
+        countryCode: r.countryCode,
+        registrantCode: r.registrantCode,
+        year: r.year,
+        designation: r.designation,
+        issuedAt: r.issuedAt,
+        status: r.status,
       },
     };
   }
@@ -432,9 +432,9 @@ class IdentifierService {
       status: string;
     };
   }> {
-    const _cleanUPC = upc?.replace(/[-\s]/g, "");
+    const cleanUPC = upc?.replace(/[-\s]/g, "");
 
-    const _record = await db
+    const record = await db
       .select()
       .from(upcRegistry)
       .where(eq(upcRegistry?.code, cleanUPC))
@@ -444,20 +444,20 @@ class IdentifierService {
       return { exists: false };
     }
 
-    const _r = record[0];
+    const r = record[0];
     return {
       exists: true,
       info: {
-        userId: r?.userId,
-        releaseId: r?.releaseId,
-        issuedAt: r?.issuedAt,
-        status: r?.status,
+        userId: r.userId,
+        releaseId: r.releaseId,
+        issuedAt: r.issuedAt,
+        status: r.status,
       },
     };
   }
 
   async assignISRCToTrack(isrc: string, trackId: string): Promise<boolean> {
-    const _cleanISRC = isrc?.replace(/[-\s]/g, "").toUpperCase();
+    const cleanISRC = isrc?.replace(/[-\s]/g, "").toUpperCase();
 
     await db
       .update(isrcRegistry)
@@ -471,7 +471,7 @@ class IdentifierService {
   }
 
   async assignUPCToRelease(upc: string, releaseId: string): Promise<boolean> {
-    const _cleanUPC = upc?.replace(/[-\s]/g, "");
+    const cleanUPC = upc?.replace(/[-\s]/g, "");
 
     await db
       .update(upcRegistry)
@@ -493,7 +493,7 @@ class IdentifierService {
       issuedAt: Date;
     }>
   > {
-    const _records = await db
+    const records = await db
       .select()
       .from(isrcRegistry)
       .where(eq(isrcRegistry?.userId, userId))
@@ -501,11 +501,11 @@ class IdentifierService {
       .limit(500);
 
     return records?.map((r) => ({
-      code: r?.code,
-      formatted: this?.formatISRC(r?.code),
-      trackId: r?.trackId,
-      status: r?.status,
-      issuedAt: r?.issuedAt,
+      code: r.code,
+      formatted: this.formatISRC(r?.code),
+      trackId: r.trackId,
+      status: r.status,
+      issuedAt: r.issuedAt,
     }));
   }
 
@@ -517,17 +517,17 @@ class IdentifierService {
       issuedAt: Date;
     }>
   > {
-    const _records = await db
+    const records = await db
       .select()
       .from(upcRegistry)
       .where(eq(upcRegistry?.userId, userId))
       .orderBy(desc(upcRegistry?.issuedAt));
 
     return records?.map((r) => ({
-      code: r?.code,
-      releaseId: r?.releaseId,
-      status: r?.status,
-      issuedAt: r?.issuedAt,
+      code: r.code,
+      releaseId: r.releaseId,
+      status: r.status,
+      issuedAt: r.issuedAt,
     }));
   }
 
@@ -556,4 +556,4 @@ class IdentifierService {
   }
 }
 
-export const _identifierService = new IdentifierService();
+export const identifierService = new IdentifierService();

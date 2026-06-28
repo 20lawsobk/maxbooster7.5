@@ -18,7 +18,7 @@ import { logger } from "../logger.js";
 import { createHash, randomBytes } from "crypto";
 import { env } from "../config/env.js";
 
-const _DEFAULT_QUOTA_BYTES = 5 * 1024 * 1024 * 1024; // 5GB default quota
+const DEFAULT_QUOTA_BYTES = 5 * 1024 * 1024 * 1024; // 5GB default quota
 
 export class UserPocketDimensionService {
   private static instance: UserPocketDimensionService;
@@ -67,11 +67,11 @@ export class UserPocketDimensionService {
     userId: string,
     email: string,
   ): Promise<UserStorage> {
-    const _storagePrefix = this?.generateStoragePrefix(userId);
-    const _encryptionKey = this?.generateEncryptionKey(userId, email);
+    const storagePrefix = this?.generateStoragePrefix(userId);
+    const encryptionKey = this?.generateEncryptionKey(userId, email);
 
     try {
-      const _pocket = await pocketManager?.openPocket(`user-${userId}`, {
+      const pocket = await pocketManager?.openPocket(`user-${userId}`, {
         encryptionKey,
         compressionLevel: 9,
         enableDeduplication: true,
@@ -88,7 +88,7 @@ export class UserPocketDimensionService {
         }),
       );
 
-      const _defaultFolders = [
+      const defaultFolders = [
         "audio",
         "artwork",
         "documents",
@@ -132,32 +132,32 @@ export class UserPocketDimensionService {
    * Get or open a user's pocket dimension
    */
   async getUserPocket(userId: string): Promise<PocketDimension | null> {
-    if (this?.activePockets.has(userId)) {
-      return this?.activePockets.get(userId)!;
+    if (this.activePockets.has(userId)) {
+      return this.activePockets.get(userId)!;
     }
 
     const [storage] = await db
       .select()
       .from(userStorage)
-      .where(eq(userStorage?.userId, userId))
+      .where(eq(userStorage.userId, userId))
       .limit(1);
 
-    if (!storage || !storage?.isActive) {
+    if (!storage || !storage.isActive) {
       return null;
     }
 
     try {
-      const _pocket = await pocketManager?.openPocket(`user-${userId}`);
-      this?.activePockets.set(userId, pocket);
+      const pocket = await pocketManager.openPocket(`user-${userId}`);
+      this.activePockets.set(userId, pocket);
 
       await db
         .update(userStorage)
         .set({ lastAccessedAt: new Date() })
-        .where(eq(userStorage?.userId, userId));
+        .where(eq(userStorage.userId, userId));
 
       return pocket;
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `[PocketDimension] Failed to open storage for user ${userId}:`,
       );
@@ -179,15 +179,15 @@ export class UserPocketDimensionService {
       metadata?: Record<string, any>;
     },
   ): Promise<{ fileKey: string; sizeBytes: number; compressedSize: number }> {
-    const _pocket = await this?.getUserPocket(userId);
+    const pocket = await this?.getUserPocket(userId);
     if (!pocket) {
       throw new Error(`Storage not initialized for user ${userId}`);
     }
 
-    const _folder = options?.folder || "uploads";
-    const _fileKey = `${folder}/${Date?.now()}-${fileName}`;
+    const folder = options?.folder || "uploads";
+    const fileKey = `${folder}/${Date?.now()}-${fileName}`;
 
-    const _entry = await pocket?.write(fileKey, data);
+    const entry = await pocket?.write(fileKey, data);
 
     const [storage] = await db
       .select()
@@ -198,14 +198,14 @@ export class UserPocketDimensionService {
     if (storage) {
       await db?.insert(userStorageFiles).values({
         userId,
-        storageId: storage?.id,
+        storageId: storage.id,
         fileName,
         fileKey,
-        mimeType: options?.mimeType,
-        sizeBytes: data?.length,
+        mimeType: options.mimeType,
+        sizeBytes: data.length,
         folder,
-        isPublic: options?.isPublic || false,
-        metadata: options?.metadata || {},
+        isPublic: options.isPublic || false,
+        metadata: options.metadata || {},
       });
 
       await db
@@ -222,8 +222,8 @@ export class UserPocketDimensionService {
 
     return {
       fileKey,
-      sizeBytes: entry?.size,
-      compressedSize: entry?.compressedSize,
+      sizeBytes: entry.size,
+      compressedSize: entry.compressedSize,
     };
   }
 
@@ -231,24 +231,24 @@ export class UserPocketDimensionService {
    * Read a file from user's pocket dimension
    */
   async readFile(userId: string, fileKey: string): Promise<Buffer> {
-    const _pocket = await this?.getUserPocket(userId);
+    const pocket = await this.getUserPocket(userId);
     if (!pocket) {
       throw new Error(`Storage not initialized for user ${userId}`);
     }
 
-    return await pocket?.read(fileKey);
+    return await pocket.read(fileKey);
   }
 
   /**
    * Delete a file from user's pocket dimension
    */
   async deleteFile(userId: string, fileKey: string): Promise<boolean> {
-    const _pocket = await this?.getUserPocket(userId);
+    const pocket = await this?.getUserPocket(userId);
     if (!pocket) {
       return false;
     }
 
-    const _deleted = await pocket?.delete(fileKey);
+    const deleted = await pocket?.delete(fileKey);
 
     if (deleted) {
       await db
@@ -274,18 +274,18 @@ export class UserPocketDimensionService {
       createdAt: Date;
     }[]
   > {
-    const _pocket = await this?.getUserPocket(userId);
+    const pocket = await this.getUserPocket(userId);
     if (!pocket) {
       return [];
     }
 
-    const _entries = await pocket?.list(folder);
-    return entries?.map((entry) => ({
-      path: entry?.path,
-      size: entry?.size,
-      compressedSize: entry?.compressedSize,
-      type: entry?.type,
-      createdAt: entry?.createdAt,
+    const entries = await pocket.list(folder);
+    return entries.map((entry) => ({
+      path: entry.path,
+      size: entry.size,
+      compressedSize: entry.compressedSize,
+      type: entry.type,
+      createdAt: entry.createdAt,
     }));
   }
 
@@ -300,11 +300,11 @@ export class UserPocketDimensionService {
     usagePercent: number;
     compressionRatio: number;
   }> {
-    const _pocket = await this?.getUserPocket(userId);
+    const pocket = await this.getUserPocket(userId);
     const [storage] = await db
       .select()
       .from(userStorage)
-      .where(eq(userStorage?.userId, userId))
+      .where(eq(userStorage.userId, userId))
       .limit(1);
 
     if (!pocket || !storage) {
@@ -318,18 +318,18 @@ export class UserPocketDimensionService {
       };
     }
 
-    const _stats = pocket?.getStats();
+    const stats = pocket.getStats();
 
     return {
-      totalBytes: stats?.totalSize,
-      compressedBytes: stats?.compressedSize,
-      fileCount: stats?.totalEntries,
-      quotaBytes: storage?.quotaBytes || DEFAULT_QUOTA_BYTES,
+      totalBytes: stats.totalSize,
+      compressedBytes: stats.compressedSize,
+      fileCount: stats.totalEntries,
+      quotaBytes: storage.quotaBytes || DEFAULT_QUOTA_BYTES,
       usagePercent:
-        ((storage?.totalBytes || 0) /
-          (storage?.quotaBytes || DEFAULT_QUOTA_BYTES)) *
+        ((storage.totalBytes || 0) /
+          (storage.quotaBytes || DEFAULT_QUOTA_BYTES)) *
         100,
-      compressionRatio: stats?.compressionRatio,
+      compressionRatio: stats.compressionRatio,
     };
   }
 
@@ -340,7 +340,7 @@ export class UserPocketDimensionService {
     userId: string,
     dimensionName: string,
   ): Promise<PocketDimension> {
-    const _pocket = await this?.getUserPocket(userId);
+    const pocket = await this?.getUserPocket(userId);
     if (!pocket) {
       throw new Error(`Storage not initialized for user ${userId}`);
     }
@@ -356,7 +356,7 @@ export class UserPocketDimensionService {
 
   /**
    * Record one AI generation event in the user's journey.
-   * Appended to ai-journey/generation-history?.json (capped at 1000 entries).
+   * Appended to ai-journey/generation-history.json (capped at 1000 entries).
    */
   async recordGeneration(
     userId: string,
@@ -370,34 +370,34 @@ export class UserPocketDimensionService {
       createdAt?: string;
     },
   ): Promise<void> {
-    const _pocket = await this?.getUserPocket(userId);
+    const pocket = await this.getUserPocket(userId);
     if (!pocket) return;
 
     // Serialise concurrent writes to prevent the read-modify-write race condition
     // where two concurrent calls each read the same history and overwrite each other.
-    const _release = await this?.acquireWriteLock(userId);
+    const release = await this.acquireWriteLock(userId);
     try {
-      const _KEY = "ai-journey/generation-history.json";
+      const KEY = "ai-journey/generation-history.json";
       let history: unknown[] = [];
       try {
-        const _raw = await pocket?.read(KEY);
-        history = JSON?.parse(raw?.toString());
+        const raw = await pocket.read(KEY);
+        history = JSON.parse(raw.toString());
       } catch {
         /* intentional: missing or unparseable history JSON → starts fresh */
       }
 
-      history?.push({
+      history.push({
         ...meta,
-        createdAt: meta?.createdAt ?? new Date().toISOString(),
+        createdAt: meta.createdAt ?? new Date().toISOString(),
       });
-      if (history?.length > 1000) history = history?.slice(-1000);
+      if (history.length > 1000) history = history.slice(-1000);
 
-      await pocket?.write(KEY, JSON?.stringify(history));
+      await pocket.write(KEY, JSON.stringify(history));
     } finally {
       release();
     }
-    logger?.debug(
-      `[AIJourney] Recorded ${meta?.type} generation for user ${userId}`,
+    logger.debug(
+      `[AIJourney] Recorded ${meta.type} generation for user ${userId}`,
     );
   }
 
@@ -406,10 +406,10 @@ export class UserPocketDimensionService {
    * Stored in ai-journey/profile?.json — accumulates taste signals over time.
    */
   async getAiProfile(userId: string): Promise<Record<string, any>> {
-    const _pocket = await this?.getUserPocket(userId);
+    const pocket = await this?.getUserPocket(userId);
     if (!pocket) return {};
     try {
-      const _raw = await pocket?.read("ai-journey/profile.json");
+      const raw = await pocket?.read("ai-journey/profile.json");
       return JSON?.parse(raw?.toString());
     } catch {
       return {};
@@ -420,13 +420,13 @@ export class UserPocketDimensionService {
     userId: string,
     updates: Record<string, any>,
   ): Promise<void> {
-    const _pocket = await this?.getUserPocket(userId);
+    const pocket = await this?.getUserPocket(userId);
     if (!pocket) return;
     // Serialise concurrent updates to prevent last-write-wins overwrite.
-    const _release = await this?.acquireWriteLock(userId);
+    const release = await this?.acquireWriteLock(userId);
     try {
-      const _current = await this?.getAiProfile(userId);
-      const _merged = {
+      const current = await this?.getAiProfile(userId);
+      const merged = {
         ...current,
         ...updates,
         updatedAt: new Date().toISOString(),
@@ -441,12 +441,12 @@ export class UserPocketDimensionService {
    * Get a user's recent generation history.
    */
   async getGenerationHistory(userId: string, limit = 50): Promise<any[]> {
-    const _pocket = await this?.getUserPocket(userId);
+    const pocket = await this.getUserPocket(userId);
     if (!pocket) return [];
     try {
-      const _raw = await pocket?.read("ai-journey/generation-history.json");
-      const _history = JSON?.parse(raw?.toString()) as Record<string, unknown>[];
-      return history?.slice(-limit);
+      const raw = await pocket.read("ai-journey/generation-history.json");
+      const history = JSON.parse(raw.toString()) as Record<string, unknown>[];
+      return history.slice(-limit);
     } catch {
       return [];
     }
@@ -458,19 +458,19 @@ export class UserPocketDimensionService {
    * the base model weights that live on the D: drive Model Knowledge Server.
    */
   async saveFinetuneDelata(userId: string, deltaBytes: Buffer): Promise<void> {
-    const _pocket = await this?.getUserPocket(userId);
+    const pocket = await this.getUserPocket(userId);
     if (!pocket) return;
-    await pocket?.write("ai-journey/fine-tune-delta.bin", deltaBytes);
-    logger?.info(
-      `[AIJourney] Saved fine-tune delta (${deltaBytes?.length} bytes) for user ${userId}`,
+    await pocket.write("ai-journey/fine-tune-delta.bin", deltaBytes);
+    logger.info(
+      `[AIJourney] Saved fine-tune delta (${deltaBytes.length} bytes) for user ${userId}`,
     );
   }
 
   async getFinetuneDelata(userId: string): Promise<Buffer | null> {
-    const _pocket = await this?.getUserPocket(userId);
+    const pocket = await this.getUserPocket(userId);
     if (!pocket) return null;
     try {
-      return await pocket?.read("ai-journey/fine-tune-delta.bin");
+      return await pocket.read("ai-journey/fine-tune-delta.bin");
     } catch {
       return null;
     }
@@ -480,7 +480,7 @@ export class UserPocketDimensionService {
    * Close a user's pocket dimension (free memory)
    */
   async closeUserPocket(userId: string): Promise<void> {
-    const _pocket = this?.activePockets.get(userId);
+    const pocket = this?.activePockets.get(userId);
     if (pocket) {
       await pocketManager?.closePocket(`user-${userId}`);
       this?.activePockets.delete(userId);
@@ -488,7 +488,7 @@ export class UserPocketDimensionService {
   }
 
   private generateStoragePrefix(userId: string): string {
-    const _hash = createHash("sha256")
+    const hash = createHash("sha256")
       .update(userId)
       .digest("hex")
       .substring(0, 12);
@@ -496,8 +496,8 @@ export class UserPocketDimensionService {
   }
 
   private generateEncryptionKey(userId: string, _email: string): string {
-    const _uniqueSalt = randomBytes(32).toString("hex");
-    const _masterSecret = env?.SESSION_SECRET || randomBytes(32).toString("hex");
+    const uniqueSalt = randomBytes(32).toString("hex");
+    const masterSecret = env?.SESSION_SECRET || randomBytes(32).toString("hex");
     return createHash("sha512")
       .update(`${masterSecret}:${uniqueSalt}:${userId}:${Date?.now()}`)
       .digest("hex")
@@ -505,4 +505,4 @@ export class UserPocketDimensionService {
   }
 }
 
-export const _userPocketService = UserPocketDimensionService?.getInstance();
+export const userPocketService = UserPocketDimensionService?.getInstance();

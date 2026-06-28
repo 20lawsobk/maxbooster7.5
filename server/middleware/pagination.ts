@@ -12,8 +12,8 @@
 
 import type { Request } from "express";
 
-export const _MAX_PAGE_SIZE = 500;
-export const _DEFAULT_PAGE_SIZE = 50;
+export const MAX_PAGE_SIZE = 500;
+export const DEFAULT_PAGE_SIZE = 50;
 
 export interface PaginationParams {
   limit: number;
@@ -28,18 +28,18 @@ export interface PaginationParams {
  * - offset: computed from page × limit
  */
 export function parsePaginationParams(req: Request): PaginationParams {
-  const _rawLimit = parseInt(
+  const rawLimit = parseInt(
     String(req?.query.limit ?? req?.query.pageSize ?? DEFAULT_PAGE_SIZE),
     10,
   );
-  const _rawPage = parseInt(String(req?.query.page ?? 1), 10);
+  const rawPage = parseInt(String(req?.query.page ?? 1), 10);
 
-  const _page = Number?.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1;
-  const _limit =
+  const page = Number?.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1;
+  const limit =
     Number?.isFinite(rawLimit) && rawLimit >= 1
       ? Math?.min(rawLimit, MAX_PAGE_SIZE)
       : DEFAULT_PAGE_SIZE;
-  const _offset = (page - 1) * limit;
+  const offset = (page - 1) * limit;
 
   return { limit, offset, page };
 }

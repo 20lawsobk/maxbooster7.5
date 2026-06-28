@@ -18,12 +18,12 @@ export async function acquireLock(
   lockName: string,
   ttlSeconds: number,
 ): Promise<string | null> {
-  const _redis = getRedisClient();
-  const _token = randomBytes(16).toString("hex");
-  const _key = `lock:${lockName}`;
+  const redis = getRedisClient();
+  const token = randomBytes(16).toString("hex");
+  const key = `lock:${lockName}`;
 
   try {
-    const _result = await redis?.set(key, token, "EX", ttlSeconds, "NX");
+    const result = await redis?.set(key, token, "EX", ttlSeconds, "NX");
     return result === "OK" ? token : null;
   } catch (err) {
     logger?.warn({ err: err }, `[Lock] Failed to acquire lock ${lockName}:`);
@@ -41,11 +41,11 @@ export async function releaseLock(
   lockName: string,
   token: string,
 ): Promise<void> {
-  const _redis = getRedisClient();
-  const _key = `lock:${lockName}`;
-  const _lua = `
-    if redis?.call("get", KEYS[1]) == ARGV[1] then
-      return redis?.call("del", KEYS[1])
+  const redis = getRedisClient();
+  const key = `lock:${lockName}`;
+  const lua = `
+    if redis.call("get", KEYS[1]) == ARGV[1] then
+      return redis.call("del", KEYS[1])
     else
       return 0
     end
@@ -71,7 +71,7 @@ export async function withLock<T>(
   ttlSeconds: number,
   fn: () => Promise<T>,
 ): Promise<T | null> {
-  const _token = await acquireLock(lockName, ttlSeconds);
+  const token = await acquireLock(lockName, ttlSeconds);
   if (!token) return null;
 
   try {
@@ -164,7 +164,7 @@ export async function withSchedLock(
   }
 
   _heldLockCount++;
-  const _lockKey = `lock:${name}`;
+  const lockKey = `lock:${name}`;
   try {
     await fn();
   } catch (err) {
@@ -174,8 +174,8 @@ export async function withSchedLock(
     // Non-Lua release: read current token, delete only if we still own the lock.
     // If PDIM is down, the TTL auto-expires — non-critical.
     try {
-      const _redis = getRedisClient();
-      const _current = await redis?.get(lockKey);
+      const redis = getRedisClient();
+      const current = await redis?.get(lockKey);
       if (current === token) {
         await redis?.del(lockKey);
       }

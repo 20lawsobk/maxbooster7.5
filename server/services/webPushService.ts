@@ -29,10 +29,10 @@ class WebPushService {
   }
 
   private initialize() {
-    const _publicKey = process?.env.VAPID_PUBLIC_KEY;
-    const _privateKey = process?.env.VAPID_PRIVATE_KEY;
-    const _subject =
-      process?.env.VAPID_SUBJECT || "mailto:notifications@maxbooster?.ai";
+    const publicKey = process?.env.VAPID_PUBLIC_KEY;
+    const privateKey = process?.env.VAPID_PRIVATE_KEY;
+    const subject =
+      process?.env.VAPID_SUBJECT || "mailto:notifications@maxbooster.ai";
 
     if (!publicKey || !privateKey) {
       logger?.warn("VAPID keys not configured - Web Push disabled");
@@ -62,7 +62,7 @@ class WebPushService {
     userAgent?: string,
   ): Promise<void> {
     try {
-      const _existing = await db
+      const existing = await db
         .select()
         .from(pushSubscriptions)
         .where(eq(pushSubscriptions?.endpoint, subscription?.endpoint))
@@ -73,8 +73,8 @@ class WebPushService {
           .update(pushSubscriptions)
           .set({
             userId,
-            p256dh: subscription?.keys.p256dh,
-            auth: subscription?.keys.auth,
+            p256dh: subscription.keys.p256dh,
+            auth: subscription.keys.auth,
             userAgent: userAgent || null,
             updatedAt: new Date(),
           })
@@ -83,9 +83,9 @@ class WebPushService {
       } else {
         await db?.insert(pushSubscriptions).values({
           userId,
-          endpoint: subscription?.endpoint,
-          p256dh: subscription?.keys.p256dh,
-          auth: subscription?.keys.auth,
+          endpoint: subscription.endpoint,
+          p256dh: subscription.keys.p256dh,
+          auth: subscription.keys.auth,
           userAgent: userAgent || null,
         });
         logger?.info(`Push subscription saved for user ${userId}`);
@@ -133,7 +133,7 @@ class WebPushService {
   }
 
   private async deliverToSubscriptions(
-    subscriptions: Awaited<ReturnType<typeof this?.getUserSubscriptions>>,
+    subscriptions: Awaited<ReturnType<typeof this.getUserSubscriptions>>,
     serializedPayload: string,
   ): Promise<{ sent: number; failed: number }> {
     let sent = 0;
@@ -143,10 +143,10 @@ class WebPushService {
       try {
         await webpush?.sendNotification(
           {
-            endpoint: sub?.endpoint,
+            endpoint: sub.endpoint,
             keys: {
-              p256dh: sub?.p256dh,
-              auth: sub?.auth,
+              p256dh: sub.p256dh,
+              auth: sub.auth,
             },
           },
           serializedPayload,
@@ -180,31 +180,31 @@ class WebPushService {
       return { sent: 0, failed: 0 };
     }
 
-    const _subscriptions = await this?.getUserSubscriptions(userId);
+    const subscriptions = await this?.getUserSubscriptions(userId);
     if (subscriptions?.length === 0) {
       return { sent: 0, failed: 0 };
     }
 
-    const _pushPayload = JSON?.stringify({
-      title: payload?.title,
-      body: payload?.body,
-      url: payload?.url || "/",
-      icon: payload?.icon || "/icons/icon-192x192.png",
-      badge: payload?.badge || "/icons/icon-72x72.png",
-      tag: payload?.tag,
-      actions: payload?.actions || [
+    const pushPayload = JSON?.stringify({
+      title: payload.title,
+      body: payload.body,
+      url: payload.url || "/",
+      icon: payload.icon || "/icons/icon-192x192.png",
+      badge: payload.badge || "/icons/icon-72x72.png",
+      tag: payload.tag,
+      actions: payload.actions || [
         { action: "open", title: "Open" },
         { action: "dismiss", title: "Dismiss" },
       ],
-      silent: payload?.silent || false,
-      requireInteraction: payload?.requireInteraction || false,
-      renotify: payload?.renotify || false,
-      vibrate: payload?.vibrate || [100, 50, 100],
-      image: payload?.image,
-      data: { ...payload?.data, url: payload?.url || "/" },
+      silent: payload.silent || false,
+      requireInteraction: payload.requireInteraction || false,
+      renotify: payload.renotify || false,
+      vibrate: payload.vibrate || [100, 50, 100],
+      image: payload.image,
+      data: { ...payload?.data, url: payload.url || "/" },
     });
 
-    const _result = await this?.deliverToSubscriptions(
+    const result = await this?.deliverToSubscriptions(
       subscriptions,
       pushPayload,
     );
@@ -227,30 +227,30 @@ class WebPushService {
       return { sent: 0, failed: 0 };
     }
 
-    const _subscriptions = await this?.getUserSubscriptions(userId);
+    const subscriptions = await this?.getUserSubscriptions(userId);
     if (subscriptions?.length === 0) {
       return { sent: 0, failed: 0 };
     }
 
-    const _serialized = JSON?.stringify({
-      title: richPayload?.title,
-      body: richPayload?.body,
-      url: richPayload?.url,
-      icon: richPayload?.icon,
-      badge: richPayload?.badge,
-      tag: richPayload?.tag,
-      category: richPayload?.category,
-      actions: richPayload?.actions,
-      silent: richPayload?.silent,
-      requireInteraction: richPayload?.requireInteraction,
-      renotify: richPayload?.renotify,
-      vibrate: richPayload?.vibrate,
-      image: richPayload?.image,
-      timestamp: richPayload?.timestamp || Date?.now(),
-      data: { ...richPayload?.data, url: richPayload?.url },
+    const serialized = JSON?.stringify({
+      title: richPayload.title,
+      body: richPayload.body,
+      url: richPayload.url,
+      icon: richPayload.icon,
+      badge: richPayload.badge,
+      tag: richPayload.tag,
+      category: richPayload.category,
+      actions: richPayload.actions,
+      silent: richPayload.silent,
+      requireInteraction: richPayload.requireInteraction,
+      renotify: richPayload.renotify,
+      vibrate: richPayload.vibrate,
+      image: richPayload.image,
+      timestamp: richPayload.timestamp || Date?.now(),
+      data: { ...richPayload?.data, url: richPayload.url },
     });
 
-    const _result = await this?.deliverToSubscriptions(subscriptions, serialized);
+    const result = await this?.deliverToSubscriptions(subscriptions, serialized);
 
     if (richPayload?.silent) {
       if (result?.sent > 0) {
@@ -268,4 +268,4 @@ class WebPushService {
   }
 }
 
-export const _webPushService = new WebPushService();
+export const webPushService = new WebPushService();

@@ -49,12 +49,12 @@ import {
   renderDiffusionScene,
 } from "./maxcoreDiffusionSceneService.js";
 
-const _execFileAsync = promisify(execFile);
+const execFileAsync = promisify(execFile);
 
 function resolveFFmpegPath(): string {
   if (process?.env.FFMPEG_PATH) return process?.env.FFMPEG_PATH;
   try {
-    const _p = execFileSync("/bin/sh", ["-c", "which ffmpeg"], { timeout: 3000 })
+    const p = execFileSync("/bin/sh", ["-c", "which ffmpeg"], { timeout: 3000 })
       .toString()
       .trim();
     if (p) return p;
@@ -71,12 +71,12 @@ function resolveFFmpegPath(): string {
   return "ffmpeg";
 }
 
-const _FFMPEG = resolveFFmpegPath();
-const _OUTPUT_DIR = path?.join(process?.cwd(), "uploads", "videos");
-const _TEMP_DIR = path?.join(process?.cwd(), "uploads", "video_temp");
-const _FONT_DIR = "/usr/share/fonts/truetype/dejavu";
+const FFMPEG = resolveFFmpegPath();
+const OUTPUT_DIR = path?.join(process?.cwd(), "uploads", "videos");
+const TEMP_DIR = path?.join(process?.cwd(), "uploads", "video_temp");
+const FONT_DIR = "/usr/share/fonts/truetype/dejavu";
 
-const _FONTS = {
+const FONTS = {
   bold: `${FONT_DIR}/DejaVuSans-Bold?.ttf`,
   regular: `${FONT_DIR}/DejaVuSans?.ttf`,
   mono: `${FONT_DIR}/DejaVuSansMono-Bold?.ttf`,
@@ -202,35 +202,31 @@ async function renderImageWithKenBurns(
   height: number,
   durationSec: number,
   motionIndex: number,
-  intensity: "subtle" | "moderate" | "dramatic",
+  // NOTE: intensity is accepted for API compatibility but not yet wired into the
+  // zoom/pan amount — Ken Burns currently renders the same regardless of level.
+  _intensity: "subtle" | "moderate" | "dramatic",
   colorGrade: string,
   textOverlays: string[],
   fps = 30,
 ): Promise<void> {
-  const _motion = KEN_BURNS_MOTIONS[motionIndex % KEN_BURNS_MOTIONS?.length];
-  const _frames = Math?.ceil(durationSec * fps);
-
-  // Scale intensity: zoom range multiplier
-  const _intensityScale =
-    intensity === "subtle" ? 0.5 : intensity === "dramatic" ? 1.6 : 1.0;
+  const motion = KEN_BURNS_MOTIONS[motionIndex % KEN_BURNS_MOTIONS.length];
+  const frames = Math.ceil(durationSec * fps);
 
   // zoompan: zoom in/out + pan within source image
   // Output is at output resolution (width x height), source scaled from input image.
   // We render at full resolution — the zoompan filter handles the motion.
-  `pmax(${1.0},${1.0 + parseFloat(motion?.z(durationSec).match(/0\.\d+/)?.[0] ?? "0.08") * intensityScale * 0 + 1}*(${motion?.z(durationSec)}-1)+1)`;
-  // Simpler and more reliable zoompan expression:
-  const _zBasic = motion?.z(durationSec);
-  const _xBasic = motion?.x(width, width, durationSec);
-  const _yBasic = motion?.y(height, height, durationSec);
+  const zBasic = motion.z(durationSec);
+  const xBasic = motion.x(width, width, durationSec);
+  const yBasic = motion.y(height, height, durationSec);
 
   // Color grade filter
-  const _gradeFilter = buildColorGrade(colorGrade);
+  const gradeFilter = buildColorGrade(colorGrade);
 
   // Vignette for cinematic depth
-  const _vignetteFilter = "vignette=angle=PI/4.5:mode=forward:eval=init";
+  const vignetteFilter = "vignette=angle=PI/4.5:mode=forward:eval=init";
 
   // Build complete filter chain
-  const _filterParts = [
+  const filterParts = [
     `scale=${width * 2}:${height * 2}:flags=lanczos`, // oversample for quality Ken Burns
     `zoompan=z='${zBasic}':x='${xBasic}':y='${yBasic}':d=${frames}:s=${width}x${height}:fps=${fps}`,
     "format=yuv420p",
@@ -248,7 +244,7 @@ async function renderImageWithKenBurns(
       "-i",
       imagePath,
       "-vf",
-      filterParts?.join(","),
+      filterParts.join(","),
       "-c:v",
       "libx264",
       "-preset",
@@ -266,7 +262,7 @@ async function renderImageWithKenBurns(
       String(fps),
       outputPath,
     ],
-    { timeout: Math?.max(120_000, durationSec * 8000) },
+    { timeout: Math.max(120_000, durationSec * 8000) },
   );
 }
 
@@ -296,25 +292,25 @@ async function applyAudioToVideo(
   logoPath?: string,
 ): Promise<void> {
   const audioProfiles: Record<string, any> = AUDIO_PROFILES;
-  const _audioProfile = audioProfiles[genre] || audioProfiles?.default;
+  const audioProfile = audioProfiles[genre] || audioProfiles.default;
 
-  const _fadeDur = Math?.min(1.5, totalDur * 0.1);
-  const _fadeOut = Math?.max(0, totalDur - fadeDur);
-  const _fd = fadeDur?.toFixed(2);
-  const _fo = fadeOut?.toFixed(2);
+  const fadeDur = Math.min(1.5, totalDur * 0.1);
+  const fadeOut = Math.max(0, totalDur - fadeDur);
+  const fd = fadeDur.toFixed(2);
+  const fo = fadeOut.toFixed(2);
 
-  const _src1 = `aevalsrc=${audioProfile?.bass}|${audioProfile?.bass}:sample_rate=44100:channel_layout=stereo`;
-  const _src2 = `aevalsrc=${audioProfile?.beat}|${audioProfile?.beat}:sample_rate=44100:channel_layout=stereo`;
-  const _src3 = `aevalsrc=${audioProfile?.pad}|${audioProfile?.pad}:sample_rate=44100:channel_layout=stereo`;
+  const src1 = `aevalsrc=${audioProfile.bass}|${audioProfile.bass}:sample_rate=44100:channel_layout=stereo`;
+  const src2 = `aevalsrc=${audioProfile.beat}|${audioProfile.beat}:sample_rate=44100:channel_layout=stereo`;
+  const src3 = `aevalsrc=${audioProfile.pad}|${audioProfile.pad}:sample_rate=44100:channel_layout=stereo`;
 
-  const _hasLogo = !!(logoPath && existsSync(logoPath));
-  const _hasAudio = !!(audioPath && existsSync(audioPath));
-  const _hasVoice = !!(voiceSynthPath && existsSync(voiceSynthPath));
+  const hasLogo = !!(logoPath && existsSync(logoPath));
+  const hasAudio = !!(audioPath && existsSync(audioPath));
+  const hasVoice = !!(voiceSynthPath && existsSync(voiceSynthPath));
 
   const inputs: string[] = ["-i", videoPath];
-  inputs?.push("-f", "lavfi", "-i", src1);
-  inputs?.push("-f", "lavfi", "-i", src2);
-  inputs?.push("-f", "lavfi", "-i", src3);
+  inputs.push("-f", "lavfi", "-i", src1);
+  inputs.push("-f", "lavfi", "-i", src2);
+  inputs.push("-f", "lavfi", "-i", src3);
 
   let logoIdx = -1;
   let audioIdx = -1;
@@ -323,77 +319,77 @@ async function applyAudioToVideo(
 
   if (hasLogo) {
     logoIdx = nextIdx++;
-    inputs?.push("-i", logoPath!);
+    inputs.push("-i", logoPath!);
   }
   if (hasAudio) {
     audioIdx = nextIdx++;
-    inputs?.push("-i", audioPath!);
+    inputs.push("-i", audioPath!);
   }
   if (hasVoice) {
     voiceIdx = nextIdx++;
-    inputs?.push("-i", voiceSynthPath!);
+    inputs.push("-i", voiceSynthPath!);
   }
 
   const parts: string[] = [];
-  const _videoMap = hasLogo ? ["-map", "[vfinal]"] : ["-map", "0:v"];
-  const _outputLabels = [...videoMap, "-map", "[afinal]"];
+  const videoMap = hasLogo ? ["-map", "[vfinal]"] : ["-map", "0:v"];
+  const outputLabels = [...videoMap, "-map", "[afinal]"];
 
   if (hasLogo) {
-    parts?.push(
+    parts.push(
       `[${logoIdx}:v]scale=iw*0.14:ih*0.14[logo]`,
       `[0:v][logo]overlay=W-w-24:24:enable='between(t\\,0\\,${totalDur})'[vfinal]`,
     );
   }
 
   // Synth bed
-  parts?.push(
+  parts.push(
     `[1:a][2:a][3:a]amix=inputs=3:normalize=0:weights=1.25 1.0 0.55[synth_raw]`,
   );
-  parts?.push(
-    `[synth_raw]${audioProfile?.filters},extrastereo=m=1.4,` +
+  parts.push(
+    `[synth_raw]${audioProfile.filters},extrastereo=m=1.4,` +
       `afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[synth]`,
   );
 
   if (hasAudio && hasVoice) {
     // User audio + voice narration over synth bed
-    parts?.push(
+    parts.push(
       `[${audioIdx}:a]aformat=sample_rates=44100:channel_layouts=stereo,` +
         `volume=0.85,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[user_a]`,
     );
-    parts?.push(
+    parts.push(
       `[${voiceIdx}:a]aformat=sample_rates=44100:channel_layouts=stereo,` +
         `volume=1.1,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[voice_a]`,
     );
-    parts?.push(
+    parts.push(
       `[user_a][voice_a][synth]amix=inputs=3:normalize=0:weights=1.0 1.1 0.15[afinal]`,
     );
   } else if (hasAudio) {
     // User audio (music) is dominant, synth bed very low
-    parts?.push(
+    parts.push(
       `[${audioIdx}:a]aformat=sample_rates=44100:channel_layouts=stereo,` +
         `volume=0.92,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[user_a]`,
     );
-    parts?.push(
+    parts.push(
       `[user_a][synth]amix=inputs=2:normalize=0:weights=1.0 0.08[afinal]`,
     );
   } else if (hasVoice) {
     // Voice narration + synth bed
-    parts?.push(
+    parts.push(
       `[${voiceIdx}:a]aformat=sample_rates=44100:channel_layouts=stereo,` +
         `volume=1.2,afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[voice_a]`,
     );
-    parts?.push(
+    parts.push(
       `[voice_a][synth]amix=inputs=2:normalize=0:weights=1.2 0.22[afinal]`,
     );
   } else {
-    parts?.push(`[synth]volume=1.0[afinal]`);
+    parts.push(`[synth]volume=1.0[afinal]`);
   }
 
-  const _ffmpegArgs = [
+  const ffmpegArgs = [
     "-y",
     ...inputs,
     "-filter_complex",
-    parts?.join(";"),
+    parts.join(";"),
     ...outputLabels,
     "-c:v",
     hasLogo ? "libx264" : "copy",
@@ -414,27 +410,27 @@ async function applyAudioToVideo(
   try {
     await execFileAsync(FFMPEG, ffmpegArgs, { timeout: 120_000 });
   } catch (err) {
-    const _errMsg = err?.message || String(err);
-    if (/No such filter|Invalid option|filter.*not found/i?.test(errMsg)) {
-      logger?.warn(
+    const errMsg = err.message || String(err);
+    if (/No such filter|Invalid option|filter.*not found/i.test(errMsg)) {
+      logger.warn(
         "[ImageToVideo] Complex audio filters failed, retrying with safe chain",
       );
-      const _safeParts = parts?.map((p) =>
+      const safeParts = parts.map((p) =>
         p
           .replace(
-            `[synth_raw]${audioProfile?.filters},extrastereo=m=1.4,`,
+            `[synth_raw]${audioProfile.filters},extrastereo=m=1.4,`,
             "[synth_raw]volume=0.9,",
           )
           .replace(
-            `[synth_raw]${audioProfile?.filters},`,
+            `[synth_raw]${audioProfile.filters},`,
             "[synth_raw]volume=0.9,",
           ),
       );
-      const _safeArgs = [
+      const safeArgs = [
         "-y",
         ...inputs,
         "-filter_complex",
-        safeParts?.join(";"),
+        safeParts.join(";"),
         ...outputLabels,
         "-c:v",
         hasLogo ? "libx264" : "copy",
@@ -466,23 +462,23 @@ async function combineImageScenes(
   transition: string,
   transitionDur = 0.4,
 ): Promise<void> {
-  if (scenePaths?.length === 1) {
+  if (scenePaths.length === 1) {
     await execFileAsync("cp", [scenePaths[0], outputPath]);
     return;
   }
-  const _inputs = scenePaths?.flatMap((p) => ["-i", p]);
+  const inputs = scenePaths.flatMap((p) => ["-i", p]);
   let fc = "";
   let prevLabel = "[0:v]";
   let cumOffset = 0;
 
-  for (let i = 0; i < scenePaths?.length - 1; i++) {
+  for (let i = 0; i < scenePaths.length - 1; i++) {
     cumOffset += sceneDurations[i] - transitionDur;
-    const _nextIn = `[${i + 1}:v]`;
-    const _outLbl = i === scenePaths?.length - 2 ? "[vout]" : `[v${i}]`;
-    fc += `${prevLabel}${nextIn}xfade=transition=${transition}:duration=${transitionDur}:offset=${cumOffset?.toFixed(3)}${outLbl};`;
+    const nextIn = `[${i + 1}:v]`;
+    const outLbl = i === scenePaths.length - 2 ? "[vout]" : `[v${i}]`;
+    fc += `${prevLabel}${nextIn}xfade=transition=${transition}:duration=${transitionDur}:offset=${cumOffset.toFixed(3)}${outLbl};`;
     prevLabel = outLbl;
   }
-  fc = fc?.replace(/;$/, "");
+  fc = fc.replace(/;$/, "");
 
   await execFileAsync(
     FFMPEG,
@@ -522,77 +518,77 @@ function buildTextOverlays(
   artistName?: string,
 ): string[] {
   const overlays: string[] = [];
-  const _barH = Math?.floor(height * 0.085);
-  const _hs = style?.hs || 64;
-  const _bs = style?.bs || 42;
-  const _cs = style?.cs || 48;
-  const _font = FONTS?.bold;
+  const barH = Math.floor(height * 0.085);
+  const hs = style.hs || 64;
+  const bs = style.bs || 42;
+  const cs = style.cs || 48;
+  const font = FONTS.bold;
 
   // Accent bars
-  overlays?.push(
-    `drawbox=x=0:y=0:w=${width}:h=${barH}:color=${style?.ac}@0.28:t=fill`,
+  overlays.push(
+    `drawbox=x=0:y=0:w=${width}:h=${barH}:color=${style.ac}@0.28:t=fill`,
   );
-  overlays?.push(
-    `drawbox=x=0:y=${height - barH}:w=${width}:h=${barH}:color=${style?.ac}@0.28:t=fill`,
+  overlays.push(
+    `drawbox=x=0:y=${height - barH}:w=${width}:h=${barH}:color=${style.ac}@0.28:t=fill`,
   );
 
   // Artist name
   if (artistName) {
-    const _at = sanitize(artistName).toUpperCase();
-    overlays?.push(
-      `drawtext=fontfile=${FONTS?.mono}:text='${at}':fontcolor=${style?.ac}:fontsize=${Math?.floor(bs * 0.62)}` +
+    const at = sanitize(artistName).toUpperCase();
+    overlays.push(
+      `drawtext=fontfile=${FONTS.mono}:text='${at}':fontcolor=${style.ac}:fontsize=${Math.floor(bs * 0.62)}` +
         `:x=(w-text_w)/2:y=h*0.05:alpha='min(1\\,t*5)':bordercolor=black@0.4:borderw=2`,
     );
   }
 
   if (sceneType === "hook" || sceneType === "all") {
-    const _ht = sanitize(hook);
+    const ht = sanitize(hook);
     // Shadow
-    overlays?.push(
+    overlays.push(
       `drawtext=fontfile=${font}:text='${ht}':fontcolor=black@0.50:fontsize=${hs}` +
         `:x=(w-text_w)/2+4:y=(h-text_h)/4+4+30*(1-min(1\\,t*3)):alpha='min(1\\,t*3)'`,
     );
     // Main + outline
-    overlays?.push(
-      `drawtext=fontfile=${font}:text='${ht}':fontcolor=${style?.tc}:fontsize=${hs}` +
+    overlays.push(
+      `drawtext=fontfile=${font}:text='${ht}':fontcolor=${style.tc}:fontsize=${hs}` +
         `:x=(w-text_w)/2:y=(h-text_h)/4+30*(1-min(1\\,t*3)):alpha='min(1\\,t*3)'` +
-        `:bordercolor=${style?.ac}:borderw=2`,
+        `:bordercolor=${style.ac}:borderw=2`,
     );
     // Expanding accent line
-    const _acLineY = Math?.floor(height * 0.44);
-    overlays?.push(
+    const acLineY = Math.floor(height * 0.44);
+    overlays.push(
       `drawbox=x=(iw-iw*min(1\\,max(0\\,(t-0.3)*2.5))*0.50)/2` +
         `:y=${acLineY}:w=iw*min(1\\,max(0\\,(t-0.3)*2.5))*0.50:h=4` +
-        `:color=${style?.ac}:t=fill:enable='gte(t\\,0.3)'`,
+        `:color=${style.ac}:t=fill:enable='gte(t\\,0.3)'`,
     );
   }
 
   if (sceneType === "body" || sceneType === "all") {
-    const _bt = sanitize(body);
-    const _yTime =
+    const bt = sanitize(body);
+    const yTime =
       sceneType === "all" ? `(h-text_h)/2` : `(h-text_h)/2+25*(1-min(1\\,t*3))`;
-    overlays?.push(
-      `drawtext=fontfile=${font}:text='${bt}':fontcolor=${style?.tc}:fontsize=${bs}` +
+    overlays.push(
+      `drawtext=fontfile=${font}:text='${bt}':fontcolor=${style.tc}:fontsize=${bs}` +
         `:x=(w-text_w)/2:y=${yTime}:alpha='min(1\\,t*3)'`,
     );
   }
 
   if (sceneType === "cta" || sceneType === "all") {
-    const _ct = sanitize(cta);
-    const _boxW = Math?.floor(width * 0.82);
-    const _boxX = Math?.floor((width - boxW) / 2);
-    const _boxY = Math?.floor(height * 0.68);
-    const _boxH = cs + 44;
-    overlays?.push(
-      `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=${boxH}:color=${style?.cta_bg}@0.94:t=fill:enable='gte(t\\,0.2)'`,
+    const ct = sanitize(cta);
+    const boxW = Math.floor(width * 0.82);
+    const boxX = Math.floor((width - boxW) / 2);
+    const boxY = Math.floor(height * 0.68);
+    const boxH = cs + 44;
+    overlays.push(
+      `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=${boxH}:color=${style.cta_bg}@0.94:t=fill:enable='gte(t\\,0.2)'`,
     );
-    overlays?.push(
-      `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=4:color=${style?.ac}:t=fill:enable='gte(t\\,0.2)'`,
+    overlays.push(
+      `drawbox=x=${boxX}:y=${boxY}:w=${boxW}:h=4:color=${style.ac}:t=fill:enable='gte(t\\,0.2)'`,
     );
-    overlays?.push(
-      `drawbox=x=${boxX}:y=${boxY + boxH - 4}:w=${boxW}:h=4:color=${style?.ac}@0.55:t=fill:enable='gte(t\\,0.2)'`,
+    overlays.push(
+      `drawbox=x=${boxX}:y=${boxY + boxH - 4}:w=${boxW}:h=4:color=${style.ac}@0.55:t=fill:enable='gte(t\\,0.2)'`,
     );
-    overlays?.push(
+    overlays.push(
       `drawtext=fontfile=${font}:text='${ct}':fontcolor=white:fontsize=${cs}` +
         `:x=(w-text_w)/2:y=h*0.70+20*(1-min(1\\,t*5)):alpha='min(1\\,t*5)'`,
     );
@@ -621,40 +617,40 @@ const PLATFORM_RATIOS: Record<string, string> = {
 export async function imageToMusicVideo(
   opts: ImageToVideoOptions,
 ): Promise<VideoGenResult> {
-  const _startMs = Date?.now();
+  const startMs = Date.now();
   mkdirSync(OUTPUT_DIR, { recursive: true });
   mkdirSync(TEMP_DIR, { recursive: true });
 
-  const _imagePaths = opts?.imagePaths.filter((p) => existsSync(p));
-  if (!imagePaths?.length) {
+  const imagePaths = opts.imagePaths.filter((p) => existsSync(p));
+  if (!imagePaths.length) {
     return { success: false, error: "No valid image files found" };
   }
 
-  const _templateKey =
-    opts?.template && TEMPLATE_STYLES[opts?.template]
-      ? opts?.template
+  const templateKey =
+    opts.template && TEMPLATE_STYLES[opts.template]
+      ? opts.template
       : "cinematic_promo";
-  const _style = TEMPLATE_STYLES[templateKey] as Record<string, unknown>;
-  const _ratio =
-    opts?.aspect_ratio || PLATFORM_RATIOS[opts?.platform || "tiktok"] || "9:16";
+  const style = TEMPLATE_STYLES[templateKey] as Record<string, unknown>;
+  const ratio =
+    opts.aspect_ratio || PLATFORM_RATIOS[opts.platform || "tiktok"] || "9:16";
   const [width, height] = ASPECT_RATIOS[ratio] || [1080, 1920];
-  const _totalDur = Math?.max(
+  const totalDur = Math.max(
     4,
-    Math?.min(opts?.duration || imagePaths?.length * 4, 60),
+    Math.min(opts.duration || imagePaths.length * 4, 60),
   );
-  const _genre = (opts?.genre || "default").toLowerCase();
-  const _transition = opts?.transitionType || style?.transition || "fade";
-  const _intensity = opts?.kenBurnsIntensity || "moderate";
-  const _colorGrade =
-    opts?.colorGrade || (style?.bgType === "solid" ? "cinematic" : "none");
-  const _transitionDur = 0.4;
+  const genre = (opts.genre || "default").toLowerCase();
+  const transition = opts.transitionType || style.transition || "fade";
+  const intensity = opts.kenBurnsIntensity || "moderate";
+  const colorGrade =
+    opts.colorGrade || (style.bgType === "solid" ? "cinematic" : "none");
+  const transitionDur = 0.4;
 
-  const _hook = opts?.hook || "New Music Drop";
-  const _body = opts?.body || "Stream now on all platforms";
-  const _cta = opts?.cta || "Follow for more";
+  const hook = opts.hook || "New Music Drop";
+  const body = opts.body || "Stream now on all platforms";
+  const cta = opts.cta || "Follow for more";
 
   const tempFiles: string[] = [];
-  const _renderStart = Date?.now();
+  const renderStart = Date.now();
 
   try {
     // ── Beat sync: analyze audio and compute scene durations ────────────────
@@ -662,68 +658,68 @@ export async function imageToMusicVideo(
     let sceneDurations: number[];
 
     if (
-      opts?.audioPath &&
-      existsSync(opts?.audioPath) &&
-      opts?.beatSync !== false
+      opts.audioPath &&
+      existsSync(opts.audioPath) &&
+      opts.beatSync !== false
     ) {
       try {
-        beatAnalysis = await analyzeAudio(opts?.audioPath);
-        const _cuts = getBeatAlignedCuts(beatAnalysis, imagePaths?.length, true);
+        beatAnalysis = await analyzeAudio(opts.audioPath);
+        const cuts = getBeatAlignedCuts(beatAnalysis, imagePaths.length, true);
         sceneDurations = cutsToSceneDurations(
           cuts,
-          Math?.min(totalDur, beatAnalysis?.durationSeconds),
+          Math.min(totalDur, beatAnalysis.durationSeconds),
         );
-        logger?.info(
-          `[ImageToVideo] Beat sync — BPM=${beatAnalysis?.bpm.toFixed(1)} tier=${beatAnalysis?.tier}`,
+        logger.info(
+          `[ImageToVideo] Beat sync — BPM=${beatAnalysis.bpm.toFixed(1)} tier=${beatAnalysis.tier}`,
         );
       } catch (e) {
-        logger?.warn(
+        logger.warn(
           "[ImageToVideo] Beat analysis failed, using equal durations:",
-          e?.message,
+          e.message,
         );
-        const _perScene = totalDur / imagePaths?.length;
-        sceneDurations = imagePaths?.map(() => perScene);
+        const perScene = totalDur / imagePaths.length;
+        sceneDurations = imagePaths.map(() => perScene);
       }
     } else {
       // Equal durations without beat sync
-      const _perScene = totalDur / imagePaths?.length;
-      sceneDurations = imagePaths?.map(() => perScene);
+      const perScene = totalDur / imagePaths.length;
+      sceneDurations = imagePaths.map(() => perScene);
     }
 
     // Ensure each scene is at least 1.5 seconds
-    const _minDur = 1.5;
-    sceneDurations = sceneDurations?.map((d) => Math?.max(d, minDur));
+    const minDur = 1.5;
+    sceneDurations = sceneDurations.map((d) => Math.max(d, minDur));
 
     // ── Render each image — Tier 1: PyTorch diffusion → Tier 2: Ken Burns ───
     const scenePaths: string[] = [];
     const sceneSources: string[] = [];
 
     // Check diffusion availability once before the loop (2 s probe, 30 s cached).
-    const _diffusionAvailable = await checkDiffusionAvailable();
+    const diffusionAvailable = await checkDiffusionAvailable();
     if (diffusionAvailable) {
-      logger?.info(
+      logger.info(
         "[ImageToVideo] Tier 1 (PyTorch diffusion) active for this run",
       );
     }
 
-    for (let i = 0; i < imagePaths?.length; i++) {
-      const _sceneDur = sceneDurations[i];
-      const _scenePath = tempPath(`scene${i}`);
-      tempFiles?.push(scenePath);
+    for (let i = 0; i < imagePaths.length; i++) {
+      const sceneDur = sceneDurations[i];
+      const scenePath = tempPath(`scene${i}`);
+      tempFiles.push(scenePath);
 
       // Assign text type to scene
       let sceneType: "hook" | "body" | "cta" | "all";
-      if (imagePaths?.length === 1) {
+      if (imagePaths.length === 1) {
         sceneType = "all";
       } else if (i === 0) {
         sceneType = "hook";
-      } else if (i === imagePaths?.length - 1) {
+      } else if (i === imagePaths.length - 1) {
         sceneType = "cta";
       } else {
         sceneType = "body";
       }
 
-      const _textOverlays = buildTextOverlays(
+      const textOverlays = buildTextOverlays(
         hook,
         body,
         cta,
@@ -732,13 +728,13 @@ export async function imageToMusicVideo(
         height,
         sceneDur,
         sceneType,
-        opts?.artistName,
+        opts.artistName,
       );
 
       // ── Tier 1: PyTorch diffusion (per-scene AI video synthesis) ──────────
       let sceneRendered = false;
       if (diffusionAvailable) {
-        const _diffOut = await renderDiffusionScene(
+        const diffOut = await renderDiffusionScene(
           {
             imagePath: imagePaths[i],
             outputPath: scenePath,
@@ -747,18 +743,18 @@ export async function imageToMusicVideo(
             durationSec: sceneDur,
             genre,
             colorGrade,
-            platform: opts?.platform,
+            platform: opts.platform,
             beatAnalysis,
             sceneIndex: i,
-            totalScenes: imagePaths?.length,
-            artistName: opts?.artistName,
+            totalScenes: imagePaths.length,
+            artistName: opts.artistName,
             textOverlays,
           },
           FFMPEG,
         );
         if (diffOut) {
           sceneRendered = true;
-          sceneSources?.push("diffusion");
+          sceneSources.push("diffusion");
         }
       }
 
@@ -775,31 +771,31 @@ export async function imageToMusicVideo(
           colorGrade,
           textOverlays,
         );
-        sceneSources?.push("ken_burns");
+        sceneSources.push("ken_burns");
       }
 
-      scenePaths?.push(scenePath);
+      scenePaths.push(scenePath);
     }
 
-    const _diffusionScenes = sceneSources?.filter(
+    const diffusionScenes = sceneSources.filter(
       (s) => s === "diffusion",
     ).length;
-    const _kenBurnsScenes = sceneSources?.filter((s) => s === "ken_burns").length;
+    const kenBurnsScenes = sceneSources.filter((s) => s === "ken_burns").length;
     if (diffusionScenes > 0) {
-      logger?.info(
+      logger.info(
         `[ImageToVideo] Scene render complete — ` +
-          `diffusion: ${diffusionScenes}/${imagePaths?.length} scenes, ` +
-          `ken_burns: ${kenBurnsScenes}/${imagePaths?.length} scenes`,
+          `diffusion: ${diffusionScenes}/${imagePaths.length} scenes, ` +
+          `ken_burns: ${kenBurnsScenes}/${imagePaths.length} scenes`,
       );
     }
 
     // ── Combine scenes ──────────────────────────────────────────────────────
     let videoPath: string;
-    if (scenePaths?.length === 1) {
+    if (scenePaths.length === 1) {
       videoPath = scenePaths[0];
     } else {
       videoPath = tempPath("combined");
-      tempFiles?.push(videoPath);
+      tempFiles.push(videoPath);
       await combineImageScenes(
         scenePaths,
         sceneDurations,
@@ -810,36 +806,36 @@ export async function imageToMusicVideo(
     }
 
     // ── Apply audio ─────────────────────────────────────────────────────────
-    const _combinedDur =
-      sceneDurations?.reduce((a, b) => a + b, 0) -
-      (scenePaths?.length > 1 ? (scenePaths?.length - 1) * transitionDur : 0);
+    const combinedDur =
+      sceneDurations.reduce((a, b) => a + b, 0) -
+      (scenePaths.length > 1 ? (scenePaths.length - 1) * transitionDur : 0);
 
-    const _filename = `musicvideo_${randomBytes(6).toString("hex")}.mp4`;
-    const _finalPath = path?.join(OUTPUT_DIR, filename);
+    const filename = `musicvideo_${randomBytes(6).toString("hex")}.mp4`;
+    const finalPath = path.join(OUTPUT_DIR, filename);
 
     await applyAudioToVideo(
       videoPath,
       finalPath,
       combinedDur,
       genre,
-      opts?.audioPath,
-      opts?.voiceSynthPath,
-      opts?.logoPath,
+      opts.audioPath,
+      opts.voiceSynthPath,
+      opts.logoPath,
     );
 
-    const _renderMs = Date?.now() - renderStart;
+    const renderMs = Date.now() - renderStart;
     cleanup(...tempFiles);
 
-    logger?.info(
-      `[ImageToVideo] ✅ ${filename} — ${width}x${height} ${combinedDur?.toFixed(1)}s | ` +
-        `${imagePaths?.length} images | ${beatAnalysis ? `beat-synced BPM=${beatAnalysis?.bpm.toFixed(0)}` : "equal cuts"} | ${renderMs}ms`,
+    logger.info(
+      `[ImageToVideo] ✅ ${filename} — ${width}x${height} ${combinedDur.toFixed(1)}s | ` +
+        `${imagePaths.length} images | ${beatAnalysis ? `beat-synced BPM=${beatAnalysis.bpm.toFixed(0)}` : "equal cuts"} | ${renderMs}ms`,
     );
 
-    const _diffusionUsed = diffusionScenes > 0;
-    const _beatLabel = beatAnalysis
-      ? `beat_sync_${beatAnalysis?.tier}`
+    const diffusionUsed = diffusionScenes > 0;
+    const beatLabel = beatAnalysis
+      ? `beat_sync_${beatAnalysis.tier}`
       : "equal_cuts";
-    const _tierLabel = diffusionUsed
+    const tierLabel = diffusionUsed
       ? `pytorch_diffusion+${beatLabel}`
       : beatLabel;
 
@@ -849,14 +845,14 @@ export async function imageToMusicVideo(
       filename,
       width,
       height,
-      duration: Math?.round(combinedDur),
+      duration: Math.round(combinedDur),
       hook,
       body,
       cta,
       template: templateKey,
-      template_name: style?.name,
-      scenes_rendered: imagePaths?.length,
-      processing_time_ms: Date?.now() - startMs,
+      template_name: style.name,
+      scenes_rendered: imagePaths.length,
+      processing_time_ms: Date.now() - startMs,
       render_time_ms: renderMs,
       source: tierLabel,
       quality: "cinematic",
@@ -869,18 +865,18 @@ export async function imageToMusicVideo(
         "color_grade",
         "audio_track",
         "multi_font",
-        ...(opts?.audioPath ? ["user_audio"] : []),
-        ...(opts?.voiceSynthPath ? ["voice_narration"] : []),
-        ...(opts?.logoPath ? ["logo_overlay"] : []),
+        ...(opts.audioPath ? ["user_audio"] : []),
+        ...(opts.voiceSynthPath ? ["voice_narration"] : []),
+        ...(opts.logoPath ? ["logo_overlay"] : []),
         ...(diffusionUsed && kenBurnsScenes > 0 ? ["ken_burns_fallback"] : []),
       ],
     };
   } catch (err) {
     cleanup(...tempFiles);
-    logger?.warn("[ImageToVideo] Render failed:", err?.stderr || err?.message);
+    logger.warn("[ImageToVideo] Render failed:", err.stderr || err.message);
     return {
       success: false,
-      error: `Music video render failed: ${err?.message || "FFmpeg error"}`,
+      error: `Music video render failed: ${err.message || "FFmpeg error"}`,
     };
   }
 }

@@ -24,7 +24,7 @@ function buildReEngagementHtml(
   daysSinceLogin: number,
   appUrl: string,
 ): string {
-  const _urgencyMessage =
+  const urgencyMessage =
     daysSinceLogin >= 20
       ? `It's been ${daysSinceLogin} days — your career momentum doesn't have to pause.`
       : `It's been ${daysSinceLogin} days since your last session.`;
@@ -80,17 +80,17 @@ class ReEngagementService {
 
       this.isRunning = true;
       try {
-        const _sevenDaysAgo = new Date();
+        const sevenDaysAgo = new Date();
         sevenDaysAgo?.setDate(sevenDaysAgo?.getDate() - 7);
 
-        const _eligibleUsers = await db
+        const eligibleUsers = await db
           .select({
-            userId: customerHealthScores?.userId,
-            daysSinceLastLogin: customerHealthScores?.daysSinceLastLogin,
-            riskLevel: customerHealthScores?.riskLevel,
-            email: users?.email,
-            firstName: users?.firstName,
-            notificationSettings: users?.notificationSettings,
+            userId: customerHealthScores.userId,
+            daysSinceLastLogin: customerHealthScores.daysSinceLastLogin,
+            riskLevel: customerHealthScores.riskLevel,
+            email: users.email,
+            firstName: users.firstName,
+            notificationSettings: users.notificationSettings,
           })
           .from(customerHealthScores)
           .innerJoin(users, eq(users?.id, customerHealthScores?.userId))
@@ -125,15 +125,15 @@ class ReEngagementService {
             } = user;
             if (!email) continue;
 
-            const _settings = notificationSettings as Record<
+            const settings = notificationSettings as Record<
               string,
               boolean
             > | null;
             if (settings?.emailMarketing === false) continue;
 
-            const _displayName = firstName ?? email?.split("@")[0];
-            const _appUrl = process?.env.APP_URL ?? "https://maxbooster.app";
-            const _html = buildReEngagementHtml(
+            const displayName = firstName ?? email?.split("@")[0];
+            const appUrl = process?.env.APP_URL ?? "https://maxbooster.app";
+            const html = buildReEngagementHtml(
               displayName,
               daysSinceLastLogin ?? 10,
               appUrl,
@@ -167,19 +167,19 @@ class ReEngagementService {
   }
 
   startDailyCron(): void {
-    const _MS_PER_HOUR = 60 * 60 * 1000;
-    const _MS_PER_DAY = 24 * MS_PER_HOUR;
+    const MS_PER_HOUR = 60 * 60 * 1000;
+    const MS_PER_DAY = 24 * MS_PER_HOUR;
 
-    const _runAtNoon = () => {
-      const _now = new Date();
-      const _noon = new Date(now);
+    const runAtNoon = () => {
+      const now = new Date();
+      const noon = new Date(now);
       noon?.setHours(12, 0, 0, 0);
       if (noon <= now) noon?.setDate(noon?.getDate() + 1);
       return noon?.getTime() - now?.getTime();
     };
 
-    const _scheduleNext = () => {
-      const _delay = runAtNoon();
+    const scheduleNext = () => {
+      const delay = runAtNoon();
       logger?.info(
         `[ReEngagement] Next run in ${Math?.round(delay / MS_PER_HOUR)} hours`,
       );
@@ -193,4 +193,4 @@ class ReEngagementService {
   }
 }
 
-export const _reEngagementService = new ReEngagementService();
+export const reEngagementService = new ReEngagementService();

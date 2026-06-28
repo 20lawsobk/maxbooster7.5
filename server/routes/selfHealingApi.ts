@@ -14,11 +14,11 @@ import { Router, Request, Response } from "express";
 import { selfHealingEngine } from "../services/selfHealingSecurityEngine.js";
 import { logger } from "../logger.js";
 
-const _router = Router();
+const router = Router();
 
 // Inline admin guard reused across routes
 function assertAdmin(req: Request, res: Response): boolean {
-  const _user = req?.user;
+  const user = req?.user;
   if (!user) {
     res?.status(401).json({ success: false, error: "Authentication required" });
     return false;
@@ -31,7 +31,7 @@ function assertAdmin(req: Request, res: Response): boolean {
 }
 
 function assertAuth(req: Request, res: Response): boolean {
-  const _user = req?.user;
+  const user = req?.user;
   if (!user) {
     res?.status(401).json({ success: false, error: "Authentication required" });
     return false;
@@ -42,7 +42,7 @@ function assertAuth(req: Request, res: Response): boolean {
 router?.get("/status", (req: Request, res: Response) => {
   if (!assertAuth(req, res)) return;
   try {
-    const _status = selfHealingEngine?.getStatus();
+    const status = selfHealingEngine?.getStatus();
     res?.json({
       success: true,
       data: {
@@ -66,16 +66,16 @@ router?.get("/status", (req: Request, res: Response) => {
 router?.get("/metrics", (req: Request, res: Response) => {
   if (!assertAuth(req, res)) return;
   try {
-    const _metrics = selfHealingEngine?.getMetrics();
+    const metrics = selfHealingEngine?.getMetrics();
 
-    const _calculateP95 = (arr: number[]) => {
+    const calculateP95 = (arr: number[]) => {
       if (arr?.length === 0) return 0;
-      const _sorted = [...arr].sort((a, b) => a - b);
-      const _index = Math?.ceil(0.95 * sorted?.length) - 1;
+      const sorted = [...arr].sort((a, b) => a - b);
+      const index = Math?.ceil(0.95 * sorted?.length) - 1;
       return sorted[Math?.max(0, index)];
     };
 
-    const _calculateAvg = (arr: number[]) => {
+    const calculateAvg = (arr: number[]) => {
       if (arr?.length === 0) return 0;
       return arr?.reduce((a, b) => a + b, 0) / arr?.length;
     };
@@ -84,39 +84,39 @@ router?.get("/metrics", (req: Request, res: Response) => {
       success: true,
       data: {
         summary: {
-          threatsDetected: metrics?.threatsDetected,
-          threatsBlocked: metrics?.threatsBlocked,
-          threatsHealed: metrics?.threatsHealed,
-          healingSpeedRatio: metrics?.healingSpeedRatio.toFixed(1) + "x",
-          isHealingFasterThanAttacks: metrics?.healingSpeedRatio >= 10,
+          threatsDetected: metrics.threatsDetected,
+          threatsBlocked: metrics.threatsBlocked,
+          threatsHealed: metrics.threatsHealed,
+          healingSpeedRatio: metrics.healingSpeedRatio.toFixed(1) + "x",
+          isHealingFasterThanAttacks: metrics.healingSpeedRatio >= 10,
         },
         latencyMetrics: {
           detection: {
             avg: calculateAvg(metrics?.detectionLatency).toFixed(2) + "ms",
             p95: calculateP95(metrics?.detectionLatency).toFixed(2) + "ms",
             target: "< 50ms",
-            samples: metrics?.detectionLatency.length,
+            samples: metrics.detectionLatency.length,
           },
           response: {
             avg: calculateAvg(metrics?.responseLatency).toFixed(2) + "ms",
             p95: calculateP95(metrics?.responseLatency).toFixed(2) + "ms",
             target: "< 250ms",
-            samples: metrics?.responseLatency.length,
+            samples: metrics.responseLatency.length,
           },
           recovery: {
             avg: calculateAvg(metrics?.recoveryLatency).toFixed(2) + "ms",
             p95: calculateP95(metrics?.recoveryLatency).toFixed(2) + "ms",
             target: "< 500ms",
-            samples: metrics?.recoveryLatency.length,
+            samples: metrics.recoveryLatency.length,
           },
           totalHealing: {
             avg: calculateAvg(metrics?.totalHealingTime).toFixed(2) + "ms",
             p95: calculateP95(metrics?.totalHealingTime).toFixed(2) + "ms",
             target: "< 800ms",
-            samples: metrics?.totalHealingTime.length,
+            samples: metrics.totalHealingTime.length,
           },
         },
-        sloCompliance: metrics?.sloCompliance,
+        sloCompliance: metrics.sloCompliance,
         attackDwellTimeAssumption:
           "7500ms (minimum time for attack to cause damage)",
         healingGuarantee: `System heals ${metrics?.healingSpeedRatio.toFixed(1)}x faster than attacks can progress`,
@@ -131,18 +131,18 @@ router?.get("/metrics", (req: Request, res: Response) => {
 router?.get("/proof", (req: Request, res: Response) => {
   if (!assertAuth(req, res)) return;
   try {
-    const _metrics = selfHealingEngine?.getMetrics();
+    const metrics = selfHealingEngine?.getMetrics();
 
-    const _calculateP95 = (arr: number[]) => {
+    const calculateP95 = (arr: number[]) => {
       if (arr?.length === 0) return 0;
-      const _sorted = [...arr].sort((a, b) => a - b);
-      const _index = Math?.ceil(0.95 * sorted?.length) - 1;
+      const sorted = [...arr].sort((a, b) => a - b);
+      const index = Math?.ceil(0.95 * sorted?.length) - 1;
       return sorted[Math?.max(0, index)];
     };
 
-    const _totalHealingP95 = calculateP95(metrics?.totalHealingTime) || 750;
-    const _attackDwellTime = 7500;
-    const _healingRatio = attackDwellTime / totalHealingP95;
+    const totalHealingP95 = calculateP95(metrics?.totalHealingTime) || 750;
+    const attackDwellTime = 7500;
+    const healingRatio = attackDwellTime / totalHealingP95;
 
     res?.json({
       success: true,
@@ -152,7 +152,7 @@ router?.get("/proof", (req: Request, res: Response) => {
         healing10xProof: {
           attackDwellTimeMs: attackDwellTime,
           healingTimeP95Ms: totalHealingP95,
-          healingSpeedRatio: healingRatio?.toFixed(1) + "x",
+          healingSpeedRatio: healingRatio.toFixed(1) + "x",
           requirement: "10x faster healing",
           status: healingRatio >= 10 ? "COMPLIANT" : "MONITORING",
           explanation:
@@ -161,10 +161,10 @@ router?.get("/proof", (req: Request, res: Response) => {
             `This gives a ${healingRatio?.toFixed(1)}x healing speed advantage.`,
         },
         threatStats: {
-          detected: metrics?.threatsDetected,
-          blocked: metrics?.threatsBlocked,
-          healed: metrics?.threatsHealed,
-          falsePositives: metrics?.falsePositives,
+          detected: metrics.threatsDetected,
+          blocked: metrics.threatsBlocked,
+          healed: metrics.threatsHealed,
+          falsePositives: metrics.falsePositives,
           accuracy:
             metrics?.threatsDetected > 0
               ? (
@@ -173,7 +173,7 @@ router?.get("/proof", (req: Request, res: Response) => {
                 ).toFixed(1) + "%"
               : "100%",
         },
-        sloCompliance: metrics?.sloCompliance,
+        sloCompliance: metrics.sloCompliance,
         capabilities: [
           "Real-time threat detection (< 50ms)",
           "Automatic IP blocking for critical threats",
@@ -198,7 +198,7 @@ router?.post("/simulate-attack", async (req: Request, res: Response) => {
   if (!assertAdmin(req, res)) return;
   try {
     const { type = "sql_injection" } = req?.body;
-    const _startTime = Date?.now();
+    const startTime = Date?.now();
 
     const testPayloads: Record<string, string> = {
       sql_injection: "' OR '1'='1",
@@ -207,7 +207,7 @@ router?.post("/simulate-attack", async (req: Request, res: Response) => {
       command_injection: "; rm -rf /",
     };
 
-    const _payload = testPayloads[type] || testPayloads?.sql_injection;
+    const payload = testPayloads[type] || testPayloads?.sql_injection;
 
     selfHealingEngine?.processSecurityEvent({
       type: "request",
@@ -226,20 +226,20 @@ router?.post("/simulate-attack", async (req: Request, res: Response) => {
 
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const _healingTime = Date?.now() - startTime;
-    const _metrics = selfHealingEngine?.getMetrics();
+    const healingTime = Date?.now() - startTime;
+    const metrics = selfHealingEngine?.getMetrics();
 
     res?.json({
       success: true,
       data: {
         attackType: type,
-        payload: payload?.substring(0, 50) + "...",
+        payload: payload.substring(0, 50) + "...",
         healingTimeMs: healingTime,
         healingSpeedRatio: (7500 / healingTime).toFixed(1) + "x",
         meetsTarget: healingTime < 800,
         threatsAfterSimulation: {
-          detected: metrics?.threatsDetected,
-          healed: metrics?.threatsHealed,
+          detected: metrics.threatsDetected,
+          healed: metrics.threatsHealed,
         },
       },
     });
@@ -282,8 +282,8 @@ router?.post("/clear-all-blocks", async (req: Request, res: Response) => {
 router?.get("/blocked-ips", async (req: Request, res: Response) => {
   if (!assertAdmin(req, res)) return;
   try {
-    const _blockedIps = selfHealingEngine?.getBlockedIps();
-    res?.json({ success: true, data: { blockedIps, count: blockedIps?.length } });
+    const blockedIps = selfHealingEngine?.getBlockedIps();
+    res?.json({ success: true, data: { blockedIps, count: blockedIps.length } });
   } catch (error) {
     logger?.warn({ err: error }, "Error fetching blocked IPs:");
     res

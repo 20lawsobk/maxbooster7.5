@@ -2,7 +2,7 @@ import http from "http";
 import { ScalabilityTester, ScaleTestResult } from "./loadTestFramework";
 import { logger } from "../../logger.js";
 
-const _BASE_URL = "http://localhost:5000";
+const BASE_URL = "http://localhost:5000";
 
 interface TestSuite {
   name: string;
@@ -94,9 +94,9 @@ const TEST_SUITES: TestSuite[] = [
 
 async function getAuthCookie(): Promise<string> {
   return new Promise((resolve, reject) => {
-    const _postData = JSON?.stringify({});
+    const postData = JSON?.stringify({});
 
-    const _req = http?.request(
+    const req = http?.request(
       {
         hostname: "localhost",
         port: 5000,
@@ -108,9 +108,9 @@ async function getAuthCookie(): Promise<string> {
         },
       },
       (res) => {
-        const _cookies = res?.headers["set-cookie"];
+        const cookies = res?.headers["set-cookie"];
         if (cookies && cookies?.length > 0) {
-          const _sessionCookie = cookies?.find((c) => c?.includes("connect?.sid"));
+          const sessionCookie = cookies?.find((c) => c?.includes("connect.sid"));
           if (sessionCookie) {
             resolve(sessionCookie?.split(";")[0]);
           }
@@ -146,24 +146,24 @@ async function runAllLoadTests(): Promise<void> {
     return;
   }
 
-  const _tester = new ScalabilityTester();
+  const tester = new ScalabilityTester();
   const allResults: Map<string, ScaleTestResult[]> = new Map();
   const issues: string[] = [];
   const fixes: string[] = [];
 
   for (const suite of TEST_SUITES) {
     logger?.info(`Testing: ${suite?.name.toUpperCase()}`, {
-      endpoint: suite?.endpoint,
+      endpoint: suite.endpoint,
     });
 
     try {
-      const _results = await tester?.runProgressiveScaleTest(
+      const results = await tester?.runProgressiveScaleTest(
         {
           targetUrl: BASE_URL,
-          endpoint: suite?.endpoint,
-          method: suite?.method,
-          headers: suite?.requiresAuth ? { Cookie: authCookie } : {},
-          body: suite?.body,
+          endpoint: suite.endpoint,
+          method: suite.method,
+          headers: suite.requiresAuth ? { Cookie: authCookie } : {},
+          body: suite.body,
           rampUpSeconds: 3,
           thinkTimeMs: 50,
           requestsPerUser: 3,
@@ -182,7 +182,7 @@ async function runAllLoadTests(): Promise<void> {
         }
       }
     } catch (error) {
-      logger?.warn(`${suite?.name} test failed`, { error: error?.message });
+      logger?.warn(`${suite?.name} test failed`, { error: error.message });
       issues?.push(`${suite?.name}: Test execution failed - ${error?.message}`);
     }
   }
@@ -190,25 +190,25 @@ async function runAllLoadTests(): Promise<void> {
   logger?.info("COMPREHENSIVE SCALABILITY REPORT");
 
   for (const [name, results] of allResults?.entries()) {
-    const _maxResult = results[results?.length - 1];
-    const _passRate =
+    const maxResult = results[results?.length - 1];
+    const passRate =
       (results?.filter((r) => r?.passed).length / results?.length) * 100;
     logger?.info(`Endpoint summary: ${name}`, {
       maxTested: `${maxResult?.scale || "N/A"} (${formatNumber(maxResult?.simulatedUsers || 0)} users)`,
       passRate: `${passRate?.toFixed(0)}%`,
-      status: maxResult?.passed ? "PASSED" : "NEEDS OPTIMIZATION",
+      status: maxResult.passed ? "PASSED" : "NEEDS OPTIMIZATION",
     });
   }
 
   if (issues?.length === 0) {
     logger?.info("No issues detected");
   } else {
-    const _uniqueIssues = [...new Set(issues)];
+    const uniqueIssues = [...new Set(issues)];
     logger?.warn("Identified issues", { issues: uniqueIssues });
   }
 
-  const _uniqueFixes = [...new Set(fixes)];
-  const _criticalFixes = [
+  const uniqueFixes = [...new Set(fixes)];
+  const criticalFixes = [
     "Implement Redis cluster for distributed caching",
     "Add database connection pooling with pg-pool",
     "Deploy horizontal scaling with Kubernetes",
@@ -225,7 +225,7 @@ async function runAllLoadTests(): Promise<void> {
     recommendations: [...uniqueFixes, ...criticalFixes].slice(0, 15),
   });
 
-  const _avgThroughput =
+  const avgThroughput =
     Array?.from(allResults?.values())
       .map((r) => r[r?.length - 1]?.results?.requestsPerSecond || 0)
       .reduce((a, b) => a + b, 0) / allResults?.size;

@@ -10,8 +10,8 @@ import type {
   CompressionResult,
 } from "./types.js";
 
-const _MEDIA_CLASSES = new Set<ContentClass>(["video", "audio", "image"]);
-const _SEMANTIC_CLASSES = new Set<ContentClass>([
+const MEDIA_CLASSES = new Set<ContentClass>(["video", "audio", "image"]);
+const SEMANTIC_CLASSES = new Set<ContentClass>([
   "json",
   "log",
   "text",
@@ -19,7 +19,7 @@ const _SEMANTIC_CLASSES = new Set<ContentClass>([
 ]);
 new Set<ContentClass>(["archive"]);
 
-const _LOSSY_SIZE_THRESHOLD = 5 * 1024 * 1024;
+const LOSSY_SIZE_THRESHOLD = 5 * 1024 * 1024;
 
 export class CompressionProfileRouter {
   private versionBases = new Map<string, Buffer>();
@@ -31,7 +31,7 @@ export class CompressionProfileRouter {
     if (opts?.profile) return opts?.profile;
 
     if (MEDIA_CLASSES?.has(contentClass)) {
-      const _size = opts?.sizeHintBytes ?? 0;
+      const size = opts?.sizeHintBytes ?? 0;
       if (
         opts?.allowLossy !== false &&
         (size === 0 || size >= LOSSY_SIZE_THRESHOLD)
@@ -54,10 +54,10 @@ export class CompressionProfileRouter {
     contentType: string,
     opts: StoreOptions = {},
   ): Promise<CompressionResult> {
-    const _contentClass = classifyContentType(contentType, originalName);
-    const _profile = this?.chooseProfile(contentClass, {
+    const contentClass = classifyContentType(contentType, originalName);
+    const profile = this?.chooseProfile(contentClass, {
       ...opts,
-      sizeHintBytes: data?.length,
+      sizeHintBytes: data.length,
     });
 
     switch (profile) {
@@ -81,17 +81,17 @@ export class CompressionProfileRouter {
     _originalName: string,
     opts: StoreOptions,
   ): Promise<CompressionResult> {
-    const _domain = opts?.dimensionHint ?? contentClass;
+    const domain = opts?.dimensionHint ?? contentClass;
     let processedData = data;
     let isDelta = false;
     let deltaBaseId: string | undefined;
     let codec = "cdc+zstd";
 
     if (opts?.versionOf) {
-      const _base = this?.versionBases.get(opts?.versionOf);
+      const base = this?.versionBases.get(opts?.versionOf);
       if (base) {
         try {
-          const _delta = deltaEngine?.encode(base, data);
+          const delta = deltaEngine?.encode(base, data);
           if (delta?.length < data?.length * 0.8) {
             processedData = delta;
             isDelta = true;
@@ -103,7 +103,7 @@ export class CompressionProfileRouter {
     }
 
     await zstdEngine?.addSample(domain, processedData?.subarray(0, 32 * 1024));
-    const _dictId = await zstdEngine?.getDictForDomain(domain);
+    const dictId = await zstdEngine?.getDictForDomain(domain);
 
     const { compressed, dictId: usedDict } = await zstdEngine?.compress(
       processedData,
@@ -114,15 +114,15 @@ export class CompressionProfileRouter {
       this?.versionBases.set(opts?.versionOf, data);
     }
 
-    const _objectId = this?.hashContent(data);
+    const objectId = this?.hashContent(data);
 
     return {
       data: compressed,
       profile: "lossless-max-dedup",
       contentClass,
-      originalBytes: data?.length,
-      compressedBytes: compressed?.length,
-      ratio: data?.length / compressed?.length,
+      originalBytes: data.length,
+      compressedBytes: compressed.length,
+      ratio: data.length / compressed?.length,
       codec,
       isDelta,
       deltaBaseId,
@@ -141,7 +141,7 @@ export class CompressionProfileRouter {
     let codec = "passthrough";
     let wasTranscoded = false;
 
-    const _transcodeResult = await mediaTranscoder?.transcode(
+    const transcodeResult = await mediaTranscoder?.transcode(
       data,
       contentClass,
       originalName,
@@ -153,21 +153,21 @@ export class CompressionProfileRouter {
       wasTranscoded = true;
     }
 
-    const _domain = `media-${contentClass}`;
+    const domain = `media-${contentClass}`;
     const { compressed } = await zstdEngine?.compress(workingData);
 
-    const _finalData =
+    const finalData =
       compressed?.length < workingData?.length ? compressed : workingData;
-    const _finalCodec =
+    const finalCodec =
       compressed?.length < workingData?.length ? `${codec}+zstd` : codec;
 
     return {
       data: finalData,
       profile: "media-lossy",
       contentClass,
-      originalBytes: data?.length,
-      compressedBytes: finalData?.length,
-      ratio: data?.length / finalData?.length,
+      originalBytes: data.length,
+      compressedBytes: finalData.length,
+      ratio: data.length / finalData?.length,
       codec: finalCodec,
       isDelta: false,
       metadata: {
@@ -183,21 +183,21 @@ export class CompressionProfileRouter {
     contentClass: ContentClass,
     _opts: StoreOptions,
   ): Promise<CompressionResult> {
-    const _archiveResult = await semanticArchiver?.archive(data, contentClass);
+    const archiveResult = await semanticArchiver?.archive(data, contentClass);
 
-    const _domain = `semantic-${contentClass}`;
+    const domain = `semantic-${contentClass}`;
     await zstdEngine?.addSample(
       domain,
       archiveResult?.data.subarray(0, 32 * 1024),
     );
-    const _dictId = await zstdEngine?.getDictForDomain(domain);
+    const dictId = await zstdEngine?.getDictForDomain(domain);
 
     const { compressed } = await zstdEngine?.compress(
       archiveResult?.data,
       dictId,
     );
 
-    const _finalData =
+    const finalData =
       compressed?.length < archiveResult?.data.length
         ? compressed
         : archiveResult?.data;
@@ -206,21 +206,21 @@ export class CompressionProfileRouter {
       data: finalData,
       profile: "semantic-archive",
       contentClass,
-      originalBytes: data?.length,
-      compressedBytes: finalData?.length,
-      ratio: data?.length / finalData?.length,
+      originalBytes: data.length,
+      compressedBytes: finalData.length,
+      ratio: data.length / finalData?.length,
       codec: `semantic+zstd`,
       isDelta: false,
       metadata: {
-        archiveSummary: archiveResult?.summary,
-        intermediateBytes: archiveResult?.archivedBytes,
+        archiveSummary: archiveResult.summary,
+        intermediateBytes: archiveResult.archivedBytes,
         domain,
       },
     };
   }
 
   async trainDictionaries(): Promise<Record<string, string | null>> {
-    const _domains = [
+    const domains = [
       "video",
       "audio",
       "image",
@@ -249,4 +249,4 @@ export class CompressionProfileRouter {
   }
 }
 
-export const _compressionRouter = new CompressionProfileRouter();
+export const compressionRouter = new CompressionProfileRouter();

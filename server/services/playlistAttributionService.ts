@@ -98,8 +98,8 @@ class PlaylistAttributionService {
         .update(playlistAttributions)
         .set({
           isActive: true,
-          position: playlistData?.position,
-          followerCount: playlistData?.followerCount,
+          position: playlistData.position,
+          followerCount: playlistData.followerCount,
           lastUpdated: new Date(),
         })
         .where(eq(playlistAttributions?.id, existing?.id))
@@ -156,9 +156,9 @@ class PlaylistAttributionService {
       .update(playlistAttributions)
       .set({
         streams: sql`${playlistAttributions?.streams} + ${metrics?.streams}`,
-        listeners: metrics?.listeners,
+        listeners: metrics.listeners,
         saves: sql`${playlistAttributions?.saves} + ${metrics?.saves}`,
-        revenue: metrics?.revenue?.toString(),
+        revenue: metrics.revenue?.toString(),
         lastUpdated: new Date(),
       })
       .where(
@@ -179,9 +179,9 @@ class PlaylistAttributionService {
     await db
       .update(playlistAttributions)
       .set({
-        pitchStatus: pitchData?.status,
-        pitchDate: pitchData?.date,
-        pitchResponse: pitchData?.response,
+        pitchStatus: pitchData.status,
+        pitchDate: pitchData.date,
+        pitchResponse: pitchData.response,
         lastUpdated: new Date(),
       })
       .where(
@@ -208,7 +208,7 @@ class PlaylistAttributionService {
       endDate?: Date;
     } = {},
   ): Promise<PlaylistAttribution[]> {
-    const _conditions = [eq(playlistAttributions?.userId, userId)];
+    const conditions = [eq(playlistAttributions?.userId, userId)];
 
     if (options?.platform) {
       conditions?.push(eq(playlistAttributions?.platform, options?.platform));
@@ -242,7 +242,7 @@ class PlaylistAttributionService {
     userId: string,
     options: { startDate?: Date; endDate?: Date } = {},
   ): Promise<PlaylistPerformanceSummary> {
-    const _conditions = [eq(playlistAttributions?.userId, userId)];
+    const conditions = [eq(playlistAttributions?.userId, userId)];
 
     if (options?.startDate) {
       conditions?.push(gte(playlistAttributions?.addedDate, options?.startDate));
@@ -260,9 +260,9 @@ class PlaylistAttributionService {
       .from(playlistAttributions)
       .where(and(...conditions));
 
-    const _byType = await db
+    const byType = await db
       .select({
-        type: playlistAttributions?.playlistType,
+        type: playlistAttributions.playlistType,
         count: sql<number>`COUNT(DISTINCT ${playlistAttributions?.playlistId})`,
         streams: sql<number>`COALESCE(SUM(${playlistAttributions?.streams}), 0)`,
         revenue: sql<number>`COALESCE(SUM(CAST(${playlistAttributions?.revenue} AS real)), 0)`,
@@ -271,9 +271,9 @@ class PlaylistAttributionService {
       .where(and(...conditions))
       .groupBy(playlistAttributions?.playlistType);
 
-    const _byPlatform = await db
+    const byPlatform = await db
       .select({
-        platform: playlistAttributions?.platform,
+        platform: playlistAttributions.platform,
         count: sql<number>`COUNT(DISTINCT ${playlistAttributions?.playlistId})`,
         streams: sql<number>`COALESCE(SUM(${playlistAttributions?.streams}), 0)`,
         revenue: sql<number>`COALESCE(SUM(CAST(${playlistAttributions?.revenue} AS real)), 0)`,
@@ -282,23 +282,23 @@ class PlaylistAttributionService {
       .where(and(...conditions))
       .groupBy(playlistAttributions?.platform);
 
-    const _topPlaylistsRaw = await db
+    const topPlaylistsRaw = await db
       .select()
       .from(playlistAttributions)
       .where(and(...conditions))
       .orderBy(desc(playlistAttributions?.streams))
       .limit(10);
 
-    const _recentAddsRaw = await db
+    const recentAddsRaw = await db
       .select()
       .from(playlistAttributions)
       .where(and(...conditions, eq(playlistAttributions?.isActive, true)))
       .orderBy(desc(playlistAttributions?.addedDate))
       .limit(5);
 
-    const _pitchStats = await db
+    const pitchStats = await db
       .select({
-        status: playlistAttributions?.pitchStatus,
+        status: playlistAttributions.pitchStatus,
         count: sql<number>`COUNT(*)`,
       })
       .from(playlistAttributions)
@@ -310,7 +310,7 @@ class PlaylistAttributionService {
       )
       .groupBy(playlistAttributions?.pitchStatus);
 
-    const _pitchMetrics = {
+    const pitchMetrics = {
       totalPitches: 0,
       accepted: 0,
       pending: 0,
@@ -319,13 +319,13 @@ class PlaylistAttributionService {
     };
 
     pitchStats?.forEach((s) => {
-      const _count = Number(s?.count);
-      pitchMetrics?.totalPitches += count;
+      const count = Number(s?.count);
+      pitchMetrics.totalPitches += count;
       if (s?.status === "accepted" || s?.status === "approved")
-        pitchMetrics?.accepted += count;
-      else if (s?.status === "pending") pitchMetrics?.pending += count;
+        pitchMetrics.accepted += count;
+      else if (s?.status === "pending") pitchMetrics.pending += count;
       else if (s?.status === "rejected" || s?.status === "declined")
-        pitchMetrics?.rejected += count;
+        pitchMetrics.rejected += count;
     });
 
     if (pitchMetrics?.totalPitches > 0) {
@@ -335,40 +335,40 @@ class PlaylistAttributionService {
           100 || 0;
     }
 
-    const _mapToMetrics = (attr: PlaylistAttribution): PlaylistMetrics => ({
-      playlistId: attr?.playlistId,
-      playlistName: attr?.playlistName,
-      playlistType: attr?.playlistType,
-      platform: attr?.platform,
+    const mapToMetrics = (attr: PlaylistAttribution): PlaylistMetrics => ({
+      playlistId: attr.playlistId,
+      playlistName: attr.playlistName,
+      playlistType: attr.playlistType,
+      platform: attr.platform,
       streams: Number(attr?.streams),
-      listeners: attr?.listeners || 0,
-      saves: attr?.saves || 0,
+      listeners: attr.listeners || 0,
+      saves: attr.saves || 0,
       revenue: Number(attr?.revenue || 0),
-      addedDate: attr?.addedDate || new Date(),
-      position: attr?.position || undefined,
-      followerCount: attr?.followerCount || 0,
-      curatorName: attr?.curatorName || undefined,
-      isActive: attr?.isActive || false,
+      addedDate: attr.addedDate || new Date(),
+      position: attr.position || undefined,
+      followerCount: attr.followerCount || 0,
+      curatorName: attr.curatorName || undefined,
+      isActive: attr.isActive || false,
     });
 
     return {
       totalPlaylists: Number(totals?.totalPlaylists || 0),
       totalStreams: Number(totals?.totalStreams || 0),
       totalRevenue: Number(totals?.totalRevenue || 0),
-      byType: byType?.map((t) => ({
-        type: t?.type,
+      byType: byType.map((t) => ({
+        type: t.type,
         count: Number(t?.count),
         streams: Number(t?.streams),
         revenue: Number(t?.revenue),
       })),
-      byPlatform: byPlatform?.map((p) => ({
-        platform: p?.platform,
+      byPlatform: byPlatform.map((p) => ({
+        platform: p.platform,
         count: Number(p?.count),
         streams: Number(p?.streams),
         revenue: Number(p?.revenue),
       })),
-      topPlaylists: topPlaylistsRaw?.map(mapToMetrics),
-      recentAdds: recentAddsRaw?.map(mapToMetrics),
+      topPlaylists: topPlaylistsRaw.map(mapToMetrics),
+      recentAdds: recentAddsRaw.map(mapToMetrics),
       pitchMetrics,
     };
   }
@@ -380,26 +380,26 @@ class PlaylistAttributionService {
     days: number = 30,
   ): Promise<PlaylistStreamHistory[]> {
     const history: PlaylistStreamHistory[] = [];
-    const _baseDate = new Date();
+    const baseDate = new Date();
 
     let cumulativeStreams = 0;
     let cumulativeListeners = 0;
     let cumulativeSaves = 0;
 
     for (let i = days - 1; i >= 0; i--) {
-      const _date = new Date(baseDate);
+      const date = new Date(baseDate);
       date?.setDate(date?.getDate() - i);
 
-      const _dailyStreams = Math?.floor(Math?.random() * 500) + 50;
-      const _dailyListeners = Math?.floor(dailyStreams * 0.6);
-      const _dailySaves = Math?.floor(dailyStreams * 0.05);
+      const dailyStreams = Math?.floor(Math?.random() * 500) + 50;
+      const dailyListeners = Math?.floor(dailyStreams * 0.6);
+      const dailySaves = Math?.floor(dailyStreams * 0.05);
 
       cumulativeStreams += dailyStreams;
       cumulativeListeners += dailyListeners;
       cumulativeSaves += dailySaves;
 
       history?.push({
-        date: date?.toISOString().split("T")[0],
+        date: date.toISOString().split("T")[0],
         streams: cumulativeStreams,
         listeners: cumulativeListeners,
         saves: cumulativeSaves,
@@ -430,7 +430,7 @@ class PlaylistAttributionService {
       revenue: number;
     }[];
   }> {
-    const _conditions = [eq(playlistAttributions?.userId, userId)];
+    const conditions = [eq(playlistAttributions?.userId, userId)];
 
     if (options?.startDate) {
       conditions?.push(gte(playlistAttributions?.addedDate, options?.startDate));
@@ -446,30 +446,30 @@ class PlaylistAttributionService {
       .from(playlistAttributions)
       .where(and(...conditions));
 
-    const _totalRevenue = Number(totals?.totalRevenue || 0);
+    const totalRevenue = Number(totals?.totalRevenue || 0);
 
-    const _byTypeRaw = await db
+    const byTypeRaw = await db
       .select({
-        type: playlistAttributions?.playlistType,
+        type: playlistAttributions.playlistType,
         revenue: sql<number>`COALESCE(SUM(CAST(${playlistAttributions?.revenue} AS real)), 0)`,
       })
       .from(playlistAttributions)
       .where(and(...conditions))
       .groupBy(playlistAttributions?.playlistType);
 
-    const _byPlatformRaw = await db
+    const byPlatformRaw = await db
       .select({
-        platform: playlistAttributions?.platform,
+        platform: playlistAttributions.platform,
         revenue: sql<number>`COALESCE(SUM(CAST(${playlistAttributions?.revenue} AS real)), 0)`,
       })
       .from(playlistAttributions)
       .where(and(...conditions))
       .groupBy(playlistAttributions?.platform);
 
-    const _topGenerators = await db
+    const topGenerators = await db
       .select({
-        playlistName: playlistAttributions?.playlistName,
-        platform: playlistAttributions?.platform,
+        playlistName: playlistAttributions.playlistName,
+        platform: playlistAttributions.platform,
         revenue: sql<number>`COALESCE(${playlistAttributions?.revenue}, 0)`,
       })
       .from(playlistAttributions)
@@ -479,21 +479,21 @@ class PlaylistAttributionService {
 
     return {
       totalRevenue,
-      byPlaylistType: byTypeRaw?.map((t) => ({
-        type: t?.type,
+      byPlaylistType: byTypeRaw.map((t) => ({
+        type: t.type,
         revenue: Number(t?.revenue),
         percentage:
           totalRevenue > 0 ? (Number(t?.revenue) / totalRevenue) * 100 : 0,
       })),
-      byPlatform: byPlatformRaw?.map((p) => ({
-        platform: p?.platform,
+      byPlatform: byPlatformRaw.map((p) => ({
+        platform: p.platform,
         revenue: Number(p?.revenue),
         percentage:
           totalRevenue > 0 ? (Number(p?.revenue) / totalRevenue) * 100 : 0,
       })),
-      topRevenueGenerators: topGenerators?.map((g) => ({
-        playlistName: g?.playlistName,
-        platform: g?.platform,
+      topRevenueGenerators: topGenerators.map((g) => ({
+        playlistName: g.playlistName,
+        platform: g.platform,
         revenue: Number(g?.revenue),
       })),
     };
@@ -506,7 +506,7 @@ class PlaylistAttributionService {
     revenueFromEditorial: number;
     topEditorialPlaylists: PlaylistMetrics[];
   }> {
-    const _conditions = [
+    const conditions = [
       eq(playlistAttributions?.userId, userId),
       eq(playlistAttributions?.playlistType, "editorial"),
     ];
@@ -514,14 +514,14 @@ class PlaylistAttributionService {
     const [totals] = await db
       .select({
         totalPlacements: sql<number>`COUNT(*)`,
-        activePlacements: sql<number>`COUNT(*) FILTER (WHERE ${playlistAttributions?.isActive} = true)`,
+        activePlacements: sql<number>`COUNT(*) FILTER (WHERE ${playlistAttributions.isActive} = true)`,
         totalStreams: sql<number>`COALESCE(SUM(${playlistAttributions?.streams}), 0)`,
         totalRevenue: sql<number>`COALESCE(SUM(CAST(${playlistAttributions?.revenue} AS real)), 0)`,
       })
       .from(playlistAttributions)
       .where(and(...conditions));
 
-    const _topPlaylists = await db
+    const topPlaylists = await db
       .select()
       .from(playlistAttributions)
       .where(and(...conditions))
@@ -533,20 +533,20 @@ class PlaylistAttributionService {
       currentActivePlacements: Number(totals?.activePlacements || 0),
       streamsFromEditorial: Number(totals?.totalStreams || 0),
       revenueFromEditorial: Number(totals?.totalRevenue || 0),
-      topEditorialPlaylists: topPlaylists?.map((p) => ({
-        playlistId: p?.playlistId,
-        playlistName: p?.playlistName,
-        playlistType: p?.playlistType,
-        platform: p?.platform,
+      topEditorialPlaylists: topPlaylists.map((p) => ({
+        playlistId: p.playlistId,
+        playlistName: p.playlistName,
+        playlistType: p.playlistType,
+        platform: p.platform,
         streams: Number(p?.streams),
-        listeners: p?.listeners || 0,
-        saves: p?.saves || 0,
+        listeners: p.listeners || 0,
+        saves: p.saves || 0,
         revenue: Number(p?.revenue || 0),
-        addedDate: p?.addedDate || new Date(),
-        position: p?.position || undefined,
-        followerCount: p?.followerCount || 0,
-        curatorName: p?.curatorName || undefined,
-        isActive: p?.isActive || false,
+        addedDate: p.addedDate || new Date(),
+        position: p.position || undefined,
+        followerCount: p.followerCount || 0,
+        curatorName: p.curatorName || undefined,
+        isActive: p.isActive || false,
       })),
     };
   }
@@ -558,7 +558,7 @@ class PlaylistAttributionService {
   ): Promise<PlaylistAttribution[]> {
     try {
       // Build conditions array properly - only include defined conditions
-      const _conditions = [
+      const conditions = [
         eq(playlistAttributions?.userId, userId),
         eq(playlistAttributions?.platform, platform),
       ];
@@ -568,7 +568,7 @@ class PlaylistAttributionService {
       }
 
       // Fetch existing playlist attributions from database for this user and platform
-      const _existingPlaylists = await db
+      const existingPlaylists = await db
         .select()
         .from(playlistAttributions)
         .where(and(...conditions));
@@ -582,7 +582,7 @@ class PlaylistAttributionService {
         const updatedPlaylists: PlaylistAttribution[] = [];
         for (const playlist of existingPlaylists) {
           // Build analytics filter for this specific playlist based on its track
-          const _analyticsConditions = [
+          const analyticsConditions = [
             eq(dspAnalytics?.userId, userId),
             eq(dspAnalytics?.platform, platform),
           ];
@@ -594,7 +594,7 @@ class PlaylistAttributionService {
           }
 
           // Get latest analytics for this playlist's track from dspAnalytics
-          const _analytics = await db
+          const analytics = await db
             .select({
               streams: sql<number>`COALESCE(SUM(${dspAnalytics?.streams}), 0)`,
               listeners: sql<number>`COALESCE(COUNT(DISTINCT ${dspAnalytics?.date}), 0)`,
@@ -602,7 +602,7 @@ class PlaylistAttributionService {
             .from(dspAnalytics)
             .where(and(...analyticsConditions));
 
-          const _newStreams = Number(analytics[0]?.streams) || 0;
+          const newStreams = Number(analytics[0]?.streams) || 0;
 
           // Only update if we have new data
           if (newStreams > 0 && newStreams !== playlist?.streams) {
@@ -637,4 +637,4 @@ class PlaylistAttributionService {
   }
 }
 
-export const _playlistAttributionService = new PlaylistAttributionService();
+export const playlistAttributionService = new PlaylistAttributionService();

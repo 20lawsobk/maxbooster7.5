@@ -6,11 +6,11 @@ import { logger } from "../logger.js";
 import crypto from "crypto";
 import { z } from "zod";
 
-const _router = Router();
+const router = Router();
 
 // 30 messages per IP per 10 min — prevents AI cost abuse on public endpoint
 // Authenticated users get 3× headroom via the skip
-const _chatRateLimiter = rateLimit({
+const chatRateLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 30,
   standardHeaders: true,
@@ -22,28 +22,28 @@ const _chatRateLimiter = rateLimit({
   skip: (req) => !!req?.user,
 });
 
-const _chatSchema = z?.object({
-  message: z?.string().min(1).max(5000),
-  sessionId: z?.string().uuid().optional(),
+const chatSchema = z.object({
+  message: z.string().min(1).max(5000),
+  sessionId: z.string().uuid().optional(),
 });
 
-const _escalateSchema = z?.object({
-  sessionId: z?.string().min(1).max(200),
-  reason: z?.string().max(2000).optional(),
+const escalateSchema = z.object({
+  sessionId: z.string().min(1).max(200),
+  reason: z.string().max(2000).optional(),
 });
 
-const _endSessionSchema = z?.object({
-  sessionId: z?.string().min(1).max(200).optional(),
+const endSessionSchema = z.object({
+  sessionId: z.string().min(1).max(200).optional(),
 });
 
 router?.get("/welcome", (_req: Request, res: Response) => {
   try {
-    const _response = aiHelpDeskService?.getWelcomeMessage();
+    const response = aiHelpDeskService?.getWelcomeMessage();
     res?.json({
       success: true,
       assistant: {
-        name: BUSINESS_CONFIG?.helpDesk.aiAssistantName,
-        role: BUSINESS_CONFIG?.helpDesk.aiAssistantRole,
+        name: BUSINESS_CONFIG.helpDesk.aiAssistantName,
+        role: BUSINESS_CONFIG.helpDesk.aiAssistantRole,
       },
       ...response,
     });
@@ -55,20 +55,20 @@ router?.get("/welcome", (_req: Request, res: Response) => {
 
 router?.post("/chat", chatRateLimiter, async (req: Request, res: Response) => {
   try {
-    const _parsed = chatSchema?.safeParse(req?.body);
+    const parsed = chatSchema?.safeParse(req?.body);
     if (!parsed?.success) {
       return res?.status(400).json({
         success: false,
         error: "Validation error",
-        details: parsed?.error.flatten(),
+        details: parsed.error.flatten(),
       });
     }
 
     const { message, sessionId } = parsed?.data;
-    const _userId = req?.user?.id;
-    const _chatSessionId = sessionId || crypto?.randomUUID();
+    const userId = req?.user?.id;
+    const chatSessionId = sessionId || crypto?.randomUUID();
 
-    const _response = await aiHelpDeskService?.processMessage(
+    const response = await aiHelpDeskService?.processMessage(
       chatSessionId,
       message,
       userId,
@@ -77,7 +77,7 @@ router?.post("/chat", chatRateLimiter, async (req: Request, res: Response) => {
     res?.json({
       success: true,
       sessionId: chatSessionId,
-      assistant: BUSINESS_CONFIG?.helpDesk.aiAssistantName,
+      assistant: BUSINESS_CONFIG.helpDesk.aiAssistantName,
       ...response,
     });
   } catch (error) {
@@ -91,17 +91,17 @@ router?.post("/chat", chatRateLimiter, async (req: Request, res: Response) => {
 
 router?.post("/escalate", async (req: Request, res: Response) => {
   try {
-    const _parsed = escalateSchema?.safeParse(req?.body);
+    const parsed = escalateSchema?.safeParse(req?.body);
     if (!parsed?.success) {
       return res?.status(400).json({
         success: false,
         error: "Validation error",
-        details: parsed?.error.flatten(),
+        details: parsed.error.flatten(),
       });
     }
 
     const { sessionId, reason } = parsed?.data;
-    const _result = await aiHelpDeskService?.escalateToHuman(
+    const result = await aiHelpDeskService?.escalateToHuman(
       sessionId,
       reason || "User requested human support",
     );
@@ -121,7 +121,7 @@ router?.post("/escalate", async (req: Request, res: Response) => {
 
 router?.post("/end", (req: Request, res: Response) => {
   try {
-    const _parsed = endSessionSchema?.safeParse(req?.body);
+    const parsed = endSessionSchema?.safeParse(req?.body);
     if (!parsed?.success) {
       return res?.status(400).json({ success: false, error: "Invalid request" });
     }
@@ -145,13 +145,13 @@ router?.get("/info", (_req: Request, res: Response) => {
   try {
     res?.json({
       success: true,
-      company: BUSINESS_CONFIG?.company,
+      company: BUSINESS_CONFIG.company,
       helpDesk: {
-        name: BUSINESS_CONFIG?.helpDesk.aiAssistantName,
-        role: BUSINESS_CONFIG?.helpDesk.aiAssistantRole,
-        capabilities: BUSINESS_CONFIG?.helpDesk.capabilities,
+        name: BUSINESS_CONFIG.helpDesk.aiAssistantName,
+        role: BUSINESS_CONFIG.helpDesk.aiAssistantRole,
+        capabilities: BUSINESS_CONFIG.helpDesk.capabilities,
       },
-      branding: BUSINESS_CONFIG?.branding,
+      branding: BUSINESS_CONFIG.branding,
     });
   } catch (error) {
     logger?.warn({ err: error }, "Help desk info error:");

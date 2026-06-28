@@ -1,16 +1,5 @@
 import { logger } from "../logger";
-import type {
-  VideoProject,
-  LayerConfig,
-  TransformConfig,
-  RenderProgress,
-  BackgroundConfig,
-  VisualizerConfig,
-  TextConfig,
-  ImageConfig,
-  ShapeConfig,
-  ParticleConfig,
-} from "../../../../shared/video/VideoRendererEngine";
+import type { VideoProject, LayerConfig, TransformConfig, RenderProgress, BackgroundConfig, VisualizerConfig, TextConfig, ImageConfig, ShapeConfig, ParticleConfig } from "../../../../shared/video/VideoRendererEngine";
 import { DEFAULT_TRANSFORM } from "../../../../shared/video/VideoRendererEngine";
 import { Scene, Layer, type EasingName } from "./SceneGraph";
 import {
@@ -121,11 +110,11 @@ export class RenderOrchestrator {
       this.canvas = new OffscreenCanvas(this?.width, this?.height);
     } else {
       this.canvas = document?.createElement("canvas");
-      this?.canvas.width = this?.width;
-      this?.canvas.height = this?.height;
+      this.canvas.width = this?.width;
+      this.canvas.height = this?.height;
     }
 
-    const _ctx = this?.canvas.getContext("2d", { alpha: true });
+    const ctx = this?.canvas.getContext("2d", { alpha: true });
     if (!ctx) {
       throw new Error("Failed to create 2D rendering context");
     }
@@ -171,22 +160,22 @@ export class RenderOrchestrator {
 
       this.scene = new Scene(
         {
-          width: project?.width,
-          height: project?.height,
-          fps: project?.fps,
-          duration: project?.duration,
-          backgroundColor: project?.backgroundColor,
+          width: project.width,
+          height: project.height,
+          fps: project.fps,
+          duration: project.duration,
+          backgroundColor: project.backgroundColor,
         },
         project?.id,
       );
 
       for (const layerConfig of project?.layers) {
-        const _layer = new Layer(layerConfig);
+        const layer = new Layer(layerConfig);
         this?.scene.addLayer(layer);
       }
 
       for (const keyframe of project?.keyframes) {
-        const _layer = this?.scene.getLayer(keyframe?.layerId);
+        const layer = this?.scene.getLayer(keyframe?.layerId);
         if (layer) {
           layer?.addKeyframe(
             keyframe?.property,
@@ -222,7 +211,7 @@ export class RenderOrchestrator {
       if (layer?.type === "visualizer") {
         this?.createVisualizer(layer);
       } else if (layer?.type === "image") {
-        const _imageConfig = layer?.config as ImageConfig;
+        const imageConfig = layer?.config as ImageConfig;
         if (imageConfig?.src) {
           loadPromises?.push(this?.loadImage(layer?.id, imageConfig?.src));
         }
@@ -233,7 +222,7 @@ export class RenderOrchestrator {
   }
 
   private createVisualizer(layer: LayerConfig): void {
-    const _config = layer?.config as VisualizerConfig;
+    const config = layer?.config as VisualizerConfig;
     let instance: VisualizerInstance["instance"];
     let type: VisualizerInstance["type"];
 
@@ -242,16 +231,16 @@ export class RenderOrchestrator {
       case "bars":
         type = "spectrum";
         instance = new SpectrumVisualizer({
-          barCount: config?.barCount ?? 64,
-          barWidth: config?.barWidth ?? 8,
-          barGap: config?.barGap ?? 2,
-          color: config?.color,
-          secondaryColor: config?.secondaryColor ?? config?.color,
-          sensitivity: config?.sensitivity ?? 1.5,
-          glow: config?.glow ?? true,
-          glowColor: config?.color,
-          glowIntensity: config?.glowIntensity ?? 0.8,
-          mirror: config?.mirror ?? false,
+          barCount: config.barCount ?? 64,
+          barWidth: config.barWidth ?? 8,
+          barGap: config.barGap ?? 2,
+          color: config.color,
+          secondaryColor: config.secondaryColor ?? config?.color,
+          sensitivity: config.sensitivity ?? 1.5,
+          glow: config.glow ?? true,
+          glowColor: config.color,
+          glowIntensity: config.glowIntensity ?? 0.8,
+          mirror: config.mirror ?? false,
         });
         break;
 
@@ -260,24 +249,24 @@ export class RenderOrchestrator {
         type = "waveform";
         instance = new WaveformVisualizer({
           sampleCount: 256,
-          color: config?.color,
-          lineWidth: config?.lineWidth ?? 2,
-          glow: config?.glow ?? true,
-          glowColor: config?.color,
-          glowIntensity: config?.glowIntensity ?? 0.6,
+          color: config.color,
+          lineWidth: config.lineWidth ?? 2,
+          glow: config.glow ?? true,
+          glowColor: config.color,
+          glowIntensity: config.glowIntensity ?? 0.6,
         });
         break;
 
       case "circular":
         type = "circular";
         instance = new CircularVisualizer({
-          barCount: config?.barCount ?? 64,
-          innerRadius: config?.radius ?? 100,
+          barCount: config.barCount ?? 64,
+          innerRadius: config.radius ?? 100,
           outerRadius: (config?.radius ?? 100) + 100,
-          color: config?.color,
-          secondaryColor: config?.secondaryColor ?? config?.color,
-          glow: config?.glow ?? true,
-          glowIntensity: config?.glowIntensity ?? 0.8,
+          color: config.color,
+          secondaryColor: config.secondaryColor ?? config?.color,
+          glow: config.glow ?? true,
+          glowIntensity: config.glowIntensity ?? 0.8,
         });
         break;
 
@@ -285,7 +274,7 @@ export class RenderOrchestrator {
         type = "particle";
         instance = new ParticleVisualizer({
           maxParticles: 500,
-          color: config?.color,
+          color: config.color,
           size: { min: 2, max: 6 },
           speed: { min: 0.5, max: 2 },
         });
@@ -295,12 +284,12 @@ export class RenderOrchestrator {
         return;
     }
 
-    this?.visualizers.set(layer?.id, { type, instance, layerId: layer?.id });
+    this?.visualizers.set(layer?.id, { type, instance, layerId: layer.id });
   }
 
   private async loadImage(layerId: string, src: string): Promise<void> {
     return new Promise((resolve, _reject) => {
-      const _img = new Image();
+      const img = new Image();
       img.crossOrigin = "anonymous";
 
       img.onload = () => {
@@ -336,7 +325,7 @@ export class RenderOrchestrator {
     this?.startRenderLoop();
 
     if (this?.audioElement) {
-      this?.audioElement.currentTime = this?.currentTime;
+      this.audioElement.currentTime = this?.currentTime;
       this?.audioElement.play();
     }
   }
@@ -366,7 +355,7 @@ export class RenderOrchestrator {
     }
 
     if (this?.audioElement) {
-      this?.audioElement.currentTime = this?.currentTime;
+      this.audioElement.currentTime = this?.currentTime;
     }
 
     this?.events.onTimeUpdate?.(this?.currentTime);
@@ -377,21 +366,21 @@ export class RenderOrchestrator {
   }
 
   private startRenderLoop(): void {
-    const _frameInterval = 1000 / this?.fps;
+    const frameInterval = 1000 / this?.fps;
 
-    const _loop = () => {
+    const loop = () => {
       if (!this?.isPlaying) return;
 
-      const _now = performance?.now();
-      const _elapsed = now - this?.lastFrameTime;
+      const now = performance?.now();
+      const elapsed = now - this?.lastFrameTime;
 
       if (elapsed >= frameInterval) {
-        this?.currentTime += elapsed / 1000;
+        this.currentTime += elapsed / 1000;
 
         if (this?.currentTime >= this?.duration) {
           this.currentTime = 0;
           if (this?.audioElement) {
-            this?.audioElement.currentTime = 0;
+            this.audioElement.currentTime = 0;
           }
         }
 
@@ -420,14 +409,14 @@ export class RenderOrchestrator {
     this?.ctx.save();
     this?.ctx.clearRect(0, 0, this?.width, this?.height);
 
-    this?.ctx.fillStyle = this?.project.backgroundColor;
+    this.ctx.fillStyle = this?.project.backgroundColor;
     this?.ctx.fillRect(0, 0, this?.width, this?.height);
 
     this?.scene.setTime(time);
 
-    const _audioData = this?.getAudioData(time);
+    const audioData = this?.getAudioData(time);
 
-    const _activeLayers = this?.scene
+    const activeLayers = this?.scene
       .getActiveLayersAtTime(time)
       .sort((a, b) => a?.zIndex - b?.zIndex);
 
@@ -437,7 +426,7 @@ export class RenderOrchestrator {
 
     this?.ctx.restore();
 
-    const _frameNumber = Math?.floor(time * this?.fps);
+    const frameNumber = Math?.floor(time * this?.fps);
     this?.events.onFrameRendered?.(frameNumber, time);
 
     if (this?.exportFrameCallback) {
@@ -463,14 +452,14 @@ export class RenderOrchestrator {
     time: number,
     audioData: AudioAnalysisData,
   ): void {
-    const _config = layer?.toLayerConfig();
-    const _transform = layer?.state.transform;
-    const _opacity = layer?.state.opacity;
+    const config = layer?.toLayerConfig();
+    const transform = layer?.state.transform;
+    const opacity = layer?.state.opacity;
 
     if (opacity <= 0) return;
 
     this?.ctx.save();
-    this?.ctx.globalAlpha = opacity;
+    this.ctx.globalAlpha = opacity;
 
     this?.applyTransform(transform);
     this?.applyAudioReactivity(layer?.id, audioData);
@@ -500,8 +489,8 @@ export class RenderOrchestrator {
   }
 
   private applyTransform(transform: TransformConfig): void {
-    const _anchorX = this?.width * transform?.anchorX;
-    const _anchorY = this?.height * transform?.anchorY;
+    const anchorX = this?.width * transform?.anchorX;
+    const anchorY = this?.height * transform?.anchorY;
 
     this?.ctx.translate(transform?.x + anchorX, transform?.y + anchorY);
     this?.ctx.rotate(transform?.rotation);
@@ -513,7 +502,7 @@ export class RenderOrchestrator {
     layerId: string,
     audioData: AudioAnalysisData,
   ): void {
-    const _bindings = this?.audioReactiveBindings.filter(
+    const bindings = this?.audioReactiveBindings.filter(
       (b) => b?.layerId === layerId,
     );
 
@@ -534,14 +523,14 @@ export class RenderOrchestrator {
           break;
       }
 
-      const _effect = value * binding?.intensity;
+      const effect = value * binding?.intensity;
 
       switch (binding?.property) {
         case "scale":
           this?.ctx.scale(1 + effect * 0.1, 1 + effect * 0.1);
           break;
         case "opacity":
-          this?.ctx.globalAlpha *= 1 - effect * 0.3;
+          this.ctx.globalAlpha *= 1 - effect * 0.3;
           break;
         case "rotation":
           this?.ctx.rotate(effect * 0.1);
@@ -553,28 +542,28 @@ export class RenderOrchestrator {
   private renderBackground(config: BackgroundConfig): void {
     switch (config?.type) {
       case "solid":
-        this?.ctx.fillStyle = config?.color || "#000000";
+        this.ctx.fillStyle = config?.color || "#000000";
         this?.ctx.fillRect(0, 0, this?.width, this?.height);
         break;
 
       case "gradient":
-        const _gradient = this?.createLinearGradient(
+        const gradient = this?.createLinearGradient(
           config?.colors || [],
           config?.angle || 0,
         );
-        this?.ctx.fillStyle = gradient;
+        this.ctx.fillStyle = gradient;
         this?.ctx.fillRect(0, 0, this?.width, this?.height);
         break;
 
       case "radialGradient":
-        const _radialGradient = this?.createRadialGradient(config?.colors || []);
-        this?.ctx.fillStyle = radialGradient;
+        const radialGradient = this?.createRadialGradient(config?.colors || []);
+        this.ctx.fillStyle = radialGradient;
         this?.ctx.fillRect(0, 0, this?.width, this?.height);
         break;
 
       case "image":
         if (config?.imageUrl) {
-          const _cached = this?.imageCache.get(config?.imageUrl);
+          const cached = this?.imageCache.get(config?.imageUrl);
           if (cached?.loaded) {
             this?.ctx.drawImage(cached?.image, 0, 0, this?.width, this?.height);
           }
@@ -587,13 +576,13 @@ export class RenderOrchestrator {
     colors: string[],
     angle: number,
   ): CanvasGradient {
-    const _angleRad = (angle * Math?.PI) / 180;
-    const _x1 = this?.width / 2 - (Math?.cos(angleRad) * this?.width) / 2;
-    const _y1 = this?.height / 2 - (Math?.sin(angleRad) * this?.height) / 2;
-    const _x2 = this?.width / 2 + (Math?.cos(angleRad) * this?.width) / 2;
-    const _y2 = this?.height / 2 + (Math?.sin(angleRad) * this?.height) / 2;
+    const angleRad = (angle * Math.PI) / 180;
+    const x1 = this?.width / 2 - (Math?.cos(angleRad) * this?.width) / 2;
+    const y1 = this?.height / 2 - (Math?.sin(angleRad) * this?.height) / 2;
+    const x2 = this?.width / 2 + (Math?.cos(angleRad) * this?.width) / 2;
+    const y2 = this?.height / 2 + (Math?.sin(angleRad) * this?.height) / 2;
 
-    const _gradient = this?.ctx.createLinearGradient(x1, y1, x2, y2);
+    const gradient = this?.ctx.createLinearGradient(x1, y1, x2, y2);
     colors?.forEach((color, i) => {
       gradient?.addColorStop(i / Math?.max(1, colors?.length - 1), color);
     });
@@ -601,11 +590,11 @@ export class RenderOrchestrator {
   }
 
   private createRadialGradient(colors: string[]): CanvasGradient {
-    const _cx = this?.width / 2;
-    const _cy = this?.height / 2;
-    const _radius = Math?.max(this?.width, this?.height) / 2;
+    const cx = this?.width / 2;
+    const cy = this?.height / 2;
+    const radius = Math?.max(this?.width, this?.height) / 2;
 
-    const _gradient = this?.ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+    const gradient = this?.ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
     colors?.forEach((color, i) => {
       gradient?.addColorStop(i / Math?.max(1, colors?.length - 1), color);
     });
@@ -613,16 +602,16 @@ export class RenderOrchestrator {
   }
 
   private renderText(config: LayerConfig, _time: number): void {
-    const _textConfig = config?.config as TextConfig;
-    const _transform = config?.transform || DEFAULT_TRANSFORM;
+    const textConfig = config?.config as TextConfig;
+    const transform = config?.transform || DEFAULT_TRANSFORM;
 
     const style: TextStyle = {
-      font: textConfig?.font,
-      fontSize: textConfig?.fontSize,
+      font: textConfig.font,
+      fontSize: textConfig.fontSize,
       fontWeight: "600",
-      color: textConfig?.color,
-      strokeColor: textConfig?.strokeColor,
-      strokeWidth: textConfig?.strokeWidth,
+      color: textConfig.color,
+      strokeColor: textConfig.strokeColor,
+      strokeWidth: textConfig.strokeWidth,
     };
 
     if (textConfig?.shadow) {
@@ -643,28 +632,28 @@ export class RenderOrchestrator {
   }
 
   private renderImage(config: LayerConfig): void {
-    const _imageConfig = config?.config as ImageConfig;
-    const _transform = config?.transform || DEFAULT_TRANSFORM;
+    const imageConfig = config?.config as ImageConfig;
+    const transform = config?.transform || DEFAULT_TRANSFORM;
 
-    const _cached = this?.imageCache.get(config?.id);
+    const cached = this?.imageCache.get(config?.id);
     if (!cached?.loaded) return;
 
-    const _img = cached?.image;
+    const img = cached?.image;
     let drawWidth = imageConfig?.width || img?.width;
     let drawHeight = imageConfig?.height || img?.height;
 
     if (imageConfig?.fit === "contain") {
-      const _scale = Math?.min(drawWidth / img?.width, drawHeight / img?.height);
+      const scale = Math?.min(drawWidth / img?.width, drawHeight / img?.height);
       drawWidth = img?.width * scale;
       drawHeight = img?.height * scale;
     } else if (imageConfig?.fit === "cover") {
-      const _scale = Math?.max(drawWidth / img?.width, drawHeight / img?.height);
+      const scale = Math?.max(drawWidth / img?.width, drawHeight / img?.height);
       drawWidth = img?.width * scale;
       drawHeight = img?.height * scale;
     }
 
-    const _x = transform?.x - drawWidth / 2;
-    const _y = transform?.y - drawHeight / 2;
+    const x = transform?.x - drawWidth / 2;
+    const y = transform?.y - drawHeight / 2;
 
     if (imageConfig?.borderRadius) {
       this?.ctx.save();
@@ -700,15 +689,15 @@ export class RenderOrchestrator {
   }
 
   private renderShape(config: ShapeConfig, transform: TransformConfig): void {
-    const _x = transform?.x;
-    const _y = transform?.y;
+    const x = transform?.x;
+    const y = transform?.y;
 
     this?.ctx.beginPath();
 
     switch (config?.type) {
       case "rectangle":
-        const _w = config?.width || 100;
-        const _h = config?.height || 100;
+        const w = config?.width || 100;
+        const h = config?.height || 100;
         if (config?.cornerRadius) {
           this?.roundRect(x - w / 2, y - h / 2, w, h, config?.cornerRadius);
         } else {
@@ -717,11 +706,11 @@ export class RenderOrchestrator {
         break;
 
       case "circle":
-        this?.ctx.arc(x, y, config?.radius || 50, 0, Math?.PI * 2);
+        this?.ctx.arc(x, y, config?.radius || 50, 0, Math.PI * 2);
         break;
 
       case "triangle":
-        const _size = config?.radius || 50;
+        const size = config?.radius || 50;
         this?.ctx.moveTo(x, y - size);
         this?.ctx.lineTo(x + size * 0.866, y + size * 0.5);
         this?.ctx.lineTo(x - size * 0.866, y + size * 0.5);
@@ -729,12 +718,12 @@ export class RenderOrchestrator {
         break;
 
       case "polygon":
-        const _points = config?.points || 6;
-        const _radius = config?.radius || 50;
+        const points = config?.points || 6;
+        const radius = config?.radius || 50;
         for (let i = 0; i < points; i++) {
-          const _angle = (i / points) * Math?.PI * 2 - Math?.PI / 2;
-          const _px = x + Math?.cos(angle) * radius;
-          const _py = y + Math?.sin(angle) * radius;
+          const angle = (i / points) * Math.PI * 2 - Math.PI / 2;
+          const px = x + Math?.cos(angle) * radius;
+          const py = y + Math?.sin(angle) * radius;
           if (i === 0) {
             this?.ctx.moveTo(px, py);
           } else {
@@ -745,20 +734,20 @@ export class RenderOrchestrator {
         break;
 
       case "line":
-        const _lineWidth = config?.width || 100;
+        const lineWidth = config?.width || 100;
         this?.ctx.moveTo(x - lineWidth / 2, y);
         this?.ctx.lineTo(x + lineWidth / 2, y);
         break;
     }
 
     if (config?.fill) {
-      this?.ctx.fillStyle = config?.fill;
+      this.ctx.fillStyle = config?.fill;
       this?.ctx.fill();
     }
 
     if (config?.stroke) {
-      this?.ctx.strokeStyle = config?.stroke;
-      this?.ctx.lineWidth = config?.strokeWidth || 1;
+      this.ctx.strokeStyle = config?.stroke;
+      this.ctx.lineWidth = config?.strokeWidth || 1;
       this?.ctx.stroke();
     }
   }
@@ -768,7 +757,7 @@ export class RenderOrchestrator {
     audioData: AudioAnalysisData,
     time: number,
   ): void {
-    const _visualizer = this?.visualizers.get(layerId);
+    const visualizer = this?.visualizers.get(layerId);
     if (!visualizer) return;
 
     visualizer?.instance.render(
@@ -785,15 +774,15 @@ export class RenderOrchestrator {
     time: number,
     audioData: AudioAnalysisData,
   ): void {
-    const _particleVisualizer = new ParticleVisualizer({
-      maxParticles: config?.count,
+    const particleVisualizer = new ParticleVisualizer({
+      maxParticles: config.count,
       color: typeof config?.color === "string" ? config?.color : config?.color[0],
-      size: config?.size,
-      speed: config?.speed,
-      shape: config?.shape,
-      emissionArea: config?.emissionArea,
-      audioReactive: config?.reactToAudio,
-      audioSensitivity: config?.audioSensitivity,
+      size: config.size,
+      speed: config.speed,
+      shape: config.shape,
+      emissionArea: config.emissionArea,
+      audioReactive: config.reactToAudio,
+      audioSensitivity: config.audioSensitivity,
     });
 
     particleVisualizer?.render(
@@ -838,11 +827,11 @@ export class RenderOrchestrator {
     this.height = height;
 
     if (this?.canvas instanceof HTMLCanvasElement) {
-      this?.canvas.width = width;
-      this?.canvas.height = height;
+      this.canvas.width = width;
+      this.canvas.height = height;
     } else {
-      (this?.canvas as OffscreenCanvas).width = width;
-      (this?.canvas as OffscreenCanvas).height = height;
+      (this.canvas as OffscreenCanvas).width = width;
+      (this.canvas as OffscreenCanvas).height = height;
     }
 
     if (this?.textAnimator) {
@@ -877,7 +866,7 @@ export class RenderOrchestrator {
   }
 
   async exportFrame(frameNumber: number): Promise<void> {
-    const _timestamp = frameNumber / this?.fps;
+    const timestamp = frameNumber / this?.fps;
     this?.renderFrame(timestamp);
   }
 
@@ -886,10 +875,10 @@ export class RenderOrchestrator {
     frameNumber: number,
     timestamp: number,
   ) => void {
-    return (canvas, _frameNumber, timestamp) => {
+    return (canvas, frameNumber, timestamp) => {
       this?.renderFrame(timestamp);
 
-      const _targetCtx = canvas?.getContext("2d");
+      const targetCtx = canvas?.getContext("2d");
       if (targetCtx) {
         targetCtx?.drawImage(this?.canvas as CanvasImageSource, 0, 0);
       }

@@ -7,8 +7,8 @@ import { logger } from "../logger.js";
 
 // Resolve worker path for both dev (tsx/source) and prod (esbuild/dist) environments
 function resolveWorkerPath(): string {
-  const _cwd = process?.cwd();
-  const _candidates = [
+  const cwd = process?.cwd();
+  const candidates = [
     path?.join(cwd, "server/workers/tfWorkerThread.cjs"),
     path?.join(cwd, "dist/workers/tfWorkerThread.cjs"),
     path?.join(cwd, "dist/workers/tfWorkerThread.js"),
@@ -28,6 +28,7 @@ interface InferenceRequest {
   reject: (err: Error) => void;
 }
 
+
 interface WorkerState {
   worker: Worker;
   busy: boolean;
@@ -40,11 +41,11 @@ interface WorkerState {
 //   • CPU-bound JS inference doesn't scale linearly beyond 2 workers on the
 //     same core set — additional workers just thrash the event loop.
 //   • Keeps startup memory lean; the pool can be enlarged at runtime if needed.
-const _DEFAULT_POOL_SIZE = Math?.min(2, Math?.max(1, os?.cpus().length - 2));
+const DEFAULT_POOL_SIZE = Math.min(2, Math.max(1, os.cpus().length - 2));
 
 // Reject inference requests when the pending queue exceeds this depth.
 // Prevents unbounded memory growth under sustained AI load.
-const _MAX_QUEUE_DEPTH = 500;
+const MAX_QUEUE_DEPTH = 500;
 
 class TensorFlowWorkerPool {
   private workers: WorkerState[] = [];
@@ -58,13 +59,13 @@ class TensorFlowWorkerPool {
   }
 
   getQueueDepth(): number {
-    return this?.queue.length;
+    return this.queue.length;
   }
 
   async initialize(): Promise<void> {
-    if (this?.initialized) return;
+    if (this.initialized) return;
 
-    const _workerPath = resolveWorkerPath();
+    const workerPath = resolveWorkerPath();
 
     // Guard: if the worker file doesn't exist at any candidate path, skip gracefully.
     // Without this guard, all poolSize worker threads are spawned and each fails with
@@ -78,12 +79,12 @@ class TensorFlowWorkerPool {
       return;
     }
 
-    const _startWorker = (index: number): Promise<WorkerState> =>
+    const startWorker = (index: number): Promise<WorkerState> =>
       new Promise((resolve, reject) => {
-        const _worker = new Worker(workerPath);
+        const worker = new Worker(workerPath);
         const state: WorkerState = { worker, busy: false };
 
-        const _timeout = setTimeout(
+        const timeout = setTimeout(
           () => reject(new Error(`TF worker ${index} init timeout`)),
           15000,
         );
@@ -100,7 +101,7 @@ class TensorFlowWorkerPool {
 
         worker?.on("message", (msg: Record<string, unknown>) => {
           if (msg?.ready) return;
-          const _req = this?.pendingRequests.get(msg?.id);
+          const req = this?.pendingRequests.get(msg?.id);
           if (!req) return;
           this?.pendingRequests.delete(msg?.id);
           state.busy = false;
@@ -135,7 +136,7 @@ class TensorFlowWorkerPool {
 
     try {
       this.workers = await Promise?.all(
-        Array?.from({ length: this?.poolSize }, (_, i) => startWorker(i)),
+        Array?.from({ length: this.poolSize }, (_, i) => startWorker(i)),
       );
       this.initialized = true;
       logger?.info(
@@ -160,12 +161,12 @@ class TensorFlowWorkerPool {
     }
 
     return new Promise<void>((resolve, reject) => {
-      const _id = `load-${Date?.now()}-${randomBytes(4).toString("hex")}`;
+      const id = `load-${Date?.now()}-${randomBytes(4).toString("hex")}`;
       let settled = 0;
       let failed = 0;
-      const _total = this?.workers.length;
+      const total = this?.workers.length;
 
-      const _onResponse = (msg: Record<string, unknown>) => {
+      const onResponse = (msg: Record<string, unknown>) => {
         if (msg?.type !== "load" || msg?.modelId !== modelId || msg?.id !== id)
           return;
 
@@ -215,7 +216,7 @@ class TensorFlowWorkerPool {
       return;
     }
 
-    const _withPath = models?.filter((m) => m?.filePath);
+    const withPath = models?.filter((m) => m?.filePath);
     if (withPath?.length === 0) {
       logger?.info(
         "[TFWorkerPool] No persisted models found in registry — workers idle until models are trained",
@@ -226,12 +227,12 @@ class TensorFlowWorkerPool {
     logger?.info(
       `[TFWorkerPool] Loading ${withPath?.length} model(s) into worker pool…`,
     );
-    const _results = await Promise?.allSettled(
+    const results = await Promise?.allSettled(
       withPath?.map((m) => this?.loadModel(m?.id, `${m?.filePath}/model?.json`)),
     );
 
-    const _loaded = results?.filter((r) => r?.status === "fulfilled").length;
-    const _failed = results?.filter((r) => r?.status === "rejected").length;
+    const loaded = results?.filter((r) => r?.status === "fulfilled").length;
+    const failed = results?.filter((r) => r?.status === "rejected").length;
     logger?.info(
       `✅ [TFWorkerPool] Models loaded into workers — success: ${loaded}, failed: ${failed}`,
     );
@@ -251,7 +252,7 @@ class TensorFlowWorkerPool {
       );
     }
     return new Promise((resolve, reject) => {
-      const _id = `${Date?.now()}-${randomBytes(4).toString("hex")}`;
+      const id = `${Date?.now()}-${randomBytes(4).toString("hex")}`;
       const req: InferenceRequest = {
         id,
         modelId,
@@ -267,19 +268,19 @@ class TensorFlowWorkerPool {
 
   private dispatch(): void {
     if (this?.queue.length === 0) return;
-    const _idle = this?.workers.find((w) => !w?.busy);
+    const idle = this?.workers.find((w) => !w?.busy);
     if (!idle) return;
 
-    const _req = this?.queue.shift()!;
+    const req = this?.queue.shift()!;
     idle.busy = true;
     this?.pendingRequests.set(req?.id, req);
 
     idle?.worker.postMessage({
-      id: req?.id,
+      id: req.id,
       type: "predict",
-      modelId: req?.modelId,
-      inputData: req?.inputData,
-      inputShape: req?.inputShape,
+      modelId: req.modelId,
+      inputData: req.inputData,
+      inputShape: req.inputShape,
     });
   }
 
@@ -294,6 +295,6 @@ class TensorFlowWorkerPool {
   }
 }
 
-export const _tfWorkerPool = new TensorFlowWorkerPool();
+export const tfWorkerPool = new TensorFlowWorkerPool();
 
 export default tfWorkerPool;

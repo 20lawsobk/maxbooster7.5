@@ -24,7 +24,7 @@ export interface CodeGenerationResult {
   checkDigit?: string;
 }
 
-const _VALID_COUNTRY_CODES = [
+const VALID_COUNTRY_CODES = [
   "US",
   "GB",
   "DE",
@@ -241,7 +241,7 @@ export class ISRCGenerator {
     year: number,
     designation: number,
   ): CodeGenerationResult {
-    const _errors = this?.validateInputs(
+    const errors = this?.validateInputs(
       countryCode,
       registrantCode,
       year,
@@ -251,11 +251,11 @@ export class ISRCGenerator {
       throw new Error(`Invalid ISRC inputs: ${errors?.join(", ")}`);
     }
 
-    const _yearStr = String(year).slice(-2);
-    const _designationStr = String(designation).padStart(5, "0");
+    const yearStr = String(year).slice(-2);
+    const designationStr = String(designation).padStart(5, "0");
 
-    const _code = `${countryCode}${registrantCode}${yearStr}${designationStr}`;
-    const _formatted = `${countryCode}-${registrantCode}-${yearStr}-${designationStr}`;
+    const code = `${countryCode}${registrantCode}${yearStr}${designationStr}`;
+    const formatted = `${countryCode}-${registrantCode}-${yearStr}-${designationStr}`;
 
     return { code, formatted };
   }
@@ -280,7 +280,7 @@ export class ISRCGenerator {
       errors?.push("Registrant code must be alphanumeric");
     }
 
-    const _currentYear = new Date().getFullYear();
+    const currentYear = new Date().getFullYear();
     if (year < 1970 || year > currentYear + 1) {
       errors?.push(`Year must be between 1970 and ${currentYear + 1}`);
     }
@@ -299,7 +299,7 @@ export class ISRCGenerator {
       return { valid: false, errors: ["ISRC is required"] };
     }
 
-    const _cleanISRC = isrc?.replace(/-/g, "").toUpperCase();
+    const cleanISRC = isrc?.replace(/-/g, "").toUpperCase();
 
     if (cleanISRC?.length !== 12) {
       errors?.push(
@@ -308,49 +308,49 @@ export class ISRCGenerator {
       return { valid: false, errors };
     }
 
-    const _countryCode = cleanISRC?.substring(0, 2);
+    const countryCode = cleanISRC?.substring(0, 2);
     if (!VALID_COUNTRY_CODES?.includes(countryCode)) {
       errors?.push(`Invalid country code: ${countryCode}`);
     }
 
-    const _registrantCode = cleanISRC?.substring(2, 5);
+    const registrantCode = cleanISRC?.substring(2, 5);
     if (!/^[A-Z0-9]{3}$/.test(registrantCode)) {
       errors?.push(
         `Invalid registrant code: ${registrantCode}. Must be 3 alphanumeric characters`,
       );
     }
 
-    const _yearCode = cleanISRC?.substring(5, 7);
+    const yearCode = cleanISRC?.substring(5, 7);
     if (!/^\d{2}$/.test(yearCode)) {
       errors?.push(`Invalid year code: ${yearCode}. Must be 2 digits`);
     }
 
-    const _designation = cleanISRC?.substring(7, 12);
+    const designation = cleanISRC?.substring(7, 12);
     if (!/^\d{5}$/.test(designation)) {
       errors?.push(`Invalid designation: ${designation}. Must be 5 digits`);
     }
 
-    return { valid: errors?.length === 0, errors };
+    return { valid: errors.length === 0, errors };
   }
 
   parse(isrc: string): ISRCParsedResult {
-    const _validationResult = this?.validate(isrc);
+    const validationResult = this?.validate(isrc);
     if (!validationResult?.valid) {
       throw new Error(`Invalid ISRC: ${validationResult?.errors.join(", ")}`);
     }
 
-    const _cleanISRC = isrc?.replace(/-/g, "").toUpperCase();
+    const cleanISRC = isrc?.replace(/-/g, "").toUpperCase();
 
     return {
-      country: cleanISRC?.substring(0, 2),
-      registrant: cleanISRC?.substring(2, 5),
-      year: cleanISRC?.substring(5, 7),
-      designation: cleanISRC?.substring(7, 12),
+      country: cleanISRC.substring(0, 2),
+      registrant: cleanISRC.substring(2, 5),
+      year: cleanISRC.substring(5, 7),
+      designation: cleanISRC.substring(7, 12),
     };
   }
 
   format(isrc: string): string {
-    const _cleanISRC = isrc?.replace(/-/g, "").toUpperCase();
+    const cleanISRC = isrc?.replace(/-/g, "").toUpperCase();
     if (cleanISRC?.length !== 12) {
       throw new Error("Invalid ISRC length");
     }
@@ -394,8 +394,8 @@ export class ISRCGenerator {
     if (!/^[A-Z0-9]{3}$/.test(code?.toUpperCase())) {
       throw new Error("Registrant code must be 3 alphanumeric characters");
     }
-    if (this?.registrantCodeRegistry.size >= ISRCGenerator?.MAX_REGISTRY) {
-      const _evictKey = this?.registrantCodeRegistry.keys().next().value;
+    if (this?.registrantCodeRegistry.size >= ISRCGenerator.MAX_REGISTRY) {
+      const evictKey = this?.registrantCodeRegistry.keys().next().value;
       if (evictKey && evictKey !== "default")
         this?.registrantCodeRegistry.delete(evictKey);
     }
@@ -421,12 +421,12 @@ export class UPCGenerator {
   }
 
   generate(companyPrefix: string, itemReference: string): CodeGenerationResult {
-    const _errors = this?.validateInputs(companyPrefix, itemReference);
+    const errors = this?.validateInputs(companyPrefix, itemReference);
     if (errors?.length > 0) {
       throw new Error(`Invalid UPC inputs: ${errors?.join(", ")}`);
     }
 
-    const _baseCode = companyPrefix + itemReference;
+    const baseCode = companyPrefix + itemReference;
 
     if (baseCode?.length !== 11) {
       throw new Error(
@@ -434,8 +434,8 @@ export class UPCGenerator {
       );
     }
 
-    const _checkDigit = this?.calculateCheckDigit(baseCode);
-    const _code = baseCode + checkDigit;
+    const checkDigit = this?.calculateCheckDigit(baseCode);
+    const code = baseCode + checkDigit;
 
     return {
       code,
@@ -460,7 +460,7 @@ export class UPCGenerator {
       errors?.push("Item reference must be numeric");
     }
 
-    const _totalLength =
+    const totalLength =
       (companyPrefix?.length || 0) + (itemReference?.length || 0);
     if (totalLength !== 11) {
       errors?.push(
@@ -472,7 +472,7 @@ export class UPCGenerator {
   }
 
   calculateCheckDigit(code: string): string {
-    const _cleanCode = code?.replace(/\D/g, "");
+    const cleanCode = code?.replace(/\D/g, "");
 
     if (cleanCode?.length !== 11 && cleanCode?.length !== 12) {
       throw new Error(
@@ -480,14 +480,14 @@ export class UPCGenerator {
       );
     }
 
-    const _digits = cleanCode?.slice(0, 11).split("").map(Number);
+    const digits = cleanCode?.slice(0, 11).split("").map(Number);
 
     let sum = 0;
     for (let i = 0; i < 11; i++) {
       sum += digits[i] * (i % 2 === 0 ? 3 : 1);
     }
 
-    const _checkDigit = (10 - (sum % 10)) % 10;
+    const checkDigit = (10 - (sum % 10)) % 10;
     return String(checkDigit);
   }
 
@@ -498,12 +498,12 @@ export class UPCGenerator {
       return { valid: false, errors: ["UPC is required"] };
     }
 
-    const _cleanUPC = upc?.replace(/\D/g, "");
+    const cleanUPC = upc?.replace(/\D/g, "");
 
     if (cleanUPC?.length === 12) {
-      const _baseCode = cleanUPC?.slice(0, 11);
-      const _providedCheckDigit = cleanUPC?.charAt(11);
-      const _calculatedCheckDigit = this?.calculateCheckDigit(baseCode);
+      const baseCode = cleanUPC?.slice(0, 11);
+      const providedCheckDigit = cleanUPC?.charAt(11);
+      const calculatedCheckDigit = this?.calculateCheckDigit(baseCode);
 
       if (providedCheckDigit !== calculatedCheckDigit) {
         errors?.push(
@@ -511,9 +511,9 @@ export class UPCGenerator {
         );
       }
     } else if (cleanUPC?.length === 13) {
-      const _baseCode = cleanUPC?.slice(0, 12);
-      const _providedCheckDigit = cleanUPC?.charAt(12);
-      const _calculatedCheckDigit = this?.calculateEAN13CheckDigit(baseCode);
+      const baseCode = cleanUPC?.slice(0, 12);
+      const providedCheckDigit = cleanUPC?.charAt(12);
+      const calculatedCheckDigit = this?.calculateEAN13CheckDigit(baseCode);
 
       if (providedCheckDigit !== calculatedCheckDigit) {
         errors?.push(
@@ -530,11 +530,11 @@ export class UPCGenerator {
       errors?.push("UPC must contain only digits");
     }
 
-    return { valid: errors?.length === 0, errors };
+    return { valid: errors.length === 0, errors };
   }
 
   calculateEAN13CheckDigit(code: string): string {
-    const _cleanCode = code?.replace(/\D/g, "");
+    const cleanCode = code?.replace(/\D/g, "");
 
     if (cleanCode?.length !== 12 && cleanCode?.length !== 13) {
       throw new Error(
@@ -542,32 +542,32 @@ export class UPCGenerator {
       );
     }
 
-    const _digits = cleanCode?.slice(0, 12).split("").map(Number);
+    const digits = cleanCode?.slice(0, 12).split("").map(Number);
 
     let sum = 0;
     for (let i = 0; i < 12; i++) {
       sum += digits[i] * (i % 2 === 0 ? 1 : 3);
     }
 
-    const _checkDigit = (10 - (sum % 10)) % 10;
+    const checkDigit = (10 - (sum % 10)) % 10;
     return String(checkDigit);
   }
 
   convertUPCToEAN13(upc: string): string {
-    const _cleanUPC = upc?.replace(/\D/g, "");
+    const cleanUPC = upc?.replace(/\D/g, "");
 
     if (cleanUPC?.length !== 12) {
       throw new Error("UPC-A must be 12 digits to convert to EAN-13");
     }
 
-    const _baseCode = "0" + cleanUPC?.slice(0, 11);
-    const _checkDigit = this?.calculateEAN13CheckDigit(baseCode);
+    const baseCode = "0" + cleanUPC?.slice(0, 11);
+    const checkDigit = this?.calculateEAN13CheckDigit(baseCode);
 
     return baseCode + checkDigit;
   }
 
   convertEAN13ToUPC(ean13: string): string {
-    const _cleanEAN = ean13?.replace(/\D/g, "");
+    const cleanEAN = ean13?.replace(/\D/g, "");
 
     if (cleanEAN?.length !== 13) {
       throw new Error("EAN-13 must be 13 digits");
@@ -583,8 +583,8 @@ export class UPCGenerator {
   }
 
   getCountryFromGS1Prefix(upc: string): string {
-    const _cleanCode = upc?.replace(/\D/g, "");
-    const _prefix = cleanCode?.substring(0, 3);
+    const cleanCode = upc?.replace(/\D/g, "");
+    const prefix = cleanCode?.substring(0, 3);
 
     for (const [country, prefixes] of Object?.entries(GS1_PREFIXES)) {
       if (prefixes?.includes(prefix)) {
@@ -599,8 +599,8 @@ export class UPCGenerator {
     if (!/^\d{6,10}$/.test(prefix)) {
       throw new Error("Company prefix must be 6-10 digits");
     }
-    if (this?.companyPrefixRegistry.size >= UPCGenerator?.MAX_REGISTRY) {
-      const _evictKey = this?.companyPrefixRegistry.keys().next().value;
+    if (this?.companyPrefixRegistry.size >= UPCGenerator.MAX_REGISTRY) {
+      const evictKey = this?.companyPrefixRegistry.keys().next().value;
       if (evictKey && evictKey !== "default")
         this?.companyPrefixRegistry.delete(evictKey);
     }
@@ -620,11 +620,11 @@ export class UPCGenerator {
     companyPrefix: string,
     lastUsed: number = 0,
   ): string {
-    const _prefixLength = companyPrefix?.length;
-    const _itemRefLength = 11 - prefixLength;
-    const _nextNumber = lastUsed + 1;
+    const prefixLength = companyPrefix?.length;
+    const itemRefLength = 11 - prefixLength;
+    const nextNumber = lastUsed + 1;
 
-    const _maxValue = Math?.pow(10, itemRefLength) - 1;
+    const maxValue = Math?.pow(10, itemRefLength) - 1;
     if (nextNumber > maxValue) {
       throw new Error(
         `Item reference overflow. Maximum value for ${itemRefLength} digits is ${maxValue}`,
@@ -648,12 +648,12 @@ export class MusicCodesService {
     userId: string,
     countryCode: string = "US",
   ): Promise<CodeGenerationResult> {
-    const _registrantCode = this?.isrcGenerator.getRegistrantCode(userId);
-    const _year = new Date().getFullYear();
-    const _redisKey = `music:isrc:ctr:${userId}:${year}`;
+    const registrantCode = this?.isrcGenerator.getRegistrantCode(userId);
+    const year = new Date().getFullYear();
+    const redisKey = `music:isrc:ctr:${userId}:${year}`;
     let designation: number;
     try {
-      const _pdim = getPdimClient();
+      const pdim = getPdimClient();
       designation = (await pdim?.incr(redisKey)) as number;
       // Expire counter after 2 years so old year keys are cleaned up automatically
       await pdim?.expire(redisKey, 2 * 365 * 24 * 3600);
@@ -661,7 +661,7 @@ export class MusicCodesService {
       // Fallback: use a timestamp-based unique designation if Redis is unavailable
       designation = Math?.floor(Date?.now() % 99999) + 1;
     }
-    const _result = this?.isrcGenerator.generate(
+    const result = this?.isrcGenerator.generate(
       countryCode,
       registrantCode,
       year,
@@ -672,20 +672,20 @@ export class MusicCodesService {
   }
 
   async generateUPC(userId: string): Promise<CodeGenerationResult> {
-    const _companyPrefix = this?.upcGenerator.getCompanyPrefix(userId);
-    const _redisKey = `music:upc:ctr:${userId}:${companyPrefix}`;
+    const companyPrefix = this?.upcGenerator.getCompanyPrefix(userId);
+    const redisKey = `music:upc:ctr:${userId}:${companyPrefix}`;
     let lastUsed: number;
     try {
-      const _pdim = getPdimClient();
+      const pdim = getPdimClient();
       lastUsed = ((await pdim?.incr(redisKey)) as number) - 1;
     } catch {
       lastUsed = Math?.floor(Date?.now() % 9999);
     }
-    const _itemReference = this?.upcGenerator.generateNextItemReference(
+    const itemReference = this?.upcGenerator.generateNextItemReference(
       companyPrefix,
       lastUsed,
     );
-    const _result = this?.upcGenerator.generate(companyPrefix, itemReference);
+    const result = this?.upcGenerator.generate(companyPrefix, itemReference);
     logger?.info(`Generated UPC ${result?.code} for user ${userId}`);
     return result;
   }
@@ -733,9 +733,9 @@ export class MusicCodesService {
     errors: string[];
   }[] {
     return codes?.map(({ type, code }) => {
-      const _result =
-        type === "isrc" ? this?.validateISRC(code) : this?.validateUPC(code);
-      return { code, type, valid: result?.valid, errors: result?.errors };
+      const result =
+        type === "isrc" ? this?.validateISRC(code) : this.validateUPC(code);
+      return { code, type, valid: result.valid, errors: result.errors };
     });
   }
 
@@ -744,6 +744,6 @@ export class MusicCodesService {
   }
 }
 
-export const _musicCodesService = new MusicCodesService();
-export const _isrcGenerator = new ISRCGenerator();
-export const _upcGenerator = new UPCGenerator();
+export const musicCodesService = new MusicCodesService();
+export const isrcGenerator = new ISRCGenerator();
+export const upcGenerator = new UPCGenerator();

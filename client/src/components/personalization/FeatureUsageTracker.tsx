@@ -12,18 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useFeatureUsage, useFeatureTracking } from "@/hooks/useFeatureUsage";
-import {
-  Eye,
-  EyeOff,
-  TrendingUp,
-  TrendingDown,
-  BarChart3,
-  Sparkles,
-  RotateCcw,
-  Check,
-  Star,
-  Clock,
-} from "lucide-react";
+import { Eye, EyeOff, TrendingUp, TrendingDown, BarChart3, Sparkles, RotateCcw, Check, Star, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface FeatureUsageTrackerProps {
@@ -78,6 +67,7 @@ export function FeatureUsageTracker({
   className,
 }: FeatureUsageTrackerProps) {
   const {
+    
     isLoading,
     frequentlyUsed,
     rarelyUsed,

@@ -1,8 +1,8 @@
 import { getRedisClient } from "../lib/redisConnectionFactory.js";
 import { logger } from "../logger.js";
 
-const _IDEMPOTENCY_PREFIX = "idempotency:";
-const _DEFAULT_TTL_SECONDS = 86400;
+const IDEMPOTENCY_PREFIX = "idempotency:";
+const DEFAULT_TTL_SECONDS = 86400;
 
 export interface IdempotencyResult<T = any> {
   exists: boolean;
@@ -27,14 +27,14 @@ class IdempotencyService {
   }
 
   private cleanupMemoryFallback(): void {
-    const _now = Date?.now();
+    const now = Date?.now();
     for (const [key, value] of this?.memoryFallback.entries()) {
       if (value?.expiresAt < now) {
         this?.memoryFallback.delete(key);
       }
     }
     if (this?.memoryFallback.size >= this?.maxMemoryEntries) {
-      const _oldestKey = this?.memoryFallback.keys().next().value;
+      const oldestKey = this?.memoryFallback.keys().next().value;
       if (oldestKey) {
         this?.memoryFallback.delete(oldestKey);
       }
@@ -47,20 +47,20 @@ class IdempotencyService {
     options: IdempotencyOptions = {},
   ): Promise<IdempotencyResult<T>> {
     const { ttlSeconds = DEFAULT_TTL_SECONDS, prefix } = options;
-    const _fullKey = this?.getFullKey(key, prefix);
+    const fullKey = this?.getFullKey(key, prefix);
 
     try {
-      const _redis = await getRedisClient();
+      const redis = await getRedisClient();
 
       if (redis) {
-        const _existing = await redis?.get(fullKey);
+        const existing = await redis?.get(fullKey);
         if (existing) {
           try {
-            const _parsed = JSON?.parse(existing);
+            const parsed = JSON?.parse(existing);
             logger?.info(`Idempotency hit for key: ${key}`);
             return {
               exists: true,
-              result: parsed?.result as T,
+              result: parsed.result as T,
               cachedAt: new Date(parsed?.cachedAt),
             };
           } catch {
@@ -68,7 +68,7 @@ class IdempotencyService {
           }
         }
 
-        const _data = JSON?.stringify({
+        const data = JSON?.stringify({
           result,
           cachedAt: new Date().toISOString(),
         });
@@ -83,19 +83,19 @@ class IdempotencyService {
     }
 
     this?.cleanupMemoryFallback();
-    const _existing = this?.memoryFallback.get(fullKey);
+    const existing = this?.memoryFallback.get(fullKey);
     if (existing && existing?.expiresAt > Date?.now()) {
       logger?.info(`Idempotency hit (memory) for key: ${key}`);
       return {
         exists: true,
-        result: existing?.data.result as T,
+        result: existing.data.result as T,
         cachedAt: new Date(existing?.data.cachedAt),
       };
     }
 
     this?.memoryFallback.set(fullKey, {
       data: { result, cachedAt: new Date().toISOString() },
-      expiresAt: Date?.now() + ttlSeconds * 1000,
+      expiresAt: Date.now() + ttlSeconds * 1000,
     });
     return { exists: false };
   }
@@ -105,19 +105,19 @@ class IdempotencyService {
     options: IdempotencyOptions = {},
   ): Promise<IdempotencyResult> {
     const { prefix } = options;
-    const _fullKey = this?.getFullKey(key, prefix);
+    const fullKey = this?.getFullKey(key, prefix);
 
     try {
-      const _redis = await getRedisClient();
+      const redis = await getRedisClient();
 
       if (redis) {
-        const _existing = await redis?.get(fullKey);
+        const existing = await redis?.get(fullKey);
         if (existing) {
           try {
-            const _parsed = JSON?.parse(existing);
+            const parsed = JSON?.parse(existing);
             return {
               exists: true,
-              result: parsed?.result,
+              result: parsed.result,
               cachedAt: new Date(parsed?.cachedAt),
             };
           } catch {
@@ -132,11 +132,11 @@ class IdempotencyService {
       );
     }
 
-    const _existing = this?.memoryFallback.get(fullKey);
+    const existing = this?.memoryFallback.get(fullKey);
     if (existing && existing?.expiresAt > Date?.now()) {
       return {
         exists: true,
-        result: existing?.data.result,
+        result: existing.data.result,
         cachedAt: new Date(existing?.data.cachedAt),
       };
     }
@@ -149,13 +149,13 @@ class IdempotencyService {
     options: IdempotencyOptions = {},
   ): Promise<void> {
     const { ttlSeconds = DEFAULT_TTL_SECONDS, prefix } = options;
-    const _fullKey = this?.getFullKey(key, prefix);
+    const fullKey = this?.getFullKey(key, prefix);
 
     try {
-      const _redis = await getRedisClient();
+      const redis = await getRedisClient();
 
       if (redis) {
-        const _data = JSON?.stringify({
+        const data = JSON?.stringify({
           result,
           cachedAt: new Date().toISOString(),
         });
@@ -172,7 +172,7 @@ class IdempotencyService {
     this?.cleanupMemoryFallback();
     this?.memoryFallback.set(fullKey, {
       data: { result, cachedAt: new Date().toISOString() },
-      expiresAt: Date?.now() + ttlSeconds * 1000,
+      expiresAt: Date.now() + ttlSeconds * 1000,
     });
   }
 
@@ -181,16 +181,16 @@ class IdempotencyService {
     options: IdempotencyOptions = {},
   ): Promise<T | null> {
     const { prefix } = options;
-    const _fullKey = this?.getFullKey(key, prefix);
+    const fullKey = this?.getFullKey(key, prefix);
 
     try {
-      const _redis = await getRedisClient();
+      const redis = await getRedisClient();
 
       if (redis) {
-        const _data = await redis?.get(fullKey);
+        const data = await redis?.get(fullKey);
         if (data) {
           try {
-            const _parsed = JSON?.parse(data);
+            const parsed = JSON?.parse(data);
             return parsed?.result as T;
           } catch {
             return null;
@@ -204,7 +204,7 @@ class IdempotencyService {
       );
     }
 
-    const _existing = this?.memoryFallback.get(fullKey);
+    const existing = this?.memoryFallback.get(fullKey);
     if (existing && existing?.expiresAt > Date?.now()) {
       return existing?.data.result as T;
     }
@@ -213,10 +213,10 @@ class IdempotencyService {
 
   async remove(key: string, options: IdempotencyOptions = {}): Promise<void> {
     const { prefix } = options;
-    const _fullKey = this?.getFullKey(key, prefix);
+    const fullKey = this?.getFullKey(key, prefix);
 
     try {
-      const _redis = await getRedisClient();
+      const redis = await getRedisClient();
 
       if (redis) {
         await redis?.del(fullKey);
@@ -237,13 +237,13 @@ class IdempotencyService {
     options: IdempotencyOptions = {},
   ): Promise<boolean> {
     const { ttlSeconds = 300, prefix } = options;
-    const _fullKey = this?.getFullKey(`processing:${key}`, prefix);
+    const fullKey = this?.getFullKey(`processing:${key}`, prefix);
 
     try {
-      const _redis = await getRedisClient();
+      const redis = await getRedisClient();
 
       if (redis) {
-        const _existing = await redis?.get(fullKey);
+        const existing = await redis?.get(fullKey);
         if (existing) return false;
         await redis?.setex(fullKey, ttlSeconds, "processing");
         return true;
@@ -255,14 +255,14 @@ class IdempotencyService {
     }
 
     if (this?.memoryFallback.has(fullKey)) {
-      const _existing = this?.memoryFallback.get(fullKey)!;
+      const existing = this?.memoryFallback.get(fullKey)!;
       if (existing?.expiresAt > Date?.now()) {
         return false;
       }
     }
     this?.memoryFallback.set(fullKey, {
       data: "processing",
-      expiresAt: Date?.now() + ttlSeconds * 1000,
+      expiresAt: Date.now() + ttlSeconds * 1000,
     });
     return true;
   }
@@ -272,10 +272,10 @@ class IdempotencyService {
     options: IdempotencyOptions = {},
   ): Promise<void> {
     const { prefix } = options;
-    const _fullKey = this?.getFullKey(`processing:${key}`, prefix);
+    const fullKey = this?.getFullKey(`processing:${key}`, prefix);
 
     try {
-      const _redis = await getRedisClient();
+      const redis = await getRedisClient();
 
       if (redis) {
         await redis?.del(fullKey);
@@ -299,7 +299,7 @@ class IdempotencyService {
   }
 
   generatePayoutKey(userId: string, amount: number, currency: string): string {
-    const _timestamp = Math?.floor(Date?.now() / 60000);
+    const timestamp = Math?.floor(Date?.now() / 60000);
     return this?.generateKey(
       "payout",
       userId,
@@ -318,4 +318,4 @@ class IdempotencyService {
   }
 }
 
-export const _idempotencyService = new IdempotencyService();
+export const idempotencyService = new IdempotencyService();

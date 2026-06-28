@@ -8,13 +8,13 @@ import { cohortAnalyticsService } from "../../services/cohortAnalyticsService";
 import { revenueForecaster } from "../../services/revenueForecaster";
 import { logger } from "../../logger.js";
 
-const _router = Router();
+const router = Router();
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string };
 }
 
-const _getUserId = (req: AuthenticatedRequest): string | null => {
+const getUserId = (req: AuthenticatedRequest): string | null => {
   return req?.user?.id ?? null;
 };
 
@@ -22,7 +22,7 @@ router?.get(
   "/streams{/:artistId}",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _artistId = getUserId(req);
+      const artistId = getUserId(req);
       if (!artistId) {
         return res
           .status(401)
@@ -31,12 +31,12 @@ router?.get(
 
       const { platform, startDate, endDate, groupBy } = req?.query;
 
-      const _start = startDate
+      const start = startDate
         ? new Date(startDate as string)
         : new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000);
-      const _end = endDate ? new Date(endDate as string) : new Date();
+      const end = endDate ? new Date(endDate as string) : new Date();
 
-      const _analytics = await dspAnalyticsService?.getAggregatedAnalytics(
+      const analytics = await dspAnalyticsService?.getAggregatedAnalytics(
         artistId,
         {
           platform: platform as DSPPlatform | undefined,
@@ -67,17 +67,17 @@ router?.get(
   "/playlists{/:trackId}",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = getUserId(req);
+      const userId = getUserId(req);
       if (!userId) {
         return res
           .status(401)
           .json({ error: "Unauthorized", message: "User ID required" });
       }
 
-      const _trackId = req?.params.trackId;
+      const trackId = req?.params.trackId;
       const { platform, playlistType, activeOnly } = req?.query;
 
-      const _attributions =
+      const attributions =
         await playlistAttributionService?.getPlaylistAttributions(userId, {
           platform: platform as DSPPlatform | undefined,
           playlistType: playlistType as Record<string, unknown>,
@@ -85,7 +85,7 @@ router?.get(
           activeOnly: activeOnly === "true",
         });
 
-      const _summary =
+      const summary =
         await playlistAttributionService?.getPlaylistPerformanceSummary(userId);
 
       return res?.json({
@@ -111,7 +111,7 @@ router?.get(
   "/playlists/revenue{/:artistId}",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _artistId = getUserId(req);
+      const artistId = getUserId(req);
       if (!artistId) {
         return res
           .status(401)
@@ -119,10 +119,10 @@ router?.get(
       }
 
       const { startDate, endDate } = req?.query;
-      const _start = startDate ? new Date(startDate as string) : undefined;
-      const _end = endDate ? new Date(endDate as string) : undefined;
+      const start = startDate ? new Date(startDate as string) : undefined;
+      const end = endDate ? new Date(endDate as string) : undefined;
 
-      const _revenueAttribution =
+      const revenueAttribution =
         await playlistAttributionService?.getPlaylistRevenueAttribution(
           artistId,
           {
@@ -151,14 +151,14 @@ router?.get(
   "/playlists/editorial{/:artistId}",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _artistId = getUserId(req);
+      const artistId = getUserId(req);
       if (!artistId) {
         return res
           .status(401)
           .json({ error: "Unauthorized", message: "User ID required" });
       }
 
-      const _metrics =
+      const metrics =
         await playlistAttributionService?.getEditorialPlaylistMetrics(artistId);
 
       return res?.json({
@@ -181,7 +181,7 @@ router?.get(
   "/cohorts{/:artistId}",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _artistId = getUserId(req);
+      const artistId = getUserId(req);
       if (!artistId) {
         return res
           .status(401)
@@ -189,8 +189,8 @@ router?.get(
       }
 
       const { platform, startDate, endDate } = req?.query;
-      const _start = startDate ? new Date(startDate as string) : undefined;
-      const _end = endDate ? new Date(endDate as string) : undefined;
+      const start = startDate ? new Date(startDate as string) : undefined;
+      const end = endDate ? new Date(endDate as string) : undefined;
 
       let report;
       try {
@@ -238,7 +238,7 @@ router?.get(
   "/cohorts/retention{/:artistId}",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _artistId = getUserId(req);
+      const artistId = getUserId(req);
       if (!artistId) {
         return res
           .status(401)
@@ -247,7 +247,7 @@ router?.get(
 
       const { platform, numCohorts } = req?.query;
 
-      const _curves = await cohortAnalyticsService?.getRetentionCurves(artistId, {
+      const curves = await cohortAnalyticsService?.getRetentionCurves(artistId, {
         platform: platform as DSPPlatform | undefined,
         numCohorts: numCohorts ? parseInt(numCohorts as string) : 12,
       });
@@ -272,14 +272,14 @@ router?.get(
   "/cohorts/churn{/:artistId}",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _artistId = getUserId(req);
+      const artistId = getUserId(req);
       if (!artistId) {
         return res
           .status(401)
           .json({ error: "Unauthorized", message: "User ID required" });
       }
 
-      const _churnData = await cohortAnalyticsService?.predictChurn(artistId);
+      const churnData = await cohortAnalyticsService?.predictChurn(artistId);
 
       return res?.json({
         success: true,
@@ -301,7 +301,7 @@ router?.get(
   "/cohorts/loyalty{/:artistId}",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _artistId = getUserId(req);
+      const artistId = getUserId(req);
       if (!artistId) {
         return res
           .status(401)
@@ -310,7 +310,7 @@ router?.get(
 
       const { platform } = req?.query;
 
-      const _loyaltyTiers = await cohortAnalyticsService?.getFanLoyaltyTiers(
+      const loyaltyTiers = await cohortAnalyticsService?.getFanLoyaltyTiers(
         artistId,
         {
           platform: platform as DSPPlatform | undefined,
@@ -337,7 +337,7 @@ router?.get(
   "/forecast{/:artistId}",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _artistId = getUserId(req);
+      const artistId = getUserId(req);
       if (!artistId) {
         return res
           .status(401)
@@ -346,14 +346,14 @@ router?.get(
 
       const { platform, horizonDays, granularity } = req?.query;
 
-      const _forecast = await revenueForecaster?.generateForecast(artistId, {
+      const forecast = await revenueForecaster?.generateForecast(artistId, {
         platform: platform as DSPPlatform | undefined,
         horizonDays: horizonDays ? parseInt(horizonDays as string) : 90,
         granularity:
           (granularity as "daily" | "weekly" | "monthly") || "weekly",
       });
 
-      const _accuracy = await revenueForecaster?.getForecastAccuracy(artistId, {
+      const accuracy = await revenueForecaster?.getForecastAccuracy(artistId, {
         platform: platform as DSPPlatform | undefined,
       });
 
@@ -380,7 +380,7 @@ router?.get(
   "/forecast/breakdown{/:artistId}",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _artistId = getUserId(req);
+      const artistId = getUserId(req);
       if (!artistId) {
         return res
           .status(401)
@@ -388,10 +388,10 @@ router?.get(
       }
 
       const { startDate, endDate } = req?.query;
-      const _start = startDate ? new Date(startDate as string) : undefined;
-      const _end = endDate ? new Date(endDate as string) : undefined;
+      const start = startDate ? new Date(startDate as string) : undefined;
+      const end = endDate ? new Date(endDate as string) : undefined;
 
-      const _breakdown = await revenueForecaster?.getRevenueBreakdown(artistId, {
+      const breakdown = await revenueForecaster?.getRevenueBreakdown(artistId, {
         startDate: start,
         endDate: end,
       });
@@ -416,14 +416,14 @@ router?.get(
   "/forecast/seasonality{/:artistId}",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _artistId = getUserId(req);
+      const artistId = getUserId(req);
       if (!artistId) {
         return res
           .status(401)
           .json({ error: "Unauthorized", message: "User ID required" });
       }
 
-      const _seasonality =
+      const seasonality =
         await revenueForecaster?.getSeasonalityAnalysis(artistId);
 
       return res?.json({
@@ -446,7 +446,7 @@ router?.post(
   "/forecast/release-impact",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = getUserId(req);
+      const userId = getUserId(req);
       if (!userId) {
         return res
           .status(401)
@@ -463,13 +463,15 @@ router?.post(
       } = req?.body;
 
       if (!releaseDate || !trackName) {
-        return res.status(400).json({
-          error: "Bad Request",
-          message: "releaseDate and trackName are required",
-        });
+        return res
+          .status(400)
+          .json({
+            error: "Bad Request",
+            message: "releaseDate and trackName are required",
+          });
       }
 
-      const _projection = await revenueForecaster?.projectReleaseImpact(userId, {
+      const projection = await revenueForecaster?.projectReleaseImpact(userId, {
         releaseDate: new Date(releaseDate),
         trackName,
         genre,
@@ -498,14 +500,14 @@ router?.get(
   "/demographics{/:artistId}",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _artistId = getUserId(req);
+      const artistId = getUserId(req);
       if (!artistId) {
         return res
           .status(401)
           .json({ error: "Unauthorized", message: "User ID required" });
       }
 
-      const _demographics = await dspAnalyticsService?.getDemographics(artistId);
+      const demographics = await dspAnalyticsService?.getDemographics(artistId);
 
       return res?.json({
         success: true,
@@ -527,14 +529,14 @@ router?.post(
   "/sync/:platform",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _userId = getUserId(req);
+      const userId = getUserId(req);
       if (!userId) {
         return res
           .status(401)
           .json({ error: "Unauthorized", message: "User ID required" });
       }
 
-      const _platform = req?.params.platform as DSPPlatform;
+      const platform = req?.params.platform as DSPPlatform;
       const { startDate, endDate } = req?.body;
 
       const validPlatforms: DSPPlatform[] = [
@@ -555,12 +557,12 @@ router?.post(
           .json({ error: "Bad Request", message: "Invalid platform" });
       }
 
-      const _start = startDate
+      const start = startDate
         ? new Date(startDate)
         : new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000);
-      const _end = endDate ? new Date(endDate) : new Date();
+      const end = endDate ? new Date(endDate) : new Date();
 
-      const _result = await dspAnalyticsService?.syncPlatformData(
+      const result = await dspAnalyticsService?.syncPlatformData(
         userId,
         platform,
         start,
@@ -596,7 +598,7 @@ router?.post(
 
 router?.post("/sync-all", async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const _userId = getUserId(req);
+    const userId = getUserId(req);
     if (!userId) {
       return res
         .status(401)
@@ -604,12 +606,12 @@ router?.post("/sync-all", async (req: AuthenticatedRequest, res: Response) => {
     }
 
     const { startDate, endDate } = req?.body;
-    const _start = startDate
+    const start = startDate
       ? new Date(startDate)
       : new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000);
-    const _end = endDate ? new Date(endDate) : new Date();
+    const end = endDate ? new Date(endDate) : new Date();
 
-    const _result = await dspAnalyticsService?.syncAllPlatforms(
+    const result = await dspAnalyticsService?.syncAllPlatforms(
       userId,
       start,
       end,
@@ -648,7 +650,7 @@ router?.post("/sync-all", async (req: AuthenticatedRequest, res: Response) => {
 
 router?.get("/sync-status", async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const _userId = getUserId(req);
+    const userId = getUserId(req);
     if (!userId) {
       return res
         .status(401)
@@ -656,7 +658,7 @@ router?.get("/sync-status", async (req: AuthenticatedRequest, res: Response) => 
     }
 
     const { platform } = req?.query;
-    const _status = await dspAnalyticsService?.getSyncStatus(
+    const status = await dspAnalyticsService?.getSyncStatus(
       userId,
       platform as DSPPlatform | undefined,
     );
@@ -680,14 +682,14 @@ router?.get(
   "/overview{/:artistId}",
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const _artistId = getUserId(req);
+      const artistId = getUserId(req);
       if (!artistId) {
         return res
           .status(401)
           .json({ error: "Unauthorized", message: "User ID required" });
       }
 
-      const _thirtyDaysAgo = new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000);
+      const thirtyDaysAgo = new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000);
 
       const [streams, playlists, cohorts, forecast, demographics] =
         await Promise?.all([
@@ -710,8 +712,8 @@ router?.get(
         data: {
           streams,
           playlists,
-          cohorts: cohorts?.summary,
-          forecast: forecast?.slice(0, 4),
+          cohorts: cohorts.summary,
+          forecast: forecast.slice(0, 4),
           demographics,
           lastUpdated: new Date(),
         },

@@ -73,7 +73,7 @@ export function SuggestedCollaborators({
       <CardContent>
         {isLoading ? (
           renderSkeletons()
-        ) : suggestions?.length > 0 ? (
+        ) : suggestions.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {suggestions.map((suggestion: Record<string, unknown>) => (
               <CollaboratorCard

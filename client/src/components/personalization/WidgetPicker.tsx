@@ -4,27 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Search,
-  Plus,
-  Check,
-  Sparkles,
-  BarChart3,
-  DollarSign,
-  Users,
-  Upload,
-  Music,
-  Calendar,
-  Bell,
-  Shield,
-  Settings,
-  Target,
-  TrendingUp,
-  Zap,
-  Play,
-  Heart,
-  Star,
-} from "lucide-react";
+import { Search, Plus, Check, Sparkles, BarChart3, DollarSign, Users, Upload, Music, Calendar, Bell, Shield, Settings, Target, TrendingUp, Zap, Play, Heart, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface Widget {
