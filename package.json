@@ -22,6 +22,7 @@
     "prune:deploy": "npm prune --omit=dev --no-audit --no-fund",
     "deploy": "npx tsx scripts/deploy.ts",
     "start": "bash start.sh",
+    "demo:security": "npx tsx scripts/security-self-healing-demo.ts",
     "postinstall": "node scripts/postinstall.mjs",
     "check": "tsc -p tsconfig.server.json && tsc -p tsconfig.client.json",
     "check:server": "tsc -p tsconfig.server.json",
