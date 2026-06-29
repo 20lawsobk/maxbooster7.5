@@ -233,7 +233,7 @@
     "csv-parse": "^6.1.0",
     "date-fns": "^4.1.0",
     "dns-packet": "^5.6.1",
-    "dns2": "^2.1.0",
+    "dns2": "^2.4.0",
     "drizzle-orm": "^0.45.1",
     "drizzle-zod": "^0.8.3",
     "embla-carousel-react": "^8.6.0",
