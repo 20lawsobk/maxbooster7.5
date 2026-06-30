@@ -8,6 +8,7 @@ import {
 } from "../lib/redisConnectionFactory.js";
 import { logger } from "../logger.js";
 import { cbIsOpen } from "../lib/pdimCircuitBreaker.js";
+import { MaxCoreAIClient } from "./maxcoreClient.js";
 
 
 interface AIAdvertisingConfig {
@@ -257,6 +258,21 @@ export class AIService {
     };
   }> {
     try {
+      // ── MaxCore ad campaign generation ────────────────────────────────────
+      const mcCampaign = await MaxCoreAIClient.generate<{
+        primary?: string;
+        variations?: string[];
+        hook?: string;
+        cta?: string;
+      }>("/api/generate/content", {
+        topic: "music artist ad campaign",
+        platform: "instagram",
+        tone: "promotional",
+        objective: config.campaignType ?? "engagement",
+        target_audience: config.targetAudience,
+        budget: config.budget,
+      });
+
       // Calculate metrics based on actual input data
       const audienceScore = this?.calculateAudienceScore(config?.targetAudience);
       const campaignEfficiency = this?.calculateCampaignEfficiency(
@@ -276,8 +292,8 @@ export class AIService {
         viralityScore: viralityScore,
         algorithmicAdvantage: `${Math?.round(viralityScore * 1000)}x platform advantage`,
         adContent: {
-          primary: adContent.primary,
-          variations: adContent.variations,
+          primary: mcCampaign?.primary ?? adContent.primary,
+          variations: mcCampaign?.variations ?? adContent.variations,
           targetingStrategy: targeting,
           distributionPlan: distribution,
         },

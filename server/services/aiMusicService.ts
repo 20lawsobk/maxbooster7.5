@@ -7,6 +7,7 @@ import { parseFile } from "music-metadata";
 import * as wav from "node-wav";
 import FFT from "fft.js";
 import { logger } from "../logger.js";
+import { MaxCoreAIClient } from "./maxcoreClient.js";
 
 let ffmpeg: Record<string, unknown> | null = null;
 let ffmpegAvailable = false;
@@ -981,7 +982,55 @@ export class AIMusicService {
   ): Promise<AISuggestion[]> {
     const suggestions: AISuggestion[] = [];
 
-    const { genre, energy,  intensity, preset } = audioAnalysis;
+    // ── MaxCore primary mix suggestions ──────────────────────────────────────
+    try {
+      const mcSuggestions = await MaxCoreAIClient.infer<{
+        suggestions?: Array<{
+          category?: string;
+          suggestion?: string;
+          reasoning?: string;
+          confidence?: number;
+          parameters?: Record<string, unknown>;
+          priority?: string;
+          estimatedImpact?: number;
+        }>;
+      }>("/api/generate/content", {
+        audio_analysis: audioAnalysis,
+        task: "mix_suggestions",
+        platform: "maxcore_mixing",
+      });
+
+      if (
+        mcSuggestions?.suggestions &&
+        Array.isArray(mcSuggestions.suggestions) &&
+        mcSuggestions.suggestions.length > 0
+      ) {
+        for (const s of mcSuggestions.suggestions) {
+          suggestions.push({
+            id: randomBytes(8).toString("hex"),
+            category: (s.category ?? "general") as AISuggestion["category"],
+            suggestion: s.suggestion ?? "",
+            reasoning: s.reasoning ?? "",
+            confidence: s.confidence ?? 0.8,
+            parameters: s.parameters ?? {},
+            priority: (s.priority ?? "medium") as AISuggestion["priority"],
+            estimatedImpact: s.estimatedImpact ?? 7.0,
+          });
+        }
+        logger.info(
+          `[AIMusicService] MaxCore returned ${suggestions.length} mix suggestions`,
+        );
+        return suggestions;
+      }
+    } catch (mcErr) {
+      logger.warn(
+        { err: mcErr },
+        "[AIMusicService] MaxCore mix suggestions failed, using local rules",
+      );
+    }
+    // ── Local rule-based fallback ─────────────────────────────────────────────
+
+    const { genre, energy,  intensity, preset } = audioAnalysis as Record<string, unknown>;
 
     if (genre === "hip-hop" || genre === "trap") {
       suggestions?.push({

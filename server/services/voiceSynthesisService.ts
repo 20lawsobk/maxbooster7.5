@@ -32,6 +32,7 @@ import path from "path";
 import os from "os";
 import { randomBytes } from "crypto";
 import { logger } from "../logger.js";
+import { MaxCoreAIClient } from "./maxcoreClient.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -430,6 +431,60 @@ export async function synthesizeVoice(
   options: SynthesisOptions = {},
 ): Promise<SynthesisResult> {
   mkdirSync(VOICE_DIR, { recursive: true });
+
+  // ── MaxCore primary TTS ──────────────────────────────────────────────────
+  try {
+    const mcAudio = await MaxCoreAIClient.generate<{
+      audioUrl?: string;
+      audio_url?: string;
+      audio_data?: string;
+      format?: string;
+      duration?: number;
+    }>("/api/generate/audio", {
+      text,
+      voice_id: options.profileId ?? "smooth_narrator",
+      output_format: options.outputFormat ?? "wav",
+      pitch: options.pitch ?? 1.0,
+      speed: options.speed ?? 1.0,
+      volume: options.volume ?? 1.0,
+      max_duration: options.maxDurationSeconds ?? null,
+    });
+
+    const audioSrc = mcAudio?.audioUrl ?? mcAudio?.audio_url ?? null;
+    const audioData = mcAudio?.audio_data ?? null;
+
+    if (audioSrc || audioData) {
+      const ext = options.outputFormat === "mp3" ? "mp3" : "wav";
+      const outFilename = `voice_mc_${randomBytes(6).toString("hex")}.${ext}`;
+      const outputPath = path.join(VOICE_DIR, outFilename);
+
+      if (audioData) {
+        await fsWriteFile(outputPath, Buffer.from(audioData, "base64"));
+      } else if (audioSrc) {
+        const resp = await fetch(audioSrc);
+        if (resp.ok) {
+          const buf = Buffer.from(await resp.arrayBuffer());
+          await fsWriteFile(outputPath, buf);
+        } else {
+          throw new Error(`MaxCore audio download failed: ${resp.status}`);
+        }
+      }
+
+      logger.info(
+        `[VoiceSynth] MaxCore audio generated → ${outFilename}`,
+      );
+      return {
+        success: true,
+        outputPath,
+        durationSeconds: mcAudio?.duration ?? 0,
+        profileUsed: options.profileId ?? "smooth_narrator",
+        voiceUsed: "maxcore",
+      };
+    }
+  } catch (mcErr) {
+    logger.warn({ err: mcErr }, "[VoiceSynth] MaxCore TTS failed, falling back to flite");
+  }
+  // ── Local flite / FFmpeg fallback ────────────────────────────────────────
 
   const fliteVoice = await detectBestFliteVoice();
   if (fliteVoice === "none") {

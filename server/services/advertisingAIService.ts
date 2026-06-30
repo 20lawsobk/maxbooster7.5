@@ -1,6 +1,7 @@
 import type { AdCreative } from "@shared/schema";
 import { storage } from "../storage";
 import { db } from "../db";
+import { MaxCoreAIClient } from "./maxcoreClient.js";
 import {
   adCampaigns,
   adCompetitorIntelligence,
@@ -133,6 +134,33 @@ export class AdvertisingAIService {
   ): Promise<Record<string, unknown>> {
     const startTime = Date?.now();
 
+    // ── MaxCore creative amplification ──────────────────────────────────────
+    const mcCreative = await MaxCoreAIClient.generate<{
+      hook?: string;
+      body?: string;
+      cta?: string;
+      caption?: string;
+      platform_insights?: Record<string, unknown>;
+      suggested_hashtags?: string[];
+      optimal_post_times?: number[];
+      audience_segments?: string[];
+    }>("/api/generate/content", {
+      topic:
+        (creative as Record<string, unknown>).headline ||
+        (creative as Record<string, unknown>).description ||
+        "music artist promotion",
+      platform: platforms[0] ?? "instagram",
+      tone: "promotional",
+      objective: campaign.objective ?? "engagement",
+      content_type:
+        (creative as Record<string, unknown>).contentType ?? "video",
+      campaign_context: {
+        budget: campaign.budget ?? 0,
+        platforms,
+        creative_id: creative.id,
+      },
+    });
+
     // Calculate organic amplification potential (100%+ boost vs paid ads)
     const viralityScore = this?.calculateViralityScore(creative);
     const organicReachMultiplier =
@@ -146,7 +174,7 @@ export class AdvertisingAIService {
       platformPerformance,
     );
 
-    const outputs = {
+    const outputs: Record<string, unknown> = {
       viralityScore,
       organicReachMultiplier, // 100%+ amplification vs paid ads
       platformPredictions: platformPerformance,
@@ -158,6 +186,19 @@ export class AdvertisingAIService {
       optimalPostSchedule: this.generatePostSchedule(platforms),
       expectedOrganicReach:
         this?.calculateExpectedOrganicReach(platformPerformance),
+      // Merge MaxCore AI suggestions when available
+      ...(mcCreative
+        ? {
+            aiSuggestedHook: mcCreative.hook ?? null,
+            aiSuggestedCaption: mcCreative.caption ?? mcCreative.body ?? null,
+            aiSuggestedCTA: mcCreative.cta ?? null,
+            aiSuggestedHashtags: mcCreative.suggested_hashtags ?? [],
+            aiOptimalPostTimes: mcCreative.optimal_post_times ?? [],
+            aiAudienceSegments: mcCreative.audience_segments ?? [],
+            aiPlatformInsights: mcCreative.platform_insights ?? {},
+            aiSource: "maxcore",
+          }
+        : { aiSource: "local" }),
     };
 
     // Record AI run for determinism verification
@@ -602,6 +643,29 @@ export class AdvertisingAIService {
   ): Promise<Record<string, unknown>> {
     const startTime = Date?.now();
 
+    // ── MaxCore performance prediction ───────────────────────────────────────
+    const mcPrediction = await MaxCoreAIClient.infer<{
+      predicted_ctr?: number;
+      predicted_engagement_rate?: number;
+      predicted_conversion_rate?: number;
+      confidence?: number;
+      percentile?: number;
+      recommendations?: string[];
+    }>("/api/infer/viral-score", {
+      caption:
+        (creative as Record<string, unknown>).headline ||
+        (creative as Record<string, unknown>).description ||
+        "",
+      hashtags: (creative as Record<string, unknown>).hashtags ?? [],
+      platform:
+        ((creative as Record<string, unknown>).platforms as string[])?.[0] ??
+        "instagram",
+      content_type:
+        (creative as Record<string, unknown>).contentType ?? "video",
+      target_audience: targetAudience ?? null,
+      creative_id: creative.id,
+    });
+
     // Feature extraction from creative
     const features = this?.extractCreativeFeatures(creative);
 
@@ -689,20 +753,34 @@ export class AdvertisingAIService {
     // Record AI inference
     const outputs = {
       predictions: {
-        ctr: { value: predictedCTR, confidence: ctrConfidenceInterval },
+        ctr: {
+          value: mcPrediction?.predicted_ctr ?? predictedCTR,
+          confidence: ctrConfidenceInterval,
+        },
         engagementRate: {
-          value: predictedEngagementRate,
+          value:
+            mcPrediction?.predicted_engagement_rate ?? predictedEngagementRate,
           confidence: engagementConfidenceInterval,
         },
         conversionRate: {
-          value: predictedConversionRate,
+          value:
+            mcPrediction?.predicted_conversion_rate ?? predictedConversionRate,
           confidence: conversionConfidenceInterval,
         },
         viralityScore,
       },
       features,
-      comparisonData,
+      comparisonData: {
+        ...comparisonData,
+        ...(mcPrediction?.percentile != null
+          ? { percentile: mcPrediction.percentile }
+          : {}),
+      },
       explanation: this.generatePredictionExplanation(features, viralityScore),
+      ...(mcPrediction?.recommendations
+        ? { aiRecommendations: mcPrediction.recommendations }
+        : {}),
+      aiSource: mcPrediction ? "maxcore" : "local",
     };
 
     await storage?.createAdAIRun({

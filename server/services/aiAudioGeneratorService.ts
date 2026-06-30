@@ -12,6 +12,7 @@ import { randomBytes } from "crypto";
 import { AIAudioGenerator, type GenerationType } from "../../shared/ml/audio/AIAudioGenerator.js";
 import { logger } from "../logger.js";
 import { storageService } from "./storageService.js";
+import { MaxCoreAIClient } from "./maxcoreClient.js";
 
 // Initialize generator
 const audioGenerator = new AIAudioGenerator(48000);
@@ -91,6 +92,68 @@ export async function generateFromText(
   await ensureInitialized();
 
   logger?.info(`[AI Audio] Generating from text: "${request.text}"`);
+
+  // ── MaxCore primary audio generation ─────────────────────────────────────
+  try {
+    const mcAudio = await MaxCoreAIClient.generate<{
+      audioUrl?: string;
+      audio_url?: string;
+      audio_data?: string;
+      duration?: number;
+      tempo?: number;
+      key?: string;
+      scale?: string;
+      genre?: string;
+    }>("/api/generate/audio", {
+      text: request.text,
+      duration: request.duration ?? null,
+      bars: request.bars ?? null,
+      tempo: request.tempo ?? null,
+      project_id: request.projectId ?? null,
+    });
+
+    const audioSrc = mcAudio?.audioUrl ?? mcAudio?.audio_url ?? null;
+    const audioData = mcAudio?.audio_data ?? null;
+
+    if (audioSrc || audioData) {
+      const outDir = process.cwd() + "/uploads/audio";
+      const { mkdirSync } = await import("fs");
+      mkdirSync(outDir, { recursive: true });
+      const filename = `mc_audio_${randomBytes(6).toString("hex")}.wav`;
+      const filePath = `${outDir}/${filename}`;
+
+      if (audioData) {
+        const { writeFile } = await import("fs/promises");
+        await writeFile(filePath, Buffer.from(audioData, "base64"));
+      } else if (audioSrc) {
+        const resp = await fetch(audioSrc);
+        if (resp.ok) {
+          const { writeFile } = await import("fs/promises");
+          await writeFile(filePath, Buffer.from(await resp.arrayBuffer()));
+        } else {
+          throw new Error(`MaxCore audio download failed: ${resp.status}`);
+        }
+      }
+
+      logger?.info(`[AI Audio] MaxCore audio generated → ${filename}`);
+      return {
+        success: true,
+        audioFilePath: `/uploads/audio/${filename}`,
+        parameters: {
+          type: "music" as GenerationType,
+          tempo: mcAudio?.tempo ?? request.tempo ?? 120,
+          key: mcAudio?.key ?? "C",
+          scale: mcAudio?.scale ?? "major",
+          genre: mcAudio?.genre ?? "electronic",
+        },
+        duration: mcAudio?.duration ?? request.duration ?? 0,
+        sourceType: "text",
+      };
+    }
+  } catch (mcErr) {
+    logger?.warn({ err: mcErr }, "[AI Audio] MaxCore failed, falling back to local generator");
+  }
+  // ── Local AIAudioGenerator fallback ──────────────────────────────────────
 
   try {
     logger?.info(

@@ -4,6 +4,7 @@ import {
   getRedisClient,
   RedisClientType,
 } from "../lib/redisConnectionFactory.js";
+import { MaxCoreAIClient } from "./maxcoreClient.js";
 
 export interface ContentData {
   id?: string;
@@ -569,6 +570,37 @@ class ViralScoringService {
         /* intentional: Redis cache miss → falls through to live calculation */
       }
     }
+
+    // ── MaxCore primary scoring ──────────────────────────────────────────────
+    const mcScore = await MaxCoreAIClient.infer<ViralScore>(
+      "/api/infer/viral-score",
+      {
+        caption: content.caption,
+        hashtags: content.hashtags,
+        platform: content.platform,
+        content_type: content.contentType,
+        music_genre: content.musicGenre ?? null,
+        has_audio: content.hasAudio ?? false,
+        duration: content.duration ?? null,
+        target_audience: content.targetAudience ?? null,
+        scheduled_time: content.scheduledTime?.toISOString() ?? null,
+      },
+    );
+    if (mcScore && typeof mcScore.overall === "number") {
+      logger.info(
+        `[ViralScore] MaxCore score: ${mcScore.overall}/100 for ${content.platform}`,
+        { contentId: content.id },
+      );
+      if (redis && content.id) {
+        try {
+          await redis.setEx(cacheKey, this.REDIS_TTL, JSON.stringify(mcScore));
+        } catch {
+          /* best-effort */
+        }
+      }
+      return mcScore;
+    }
+    // ── Local fallback ───────────────────────────────────────────────────────
 
     const factors = await this.analyzeFactors(content);
     const platformScores = this.calculatePlatformScores(content, factors);

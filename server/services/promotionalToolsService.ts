@@ -1,5 +1,6 @@
 import { randomBytes } from "crypto";
 import { db } from "../db";
+import { MaxCoreAIClient } from "./maxcoreClient.js";
 import {
   releases,
   preSavePages,
@@ -255,6 +256,33 @@ class PromotionalToolsService {
       PROMO_CARD_DIMENSIONS[config?.type] || PROMO_CARD_DIMENSIONS?.square;
     const cardId = randomBytes(8).toString("hex");
 
+    // ── MaxCore AI copy generation ───────────────────────────────────────────
+    let aiGeneratedText: string | null = null;
+    if (!config.customText) {
+      try {
+        const mcCopy = await MaxCoreAIClient.generate<{
+          headline?: string;
+          body?: string;
+          caption?: string;
+          cta?: string;
+        }>("/api/generate/content", {
+          topic: `Promo card for "${release.title}"`,
+          platform: "instagram",
+          tone: "promotional",
+          objective: "awareness",
+          content_type: config.type,
+          artist_name:
+            (release?.metadata as Record<string, unknown>)?.artistName ||
+            "Unknown Artist",
+          release_date: release.releaseDate?.toLocaleDateString(),
+        });
+        aiGeneratedText =
+          mcCopy?.headline ?? mcCopy?.caption ?? mcCopy?.body ?? null;
+      } catch {
+        /* best-effort — card is created with or without AI copy */
+      }
+    }
+
     let generatedImageUrl: string | null = null;
     try {
       const imageBuffer = await sharpImageService?.createPromoCard({
@@ -301,7 +329,7 @@ class PromotionalToolsService {
           "Unknown Artist",
         trackTitle: release.title,
         releaseDate: release.releaseDate?.toLocaleDateString(),
-        customText: config.customText,
+        customText: config.customText ?? aiGeneratedText,
         backgroundColor: config.backgroundColor || "#1a1a2e",
         textColor: config.textColor || "#ffffff",
         accentColor: config.accentColor || "#4ecdc4",

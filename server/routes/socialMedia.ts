@@ -893,27 +893,27 @@ router?.get(
             engagement,
             lastSync,
             status: isConnected ? "active" : "inactive",
-            username: primaryConn.username || undefined,
-            profileUrl: primaryConn.profileUrl || "",
-            platformUserId: primaryConn.platformUserId || "",
+            username: primaryConn?.username || undefined,
+            profileUrl: primaryConn?.profileUrl || "",
+            platformUserId: primaryConn?.platformUserId || "",
             // Expose per-platform breakdown in metadata for UI tooltip/detail
             metadata: {
               ...(primaryConn?.metadata || {}),
               facebook: {
                 followers: fbFollowers,
-                username: fb.username || null,
-                profileUrl: fb.profileUrl || null,
-                engagementRate: fbMeta.engagementRate || 0,
+                username: fb?.username || null,
+                profileUrl: fb?.profileUrl || null,
+                engagementRate: (fbMeta as Record<string, unknown>)?.engagementRate || 0,
               },
               instagram: {
                 followers: igFollowers,
-                username: ig.username || null,
-                profileUrl: ig.profileUrl || null,
-                engagementRate: igMeta.engagementRate || 0,
+                username: ig?.username || null,
+                profileUrl: ig?.profileUrl || null,
+                engagementRate: (igMeta as Record<string, unknown>)?.engagementRate || 0,
               },
             },
             // Extra field used by the connected accounts detail view
-            secondaryUsername: secondaryConn.username || undefined,
+            secondaryUsername: secondaryConn?.username || undefined,
           };
         }
         const conn = connectionMap?.get(platform?.id);

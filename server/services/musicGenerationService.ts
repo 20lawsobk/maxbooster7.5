@@ -2,6 +2,8 @@ import path from "path";
 import fs from "fs/promises";
 import { randomBytes } from "crypto";
 import { musicIndustryContextFilter } from "./musicIndustryContextFilter.js";
+import { MaxCoreAIClient } from "./maxcoreClient.js";
+import { logger as mgLogger } from "../logger.js";
 import wavefilePkg from "wavefile";
 const WaveFile =
   (wavefilePkg as Record<string, unknown>).WaveFile || wavefilePkg;
@@ -470,6 +472,57 @@ export async function synthesizeToWAV(
   chords: Chord[],
   params: MusicParameters,
 ): Promise<string> {
+  // ── MaxCore primary audio synthesis ──────────────────────────────────────
+  try {
+    const mcAudio = await MaxCoreAIClient.generate<{
+      audioUrl?: string;
+      audio_url?: string;
+      audio_data?: string;
+      duration?: number;
+    }>("/api/generate/audio", {
+      notes: notes.slice(0, 64),
+      chords: chords.slice(0, 32),
+      key: params.key,
+      scale: params.scale,
+      tempo: params.tempo,
+      mood: params.mood,
+      genre: params.genre,
+      bars: params.structure ?? 8,
+    });
+
+    const audioSrc = mcAudio?.audioUrl ?? mcAudio?.audio_url ?? null;
+    const audioData = mcAudio?.audio_data ?? null;
+
+    if (audioSrc || audioData) {
+      const outputDir = path.join(
+        process.cwd(),
+        "public",
+        "generated-content",
+        "audio",
+      );
+      await fs.mkdir(outputDir, { recursive: true });
+      const filename = `melody_mc_${Date.now()}_${randomBytes(8).toString("hex")}.wav`;
+      const filepath = path.join(outputDir, filename);
+
+      if (audioData) {
+        await fs.writeFile(filepath, Buffer.from(audioData, "base64"));
+      } else if (audioSrc) {
+        const resp = await fetch(audioSrc);
+        if (resp.ok) {
+          await fs.writeFile(filepath, Buffer.from(await resp.arrayBuffer()));
+        } else {
+          throw new Error(`MaxCore audio download failed: ${resp.status}`);
+        }
+      }
+
+      mgLogger.info(`[MusicGen] MaxCore audio synthesized → ${filename}`);
+      return `/generated-content/audio/${filename}`;
+    }
+  } catch (mcErr) {
+    mgLogger.warn({ err: mcErr }, "[MusicGen] MaxCore synthesis failed, using local DSP");
+  }
+  // ── Local DSP fallback ───────────────────────────────────────────────────
+
   const sampleRate = 48000;
   const beatsPerSecond = params?.tempo / 60;
   const totalDuration =
