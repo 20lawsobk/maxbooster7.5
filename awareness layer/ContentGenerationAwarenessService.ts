@@ -494,6 +494,34 @@ const PLATFORM_ENTRIES: PlatformEntry[] = [
       { pattern: /\bradio\b/i, trend: "radio / Beats 1 feature", contentFormat: "Audio" },
     ],
   },
+  {
+    platform: "Facebook",
+    detect: /\bfacebook\b|\bfb\b|\bmeta\b/i,
+    trendSignals: [
+      { pattern: /\breels?\b/i, trend: "Facebook Reels reach push", contentFormat: "Reels" },
+      { pattern: /\bgroup\b/i, trend: "Groups community engagement", contentFormat: "Group Post" },
+      { pattern: /\bevent\b/i, trend: "Events / show promotion", contentFormat: "Event Post" },
+      { pattern: /\bstory\b|\bstories\b/i, trend: "Stories format active", contentFormat: "Stories" },
+      { pattern: /\balgorithm\b/i, trend: "News Feed algorithm change", contentFormat: "Native Video" },
+      { pattern: /\bads?\b|\bboost\b/i, trend: "Paid boost / ad reach shift", contentFormat: "Boosted Post" },
+      { pattern: /\bwatch\b/i, trend: "Facebook Watch engagement", contentFormat: "Watch Video" },
+      { pattern: /\bcreator\b/i, trend: "Creator monetisation update", contentFormat: "Creator Studio" },
+    ],
+  },
+  {
+    platform: "LinkedIn",
+    detect: /\blinkedin\b/i,
+    trendSignals: [
+      { pattern: /\barticle\b|\blog\b/i, trend: "Long-form article reach boost", contentFormat: "Article" },
+      { pattern: /\bvideo\b/i, trend: "Native video prioritised", contentFormat: "Native Video" },
+      { pattern: /\bthought leadership\b|\bopinion\b/i, trend: "Thought leadership rewarded", contentFormat: "Text Post" },
+      { pattern: /\bpoll\b/i, trend: "Polls driving engagement", contentFormat: "Poll" },
+      { pattern: /\balgorithm\b/i, trend: "LinkedIn feed algorithm update", contentFormat: "Text + Media" },
+      { pattern: /\bcreator mode\b/i, trend: "Creator Mode visibility boost", contentFormat: "Newsletter" },
+      { pattern: /\bcollaborat\w*\b/i, trend: "Collaborative articles feature", contentFormat: "Collab Article" },
+      { pattern: /\bmusic\b|\bartist\b|\bindustry\b/i, trend: "Music industry professional content", contentFormat: "Industry Post" },
+    ],
+  },
 ];
 
 // ─── Signal Classifier ────────────────────────────────────────────────────────
@@ -537,6 +565,29 @@ function classifySignal(title: string, description: string): {
     if (/content trend|viral|format|challenge|stitch|duet/.test(text)) {
       return { source: "content_trend", category: "trend", urgency: "high", modules: ["social", "content"], impact: 78, complexity: "simple", hours: 4 };
     }
+    if (/facebook|meta/.test(text)) {
+      if (/ads?|boost|paid|campaign|targeting/.test(text)) {
+        return { source: "social_media", category: "optimization", urgency: "high", modules: ["advertising", "social"], impact: 82, complexity: "simple", hours: 8 };
+      }
+      if (/group|community|event/.test(text)) {
+        return { source: "audience_behavior", category: "audience_shift", urgency: "medium", modules: ["social", "content"], impact: 65, complexity: "simple", hours: 4 };
+      }
+    }
+  }
+  if (/\blinkedin\b/.test(text)) {
+    if (/api|deprecat|rate.?limit|oauth|developer/.test(text)) {
+      return { source: "social_media", category: "api_change", urgency: "high", modules: ["social"], impact: 75, complexity: "moderate", hours: 14 };
+    }
+    if (/algorithm|reach|organic|engagement|impressions|newsletter/.test(text)) {
+      return { source: "platform_algorithm", category: "algorithm_change", urgency: "high", modules: ["social", "content"], impact: 78, complexity: "simple", hours: 6 };
+    }
+    if (/thought leadership|article|creator mode|professional|b2b|industry/.test(text)) {
+      return { source: "content_trend", category: "trend", urgency: "medium", modules: ["social", "content", "advertising"], impact: 70, complexity: "simple", hours: 5 };
+    }
+    if (/music|artist|label|tour|industry/.test(text)) {
+      return { source: "social_media", category: "feature", urgency: "low", modules: ["social"], impact: 60, complexity: "trivial", hours: 3 };
+    }
+    return { source: "social_media", category: "standard", urgency: "low", modules: ["social"], impact: 55, complexity: "trivial", hours: 3 };
   }
   if (/fl studio|ableton|logic pro|pro tools|studio one|cubase|reaper|garageband|bitwig|reason|bandlab|splice|landr/.test(text)) {
     const isAI = /ai |artificial intelligence|machine learning|neural/.test(text);
