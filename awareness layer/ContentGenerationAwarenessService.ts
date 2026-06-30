@@ -486,15 +486,6 @@ const PLATFORM_ENTRIES: PlatformEntry[] = [
     ],
   },
   {
-    platform: "Apple Music",
-    detect: /\bapple music\b/i,
-    trendSignals: [
-      { pattern: /\batmos\b|\bspatial\b/i, trend: "Spatial Audio / Atmos push", contentFormat: "Spatial Audio" },
-      { pattern: /\beditorial\b/i, trend: "editorial playlist activity", contentFormat: "Audio" },
-      { pattern: /\bradio\b/i, trend: "radio / Beats 1 feature", contentFormat: "Audio" },
-    ],
-  },
-  {
     platform: "Facebook",
     detect: /\bfacebook\b|\bfb\b|\bmeta\b/i,
     trendSignals: [
