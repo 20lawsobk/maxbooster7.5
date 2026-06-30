@@ -2274,6 +2274,11 @@ router?.post(
         return res?.status(400).json({ error: "URL is required" });
       }
 
+      // Reject obviously oversized URLs before any parsing or network fetch
+      if (url.length > 2048) {
+        return res.status(400).json({ error: "URL too long (max 2048 characters)" });
+      }
+
       // SSRF guard — block private/internal targets before fetching the URL
       try {
         assertSafeExternalUrl(url?.trim());
@@ -2521,7 +2526,12 @@ router?.post(
       }
 
       if (generatedContent?.length === 0) {
-        // Should never reach here — but keep a last-resort loop as safety net
+        // All parallel calls failed (MaxCore transient or cold-start).
+        // Log the failure details and retry serially with a minimal payload.
+        logger?.warn(
+          `[generate-from-url] All ${platforms.length} parallel generateContent calls ` +
+            `returned no data — retrying serially (topic="${topic.slice(0, 60)}")`,
+        );
         for (const platform of platforms) {
           if (!validPlatforms?.includes(platform)) continue;
 
@@ -4222,6 +4232,14 @@ router.post(
           .json({ success: false, message: "url is required" });
       }
 
+      // Reject obviously oversized URLs before any parsing or network fetch
+      if (url.length > 2048) {
+        return res.status(400).json({
+          success: false,
+          message: "URL too long (max 2048 characters)",
+        });
+      }
+
       // SSRF guard — block private/internal targets before fetching the URL
       try {
         assertSafeExternalUrl(url.trim());
@@ -4310,9 +4328,10 @@ router.post(
         genreColorMap[genreKey] || { bg: "#1a1a2e", ac: "#e94560" };
 
       // Use AI-generated hook/body/cta for the video overlay when available
-      const aiHook = content.data.hook || "";
-      const aiBody = content.data.body || "";
-      const aiCta = content.data.cta || "";
+      // content.data may be null when MaxCore returns no content — guard with ?.
+      const aiHook = content?.data?.hook || "";
+      const aiBody = content?.data?.body || "";
+      const aiCta = content?.data?.cta || "";
 
       // Build punchy video-specific text (fallback from AI result)
       const videoHook =

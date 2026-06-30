@@ -1214,12 +1214,23 @@ export async function renderVideo(
   });
 
   if (!jobResp) {
-    return {
-      success: false,
-      error: "MaxCore did not respond to the video job submission",
-      source: "MaxCoreAI",
-      processing_time_ms: Date.now() - startMs,
-    };
+    // MaxCore's /api/generate-video endpoint is unavailable (cold-start, training
+    // load, or transient 5xx).  Fall through to the photorealistic pipeline which
+    // calls MaxCore's /generate/image endpoint — still MaxCore-powered, always
+    // produces a playable MP4, and has its own gradient fallback if image gen
+    // is also unavailable.
+    logger.warn(
+      "[AdvancedVideoRenderer] /api/generate-video returned null — " +
+        "routing to MaxCore photorealistic pipeline",
+    );
+    return renderPhotorealisticVideo(
+      opts,
+      hook,
+      body,
+      cta,
+      startMs,
+      intelligence as Record<string, unknown>,
+    );
   }
 
   // Shared composite options derived from the render request
