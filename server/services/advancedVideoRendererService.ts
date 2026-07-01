@@ -814,17 +814,24 @@ export async function fetchPhotorealisticImage(
       seed: Math.floor(Math.random() * 999_999),
     });
 
-    const imageUrl =
+    const rawImageUrl =
       result?.url ??
       result?.image_url ??
       result?.src ??
       result?.outputs?.[0]?.url ??
       result?.outputs?.[0]?.src;
 
-    if (
-      imageUrl &&
-      (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"))
-    ) {
+    // MaxCore may return a relative path ("/uploads/images/img_xxx.png") —
+    // resolve it against MAXCORE_ORIGIN so the fetch works.
+    const imageUrl = rawImageUrl
+      ? rawImageUrl.startsWith("http://") || rawImageUrl.startsWith("https://")
+        ? rawImageUrl
+        : rawImageUrl.startsWith("/")
+          ? `${MAXCORE_ORIGIN}${rawImageUrl}`
+          : null
+      : null;
+
+    if (imageUrl) {
       const rawExt = imageUrl.split("?")[0].split(".").pop()?.toLowerCase() ?? "jpg";
       const ext = ["jpg", "jpeg", "png", "webp"].includes(rawExt) ? rawExt : "jpg";
       const filename = `photo_${randomUUID().slice(0, 8)}.${ext}`;
