@@ -685,6 +685,50 @@ export async function parseUrl(
         }`,
       );
     }
+
+    // Spotify's SSR HTML returns a generic "Spotify – Web Player" title — not
+    // the actual track/album/artist name.  Detect any generic Spotify title and
+    // replace it with the real title from the public oEmbed endpoint (no auth).
+    const isGenericSpotifyTitle =
+      !meta.title ||
+      /^spotify\b/i.test(meta.title.trim()) ||
+      meta.title.trim() === "Spotify";
+    if (platform === "spotify" && ids.spotify && isGenericSpotifyTitle) {
+      try {
+        const oe = await safeFetchText(
+          `https://open.spotify.com/oembed?url=${encodeURIComponent(u.href)}`,
+          { timeoutMs: 6_000 },
+        );
+        if (oe.status < 400 && oe.body.trimStart().startsWith("{")) {
+          const oeJson = JSON.parse(oe.body) as {
+            title?: string;
+            thumbnail_url?: string;
+            author_name?: string;
+          };
+          if (oeJson.title) {
+            // For artist-type URLs the oEmbed title IS the artist name.
+            // Wrap it as "by <artist>" so parseArtistTrack picks it up correctly.
+            meta.title =
+              ids.spotifyType === "artist"
+                ? oeJson.title
+                : oeJson.title;
+            // author_name is present on some oEmbed providers; Spotify omits it,
+            // but store it in h1 so parseArtistTrack can use it as a fallback.
+            if (oeJson.author_name) meta.h1 = oeJson.author_name;
+            meta.siteName = "Spotify";
+            fetched = true;
+          }
+          if (oeJson.thumbnail_url && !meta.image) {
+            meta.image = oeJson.thumbnail_url;
+          }
+        }
+      } catch (err) {
+        logger.warn(
+          { err },
+          `[AdvancedUrlParser] Spotify oEmbed failed for id=${ids.spotify}`,
+        );
+      }
+    }
   }
 
   const category = refineCategory(baseCategory, meta);
