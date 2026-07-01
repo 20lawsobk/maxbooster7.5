@@ -22,7 +22,8 @@ const POLL_INTERVAL_MS = 2_000;
 const POLL_MAX_ATTEMPTS = 150; // 5 min
 
 const MAXCORE_ORIGIN = (process?.env.AI_SERVER_URL || "").replace(/\/+$/, "");
-const MC_AI_KEY = process?.env.AI_SERVER_KEY || "";
+const MC_AI_KEY =
+  process?.env.MAXCORE_ADMIN_KEY || process?.env.AI_SERVER_KEY || "";
 const LOCAL_VIDEO_DIR = path?.join(process?.cwd(), "uploads", "videos");
 
 // ── MaxCore video URL cache ───────────────────────────────────────────────────
