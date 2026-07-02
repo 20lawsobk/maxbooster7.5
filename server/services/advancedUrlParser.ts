@@ -695,25 +695,25 @@ export async function parseUrl(
       meta.title.trim() === "Spotify";
     if (platform === "spotify" && ids.spotify && isGenericSpotifyTitle) {
       try {
-        const oe = await safeFetchText(
+        // Use native fetch (not the SSRF-guarded axios agent) for the hardcoded
+        // Spotify oEmbed endpoint — this is a known public API, not a user URL.
+        // The custom axios agent's DNS lookup is incompatible with Spotify's TLS
+        // stack in this environment, causing ERR_INVALID_IP_ADDRESS failures.
+        const oeFetch = await fetch(
           `https://open.spotify.com/oembed?url=${encodeURIComponent(u.href)}`,
-          { timeoutMs: 6_000 },
+          {
+            headers: { "User-Agent": "MaxBooster/3.0", Accept: "application/json" },
+            signal: AbortSignal.timeout(8_000),
+          },
         );
-        if (oe.status < 400 && oe.body.trimStart().startsWith("{")) {
-          const oeJson = JSON.parse(oe.body) as {
+        if (oeFetch.ok) {
+          const oeJson = (await oeFetch.json()) as {
             title?: string;
             thumbnail_url?: string;
             author_name?: string;
           };
           if (oeJson.title) {
-            // For artist-type URLs the oEmbed title IS the artist name.
-            // Wrap it as "by <artist>" so parseArtistTrack picks it up correctly.
-            meta.title =
-              ids.spotifyType === "artist"
-                ? oeJson.title
-                : oeJson.title;
-            // author_name is present on some oEmbed providers; Spotify omits it,
-            // but store it in h1 so parseArtistTrack can use it as a fallback.
+            meta.title = oeJson.title;
             if (oeJson.author_name) meta.h1 = oeJson.author_name;
             meta.siteName = "Spotify";
             fetched = true;

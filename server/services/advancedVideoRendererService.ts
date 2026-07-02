@@ -23,7 +23,7 @@ const POLL_MAX_ATTEMPTS = 150; // 5 min
 
 const MAXCORE_ORIGIN = (process?.env.AI_SERVER_URL || "").replace(/\/+$/, "");
 const MC_AI_KEY =
-  process?.env.MAXCORE_ADMIN_KEY || process?.env.AI_SERVER_KEY || "";
+  process?.env.AI_SERVER_KEY || process?.env.MAXCORE_ADMIN_KEY || "";
 const LOCAL_VIDEO_DIR = path?.join(process?.cwd(), "uploads", "videos");
 
 // ── MaxCore video URL cache ───────────────────────────────────────────────────
@@ -1198,37 +1198,63 @@ export async function renderVideo(
     );
   }
 
-  // ── Step 2: MaxCore video generation ────────────────────────────────────────
-  const jobResp = await MaxCoreAIClient?.infer<unknown>("/generate-video", {
-    idea:
-      [hook, opts.artist_name, opts.genre, opts.topic]
-        .filter(Boolean)
-        .join(" — ") || "music video",
-    hook,
-    body,
-    cta,
-    topic: opts.topic || hook || body || "music video",
-    platform: opts.platform || "tiktok",
-    aspect_ratio: opts.aspect_ratio,
-    template: opts.template || "cinematic_promo",
-    duration: opts.duration || 10,
-    artist_name: opts.artist_name,
-    genre: opts.genre || undefined,
-    tone: opts.tone || "energetic",
-    goal: opts.goal || "growth",
-    quality: opts.quality || "cinematic",
-    user_audio_path: opts.user_audio_path || undefined,
-    voiceover: !!opts?.voiceover,
-  });
+  // ── Step 2: MaxCore video script generation ──────────────────────────────────
+  // /api/platform/video/generate is the correct MaxCore endpoint (see arch doc).
+  // It returns a synchronous video SCRIPT (scenes, hook, script, captions) that
+  // we then render via renderPhotorealisticVideo (MaxCore image + FFmpeg assembly).
+  type MaxCoreVideoScript = {
+    success?: boolean;
+    hook?: string;
+    body?: string;
+    cta?: string;
+    script?: string;
+    title?: string;
+    scenes?: Array<{
+      scene: number;
+      duration_seconds?: number;
+      description?: string;
+      visual_direction?: string;
+      narration?: string;
+    }>;
+    hashtags?: string[];
+    duration_seconds?: number;
+    aspect_ratio?: string;
+    user_id?: string;
+    job_id?: string;
+    url?: string;
+  };
+  const jobResp = await MaxCoreAIClient?.infer<MaxCoreVideoScript>(
+    "/platform/video/generate",
+    {
+      idea:
+        [hook, opts.artist_name, opts.genre, opts.topic]
+          .filter(Boolean)
+          .join(" — ") || "music video",
+      hook,
+      body,
+      cta,
+      topic: opts.topic || hook || body || "music video",
+      platform: opts.platform || "tiktok",
+      aspect_ratio: opts.aspect_ratio,
+      template: opts.template || "cinematic_promo",
+      duration: opts.duration || 10,
+      artist_name: opts.artist_name,
+      genre: opts.genre || undefined,
+      tone: opts.tone || "energetic",
+      goal: opts.goal || "growth",
+      quality: opts.quality || "cinematic",
+      user_audio_path: opts.user_audio_path || undefined,
+      voiceover: !!opts?.voiceover,
+      user_id: opts.userId || "anonymous",
+    },
+  );
 
   if (!jobResp) {
-    // MaxCore's /api/generate-video endpoint is unavailable (cold-start, training
-    // load, or transient 5xx).  Fall through to the photorealistic pipeline which
-    // calls MaxCore's /generate/image endpoint — still MaxCore-powered, always
-    // produces a playable MP4, and has its own gradient fallback if image gen
-    // is also unavailable.
+    // MaxCore endpoint unavailable (cold-start, training load, transient 5xx).
+    // Fall through to the photorealistic pipeline which calls /generate/image —
+    // still MaxCore-powered and always produces a playable MP4.
     logger.warn(
-      "[AdvancedVideoRenderer] /api/generate-video returned null — " +
+      "[AdvancedVideoRenderer] /api/platform/video/generate returned null — " +
         "routing to MaxCore photorealistic pipeline",
     );
     return renderPhotorealisticVideo(
@@ -1238,6 +1264,29 @@ export async function renderVideo(
       cta,
       startMs,
       intelligence as Record<string, unknown>,
+    );
+  }
+
+  // Synchronous scene-script response (new format from /platform/video/generate):
+  // MaxCore returns hook + scenes + captions but no rendered file yet.
+  // Use the enriched hook/body/cta from the script, then render via the
+  // photorealistic pipeline (MaxCore /generate/image + FFmpeg assembly).
+  if (jobResp?.scenes?.length || (jobResp?.success && !jobResp?.url && !jobResp?.job_id)) {
+    const scriptHook = jobResp?.hook || hook;
+    const scriptBody = jobResp?.script?.split("\n")[1] || body;
+    const scriptCta  = jobResp?.cta  || cta;
+    const scriptHashtags = jobResp?.hashtags || hashtags;
+    logger.info(
+      `[AdvancedVideoRenderer] MaxCore returned ${jobResp?.scenes?.length ?? 0}-scene script — ` +
+        `rendering photorealistic pipeline with enriched hook`,
+    );
+    return renderPhotorealisticVideo(
+      opts,
+      scriptHook,
+      scriptBody,
+      scriptCta,
+      startMs,
+      { ...intelligence, hashtags: scriptHashtags } as Record<string, unknown>,
     );
   }
 

@@ -11,9 +11,9 @@
 import { logger } from "../logger.js";
 
 const MC_AI_URL = process?.env.AI_SERVER_URL || "";
-// Prefer MAXCORE_ADMIN_KEY (dedicated admin credential), fall back to AI_SERVER_KEY
+// AI_SERVER_KEY is the active generation credential; MAXCORE_ADMIN_KEY is the admin credential
 const MC_AI_KEY =
-  process?.env.MAXCORE_ADMIN_KEY || process?.env.AI_SERVER_KEY || "";
+  process?.env.AI_SERVER_KEY || process?.env.MAXCORE_ADMIN_KEY || "";
 
 export class MaxCoreAIClient {
   private static _remoteAvailable: boolean | null = null;
