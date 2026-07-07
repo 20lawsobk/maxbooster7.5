@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { VideoPlayer } from "@/components/ui/video-player";
 import { getCsrfTokenFromCookie } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import {
@@ -60,6 +61,7 @@ interface VideoJobData {
   success?: boolean;
   url?: string;
   video_url?: string;
+  thumbnail_url?: string | null;
   hook?: string;
   body?: string;
   cta?: string;
@@ -165,20 +167,6 @@ function errMessage(error: unknown): string {
 }
 function errName(error: unknown): string | undefined {
   return error instanceof Error ? error.name : undefined;
-}
-
-/**
- * Append a media-fragment so mobile browsers decode & show a first-frame poster
- * instead of a grey placeholder. Skips blob:/data: URLs and URLs already carrying
- * a fragment (which don't accept one).
- */
-function withPosterFrame(u: string): string {
-  return u &&
-    !u.startsWith("blob:") &&
-    !u.startsWith("data:") &&
-    !u.includes("#")
-    ? `${u}#t=0.1`
-    : u;
 }
 
 const CINEMATIC_TEMPLATES = [
@@ -388,6 +376,7 @@ export function ServerVideoGenerator({
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingStage, setGeneratingStage] = useState<string>("");
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [posterUrl, setPosterUrl] = useState<string | null>(null);
   const [videoInfo, setVideoInfo] = useState<VideoInfo | null>(null);
 
   const [renderProgress, setRenderProgress] = useState<number>(0);
@@ -461,6 +450,7 @@ export function ServerVideoGenerator({
   const applyVideoResult = (data: VideoJobData) => {
     const finalUrl = data.url ?? data.video_url ?? "";
     setVideoUrl(finalUrl || null);
+    setPosterUrl(data.thumbnail_url ?? null);
     setVideoInfo({
       hook: data.hook,
       body: data.body,
@@ -1086,15 +1076,12 @@ export function ServerVideoGenerator({
             {videoUrl && (
               <div className="space-y-3">
                 <div className="rounded-lg overflow-hidden border bg-black">
-                  <video
-                    src={withPosterFrame(videoUrl)}
+                  <VideoPlayer
+                    src={videoUrl}
+                    poster={posterUrl}
+                    autoPlay
                     className="w-full"
                     style={{ maxHeight: 420 }}
-                    controls
-                    autoPlay
-                    muted
-                    playsInline
-                    preload="metadata"
                   />
                 </div>
                 {videoInfo && (
@@ -1838,15 +1825,12 @@ export function ServerVideoGenerator({
               {videoUrl && (
                 <div className="space-y-3">
                   <div className="rounded-lg overflow-hidden border bg-black">
-                    <video
-                      src={withPosterFrame(videoUrl)}
+                    <VideoPlayer
+                      src={videoUrl}
+                      poster={posterUrl}
+                      autoPlay
                       className="w-full"
                       style={{ maxHeight: 420 }}
-                      controls
-                      autoPlay
-                      muted
-                      playsInline
-                      preload="metadata"
                     />
                   </div>
 

@@ -1001,6 +1001,76 @@ async function kenBurnsAnimate(
 }
 
 /**
+ * Grab a real first-frame poster from a rendered MP4 so the client `<video>`
+ * shows an actual frame instead of a grey placeholder on mobile (where browsers
+ * won't decode a frame without a poster). Best-effort: returns the poster URL,
+ * or null if extraction fails — it must never fail the video render itself.
+ */
+async function generatePosterThumbnail(
+  localMp4Path: string,
+): Promise<string | null> {
+  try {
+    await fsPromises.mkdir(LOCAL_VIDEO_DIR, { recursive: true });
+    const outFilename = `poster_${randomUUID().slice(0, 8)}.jpg`;
+    const outPath = path.join(LOCAL_VIDEO_DIR, outFilename);
+
+    await new Promise<void>((resolve, reject) => {
+      const proc = spawn(
+        "ffmpeg",
+        [
+          "-y",
+          "-ss", "0.1",
+          "-i", localMp4Path,
+          "-frames:v", "1",
+          "-q:v", "3",
+          outPath,
+        ],
+        { stdio: ["ignore", "pipe", "pipe"] },
+      );
+      const errChunks: string[] = [];
+      // A poster is best-effort — never let a hung ffmpeg stall job completion.
+      const killTimer = setTimeout(() => {
+        proc.kill("SIGKILL");
+        reject(new Error("FFmpeg poster grab timed out after 10s"));
+      }, 10_000);
+      proc.stderr?.on("data", (d: Buffer) => errChunks.push(d.toString()));
+      proc.on("close", (code) => {
+        clearTimeout(killTimer);
+        if (code === 0) {
+          resolve();
+        } else {
+          reject(
+            new Error(
+              `FFmpeg poster grab exited ${code}: ${errChunks.slice(-3).join("").slice(0, 200)}`,
+            ),
+          );
+        }
+      });
+      proc.on("error", (e) => {
+        clearTimeout(killTimer);
+        reject(e);
+      });
+    });
+
+    // Only advertise a poster that is a real, non-trivial JPEG.
+    const stat = await fsPromises.stat(outPath).catch(() => null);
+    if (!stat || stat.size < 1_000) {
+      logger.warn("[PhotoReal] Poster frame missing or too small — skipping");
+      return null;
+    }
+    logger.info(
+      `[PhotoReal] Poster frame → ${outFilename} (${Math.round(stat.size / 1024)} KB)`,
+    );
+    return `/uploads/videos/${outFilename}`;
+  } catch (err: unknown) {
+    logger.warn(
+      `[PhotoReal] Poster extraction failed (${(err as Error).message ?? String(err)}) — no poster`,
+    );
+    return null;
+  }
+}
+
+/**
  * Full photorealistic video pipeline:
  *   1. MaxCore /generate/image  →  photorealistic background frame
  *   2. FFmpeg Ken Burns          →  animated base video (cinematic zoom)
@@ -1047,6 +1117,15 @@ async function renderPhotorealisticVideo(
       baseVideoPath, hook, body, cta, compositeOpts,
     );
 
+    // Best-effort poster so the client shows a real frame, not a grey box.
+    // Guard on the known served prefix so contract drift can never resolve an
+    // unexpected path into the ffmpeg input.
+    const thumbnailUrl = finalUrl.startsWith("/uploads/videos/")
+      ? await generatePosterThumbnail(
+          path.join(process.cwd(), finalUrl.replace(/^\/+/, "")),
+        )
+      : null;
+
     logger.info(
       `[PhotoReal] Pipeline complete in ${Date.now() - startMs}ms → ${finalUrl}`,
     );
@@ -1054,6 +1133,7 @@ async function renderPhotorealisticVideo(
     return {
       success: true,
       url: finalUrl,
+      thumbnail_url: thumbnailUrl ?? null,
       width: W,
       height: H,
       duration: durationSec,
