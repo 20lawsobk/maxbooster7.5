@@ -1006,7 +1006,7 @@ async function kenBurnsAnimate(
  * won't decode a frame without a poster). Best-effort: returns the poster URL,
  * or null if extraction fails — it must never fail the video render itself.
  */
-async function generatePosterThumbnail(
+export async function generatePosterThumbnail(
   localMp4Path: string,
 ): Promise<string | null> {
   try {

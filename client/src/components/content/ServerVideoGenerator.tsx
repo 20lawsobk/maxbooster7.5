@@ -30,7 +30,7 @@ interface ServerVideoGeneratorProps {
   tone?: string;
   goal?: string;
   artistName?: string;
-  onVideoGenerated: (url: string) => void;
+  onVideoGenerated: (url: string, posterUrl?: string) => void;
   onImportToStudio?: (url: string) => void;
   className?: string;
   // Pre-population props (used when arriving from URL params / ContentGenerator redirect)
@@ -468,7 +468,7 @@ export function ServerVideoGenerator({
       sentimentScore: data.sentiment_score ?? null,
       sentimentLabel: data.sentiment_label ?? null,
     });
-    if (finalUrl) onVideoGenerated(finalUrl);
+    if (finalUrl) onVideoGenerated(finalUrl, data.thumbnail_url ?? undefined);
   };
 
   const pollJobUntilDone = async (jobId: string): Promise<VideoJobData> => {

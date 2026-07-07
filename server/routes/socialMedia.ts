@@ -4970,6 +4970,25 @@ router.post(
             logger.warn(`[MusicVideo/Studio] PDIM store skipped: ${e?.message?.slice(0, 80)}`);
           }
 
+          // Extract a real first-frame poster so mobile shows a frame instead of
+          // a grey box (mirrors the /generate-video path).
+          try {
+            const { generatePosterThumbnail } = await import(
+              "../services/advancedVideoRendererService.js"
+            );
+            if (studioResult.filename) {
+              const poster = await generatePosterThumbnail(
+                `${process.cwd()}/uploads/videos/${studioResult.filename}`,
+              );
+              if (poster)
+                (studioResult as Record<string, unknown>).thumbnail_url = poster;
+            }
+          } catch (e) {
+            logger.warn(
+              `[MusicVideo/Studio] poster skipped: ${(e as Error)?.message?.slice(0, 80)}`,
+            );
+          }
+
           musicVideoJobs.set(jobId, {
             status: "done",
             result: studioResult as unknown as Record<string, unknown>,
@@ -4996,7 +5015,7 @@ router.post(
 
         // Optional: synthesize voice narration before rendering
         let voiceSynthPath: string | undefined;
-        if (body.synthesize_voice === "true" && body.voice_text.trim()) {
+        if (body.synthesize_voice === "true" && body.voice_text?.trim()) {
           try {
             const voiceSvc = await getVoiceSynthService();
             const voiceResult = await voiceSvc.synthesizeVoice(
@@ -5071,6 +5090,24 @@ router.post(
           );
         }
 
+        // Extract a real first-frame poster (mobile grey-box fix).
+        try {
+          const { generatePosterThumbnail } = await import(
+            "../services/advancedVideoRendererService.js"
+          );
+          if (result.filename) {
+            const poster = await generatePosterThumbnail(
+              `${process.cwd()}/uploads/videos/${result.filename}`,
+            );
+            if (poster)
+              (result as Record<string, unknown>).thumbnail_url = poster;
+          }
+        } catch (e) {
+          logger.warn(
+            `[MusicVideo] poster skipped: ${(e as Error)?.message?.slice(0, 80)}`,
+          );
+        }
+
         musicVideoJobs.set(jobId, {
           status: "done",
           result,
@@ -5118,12 +5155,24 @@ router?.get(
     }
 
     if (job?.status === "error") {
-      return res
-        .status(500)
-        .json({ success: false, status: "error", error: job.error });
+      // 200 (not 500) so the client poll can read the failure instead of throwing.
+      return res?.json({
+        success: false,
+        status: "failed",
+        error: job.error,
+      });
     }
 
-    res?.json({ success: true, status: "done", result: job.result });
+    // Normalize to the contract the client expects: status "completed" plus a
+    // flat videoUrl/thumbnailUrl (poster) so the new VideoPlayer can render.
+    const doneResult = job.result as Record<string, unknown> | undefined;
+    res?.json({
+      success: true,
+      status: "completed",
+      videoUrl: (doneResult?.url as string) ?? null,
+      thumbnailUrl: (doneResult?.thumbnail_url as string) ?? null,
+      result: job.result,
+    });
   },
 );
 

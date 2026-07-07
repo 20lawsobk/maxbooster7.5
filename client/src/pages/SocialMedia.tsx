@@ -2940,12 +2940,18 @@ export default function SocialMedia() {
                                         item.accent_color || ""
                                       }
                                       autoStart={true}
-                                      onVideoGenerated={(videoUrl: string) => {
+                                      onVideoGenerated={(
+                                        videoUrl: string,
+                                        poster?: string,
+                                      ) => {
                                         setUrlGeneratedContent((prev) => {
                                           const updated = [...prev];
                                           updated[index] = {
                                             ...updated[index],
                                             mediaUrl: videoUrl,
+                                            posterUrl:
+                                              poster ??
+                                              updated[index].posterUrl,
                                           };
                                           return updated;
                                         });

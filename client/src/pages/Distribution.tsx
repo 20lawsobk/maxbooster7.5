@@ -50,6 +50,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAnalyticsInvalidation } from "@/hooks/useAnalyticsInvalidation";
 import { apiRequest } from "@/lib/queryClient";
+import { VideoPlayer } from "@/components/ui/video-player";
 import { Upload, Music, Globe, Calendar as CalendarIcon, Clock, CheckCircle, XCircle, AlertCircle, Play, Download, BarChart3, DollarSign, Users, TrendingUp, Eye, Plus, Link2, X, Share2, Edit, Trash2, ExternalLink, Music2, Disc, FileAudio, Settings, CreditCard, Banknote, PieChart, Target, Zap, Shield, Crown, MapPin, ListMusic, Ticket, Film, Briefcase, Video, ShieldCheck, Wand2, Loader2, ImagePlus, Mic } from "lucide-react";
 import {
   SpotifyIcon,
@@ -6264,6 +6265,9 @@ function MusicVideosContent() {
   const [completedVideoUrl, setCompletedVideoUrl] = useState<string | null>(
     null,
   );
+  const [completedPosterUrl, setCompletedPosterUrl] = useState<string | null>(
+    null,
+  );
 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
@@ -6291,7 +6295,12 @@ function MusicVideosContent() {
         const data = await res.json();
         setJobStatus(data);
         if (data.status === "completed") {
-          setCompletedVideoUrl(data.videoUrl || data.outputPath || null);
+          setCompletedVideoUrl(
+            data.videoUrl || data.result?.url || data.outputPath || null,
+          );
+          setCompletedPosterUrl(
+            data.thumbnailUrl || data.result?.thumbnail_url || null,
+          );
           toast({
             title: "Music Video Ready!",
             description: "Your AI music video has been generated.",
@@ -6326,10 +6335,11 @@ function MusicVideosContent() {
   };
 
   const handleGenerate = async () => {
-    if (!selectedImages.length) {
+    if (!selectedImages.length && !selectedAudio) {
       toast({
-        title: "Images required",
-        description: "Upload at least 1 image to generate a music video.",
+        title: "Add audio or images",
+        description:
+          "Upload an audio track (for AI-generated scenes via MaxCore) or at least one image.",
         variant: "destructive",
       });
       return;
@@ -6338,6 +6348,7 @@ function MusicVideosContent() {
     setJobId(null);
     setJobStatus(null);
     setCompletedVideoUrl(null);
+    setCompletedPosterUrl(null);
     try {
       const form = new FormData();
       selectedImages.forEach((img) => form.append("images", img));
@@ -6356,6 +6367,28 @@ function MusicVideosContent() {
           enableVoiceNarration: enableVoice,
         }),
       );
+      // Flat fields the server route reads directly (the JSON `config` blob above
+      // is NOT parsed server-side). When an audio track is present we route to the
+      // MaxCore Music Video Studio (AI-generated photorealistic scenes per song
+      // section); with images and no audio the legacy image renderer is used.
+      form.append("ai_generate_scenes", selectedAudio ? "true" : "false");
+      form.append("artist_name", artistName || "");
+      form.append("hook", hookText || "");
+      form.append("body", bodyText || "");
+      form.append("cta", ctaText || "");
+      form.append("color_grade", colorGrade || "cinematic");
+      form.append("platform", outputPlatform || "instagram");
+      if (enableVoice) {
+        form.append("synthesize_voice", "true");
+        if (voiceProfile) form.append("voice_profile_id", voiceProfile);
+        // Legacy renderer narrates voice_text; feed it the script so narration
+        // isn't empty (studio/MaxCore path ignores this and uses hook/body/cta).
+        const voiceScript = [hookText, bodyText, ctaText]
+          .filter(Boolean)
+          .join(". ")
+          .trim();
+        if (voiceScript) form.append("voice_text", voiceScript);
+      }
       const csrfToken2 = getCsrfTokenFromCookie();
       const res = await fetch("/api/social/generate-music-video", {
         method: "POST",
@@ -6669,7 +6702,11 @@ function MusicVideosContent() {
           <Button
             className="w-full gradient-bg"
             onClick={handleGenerate}
-            disabled={!selectedImages.length || isSubmitting || isGenerating}
+            disabled={
+              (!selectedImages.length && !selectedAudio) ||
+              isSubmitting ||
+              isGenerating
+            }
           >
             {isSubmitting ? (
               <>
@@ -6719,10 +6756,10 @@ function MusicVideosContent() {
                   </div>
                   {completedVideoUrl && (
                     <>
-                      <video
-                        controls
-                        className="w-full rounded-lg max-h-64 bg-black"
+                      <VideoPlayer
                         src={completedVideoUrl}
+                        poster={completedPosterUrl ?? undefined}
+                        className="w-full rounded-lg max-h-64 bg-black"
                       />
                       <Button
                         variant="outline"
