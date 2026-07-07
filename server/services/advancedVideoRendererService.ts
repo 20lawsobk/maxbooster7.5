@@ -316,15 +316,18 @@ async function compositeTextOnLocalVideo(
     hookY += 92;
   }
 
-  // ── Body: lower-middle area, smaller white with shadow ─────────────────────
-  let bodyY = 680;
+  // ── Body: lower third, smaller white with shadow ───────────────────────────
+  // Height-relative so it stays clear of the MaxCore artwork's own headline
+  // band (the card's typographic text sits mid-frame after cover-scaling) and
+  // above the gold CTA at h-210.
+  let bodyOffset = 640;
   for (const line of bodyLines) {
     filters.push(
       `drawtext=text='${line}':fontsize=38:fontcolor=white@0.95` +
-      `:x=(w-text_w)/2:y=${bodyY}` +
+      `:x=(w-text_w)/2:y=h-${bodyOffset}` +
       `:shadowx=2:shadowy=2:shadowcolor=black@0.8`,
     );
-    bodyY += 56;
+    bodyOffset -= 56;
   }
 
   // ── CTA: near bottom, gold / yellow ────────────────────────────────────────
@@ -784,15 +787,12 @@ export async function fetchPhotorealisticImage(
 
   const [W, H] = PHOTO_ASPECT_DIMS[aspectRatio] ?? PHOTO_ASPECT_DIMS["9:16"];
 
-  // Cinematic scene description — MaxCore's dataset uses music-photography
-  // keywords (venue lighting, artist silhouettes, crowd dynamics, etc.)
-  const sceneText = (hook || topic || "music artist").slice(0, 120);
-  const prompt = [
-    sceneText,
-    genre ? `${genre} music scene` : "music scene",
-    "photorealistic cinematic photography, dramatic studio lighting",
-    "ultra-high detail, 8k resolution, vivid colors, no text, no watermarks",
-  ].join(", ");
+  // MaxCore's image endpoint composes its own awareness prompt (tone / goal /
+  // audience / themes) server-side and RENDERS the prompt text as the artwork
+  // headline (engine: maxbooster-pil-v1). Send ONLY the clean hook copy —
+  // keyword-stuffed diffusion prompts ("8k resolution, no text, …") get
+  // printed verbatim onto the card and look like debug output.
+  const prompt = (hook || topic || "music artist").slice(0, 120);
 
   try {
     const result = await MaxCoreAIClient.generate<{
@@ -839,7 +839,9 @@ export async function fetchPhotorealisticImage(
       const localPath = path.join(PHOTO_CACHE_DIR, filename);
 
       const imgResp = await fetch(imageUrl, {
-        headers: { "X-Admin-Key": MC_AI_KEY, Authorization: `Bearer ${MC_AI_KEY}` },
+        // Bearer ONLY — MaxCore validates X-Admin-Key/X-API-Key schemes first
+        // and 401s the whole request if they're present (see replit.md).
+        headers: { Authorization: `Bearer ${MC_AI_KEY}` },
         signal: AbortSignal.timeout(30_000),
       });
       if (imgResp.ok) {
@@ -1428,7 +1430,31 @@ export async function renderVideo(
   // photorealistic pipeline (MaxCore /generate/image + FFmpeg assembly).
   if (jobResp?.scenes?.length || (jobResp?.success && !jobResp?.url && !jobResp?.job_id)) {
     const scriptHook = jobResp?.hook || hook;
-    const scriptBody = jobResp?.script?.split("\n")[1] || body;
+    // Body text must be real caption copy, never a visual direction / image
+    // prompt. MaxCore's `script` interleaves narration with visual directions
+    // ("Bold cinematic cover art for …, 8k resolution, no text"), so drawing
+    // script line 2 verbatim baked the image prompt into the video as text.
+    const looksLikeVisualPrompt = (t: string | undefined | null): boolean =>
+      !!t &&
+      /cover art|photorealistic|8k resolution|no text|no watermark|studio lighting|ultra-high detail|visual direction|camera angle/i.test(
+        t,
+      );
+    const usableBody = (t: string | undefined | null): string | undefined =>
+      t && !looksLikeVisualPrompt(t) && t.trim() !== scriptHook.trim() ? t : undefined;
+    const sceneNarration = jobResp?.scenes
+      ?.map((s) => s?.narration?.trim())
+      .find((n) => usableBody(n));
+    const scriptLines = jobResp?.script
+      ?.split("\n")
+      .map((l) => l.trim())
+      .filter((l) => usableBody(l));
+    const scriptBody =
+      usableBody(jobResp?.body) ||
+      sceneNarration ||
+      // scriptLines is already filtered (no hook-dupes, no visual prompts),
+      // so the FIRST surviving line is the best body candidate.
+      scriptLines?.[0] ||
+      (usableBody(body) ? body : "");
     const scriptCta  = jobResp?.cta  || cta;
     const scriptHashtags = jobResp?.hashtags || hashtags;
     logger.info(
