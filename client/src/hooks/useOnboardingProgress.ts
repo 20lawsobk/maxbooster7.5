@@ -183,8 +183,8 @@ export function useOnboardingProgress() {
     progress,
     isLoading,
     isOnboardingActive: !progress?.completedAt && !progress?.skippedAt,
-    completionPercentage: progress.completionPercentage ?? 0,
-    totalPoints: progress.totalPoints ?? 0,
+    completionPercentage: progress?.completionPercentage ?? 0,
+    totalPoints: progress?.totalPoints ?? 0,
 
     isTaskCompleted,
     completeTaskByName,

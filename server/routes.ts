@@ -1971,14 +1971,14 @@ export async function registerRoutes(
   // Auth: Demo login - Read-only showcase of all features
   app.post("/api/auth/demo", async (req: Request, res: Response) => {
     try {
-      let demoUser = await storage.getUserByEmail("demo@maxbooster?.ai");
+      let demoUser = await storage.getUserByEmail("demo@maxbooster.ai");
       if (!demoUser) {
         const hashedPassword = await bcrypt.hash(
           crypto.randomBytes(32).toString("hex"),
           12,
         );
         demoUser = await storage.createUser({
-          email: "demo@maxbooster?.ai",
+          email: "demo@maxbooster.ai",
           password: hashedPassword,
           username: "demo_user",
           firstName: "Demo",
