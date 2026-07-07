@@ -1009,42 +1009,28 @@ async function kenBurnsAnimate(
 export async function generatePosterThumbnail(
   localMp4Path: string,
 ): Promise<string | null> {
-  try {
-    await fsPromises.mkdir(LOCAL_VIDEO_DIR, { recursive: true });
-    const outFilename = `poster_${randomUUID().slice(0, 8)}.jpg`;
-    const outPath = path.join(LOCAL_VIDEO_DIR, outFilename);
-
-    await new Promise<void>((resolve, reject) => {
-      const proc = spawn(
-        "ffmpeg",
-        [
-          "-y",
-          "-ss", "0.1",
-          "-i", localMp4Path,
-          "-frames:v", "1",
-          "-q:v", "3",
-          outPath,
-        ],
-        { stdio: ["ignore", "pipe", "pipe"] },
-      );
+  // Bounded ffmpeg/ffprobe runner — a poster is best-effort and must never
+  // stall job completion behind a hung subprocess.
+  const runBounded = (cmd: string, args: string[], timeoutMs: number) =>
+    new Promise<string>((resolve, reject) => {
+      const proc = spawn(cmd, [...args], { stdio: ["ignore", "pipe", "pipe"] });
+      const outChunks: string[] = [];
       const errChunks: string[] = [];
-      // A poster is best-effort — never let a hung ffmpeg stall job completion.
       const killTimer = setTimeout(() => {
         proc.kill("SIGKILL");
-        reject(new Error("FFmpeg poster grab timed out after 10s"));
-      }, 10_000);
+        reject(new Error(`${cmd} poster step timed out after ${timeoutMs}ms`));
+      }, timeoutMs);
+      proc.stdout?.on("data", (d: Buffer) => outChunks.push(d.toString()));
       proc.stderr?.on("data", (d: Buffer) => errChunks.push(d.toString()));
       proc.on("close", (code) => {
         clearTimeout(killTimer);
-        if (code === 0) {
-          resolve();
-        } else {
+        if (code === 0) resolve(outChunks.join(""));
+        else
           reject(
             new Error(
-              `FFmpeg poster grab exited ${code}: ${errChunks.slice(-3).join("").slice(0, 200)}`,
+              `${cmd} exited ${code}: ${errChunks.slice(-3).join("").slice(0, 200)}`,
             ),
           );
-        }
       });
       proc.on("error", (e) => {
         clearTimeout(killTimer);
@@ -1052,9 +1038,98 @@ export async function generatePosterThumbnail(
       });
     });
 
+  // Mean luma (0-255) of a JPEG — detects near-black fade-in frames.
+  const frameBrightness = async (jpgPath: string): Promise<number | null> => {
+    try {
+      const out = await runBounded(
+        "ffmpeg",
+        [
+          "-v", "error",
+          "-i", jpgPath,
+          "-vf", "signalstats,metadata=print:file=-",
+          "-f", "null", "-",
+        ],
+        5_000,
+      );
+      const m = out.match(/signalstats\.YAVG=([\d.]+)/);
+      return m ? parseFloat(m[1]) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const extractFrame = async (outPath: string, seekSec: number) =>
+    runBounded(
+      "ffmpeg",
+      [
+        "-y",
+        "-ss", seekSec.toFixed(2),
+        "-i", localMp4Path,
+        // Pick the most representative frame from a short window instead of
+        // whatever frame lands exactly at the seek point.
+        "-vf", "thumbnail=30",
+        "-frames:v", "1",
+        "-q:v", "3",
+        outPath,
+      ],
+      10_000,
+    );
+
+  try {
+    await fsPromises.mkdir(LOCAL_VIDEO_DIR, { recursive: true });
+    const outFilename = `poster_${randomUUID().slice(0, 8)}.jpg`;
+    const outPath = path.join(LOCAL_VIDEO_DIR, outFilename);
+
+    // Probe duration so we can seek past intro fades (best-effort).
+    let durationSec = 0;
+    try {
+      const probed = await runBounded(
+        "ffprobe",
+        [
+          "-v", "error",
+          "-show_entries", "format=duration",
+          "-of", "csv=p=0",
+          localMp4Path,
+        ],
+        5_000,
+      );
+      durationSec = parseFloat(probed.trim()) || 0;
+    } catch {
+      /* fall back to fixed seeks below */
+    }
+
+    // Videos fade in from black, so the 0s frame is a near-black "placeholder
+    // looking" poster. Try ~25% in, then ~55% in, then the start.
+    const seeks = durationSec > 0.5
+      ? [
+          Math.max(0.5, durationSec * 0.25),
+          Math.min(durationSec - 0.2, durationSec * 0.55),
+          0.1,
+        ]
+      : [1.0, 0.1];
+
+    const MIN_BRIGHTNESS = 24; // YAVG below this reads as a black frame
+    let extracted = false;
+    for (const seek of seeks) {
+      try {
+        await extractFrame(outPath, seek);
+      } catch {
+        continue;
+      }
+      const stat = await fsPromises.stat(outPath).catch(() => null);
+      if (!stat || stat.size < 1_000) continue;
+      extracted = true;
+      const brightness = await frameBrightness(outPath);
+      // Unknown brightness = accept (we at least have a real frame).
+      if (brightness === null || brightness >= MIN_BRIGHTNESS) break;
+      logger.info(
+        `[PhotoReal] Poster frame at ${seek.toFixed(1)}s too dark (YAVG=${brightness.toFixed(1)}) — trying a later frame`,
+      );
+    }
+
     // Only advertise a poster that is a real, non-trivial JPEG.
     const stat = await fsPromises.stat(outPath).catch(() => null);
-    if (!stat || stat.size < 1_000) {
+    if (!extracted || !stat || stat.size < 1_000) {
       logger.warn("[PhotoReal] Poster frame missing or too small — skipping");
       return null;
     }

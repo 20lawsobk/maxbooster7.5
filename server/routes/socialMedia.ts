@@ -4960,12 +4960,21 @@ router.post(
             return;
           }
 
-          // Persist to PDIM
+          // Persist to PDIM — best-effort and time-bounded: when PDIM is
+          // congested this upload can hang for minutes, and it must never
+          // block the job from reporting "done" (the file is already served
+          // locally from /uploads/videos).
           try {
             const { storeMusicVideo } = await import("../services/pdimMediaStorageService.js");
             const videoFilePath = `${process.cwd()}/uploads/videos/${studioResult.filename}`;
-            const pdimMeta = await storeMusicVideo(userId, videoFilePath, studioResult as Record<string, unknown>);
+            const pdimMeta = await Promise.race([
+              storeMusicVideo(userId, videoFilePath, studioResult as Record<string, unknown>).catch(() => null),
+              new Promise<null>((resolve) =>
+                setTimeout(() => resolve(null), 30_000),
+              ),
+            ]);
             if (pdimMeta) studioResult.pdim = { key: pdimMeta.pdimKey, tier: pdimMeta.tier };
+            else logger.warn("[MusicVideo/Studio] PDIM store slow/unavailable — continuing without PDIM metadata");
           } catch (e) {
             logger.warn(`[MusicVideo/Studio] PDIM store skipped: ${e?.message?.slice(0, 80)}`);
           }
@@ -5075,7 +5084,14 @@ router.post(
             "../services/pdimMediaStorageService.js"
           );
           const videoFilePath = `${process.cwd()}/uploads/videos/${result.filename}`;
-          pdimVideoMeta = await storeMusicVideo(userId, videoFilePath, result);
+          // Time-bounded: a congested PDIM must never block job completion —
+          // the file is already served locally from /uploads/videos.
+          pdimVideoMeta = await Promise.race([
+            storeMusicVideo(userId, videoFilePath, result).catch(() => null),
+            new Promise<null>((resolve) =>
+              setTimeout(() => resolve(null), 30_000),
+            ),
+          ]);
           if (pdimVideoMeta) {
             result.pdim = {
               key: pdimVideoMeta.pdimKey,
@@ -5114,7 +5130,7 @@ router.post(
           createdAt: Date.now(),
         });
         logger.info(
-          `[MusicVideo] Job ${jobId} complete — ${result.filename} | PDIM: ${pdimVideoMeta.pdimKey ?? "skipped"}`,
+          `[MusicVideo] Job ${jobId} complete — ${result.filename} | PDIM: ${pdimVideoMeta?.pdimKey ?? "skipped"}`,
         );
       } catch (e) {
         logger.warn(`[MusicVideo] Job ${jobId} failed:`, e.message);
