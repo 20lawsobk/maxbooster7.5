@@ -44,9 +44,12 @@ export class MaxCoreAIClient {
   }
 
   private static authHeaders(): Record<string, string> {
+    // MaxCore validates X-API-Key / X-Admin-Key BEFORE Authorization and rejects
+    // the generation credential on those header schemes with 401 "Invalid or
+    // inactive API key". Sending them alongside the (valid) Bearer token makes
+    // MaxCore 401 every generation/inference call. Bearer alone is the only
+    // scheme the generation key authenticates under, so send ONLY that.
     return {
-      "X-Admin-Key": MC_AI_KEY,
-      "X-API-Key": MC_AI_KEY,
       Authorization: `Bearer ${MC_AI_KEY}`,
     };
   }

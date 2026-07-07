@@ -32,3 +32,4 @@
 - [Mobile load: dev-link vs published](mobile-load-dev-vs-prod.md) — dev/preview (`.replit.dev`) cellular flakiness is Vite-unbundled-dev + SW-bypass (not the SW); the PRODUCTION SW has real mobile defects (empty-503 hashed-asset poisoning w/ no retry, no shell-fetch timeout) left UNFIXED per user
 - [MaxCore endpoint map](maxcore-endpoint-map.md) — correct paths per arch doc: content=/api/generate/content, image=/api/generate/image, video=/api/platform/video/generate (requires user_id, returns sync scene-script not job_id)
 - [Spotify oEmbed native fetch](spotify-oembed-native-fetch.md) — safeFetchText axios agent fails for Spotify TLS (ERR_INVALID_IP_ADDRESS); hardcoded oEmbed URL uses native fetch safely
+- [MaxCore auth header scheme](maxcore-auth-header.md) — MaxCore 401s the generation key under X-API-Key/X-Admin-Key; send ONLY Authorization Bearer, or EVERY call 401s and surfaces as "MaxCore returned no content"
