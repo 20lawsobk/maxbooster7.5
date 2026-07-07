@@ -167,6 +167,20 @@ function errName(error: unknown): string | undefined {
   return error instanceof Error ? error.name : undefined;
 }
 
+/**
+ * Append a media-fragment so mobile browsers decode & show a first-frame poster
+ * instead of a grey placeholder. Skips blob:/data: URLs and URLs already carrying
+ * a fragment (which don't accept one).
+ */
+function withPosterFrame(u: string): string {
+  return u &&
+    !u.startsWith("blob:") &&
+    !u.startsWith("data:") &&
+    !u.includes("#")
+    ? `${u}#t=0.1`
+    : u;
+}
+
 const CINEMATIC_TEMPLATES = [
   {
     id: "cinematic_promo",
@@ -1073,13 +1087,14 @@ export function ServerVideoGenerator({
               <div className="space-y-3">
                 <div className="rounded-lg overflow-hidden border bg-black">
                   <video
-                    src={videoUrl}
+                    src={withPosterFrame(videoUrl)}
                     className="w-full"
                     style={{ maxHeight: 420 }}
                     controls
                     autoPlay
                     muted
                     playsInline
+                    preload="metadata"
                   />
                 </div>
                 {videoInfo && (
@@ -1824,13 +1839,14 @@ export function ServerVideoGenerator({
                 <div className="space-y-3">
                   <div className="rounded-lg overflow-hidden border bg-black">
                     <video
-                      src={videoUrl}
+                      src={withPosterFrame(videoUrl)}
                       className="w-full"
                       style={{ maxHeight: 420 }}
                       controls
                       autoPlay
                       muted
                       playsInline
+                      preload="metadata"
                     />
                   </div>
 

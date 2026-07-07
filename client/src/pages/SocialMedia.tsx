@@ -480,6 +480,18 @@ export default function SocialMedia() {
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(
     null,
   );
+  // Video URLs that failed to load inline (device decode/network failure) — show an
+  // honest fallback + download instead of a silent broken 0:00 player.
+  const [failedVideoUrls, setFailedVideoUrls] = useState<Set<string>>(
+    new Set(),
+  );
+  // Append a media-fragment so mobile browsers decode & show a first-frame poster
+  // instead of a grey placeholder. Skips blob:/data: URLs and URLs already carrying
+  // a fragment (which don't accept one).
+  const withPosterFrame = (u: string): string =>
+    u && !u.startsWith("blob:") && !u.startsWith("data:") && !u.includes("#")
+      ? `${u}#t=0.1`
+      : u;
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Calendar state
@@ -2416,13 +2428,35 @@ export default function SocialMedia() {
                               )}
                               {item.format === "video" && item.mediaUrl && (
                                 <div className="mb-2">
-                                  <video
-                                    src={item.mediaUrl}
-                                    controls
-                                    muted
-                                    playsInline
-                                    className="max-w-full h-auto rounded-lg border"
-                                  />
+                                  {failedVideoUrls.has(item.mediaUrl) ? (
+                                    <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 p-3">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <AlertTriangle className="h-4 w-4 text-amber-500" />
+                                        <span className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                                          Preview unavailable on this device
+                                        </span>
+                                      </div>
+                                      <p className="text-xs text-muted-foreground">
+                                        The video generated successfully but
+                                        couldn't play inline here. Use Download
+                                        below to save the clip.
+                                      </p>
+                                    </div>
+                                  ) : (
+                                    <video
+                                      src={withPosterFrame(item.mediaUrl)}
+                                      controls
+                                      muted
+                                      playsInline
+                                      preload="metadata"
+                                      onError={() =>
+                                        setFailedVideoUrls((prev) =>
+                                          new Set(prev).add(item.mediaUrl!),
+                                        )
+                                      }
+                                      className="max-w-full h-auto rounded-lg border"
+                                    />
+                                  )}
                                   <div className="flex justify-between items-center mt-1">
                                     <span className="text-xs text-muted-foreground">
                                       AI-generated video clip
@@ -2865,13 +2899,35 @@ export default function SocialMedia() {
                                   </div>
                                 ) : item.format === "video" && item.mediaUrl ? (
                                   <div className="mb-2">
-                                    <video
-                                      src={item.mediaUrl}
-                                      controls
-                                      muted
-                                      playsInline
-                                      className="max-w-full h-auto rounded-lg border"
-                                    />
+                                    {failedVideoUrls.has(item.mediaUrl) ? (
+                                      <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 p-3">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <AlertTriangle className="h-4 w-4 text-amber-500" />
+                                          <span className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                                            Preview unavailable on this device
+                                          </span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                          The video generated successfully but
+                                          couldn't play inline here. Use Download
+                                          below to save the clip.
+                                        </p>
+                                      </div>
+                                    ) : (
+                                      <video
+                                        src={withPosterFrame(item.mediaUrl)}
+                                        controls
+                                        muted
+                                        playsInline
+                                        preload="metadata"
+                                        onError={() =>
+                                          setFailedVideoUrls((prev) =>
+                                            new Set(prev).add(item.mediaUrl!),
+                                          )
+                                        }
+                                        className="max-w-full h-auto rounded-lg border"
+                                      />
+                                    )}
                                     <div className="flex justify-between items-center mt-1">
                                       <span className="text-xs text-muted-foreground">
                                         AI-generated video clip
