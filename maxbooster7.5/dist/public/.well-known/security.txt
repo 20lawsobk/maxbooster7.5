@@ -1,6 +1,0 @@
-Contact: mailto:security@max-booster.com
-Expires: 2027-01-01T00:00:00.000Z
-Encryption: https://max-booster.com/pgp-key.txt
-Preferred-Languages: en
-Policy: https://max-booster.com/security-policy
-Acknowledgments: https://max-booster.com/security-acknowledgments
