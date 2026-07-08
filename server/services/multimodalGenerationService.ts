@@ -2647,8 +2647,10 @@ const textWorker = {
                 ? { avoid_topics: userCtx.avoidTopics }
                 : {}),
             },
-            8_000,
-          ); // 8 s per slot — fail fast so the local fallback runs within the 30 s client window
+            20_000,
+          ); // 20 s per slot — MaxCore's awareness layer takes ~8-13 s under load
+          // (an 8 s budget flaked to local fallback); slots run in parallel and
+          // the local fallback is instant, so this still fits the 30 s client window.
 
           // /generate/content always returns { caption, hook, body, cta, hashtags, confidence }
           const caption: string = mc.caption ?? "";
@@ -2685,7 +2687,16 @@ const textWorker = {
       if (successful.length > 0) return successful;
 
       // All per-slot MaxCore calls failed — fall back to local template builder.
+      const firstFailure = perSlotResults.find(
+        (r): r is PromiseRejectedResult => r.status === "rejected",
+      );
       logger.warn(
+        {
+          reason:
+            firstFailure?.reason instanceof Error
+              ? firstFailure.reason.message
+              : String(firstFailure?.reason ?? "unknown"),
+        },
         "[MultimodalGen] All /generate/content slot calls failed — falling back to buildLocalTextAssets",
       );
       const localAssets = buildLocalTextAssets(rawSlots, inputs, req);

@@ -85,3 +85,6 @@ undefined (reading 'allowed')". Use `rules.text.hashtags?.allowed` (and guard `r
 nullable). Same class as section 1: an optional config field treated as always-present. Verified via
 the content-gen HTTP harness (tests/e2e/content-generation-http.ts) by sending platforms incl.
 youtube with text modality (no media pack — a pack triggers heavy/slow image+audio+video gen).
+
+## MaxCore awareness-layer latency vs fail-fast budgets
+MaxCore's awareness/quality-bridge layer makes generation endpoints take ~8-13s under load. Any "fail fast" per-call budget at or below that (e.g. 8s) intermittently flips real MaxCore output to local fallback — an availability bug masquerading as MaxCore flakiness. Size per-call budgets ≥20s where a fast local fallback still fits the client window, and ALWAYS log the rejection reason when falling back (a bare "all calls failed" warn makes this class undiagnosable).
