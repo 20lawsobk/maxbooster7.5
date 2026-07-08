@@ -484,7 +484,17 @@ router.post(
   },
 );
 
-// Advertising autopilot status — returns isRunning, config, modelStatus + campaign metrics
+// Platform CPM benchmarks (industry paid-ad rates) — used to compute organic ad-equivalent value
+const PLATFORM_CPM: Record<string, number> = {
+  instagram: 8.5, tiktok: 6.2, youtube: 11.4, twitter: 7.8,
+  facebook: 9.1, linkedin: 14.0, threads: 6.5, spotify: 12.0,
+};
+function adEquivalentValue(platform: string, organicReach: number): number {
+  const cpm = PLATFORM_CPM[platform] ?? 8.0;
+  return (organicReach / 1000) * cpm;
+}
+
+// Advertising autopilot status — returns isRunning, config, modelStatus + campaign organic metrics
 router?.get("/status", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const userId = req?.user!.id;
@@ -494,7 +504,7 @@ router?.get("/status", requireAuth, async (req: AuthenticatedRequest, res) => {
         .select({
           platform: adCampaigns.platform,
           status: adCampaigns.status,
-          budget: adCampaigns.budget,
+          performance: adCampaigns.performance,
         })
         .from(adCampaigns)
         .where(eq(adCampaigns?.userId, userId))
@@ -506,17 +516,26 @@ router?.get("/status", requireAuth, async (req: AuthenticatedRequest, res) => {
     const connectedPlatforms = [
       ...new Set(activeCampaigns?.map((c) => c?.platform)),
     ];
-    const totalBudget = campaigns?.reduce((sum, c) => sum + (c?.budget || 0), 0);
+    const totalOrganicReach = campaigns?.reduce((sum, c) => {
+      const perf = (c?.performance || {}) as Record<string, unknown>;
+      return sum + Number(perf?.organicReach || perf?.reach || 0);
+    }, 0);
+    const estimatedAdEquivalent = campaigns?.reduce((sum, c) => {
+      const perf = (c?.performance || {}) as Record<string, unknown>;
+      const reach = Number(perf?.organicReach || perf?.reach || 0);
+      return sum + adEquivalentValue(c?.platform, reach);
+    }, 0);
 
     res?.json({
-      isRunning: autopilotConfig.isRunning || false,
+      isRunning: autopilotConfig?.isRunning || false,
       config: autopilotConfig || null,
       status: {
         campaignStatus: activeCampaigns.length > 0 ? "active" : "inactive",
         connectedPlatforms,
-        budget: totalBudget,
-        spent: 0,
         activeCampaigns: activeCampaigns.length,
+        totalOrganicReach,
+        estimatedAdEquivalent: Math.round(estimatedAdEquivalent * 100) / 100,
+        adSpend: 0,
       },
       modelStatus: {
         advertising: { trained: false, version: "1.0.0" },
@@ -690,23 +709,23 @@ router?.get(
       const channelMap = new Map<
         string,
         {
-          spend: number;
+          organicReach: number;
           conversions: number;
-          revenue: number;
+          engagements: number;
           campaigns: number;
         }
       >();
       for (const c of campaigns) {
         const perf = (c?.performance || {}) as Record<string, unknown>;
         const entry = channelMap?.get(c?.platform) || {
-          spend: 0,
+          organicReach: 0,
           conversions: 0,
-          revenue: 0,
+          engagements: 0,
           campaigns: 0,
         };
-        entry.spend += Number(c?.budget || 0);
+        entry.organicReach += Number(perf?.organicReach || perf?.reach || 0);
         entry.conversions += Number(perf?.conversions || 0);
-        entry.revenue += Number(perf?.revenue || 0);
+        entry.engagements += Number(perf?.engagements || perf?.likes || 0);
         entry.campaigns += 1;
         channelMap?.set(c?.platform, entry);
       }
@@ -714,11 +733,12 @@ router?.get(
       const channels = Array?.from(channelMap?.entries()).map(
         ([platform, data]) => ({
           platform,
-          spend: data.spend,
+          organicReach: data.organicReach,
           conversions: data.conversions,
-          revenue: data.revenue,
-          roas: data.spend > 0 ? data?.revenue / data?.spend : 0,
+          engagements: data.engagements,
           campaigns: data.campaigns,
+          adEquivalentValue: Math.round(adEquivalentValue(platform, data.organicReach) * 100) / 100,
+          adSpend: 0,
         }),
       );
 
@@ -780,7 +800,6 @@ router?.get(
       const campaigns = await db
         .select({
           platform: adCampaigns.platform,
-          budget: adCampaigns.budget,
           performance: adCampaigns.performance,
         })
         .from(adCampaigns)
@@ -790,9 +809,9 @@ router?.get(
       const channelMap = new Map<string, number>();
       let total = 0;
       for (const c of campaigns) {
-        const rev = Number(
-          (c?.performance as Record<string, unknown>)?.revenue || c?.budget || 0,
-        );
+        const perf = (c?.performance || {}) as Record<string, unknown>;
+        const reach = Number(perf?.organicReach || perf?.reach || 0);
+        const rev = Number(perf?.revenue || adEquivalentValue(c?.platform, reach));
         channelMap?.set(c?.platform, (channelMap?.get(c?.platform) || 0) + rev);
         total += rev;
       }
@@ -871,18 +890,22 @@ router?.get(
         )
         .limit(50);
 
-      const segments = campaigns?.map((c) => ({
-        campaignId: c.id,
-        campaignName: c.name,
-        audience: c.targetAudience,
-        spend: Number(c?.budget || 0),
-        roas: (() => {
-          const perf = c?.performance as Record<string, unknown>;
-          const revenue = Number(perf?.revenue || 0);
-          const spend = Number(c?.budget || 0);
-          return spend > 0 ? revenue / spend : 0;
-        })(),
-      }));
+      const segments = campaigns?.map((c) => {
+        const perf = (c?.performance || {}) as Record<string, unknown>;
+        const reach = Number(perf?.organicReach || perf?.reach || 0);
+        const engagements = Number(perf?.engagements || perf?.likes || 0);
+        const engagementRate = reach > 0 ? (engagements / reach) * 100 : 0;
+        return {
+          campaignId: c.id,
+          campaignName: c.name,
+          audience: c.targetAudience,
+          organicReach: reach,
+          engagements,
+          engagementRate: Math.round(engagementRate * 100) / 100,
+          adEquivalentValue: Math.round(adEquivalentValue(c?.platform || "instagram", reach) * 100) / 100,
+          adSpend: 0,
+        };
+      });
 
       res?.json({ segments });
     } catch (error) {
@@ -994,46 +1017,42 @@ router?.get(
         )
         .limit(100);
 
-      const totalDailyBudget = campaigns?.reduce(
-        (sum, c) => sum + Number(c?.dailyBudget || c?.budget / 30 || 0),
-        0,
-      );
-      const avgRoas = (() => {
-        const withPerf = campaigns?.filter(
-          (c) => (c?.performance as Record<string, unknown>)?.roas,
-        );
-        if (!withPerf?.length) return 2.5;
-        return (
-          withPerf?.reduce(
-            (sum, c) =>
-              sum +
-              Number((c?.performance as Record<string, unknown>).roas || 0),
-            0,
-          ) / withPerf?.length
-        );
-      })();
+      // Organic reach projection — based on historical performance, grows with active campaigns
+      const baselineDailyReach = campaigns?.reduce((sum, c) => {
+        const perf = (c?.performance || {}) as Record<string, unknown>;
+        const totalReach = Number(perf?.organicReach || perf?.reach || 1000);
+        return sum + Math.round(totalReach / 30);
+      }, 500 * campaigns.length);
+
+      const avgPlatformCpm = campaigns.length > 0
+        ? campaigns.reduce((sum, c) => sum + (PLATFORM_CPM[c?.platform] ?? 8.0), 0) / campaigns.length
+        : 8.0;
 
       const daily = Array?.from({ length: 7 }, (_, i) => {
         const date = new Date();
         date?.setDate(date?.getDate() + i + 1);
-        const jitter = 0.85 + Math?.random() * 0.3;
-        const spend = totalDailyBudget * jitter;
+        const growthFactor = 1 + (i * 0.04);
+        const jitter = 0.9 + Math?.random() * 0.2;
+        const projectedReach = Math.round(baselineDailyReach * growthFactor * jitter);
+        const adEquiv = Math.round((projectedReach / 1000) * avgPlatformCpm * 100) / 100;
         return {
           date: date.toISOString().split("T")[0],
-          spend,
-          revenue: spend * avgRoas,
-          roas: avgRoas * jitter,
+          projectedOrganicReach: projectedReach,
+          estimatedAdEquivalent: adEquiv,
+          adSpend: 0,
         };
       });
 
       const weekly = Array?.from({ length: 4 }, (_, i) => {
-        const spend = totalDailyBudget * 7 * (0.9 + i * 0.05);
-        return { week: i + 1, spend, revenue: spend * avgRoas, roas: avgRoas };
+        const projectedReach = Math.round(baselineDailyReach * 7 * (1 + i * 0.06));
+        const adEquiv = Math.round((projectedReach / 1000) * avgPlatformCpm * 100) / 100;
+        return { week: i + 1, projectedOrganicReach: projectedReach, estimatedAdEquivalent: adEquiv, adSpend: 0 };
       });
 
       const monthly = Array?.from({ length: 3 }, (_, i) => {
-        const spend = totalDailyBudget * 30 * (0.95 + i * 0.03);
-        return { month: i + 1, spend, revenue: spend * avgRoas, roas: avgRoas };
+        const projectedReach = Math.round(baselineDailyReach * 30 * (1 + i * 0.08));
+        const adEquiv = Math.round((projectedReach / 1000) * avgPlatformCpm * 100) / 100;
+        return { month: i + 1, projectedOrganicReach: projectedReach, estimatedAdEquivalent: adEquiv, adSpend: 0 };
       });
 
       res?.json({
@@ -1042,7 +1061,8 @@ router?.get(
           weekly,
           monthly,
           activeCampaigns: campaigns.length,
-          dailyBudget: totalDailyBudget,
+          methodology: "organic_amplification",
+          adSpend: 0,
         },
       });
     } catch (error) {
@@ -1061,15 +1081,18 @@ router?.post("/optimize-campaign", requireAuth, async (req, res) => {
       return res?.status(400).json({ error: "Campaign ID is required" });
     }
 
-    // Build campaign object for AI optimization
+    // Build campaign object for MaxCore organic-amplification optimization
+    // All metrics are organic (no ad spend — adSpend is always 0)
+    const platform = performance.platform || "instagram";
+    const organicReach = performance.organicReach || performance.impressions || 1000;
     const campaign = {
       id: campaignId,
       name: performance.name || "Campaign",
-      platform: performance.platform || "instagram",
+      platform,
       objective: performance.objective || "engagement",
       status: "active" as const,
-      budget: performance.budget || 500,
-      dailyBudget: performance.dailyBudget || 50,
+      budget: 0,
+      dailyBudget: 0,
       startDate: new Date(),
       targeting: {
         ageMin: 18,
@@ -1092,16 +1115,16 @@ router?.post("/optimize-campaign", requireAuth, async (req, res) => {
         },
       ],
       metrics: {
-        impressions: performance.impressions || 1000,
-        clicks: performance.clicks || 50,
-        conversions: performance.conversions || 5,
-        spend: performance.spend || 100,
-        revenue: performance.revenue || 150,
+        organicReach,
+        impressions: organicReach,
+        clicks: performance.clicks || Math.round(organicReach * 0.05),
+        conversions: performance.conversions || Math.round(organicReach * 0.005),
+        engagements: performance.engagements || Math.round(organicReach * 0.08),
+        adSpend: 0,
+        adEquivalentValue: adEquivalentValue(platform, organicReach),
         ctr: performance.ctr || 0.05,
-        cvr: performance.cvr || 0.1,
-        cpc: performance.cpc || 2,
-        cpa: performance.cpa || 20,
-        roas: performance.roas || 1.5,
+        engagementRate: performance.engagementRate || 0.08,
+        viralScore: performance.viralScore || 0,
       },
     };
 
