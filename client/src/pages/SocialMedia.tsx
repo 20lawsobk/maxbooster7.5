@@ -481,6 +481,9 @@ export default function SocialMedia() {
   const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(
     null,
   );
+  const [generatedVideoPosterUrl, setGeneratedVideoPosterUrl] = useState<
+    string | undefined
+  >(undefined);
   const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(
     null,
   );
@@ -2040,7 +2043,10 @@ export default function SocialMedia() {
                         value={regularContentFormat}
                         onValueChange={(value) => {
                           setRegularContentFormat(value);
-                          if (value !== "video") setGeneratedVideoUrl(null);
+                          if (value !== "video") {
+                            setGeneratedVideoUrl(null);
+                            setGeneratedVideoPosterUrl(undefined);
+                          }
                           if (value !== "image") setGeneratedImageUrl(null);
                         }}
                       >
@@ -2064,8 +2070,12 @@ export default function SocialMedia() {
                           tone={selectedTone}
                           goal="growth"
                           artistName={userDisplayName || user?.username || ""}
-                          onVideoGenerated={(url: string) => {
+                          onVideoGenerated={(
+                            url: string,
+                            posterUrl?: string,
+                          ) => {
                             setGeneratedVideoUrl(url);
+                            setGeneratedVideoPosterUrl(posterUrl);
                             setMediaPreviewUrl(url);
                           }}
                           onImportToStudio={(url: string) => {
@@ -2202,10 +2212,14 @@ export default function SocialMedia() {
                                   className="max-h-40 rounded-lg"
                                 />
                               ) : (
-                                <video
+                                <VideoPlayer
                                   src={mediaPreviewUrl}
+                                  poster={
+                                    mediaPreviewUrl === generatedVideoUrl
+                                      ? generatedVideoPosterUrl
+                                      : undefined
+                                  }
                                   className="max-h-40 rounded-lg"
-                                  controls
                                 />
                               )}
                             </div>

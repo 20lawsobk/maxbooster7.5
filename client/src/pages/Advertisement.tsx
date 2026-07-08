@@ -1404,10 +1404,15 @@ export default function Advertisement() {
                           user?.email?.split("@")[0] ||
                           "Artist"
                         }
-                        onVideoGenerated={(url) => {
+                        onVideoGenerated={(url, posterUrl) => {
                           setGeneratedVideos((prev) => [
                             ...prev,
-                            { url, blob: new Blob(), createdAt: new Date() },
+                            {
+                              url,
+                              blob: new Blob(),
+                              posterUrl,
+                              createdAt: new Date(),
+                            },
                           ]);
                         }}
                         className="border-0 shadow-none p-0 bg-transparent"
@@ -1491,10 +1496,10 @@ export default function Advertisement() {
                             key={index}
                             className="rounded-lg overflow-hidden border bg-card"
                           >
-                            <video
+                            <VideoPlayer
                               src={video.url}
+                              poster={video.posterUrl}
                               className="w-full aspect-video object-cover"
-                              controls
                             />
                             <div className="p-2 text-xs text-muted-foreground">
                               {video.createdAt.toLocaleString()}
