@@ -447,7 +447,6 @@ function notifyMaxCore(label: string, simYears: number) {
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${MC_KEY}`,
-      "X-API-Key": MC_KEY,
     },
     body: payload,
     signal: AbortSignal.timeout(8_000),
@@ -729,7 +728,6 @@ app?.post("/generate", async (req: Request, res: Response) => {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${MC_KEY}`,
-        "X-API-Key": MC_KEY,
       },
       body: JSON.stringify(req?.body),
       signal: AbortSignal.timeout(60_000),
@@ -763,7 +761,6 @@ app?.post("/generate/keyframe", async (req: Request, res: Response) => {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${MC_KEY}`,
-        "X-API-Key": MC_KEY,
       },
       body: JSON.stringify(req?.body),
       signal: AbortSignal.timeout(30_000),

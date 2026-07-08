@@ -1,4 +1,6 @@
 import { randomUUID } from "crypto";
+import path from "path";
+import { promises as fsPromises } from "fs";
 import { logger } from "../logger.js";
 import { generateAudio as generateLocalAudio } from "./audioGeneratorService.js";
 import { sharpImageService } from "./sharpImageService.js";
@@ -85,12 +87,9 @@ async function maxcorePost(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(MAXCORE_KEY
-        ? {
-            Authorization: `Bearer ${MAXCORE_KEY}`,
-            "X-API-Key": MAXCORE_KEY,
-          }
-        : {}),
+      // MaxCore auth is Bearer-ONLY — sending X-API-Key/X-Admin-Key alongside
+      // makes MaxCore validate those schemes first and 401 every call.
+      ...(MAXCORE_KEY ? { Authorization: `Bearer ${MAXCORE_KEY}` } : {}),
     },
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(timeoutMs),
@@ -109,6 +108,88 @@ async function maxcorePost(
     );
   }
   return res?.json();
+}
+
+// ---------------------------------------------------------------------------
+// Remote media mirroring — MaxCore returns relative /uploads/... URLs that our
+// server cannot serve.  Absolute-ize them against the MaxCore origin and
+// best-effort mirror the bytes into public/generated-content/<kind>/ so the
+// asset survives MaxCore restarts and downloads work same-origin.
+// ---------------------------------------------------------------------------
+
+const MEDIA_MAGIC: Record<string, (b: Buffer) => boolean> = {
+  images: (b) =>
+    (b.length > 8 &&
+      b[0] === 0x89 &&
+      b[1] === 0x50 &&
+      b[2] === 0x4e &&
+      b[3] === 0x47) || // PNG
+    (b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) || // JPEG
+    (b.length > 12 && b.slice(8, 12).toString("ascii") === "WEBP") || // WebP
+    (b.length > 6 && b.slice(0, 4).toString("ascii") === "GIF8"), // GIF
+  audio: (b) =>
+    (b.length > 3 && b.slice(0, 3).toString("ascii") === "ID3") || // MP3 w/ ID3
+    (b.length > 2 && b[0] === 0xff && (b[1] & 0xe0) === 0xe0) || // MP3 frame
+    (b.length > 12 && b.slice(0, 4).toString("ascii") === "RIFF") || // WAV
+    (b.length > 4 && b.slice(0, 4).toString("ascii") === "OggS") || // OGG
+    (b.length > 12 && b.slice(4, 8).toString("ascii") === "ftyp"), // M4A/MP4
+};
+
+function absolutizeMaxCoreUrl(rawUrl: string): string {
+  if (!rawUrl) return "";
+  return rawUrl.startsWith("http://") || rawUrl.startsWith("https://")
+    ? rawUrl
+    : `${_MAXCORE_BASE}${rawUrl.startsWith("/") ? "" : "/"}${rawUrl}`;
+}
+
+/** True only when the URL's scheme+host exactly match the MaxCore origin. */
+function isMaxCoreOrigin(absoluteUrl: string): boolean {
+  try {
+    return new URL(absoluteUrl).origin === new URL(_MAXCORE_BASE).origin;
+  } catch {
+    return false;
+  }
+}
+
+async function mirrorRemoteAssetLocally(
+  rawUrl: string,
+  kind: "images" | "audio",
+): Promise<string> {
+  const absolute = absolutizeMaxCoreUrl(rawUrl);
+  if (!absolute) return "";
+  // SECURITY: only fetch (and only ever send the Bearer key to) the MaxCore
+  // origin. A non-MaxCore absolute URL in a MaxCore response must NOT be
+  // fetched server-side (SSRF pivot) nor receive our credentials — pass it
+  // through untouched for the client to resolve, matching prior behavior.
+  if (!isMaxCoreOrigin(absolute)) return absolute;
+  try {
+    const res = await fetch(absolute, {
+      headers: MAXCORE_KEY
+        ? { Authorization: `Bearer ${MAXCORE_KEY}` }
+        : undefined,
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!res.ok) return absolute;
+    const buffer = Buffer.from(await res.arrayBuffer());
+    // MaxCore's SPA answers unknown paths with HTML 200 — magic bytes are the
+    // only trustworthy validation.
+    if (buffer.length < 128 || !MEDIA_MAGIC[kind](buffer)) return absolute;
+
+    const baseName = path
+      .basename(absolute.split("?")[0])
+      .replace(/[^A-Za-z0-9._-]/g, "_");
+    const filename = `mc_${baseName || randomUUID()}`;
+    const dir = path.join(process.cwd(), "public", "generated-content", kind);
+    await fsPromises.mkdir(dir, { recursive: true });
+    await fsPromises.writeFile(path.join(dir, filename), buffer);
+    return `/generated-content/${kind}/${filename}`;
+  } catch (err) {
+    logger.warn(
+      `[MultimodalGen] Failed to mirror ${kind} asset locally — using remote URL:`,
+      err instanceof Error ? err.message : String(err),
+    );
+    return absolute;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -2963,12 +3044,19 @@ const imageWorker = {
         ),
       });
       const allOutputs = Array.isArray(result.outputs) ? result.outputs : [];
-      // Only accept outputs whose URLs are absolute — relative paths from the
-      // remote server (e.g. /uploads/images/...) cannot be served by our server.
-      const outputs = allOutputs.filter((o: Record<string, unknown>) => {
-        const url = o.url || o.src || "";
-        return url.startsWith("http://") || url.startsWith("https://");
-      });
+      // MaxCore returns relative /uploads/images/... URLs — absolute-ize them
+      // against the MaxCore origin and mirror locally so they serve same-origin.
+      const outputs = (
+        await Promise.all(
+          allOutputs.map(async (o: Record<string, unknown>) => {
+            const rawUrl = String(o.url || o.src || "");
+            if (!rawUrl) return null;
+            const servedUrl = await mirrorRemoteAssetLocally(rawUrl, "images");
+            if (!servedUrl) return null;
+            return { ...o, url: servedUrl, src: servedUrl };
+          }),
+        )
+      ).filter(Boolean) as Record<string, unknown>[];
       if (outputs.length > 0) return mapOutputs(outputs);
     } catch (err) {
       logger.warn(
@@ -3047,20 +3135,83 @@ const audioWorker = {
         intent: req.intent,
         platformRules: audioRules,
       });
-      const outputs = Array.isArray(result.outputs) ? result.outputs : [];
+
+      // Inline outputs (legacy shape) — use them directly.
+      let outputs = Array.isArray(result.outputs) ? result.outputs : [];
+
+      // Async job shape — MaxCore returns { job_id, status: "processing" }.
+      // Poll GET /api/audio-job/:id until done/error, bounded so the caller's
+      // HTTP request cannot hang indefinitely.
+      const jobId =
+        outputs.length === 0 && typeof result?.job_id === "string"
+          ? (result.job_id as string)
+          : null;
+      if (jobId) {
+        const AUDIO_POLL_ATTEMPTS = 20;
+        const AUDIO_POLL_INTERVAL_MS = 3_000;
+        logger.info(
+          `[MultimodalGen] MaxCore audio job ${jobId} — polling /audio-job (max ${AUDIO_POLL_ATTEMPTS} × ${AUDIO_POLL_INTERVAL_MS / 1000}s)`,
+        );
+        for (let attempt = 0; attempt < AUDIO_POLL_ATTEMPTS; attempt++) {
+          await new Promise((r) => setTimeout(r, AUDIO_POLL_INTERVAL_MS));
+          let jobStatus: Record<string, unknown> | null = null;
+          try {
+            const pollRes = await fetch(`${MAXCORE_URL}/audio-job/${jobId}`, {
+              headers: MAXCORE_KEY
+                ? { Authorization: `Bearer ${MAXCORE_KEY}` }
+                : undefined,
+              signal: AbortSignal.timeout(15_000),
+            });
+            if (!pollRes.ok) continue;
+            const ct = pollRes.headers.get("content-type") ?? "";
+            if (!ct.includes("application/json")) continue;
+            jobStatus = (await pollRes.json()) as Record<string, unknown>;
+          } catch {
+            continue; // transient poll failure — retry
+          }
+          const st = String(jobStatus?.status ?? "");
+          if (st === "error" || st === "failed") {
+            throw new Error(
+              `MaxCore audio job ${jobId} failed: ${String(jobStatus?.error ?? "unknown")}`,
+            );
+          }
+          if ((st === "done" || st === "completed") && jobStatus?.url) {
+            outputs = [
+              {
+                url: String(jobStatus.url),
+                platform,
+                meta: { maxcoreJobId: jobId },
+              },
+            ];
+            break;
+          }
+        }
+        if (outputs.length === 0) {
+          throw new Error(
+            `MaxCore audio job ${jobId} did not finish within the poll budget`,
+          );
+        }
+      }
+
       if (outputs.length > 0) {
-        return outputs.map((o: Record<string, unknown>) => ({
-          id: randomUUID(),
-          modality: "audio" as OutputModality,
-          payload: o.url || "",
-          platform: o.platform as Platform | undefined,
-          slotId: o.slotId,
-          metadata: {
-            ...(o.meta ?? {}),
-            maxDurationSec: audioRules.maxDurationSec,
-            platformRules: audioRules,
-          },
-        }));
+        // Mirror remote (possibly relative) URLs locally so they serve same-origin.
+        return await Promise.all(
+          outputs.map(async (o: Record<string, unknown>) => ({
+            id: randomUUID(),
+            modality: "audio" as OutputModality,
+            payload: await mirrorRemoteAssetLocally(
+              String(o.url || ""),
+              "audio",
+            ),
+            platform: (o.platform as Platform | undefined) ?? platform,
+            slotId: o.slotId,
+            metadata: {
+              ...(o.meta ?? {}),
+              maxDurationSec: audioRules.maxDurationSec,
+              platformRules: audioRules,
+            },
+          })),
+        );
       }
     } catch (err) {
       logger.warn(
