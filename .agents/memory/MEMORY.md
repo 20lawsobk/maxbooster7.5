@@ -36,3 +36,4 @@
 - [MaxCore image = PIL typographic card](maxcore-image-pil-card.md) — /generate/image RENDERS its composed prompt as artwork text; send clean hook copy only, no field suppresses typography, discover schemas via 422 not GET
 - [Frontend content-gen UI testing](frontend-content-gen-testing.md) — live /social-media composer gates generation behind a CONNECTED platform; demo is read-only (nWrite); social ContentGenerator.tsx is dead code; seed an active social_accounts row to unlock the toggle
 - [MaxCore auth header scheme](maxcore-auth-header.md) — MaxCore 401s the generation key under X-API-Key/X-Admin-Key; send ONLY Authorization Bearer, or EVERY call 401s and surfaces as "MaxCore returned no content"
+- [PDIM_* vs STORAGE_* token drift](pdim-storage-token-drift.md) — PDIM_BEARER_TOKEN/PDIM_EXEC_TOKEN went stale for the live instance; STORAGE_BEARER_TOKEN/STORAGE_HTTP_URL are current — reconciled once in pdimEnvFix.ts, not per call site

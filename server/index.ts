@@ -1,3 +1,6 @@
+// Reconcile stale PDIM_* credentials against the working STORAGE_* token
+// BEFORE any other module reads process.env.PDIM_* — must stay first.
+import "./lib/pdimEnvFix.js";
 // Import console error filter FIRST to suppress non-critical localhost Redis errors
 import "./lib/consoleErrorFilter.js";
 // Mandatory observability — must load before anything else can throw
