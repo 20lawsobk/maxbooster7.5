@@ -12,6 +12,7 @@ import {
 } from "../services/unifiedAIController";
 import { aiContentService } from "../services/aiContentService";
 import { analyzeUrl } from "../services/mediaAnalyzerService";
+import { MaxCoreAIClient } from "../services/maxcoreClient.js";
 import { logger } from "../logger";
 import { requireAuth } from "../middleware/auth.js";
 import { aiRateLimiter } from "../middleware/rateLimiter.js";
@@ -1405,30 +1406,65 @@ router.post(
 
       const caption: string = data.caption || `${hook}\n\n${body}\n\n${cta}`;
 
-      // Real-life simulation parameters
+      // ── MaxCore real-time engagement predictions ─────────────────────────────
+      // Run all three prediction modes in parallel; fall back to local estimators
+      // if MaxCore is unavailable or times out.
       const genre = detectedGenre;
       const hasEmoji =
-        /[\u{1F300}-\u{1F9FF}]|[\\u{2600}-\u{26FF}]|[\\u{2700}-\u{27BF}]/u.test(
+        /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u.test(
           caption,
         );
-      const viralScore = calcViralScore(
-        resolvedPlatform,
-        genre,
-        hasEmoji,
-        hashtags.length,
-        caption.length,
-      );
-      const engagement = predictEngagement(resolvedPlatform, viralScore);
-      const bestTime = getBestPostingTime(resolvedPlatform);
+
+      const [mcViral, mcEngagement, mcBestTime] = await Promise.allSettled([
+        MaxCoreAIClient.infer<{ viralScore?: number; score?: number }>(
+          "/api/predict/engagement",
+          { action: "viral_potential", platform: resolvedPlatform, content: caption },
+        ),
+        MaxCoreAIClient.infer<{ engagementRate?: number; predicted_engagement?: number }>(
+          "/api/predict/engagement",
+          { action: "predict_engagement", platform: resolvedPlatform, content: caption, postsPerWeek: 4 },
+        ),
+        MaxCoreAIClient.infer<{ bestTime?: string }>(
+          "/api/predict/engagement",
+          { action: "best_time", platform: resolvedPlatform },
+        ),
+      ]);
+
+      // Merge MaxCore results with local fallbacks
+      const mcViralVal = mcViral.status === "fulfilled" && mcViral.value
+        ? (mcViral.value.viralScore ?? mcViral.value.score ?? null)
+        : null;
+      const mcEngRate = mcEngagement.status === "fulfilled" && mcEngagement.value
+        ? (mcEngagement.value.engagementRate ?? mcEngagement.value.predicted_engagement ?? null)
+        : null;
+      const mcBestTimeStr = mcBestTime.status === "fulfilled" && mcBestTime.value
+        ? mcBestTime.value.bestTime ?? null
+        : null;
+
+      // Local fallbacks used only when MaxCore doesn't return data
+      const localViralScore = calcViralScore(resolvedPlatform, genre, hasEmoji, hashtags.length, caption.length);
+      const viralScore = mcViralVal !== null ? Math.round(mcViralVal * 100) : localViralScore;
+      const localEngagement = predictEngagement(resolvedPlatform, viralScore);
+      const localBestTime = getBestPostingTime(resolvedPlatform);
+
+      // Parse MaxCore best-time string "HH:MM" → hour number
+      let bestTime = localBestTime;
+      if (mcBestTimeStr) {
+        const parts = mcBestTimeStr.split(":");
+        const h = parseInt(parts[0], 10);
+        if (!isNaN(h)) {
+          const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+          bestTime = { dayOfWeek: days[new Date().getDay()], hour: h, label: mcBestTimeStr };
+        }
+      }
+
+      // Blend MaxCore engagement rate with local estimate
+      const engagement = mcEngRate !== null
+        ? { ...localEngagement, engagementRate: parseFloat((mcEngRate * 100).toFixed(2)) }
+        : localEngagement;
+
       const bench =
         PLATFORM_BENCHMARKS[resolvedPlatform] || PLATFORM_BENCHMARKS.instagram;
-
-      // Simulate realistic model processing time (platforms report 400ms–3s for real LLM calls)
-      const elapsed = Date.now() - generationStart;
-      const minRealisticMs = 420;
-      if (elapsed < minRealisticMs) {
-        await new Promise((r) => setTimeout(r, minRealisticMs - elapsed));
-      }
 
       const totalMs = Date.now() - generationStart;
 
@@ -1444,8 +1480,8 @@ router.post(
         cta,
         caption,
         hashtags,
-        // Real-life simulation data
-        simulation: {
+        // MaxCore AI analytics (viralScore/engagement from MaxCore; local benchmarks as fallback)
+        analytics: {
           genre: detectedGenre,
           viralScore,
           engagement: {

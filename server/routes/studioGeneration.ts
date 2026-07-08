@@ -498,7 +498,8 @@ router?.post("/pattern/melody", requireAuth, aiRateLimiter, async (req, res) => 
       audioUrl?: string;
       audio_url?: string;
       pattern?: Record<string, unknown>;
-    }>("/api/generate/audio", {
+    }>("/api/generate/content", {
+      mode: "music",
       text: prompt,
       instrument: params.instrument,
       genre: params.genre,
@@ -551,7 +552,8 @@ router?.post("/pattern/drums", requireAuth, aiRateLimiter, async (req, res) => {
       pattern?: Record<string, unknown>;
       audioUrl?: string;
       audio_url?: string;
-    }>("/api/generate/audio", {
+    }>("/api/generate/content", {
+      mode: "music",
       text: prompt,
       instrument: params.instrument,
       genre: params.genre,
@@ -600,7 +602,8 @@ router?.post("/pattern/chords", requireAuth, aiRateLimiter, async (req, res) => 
       progression?: string[];
       audioUrl?: string;
       audio_url?: string;
-    }>("/api/generate/audio", {
+    }>("/api/generate/content", {
+      mode: "music",
       text: prompt,
       genre: params.genre,
       key: params.key,
@@ -659,7 +662,8 @@ router?.post(
         chords?: Record<string, unknown>;
         audioUrl?: string;
         audio_url?: string;
-      }>("/api/generate/audio", {
+      }>("/api/generate/content", {
+        mode: "music",
         text: prompt,
         genre: params.genre,
         key: params.key,

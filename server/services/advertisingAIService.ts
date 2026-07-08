@@ -651,8 +651,10 @@ export class AdvertisingAIService {
       confidence?: number;
       percentile?: number;
       recommendations?: string[];
-    }>("/api/infer/viral-score", {
-      caption:
+      viralScore?: number;
+    }>("/api/predict/engagement", {
+      action: "viral_potential",
+      content:
         (creative as Record<string, unknown>).headline ||
         (creative as Record<string, unknown>).description ||
         "",

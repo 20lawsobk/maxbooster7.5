@@ -129,9 +129,22 @@ router?.get("/status", requireAuth, async (req, res) => {
       },
     );
 
+    const defaultConfig = {
+      enabled: false,
+      platforms: [],
+      postingFrequency: "daily",
+      brandVoice: "professional",
+      contentTypes: ["tips", "insights"],
+      autoPublish: false,
+      useMultimodalAnalysis: true,
+      autoAnalyzeBeforePosting: true,
+      minConfidenceThreshold: 0.7,
+    };
+    const activeConfig = config || defaultConfig;
+
     res?.json({
-      isRunning: config.enabled || false,
-      config: config || {
+      isRunning: activeConfig.enabled || false,
+      config: activeConfig || {
         enabled: false,
         platforms: [],
         postingFrequency: "daily",
