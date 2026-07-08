@@ -47,5 +47,8 @@ Every MaxCore generation endpoint has an advanced awareness layer wired in to br
 
 **Why:** `/api/generate-video` does not exist on MaxCore. `/api/platform/video/generate` is the correct endpoint per the architecture document the user shared. The old endpoint returned 404/error silently.
 
-## Content composer ignores its own intelligence (external, 2026-07)
-`/api/generate/content` runs the awareness layer (response `intelligence` block shows real comprehension: keywords, audience, strategy) but the hook/body/cta composer templates the RAW topic verbatim ("Here's what nobody tells you about {topic}", body = topic echo, stock CTA). Differential probe proved it: minimal vs rich payload (context/description/audience/intent/artist_name) → byte-identical output. No request field on our side unlocks it — the fix is in MaxCore's composer (wire it to consume the intelligence block). Same pattern as the PIL image card printing its prompt. Don't re-diagnose in-app: pass-through wiring is verified clean.
+## Content composer & awareness intelligence (external; RESOLVED 2026-07)
+`/api/generate/content` runs an awareness layer (response `intelligence` block: keywords, audience, strategy). Earlier the hook/body/cta composer templated the RAW topic verbatim and ignored it (differential probe: rich vs minimal payload → byte-identical). User then upgraded MaxCore-side composer — copy now weaves in extracted keywords + audience intent. Lesson: when output quality looks templated, differential-probe (minimal vs rich payload) FIRST — if identical, the gap is MaxCore-side composition, not our request; pass-through wiring here is verified clean. Output quality is bounded by the `topic` we send — garbage topic (raw Spotify track ID when title extraction fails) = garbage copy regardless of awareness quality.
+
+## Audio dataset (RESOLVED 2026-07)
+`mb:dataset:audio` was seeded on MaxCore — `/api/generate/audio` jobs now complete with real MP3s (30s, served from MaxCore /uploads, mirrored locally). The local-ffmpeg fallback path remains for MaxCore outages.
