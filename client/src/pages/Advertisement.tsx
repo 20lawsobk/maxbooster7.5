@@ -45,6 +45,7 @@ import {
   type Platform as VideoPlatform,
 } from "@/components/content/VideoContentGenerator";
 import { ServerVideoGenerator } from "@/components/content/ServerVideoGenerator";
+import { VideoPlayer } from "@/components/ui/video-player";
 import {
   AIImageGenerator,
   type ImagePlatform,
@@ -353,7 +354,7 @@ export default function Advertisement() {
     "video-ai" | "video-browser" | "image"
   >("video-ai");
   const [generatedVideos, setGeneratedVideos] = useState<
-    Array<{ url: string; blob: Blob; createdAt: Date }>
+    Array<{ url: string; blob: Blob; posterUrl?: string; createdAt: Date }>
   >([]);
   const [generatedAdImages, setGeneratedAdImages] = useState<
     Array<{ url: string; createdAt: Date }>
@@ -683,10 +684,14 @@ export default function Advertisement() {
     0,
   );
 
-  const handleVideoGenerated = (url: string, blob: Blob) => {
+  const handleVideoGenerated = (
+    url: string,
+    blob: Blob,
+    posterUrl?: string,
+  ) => {
     setGeneratedVideos((prev) => [
       ...prev,
-      { url, blob, createdAt: new Date() },
+      { url, blob, posterUrl, createdAt: new Date() },
     ]);
     toast({
       title: "Video Creative Generated",
