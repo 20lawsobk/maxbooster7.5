@@ -3307,8 +3307,9 @@ router.get(
       );
     }
 
+    // Bearer ONLY — MaxCore validates X-API-Key/X-Admin-Key schemes first
+    // and 401s the whole request if they're present (see replit.md).
     const authHeaders: Record<string, string> = {
-      "X-API-Key": MC_AI_KEY,
       Authorization: `Bearer ${MC_AI_KEY}`,
     };
 

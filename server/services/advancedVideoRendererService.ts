@@ -46,9 +46,9 @@ function urlStoreSet(filename: string, url: string): void {
 }
 
 function maxcoreAuthHeaders(): Record<string, string> {
+  // Bearer ONLY — MaxCore validates X-Admin-Key/X-API-Key schemes first
+  // and 401s the whole request if they're present (see replit.md).
   return {
-    "X-Admin-Key": MC_AI_KEY,
-    "X-API-Key": MC_AI_KEY,
     Authorization: `Bearer ${MC_AI_KEY}`,
   };
 }
@@ -372,7 +372,8 @@ async function compositeTextOnLocalVideo(
         await fsPromises.mkdir(audioDir, { recursive: true });
         const audioPath = path.join(audioDir, audioFilename);
         const audioResp = await fetch(fullAudioUrl, {
-          headers: { "X-Admin-Key": MC_AI_KEY, Authorization: `Bearer ${MC_AI_KEY}` },
+          // Bearer ONLY — X-Admin-Key/X-API-Key make MaxCore 401 the request.
+          headers: { Authorization: `Bearer ${MC_AI_KEY}` },
           signal: AbortSignal.timeout(30_000),
         });
         if (audioResp.ok) {
@@ -1007,7 +1008,25 @@ async function kenBurnsAnimate(
  * shows an actual frame instead of a grey placeholder on mobile (where browsers
  * won't decode a frame without a poster). Best-effort: returns the poster URL,
  * or null if extraction fails — it must never fail the video render itself.
+ *
+ * posterForServedUrl: best-effort poster for a served video URL. Only locally-served files
+ * (`/uploads/videos/...`) can be frame-extracted; proxy URLs return null.
+ * Prefix-guarded so contract drift can never resolve an unexpected path
+ * into the ffmpeg input. Never throws.
  */
+async function posterForServedUrl(
+  servedUrl: string | null | undefined,
+): Promise<string | null> {
+  if (!servedUrl || !servedUrl.startsWith("/uploads/videos/")) return null;
+  try {
+    return await generatePosterThumbnail(
+      path.join(process.cwd(), servedUrl.replace(/^\/+/, "")),
+    );
+  } catch {
+    return null;
+  }
+}
+
 export async function generatePosterThumbnail(
   localMp4Path: string,
 ): Promise<string | null> {
@@ -1493,6 +1512,7 @@ export async function renderVideo(
     return {
       success: true,
       url: servedUrl,
+      thumbnail_url: await posterForServedUrl(servedUrl),
       filename: jobResp.filename,
       width: jobResp.width,
       height: jobResp.height,
@@ -1520,6 +1540,7 @@ export async function renderVideo(
       return {
         ...result,
         url: servedUrl,
+        thumbnail_url: await posterForServedUrl(servedUrl),
         hook: finalHook,
         body: finalBody,
         cta: finalCta,

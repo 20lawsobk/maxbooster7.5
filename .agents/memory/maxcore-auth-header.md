@@ -26,3 +26,12 @@ different scheme, make it per-endpoint (e.g. `authHeaders("bearer"|"admin")`), n
 global multi-header blast. When "MaxCore returned no content" appears, probe MaxCore
 directly with the exact header set the client sends and check for 401 before assuming
 transient emptiness.
+
+**The bug recurs at scattered fetch sites, not just the shared client.** Fixing
+`MaxCoreAIClient.authHeaders()` was not enough: the video FILE-fetch paths (the video
+download/cache helper, the voiceover audio fetch, and the video-proxy route) each built
+their own header objects with the forbidden schemes — so MaxCore rendered videos fine
+but every attempt to download/stream the finished MP4 401'd, and the player showed a
+dead grey 0:00 box. When this class of symptom appears ("file not found on any candidate
+path" / all candidates fail), grep the WHOLE server for `X-API-Key|X-Admin-Key` before
+debugging URLs.
