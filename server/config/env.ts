@@ -18,7 +18,9 @@ const envSchema = z.object({
   PORT: z.coerce.number().min(1).max(65535).default(5000),
 
   // ── Database ──────────────────────────────────────────────────────────────
-  DATABASE_URL: z.string().url().startsWith("postgresql://"),
+  // Optional here — the app prefers NEON_DATABASE_URL (see config/defaults.ts).
+  // db.ts enforces that at least one is present at pool-creation time.
+  DATABASE_URL: z.string().url().startsWith("postgresql://").optional(),
 
   // ── Session / Auth ────────────────────────────────────────────────────────
   SESSION_SECRET: z.string().min(32),
@@ -86,7 +88,7 @@ function parseEnv() {
       .map((i) => `  ${i?.path.join(".")}: ${i?.message}`)
       .join("\n");
     // Log but don't crash for optional vars — only crash on required ones
-    const required = ["DATABASE_URL", "SESSION_SECRET"];
+    const required = ["SESSION_SECRET"];
     const criticalFail = result?.error.issues?.some((i) =>
       required?.includes(String(i?.path[0])),
     );
