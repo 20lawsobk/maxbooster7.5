@@ -58,6 +58,14 @@ try {
 
 let geoReader: Record<string, unknown> | null = null;
 let geoReaderLoading: Promise<unknown> | null = null;
+/**
+ * Monotonically incrementing generation counter.
+ * Incremented by reloadGeoReader() before it starts a fresh open().
+ * getGeoReader()'s async closure captures the generation at dispatch time and
+ * only writes back to `geoReader` if the generation hasn't advanced — ensuring
+ * a hot-swap that completes while an initial load is in-flight always wins.
+ */
+let geoReaderGeneration = 0;
 
 async function getGeoReader(): Promise<unknown> {
   if (geoReader) return geoReader;
@@ -72,15 +80,20 @@ async function getGeoReader(): Promise<unknown> {
     return null;
   }
 
+  const myGeneration = geoReaderGeneration;
   geoReaderLoading = (async () => {
     try {
       const { default: maxmind } = await import("maxmind");
-      geoReader = await maxmind.open(GEODB_PATH);
-      logger.info(`[GeoDNS] GeoIP database loaded from ${GEODB_PATH}`);
+      const reader = await maxmind.open(GEODB_PATH);
+      // Only write back if no hot-swap happened while we were loading
+      if (geoReaderGeneration === myGeneration) {
+        geoReader = reader as Record<string, unknown>;
+        logger.info(`[GeoDNS] GeoIP database loaded from ${GEODB_PATH}`);
+      }
       return geoReader;
     } catch (err) {
       logger.warn(
-        { err: err.message },
+        { err: (err as Error).message },
         "[GeoDNS] Failed to open GeoIP database",
       );
       geoReaderLoading = null; // allow retry on next request
@@ -345,18 +358,67 @@ export async function resolveGeoIP(
   return selectedIp;
 }
 
+// ── Hot-swap reload ───────────────────────────────────────────────────────────
+
+/**
+ * Reload the GeoIP database from disk without restarting the server.
+ * Safe to call while DNS queries are in-flight — the old reader stays alive
+ * until the new one is ready; only then is the module-level reference swapped.
+ */
+export async function reloadGeoReader(): Promise<boolean> {
+  if (!fs.existsSync(GEODB_PATH)) {
+    logger.warn(`[GeoDNS] reloadGeoReader: file not found at ${GEODB_PATH}`);
+    return false;
+  }
+  // Advance generation BEFORE opening so any concurrent getGeoReader() load
+  // in-flight will see the generation mismatch and skip writing back.
+  const swapGeneration = ++geoReaderGeneration;
+  geoReaderLoading = null; // cancel dedup so getGeoReader() won't wait on stale promise
+  try {
+    const { default: maxmind } = await import("maxmind");
+    const newReader = await maxmind.open(GEODB_PATH);
+    // Guard against two concurrent reloadGeoReader() calls racing each other
+    if (geoReaderGeneration === swapGeneration) {
+      geoReader = newReader as Record<string, unknown>;
+      logger.info(`[GeoDNS] Hot-swap complete — new database loaded from ${GEODB_PATH}`);
+      return true;
+    } else {
+      logger.info("[GeoDNS] Hot-swap superseded by a newer reload — discarding this reader");
+      return false;
+    }
+  } catch (err) {
+    logger.warn({ err: (err as Error).message }, "[GeoDNS] reloadGeoReader: failed to open new database");
+    return false;
+  }
+}
+
 // ── Status ────────────────────────────────────────────────────────────────────
 
 export function getGeoDnsStatus(): {
   enabled: boolean;
   dbLoaded: boolean;
   dbPath: string;
+  dbAgeDays: number | null;
+  dbModifiedAt: string | null;
   regionMap: Record<string, string>;
 } {
+  let dbAgeDays: number | null = null;
+  let dbModifiedAt: string | null = null;
+  try {
+    if (fs.existsSync(GEODB_PATH)) {
+      const { mtimeMs } = fs.statSync(GEODB_PATH);
+      dbModifiedAt = new Date(mtimeMs).toISOString();
+      dbAgeDays = Math.floor((Date.now() - mtimeMs) / 86_400_000);
+    }
+  } catch {
+    /* non-critical */
+  }
   return {
     enabled: GEODNS_ENABLED,
     dbLoaded: geoReader !== null,
     dbPath: GEODB_PATH,
+    dbAgeDays,
+    dbModifiedAt,
     regionMap,
   };
 }

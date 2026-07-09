@@ -16,6 +16,7 @@ import {
 } from "../services/externalServices.js";
 import { apiCache } from "../middleware/apiCache.js";
 import { isSchedulerLeader } from "../services/autonomousJobScheduler.js";
+import { getGeoDnsStatus } from "../services/geoDns.js";
 
 // Enhanced health check endpoints for 24/7 monitoring
 export function setupReliabilityEndpoints(
@@ -87,6 +88,24 @@ export function setupReliabilityEndpoints(
       res?.status(500).json({
         status: "error",
         timestamp: new Date().toISOString(),
+      });
+    }
+  });
+
+  // GeoDNS status — database age, loaded state, region map
+  app?.get("/api/system/geodns", (_req: Request, res: Response) => {
+    try {
+      const status = getGeoDnsStatus();
+      const stale = status.dbAgeDays !== null && status.dbAgeDays > 35;
+      res?.json({
+        ...status,
+        stale,
+        nextRefresh: "1st of each month, 03:15 UTC",
+      });
+    } catch (error: unknown) {
+      res?.status(500).json({
+        error: "GeoDNS status unavailable",
+        message: (error as Error).message,
       });
     }
   });

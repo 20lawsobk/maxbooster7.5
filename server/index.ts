@@ -1078,6 +1078,10 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     const { startAcmeRenewalCron } = await import("./services/acmeClient.js");
     startAcmeRenewalCron();
 
+    // GeoIP database refresh — runs on the 1st of each month at 03:15 UTC
+    const { startGeoDbRefreshCron } = await import("./services/geoDbRefresh.js");
+    startGeoDbRefreshCron();
+
     const { recoverStaleProcessingBatches } = await import(
       "./services/featureEventBuffer.js"
     );
