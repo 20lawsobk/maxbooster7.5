@@ -48,7 +48,7 @@ class OptimizedConnectionPool {
       process?.env.NODE_ENV === "production" || !!process?.env.REPLIT_DEPLOYMENT;
 
     const baseConfig: PoolConfig = {
-      connectionString: env.DATABASE_URL,
+      connectionString: env.NEON_DATABASE_URL || env.DATABASE_URL,
 
       max: isProduction ? 100 : 20,
       min: isProduction ? 10 : 2,

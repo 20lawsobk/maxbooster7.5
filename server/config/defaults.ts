@@ -276,7 +276,7 @@ export function validateConfig(): void {
   const errors: string[] = [];
 
   if (!config?.database.url) {
-    errors?.push("DATABASE_URL is required");
+    errors?.push("At least one of NEON_DATABASE_URL or DATABASE_URL is required");
   }
 
   if (config?.storage.provider === "s3") {
