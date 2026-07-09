@@ -54,6 +54,13 @@ Key architectural decisions include:
 - **Music Integrations**: Spotify, LabelGrid.
 - **Social Media OAuth Integrations**: Facebook, Instagram, Twitter/X, TikTok, YouTube, LinkedIn, Google, Threads.
 
+## Stripe Key Configuration
+
+Live Stripe keys (`sk_live_*`, `pk_live_*`, `whsec_*`) are stored **in the production environment only**.  
+The shared and development environments hold **no** Stripe keys — payment flows are disabled in dev by design (all Stripe env vars are optional in `server/config/env.ts`).
+
+To enable Stripe in development, add test-mode keys (`sk_test_*`, `pk_test_*`, and a test webhook secret) to the **development** environment via Replit's Secrets/Env panel. Get them from https://dashboard.stripe.com/test/apikeys.
+
 ## Recent Hardening — Lessons & Conventions
 
 Durable lessons and conventions only. Full per-task play-by-play is in `.local/agent-notes.md` and git history; cross-session pointers are in `.agents/memory/`.
