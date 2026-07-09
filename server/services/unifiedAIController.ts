@@ -578,9 +578,18 @@ export class UnifiedAIController {
         // Merge the user's actual keywords (from URL metadata, labels, etc.)
         // so the post reaches the right audience. Keep MaxCore's hashtags but
         // prepend keyword-derived ones, capped at 15 total.
-        const mcHashtags: string[] = Array?.isArray(mc?.hashtags)
-          ? mc?.hashtags
-          : [];
+        // Sanitize MaxCore hashtags: drop anything that contains "—", quotes,
+        // spaces, or is longer than 40 chars — these are enriched topic strings
+        // that MaxCore occasionally echoes back as hashtags rather than real tags.
+        const mcHashtags: string[] = (
+          Array?.isArray(mc?.hashtags) ? mc?.hashtags : []
+        ).filter(
+          (h: string) =>
+            typeof h === "string" &&
+            h.startsWith("#") &&
+            h.length <= 40 &&
+            !/[—\s"'«»]/.test(h),
+        );
         const keywordHashtags = (options?.keywords ?? [])
           .filter((k: string) => k && k?.length > 1)
           .map((k: string) =>
