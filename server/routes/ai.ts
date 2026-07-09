@@ -466,6 +466,12 @@ router?.post(
     try {
       const { topic, genre, platform, tone, count } = req?.body;
 
+      if (!topic || typeof topic !== "string" || !topic.trim()) {
+        return res
+          .status(400)
+          .json({ error: "topic is required for hashtag generation" });
+      }
+
       const hashtags = unifiedAIController?.generateHashtags({
         topic,
         genre,

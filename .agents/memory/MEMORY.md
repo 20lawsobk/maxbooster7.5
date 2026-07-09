@@ -37,3 +37,4 @@
 - [Frontend content-gen UI testing](frontend-content-gen-testing.md) — live /social-media composer gates generation behind a CONNECTED platform; demo is read-only (nWrite); social ContentGenerator.tsx is dead code; seed an active social_accounts row to unlock the toggle
 - [MaxCore auth header scheme](maxcore-auth-header.md) — MaxCore 401s the generation key under X-API-Key/X-Admin-Key; send ONLY Authorization Bearer, or EVERY call 401s and surfaces as "MaxCore returned no content"
 - [PDIM_* vs STORAGE_* token drift](pdim-storage-token-drift.md) — PDIM_BEARER_TOKEN/PDIM_EXEC_TOKEN went stale for the live instance; STORAGE_BEARER_TOKEN/STORAGE_HTTP_URL are current — reconciled once in pdimEnvFix.ts, not per call site
+- [musicIndustryTrainingData stub](music-industry-training-stub.md) — file was missing; its absence silently killed 10+ routes at startup; stub shapes must match nested consumer access patterns exactly
