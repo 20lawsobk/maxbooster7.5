@@ -10,6 +10,13 @@ I prefer iterative development, with clear communication before significant chan
 
 **Agent reminder:** At the end of every task, record the full play-by-play (what was built, files changed, test baseline) in `.local/agent-notes.md`, and add only durable lessons/conventions to the concise "Recent Hardening — Lessons & Conventions" section below. Keep this file an overview + pointers, not a changelog — full detail lives in `.local/agent-notes.md`, git history, and `.agents/memory/`.
 
+## Running on Replit
+
+- **Install:** `pnpm install` (lockfile is `pnpm-lock.yaml`; `.npmrc` uses `node-linker=hoisted` — required, see `.agents/memory/install-pnpm-hoisted-and-workflow.md`). Run heavy installs as a workflow, not detached bash.
+- **Run:** the `Start application` workflow runs `npm run dev` (→ `tsx server/index.ts`) and serves the web app on **port 5000**.
+- **Environment:** all runtime API/config values live in the `shared` environment (loaded from the owner's env file). **Exception:** live Stripe keys (`STRIPE_*`, `VITE_STRIPE_PUBLIC_KEY`) are set in the **production** environment only — dev/shared intentionally hold none so live payment setup never runs in dev (see "Stripe Key Configuration" below).
+- **Known non-fatal boot notes:** GeoDNS mmdb is absent (`scripts/download-geodb.sh` enables it); `shared/ml/training/musicIndustryTrainingData.js` is missing on a fresh import, which degrades some autopilot/auto-posting modules (see `.agents/memory/music-industry-training-stub.md`).
+
 ## System Architecture
 
 The Max Booster application uses a monorepo structure, separating concerns into `client/`, `server/`, `shared/`, `boosterstate/`, `server/pocket-dimension/`, and `AI training server/`. The UI/UX emphasizes a clean, responsive design and a Studio DAW-like interface with TopBar, LeftSidebar Browser, MainArea with view tabs (Timeline / Mixer / Node Graph / Flow), and RightSidebar Universal Inspector.
