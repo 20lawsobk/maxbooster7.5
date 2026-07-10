@@ -33,9 +33,16 @@ client could then act as another user under the server's privileged key.
 
 ## Durable MaxCore-side ceilings (NOT fixable from this repo)
 These gate what can ever return 200 regardless of proxy correctness:
-- **Admin key is stale.** `MAXCORE_ADMIN_KEY` is rejected by MaxCore ("Invalid
-  admin key") → `/api/platform/model/reload` and `/api/training/start-from-storage`
-  401. Same credential-drift class as the PDIM tokens.
+- **Admin key is a DISTINCT credential from the Bearer key.** `MAXCORE_ADMIN_KEY`
+  (sent as `X-Admin-Key`) must equal MaxCore's own server-side admin secret — NOT
+  a copy of `AI_SERVER_KEY`. A common failure is both env vars holding the same
+  `mbs_…` value → MaxCore 401 "Invalid admin key" on `/api/platform/model/reload`
+  and `/api/training/start-from-storage`. Diagnose by comparing the two values
+  (`KEY === BEARER`) and by MaxCore's message: "Invalid admin key" = header
+  received, value wrong; "X-Admin-Key header required" = header not sent. With the
+  correct distinct key both endpoints authenticate (reload → 200; start-from-storage
+  → 200 when a training session is staged, else 503 "No training session found").
+  Env changes require a workflow restart to take effect.
 - **MaxCore's own internal ~45s timeout** on heavy generation → `/api/platform/social/autopilot`,
   `/api/platform/daw/generate` (504) and `/api/platform/social/generate`,
   `/api/platform/video/generate` (503 "empty generatedContent — timed out")
