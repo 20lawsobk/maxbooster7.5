@@ -36,15 +36,21 @@ These gate what can ever return 200 regardless of proxy correctness:
 - **Admin key is stale.** `MAXCORE_ADMIN_KEY` is rejected by MaxCore ("Invalid
   admin key") → `/api/platform/model/reload` and `/api/training/start-from-storage`
   401. Same credential-drift class as the PDIM tokens.
-- **MaxCore's own internal ~45s timeout** on heavy generation → `/api/platform/social/autopilot`
-  and `/api/platform/daw/generate` return upstream-timeout even when reachable.
-- **4 listed paths don't exist on MaxCore** (they're aliases of ones that do):
-  `/api/audio/analyze` → use `/api/analyze/audio`; `/api/infer/viral-score` →
-  use `/api/content/score` or `/api/predict/engagement`; `/api/safety/screen`
-  and `/api/storage/artist/:id/releases` have no MaxCore implementation.
-- **Whole MaxCore server goes fully unreachable intermittently** (even its root
-  times out). When that happens every proxied call times out — it is a
-  MaxCore outage, not a proxy bug. Verify with a direct probe to `AI_SERVER_URL/`.
+- **MaxCore's own internal ~45s timeout** on heavy generation → `/api/platform/social/autopilot`,
+  `/api/platform/daw/generate` (504) and `/api/platform/social/generate`,
+  `/api/platform/video/generate` (503 "empty generatedContent — timed out")
+  even when MaxCore is reachable. Retryable; not a proxy bug.
+- **Whole MaxCore server goes fully unreachable / degraded intermittently.**
+  When fully down, even its root times out and every proxied call times out.
+  When *degraded*, some routes transiently answer with Express-style HTML
+  "Cannot POST /api/..." (looks like a 404 for a missing route but is NOT).
+  Verify true state with a direct probe to `AI_SERVER_URL/`.
+- **Do NOT conclude a path is unimplemented from a single degraded-state 404.**
+  When MaxCore is healthy, `/api/audio/analyze`, `/api/safety/screen`,
+  `/api/infer/viral-score`, and `/api/storage/artist/:id/releases` all return
+  proper JSON 200 — they exist. Earlier HTML 404s were transient degradation.
+- **Fake-id job routes correctly 404** (`DELETE`/`download` on a nonexistent
+  video-job return `{"detail":"Job not found"}`) — the route works; the id doesn't.
 
 ## Correct request fields (MaxCore is FastAPI → 422 tells you the missing field)
 MaxCore's `/openapi.json` and `/docs` are hidden behind its SPA catch-all, so
