@@ -434,7 +434,7 @@ class AutoPostGenerator {
       body,
       hashtags,
       mentions: [],
-      mediaType: request.mediaType || "video",
+      mediaType: this.toPredictionMediaType(request.mediaType),
       callToAction,
       platforms,
       scheduledTime: new Date(),
@@ -558,7 +558,7 @@ class AutoPostGenerator {
       headline: content.headline,
       hashtags: content.hashtags,
       mentions: content.mentions,
-      mediaType: content.mediaType,
+      mediaType: this.toPostMediaType(content.mediaType),
     };
 
     // Post or schedule
@@ -622,7 +622,7 @@ class AutoPostGenerator {
       headline: content.headline,
       hashtags: content.hashtags,
       mentions: content.mentions,
-      mediaType: content.mediaType,
+      mediaType: this.toPostMediaType(content.mediaType),
     };
 
     // Post or schedule
@@ -684,6 +684,46 @@ class AutoPostGenerator {
     }
 
     return baseHashtags.slice(0, 7); // Max 7 hashtags for optimal performance
+  }
+
+  /**
+   * Map the wide content media union to the ad-AI viral-prediction contract
+   * ("text" | "video" | "carousel" | "image"). photo→image, audio→video.
+   */
+  private toPredictionMediaType(
+    mediaType?: string,
+  ): "text" | "video" | "carousel" | "image" {
+    switch (mediaType) {
+      case "photo":
+      case "image":
+        return "image";
+      case "carousel":
+        return "carousel";
+      case "text":
+        return "text";
+      default:
+        return "video"; // video/audio/undefined → video
+    }
+  }
+
+  /**
+   * Map the wide content media union to the PostContent media contract
+   * ("image" | "video" | "carousel" | undefined). text/audio have no media.
+   */
+  private toPostMediaType(
+    mediaType?: string,
+  ): "image" | "video" | "carousel" | undefined {
+    switch (mediaType) {
+      case "photo":
+      case "image":
+        return "image";
+      case "video":
+        return "video";
+      case "carousel":
+        return "carousel";
+      default:
+        return undefined; // text/audio → no post media
+    }
   }
 
   /**

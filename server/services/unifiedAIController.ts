@@ -740,7 +740,7 @@ export class UnifiedAIController {
 
     try {
       // MaxCore is the ONLY source — no local SentimentAnalyzer fallback.
-      const mcRaw = await MaxCoreAIClient?.infer<FullAnalysisResult>(
+      const mcRaw = await MaxCoreAIClient?.infer<Record<string, unknown>>(
         "/analyze/sentiment",
         {
           text: options.text,
@@ -750,22 +750,15 @@ export class UnifiedAIController {
       );
       const mc = requireMaxCore(mcRaw, "sentiment analysis");
       // A non-null response with no usable sentiment signal is unavailability.
-      if (
-        !(
-          (mc as Record<string, unknown>).sentiment ||
-          (mc as Record<string, unknown>).label
-        )
-      ) {
+      if (!(mc.sentiment || mc.label)) {
         throw new AIUnavailableError("sentiment analysis");
       }
       return {
         success: true,
-        data: mc,
+        data: mc as unknown as FullAnalysisResult,
         processingTimeMs: Date.now() - startTime,
         source: "MaxCoreAI",
-        confidence:
-          (mc as Record<string, unknown>).confidence as number | undefined ||
-          0.92,
+        confidence: (mc.confidence as number | undefined) || 0.92,
       };
     } catch (error) {
       if (error instanceof AIUnavailableError) throw error;
@@ -921,7 +914,7 @@ export class UnifiedAIController {
       }
       return {
         success: true,
-        data: mc as
+        data: mc as unknown as
           | CampaignScore
           | BudgetOptimizationResult
           | CreativePrediction
@@ -997,7 +990,7 @@ export class UnifiedAIController {
       }
       return {
         success: true,
-        data: mc as
+        data: mc as unknown as
           | BestTimeResult
           | ContentTypeRecommendation
           | ViralPotentialScore

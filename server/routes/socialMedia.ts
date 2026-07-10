@@ -5067,9 +5067,19 @@ router.post(
           artistName: body.artist_name || body.artistName,
           beatSync: body.beat_sync !== "false",
           kenBurnsIntensity:
-            (body.intensity as Record<string, unknown>) || "moderate",
+            body.intensity === "subtle" ||
+            body.intensity === "moderate" ||
+            body.intensity === "dramatic"
+              ? body.intensity
+              : "moderate",
           colorGrade:
-            (body.color_grade as Record<string, unknown>) || "cinematic",
+            body.color_grade === "none" ||
+            body.color_grade === "cinematic" ||
+            body.color_grade === "cool" ||
+            body.color_grade === "neon" ||
+            body.color_grade === "warm"
+              ? body.color_grade
+              : "cinematic",
           transitionType: body.transition,
         });
 
