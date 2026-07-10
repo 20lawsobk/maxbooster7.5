@@ -22,3 +22,6 @@ description: The durable rule that AI features must be MaxCore-sourced and fail 
 - Supplementary metadata (e.g. hashtags) may fall back to a caller-supplied list when MaxCore omits it — that is metadata, not the generated body.
 
 Video/FFmpeg compositing and DSP metering (loudness) are processing, not AI generation — leaving their non-AI fallbacks is fine.
+
+## External servers are always-on BY DESIGN
+The external **MaxCore** (AI/inference) and **PDIM** (storage) servers are designed to stay active and available at all times (owner-confirmed). This is the premise of the fail-explicit contract: a MaxCore/PDIM failure is a *real* operational signal to surface (503 / explicit error), NOT a routine condition to mask with locally-generated content. Do not add "resilience" local fallbacks on the assumption these servers go down normally — they aren't supposed to.
