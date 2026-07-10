@@ -1379,7 +1379,24 @@ class AdvancedSocialAIService {
       ] || AUDIENCE_PROFILES.indie_artists;
 
     // ── 8TB dataset via MaxCore is the ONLY text source ─────────────────────
-    const mc = await MaxCoreAIClient.infer<unknown>("/api/generate/content", {
+    // Dedicated social-generation endpoint (richer, platform-aware output than
+    // the generic /generate/content). It nests results under `variants[]`; we
+    // normalize the first variant to the flat {hook,body,cta,caption,hashtags}
+    // shape the rest of this method consumes.
+    const mcRaw = await MaxCoreAIClient.infer<{
+      hook?: string;
+      body?: string;
+      cta?: string;
+      caption?: string;
+      hashtags?: string[];
+      variants?: Array<{
+        hook?: string;
+        body?: string;
+        cta?: string;
+        caption?: string;
+        hashtags?: string[];
+      }>;
+    }>("/api/platform/social/generate", {
       platform: request.platforms[0] || "instagram",
       topic: request.topic || "new music",
       tone: request.tone || "energetic",
@@ -1397,6 +1414,10 @@ class AdvancedSocialAIService {
       caption_length: request.captionLength,
       cta_strength: request.callToActionStrength,
     });
+    const mc =
+      mcRaw && Array.isArray(mcRaw.variants) && mcRaw.variants.length > 0
+        ? mcRaw.variants[0]
+        : mcRaw;
 
     if (!mc || (!mc.hook && !mc.caption)) {
       // MaxCore returned null — either the endpoint is suppressed after a burst

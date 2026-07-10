@@ -1,5 +1,6 @@
 import type { AdCreative } from "@shared/schema";
 import { getRedisClient } from "../lib/redisConnectionFactory.js";
+import { MaxCoreAIClient } from "./maxcoreClient.js";
 
 /**
  * Advertisement Content Normalization Service
@@ -129,13 +130,29 @@ export class AdvertisingNormalizationService {
     content: string,
     _assets: string[],
   ): Promise<{ status: string; issues: Record<string, unknown> }> {
-    const issues = {
+    const issues: Record<string, unknown> = {
       offensive: this.detectOffensiveContent(content),
       spam: this.detectSpamPatterns(content),
       copyright: false, // Placeholder - users upload own content
       brandSafety: this.checkBrandSafety(content),
       engagement: this.validateEngagementQuality(content),
     };
+
+    // MaxCore safety screen as an additional signal — never relaxes local
+    // decisions; only ADDS a flag when MaxCore detects a violation. Null → local.
+    const screen = await MaxCoreAIClient.infer<{
+      allowed?: boolean;
+      flagged?: boolean;
+      severity?: string;
+      categories?: string[];
+    }>("/api/safety/screen", { content });
+    if (screen && (screen.flagged === true || screen.allowed === false)) {
+      issues.brandSafety = true;
+      issues.maxcoreSafety = {
+        severity: screen.severity ?? "unknown",
+        categories: screen.categories ?? [],
+      };
+    }
 
     const hasIssues = Object?.entries(issues).some(
       ([key, value]) => key !== "engagement" && value === true,

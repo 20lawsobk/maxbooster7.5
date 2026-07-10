@@ -14,6 +14,19 @@ Base URL: `AI_SERVER_URL` env var (e.g. `https://secure-ai-forge.replit.app`)
 | Audio gen | `POST /api/generate/audio` | returns async job `{job_id, status:"processing"}` — poll `GET /api/audio-job/:id` (Bearer) until `done`/`error`. Status GETs on wrong paths hit the SPA catch-all (HTML 200) — guard on JSON content-type. As of 2026-07 MaxCore errors "no real audio dataset available (mb:dataset:audio)" — server-side seeding needed before real audio returns |
 | Video gen | `POST /api/platform/video/generate` | requires `user_id`; returns synchronous scene-script (not a job_id) |
 
+## Dedicated `/platform/*` feature endpoints (verified 2026-07, richer than generic `/generate/content`)
+Wire feature services to these instead of the generic content endpoint. All Bearer-only. Key gotcha: **output is NESTED, not top-level** — normalize before consumers read it.
+| What | Path | Required | Response shape |
+|---|---|---|---|
+| Social gen | `POST /api/platform/social/generate` | topic, platform | `{variants:[{hook,body,cta,caption,hashtags}]}` — read `variants[0]` |
+| Ads gen | `POST /api/platform/ads/generate` | **`product`** (NOT topic — 422 without it) | `{creatives:[{hook,headline,body,cta,creative_brief}], targeting:{primary_interests,...}}` — read `creatives[0]`+`targeting` |
+| Social autopilot | `POST /api/platform/social/autopilot` | user_id, platform | `{recommendations:{next_topics:[{topic,hook,cta}], best_posting_times, content_type, style_focus}}` (recommendations, not raw gen) |
+| Ads audience | `POST /api/platform/ads/audience` | **`product`** | `{targeting:{...}, audience_segments:[]}` |
+| Safety screen | `POST /api/safety/screen` | content | `{allowed, flagged, severity, categories, enforced_text, stats}` |
+| Artist storage | `GET/POST /api/storage/artist/:profileId` | — | GET `{profile_id, profile:{genre,tone,...}, releases:[]}` |
+
+**Why:** switching social/ads generation from `/generate/content` to these gives platform-aware, multi-variant output. The `product`-required 422 on ads endpoints is the #1 wiring trap. MaxCore + PDIM are guaranteed always-up (per user), so these are the primary source — existing null→local fallback is harmless insurance, not a required design constraint.
+
 ## Mirroring media locally
 MaxCore media URLs are relative and its /uploads may be ephemeral — mirror bytes into `public/generated-content/<kind>/` with magic-byte validation (SPA answers unknown paths HTML 200). SECURITY: only fetch MaxCore-origin URLs server-side and NEVER send the Bearer key to any other host (SSRF/key-leak — architect-flagged).
 

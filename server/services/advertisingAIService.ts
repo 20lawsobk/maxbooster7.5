@@ -135,20 +135,25 @@ export class AdvertisingAIService {
     const startTime = Date?.now();
 
     // ── MaxCore creative amplification ──────────────────────────────────────
-    const mcCreative = await MaxCoreAIClient.generate<{
-      hook?: string;
-      body?: string;
-      cta?: string;
-      caption?: string;
-      platform_insights?: Record<string, unknown>;
-      suggested_hashtags?: string[];
-      optimal_post_times?: number[];
-      audience_segments?: string[];
-    }>("/api/generate/content", {
-      topic:
-        (creative as Record<string, unknown>).headline ||
-        (creative as Record<string, unknown>).description ||
-        "music artist promotion",
+    // Dedicated ads-generation endpoint — returns ad creatives + targeting.
+    // Requires `product`; results are nested under `creatives[]`. We normalize
+    // the first creative + targeting into the flat shape consumed below so the
+    // richer ad output flows through without changing downstream callers.
+    const adTopic =
+      ((creative as Record<string, unknown>).headline as string) ||
+      ((creative as Record<string, unknown>).description as string) ||
+      "music artist promotion";
+    const mcAdRaw = await MaxCoreAIClient.generate<{
+      creatives?: Array<{
+        hook?: string;
+        headline?: string;
+        body?: string;
+        cta?: string;
+      }>;
+      targeting?: Record<string, unknown>;
+    }>("/api/platform/ads/generate", {
+      product: adTopic,
+      topic: adTopic,
       platform: platforms[0] ?? "instagram",
       tone: "promotional",
       objective: campaign.objective ?? "engagement",
@@ -160,6 +165,23 @@ export class AdvertisingAIService {
         creative_id: creative.id,
       },
     });
+    const adCreative = mcAdRaw?.creatives?.[0] ?? null;
+    const targeting = (mcAdRaw?.targeting ?? {}) as Record<string, unknown>;
+    const mcCreative = adCreative
+      ? {
+          hook: adCreative.hook ?? null,
+          body: adCreative.body ?? null,
+          cta: adCreative.cta ?? null,
+          caption: adCreative.body ?? null,
+          headline: adCreative.headline ?? null,
+          platform_insights: targeting,
+          suggested_hashtags: [] as string[],
+          optimal_post_times: [] as number[],
+          audience_segments: Array.isArray(targeting.primary_interests)
+            ? (targeting.primary_interests as string[])
+            : [],
+        }
+      : null;
 
     // Calculate organic amplification potential (100%+ boost vs paid ads)
     const viralityScore = this?.calculateViralityScore(creative);
@@ -609,6 +631,17 @@ export class AdvertisingAIService {
     }
 
     // Record AI inference
+    // MaxCore audience targeting enrichment — attached alongside the deterministic
+    // segments; null result simply omits it (local segments unchanged).
+    const mcAudience = await MaxCoreAIClient.generate<{
+      targeting?: Record<string, unknown>;
+      audience_segments?: unknown[];
+    }>("/api/platform/ads/audience", {
+      product: "music artist promotion",
+      campaign_id: campaignId,
+      objective: "engagement",
+    });
+
     const outputs = {
       campaignId,
       totalSegments: numClusters,
@@ -619,6 +652,9 @@ export class AdvertisingAIService {
         platforms: s.targetingRecommendations.platforms,
       })),
       totalAudienceSize: segments.reduce((sum, s) => sum + s?.size, 0),
+      ...(mcAudience?.targeting
+        ? { maxcoreTargeting: mcAudience.targeting }
+        : {}),
     };
 
     await storage?.createAdAIRun({

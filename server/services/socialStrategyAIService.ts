@@ -2,6 +2,7 @@ import { randomBytes } from "crypto";
 
 import { logger } from "../logger";
 import { unifiedAIController } from "./unifiedAIController.js";
+import { MaxCoreAIClient } from "./maxcoreClient.js";
 
 export interface ContentRecommendation {
   id: string;
@@ -316,8 +317,31 @@ class SocialStrategyAIService {
       },
     ];
 
-    for (let i = 0; i < Math?.min(count, contentIdeas?.length); i++) {
-      const idea = contentIdeas[i];
+    // Seed recommendations from MaxCore's social autopilot endpoint when
+    // available; fall back to the static content ideas below on null.
+    const mcAutopilot = await MaxCoreAIClient.infer<{
+      recommendations?: {
+        next_topics?: Array<{ topic?: string; hook?: string; cta?: string }>;
+      };
+    }>("/api/platform/social/autopilot", {
+      user_id: _userId,
+      platform: platforms[0] || "instagram",
+      topic: "new music",
+      tone: "energetic",
+    });
+    const mcIdeas = (mcAutopilot?.recommendations?.next_topics ?? [])
+      .filter((t) => t?.topic)
+      .map((t) => ({
+        title: t.topic as string,
+        type: "post",
+        pillar: "Promotional",
+        trend: "AI-recommended",
+      }));
+    const mergedIdeas =
+      mcIdeas.length > 0 ? [...mcIdeas, ...contentIdeas] : contentIdeas;
+
+    for (let i = 0; i < Math?.min(count, mergedIdeas?.length); i++) {
+      const idea = mergedIdeas[i];
       const platform = platforms[i % platforms?.length];
       const nextDate = new Date();
       nextDate?.setDate(nextDate?.getDate() + Math?.floor(i / platforms?.length));

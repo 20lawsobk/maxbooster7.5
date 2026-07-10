@@ -4,6 +4,7 @@ import { artistProfiles, artistProfileReleases, distroTracks, profileClaimPipeli
 import type { ArtistProfile, InsertArtistProfile, ProfileClaimPipeline, ArtistIdentityLink, ArtistDnaSnapshot } from "@shared/schema";
 import { logger } from "../logger.js";
 import { labelGridService } from "./labelgrid-service.js";
+import { MaxCoreAIClient } from "./maxcoreClient.js";
 import type { LabelGridArtistPlatformPresence } from "./labelgrid-service.js";
 
 // ── Claim pipeline state constants ────────────────────────────────────────────
@@ -1408,6 +1409,18 @@ class ArtistProfileService {
       .set({ ...data, updatedAt: new Date() })
       .where(and(eq(artistProfiles?.id, id), eq(artistProfiles?.userId, userId)))
       .returning();
+
+    // Best-effort sync to MaxCore artist storage so generation endpoints read the
+    // latest profile. Fire-and-forget — never blocks or fails the local update.
+    if (updated) {
+      const d = data as Record<string, unknown>;
+      void MaxCoreAIClient.generate(`/api/storage/artist/${id}`, {
+        genre: d.genre,
+        tone: d.tone,
+        artist_name: (updated as Record<string, unknown>).name,
+      });
+    }
+
     return updated ?? null;
   }
 
