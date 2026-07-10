@@ -30,6 +30,7 @@ import {
   type CaptionResult,
 } from "../../shared/ml/nlp/ContentGenerator.js";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
+import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
 export { MaxCoreAIClient } from "./maxcoreClient.js";
 import {
   SentimentAnalyzer,
@@ -563,12 +564,19 @@ export class UnifiedAIController {
         `[UnifiedAI] MaxCore payload topic="${enrichedTopic.slice(0, 60)}" instruction="${(options.extraContext ?? "").slice(0, 80)}"`,
       );
 
-      const mc = await MaxCoreAIClient?.infer<unknown>(
+      const mcRaw = await MaxCoreAIClient?.infer<unknown>(
         "/api/generate/content",
         mcPayload,
       );
 
-      if (mc?.caption || mc?.hook) {
+      // MaxCore is the ONLY source — throw explicitly (HTTP 503) when it returns
+      // nothing rather than falling through to a "please retry" local response.
+      const mc = requireMaxCore(
+        mcRaw?.caption || mcRaw?.hook ? mcRaw : null,
+        "unified AI",
+      );
+
+      {
         const caption =
           mc?.caption ||
           `${mc?.hook}\n\n${mc?.body || ""}\n\n${mc?.cta || ""}`.trim();
@@ -630,17 +638,6 @@ export class UnifiedAIController {
           confidence: mc.confidence || 0.95,
         };
       }
-
-      // MaxCore returned no content — transient issue.
-      logger?.warn(
-        "[UnifiedAI] MaxCore returned empty response (transient) — no content generated",
-      );
-      return {
-        success: false,
-        error: "MaxCore returned no content — please retry",
-        processingTimeMs: Date.now() - startTime,
-        source: "MaxCoreAI",
-      };
     } catch (error) {
       logger?.warn({ err: error }, "[UnifiedAI] generateContent error:");
       return {
@@ -675,35 +672,37 @@ export class UnifiedAIController {
     const tone = options?.tone || "energetic";
 
     try {
-      // MaxCore is the ONLY source — always succeeds via remote + local engine
-      const mc = await MaxCoreAIClient?.infer<unknown>("/api/generate/content", {
-        platform,
-        topic,
-        tone,
-        genre: options.musicData?.genre,
-        artist_name: options.musicData?.artist,
-      });
-      if (mc?.caption || mc?.hook) {
-        const parts = mc?.caption
-          ? [mc?.caption]
-          : [mc?.hook, mc?.body, mc?.cta].filter(Boolean);
-        return {
-          success: true,
-          data: { content: parts },
-          processingTimeMs: Date.now() - startTime,
-          source: "MaxCoreAI",
-          confidence: mc.confidence || 0.95,
-        };
-      }
-      // MaxCore returned no content — transient.
-      logger?.warn(
-        "[UnifiedAI] MaxCore returned empty response for generateSocialContent (transient)",
+      // MaxCore is the ONLY source — fail explicitly if it returns nothing.
+      const mc = requireMaxCore(
+        await MaxCoreAIClient?.infer<{
+          caption?: string;
+          hook?: string;
+          body?: string;
+          cta?: string;
+          confidence?: number;
+        }>("/api/generate/content", {
+          platform,
+          topic,
+          tone,
+          genre: options.musicData?.genre,
+          artist_name: options.musicData?.artist,
+        }),
+        "unified social content",
       );
+      const parts = (
+        mc.caption ? [mc.caption] : [mc.hook, mc.body, mc.cta].filter(Boolean)
+      ) as string[];
+      // A non-null response with no usable content is still a failure — do not
+      // fabricate or fall back to local output.
+      if (parts.length === 0) {
+        throw new AIUnavailableError("unified social content");
+      }
       return {
-        success: false,
-        error: "MaxCore returned no content — please retry",
+        success: true,
+        data: { content: parts },
         processingTimeMs: Date.now() - startTime,
         source: "MaxCoreAI",
+        confidence: mc.confidence || 0.95,
       };
     } catch (error) {
       logger?.warn({ err: error }, "[UnifiedAI] generateSocialContent error:");
@@ -740,73 +739,64 @@ export class UnifiedAIController {
     await this?.ensureInitialized();
 
     try {
-      // Priority 1: MaxCore
-      if (await MaxCoreAIClient?.isAvailable()) {
-        try {
-          const mc = await MaxCoreAIClient?.infer<unknown>(
-            "/analyze/sentiment",
-            {
-              text: options.text,
-              includeEmotions: options.includeEmotions,
-              includeToxicity: options.includeToxicity,
-            },
-          );
-          if (mc?.sentiment || mc?.label) {
-            return {
-              success: true,
-              data: mc as FullAnalysisResult,
-              processingTimeMs: Date.now() - startTime,
-              source: "MaxCoreAI",
-              confidence: mc.confidence || 0.92,
-            };
-          }
-        } catch (mcErr) {
-          logger?.warn(
-            "[UnifiedAI] MaxCore sentiment failed, falling through:",
-            mcErr,
-          );
-        }
-      }
-
-      let result: FullAnalysisResult | SentimentResult;
+      // MaxCore is the ONLY source — no local SentimentAnalyzer fallback.
+      const mcRaw = await MaxCoreAIClient?.infer<FullAnalysisResult>(
+        "/analyze/sentiment",
+        {
+          text: options.text,
+          includeEmotions: options.includeEmotions,
+          includeToxicity: options.includeToxicity,
+        },
+      );
+      const mc = requireMaxCore(mcRaw, "sentiment analysis");
+      // A non-null response with no usable sentiment signal is unavailability.
       if (
-        options?.includeEmotions ||
-        options?.includeToxicity ||
-        options?.includeAspects
+        !(
+          (mc as Record<string, unknown>).sentiment ||
+          (mc as Record<string, unknown>).label
+        )
       ) {
-        result = this?.sentimentAnalyzer.analyze(options?.text);
-      } else {
-        result = this?.sentimentAnalyzer.analyzeSentiment(options?.text);
+        throw new AIUnavailableError("sentiment analysis");
       }
-      const confidence =
-        "overallConfidence" in result
-          ? result?.overallConfidence
-          : result?.confidence;
       return {
         success: true,
-        data: result,
+        data: mc,
         processingTimeMs: Date.now() - startTime,
-        source: "SentimentAnalyzer",
-        confidence,
+        source: "MaxCoreAI",
+        confidence:
+          (mc as Record<string, unknown>).confidence as number | undefined ||
+          0.92,
       };
     } catch (error) {
+      if (error instanceof AIUnavailableError) throw error;
+      // MaxCore is the sole source; any failure means the feature is unavailable.
       logger?.warn({ err: error }, "Sentiment analysis failed:");
-      return {
-        success: false,
-        error:
-          error instanceof Error ? error?.message : "Sentiment analysis failed",
-        processingTimeMs: Date.now() - startTime,
-        source: "SentimentAnalyzer",
-      };
+      throw new AIUnavailableError("sentiment analysis");
     }
   }
 
-  public analyzeToxicity(text: string) {
-    return this?.sentimentAnalyzer.detectToxicity(text);
+  public async analyzeToxicity(text: string) {
+    // MaxCore-only: toxicity is a sentiment sub-analysis served by MaxCore.
+    const mc = requireMaxCore(
+      await MaxCoreAIClient?.infer<Record<string, unknown>>(
+        "/analyze/sentiment",
+        { text, includeToxicity: true },
+      ),
+      "toxicity analysis",
+    );
+    return mc.toxicity ?? mc;
   }
 
-  public detectEmotions(text: string) {
-    return this?.sentimentAnalyzer.detectEmotions(text);
+  public async detectEmotions(text: string) {
+    // MaxCore-only: emotion detection is a sentiment sub-analysis via MaxCore.
+    const mc = requireMaxCore(
+      await MaxCoreAIClient?.infer<Record<string, unknown>>(
+        "/analyze/sentiment",
+        { text, includeEmotions: true },
+      ),
+      "emotion detection",
+    );
+    return mc.emotions ?? mc;
   }
 
   // ============================================================================
@@ -905,104 +895,45 @@ export class UnifiedAIController {
     await this?.ensureInitialized();
 
     try {
-      // Priority 1: MaxCore
-      if (await MaxCoreAIClient?.isAvailable()) {
-        try {
-          const mc = await MaxCoreAIClient?.infer<unknown>("/optimize/ad", {
-            action: options.action,
-            campaign: options.campaign,
-            campaigns: options.campaigns,
-            totalBudget: options.totalBudget,
-            forecastPeriod: options.forecastPeriod,
-          });
-          // MaxCore returns {action, confidence, source} — accept any non-empty response
-          if (
-            mc &&
-            (mc?.score !== undefined ||
-              mc?.allocations ||
-              mc?.predictedCTR !== undefined ||
-              mc?.expectedROI !== undefined ||
-              mc?.confidence !== undefined)
-          ) {
-            return {
-              success: true,
-              data: mc,
-              processingTimeMs: Date.now() - startTime,
-              source: "MaxCoreAI",
-              confidence: mc.confidence || 0.9,
-            };
-          }
-        } catch (mcErr) {
-          logger?.warn(
-            "[UnifiedAI] MaxCore ad optimization failed, falling through:",
-            mcErr,
-          );
-        }
+      // MaxCore is the ONLY source — no local AdOptimizationEngine fallback.
+      const mcRaw = await MaxCoreAIClient?.infer<Record<string, unknown>>(
+        "/optimize/ad",
+        {
+          action: options.action,
+          campaign: options.campaign,
+          campaigns: options.campaigns,
+          totalBudget: options.totalBudget,
+          forecastPeriod: options.forecastPeriod,
+        },
+      );
+      const mc = requireMaxCore(mcRaw, "ad optimization");
+      // A non-null response with no usable optimization payload is unavailability.
+      if (
+        !(
+          mc?.score !== undefined ||
+          mc?.allocations ||
+          mc?.predictedCTR !== undefined ||
+          mc?.expectedROI !== undefined ||
+          mc?.confidence !== undefined
+        )
+      ) {
+        throw new AIUnavailableError("ad optimization");
       }
-
-      let result:
-        | CampaignScore
-        | BudgetOptimizationResult
-        | CreativePrediction
-        | ROIForecast;
-
-      switch (options?.action) {
-        case "score":
-          result = await this?.adOptimizationEngine.scoreCampaign(
-            options?.campaign,
-          );
-          break;
-        case "optimize_budget":
-          if (!options?.campaigns || !options?.totalBudget) {
-            throw new Error(
-              "campaigns and totalBudget required for budget optimization",
-            );
-          }
-          result = await this?.adOptimizationEngine.optimizeBudgetAllocation(
-            options?.campaigns,
-            options?.totalBudget,
-          );
-          break;
-        case "predict_creative":
-          if (
-            !options?.campaign.creatives ||
-            options?.campaign.creatives?.length === 0
-          ) {
-            throw new Error("Campaign must have creatives for prediction");
-          }
-          result = await this?.adOptimizationEngine.predictCreativePerformance(
-            options?.campaign.creatives[0],
-            options?.campaign,
-          );
-          break;
-        case "forecast_roi":
-          result = await this?.adOptimizationEngine.forecastROI(
-            options?.campaign,
-            options?.forecastPeriod || 30,
-          );
-          break;
-        default:
-          throw new Error(`Unknown ad optimization action: ${options?.action}`);
-      }
-
-      const confidence = "confidence" in result ? result?.confidence : 0.75;
-
       return {
         success: true,
-        data: result,
+        data: mc as
+          | CampaignScore
+          | BudgetOptimizationResult
+          | CreativePrediction
+          | ROIForecast,
         processingTimeMs: Date.now() - startTime,
-        source: "AdOptimizationEngine",
-        confidence,
+        source: "MaxCoreAI",
+        confidence: (mc.confidence as number | undefined) || 0.9,
       };
     } catch (error) {
+      if (error instanceof AIUnavailableError) throw error;
       logger?.warn({ err: error }, "Ad optimization failed:");
-      return {
-        success: false,
-        error:
-          error instanceof Error ? error?.message : "Ad optimization failed",
-        processingTimeMs: Date.now() - startTime,
-        source: "AdOptimizationEngine",
-      };
+      throw new AIUnavailableError("ad optimization");
     }
   }
 
@@ -1041,106 +972,44 @@ export class UnifiedAIController {
     await this?.ensureInitialized();
 
     try {
-      // Priority 1: MaxCore
-      if (await MaxCoreAIClient?.isAvailable()) {
-        try {
-          const mc = await MaxCoreAIClient?.infer<unknown>(
-            "/predict/engagement",
-            {
-              platform: options.platform,
-              action: options.action,
-              content: options.content,
-              postsPerWeek: options.postsPerWeek,
-            },
-          );
-          // MaxCore returns {action, platform, confidence, source} — accept any non-empty response
-          if (
-            mc &&
-            (mc?.bestTime ||
-              mc?.viralScore !== undefined ||
-              mc?.schedule ||
-              mc?.contentType ||
-              mc?.confidence !== undefined)
-          ) {
-            return {
-              success: true,
-              data: mc,
-              processingTimeMs: Date.now() - startTime,
-              source: "MaxCoreAI",
-              confidence: mc.confidence || 0.9,
-            };
-          }
-        } catch (mcErr) {
-          logger?.warn(
-            "[UnifiedAI] MaxCore engagement prediction failed, falling through:",
-            mcErr,
-          );
-        }
+      // MaxCore is the ONLY source — no local SocialAutopilotEngine fallback.
+      const mcRaw = await MaxCoreAIClient?.infer<Record<string, unknown>>(
+        "/predict/engagement",
+        {
+          platform: options.platform,
+          action: options.action,
+          content: options.content,
+          postsPerWeek: options.postsPerWeek,
+        },
+      );
+      const mc = requireMaxCore(mcRaw, "engagement prediction");
+      // A non-null response with no usable prediction payload is unavailability.
+      if (
+        !(
+          mc?.bestTime ||
+          mc?.viralScore !== undefined ||
+          mc?.schedule ||
+          mc?.contentType ||
+          mc?.confidence !== undefined
+        )
+      ) {
+        throw new AIUnavailableError("engagement prediction");
       }
-
-      let result:
-        | BestTimeResult
-        | ContentTypeRecommendation
-        | ViralPotentialScore
-        | ScheduleOptimization;
-
-      switch (options?.action) {
-        case "best_time":
-          result = this?.socialAutopilotEngine.predictBestTime(
-            options?.platform,
-            options?.content.contentType,
-          );
-          break;
-        case "recommend_type":
-          result = this?.socialAutopilotEngine.recommendContentType(
-            options?.platform,
-          );
-          break;
-        case "viral_potential":
-          result = this?.socialAutopilotEngine.scoreViralPotential(
-            options?.platform,
-            options?.content,
-          );
-          break;
-        case "optimize_schedule":
-          result = this?.socialAutopilotEngine.optimizeSchedule(
-            options?.platform,
-            options?.postsPerWeek || 7,
-          );
-          break;
-        case "predict_engagement":
-          const viralScore = this?.socialAutopilotEngine.scoreViralPotential(
-            options?.platform,
-            options?.content,
-          );
-          result = viralScore;
-          break;
-        default:
-          throw new Error(
-            `Unknown engagement prediction action: ${options?.action}`,
-          );
-      }
-
-      const confidence = "confidence" in result ? result?.confidence : 0.7;
-
       return {
         success: true,
-        data: result,
+        data: mc as
+          | BestTimeResult
+          | ContentTypeRecommendation
+          | ViralPotentialScore
+          | ScheduleOptimization,
         processingTimeMs: Date.now() - startTime,
-        source: "SocialAutopilotEngine",
-        confidence,
+        source: "MaxCoreAI",
+        confidence: (mc.confidence as number | undefined) || 0.9,
       };
     } catch (error) {
+      if (error instanceof AIUnavailableError) throw error;
       logger?.warn({ err: error }, "Engagement prediction failed:");
-      return {
-        success: false,
-        error:
-          error instanceof Error
-            ? error?.message
-            : "Engagement prediction failed",
-        processingTimeMs: Date.now() - startTime,
-        source: "SocialAutopilotEngine",
-      };
+      throw new AIUnavailableError("engagement prediction");
     }
   }
 

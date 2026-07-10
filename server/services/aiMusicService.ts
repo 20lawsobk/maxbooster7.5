@@ -8,6 +8,7 @@ import * as wav from "node-wav";
 import FFT from "fft.js";
 import { logger } from "../logger.js";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
+import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
 
 let ffmpeg: Record<string, unknown> | null = null;
 let ffmpegAvailable = false;
@@ -983,8 +984,8 @@ export class AIMusicService {
     const suggestions: AISuggestion[] = [];
 
     // ── MaxCore primary mix suggestions ──────────────────────────────────────
-    try {
-      const mcSuggestions = await MaxCoreAIClient.infer<{
+    const mcSuggestions = requireMaxCore(
+      await MaxCoreAIClient.infer<{
         suggestions?: Array<{
           category?: string;
           suggestion?: string;
@@ -998,117 +999,33 @@ export class AIMusicService {
         audio_analysis: audioAnalysis,
         task: "mix_suggestions",
         platform: "maxcore_mixing",
-      });
+      }),
+      "music suggestions",
+    );
 
-      if (
-        mcSuggestions?.suggestions &&
-        Array.isArray(mcSuggestions.suggestions) &&
-        mcSuggestions.suggestions.length > 0
-      ) {
-        for (const s of mcSuggestions.suggestions) {
-          suggestions.push({
-            id: randomBytes(8).toString("hex"),
-            category: (s.category ?? "general") as AISuggestion["category"],
-            suggestion: s.suggestion ?? "",
-            reasoning: s.reasoning ?? "",
-            confidence: s.confidence ?? 0.8,
-            parameters: s.parameters ?? {},
-            priority: (s.priority ?? "medium") as AISuggestion["priority"],
-            estimatedImpact: s.estimatedImpact ?? 7.0,
-          });
-        }
-        logger.info(
-          `[AIMusicService] MaxCore returned ${suggestions.length} mix suggestions`,
-        );
-        return suggestions;
-      }
-    } catch (mcErr) {
-      logger.warn(
-        { err: mcErr },
-        "[AIMusicService] MaxCore mix suggestions failed, using local rules",
-      );
-    }
-    // ── Local rule-based fallback ─────────────────────────────────────────────
-
-    const { genre, energy,  intensity, preset } = audioAnalysis as Record<string, unknown>;
-
-    if (genre === "hip-hop" || genre === "trap") {
-      suggestions?.push({
-        id: randomBytes(8).toString("hex"),
-        category: "eq",
-        suggestion: "Added +3dB at 80Hz because bass lacked punch",
-        reasoning:
-          "Hip-hop requires strong sub-bass presence. Boosting 80Hz adds weight without muddiness.",
-        confidence: 0.92,
-        parameters: { frequency: 80, gain: 3 },
-        priority: "high",
-        estimatedImpact: 8.5,
-      });
-
-      suggestions?.push({
-        id: randomBytes(8).toString("hex"),
-        category: "compression",
-        suggestion: "Applied compression (4:1) to control vocal dynamics",
-        reasoning:
-          "Vocals need consistent presence in hip-hop mix. 4:1 ratio maintains energy while controlling peaks.",
-        confidence: 0.89,
-        parameters: { ratio: 4, threshold: -15, attack: 5, release: 80 },
-        priority: "high",
-        estimatedImpact: 7.8,
-      });
+    // A non-null response with an empty suggestion list is still unavailability.
+    if (
+      !Array.isArray(mcSuggestions.suggestions) ||
+      mcSuggestions.suggestions.length === 0
+    ) {
+      throw new AIUnavailableError("music suggestions");
     }
 
-    if (genre === "edm" || genre === "house" || genre === "techno") {
-      suggestions?.push({
+    for (const s of mcSuggestions.suggestions ?? []) {
+      suggestions.push({
         id: randomBytes(8).toString("hex"),
-        category: "stereo",
-        suggestion: "Increased stereo width by 25% for pads and synths",
-        reasoning:
-          "Electronic music benefits from wide stereo image. Keeping bass centered while expanding highs.",
-        confidence: 0.87,
-        parameters: { width: 1.25, bassMonoFreq: 150 },
-        priority: "medium",
-        estimatedImpact: 7.5,
-      });
-
-      suggestions?.push({
-        id: randomBytes(8).toString("hex"),
-        category: "effects",
-        suggestion: "Added sidechain compression (4:1) for pumping effect",
-        reasoning:
-          "Sidechain compression creates rhythmic pumping essential to EDM/house genres.",
-        confidence: 0.91,
-        parameters: { ratio: 4, attack: 10, release: 150 },
-        priority: "high",
-        estimatedImpact: 8.2,
+        category: (s.category ?? "general") as AISuggestion["category"],
+        suggestion: s.suggestion ?? "",
+        reasoning: s.reasoning ?? "",
+        confidence: s.confidence ?? 0.8,
+        parameters: s.parameters ?? {},
+        priority: (s.priority ?? "medium") as AISuggestion["priority"],
+        estimatedImpact: s.estimatedImpact ?? 7.0,
       });
     }
-
-    if (energy && energy > 0.8) {
-      suggestions?.push({
-        id: randomBytes(8).toString("hex"),
-        category: "compression",
-        suggestion: "Applied parallel compression for extra punch",
-        reasoning: `High energy track (${(energy * 100).toFixed(0)}%) needs controlled dynamics with maximum impact.`,
-        confidence: 0.85,
-        parameters: { blend: 40, ratio: 8, threshold: -20 },
-        priority: "medium",
-        estimatedImpact: 7.0,
-      });
-    }
-
-    if (preset) {
-      suggestions?.push({
-        id: randomBytes(8).toString("hex"),
-        category: "general",
-        suggestion: `Applied ${preset} preset at ${(intensity || 1) * 100}% intensity`,
-        reasoning: `Genre-optimized settings for ${genre}. Professional preset tailored for this musical style.`,
-        confidence: 0.94,
-        priority: "high",
-        estimatedImpact: 9.0,
-      });
-    }
-
+    logger.info(
+      `[AIMusicService] MaxCore returned ${suggestions.length} mix suggestions`,
+    );
     return suggestions;
   }
 

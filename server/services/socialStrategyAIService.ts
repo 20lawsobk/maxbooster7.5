@@ -3,6 +3,7 @@ import { randomBytes } from "crypto";
 import { logger } from "../logger";
 import { unifiedAIController } from "./unifiedAIController.js";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
+import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
 
 export interface ContentRecommendation {
   id: string;
@@ -254,71 +255,9 @@ class SocialStrategyAIService {
       options;
     const recommendations: ContentRecommendation[] = [];
 
-    const contentIdeas = [
-      {
-        title: "Studio Session Behind the Scenes",
-        type: "reel",
-        pillar: "Behind the Scenes",
-        trend: "Studio aesthetics",
-      },
-      {
-        title: "New Track Teaser",
-        type: "video",
-        pillar: "Promotional",
-        trend: "Music teasers",
-      },
-      {
-        title: "Fan Q&A Session",
-        type: "story",
-        pillar: "Community Engagement",
-        trend: "Interactive content",
-      },
-      {
-        title: "Production Tips & Tricks",
-        type: "carousel",
-        pillar: "Educational",
-        trend: "Tutorial content",
-      },
-      {
-        title: "Day in the Life",
-        type: "reel",
-        pillar: "Personal/Authentic",
-        trend: "Artist lifestyle",
-      },
-      {
-        title: "Throwback to First Performance",
-        type: "post",
-        pillar: "Personal/Authentic",
-        trend: "Throwback Thursday",
-      },
-      {
-        title: "Cover Song Challenge",
-        type: "reel",
-        pillar: "Entertainment",
-        trend: "Music challenges",
-      },
-      {
-        title: "Equipment Breakdown",
-        type: "carousel",
-        pillar: "Educational",
-        trend: "Gear reviews",
-      },
-      {
-        title: "Collaboration Announcement",
-        type: "post",
-        pillar: "Promotional",
-        trend: "Artist collaborations",
-      },
-      {
-        title: "Fan Art Feature",
-        type: "story",
-        pillar: "User Generated Content",
-        trend: "Community spotlight",
-      },
-    ];
-
-    // Seed recommendations from MaxCore's social autopilot endpoint when
-    // available; fall back to the static content ideas below on null.
+    // Content recommendations are sourced authoritatively from MaxCore's
+    // social autopilot endpoint. There is no local fallback: if MaxCore
+    // returns nothing, this feature fails explicitly.
     const mcAutopilot = await MaxCoreAIClient.infer<{
       recommendations?: {
         next_topics?: Array<{ topic?: string; hook?: string; cta?: string }>;
@@ -329,7 +268,8 @@ class SocialStrategyAIService {
       topic: "new music",
       tone: "energetic",
     });
-    const mcIdeas = (mcAutopilot?.recommendations?.next_topics ?? [])
+    const autopilot = requireMaxCore(mcAutopilot, "content recommendations");
+    const mergedIdeas = (autopilot?.recommendations?.next_topics ?? [])
       .filter((t) => t?.topic)
       .map((t) => ({
         title: t.topic as string,
@@ -337,8 +277,12 @@ class SocialStrategyAIService {
         pillar: "Promotional",
         trend: "AI-recommended",
       }));
-    const mergedIdeas =
-      mcIdeas.length > 0 ? [...mcIdeas, ...contentIdeas] : contentIdeas;
+
+    // A non-null envelope with no usable topics is still unavailability — do
+    // not silently return an empty recommendation list.
+    if (mergedIdeas.length === 0) {
+      throw new AIUnavailableError("content recommendations");
+    }
 
     for (let i = 0; i < Math?.min(count, mergedIdeas?.length); i++) {
       const idea = mergedIdeas[i];

@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { requireAuth, requireAuthOnly } from "../middleware/auth.js";
 import { logger } from "../logger.js";
 import { unifiedAIController } from "../services/unifiedAIController.js";
+import { AIUnavailableError } from "../lib/aiSource.js";
 import { storage } from "../storage.js";
 import { notificationService } from "../services/notificationService.js";
 import { pythonAIService } from "../services/pythonAIService.js";
@@ -1166,6 +1167,9 @@ router?.post("/optimize-campaign", requireAuth, async (req, res) => {
       });
     }
   } catch (error) {
+    if (error instanceof AIUnavailableError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     logger?.warn({ err: error }, "Failed to optimize campaign:");
     res?.status(500).json({ error: "Failed to optimize campaign" });
   }

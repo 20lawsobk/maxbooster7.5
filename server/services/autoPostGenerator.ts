@@ -11,6 +11,7 @@ import { contentQualityGate } from "./contentQualityGate.js";
 import { dynamicTrendsService } from "./dynamicTrendsService";
 import { type TranslatedContent } from "./aiTranslationService";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
+import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
 import { veoMusicService } from "./veoMusicService.js";
 
 async function translateViaMaxCore(
@@ -22,7 +23,7 @@ async function translateViaMaxCore(
 ): Promise<TranslatedContent[]> {
   const results: TranslatedContent[] = [];
   for (const lang of targetLanguages) {
-    const mcResult = await MaxCoreAIClient?.generate<{
+    const mcRaw = await MaxCoreAIClient?.generate<{
       caption?: string;
       hook?: string;
       body?: string;
@@ -39,12 +40,21 @@ async function translateViaMaxCore(
       extra_context: `Translate and culturally adapt the following music social media post to ${lang}. Maintain the artist's voice, energy, and promotional intent. Adapt hashtags for ${lang}-speaking audiences where appropriate. Return the translated post content.`,
     });
 
+    // MaxCore is the ONLY source — throw explicitly if it returns nothing
+    // rather than silently returning the untranslated original content.
+    const mcResult = requireMaxCore(mcRaw, "auto-post generation");
+
     const translatedBody =
       mcResult.caption ||
       mcResult.content ||
       mcResult.body ||
       mcResult.text ||
-      content;
+      "";
+    // Fail explicitly when MaxCore returns a response with no usable
+    // translated body rather than silently emitting the untranslated original.
+    if (!translatedBody.trim()) {
+      throw new AIUnavailableError("auto-post generation");
+    }
     const translatedHeadline = mcResult.headline || headline;
     const translatedHashtags: string[] =
       mcResult.hashtags && mcResult.hashtags.length > 0
@@ -312,23 +322,25 @@ class AutoPostGenerator {
     const tone = request.tone || "inspirational";
     const platforms = request.platforms || ["instagram", "facebook", "twitter"];
 
-    const mc = await MaxCoreAIClient.generate<{
-      caption?: string;
-      hook?: string;
-      body?: string;
-      cta?: string;
-      hashtags?: string[];
-    }>("/api/generate/content", {
-      topic,
-      platform: platforms[0],
-      tone,
-      artist_name: artistName,
-    });
+    const mc = requireMaxCore(
+      await MaxCoreAIClient.generate<{
+        caption?: string;
+        hook?: string;
+        body?: string;
+        cta?: string;
+        hashtags?: string[];
+      }>("/api/generate/content", {
+        topic,
+        platform: platforms[0],
+        tone,
+        artist_name: artistName,
+      }),
+      "auto-post social content",
+    );
 
+    // A non-null response with no usable copy is still unavailability.
     if (!mc.caption && !mc.hook) {
-      throw new Error(
-        "[AutoPost] MaxCore returned null for social content generation",
-      );
+      throw new AIUnavailableError("auto-post social content");
     }
 
     const headline = mc.hook ?? mc.caption.split("\n")[0] ?? "";
@@ -389,23 +401,25 @@ class AutoPostGenerator {
       "facebook",
     ];
 
-    const mc = await MaxCoreAIClient.generate<{
-      caption?: string;
-      hook?: string;
-      body?: string;
-      cta?: string;
-      hashtags?: string[];
-    }>("/api/generate/content", {
-      topic,
-      platform: platforms[0],
-      tone: request.tone || "energetic",
-      artist_name: artistName,
-    });
+    const mc = requireMaxCore(
+      await MaxCoreAIClient.generate<{
+        caption?: string;
+        hook?: string;
+        body?: string;
+        cta?: string;
+        hashtags?: string[];
+      }>("/api/generate/content", {
+        topic,
+        platform: platforms[0],
+        tone: request.tone || "energetic",
+        artist_name: artistName,
+      }),
+      "auto-post viral content",
+    );
 
+    // A non-null response with no usable copy is still unavailability.
     if (!mc.caption && !mc.hook) {
-      throw new Error(
-        "[AutoPost] MaxCore returned null for viral content generation",
-      );
+      throw new AIUnavailableError("auto-post viral content");
     }
 
     const headline = mc.hook ?? mc.caption.split("\n")[0] ?? "";

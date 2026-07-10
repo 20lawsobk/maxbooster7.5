@@ -3,10 +3,8 @@ import fs from "fs/promises";
 import { randomBytes } from "crypto";
 import { musicIndustryContextFilter } from "./musicIndustryContextFilter.js";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
+import { requireMaxCore } from "../lib/aiSource.js";
 import { logger as mgLogger } from "../logger.js";
-import wavefilePkg from "wavefile";
-const WaveFile =
-  (wavefilePkg as Record<string, unknown>).WaveFile || wavefilePkg;
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -420,61 +418,14 @@ export function generateMelody(
 // AUDIO SYNTHESIS
 // ============================================================================
 
-function getNoteFrequency(note: string, octave: number): number {
-  const baseFreq = NOTE_FREQUENCIES[note] || 440;
-  // Adjust for octave (A4 = 440Hz is our reference)
-  const octaveDiff = octave - 4;
-  return baseFreq * Math?.pow(2, octaveDiff);
-}
-
-function generateADSREnvelope(
-  sampleCount: number,
-  sampleRate: number,
-  attack: number = 0.05,
-  decay: number = 0.1,
-  sustain: number = 0.7,
-  release: number = 0.2,
-): Float32Array {
-  const envelope = new Float32Array(sampleCount);
-  const attackSamples = Math?.floor(attack * sampleRate);
-  const decaySamples = Math?.floor(decay * sampleRate);
-  const releaseSamples = Math?.floor(release * sampleRate);
-  const sustainSamples =
-    sampleCount - attackSamples - decaySamples - releaseSamples;
-
-  let idx = 0;
-
-  // Attack
-  for (let i = 0; i < attackSamples && idx < sampleCount; i++, idx++) {
-    envelope[idx] = i / attackSamples;
-  }
-
-  // Decay
-  for (let i = 0; i < decaySamples && idx < sampleCount; i++, idx++) {
-    envelope[idx] = 1 - (1 - sustain) * (i / decaySamples);
-  }
-
-  // Sustain
-  for (let i = 0; i < sustainSamples && idx < sampleCount; i++, idx++) {
-    envelope[idx] = sustain;
-  }
-
-  // Release
-  for (let i = 0; i < releaseSamples && idx < sampleCount; i++, idx++) {
-    envelope[idx] = sustain * (1 - i / releaseSamples);
-  }
-
-  return envelope;
-}
-
 export async function synthesizeToWAV(
   notes: Note[],
   chords: Chord[],
   params: MusicParameters,
 ): Promise<string> {
   // ── MaxCore primary audio synthesis ──────────────────────────────────────
-  try {
-    const mcAudio = await MaxCoreAIClient.generate<{
+  const mcAudio = requireMaxCore(
+    await MaxCoreAIClient.generate<{
       audioUrl?: string;
       audio_url?: string;
       audio_data?: string;
@@ -488,111 +439,39 @@ export async function synthesizeToWAV(
       mood: params.mood,
       genre: params.genre,
       bars: params.structure ?? 8,
-    });
+    }),
+    "music generation",
+  );
 
-    const audioSrc = mcAudio?.audioUrl ?? mcAudio?.audio_url ?? null;
-    const audioData = mcAudio?.audio_data ?? null;
+  const audioSrc = mcAudio?.audioUrl ?? mcAudio?.audio_url ?? null;
+  const audioData = mcAudio?.audio_data ?? null;
 
-    if (audioSrc || audioData) {
-      const outputDir = path.join(
-        process.cwd(),
-        "public",
-        "generated-content",
-        "audio",
-      );
-      await fs.mkdir(outputDir, { recursive: true });
-      const filename = `melody_mc_${Date.now()}_${randomBytes(8).toString("hex")}.wav`;
-      const filepath = path.join(outputDir, filename);
-
-      if (audioData) {
-        await fs.writeFile(filepath, Buffer.from(audioData, "base64"));
-      } else if (audioSrc) {
-        const resp = await fetch(audioSrc);
-        if (resp.ok) {
-          await fs.writeFile(filepath, Buffer.from(await resp.arrayBuffer()));
-        } else {
-          throw new Error(`MaxCore audio download failed: ${resp.status}`);
-        }
-      }
-
-      mgLogger.info(`[MusicGen] MaxCore audio synthesized → ${filename}`);
-      return `/generated-content/audio/${filename}`;
-    }
-  } catch (mcErr) {
-    mgLogger.warn({ err: mcErr }, "[MusicGen] MaxCore synthesis failed, using local DSP");
-  }
-  // ── Local DSP fallback ───────────────────────────────────────────────────
-
-  const sampleRate = 48000;
-  const beatsPerSecond = params?.tempo / 60;
-  const totalDuration =
-    Math?.max(
-      ...notes?.map((n) => n?.time + n?.duration),
-      ...chords?.map((c) => c?.time + c?.duration),
-    ) / beatsPerSecond;
-
-  const totalSamples = Math?.floor(totalDuration * sampleRate);
-  const audioBuffer = new Float32Array(totalSamples);
-
-  // Synthesize notes
-  for (const note of notes) {
-    const freq = getNoteFrequency(note?.note, note?.octave);
-    const startSample = Math?.floor((note?.time / beatsPerSecond) * sampleRate);
-    const durationSamples = Math?.floor(
-      (note?.duration / beatsPerSecond) * sampleRate,
-    );
-
-    const envelope = generateADSREnvelope(durationSamples, sampleRate);
-
-    for (
-      let i = 0;
-      i < durationSamples && startSample + i < totalSamples;
-      i++
-    ) {
-      const t = i / sampleRate;
-      const sample = Math?.sin(2 * Math.PI * freq * t) * envelope[i] * 0.3;
-      audioBuffer[startSample + i] += sample;
-    }
+  if (!(audioSrc || audioData)) {
+    throw new Error("MaxCore music generation returned no audio");
   }
 
-  // Normalize audio
-  let maxAmplitude = 0;
-  for (let i = 0; i < totalSamples; i++) {
-    maxAmplitude = Math?.max(maxAmplitude, Math?.abs(audioBuffer[i]));
-  }
-  if (maxAmplitude > 0) {
-    for (let i = 0; i < totalSamples; i++) {
-      audioBuffer[i] = (audioBuffer[i] / maxAmplitude) * 0.8;
-    }
-  }
-
-  // Convert to 16-bit PCM
-  const pcmData = new Int16Array(totalSamples);
-  for (let i = 0; i < totalSamples; i++) {
-    pcmData[i] = Math?.max(
-      -32768,
-      Math?.min(32767, Math?.floor(audioBuffer[i] * 32767)),
-    );
-  }
-
-  // Create WAV file
-  const wav = new WaveFile();
-  wav?.fromScratch(1, sampleRate, "16", Array?.from(pcmData));
-
-  // Save to file
-  const outputDir = path?.join(
-    process?.cwd(),
+  const outputDir = path.join(
+    process.cwd(),
     "public",
     "generated-content",
     "audio",
   );
-  await fs?.mkdir(outputDir, { recursive: true });
+  await fs.mkdir(outputDir, { recursive: true });
+  const filename = `melody_mc_${Date.now()}_${randomBytes(8).toString("hex")}.wav`;
+  const filepath = path.join(outputDir, filename);
 
-  const filename = `melody_${Date?.now()}_${randomBytes(8).toString("hex")}.wav`;
-  const filepath = path?.join(outputDir, filename);
+  if (audioData) {
+    await fs.writeFile(filepath, Buffer.from(audioData, "base64"));
+  } else if (audioSrc) {
+    const resp = await fetch(audioSrc);
+    if (resp.ok) {
+      await fs.writeFile(filepath, Buffer.from(await resp.arrayBuffer()));
+    } else {
+      throw new Error(`MaxCore audio download failed: ${resp.status}`);
+    }
+  }
 
-  await fs?.writeFile(filepath, wav?.toBuffer());
-
+  mgLogger.info(`[MusicGen] MaxCore audio synthesized → ${filename}`);
   return `/generated-content/audio/${filename}`;
 }
 
@@ -684,7 +563,7 @@ export async function analyzeAudioForGeneration(
       structure: 8,
     };
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Audio analysis failed, using defaults:");
+    mgLogger.warn({ err: error }, "Audio analysis failed, using defaults:");
     return {
       key: "C",
       scale: "major",

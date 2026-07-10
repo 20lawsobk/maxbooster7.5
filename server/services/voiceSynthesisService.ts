@@ -1,27 +1,13 @@
 /**
  * Voice Synthesis Service
  *
- * Architecture: FFmpeg-native TTS pipeline with 14 distinct voice profiles.
+ * Architecture: MaxCore is the ONLY voice-synthesis source. `synthesizeVoice`
+ * calls MaxCore audio generation and fails explicitly (AIUnavailableError) when
+ * MaxCore is unavailable — there is no local TTS fallback. FFmpeg is used only
+ * for post-processing the MaxCore-generated audio (format/loudness), never to
+ * synthesize speech locally.
  *
- * Each profile is a unique audio processing chain applied to FFmpeg's built-in
- * flite TTS engine (kal16 voice — highest quality 16kHz flite variant).
- * Processing stages per profile:
- *   1. flite TTS → raw speech PCM (44.1kHz stereo)
- *   2. asetrate pitch shift (via sample-rate trick: shift pitch without time-stretch)
- *   3. atempo speed/tempo correction (restores duration after pitch shift)
- *   4. Genre-specific EQ chain (treble/bass/equalizer filters)
- *   5. acompressor (dynamic range control)
- *   6. aecho or aconvolve (spatial depth / room simulation)
- *   7. extrastereo (stereo width)
- *   8. dynaudnorm (final loudness normalization)
- *
- * Voice clone simulation: Pass a `reference_audio_path` and the service will
- * extract timbral characteristics (pitch, spectral centroid estimate via FFmpeg
- * `astats`) and shift the synthesis parameters to approximate the reference.
- *
- * When an external TTS API is configured (env: ELEVENLABS_API_KEY or
- * AZURE_SPEECH_KEY), the service switches to that provider for true voice
- * cloning while maintaining the same interface.
+ * VOICE_PROFILES describe the requested voice characteristics passed to MaxCore.
  */
 
 import { execFile, execFileSync } from "child_process";
@@ -33,6 +19,7 @@ import os from "os";
 import { randomBytes } from "crypto";
 import { logger } from "../logger.js";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
+import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -58,47 +45,6 @@ function resolveFFmpegPath(): string {
 }
 const FFMPEG = resolveFFmpegPath();
 const VOICE_DIR = path.join(process.cwd(), "uploads", "voices");
-
-// ── FLITE VOICE AVAILABILITY ──────────────────────────────────────────────────
-// flite voices compiled into FFmpeg differ by build. We probe at startup and
-// fall back gracefully. kal16 is highest quality (16kHz); kal is 8kHz fallback.
-let _bestFliteVoice: string | null = null;
-
-async function detectBestFliteVoice(): Promise<string> {
-  if (_bestFliteVoice) return _bestFliteVoice;
-  const voices = ["kal16", "slt", "awb", "rms", "kal"];
-  for (const v of voices) {
-    try {
-      await execFileAsync(
-        FFMPEG,
-        [
-          "-y",
-          "-f",
-          "lavfi",
-          "-i",
-          `flite=text='test':voice=${v}`,
-          "-t",
-          "0.1",
-          "-f",
-          "null",
-          "-",
-        ],
-        { timeout: 5000 },
-      );
-      _bestFliteVoice = v;
-      logger.info(`[VoiceSynth] Best flite voice: ${v}`);
-      return v;
-    } catch {
-      /* try next */
-    }
-  }
-  // No flite at all — use silence + warn
-  logger.warn(
-    "[VoiceSynth] No flite TTS voices available in this FFmpeg build. Silence fallback active.",
-  );
-  _bestFliteVoice = "none";
-  return "none";
-}
 
 // ── VOICE PROFILES ─────────────────────────────────────────────────────────
 export interface VoiceProfile {
@@ -319,17 +265,6 @@ export const VOICE_PROFILES: Record<string, VoiceProfile> = {
   },
 };
 
-// ── TEXT SANITIZATION ─────────────────────────────────────────────────────────
-function sanitizeForFlite(text: string): string {
-  return text
-    .replace(/[^\x20-\x7E]/g, " ") // strip non-printable
-    .replace(/[?:=,;[\]\\]/g, "") // strip lavfi option-parser chars
-    .replace(/[']/g, "") // strip single quotes (breaks flite filter)
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 1000);
-}
-
 // ── REFERENCE VOICE ANALYSIS ──────────────────────────────────────────────────
 export interface VoiceCharacteristics {
   estimatedPitch: "very_low" | "low" | "medium" | "high" | "very_high";
@@ -433,8 +368,8 @@ export async function synthesizeVoice(
   mkdirSync(VOICE_DIR, { recursive: true });
 
   // ── MaxCore primary TTS ──────────────────────────────────────────────────
-  try {
-    const mcAudio = await MaxCoreAIClient.generate<{
+  const mcAudio = requireMaxCore(
+    await MaxCoreAIClient.generate<{
       audioUrl?: string;
       audio_url?: string;
       audio_data?: string;
@@ -448,194 +383,43 @@ export async function synthesizeVoice(
       speed: options.speed ?? 1.0,
       volume: options.volume ?? 1.0,
       max_duration: options.maxDurationSeconds ?? null,
-    });
+    }),
+    "voice synthesis",
+  );
 
-    const audioSrc = mcAudio?.audioUrl ?? mcAudio?.audio_url ?? null;
-    const audioData = mcAudio?.audio_data ?? null;
+  const audioSrc = mcAudio?.audioUrl ?? mcAudio?.audio_url ?? null;
+  const audioData = mcAudio?.audio_data ?? null;
 
-    if (audioSrc || audioData) {
-      const ext = options.outputFormat === "mp3" ? "mp3" : "wav";
-      const outFilename = `voice_mc_${randomBytes(6).toString("hex")}.${ext}`;
-      const outputPath = path.join(VOICE_DIR, outFilename);
-
-      if (audioData) {
-        await fsWriteFile(outputPath, Buffer.from(audioData, "base64"));
-      } else if (audioSrc) {
-        const resp = await fetch(audioSrc);
-        if (resp.ok) {
-          const buf = Buffer.from(await resp.arrayBuffer());
-          await fsWriteFile(outputPath, buf);
-        } else {
-          throw new Error(`MaxCore audio download failed: ${resp.status}`);
-        }
-      }
-
-      logger.info(
-        `[VoiceSynth] MaxCore audio generated → ${outFilename}`,
-      );
-      return {
-        success: true,
-        outputPath,
-        durationSeconds: mcAudio?.duration ?? 0,
-        profileUsed: options.profileId ?? "smooth_narrator",
-        voiceUsed: "maxcore",
-      };
-    }
-  } catch (mcErr) {
-    logger.warn({ err: mcErr }, "[VoiceSynth] MaxCore TTS failed, falling back to flite");
-  }
-  // ── Local flite / FFmpeg fallback ────────────────────────────────────────
-
-  const fliteVoice = await detectBestFliteVoice();
-  if (fliteVoice === "none") {
-    return {
-      success: false,
-      error:
-        "No TTS engine available (flite not compiled into this FFmpeg build)",
-    };
+  // A non-null response with no usable audio is still unavailability — surface
+  // it explicitly instead of a soft success:false result.
+  if (!(audioSrc || audioData)) {
+    throw new AIUnavailableError("voice synthesis");
   }
 
-  // If reference audio provided, adapt profile to match it
-  let profileId = options?.profileId || "smooth_narrator";
-  if (options?.referenceAudioPath && existsSync(options?.referenceAudioPath)) {
-    const characteristics = await analyzeReferenceVoice(
-      options?.referenceAudioPath,
-    );
-    if (!options?.profileId) {
-      profileId = characteristics?.suggestedProfileId;
-      logger?.info(
-        `[VoiceSynth] Auto-selected profile '${profileId}' from reference analysis`,
-      );
+  const ext = options.outputFormat === "mp3" ? "mp3" : "wav";
+  const outFilename = `voice_mc_${randomBytes(6).toString("hex")}.${ext}`;
+  const outputPath = path.join(VOICE_DIR, outFilename);
+
+  if (audioData) {
+    await fsWriteFile(outputPath, Buffer.from(audioData, "base64"));
+  } else if (audioSrc) {
+    const resp = await fetch(audioSrc);
+    if (resp.ok) {
+      const buf = Buffer.from(await resp.arrayBuffer());
+      await fsWriteFile(outputPath, buf);
+    } else {
+      throw new Error(`MaxCore audio download failed: ${resp.status}`);
     }
   }
 
-  const profile = VOICE_PROFILES[profileId] || VOICE_PROFILES?.smooth_narrator;
-  const cleanText = sanitizeForFlite(text);
-  if (!cleanText) {
-    return { success: false, error: "No usable text after sanitization" };
-  }
-
-  // Compute final processing parameters (profile × user overrides)
-  const pitchMult = profile?.pitchFactor * (options?.pitch ?? 1.0);
-  const tempoMult = profile?.tempoFactor * (options?.speed ?? 1.0);
-  const volumeMult = options?.volume ?? 1.0;
-  const reverbMix = Math?.max(0, Math?.min(1, options?.reverbAmount ?? 1.0));
-
-  // FFmpeg pitch-shift trick:
-  //   asetrate changes the sample rate (shifts pitch + speed together)
-  //   atempo corrects the speed back (restores duration without affecting pitch)
-  // Clamp atempo to valid range (0.5–2.0); for extreme shifts use chained atempo filters
-  const asetrate = Math?.round(44100 * pitchMult);
-  const rawTempo = (1 / pitchMult) * tempoMult;
-  const clampedTempos: number[] = [];
-  let t = rawTempo;
-  while (t > 2.0) {
-    clampedTempos?.push(2.0);
-    t /= 2.0;
-  }
-  while (t < 0.5) {
-    clampedTempos?.push(0.5);
-    t *= 2.0;
-  }
-  clampedTempos?.push(t);
-  const atempoChain = clampedTempos
-    .map((v) => `atempo=${v?.toFixed(4)}`)
-    .join(",");
-
-  // Build the spatial FX with scaled reverb
-  const spatialFx =
-    reverbMix <= 0.05
-      ? "aecho=0:0:1:0" // near-zero echo = effectively bypass
-      : profile?.spatialFx;
-
-  // Build the full audio filter graph
-  const gainFilter = `volume=${(volumeMult * Math?.pow(10, profile?.gainDb / 20)).toFixed(4)}`;
-  const filterChain = [
-    `highpass=f=80`, // remove sub-rumble
-    `asetrate=r=${asetrate}`, // pitch shift
-    `aformat=sample_rates=44100:channel_layouts=stereo`, // normalize SR after asetrate
-    atempoChain, // tempo correct
-    profile?.eqChain, // genre EQ + compression
-    spatialFx, // reverb / echo
-    `extrastereo=m=${profile?.stereoWidth.toFixed(2)}`, // stereo width
-    `dynaudnorm=p=0.90:r=0.8`, // loudness normalize
-    gainFilter, // final gain
-  ].join(",");
-
-  const ext = options?.outputFormat === "mp3" ? "mp3" : "wav";
-  const outFilename = `voice_${randomBytes(6).toString("hex")}.${ext}`;
-  const outputPath = path?.join(VOICE_DIR, outFilename);
-  const maxDur = options?.maxDurationSeconds;
-
-  const ffmpegArgs = [
-    "-y",
-    "-f",
-    "lavfi",
-    "-i",
-    `flite=text='${cleanText}':voice=${fliteVoice}`,
-    "-af",
-    filterChain,
-    "-ar",
-    "44100",
-    "-ac",
-    "2",
-    ...(maxDur ? ["-t", String(maxDur)] : []),
-    ...(ext === "mp3"
-      ? ["-c:a", "libmp3lame", "-b:a", "256k"]
-      : ["-c:a", "pcm_s16le"]),
+  logger.info(`[VoiceSynth] MaxCore audio generated → ${outFilename}`);
+  return {
+    success: true,
     outputPath,
-  ];
-
-  try {
-    await execFileAsync(FFMPEG, ffmpegArgs, { timeout: 60_000 });
-
-    // Get output duration via ffprobe
-    let durationSeconds = maxDur;
-    try {
-      const { stdout } = await execFileAsync(
-        FFMPEG,
-        ["-i", outputPath, "-f", "null", "-"],
-        { timeout: 10_000 },
-      );
-      const dur = stdout?.match(/Duration:\s*(\d+):(\d+):([\d.]+)/);
-      if (!dur) throw new Error("no duration match");
-      durationSeconds =
-        parseInt(dur[1]) * 3600 + parseInt(dur[2]) * 60 + parseFloat(dur[3]);
-    } catch {
-      try {
-        const { stderr } = await execFileAsync(
-          FFMPEG,
-          ["-i", outputPath, "-f", "null", "-"],
-          { timeout: 10_000 },
-        );
-        const dur = stderr?.match(/Duration:\s*(\d+):(\d+):([\d.]+)/);
-        if (dur) {
-          durationSeconds =
-            parseInt(dur[1]) * 3600 +
-            parseInt(dur[2]) * 60 +
-            parseFloat(dur[3]);
-        }
-      } catch {
-        /* use maxDur or undefined */
-      }
-    }
-
-    logger?.info(
-      `[VoiceSynth] ✅ ${outFilename} — profile=${profile.id} voice=${fliteVoice} dur=${durationSeconds?.toFixed(1)}s`,
-    );
-
-    return {
-      success: true,
-      outputPath,
-      durationSeconds,
-      profileUsed: profile.id,
-      voiceUsed: fliteVoice,
-    };
-  } catch (err) {
-    const errMsg = err?.stderr?.slice(-500) || err?.message || String(err);
-    logger?.warn("[VoiceSynth] Synthesis failed:", errMsg);
-    return { success: false, error: `Voice synthesis failed: ${errMsg}` };
-  }
+    durationSeconds: mcAudio?.duration ?? 0,
+    profileUsed: options.profileId ?? "smooth_narrator",
+    voiceUsed: "maxcore",
+  };
 }
 
 /**
@@ -734,6 +518,9 @@ export async function synthesizeSegments(
 
     return { success: true, outputPath, profileUsed: options.profileId };
   } catch (err) {
+    // MaxCore unavailability must propagate explicitly, not collapse into a
+    // soft success:false result.
+    if (err instanceof AIUnavailableError) throw err;
     return { success: false, error: err.message || String(err) };
   } finally {
     // Clean up temp segment files

@@ -14,6 +14,7 @@ import {
   type ForecastOptions,
 } from "../services/unifiedAIController.js";
 import { aiRateLimiter } from "../middleware/rateLimiter.js";
+import { AIUnavailableError } from "../lib/aiSource.js";
 import { notificationService } from "../services/notificationService.js";
 
 const router = Router();
@@ -138,6 +139,9 @@ router?.post(
         confidence: result.confidence,
       });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
       logger?.warn({ err: error }, "Sentiment analysis route error:");
       res?.status(500).json({ error: "Failed to analyze sentiment" });
     }
@@ -275,6 +279,9 @@ router?.post(
         confidence: result.confidence,
       });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
       logger?.warn({ err: error }, "Ad optimization route error:");
       res?.status(500).json({ error: "Failed to optimize ads" });
     }
@@ -366,6 +373,9 @@ router?.post(
         confidence: result.confidence,
       });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
       logger?.warn({ err: error }, "Social prediction route error:");
       res?.status(500).json({ error: "Failed to predict social engagement" });
     }
@@ -504,13 +514,16 @@ router?.post(
           .json({ error: "Text is required for toxicity analysis" });
       }
 
-      const result = unifiedAIController?.analyzeToxicity(text);
+      const result = await unifiedAIController?.analyzeToxicity(text);
 
       res?.json({
         success: true,
         data: result,
       });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
       logger?.warn({ err: error }, "Toxicity analysis route error:");
       res?.status(500).json({ error: "Failed to analyze toxicity" });
     }
@@ -530,13 +543,16 @@ router?.post(
           .json({ error: "Text is required for emotion detection" });
       }
 
-      const result = unifiedAIController?.detectEmotions(text);
+      const result = await unifiedAIController?.detectEmotions(text);
 
       res?.json({
         success: true,
         data: result,
       });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
       logger?.warn({ err: error }, "Emotion detection route error:");
       res?.status(500).json({ error: "Failed to detect emotions" });
     }

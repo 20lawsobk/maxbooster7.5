@@ -13,6 +13,7 @@ import {
   GenerationParams,
 } from "../services/melodyPatternService";
 import { MaxCoreAIClient } from "../services/maxcoreClient.js";
+import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
 import { db } from "../db.js";
 import { studioSamples } from "../../shared/schema.js";
 import os from "os";
@@ -233,6 +234,14 @@ router?.post("/text", requireAuth, aiRateLimiter, async (req, res) => {
       });
     }
 
+    if (error instanceof AIUnavailableError) {
+      return res?.status(error.statusCode).json({
+        success: false,
+        code: error.code,
+        message: error.message,
+      });
+    }
+
     res?.status(500).json({
       success: false,
       message: error.message || "Failed to generate audio from text",
@@ -308,6 +317,14 @@ router?.post(
           success: false,
           message: "Invalid request parameters",
           errors: error.issues,
+        });
+      }
+
+      if (error instanceof AIUnavailableError) {
+        return res?.status(error.statusCode).json({
+          success: false,
+          code: error.code,
+          message: error.message,
         });
       }
 
@@ -510,27 +527,31 @@ router?.post("/pattern/melody", requireAuth, aiRateLimiter, async (req, res) => 
       type: "melody",
     });
 
-    const localPattern = melodyPatternService?.generateMelody(params);
+    const mc = requireMaxCore(mcResult, "studio generation");
 
-    if (mcResult) {
-      const pattern = {
-        ...localPattern,
-        ...(mcResult.notes ? { notes: mcResult.notes } : {}),
-        ...(mcResult.durations ? { durations: mcResult.durations } : {}),
-        ...(mcResult.velocities ? { velocities: mcResult.velocities } : {}),
-        ...(mcResult.audioUrl ?? mcResult.audio_url
-          ? { audioUrl: mcResult.audioUrl ?? mcResult.audio_url }
-          : {}),
-        sourceType: "MaxCoreAI",
-      };
-      logger?.info(`[Generation] MaxCore melody: ${params.instrument} ${params.genre}`);
-      return res?.json({ success: true, pattern, params });
+    // A non-null response with no usable musical content is still a failure.
+    if (!mc.notes?.length && !mc.audioUrl && !mc.audio_url) {
+      throw new AIUnavailableError("studio generation");
     }
 
-    // ── Local fallback ───────────────────────────────────────────────────────
-    logger?.info(`[Generation] Local melody: ${params?.instrument} in ${params?.genre} style`);
-    res?.json({ success: true, pattern: localPattern, params });
+    const pattern = {
+      ...(mc.notes ? { notes: mc.notes } : {}),
+      ...(mc.durations ? { durations: mc.durations } : {}),
+      ...(mc.velocities ? { velocities: mc.velocities } : {}),
+      ...(mc.audioUrl ?? mc.audio_url
+        ? { audioUrl: mc.audioUrl ?? mc.audio_url }
+        : {}),
+      sourceType: "MaxCoreAI",
+    };
+    logger?.info(`[Generation] MaxCore melody: ${params.instrument} ${params.genre}`);
+    return res?.json({ success: true, pattern, params });
   } catch (error) {
+    if (error instanceof AIUnavailableError) {
+      logger?.warn(`[Generation] MaxCore unavailable (melody): ${error.message}`);
+      return res
+        ?.status(error.statusCode)
+        .json({ error: error.message, code: error.code });
+    }
     logger?.warn({ err: error }, "Error generating melody:");
     res?.status(500).json({ error: "Failed to generate melody" });
   }
@@ -562,25 +583,32 @@ router?.post("/pattern/drums", requireAuth, aiRateLimiter, async (req, res) => {
       type: "drums",
     });
 
-    const localPattern = melodyPatternService?.generateDrums(params);
+    const mc = requireMaxCore(mcResult, "studio generation");
 
-    if (mcResult) {
-      const pattern = {
-        ...localPattern,
-        ...(mcResult.hits ? { hits: mcResult.hits } : {}),
-        ...(mcResult.audioUrl ?? mcResult.audio_url
-          ? { audioUrl: mcResult.audioUrl ?? mcResult.audio_url }
-          : {}),
-        sourceType: "MaxCoreAI",
-      };
-      logger?.info(`[Generation] MaxCore drums: ${params.instrument} ${params.genre}`);
-      return res?.json({ success: true, pattern, params });
+    if (
+      !(mc.hits && Object.keys(mc.hits).length) &&
+      !mc.audioUrl &&
+      !mc.audio_url
+    ) {
+      throw new AIUnavailableError("studio generation");
     }
 
-    // ── Local fallback ───────────────────────────────────────────────────────
-    logger?.info(`[Generation] Local drums: ${params?.instrument} in ${params?.genre} style`);
-    res?.json({ success: true, pattern: localPattern, params });
+    const pattern = {
+      ...(mc.hits ? { hits: mc.hits } : {}),
+      ...(mc.audioUrl ?? mc.audio_url
+        ? { audioUrl: mc.audioUrl ?? mc.audio_url }
+        : {}),
+      sourceType: "MaxCoreAI",
+    };
+    logger?.info(`[Generation] MaxCore drums: ${params.instrument} ${params.genre}`);
+    return res?.json({ success: true, pattern, params });
   } catch (error) {
+    if (error instanceof AIUnavailableError) {
+      logger?.warn(`[Generation] MaxCore unavailable (drums): ${error.message}`);
+      return res
+        ?.status(error.statusCode)
+        .json({ error: error.message, code: error.code });
+    }
     logger?.warn({ err: error }, "Error generating drums:");
     res?.status(500).json({ error: "Failed to generate drums" });
   }
@@ -613,27 +641,29 @@ router?.post("/pattern/chords", requireAuth, aiRateLimiter, async (req, res) => 
       type: "chords",
     });
 
-    const localProgression = melodyPatternService?.generateChordProgression(params);
+    const mc = requireMaxCore(mcResult, "studio generation");
 
-    if (mcResult) {
-      const progression = {
-        ...localProgression,
-        ...(mcResult.chords ?? mcResult.progression
-          ? { chords: mcResult.chords ?? mcResult.progression }
-          : {}),
-        ...(mcResult.audioUrl ?? mcResult.audio_url
-          ? { audioUrl: mcResult.audioUrl ?? mcResult.audio_url }
-          : {}),
-        sourceType: "MaxCoreAI",
-      };
-      logger?.info(`[Generation] MaxCore chords: ${params.key} ${params.scale} ${params.genre}`);
-      return res?.json({ success: true, progression, params });
+    const chordList = mc.chords ?? mc.progression;
+    if (!chordList?.length && !mc.audioUrl && !mc.audio_url) {
+      throw new AIUnavailableError("studio generation");
     }
 
-    // ── Local fallback ───────────────────────────────────────────────────────
-    logger?.info(`[Generation] Local chords: ${params?.key} ${params?.scale} in ${params?.genre} style`);
-    res?.json({ success: true, progression: localProgression, params });
+    const progression = {
+      ...(chordList ? { chords: chordList } : {}),
+      ...(mc.audioUrl ?? mc.audio_url
+        ? { audioUrl: mc.audioUrl ?? mc.audio_url }
+        : {}),
+      sourceType: "MaxCoreAI",
+    };
+    logger?.info(`[Generation] MaxCore chords: ${params.key} ${params.scale} ${params.genre}`);
+    return res?.json({ success: true, progression, params });
   } catch (error) {
+    if (error instanceof AIUnavailableError) {
+      logger?.warn(`[Generation] MaxCore unavailable (chords): ${error.message}`);
+      return res
+        ?.status(error.statusCode)
+        .json({ error: error.message, code: error.code });
+    }
     logger?.warn({ err: error }, "Error generating chords:");
     res?.status(500).json({ error: "Failed to generate chords" });
   }
@@ -673,37 +703,42 @@ router?.post(
         type: "arrangement",
       });
 
-      // Always build local tracks (used as fallback or enrichment base)
-      const localMelody = melodyPatternService?.generateMelody({ ...params, instrument: "synth_lead" });
-      const localBass   = melodyPatternService?.generateMelody({ ...params, instrument: "bass_synth" });
-      const localPad    = melodyPatternService?.generateMelody({ ...params, instrument: "synth_pad" });
-      const localDrums  = melodyPatternService?.generateDrums({ ...params, instrument: "trap_kit" });
-      const localChords = melodyPatternService?.generateChordProgression(params);
+      const mc = requireMaxCore(mcResult, "studio generation");
 
-      if (mcResult) {
-        const arrangement = {
-          melody: mcResult.melody ? { ...localMelody, ...mcResult.melody, sourceType: "MaxCoreAI" } : { ...localMelody, sourceType: "MaxCoreAI" },
-          bass:   mcResult.bass   ? { ...localBass,   ...mcResult.bass,   sourceType: "MaxCoreAI" } : { ...localBass,   sourceType: "MaxCoreAI" },
-          pad:    mcResult.pad    ? { ...localPad,    ...mcResult.pad,    sourceType: "MaxCoreAI" } : { ...localPad,    sourceType: "MaxCoreAI" },
-          drums:  mcResult.drums  ? { ...localDrums,  ...mcResult.drums,  sourceType: "MaxCoreAI" } : { ...localDrums,  sourceType: "MaxCoreAI" },
-          chords: mcResult.chords ? { ...localChords, ...mcResult.chords, sourceType: "MaxCoreAI" } : { ...localChords, sourceType: "MaxCoreAI" },
-          ...(mcResult.audioUrl ?? mcResult.audio_url
-            ? { audioUrl: mcResult.audioUrl ?? mcResult.audio_url }
-            : {}),
-          sourceType: "MaxCoreAI",
-        };
-        logger?.info(`[Generation] MaxCore arrangement: ${params.genre} style`);
-        return res?.json({ success: true, arrangement, params });
+      if (
+        !mc.melody &&
+        !mc.bass &&
+        !mc.pad &&
+        !mc.drums &&
+        !mc.chords &&
+        !mc.audioUrl &&
+        !mc.audio_url
+      ) {
+        throw new AIUnavailableError("studio generation");
       }
 
-      // ── Local fallback ─────────────────────────────────────────────────────
-      logger?.info(`[Generation] Local arrangement: ${params?.genre} style`);
-      res?.json({
-        success: true,
-        arrangement: { melody: localMelody, bass: localBass, pad: localPad, drums: localDrums, chords: localChords },
-        params,
-      });
+      const arrangement = {
+        melody: mc.melody ? { ...mc.melody, sourceType: "MaxCoreAI" } : { sourceType: "MaxCoreAI" },
+        bass:   mc.bass   ? { ...mc.bass,   sourceType: "MaxCoreAI" } : { sourceType: "MaxCoreAI" },
+        pad:    mc.pad    ? { ...mc.pad,    sourceType: "MaxCoreAI" } : { sourceType: "MaxCoreAI" },
+        drums:  mc.drums  ? { ...mc.drums,  sourceType: "MaxCoreAI" } : { sourceType: "MaxCoreAI" },
+        chords: mc.chords ? { ...mc.chords, sourceType: "MaxCoreAI" } : { sourceType: "MaxCoreAI" },
+        ...(mc.audioUrl ?? mc.audio_url
+          ? { audioUrl: mc.audioUrl ?? mc.audio_url }
+          : {}),
+        sourceType: "MaxCoreAI",
+      };
+      logger?.info(`[Generation] MaxCore arrangement: ${params.genre} style`);
+      return res?.json({ success: true, arrangement, params });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        logger?.warn(
+          `[Generation] MaxCore unavailable (arrangement): ${error.message}`,
+        );
+        return res
+          ?.status(error.statusCode)
+          .json({ error: error.message, code: error.code });
+      }
       logger?.warn({ err: error }, "Error generating full arrangement:");
       res?.status(500).json({ error: "Failed to generate arrangement" });
     }

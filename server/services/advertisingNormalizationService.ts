@@ -1,6 +1,7 @@
 import type { AdCreative } from "@shared/schema";
 import { getRedisClient } from "../lib/redisConnectionFactory.js";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
+import { requireMaxCore } from "../lib/aiSource.js";
 
 /**
  * Advertisement Content Normalization Service
@@ -138,15 +139,19 @@ export class AdvertisingNormalizationService {
       engagement: this.validateEngagementQuality(content),
     };
 
-    // MaxCore safety screen as an additional signal — never relaxes local
-    // decisions; only ADDS a flag when MaxCore detects a violation. Null → local.
-    const screen = await MaxCoreAIClient.infer<{
+    // MaxCore safety screen — REQUIRED (fail-closed): compliance is a safety
+    // gate, so a null result throws AIUnavailableError rather than silently
+    // continuing. This runs ALONGSIDE the local deterministic regex checks
+    // above (offensive/spam/brand-safety), which remain a hard guardrail and
+    // never relax MaxCore's decision.
+    const screenRaw = await MaxCoreAIClient.infer<{
       allowed?: boolean;
       flagged?: boolean;
       severity?: string;
       categories?: string[];
     }>("/api/safety/screen", { content });
-    if (screen && (screen.flagged === true || screen.allowed === false)) {
+    const screen = requireMaxCore(screenRaw, "ad compliance");
+    if (screen.flagged === true || screen.allowed === false) {
       issues.brandSafety = true;
       issues.maxcoreSafety = {
         severity: screen.severity ?? "unknown",

@@ -2,6 +2,7 @@ import type { AdCreative } from "@shared/schema";
 import { storage } from "../storage";
 import { db } from "../db";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
+import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
 import {
   adCampaigns,
   adCompetitorIntelligence,
@@ -165,8 +166,9 @@ export class AdvertisingAIService {
         creative_id: creative.id,
       },
     });
-    const adCreative = mcAdRaw?.creatives?.[0] ?? null;
-    const targeting = (mcAdRaw?.targeting ?? {}) as Record<string, unknown>;
+    const mcAd = requireMaxCore(mcAdRaw, "ad creative");
+    const adCreative = mcAd.creatives?.[0] ?? null;
+    const targeting = (mcAd.targeting ?? {}) as Record<string, unknown>;
     const mcCreative = adCreative
       ? {
           hook: adCreative.hook ?? null,
@@ -182,6 +184,19 @@ export class AdvertisingAIService {
             : [],
         }
       : null;
+
+    // A non-null response with no usable creative content is unavailability.
+    if (
+      !adCreative ||
+      !(
+        adCreative.hook ||
+        adCreative.headline ||
+        adCreative.body ||
+        adCreative.cta
+      )
+    ) {
+      throw new AIUnavailableError("ad creative");
+    }
 
     // Calculate organic amplification potential (100%+ boost vs paid ads)
     const viralityScore = this?.calculateViralityScore(creative);
@@ -208,19 +223,15 @@ export class AdvertisingAIService {
       optimalPostSchedule: this.generatePostSchedule(platforms),
       expectedOrganicReach:
         this?.calculateExpectedOrganicReach(platformPerformance),
-      // Merge MaxCore AI suggestions when available
-      ...(mcCreative
-        ? {
-            aiSuggestedHook: mcCreative.hook ?? null,
-            aiSuggestedCaption: mcCreative.caption ?? mcCreative.body ?? null,
-            aiSuggestedCTA: mcCreative.cta ?? null,
-            aiSuggestedHashtags: mcCreative.suggested_hashtags ?? [],
-            aiOptimalPostTimes: mcCreative.optimal_post_times ?? [],
-            aiAudienceSegments: mcCreative.audience_segments ?? [],
-            aiPlatformInsights: mcCreative.platform_insights ?? {},
-            aiSource: "maxcore",
-          }
-        : { aiSource: "local" }),
+      // MaxCore AI creative suggestions (required — authoritative source)
+      aiSuggestedHook: mcCreative?.hook ?? null,
+      aiSuggestedCaption: mcCreative?.caption ?? mcCreative?.body ?? null,
+      aiSuggestedCTA: mcCreative?.cta ?? null,
+      aiSuggestedHashtags: mcCreative?.suggested_hashtags ?? [],
+      aiOptimalPostTimes: mcCreative?.optimal_post_times ?? [],
+      aiAudienceSegments: mcCreative?.audience_segments ?? [],
+      aiPlatformInsights: mcCreative?.platform_insights ?? {},
+      aiSource: "maxcore",
     };
 
     // Record AI run for determinism verification
@@ -631,9 +642,9 @@ export class AdvertisingAIService {
     }
 
     // Record AI inference
-    // MaxCore audience targeting enrichment — attached alongside the deterministic
-    // segments; null result simply omits it (local segments unchanged).
-    const mcAudience = await MaxCoreAIClient.generate<{
+    // MaxCore audience targeting — required & authoritative source for
+    // audience clustering. A null result throws AIUnavailableError.
+    const mcAudienceRaw = await MaxCoreAIClient.generate<{
       targeting?: Record<string, unknown>;
       audience_segments?: unknown[];
     }>("/api/platform/ads/audience", {
@@ -641,6 +652,19 @@ export class AdvertisingAIService {
       campaign_id: campaignId,
       objective: "engagement",
     });
+    const mcAudience = requireMaxCore(mcAudienceRaw, "audience clustering");
+
+    // A non-null response with no usable targeting is still unavailability.
+    const mcTargeting = (mcAudience.targeting ?? {}) as Record<string, unknown>;
+    if (
+      Object.keys(mcTargeting).length === 0 &&
+      !(
+        Array.isArray(mcAudience.audience_segments) &&
+        mcAudience.audience_segments.length
+      )
+    ) {
+      throw new AIUnavailableError("audience clustering");
+    }
 
     const outputs = {
       campaignId,
@@ -652,9 +676,8 @@ export class AdvertisingAIService {
         platforms: s.targetingRecommendations.platforms,
       })),
       totalAudienceSize: segments.reduce((sum, s) => sum + s?.size, 0),
-      ...(mcAudience?.targeting
-        ? { maxcoreTargeting: mcAudience.targeting }
-        : {}),
+      maxcoreTargeting: mcTargeting,
+      aiSource: "maxcore",
     };
 
     await storage?.createAdAIRun({
@@ -679,8 +702,8 @@ export class AdvertisingAIService {
   ): Promise<Record<string, unknown>> {
     const startTime = Date?.now();
 
-    // ── MaxCore performance prediction ───────────────────────────────────────
-    const mcPrediction = await MaxCoreAIClient.infer<{
+    // ── MaxCore performance prediction (required & authoritative source) ─────
+    const mcPredictionRaw = await MaxCoreAIClient.infer<{
       predicted_ctr?: number;
       predicted_engagement_rate?: number;
       predicted_conversion_rate?: number;
@@ -703,28 +726,27 @@ export class AdvertisingAIService {
       target_audience: targetAudience ?? null,
       creative_id: creative.id,
     });
+    const mcPrediction = requireMaxCore(
+      mcPredictionRaw,
+      "creative performance prediction",
+    );
 
     // Feature extraction from creative
     const features = this?.extractCreativeFeatures(creative);
-
-    // Deterministic prediction based on features
-    const seed = this?.hashString(creative?.id);
-    const random = this?.seededRandom(seed);
-
-    // Base predictions from virality score
     const viralityScore = this?.calculateViralityScore(creative);
 
-    // CTR Prediction (0.5% - 8%)
-    const baseCTR = 0.005 + (viralityScore / 100) * 0.075;
-    const predictedCTR = baseCTR + (random() - 0.5) * 0.01;
-
-    // Engagement Rate Prediction (1% - 15%)
-    const baseEngagement = 0.01 + (viralityScore / 100) * 0.14;
-    const predictedEngagementRate = baseEngagement + (random() - 0.5) * 0.02;
-
-    // Conversion Rate Prediction (0.1% - 5%)
-    const baseConversion = 0.001 + (viralityScore / 100) * 0.049;
-    const predictedConversionRate = baseConversion + (random() - 0.5) * 0.005;
+    // MaxCore is the authoritative source for predicted metrics — no local
+    // seeded substitution. Missing metrics ⇒ unusable ⇒ explicit unavailability.
+    if (
+      mcPrediction.predicted_ctr == null ||
+      mcPrediction.predicted_engagement_rate == null ||
+      mcPrediction.predicted_conversion_rate == null
+    ) {
+      throw new AIUnavailableError("creative performance prediction");
+    }
+    const predictedCTR = mcPrediction.predicted_ctr;
+    const predictedEngagementRate = mcPrediction.predicted_engagement_rate;
+    const predictedConversionRate = mcPrediction.predicted_conversion_rate;
 
     // Confidence intervals (95%)
     const ctrConfidenceInterval = {
@@ -792,17 +814,15 @@ export class AdvertisingAIService {
     const outputs = {
       predictions: {
         ctr: {
-          value: mcPrediction?.predicted_ctr ?? predictedCTR,
+          value: predictedCTR,
           confidence: ctrConfidenceInterval,
         },
         engagementRate: {
-          value:
-            mcPrediction?.predicted_engagement_rate ?? predictedEngagementRate,
+          value: predictedEngagementRate,
           confidence: engagementConfidenceInterval,
         },
         conversionRate: {
-          value:
-            mcPrediction?.predicted_conversion_rate ?? predictedConversionRate,
+          value: predictedConversionRate,
           confidence: conversionConfidenceInterval,
         },
         viralityScore,
@@ -810,15 +830,15 @@ export class AdvertisingAIService {
       features,
       comparisonData: {
         ...comparisonData,
-        ...(mcPrediction?.percentile != null
+        ...(mcPrediction.percentile != null
           ? { percentile: mcPrediction.percentile }
           : {}),
       },
       explanation: this.generatePredictionExplanation(features, viralityScore),
-      ...(mcPrediction?.recommendations
+      ...(mcPrediction.recommendations
         ? { aiRecommendations: mcPrediction.recommendations }
         : {}),
-      aiSource: mcPrediction ? "maxcore" : "local",
+      aiSource: "maxcore",
     };
 
     await storage?.createAdAIRun({

@@ -12,7 +12,7 @@
  */
 
 import { MaxCoreAIClient } from "../unifiedAIController.js";
-import { logger } from "../../logger.js";
+import { requireMaxCore } from "../../lib/aiSource.js";
 import type { SupportedPlatform } from "./platformFormatters.js";
 
 // ─── Shared Context ───────────────────────────────────────────────────────────
@@ -110,41 +110,40 @@ export interface StoryFrame {
 async function callMaxCore(
   prompt: string,
   ctx: GeneratorContext,
-): Promise<string | null> {
-  try {
-    // /api/generate/content builds caption = hook + "\n\n" + body + "\n\n" + cta
-    // server-side, so caption is always clean structured text (never raw model tokens).
-    const payload: Record<string, unknown> = {
-      topic: prompt,
-      platform: ctx.platform,
-      tone: ctx.brandVoice,
-      genre: ctx.genre,
-      artist_name: ctx.artistName,
-      brand_voice: ctx.brandVoice,
-      target_audience: ctx.targetAudience,
-    };
-    // Pass all available content-guidance signals as structured fields
-    if (ctx.keywords.length) payload.preferred_hashtags = ctx?.keywords;
-    if (ctx.avoidTopics.length) payload.avoid_topics = ctx?.avoidTopics;
-    if (ctx.extraContext) payload.extra_context = ctx?.extraContext;
-    if (ctx.trackTitle) payload.track_title = ctx?.trackTitle;
-    if (ctx.releaseDate) payload.release_date = ctx?.releaseDate;
+): Promise<string> {
+  // /api/generate/content builds caption = hook + "\n\n" + body + "\n\n" + cta
+  // server-side, so caption is always clean structured text (never raw model tokens).
+  const payload: Record<string, unknown> = {
+    topic: prompt,
+    platform: ctx.platform,
+    tone: ctx.brandVoice,
+    genre: ctx.genre,
+    artist_name: ctx.artistName,
+    brand_voice: ctx.brandVoice,
+    target_audience: ctx.targetAudience,
+  };
+  // Pass all available content-guidance signals as structured fields
+  if (ctx.keywords.length) payload.preferred_hashtags = ctx?.keywords;
+  if (ctx.avoidTopics.length) payload.avoid_topics = ctx?.avoidTopics;
+  if (ctx.extraContext) payload.extra_context = ctx?.extraContext;
+  if (ctx.trackTitle) payload.track_title = ctx?.trackTitle;
+  if (ctx.releaseDate) payload.release_date = ctx?.releaseDate;
 
-    const result = await MaxCoreAIClient?.infer<{
-      caption?: string;
-      hook?: string;
-      body?: string;
-      cta?: string;
-      content?: string;
-      text?: string;
-    }>("/api/generate/content", payload);
-    // Prefer the clean structured caption; fall back to individual fields if absent.
-    return (
-      result?.caption ?? result?.hook ?? result?.content ?? result?.text ?? null
-    );
-  } catch {
-    return null;
-  }
+  const result = await MaxCoreAIClient?.infer<{
+    caption?: string;
+    hook?: string;
+    body?: string;
+    cta?: string;
+    content?: string;
+    text?: string;
+  }>("/api/generate/content", payload);
+  // Prefer the clean structured caption; fall back to individual fields if absent.
+  // MaxCore is the ONLY source — throw explicitly (HTTP 503) when it returns
+  // nothing rather than letting callers substitute local fallback content.
+  return requireMaxCore(
+    result?.caption ?? result?.hook ?? result?.content ?? result?.text ?? null,
+    "content pipeline",
+  );
 }
 
 // ─── Hook Generator ──────────────────────────────────────────────────────────
@@ -159,26 +158,13 @@ Keep each hook under 15 words. Make the primary hook irresistible in the first 3
 
   const raw = await callMaxCore(prompt, ctx);
 
-  if (raw) {
-    const lines = raw?.split("\n").filter((l) => l?.trim().length > 0);
-    return {
-      primary: lines[0] ?? "",
-      alternates: lines.slice(1, 4),
-      questionHook: lines[4] ?? "",
-      statementHook: lines[5] ?? "",
-      cliffhangerHook: lines[6] ?? "",
-    };
-  }
-
-  logger?.debug(
-    "[ContentGenerators] MaxCore returned empty hook response — local fallback",
-  );
+  const lines = raw?.split("\n").filter((l) => l?.trim().length > 0);
   return {
-    primary: "",
-    alternates: [],
-    questionHook: "",
-    statementHook: "",
-    cliffhangerHook: "",
+    primary: lines[0] ?? "",
+    alternates: lines.slice(1, 4),
+    questionHook: lines[4] ?? "",
+    statementHook: lines[5] ?? "",
+    cliffhangerHook: lines[6] ?? "",
   };
 }
 
@@ -199,20 +185,13 @@ Use ${ctx?.brandVoice} tone. No filler. Every word earns its place.`;
 
   const raw = await callMaxCore(prompt, ctx);
 
-  if (raw) {
-    const sections = raw?.split(/\n{2,}/);
-    return {
-      short: sections[0]?.trim() ?? "",
-      medium: sections[1]?.trim() ?? "",
-      long: sections[2]?.trim() ?? "",
-      platform: ctx.platform,
-    };
-  }
-
-  logger?.debug(
-    "[ContentGenerators] MaxCore returned empty caption response — local fallback",
-  );
-  return { short: "", medium: "", long: "", platform: ctx.platform };
+  const sections = raw?.split(/\n{2,}/);
+  return {
+    short: sections[0]?.trim() ?? "",
+    medium: sections[1]?.trim() ?? "",
+    long: sections[2]?.trim() ?? "",
+    platform: ctx.platform,
+  };
 }
 
 // ─── Hashtag Generator ───────────────────────────────────────────────────────
@@ -244,14 +223,12 @@ Mix: 5 niche/genre-specific, 5 broad/discovery, 5 trending/platform-native, 5 em
 
   const raw = await callMaxCore(prompt, ctx);
 
-  // Parse AI hashtags if returned, otherwise fall back to static sets
+  // Parse AI hashtags from the (guaranteed non-null) MaxCore response
   const aiTags: string[] = raw
-    ? raw
-        .split("\n")
-        .map((l) => l?.trim())
-        .filter((l) => l?.startsWith("#") && l?.length > 1)
-        .slice(0, 20)
-    : [];
+    .split("\n")
+    .map((l) => l?.trim())
+    .filter((l) => l?.startsWith("#") && l?.length > 1)
+    .slice(0, 20);
 
   const nicheStatic = [
     `#${ctx?.genre.replace(/\s+/g, "")}Music`,
@@ -306,29 +283,16 @@ Then write 2 A/B variants with different angles.`;
 
   const raw = await callMaxCore(prompt, ctx);
 
-  if (raw) {
-    const lines = raw?.split("\n").filter((l) => l?.trim().length > 0);
-    return {
-      headline: lines[0] ?? "",
-      subheadline: lines[1] ?? "",
-      body: lines[2] ?? "",
-      cta: lines[3] ?? "",
-      variants: [
-        { headline: lines[4] ?? "", body: lines[5] ?? "", cta: "" },
-        { headline: lines[6] ?? "", body: lines[7] ?? "", cta: "" },
-      ],
-    };
-  }
-
-  logger?.debug(
-    "[ContentGenerators] MaxCore returned empty ad copy response — local fallback",
-  );
+  const lines = raw?.split("\n").filter((l) => l?.trim().length > 0);
   return {
-    headline: "",
-    subheadline: "",
-    body: "",
-    cta: "",
-    variants: [],
+    headline: lines[0] ?? "",
+    subheadline: lines[1] ?? "",
+    body: lines[2] ?? "",
+    cta: lines[3] ?? "",
+    variants: [
+      { headline: lines[4] ?? "", body: lines[5] ?? "", cta: "" },
+      { headline: lines[6] ?? "", body: lines[7] ?? "", cta: "" },
+    ],
   };
 }
 
@@ -359,30 +323,15 @@ OVERLAY TEXTS (3 short text overlays for the video):`;
     `Fans reacting to music`,
   ];
 
-  if (raw) {
-    const lines = raw?.split("\n").filter((l) => l?.trim().length > 0);
-    return {
-      hook: lines[0] ?? "",
-      body: lines.slice(1, 4),
-      cta: lines[4] ?? "",
-      durationHint: `${durationSeconds}s`,
-      bRoll: defaultBRoll,
-      musicNote: "",
-      overlayTexts: [lines[5] ?? "", lines[6] ?? "", lines[7] ?? ""],
-    };
-  }
-
-  logger?.debug(
-    "[ContentGenerators] MaxCore returned empty video script response — local fallback",
-  );
+  const lines = raw?.split("\n").filter((l) => l?.trim().length > 0);
   return {
-    hook: "",
-    body: [],
-    cta: "",
+    hook: lines[0] ?? "",
+    body: lines.slice(1, 4),
+    cta: lines[4] ?? "",
     durationHint: `${durationSeconds}s`,
     bRoll: defaultBRoll,
     musicNote: "",
-    overlayTexts: [],
+    overlayTexts: [lines[5] ?? "", lines[6] ?? "", lines[7] ?? ""],
   };
 }
 
@@ -429,11 +378,9 @@ Return exactly 5 lines, one per frame.`;
 
   const raw = await callMaxCore(prompt, ctx);
   const aiLines = raw
-    ? raw
-        .split("\n")
-        .map((l) => l?.replace(/^Frame\s*\d+[:\-–]?\s*/i, "").trim())
-        .filter(Boolean)
-    : [];
+    .split("\n")
+    .map((l) => l?.replace(/^Frame\s*\d+[:\-–]?\s*/i, "").trim())
+    .filter(Boolean);
 
   const frames: StoryFrame[] = [
     {

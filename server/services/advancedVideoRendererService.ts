@@ -16,7 +16,7 @@ import type {
   VideoGenResult,
 } from "./videoGeneratorService.js";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
-import { generateAudio } from "./audioGeneratorService.js";
+import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
 
 const POLL_INTERVAL_MS = 2_000;
 const POLL_MAX_ATTEMPTS = 150; // 5 min
@@ -348,9 +348,10 @@ async function compositeTextOnLocalVideo(
     const script = [hook, body, cta].filter(Boolean).join(". ");
     const videoDuration = opts.duration ?? 10;
 
-    // Primary: MaxCore authoritative AI voice synthesis
-    try {
-      const mcAudio = await MaxCoreAIClient.generate<{
+    // MaxCore is the ONLY voice source — no local TTS fallback. A requested
+    // voiceover that MaxCore cannot produce fails explicitly.
+    const mcAudio = requireMaxCore(
+      await MaxCoreAIClient.generate<{
         url?: string;
         audio_url?: string;
       }>("/generate/audio", {
@@ -361,56 +362,31 @@ async function compositeTextOnLocalVideo(
         topic: opts.topic,
         platform: "video",
         quality: "high",
-      });
-      const rawAudioUrl = mcAudio?.url ?? mcAudio?.audio_url;
-      if (rawAudioUrl) {
-        const fullAudioUrl = rawAudioUrl.startsWith("http")
-          ? rawAudioUrl
-          : `${MAXCORE_ORIGIN}${rawAudioUrl}`;
-        const audioFilename = `vo_mc_${Date.now()}.mp3`;
-        const audioDir = path.join(process.cwd(), "uploads", "audio");
-        await fsPromises.mkdir(audioDir, { recursive: true });
-        const audioPath = path.join(audioDir, audioFilename);
-        const audioResp = await fetch(fullAudioUrl, {
-          // Bearer ONLY — X-Admin-Key/X-API-Key make MaxCore 401 the request.
-          headers: { Authorization: `Bearer ${MC_AI_KEY}` },
-          signal: AbortSignal.timeout(30_000),
-        });
-        if (audioResp.ok) {
-          await fsPromises.writeFile(audioPath, Buffer.from(await audioResp.arrayBuffer()));
-          audioLocalPath = audioPath;
-          logger.info(`[AdvancedVideoRenderer] MaxCore voiceover ready → ${audioFilename}`);
-        }
-      }
-    } catch (mcErr: unknown) {
-      logger.warn(
-        `[AdvancedVideoRenderer] MaxCore /generate/audio unavailable (${(mcErr as Error).message}) — falling back to local TTS`,
-      );
+      }),
+      "video voiceover",
+    );
+    const rawAudioUrl = mcAudio.url ?? mcAudio.audio_url;
+    if (!rawAudioUrl) {
+      throw new AIUnavailableError("video voiceover");
     }
-
-    // Fallback: local espeak/flite TTS + genre music bed
-    if (!audioLocalPath) {
-      try {
-        const audioResult = await generateAudio({
-          text: script,
-          topic: opts.topic,
-          artistName: opts.artistName,
-          genre: opts.genre,
-          duration: videoDuration,
-        });
-        if (audioResult.success && audioResult.filename) {
-          audioLocalPath = path.join(
-            process.cwd(), "uploads", "audio", audioResult.filename,
-          );
-          logger.info(`[AdvancedVideoRenderer] Local TTS voiceover ready → ${audioResult.filename}`);
-        } else {
-          logger.warn("[AdvancedVideoRenderer] Local TTS also failed — video will be silent");
-        }
-      } catch (audioErr: unknown) {
-        const msg = audioErr instanceof Error ? audioErr.message : String(audioErr);
-        logger.warn(`[AdvancedVideoRenderer] Local TTS error (${msg}) — video will be silent`);
-      }
+    const fullAudioUrl = rawAudioUrl.startsWith("http")
+      ? rawAudioUrl
+      : `${MAXCORE_ORIGIN}${rawAudioUrl}`;
+    const audioFilename = `vo_mc_${Date.now()}.mp3`;
+    const audioDir = path.join(process.cwd(), "uploads", "audio");
+    await fsPromises.mkdir(audioDir, { recursive: true });
+    const audioPath = path.join(audioDir, audioFilename);
+    const audioResp = await fetch(fullAudioUrl, {
+      // Bearer ONLY — X-Admin-Key/X-API-Key make MaxCore 401 the request.
+      headers: { Authorization: `Bearer ${MC_AI_KEY}` },
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!audioResp.ok) {
+      throw new AIUnavailableError("video voiceover");
     }
+    await fsPromises.writeFile(audioPath, Buffer.from(await audioResp.arrayBuffer()));
+    audioLocalPath = audioPath;
+    logger.info(`[AdvancedVideoRenderer] MaxCore voiceover ready → ${audioFilename}`);
   }
 
   let ffmpegArgs: string[];
@@ -795,8 +771,8 @@ export async function fetchPhotorealisticImage(
   // printed verbatim onto the card and look like debug output.
   const prompt = (hook || topic || "music artist").slice(0, 120);
 
-  try {
-    const result = await MaxCoreAIClient.generate<{
+  const result = requireMaxCore(
+    await MaxCoreAIClient.generate<{
       url?: string;
       image_url?: string;
       src?: string;
@@ -814,122 +790,54 @@ export async function fetchPhotorealisticImage(
       steps: 30,
       guidance_scale: 7.5,
       seed: Math.floor(Math.random() * 999_999),
-    });
+    }),
+    "video rendering",
+  );
 
-    const rawImageUrl =
-      result?.url ??
-      result?.image_url ??
-      result?.src ??
-      result?.outputs?.[0]?.url ??
-      result?.outputs?.[0]?.src;
+  const rawImageUrl =
+    result?.url ??
+    result?.image_url ??
+    result?.src ??
+    result?.outputs?.[0]?.url ??
+    result?.outputs?.[0]?.src;
 
-    // MaxCore may return a relative path ("/uploads/images/img_xxx.png") —
-    // resolve it against MAXCORE_ORIGIN so the fetch works.
-    const imageUrl = rawImageUrl
-      ? rawImageUrl.startsWith("http://") || rawImageUrl.startsWith("https://")
-        ? rawImageUrl
-        : rawImageUrl.startsWith("/")
-          ? `${MAXCORE_ORIGIN}${rawImageUrl}`
-          : null
-      : null;
+  // MaxCore may return a relative path ("/uploads/images/img_xxx.png") —
+  // resolve it against MAXCORE_ORIGIN so the fetch works.
+  const imageUrl = rawImageUrl
+    ? rawImageUrl.startsWith("http://") || rawImageUrl.startsWith("https://")
+      ? rawImageUrl
+      : rawImageUrl.startsWith("/")
+        ? `${MAXCORE_ORIGIN}${rawImageUrl}`
+        : null
+    : null;
 
-    if (imageUrl) {
-      const rawExt = imageUrl.split("?")[0].split(".").pop()?.toLowerCase() ?? "jpg";
-      const ext = ["jpg", "jpeg", "png", "webp"].includes(rawExt) ? rawExt : "jpg";
-      const filename = `photo_${randomUUID().slice(0, 8)}.${ext}`;
-      const localPath = path.join(PHOTO_CACHE_DIR, filename);
-
-      const imgResp = await fetch(imageUrl, {
-        // Bearer ONLY — MaxCore validates X-Admin-Key/X-API-Key schemes first
-        // and 401s the whole request if they're present (see replit.md).
-        headers: { Authorization: `Bearer ${MC_AI_KEY}` },
-        signal: AbortSignal.timeout(30_000),
-      });
-      if (imgResp.ok) {
-        const buf = Buffer.from(await imgResp.arrayBuffer());
-        if (buf.length > 5_000) {
-          await fsPromises.writeFile(localPath, buf);
-          logger.info(
-            `[PhotoReal] MaxCore image cached → ${filename} (${Math.round(buf.length / 1024)} KB)`,
-          );
-          return localPath;
-        }
-      }
-    }
-  } catch (err: unknown) {
-    logger.warn(
-      `[PhotoReal] MaxCore /generate/image failed (${(err as Error).message ?? String(err)}) — using gradient fallback`,
-    );
+  if (!imageUrl) {
+    throw new Error("MaxCore video rendering returned no image URL");
   }
 
-  return generatePhotoGradientFallback(W, H, genre);
-}
-
-/**
- * Sharp gradient fallback — a vivid multi-stop vertical gradient keyed to the
- * artist's genre palette.  Used when MaxCore image generation is unavailable.
- */
-async function generatePhotoGradientFallback(
-  W: number,
-  H: number,
-  genre: string,
-): Promise<string> {
-  await fsPromises.mkdir(PHOTO_CACHE_DIR, { recursive: true });
-
-  const filename = `gradient_${randomUUID().slice(0, 8)}.png`;
+  const rawExt = imageUrl.split("?")[0].split(".").pop()?.toLowerCase() ?? "jpg";
+  const ext = ["jpg", "jpeg", "png", "webp"].includes(rawExt) ? rawExt : "jpg";
+  const filename = `photo_${randomUUID().slice(0, 8)}.${ext}`;
   const localPath = path.join(PHOTO_CACHE_DIR, filename);
 
-  // [top-R, top-G, top-B, mid-R, mid-G, mid-B, bot-R, bot-G, bot-B]
-  const PALETTES: Record<string, [number,number,number, number,number,number, number,number,number]> = {
-    "hip-hop":    [20,  0, 40,  80,  0, 120, 200,   0,  60],
-    "trap":       [10,  0, 30,  60,  0,  80, 150,   0,  20],
-    "pop":        [20,  0, 60, 160,  0, 200, 255,  60, 120],
-    "r&b":        [40,  0, 60, 120, 20,  40, 180,  30,  30],
-    "electronic": [ 0, 20, 80,   0,120, 200,   0, 200, 180],
-    "dance":      [60,  0,120, 120,  0, 200, 200,   0, 255],
-    "rock":       [30,  0,  0,  80, 10,   0,  60,   0,   0],
-    "country":    [80, 50, 10, 180,120,   0, 220, 160,  20],
-    "jazz":       [20, 15, 50,  80, 60,  20, 100,  80,  30],
-    "latin":      [180,40,  0, 220,100,   0, 255, 160,   0],
-  };
-
-  const key = Object.keys(PALETTES).find((k) =>
-    (genre ?? "").toLowerCase().includes(k),
-  );
-  const [tr,tg,tb, mr,mg,mb, br,bg_,bb] = PALETTES[key ?? ""] ?? PALETTES["pop"];
-
-  try {
-    const sharp = (await import("sharp")).default;
-    const pixels = Buffer.alloc(W * H * 3);
-    for (let y = 0; y < H; y++) {
-      const t = y / (H - 1);
-      const toMid = Math.min(t * 2, 1);
-      const toBot = Math.max((t - 0.5) * 2, 0);
-      for (let x = 0; x < W; x++) {
-        const i = (y * W + x) * 3;
-        pixels[i]     = Math.round(tr + (mr - tr) * toMid + (br - mr) * toBot);
-        pixels[i + 1] = Math.round(tg + (mg - tg) * toMid + (bg_ - mg) * toBot);
-        pixels[i + 2] = Math.round(tb + (mb - tb) * toMid + (bb - mb) * toBot);
-      }
-    }
-    await sharp(pixels, { raw: { width: W, height: H, channels: 3 } })
-      .png()
-      .toFile(localPath);
-    logger.info(`[PhotoReal] Gradient fallback rendered → ${filename}`);
-    return localPath;
-  } catch {
-    // Last resort: tiny valid 1×1 black PNG that FFmpeg accepts
-    const black = path.join(PHOTO_CACHE_DIR, `black_${randomUUID().slice(0, 6)}.png`);
-    await fsPromises.writeFile(
-      black,
-      Buffer.from([
-        137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,1,0,0,0,1,
-        8,2,0,0,0,144,119,83,222,0,0,0,12,73,68,65,84,8,215,99,96,96,96,
-        0,0,0,4,0,1,39,246,149,36,0,0,0,0,73,69,78,68,174,66,96,130,
-      ]),
-    );
-    return black;
+  const imgResp = await fetch(imageUrl, {
+    // Bearer ONLY — MaxCore validates X-Admin-Key/X-API-Key schemes first
+    // and 401s the whole request if they're present (see replit.md).
+    headers: { Authorization: `Bearer ${MC_AI_KEY}` },
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!imgResp.ok) {
+    throw new Error(`MaxCore image download failed: ${imgResp.status}`);
   }
+  const buf = Buffer.from(await imgResp.arrayBuffer());
+  if (buf.length <= 5_000) {
+    throw new Error("MaxCore image download returned an empty/invalid image");
+  }
+  await fsPromises.writeFile(localPath, buf);
+  logger.info(
+    `[PhotoReal] MaxCore image cached → ${filename} (${Math.round(buf.length / 1024)} KB)`,
+  );
+  return localPath;
 }
 
 /**
@@ -1330,24 +1238,27 @@ export async function renderVideo(
   logger?.info("[AdvancedVideoRenderer] Starting MaxCore video pipeline");
 
   // ── Step 1: generate content + sentiment intelligence (parallel) ──────────
-  const contentResult = await generateContent(opts);
+  // MaxCore is the ONLY content source — fail explicitly, never fall back to
+  // caller-supplied opts as a substitute for AI-generated content.
+  const contentResult = requireMaxCore(
+    await generateContent(opts),
+    "video content",
+  );
 
-  const hook = contentResult?.hook || opts?.hook || "";
-  const body = contentResult?.body || opts?.body || "";
-  const cta = contentResult?.cta || opts?.cta || "";
-  const hashtags = contentResult?.hashtags || [];
-  const contentConfidence = contentResult?.confidence ?? null;
+  const hook = contentResult.hook || "";
+  const body = contentResult.body || "";
+  const cta = contentResult.cta || "";
+  const hashtags = contentResult.hashtags || [];
+  const contentConfidence = contentResult.confidence ?? null;
 
-  if (contentResult) {
-    logger?.info(
-      `[AdvancedVideoRenderer] Content generated — hook: "${hook.slice(0, 60)}..." ` +
-        `confidence: ${contentConfidence} hashtags: ${hashtags?.length}`,
-    );
-  } else {
-    logger?.warn(
-      "[AdvancedVideoRenderer] /api/generate/content returned null — using opts fallbacks",
-    );
+  if (!hook && !body && !cta) {
+    throw new AIUnavailableError("video content");
   }
+
+  logger?.info(
+    `[AdvancedVideoRenderer] Content generated — hook: "${hook.slice(0, 60)}..." ` +
+      `confidence: ${contentConfidence} hashtags: ${hashtags?.length}`,
+  );
 
   const sentimentResult = hook ? await getSentiment(hook) : null;
   if (sentimentResult) {

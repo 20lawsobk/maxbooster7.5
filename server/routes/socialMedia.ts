@@ -11,6 +11,7 @@ import { eq, and, desc, gte, inArray, isNull } from "drizzle-orm";
 import { syncPlatformData } from "../services/socialSyncService";
 import { requireAuth, requireAuthOnly } from "../middleware/auth.js";
 import { aiRateLimiter } from "../middleware/rateLimiter.js";
+import { AIUnavailableError } from "../lib/aiSource.js";
 import { notificationService } from "../services/notificationService.js";
 import {
   audioUpload,
@@ -4697,6 +4698,13 @@ router.post(
           : null,
       });
     } catch (e) {
+      if (e instanceof AIUnavailableError) {
+        return res.status(e.statusCode).json({
+          success: false,
+          code: e.code,
+          error: e.message,
+        });
+      }
       logger.warn("[Route] synthesize-voice:", e.message);
       res
         .status(500)

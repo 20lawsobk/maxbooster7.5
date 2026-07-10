@@ -6,6 +6,7 @@ import {
 } from "../lib/redisConnectionFactory.js";
 
 import { MaxCoreAIClient } from "./maxcoreClient.js";
+import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
 
 function seededIndex(seed: string, len: number): number {
   let h = 0x811c9dc5;
@@ -210,7 +211,6 @@ class ContentVariantGeneratorService {
   ): Promise<string[]> {
     const variants: string[] = [];
     const topic = this?.extractTopic(original);
-    const audience = this?.inferAudience(original);
 
     // Hyper A/B: cycle all platforms × all tones for maximum variate coverage
     const platforms = [
@@ -238,53 +238,31 @@ class ContentVariantGeneratorService {
     ];
 
     // ── MaxCore (sole AI source) ──────────────────────────────────────────────
-    // Call MaxCore directly for every variant slot.  Falls back to string
-    // templates below if MaxCore is unavailable or returns empty content.
+    // Call MaxCore directly for every variant slot. MaxCore is the ONLY source —
+    // a null/empty result THROWS (HTTP 503) instead of substituting local
+    // string-template variants.
     let aiVariantsGenerated = 0;
-    try {
-      for (let i = 0; i < count && aiVariantsGenerated < count; i++) {
-        const platform = platforms[i % platforms?.length];
-        const tone = tones[i % tones?.length];
-        const goal = goals[i % goals?.length];
-        const mc = await MaxCoreAIClient?.infer<{
-          hook?: string;
-          body?: string;
-          cta?: string;
-          caption?: string;
-        }>("/api/generate/content", { platform, topic, tone, goal });
-        if (mc?.hook) {
-          variants?.push(
-            `${mc?.hook}\n\n${mc?.body || ""}\n\n${mc?.cta || ""}`.trim(),
-          );
-          aiVariantsGenerated++;
-        }
+    for (let i = 0; i < count && aiVariantsGenerated < count; i++) {
+      const platform = platforms[i % platforms?.length];
+      const tone = tones[i % tones?.length];
+      const goal = goals[i % goals?.length];
+      const mcRaw = await MaxCoreAIClient?.infer<{
+        hook?: string;
+        body?: string;
+        cta?: string;
+        caption?: string;
+      }>("/api/generate/content", { platform, topic, tone, goal });
+      const mc = requireMaxCore(mcRaw, "content variant");
+      // Accept any usable MaxCore shape (caption OR hook/body/cta); only a
+      // structurally empty response counts as unavailability.
+      const variantText = (
+        mc.caption || [mc.hook, mc.body, mc.cta].filter(Boolean).join("\n\n")
+      ).trim();
+      if (!variantText) {
+        throw new AIUnavailableError("content variant");
       }
-    } catch (err) {
-      logger?.warn(
-        { err: err },
-        "[VariantGen] MaxCore unavailable, filling with template variants:",
-      );
-    }
-
-    // Fill remaining slots by cycling all hook templates across multiple passes
-    const hookTypes = Object?.keys(this?.hookTemplates);
-    const remaining = count - aiVariantsGenerated;
-
-    for (let i = 0; i < remaining; i++) {
-      const hookType = hookTypes[i % hookTypes?.length];
-      const templates = this?.hookTemplates[hookType];
-      const template =
-        templates[Math?.floor(i / hookTypes?.length) % templates?.length];
-
-      const newHook = template
-        .replace("{topic}", topic)
-        .replace("{Topic}", topic?.charAt(0).toUpperCase() + topic?.slice(1))
-        .replace("{audience}", audience);
-
-      const bodyLines = original?.split("\n").slice(1).join("\n");
-      const variant = `${newHook}\n\n${bodyLines || original}`;
-
-      variants?.push(this?.enhanceWithEmotions(variant));
+      variants?.push(variantText);
+      aiVariantsGenerated++;
     }
 
     logger?.info(
@@ -541,19 +519,6 @@ class ContentVariantGeneratorService {
     }
 
     return "creators";
-  }
-
-  private enhanceWithEmotions(text: string): string {
-    const emotions = Object?.values(this?.emotionKeywords).flat();
-    const hasEmotion = emotions?.some((e) => text?.toLowerCase().includes(e));
-
-    if (!hasEmotion) {
-      const randomEmotion =
-        emotions[seededIndex(`${text}:emotion`, emotions?.length)];
-      return text?.replace(/\.$/, ` - ${randomEmotion}!`);
-    }
-
-    return text;
   }
 
   private generateTopicHashtags(caption: string): string[] {

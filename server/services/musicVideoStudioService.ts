@@ -33,6 +33,7 @@ import type { BeatAnalysis, AudioSection } from "./beatSyncService.js";
 import { fetchPhotorealisticImage } from "./advancedVideoRendererService.js";
 import { imageToMusicVideo } from "./imageToVideoService.js";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
+import { requireMaxCore } from "../lib/aiSource.js";
 
 // ── GENRE DNA TOKENS ─────────────────────────────────────────────────────────
 // Each genre maps to a cinematic photography style string injected into every
@@ -252,45 +253,47 @@ async function viralPreScore(opts: {
   sections: AudioSection[];
   scenesCount: number;
   platform: string;
-}): Promise<{ score: number; recommendation: string } | null> {
-  try {
-    const body = {
-      model: "viral-score-v2",
-      inputs: {
-        genre: opts.genre,
-        bpm: opts.bpm,
-        section_count: opts.sections.length,
-        scene_count: opts.scenesCount,
-        has_chorus: opts.sections.some((s) => s.type === "chorus"),
-        platform: opts.platform,
-        content_type: "music_video",
-      },
-    };
+}): Promise<{ score: number; recommendation: string }> {
+  const body = {
+    model: "viral-score-v2",
+    inputs: {
+      genre: opts.genre,
+      bpm: opts.bpm,
+      section_count: opts.sections.length,
+      scene_count: opts.scenesCount,
+      has_chorus: opts.sections.some((s) => s.type === "chorus"),
+      platform: opts.platform,
+      content_type: "music_video",
+    },
+  };
 
-    const result = await MaxCoreAIClient.infer("/infer/viral-score", body);
-    if (!result) return null;
+  const result = requireMaxCore(
+    await MaxCoreAIClient.infer<{
+      score?: number;
+      viral_score?: number;
+      recommendation?: string;
+    }>("/infer/viral-score", body),
+    "music video studio",
+  );
 
-    const score = Math.round(
-      typeof result.score === "number"
-        ? Math.min(100, Math.max(0, result.score * 100))
-        : typeof result.viral_score === "number"
-          ? Math.min(100, Math.max(0, result.viral_score * 100))
-          : 70,
-    );
+  const score = Math.round(
+    typeof result.score === "number"
+      ? Math.min(100, Math.max(0, result.score * 100))
+      : typeof result.viral_score === "number"
+        ? Math.min(100, Math.max(0, result.viral_score * 100))
+        : 70,
+  );
 
-    const recommendation =
-      typeof result.recommendation === "string"
-        ? result.recommendation
-        : score >= 80
-          ? "High viral potential — strong beat sync and genre-authentic scenes"
-          : score >= 60
-            ? "Good engagement likely — consider adding a strong CTA overlay"
-            : "Post during peak hours for best results";
+  const recommendation =
+    typeof result.recommendation === "string"
+      ? result.recommendation
+      : score >= 80
+        ? "High viral potential — strong beat sync and genre-authentic scenes"
+        : score >= 60
+          ? "Good engagement likely — consider adding a strong CTA overlay"
+          : "Post during peak hours for best results";
 
-    return { score, recommendation };
-  } catch {
-    return null;
-  }
+  return { score, recommendation };
 }
 
 // ── MAIN EXPORT ───────────────────────────────────────────────────────────────
