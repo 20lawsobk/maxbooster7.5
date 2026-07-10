@@ -7649,6 +7649,21 @@ export async function registerRoutes(
   }
 
   try {
+    // MaxCore proxy — exposes the external MaxCore endpoint surface through the
+    // Node /api/* layer. Mounted last (its own try block) so it only handles
+    // paths not already served by a real Node route, and so an unrelated route
+    // load failure never disables it. Uses full /api/* paths internally.
+    const maxcoreProxyRouter = (await import("./routes/maxcoreProxy.js"))
+      .default;
+    app.use(maxcoreProxyRouter);
+    log("Loaded route: maxcore-proxy");
+  } catch (error) {
+    log(
+      `Warning: Could not load maxcore-proxy routes - ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+
+  try {
     // Warm the Self-Evolution registry from persisted state so the autopilot
     // timing/content consumers see active enhancements immediately on boot.
     const { evolutionRegistry } = await import(
