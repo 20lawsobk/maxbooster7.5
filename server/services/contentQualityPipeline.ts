@@ -1,4 +1,5 @@
 import { logger } from "../logger.js";
+import { AIUnavailableError } from "../lib/aiSource.js";
 import { db } from "../db";
 import { userBrandVoices, autopilotPreferences } from "@shared/schema";
 import { eq } from "drizzle-orm";
@@ -578,124 +579,12 @@ class ContentQualityPipeline {
           `[ContentQuality] Variant ${index} generated via Advanced AI (${contentType})`,
         );
       } catch (err) {
-        // MaxCore (Tier 1) failed — Tier 2 local fallback below handles this.
-        // MaxCore is always running, so any failure here is a real signal
-        // (shape mismatch, transient timeout, wrong endpoint).
-        // If a failure accumulator was supplied (by generateVariants), record
-        // the failure silently; generateVariants will emit one summary WARN
-        // after the loop so N variants don't produce N identical warn lines.
-        // Without an accumulator (standalone call), log immediately.
+        // MaxCore is the sole AI source — no local pattern fallback.
         const advErrMsg = (err as Error).message ?? String(err);
-        if (_failAcc) {
-          _failAcc.count++;
-          if (!_failAcc.reason) _failAcc.reason = advErrMsg;
-        } else {
-          logger.info(
-            `[ContentQuality] MaxCore used local fallback for variant ${index}: ${advErrMsg}`,
-          );
-        }
-
-        // ── Tier 2: Local pattern-data fallback (always available) ────────────
-        // MaxCore (Tier 1) is unavailable.  Generate content from music industry
-        // training data patterns — no network calls, no external dependencies,
-        // zero failure modes.  Content quality is lower than MaxCore but always
-        // publishable.
-        try {
-          const {
-            getHashtagsForGenre,
-            PLATFORM_CONTENT_SCRIPTS,
-            CALL_TO_ACTION_LIBRARY,
-            GENRE_VIRAL_HOOKS,
-            EMOTIONAL_TRIGGER_PATTERNS,
-          } = await import(
-            "../../shared/ml/training/musicIndustryTrainingData.js"
-          );
-
-          // Deterministic seed: same user + strategy + index → same pick every
-          // time so content is reproducible without Math.random().
-          const seedStr = `${context.userId}:${strategy}:${index}`;
-          function seededPick<T>(arr: readonly T[] | T[]): T {
-            if (!arr || arr.length === 0) return "" as unknown as T;
-            let h = 2166136261;
-            for (let i = 0; i < seedStr.length; i++) {
-              h ^= seedStr.charCodeAt(i);
-              h = Math.imul(h, 16777619) >>> 0;
-            }
-            return arr[h % arr.length];
-          }
-
-          const genre = (context.genre || "pop").toLowerCase();
-          const platform = (context.platform || "instagram").toLowerCase();
-
-          // Pick a platform hook template
-          const scripts = PLATFORM_CONTENT_SCRIPTS as Record<
-            string,
-            Record<string, readonly string[]>
-          >;
-          const platformScripts = scripts[platform] ?? scripts.instagram;
-          const hookList =
-            platformScripts.viralHookFormulas ??
-            platformScripts.reelsHookFormulas ??
-            platformScripts.titleFormulas ??
-            [];
-          let hookTemplate = seededPick(hookList as string[]);
-
-          // Fill simple template placeholders
-          const topic = context.topic || "new music";
-          hookTemplate = hookTemplate
-            .replace(/\{scenario\}/g, topic)
-            .replace(/\{identity\}/g, "music lover")
-            .replace(/\{moment\}/g, topic)
-            .replace(/\{context\}/g, genre)
-            .replace(/\{feeling\}/g, "pure emotion")
-            .replace(/\{genre\}/g, genre)
-            .replace(/\{seconds\}/g, "10")
-            .replace(/\{emotion\}/g, "powerful")
-            .replace(/\{timeframe\}/g, "24 hours")
-            .replace(/\{adjective\}/g, "exciting");
-
-          // Pick body content from emotional triggers
-          const triggerKeys = Object.keys(EMOTIONAL_TRIGGER_PATTERNS) as Array<
-            keyof typeof EMOTIONAL_TRIGGER_PATTERNS
-          >;
-          const triggerKey = seededPick(triggerKeys);
-          const bodyLine = seededPick(EMOTIONAL_TRIGGER_PATTERNS[triggerKey]);
-
-          // Compose body
-          const genreHooks = GENRE_VIRAL_HOOKS as Record<
-            string,
-            Record<string, readonly string[]>
-          >;
-          const genreData = genreHooks[genre] ?? genreHooks.pop;
-          const platformHooks: readonly string[] = (genreData[platform] ??
-            genreData.instagram ??
-            []) as readonly string[];
-          const genreHook = platformHooks.length
-            ? seededPick(platformHooks)
-            : topic;
-
-          headline = hookTemplate || genreHook;
-          body = `${bodyLine}\n\n${genreHook}`;
-          cta = seededPick([
-            ...CALL_TO_ACTION_LIBRARY.streaming.direct,
-            ...CALL_TO_ACTION_LIBRARY.streaming.urgent,
-          ]);
-          hashtags = getHashtagsForGenre(genre).slice(0, 8);
-
-          // Per-variant local-fallback info is suppressed when an accumulator
-          // is present — generateVariants logs one summary line after the loop.
-          if (_failAcc) {
-            _failAcc.localCount++;
-          } else {
-            logger.info(
-              `[ContentQuality] Variant ${index} generated via local pattern fallback (Tier 2)`,
-            );
-          }
-        } catch (localErr) {
-          throw new Error(
-            `[ContentQuality] All generation tiers failed for variant ${index}: ${err}`,
-          );
-        }
+        logger.warn(
+          `[ContentQuality] MaxCore unavailable for variant ${index}: ${advErrMsg}`,
+        );
+        throw new AIUnavailableError("content quality generation");
       }
     }
 

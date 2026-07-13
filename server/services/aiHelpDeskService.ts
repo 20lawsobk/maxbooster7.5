@@ -1,9 +1,12 @@
 /**
  * AI Help Desk Service
  * Provides intelligent support assistance for Max Booster users
+ * All AI response generation routes through MaxCore — no local fallback.
  */
 
 import { BUSINESS_CONFIG } from "../config/businessConfig";
+import { MaxCoreAIClient } from "./maxcoreClient.js";
+import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
 
 interface ChatMessage {
   role: "user" | "assistant" | "system";
@@ -189,7 +192,8 @@ class AIHelpDeskService {
   }
 
   /**
-   * Process a user message and generate a response
+   * Process a user message and generate a response.
+   * Routes through MaxCore — the sole AI source for help desk responses.
    */
   async processMessage(
     sessionId: string,
@@ -205,17 +209,35 @@ class AIHelpDeskService {
       timestamp: new Date(),
     });
 
-    // Detect category and intent
-    const category = this?.detectCategory(userMessage);
-    const intent = this?.detectIntent(userMessage);
+    // Build conversation history for context (last 10 messages)
+    const historyForContext = context.messages
+      .slice(-10)
+      .map((m) => ({ role: m.role, content: m.content }));
 
-    // Generate response based on category and intent
-    const response = this?.generateResponse(
-      userMessage,
-      category,
-      intent,
-      context,
+    const mc = requireMaxCore(
+      await MaxCoreAIClient.generate<{
+        message: string;
+        suggestedActions?: string[];
+        relatedArticles?: { title: string; url: string }[];
+        needsHumanSupport?: boolean;
+        category?: string;
+      }>("/api/generate/content", {
+        type: "help_desk_response",
+        format: "json",
+        platform: BUSINESS_CONFIG.company?.platform ?? "Max Booster",
+        user_message: userMessage,
+        conversation_history: historyForContext,
+      }),
+      "help desk response",
     );
+
+    const response: HelpDeskResponse = {
+      message: mc.message,
+      suggestedActions: mc.suggestedActions,
+      relatedArticles: mc.relatedArticles,
+      needsHumanSupport: mc.needsHumanSupport,
+      category: mc.category,
+    };
 
     // Add assistant response to history
     context?.messages.push({

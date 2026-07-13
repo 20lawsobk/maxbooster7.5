@@ -4,6 +4,8 @@ import {
   getRedisClient,
   RedisClientType,
 } from "../lib/redisConnectionFactory.js";
+import { MaxCoreAIClient } from "./maxcoreClient.js";
+import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
 
 export interface AlgorithmHealth {
   platform: string;
@@ -885,29 +887,51 @@ class AlgorithmIntelligenceService {
       }
     }
 
-    const metrics = this.analyzeMetrics(platform, recentMetrics);
-    const alerts = await this.detectAlerts(platform, metrics, userId);
-    const status = this.determineStatus(metrics, alerts);
-    const recommendations = this.generateRecommendations(
-      platform,
-      metrics,
-      alerts,
+    // Route through MaxCore — sole AI source for algorithm health analysis.
+    const rawMetrics = recentMetrics ?? {
+      impressions: [],
+      engagement: [],
+      followers: [],
+      hashtagReach: [],
+    };
+
+    const mcResult = requireMaxCore(
+      await MaxCoreAIClient.generate<{
+        overallScore: number;
+        status: "healthy" | "warning" | "critical" | "shadowbanned";
+        metrics: {
+          reachTrend: "increasing" | "stable" | "declining";
+          engagementRate: number;
+          impressionRatio: number;
+          followerGrowth: number;
+          hashtagReach: number;
+        };
+        alerts: AlgorithmAlert[];
+        recommendations: string[];
+      }>("/api/generate/content", {
+        type: "algorithm_health_check",
+        format: "json",
+        platform,
+        recent_metrics: rawMetrics,
+      }),
+      "algorithm health check",
     );
-    const overallScore = this.calculateHealthScore(metrics, alerts, platform);
 
     const result: AlgorithmHealth = {
       platform,
-      overallScore,
-      status,
-      metrics: {
-        reachTrend: metrics.reachTrend,
-        engagementRate: metrics.engagementRate,
-        impressionRatio: metrics.impressionRatio,
-        followerGrowth: metrics.followerGrowth,
-        hashtagReach: metrics.hashtagReach,
+      overallScore: mcResult.overallScore ?? 50,
+      status: mcResult.status ?? "warning",
+      metrics: mcResult.metrics ?? {
+        reachTrend: "stable",
+        engagementRate: 0,
+        impressionRatio: 1,
+        followerGrowth: 0,
+        hashtagReach: 50,
       },
-      alerts,
-      recommendations,
+      alerts: Array.isArray(mcResult.alerts) ? mcResult.alerts : [],
+      recommendations: Array.isArray(mcResult.recommendations)
+        ? mcResult.recommendations
+        : [],
       lastChecked: new Date(),
     };
 
@@ -920,7 +944,7 @@ class AlgorithmIntelligenceService {
     }
 
     logger.info(
-      `🔍 Algorithm health check: ${platform} — Score: ${overallScore}/100 — Status: ${status}`,
+      `🔍 Algorithm health check: ${platform} — Score: ${result.overallScore}/100 — Status: ${result.status}`,
     );
     return result;
   }
@@ -944,7 +968,38 @@ class AlgorithmIntelligenceService {
       searchVisibility: 65,
     };
 
-    const indicators = {
+    // Route through MaxCore — sole AI source for shadowban detection.
+    const mcResult = requireMaxCore(
+      await MaxCoreAIClient.generate<{
+        isShadowbanned: boolean;
+        confidence: number;
+        indicators: {
+          hashtagVisibility: number;
+          explorePageReach: number;
+          nonFollowerReach: number;
+          engagementFromNew: number;
+          searchVisibility: number;
+        };
+        possibleCauses: string[];
+        remediation: string[];
+      }>("/api/generate/content", {
+        type: "shadowban_detection",
+        format: "json",
+        platform,
+        metrics,
+      }),
+      "shadowban detection",
+    );
+
+    const isShadowbanned = mcResult.isShadowbanned ?? false;
+    const confidence = mcResult.confidence ?? 0;
+    const possibleCauses: string[] = Array.isArray(mcResult.possibleCauses)
+      ? mcResult.possibleCauses
+      : [];
+    const remediation: string[] = Array.isArray(mcResult.remediation)
+      ? mcResult.remediation
+      : [];
+    const indicators = mcResult.indicators ?? {
       hashtagVisibility: metrics.hashtagReach,
       explorePageReach: metrics.exploreReach,
       nonFollowerReach: metrics.nonFollowerReach,
@@ -952,109 +1007,7 @@ class AlgorithmIntelligenceService {
       searchVisibility: metrics.searchVisibility,
     };
 
-    const { shadowbanIndicators } = this;
-    const lowFlags = [
-      indicators.hashtagVisibility <
-        shadowbanIndicators.hashtagVisibilityThreshold,
-      indicators.explorePageReach < shadowbanIndicators.exploreReachThreshold,
-      indicators.nonFollowerReach <
-        shadowbanIndicators.nonFollowerReachThreshold,
-      indicators.engagementFromNew < shadowbanIndicators.newEngagementThreshold,
-      indicators.searchVisibility <
-        shadowbanIndicators.searchVisibilityThreshold,
-    ];
-
-    const lowCount = lowFlags.filter(Boolean).length;
-
-    // Require 3+ low flags for shadowban diagnosis (reduces false positives for niche artists)
-    const isShadowbanned = lowCount >= 3;
-
-    // Confidence scales with number of low indicators (calibrated: 3 flags = 65%, 5 flags = 95%)
-    const confidence =
-      lowCount === 0
-        ? 5
-        : lowCount === 1
-          ? 20
-          : lowCount === 2
-            ? 40
-            : lowCount === 3
-              ? 65
-              : lowCount === 4
-                ? 82
-                : 95;
-
-    const possibleCauses: string[] = [];
-    const remediation: string[] = [];
-
-    if (
-      indicators.hashtagVisibility <
-      shadowbanIndicators.hashtagVisibilityThreshold
-    ) {
-      possibleCauses.push(
-        "Banned, flagged, or overused hashtags limiting discovery reach",
-      );
-      remediation.push(
-        "Audit your hashtags — remove any banned tags and rotate to fresh niche hashtags",
-      );
-    }
-    if (
-      indicators.explorePageReach < shadowbanIndicators.exploreReachThreshold
-    ) {
-      possibleCauses.push(
-        "Content not meeting platform discovery quality threshold",
-      );
-      remediation.push(
-        "Increase save-worthy value: tutorials, how-tos, music tips outperform pure promos",
-      );
-    }
-    if (
-      indicators.nonFollowerReach <
-      shadowbanIndicators.nonFollowerReachThreshold
-    ) {
-      possibleCauses.push(
-        "Algorithm has limited distribution — likely from recent content policy signal",
-      );
-      remediation.push(
-        "Increase authentic engagement quality (reply to comments, start genuine conversations)",
-      );
-    }
-    if (
-      indicators.engagementFromNew < shadowbanIndicators.newEngagementThreshold
-    ) {
-      possibleCauses.push(
-        "Content not resonating with discovery audiences — hook may need strengthening",
-      );
-      remediation.push(
-        "A/B test 3 different hook styles — POV, curiosity gap, and question format",
-      );
-    }
-    if (
-      indicators.searchVisibility <
-      shadowbanIndicators.searchVisibilityThreshold
-    ) {
-      possibleCauses.push(
-        "Account or content metadata flagged in search index",
-      );
-      remediation.push(
-        "Update bio, ensure no banned terms in profile, and submit account review if available",
-      );
-    }
-
-    if (isShadowbanned) {
-      remediation.push(
-        "Take a 48-72 hour posting break — activity pause often resets distribution limits",
-      );
-      remediation.push(
-        "Remove and disconnect any suspicious third-party apps from account settings",
-      );
-      remediation.push(
-        "Avoid all engagement pods, mass DM campaigns, or automation tools for 2 weeks",
-      );
-      remediation.push(
-        "Post 3-5 pieces of high-quality, policy-compliant content after the break",
-      );
-    }
-
+    // possibleCauses, remediation, and isShadowbanned all come from MaxCore above.
     return {
       platform,
       isShadowbanned,

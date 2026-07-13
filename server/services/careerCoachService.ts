@@ -2,6 +2,8 @@ import { db } from "../db";
 import { eq, and, desc, isNull, sql, gte } from "drizzle-orm";
 import { careerCoachRecommendations, careerGoals, analytics, releases, socialAccounts, dspAnalytics, InsertCareerCoachRecommendation, InsertCareerGoal, CareerCoachRecommendation, CareerGoal } from "../../shared/schema";
 import { logger } from "../logger";
+import { MaxCoreAIClient } from "./maxcoreClient.js";
+import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
 
 interface CareerGap {
   area: string;
@@ -654,31 +656,61 @@ class CareerCoachService {
       const snapshot = await this?.getUserAnalyticsSnapshot(userId);
       const recommendations: InsertCareerCoachRecommendation[] = [];
 
-      const triggeredPatterns = CAREER_COACH_PATTERNS?.filter((p) =>
-        p?.trigger(snapshot),
+      // Route through MaxCore — it is the sole AI source for career coaching.
+      const mcResult = requireMaxCore(
+        await MaxCoreAIClient.generate<{
+          recommendations: Array<{
+            type: string;
+            title: string;
+            description: string;
+            priority: number;
+            actionUrl: string;
+            patternId: string;
+            area: string;
+            severity: "high" | "medium" | "low";
+            steps: string[];
+            expectedImpact: string;
+            timeframe: string;
+          }>;
+        }>("/api/generate/content", {
+          type: "career_coaching",
+          format: "json",
+          analytics_snapshot: {
+            totalStreams: snapshot.totalStreams,
+            totalFollowers: snapshot.totalFollowers,
+            totalRevenue: snapshot.totalRevenue,
+            releaseCount: snapshot.releaseCount,
+            daysSinceRelease: snapshot.daysSinceRelease,
+            socialAccounts: snapshot.socialAccounts,
+            topPlatform: snapshot.topPlatform,
+            topCity: snapshot.topCity,
+            avgEngagementRate: snapshot.avgEngagementRate,
+            platformStreams: snapshot.platformStreams,
+          },
+          max_recommendations: 6,
+        }),
+        "career coaching",
       );
-      triggeredPatterns?.sort((a, b) => {
-        const sevOrder = { high: 0, medium: 1, low: 2 };
-        const aSev = sevOrder[a?.severity(snapshot)];
-        const bSev = sevOrder[b?.severity(snapshot)];
-        return aSev !== bSev ? aSev - bSev : a?.priority - b?.priority;
-      });
 
-      for (const pattern of triggeredPatterns?.slice(0, 6)) {
+      const mcRecs = Array.isArray(mcResult?.recommendations)
+        ? mcResult.recommendations
+        : [];
+
+      for (const rec of mcRecs.slice(0, 6)) {
         recommendations?.push({
           userId,
-          type: pattern.type,
-          title: pattern.title(snapshot),
-          description: pattern.description(snapshot),
-          priority: pattern.priority,
-          actionUrl: pattern.actionUrl,
+          type: rec.type || this.recommendationTypes.GROWTH_OPPORTUNITY,
+          title: rec.title,
+          description: rec.description,
+          priority: rec.priority ?? 2,
+          actionUrl: rec.actionUrl || "/analytics",
           metadata: {
-            patternId: pattern.id,
-            area: pattern.area,
-            severity: pattern.severity(snapshot),
-            steps: pattern.steps,
-            expectedImpact: pattern.expectedImpact,
-            timeframe: pattern.timeframe,
+            patternId: rec.patternId || "maxcore",
+            area: rec.area || "growth",
+            severity: rec.severity || "medium",
+            steps: rec.steps || [],
+            expectedImpact: rec.expectedImpact || "",
+            timeframe: rec.timeframe || "",
             snapshot: {
               totalStreams: snapshot.totalStreams,
               totalFollowers: snapshot.totalFollowers,
@@ -694,27 +726,8 @@ class CareerCoachService {
       }
 
       if (recommendations?.length === 0) {
-        recommendations?.push({
-          userId,
-          type: this.recommendationTypes.GROWTH_OPPORTUNITY,
-          title: "You're building strong momentum — here's how to sustain it",
-          description:
-            "Your career metrics look solid. Focus on consistency: maintain your release cadence, keep engaging your audience, and explore new revenue streams to keep growing.",
-          priority: 2,
-          actionUrl: "/analytics",
-          metadata: {
-            patternId: "momentum_maintenance",
-            steps: [
-              "Review your analytics dashboard for any emerging opportunities",
-              "Plan your next release and submit for editorial consideration",
-              "Explore a new revenue stream: beat sales, merch, or sync licensing",
-              "Run a fan engagement campaign on your top social platform",
-            ],
-            expectedImpact:
-              "Sustained consistency leads to compounding growth over 3–6 months",
-            timeframe: "Ongoing",
-          },
-        });
+        // MaxCore returned an empty recommendations array — treat as unavailable.
+        throw new AIUnavailableError("career coaching");
       }
 
       const inserted: CareerCoachRecommendation[] = [];
@@ -741,27 +754,46 @@ class CareerCoachService {
 
   async analyzeCareerGaps(userId: string): Promise<CareerGap[]> {
     const snapshot = await this?.getUserAnalyticsSnapshot(userId);
-    const gaps: CareerGap[] = [];
 
-    const triggeredPatterns = CAREER_COACH_PATTERNS?.filter((p) =>
-      p?.trigger(snapshot),
+    // Route through MaxCore — sole AI source for career gap analysis.
+    const mcResult = requireMaxCore(
+      await MaxCoreAIClient.generate<{
+        gaps: Array<{
+          area: string;
+          severity: "high" | "medium" | "low";
+          description: string;
+          recommendation: string;
+          actionUrl: string;
+          steps: string[];
+          expectedImpact: string;
+          timeframe: string;
+        }>;
+      }>("/api/generate/content", {
+        type: "career_gap_analysis",
+        format: "json",
+        analytics_snapshot: {
+          totalStreams: snapshot.totalStreams,
+          totalFollowers: snapshot.totalFollowers,
+          totalRevenue: snapshot.totalRevenue,
+          releaseCount: snapshot.releaseCount,
+          daysSinceRelease: snapshot.daysSinceRelease,
+          socialAccounts: snapshot.socialAccounts,
+          topPlatform: snapshot.topPlatform,
+          topCity: snapshot.topCity,
+          avgEngagementRate: snapshot.avgEngagementRate,
+          platformStreams: snapshot.platformStreams,
+        },
+      }),
+      "career gap analysis",
     );
-    for (const pattern of triggeredPatterns) {
-      gaps?.push({
-        area: pattern.area,
-        severity: pattern.severity(snapshot),
-        description: pattern.description(snapshot),
-        recommendation: pattern.title(snapshot),
-        actionUrl: pattern.actionUrl,
-        steps: pattern.steps,
-        expectedImpact: pattern.expectedImpact,
-        timeframe: pattern.timeframe,
-      });
-    }
 
-    return gaps?.sort((a, b) => {
+    const gaps: CareerGap[] = Array.isArray(mcResult?.gaps)
+      ? mcResult.gaps
+      : [];
+
+    return gaps.sort((a, b) => {
       const severityOrder = { high: 0, medium: 1, low: 2 };
-      return severityOrder[a?.severity] - severityOrder[b?.severity];
+      return (severityOrder[a?.severity] ?? 1) - (severityOrder[b?.severity] ?? 1);
     });
   }
 

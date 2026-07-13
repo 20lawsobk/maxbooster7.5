@@ -263,18 +263,14 @@ export class AIContentService {
 
       const executionTimeMs = Date?.now() - startTime;
 
-      let content: string[];
-      if (aiResult?.success && aiResult?.data) {
-        const d = aiResult?.data as Record<string, unknown>;
-        const caption =
-          d?.caption || [d?.hook, d?.body, d?.cta].filter(Boolean).join("\n\n");
-        content = caption ? [caption] : d?.content || [];
-      } else {
-        logger?.debug(
-          "[AIContentService] MaxCore returned no content — local fallback",
-        );
-        content = [];
+      if (!(aiResult?.success && aiResult?.data)) {
+        // MaxCore is the sole AI source — no local fallback.
+        throw new AIUnavailableError("multilingual content generation");
       }
+      const d = aiResult?.data as Record<string, unknown>;
+      const caption =
+        (d?.caption as string) || [d?.hook, d?.body, d?.cta].filter(Boolean).join("\n\n");
+      const content: string[] = caption ? [caption] : (d?.content as string[]) || [];
 
       const inferenceId = await this?.logInference(
         "multilingual",
@@ -385,83 +381,38 @@ export class AIContentService {
   ): Promise<BrandVoiceProfile> {
     const startTime = Date?.now();
 
-    const emojiRegex = new RegExp("[\\u{1F300}-\\u{1F9FF}]", "gu");
-    const hashtagRegex = /#\w+/g;
+    // Route through MaxCore — the sole AI source for brand voice analysis.
+    const { MaxCoreAIClient } = await import("./maxcoreClient.js");
+    const { requireMaxCore, AIUnavailableError } = await import("../lib/aiSource.js");
 
-    const totalEmojis = historicalPosts?.reduce(
-      (sum, post) => sum + (post?.match(emojiRegex) || []).length,
-      0,
+    const mcResult = requireMaxCore(
+      await MaxCoreAIClient.generate<{
+        tone: "formal" | "casual" | "mixed";
+        emojiUsage: "none" | "light" | "moderate" | "heavy";
+        hashtagFrequency: number;
+        avgSentenceLength: number;
+        vocabularyComplexity: "simple" | "moderate" | "advanced";
+        commonPhrases: string[];
+        confidenceScore: number;
+      }>("/api/generate/content", {
+        type: "brand_voice_analysis",
+        format: "json",
+        posts: historicalPosts.slice(0, 50), // cap for payload size
+        post_count: historicalPosts.length,
+      }),
+      "brand voice analysis",
     );
-    const totalHashtags = historicalPosts?.reduce(
-      (sum, post) => sum + (post?.match(hashtagRegex) || []).length,
-      0,
-    );
-    const totalSentences = historicalPosts?.reduce(
-      (sum, post) => sum + post?.split(/[.!?]+/).filter((s) => s?.trim()).length,
-      0,
-    );
-    const totalWords = historicalPosts?.reduce(
-      (sum, post) => sum + post?.split(/\s+/).length,
-      0,
-    );
 
-    const avgSentenceLength = totalWords / Math?.max(totalSentences, 1);
-    const emojiPerPost = totalEmojis / historicalPosts?.length;
-    const hashtagPerPost = totalHashtags / historicalPosts?.length;
-
-    const formalWords = [
-      "moreover",
-      "furthermore",
-      "additionally",
-      "consequently",
-    ];
-    const casualWords = ["yeah", "cool", "awesome", "hey", "lol"];
-
-    let formalCount = 0;
-    let casualCount = 0;
-    historicalPosts?.forEach((post) => {
-      const lower = post?.toLowerCase();
-      formalWords?.forEach((word) => {
-        if (lower?.includes(word)) formalCount++;
-      });
-      casualWords?.forEach((word) => {
-        if (lower?.includes(word)) casualCount++;
-      });
-    });
-
-    const tone: "formal" | "casual" | "mixed" =
-      formalCount > casualCount * 1.5
-        ? "formal"
-        : casualCount > formalCount * 1.5
-          ? "casual"
-          : "mixed";
-
-    const emojiUsage: "none" | "light" | "moderate" | "heavy" =
-      emojiPerPost === 0
-        ? "none"
-        : emojiPerPost < 1
-          ? "light"
-          : emojiPerPost < 3
-            ? "moderate"
-            : "heavy";
-
-    const vocabularyComplexity: "simple" | "moderate" | "advanced" =
-      avgSentenceLength < 10
-        ? "simple"
-        : avgSentenceLength < 20
-          ? "moderate"
-          : "advanced";
-
-    const commonPhrases = this?.extractCommonPhrases(historicalPosts);
-    const confidenceScore = Math?.min(100, 50 + historicalPosts?.length * 2);
+    const confidenceScore = mcResult.confidenceScore
+      ?? Math.min(100, 50 + historicalPosts.length * 2);
 
     const profile: BrandVoiceProfile = {
-      tone,
-      emojiUsage,
-      hashtagFrequency: hashtagPerPost,
-      avgSentenceLength,
-      vocabularyComplexity,
-      commonPhrases,
+      tone: mcResult.tone ?? "mixed",
+      emojiUsage: mcResult.emojiUsage ?? "light",
+      hashtagFrequency: mcResult.hashtagFrequency ?? 0,
+      avgSentenceLength: mcResult.avgSentenceLength ?? 12,
+      vocabularyComplexity: mcResult.vocabularyComplexity ?? "moderate",
+      commonPhrases: mcResult.commonPhrases ?? [],
       confidenceScore,
     };
 
@@ -1100,18 +1051,14 @@ export class AIContentService {
       includeEmojis: true,
     });
 
-    let content: string[];
-    if (aiResult?.success && aiResult?.data) {
-      const d = aiResult?.data as Record<string, unknown>;
-      const caption =
-        d?.caption || [d?.hook, d?.body, d?.cta].filter(Boolean).join("\n\n");
-      content = caption ? [caption] : d?.content || [];
-    } else {
-      logger?.debug(
-        "[AIContentService] MaxCore returned no content — local fallback",
-      );
-      content = [];
+    if (!(aiResult?.success && aiResult?.data)) {
+      // MaxCore is the sole AI source — no local fallback.
+      throw new AIUnavailableError("text content generation");
     }
+    const d2 = aiResult?.data as Record<string, unknown>;
+    const caption2 =
+      (d2?.caption as string) || [d2?.hook, d2?.body, d2?.cta].filter(Boolean).join("\n\n");
+    const content: string[] = caption2 ? [caption2] : (d2?.content as string[]) || [];
 
     return {
       id: `txt_${randomBytes(8).toString("hex")}`,

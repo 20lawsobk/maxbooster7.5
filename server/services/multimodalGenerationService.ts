@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import path from "path";
 import { promises as fsPromises } from "fs";
 import { logger } from "../logger.js";
+import { AIUnavailableError } from "../lib/aiSource.js";
 import { generateAudio as generateLocalAudio } from "./audioGeneratorService.js";
 import { sharpImageService } from "./sharpImageService.js";
 import { db } from "../db.js";
@@ -2077,31 +2078,12 @@ async function normalizeInput(req: GenerationRequest): Promise<unknown> {
       8_000,
     ); // 8 s — fail fast to local fallback
   } catch (err) {
+    // MaxCore is the sole AI source — no local fallback.
     logger.warn(
-      "[MultimodalGen] MaxCore /analyze unavailable, using local fallback:",
+      "[MultimodalGen] MaxCore /analyze unavailable:",
       err instanceof Error ? err.message : String(err),
     );
-
-    // For URL inputs: use the pre-fetched meta if available, otherwise fetch now
-    if (req.input.modality === "url" && /^https?:\/\//i.test(payload)) {
-      try {
-        return await localAnalyzeUrl(payload, req, platformRulesSubset);
-      } catch (urlErr) {
-        logger.warn(
-          "[MultimodalGen] URL metadata fetch failed:",
-          urlErr instanceof Error ? urlErr.message : String(urlErr),
-        );
-      }
-    }
-
-    return {
-      summary: payload,
-      modality: req.input.modality,
-      platforms: req.platforms,
-      intent: req.intent,
-      metadata: req.input.metadata || {},
-      platformRules: platformRulesSubset,
-    };
+    throw new AIUnavailableError("multimodal content analysis");
   }
 }
 
@@ -3076,54 +3058,8 @@ const imageWorker = {
       );
     }
 
-    // Local fallback: Sharp-based image generation.
-    // Iterate over every slot so we produce one image per platform (not just
-    // the first platform).  If no slots are present, fall back to one image
-    // for each platform in the request.
-    const normalized = inputs.normalized ?? {};
-    const prompt =
-      normalized.summary ??
-      req.input.payload ??
-      req.intent ??
-      "music artist promotional image";
-    const fallbackPlatforms: Platform[] = (
-      slots.length > 0
-        ? slots.map((s: Record<string, unknown>) => s.platform as Platform)
-        : (req.platforms as Platform[])
-    ).filter(Boolean);
-
-    const generated: GeneratedAsset[] = [];
-    for (const plat of fallbackPlatforms) {
-      const rules = getRules(plat);
-      try {
-        const img = await sharpImageService.generateImage({
-          prompt: String(prompt).slice(0, 200),
-          platform: plat,
-          tone:
-            (req.constraints as Record<string, unknown> | undefined)?.tone ??
-            "creative",
-        });
-        generated.push({
-          id: randomUUID(),
-          modality: "image" as OutputModality,
-          payload: img.publicUrl,
-          platform: plat,
-          metadata: {
-            aspectRatio:
-              step.params.recommendedAspectRatio ??
-              rules.image.aspectRatios[0],
-            platformRules: rules.image,
-            source: "local-sharp",
-          },
-        });
-      } catch (sharpErr) {
-        logger.warn(
-          `[MultimodalGen] Sharp fallback failed for platform ${plat}:`,
-          sharpErr instanceof Error ? sharpErr.message : String(sharpErr),
-        );
-      }
-    }
-    return generated;
+    // MaxCore is the sole AI source — no local image generation fallback.
+    throw new AIUnavailableError("multimodal image generation");
   },
 };
 

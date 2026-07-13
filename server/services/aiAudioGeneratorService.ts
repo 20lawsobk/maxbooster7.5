@@ -251,8 +251,43 @@ export async function generateDrumHit(
 ): Promise<string> {
   await ensureInitialized();
 
-  const audioData = audioGenerator?.generateDrumHit(type, preset, 1);
-  return saveToWav(audioData, 48000);
+  // Route through MaxCore — the sole AI source for audio generation.
+  const mc = requireMaxCore(
+    await MaxCoreAIClient.generate<{
+      audioUrl?: string;
+      audio_url?: string;
+      audio_data?: string;
+    }>("/api/generate/audio", {
+      instrument: "drum",
+      drum_type: type,
+      preset: preset ?? "default",
+      duration: 1,
+    }),
+    "drum hit generation",
+  );
+
+  const audioSrc = mc?.audioUrl ?? mc?.audio_url ?? null;
+  const audioData = mc?.audio_data ?? null;
+
+  const outDir = process.cwd() + "/uploads/audio";
+  const { mkdirSync } = await import("fs");
+  mkdirSync(outDir, { recursive: true });
+  const filename = `drum_${randomBytes(6).toString("hex")}.wav`;
+  const filePath = `${outDir}/${filename}`;
+
+  if (audioData) {
+    const { writeFile } = await import("fs/promises");
+    await writeFile(filePath, Buffer.from(audioData, "base64"));
+  } else if (audioSrc) {
+    const resp = await fetch(audioSrc);
+    if (!resp.ok) throw new Error(`MaxCore audio download failed: ${resp.status}`);
+    const { writeFile } = await import("fs/promises");
+    await writeFile(filePath, Buffer.from(await resp.arrayBuffer()));
+  } else {
+    throw new AIUnavailableError("drum hit generation");
+  }
+
+  return `/uploads/audio/${filename}`;
 }
 
 export async function generateBassNote(
@@ -263,13 +298,44 @@ export async function generateBassNote(
 ): Promise<string> {
   await ensureInitialized();
 
-  const audioData = audioGenerator?.generateBassNote(
-    note,
-    octave,
-    preset,
-    duration,
+  // Route through MaxCore — the sole AI source for audio generation.
+  const mc = requireMaxCore(
+    await MaxCoreAIClient.generate<{
+      audioUrl?: string;
+      audio_url?: string;
+      audio_data?: string;
+    }>("/api/generate/audio", {
+      instrument: "bass",
+      note,
+      octave,
+      preset,
+      duration,
+    }),
+    "bass note generation",
   );
-  return saveToWav(audioData, 48000);
+
+  const audioSrc = mc?.audioUrl ?? mc?.audio_url ?? null;
+  const audioData = mc?.audio_data ?? null;
+
+  const outDir = process.cwd() + "/uploads/audio";
+  const { mkdirSync } = await import("fs");
+  mkdirSync(outDir, { recursive: true });
+  const filename = `bass_${randomBytes(6).toString("hex")}.wav`;
+  const filePath = `${outDir}/${filename}`;
+
+  if (audioData) {
+    const { writeFile } = await import("fs/promises");
+    await writeFile(filePath, Buffer.from(audioData, "base64"));
+  } else if (audioSrc) {
+    const resp = await fetch(audioSrc);
+    if (!resp.ok) throw new Error(`MaxCore audio download failed: ${resp.status}`);
+    const { writeFile } = await import("fs/promises");
+    await writeFile(filePath, Buffer.from(await resp.arrayBuffer()));
+  } else {
+    throw new AIUnavailableError("bass note generation");
+  }
+
+  return `/uploads/audio/${filename}`;
 }
 
 export async function generateSynthNote(
@@ -281,14 +347,45 @@ export async function generateSynthNote(
 ): Promise<string> {
   await ensureInitialized();
 
-  const audioData = audioGenerator?.generateSynthNote(
-    note,
-    octave,
-    type,
-    preset,
-    duration,
+  // Route through MaxCore — the sole AI source for audio generation.
+  const mc = requireMaxCore(
+    await MaxCoreAIClient.generate<{
+      audioUrl?: string;
+      audio_url?: string;
+      audio_data?: string;
+    }>("/api/generate/audio", {
+      instrument: "synth",
+      synth_type: type,
+      note,
+      octave,
+      preset,
+      duration,
+    }),
+    "synth note generation",
   );
-  return saveToWav(audioData, 48000);
+
+  const audioSrc = mc?.audioUrl ?? mc?.audio_url ?? null;
+  const audioData = mc?.audio_data ?? null;
+
+  const outDir = process.cwd() + "/uploads/audio";
+  const { mkdirSync } = await import("fs");
+  mkdirSync(outDir, { recursive: true });
+  const filename = `synth_${randomBytes(6).toString("hex")}.wav`;
+  const filePath = `${outDir}/${filename}`;
+
+  if (audioData) {
+    const { writeFile } = await import("fs/promises");
+    await writeFile(filePath, Buffer.from(audioData, "base64"));
+  } else if (audioSrc) {
+    const resp = await fetch(audioSrc);
+    if (!resp.ok) throw new Error(`MaxCore audio download failed: ${resp.status}`);
+    const { writeFile } = await import("fs/promises");
+    await writeFile(filePath, Buffer.from(await resp.arrayBuffer()));
+  } else {
+    throw new AIUnavailableError("synth note generation");
+  }
+
+  return `/uploads/audio/${filename}`;
 }
 
 export async function getSuggestions(text: string): Promise<string[]> {
