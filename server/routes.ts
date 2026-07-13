@@ -1261,15 +1261,20 @@ export async function registerRoutes(
         "gdprAnalytics",
       ];
 
-      const updates: Record<string, any> = {};
+      const privacyUpdates: Record<string, any> = {};
       for (const field of allowedFields) {
         if (req.body[field] !== undefined) {
-          updates[field] = req.body[field];
+          privacyUpdates[field] = req.body[field];
         }
       }
 
-      if (Object.keys(updates).length > 0) {
-        await storage.updateUser(req.user.id, updates);
+      if (Object.keys(privacyUpdates).length > 0) {
+        // Privacy settings are stored in the preferences JSONB column
+        // (no dedicated columns exist on the users table for these fields)
+        const existing = (req.user.preferences as Record<string, any>) || {};
+        await storage.updateUser(req.user.id, {
+          preferences: { ...existing, privacy: { ...((existing.privacy as Record<string, any>) || {}), ...privacyUpdates } },
+        });
       }
 
       return res.json({ success: true, message: "Privacy settings updated" });
@@ -1723,7 +1728,7 @@ export async function registerRoutes(
 
         await storage.updateUser(req.user.id, { twoFactorSecret: secret });
         // Invalidate stale user cache so the next request (2fa/verify) sees the new secret
-        _userCacheInvalidate(req.user.id);
+        userCacheInvalidate(req.user.id);
 
         const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl, {
           width: 256,
@@ -1785,7 +1790,7 @@ export async function registerRoutes(
         }
 
         await storage.updateUser(req.user.id, { twoFactorEnabled: true });
-        _userCacheInvalidate(req.user.id);
+        userCacheInvalidate(req.user.id);
 
         return res.json({ success: true, message: "2FA enabled successfully" });
       } catch (error) {
@@ -1843,7 +1848,7 @@ export async function registerRoutes(
           twoFactorEnabled: false,
           twoFactorSecret: null,
         });
-        _userCacheInvalidate(req.user.id);
+        userCacheInvalidate(req.user.id);
 
         return res.json({
           success: true,
@@ -4914,6 +4919,7 @@ export async function registerRoutes(
     }
     try {
       const storagePrefix = `user_${req.user.id}_${Date.now()}`;
+      // Use upsert: if a pocket already exists for this user, return it
       const [pocket] = await db
         .insert(userStorage)
         .values({
@@ -4921,6 +4927,10 @@ export async function registerRoutes(
           storagePrefix,
           totalBytes: 0,
           fileCount: 0,
+        })
+        .onConflictDoUpdate({
+          target: userStorage.userId,
+          set: { lastAccessedAt: new Date() },
         })
         .returning();
       return res.json(pocket);

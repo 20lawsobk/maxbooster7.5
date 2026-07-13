@@ -7,6 +7,7 @@ import {
   collaborationVersions,
   collaborationAccessRequests,
   studioProjects,
+  projects,
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { requireAuth } from "../middleware/auth.js";
@@ -17,14 +18,23 @@ async function verifyProjectAccess(
   projectId: string,
   userId: string,
 ): Promise<boolean> {
-  const [project] = await db
+  // Check studio_projects first (DAW projects)
+  const [studioProject] = await db
     .select({ id: studioProjects.id })
     .from(studioProjects)
     .where(
       and(eq(studioProjects?.id, projectId), eq(studioProjects?.userId, userId)),
     )
     .limit(1);
-  return !!project;
+  if (studioProject) return true;
+
+  // Fall back to regular projects table
+  const [regularProject] = await db
+    .select({ id: projects.id })
+    .from(projects)
+    .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
+    .limit(1);
+  return !!regularProject;
 }
 
 interface AuthenticatedRequest extends Request {
