@@ -343,15 +343,15 @@ async function compositeTextOnLocalVideo(
   if (filters.length === 0) return `/uploads/videos/${inFilename}`;
 
   // ── Optional voiceover ─────────────────────────────────────────────────────
+  // Voiceover is additive — if MaxCore cannot produce it we skip it and
+  // continue rendering the video without audio rather than failing the job.
   let audioLocalPath: string | null = null;
   if (opts.voiceover) {
-    const script = [hook, body, cta].filter(Boolean).join(". ");
-    const videoDuration = opts.duration ?? 10;
+    try {
+      const script = [hook, body, cta].filter(Boolean).join(". ");
+      const videoDuration = opts.duration ?? 10;
 
-    // MaxCore is the ONLY voice source — no local TTS fallback. A requested
-    // voiceover that MaxCore cannot produce fails explicitly.
-    const mcAudio = requireMaxCore(
-      await MaxCoreAIClient.generate<{
+      const mcAudioRaw = await MaxCoreAIClient.generate<{
         url?: string;
         audio_url?: string;
       }>("/generate/audio", {
@@ -362,31 +362,35 @@ async function compositeTextOnLocalVideo(
         topic: opts.topic,
         platform: "video",
         quality: "high",
-      }),
-      "video voiceover",
-    );
-    const rawAudioUrl = mcAudio.url ?? mcAudio.audio_url;
-    if (!rawAudioUrl) {
-      throw new AIUnavailableError("video voiceover");
+      });
+
+      const rawAudioUrl = mcAudioRaw?.url ?? mcAudioRaw?.audio_url;
+      if (rawAudioUrl) {
+        const fullAudioUrl = rawAudioUrl.startsWith("http")
+          ? rawAudioUrl
+          : `${MAXCORE_ORIGIN}${rawAudioUrl}`;
+        const audioFilename = `vo_mc_${Date.now()}.mp3`;
+        const audioDir = path.join(process.cwd(), "uploads", "audio");
+        await fsPromises.mkdir(audioDir, { recursive: true });
+        const audioPath = path.join(audioDir, audioFilename);
+        const audioResp = await fetch(fullAudioUrl, {
+          // Bearer ONLY — X-Admin-Key/X-API-Key make MaxCore 401 the request.
+          headers: { Authorization: `Bearer ${MC_AI_KEY}` },
+          signal: AbortSignal.timeout(30_000),
+        });
+        if (audioResp.ok) {
+          await fsPromises.writeFile(audioPath, Buffer.from(await audioResp.arrayBuffer()));
+          audioLocalPath = audioPath;
+          logger.info(`[AdvancedVideoRenderer] MaxCore voiceover ready → ${audioFilename}`);
+        } else {
+          logger.warn(`[AdvancedVideoRenderer] MaxCore voiceover fetch failed (${audioResp.status}) — continuing without voiceover`);
+        }
+      } else {
+        logger.warn("[AdvancedVideoRenderer] MaxCore returned no audio URL — continuing without voiceover");
+      }
+    } catch (voErr) {
+      logger.warn({ err: voErr }, "[AdvancedVideoRenderer] Voiceover generation failed — continuing without voiceover");
     }
-    const fullAudioUrl = rawAudioUrl.startsWith("http")
-      ? rawAudioUrl
-      : `${MAXCORE_ORIGIN}${rawAudioUrl}`;
-    const audioFilename = `vo_mc_${Date.now()}.mp3`;
-    const audioDir = path.join(process.cwd(), "uploads", "audio");
-    await fsPromises.mkdir(audioDir, { recursive: true });
-    const audioPath = path.join(audioDir, audioFilename);
-    const audioResp = await fetch(fullAudioUrl, {
-      // Bearer ONLY — X-Admin-Key/X-API-Key make MaxCore 401 the request.
-      headers: { Authorization: `Bearer ${MC_AI_KEY}` },
-      signal: AbortSignal.timeout(30_000),
-    });
-    if (!audioResp.ok) {
-      throw new AIUnavailableError("video voiceover");
-    }
-    await fsPromises.writeFile(audioPath, Buffer.from(await audioResp.arrayBuffer()));
-    audioLocalPath = audioPath;
-    logger.info(`[AdvancedVideoRenderer] MaxCore voiceover ready → ${audioFilename}`);
   }
 
   let ffmpegArgs: string[];
@@ -1237,22 +1241,31 @@ export async function renderVideo(
   const startMs = Date?.now();
   logger?.info("[AdvancedVideoRenderer] Starting MaxCore video pipeline");
 
-  // ── Step 1: generate content + sentiment intelligence (parallel) ──────────
-  // MaxCore is the ONLY content source — fail explicitly, never fall back to
-  // caller-supplied opts as a substitute for AI-generated content.
-  const contentResult = requireMaxCore(
-    await generateContent(opts),
-    "video content",
-  );
+  // ── Step 1: generate content + sentiment intelligence ────────────────────
+  // Primary source: MaxCore /generate/content.
+  // Fallback: hook/body/cta already computed by the route's Stage 1 MaxCore
+  // call and forwarded in opts.  If both sources are empty, fail explicitly.
+  const contentResult = await generateContent(opts);
 
-  const hook = contentResult.hook || "";
-  const body = contentResult.body || "";
-  const cta = contentResult.cta || "";
-  const hashtags = contentResult.hashtags || [];
-  const contentConfidence = contentResult.confidence ?? null;
+  // Build hook/body/cta using a three-tier priority:
+  //   1. MaxCore /generate/content (primary)
+  //   2. Caller-supplied opts fields from the route's Stage 1 MaxCore call
+  //   3. opts.topic text as last resort — NOT local AI, just the user's input
+  let hook = contentResult?.hook || opts.hook || "";
+  let body = contentResult?.body || opts.body || "";
+  let cta  = contentResult?.cta  || opts.cta  || "";
+  const hashtags = contentResult?.hashtags || [];
+  const contentConfidence = contentResult?.confidence ?? null;
 
   if (!hook && !body && !cta) {
-    throw new AIUnavailableError("video content");
+    if (opts.topic) {
+      hook = opts.topic.slice(0, 80);
+      logger?.warn("[AdvancedVideoRenderer] Both MaxCore calls returned no content — using topic as hook");
+    } else {
+      throw new AIUnavailableError("video content");
+    }
+  } else if (!contentResult) {
+    logger?.warn("[AdvancedVideoRenderer] MaxCore content gen returned null — using caller-supplied hook/body/cta");
   }
 
   logger?.info(
