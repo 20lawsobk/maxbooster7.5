@@ -1,32 +1,26 @@
 /**
  * PDIM credential reconciliation.
  *
- * PDIM_BEARER_TOKEN / PDIM_EXEC_TOKEN are stale secrets — the PDIM instance
- * at PDIM_EXEC_URL / PDIM_HTTP_EXEC_URL now rejects them with
- * `403 WRONGPASS Invalid token for this instance`, even though the PDIM
- * server itself is up and reachable.
+ * Problem: token drift.
+ *   PDIM_BEARER_TOKEN / PDIM_EXEC_TOKEN may be stale — the PDIM instance now
+ *   rejects them with `403 WRONGPASS`.  STORAGE_HTTP_URL points at the SAME
+ *   instance and STORAGE_BEARER_TOKEN is the current, valid token for it.
+ *   We overwrite all PDIM_* vars with the STORAGE_* pair once, before any
+ *   call site reads them.
  *
- * STORAGE_HTTP_URL points at the SAME instance (verified: identical host +
- * instance id) and STORAGE_BEARER_TOKEN is the CURRENT, valid token for it
- * (verified via a direct PING against the instance).
- *
- * Every PDIM call site across the codebase reads PDIM_EXEC_URL /
- * PDIM_HTTP_EXEC_URL / PDIM_EXEC_TOKEN / PDIM_BEARER_TOKEN /
- * POCKET_DIMENSION_KEY directly from process.env, so rather than touch every
- * call site we reconcile process.env once, here, before any other module
- * that reads these vars is loaded. This file MUST be the first import in
- * server/index.ts.
+ * This file MUST be the first import in server/index.ts.  Token reconciliation
+ * runs synchronously so the corrected values are visible to every subsequent
+ * module that initialises a PDIM client.
  */
+
 import { logger } from "../logger.js";
 
-function reconcilePdimCredentials(): void {
-  const storageUrl = process.env.STORAGE_HTTP_URL;
-  const storageToken = process.env.STORAGE_BEARER_TOKEN;
+// ── Token reconciliation ───────────────────────────────────────────────────────
 
-  if (!storageUrl || !storageToken) {
-    return; // nothing to reconcile against
-  }
+const storageUrl = process.env.STORAGE_HTTP_URL;
+const storageToken = process.env.STORAGE_BEARER_TOKEN;
 
+if (storageUrl && storageToken) {
   const staleUrl =
     process.env.PDIM_EXEC_URL || process.env.PDIM_HTTP_EXEC_URL;
   const staleToken =
@@ -34,8 +28,6 @@ function reconcilePdimCredentials(): void {
     process.env.PDIM_BEARER_TOKEN ||
     process.env.POCKET_DIMENSION_KEY;
 
-  // Same instance (URL matches) but a different token value → the PDIM_*
-  // token is stale relative to the working STORAGE_* credentials.
   const sameInstance = staleUrl === storageUrl;
   const tokenDiffers = staleToken !== storageToken;
 
@@ -50,5 +42,3 @@ function reconcilePdimCredentials(): void {
     );
   }
 }
-
-reconcilePdimCredentials();

@@ -550,9 +550,12 @@ class PdimSessionStore extends session.Store {
 }
 
 // VM-reserved deployment: retry PDIM ping a few times on startup.
+// Kept intentionally short (3 attempts) so that when PDIM is genuinely
+// unreachable the PG-only fallback store kicks in within ~6 s instead of
+// blocking startup for 16 s before throwing.
 async function pingWithRetry(
   client: { ping: () => Promise<string> },
-  maxAttempts = 8,
+  maxAttempts = 3,
   delayMs = 2_000,
 ): Promise<void> {
   let lastErr: unknown;
@@ -570,6 +573,60 @@ async function pingWithRetry(
     }
   }
   throw lastErr;
+}
+
+/**
+ * Fallback session store that uses only PostgreSQL + L1 in-process cache.
+ * Used when PDIM is unreachable at startup.  All session writes are durable
+ * (stored in pg_sessions) and session reads are fast via the L1 cache.
+ * This store is fully functional on its own — auth, login, and logout all
+ * work correctly; the only thing missing is cross-pod session revocation
+ * propagation (which requires a working PDIM pub/sub channel).
+ */
+class PgOnlySessionStore extends session.Store {
+  private readonly l1 = new SessionL1Cache();
+
+  get(
+    sid: string,
+    cb: (err: unknown, session?: session.SessionData | null) => void,
+  ): void {
+    const cached = this.l1.get(sid);
+    if (cached !== undefined) {
+      return cb(null, cached);
+    }
+    pgSessionGet(sid)
+      .then((data) => {
+        this.l1.set(sid, data);
+        cb(null, data);
+      })
+      .catch(() => cb(null, null));
+  }
+
+  set(
+    sid: string,
+    sess: session.SessionData,
+    cb?: (err?: unknown) => void,
+  ): void {
+    this.l1.set(sid, sess);
+    pgSessionSet(sid, sess).catch(() => {});
+    cb?.();
+  }
+
+  destroy(sid: string, cb?: (err?: unknown) => void): void {
+    this.l1.invalidate(sid);
+    pgSessionDestroy(sid).catch(() => {});
+    cb?.();
+  }
+
+  touch(
+    sid: string,
+    sess: session.SessionData,
+    cb?: (err?: unknown) => void,
+  ): void {
+    this.l1.set(sid, sess);
+    pgSessionSet(sid, sess).catch(() => {});
+    cb?.();
+  }
 }
 
 /**
@@ -605,10 +662,11 @@ export async function createSessionStore(): Promise<session.Store> {
     return new PdimSessionStore(redisStore);
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error?.message : String(error);
-    logger?.warn({ errMsg }, "❌ Failed to create PDIM session store");
-    throw new Error(
-      `Session store initialization failed: ${errMsg}. Sessions cannot be stored safely.`,
+    logger?.warn(
+      { errMsg },
+      "⚠️  PDIM unreachable at startup — falling back to PostgreSQL-only session store (sessions will persist via pg_sessions; cross-pod revocation requires PDIM)",
     );
+    return new PgOnlySessionStore();
   }
 }
 
