@@ -46,6 +46,24 @@ export type UrlPlatform =
   | "tunecore"
   | "cdbaby"
   | "unitedmasters"
+  // ── Web3 / NFT music ──────────────────────────────────────────────────────
+  | "audius"
+  // ── Beat / sample marketplaces ────────────────────────────────────────────
+  | "beatstars"
+  | "splice"
+  // ── Music licensing ───────────────────────────────────────────────────────
+  | "epidemic_sound"
+  | "artlist"
+  | "musicbed"
+  // ── Music creation / community ────────────────────────────────────────────
+  | "bandlab"
+  // ── Music promotion / pitching ────────────────────────────────────────────
+  | "groover"
+  // ── Live / virtual concert ────────────────────────────────────────────────
+  | "stageit"
+  | "nugs"
+  // ── Fan engagement ────────────────────────────────────────────────────────
+  | "cameo"
   // ── Radio ──────────────────────────────────────────────────────────────────
   | "iheart"
   | "audible"
@@ -236,6 +254,16 @@ const MUSIC_PLATFORMS = new Set<UrlPlatform>([
   "last_fm", "discogs", "musixmatch", "shazam", "allmusic",
   // Distribution
   "distrokid", "tunecore", "cdbaby", "unitedmasters",
+  // Web3 / NFT music
+  "audius",
+  // Beat / sample marketplaces
+  "beatstars", "splice",
+  // Music licensing
+  "epidemic_sound", "artlist", "musicbed",
+  // Music creation / community
+  "bandlab",
+  // Radio
+  "iheart",
 ]);
 
 const STOPWORDS = new Set([
@@ -1010,10 +1038,199 @@ function classify(u: URL): { platform: UrlPlatform; category: UrlCategory; ids: 
   if (h("indiegogo.com")) return { platform: "web", category: "ecommerce", ids };
   if (h("gofundme.com")) return { platform: "web", category: "ecommerce", ids };
 
-  // ── Professional / portfolio ──────────────────────────────────────────────
-  if (h("soundbetter.com") || h("airgigs.com") || h("sessionwire.com") ||
-      h("vocalizr.com") || h("kompoz.com") || h("fiverr.com") && u.pathname.includes("/music"))
-    return { platform: "web", category: "profile", ids };
+  // ── Web3 / NFT music ──────────────────────────────────────────────────────
+  if (h("audius.co")) return { platform: "audius", category: "music_stream", ids };
+  if (
+    h("sound.xyz") || h("catalog.works") || h("catalog.works") ||
+    h("nina.market") || h("mintsongs.com") || h("opulous.org") ||
+    h("noizd.com") || h("limelight.app") || h("arpeggi.io") ||
+    h("acme.wtf") || h("glasscassetterecords.com")
+  ) return { platform: "web", category: "music_stream", ids };
+  if (
+    h("royal.io") || h("anotherblock.io") || h("corite.com") ||
+    h("nft.music") || h("bluebox.live")
+  ) return { platform: "web", category: "ecommerce", ids };
+  // NFT marketplaces (music NFTs sold here)
+  if (h("opensea.io") || h("rarible.com") || h("foundation.app") ||
+      h("superrare.com") || h("niftygateway.com") || h("zora.co"))
+    return { platform: "web", category: "ecommerce", ids };
+
+  // ── Beat / instrumental marketplaces ─────────────────────────────────────
+  if (h("beatstars.com") || host.endsWith(".beatstars.com"))
+    return { platform: "beatstars", category: "music_download", ids };
+  if (h("airbit.com") || host.endsWith(".airbit.com"))
+    return { platform: "web", category: "music_download", ids };
+  if (
+    h("traktrain.com") || h("soundee.com") || h("myflashstore.net") ||
+    h("soundgine.com") || h("beatbrokerz.com") || h("omari-mc.com") ||
+    h("producerspot.com") || h("soundclick.com")
+  ) return { platform: "web", category: "music_download", ids };
+
+  // ── Sample / loop / preset marketplaces ──────────────────────────────────
+  if (h("splice.com")) return { platform: "splice", category: "ecommerce", ids };
+  if (
+    h("loopmasters.com") || h("looperman.com") || h("producerloops.com") ||
+    h("samplephonics.com") || h("prime.native-instruments.com") ||
+    h("sounds.com") || h("ghosthack.de") || h("capsunproductions.com") ||
+    h("diginoiz.com") || h("soundpacks.com") || h("drumkitsupreme.com") ||
+    h("illmindproducer.com") || h("freesound.org") || h("zapsplat.com") ||
+    h("bensound.com") || h("soundbible.com") || h("ccmixter.org")
+  ) return { platform: "web", category: "ecommerce", ids };
+
+  // ── Music licensing platforms ─────────────────────────────────────────────
+  if (h("epidemicsound.com")) return { platform: "epidemic_sound", category: "ecommerce", ids };
+  if (h("artlist.io")) return { platform: "artlist", category: "ecommerce", ids };
+  if (h("musicbed.com")) return { platform: "musicbed", category: "ecommerce", ids };
+  if (
+    h("pond5.com") || h("audiojungle.net") || h("soundsnap.com") ||
+    h("storyblocks.com") || h("soundstripe.com") || h("premiumbeat.com") ||
+    h("musicfox.com") || h("marmoset.co") || h("extrememusic.com") ||
+    h("universalproductionmusic.com") || h("hooksounds.com") ||
+    h("soundroll.com") || h("lickd.co") || h("soundlounge.co.uk") ||
+    h("musicvine.com") || h("tunefruit.com") || h("synchedin.com") ||
+    h("motionarray.com") || h("envato.com") || h("audiio.com") ||
+    h("soundtaxi.com") || h("mymusicbox.tv") || h("positivemusic.com") ||
+    h("noisetrade.com") || h("loudr.fm")
+  ) return { platform: "web", category: "ecommerce", ids };
+
+  // ── Music sync / licensing agencies ──────────────────────────────────────
+  if (
+    h("taxi.com") || h("narrows.fm") || h("musicscreen.co") ||
+    h("musicgateway.com") || h("songtradr.com") || h("musicfrontier.com") ||
+    h("musicladder.com") || h("soundimage.org") || h("filmstro.com")
+  ) return { platform: "web", category: "profile", ids };
+
+  // ── Live / virtual concert & ticketing ───────────────────────────────────
+  if (h("stageit.com")) return { platform: "stageit", category: "event", ids };
+  if (h("nugs.net")) return { platform: "nugs", category: "music_stream", ids };
+  if (
+    h("mandolin.com") || h("veeps.com") || h("momenthouse.com") ||
+    h("sofarsounds.com") || h("sessions.us") || h("driift.com") ||
+    h("loopedlive.com") || h("concert.io") || h("enterticket.com") ||
+    h("seated.com") || h("showpass.com") || h("tixr.com") ||
+    h("prekindle.com") || h("livetickets.ie") || h("ents24.com") ||
+    h("wegottickets.com") || h("seetickets.com") || h("skiddle.com") ||
+    h("festicket.com") || h("feverup.com") || h("xceed.me") ||
+    h("resident.advisor.net") || h("livenation.com") || h("stubhub.com") ||
+    h("vividseats.com") || h("seatgeek.com") || h("gametime.co")
+  ) return { platform: "web", category: "event", ids };
+
+  // ── Music creation / DAW / studio collaboration ───────────────────────────
+  if (h("bandlab.com")) return { platform: "bandlab", category: "music_stream", ids };
+  if (
+    h("soundtrap.com") || h("noteflight.com") || h("flat.io") ||
+    h("hooktheory.com") || h("kompoz.com") || h("indabamusic.com") ||
+    h("blend.io") || h("trackd.com") || h("voloco.com") ||
+    h("endlesss.fm") || h("ampled.com") || h("stempz.com")
+  ) return { platform: "web", category: "profile", ids };
+
+  // ── Music promotion / playlist pitching ──────────────────────────────────
+  if (h("groover.co")) return { platform: "groover", category: "profile", ids };
+  if (
+    h("playlistpush.com") || h("dailyplaylists.com") || h("matchfy.io") ||
+    h("musosoup.com") || h("supremepr.us") || h("indiemono.com") ||
+    h("submithub.com") || h("omarimc.com") || h("repostexchange.com") ||
+    h("soundcampaign.com") || h("promoplug.net") || h("indieonthemove.com") ||
+    h("songcasts.com") || h("musicpromotion.club") || h("recastly.com") ||
+    h("hypeddit.com") || h("fangage.com") || h("freshnewmusic.com")
+  ) return { platform: "web", category: "profile", ids };
+
+  // ── Music artist analytics / SaaS tools ──────────────────────────────────
+  if (
+    h("chartmetric.com") || h("soundcharts.com") || h("musicstax.com") ||
+    h("next.audio") || h("viberate.com") || h("artisthub.co") ||
+    h("noise.cash") || h("fanbase.com") || h("music.ai") ||
+    h("byta.com") || h("groover.co") || h("hypeddit.com") ||
+    h("stamplaapp.com") || h("veritone.com") || h("tunestats.co") ||
+    h("trackers.fm") || h("prism.fm") || h("museio.app") ||
+    h("bookmarks.music") || h("playlistmachinery.com") || h("soundiiz.com") ||
+    h("tunemymusic.com") || h("songshift.app") || h("musicfab.com")
+  ) return { platform: "web", category: "web", ids };
+
+  // ── Artist management / booking / career ─────────────────────────────────
+  if (
+    h("gigsalad.com") || h("gigmaven.com") || h("gigmasters.com") ||
+    h("sonicbids.com") || h("rootmusic.com") || h("concertwindow.com") ||
+    h("bookwhen.com") || h("agentbooking.com") || h("agentofchange.net") ||
+    h("myspace.com") || h("bandzoogle.com") || h("hostbaby.com") ||
+    h("musicglue.com") && !h("musicglue.com") // keep ecommerce for merch links
+  ) return { platform: "web", category: "profile", ids };
+
+  // ── Fan club / membership / direct-to-fan ────────────────────────────────
+  if (h("cameo.com")) return { platform: "cameo", category: "ecommerce", ids };
+  if (
+    h("community.com") || h("superphone.com") || h("flywheel.fan") ||
+    h("powderkeg.fan") || h("fanbase.com") || h("jelly.social") ||
+    h("stagelink.com") || h("topfan.com") || h("hive.co") ||
+    h("mailchimp.com") || h("klaviyo.com") || h("convertkit.com") ||
+    h("beehiiv.com") || h("ghostio.io")
+  ) return { platform: "web", category: "profile", ids };
+  // Email marketing for musicians → newsletter category
+  if (
+    h("mailerlite.com") || h("constantcontact.com") || h("aweber.com") ||
+    h("activecampaign.com") || h("sendinblue.com") || h("brevo.com")
+  ) return { platform: "web", category: "newsletter", ids };
+
+  // ── Music education / tutorials ───────────────────────────────────────────
+  if (
+    h("masterclass.com") || h("lessonface.com") || h("takelessons.com") ||
+    h("musictheory.net") || h("teoria.com") || h("musicradarblog.com") ||
+    h("coursera.org") || h("udemy.com") || h("skillshare.com") ||
+    h("berkleeonline.edu") || h("coursehorse.com") || h("instructables.com") ||
+    h("futureproducers.com") || h("point-blank.ac.uk") || h("dubspot.com") ||
+    h("waves.com") && u.pathname.includes("/edu") ||
+    h("aulart.com") || h("producerhive.com") || h("puremix.net") ||
+    h("mixwiththemastersacademy.com") || h("drumeo.com") || h("pianote.com") ||
+    h("guitareo.com") || h("artistworks.com") || h("tonebase.co") ||
+    h("truefire.com") || h("jamplay.com")
+  ) return { platform: "web", category: "video", ids };
+
+  // ── Music hardware / software / plugins ───────────────────────────────────
+  if (
+    h("native-instruments.com") || h("izotope.com") || h("waves.com") ||
+    h("output.com") || h("plugin-alliance.com") || h("pluginboutique.com") ||
+    h("kilohearts.com") || h("fabfilter.com") || h("soundtoys.com") ||
+    h("uaudio.com") || h("ableton.com") || h("propellerheads.se") ||
+    h("reasonstudios.com") || h("image-line.com") || h("presonus.com") ||
+    h("avid.com") || h("motu.com") || h("steinberg.net") ||
+    h("rolandus.com") || h("korg.com") || h("yamaha.com") ||
+    h("akaipro.com") || h("pioneerdj.com") || h("denon.com") ||
+    h("serato.com") || h("traktor.com") || h("rekordbox.com") ||
+    h("djay.com") || h("algoriddim.com") || h("virtualdj.com")
+  ) return { platform: "web", category: "ecommerce", ids };
+
+  // ── Music press not yet covered ───────────────────────────────────────────
+  if (
+    h("clash-music.com") || h("clashmusic.com") || h("contactmusic.com") ||
+    h("musicnews.com") || h("musicbusinessworldwide.com") || h("musicweek.com") ||
+    h("completemusicupdate.com") || h("hypebot.com") || h("ari-fim.com") ||
+    h("musicindustryblog.wordpress.com") || h("musically.com") ||
+    h("digitalmusicnews.com") || h("futureofmusiccoalition.org") ||
+    h("fia-net.org") || h("ifpi.org") || h("riaa.com") ||
+    h("bpi.co.uk") || h("midemnet.com") || h("grammy.com") ||
+    h("amusicworld.com") || h("themusic.com.au") || h("noiseporn.com") ||
+    h("earmilk.com") || h("pigeons-and-planes.com") || h("ghettoblaster.com") ||
+    h("broadwayworld.com") || h("atwood-magazine.com") || h("lyricalmiracle.com")
+  ) return { platform: "web", category: "press", ids };
+
+  // ── Streaming / radio / discovery aggregators ─────────────────────────────
+  if (
+    h("bandsintown.com") || h("songkick.com") // (already above but also match sub-paths)
+  ) return { platform: "web", category: "event", ids };
+  if (
+    h("traxsource.com") || h("junodownload.com") || h("juno.co.uk") ||
+    h("boomkat.com") || h("bleep.com") || h("clone.nl") ||
+    h("hardwax.com") || h("decks.de") || h("deejay.de") ||
+    h("trackitdown.net") || h("whatpeopleplay.com") || h("masterskaya.ru")
+  ) return { platform: "web", category: "music_download", ids };
+
+  // ── Professional / session / studio services ──────────────────────────────
+  if (
+    h("soundbetter.com") || h("airgigs.com") || h("sessionwire.com") ||
+    h("vocalizr.com") || h("fiverr.com") ||
+    h("studiotime.io") || h("peerspace.com") || h("studiobooker.net") ||
+    h("recordinghacks.com") || h("studiofinder.co") || h("studiomaps.co.uk")
+  ) return { platform: "web", category: "profile", ids };
 
   return { platform: "web", category: "web", ids };
 }
@@ -1158,8 +1375,26 @@ const HASHTAGS_BY_PLATFORM: Partial<Record<UrlPlatform, string[]>> = {
   substack:      ["#Substack", "#Newsletter"],
   medium:        ["#Medium", "#MusicBusiness"],
   // E-commerce / merch
-  bigcartel:     ["#Merch", "#ShopNow", "#SupportArtists"],
-  etsy:          ["#Etsy", "#Handmade", "#ShopSmall"],
+  bigcartel:      ["#Merch", "#ShopNow", "#SupportArtists"],
+  etsy:           ["#Etsy", "#Handmade", "#ShopSmall"],
+  // Web3 / NFT music
+  audius:         ["#Audius", "#Web3Music", "#DecentralizedMusic"],
+  // Beat / sample marketplaces
+  beatstars:      ["#BeatStars", "#TypeBeat", "#BuyBeats"],
+  splice:         ["#Splice", "#Samples", "#ProducerLife"],
+  // Music licensing
+  epidemic_sound: ["#EpidemicSound", "#RoyaltyFreeMusic", "#SyncLicensing"],
+  artlist:        ["#Artlist", "#RoyaltyFree", "#FilmMusic"],
+  musicbed:       ["#Musicbed", "#SyncLicensing", "#FilmScore"],
+  // Music creation / community
+  bandlab:        ["#BandLab", "#MakeMusic", "#MusicProduction"],
+  // Music promotion
+  groover:        ["#Groover", "#MusicPromotion", "#IndieArtist"],
+  // Live / virtual concert
+  stageit:        ["#StageIt", "#LiveMusic", "#VirtualConcert"],
+  nugs:           ["#Nugs", "#LiveRecording", "#ConcertFilm"],
+  // Fan engagement
+  cameo:          ["#Cameo", "#PersonalizedVideo", "#FanExperience"],
 };
 
 function buildHashtags(
@@ -1204,9 +1439,11 @@ function buildSuggestedAngle(platform: UrlPlatform, category: UrlCategory): stri
   }
   if (category === "music_download") {
     const map: Partial<Record<UrlPlatform, string>> = {
-      beatport:  "Drive Beatport chart position and downloads",
-      bandcamp:  "Drive Bandcamp purchases and supporter growth",
-      discogs:   "Drive Discogs sales and vinyl collector attention",
+      beatport:   "Drive Beatport chart position and downloads",
+      bandcamp:   "Drive Bandcamp purchases and supporter growth",
+      discogs:    "Drive Discogs sales and vinyl collector attention",
+      beatstars:  "Drive beat sales and producer profile traffic",
+      splice:     "Drive Splice sample pack downloads and follows",
     };
     return map[platform] ?? "Announce the release and drive downloads and purchases";
   }
