@@ -21,6 +21,7 @@ import { safeFetchText, assertPublicHttpUrl } from "./safeUrlFetch";
 // ── Platform & category types ─────────────────────────────────────────────────
 
 export type UrlPlatform =
+  // ── Music streaming ────────────────────────────────────────────────────────
   | "spotify"
   | "apple_music"
   | "soundcloud"
@@ -34,6 +35,21 @@ export type UrlPlatform =
   | "mixcloud"
   | "beatport"
   | "reverbnation"
+  // ── Music info / discovery ─────────────────────────────────────────────────
+  | "last_fm"
+  | "discogs"
+  | "musixmatch"
+  | "shazam"
+  | "allmusic"
+  // ── Music distribution / tools ─────────────────────────────────────────────
+  | "distrokid"
+  | "tunecore"
+  | "cdbaby"
+  | "unitedmasters"
+  // ── Radio ──────────────────────────────────────────────────────────────────
+  | "iheart"
+  | "audible"
+  // ── Social ─────────────────────────────────────────────────────────────────
   | "instagram"
   | "tiktok"
   | "twitter"
@@ -46,16 +62,35 @@ export type UrlPlatform =
   | "bluesky"
   | "reddit"
   | "pinterest"
+  | "discord"
+  | "telegram"
+  | "mastodon"
+  // ── Video ──────────────────────────────────────────────────────────────────
   | "vimeo"
+  | "dailymotion"
+  | "rumble"
+  // ── Events ─────────────────────────────────────────────────────────────────
   | "eventbrite"
   | "bandsintown"
   | "songkick"
   | "ticketmaster"
   | "dice"
+  // ── Press / Media ──────────────────────────────────────────────────────────
+  | "pitchfork"
+  | "rolling_stone"
+  | "billboard"
+  | "nme"
+  | "complex"
+  // ── Articles / newsletters / lyrics ───────────────────────────────────────
   | "medium"
   | "substack"
   | "genius"
+  // ── E-commerce / merch ────────────────────────────────────────────────────
+  | "bigcartel"
+  | "etsy"
+  // ── Bio-link aggregators ──────────────────────────────────────────────────
   | "linktree"
+  // ── Catch-all ─────────────────────────────────────────────────────────────
   | "web";
 
 export type UrlCategory =
@@ -194,8 +229,13 @@ export interface ParseUrlOptions {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const MUSIC_PLATFORMS = new Set<UrlPlatform>([
+  // Streaming
   "spotify", "apple_music", "soundcloud", "bandcamp", "tidal", "deezer",
   "amazon_music", "audiomack", "pandora", "mixcloud", "beatport", "reverbnation",
+  // Info / discovery
+  "last_fm", "discogs", "musixmatch", "shazam", "allmusic",
+  // Distribution
+  "distrokid", "tunecore", "cdbaby", "unitedmasters",
 ]);
 
 const STOPWORDS = new Set([
@@ -349,8 +389,31 @@ function parseMeta(html: string): PageMeta {
   const titleTag = html.match(/<title[^>]*>([^<]{1,400})<\/title>/i)?.[1];
   const langAttr = html.match(/<html[^>]+lang=["']([a-zA-Z-]{2,8})["']/i)?.[1];
   const h1Raw = html.match(/<h1[^>]*>([\s\S]{1,300}?)<\/h1>/i)?.[1];
-  const firstP = html.match(/<p[^>]*>([\s\S]{20,600}?)<\/p>/i)?.[1];
-  const kw = getMeta(html, "keywords");
+
+  // Collect up to 3 non-trivial paragraphs for richer body preview on unknown sites
+  const paragraphs: string[] = [];
+  const pRe = /<p[^>]*>([\s\S]{30,800}?)<\/p>/gi;
+  let pm: RegExpExecArray | null;
+  let pGuard = 0;
+  while ((pm = pRe.exec(html)) !== null && pGuard++ < 20 && paragraphs.length < 3) {
+    const text = pm[1].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    if (text.length >= 30 && !paragraphs.includes(text)) paragraphs.push(text);
+  }
+  const firstParagraph = paragraphs.length > 0 ? paragraphs[0] : null;
+
+  // Keywords: from meta tag, plus any tag-cloud / chip text (common on blogs/press)
+  const kwRaw = getMeta(html, "keywords") ?? "";
+  const kwFromMeta = kwRaw ? kwRaw.split(",").map((k) => k.trim()).filter(Boolean) : [];
+  // Scrape any <a rel="tag"> or common tag class patterns
+  const tagRe = /<a[^>]+(?:rel=["']tag["']|class=["'][^"']*tag[^"']*["'])[^>]*>([^<]{2,40})<\/a>/gi;
+  const extraTags: string[] = [];
+  let tm: RegExpExecArray | null;
+  let tGuard = 0;
+  while ((tm = tagRe.exec(html)) !== null && tGuard++ < 40 && extraTags.length < 15) {
+    const tag = tm[1].replace(/<[^>]+>/g, "").trim();
+    if (tag && !extraTags.includes(tag)) extraTags.push(tag);
+  }
+  const keywords = [...kwFromMeta, ...extraTags].slice(0, 25);
 
   return {
     title: clean(getMeta(html, "og:title", "twitter:title")) ?? clean(titleTag),
@@ -361,16 +424,22 @@ function parseMeta(html: string): PageMeta {
     ogType: clean(getMeta(html, "og:type")),
     canonical: clean(getMeta(html, "og:url")) ?? clean(getLink(html, "canonical")),
     embedUrl: clean(getMeta(html, "og:video:url", "og:video", "twitter:player")),
-    keywords: kw ? kw.split(",").map((k) => k.trim()).filter(Boolean).slice(0, 20) : [],
+    keywords,
     jsonLd: extractJsonLd(html),
     h1: clean(h1Raw ? h1Raw.replace(/<[^>]+>/g, "") : null),
-    firstParagraph: clean(firstP ? firstP.replace(/<[^>]+>/g, "") : null),
-    datePublished: clean(getMeta(html, "article:published_time", "pubdate", "date")),
-    dateModified: clean(getMeta(html, "article:modified_time", "last-modified")),
-    author: clean(getMeta(html, "article:author", "author")),
-    articleSection: clean(getMeta(html, "article:section", "article:tag")),
-    price: clean(getMeta(html, "product:price:amount", "og:price:amount")),
-    priceCurrency: clean(getMeta(html, "product:price:currency", "og:price:currency")),
+    firstParagraph: clean(firstParagraph),
+    datePublished: clean(getMeta(html, "article:published_time", "pubdate", "date",
+      "datePublished", "DC.date", "DC.Date.created")),
+    dateModified: clean(getMeta(html, "article:modified_time", "last-modified",
+      "dateModified", "DC.date.modified")),
+    author: clean(getMeta(html, "article:author", "author", "DC.creator",
+      "byl", "sailthru.author", "parsely-author")),
+    articleSection: clean(getMeta(html, "article:section", "article:tag",
+      "parsely-section", "sailthru.tags")),
+    price: clean(getMeta(html, "product:price:amount", "og:price:amount",
+      "price", "twitter:data1")),
+    priceCurrency: clean(getMeta(html, "product:price:currency", "og:price:currency",
+      "priceCurrency")),
     twitterCreator: clean(getMeta(html, "twitter:creator")),
   };
 }
@@ -775,10 +844,176 @@ function classify(u: URL): { platform: UrlPlatform; category: UrlCategory; ids: 
     return { platform: "substack", category: "newsletter", ids };
   if (h("genius.com")) return { platform: "genius", category: "lyrics", ids };
 
-  // ── Bio-link aggregators ──────────────────────────────────────────────────
-  if (h("linktr.ee") || h("lnk.to") || h("bio.link") || h("beacons.ai") ||
-      h("hypeddit.com") || h("smarturl.it") || h("fanlink.to") || h("ffm.to"))
-    return { platform: "linktree", category: "profile", ids };
+  // ── Bio-link / smart-link aggregators ────────────────────────────────────
+  if (
+    h("linktr.ee") || h("lnk.to") || h("bio.link") || h("beacons.ai") ||
+    h("hypeddit.com") || h("smarturl.it") || h("fanlink.to") || h("ffm.to") ||
+    h("feature.fm") || h("toneden.io") || h("band.link") || h("found.ee") ||
+    h("odesli.co") || h("song.link") || h("album.link") || h("artist.link") ||
+    h("distro.link") || h("hypeddit.com") || h("artiste.id") || h("koji.to") ||
+    h("direct.me") || h("solo.to") || h("withkoji.com")
+  ) return { platform: "linktree", category: "profile", ids };
+
+  // ── Music info / discovery ────────────────────────────────────────────────
+  if (h("last.fm") || h("lastfm.com")) return { platform: "last_fm", category: "profile", ids };
+  if (h("discogs.com")) return { platform: "discogs", category: "ecommerce", ids };
+  if (h("musixmatch.com")) return { platform: "musixmatch", category: "lyrics", ids };
+  if (h("shazam.com")) return { platform: "shazam", category: "music_stream", ids };
+  if (h("allmusic.com")) return { platform: "allmusic", category: "article", ids };
+  if (h("musicbrainz.org") || h("acoustid.org") || h("banscamp.com"))
+    return { platform: "web", category: "profile", ids };
+
+  // ── Music distribution / artist tools ────────────────────────────────────
+  if (h("distrokid.com")) return { platform: "distrokid", category: "profile", ids };
+  if (h("tunecore.com")) return { platform: "tunecore", category: "profile", ids };
+  if (h("cdbaby.com")) return { platform: "cdbaby", category: "profile", ids };
+  if (h("unitedmasters.com")) return { platform: "unitedmasters", category: "profile", ids };
+  if (
+    h("amuse.io") || h("symphonic.com") || h("routenote.com") || h("dittomusic.com") ||
+    h("recordunion.com") || h("awalnetwork.com") || h("stem.is") || h("indiefy.net") ||
+    h("soundrop.com") || h("songtradr.com") || h("musicgateway.com") || h("horus-music.com") ||
+    h("repostnetwork.com") || h("onerpm.com") || h("landr.com") || h("submithub.com") ||
+    h("bandsintown.com") && u.pathname.includes("/artists")
+  ) return { platform: "web", category: "profile", ids };
+
+  // ── Music press / media publications ─────────────────────────────────────
+  if (
+    h("pitchfork.com")
+  ) return { platform: "pitchfork", category: "press", ids };
+  if (
+    h("rollingstone.com")
+  ) return { platform: "rolling_stone", category: "press", ids };
+  if (
+    h("billboard.com")
+  ) return { platform: "billboard", category: "press", ids };
+  if (
+    h("nme.com")
+  ) return { platform: "nme", category: "press", ids };
+  if (
+    h("complex.com")
+  ) return { platform: "complex", category: "press", ids };
+  if (
+    h("xxlmag.com") || h("allhiphop.com") || h("hotnewhiphop.com") ||
+    h("vibe.com") || h("okayplayer.com") || h("uproxx.com") || h("sohh.com") ||
+    h("hiphopwired.com") || h("rapradar.com") || h("2dopeboyz.com") ||
+    h("hiphopdx.com") || h("wehavitall.com") || h("thisis50.com") ||
+    h("illroots.com") || h("nahright.com") || h("rapgenius.com")
+  ) return { platform: "web", category: "press", ids };
+  if (
+    h("hypebeast.com") || h("highsnobiety.com") || h("thefader.com") ||
+    h("stereogum.com") || h("consequence.net") || h("spin.com") ||
+    h("musicweek.com") || h("theneedledrop.com") || h("clashmusic.com") ||
+    h("loudwire.com") || h("metalinjection.net") || h("altpress.com") ||
+    h("kerrang.com") || h("rockpaperspotify.com") || h("musicradar.com") ||
+    h("americansongwriter.com") || h("pastemagazine.com") || h("tinymix.tapes.com") ||
+    h("exclaim.ca") || h("thelineofbestfit.com") || h("musicomh.com") ||
+    h("noizz.de") || h("djmag.com") || h("mixmag.net") || h("ra.co") ||
+    h("residentadvisor.net") || h("factmag.com") || h("xlr8r.com") ||
+    h("dancingastronaut.com") || h("edm.com") || h("youredm.com")
+  ) return { platform: "web", category: "press", ids };
+  // General news/editorial sites
+  if (
+    h("theguardian.com") || h("rollingstone.com") || h("nytimes.com") ||
+    h("washingtonpost.com") || h("theatlantic.com") || h("buzzfeed.com") ||
+    h("vice.com") || h("vulture.com") || h("mtv.com") || h("vh1.com") ||
+    h("bet.com") || h("essence.com")
+  ) return { platform: "web", category: "article", ids };
+
+  // ── Podcast hosting & directories ─────────────────────────────────────────
+  if (h("iheart.com") || h("iheartradio.com")) return { platform: "iheart", category: "podcast", ids };
+  if (h("audible.com")) return { platform: "audible", category: "podcast", ids };
+  if (
+    h("anchor.fm") || h("podcasters.spotify.com") || h("buzzsprout.com") ||
+    h("podbean.com") || h("transistor.fm") || h("simplecast.com") ||
+    h("spreaker.com") || h("castbox.fm") || h("acast.com") || h("acast.to") ||
+    h("podchaser.com") || h("listennotes.com") || h("podigee.com") ||
+    h("blubrry.com") || h("libsyn.com") || h("captivate.fm") || h("rss.com") ||
+    h("podpage.com") || h("riverside.fm") || h("zencastr.com") ||
+    h("overcast.fm") || h("pocketcasts.com") || h("stitcher.com") ||
+    h("podcastaddict.com") || h("player.fm") || h("breaker.audio") ||
+    h("radiopublic.com") || h("headliner.app") || h("ausha.co") ||
+    h("podcastics.com") || h("redcircle.com") || h("supportingcast.fm")
+  ) return { platform: "web", category: "podcast", ids };
+
+  // ── Radio & live audio ────────────────────────────────────────────────────
+  if (
+    h("tunein.com") || h("radioparadise.com") || h("bandcamp.com") && u.pathname.includes("/stream") ||
+    h("soma.fm") || h("di.fm") || h("sky.fm") || h("jazzradio.com") ||
+    h("rockradio.com") || h("classicalradio.com") || h("accuradio.com") ||
+    h("live365.com") || h("spreaker.com")
+  ) return { platform: "web", category: "podcast", ids };
+
+  // ── Video streaming platforms ─────────────────────────────────────────────
+  if (h("dailymotion.com")) return { platform: "dailymotion", category: "video", ids };
+  if (h("rumble.com")) return { platform: "rumble", category: "video", ids };
+  if (
+    h("netflix.com") || h("hulu.com") || h("disneyplus.com") || h("max.com") ||
+    h("hbomax.com") || h("peacocktv.com") || h("primevideo.com") ||
+    h("paramountplus.com") || h("crunchyroll.com") || h("funimation.com") ||
+    h("curiositystream.com") || h("mubi.com") || h("kanopy.com") ||
+    h("tubi.com") || h("pluto.tv") || h("vudu.com") || h("appleTv.com") ||
+    h("appletv.apple.com") || h("criterion.com") || h("shudder.com") ||
+    h("amc.com") || h("starz.com") || h("showtime.com") || h("hbo.com")
+  ) return { platform: "web", category: "video", ids };
+  // Short-form / clip
+  if (
+    h("streamable.com") || h("gfycat.com") || h("giphy.com") || h("imgur.com") ||
+    h("loom.com") || h("wistia.com") || h("brightcove.com") || h("kaltura.com") ||
+    h("sproutvideo.com") || h("jwplayer.com") || h("videopress.com") ||
+    h("youtube.googleapis.com") || h("vidyard.com") || h("vidme.com")
+  ) return { platform: "web", category: "video", ids };
+
+  // ── Community / messaging / fan platforms ─────────────────────────────────
+  if (h("discord.com") || h("discord.gg")) return { platform: "discord", category: "social_post", ids };
+  if (h("t.me") || h("telegram.org") || h("telegram.me"))
+    return { platform: "telegram", category: "social_post", ids };
+  if (host.endsWith(".social") || h("mastodon.social") || h("fosstodon.org") ||
+      h("hachyderm.io") || h("infosec.exchange"))
+    return { platform: "mastodon", category: "social_post", ids };
+  if (
+    h("clubhouse.com") || h("twitter.com") && u.pathname.includes("/spaces/") ||
+    h("spaces.spotify.com") || h("greenroom.spotify.com")
+  ) return { platform: "web", category: "social_post", ids };
+  if (
+    h("onlyfans.com") || h("fanvue.com") || h("fansly.com") || h("unfiltrd.com") ||
+    h("subscribestar.com") || h("buymeacoffee.com") || h("ko-fi.com") ||
+    h("gumroad.com") || h("flattr.com") || h("indiegogo.com") || h("kickstarter.com")
+  ) return { platform: "patreon", category: "ecommerce", ids };
+
+  // ── E-commerce / merch stores ─────────────────────────────────────────────
+  if (h("bigcartel.com") || host.endsWith(".bigcartel.com"))
+    return { platform: "bigcartel", category: "ecommerce", ids };
+  if (h("etsy.com")) return { platform: "etsy", category: "ecommerce", ids };
+  if (
+    h("redbubble.com") || h("creator-spring.com") || h("teespring.com") ||
+    h("bonfire.com") || h("printful.com") || h("spreadshirt.com") || h("spreadshirtmedia.net") ||
+    h("customink.com") || h("teepublic.com") || h("zazzle.com") || h("printify.com") ||
+    h("gooten.com") || h("fourthwall.com") || host.includes("merch") ||
+    h("shopify.com") || host.endsWith(".myshopify.com") || h("ebay.com") ||
+    h("threadless.com") || h("society6.com") || h("merchbar.com") || h("musicglue.com") ||
+    h("backstreetmerch.com") || h("amazon.com")
+  ) return { platform: "web", category: "ecommerce", ids };
+
+  // ── Blogging / CMS platforms (classify from URL path after fetch) ─────────
+  // Note: These classify to "web"/"article" — refineCategory will sharpen further
+  if (
+    host.endsWith(".wordpress.com") || h("wordpress.org") ||
+    host.endsWith(".ghost.io") || h("ghost.org") ||
+    host.endsWith(".blogspot.com") || h("blogger.com") ||
+    host.endsWith(".squarespace.com") || host.endsWith(".wixsite.com") ||
+    host.endsWith(".webflow.io") || host.endsWith(".netlify.app") ||
+    host.endsWith(".vercel.app") || host.endsWith(".github.io")
+  ) return { platform: "web", category: "article", ids };
+
+  // ── Crowdfunding ──────────────────────────────────────────────────────────
+  if (h("kickstarter.com")) return { platform: "web", category: "ecommerce", ids };
+  if (h("indiegogo.com")) return { platform: "web", category: "ecommerce", ids };
+  if (h("gofundme.com")) return { platform: "web", category: "ecommerce", ids };
+
+  // ── Professional / portfolio ──────────────────────────────────────────────
+  if (h("soundbetter.com") || h("airgigs.com") || h("sessionwire.com") ||
+      h("vocalizr.com") || h("kompoz.com") || h("fiverr.com") && u.pathname.includes("/music"))
+    return { platform: "web", category: "profile", ids };
 
   return { platform: "web", category: "web", ids };
 }
@@ -864,28 +1099,67 @@ const HASHTAGS_BY_CATEGORY: Partial<Record<UrlCategory, string[]>> = {
 };
 
 const HASHTAGS_BY_PLATFORM: Partial<Record<UrlPlatform, string[]>> = {
-  spotify:      ["#Spotify", "#SpotifyPlaylist"],
-  apple_music:  ["#AppleMusic", "#iTunes"],
-  soundcloud:   ["#SoundCloud", "#FreeMusic"],
-  tidal:        ["#TIDAL", "#HiFiMusic"],
-  deezer:       ["#Deezer"],
-  audiomack:    ["#Audiomack"],
-  beatport:     ["#Beatport", "#EDM", "#ElectronicMusic"],
-  mixcloud:     ["#Mixcloud", "#DJMix", "#DJSet"],
-  bandcamp:     ["#Bandcamp", "#IndieMusic", "#SupportArtists"],
-  reverbnation: ["#ReverbNation"],
-  youtube:      ["#YouTube", "#Subscribe"],
-  vimeo:        ["#Vimeo", "#ShortFilm"],
-  tiktok:       ["#TikTok", "#ForYouPage", "#FYP"],
-  instagram:    ["#Instagram", "#Reels"],
-  twitch:       ["#Twitch", "#LiveStream"],
-  patreon:      ["#Patreon", "#SupportArtists"],
-  eventbrite:   ["#Events", "#LiveMusic"],
-  bandsintown:  ["#Bandsintown", "#Concert"],
-  ticketmaster: ["#Tickets", "#LiveMusic"],
-  genius:       ["#Genius", "#Lyrics"],
-  substack:     ["#Substack", "#Newsletter"],
-  medium:       ["#Medium", "#MusicBusiness"],
+  // Music streaming
+  spotify:       ["#Spotify", "#SpotifyPlaylist"],
+  apple_music:   ["#AppleMusic", "#iTunes"],
+  soundcloud:    ["#SoundCloud", "#FreeMusic"],
+  tidal:         ["#TIDAL", "#HiFiMusic"],
+  deezer:        ["#Deezer"],
+  audiomack:     ["#Audiomack"],
+  beatport:      ["#Beatport", "#EDM", "#ElectronicMusic"],
+  mixcloud:      ["#Mixcloud", "#DJMix", "#DJSet"],
+  bandcamp:      ["#Bandcamp", "#IndieMusic", "#SupportArtists"],
+  reverbnation:  ["#ReverbNation"],
+  pandora:       ["#Pandora", "#Radio"],
+  amazon_music:  ["#AmazonMusic", "#PrimMusic"],
+  // Music info / discovery
+  last_fm:       ["#LastFM", "#NowScrobbling", "#MusicDiscovery"],
+  discogs:       ["#Discogs", "#VinylCollection", "#RecordStore"],
+  musixmatch:    ["#Musixmatch", "#Lyrics", "#SongLyrics"],
+  shazam:        ["#Shazam", "#NowPlaying", "#MusicDiscovery"],
+  allmusic:      ["#AllMusic", "#MusicReview"],
+  // Music distribution
+  distrokid:     ["#DistroKid", "#IndieArtist", "#IndependentMusic"],
+  tunecore:      ["#TuneCore", "#IndieArtist"],
+  cdbaby:        ["#CDBaby", "#IndieMusic"],
+  unitedmasters: ["#UnitedMasters", "#IndependentArtist"],
+  // Radio
+  iheart:        ["#iHeart", "#Radio", "#NowPlaying"],
+  audible:       ["#Audible", "#Audiobook", "#Listen"],
+  // Social
+  youtube:       ["#YouTube", "#Subscribe"],
+  vimeo:         ["#Vimeo", "#ShortFilm"],
+  tiktok:        ["#TikTok", "#ForYouPage", "#FYP"],
+  instagram:     ["#Instagram", "#Reels"],
+  twitch:        ["#Twitch", "#LiveStream"],
+  patreon:       ["#Patreon", "#SupportArtists"],
+  discord:       ["#Discord", "#Community", "#JoinUs"],
+  telegram:      ["#Telegram", "#JoinUs", "#Community"],
+  mastodon:      ["#Mastodon", "#Fediverse"],
+  reddit:        ["#Reddit", "#Community"],
+  pinterest:     ["#Pinterest", "#Inspiration"],
+  // Video
+  dailymotion:   ["#Dailymotion", "#Video", "#WatchNow"],
+  rumble:        ["#Rumble", "#Video"],
+  // Events
+  eventbrite:    ["#Events", "#LiveMusic"],
+  bandsintown:   ["#Bandsintown", "#Concert"],
+  ticketmaster:  ["#Tickets", "#LiveMusic"],
+  dice:          ["#DICE", "#LiveMusic", "#Concert"],
+  songkick:      ["#Songkick", "#Concert", "#LiveMusic"],
+  // Press
+  pitchfork:     ["#Pitchfork", "#MusicReview", "#MusicNews"],
+  rolling_stone: ["#RollingStone", "#MusicNews"],
+  billboard:     ["#Billboard", "#MusicCharts", "#MusicNews"],
+  nme:           ["#NME", "#MusicNews"],
+  complex:       ["#Complex", "#HipHop", "#MusicNews"],
+  // Articles / newsletters / lyrics
+  genius:        ["#Genius", "#Lyrics"],
+  substack:      ["#Substack", "#Newsletter"],
+  medium:        ["#Medium", "#MusicBusiness"],
+  // E-commerce / merch
+  bigcartel:     ["#Merch", "#ShopNow", "#SupportArtists"],
+  etsy:          ["#Etsy", "#Handmade", "#ShopSmall"],
 };
 
 function buildHashtags(
@@ -910,49 +1184,125 @@ function buildHashtags(
 function buildSuggestedAngle(platform: UrlPlatform, category: UrlCategory): string {
   if (category === "music_stream") {
     const map: Partial<Record<UrlPlatform, string>> = {
-      spotify:      "Drive streams, saves, and Spotify playlist adds",
-      apple_music:  "Drive Apple Music streams and playlist adds",
-      soundcloud:   "Drive SoundCloud plays, reposts, and follows",
-      tidal:        "Drive TIDAL HiFi streams and adds",
-      deezer:       "Drive Deezer streams and fan favorites",
-      audiomack:    "Drive Audiomack streams and follows",
-      amazon_music: "Drive Amazon Music streams and Prime adds",
-      pandora:      "Drive Pandora thumbs-up and listener growth",
-      bandcamp:     "Drive Bandcamp streams and direct purchases",
-      beatport:     "Drive Beatport chart position and downloads",
-      mixcloud:     "Drive Mixcloud plays and DJ following",
-      reverbnation: "Drive ReverbNation fans and exposure points",
+      spotify:       "Drive streams, saves, and Spotify playlist adds",
+      apple_music:   "Drive Apple Music streams and playlist adds",
+      soundcloud:    "Drive SoundCloud plays, reposts, and follows",
+      tidal:         "Drive TIDAL HiFi streams and adds",
+      deezer:        "Drive Deezer streams and fan favorites",
+      audiomack:     "Drive Audiomack streams and follows",
+      amazon_music:  "Drive Amazon Music streams and Prime adds",
+      pandora:       "Drive Pandora thumbs-up and listener growth",
+      bandcamp:      "Drive Bandcamp streams and direct purchases",
+      beatport:      "Drive Beatport chart position and downloads",
+      mixcloud:      "Drive Mixcloud plays and DJ following",
+      reverbnation:  "Drive ReverbNation fans and exposure points",
+      last_fm:       "Drive Last.fm scrobbles and music discovery",
+      shazam:        "Drive Shazam recognition and music discovery",
+      iheart:        "Drive iHeart radio plays and listener growth",
     };
     return map[platform] ?? "Announce the release and drive streams";
   }
-  if (category === "music_download") return "Announce the release and drive downloads and purchases";
+  if (category === "music_download") {
+    const map: Partial<Record<UrlPlatform, string>> = {
+      beatport:  "Drive Beatport chart position and downloads",
+      bandcamp:  "Drive Bandcamp purchases and supporter growth",
+      discogs:   "Drive Discogs sales and vinyl collector attention",
+    };
+    return map[platform] ?? "Announce the release and drive downloads and purchases";
+  }
   if (category === "music_video") {
     if (platform === "youtube") return "Tease the visual — drive YouTube views, likes, and subscribers";
     if (platform === "vimeo") return "Showcase the video — drive Vimeo views and portfolio visits";
+    if (platform === "dailymotion") return "Drive Dailymotion views and channel growth";
     return "Tease the music video and drive views";
   }
   if (category === "podcast") {
     if (platform === "mixcloud") return "Promote the mix and drive Mixcloud plays and followers";
+    if (platform === "iheart") return "Drive iHeart podcast listens and show followers";
+    if (platform === "audible") return "Drive Audible listens and Whispersync adds";
     return "Promote the episode and drive listens and subscriptions";
   }
-  if (category === "social_post") return "Amplify the post and drive engagement and profile visits";
-  if (category === "profile") return "Introduce the artist and grow followers and fans";
-  if (category === "event") return "Build hype for the show and drive ticket sales";
-  if (category === "press") return "Share the press feature and build artist credibility";
+  if (category === "social_post") {
+    const map: Partial<Record<UrlPlatform, string>> = {
+      tiktok:    "Drive TikTok views, shares, and profile follows",
+      instagram: "Drive Instagram engagement, saves, and profile visits",
+      twitter:   "Drive retweets, likes, and new followers",
+      discord:   "Drive Discord server joins and community engagement",
+      telegram:  "Drive Telegram channel joins and fan engagement",
+      reddit:    "Drive Reddit upvotes, comments, and community discussion",
+    };
+    return map[platform] ?? "Amplify the post and drive engagement and profile visits";
+  }
+  if (category === "profile") {
+    const map: Partial<Record<UrlPlatform, string>> = {
+      last_fm:       "Drive Last.fm fans and scrobble recognition",
+      distrokid:     "Showcase independent distribution and drive streams across all platforms",
+      tunecore:      "Showcase TuneCore releases and drive cross-platform streams",
+      cdbaby:        "Spotlight CD Baby releases and drive fan purchases",
+      unitedmasters: "Showcase United Masters releases and drive streams",
+      reverbnation:  "Drive ReverbNation fans, plays, and show bookings",
+      linktree:      "Drive fans to your full catalogue and social presence",
+      twitch:        "Drive Twitch follows and live stream viewers",
+      patreon:       "Drive Patreon memberships and exclusive content access",
+      discord:       "Drive Discord server joins and community growth",
+    };
+    return map[platform] ?? "Introduce the artist and grow followers and fans";
+  }
+  if (category === "event") {
+    const map: Partial<Record<UrlPlatform, string>> = {
+      eventbrite:  "Drive Eventbrite registrations and ticket sales",
+      ticketmaster:"Drive Ticketmaster ticket sales and fan attendance",
+      bandsintown: "Drive Bandsintown RSVPs and show attendance",
+      songkick:    "Drive Songkick tracking and show attendance",
+      dice:        "Drive DICE ticket sales and fan discovery",
+    };
+    return map[platform] ?? "Build hype for the show and drive ticket sales";
+  }
+  if (category === "press") {
+    const map: Partial<Record<UrlPlatform, string>> = {
+      pitchfork:    "Amplify the Pitchfork feature and build critical credibility",
+      rolling_stone:"Share the Rolling Stone story and drive artist recognition",
+      billboard:    "Leverage the Billboard feature and build industry credibility",
+      nme:          "Amplify the NME feature and build UK audience reach",
+      complex:      "Share the Complex feature and connect with hip-hop audiences",
+    };
+    return map[platform] ?? "Share the press feature and build artist credibility";
+  }
   if (category === "ecommerce") {
-    if (platform === "patreon") return "Drive Patreon memberships and exclusive fan support";
-    return "Drive purchases and fan support";
+    const map: Partial<Record<UrlPlatform, string>> = {
+      patreon:   "Drive Patreon memberships and exclusive fan support",
+      bandcamp:  "Drive Bandcamp purchases and direct fan support",
+      bigcartel: "Drive merch sales and direct fan support",
+      etsy:      "Drive Etsy sales and fan appreciation",
+      discogs:   "Drive Discogs purchases and collector interest",
+    };
+    return map[platform] ?? "Drive purchases and fan support";
   }
   if (category === "article") {
-    if (platform === "medium") return "Drive Medium reads and profile follows";
-    return "Share the story and spark industry conversation";
+    const map: Partial<Record<UrlPlatform, string>> = {
+      medium:       "Drive Medium reads and claps",
+      pitchfork:    "Amplify the review and spark listener conversation",
+      rolling_stone:"Share the story and drive readership and streams",
+    };
+    return map[platform] ?? "Share the story and spark industry conversation";
   }
   if (category === "newsletter") return "Drive newsletter opens, subscribers, and shares";
-  if (category === "lyrics") return "Connect fans to the lyrics — drive streams and song conversation";
+  if (category === "lyrics") {
+    const map: Partial<Record<UrlPlatform, string>> = {
+      genius:     "Connect fans to the lyrics — drive Genius views and song streams",
+      musixmatch: "Drive Musixmatch lyric views and Spotify synced-lyrics exposure",
+    };
+    return map[platform] ?? "Connect fans to the lyrics and drive streams and conversation";
+  }
   if (category === "video") {
-    if (platform === "youtube") return "Drive YouTube views, likes, and channel subscribers";
-    if (platform === "twitch") return "Drive live viewers and Twitch channel follows";
-    return "Tease the video and drive views and engagement";
+    const map: Partial<Record<UrlPlatform, string>> = {
+      youtube:    "Drive YouTube views, likes, and channel subscribers",
+      vimeo:      "Drive Vimeo views and portfolio engagement",
+      twitch:     "Drive live viewers and Twitch channel follows",
+      dailymotion:"Drive Dailymotion views and channel subscribers",
+      rumble:     "Drive Rumble views and channel follows",
+    };
+    return map[platform] ?? "Tease the video and drive views and engagement";
   }
   return "Drive clicks and engagement";
 }
@@ -995,18 +1345,79 @@ function parseArtistTrack(
   return { artist: null, track: clean(t) };
 }
 
-// ── Category refinement from JSON-LD ─────────────────────────────────────────
+// ── Category refinement ───────────────────────────────────────────────────────
+// For known platforms this is a no-op. For "web" platform pages it uses
+// JSON-LD schema types, og:type, and URL path patterns to infer the best
+// UrlCategory — so any arbitrary website gets a useful classification.
 
-function refineCategory(base: UrlCategory, meta: PageMeta): UrlCategory {
+function refineCategory(base: UrlCategory, meta: PageMeta, pathname: string): UrlCategory {
   if (base !== "web") return base;
+
+  // ── 1. JSON-LD @type ─────────────────────────────────────────────────────
   const types = meta.jsonLd
     .map((j) => String((j as Record<string, unknown>)["@type"] ?? ""))
     .join(" ").toLowerCase();
-  if (meta.ogType === "article" || /article|newsarticle|blogposting/.test(types)) return "article";
-  if (meta.ogType === "product" || /product|offer/.test(types)) return "ecommerce";
-  if (/musicevent|event/.test(types)) return "event";
-  if (/musicrecording|musicalentity|musicalbum/.test(types)) return "music_stream";
-  if (meta.ogType?.startsWith("video")) return "video";
+
+  if (/musicrecording|musicalbum|musicgroup|musicplaylist|musicalentity/i.test(types))
+    return "music_stream";
+  if (/musicevent|concertevent|entertainmentevent|festivalevent|theatereventseries/i.test(types))
+    return "event";
+  if (/\bevent\b/i.test(types) && !/product|article/i.test(types))
+    return "event";
+  if (/podcastepisode|podcastseries|radioepisode|radioseries|audioobject/i.test(types))
+    return "podcast";
+  if (/videoobject|movie\b|tvseries|tvepisode|videogame/i.test(types))
+    return "video";
+  if (/newsarticle|blogposting|reportage|opinion|technicalarticle|scholarlya/i.test(types))
+    return "article";
+  if (/\barticle\b/i.test(types))
+    return "article";
+  if (/\bproduct\b/i.test(types))
+    return "ecommerce";
+  if (/\bperson\b|\bmusicgroup\b|\bband\b|\borganization\b/i.test(types)
+      && !/article|product|event/i.test(types))
+    return "profile";
+
+  // ── 2. og:type ────────────────────────────────────────────────────────────
+  const ot = (meta.ogType ?? "").toLowerCase();
+  if (ot === "article" || ot === "news" || ot === "blog.post") return "article";
+  if (ot.startsWith("music.")) return "music_stream";
+  if (ot.startsWith("video.")) return "video";
+  if (ot === "product") return "ecommerce";
+  if (ot === "profile") return "profile";
+  // "website" with a publish date → likely an article
+  if ((ot === "website" || ot === "blog") && meta.datePublished) return "article";
+
+  // ── 3. URL path heuristics ───────────────────────────────────────────────
+  const path = pathname.toLowerCase();
+
+  if (/\/(album|albums|track|tracks|song|songs|release|releases|discography|listening)\b/.test(path))
+    return "music_stream";
+  if (/\/(lyrics?|lyric)\b/.test(path))
+    return "lyrics";
+  if (/\/(podcast|podcasts|episode|episodes|listen|audio)\b/.test(path))
+    return "podcast";
+  if (/\/(video|videos|watch|stream|streams|film|films|series|episode)\b/.test(path))
+    return "video";
+  if (/\/(event|events|gig|gigs|show|shows|tour|tours|concert|concerts|ticket|tickets|live)\b/.test(path))
+    return "event";
+  if (/\/(product|products|item|items|shop|store|cart|buy|checkout|merch|merchandise|gear|apparel|collection)\b/.test(path))
+    return "ecommerce";
+  if (/\/(news|article|articles|story|stories|post|posts|blog|blogs|review|reviews|interview|interviews|feature|features|column|columns|opinion|opinions|editorial)\b/.test(path))
+    return "article";
+  if (/\/(newsletter|subscribe|digest)\b/.test(path))
+    return "newsletter";
+  if (/\/(about|bio|biography|artist|artists|band|profile|booking|contact|press-kit|presskit)\b/.test(path))
+    return "profile";
+
+  // ── 4. Content-based signals ──────────────────────────────────────────────
+  // If the page has a product price tag, it's ecommerce
+  if (meta.price) return "ecommerce";
+  // If it has an article author + date it's an article
+  if (meta.author && meta.datePublished) return "article";
+  // If it has an embedUrl (og:video), it's video
+  if (meta.embedUrl) return "video";
+
   return "web";
 }
 
@@ -1394,7 +1805,7 @@ export async function parseUrl(
   }
 
   // ── Step 4: JSON-LD structured extraction ─────────────────────────────────
-  const category = refineCategory(baseCategory, meta);
+  const category = refineCategory(baseCategory, meta, u.pathname);
   const isMusic = MUSIC_PLATFORMS.has(platform) ||
     ["music_stream","music_video","music_download"].includes(category);
 
