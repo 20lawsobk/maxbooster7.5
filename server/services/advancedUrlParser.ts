@@ -707,25 +707,121 @@ export async function parseUrl(
           },
         );
         if (oeFetch.ok) {
-          const oeJson = (await oeFetch.json()) as {
-            title?: string;
-            thumbnail_url?: string;
-            author_name?: string;
-          };
-          if (oeJson.title) {
-            meta.title = oeJson.title;
-            if (oeJson.author_name) meta.h1 = oeJson.author_name;
-            meta.siteName = "Spotify";
-            fetched = true;
+          const rawText = await oeFetch.text();
+          try {
+            const oeJson = JSON.parse(rawText) as {
+              title?: string;
+              thumbnail_url?: string;
+              author_name?: string;
+            };
+            if (oeJson.title) {
+              meta.title = oeJson.title;
+              if (oeJson.author_name) meta.h1 = oeJson.author_name;
+              meta.siteName = "Spotify";
+              fetched = true;
+            }
+            if (oeJson.thumbnail_url && !meta.image) {
+              meta.image = oeJson.thumbnail_url;
+            }
+          } catch {
+            logger.warn(
+              `[AdvancedUrlParser] Spotify oEmbed returned non-JSON (${rawText.length} bytes) for id=${ids.spotify}`,
+            );
           }
-          if (oeJson.thumbnail_url && !meta.image) {
-            meta.image = oeJson.thumbnail_url;
-          }
+        } else {
+          logger.warn(
+            `[AdvancedUrlParser] Spotify oEmbed HTTP ${oeFetch.status} for id=${ids.spotify}`,
+          );
         }
       } catch (err) {
         logger.warn(
           { err },
           `[AdvancedUrlParser] Spotify oEmbed failed for id=${ids.spotify}`,
+        );
+      }
+    }
+
+    // Spotify fallback: oEmbed returned 404 or empty — use the release type
+    // from the URL path to build a meaningful placeholder title rather than the
+    // uninformative "spotify music_stream" that the summary fallback would produce.
+    if (platform === "spotify" && !meta.title && ids.spotifyType) {
+      const typeLabel =
+        ids.spotifyType === "track" ? "Track" :
+        ids.spotifyType === "album" ? "Album" :
+        ids.spotifyType === "playlist" ? "Playlist" :
+        ids.spotifyType === "episode" ? "Episode" : "Release";
+      meta.title = `New Spotify ${typeLabel}`;
+      meta.siteName = "Spotify";
+      logger.info(
+        `[AdvancedUrlParser] Spotify oEmbed unavailable — using type fallback: "${meta.title}"`,
+      );
+    }
+
+    // YouTube: their SSR HTML may be partially rendered or bot-walled — if we
+    // didn't get a title, fall back to noembed.com (a public, auth-free oEmbed
+    // aggregator that works for YouTube even when direct HTML scraping fails).
+    const isGenericYouTubeTitle =
+      !meta.title ||
+      /^youtube\b/i.test(meta.title.trim());
+    if (platform === "youtube" && ids.youtube && isGenericYouTubeTitle) {
+      try {
+        const noEmbedFetch = await fetch(
+          `https://noembed.com/embed?url=${encodeURIComponent(u.href)}`,
+          {
+            headers: { "User-Agent": "MaxBooster/3.0", Accept: "application/json" },
+            signal: AbortSignal.timeout(8_000),
+          },
+        );
+        if (noEmbedFetch.ok) {
+          const rawText = await noEmbedFetch.text();
+          try {
+            const oeJson = JSON.parse(rawText) as {
+              title?: string;
+              author_name?: string;
+              thumbnail_url?: string;
+            };
+            if (oeJson.title) {
+              meta.title = oeJson.title;
+              if (oeJson.author_name) meta.h1 = oeJson.author_name;
+              meta.siteName = "YouTube";
+              fetched = true;
+            }
+            if (oeJson.thumbnail_url && !meta.image) {
+              meta.image = oeJson.thumbnail_url;
+            }
+          } catch {
+            logger.warn(
+              `[AdvancedUrlParser] noembed.com returned non-JSON for YouTube id=${ids.youtube}`,
+            );
+          }
+        }
+      } catch (err) {
+        logger.warn(
+          { err },
+          `[AdvancedUrlParser] noembed.com fallback failed for YouTube id=${ids.youtube}`,
+        );
+      }
+    }
+
+    // SoundCloud: JS-rendered and noembed.com returns 404 for SoundCloud URLs.
+    // However, SoundCloud's URL structure is soundcloud.com/{artist}/{track-slug},
+    // so we can extract artist and track directly from the URL path segments.
+    const isGenericSoundCloudTitle =
+      !meta.title ||
+      /^soundcloud\b/i.test(meta.title.trim());
+    if (platform === "soundcloud" && ids.soundcloud && isGenericSoundCloudTitle) {
+      const scSegments = ids.soundcloud.split("/"); // e.g. ["drake", "gods-plan"]
+      if (scSegments.length >= 2) {
+        const slugToName = (slug: string) =>
+          slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+        const scArtist = slugToName(scSegments[0]);
+        const scTrack = slugToName(scSegments[1]);
+        // Build an OG-style title that parseArtistTrack() can split
+        meta.title = `${scTrack} by ${scArtist}`;
+        meta.siteName = "SoundCloud";
+        fetched = true;
+        logger.info(
+          `[AdvancedUrlParser] SoundCloud URL-derived title: "${meta.title}"`,
         );
       }
     }

@@ -2978,6 +2978,14 @@ router?.post(
 
       const userId = req?.user?.id;
 
+      // ── Validate: at least one content source must be provided ───────────────
+      if (!topic && !rawHook && !rawBody) {
+        return res.status(400).json({
+          success: false,
+          message: "topic or hook is required to generate a video",
+        });
+      }
+
       // ── Always respond immediately — client polls via /video-job/:id ─────────
       // Holding the HTTP connection open during generation (2–5 min) triggers
       // proxy timeouts that the client misreads as auth failures.  All paths
@@ -3189,14 +3197,13 @@ router?.get(
         });
       }
 
-      // Fall through to Python AI service for non-FFmpeg jobs
-      const result = await (await getPythonAI()).getVideoJobStatus(jobId);
-      if (!result.success) {
-        return res
-          .status(503)
-          .json({ success: false, status: "error", message: result.error });
-      }
-      res.json(result.data);
+      // Unknown job ID format — all video jobs are FFmpeg-backed ("video_*")
+      // so anything else is either a typo or a stale reference from before a restart.
+      return res.status(404).json({
+        success: false,
+        status: "error",
+        message: "Job not found. Please generate a new video.",
+      });
     } catch (error) {
       logger.warn({ err: error }, "Failed to poll video job:");
       res
