@@ -991,31 +991,47 @@ const MAXBOOSTER_ROUTE_META: Record<string, PageMeta> = {
   },
 };
 
+// Plain hostnames (no regex chars) — checked with Set.has() or endsWith()
 const MAXBOOSTER_HOSTS = new Set([
-  "max-booster?.com",
-  "maxbooster?.replit.app", // legacy
-  "maxbooster?.app",
+  "max-booster.com",
+  "maxbooster.replit.app", // legacy
+  "maxbooster.app",
   "localhost",
   "127.0.0.1",
 ]);
+
+/** Return true when `host` looks like a Replit-hosted deployment of this app. */
+function isReplitDevHost(host: string): boolean {
+  // *.replit.dev  — Replit development preview URLs (any user handle + project UUID)
+  // *.repl.co     — older Replit format
+  // *.replit.app  — Replit deployment format (already in MAXBOOSTER_HOSTS but catch-all)
+  return (
+    host.endsWith(".replit.dev") ||
+    host.endsWith(".repl.co") ||
+    host.endsWith(".replit.app")
+  );
+}
 
 function getMaxBoosterRouteMeta(url: string): PageMeta | null {
   try {
     const u = new URL(url);
     const host = u.hostname.split(":")[0].toLowerCase();
-    if (
-      !MAXBOOSTER_HOSTS.has(host) &&
-      !host.endsWith(".max-booster?.com") &&
-      !host.endsWith(".maxbooster?.replit.app") &&
-      !host.endsWith(".maxbooster?.app")
-    ) {
-      return null;
-    }
+    const isOwnApp =
+      MAXBOOSTER_HOSTS.has(host) ||
+      host.endsWith(".max-booster.com") ||
+      host.endsWith(".maxbooster.replit.app") ||
+      host.endsWith(".maxbooster.app") ||
+      isReplitDevHost(host); // dev previews of this very app
+    if (!isOwnApp) return null;
+
     const cleanPath = u.pathname.replace(/\/$/, "") || "/";
     // Exact match first, then first path segment (e.g. /pricing?plan=pro → /pricing)
     return (
       MAXBOOSTER_ROUTE_META[cleanPath] ??
       MAXBOOSTER_ROUTE_META[`/${cleanPath.split("/")[1]}`] ??
+      // For Replit dev URLs with no specific route data, fall back to root meta
+      // so the generator always has meaningful platform copy instead of the raw URL.
+      MAXBOOSTER_ROUTE_META["/"] ??
       null
     );
   } catch {
@@ -2540,13 +2556,35 @@ const textWorker = {
                 return "";
               }
             })();
+            // Never use the raw URL string as the topic — MaxCore will quote it
+            // verbatim in captions ("Content from URL: https://...").  Fall back
+            // to a human-readable domain label instead.
+            const rawUrlFallback = (() => {
+              try {
+                const u = new URL(req.input.payload ?? "");
+                const segments = u.hostname
+                  .replace(/^www\./, "")
+                  .split(".");
+                // e.g. "51b4500f-...kirk.replit.dev" → "Max Booster"
+                //      "spotify.com"                  → "Spotify"
+                //      "my-beats.netlify.app"          → "My Beats"
+                const meaningfulPart = segments[0]
+                  .replace(/^[a-z0-9]{6,}-[a-z0-9-]{8,}$/, "") // strip UUID/hash-like prefixes
+                  .replace(/[-_]/g, " ")
+                  .trim();
+                if (!meaningfulPart) return "music platform promotion";
+                return meaningfulPart
+                  .replace(/\b\w/g, (c) => c.toUpperCase());
+              } catch {
+                return "music platform promotion";
+              }
+            })();
             topic =
               slugTopic ||
               normalized.summary ||
               normalized.payload_summary ||
               semantic.core_message ||
-              req.input.payload ||
-              "";
+              rawUrlFallback;
           }
         }
         logger.debug(

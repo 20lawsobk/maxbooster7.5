@@ -3171,10 +3171,21 @@ router?.get(
         }
         if (ffmpegJob?.status === "done" && ffmpegJob?.result) {
           const r = ffmpegJob?.result;
+          // If the renderer marked success but returned no URL, treat it as an
+          // error so the client shows a clear retry prompt instead of silently
+          // polling until the 3-minute timeout fires.
+          const resolvedUrl = r.url || r.video_url || null;
+          if (!resolvedUrl) {
+            return res?.status(500).json({
+              status: "error",
+              error: "Video was generated but no file URL was returned. Please try again.",
+            });
+          }
           return res?.json({
             ...r,
             status: "completed",
-            video_url: r.url ?? null,
+            url: resolvedUrl,
+            video_url: resolvedUrl,
             thumbnail_url: r.thumbnail_url ?? r?.thumbnailUrl ?? null,
             metadata: r.metadata ?? {},
           });
