@@ -694,15 +694,16 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user!.id;
-      const { historicalPosts = [] } = req.body;
-      if (!Array.isArray(historicalPosts)) {
-        return res
-          .status(400)
-          .json({ error: "historicalPosts must be an array of strings" });
-      }
+      // Accept both `historicalPosts` and `content` (array) as the post list
+      const rawPosts = req.body.historicalPosts ?? req.body.content ?? [];
+      const historicalPosts: string[] = Array.isArray(rawPosts)
+        ? rawPosts.map(String)
+        : typeof rawPosts === "string"
+          ? [rawPosts]
+          : [];
       const brandVoice = await aiContentService.analyzeBrandVoice(
         userId,
-        historicalPosts.map(String),
+        historicalPosts,
       );
       res.json({ brandVoice, score: brandVoice.consistency || 0.85 });
     } catch (error) {
