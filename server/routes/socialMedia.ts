@@ -3288,11 +3288,16 @@ router.get(
       Authorization: `Bearer ${MC_AI_KEY}`,
     };
 
-    for (const url of candidateUrls) {
+    // Limit proxy attempts: stored URL + first 8 candidates.
+    // Each attempt uses an 8s timeout — MaxCore responds immediately (200 or
+    // 404); only a connection stall would exhaust the timeout.  Without this
+    // cap, a missing file walks all 20+ candidates × 30s = many minutes.
+    const MAX_PROXY_ATTEMPTS = 9;
+    for (const url of candidateUrls.slice(0, MAX_PROXY_ATTEMPTS)) {
       try {
         const upstream = await fetch(url, {
           headers: authHeaders,
-          signal: AbortSignal.timeout(30_000),
+          signal: AbortSignal.timeout(8_000),
         });
         if (!upstream?.ok) {
           logger?.info(
