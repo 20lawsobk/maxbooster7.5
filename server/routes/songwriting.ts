@@ -299,7 +299,7 @@ router.post("/ai-assist", requireAuth, async (req, res) => {
     const _swCtx = await musicIndustryContextFilter
       .getContextForMode("songwriting")
       .catch(() => null);
-    const _swExtraContext = _swCtx.contextString || undefined;
+    const _swExtraContext = _swCtx?.contextString || undefined;
 
     const [lyricResult, rhymeResult] = await Promise.allSettled([
       unifiedAIController.generateContent({
