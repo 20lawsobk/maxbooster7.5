@@ -2998,11 +2998,13 @@ router?.post(
       // ── Background job: MaxCore video render ──────────────────────────────────
       (async () => {
         try {
-          // Stage 1 — Advanced Social AI generates hook / body / CTA.
-          // Hook/body/cta passed directly from the client are used as-is.
-          let hook = rawHook || "";
-          let body = rawBody || "";
-          let cta = rawCta || "";
+          // Hook/body/cta passed directly from the client are forwarded as
+          // optional hints. No pre-generation happens here — the MaxCore
+          // /api/generate-video job generates its own script, renders, and
+          // serves the file itself (no local or intermediate AI calls).
+          const hook = rawHook || "";
+          const body = rawBody || "";
+          const cta = rawCta || "";
 
           // If the topic is a bare URL, convert it to a descriptive topic so MaxCore
           // can generate meaningful content instead of just printing the raw URL.
@@ -3026,55 +3028,6 @@ router?.post(
             } catch {
               resolvedTopic = topic;
             }
-          }
-
-          if (!hook && !body && !cta && topic) {
-            // Stage 1: MaxCore → Python AI → ContentGenerator for video script
-            // Route through the full advanced AI pipeline so MaxCore-trained content
-            // feeds the video renderer, not the template engine.
-            let scriptSource = "template";
-            try {
-              const scriptResult = await (
-                await getUnifiedAI()
-              ).generateContent({
-                platform: (platform || "tiktok") as string,
-                tone: (tone || "energetic") as string,
-                topic: resolvedTopic,
-                contentType:
-                  goal === "sales" || goal === "traffic"
-                    ? "promotional"
-                    : goal === "viral"
-                      ? "engagement"
-                      : "engagement",
-                includeHashtags: false,
-                includeEmojis: false,
-                genre: genre || undefined,
-              });
-
-              if (scriptResult?.success && scriptResult?.data) {
-                const d = scriptResult?.data as Record<string, unknown>;
-                hook = (d?.hook || d?.caption || "").slice(0, 80);
-                body = (d?.body || d?.caption || "").split("\n")[0].slice(0, 120);
-                cta = (d?.cta || "").slice(0, 60);
-                scriptSource = scriptResult?.source || "AI";
-              }
-            } catch (scriptErr) {
-              logger?.warn(
-                "[VideoGen] MaxCore call failed (transient) — script fields will be empty:",
-                scriptErr,
-              );
-            }
-
-            if (!hook && !body) {
-              logger?.warn(
-                "[VideoGen] MaxCore returned no script content (transient failure) — hook/body empty",
-              );
-            }
-
-            logger?.info(
-              `[VideoGen] Video script ready via ${scriptSource} — ` +
-                `hook="${hook.slice(0, 40)}…"`,
-            );
           }
 
           // Shared render params for all video renderers.
@@ -3190,10 +3143,13 @@ router?.get(
             metadata: r.metadata ?? {},
           });
         }
-        // error or unknown state
+        // error or unknown state — use `error` (the field the client reads),
+        // keep `message` for any older consumers.
+        const jobErr = ffmpegJob.error ?? "Video generation failed";
         return res?.status(500).json({
           status: "error",
-          message: ffmpegJob.error ?? "Video generation failed",
+          error: jobErr,
+          message: jobErr,
         });
       }
 

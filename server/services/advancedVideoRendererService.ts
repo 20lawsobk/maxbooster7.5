@@ -8,7 +8,6 @@
 import { randomUUID } from "crypto";
 import { spawn } from "child_process";
 import fsPromises from "fs/promises";
-import { tmpdir } from "os";
 import path from "path";
 import { logger } from "../logger.js";
 import type {
@@ -98,7 +97,9 @@ function extractJobUuid(filename: string): string | null {
 
 /**
  * Candidate URL paths to try when downloading a video from MaxCore.
- * Ordered: specific API download routes first (bypass SPA), then static paths.
+ * Ordered: the raw URL MaxCore reported FIRST (its file-serving layer now
+ * serves /uploads/videos/* directly — verified 2026-07-14), then legacy API
+ * download routes as fallbacks for older MaxCore deployments.
  */
 function candidateUrls(rawUrl: string): string[] {
   const absolute = rawUrl?.startsWith("http")
@@ -107,9 +108,10 @@ function candidateUrls(rawUrl: string): string[] {
   const filename = path?.basename(rawUrl?.split("?")[0]);
   const uuid = extractJobUuid(filename);
 
-  const urls: string[] = [];
+  // The URL MaxCore itself reported — authoritative, try it first.
+  const urls: string[] = [absolute];
 
-  // Job-ID-based download routes (most likely to work)
+  // Job-ID-based download routes (legacy fallbacks)
   if (uuid) {
     urls?.push(
       `${MAXCORE_ORIGIN}/api/video-job/${uuid}/download`,
@@ -141,9 +143,8 @@ function candidateUrls(rawUrl: string): string[] {
     `${MAXCORE_ORIGIN}/api/static/videos/${filename}`,
   );
 
-  // The raw URL from MaxCore + non-/api/ static paths (caught by SPA but worth trying)
+  // Non-/api/ static paths (caught by SPA but worth trying)
   urls?.push(
-    absolute,
     `${MAXCORE_ORIGIN}/uploads/${filename}`,
     `${MAXCORE_ORIGIN}/uploads/videos/${filename}`,
     `${MAXCORE_ORIGIN}/videos/${filename}`,
@@ -225,7 +226,7 @@ async function cacheVideoLocally(rawUrl: string): Promise<string> {
         return `/uploads/videos/${filename}`;
       } catch (err) {
         logger.info(
-          `[AdvancedVideoRenderer] Candidate ${url} fetch error: ${err.message}`,
+          `[AdvancedVideoRenderer] Candidate ${url} fetch error: ${err instanceof Error ? err.message : String(err)}`,
         );
       }
     }
@@ -235,237 +236,12 @@ async function cacheVideoLocally(rawUrl: string): Promise<string> {
     );
   } catch (err) {
     logger.warn(
-      `[AdvancedVideoRenderer] Local cache setup failed: ${err.message}`,
+      `[AdvancedVideoRenderer] Local cache setup failed: ${err instanceof Error ? err.message : String(err)}`,
     );
   }
 
   // Return proxy URL — our server will stream from MaxCore with auth
   return `/api/social/video-proxy/${filename}`;
-}
-
-interface CompositeOpts {
-  voiceover?: boolean;
-  genre?: string;
-  duration?: number;
-  artistName?: string;
-  topic?: string;
-}
-
-/**
- * Inner compositor — shared by the MaxCore video path and the photorealistic
- * Ken-Burns path.  Takes an absolute local video file path, composites
- * hook/body/CTA text and optional AI voiceover onto it, and writes the result
- * to LOCAL_VIDEO_DIR/comp_<basename>.
- *
- * Returns the served URL of the composited file.
- * Throws on FFmpeg error so callers can apply their own fallback.
- */
-async function compositeTextOnLocalVideo(
-  inPath: string,
-  hook: string,
-  body: string,
-  cta: string,
-  opts: CompositeOpts = {},
-): Promise<string> {
-  await fsPromises.mkdir(LOCAL_VIDEO_DIR, { recursive: true });
-
-  const inFilename = path.basename(inPath);
-  const outFilename = `comp_${inFilename}`;
-  const outPath = path.join(LOCAL_VIDEO_DIR, outFilename);
-
-  // Sanitize text: strip chars that break FFmpeg's drawtext filter parser
-  const sanitize = (t: string) =>
-    (t ?? "")
-      .replace(/['":\\,[\]%]/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-
-  // Wrap text into lines of up to maxChars characters
-  const wrap = (text: string, maxChars: number, maxLines = 3): string[] => {
-    if (!text) return [];
-    const words = text.split(/\s+/);
-    const lines: string[] = [];
-    let cur = "";
-    for (const w of words) {
-      const candidate = cur ? `${cur} ${w}` : w;
-      if (candidate.length <= maxChars) {
-        cur = candidate;
-      } else {
-        if (cur) lines.push(cur);
-        cur = w.slice(0, maxChars);
-      }
-    }
-    if (cur) lines.push(cur);
-    return lines.slice(0, maxLines);
-  };
-
-  const hookLines = wrap(sanitize(hook), 24, 3);
-  const bodyLines = wrap(sanitize(body), 38, 3);
-  const ctaText  = sanitize(cta).slice(0, 48);
-
-  const filters: string[] = [];
-
-  // ── Hook: top of frame, large bold white with black shadow ─────────────────
-  let hookY = 140;
-  for (const line of hookLines) {
-    filters.push(
-      `drawtext=text='${line}':fontsize=68:fontcolor=white` +
-      `:x=(w-text_w)/2:y=${hookY}` +
-      `:shadowx=3:shadowy=3:shadowcolor=black@0.8`,
-    );
-    hookY += 92;
-  }
-
-  // ── Body: lower third, smaller white with shadow ───────────────────────────
-  // Height-relative so it stays clear of the MaxCore artwork's own headline
-  // band (the card's typographic text sits mid-frame after cover-scaling) and
-  // above the gold CTA at h-210.
-  let bodyOffset = 640;
-  for (const line of bodyLines) {
-    filters.push(
-      `drawtext=text='${line}':fontsize=38:fontcolor=white@0.95` +
-      `:x=(w-text_w)/2:y=h-${bodyOffset}` +
-      `:shadowx=2:shadowy=2:shadowcolor=black@0.8`,
-    );
-    bodyOffset -= 56;
-  }
-
-  // ── CTA: near bottom, gold / yellow ────────────────────────────────────────
-  if (ctaText) {
-    filters.push(
-      `drawtext=text='${ctaText}':fontsize=44:fontcolor=#FFD700` +
-      `:x=(w-text_w)/2:y=h-210` +
-      `:shadowx=3:shadowy=3:shadowcolor=black@0.9`,
-    );
-  }
-
-  // No drawable text — return original file URL
-  if (filters.length === 0) return `/uploads/videos/${inFilename}`;
-
-  // ── Optional voiceover ─────────────────────────────────────────────────────
-  // Voiceover is additive — if MaxCore cannot produce it we skip it and
-  // continue rendering the video without audio rather than failing the job.
-  let audioLocalPath: string | null = null;
-  if (opts.voiceover) {
-    try {
-      const script = [hook, body, cta].filter(Boolean).join(". ");
-      const videoDuration = opts.duration ?? 10;
-
-      const mcAudioRaw = await MaxCoreAIClient.generate<{
-        url?: string;
-        audio_url?: string;
-      }>("/generate/audio", {
-        text: script,
-        genre: opts.genre || "default",
-        duration: videoDuration,
-        artist_name: opts.artistName,
-        topic: opts.topic,
-        platform: "video",
-        quality: "high",
-      });
-
-      const rawAudioUrl = mcAudioRaw?.url ?? mcAudioRaw?.audio_url;
-      if (rawAudioUrl) {
-        const fullAudioUrl = rawAudioUrl.startsWith("http")
-          ? rawAudioUrl
-          : `${MAXCORE_ORIGIN}${rawAudioUrl}`;
-        const audioFilename = `vo_mc_${Date.now()}.mp3`;
-        const audioDir = path.join(process.cwd(), "uploads", "audio");
-        await fsPromises.mkdir(audioDir, { recursive: true });
-        const audioPath = path.join(audioDir, audioFilename);
-        const audioResp = await fetch(fullAudioUrl, {
-          // Bearer ONLY — X-Admin-Key/X-API-Key make MaxCore 401 the request.
-          headers: { Authorization: `Bearer ${MC_AI_KEY}` },
-          signal: AbortSignal.timeout(30_000),
-        });
-        if (audioResp.ok) {
-          await fsPromises.writeFile(audioPath, Buffer.from(await audioResp.arrayBuffer()));
-          audioLocalPath = audioPath;
-          logger.info(`[AdvancedVideoRenderer] MaxCore voiceover ready → ${audioFilename}`);
-        } else {
-          logger.warn(`[AdvancedVideoRenderer] MaxCore voiceover fetch failed (${audioResp.status}) — continuing without voiceover`);
-        }
-      } else {
-        logger.warn("[AdvancedVideoRenderer] MaxCore returned no audio URL — continuing without voiceover");
-      }
-    } catch (voErr) {
-      logger.warn({ err: voErr }, "[AdvancedVideoRenderer] Voiceover generation failed — continuing without voiceover");
-    }
-  }
-
-  let ffmpegArgs: string[];
-  if (audioLocalPath) {
-    ffmpegArgs = [
-      "-y",
-      "-i", inPath,
-      "-i", audioLocalPath,
-      "-filter_complex", `[0:v]${filters.join(",")}[vout]`,
-      "-map", "[vout]",
-      "-map", "1:a",
-      "-c:v", "libx264",
-      "-preset", "ultrafast",
-      "-crf", "23",
-      "-movflags", "+faststart",
-      "-c:a", "aac",
-      "-b:a", "128k",
-      "-shortest",
-      outPath,
-    ];
-  } else {
-    ffmpegArgs = [
-      "-y",
-      "-i", inPath,
-      "-vf", filters.join(","),
-      "-c:v", "libx264",
-      "-preset", "ultrafast",
-      "-crf", "23",
-      "-movflags", "+faststart",
-      "-an",
-      outPath,
-    ];
-  }
-
-  await new Promise<void>((resolve, reject) => {
-    const proc = spawn("ffmpeg", ffmpegArgs, { stdio: ["ignore", "pipe", "pipe"] });
-    proc.on("close", (code) =>
-      code === 0 ? resolve() : reject(new Error(`FFmpeg composite exited ${code}`)),
-    );
-    proc.on("error", reject);
-  });
-
-  const audioTag = audioLocalPath ? " + voiceover" : "";
-  logger.info(
-    `[AdvancedVideoRenderer] Composited (text${audioTag}) → ${outFilename}`,
-  );
-  return `/uploads/videos/${outFilename}`;
-}
-
-/**
- * Thin wrapper: resolves MaxCore's served URL to a local path, then delegates
- * to compositeTextOnLocalVideo.  Returns the original servedUrl on any failure.
- */
-async function compositeTextOnMaxcoreVideo(
-  servedUrl: string,
-  hook: string,
-  body: string,
-  cta: string,
-  opts: CompositeOpts = {},
-): Promise<string> {
-  if ((!hook && !body && !cta) || !servedUrl.startsWith("/uploads/videos/")) {
-    return servedUrl;
-  }
-  const inPath = path.join(
-    process.cwd(), "uploads", "videos", path.basename(servedUrl),
-  );
-  try {
-    return await compositeTextOnLocalVideo(inPath, hook, body, cta, opts);
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    logger.warn(
-      `[AdvancedVideoRenderer] Compositing failed (${msg}) — serving original MaxCore video`,
-    );
-    return servedUrl;
-  }
 }
 
 // ── MaxCore video job status type ─────────────────────────────────────────────
@@ -491,161 +267,6 @@ interface MaxCoreVideoStatus {
   error?: string;
 }
 
-// ── Scene-based video assembly (FFmpeg fallback) ───────────────────────────────
-
-const SCENE_BG: Record<string, string> = {
-  hook:  "0x1a0a2e",
-  build: "0x0a1a30",
-  body:  "0x0a2e1a",
-  drop:  "0x2e0a0a",
-  outro: "0x1a1a08",
-};
-
-const SCENE_DURATION_S: Record<string, number> = {
-  hook:  4,
-  build: 3,
-  body:  4,
-  drop:  4,
-  outro: 3,
-};
-
-/**
- * Assemble a real MP4 from MaxCore scene data using local FFmpeg.
- *
- * Called automatically when MaxCore renders successfully (status=done, scenes=[...])
- * but its file-serving layer cannot deliver the bytes (500 on /uploads/videos/*).
- * Each scene becomes a styled text-overlay clip; all clips are concatenated into
- * one playable MP4 and written to LOCAL_VIDEO_DIR.
- *
- * Returns the served URL (/uploads/videos/<filename>) or null on failure.
- */
-async function assembleVideoFromScenes(
-  scenes: Array<{ type: string; text: string }>,
-  opts: {
-    jobId: string;
-    width?: number;
-    height?: number;
-    duration?: number;
-  },
-): Promise<string | null> {
-  if (!scenes || scenes.length === 0) return null;
-
-  const W = opts.width ?? 1080;
-  const H = opts.height ?? 1920;
-  const totalDuration = opts.duration ?? scenes.length * 3;
-  const clipS = Math.max(2, Math.min(6, Math.floor(totalDuration / scenes.length)));
-  const fontSize = Math.floor(W / 16);
-  const labelSize = Math.floor(W / 35);
-
-  const tmpDir = await fsPromises.mkdtemp(path.join(tmpdir(), "maxcore-scenes-"));
-  const clipPaths: string[] = [];
-
-  try {
-    for (let i = 0; i < scenes.length; i++) {
-      const scene = scenes[i];
-      const clipPath = path.join(tmpDir, `scene_${i}.mp4`);
-      const bgColor = SCENE_BG[scene.type] ?? "0x111111";
-      const sceneClipS = SCENE_DURATION_S[scene.type] ?? clipS;
-
-      // Sanitize text — strip chars that confuse FFmpeg's drawtext filter parser
-      const txt = (scene.text ?? "")
-        .replace(/['":\\,[\]]/g, " ")
-        .replace(/\s+/g, " ")
-        .trim()
-        .slice(0, 55);
-      const label = (scene.type ?? "").toUpperCase().replace(/['":\\,[\]]/g, "");
-
-      await new Promise<void>((resolve, reject) => {
-        const vf = [
-          `drawtext=text='${txt}':fontcolor=white:fontsize=${fontSize}` +
-            `:x=(w-text_w)/2:y=(h-text_h)/2` +
-            `:box=1:boxcolor=black@0.35:boxborderw=20`,
-          `drawtext=text='${label}':fontcolor=#aaaaaa:fontsize=${labelSize}` +
-            `:x=60:y=60`,
-        ].join(",");
-        const args = [
-          "-y",
-          "-f", "lavfi",
-          "-i", `color=c=${bgColor}:s=${W}x${H}:r=30`,
-          "-vf", vf,
-          "-t", String(sceneClipS),
-          "-c:v", "libx264",
-          "-preset", "ultrafast",
-          "-pix_fmt", "yuv420p",
-          clipPath,
-        ];
-        const proc = spawn("ffmpeg", args, { stdio: ["ignore", "pipe", "pipe"] });
-        const errBufs: Buffer[] = [];
-        proc.stderr?.on("data", (d: Buffer) => errBufs.push(d));
-        proc.on("close", (code) => {
-          if (code === 0) {
-            resolve();
-          } else {
-            reject(
-              new Error(
-                `FFmpeg scene ${i} exit=${code}: ` +
-                  Buffer.concat(errBufs).toString().slice(-300),
-              ),
-            );
-          }
-        });
-        proc.on("error", reject);
-      });
-
-      clipPaths.push(clipPath);
-      logger.info(
-        `[SceneAssembly] Scene ${i + 1}/${scenes.length} — type=${scene.type} duration=${sceneClipS}s`,
-      );
-    }
-
-    // Write concat list
-    const listPath = path.join(tmpDir, "list.txt");
-    await fsPromises.writeFile(
-      listPath,
-      clipPaths.map((p) => `file '${p}'`).join("\n"),
-      "utf-8",
-    );
-
-    // Concatenate → final MP4
-    await fsPromises.mkdir(LOCAL_VIDEO_DIR, { recursive: true });
-    const outFilename = `ai_${opts.jobId.replace(/-/g, "").slice(0, 12)}_assembled.mp4`;
-    const outPath = path.join(LOCAL_VIDEO_DIR, outFilename);
-
-    await new Promise<void>((resolve, reject) => {
-      const args = ["-y", "-f", "concat", "-safe", "0", "-i", listPath, "-c", "copy", outPath];
-      const proc = spawn("ffmpeg", args, { stdio: ["ignore", "pipe", "pipe"] });
-      const errBufs: Buffer[] = [];
-      proc.stderr?.on("data", (d: Buffer) => errBufs.push(d));
-      proc.on("close", (code) => {
-        if (code === 0) {
-          resolve();
-        } else {
-          reject(
-            new Error(
-              `FFmpeg concat exit=${code}: ` +
-                Buffer.concat(errBufs).toString().slice(-300),
-            ),
-          );
-        }
-      });
-      proc.on("error", reject);
-    });
-
-    logger.info(
-      `[SceneAssembly] ${scenes.length} scenes assembled → ${outFilename} (${W}x${H}, ~${totalDuration}s)`,
-    );
-    return `/uploads/videos/${outFilename}`;
-  } catch (err) {
-    logger.warn(
-      `[SceneAssembly] FFmpeg assembly failed: ${(err as Error).message}`,
-    );
-    return null;
-  } finally {
-    for (const p of clipPaths) await fsPromises.unlink(p).catch(() => {});
-    await fsPromises.rm(tmpDir, { recursive: true, force: true }).catch(() => {});
-  }
-}
-
 /**
  * Poll MaxCore until the video job finishes, errors, or times out.
  * Uses poll() (not get()) so each attempt is a real HTTP request with no suppression.
@@ -664,31 +285,7 @@ async function pollVideoJob(jobId: string): Promise<VideoGenResult | null> {
     if (!status) continue;
 
     if (status.status === "done" && status.url) {
-      let servedUrl = await cacheVideoLocally(status.url);
-
-      // If MaxCore's file-serving layer failed (proxy fallback) AND we have
-      // scene data → assemble a real playable MP4 locally with FFmpeg.
-      if (
-        servedUrl.startsWith("/api/social/video-proxy/") &&
-        status.scenes?.length
-      ) {
-        logger.info(
-          `[AdvancedVideoRenderer] Download unavailable — assembling ` +
-            `${status.scenes.length} scenes locally with FFmpeg`,
-        );
-        const assembled = await assembleVideoFromScenes(status.scenes, {
-          jobId,
-          width: status.width,
-          height: status.height,
-          duration: status.duration,
-        });
-        if (assembled) {
-          servedUrl = assembled;
-          logger.info(
-            `[AdvancedVideoRenderer] Scene assembly complete → ${assembled}`,
-          );
-        }
-      }
+      const servedUrl = await cacheVideoLocally(status.url);
 
       logger.info(
         `[AdvancedVideoRenderer] Job ${jobId} done after ${attempt + 1} poll(s) — serving: ${servedUrl}`,
@@ -714,7 +311,13 @@ async function pollVideoJob(jobId: string): Promise<VideoGenResult | null> {
       logger.warn(
         `[AdvancedVideoRenderer] MaxCore job ${jobId} errored: ${status.error}`,
       );
-      return null;
+      // Preserve MaxCore's own error text — do NOT collapse into the
+      // generic timeout message the caller uses for a null return.
+      return {
+        success: false,
+        error: status.error || "MaxCore video job failed",
+        source: "MaxCoreAI",
+      };
     }
 
     if (attempt % 15 === 14) {
@@ -730,14 +333,10 @@ async function pollVideoJob(jobId: string): Promise<VideoGenResult | null> {
   return null;
 }
 
-// ── Photorealistic video pipeline ─────────────────────────────────────────────
+// ── MaxCore photorealistic image fetch ───────────────────────────────────────
 //
-// MaxCore /generate/image → photorealistic frame → FFmpeg Ken Burns zoom →
-// compositeTextOnLocalVideo (text + voiceover) → comp_photo_base_*.mp4
-//
-// This is the sole photorealistic path.  MaxCore's growing image-generation
-// dataset (fine-tuned on real music photography) powers the visual base.
-// A vivid Sharp genre-palette gradient is the fallback if MaxCore is offline.
+// Used by the Music Video Studio path (musicVideoStudioService) as a visual
+// base. MaxCore is the ONLY source — fails explicitly when unavailable.
 
 const PHOTO_CACHE_DIR = path.join(process.cwd(), "uploads", "photo_cache");
 
@@ -754,7 +353,7 @@ const PHOTO_ASPECT_DIMS: Record<string, [number, number]> = {
  * The prompt is assembled from the video's hook, topic, genre, and platform so
  * MaxCore's model can leverage its training data for music-specific scenes.
  *
- * Falls back to a vivid Sharp gradient when MaxCore is unavailable.
+ * MaxCore is the only source — throws (fail-explicit) when unavailable.
  * Returns an absolute local file path ready for FFmpeg input.
  */
 export async function fetchPhotorealisticImage(
@@ -844,76 +443,6 @@ export async function fetchPhotorealisticImage(
   return localPath;
 }
 
-/**
- * Applies a Ken Burns (slow zoom-in + centered pan) effect to a still image,
- * producing a smooth cinematic base video ready for text compositing.
- *
- * FFmpeg zoompan needs headroom to crop into: the image is scaled to 2× first,
- * then zoompan crops and outputs at the target WxH so no quality is lost.
- *
- * Returns the absolute local path of the rendered base MP4.
- */
-async function kenBurnsAnimate(
-  imagePath: string,
-  W: number,
-  H: number,
-  durationSec: number,
-): Promise<string> {
-  await fsPromises.mkdir(LOCAL_VIDEO_DIR, { recursive: true });
-
-  const outFilename = `photo_base_${randomUUID().slice(0, 8)}.mp4`;
-  const outPath = path.join(LOCAL_VIDEO_DIR, outFilename);
-
-  const fps = 24;
-  const frames = Math.round(durationSec * fps);
-
-  // Zoom slowly from 1.02 → max 1.5, panned to center (iw/zoom keeps the
-  // output crop centred regardless of zoom level).
-  const zoomFilter =
-    `scale=iw*2:ih*2,` +
-    `zoompan=` +
-      `z='min(zoom+0.0015,1.5)':` +
-      `x='iw/2-(iw/zoom/2)':` +
-      `y='ih/2-(ih/zoom/2)':` +
-      `d=${frames}:fps=${fps}:s=${W}x${H},` +
-    `format=yuv420p`;
-
-  await new Promise<void>((resolve, reject) => {
-    const proc = spawn(
-      "ffmpeg",
-      [
-        "-y",
-        "-loop", "1",
-        "-i", imagePath,
-        "-vf", zoomFilter,
-        "-t", String(durationSec),
-        "-c:v", "libx264",
-        "-preset", "ultrafast",
-        "-crf", "23",
-        "-movflags", "+faststart",
-        outPath,
-      ],
-      { stdio: ["ignore", "pipe", "pipe"] },
-    );
-    const errChunks: string[] = [];
-    proc.stderr?.on("data", (d: Buffer) => errChunks.push(d.toString()));
-    proc.on("close", (code) =>
-      code === 0
-        ? resolve()
-        : reject(
-            new Error(
-              `FFmpeg Ken Burns exited ${code}: ${errChunks.slice(-3).join("").slice(0, 300)}`,
-            ),
-          ),
-    );
-    proc.on("error", reject);
-  });
-
-  logger.info(
-    `[PhotoReal] Ken Burns video → ${outFilename} (${W}×${H}, ${durationSec}s)`,
-  );
-  return outPath;
-}
 
 /**
  * Grab a real first-frame poster from a rendered MP4 so the client `<video>`
@@ -1078,360 +607,93 @@ export async function generatePosterThumbnail(
   }
 }
 
+
+// ── MaxCore end-to-end video job ──────────────────────────────────────────────
+//
+// MaxCore /api/generate-video renders the ENTIRE video itself — content
+// intelligence, script, scene rendering, text, voiceover, and file serving all
+// happen on the MaxCore server. This service only submits the job, polls
+// /api/video-job/:id, and caches the finished MP4 locally (pure file
+// transport — no local generation, compositing, or re-rendering in between).
+
+interface MaxCoreVideoJobResponse {
+  job_id?: string;
+  status?: string;
+  url?: string;
+  video_url?: string;
+  filename?: string;
+  width?: number;
+  height?: number;
+  duration?: number;
+  hook?: string;
+  body?: string;
+  cta?: string;
+  template?: string;
+  template_name?: string;
+  scenes_rendered?: number;
+  hashtags?: string[];
+  intelligence?: Record<string, unknown>;
+}
+
 /**
- * Full photorealistic video pipeline:
- *   1. MaxCore /generate/image  →  photorealistic background frame
- *   2. FFmpeg Ken Burns          →  animated base video (cinematic zoom)
- *   3. compositeTextOnLocalVideo →  hook/body/CTA text + optional AI voiceover
+ * Render a video through MaxCore's own end-to-end job pipeline.
+ *   Submit → POST /api/generate-video (requires `idea`; returns job_id)
+ *   Poll   → GET /api/video-job/:id until status=done with a URL
+ *   Cache  → download the finished MP4 locally (file transport only)
  *
- * Falls back to a genre-palette gradient when MaxCore image generation is
- * unavailable — the Ken Burns + text composite still runs over the gradient.
- */
-async function renderPhotorealisticVideo(
-  opts: VideoGenOptions,
-  hook: string,
-  body: string,
-  cta: string,
-  startMs: number,
-  intelligence: Record<string, unknown>,
-): Promise<VideoGenResult> {
-  const aspectRatio = opts.aspect_ratio ?? "9:16";
-  const [W, H] = PHOTO_ASPECT_DIMS[aspectRatio] ?? PHOTO_ASPECT_DIMS["9:16"];
-  const durationSec = opts.duration ?? 10;
-
-  const compositeOpts: CompositeOpts = {
-    voiceover: !!opts.voiceover,
-    genre: opts.genre,
-    duration: durationSec,
-    artistName: opts.artist_name,
-    topic: opts.topic,
-  };
-
-  try {
-    logger.info("[PhotoReal] Fetching photorealistic image from MaxCore…");
-    const imagePath = await fetchPhotorealisticImage(
-      opts.topic ?? hook ?? "music artist",
-      hook,
-      opts.genre ?? "pop",
-      opts.platform ?? "tiktok",
-      aspectRatio,
-    );
-
-    logger.info("[PhotoReal] Applying Ken Burns animation…");
-    const baseVideoPath = await kenBurnsAnimate(imagePath, W, H, durationSec);
-
-    logger.info("[PhotoReal] Compositing text overlay…");
-    const finalUrl = await compositeTextOnLocalVideo(
-      baseVideoPath, hook, body, cta, compositeOpts,
-    );
-
-    // Best-effort poster so the client shows a real frame, not a grey box.
-    // Guard on the known served prefix so contract drift can never resolve an
-    // unexpected path into the ffmpeg input.
-    const thumbnailUrl = finalUrl.startsWith("/uploads/videos/")
-      ? await generatePosterThumbnail(
-          path.join(process.cwd(), finalUrl.replace(/^\/+/, "")),
-        )
-      : null;
-
-    logger.info(
-      `[PhotoReal] Pipeline complete in ${Date.now() - startMs}ms → ${finalUrl}`,
-    );
-
-    return {
-      success: true,
-      url: finalUrl,
-      thumbnail_url: thumbnailUrl ?? null,
-      width: W,
-      height: H,
-      duration: durationSec,
-      hook,
-      body,
-      cta,
-      template: "photorealistic",
-      template_name: "Photorealistic (MaxCore AI)",
-      source: "MaxCoreAI-Photorealistic",
-      quality: "photorealistic",
-      capabilities: [
-        "maxcore_image_generation",
-        "ken_burns_animation",
-        "text_overlay",
-        ...(compositeOpts.voiceover ? ["ai_voiceover"] : []),
-      ],
-      processing_time_ms: Date.now() - startMs,
-      ...intelligence,
-    } as unknown as VideoGenResult;
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    logger.error(`[PhotoReal] Pipeline failed: ${msg}`);
-    return {
-      success: false,
-      error: `Photorealistic pipeline failed: ${msg}`,
-      source: "MaxCoreAI-Photorealistic",
-      processing_time_ms: Date.now() - startMs,
-    };
-  }
-}
-
-// ── MaxCore content types ─────────────────────────────────────────────────────
-
-interface MaxCoreContent {
-  caption: string;
-  hook: string;
-  body: string;
-  cta: string;
-  hashtags: string[];
-  confidence: number;
-  processing_time_ms: number;
-}
-
-interface MaxCoreSentiment {
-  sentiment: number; // 0–1
-  label: string;
-  confidence: number;
-  model_summary: string;
-  source: string;
-}
-
-// ── Step 1: generate content intelligence from MaxCore ────────────────────────
-
-async function generateContent(
-  opts: VideoGenOptions,
-): Promise<MaxCoreContent | null> {
-  const topic = [
-    opts.artist_name ? `${opts.artist_name}` : null,
-    opts.topic,
-    opts.genre ? `(${opts.genre})` : null,
-  ]
-    .filter(Boolean)
-    .join(" — ");
-
-  logger.info(
-    `[AdvancedVideoRenderer] Calling /api/generate/content for topic: "${topic}"`,
-  );
-
-  return MaxCoreAIClient.generate<MaxCoreContent>("/generate/content", {
-    topic,
-    platform: opts.platform || "tiktok",
-    tone: opts.tone || "energetic",
-    goal: opts.goal || "growth",
-    genre: opts.genre || undefined,
-    artist: opts.artist_name || undefined,
-    title: opts.topic || undefined,
-  });
-}
-
-// ── Step 2: sentiment scoring on the hook ─────────────────────────────────────
-
-async function getSentiment(hook: string): Promise<MaxCoreSentiment | null> {
-  return MaxCoreAIClient.generate<MaxCoreSentiment>("/analyze/sentiment", {
-    text: hook,
-  });
-}
-
-/**
- * Render a video through MaxCore — authoritative AI generation pipeline:
- *   Step 1: MaxCore content + sentiment intelligence
- *   Step 2: MaxCore video generation (async job with polling)
- *   Step 3: FFmpeg compositing — text overlays + AI voiceover on the cached MP4
+ * Fails explicitly (AIUnavailableError → 503) when MaxCore is unavailable.
+ * There is NO local rendering fallback — the MaxCore job owns the video.
  */
 export async function renderVideo(
   opts: VideoGenOptions,
 ): Promise<VideoGenResult> {
-  const startMs = Date?.now();
-  logger?.info("[AdvancedVideoRenderer] Starting MaxCore video pipeline");
+  const startMs = Date.now();
 
-  // ── Step 1: generate content + sentiment intelligence ────────────────────
-  // Primary source: MaxCore /generate/content.
-  // Fallback: hook/body/cta already computed by the route's Stage 1 MaxCore
-  // call and forwarded in opts.  If both sources are empty, fail explicitly.
-  const contentResult = await generateContent(opts);
+  const idea =
+    [opts.hook || opts.topic, opts.artist_name, opts.genre]
+      .filter(Boolean)
+      .join(" — ") || "music promo video";
 
-  // Build hook/body/cta using a three-tier priority:
-  //   1. MaxCore /generate/content (primary)
-  //   2. Caller-supplied opts fields from the route's Stage 1 MaxCore call
-  //   3. opts.topic text as last resort — NOT local AI, just the user's input
-  let hook = contentResult?.hook || opts.hook || "";
-  let body = contentResult?.body || opts.body || "";
-  let cta  = contentResult?.cta  || opts.cta  || "";
-  const hashtags = contentResult?.hashtags || [];
-  const contentConfidence = contentResult?.confidence ?? null;
-
-  if (!hook && !body && !cta) {
-    if (opts.topic) {
-      hook = opts.topic.slice(0, 80);
-      logger?.warn("[AdvancedVideoRenderer] Both MaxCore calls returned no content — using topic as hook");
-    } else {
-      throw new AIUnavailableError("video content");
-    }
-  } else if (!contentResult) {
-    logger?.warn("[AdvancedVideoRenderer] MaxCore content gen returned null — using caller-supplied hook/body/cta");
-  }
-
-  logger?.info(
-    `[AdvancedVideoRenderer] Content generated — hook: "${hook.slice(0, 60)}..." ` +
-      `confidence: ${contentConfidence} hashtags: ${hashtags?.length}`,
+  logger.info(
+    `[AdvancedVideoRenderer] Submitting MaxCore video job — idea: "${idea.slice(0, 80)}"`,
   );
 
-  const sentimentResult = hook ? await getSentiment(hook) : null;
-  if (sentimentResult) {
-    logger?.info(
-      `[AdvancedVideoRenderer] Sentiment: ${sentimentResult?.label} ` +
-        `(score=${sentimentResult.sentiment.toFixed(2)}, confidence=${sentimentResult?.confidence.toFixed(2)})`,
-    );
-  }
-
-  const intelligence = {
-    hashtags,
-    content_confidence: contentConfidence,
-    sentiment_score: sentimentResult?.sentiment ?? null,
-    sentiment_label: sentimentResult?.label ?? null,
-    sentiment_confidence: sentimentResult?.confidence ?? null,
-  };
-
-  // ── Photorealistic mode — branch before MaxCore motion-video submission ──────
-  // MaxCore /generate/image provides the visual base (photorealistic frame),
-  // FFmpeg Ken Burns animates it, compositeTextOnLocalVideo adds text+voice.
-  if (opts.quality === "photorealistic") {
-    return renderPhotorealisticVideo(
-      opts, hook, body, cta, startMs, intelligence as Record<string, unknown>,
-    );
-  }
-
-  // ── Step 2: MaxCore video script generation ──────────────────────────────────
-  // /api/platform/video/generate is the correct MaxCore endpoint (see arch doc).
-  // It returns a synchronous video SCRIPT (scenes, hook, script, captions) that
-  // we then render via renderPhotorealisticVideo (MaxCore image + FFmpeg assembly).
-  type MaxCoreVideoScript = {
-    success?: boolean;
-    hook?: string;
-    body?: string;
-    cta?: string;
-    script?: string;
-    title?: string;
-    scenes?: Array<{
-      scene: number;
-      duration_seconds?: number;
-      description?: string;
-      visual_direction?: string;
-      narration?: string;
-    }>;
-    hashtags?: string[];
-    duration_seconds?: number;
-    aspect_ratio?: string;
-    user_id?: string;
-    job_id?: string;
-    url?: string;
-  };
-  const jobResp = await MaxCoreAIClient?.infer<MaxCoreVideoScript>(
-    "/platform/video/generate",
+  const jobResp = await MaxCoreAIClient.infer<MaxCoreVideoJobResponse>(
+    "/generate-video",
     {
-      idea:
-        [hook, opts.artist_name, opts.genre, opts.topic]
-          .filter(Boolean)
-          .join(" — ") || "music video",
-      hook,
-      body,
-      cta,
-      topic: opts.topic || hook || body || "music video",
+      idea,
+      topic: opts.topic || undefined,
+      hook: opts.hook || undefined,
+      body: opts.body || undefined,
+      cta: opts.cta || undefined,
       platform: opts.platform || "tiktok",
-      aspect_ratio: opts.aspect_ratio,
-      template: opts.template || "cinematic_promo",
+      aspect_ratio: opts.aspect_ratio || "9:16",
+      template: opts.template || undefined,
       duration: opts.duration || 10,
-      artist_name: opts.artist_name,
+      artist_name: opts.artist_name || undefined,
       genre: opts.genre || undefined,
       tone: opts.tone || "energetic",
       goal: opts.goal || "growth",
-      quality: opts.quality || "cinematic",
+      quality: opts.quality || undefined,
+      voiceover: !!opts.voiceover,
       user_audio_path: opts.user_audio_path || undefined,
-      voiceover: !!opts?.voiceover,
       user_id: opts.userId || "anonymous",
     },
   );
 
   if (!jobResp) {
-    // MaxCore endpoint unavailable (cold-start, training load, transient 5xx).
-    // Fall through to the photorealistic pipeline which calls /generate/image —
-    // still MaxCore-powered and always produces a playable MP4.
-    logger.warn(
-      "[AdvancedVideoRenderer] /api/platform/video/generate returned null — " +
-        "routing to MaxCore photorealistic pipeline",
-    );
-    return renderPhotorealisticVideo(
-      opts,
-      hook,
-      body,
-      cta,
-      startMs,
-      intelligence as Record<string, unknown>,
-    );
+    // MaxCore unavailable — fail explicitly (503). No local fallback.
+    throw new AIUnavailableError("video generation");
   }
 
-  // Synchronous scene-script response (new format from /platform/video/generate):
-  // MaxCore returns hook + scenes + captions but no rendered file yet.
-  // Use the enriched hook/body/cta from the script, then render via the
-  // photorealistic pipeline (MaxCore /generate/image + FFmpeg assembly).
-  if (jobResp?.scenes?.length || (jobResp?.success && !jobResp?.url && !jobResp?.job_id)) {
-    const scriptHook = jobResp?.hook || hook;
-    // Body text must be real caption copy, never a visual direction / image
-    // prompt. MaxCore's `script` interleaves narration with visual directions
-    // ("Bold cinematic cover art for …, 8k resolution, no text"), so drawing
-    // script line 2 verbatim baked the image prompt into the video as text.
-    const looksLikeVisualPrompt = (t: string | undefined | null): boolean =>
-      !!t &&
-      /cover art|photorealistic|8k resolution|no text|no watermark|studio lighting|ultra-high detail|visual direction|camera angle/i.test(
-        t,
-      );
-    const usableBody = (t: string | undefined | null): string | undefined =>
-      t && !looksLikeVisualPrompt(t) && t.trim() !== scriptHook.trim() ? t : undefined;
-    const sceneNarration = jobResp?.scenes
-      ?.map((s) => s?.narration?.trim())
-      .find((n) => usableBody(n));
-    const scriptLines = jobResp?.script
-      ?.split("\n")
-      .map((l) => l.trim())
-      .filter((l) => usableBody(l));
-    const scriptBody =
-      usableBody(jobResp?.body) ||
-      sceneNarration ||
-      // scriptLines is already filtered (no hook-dupes, no visual prompts),
-      // so the FIRST surviving line is the best body candidate.
-      scriptLines?.[0] ||
-      (usableBody(body) ? body : "");
-    const scriptCta  = jobResp?.cta  || cta;
-    const scriptHashtags = jobResp?.hashtags || hashtags;
-    logger.info(
-      `[AdvancedVideoRenderer] MaxCore returned ${jobResp?.scenes?.length ?? 0}-scene script — ` +
-        `rendering photorealistic pipeline with enriched hook`,
-    );
-    return renderPhotorealisticVideo(
-      opts,
-      scriptHook,
-      scriptBody,
-      scriptCta,
-      startMs,
-      { ...intelligence, hashtags: scriptHashtags } as Record<string, unknown>,
-    );
-  }
-
-  // Shared composite options derived from the render request
-  const compositeOpts: CompositeOpts = {
-    voiceover: !!opts?.voiceover,
-    genre: opts.genre,
-    duration: opts.duration || 10,
-    artistName: opts.artist_name,
-    topic: opts.topic,
-  };
+  const intelligence = (jobResp.intelligence ?? {}) as Record<string, unknown>;
 
   // Synchronous response — MaxCore rendered immediately
-  if (jobResp?.url) {
-    const cachedUrl = await cacheVideoLocally(jobResp?.url);
-    const finalHook = jobResp.hook || hook;
-    const finalBody = jobResp.body || body;
-    const finalCta  = jobResp.cta  || cta;
-    const servedUrl = await compositeTextOnMaxcoreVideo(cachedUrl, finalHook, finalBody, finalCta, compositeOpts);
-    logger?.info(
-      `[AdvancedVideoRenderer] Synchronous render complete in ${Date?.now() - startMs}ms`,
+  const syncUrl = jobResp.url || jobResp.video_url;
+  if (syncUrl) {
+    const servedUrl = await cacheVideoLocally(syncUrl);
+    logger.info(
+      `[AdvancedVideoRenderer] Synchronous MaxCore render complete in ${Date.now() - startMs}ms`,
     );
     return {
       success: true,
@@ -1441,52 +703,54 @@ export async function renderVideo(
       width: jobResp.width,
       height: jobResp.height,
       duration: jobResp.duration,
-      hook: finalHook,
-      body: finalBody,
-      cta: finalCta,
+      hook: jobResp.hook || opts.hook,
+      body: jobResp.body || opts.body,
+      cta: jobResp.cta || opts.cta,
       template: jobResp.template,
       template_name: jobResp.template_name,
       scenes_rendered: jobResp.scenes_rendered,
+      hashtags: jobResp.hashtags,
       source: "MaxCoreAI",
       processing_time_ms: Date.now() - startMs,
-      ...intelligence,
-    } as Record<string, unknown>;
+      intelligence,
+    } as unknown as VideoGenResult;
   }
 
-  // Async response — poll for completion
-  if (jobResp?.job_id) {
-    const result = await pollVideoJob(jobResp?.job_id);
-    if (result) {
-      const finalHook = result.hook || hook;
-      const finalBody = result.body || body;
-      const finalCta  = result.cta  || cta;
-      const servedUrl = await compositeTextOnMaxcoreVideo(result.url as string, finalHook, finalBody, finalCta, compositeOpts);
+  // Async job — poll MaxCore until the video is rendered and served
+  if (jobResp.job_id) {
+    const result = await pollVideoJob(jobResp.job_id);
+    if (result && !result.success) {
+      // Explicit MaxCore job error — surface its own error text.
       return {
         ...result,
-        url: servedUrl,
-        thumbnail_url: await posterForServedUrl(servedUrl),
-        hook: finalHook,
-        body: finalBody,
-        cta: finalCta,
         processing_time_ms: Date.now() - startMs,
-        ...intelligence,
-      } as Record<string, unknown>;
+      } as unknown as VideoGenResult;
+    }
+    if (result) {
+      return {
+        ...result,
+        thumbnail_url: await posterForServedUrl(result.url as string),
+        hook: result.hook || opts.hook,
+        body: result.body || opts.body,
+        cta: result.cta || opts.cta,
+        processing_time_ms: Date.now() - startMs,
+        intelligence,
+      } as unknown as VideoGenResult;
     }
     return {
       success: false,
-      error: `MaxCore job ${jobResp?.job_id} did not complete within the polling window`,
+      error: `MaxCore job ${jobResp.job_id} did not complete within the polling window`,
       source: "MaxCoreAI",
       processing_time_ms: Date.now() - startMs,
     };
   }
 
-  logger?.warn(
-    "[AdvancedVideoRenderer] MaxCore response missing both url and job_id:",
-    jobResp,
+  logger.warn(
+    "[AdvancedVideoRenderer] MaxCore response missing both url and job_id",
   );
   return {
     success: false,
-    error: "MaxCore returned an unexpected response format",
+    error: "MaxCore returned neither a job_id nor a video URL",
     source: "MaxCoreAI",
     processing_time_ms: Date.now() - startMs,
   };
