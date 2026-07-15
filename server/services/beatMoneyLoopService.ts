@@ -445,14 +445,15 @@ class BeatMoneyLoopService {
     if (scan.hooks.length > 0)
       body.context = scan.hooks.slice(0, 3).join("; ");
 
+    // Bearer ONLY — MaxCore 401s the whole request when X-API-Key/X-Admin-Key
+    // are present (see replit.md / maxcore-auth-header memory).
+    const authHeaders: Record<string, string> = key
+      ? { Authorization: `Bearer ${key}` }
+      : {};
+
     const res = await fetch(`${base}/api/generate/audio`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(key
-          ? { Authorization: `Bearer ${key}`, "X-API-Key": key }
-          : {}),
-      },
+      headers: { "Content-Type": "application/json", ...authHeaders },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(mode === "C" ? 30_000 : 20_000),
     });
@@ -464,17 +465,102 @@ class BeatMoneyLoopService {
     }
     const data = (await res.json()) as {
       wav_b64?: string;
+      audio_b64?: string;
+      url?: string;
+      audio_url?: string;
+      job_id?: string;
+      status?: string;
       mc_key?: string;
       mc_bpm?: number;
       backend?: string;
     };
-    if (!data.wav_b64) throw new Error("MaxCore returned no wav_b64");
-    return {
-      wavBytes: Buffer.from(data.wav_b64, "base64"),
-      mcKey: data.mc_key,
-      mcBpm: data.mc_bpm,
-      backend: data.backend ?? (mode === "C" ? "maxcore" : "dsp_b"),
+
+    const backend = data.backend ?? (mode === "C" ? "maxcore" : "dsp_b");
+    const finish = async (d: typeof data): Promise<{
+      wavBytes: Buffer;
+      mcKey?: string;
+      mcBpm?: number;
+      backend: string;
+    }> => {
+      const b64 = d.wav_b64 ?? d.audio_b64;
+      if (b64) {
+        return {
+          wavBytes: Buffer.from(b64, "base64"),
+          mcKey: d.mc_key,
+          mcBpm: d.mc_bpm,
+          backend: d.backend ?? backend,
+        };
+      }
+      const rawUrl = d.url ?? d.audio_url;
+      if (rawUrl) {
+        const abs = /^https?:\/\//i.test(rawUrl) ? rawUrl : `${base}${rawUrl}`;
+        // SSRF / credential-leak guard: only download from the MaxCore origin.
+        // Never forward the Bearer token to a host we don't control.
+        if (new URL(abs).origin !== new URL(base).origin) {
+          throw new Error(
+            `MaxCore returned audio URL on unexpected origin: ${new URL(abs).origin}`,
+          );
+        }
+        const dl = await fetch(abs, {
+          headers: authHeaders,
+          signal: AbortSignal.timeout(30_000),
+        });
+        if (!dl.ok) throw new Error(`MaxCore audio download HTTP ${dl.status}`);
+        const bytes = Buffer.from(await dl.arrayBuffer());
+        if (bytes.length < 1_024)
+          throw new Error(`MaxCore audio download too small (${bytes.length} bytes)`);
+        return {
+          wavBytes: bytes,
+          mcKey: d.mc_key,
+          mcBpm: d.mc_bpm,
+          backend: d.backend ?? backend,
+        };
+      }
+      throw new Error("MaxCore returned no audio payload (no wav_b64/url)");
     };
+
+    // Synchronous response — audio inline or via URL
+    if (data.wav_b64 || data.audio_b64 || data.url || data.audio_url) {
+      return finish(data);
+    }
+
+    // Async job contract — MaxCore now returns { job_id, status: "processing" }.
+    // Poll /api/audio-job/:id until done (90 s budget; render can take a while).
+    if (data.job_id) {
+      const deadline = Date.now() + 90_000;
+      while (Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 3_000));
+        const jr = await fetch(`${base}/api/audio-job/${data.job_id}`, {
+          headers: authHeaders,
+          signal: AbortSignal.timeout(15_000),
+        });
+        // Terminal auth/not-found statuses will never recover — fail fast.
+        if (jr.status === 401 || jr.status === 403 || jr.status === 404) {
+          throw new Error(`MaxCore audio job poll HTTP ${jr.status}`);
+        }
+        if (!jr.ok) continue; // transient 5xx — keep polling within budget
+        const job = (await jr.json()) as typeof data & { error?: string };
+        const st = (job.status ?? "").toLowerCase();
+        if (st === "error" || st === "failed") {
+          throw new Error(
+            `MaxCore audio job failed: ${(job.error ?? "unknown").slice(0, 200)}`,
+          );
+        }
+        if (
+          st === "done" ||
+          st === "completed" ||
+          job.wav_b64 ||
+          job.audio_b64 ||
+          job.url ||
+          job.audio_url
+        ) {
+          return finish(job);
+        }
+      }
+      throw new Error("MaxCore audio job did not complete within 90 s");
+    }
+
+    throw new Error("MaxCore returned no wav_b64");
   }
 
   /**
