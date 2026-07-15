@@ -147,17 +147,31 @@ async function pruneUploadDirs(days = 7): Promise<void> {
 // ── Job processor ─────────────────────────────────────────────────────────────
 
 async function processAutonomousJob(job: Job): Promise<void> {
-  if (!job?.name) {
-    // Stale repeatable job from a prior schedule fired with an undefined name.
-    // This happens when BullMQ replays a job whose key pre-dates the current
-    // name registry (e?.g. after a deploy that cleared or renamed jobs).
-    // Safe to skip — the scheduler will register fresh repeatable jobs on startup.
-    logger?.warn(
-      `[AutonomousScheduler] Skipping job with undefined name (id=${job?.id}) — stale entry from prior schedule`,
-    );
-    return;
+  let jobName = job?.name;
+  if (!jobName) {
+    // BullMQ-over-PDIM (wasmoon LuaExecutor) can drop the job name from the
+    // job hash, so EVERY repeatable job arrives with name=undefined — not just
+    // stale entries. The repeatable job id still encodes the name as
+    // "repeat:<name>:<timestamp>", so recover it from there before giving up.
+    const m = /^repeat:(.+):\d+$/.exec(String(job?.id ?? ""));
+    const recovered = m?.[1];
+    if (
+      recovered &&
+      (REPEATABLE_JOBS.some((j) => j.name === recovered) ||
+        recovered.startsWith("campaign-optimize-"))
+    ) {
+      jobName = recovered;
+      logger?.info(
+        `[AutonomousScheduler] Recovered job name "${recovered}" from id=${job?.id} (name missing from job hash)`,
+      );
+    } else {
+      logger?.warn(
+        `[AutonomousScheduler] Skipping job with undefined name (id=${job?.id}) — could not recover a known job name`,
+      );
+      return;
+    }
   }
-  switch (job?.name) {
+  switch (jobName) {
     case "content-dispatch": {
       const { autonomousService } = await import("./autonomousService.js");
       await autonomousService?.runContentDispatch();
@@ -207,18 +221,18 @@ async function processAutonomousJob(job: Job): Promise<void> {
       break;
     }
     default:
-      if (job?.name.startsWith("campaign-optimize-")) {
+      if (jobName.startsWith("campaign-optimize-")) {
         const campaignId = job?.data?.campaignId as string | undefined;
         if (campaignId) {
           const { autonomousService } = await import("./autonomousService.js");
           await autonomousService?.runCampaignOptimization(campaignId);
         } else {
           logger?.warn(
-            `[AutonomousScheduler] campaign-optimize job missing campaignId: ${job?.name}`,
+            `[AutonomousScheduler] campaign-optimize job missing campaignId: ${jobName}`,
           );
         }
       } else {
-        logger?.warn(`[AutonomousScheduler] Unknown job: ${job?.name}`);
+        logger?.warn(`[AutonomousScheduler] Unknown job: ${jobName}`);
       }
   }
 }
