@@ -427,11 +427,16 @@ class BeatMoneyLoopService {
       process.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app"
     ).replace(/\/api\/?$/, "");
     const key = process.env.AI_SERVER_KEY || "";
+    // Full-length beat (default 3 min). Override via BEAT_DURATION_SECONDS.
+    const durationSec = Math.min(
+      600,
+      Math.max(60, Number(process.env.BEAT_DURATION_SECONDS) || 180),
+    );
     const body: Record<string, unknown> = {
       genre: scan.genre,
       bpm: scan.tempo,
       mood: scan.mood,
-      duration: 30,
+      duration: durationSec,
       energy: 0.8,
       mode,
     };
@@ -450,7 +455,9 @@ class BeatMoneyLoopService {
       method: "POST",
       headers: { "Content-Type": "application/json", ...authHeaders },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(mode === "C" ? 30_000 : 20_000),
+      // Either mode may render synchronously for long durations instead of
+      // returning a job_id — give both time proportional to requested length.
+      signal: AbortSignal.timeout(Math.max(120_000, durationSec * 1_000)),
     });
     if (!res.ok) {
       const text = await res.text().catch(() => "");
@@ -498,7 +505,8 @@ class BeatMoneyLoopService {
         }
         const dl = await fetch(abs, {
           headers: authHeaders,
-          signal: AbortSignal.timeout(30_000),
+          // Full-length files are ~10× larger than the old 30 s clips.
+          signal: AbortSignal.timeout(120_000),
         });
         if (!dl.ok) throw new Error(`MaxCore audio download HTTP ${dl.status}`);
         const bytes = Buffer.from(await dl.arrayBuffer());
@@ -520,9 +528,11 @@ class BeatMoneyLoopService {
     }
 
     // Async job contract — MaxCore now returns { job_id, status: "processing" }.
-    // Poll /api/audio-job/:id until done (90 s budget; render can take a while).
+    // Poll /api/audio-job/:id until done. Budget scales with requested length:
+    // rendering a full 3-min beat takes far longer than the old 30 s clip.
     if (data.job_id) {
-      const deadline = Date.now() + 90_000;
+      const pollBudgetMs = Math.max(180_000, durationSec * 2_000);
+      const deadline = Date.now() + pollBudgetMs;
       while (Date.now() < deadline) {
         await new Promise((r) => setTimeout(r, 3_000));
         const jr = await fetch(`${base}/api/audio-job/${data.job_id}`, {
@@ -552,7 +562,9 @@ class BeatMoneyLoopService {
           return finish(job);
         }
       }
-      throw new Error("MaxCore audio job did not complete within 90 s");
+      throw new Error(
+        `MaxCore audio job did not complete within ${Math.round(pollBudgetMs / 1000)} s`,
+      );
     }
 
     throw new Error("MaxCore returned no wav_b64");
