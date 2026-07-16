@@ -1,126 +1,51 @@
-# Max Booster - AI-Powered Music Career Management Platform
+# Max Booster
 
-## Overview
+AI-Powered Music Career Management Platform (v3.0.0) by B-Lawz Music.
 
-Max Booster is an AI-powered, full-stack TypeScript web application designed to empower music artists with comprehensive career management tools. It offers AI-assisted features for social media management, music distribution, analytics, a beat marketplace, career automation, press kit creation, playlist pitching, tour management, merch store integration, sync licensing, publishing rights, A&R submissions, sample clearances, music video production tracking, radio/blog pitching, fan campaigns, revenue intelligence, songwriting, project budget planning, and venue/booking CRM. The platform aims to streamline and optimize various aspects of an artist's career, leveraging AI models fine-tuned specifically for the music industry, with the ambition to become the leading platform for artist career development through intelligent automation and insights.
+## Stack
+
+- **Frontend:** React 19, Vite, Tailwind CSS 4, Radix UI, Framer Motion, TanStack Query, Zustand
+- **Backend:** Node.js (Express 5), TypeScript (tsx), Drizzle ORM (PostgreSQL/Neon)
+- **Jobs:** BullMQ + Redis
+- **AI:** OpenAI, Anthropic, custom MaxCore AI service
+
+## How to Run
+
+The main workflow is **"Start application"** — it runs the Express + Vite dev server on port 5000.
+
+```
+npm run dev
+```
+
+This skips the optional Rust boosterstate sidecar if not compiled, then starts `server/index.ts` via `tsx`.
+
+## Required Environment Variables
+
+| Variable | Notes |
+|---|---|
+| `DATABASE_URL` | Auto-provided by Replit's built-in PostgreSQL |
+| `SESSION_SECRET` | Set as a Replit Secret (min 32 chars) |
+
+## Optional Environment Variables
+
+See `.env.example` for the full list of 300+ optional variables (Stripe, SendGrid, OpenAI, social OAuth, etc.). Features degrade gracefully when these are absent.
+
+## Database
+
+Uses Replit's built-in PostgreSQL (`DATABASE_URL`). Schema is managed by Drizzle ORM.
+
+To push schema changes: `npm run db:push`
+
+## Key Scripts
+
+| Script | Purpose |
+|---|---|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run db:push` | Sync Drizzle schema to database |
+| `npm run bootstrap:admin` | Create the initial admin user |
 
 ## User Preferences
 
-I prefer iterative development, with clear communication before significant changes. Please prioritize stability and performance. Do not make changes to folder `AI training server/ai_model/` or file `server/services/hybridStorageService.ts` unless explicitly instructed. Ensure that all new features integrate seamlessly with the existing hybrid storage system.
-
-**Agent reminder:** At the end of every task, record the full play-by-play (what was built, files changed, test baseline) in `.local/agent-notes.md`, and add only durable lessons/conventions to the concise "Recent Hardening — Lessons & Conventions" section below. Keep this file an overview + pointers, not a changelog — full detail lives in `.local/agent-notes.md`, git history, and `.agents/memory/`.
-
-## Running on Replit
-
-- **Install:** `pnpm install` (lockfile is `pnpm-lock.yaml`; `.npmrc` uses `node-linker=hoisted` — required, see `.agents/memory/install-pnpm-hoisted-and-workflow.md`). Run heavy installs as a workflow, not detached bash.
-- **Run:** the `Start application` workflow runs `npm run dev` (→ `tsx server/index.ts`) and serves the web app on **port 5000**.
-- **Environment:** all runtime API/config values live in the `shared` environment (loaded from the owner's env file). **Exception:** live Stripe keys (`STRIPE_*`, `VITE_STRIPE_PUBLIC_KEY`) are set in the **production** environment only — dev/shared intentionally hold none so live payment setup never runs in dev (see "Stripe Key Configuration" below).
-- **Known non-fatal boot notes:** GeoDNS mmdb is absent (`scripts/download-geodb.sh` enables it); `shared/ml/training/musicIndustryTrainingData.js` is missing on a fresh import, which degrades some autopilot/auto-posting modules (see `.agents/memory/music-industry-training-stub.md`).
-
-## System Architecture
-
-The Max Booster application uses a monorepo structure, separating concerns into `client/`, `server/`, `shared/`, `boosterstate/`, `server/pocket-dimension/`, and `AI training server/`. The UI/UX emphasizes a clean, responsive design and a Studio DAW-like interface with TopBar, LeftSidebar Browser, MainArea with view tabs (Timeline / Mixer / Node Graph / Flow), and RightSidebar Universal Inspector.
-
-The core of the system is a "Triangle Architecture" data flow: Max Booster pushes all data exclusively to PDIM, MaxCore training server pulls training data from PDIM, and Max Booster pulls trained model weights from MaxCore for inference. PDIM serves as the ONLY unified storage backend, functioning as both a Redis-compatible layer and a persistent object storage system with level-9 Gzip compression and SHA-256 content-addressed deduplication.
-
-Key architectural decisions include:
-
-- All core AI/ML models are in-house, specifically fine-tuned for music artist use cases (e.g., Viral Scoring, Timing Optimization, Algorithm Intelligence) using industry-specific data. MaxCore (`secure-ai-forge.replit.app`) is the sole AI source across all endpoints.
-- Microservices-like logical separation within the monorepo for scalability, designed for Replit Autoscale with PDIM (`pocketdimensionstorage.replit.app`) as the shared-state backend.
-- Robust authentication with session fixation prevention, JWTs with refresh, and session heartbeat.
-- Comprehensive workflow automations managed by `musicWorkflowAutomationService.ts`, and a Unified Content Orchestration System for all content generation.
-- Custom in-house AI models exclusively used for Advertisement and Autopilot Systems, integrating an advanced AI Content Stack (v2, v3, v4) for social content and songwriting.
-- A Multimodal Content Generation System via `server/services/multimodalGenerationService.ts` orchestrates text, image, audio, and video generation, all calling MaxCore. This includes a Video Generation Engine, Voice Synthesis Engine, and Python Audio Analysis Engine for media processing, along with a Beat Audio Separator for generating MP3s and frequency-band stems from uploaded WAV beats.
-- Offline mode for app-wide context and background sync.
-- Autopilot Learning Feedback Loop for recording performance patterns.
-- Dedicated admin UI for financial configuration.
-- `Chain Error Auto-Fixer` and `Platform Auto Error Fixer & Patcher` for system health and runtime patching.
-- Profile Claiming System v2 for artist profile management.
-- Per-Artist Storefront Deployment System for dynamic domain management and multi-tenant routing, including a full DIY DNS Infrastructure (`dns-os/`, `dns-node/`) with DNSSEC, GeoDNS, BGP Anycast, EPP Registrar Client, and an Authoritative DNS Server. This also features a Domain Registrar System and a Multi-Provider DNS Adapter supporting various commercial DNS providers.
-- Advanced AI Routing through `unifiedAIController.generateContent()` to MaxCore, using seeded, deterministic outcomes for content generation, aesthetic elements, and AI decision-making (including UCB1 Multi-Armed Bandit for topic selection).
-- Three-Tier Video Diffusion Architecture: Max Booster → MaxCore Rendering Engine relay → MaxCore AI Content Gateway → MaxCore.
-- Performance hardening features include pagination, composite DB indexes, Neon PostgreSQL, request correlation IDs, server-side in-memory API cache, Brotli compression, browser caching, i18n lazy-loading, IndexedDB async query-cache persister, non-blocking Google Fonts, and DNS resource hints.
-- Canonical image upload patterns and specific handling for beat marketplace cover art.
-- Generated contracts are persisted in the `generated_contracts` PostgreSQL table.
-- Storage quota system based on `user_storage_files` table, `mime_type`, and `subscription_tier`.
-- Advertising autopilot performance endpoint computes ROI estimates.
-- AI generation pipeline (`server/services/diffusion/gen_engine_v2/`) includes GPU-aware primitives (`ops.py`), `UNetV5` for image generation, `SchedulerV2` with `DPMSolver2M` and `KarrasSampler`, `AudioSynthV2` for music engine (DSP and MaxCore AI modes), `TrainerV5`, `LTXAdapter` for a 3-tier backend cascade, and `api_server_v5.py`.
-
-## External Dependencies
-
-- **Frontend Frameworks**: React, Vite, TypeScript, TailwindCSS, Wouter, Zustand, TanStack Query.
-- **Backend Frameworks**: Express.js, Node.js, tsx.
-- **Database**: PostgreSQL (via Neon serverless), Drizzle ORM.
-- **Storage / Queuing / Cache (unified)**: PDIM — Pocket Dimension (`pocketdimensionstorage.replit.app`).
-- **Machine Learning**: `@tensorflow/tfjs`.
-- **Payment Processing**: Stripe.
-- **Email Delivery**: Resend (`RESEND_API_KEY`), verified sender domain `max-booster.com`, from `noreply@max-booster.com`. SendGrid deprecated (permanently quota-locked). Note: Resend is email-only — it does NOT send SMS.
-- **SMS Delivery**: Twilio with a provisioned phone number. Configured secrets (`TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_VERIFY_SERVICE_SID`, `TWILIO_PHONE_NUMBER`) put phone verification on the Twilio **Verify** path; `/sms/confirm` validates the user's code via Twilio `verificationChecks` (never a locally stored code).
-- **Error Tracking**: Sentry.
-- **Push Notifications**: Web Push, Desktop Push, Mobile Push (FCM v1 API / legacy FCM).
-- **Music Integrations**: Spotify, LabelGrid.
-- **Social Media OAuth Integrations**: Facebook, Instagram, Twitter/X, TikTok, YouTube, LinkedIn, Google, Threads.
-
-## Stripe Key Configuration
-
-Live Stripe keys (`sk_live_*`, `pk_live_*`, `whsec_*`) are stored **in the production environment only**.  
-The shared and development environments hold **no** Stripe keys — payment flows are disabled in dev by design (all Stripe env vars are optional in `server/config/env.ts`).
-
-To enable Stripe in development, add test-mode keys (`sk_test_*`, `pk_test_*`, and a test webhook secret) to the **development** environment via Replit's Secrets/Env panel. Get them from https://dashboard.stripe.com/test/apikeys.
-
-## Recent Hardening — Lessons & Conventions
-
-Durable lessons and conventions only. Full per-task play-by-play is in `.local/agent-notes.md` and git history; cross-session pointers are in `.agents/memory/`.
-
-### Autonomy honesty (Self-Evolution & Beat Money Loop)
-
-- **Honest "applied/completed" rule:** an autonomous status of applied/completed must gate on a real side-effect a live consumer actually reads — never on category membership or merely reaching the end of a function. The Self-Evolution Engine previously wrote dead `.ts` files nothing imported and reported `completed`; Beat Money Loop reported `completed` with `campaignId=NONE`. Both replaced with real, reversible behavior.
-- **Self-Evolution applied-registry:** `server/services/evolutionRegistry.ts` is a bounded, reversible registry that live subsystems read. `apply()` returns `applied=true` ONLY when the category is consumed AND the sanitized payload carries a field in `EFFECTIVE_FIELDS` (a field a consumer reads today). Rollback = `deactivateAll()` (in-process, no restart). Adding a field to `EFFECTIVE_FIELDS` is only honest once a live consumer genuinely reshapes output from it.
-- **Knobs wired end-to-end:** posting-time (`optimalHours`), content (`variantCount`/`visualPriority`), hashtag/caption/CTA, and posting-format/engagement-targeting all affect real output. Wire guidance once at the shared `advancedSocialAIService.generateAdvancedContent` chokepoint so autopilot AND content-quality/scheduled posts are covered; it stays idempotent for autopilot (which already passes explicit values). A deterministic post-process guard backs every MaxCore hint so a knob can never silently no-op.
-- **Two generation chokepoints, not one:** the artist-facing manual "generate a post" flows route through `unifiedAIController.generateContent`, NOT `generateAdvancedContent` — so guidance must be wired in BOTH. posting-format/engagement is mirrored there via a private `applyPostingOptimization(platform, callerContentType)` (objective→engagement on `engagementTargeting==='high'`; `contentFormatPriority`→contentType only when caller unpinned; lookup keyed by the raw artist-facing platform, not the threads→instagram alias). Caveat: that controller historically DROPPED `contentType` entirely (never forwarded to MaxCore), so wiring a knob there required also forwarding the effective `content_type`/`objective` into the infer payload — biasing in-memory alone would silently no-op.
-- **Campaign activation:** create ad campaigns as `draft` — `activateCampaign` rejects already-active campaigns and flips draft→active itself on a successful post.
-- **Admin Autonomy UI:** show honest applied-vs-advisory counts and which knobs are live; derive "what's live" from the registry's active entries so the view tracks rollbacks for free (never cache a separate copy that can drift).
-- **Regression discipline:** a "consumed category" guarantee is not proven until a test drives the REAL consumer and asserts the effective field reaches the downstream call — registry-level `apply()=true` is necessary but not sufficient.
-
-### Generated-video preview (poster thumbnails)
-
-- **Never extract the poster at 0.1s — generated videos fade in from black,** so that frame reads as a hardcoded grey placeholder even when the pipeline works. Extract a representative frame instead: ffprobe duration → seeks at ~25%/~55%/0.1s with `-vf thumbnail=30`, validate via signalstats YAVG (<~24 = retry next seek; ALL-dark = keep the last real frame — dark-themed content is legitimate). Every subprocess kill-timeout-bounded; poster stays best-effort. Separately, any post-render PDIM persist (`storeMusicVideo`) MUST be time-bounded at the call site (`Promise.race` + `.catch(()=>null)`, 30s) or a congested PDIM leaves the job stuck at "processing" forever despite an ~11s render — and once the persist can resolve null, later reads like `pdimVideoMeta.pdimKey` need `?.` or the TypeError flips a done job to error. See `.agents/memory/video-poster-thumbnail.md`.
-
-- **A valid served MP4 still shows a grey box at 0:00 on mobile without a poster.** The encode was never the bug (H.264 Constrained Baseline/yuv420p/faststart is already ideal); mobile browsers with `preload="metadata"` don't paint a first frame until tap, so with no `poster` there's nothing to show. The old `#t=0.1` media-fragment workaround is ignored by iOS — do not reintroduce it. Fix: the video job emits a real server-extracted `thumbnail_url` (ffmpeg first-frame JPEG into `/uploads/videos/`, best-effort with a kill-timeout so a hung ffmpeg can't stall completion, prefix-guarded URL→local-path mapping), and all generated-clip render sites use one reusable native `<VideoPlayer>` (`client/src/components/ui/video-player.tsx`) that threads `thumbnail_url`→`poster` and shows an honest fallback on `onError`. Never use a `<source type="video/mp4">` child (blob URLs may be WebM — mime mismatch silently rejects). See `.agents/memory/video-poster-thumbnail.md`.
-- **Emitting `thumbnail_url` from the job is necessary but NOT sufficient — the poster silently drops at handoff seams.** Two more sites lost it: (1) Social "Generate from URL" renders a nested `<ServerVideoGenerator>` whose `onVideoGenerated(url)` callback carried only the URL — the parent set `mediaUrl` with NO poster (grey box), even though the child previewed fine; the callback must be `(url, posterUrl?)` and the parent must persist it. (2) The Distribution music-video job extracted no poster in EITHER done branch, and `GET /music-video-job/:jobId` returned `status:"done"` + `result.url` while the client waited for `status:"completed"` + `data.videoUrl` (never displayed); normalize the route to flat `videoUrl`+`thumbnailUrl` and return the error branch as **200 `status:"failed"`** (a 500 makes a `try/catch` client poll swallow it and loop forever). MaxCore routing for that page: `ai_generate_scenes="true"` when audio present → MaxCore Music Video Studio (AI scenes, ignores images), image-only → legacy ffmpeg; the Generate button `disabled` gate MUST match the handler validation (audio OR images) or the audio-only MaxCore path is UI-unreachable, and legacy `voice_text` must be `?.trim()`-guarded AND fed a client script. See `.agents/memory/video-poster-thumbnail.md`.
-
-- **MaxCore `/generate/image` is a PIL typographic card, not diffusion** (`engine: maxbooster-pil-v1`): it renders its composed awareness prompt AS TEXT on the artwork. Send `prompt` = clean hook copy only — keyword-stuffed prompts ("photorealistic…, 8k, no text") get printed verbatim on the image; no payload field suppresses the typography, and no `/advanced`/`v2` endpoint variants exist (probe schemas via FastAPI 422s, never GET — the SPA catch-all answers every unknown path). On-video body copy pulled from MaxCore's `script` must be filtered (visual-direction/prompt lines) and deduped against the hook, and local overlays belong in the height-relative lower third clear of the card's mid-frame headline band. Residual "…| tone: … | audience: …" text baked into the artwork is a secure-ai-forge-side fix. See `.agents/memory/maxcore-image-pil-card.md`.
-
-### Frontend content-generation UI (testing)
-
-- **The live `/social-media` composer gates generation behind a CONNECTED platform.** The only usable composer is the page-level "Create Post" card (`selectedPlatforms` array, "Generate with AI" button); its platform toggles render ONLY for connected accounts (`platforms.filter(p=>p.isConnected)`), so with no connection generation is unreachable. `isConnected` (meta) = an ACTIVE `social_accounts` row with platform `facebook`/`instagram`. Generation only produces TEXT (never posts), so seeding an active row with a throwaway token unlocks the toggle for tests (set `metadata.lastSyncedAt=now` to skip the blocking pre-boot sync). The standalone `ContentGenerator.tsx` (single-platform dropdown, `textarea-post-content`/`button-generate-content`, separate optimize-hashtags button) is DEAD CODE (imported nowhere) — don't target its testids; hashtags ship as chips inside generated output. See `.agents/memory/frontend-content-gen-testing.md`.
-- **Demo Mode is read-only for generation:** `nWrite` demo-write-protection (mounted `app.use("/api", ...)`) blocks `POST /api/social/generate`. To test write flows, register a real user then set `subscription_status='active'`/`tier='pro'` directly in NEON. Codemod debris can hide INSIDE string literals too — `/api/auth/demo` 500'd for everyone because the demo email literal was `"demo@maxbooster?.ai"` (a `?.` baked into the string), missing the seeded user and colliding on `users_username_unique`.
-
-### Data, routing & auth
-
-- **App DB = `NEON_DATABASE_URL`, NOT Replit's managed `DATABASE_URL`.** The runtime pool resolves `NEON_DATABASE_URL || DATABASE_URL`; `NEON_DATABASE_URL` is a shared (dev+prod) self-managed Neon DB. `executeSql`/Publish/managed-DB diff operate on a DIFFERENT database. ALL schema/data work and "is it in prod?" checks MUST target `NEON_DATABASE_URL`.
-- **Storefront routing:** every active storefront domain MUST upsert `storefront_hosts` (the multi-tenant router reads only that table) — `storefront_domains` is bookkeeping only. A "live" domain that skips the host row 404s.
-- **Admin route gating:** routes aren't role-gated in `App.tsx`; every `/admin*` page must self-gate with `useRequireAdmin` (not `useRequireAuth`). Sidebar `adminOnly` only hides links.
-- **SMS verification:** Twilio Verify owns its code — confirm via `verificationChecks`, never a locally stored code; return dev `devCode` only when no SMS was sent AND `NODE_ENV !== 'production'`.
-
-### Autopilot & AI
-
-- **UCB1 bandit:** seed arms from a static default set unioned with history and force-explore untried arms, or it locks to one arm and never converges.
-- **Publish-context recovery:** capture context after the queue `shift()`, store it durably, and do NOT delete on consume (analysis jobs retry) — bound by cap-eviction instead. Timing insights must use the real posted hour, not analysis-time.
-- **MaxCore reachability:** only suppress endpoints on 404/405 (absent); 5xx/3xx return null without suppressing, so transient training-load 503s don't log false "unreachable".
-- **MaxCore-only routing:** content/variant/advertising generation use MaxCore exclusively; the Python sidecar is retained only for audio analysis, MIDI transcription, and cinematic video templates.
-- **MaxCore auth = Bearer ONLY:** the external MaxCore server authenticates the generation credential only under `Authorization: Bearer <AI_SERVER_KEY>`. If a request also sends `X-API-Key` or `X-Admin-Key` (even the same value) MaxCore validates those schemes first and returns `401 "Invalid or inactive API key"` before checking Bearer. `MaxCoreAIClient.authHeaders()` must return ONLY the Bearer header — sending the extra headers 401s EVERY call and surfaces deceptively as "MaxCore returned no content — please retry" (a deterministic auth failure masquerading as transient emptiness). Never re-add the extra headers as a "send-through-all-channels" defense. See `.agents/memory/maxcore-auth-header.md`.
-- **Generation crash chains hide on the new-user path:** an additive external-API change can unmask pre-existing null-derefs in downstream consumers when fixing the first crash removes the shield. When retesting generation, drive the brand-new-user / empty-data path until it returns real output (each fixed crash often reveals the next). Context fetchers that may be empty must return a fully-defaulted object, never `{} as T` (a type-lie that forces optional guards everywhere). See `.agents/memory/multimodal-text-null-derefs.md` (also: pino drops `logger.warn(msg, errStr)` with no `%s`, hiding error detail).
-- **Additive optional-feature injection (URL parser & similar):** when an optional input (e.g. an advanced-URL-parser brief / `sourceUrls`) feeds existing generation, preserve byte-for-byte no-feature behavior — inject NEW fields via conditional spread `...(x ? {k:x} : {})` (never `k: x ?? undefined`, which adds `undefined`-valued own-keys a pre-serialize consumer sees), keep already-present fields as `override ?? original`, and DON'T add a default `[]` to emitted/persisted config (rely on the guarded `!urls` check so `absent === empty`). URL→generation has TWO seams to wire: autopilot's `advancedSocialAIService.generateAdvancedContent` AND the manual `/generate-from-url` route (overlay empty `UrlAnalysis` fields BEFORE `urlToContentSeed` → `unifiedAIController.generateContent`). All outbound URL fetches MUST go through `server/services/safeUrlFetch.ts` (SSRF guard: connect-time safe DNS lookup that closes the rebinding TOCTOU + per-redirect re-assert incl. credential rejection; caps redirects/time/bytes). The pure-TS parser is `server/services/advancedUrlParser.ts` (`parseUrl`→`toContentBrief`, bounded TTL cache, `safeFetchText` only). See `.agents/memory/additive-optional-field-injection.md`. **The legacy Python URL parser (`urlAnalyzer.py` + the subprocess-based `analyzeUrl`) is REMOVED** — `analyzeUrl` is now a thin TS adapter over `advancedUrlParser` that maps `ParsedUrl`→the preserved `UrlAnalysis` contract (with `urlToContentSeed`); the rich engagement/event/product fields are empty by design (don't treat as a bug or re-add a Python parser), and the parser's `UrlCategory` must be mapped faithfully to `content_type`/`platform_category` (`URL_CATEGORY_TO_ANALYSIS`) or CTA/website-promo detection silently regresses.
-
-- **Content-gen wiring/correctness harness (`tests/e2e/content-generation-http.ts`):** registers a session user, acquires CSRF (register/login are CSRF-exempt → cookie, then GET `/api/csrf-token`, echo in `x-csrf-token`), hits each content-gen endpoint once and asserts REAL (non-empty) output. Mount-prefix gotchas: socialAI is `/api/social` (NOT `/api/social-ai`); music-video is under the socialMedia router; `ab-variants` is a GET. Two latent crashers it caught: (1) `TextRules.hashtags` is OPTIONAL and youtube omits it — multimodal text-slot reads of `rules.text.hashtags.allowed` must use `?.` or a pack/platform-list pulling in the youtube slot 500s; (2) a unused-var codemod that `_`-prefixed a LOCAL declaration but missed a sibling assignment (`_foundPeak`/`foundPeak`) is a runtime ReferenceError — `_`-prefix only silences unused PARAMS, never locals. Music-video RENDER completion stays blocked at external MaxCore (no file served), not local wiring. See `.agents/memory/{generation-endpoint-timeouts,ts-error-cleanup-codemods,maxcore-video-no-file}.md`.
-
-### Infrastructure & environment
-
-- **typecheck OOM/starvation:** a monolithic `tsc --noEmit` consumes ~4GB and OOMs, starving tsx and crashing the app at boot. Gate is now split into `tsconfig.server.json` + `tsconfig.client.json` (each ~3.46GB standalone) with build-info in `.cache/` (NOT `node_modules`, which `npm install` wipes). Run the `typecheck` workflow **standalone** (`npm run check`) — never alongside the running app (memory is additive → OOM). `tsgo` (`@typescript/native-preview`, TS7) is installed as opt-in `check:fast` but its full check OOMs on this repo, so tsc-split stays the gate; revisit as TS7 matures. `baseUrl`/`downlevelIteration` removed from `tsconfig.json` (TS7-incompatible; safe — see `.agents/memory/typecheck-oom.md`).
-- **PDIM tuning** (see `.agents/memory/` for detail): gap floor = `clusterWorkers × 4ms`; direct calls use N round-robin parallel lanes with global AIMD state; passive geometric decay gated only on 429-recency (not queue depth); a dedicated script chain keeps Lua Workers off the direct-call queue; the distributed rate-limiter coalesces with an L1 cache (it was the dominant direct caller). PermanentFixer caps restored gap at 400ms so the startup queue drains fast.
-- **OAuth log redaction:** scrub `access_token`/`refresh_token`/`id_token` (and `client_secret` in URLs) before logging in `socialOAuth.ts`.
-- **Plugin catalog:** seed via `storage.seedPluginCatalog()` (the path wired from `init-admin`); built-in parameter/preset enrichment is additive and gates on a `_rev` marker (bump `MANIFEST_REV` to force re-upsert). Drizzle silently drops writes to non-existent columns.
-- **pino `logger.warn(string, string)` is a TS2769** (the overload treats a string-literal first arg as `obj`, requiring the 2nd arg to be `undefined`); always use the object-first form `logger.warn({ err }, "msg")` — this also avoids pino silently dropping the 2nd positional arg when there's no `%s`.
-- **Scoped per-diff typecheck (full `npm run check`/tccap OOMs even standalone now):** to authoritatively confirm YOUR edits add no type errors, run a temp tsconfig that `extends ./tsconfig.server.json` with `include:[]` + `files:[<changed>]` + `skipLibCheck` at `--max-old-space-size=3584` (~110s, runnable synchronously in one bash call). Per-diff hint (named files + imports, not dependents), not a whole-program gate. See `.agents/memory/typecheck-oom.md`.
-- **Version control:** GitHub.
+- Use pnpm for package installation (npm install can OOM on this large project)
+- Run heavy installs via a Replit workflow, not ShellExec (detached bash gets reaped)
