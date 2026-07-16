@@ -78,6 +78,9 @@ export const platformAPI = {
         // Extract content data
         const text = content.body || content.text || content.message || "";
         const mediaUrl = content.mediaUrl || content.media || null;
+        // Local file path for platforms that upload bytes (e.g. Twitter);
+        // URL-fetching platforms (IG/FB/TikTok) keep using mediaUrl.
+        const mediaLocalPath = content.mediaLocalPath || null;
         const hashtags = content.hashtags || [];
 
         // Add hashtags to text if provided
@@ -91,7 +94,11 @@ export const platformAPI = {
         // Call platform-specific API
         switch (normalizedPlatform) {
           case "twitter":
-            postId = await this.postToTwitter(fullText, mediaUrl, token);
+            postId = await this.postToTwitter(
+              fullText,
+              mediaLocalPath || mediaUrl,
+              token,
+            );
             break;
 
           case "facebook":

@@ -148,10 +148,27 @@ export class AdvertisingDispatchService {
         // `mediaUrl` (there are no `normalizedContent`/`rawContent`/`assetUrls`
         // columns), so read the real columns here.
         const copy = creative?.description || creative?.headline || "";
+        // Beat Money Loop creatives carry the beat's audio rendered into a
+        // postable video; variants.localMediaPath points at the local file so
+        // platforms that upload bytes (Twitter) don't have to re-fetch the URL.
+        const variants = (creative?.variants ?? {}) as Record<string, unknown>;
+        const localMediaPath =
+          typeof variants.localMediaPath === "string"
+            ? variants.localMediaPath
+            : null;
+        // URL-fetching platforms (IG/FB/TikTok) can only use an ABSOLUTE
+        // http(s) URL pointing at postable media (video/image). Never hand
+        // them a relative path or a raw WAV — post text-only instead, and
+        // let byte-upload platforms (Twitter) use the local file.
+        const rawMediaUrl = creative.mediaUrl || null;
+        const isAbsolute = !!rawMediaUrl && /^https?:\/\//i.test(rawMediaUrl);
+        const isPostableMedia =
+          isAbsolute && !/\.(wav|mp3|flac|ogg|aiff?)(\?|$)/i.test(rawMediaUrl!);
         const content = {
           text: copy,
           body: copy,
-          mediaUrl: creative.mediaUrl || null,
+          mediaUrl: isPostableMedia ? rawMediaUrl : null,
+          mediaLocalPath: localMediaPath,
           hashtags: this.extractHashtags(copy),
         };
 

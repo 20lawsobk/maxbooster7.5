@@ -286,6 +286,7 @@ class BeatMoneyLoopService {
         price,
         title,
         audioUrl,
+        audioAbsPath,
       });
 
       // 6. RECORD outcome + schedule next.
@@ -633,6 +634,61 @@ class BeatMoneyLoopService {
   }
 
   /**
+   * Extract the beat's audio into a postable waveform MP4 (the ad content
+   * IS the beat). Clipped to 45 s for cross-platform limits (Twitter 140 s,
+   * IG feed ≥60 s reels rules, TikTok minimums) and encoded H.264/AAC.
+   */
+  private async _renderAdVideo(
+    audioAbsPath: string,
+  ): Promise<{ absPath: string; relUrl: string; publicUrl: string }> {
+    const { execFile } = await import("child_process");
+    const { promisify } = await import("util");
+    const run = promisify(execFile);
+
+    const outDir = path.join(process.cwd(), "public", "generated-content", "videos");
+    await fsPromises.mkdir(outDir, { recursive: true });
+    const filename = `beat_ad_${Date.now()}_${randomBytes(6).toString("hex")}.mp4`;
+    const absPath = path.join(outDir, filename);
+
+    await run(
+      "ffmpeg",
+      [
+        "-y",
+        "-i", audioAbsPath,
+        "-filter_complex",
+        "color=c=0x0e0e16:s=720x720:d=45[bg];" +
+          "[0:a]showwaves=s=720x600:mode=cline:colors=0x8b5cf6|0x22d3ee[w];" +
+          "[bg][w]overlay=(W-w)/2:(H-h)/2[v]",
+        "-map", "[v]",
+        "-map", "0:a",
+        "-t", "45",
+        "-c:v", "libx264",
+        "-preset", "veryfast",
+        "-pix_fmt", "yuv420p",
+        "-c:a", "aac",
+        "-b:a", "192k",
+        "-shortest",
+        absPath,
+      ],
+      { timeout: 120_000 },
+    );
+
+    const st = await fsPromises.stat(absPath);
+    if (st.size < 10_240) {
+      throw new Error(`rendered ad video too small (${st.size} bytes)`);
+    }
+
+    const relUrl = `/generated-content/videos/${filename}`;
+    // Platforms fetch media over the public internet — the URL must be absolute.
+    const base =
+      process.env.PUBLIC_BASE_URL ||
+      (process.env.REPLIT_DEV_DOMAIN
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+        : "");
+    return { absPath, relUrl, publicUrl: base ? `${base}${relUrl}` : relUrl };
+  }
+
+  /**
    * Median price of the 50 most-recent published beats in the same genre × 0.95.
    * Falls back to $29.99 if no comparable listings.
    */
@@ -767,6 +823,7 @@ class BeatMoneyLoopService {
     price: number;
     title: string;
     audioUrl: string;
+    audioAbsPath?: string;
   }): Promise<AdvertiseOutcome> {
     let campaignId: string | null = null;
     try {
@@ -817,8 +874,30 @@ class BeatMoneyLoopService {
         .returning({ id: adCampaigns.id });
       campaignId = campaign.id;
 
+      // 1b. Extract the beat's audio into postable media: render a waveform
+      //     MP4 that plays the beat itself. Social platforms cannot post raw
+      //     WAV audio, so the campaign content carries the beat as video.
+      let mediaUrl = args.audioUrl;
+      let mediaLocalPath: string | null = null;
+      if (args.audioAbsPath) {
+        try {
+          const vid = await this._renderAdVideo(args.audioAbsPath);
+          mediaLocalPath = vid.absPath;
+          mediaUrl = vid.publicUrl;
+          logger.info(
+            `[BeatMoneyLoop] Ad video rendered from beat audio: ${vid.relUrl}`,
+          );
+        } catch (err) {
+          logger.warn(
+            `[BeatMoneyLoop] Ad video render failed (${(err as Error).message}) — creative will carry the audio URL`,
+          );
+        }
+      }
+
       // 2. Create the creative linked to the campaign (activateCampaign reads
       //    adCreatives by campaignId and posts description/headline + mediaUrl).
+      //    variants.localMediaPath lets the dispatcher hand platforms a local
+      //    file (Twitter uploads need a path, not a URL).
       const [creative] = await db
         .insert(adCreatives)
         .values({
@@ -828,10 +907,13 @@ class BeatMoneyLoopService {
           type: "social_post",
           headline: args.title,
           description: caption,
-          mediaUrl: args.audioUrl,
+          mediaUrl,
           callToAction: "Listen & Buy",
           landingUrl: "/marketplace",
           status: "active",
+          ...(mediaLocalPath
+            ? { variants: { localMediaPath: mediaLocalPath, kind: "beat-audio-video" } }
+            : {}),
         })
         .returning({ id: adCreatives.id });
       await db
