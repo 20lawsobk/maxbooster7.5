@@ -8,6 +8,7 @@
 
 import { randomUUID } from "crypto";
 import { logger } from "../logger.js";
+import fs from "fs";
 import fsPromises from "fs/promises";
 import path from "path";
 
