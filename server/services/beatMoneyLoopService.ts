@@ -4,10 +4,11 @@
  * Admin-only autonomous revenue loop:
  *   1. SCAN   — pull live music-industry context (trending genre / mood / tempo)
  *               from musicIndustryContextFilter (which is fed by industryMonitorService).
- *   2. GENERATE — synthesize a beat WAV using the TS-native music engine
- *               (parseTextToParameters → generateChordProgression →
- *                generateMelody → synthesizeToWAV). The text prompt embeds the
- *               trending signals so generation is biased toward what's hot.
+ *   2. GENERATE — request a beat WAV from the EXTERNAL MaxCore server ONLY
+ *               (Mode C: AI from 8 TB dataset, then Mode B: HD DSP). There is
+ *               NO local fallback — if MaxCore is unreachable the cycle fails
+ *               explicitly. The scan context is forwarded so generation is
+ *               biased toward what's trending.
  *   3. PRICE  — compute competitive price = median(recent published beats in
  *               same genre) × 0.95 (5 % undercut). Falls back to $29.99.
  *   4. UPLOAD — insert a row into `beats` (admin-owned, published) and upload
@@ -46,12 +47,6 @@ import {
   musicIndustryContextFilter,
   type MusicIndustryContext,
 } from "./musicIndustryContextFilter.js";
-import {
-  parseTextToParameters,
-  generateChordProgression,
-  generateMelody,
-  synthesizeToWAV,
-} from "./musicGenerationService.js";
 import { storageService } from "./storageService.js";
 import { autonomousService } from "./autonomousService.js";
 import { advertisingDispatchService } from "./advertisingDispatchService.js";
@@ -564,10 +559,12 @@ class BeatMoneyLoopService {
   }
 
   /**
-   * Generate a beat WAV.
+   * Generate a beat WAV — external MaxCore ONLY (no local fallback).
    * Tier 1: MaxCore Mode C  — AI audio from 8 TB music dataset.
    * Tier 2: MaxCore Mode B  — HD DSP (plate reverb, stereo, release quality).
-   * Tier 3: TS synthesizer  — local fallback when MaxCore is unreachable.
+   *
+   * If both MaxCore modes fail, the cycle fails explicitly — we never list a
+   * beat that wasn't produced by the external MaxCore server.
    *
    * The industry scan (genre / mood / tempo / production styles / viral hooks)
    * is forwarded to MaxCore so generation is biased toward what's trending.
@@ -593,7 +590,8 @@ class BeatMoneyLoopService {
       scan.genre.charAt(0).toUpperCase() + scan.genre.slice(1);
     const stamp = new Date().toISOString().slice(5, 10).replace("-", "/");
 
-    // ── Tier 1 & 2: MaxCore ──────────────────────────────────────────────────
+    // ── MaxCore ONLY (Mode C, then Mode B) — no local fallback ──────────────
+    const modeErrors: string[] = [];
     for (const mode of ["C", "B"] as const) {
       try {
         const mc = await this._maxcoreAudio(scan, mode);
@@ -608,37 +606,18 @@ class BeatMoneyLoopService {
         );
         return { audioRelUrl, audioAbsPath, title, audioGenBackend: mc.backend };
       } catch (err) {
+        const msg = (err as Error).message;
+        modeErrors.push(`mode ${mode}: ${msg}`);
         logger.warn(
-          `[BeatMoneyLoop] MaxCore mode ${mode} unavailable — ${(err as Error).message}`,
+          `[BeatMoneyLoop] MaxCore mode ${mode} unavailable — ${msg}`,
         );
       }
     }
 
-    // ── Tier 3: TS sine synthesizer (offline fallback) ───────────────────────
-    logger.warn(
-      "[BeatMoneyLoop] MaxCore unreachable — falling back to TS synthesizer",
+    // MaxCore is the ONLY audio source — fail the cycle explicitly.
+    throw new Error(
+      `MaxCore audio generation failed (external server is the only allowed source) — ${modeErrors.join("; ")}`,
     );
-    const styleText =
-      scan.productionStyles.length > 0
-        ? ` ${scan.productionStyles.join(" ")}`
-        : "";
-    const prompt = `${scan.mood} ${scan.genre} beat at ${scan.tempo} bpm${styleText}`;
-    const params = parseTextToParameters(prompt);
-    params.tempo = scan.tempo;
-    const chords = generateChordProgression(params);
-    const notes = generateMelody(params, chords);
-    if (chords.length === 0 || notes.length === 0) {
-      throw new Error("Music engine returned empty chord/melody arrays");
-    }
-    const fallbackRelUrl = await synthesizeToWAV(notes, chords, params);
-    const fallbackAbsPath = path.join(process.cwd(), "public", fallbackRelUrl);
-    const title = `${titleAdj} ${titleGenre} Type Beat — ${stamp}`;
-    return {
-      audioRelUrl: fallbackRelUrl,
-      audioAbsPath: fallbackAbsPath,
-      title,
-      audioGenBackend: "ts-native",
-    };
   }
 
   /**
@@ -674,7 +653,7 @@ class BeatMoneyLoopService {
     audioAbsPath: string;
     title: string;
   }): Promise<{ beatId: string; audioUrl: string }> {
-    // Read WAV bytes from the file synthesizeToWAV just wrote
+    // Read the WAV bytes MaxCore generation just wrote to disk
     const buf = await fsPromises.readFile(args.audioAbsPath);
     const filename = path.basename(args.audioAbsPath);
     // storageService.uploadFile(buffer, category, filename, contentType): Promise<string>
