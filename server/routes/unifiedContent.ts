@@ -63,8 +63,9 @@ function validateInput(body: unknown): {
   if (!b?.genre || typeof b?.genre !== "string") {
     return { valid: false, error: "genre is required (string)" };
   }
-  if (!b?.mood || typeof b?.mood !== "string") {
-    return { valid: false, error: "mood is required (string)" };
+  // mood is optional — defaults to "energetic" downstream
+  if (b?.mood !== undefined && typeof b?.mood !== "string") {
+    return { valid: false, error: "mood must be a string when provided" };
   }
 
   const validPlatforms = new Set(ALL_PLATFORMS);
@@ -88,7 +89,7 @@ function validateInput(body: unknown): {
   const commonFields = {
     artistName: b.artistName as string,
     genre: b.genre as string,
-    mood: b.mood as string,
+    mood: (b.mood as string | undefined) ?? "energetic",
     trackTitle: b.trackTitle as string | undefined,
     albumTitle: b.albumTitle as string | undefined,
     releaseDate: b.releaseDate as string | undefined,

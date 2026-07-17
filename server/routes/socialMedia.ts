@@ -4148,13 +4148,47 @@ router.post(
       if (description && description !== topic) contextParts.push(description);
       const enrichedTopic = contextParts.filter(Boolean).join(" — ");
 
-      // Generate a rich visual spec using MaxCore local pipeline
       const resolvedPlatform = (
         CONTENT_ALL_PLATFORMS.includes(platform as ContentSupportedPlatform)
           ? platform
           : "instagram"
       ) as ContentSupportedPlatform;
 
+      const resolvedTone = String(tone || "energetic").toLowerCase();
+
+      // ── Try MaxCore /api/generate/image first ────────────────────────────
+      let imageUrl: string | null = null;
+      try {
+        const mcBase = (process.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app").replace(/\/+$/, "");
+        const mcKey = process.env.AI_SERVER_KEY || "";
+        const imgRes = await fetch(`${mcBase}/api/generate/image`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(mcKey ? { Authorization: `Bearer ${mcKey}` } : {}),
+          },
+          body: JSON.stringify({
+            prompt: enrichedTopic || topic,
+            style: resolvedTone,
+            platform: resolvedPlatform,
+            genre: genre || "",
+          }),
+          signal: AbortSignal.timeout(30_000),
+        });
+        if (imgRes.ok) {
+          const imgData = (await imgRes.json()) as { url?: string; image_url?: string; outputs?: { url?: string }[] };
+          const raw = imgData.url ?? imgData.image_url ?? imgData.outputs?.[0]?.url ?? null;
+          // MaxCore returns relative paths like /uploads/images/img_xxx.png —
+          // make them absolute so the browser can load them.
+          if (raw) {
+            imageUrl = /^https?:\/\//i.test(raw) ? raw : `${mcBase}${raw.startsWith("/") ? "" : "/"}${raw}`;
+          }
+        }
+      } catch {
+        // MaxCore unavailable — fall through to visual spec
+      }
+
+      // ── Build visual spec (always returned as UI fallback) ───────────────
       const toneColorMap: Record<string, string[]> = {
         energetic: ["#ff6b35", "#f7c59f", "#1a1a2e", "#ffffff"],
         chill: ["#a8dadc", "#457b9d", "#1d3557", "#f1faee"],
@@ -4162,14 +4196,9 @@ router.post(
         playful: ["#ffbe0b", "#fb5607", "#ff006e", "#8338ec"],
         nostalgic: ["#d4a373", "#ccd5ae", "#e9edc9", "#fefae0"],
       };
-      const resolvedTone = String(tone || "energetic").toLowerCase();
       const colorPalette = toneColorMap[resolvedTone] ?? toneColorMap.energetic;
 
-      const visualSpec = getVisualSpec(
-        resolvedPlatform,
-        "video_post",
-        colorPalette,
-      );
+      const visualSpec = getVisualSpec(resolvedPlatform, "video_post", colorPalette);
 
       const specData = {
         ...visualSpec,
@@ -4181,13 +4210,14 @@ router.post(
         genre: genre || "",
         keywords: Array.isArray(keywords) ? keywords : [],
         description: description || urlDescription || "",
-        source: "MaxCoreAI",
+        source: imageUrl ? "MaxCoreAI" : "local",
       };
 
       res.json({
         success: true,
         visual_spec: specData,
-        image_url: null,
+        image_url: imageUrl,
+        ...(imageUrl ? { image_url: imageUrl } : {}),
         ...specData,
       });
     } catch (error) {

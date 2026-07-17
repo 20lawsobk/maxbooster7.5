@@ -146,7 +146,7 @@ export class MaxCoreAIClient {
       const r = await fetch(`${MC_AI_URL}${path}`, {
         method: "GET",
         headers: MaxCoreAIClient.authHeaders(),
-        signal: AbortSignal.timeout(15_000),
+        signal: AbortSignal.timeout(30_000),
         redirect: "manual",
       });
       if (!r?.ok || !MaxCoreAIClient.isJson(r)) {
@@ -170,7 +170,8 @@ export class MaxCoreAIClient {
    * - On 503 with circuit-breaker body, waits the suggested retry delay and
    *   retries once before returning null.
    */
-  private static readonly GENERATE_TIMEOUT_MS = 45_000;
+  // MaxCore has no server-side timeouts — allow up to 10 min for generation.
+  private static readonly GENERATE_TIMEOUT_MS = 600_000;
 
   static async generate<T = any>(
     endpoint: string,
@@ -257,7 +258,8 @@ export class MaxCoreAIClient {
    * - On 503 with circuit-breaker body, waits the suggested retry delay and
    *   retries once before returning null.
    */
-  private static readonly INFER_TIMEOUT_MS = 45_000;
+  // MaxCore has no server-side timeouts — allow up to 10 min for inference.
+  private static readonly INFER_TIMEOUT_MS = 600_000;
 
   static async infer<T = any>(
     endpoint: string,
@@ -339,124 +341,70 @@ export class MaxCoreAIClient {
 }
 
 /**
- * Fire an immediate wake request to MaxCore so the Replit project finishes
- * booting before the first real user request arrives. Fire-and-forget — we
- * don't need the result, we just want to trigger the wake.
+ * Check MaxCore availability using the lightweight model-info endpoint.
+ * This is a metadata GET — it never queues AI work on MaxCore's side.
+ * Returns true if MaxCore responded with 2xx.
  */
-function wakeMaxCore(): void {
-  if (!MC_AI_URL || !MC_AI_KEY) return;
-  fetch(`${MC_AI_URL}/api/generate/content`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${MC_AI_KEY}`,
-    },
-    body: JSON.stringify({
-      topic: "music artist brand new release",
-      platform: "instagram",
-      tone: "energetic",
-    }),
-    signal: AbortSignal.timeout(60_000),
-    redirect: "manual",
-  })
-    .then((r) => {
-      if (r.ok) {
-        MaxCoreAIClient._remoteAvailable = true;
-        MaxCoreAIClient._lastCheck = Date.now();
-        logger?.info("[MaxCoreAI] Wake ping succeeded — MaxCore is ready ✅");
-      } else {
-        logger?.warn(`[MaxCoreAI] Wake ping → HTTP ${r.status} — MaxCore AI model not yet ready`);
-      }
-    })
-    .catch((e) => {
-      logger?.warn(`[MaxCoreAI] Wake ping timed out or failed: ${e.message}`);
+async function pingMaxCoreHealth(): Promise<boolean> {
+  if (!MC_AI_URL || !MC_AI_KEY) return false;
+  try {
+    const r = await fetch(`${MC_AI_URL}/api/platform/model/info`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${MC_AI_KEY}` },
+      signal: AbortSignal.timeout(15_000),
+      redirect: "manual",
     });
+    return r.ok;
+  } catch {
+    return false;
+  }
 }
 
 /**
- * Keep MaxCore's LLM warm by sending a lightweight generate request every
- * 55 s — well under Replit's ~5 min inactivity sleep threshold.
+ * Fire an immediate wake check so we know MaxCore is reachable before users arrive.
+ * Uses the lightweight model-info endpoint — no AI work queued.
+ */
+function wakeMaxCore(): void {
+  pingMaxCoreHealth().then((ok) => {
+    if (ok) {
+      MaxCoreAIClient._remoteAvailable = true;
+      MaxCoreAIClient._lastCheck = Date.now();
+      logger?.info("[MaxCoreAI] Wake check succeeded — MaxCore is ready ✅");
+    } else {
+      logger?.warn("[MaxCoreAI] Wake check → MaxCore not yet reachable");
+    }
+  });
+}
+
+/**
+ * Keep MaxCore alive with a lightweight health poll every 55 s.
+ * Uses GET /api/platform/model/info — returns metadata instantly,
+ * never queues AI generation work on MaxCore's side.
  */
 export function startMaxCoreLLMWarmth(): void {
   if (!MC_AI_URL || !MC_AI_KEY) return;
 
   const WARMTH_INTERVAL_MS = 55_000;
-
-  const ping = () => {
-    fetch(`${MC_AI_URL}/api/generate/content`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${MC_AI_KEY}`,
-      },
-      body: JSON.stringify({
-        topic: "music artist brand new release",
-        platform: "instagram",
-        tone: "energetic",
-      }),
-      signal: AbortSignal.timeout(45_000),
-      redirect: "manual",
-    })
-      .then((r) => {
-        if (r?.ok) {
-          MaxCoreAIClient._remoteAvailable = true;
-          MaxCoreAIClient._lastCheck = Date.now();
-          logger?.debug("[MaxCoreAI] Warmth ping → MaxCore alive ✅");
-        } else {
-          logger?.debug(`[MaxCoreAI] Warmth ping → HTTP ${r.status}`);
-        }
-      })
-      .catch((e) => {
-        logger?.debug(`[MaxCoreAI] Warmth ping failed: ${e.message}`);
-      });
-  };
-
-  // Track consecutive failures so we log at WARN when MaxCore stays down
   let _consecutiveFailures = 0;
 
   const pingWithTracking = () => {
-    fetch(`${MC_AI_URL}/api/generate/content`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${MC_AI_KEY}`,
-      },
-      body: JSON.stringify({
-        topic: "music artist brand new release",
-        platform: "instagram",
-        tone: "energetic",
-      }),
-      signal: AbortSignal.timeout(45_000),
-      redirect: "manual",
-    })
-      .then((r) => {
-        if (r?.ok) {
-          if (_consecutiveFailures > 0) {
-            logger?.info(
-              `[MaxCoreAI] ✅ MaxCore reconnected after ${_consecutiveFailures} failed warmth ping(s)`,
-            );
-          }
-          _consecutiveFailures = 0;
-          MaxCoreAIClient._remoteAvailable = true;
-          MaxCoreAIClient._lastCheck = Date.now();
-          logger?.debug("[MaxCoreAI] Warmth ping → MaxCore alive ✅");
-        } else {
-          _consecutiveFailures++;
-          logger?.warn(
-            `[MaxCoreAI] Warmth ping → HTTP ${r.status} (MaxCore AI model unavailable, failure #${_consecutiveFailures})`,
-          );
+    pingMaxCoreHealth().then((ok) => {
+      if (ok) {
+        if (_consecutiveFailures > 0) {
+          logger?.info(`[MaxCoreAI] ✅ MaxCore reconnected after ${_consecutiveFailures} failed ping(s)`);
         }
-      })
-      .catch((e) => {
+        _consecutiveFailures = 0;
+        MaxCoreAIClient._remoteAvailable = true;
+        MaxCoreAIClient._lastCheck = Date.now();
+        logger?.debug("[MaxCoreAI] Health ping → MaxCore alive ✅");
+      } else {
         _consecutiveFailures++;
-        logger?.warn(
-          `[MaxCoreAI] Warmth ping → network error (failure #${_consecutiveFailures}): ${e.message}`,
-        );
-      });
+        logger?.warn(`[MaxCoreAI] Health ping failed (failure #${_consecutiveFailures})`);
+      }
+    });
   };
 
-  // First warmth ping after 5 s — by then the wake ping is already in-flight
-  // and the initial calibration run hasn't started yet.
+  // First health check after 5 s
   const firstPing = setTimeout(pingWithTracking, 5_000);
   if (firstPing?.unref) firstPing.unref();
 
@@ -464,7 +412,7 @@ export function startMaxCoreLLMWarmth(): void {
   if (t?.unref) t.unref();
 
   logger?.info(
-    "[MaxCoreAI] LLM warmth pinger started — pinging every 55s to prevent cold-start latency",
+    "[MaxCoreAI] Health pinger started — polling /api/platform/model/info every 55s",
   );
 }
 

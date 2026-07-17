@@ -94,18 +94,24 @@ export async function generateFromText(
 
   logger?.info(`[AI Audio] Generating from text: "${request.text}"`);
 
-  // ── MaxCore primary audio generation ─────────────────────────────────────
-  const mcAudio = requireMaxCore(
-    await MaxCoreAIClient.generate<{
-      audioUrl?: string;
-      audio_url?: string;
-      audio_data?: string;
-      duration?: number;
-      tempo?: number;
-      key?: string;
-      scale?: string;
-      genre?: string;
-    }>("/api/generate/audio", {
+  // ── MaxCore audio generation (async job pattern) ─────────────────────────
+  // MaxCore returns { job_id, status: "processing" } immediately, then
+  // the completed job at GET /api/audio-job/{job_id}.
+  type AudioJobResponse = {
+    job_id?: string;
+    audioUrl?: string;
+    audio_url?: string;
+    audio_data?: string;
+    duration?: number;
+    tempo?: number;
+    key?: string;
+    scale?: string;
+    genre?: string;
+    status?: string;
+  };
+
+  const submitted = requireMaxCore(
+    await MaxCoreAIClient.generate<AudioJobResponse>("/api/generate/audio", {
       text: request.text,
       duration: request.duration ?? null,
       bars: request.bars ?? null,
@@ -114,6 +120,42 @@ export async function generateFromText(
     }),
     "audio generation",
   );
+
+  let mcAudio: AudioJobResponse = submitted;
+
+  // If MaxCore returned a job_id, poll until the job completes.
+  if (submitted.job_id && !submitted.audioUrl && !submitted.audio_url && !submitted.audio_data) {
+    const POLL_BUDGET_MS = 600_000; // 10 min — MaxCore has no server-side timeouts
+    const POLL_INTERVAL_MS = 5_000;
+    const deadline = Date.now() + POLL_BUDGET_MS;
+    const jobPath = `/api/audio-job/${submitted.job_id}`;
+
+    logger?.info(`[AI Audio] Job submitted: ${submitted.job_id} — polling…`);
+
+    while (Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+      const jr = await MaxCoreAIClient.poll<AudioJobResponse>(jobPath);
+      if (!jr) continue;
+
+      const done =
+        jr.status === "completed" ||
+        jr.status === "done" ||
+        jr.status === "succeeded" ||
+        !!(jr.audioUrl ?? jr.audio_url ?? jr.audio_data);
+
+      if (done) {
+        mcAudio = jr;
+        logger?.info(`[AI Audio] Job ${submitted.job_id} completed`);
+        break;
+      }
+    }
+
+    if (!mcAudio.audioUrl && !mcAudio.audio_url && !mcAudio.audio_data) {
+      throw new AIUnavailableError(
+        `audio generation — job ${submitted.job_id} did not complete within ${Math.round(POLL_BUDGET_MS / 60000)} min`,
+      );
+    }
+  }
 
   const audioSrc = mcAudio?.audioUrl ?? mcAudio?.audio_url ?? null;
   const audioData = mcAudio?.audio_data ?? null;
@@ -132,7 +174,9 @@ export async function generateFromText(
     const { writeFile } = await import("fs/promises");
     await writeFile(filePath, Buffer.from(audioData, "base64"));
   } else if (audioSrc) {
-    const resp = await fetch(audioSrc);
+    const mc_base = (process.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app").replace(/\/+$/, "");
+    const absUrl = /^https?:\/\//i.test(audioSrc) ? audioSrc : `${mc_base}${audioSrc.startsWith("/") ? "" : "/"}${audioSrc}`;
+    const resp = await fetch(absUrl);
     if (resp.ok) {
       const { writeFile } = await import("fs/promises");
       await writeFile(filePath, Buffer.from(await resp.arrayBuffer()));
