@@ -448,7 +448,7 @@ async function fetchMaxCoreCalibration(
     const reachable = anyStateResponded || contentSignals != null;
 
     const ready = stateResults.filter(
-      ({ state }) => state.weights.ready === true,
+      ({ state }) => state != null && state.weights?.ready === true,
     );
 
     if (ready.length === 0 && !contentSignals)
@@ -511,7 +511,7 @@ async function fetchMaxCoreCalibration(
           trained
             .map(
               ({ domain, state }) =>
-                `${domain}: ${state!.session_count} sessions, loss=${state!.loss.toFixed(4) ?? "N/A"}`,
+                `${domain}: ${state!.session_count} sessions, loss=${state!.loss != null ? state!.loss.toFixed(4) : "N/A"}`,
             )
             .join(" | "),
       );

@@ -146,7 +146,7 @@ async function flushWAL(): Promise<void> {
     for (const entry of entries) {
       try {
         await db?.execute(sql`
-          INSERT INTO audit_log (
+          INSERT INTO audit_logs (
             id, timestamp, category, severity, action, 
             user_id, target_id, target_type, ip_address, user_agent,
             details, success, error_message
@@ -433,7 +433,7 @@ export async function getAuditLog(params: {
     const offset = params?.offset || 0;
 
     const result = await db?.execute(sql`
-      SELECT * FROM audit_log
+      SELECT * FROM audit_logs
       WHERE 1=1
         ${params.userId ? sql`AND user_id = ${params?.userId}` : sql``}
         ${params.category ? sql`AND category = ${params?.category}` : sql``}
@@ -465,7 +465,7 @@ export async function cleanupAuditLog(
 
     // Keep critical entries for longer
     const result = await db?.execute(sql`
-      DELETE FROM audit_log
+      DELETE FROM audit_logs
       WHERE timestamp < ${cutoffDate}
         AND severity != 'critical'
       RETURNING id
