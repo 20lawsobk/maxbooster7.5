@@ -234,20 +234,20 @@ export async function predictChurn(): Promise<ChurnPredictionResponse> {
   // Scoped to users inactive for >7 days to focus analysis on truly at-risk accounts.
   const rows = await db?.execute(sql`
     SELECT
-      u?.id,
-      COALESCE(u?.username, u?.email) AS username,
-      COALESCE(u?.updated_at, u?.created_at) AS last_active,
-      COALESCE(SUM(CASE WHEN p?.created_at >= ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS recent_projects,
-      COALESCE(SUM(CASE WHEN p?.created_at >= ${thirtyDaysAgo} AND p?.created_at < ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS old_projects,
-      COALESCE(SUM(CASE WHEN po?.published_at >= ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS recent_posts,
-      COALESCE(SUM(CASE WHEN po?.published_at >= ${thirtyDaysAgo} AND po?.published_at < ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS old_posts,
-      COALESCE(SUM(CASE WHEN s?.last_activity >= ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS recent_sessions
+      u.id,
+      COALESCE(u.username, u.email) AS username,
+      COALESCE(u.updated_at, u.created_at) AS last_active,
+      COALESCE(SUM(CASE WHEN p.created_at >= ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS recent_projects,
+      COALESCE(SUM(CASE WHEN p.created_at >= ${thirtyDaysAgo} AND p.created_at < ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS old_projects,
+      COALESCE(SUM(CASE WHEN po.published_at >= ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS recent_posts,
+      COALESCE(SUM(CASE WHEN po.published_at >= ${thirtyDaysAgo} AND po.published_at < ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS old_posts,
+      COALESCE(SUM(CASE WHEN s.last_activity >= ${sevenDaysAgo} THEN 1 ELSE 0 END), 0)::int AS recent_sessions
     FROM users u
-    LEFT JOIN projects p ON p.user_id = u?.id
-    LEFT JOIN posts po ON po.submitted_by = u?.id
-    LEFT JOIN sessions s ON s.user_id = u?.id
-    WHERE COALESCE(u?.updated_at, u?.created_at) < ${sevenDaysAgo}
-    GROUP BY u?.id, u?.username, u?.email, u?.updated_at, u?.created_at
+    LEFT JOIN projects p ON p.user_id = u.id
+    LEFT JOIN posts po ON po.submitted_by = u.id
+    LEFT JOIN sessions s ON s.user_id = u.id
+    WHERE COALESCE(u.updated_at, u.created_at) < ${sevenDaysAgo}
+    GROUP BY u.id, u.username, u.email, u.updated_at, u.created_at
     ORDER BY last_active ASC
     LIMIT 1000
   `);

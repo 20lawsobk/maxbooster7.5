@@ -12,11 +12,13 @@ async function getSharp() {
   if (sharpModule !== null) return sharpModule;
   try {
     sharpModule = (await import("sharp")).default;
-    sharpAvailable = true;
+    _sharpAvailable = true;
     logger?.info("Sharp module loaded for image processing");
     return sharpModule;
   } catch (error) {
-    logger?.warn("Sharp not available - image processing will be limited");
+    logger?.warn(
+      `Sharp not available - image processing will be limited: ${error instanceof Error ? error.message : String(error)}`,
+    );
     sharpModule = false;
     return null;
   }

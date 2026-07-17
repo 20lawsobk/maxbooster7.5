@@ -60,7 +60,7 @@ class PostDeploySelfTest {
       // Check if key tables exist
       const result = await db?.execute(sql`
         SELECT table_name 
-        FROM information_schema?.tables 
+        FROM information_schema.tables 
         WHERE table_schema = 'public' 
         AND table_name IN ('users', 'sessions', 'projects')
       `);

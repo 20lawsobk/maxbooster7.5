@@ -2012,11 +2012,11 @@ router.get("/ar-discovery", async (req: Request, res: Response) => {
       LEFT JOIN analytics a ON a.user_id = u.id
       WHERE u.id != ${userId}
         AND u.subscription_tier IN ('monthly','yearly','lifetime')
-      GROUP BY u?.id, u?.username
-      HAVING COALESCE(SUM(a?.streams), 0) > 0
+      GROUP BY u.id, u.username
+      HAVING COALESCE(SUM(a.streams), 0) > 0
       ORDER BY (
-        COALESCE(SUM(CASE WHEN a?.date >= ${thirtyDaysAgo} THEN a?.streams ELSE 0 END), 0)
-        - COALESCE(SUM(CASE WHEN a?.date >= ${sixtyDaysAgo} AND a?.date < ${thirtyDaysAgo} THEN a?.streams ELSE 0 END), 0)
+        COALESCE(SUM(CASE WHEN a.date >= ${thirtyDaysAgo} THEN a.streams ELSE 0 END), 0)
+        - COALESCE(SUM(CASE WHEN a.date >= ${sixtyDaysAgo} AND a.date < ${thirtyDaysAgo} THEN a.streams ELSE 0 END), 0)
       ) DESC
       LIMIT 20
     `);

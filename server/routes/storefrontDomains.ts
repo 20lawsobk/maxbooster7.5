@@ -27,9 +27,9 @@ async function getUserDomainUsage(
     `SELECT COUNT(DISTINCT domain)::int AS n FROM (
        SELECT domain FROM dns_zones WHERE user_id = $1
        UNION
-       SELECT sd?.domain
+       SELECT sd.domain
        FROM storefront_domains sd
-       JOIN storefronts s ON s.id = sd?.storefront_id
+       JOIN storefronts s ON s.id = sd.storefront_id
        WHERE s.user_id = $1 AND sd.type = 'platform_subdomain'
      ) combined`,
     [userId],

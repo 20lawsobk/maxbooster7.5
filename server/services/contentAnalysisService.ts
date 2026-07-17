@@ -113,11 +113,13 @@ async function getSharp() {
   if (sharpModule !== null) return sharpModule;
   try {
     sharpModule = (await import("sharp")).default;
-    sharpAvailable = true;
+    _sharpAvailable = true;
     logger.info("Sharp module loaded for content analysis");
     return sharpModule;
   } catch (error) {
-    logger.warn("Sharp not available - image analysis will use fallbacks");
+    logger.warn(
+      `Sharp not available - image analysis will use fallbacks: ${error instanceof Error ? error.message : String(error)}`,
+    );
     sharpModule = false;
     return null;
   }

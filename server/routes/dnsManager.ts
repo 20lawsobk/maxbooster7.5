@@ -27,9 +27,9 @@ async function getUserDomainUsage(
     `SELECT COUNT(DISTINCT domain)::int AS n FROM (
        SELECT domain FROM dns_zones WHERE user_id = $1
        UNION
-       SELECT sd?.domain
+       SELECT sd.domain
        FROM storefront_domains sd
-       JOIN storefronts s ON s.id = sd?.storefront_id
+       JOIN storefronts s ON s.id = sd.storefront_id
        WHERE s.user_id = $1 AND sd.type = 'platform_subdomain'
      ) combined`,
     [userId],
@@ -705,9 +705,9 @@ router?.get("/zones/:zoneId/storefront-link", async (req, res) => {
     const zone = zoneResult?.rows[0];
 
     const linkResult = await pool?.query(
-      `SELECT sd?.storefront_id, sd?.status, s?.name, s?.slug
+      `SELECT sd.storefront_id, sd.status, s.name, s.slug
        FROM storefront_domains sd
-       JOIN storefronts s ON s.id = sd?.storefront_id
+       JOIN storefronts s ON s.id = sd.storefront_id
        WHERE sd.domain = $1 AND sd.type = 'custom_domain' AND s.user_id = $2
        LIMIT 1`,
       [zone?.domain, userId],

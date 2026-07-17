@@ -7379,7 +7379,7 @@ export async function registerRoutes(
         const hashedPassword = await bcrypt.hash(password, 12);
 
         // Determine subscription end date based on tier
-        let _subscriptionEndsAt: Date | null = null;
+        let subscriptionEndsAt: Date | null = null;
         if (tier === "monthly") {
           subscriptionEndsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
         } else if (tier === "yearly") {
@@ -7394,6 +7394,8 @@ export async function registerRoutes(
           password: hashedPassword,
           firstName: session.metadata.firstName || "",
           lastName: session.metadata.lastName || "",
+          subscriptionTier: tier,
+          subscriptionEndsAt,
         });
 
         // Log the user in (regenerate prevents session fixation)

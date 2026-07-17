@@ -1032,8 +1032,6 @@ class PluginHostService {
     const delayBufferL = new Float32Array(maxDelaySamples);
     const delayBufferR = new Float32Array(maxDelaySamples);
     let writeIndex = 0;
-    let _feedbackSampleL = 0;
-    let _feedbackSampleR = 0;
 
     for (let i = 0; i < left?.length; i++) {
       let delayTimeL: number, delayTimeR: number;
@@ -1075,9 +1073,6 @@ class PluginHostService {
 
       delayBufferL[writeIndex] = left[i] + delayedL * feedback;
       delayBufferR[writeIndex] = right[i] + delayedR * feedback;
-
-      feedbackSampleL = delayedL;
-      feedbackSampleR = delayedR;
 
       writeIndex = (writeIndex + 1) % maxDelaySamples;
 

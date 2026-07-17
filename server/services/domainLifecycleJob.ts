@@ -187,9 +187,9 @@ async function _expireGraceDomains(graceThreshold: Date): Promise<void> {
 
 async function _cleanUpExpiredZones(): Promise<void> {
   const { rows } = await pool?.query(
-    `SELECT cd?.domain
+    `SELECT cd.domain
      FROM claimed_domains cd
-     JOIN dns_zones dz ON dz.domain = cd?.domain
+     JOIN dns_zones dz ON dz.domain = cd.domain
      WHERE cd.status = 'expired'`,
   );
 

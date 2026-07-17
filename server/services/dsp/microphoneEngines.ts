@@ -180,11 +180,11 @@ export class C414ModelerProcessor implements DSPProcessor {
     this?.presencePeakR.setPeaking(3500, 1.5, presence, this?.sampleRate);
     this?.brillianceL.setPeaking(8000, 1.2, brilliance, this?.sampleRate);
     this?.brillianceR.setPeaking(8000, 1.2, brilliance, this?.sampleRate);
-    this?.highShelfL.setHighShelf(10000, brilliance * 0.5, this?.sampleRate);
-    this?.highShelfR.setHighShelf(10000, brilliance * 0.5, this?.sampleRate);
+    // High shelf is applied after the polar-pattern switch below so the
+    // pattern's high-frequency modifier can be folded in.
 
     let lowFreqMod = 0;
-    let _highFreqMod = 0;
+    let highFreqMod = 0;
 
     switch (pattern) {
       case "figure8":
@@ -205,6 +205,8 @@ export class C414ModelerProcessor implements DSPProcessor {
         highFreqMod = 0;
     }
 
+    this?.highShelfL.setHighShelf(10000, brilliance * 0.5 + highFreqMod, this?.sampleRate);
+    this?.highShelfR.setHighShelf(10000, brilliance * 0.5 + highFreqMod, this?.sampleRate);
     this?.patternFilterL.setLowShelf(150, bass + lowFreqMod, this?.sampleRate);
     this?.patternFilterR.setLowShelf(150, bass + lowFreqMod, this?.sampleRate);
     this?.lowMidCutL.setPeaking(400, 1.5, -2, this?.sampleRate);

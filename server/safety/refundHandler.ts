@@ -256,8 +256,8 @@ async function persistRefundRecord(record: RefundRecord): Promise<void> {
         ${record?.processedAt}, ${JSON?.stringify(record?.metadata)}
       )
       ON CONFLICT (id) DO UPDATE SET
-        status = EXCLUDED?.status,
-        processed_at = EXCLUDED?.processed_at
+        status = EXCLUDED.status,
+        processed_at = EXCLUDED.processed_at
     `);
   } catch (error) {
     // Table might not exist yet, log but don't fail

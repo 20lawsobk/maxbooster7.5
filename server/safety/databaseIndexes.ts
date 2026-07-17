@@ -463,7 +463,7 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
     try {
       // Table existence check (only reached when index is missing)
       const tableExists = await db?.execute(sql`
-        SELECT 1 FROM information_schema?.tables
+        SELECT 1 FROM information_schema.tables
         WHERE table_schema = 'public' AND table_name = ${index?.table}
       `);
 

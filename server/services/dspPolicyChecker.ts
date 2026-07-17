@@ -9,12 +9,12 @@ async function getSharp() {
   if (sharpModule !== null) return sharpModule;
   try {
     sharpModule = (await import("sharp")).default;
-    sharpAvailable = true;
+    _sharpAvailable = true;
     logger?.info("Sharp module loaded for DSP policy checking");
     return sharpModule;
   } catch (error) {
     logger?.warn(
-      "Sharp not available - cover art validation will use basic checks",
+      `Sharp not available - cover art validation will use basic checks: ${error instanceof Error ? error.message : String(error)}`,
     );
     sharpModule = false;
     return null;
