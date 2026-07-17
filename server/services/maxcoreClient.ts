@@ -70,7 +70,9 @@ export class MaxCoreAIClient {
     };
   }
 
-  /** Always returns true — MaxCore is always running. */
+  /** Always returns true — MaxCore is always running.
+   *  Availability probe uses the lightweight model-info GET — it must NEVER
+   *  post to a generation endpoint (that queues real AI work on MaxCore). */
   static async isAvailable(): Promise<boolean> {
     if (MC_AI_URL && MC_AI_KEY) {
       const now = Date?.now();
@@ -78,22 +80,14 @@ export class MaxCoreAIClient {
         MaxCoreAIClient._remoteAvailable === null ||
         now - MaxCoreAIClient._lastCheck >= MaxCoreAIClient.CHECK_TTL
       ) {
-        fetch(`${MC_AI_URL}/api/generate/content`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...MaxCoreAIClient.authHeaders(),
-          },
-          body: JSON.stringify({
-            topic: "music artist brand",
-            platform: "instagram",
-            tone: "energetic",
-          }),
-          signal: AbortSignal.timeout(45_000),
+        fetch(`${MC_AI_URL}/api/platform/model/info`, {
+          method: "GET",
+          headers: MaxCoreAIClient.authHeaders(),
+          signal: AbortSignal.timeout(15_000),
           redirect: "manual",
         })
           .then((r) => {
-            MaxCoreAIClient._remoteAvailable = r?.ok && MaxCoreAIClient.isJson(r);
+            MaxCoreAIClient._remoteAvailable = r?.ok;
             if (MaxCoreAIClient._remoteAvailable)
               logger?.info("[MaxCoreAI] Remote server is online ✅");
           })
@@ -104,6 +98,93 @@ export class MaxCoreAIClient {
       }
     }
     return true;
+  }
+
+  // ── Resilience: bulkhead + circuit breaker ────────────────────────────────
+  // Bulkhead: cap concurrent in-flight generation calls so a slow MaxCore
+  // can't exhaust the undici connection pool (each call may hold a socket
+  // for up to 10 min now that MaxCore has no server-side timeouts).
+  private static readonly MAX_CONCURRENT = 8;
+  private static _inFlight = 0;
+  private static _waiters: Array<() => void> = [];
+
+  private static async acquireSlot(): Promise<boolean> {
+    if (MaxCoreAIClient._inFlight < MaxCoreAIClient.MAX_CONCURRENT) {
+      MaxCoreAIClient._inFlight++;
+      return true;
+    }
+    // Wait up to 30 s for a slot, then fail fast (surfaces as 503 upstream).
+    // NOTE: when a waiter is granted, the releasing side has TRANSFERRED its
+    // permit (it did not decrement _inFlight), so the waiter must NOT
+    // increment — this keeps the cap exact under races.
+    return await new Promise<boolean>((resolve) => {
+      const timer = setTimeout(() => {
+        const i = MaxCoreAIClient._waiters.indexOf(grant);
+        if (i >= 0) MaxCoreAIClient._waiters.splice(i, 1);
+        resolve(false);
+      }, 30_000);
+      const grant = () => {
+        clearTimeout(timer);
+        resolve(true);
+      };
+      MaxCoreAIClient._waiters.push(grant);
+    });
+  }
+
+  private static releaseSlot(): void {
+    const next = MaxCoreAIClient._waiters.shift();
+    if (next) {
+      // Transfer the permit directly to the waiter — _inFlight stays the same.
+      next();
+      return;
+    }
+    MaxCoreAIClient._inFlight = Math.max(0, MaxCoreAIClient._inFlight - 1);
+  }
+
+  // Circuit breaker: after CB_THRESHOLD consecutive network failures/timeouts,
+  // open for CB_COOLDOWN_MS and fail fast (null → 503 upstream) instead of
+  // stacking 10-min hung sockets. One half-open probe closes it on success.
+  private static readonly CB_THRESHOLD = 3;
+  private static readonly CB_COOLDOWN_MS = 60_000;
+  private static _cbFailures = 0;
+  private static _cbOpenUntil = 0;
+  private static _cbProbing = false;
+
+  private static cbBlocked(): boolean {
+    if (Date.now() < MaxCoreAIClient._cbOpenUntil) return true;
+    if (MaxCoreAIClient._cbOpenUntil > 0) {
+      // Cooldown elapsed → half-open. Allow exactly one probe at a time.
+      if (MaxCoreAIClient._cbProbing) return true;
+      MaxCoreAIClient._cbProbing = true;
+      return false;
+    }
+    return false;
+  }
+
+  /** Call when the probe (or any call) could not complete an HTTP round-trip
+   *  for a reason that is NOT a MaxCore network failure (e.g. bulkhead full).
+   *  Frees the half-open probe slot without changing breaker state. */
+  private static cbAbortProbe(): void {
+    MaxCoreAIClient._cbProbing = false;
+  }
+
+  /** Any completed upstream HTTP response (regardless of status code) means
+   *  MaxCore is reachable — close the breaker and reset the failure streak. */
+  private static cbRecordSuccess(): void {
+    MaxCoreAIClient._cbFailures = 0;
+    MaxCoreAIClient._cbOpenUntil = 0;
+    MaxCoreAIClient._cbProbing = false;
+  }
+
+  private static cbRecordFailure(path: string): void {
+    MaxCoreAIClient._cbFailures++;
+    MaxCoreAIClient._cbProbing = false;
+    if (MaxCoreAIClient._cbFailures >= MaxCoreAIClient.CB_THRESHOLD) {
+      MaxCoreAIClient._cbOpenUntil = Date.now() + MaxCoreAIClient.CB_COOLDOWN_MS;
+      logger?.warn(
+        `[MaxCoreAI] Circuit breaker OPEN after ${MaxCoreAIClient._cbFailures} consecutive failures (last: ${path}) — failing fast for ${MaxCoreAIClient.CB_COOLDOWN_MS / 1000}s`,
+      );
+    }
   }
 
   /**
@@ -188,68 +269,93 @@ export class MaxCoreAIClient {
       return null;
     }
 
-    const attempt = async (): Promise<{ r: Response; text: string } | null> => {
-      try {
-        const r = await fetch(`${MC_AI_URL}${path}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...MaxCoreAIClient.authHeaders(),
-          },
-          body: JSON.stringify(body),
-          signal: AbortSignal.timeout(MaxCoreAIClient.GENERATE_TIMEOUT_MS),
-          redirect: "manual",
-        });
-        const text = await r.text();
-        return { r, text };
-      } catch (e) {
+    // Circuit breaker: fail fast while MaxCore is known-down.
+    if (MaxCoreAIClient.cbBlocked()) {
+      logger?.debug(`[MaxCoreAI] generate ${path} — circuit open, failing fast`);
+      return null;
+    }
+
+    // Bulkhead: cap concurrent long-held sockets.
+    if (!(await MaxCoreAIClient.acquireSlot())) {
+      // Not a MaxCore failure — free the half-open probe slot if we held it.
+      MaxCoreAIClient.cbAbortProbe();
+      logger?.warn(`[MaxCoreAI] generate ${path} — bulkhead full (30 s wait), failing fast`);
+      return null;
+    }
+
+    try {
+      const attempt = async (): Promise<{ r: Response; text: string } | null> => {
+        try {
+          const r = await fetch(`${MC_AI_URL}${path}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...MaxCoreAIClient.authHeaders(),
+            },
+            body: JSON.stringify(body),
+            signal: AbortSignal.timeout(MaxCoreAIClient.GENERATE_TIMEOUT_MS),
+            redirect: "manual",
+          });
+          const text = await r.text();
+          return { r, text };
+        } catch (e) {
+          logger?.debug(
+            `[MaxCoreAI] generate ${path} network error: ${(e as Error).message}`,
+          );
+          return null;
+        }
+      };
+
+      let result = await attempt();
+
+      // Retry once on 503 circuit-breaker — wait the suggested cooldown then try again
+      if (result && result.r.status === 503) {
+        const retryMs = parseCbRetryMs(result.text);
         logger?.debug(
-          `[MaxCoreAI] generate ${path} network error: ${(e as Error).message}`,
+          `[MaxCoreAI] generate ${path} — 503 circuit-breaker, retrying in ${retryMs}ms`,
         );
+        await new Promise((res) => setTimeout(res, retryMs));
+        result = await attempt();
+      }
+
+      if (!result) {
+        MaxCoreAIClient.cbRecordFailure(path);
         return null;
       }
-    };
 
-    let result = await attempt();
+      // Any completed HTTP response (even non-2xx) proves MaxCore is reachable.
+      MaxCoreAIClient.cbRecordSuccess();
 
-    // Retry once on 503 circuit-breaker — wait the suggested cooldown then try again
-    if (result && result.r.status === 503) {
-      const retryMs = parseCbRetryMs(result.text);
+      const { r, text } = result;
+
+      if (r.ok && MaxCoreAIClient.isJson(r)) {
+        try {
+          const data = JSON.parse(text);
+          MaxCoreAIClient._remoteAvailable = true;
+          MaxCoreAIClient._lastCheck = Date.now();
+          MaxCoreAIClient._endpointSuppressed.delete(path);
+          logger?.debug(`[MaxCoreAI] generate ${path} → success`);
+          return data as T;
+        } catch {
+          return null;
+        }
+      }
+
+      const failReason = `HTTP ${r.status}`;
       logger?.debug(
-        `[MaxCoreAI] generate ${path} — 503 circuit-breaker, retrying in ${retryMs}ms`,
+        `[MaxCoreAI] generate ${path} → ${failReason} — returning null`,
       );
-      await new Promise((res) => setTimeout(res, retryMs));
-      result = await attempt();
-    }
-
-    if (!result) return null;
-
-    const { r, text } = result;
-
-    if (r.ok && MaxCoreAIClient.isJson(r)) {
-      try {
-        const data = JSON.parse(text);
-        MaxCoreAIClient._remoteAvailable = true;
-        MaxCoreAIClient._lastCheck = Date.now();
-        MaxCoreAIClient._endpointSuppressed.delete(path);
-        logger?.debug(`[MaxCoreAI] generate ${path} → success`);
-        return data as T;
-      } catch {
-        return null;
+      if (r.status === 404 || r.status === 405) {
+        MaxCoreAIClient._endpointSuppressed.set(
+          path,
+          Date.now() + MaxCoreAIClient.ENDPOINT_SUPPRESS_MS,
+        );
       }
+      // HTTP error responses mean MaxCore is up (responding) — not a CB event.
+      return null;
+    } finally {
+      MaxCoreAIClient.releaseSlot();
     }
-
-    const failReason = `HTTP ${r.status}`;
-    logger?.debug(
-      `[MaxCoreAI] generate ${path} → ${failReason} — returning null`,
-    );
-    if (r.status === 404 || r.status === 405) {
-      MaxCoreAIClient._endpointSuppressed.set(
-        path,
-        Date.now() + MaxCoreAIClient.ENDPOINT_SUPPRESS_MS,
-      );
-    }
-    return null;
   }
 
   /**
@@ -276,67 +382,92 @@ export class MaxCoreAIClient {
       return null;
     }
 
-    const attempt = async (): Promise<{ r: Response; text: string } | null> => {
-      try {
-        const r = await fetch(`${MC_AI_URL}${path}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...MaxCoreAIClient.authHeaders(),
-          },
-          body: JSON.stringify(body),
-          signal: AbortSignal.timeout(MaxCoreAIClient.INFER_TIMEOUT_MS),
-          redirect: "manual",
-        });
-        const text = await r.text();
-        return { r, text };
-      } catch (e) {
+    // Circuit breaker: fail fast while MaxCore is known-down.
+    if (MaxCoreAIClient.cbBlocked()) {
+      logger?.debug(`[MaxCoreAI] infer ${path} — circuit open, failing fast`);
+      return null;
+    }
+
+    // Bulkhead: cap concurrent long-held sockets.
+    if (!(await MaxCoreAIClient.acquireSlot())) {
+      // Not a MaxCore failure — free the half-open probe slot if we held it.
+      MaxCoreAIClient.cbAbortProbe();
+      logger?.warn(`[MaxCoreAI] infer ${path} — bulkhead full (30 s wait), failing fast`);
+      return null;
+    }
+
+    try {
+      const attempt = async (): Promise<{ r: Response; text: string } | null> => {
+        try {
+          const r = await fetch(`${MC_AI_URL}${path}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...MaxCoreAIClient.authHeaders(),
+            },
+            body: JSON.stringify(body),
+            signal: AbortSignal.timeout(MaxCoreAIClient.INFER_TIMEOUT_MS),
+            redirect: "manual",
+          });
+          const text = await r.text();
+          return { r, text };
+        } catch (e) {
+          logger.debug(
+            `[MaxCoreAI] infer ${path} network error: ${(e as Error).message}`,
+          );
+          return null;
+        }
+      };
+
+      let result = await attempt();
+
+      // Retry once on 503 circuit-breaker — wait the suggested cooldown then try again
+      if (result && result.r.status === 503) {
+        const retryMs = parseCbRetryMs(result.text);
         logger.debug(
-          `[MaxCoreAI] infer ${path} network error: ${(e as Error).message}`,
+          `[MaxCoreAI] infer ${path} — 503 circuit-breaker, retrying in ${retryMs}ms`,
         );
+        await new Promise((res) => setTimeout(res, retryMs));
+        result = await attempt();
+      }
+
+      if (!result) {
+        MaxCoreAIClient.cbRecordFailure(path);
         return null;
       }
-    };
 
-    let result = await attempt();
+      // Any completed HTTP response (even non-2xx) proves MaxCore is reachable.
+      MaxCoreAIClient.cbRecordSuccess();
 
-    // Retry once on 503 circuit-breaker — wait the suggested cooldown then try again
-    if (result && result.r.status === 503) {
-      const retryMs = parseCbRetryMs(result.text);
+      const { r, text } = result;
+
+      if (r.ok && MaxCoreAIClient.isJson(r)) {
+        try {
+          const data = JSON.parse(text);
+          logger.debug(`[MaxCoreAI] infer ${path} → success`);
+          MaxCoreAIClient._remoteAvailable = true;
+          MaxCoreAIClient._endpointSuppressed.delete(path);
+          return data as T;
+        } catch {
+          return null;
+        }
+      }
+
+      const failReason = `HTTP ${r.status}`;
       logger.debug(
-        `[MaxCoreAI] infer ${path} — 503 circuit-breaker, retrying in ${retryMs}ms`,
+        `[MaxCoreAI] infer ${path} → ${failReason} — returning null`,
       );
-      await new Promise((res) => setTimeout(res, retryMs));
-      result = await attempt();
-    }
-
-    if (!result) return null;
-
-    const { r, text } = result;
-
-    if (r.ok && MaxCoreAIClient.isJson(r)) {
-      try {
-        const data = JSON.parse(text);
-        logger.debug(`[MaxCoreAI] infer ${path} → success`);
-        MaxCoreAIClient._remoteAvailable = true;
-        MaxCoreAIClient._endpointSuppressed.delete(path);
-        return data as T;
-      } catch {
-        return null;
+      if (r.status === 404 || r.status === 405) {
+        MaxCoreAIClient._endpointSuppressed.set(
+          path,
+          Date.now() + MaxCoreAIClient.ENDPOINT_SUPPRESS_MS,
+        );
       }
+      // HTTP error responses mean MaxCore is up — not a CB event.
+      return null;
+    } finally {
+      MaxCoreAIClient.releaseSlot();
     }
-
-    const failReason = `HTTP ${r.status}`;
-    logger.debug(
-      `[MaxCoreAI] infer ${path} → ${failReason} — returning null`,
-    );
-    if (r.status === 404 || r.status === 405) {
-      MaxCoreAIClient._endpointSuppressed.set(
-        path,
-        Date.now() + MaxCoreAIClient.ENDPOINT_SUPPRESS_MS,
-      );
-    }
-    return null;
   }
 }
 

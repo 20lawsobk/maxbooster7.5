@@ -105,6 +105,20 @@ export const sessions = pgTable(
   ],
 );
 
+// pg_sessions is created at runtime by server/middleware/sessionConfig.ts as the
+// PostgreSQL session-store fallback. It MUST be declared here so `drizzle-kit push`
+// recognizes it — otherwise push proposes dropping it (data loss) and the DB Push
+// workflow hangs forever on the interactive confirmation prompt.
+export const pgSessions = pgTable(
+  "pg_sessions",
+  {
+    sid: text("sid").primaryKey(),
+    sess: text("sess").notNull(),
+    expire: bigint("expire", { mode: "number" }).notNull(),
+  },
+  (t) => [index("pg_sessions_expire_idx").on(t.expire)],
+);
+
 export const insertSessionSchema = createInsertSchema(sessions).omit({
   id: true,
   createdAt: true,

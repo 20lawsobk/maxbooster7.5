@@ -48,14 +48,27 @@ router?.post("/disable", async (_req, res) => {
 });
 
 router?.post("/run-now", async (_req, res) => {
-  // Fire-and-forget: a cycle can take 30–60 s; respond immediately with the cycle id.
+  // 202 Accepted pattern: a cycle can take 10+ minutes (MaxCore audio jobs have
+  // no server-side timeouts). Holding the HTTP connection open would get killed
+  // by the proxy (~120 s). Kick off the cycle in the background and return
+  // immediately; the client tracks progress via GET /status and /cycles.
   try {
-    // We need the cycleId, so wait for the cycle row to be inserted (very fast)
-    // but don't wait for the whole pipeline.
-    const promise = beatMoneyLoopService?.runCycle("manual");
-    // Race: return promise resolution OR a short header read
-    const result = await promise;
-    res?.json({ ok: true, result });
+    beatMoneyLoopService
+      ?.runCycle("manual")
+      .then((result) => {
+        logger?.info(
+          `[BeatMoneyLoop] manual cycle finished: ${JSON.stringify(result)?.slice(0, 300)}`,
+        );
+      })
+      .catch((err) => {
+        logger?.warn({ err }, "[BeatMoneyLoop] manual cycle failed");
+      });
+    res?.status(202).json({
+      ok: true,
+      status: "started",
+      message:
+        "Cycle started in background. Poll GET /api/admin/beat-money-loop/status for progress.",
+    });
   } catch (err) {
     const msg = (err as Error).message ?? String(err);
     logger?.warn({ err }, "[BeatMoneyLoop] /run-now failed");

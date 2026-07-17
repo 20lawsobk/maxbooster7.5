@@ -42,4 +42,5 @@
 - [Node vs MaxCore route surface + proxy](node-vs-maxcore-route-surface.md) — /api/generate|platform|analyze|video-job|storage/artist are EXTERNAL MaxCore routes, now bridged by server/routes/maxcoreProxy.ts; durable ceilings: stale MAXCORE_ADMIN_KEY, MaxCore 45s timeout, 4 nonexistent alias paths, whole server goes unreachable
 - [Beat Loop + MaxCore Audit](beat-loop-maxcore-audit.md) — live endpoint map, failure analysis, structural bugs fixed (scan context, adDeliveryLogs, adCampaigns columns, musicIndustryTrainingData)
 - [Beat Money Loop](beat-money-loop.md) — admin-only loop; MaxCore audio is async (job_id → poll audio-job), Bearer only; Tier-3 "fallback" is also MaxCore-gated by design
+- [MaxCore resilience patterns](maxcore-resilience.md) — never keep-alive via generation endpoints; 202+poll for >120s work; client has bulkhead+circuit breaker; proxy must absolutize MaxCore's relative media URLs
 - [Beat loop output quality](beat-loop-output-quality.md) — audio is 30s mono ~92kbps MP3-in-.wav & clips; old listings 404; scan context constant; ads "activate" but post 0 — verify servable audio + posts rows, not statuses

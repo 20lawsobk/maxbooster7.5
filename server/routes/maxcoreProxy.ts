@@ -24,6 +24,35 @@ import { logger } from "../logger.js";
 const router = Router();
 
 const AI_SERVER_URL = (process.env.AI_SERVER_URL || "").replace(/\/+$/, "");
+
+/**
+ * MaxCore returns media paths relative to ITS OWN domain (e.g.
+ * "/uploads/audio_x.mp3"). Left untouched, browsers resolve them against OUR
+ * domain and get the SPA's index.html instead of the media file. Rewrite any
+ * relative /uploads|/media|/static path in url-ish fields to absolute MaxCore
+ * URLs before responding.
+ */
+const MEDIA_URL_KEYS = /(^|_)(url|href)$|_(url|path)$/i;
+const RELATIVE_MEDIA = /^\/(uploads|media|static|files|outputs)\//i;
+function absolutizeMediaUrls(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(absolutizeMediaUrls);
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (
+        typeof v === "string" &&
+        (MEDIA_URL_KEYS.test(k) || k === "url") &&
+        RELATIVE_MEDIA.test(v)
+      ) {
+        out[k] = `${AI_SERVER_URL}${v}`;
+      } else {
+        out[k] = absolutizeMediaUrls(v);
+      }
+    }
+    return out;
+  }
+  return value;
+}
 const AI_SERVER_KEY = process.env.AI_SERVER_KEY || "";
 const MAXCORE_ADMIN_KEY = process.env.MAXCORE_ADMIN_KEY || "";
 
@@ -137,7 +166,7 @@ async function proxyToMaxCore(req: Request, res: Response): Promise<void> {
     res.status(upstream.status);
     if (contentType?.includes("application/json")) {
       try {
-        res.json(JSON.parse(text));
+        res.json(absolutizeMediaUrls(JSON.parse(text)));
         return;
       } catch {
         // fall through to raw send if body wasn't valid JSON
