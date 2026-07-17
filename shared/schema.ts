@@ -3825,6 +3825,11 @@ export const adCampaigns = pgTable("ad_campaigns", {
   performance: jsonb("performance"),
   aiOptimizations: jsonb("ai_optimizations"),
   metadata: jsonb("metadata"),
+  // Organic ad delivery tracking (populated by advertisingDispatchService)
+  organicMetrics: jsonb("organic_metrics"),
+  connectedPlatforms: jsonb("connected_platforms"),
+  impressions: integer("impressions").default(0),
+  clicks: integer("clicks").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at"),
 });
@@ -3863,6 +3868,37 @@ export const insertAdCreativeSchema = createInsertSchema(adCreatives).omit({
   id: true,
   createdAt: true,
 });
+
+// ============================================================================
+// AD DELIVERY LOGS
+// ============================================================================
+export const adDeliveryLogs = pgTable(
+  "ad_delivery_logs",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    variantId: varchar("variant_id").notNull(),
+    platform: text("platform").notNull(),
+    platformAdId: text("platform_ad_id"),
+    deliveryStatus: text("delivery_status").default("pending").notNull(),
+    platformResponse: jsonb("platform_response"),
+    errorMessage: text("error_message"),
+    retryCount: integer("retry_count").default(0),
+    deliveredAt: timestamp("delivered_at"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (t) => [
+    index("ad_delivery_logs_variant_id_idx").on(t.variantId),
+    index("ad_delivery_logs_platform_status_idx").on(
+      t.platform,
+      t.deliveryStatus,
+    ),
+  ],
+);
+
+export type AdDeliveryLog = typeof adDeliveryLogs.$inferSelect;
+export type InsertAdDeliveryLog = typeof adDeliveryLogs.$inferInsert;
 
 // ============================================================================
 // CONTENT CALENDAR

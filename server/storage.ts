@@ -1,6 +1,6 @@
 import { logger } from "./logger";
 import { randomBytes } from "crypto";
-import { users, dspProviders, projects, releases, posts, socialAccounts, socialCampaigns, adCampaigns, adCreatives, contentCalendar, aiModels, notifications, analytics, pluginCatalog, pluginPresets, distroReleases, distroTracks, instantPayouts, royaltyTransactions, hyperFollowPages, jwtTokens, refreshTokens, listings, listingLicenseTiers, sessions, collabSnapshots, orders, autopilotLearningData, inferenceRuns, socialKeywords, socialMentions, socialAutopilotContent, systemSettings, workspaceAuditLog, contractTemplates, type User, type InsertUser, type DSPProvider, type InsertProject, type CollabSnapshot, type InsertCollabSnapshot } from "@shared/schema";
+import { users, dspProviders, projects, releases, posts, socialAccounts, socialCampaigns, adCampaigns, adCreatives, adDeliveryLogs, contentCalendar, aiModels, notifications, analytics, pluginCatalog, pluginPresets, distroReleases, distroTracks, instantPayouts, royaltyTransactions, hyperFollowPages, jwtTokens, refreshTokens, listings, listingLicenseTiers, sessions, collabSnapshots, orders, autopilotLearningData, inferenceRuns, socialKeywords, socialMentions, socialAutopilotContent, systemSettings, workspaceAuditLog, contractTemplates, type User, type InsertUser, type DSPProvider, type InsertProject, type CollabSnapshot, type InsertCollabSnapshot } from "@shared/schema";
 import { db, dbRead } from "./db";
 import { eq, and, desc, gte, lte, sql, inArray, ilike, or, asc, lt, isNotNull } from "drizzle-orm";
 
@@ -33,6 +33,16 @@ export interface IStorage {
   getRefreshToken(token: string): Promise<unknown>;
   revokeRefreshToken(id: string, reason: string): Promise<void>;
   revokeAllRefreshTokensForUser(userId: string, reason: string): Promise<void>;
+  createAdDeliveryLog(data: {
+    variantId: string;
+    platform: string;
+    platformAdId?: string;
+    deliveryStatus: string;
+    platformResponse?: Record<string, unknown>;
+    errorMessage?: string;
+    retryCount?: number;
+    deliveredAt?: Date;
+  }): Promise<unknown>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -637,7 +647,10 @@ export class DatabaseStorage implements IStorage {
     platform: string,
   ): Promise<string | null> {
     const rows = await db
-      .select({ accessToken: socialAccounts.accessToken })
+      .select({
+        accessToken: socialAccounts.accessToken,
+        tokenExpiresAt: socialAccounts.tokenExpiresAt,
+      })
       .from(socialAccounts)
       .where(
         and(
@@ -647,7 +660,21 @@ export class DatabaseStorage implements IStorage {
         ),
       )
       .limit(1);
-    return rows[0]?.accessToken ?? null;
+
+    if (!rows[0]?.accessToken) return null;
+
+    // Proactively reject expired tokens — returning null triggers the
+    // "not connected" path in publishContent, which logs clearly and skips
+    // the platform rather than wasting an API call that will 401.
+    const expires = rows[0]?.tokenExpiresAt;
+    if (expires && new Date(expires) < new Date()) {
+      logger.warn(
+        `[SocialAccounts] ${platform} OAuth token for user ${userId} expired at ${expires} — skipping (reconnect required)`,
+      );
+      return null;
+    }
+
+    return rows[0].accessToken;
   }
 
   async updateUserSocialToken(
@@ -3037,6 +3064,23 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(eq(refreshTokens?.userId, userId), eq(refreshTokens?.revoked, false)),
       );
+  }
+
+  async createAdDeliveryLog(data: {
+    variantId: string;
+    platform: string;
+    platformAdId?: string;
+    deliveryStatus: string;
+    platformResponse?: Record<string, unknown>;
+    errorMessage?: string;
+    retryCount?: number;
+    deliveredAt?: Date;
+  }): Promise<unknown> {
+    const [log] = await db
+      .insert(adDeliveryLogs)
+      .values(data)
+      .returning();
+    return log;
   }
 }
 

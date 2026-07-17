@@ -439,6 +439,15 @@ export async function setupRepeatableJobs(): Promise<void> {
   // upsertJobScheduler calls complete cleanly in a few hundred ms each.
   await waitForPdimSettled();
 
+  // Recover any beat-loop cycles that were left in 'generating' state by a
+  // prior server restart (in-flight cycle killed mid-audio-generation).
+  try {
+    const { beatMoneyLoopService } = await import("./beatMoneyLoopService.js");
+    await beatMoneyLoopService.recoverOrphanedCycles();
+  } catch {
+    // Non-fatal; the loop will still schedule normally.
+  }
+
   const queue = getQueue();
 
   // ── Prune stale repeatable jobs from prior deploys ────────────────────────

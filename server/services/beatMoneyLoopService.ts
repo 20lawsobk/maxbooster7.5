@@ -69,7 +69,12 @@ const PRICE_UNDERCUT_FACTOR = 0.95;
 const TRENDING_GENRE_FALLBACK = "trap";
 const TRENDING_MOOD_FALLBACK = "dark";
 
-const PLATFORMS_FOR_CAMPAIGN = ["instagram", "tiktok", "twitter"] as const;
+// All platforms the admin account can have connected. Expired tokens are
+// filtered out at the storage layer (getUserSocialToken), so this list is
+// safe to include broadly — platforms without valid tokens skip gracefully.
+const PLATFORMS_FOR_CAMPAIGN = [
+  "instagram", "facebook", "tiktok", "twitter", "threads", "linkedin",
+] as const;
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
@@ -113,6 +118,37 @@ export interface RunCycleResult {
 
 class BeatMoneyLoopService {
   private _runningCycle = false;
+
+  /**
+   * On startup, any cycle stuck in 'generating' was interrupted mid-flight by
+   * a server restart. Mark them failed so the loop can start a fresh cycle.
+   */
+  async recoverOrphanedCycles(): Promise<void> {
+    try {
+      const orphans = await db
+        .update(beatMoneyLoopCycles)
+        .set({
+          status: "failed",
+          errorMessage:
+            "Interrupted by server restart — cycle was in-flight when process exited",
+          completedAt: new Date(),
+        })
+        .where(eq(beatMoneyLoopCycles.status, "generating"))
+        .returning({ id: beatMoneyLoopCycles.id });
+      if (orphans.length > 0) {
+        logger.warn(
+          `[BeatMoneyLoop] Recovered ${orphans.length} orphaned cycle(s) stuck in 'generating': ${orphans.map((r) => r.id).join(", ")}`,
+        );
+        // Also reset the in-flight lock so the loop can schedule normally.
+        this._runningCycle = false;
+      }
+    } catch (err) {
+      logger.warn(
+        "[BeatMoneyLoop] Could not recover orphaned cycles:",
+        (err as Error).message,
+      );
+    }
+  }
 
   /** Ensure the singleton state row exists; idempotent. */
   private async _ensureStateRow(): Promise<BeatMoneyLoopState> {
@@ -378,21 +414,57 @@ class BeatMoneyLoopService {
     hooks: string[];
     productionStyles: string[];
   } {
-    const genre =
-      ctx.generationHints.suggestedGenre ||
-      ctx.trendingGenres[0] ||
-      TRENDING_GENRE_FALLBACK;
-    const mood =
-      ctx.generationHints.suggestedMood ||
-      ctx.trendingMoods[0] ||
-      TRENDING_MOOD_FALLBACK;
-    // Tempo from bias: 'up'=high tempo, 'down'=low, 'neutral'=mid
-    const tempo =
+    // Build diverse candidate pools so each cycle picks a different style.
+    // suggestedGenre/suggestedMood are included but are not guaranteed winners —
+    // they bias the pool toward the current trend signal without locking every
+    // cycle into the same combination.
+    const pickRandom = (items: string[], fallback: string): string => {
+      const pool = items.filter(Boolean);
+      if (pool.length === 0) return fallback;
+      return pool[Math.floor(Math.random() * pool.length)];
+    };
+
+    // Hardcoded baseline ensures diversity even when context signals are sparse
+    // or biased by generic keyword matches. Context signals appear 2× so they
+    // carry ~2× the probability weight of any single baseline item, but the
+    // full pool guarantees genre rotation every few cycles.
+    const GENRE_BASELINE = [
+      "trap", "hiphop", "r&b", "drill", "lofi", "pop", "electronic", "indie",
+    ];
+    const MOOD_BASELINE = [
+      "dark", "empowering", "chill", "aggressive", "melancholic",
+      "energetic", "nostalgic", "euphoric",
+    ];
+
+    const genrePool: string[] = [
+      ...GENRE_BASELINE,
+      // Context signals appear twice — double-weight without monopolising.
+      ...(ctx.generationHints.suggestedGenre
+        ? [ctx.generationHints.suggestedGenre, ctx.generationHints.suggestedGenre]
+        : []),
+      ...(ctx.trendingGenres?.slice(0, 4) ?? []),
+    ];
+
+    const moodPool: string[] = [
+      ...MOOD_BASELINE,
+      ...(ctx.generationHints.suggestedMood
+        ? [ctx.generationHints.suggestedMood, ctx.generationHints.suggestedMood]
+        : []),
+      ...(ctx.trendingMoods?.slice(0, 4) ?? []),
+    ];
+
+    const genre = pickRandom(genrePool, TRENDING_GENRE_FALLBACK);
+    const mood = pickRandom(moodPool, TRENDING_MOOD_FALLBACK);
+
+    // Tempo: bias from hint + ±5 BPM jitter so consecutive cycles differ.
+    const baseTemp =
       ctx.generationHints.tempoBias === "up"
         ? 150
         : ctx.generationHints.tempoBias === "down"
           ? 85
           : 120;
+    const tempoJitter = Math.floor(Math.random() * 11) - 5; // −5 … +5
+    const tempo = baseTemp + tempoJitter;
     return {
       genre,
       mood,

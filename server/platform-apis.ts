@@ -67,10 +67,13 @@ export const platformAPI = {
         );
 
         if (!token) {
+          // getUserSocialToken returns null for both missing AND expired tokens.
+          // The storage layer logs a specific expiry warning; here we give the
+          // campaign a clear per-platform failure record.
           results.push({
             platform,
             success: false,
-            error: `User not connected to ${platform} - OAuth token missing`,
+            error: `No valid OAuth token for ${platform} — either not connected or token expired (reconnect in Social Media Settings)`,
           });
           continue;
         }
