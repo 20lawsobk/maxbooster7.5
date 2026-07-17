@@ -224,6 +224,7 @@ class AIHelpDeskService {
       }>("/api/generate/content", {
         type: "help_desk_response",
         format: "json",
+        tone: "helpful",
         platform: BUSINESS_CONFIG.company?.platform ?? "Max Booster",
         user_message: userMessage,
         conversation_history: historyForContext,

@@ -675,6 +675,7 @@ class CareerCoachService {
         }>("/api/generate/content", {
           type: "career_coaching",
           format: "json",
+          tone: "motivational",
           analytics_snapshot: {
             totalStreams: snapshot.totalStreams,
             totalFollowers: snapshot.totalFollowers,
@@ -771,6 +772,7 @@ class CareerCoachService {
       }>("/api/generate/content", {
         type: "career_gap_analysis",
         format: "json",
+        tone: "analytical",
         analytics_snapshot: {
           totalStreams: snapshot.totalStreams,
           totalFollowers: snapshot.totalFollowers,

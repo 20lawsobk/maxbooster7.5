@@ -998,6 +998,7 @@ export class AIMusicService {
       }>("/api/generate/content", {
         audio_analysis: audioAnalysis,
         task: "mix_suggestions",
+        tone: "technical",
         platform: "maxcore_mixing",
       }),
       "music suggestions",

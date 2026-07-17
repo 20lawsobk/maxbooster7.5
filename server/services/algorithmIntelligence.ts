@@ -911,6 +911,7 @@ class AlgorithmIntelligenceService {
       }>("/api/generate/content", {
         type: "algorithm_health_check",
         format: "json",
+        tone: "analytical",
         platform,
         recent_metrics: rawMetrics,
       }),
@@ -985,6 +986,7 @@ class AlgorithmIntelligenceService {
       }>("/api/generate/content", {
         type: "shadowban_detection",
         format: "json",
+        tone: "analytical",
         platform,
         metrics,
       }),
