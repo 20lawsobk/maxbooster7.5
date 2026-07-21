@@ -1044,8 +1044,14 @@ class BeatMoneyLoopService {
           reason: result.message,
         };
       }
+      // Surface per-platform errors so the cycle errorMessage is actionable.
+      const platformErrors = result.results?.errors ?? [];
+      const errSummary = platformErrors.length
+        ? ` | per-platform: ${platformErrors.join("; ")}`
+        : "";
       const reason =
-        result.error || result.message || "Ad dispatch reported no posts";
+        (result.error || result.message || "Ad dispatch reported no posts") +
+        errSummary;
       logger.warn(
         `[BeatMoneyLoop] campaign ${campaign.id} created but NOT posted: ${reason}`,
       );

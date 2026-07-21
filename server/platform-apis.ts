@@ -365,16 +365,31 @@ export const platformAPI = {
     const result = await executeSocialApiOperation(
       "instagram",
       async () => {
+        // Detect media type: MP4/video → REELS container, else IMAGE container.
+        const isVideo = /\.(mp4|mov|avi|webm)(\?|$)/i.test(mediaUrl);
+        const containerPayload = isVideo
+          ? { video_url: mediaUrl, media_type: "REELS", caption: text, access_token: token }
+          : { image_url: mediaUrl, caption: text, access_token: token };
+
         const mediaResponse = await axios?.post(
           `https://graph.instagram.com/me/media`,
-          {
-            image_url: mediaUrl,
-            caption: text,
-            access_token: token,
-          },
+          containerPayload,
         );
 
         const creationId = mediaResponse?.data.id;
+
+        // For video containers, Instagram needs time to process — poll until ready.
+        if (isVideo) {
+          for (let i = 0; i < 12; i++) {
+            await new Promise((r) => setTimeout(r, 5_000));
+            const statusRes = await axios?.get(
+              `https://graph.instagram.com/${creationId}?fields=status_code&access_token=${token}`,
+            );
+            const sc = statusRes?.data?.status_code;
+            if (sc === "FINISHED") break;
+            if (sc === "ERROR") throw new Error(`Instagram video processing failed: ${statusRes?.data?.status}`);
+          }
+        }
 
         const publishResponse = await axios?.post(
           `https://graph.instagram.com/me/media_publish`,
@@ -428,7 +443,9 @@ export const platformAPI = {
               shareCommentary: {
                 text,
               },
-              shareMediaCategory: mediaUrl ? "IMAGE" : "NONE",
+              shareMediaCategory: mediaUrl
+            ? (/\.(mp4|mov|avi|webm)(\?|$)/i.test(mediaUrl) ? "VIDEO" : "IMAGE")
+            : "NONE",
             },
           },
           visibility: {
