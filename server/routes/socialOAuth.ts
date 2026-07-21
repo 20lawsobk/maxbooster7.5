@@ -12,9 +12,9 @@ import { env } from "../config/env.js";
 // ── Timeout-guarded fetch: adds a 15s default signal so no outbound HTTP call
 // can hold the event loop indefinitely.  Per-call signal overrides this default.
 const timedFetch = (
-  url: string | URL | Request,
+  url: string | URL | globalThis.Request,
   init: RequestInit = {},
-): Promise<Response> =>
+): Promise<globalThis.Response> =>
   fetch(url, { signal: AbortSignal.timeout(15_000), ...init });
 
 const router = Router();
@@ -51,8 +51,30 @@ function scrubSecretsFromText(text: string): string {
   return out;
 }
 
-interface AuthenticatedRequest extends Request {
-  user?: { id: string };
+type AuthenticatedRequest = Request;
+
+// Shape of the optional per-platform OAuth config fields that are read
+// dynamically in the connect/callback flows. Only some platforms define
+// each field, so all are optional.
+interface PlatformConfigExtras {
+  redirectUri?: string;
+  usePKCE?: boolean;
+  clientIdParam?: string;
+  accessType?: string;
+  prompt?: string;
+}
+
+// Normalised token-exchange payload. Providers return a superset of these
+// fields (hence the index signature), but only these are read directly.
+interface TokenData {
+  access_token?: string;
+  refresh_token?: string;
+  expires_in?: number;
+  token_type?: string;
+  error?: string;
+  error_description?: string;
+  open_id?: string;
+  [key: string]: unknown;
 }
 
 const PLATFORMS = {
@@ -372,7 +394,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user!.id;
-      let platform = req.params.platform.toLowerCase();
+      let platform = String(req.params.platform).toLowerCase();
 
       const config = PLATFORMS[platform as keyof typeof PLATFORMS];
       if (!config) {
@@ -396,7 +418,7 @@ router.post(
         });
       }
 
-      const platformConfig = config as Record<string, unknown>;
+      const platformConfig = config as PlatformConfigExtras;
       const redirectUri =
         platformConfig.redirectUri || getCallbackUrl(platform);
 
@@ -448,7 +470,7 @@ router.post(
 
 router.get("/callback/:platform", async (req: Request, res: Response) => {
   try {
-    let platform = req.params.platform.toLowerCase();
+    let platform = String(req.params.platform).toLowerCase();
     const { code, state, error, error_description } = req.query;
 
     if (error) {
@@ -487,7 +509,7 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
       return res.redirect(`/social-media?error=unsupported_platform`);
     }
 
-    const platformConfig = config as Record<string, unknown>;
+    const platformConfig = config as PlatformConfigExtras;
     const redirectUri = platformConfig.redirectUri || getCallbackUrl(platform);
 
     let authCode = code as string;
@@ -495,7 +517,7 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
       authCode = authCode.replace(/#_$/, "");
     }
 
-    let tokenData: Record<string, unknown>;
+    let tokenData: Record<string, unknown> = {};
 
     try {
       const tokenParams = new URLSearchParams();
@@ -550,9 +572,11 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
           >;
           if (!twitterTokenRes.ok || !twitterTokenJson.access_token) {
             throw new Error(
-              twitterTokenJson.error_description ||
-                twitterTokenJson.error ||
-                `Token request failed with status ${twitterTokenRes.status}`,
+              String(
+                twitterTokenJson.error_description ||
+                  twitterTokenJson.error ||
+                  `Token request failed with status ${twitterTokenRes.status}`,
+              ),
             );
           }
           tokenData = {
@@ -682,8 +706,9 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
           },
           `[OAuth] Token exchange failed for ${platform}`,
         );
-        const errorDetail =
-          tokenData.error_description || tokenData.error || "unknown";
+        const errorDetail = String(
+          tokenData.error_description || tokenData.error || "unknown",
+        );
         return res.redirect(
           `/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent(errorDetail)}`,
         );
@@ -696,7 +721,7 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
       ) {
         // Threads long-lived token exchange: build URL, then log a SCRUBBED form
         // (client_secret + access_token are query params and MUST never reach logs).
-        const threadsLongLivedUrl = `https://graph.threads.net/access_token?grant_type=th_exchange_token&client_secret=${encodeURIComponent(config.clientSecret)}&access_token=${encodeURIComponent(tokenData.access_token)}`;
+        const threadsLongLivedUrl = `https://graph.threads.net/access_token?grant_type=th_exchange_token&client_secret=${encodeURIComponent(config.clientSecret)}&access_token=${encodeURIComponent(String(tokenData.access_token))}`;
         try {
           const longLivedResponse = await timedFetch(
             threadsLongLivedUrl,
@@ -732,8 +757,8 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
       const e = err instanceof Error ? err : null;
       logger.warn(
         {
-          errMessage: scrubSecretsFromText(e.message ?? String(err)),
-          errName: e.name,
+          errMessage: scrubSecretsFromText(e?.message ?? String(err)),
+          errName: e?.name,
         },
         `Token exchange error for ${platform}`,
       );
@@ -1077,7 +1102,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user!.id;
-      const platform = req.params.platform.toLowerCase();
+      const platform = String(req.params.platform).toLowerCase();
 
       const platformsToDisconnect =
         platform === "meta" ? ["facebook", "instagram"] : [platform];
@@ -1130,7 +1155,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user!.id;
-      const platform = req.params.platform.toLowerCase();
+      const platform = String(req.params.platform).toLowerCase();
 
       const results = await syncPlatformData(userId, platform);
 
@@ -1167,7 +1192,7 @@ router.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user!.id;
-      const platform = req.params.platform.toLowerCase();
+      const platform = String(req.params.platform).toLowerCase();
 
       const [connection] = await db
         .select()

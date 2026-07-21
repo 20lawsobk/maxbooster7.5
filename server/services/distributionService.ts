@@ -19,6 +19,212 @@ import { logger } from "../logger.js";
 
 const DEFAULT_SLA_TARGET_HOURS = 48;
 
+// ---------------------------------------------------------------------------
+// Local boundary types.
+//
+// The distribution "package"/"track" feature and several storage helper methods
+// referenced below are not (yet) part of the generated Drizzle schema or the
+// DatabaseStorage class. Rather than mutate shared schema / storage definitions,
+// we describe the shapes we consume here and cast at the storage read seam. This
+// preserves runtime behavior exactly (the same method calls are issued at
+// runtime) while giving the type checker precise, local information.
+// ---------------------------------------------------------------------------
+
+interface DistributionPackage {
+  id: string;
+  upc?: string | null;
+  albumTitle?: string | null;
+  releaseDate?: Date | null;
+  label?: string | null;
+  artworkUrl?: string | null;
+  copyrightP?: string | null;
+  copyrightC?: string | null;
+  [key: string]: unknown;
+}
+
+type InsertDistributionPackage = Omit<DistributionPackage, "id"> & {
+  upc?: string | null;
+};
+
+interface DistributionTrack {
+  id: string;
+  isrc?: string | null;
+  trackNumber?: number | null;
+  title?: string | null;
+  artist?: string | null;
+  genre?: string | null;
+  duration?: number | null;
+  explicitContent?: boolean | null;
+  credits?: string | null;
+  lyrics?: string | null;
+  [key: string]: unknown;
+}
+
+type InsertDistributionTrack = Omit<DistributionTrack, "id"> & {
+  isrc?: string | null;
+};
+
+// Enriched release row shape: the base `releases` table does not carry these
+// DSP-facing fields directly (some live in metadata / related records), but the
+// distribution flow reads them off the release object. Declared locally and
+// applied at the read seam.
+type EnrichedRelease = Release & {
+  artist?: string | null;
+  genre?: string | null;
+  label?: string | null;
+  coverArt?: string | null;
+  copyrightHolder?: string | null;
+  platforms?: unknown;
+};
+
+interface DistributionStorage {
+  createRelease(data: InsertRelease): Promise<Release>;
+  getUserReleases(userId: string): Promise<Release[]>;
+  updateRelease(
+    releaseId: string,
+    userId: string,
+    updates: Record<string, unknown>,
+  ): Promise<Release>;
+  getDistroRelease(releaseId: string): Promise<EnrichedRelease | undefined>;
+
+  createDistributionPackage(
+    data: InsertDistributionPackage,
+  ): Promise<DistributionPackage>;
+  getDistributionPackage(
+    projectId: string,
+  ): Promise<DistributionPackage | undefined>;
+  getDistributionPackageById(
+    packageId: string,
+  ): Promise<DistributionPackage | undefined>;
+  updateDistributionPackage(
+    packageId: string,
+    updates: Partial<DistributionPackage>,
+  ): Promise<DistributionPackage>;
+  createDistributionTrack(
+    track: InsertDistributionTrack,
+  ): Promise<DistributionTrack>;
+  getPackageTracks(packageId: string): Promise<DistributionTrack[]>;
+
+  createDistributionSLAMetric(
+    data: Record<string, unknown>,
+  ): Promise<DistributionSLAMetric>;
+  getDistributionSLAMetric(
+    metricId: string,
+  ): Promise<DistributionSLAMetric | undefined>;
+  updateDistributionSLAMetric(
+    metricId: string,
+    updates: Record<string, unknown>,
+  ): Promise<DistributionSLAMetric>;
+  getDistributionSLAMetricsByRelease(
+    releaseId: string,
+  ): Promise<DistributionSLAMetric[]>;
+  getSLAMetricsByUser(
+    userId: string,
+    days: number,
+  ): Promise<DistributionSLAMetric[]>;
+
+  createContentIdRegistration(
+    data: Record<string, unknown>,
+  ): Promise<ContentIdRegistration>;
+  getContentIdRegistrationsByRelease(
+    releaseId: string,
+  ): Promise<ContentIdRegistration[]>;
+  getContentIdRegistrationsByUser(
+    userId: string,
+  ): Promise<ContentIdRegistration[]>;
+  updateContentIdRegistration(
+    registrationId: string,
+    data: Record<string, unknown>,
+  ): Promise<ContentIdRegistration>;
+
+  createSyncLicense(data: InsertSyncLicense): Promise<SyncLicense>;
+  getSyncLicense(
+    releaseId: string,
+    trackId?: string,
+  ): Promise<SyncLicense | undefined>;
+  updateSyncLicense(
+    licenseId: string,
+    updates: Partial<InsertSyncLicense>,
+  ): Promise<SyncLicense>;
+  createSyncLicenseInquiry(
+    data: InsertSyncLicenseInquiry,
+  ): Promise<SyncLicenseInquiry>;
+  incrementSyncLicenseInquiries(syncLicenseId: string): Promise<void>;
+  getSyncInquiriesByUser(userId: string): Promise<SyncLicenseInquiry[]>;
+  updateSyncLicenseInquiry(
+    inquiryId: string,
+    updates: Record<string, unknown>,
+  ): Promise<SyncLicenseInquiry>;
+
+  createRoyaltySplit(data: Record<string, unknown>): Promise<RoyaltySplit>;
+  getRoyaltySplitsByRelease(
+    releaseId: string,
+    trackId?: string,
+  ): Promise<RoyaltySplit[]>;
+  getRoyaltySplit(splitId: string): Promise<RoyaltySplit | undefined>;
+  updateRoyaltySplit(
+    splitId: string,
+    updates: Record<string, unknown>,
+  ): Promise<RoyaltySplit>;
+  deleteRoyaltySplit(splitId: string): Promise<void>;
+  createRoyaltyTransaction(
+    data: InsertRoyaltyTransaction,
+  ): Promise<RoyaltyTransaction>;
+  getRoyaltyTransactionsBySplit(
+    splitId: string,
+  ): Promise<RoyaltyTransaction[]>;
+
+  createPreSaveCampaign(
+    data: Record<string, unknown>,
+  ): Promise<PreSaveCampaign>;
+  getPreSaveCampaignBySlug(
+    slug: string,
+  ): Promise<PreSaveCampaign | undefined>;
+  getPreSaveCampaignsByUser(userId: string): Promise<PreSaveCampaign[]>;
+  getPreSaveCampaign(campaignId: string): Promise<PreSaveCampaign | undefined>;
+  updatePreSaveCampaign(
+    campaignId: string,
+    updates: Partial<PreSaveCampaign>,
+  ): Promise<PreSaveCampaign>;
+  createPreSaveEntry(data: InsertPreSaveEntry): Promise<PreSaveEntry>;
+  getPreSaveEntriesByCampaign(campaignId: string): Promise<PreSaveEntry[]>;
+}
+
+// Boundary cast: the same runtime `storage` instance, typed with the surface
+// this service actually uses (see note above).
+const storage = baseStorage as unknown as DistributionStorage;
+
+// LabelGrid integration surface consumed here. The runtime `labelGridService`
+// instance is reached through this typed view; see POSSIBLE UNBUILT FEATURES.
+interface DistributionLabelGrid {
+  isConfigured(): boolean;
+  submitRelease(release: Record<string, unknown>): Promise<{
+    releaseId: string;
+    estimatedLiveDate?: string | Date;
+  }>;
+  getDeliveryStatus(releaseId: string): Promise<{
+    status?: string;
+    platforms?: Array<{
+      platform?: string;
+      status?: string;
+      liveDate?: string | number | Date;
+    }>;
+  }>;
+}
+const labelGrid = labelGridService as unknown as DistributionLabelGrid;
+
+// Notification surface consumed here (see POSSIBLE UNBUILT FEATURES).
+interface DistributionNotifier {
+  sendNotification(
+    userId: string,
+    type: string,
+    title: string,
+    body: string,
+    data: Record<string, unknown>,
+  ): Promise<void>;
+}
+const notifier = notificationService as unknown as DistributionNotifier;
+
 export interface DSPProvider {
   id: string;
   name: string;
@@ -43,7 +249,7 @@ export class DistributionService {
       const release = await storage?.createRelease(data);
       return release;
     } catch (error: unknown) {
-      logger?.warn("Error creating release:", error);
+      logger.warn({ err: error }, "Error creating release:");
       throw new Error("Failed to create release");
     }
   }
@@ -55,7 +261,7 @@ export class DistributionService {
     try {
       return await storage.getUserReleases(userId);
     } catch (error: unknown) {
-      logger.warn("Error fetching releases:", error);
+      logger.warn({ err: error }, "Error fetching releases:");
       throw new Error("Failed to fetch releases");
     }
   }
@@ -66,12 +272,14 @@ export class DistributionService {
   async getRelease(
     releaseId: string,
     userId: string,
-  ): Promise<Release | undefined> {
+  ): Promise<EnrichedRelease | undefined> {
     try {
-      const releases = await storage.getUserReleases(userId);
+      const releases = (await storage.getUserReleases(
+        userId,
+      )) as EnrichedRelease[];
       return releases.find((r) => r.id === releaseId);
     } catch (error: unknown) {
-      logger.warn("Error fetching release:", error);
+      logger.warn({ err: error }, "Error fetching release:");
       throw new Error("Failed to fetch release");
     }
   }
@@ -95,7 +303,7 @@ export class DistributionService {
       }
 
       // Check if LabelGrid is configured
-      if (labelGridService.isConfigured()) {
+      if (labelGrid.isConfigured()) {
         // PRODUCTION: Use LabelGrid API for real distribution
         try {
           // Prepare release data for LabelGrid
@@ -103,7 +311,7 @@ export class DistributionService {
             title: release.title,
             artist: release.artist,
             releaseDate:
-              release.releaseDate.toISOString() || new Date().toISOString(),
+              release.releaseDate?.toISOString() || new Date().toISOString(),
             upc: release.upc || undefined,
             tracks: [],
             artwork: release.coverArt || "",
@@ -115,7 +323,7 @@ export class DistributionService {
           };
 
           // Submit to LabelGrid (it handles database updates internally)
-          const result = await labelGridService.submitRelease(labelGridRelease);
+          const result = await labelGrid.submitRelease(labelGridRelease);
 
           return {
             success: true,
@@ -125,7 +333,7 @@ export class DistributionService {
               : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
           };
         } catch (error: unknown) {
-          logger.warn("LabelGrid distribution failed:", error);
+          logger.warn({ err: error }, "LabelGrid distribution failed:");
           throw error;
         }
       } else {
@@ -139,7 +347,7 @@ export class DistributionService {
         const estimatedLiveDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
         // Update release platforms
-        const platforms = (release.platforms as Record<string, unknown>) || [];
+        const platforms = (release.platforms as unknown[]) || [];
         platforms.push({
           providerId,
           status: "processing",
@@ -157,7 +365,7 @@ export class DistributionService {
         };
       }
     } catch (error: unknown) {
-      logger.warn("Error submitting to provider:", error);
+      logger.warn({ err: error }, "Error submitting to provider:");
       throw new Error("Failed to submit to provider");
     }
   }
@@ -175,7 +383,14 @@ export class DistributionService {
         throw new Error("Release not found");
       }
 
-      const platforms = (release.platforms as unknown[]) || [];
+      interface PlatformEntry {
+        providerId: string;
+        status: DispatchStatus["status"];
+        submittedAt?: string | number | Date;
+        liveDate?: string | number | Date;
+        errorMessage?: string;
+      }
+      const platforms = (release.platforms as PlatformEntry[]) || [];
 
       return platforms.map((p) => ({
         provider: p.providerId,
@@ -185,7 +400,7 @@ export class DistributionService {
         errorMessage: p.errorMessage,
       }));
     } catch (error: unknown) {
-      logger.warn("Error tracking dispatch status:", error);
+      logger.warn({ err: error }, "Error tracking dispatch status:");
       throw new Error("Failed to track dispatch status");
     }
   }
@@ -318,9 +533,9 @@ export class DistributionService {
 
       const notifData = NOTIF[internalStatus];
       if (notifData && release.userId) {
-        await notificationService.sendNotification(
+        await notifier.sendNotification(
           release.userId,
-          notifData.type as Record<string, unknown>,
+          notifData.type,
           notifData.title,
           notifData.body,
           { releaseId, provider, status: internalStatus },
@@ -333,7 +548,7 @@ export class DistributionService {
         internalStatus,
       });
     } catch (error: unknown) {
-      logger.warn("Error handling DSP webhook:", error);
+      logger.warn({ err: error }, "Error handling DSP webhook:");
       throw new Error("Failed to handle DSP webhook");
     }
   }
@@ -412,7 +627,7 @@ export class DistributionService {
         platforms: distributionResults,
       };
     } catch (error: unknown) {
-      logger.warn("Distribution error:", error);
+      logger.warn({ err: error }, "Distribution error:");
       throw new Error("Failed to distribute release");
     }
   }
@@ -473,7 +688,7 @@ export class DistributionService {
         })),
       };
     } catch (error: unknown) {
-      logger.warn("Analytics error:", error);
+      logger.warn({ err: error }, "Analytics error:");
       throw new Error("Failed to fetch analytics");
     }
   }
@@ -528,7 +743,7 @@ export class DistributionService {
 
       return { success: true, splitId: `split_${releaseId}`, splits: inserted };
     } catch (error: unknown) {
-      logger.warn("Royalty split error:", error);
+      logger.warn({ err: error }, "Royalty split error:");
       throw new Error("Failed to setup royalty split");
     }
   }
@@ -581,7 +796,7 @@ export class DistributionService {
       // For now, we'll accept the file
       return { valid: true };
     } catch (error: unknown) {
-      logger?.warn("Artwork validation error:", error);
+      logger.warn({ err: error }, "Artwork validation error:");
       return { valid: false, error: "Failed to validate artwork" };
     }
   }
@@ -601,7 +816,7 @@ export class DistributionService {
       const pkg = await storage?.createDistributionPackage(data);
       return pkg;
     } catch (error: unknown) {
-      logger?.warn("Error creating distribution package:", error);
+      logger.warn({ err: error }, "Error creating distribution package:");
       throw new Error("Failed to create distribution package");
     }
   }
@@ -671,7 +886,7 @@ export class DistributionService {
 
       return metadata;
     } catch (error: unknown) {
-      logger?.warn("Error generating metadata JSON:", error);
+      logger.warn({ err: error }, "Error generating metadata JSON:");
       throw new Error("Failed to generate metadata JSON");
     }
   }
@@ -710,7 +925,7 @@ export class DistributionService {
 
       return csvContent;
     } catch (error: unknown) {
-      logger?.warn("Error generating CSV:", error);
+      logger.warn({ err: error }, "Error generating CSV:");
       throw new Error("Failed to generate CSV");
     }
   }
@@ -815,7 +1030,7 @@ Generated: ${new Date().toISOString()}
 
       return zipKey;
     } catch (error: unknown) {
-      logger?.warn("Error packaging ZIP:", error);
+      logger.warn({ err: error }, "Error packaging ZIP:");
       throw new Error("Failed to package distribution files");
     } finally {
       // Clean up temp file
@@ -836,7 +1051,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage?.getDistributionPackage(projectId);
     } catch (error: unknown) {
-      logger?.warn("Error getting distribution package:", error);
+      logger.warn({ err: error }, "Error getting distribution package:");
       throw new Error("Failed to get distribution package");
     }
   }
@@ -856,7 +1071,7 @@ Generated: ${new Date().toISOString()}
 
       return await storage?.updateDistributionPackage(packageId, updates);
     } catch (error: unknown) {
-      logger?.warn("Error updating distribution package:", error);
+      logger.warn({ err: error }, "Error updating distribution package:");
       throw new Error("Failed to update distribution package");
     }
   }
@@ -875,7 +1090,7 @@ Generated: ${new Date().toISOString()}
 
       return await storage?.createDistributionTrack(track);
     } catch (error: unknown) {
-      logger?.warn("Error adding package track:", error);
+      logger.warn({ err: error }, "Error adding package track:");
       throw new Error("Failed to add track to package");
     }
   }
@@ -887,7 +1102,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage?.getPackageTracks(packageId);
     } catch (error: unknown) {
-      logger?.warn("Error getting package tracks:", error);
+      logger.warn({ err: error }, "Error getting package tracks:");
       throw new Error("Failed to get package tracks");
     }
   }
@@ -906,36 +1121,53 @@ Generated: ${new Date().toISOString()}
         throw new Error("Release not found");
       }
 
-      if (labelGridService?.isConfigured()) {
+      if (labelGrid?.isConfigured()) {
         try {
-          const status = await labelGridService?.getDeliveryStatus(releaseId);
+          const status = await labelGrid?.getDeliveryStatus(releaseId);
           return {
             status: status.status || "pending",
             platforms:
-              status?.platforms?.map((p: Record<string, unknown>) => ({
-                platform: p.platform,
-                status: p.status,
-                liveDate: p.liveDate ? new Date(p?.liveDate) : undefined,
-              })) || [],
+              status?.platforms?.map(
+                (p: {
+                  platform?: string;
+                  status?: string;
+                  liveDate?: string | number | Date;
+                }) => ({
+                  platform: p.platform ?? "",
+                  status: p.status ?? "pending",
+                  liveDate: p.liveDate ? new Date(p?.liveDate) : undefined,
+                }),
+              ) || [],
             lastChecked: new Date(),
           };
         } catch (error: unknown) {
-          logger?.warn("Error fetching status from LabelGrid:", error);
+          logger?.warn({ err: error }, "Error fetching status from LabelGrid:");
         }
       }
 
-      const currentPlatforms = (release?.platforms as unknown[]) || [];
+      const currentPlatforms =
+        (release?.platforms as Array<string | Record<string, unknown>>) || [];
       return {
         status: release.status || "draft",
-        platforms: currentPlatforms.map((p: Record<string, unknown>) => ({
-          platform: typeof p === "string" ? p : p?.platform || p?.name,
-          status: p.status || "pending",
-          liveDate: p.liveDate ? new Date(p?.liveDate) : undefined,
-        })),
+        platforms: currentPlatforms.map((p) => {
+          const obj = typeof p === "string" ? undefined : p;
+          const rawPlatform =
+            typeof p === "string" ? p : obj?.platform ?? obj?.name;
+          const rawLiveDate = obj?.liveDate as
+            | string
+            | number
+            | Date
+            | undefined;
+          return {
+            platform: String(rawPlatform ?? ""),
+            status: String(obj?.status ?? "pending"),
+            liveDate: rawLiveDate ? new Date(rawLiveDate) : undefined,
+          };
+        }),
         lastChecked: new Date(),
       };
     } catch (error: unknown) {
-      logger?.warn("Error refreshing release status:", error);
+      logger.warn({ err: error }, "Error refreshing release status:");
       throw new Error("Failed to refresh release status");
     }
   }
@@ -972,7 +1204,7 @@ Generated: ${new Date().toISOString()}
       );
       return metric;
     } catch (error: unknown) {
-      logger?.warn("Error creating SLA metric:", error);
+      logger.warn({ err: error }, "Error creating SLA metric:");
       throw new Error("Failed to create SLA metric");
     }
   }
@@ -1011,7 +1243,7 @@ Generated: ${new Date().toISOString()}
       );
       return updated;
     } catch (error: unknown) {
-      logger?.warn("Error marking delivery:", error);
+      logger.warn({ err: error }, "Error marking delivery:");
       throw new Error("Failed to mark delivery");
     }
   }
@@ -1025,7 +1257,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage?.getDistributionSLAMetricsByRelease(releaseId);
     } catch (error: unknown) {
-      logger?.warn("Error fetching SLA metrics:", error);
+      logger.warn({ err: error }, "Error fetching SLA metrics:");
       throw new Error("Failed to fetch SLA metrics");
     }
   }
@@ -1085,7 +1317,7 @@ Generated: ${new Date().toISOString()}
         byPlatform,
       };
     } catch (error: unknown) {
-      logger?.warn("Error generating SLA report:", error);
+      logger.warn({ err: error }, "Error generating SLA report:");
       throw new Error("Failed to generate SLA report");
     }
   }
@@ -1113,7 +1345,7 @@ Generated: ${new Date().toISOString()}
       );
       return updated;
     } catch (error: unknown) {
-      logger?.warn("Error retrying delivery:", error);
+      logger.warn({ err: error }, "Error retrying delivery:");
       throw new Error("Failed to retry delivery");
     }
   }
@@ -1160,7 +1392,7 @@ Generated: ${new Date().toISOString()}
       );
       return registration;
     } catch (error: unknown) {
-      logger?.warn("Error registering Content ID:", error);
+      logger.warn({ err: error }, "Error registering Content ID:");
       throw new Error("Failed to register Content ID");
     }
   }
@@ -1174,7 +1406,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage?.getContentIdRegistrationsByRelease(releaseId);
     } catch (error: unknown) {
-      logger?.warn("Error fetching Content ID registrations:", error);
+      logger.warn({ err: error }, "Error fetching Content ID registrations:");
       throw new Error("Failed to fetch Content ID registrations");
     }
   }
@@ -1195,7 +1427,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage?.updateContentIdRegistration(registrationId, data);
     } catch (error: unknown) {
-      logger?.warn("Error updating Content ID status:", error);
+      logger.warn({ err: error }, "Error updating Content ID status:");
       throw new Error("Failed to update Content ID status");
     }
   }
@@ -1236,7 +1468,7 @@ Generated: ${new Date().toISOString()}
         byTrack,
       };
     } catch (error: unknown) {
-      logger?.warn("Error fetching Content ID revenue:", error);
+      logger.warn({ err: error }, "Error fetching Content ID revenue:");
       throw new Error("Failed to fetch Content ID revenue");
     }
   }
@@ -1254,7 +1486,7 @@ Generated: ${new Date().toISOString()}
       logger?.info(`✅ Sync license created for release: ${data?.releaseId}`);
       return license;
     } catch (error: unknown) {
-      logger?.warn("Error creating sync license:", error);
+      logger.warn({ err: error }, "Error creating sync license:");
       throw new Error("Failed to create sync license");
     }
   }
@@ -1269,7 +1501,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage?.getSyncLicense(releaseId, trackId);
     } catch (error: unknown) {
-      logger?.warn("Error fetching sync license:", error);
+      logger.warn({ err: error }, "Error fetching sync license:");
       throw new Error("Failed to fetch sync license");
     }
   }
@@ -1284,7 +1516,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage?.updateSyncLicense(licenseId, updates);
     } catch (error: unknown) {
-      logger?.warn("Error updating sync license:", error);
+      logger.warn({ err: error }, "Error updating sync license:");
       throw new Error("Failed to update sync license");
     }
   }
@@ -1304,7 +1536,7 @@ Generated: ${new Date().toISOString()}
       logger?.info(`📩 Sync inquiry received from ${data?.inquirerEmail}`);
       return inquiry;
     } catch (error: unknown) {
-      logger?.warn("Error submitting sync inquiry:", error);
+      logger.warn({ err: error }, "Error submitting sync inquiry:");
       throw new Error("Failed to submit sync inquiry");
     }
   }
@@ -1316,7 +1548,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage?.getSyncInquiriesByUser(userId);
     } catch (error: unknown) {
-      logger?.warn("Error fetching sync inquiries:", error);
+      logger.warn({ err: error }, "Error fetching sync inquiries:");
       throw new Error("Failed to fetch sync inquiries");
     }
   }
@@ -1338,7 +1570,7 @@ Generated: ${new Date().toISOString()}
         respondedAt: new Date(),
       });
     } catch (error: unknown) {
-      logger?.warn("Error responding to sync inquiry:", error);
+      logger.warn({ err: error }, "Error responding to sync inquiry:");
       throw new Error("Failed to respond to sync inquiry");
     }
   }
@@ -1379,7 +1611,7 @@ Generated: ${new Date().toISOString()}
       );
       return split;
     } catch (error: unknown) {
-      logger?.warn("Error creating royalty split:", error);
+      logger.warn({ err: error }, "Error creating royalty split:");
       throw new Error(
         error instanceof Error
           ? error?.message
@@ -1398,7 +1630,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage?.getRoyaltySplitsByRelease(releaseId, trackId);
     } catch (error: unknown) {
-      logger?.warn("Error fetching royalty splits:", error);
+      logger.warn({ err: error }, "Error fetching royalty splits:");
       throw new Error("Failed to fetch royalty splits");
     }
   }
@@ -1432,7 +1664,7 @@ Generated: ${new Date().toISOString()}
 
       return await storage?.updateRoyaltySplit(splitId, updates);
     } catch (error: unknown) {
-      logger?.warn("Error updating royalty split:", error);
+      logger.warn({ err: error }, "Error updating royalty split:");
       throw new Error(
         error instanceof Error
           ? error?.message
@@ -1465,7 +1697,7 @@ Generated: ${new Date().toISOString()}
         bankDetails: payoutDetails.bankDetails,
       });
     } catch (error: unknown) {
-      logger?.warn("Error accepting royalty split:", error);
+      logger.warn({ err: error }, "Error accepting royalty split:");
       throw new Error("Failed to accept royalty split");
     }
   }
@@ -1478,7 +1710,7 @@ Generated: ${new Date().toISOString()}
       await storage?.deleteRoyaltySplit(splitId);
       logger?.info(`🗑️ Royalty split removed: ${splitId}`);
     } catch (error: unknown) {
-      logger?.warn("Error removing royalty split:", error);
+      logger.warn({ err: error }, "Error removing royalty split:");
       throw new Error("Failed to remove royalty split");
     }
   }
@@ -1517,7 +1749,7 @@ Generated: ${new Date().toISOString()}
 
       return { distributions, totalDistributed };
     } catch (error: unknown) {
-      logger?.warn("Error calculating royalty distribution:", error);
+      logger.warn({ err: error }, "Error calculating royalty distribution:");
       throw new Error("Failed to calculate royalty distribution");
     }
   }
@@ -1542,7 +1774,7 @@ Generated: ${new Date().toISOString()}
 
       return transaction;
     } catch (error: unknown) {
-      logger?.warn("Error recording royalty transaction:", error);
+      logger.warn({ err: error }, "Error recording royalty transaction:");
       throw new Error("Failed to record royalty transaction");
     }
   }
@@ -1554,7 +1786,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage?.getRoyaltyTransactionsBySplit(splitId);
     } catch (error: unknown) {
-      logger?.warn("Error fetching royalty transactions:", error);
+      logger.warn({ err: error }, "Error fetching royalty transactions:");
       throw new Error("Failed to fetch royalty transactions");
     }
   }
@@ -1588,7 +1820,7 @@ Generated: ${new Date().toISOString()}
       logger?.info(`✅ Pre-save campaign created: ${campaign?.name}`);
       return campaign;
     } catch (error: unknown) {
-      logger?.warn("Error creating pre-save campaign:", error);
+      logger.warn({ err: error }, "Error creating pre-save campaign:");
       throw new Error("Failed to create pre-save campaign");
     }
   }
@@ -1602,7 +1834,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage?.getPreSaveCampaignBySlug(slug);
     } catch (error: unknown) {
-      logger?.warn("Error fetching pre-save campaign:", error);
+      logger.warn({ err: error }, "Error fetching pre-save campaign:");
       throw new Error("Failed to fetch pre-save campaign");
     }
   }
@@ -1614,7 +1846,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage?.getPreSaveCampaignsByUser(userId);
     } catch (error: unknown) {
-      logger?.warn("Error fetching pre-save campaigns:", error);
+      logger.warn({ err: error }, "Error fetching pre-save campaigns:");
       throw new Error("Failed to fetch pre-save campaigns");
     }
   }
@@ -1657,7 +1889,7 @@ Generated: ${new Date().toISOString()}
       logger?.info(`✅ Pre-save recorded: ${data?.platform}`);
       return entry;
     } catch (error: unknown) {
-      logger?.warn("Error recording pre-save:", error);
+      logger.warn({ err: error }, "Error recording pre-save:");
       throw new Error("Failed to record pre-save");
     }
   }
@@ -1669,7 +1901,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage?.getPreSaveEntriesByCampaign(campaignId);
     } catch (error: unknown) {
-      logger?.warn("Error fetching pre-save entries:", error);
+      logger.warn({ err: error }, "Error fetching pre-save entries:");
       throw new Error("Failed to fetch pre-save entries");
     }
   }
@@ -1729,7 +1961,7 @@ Generated: ${new Date().toISOString()}
         timeline,
       };
     } catch (error: unknown) {
-      logger?.warn("Error fetching campaign analytics:", error);
+      logger.warn({ err: error }, "Error fetching campaign analytics:");
       throw new Error("Failed to fetch campaign analytics");
     }
   }
@@ -1744,7 +1976,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage?.updatePreSaveCampaign(campaignId, updates);
     } catch (error: unknown) {
-      logger?.warn("Error updating pre-save campaign:", error);
+      logger.warn({ err: error }, "Error updating pre-save campaign:");
       throw new Error("Failed to update pre-save campaign");
     }
   }
@@ -1759,7 +1991,7 @@ Generated: ${new Date().toISOString()}
         endDate: new Date(),
       });
     } catch (error: unknown) {
-      logger?.warn("Error ending pre-save campaign:", error);
+      logger.warn({ err: error }, "Error ending pre-save campaign:");
       throw new Error("Failed to end pre-save campaign");
     }
   }

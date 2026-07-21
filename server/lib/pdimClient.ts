@@ -514,7 +514,6 @@ function _enqueueScriptExec(fn: () => Promise<unknown>): Promise<unknown> {
 const _429_DEDUP_MS = 2_000; // burst window (ms)
 let _last429LoggedAt = 0;
 let _suppressed429Count = 0;
-let _last429Gap = 0;
 
 const _EXEC_DEDUP_WINDOW_MS = 30_000; // 30 s (for 5xx / 3xx errors)
 let _lastExecErrorStatus = -1;
@@ -653,7 +652,8 @@ function _normalizeLuaResult(val: unknown): unknown {
   if (Array.isArray(val)) return val.map(_normalizeLuaResult);
   if (typeof val !== "object") return val;
 
-  const keys = Object.keys(val);
+  const obj = val as Record<string, unknown>;
+  const keys = Object.keys(obj);
   if (keys.length === 0) return [];
 
   const numKeys = keys.map((k) => parseInt(k, 10));
@@ -663,13 +663,42 @@ function _normalizeLuaResult(val: unknown): unknown {
     const isConsecutive =
       sorted[0] === 1 && sorted[sorted.length - 1] === sorted.length;
     if (isConsecutive) {
-      return sorted.map((k) => _normalizeLuaResult(val[k] ?? val[String(k)]));
+      return sorted.map((k) => _normalizeLuaResult(obj[k] ?? obj[String(k)]));
     }
   }
 
-  const out: Record<string, any> = {};
-  for (const k of keys) out[k] = _normalizeLuaResult(val[k]);
+  const out: Record<string, unknown> = {};
+  for (const k of keys) out[k] = _normalizeLuaResult(obj[k]);
   return out;
+}
+
+/**
+ * ioredis-style chainable pipeline builder returned by pipeline()/multi().
+ * Every command method queues the command and returns the same Pipeline so
+ * calls can be chained; exec() flushes the queued commands sequentially.
+ */
+interface Pipeline {
+  get(k: string): Pipeline;
+  set(k: string, v: string, ...a: unknown[]): Pipeline;
+  setex(k: string, s: number, v: string): Pipeline;
+  del(...k: string[]): Pipeline;
+  expire(k: string, s: number): Pipeline;
+  pexpire(k: string, ms: number): Pipeline;
+  incr(k: string): Pipeline;
+  incrby(k: string, n: number): Pipeline;
+  decr(k: string): Pipeline;
+  decrby(k: string, n: number): Pipeline;
+  hset(k: string, ...a: unknown[]): Pipeline;
+  hget(k: string, f: string): Pipeline;
+  hdel(k: string, ...f: string[]): Pipeline;
+  hgetall(k: string): Pipeline;
+  sadd(k: string, ...m: unknown[]): Pipeline;
+  srem(k: string, ...m: unknown[]): Pipeline;
+  zadd(k: string, ...a: unknown[]): Pipeline;
+  zrem(k: string, ...m: unknown[]): Pipeline;
+  lpush(k: string, ...v: unknown[]): Pipeline;
+  rpush(k: string, ...v: unknown[]): Pipeline;
+  exec(): Promise<unknown[]>;
 }
 
 export class PdimRedisClient extends EventEmitter {
@@ -827,7 +856,6 @@ export class PdimRedisClient extends EventEmitter {
             // immediately; accumulate subsequent ones and flush a summary on the
             // next 429 after the window expires.
             const now429 = Date?.now();
-            _last429Gap = newGap;
             if (now429 - _last429LoggedAt < _429_DEDUP_MS) {
               _suppressed429Count++;
             } else {
@@ -953,10 +981,10 @@ export class PdimRedisClient extends EventEmitter {
     });
   }
 
-  pipeline() {
-    const cmds: (string | number | null)[][] = [];
+  pipeline(): Pipeline {
+    const cmds: unknown[][] = [];
     const self = this;
-    const pipe: Record<string, (...args: unknown[]) => unknown> = {
+    const pipe: Pipeline = {
       get: (k: string) => {
         cmds.push(["GET", k]);
         return pipe;
@@ -1051,7 +1079,9 @@ export class PdimRedisClient extends EventEmitter {
         const results: unknown[] = [];
         for (const c of cmds) {
           try {
-            results?.push(await self?.exec(c));
+            // exec coerces every arg to a string internally; the pipeline
+            // builder collects heterogeneous args as unknown[].
+            results?.push(await self?.exec(c as (string | number | null)[]));
           } catch (e) {
             results?.push(e);
           }
@@ -1241,7 +1271,7 @@ export class PdimRedisClient extends EventEmitter {
   async get(key: string): Promise<string | null> {
     const stale = _l1Read(key);
     try {
-      const fresh = await this?.exec(["GET", key]);
+      const fresh = await this?.exec<string | null>(["GET", key]);
       _l1Write(key, fresh);
       return fresh;
     } catch (err) {
@@ -1252,97 +1282,97 @@ export class PdimRedisClient extends EventEmitter {
     }
   }
   async set(key: string, value: string, ...args: unknown[]): Promise<"OK"> {
-    const result = await this?.exec(["SET", key, value, ...args]);
+    const result = await this?.exec<"OK">(["SET", key, value, ...args]);
     _l1Write(key, value);
     return result;
   }
   async setex(key: string, secs: number, value: string): Promise<"OK"> {
-    const result = await this?.exec(["SETEX", key, secs, value]);
+    const result = await this?.exec<"OK">(["SETEX", key, secs, value]);
     _l1Write(key, value);
     return result;
   }
   async setnx(key: string, value: string): Promise<0 | 1> {
-    const result = await this?.exec(["SETNX", key, value]);
+    const result = await this?.exec<0 | 1>(["SETNX", key, value]);
     if (result === 1) _l1Write(key, value);
     return result;
   }
   async getset(key: string, value: string): Promise<string | null> {
-    const result = await this?.exec(["GETSET", key, value]);
+    const result = await this?.exec<string | null>(["GETSET", key, value]);
     _l1Write(key, value);
     return result;
   }
   async mget(...keys: string[]): Promise<(string | null)[]> {
-    return this?.exec(["MGET", ...keys]);
+    return this?.exec<(string | null)[]>(["MGET", ...keys]);
   }
   async mset(...args: string[]): Promise<"OK"> {
-    return this?.exec(["MSET", ...args]);
+    return this?.exec<"OK">(["MSET", ...args]);
   }
   async append(key: string, value: string): Promise<number> {
-    return this?.exec(["APPEND", key, value]);
+    return this?.exec<number>(["APPEND", key, value]);
   }
   async incr(key: string): Promise<number> {
-    return this?.exec(["INCR", key]);
+    return this?.exec<number>(["INCR", key]);
   }
   async decr(key: string): Promise<number> {
-    return this?.exec(["DECR", key]);
+    return this?.exec<number>(["DECR", key]);
   }
   async incrby(key: string, n: number): Promise<number> {
-    return this?.exec(["INCRBY", key, n]);
+    return this?.exec<number>(["INCRBY", key, n]);
   }
   async decrby(key: string, n: number): Promise<number> {
-    return this?.exec(["DECRBY", key, n]);
+    return this?.exec<number>(["DECRBY", key, n]);
   }
   async incrbyfloat(key: string, n: number): Promise<string> {
-    return this?.exec(["INCRBYFLOAT", key, n]);
+    return this?.exec<string>(["INCRBYFLOAT", key, n]);
   }
 
   // ── Key commands ──────────────────────────────────────────────────────────
   async del(...keys: string[]): Promise<number> {
-    const result = await this?.exec(["DEL", ...keys]);
+    const result = await this?.exec<number>(["DEL", ...keys]);
     _l1Evict(...keys);
     return result;
   }
   async exists(...keys: string[]): Promise<number> {
-    return this?.exec(["EXISTS", ...keys]);
+    return this?.exec<number>(["EXISTS", ...keys]);
   }
   async expire(key: string, secs: number): Promise<0 | 1> {
-    return this?.exec(["EXPIRE", key, secs]);
+    return this?.exec<0 | 1>(["EXPIRE", key, secs]);
   }
   async pexpire(key: string, ms: number): Promise<0 | 1> {
-    return this?.exec(["PEXPIRE", key, ms]);
+    return this?.exec<0 | 1>(["PEXPIRE", key, ms]);
   }
   async expireat(key: string, ts: number): Promise<0 | 1> {
-    return this?.exec(["EXPIREAT", key, ts]);
+    return this?.exec<0 | 1>(["EXPIREAT", key, ts]);
   }
   async persist(key: string): Promise<0 | 1> {
-    return this?.exec(["PERSIST", key]);
+    return this?.exec<0 | 1>(["PERSIST", key]);
   }
   async ttl(key: string): Promise<number> {
-    return this?.exec(["TTL", key]);
+    return this?.exec<number>(["TTL", key]);
   }
   async pttl(key: string): Promise<number> {
-    return this?.exec(["PTTL", key]);
+    return this?.exec<number>(["PTTL", key]);
   }
   async type(key: string): Promise<string> {
-    return this?.exec(["TYPE", key]);
+    return this?.exec<string>(["TYPE", key]);
   }
   async rename(key: string, newKey: string): Promise<"OK"> {
-    return this?.exec(["RENAME", key, newKey]);
+    return this?.exec<"OK">(["RENAME", key, newKey]);
   }
   async keys(pattern: string): Promise<string[]> {
-    return this?.exec(["KEYS", pattern]);
+    return this?.exec<string[]>(["KEYS", pattern]);
   }
   async scan(
     cursor: string | number,
     ...args: unknown[]
   ): Promise<[string, string[]]> {
-    return this?.exec(["SCAN", cursor, ...args]);
+    return this?.exec<[string, string[]]>(["SCAN", cursor, ...args]);
   }
   async dbsize(): Promise<number> {
-    return this?.exec(["DBSIZE"]);
+    return this?.exec<number>(["DBSIZE"]);
   }
   async randomkey(): Promise<string | null> {
-    return this?.exec(["RANDOMKEY"]);
+    return this?.exec<string | null>(["RANDOMKEY"]);
   }
 
   // ── Hash commands ─────────────────────────────────────────────────────────
@@ -1350,7 +1380,7 @@ export class PdimRedisClient extends EventEmitter {
     const l1Key = `${key}\x00${field}`;
     const stale = _l1Read(l1Key);
     try {
-      const fresh = await this?.exec(["HGET", key, field]);
+      const fresh = await this?.exec<string | null>(["HGET", key, field]);
       _l1Write(l1Key, fresh);
       return fresh;
     } catch (err) {
@@ -1359,121 +1389,121 @@ export class PdimRedisClient extends EventEmitter {
     }
   }
   async hset(key: string, ...args: unknown[]): Promise<number> {
-    return this?.exec(["HSET", key, ...args]);
+    return this?.exec<number>(["HSET", key, ...args]);
   }
   async hsetnx(key: string, field: string, value: string): Promise<0 | 1> {
-    return this?.exec(["HSETNX", key, field, value]);
+    return this?.exec<0 | 1>(["HSETNX", key, field, value]);
   }
   async hdel(key: string, ...fields: string[]): Promise<number> {
-    return this?.exec(["HDEL", key, ...fields]);
+    return this?.exec<number>(["HDEL", key, ...fields]);
   }
   async hmget(key: string, ...fields: string[]): Promise<(string | null)[]> {
-    return this?.exec(["HMGET", key, ...fields]);
+    return this?.exec<(string | null)[]>(["HMGET", key, ...fields]);
   }
   async hmset(key: string, ...args: unknown[]): Promise<"OK"> {
     // PDIM only accepts HSET with a single field-value pair.  Split HMSET
     // (which can carry N pairs) into sequential HSET calls.
     for (let i = 0; i < args.length - 1; i += 2) {
-      await this?.exec(["HSET", key, args[i], args[i + 1]]);
+      await this?.exec<"OK">(["HSET", key, args[i], args[i + 1]]);
     }
     return "OK";
   }
   async hgetall(key: string): Promise<Record<string, string>> {
-    const result = await this?.exec(["HGETALL", key]);
+    const result = await this?.exec<Record<string, string>>(["HGETALL", key]);
     return result ?? {};
   }
   async hkeys(key: string): Promise<string[]> {
-    return this?.exec(["HKEYS", key]);
+    return this?.exec<string[]>(["HKEYS", key]);
   }
   async hvals(key: string): Promise<string[]> {
-    return this?.exec(["HVALS", key]);
+    return this?.exec<string[]>(["HVALS", key]);
   }
   async hlen(key: string): Promise<number> {
-    return this?.exec(["HLEN", key]);
+    return this?.exec<number>(["HLEN", key]);
   }
   async hexists(key: string, field: string): Promise<0 | 1> {
-    return this?.exec(["HEXISTS", key, field]);
+    return this?.exec<0 | 1>(["HEXISTS", key, field]);
   }
   async hincrby(key: string, field: string, n: number): Promise<number> {
-    return this?.exec(["HINCRBY", key, field, n]);
+    return this?.exec<number>(["HINCRBY", key, field, n]);
   }
   async hincrbyfloat(key: string, field: string, n: number): Promise<string> {
-    return this?.exec(["HINCRBYFLOAT", key, field, n]);
+    return this?.exec<string>(["HINCRBYFLOAT", key, field, n]);
   }
 
   // ── List commands ─────────────────────────────────────────────────────────
   async lpush(key: string, ...values: unknown[]): Promise<number> {
-    return this?.exec(["LPUSH", key, ...values]);
+    return this?.exec<number>(["LPUSH", key, ...values]);
   }
   async rpush(key: string, ...values: unknown[]): Promise<number> {
-    return this?.exec(["RPUSH", key, ...values]);
+    return this?.exec<number>(["RPUSH", key, ...values]);
   }
   async lpop(key: string): Promise<string | null> {
-    return this?.exec(["LPOP", key]);
+    return this?.exec<string | null>(["LPOP", key]);
   }
   async rpop(key: string): Promise<string | null> {
-    return this?.exec(["RPOP", key]);
+    return this?.exec<string | null>(["RPOP", key]);
   }
   async llen(key: string): Promise<number> {
-    return this?.exec(["LLEN", key]);
+    return this?.exec<number>(["LLEN", key]);
   }
   async lrange(key: string, start: number, stop: number): Promise<string[]> {
-    return this?.exec(["LRANGE", key, start, stop]);
+    return this?.exec<string[]>(["LRANGE", key, start, stop]);
   }
   async lindex(key: string, index: number): Promise<string | null> {
-    return this?.exec(["LINDEX", key, index]);
+    return this?.exec<string | null>(["LINDEX", key, index]);
   }
   async lset(key: string, index: number, value: string): Promise<"OK"> {
-    return this?.exec(["LSET", key, index, value]);
+    return this?.exec<"OK">(["LSET", key, index, value]);
   }
   async lrem(key: string, count: number, value: string): Promise<number> {
-    return this?.exec(["LREM", key, count, value]);
+    return this?.exec<number>(["LREM", key, count, value]);
   }
   async ltrim(key: string, start: number, stop: number): Promise<"OK"> {
-    return this?.exec(["LTRIM", key, start, stop]);
+    return this?.exec<"OK">(["LTRIM", key, start, stop]);
   }
 
   // ── Set commands ──────────────────────────────────────────────────────────
   async sadd(key: string, ...members: unknown[]): Promise<number> {
-    return this?.exec(["SADD", key, ...members]);
+    return this?.exec<number>(["SADD", key, ...members]);
   }
   async srem(key: string, ...members: unknown[]): Promise<number> {
-    return this?.exec(["SREM", key, ...members]);
+    return this?.exec<number>(["SREM", key, ...members]);
   }
   async smembers(key: string): Promise<string[]> {
-    return this?.exec(["SMEMBERS", key]);
+    return this?.exec<string[]>(["SMEMBERS", key]);
   }
   async scard(key: string): Promise<number> {
-    return this?.exec(["SCARD", key]);
+    return this?.exec<number>(["SCARD", key]);
   }
   async sismember(key: string, member: string): Promise<0 | 1> {
-    return this?.exec(["SISMEMBER", key, member]);
+    return this?.exec<0 | 1>(["SISMEMBER", key, member]);
   }
   async sunion(...keys: string[]): Promise<string[]> {
-    return this?.exec(["SUNION", ...keys]);
+    return this?.exec<string[]>(["SUNION", ...keys]);
   }
   async sinter(...keys: string[]): Promise<string[]> {
-    return this?.exec(["SINTER", ...keys]);
+    return this?.exec<string[]>(["SINTER", ...keys]);
   }
   async sdiff(...keys: string[]): Promise<string[]> {
-    return this?.exec(["SDIFF", ...keys]);
+    return this?.exec<string[]>(["SDIFF", ...keys]);
   }
 
   // ── Sorted set commands ───────────────────────────────────────────────────
   async zadd(key: string, ...args: unknown[]): Promise<number> {
-    return this?.exec(["ZADD", key, ...args]);
+    return this?.exec<number>(["ZADD", key, ...args]);
   }
   async zrem(key: string, ...members: unknown[]): Promise<number> {
-    return this?.exec(["ZREM", key, ...members]);
+    return this?.exec<number>(["ZREM", key, ...members]);
   }
   async zscore(key: string, member: string): Promise<string | null> {
-    return this?.exec(["ZSCORE", key, member]);
+    return this?.exec<string | null>(["ZSCORE", key, member]);
   }
   async zrank(key: string, member: string): Promise<number | null> {
-    return this?.exec(["ZRANK", key, member]);
+    return this?.exec<number | null>(["ZRANK", key, member]);
   }
   async zrevrank(key: string, member: string): Promise<number | null> {
-    return this?.exec(["ZREVRANK", key, member]);
+    return this?.exec<number | null>(["ZREVRANK", key, member]);
   }
   async zrange(
     key: string,
@@ -1481,7 +1511,7 @@ export class PdimRedisClient extends EventEmitter {
     stop: number,
     ...args: unknown[]
   ): Promise<string[]> {
-    return this?.exec(["ZRANGE", key, start, stop, ...args]);
+    return this?.exec<string[]>(["ZRANGE", key, start, stop, ...args]);
   }
   async zrevrange(
     key: string,
@@ -1489,7 +1519,7 @@ export class PdimRedisClient extends EventEmitter {
     stop: number,
     ...args: unknown[]
   ): Promise<string[]> {
-    return this?.exec(["ZREVRANGE", key, start, stop, ...args]);
+    return this?.exec<string[]>(["ZREVRANGE", key, start, stop, ...args]);
   }
   async zrangebyscore(
     key: string,
@@ -1497,7 +1527,7 @@ export class PdimRedisClient extends EventEmitter {
     max: string | number,
     ...args: unknown[]
   ): Promise<string[]> {
-    return this?.exec(["ZRANGEBYSCORE", key, min, max, ...args]);
+    return this?.exec<string[]>(["ZRANGEBYSCORE", key, min, max, ...args]);
   }
   async zrevrangebyscore(
     key: string,
@@ -1505,38 +1535,38 @@ export class PdimRedisClient extends EventEmitter {
     min: string | number,
     ...args: unknown[]
   ): Promise<string[]> {
-    return this?.exec(["ZREVRANGEBYSCORE", key, max, min, ...args]);
+    return this?.exec<string[]>(["ZREVRANGEBYSCORE", key, max, min, ...args]);
   }
   async zcard(key: string): Promise<number> {
-    return this?.exec(["ZCARD", key]);
+    return this?.exec<number>(["ZCARD", key]);
   }
   async zcount(
     key: string,
     min: string | number,
     max: string | number,
   ): Promise<number> {
-    return this?.exec(["ZCOUNT", key, min, max]);
+    return this?.exec<number>(["ZCOUNT", key, min, max]);
   }
   async zincrby(
     key: string,
     increment: number,
     member: string,
   ): Promise<string> {
-    return this?.exec(["ZINCRBY", key, increment, member]);
+    return this?.exec<string>(["ZINCRBY", key, increment, member]);
   }
   async zremrangebyscore(
     key: string,
     min: string | number,
     max: string | number,
   ): Promise<number> {
-    return this?.exec(["ZREMRANGEBYSCORE", key, min, max]);
+    return this?.exec<number>(["ZREMRANGEBYSCORE", key, min, max]);
   }
   async zremrangebyrank(
     key: string,
     start: number,
     stop: number,
   ): Promise<number> {
-    return this?.exec(["ZREMRANGEBYRANK", key, start, stop]);
+    return this?.exec<number>(["ZREMRANGEBYRANK", key, start, stop]);
   }
 
   // ── Sorted set blocking commands (polyfilled — PDIM has no blocking support) ─
@@ -1567,7 +1597,7 @@ export class PdimRedisClient extends EventEmitter {
       let result: unknown = null;
       try {
         result = await _serializedZpopmin(() =>
-          this?.exec(["ZPOPMIN", key, "1"]),
+          this?.exec<[string, string, string] | null>(["ZPOPMIN", key, "1"]),
         );
       } catch {
         result = null;
@@ -1584,15 +1614,15 @@ export class PdimRedisClient extends EventEmitter {
 
   // ── List atomic move ───────────────────────────────────────────────────────
   async rpoplpush(src: string, dst: string): Promise<string | null> {
-    return this.exec(["RPOPLPUSH", src, dst]);
+    return this.exec<string | null>(["RPOPLPUSH", src, dst]);
   }
   lmove = (src: string, dst: string, srcDir: string, dstDir: string) =>
-    this.exec(["LMOVE", src, dst, srcDir, dstDir]);
+    this.exec<string | null>(["LMOVE", src, dst, srcDir, dstDir]);
 
   // ── Stream commands (full Redis Streams support) ──────────────────────────
   /** XADD key [MAXLEN [~] count] [MINID [~] id] [NOMKSTREAM] id field value [field value ...] */
   async xadd(key: string, ...args: unknown[]): Promise<string | null> {
-    return this.exec(["XADD", key, ...args]);
+    return this.exec<string | null>(["XADD", key, ...args]);
   }
   /** XTRIM key MAXLEN|MINID [~] threshold */
   async xtrim(
@@ -1600,11 +1630,11 @@ export class PdimRedisClient extends EventEmitter {
     strategy: string,
     ...args: unknown[]
   ): Promise<number> {
-    return this.exec(["XTRIM", key, strategy, ...args]);
+    return this.exec<number>(["XTRIM", key, strategy, ...args]);
   }
   /** XLEN key */
   async xlen(key: string): Promise<number> {
-    return this.exec(["XLEN", key]);
+    return this.exec<number>(["XLEN", key]);
   }
   /** XRANGE key start end [COUNT count] */
   async xrange(
@@ -1613,7 +1643,7 @@ export class PdimRedisClient extends EventEmitter {
     end: string,
     ...args: unknown[]
   ): Promise<any[]> {
-    return this.exec(["XRANGE", key, start, end, ...args]);
+    return this.exec<any[]>(["XRANGE", key, start, end, ...args]);
   }
   /** XREVRANGE key end start [COUNT count] */
   async xrevrange(
@@ -1622,19 +1652,19 @@ export class PdimRedisClient extends EventEmitter {
     start: string,
     ...args: unknown[]
   ): Promise<any[]> {
-    return this.exec(["XREVRANGE", key, end, start, ...args]);
+    return this.exec<any[]>(["XREVRANGE", key, end, start, ...args]);
   }
   /** XREAD [COUNT count] [BLOCK milliseconds] STREAMS key [key ...] id [id ...] */
   async xread(...args: unknown[]): Promise<any[] | null> {
-    return this.exec(["XREAD", ...args]);
+    return this.exec<any[] | null>(["XREAD", ...args]);
   }
   /** XDEL key id [id ...] */
   async xdel(key: string, ...ids: string[]): Promise<number> {
-    return this.exec(["XDEL", key, ...ids]);
+    return this.exec<number>(["XDEL", key, ...ids]);
   }
   /** XACK key group id [id ...] */
   async xack(key: string, group: string, ...ids: string[]): Promise<number> {
-    return this.exec(["XACK", key, group, ...ids]);
+    return this.exec<number>(["XACK", key, group, ...ids]);
   }
   /** XGROUP CREATE|SETID|DESTROY|CREATECONSUMER|DELCONSUMER key group id */
   async xgroup(
@@ -1653,7 +1683,7 @@ export class PdimRedisClient extends EventEmitter {
     minIdleTime: number,
     ...args: unknown[]
   ): Promise<any[]> {
-    return this.exec(["XCLAIM", key, group, consumer, minIdleTime, ...args]);
+    return this.exec<any[]>(["XCLAIM", key, group, consumer, minIdleTime, ...args]);
   }
   /** XAUTOCLAIM key group consumer min-idle-time start [COUNT count] */
   async xautoclaim(
@@ -1680,7 +1710,7 @@ export class PdimRedisClient extends EventEmitter {
     group: string,
     ...args: unknown[]
   ): Promise<any[]> {
-    return this.exec(["XPENDING", key, group, ...args]);
+    return this.exec<any[]>(["XPENDING", key, group, ...args]);
   }
   /** XINFO STREAM|GROUPS|CONSUMERS|FULL key */
   async xinfo(
@@ -1697,7 +1727,7 @@ export class PdimRedisClient extends EventEmitter {
    */
   async xreadgroup(...args: unknown[]): Promise<any[] | null> {
     try {
-      return await this.exec(["XREADGROUP", ...args]);
+      return await this.exec<any[] | null>(["XREADGROUP", ...args]);
     } catch {
       // PDIM may not support XREADGROUP — return null so callers degrade gracefully
       return null;
@@ -1777,7 +1807,7 @@ export class PdimRedisClient extends EventEmitter {
   // ── Server commands ───────────────────────────────────────────────────────
   async ping(): Promise<"PONG"> {
     try {
-      return await this.exec(["PING"]);
+      return await this.exec<"PONG">(["PING"]);
     } catch {
       return "PONG";
     }
@@ -1793,10 +1823,10 @@ export class PdimRedisClient extends EventEmitter {
     ].join("\r\n");
   }
   async flushdb(): Promise<"OK"> {
-    return this.exec(["FLUSHDB"]);
+    return this.exec<"OK">(["FLUSHDB"]);
   }
   async flushall(): Promise<"OK"> {
-    return this.exec(["FLUSHALL"]);
+    return this.exec<"OK">(["FLUSHALL"]);
   }
 
   // ── camelCase aliases (node-redis v4 compat) ──────────────────────────────
@@ -1832,19 +1862,19 @@ export class PdimRedisClient extends EventEmitter {
   zRank = (k: string, m: string) => this.zrank(k, m);
   zRemRangeByScore = (
     k: string,
-    min: Record<string, unknown>,
-    max: Record<string, unknown>,
+    min: string | number,
+    max: string | number,
   ) => this.zremrangebyscore(k, min, max);
   zRangeByScore = (
     k: string,
-    min: Record<string, unknown>,
-    max: Record<string, unknown>,
+    min: string | number,
+    max: string | number,
     ...a: unknown[]
   ) => this.zrangebyscore(k, min, max, ...a);
   zCount = (
     k: string,
-    min: Record<string, unknown>,
-    max: Record<string, unknown>,
+    min: string | number,
+    max: string | number,
   ) => this.zcount(k, min, max);
   mGet = (...k: string[]) => this.mget(...k);
   mSet = (...a: string[]) => this.mset(...a);

@@ -131,48 +131,48 @@ async function verifyProjectOwnership(
   projectId: string,
   userId: string,
 ): Promise<boolean> {
-  const project = await db?.query.projects?.findFirst({
-    where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
+  const project = await db.query.projects.findFirst({
+    where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
   });
   if (project) return true;
-  const studioProject = await db?.query.studioProjects?.findFirst({
+  const studioProject = await db.query.studioProjects.findFirst({
     where: and(
-      eq(studioProjects?.id, projectId),
-      eq(studioProjects?.userId, userId),
+      eq(studioProjects.id, projectId),
+      eq(studioProjects.userId, userId),
     ),
   });
   return !!studioProject;
 }
 
 // GET all projects for user (with optional pagination)
-router?.get("/projects", requireAuth, async (req: Request, res: Response) => {
+router.get("/projects", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
-    const limit = Math?.min(
+    const userId = req.user!.id;
+    const limit = Math.min(
       500,
-      Math?.max(1, parseInt(String(req?.query.limit || "200"), 10)),
+      Math.max(1, parseInt(String(req.query.limit || "200"), 10)),
     );
-    const offset = Math?.min(
-      Math?.max(0, parseInt(String(req?.query.offset || "0"), 10)),
+    const offset = Math.min(
+      Math.max(0, parseInt(String(req.query.offset || "0"), 10)),
       100_000,
     );
-    const userProjects = await db?.query.projects?.findMany({
-      where: eq(projects?.userId, userId),
-      orderBy: [desc(projects?.updatedAt)],
+    const userProjects = await db.query.projects.findMany({
+      where: eq(projects.userId, userId),
+      orderBy: [desc(projects.updatedAt)],
       limit,
       offset,
     });
-    res?.json(userProjects);
+    res.json(userProjects);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching projects:");
-    res?.status(500).json({ error: "Failed to fetch projects" });
+    logger.warn({ err: error }, "Error fetching projects:");
+    res.status(500).json({ error: "Failed to fetch projects" });
   }
 });
 
 // POST create new project
-router?.post("/projects", requireAuth, async (req: Request, res: Response) => {
+router.post("/projects", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const {
       title,
       description,
@@ -185,7 +185,7 @@ router?.post("/projects", requireAuth, async (req: Request, res: Response) => {
       bitDepth,
       workflowStage,
       status,
-    } = req?.body;
+    } = req.body;
     const projectId = randomBytes(8).toString("hex");
 
     const [project] = await db
@@ -207,72 +207,72 @@ router?.post("/projects", requireAuth, async (req: Request, res: Response) => {
       })
       .returning();
 
-    res?.status(201).json(project);
+    res.status(201).json(project);
 
     setImmediate(async () => {
       try {
-        await notificationService?.sendProjectCreatedNotification(
+        await notificationService.sendProjectCreatedNotification(
           userId,
           project?.title || "Untitled Project",
           project?.genre,
         );
       } catch (err) {
-        logger?.warn(
+        logger.warn(
           { err: err },
           "[Studio] project created notification error:",
         );
       }
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error creating project:");
-    res?.status(500).json({ error: "Failed to create project" });
+    logger.warn({ err: error }, "Error creating project:");
+    res.status(500).json({ error: "Failed to create project" });
   }
 });
 
 // DELETE project
-router?.delete(
+router.delete(
   "/projects/:projectId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
 
       const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
       await db
         .delete(studioTracks)
-        .where(eq(studioTracks?.projectId, projectId));
-      await db?.delete(projects).where(eq(projects?.id, projectId));
+        .where(eq(studioTracks.projectId, projectId));
+      await db.delete(projects).where(eq(projects.id, projectId));
 
-      res?.json({ success: true, message: "Project deleted" });
+      res.json({ success: true, message: "Project deleted" });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error deleting project:");
-      res?.status(500).json({ error: "Failed to delete project" });
+      logger.warn({ err: error }, "Error deleting project:");
+      res.status(500).json({ error: "Failed to delete project" });
     }
   },
 );
 
 // GET recent files
-router?.get(
+router.get(
   "/recent-files",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const files = await db
         .select()
         .from(studioRecentFiles)
-        .where(eq(studioRecentFiles?.userId, userId))
-        .orderBy(desc(studioRecentFiles?.accessedAt))
+        .where(eq(studioRecentFiles.userId, userId))
+        .orderBy(desc(studioRecentFiles.accessedAt))
         .limit(20);
-      res?.json({ files });
+      res.json({ files });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching recent files:");
-      res?.status(500).json({ error: "Failed to fetch recent files" });
+      logger.warn({ err: error }, "Error fetching recent files:");
+      res.status(500).json({ error: "Failed to fetch recent files" });
     }
   },
 );
@@ -588,9 +588,9 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
 ];
 
 // GET samples library with filtering
-router?.get("/samples", requireAuth, async (req: Request, res: Response) => {
+router.get("/samples", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const {
       category,
       subcategory,
@@ -600,32 +600,32 @@ router?.get("/samples", requireAuth, async (req: Request, res: Response) => {
       key,
       limit = "50",
       offset = "0",
-    } = req?.query;
+    } = req.query;
 
-    const limitNum = Math?.min(Math?.max(parseInt(limit as string) || 0, 0), 100);
-    const offsetNum = Math?.min(
-      Math?.max(parseInt(offset as string) || 0, 0),
+    const limitNum = Math.min(Math.max(parseInt(limit as string) || 0, 0), 100);
+    const offsetNum = Math.min(
+      Math.max(parseInt(offset as string) || 0, 0),
       100_000,
     );
 
     // Build DB query conditions
     const conditions: SQL<unknown>[] = [
-      or(eq(studioSamples?.isBuiltIn, true), eq(studioSamples?.userId, userId)),
+      or(eq(studioSamples.isBuiltIn, true), eq(studioSamples.userId, userId)),
     ];
     if (category)
-      conditions?.push(eq(studioSamples?.category, category as string));
+      conditions?.push(eq(studioSamples.category, category as string));
     if (subcategory)
-      conditions?.push(eq(studioSamples?.subcategory, subcategory as string));
-    if (key) conditions?.push(eq(studioSamples?.key, key as string));
+      conditions?.push(eq(studioSamples.subcategory, subcategory as string));
+    if (key) conditions?.push(eq(studioSamples.key, key as string));
     if (search) {
       const term = `%${(search as string).toLowerCase()}%`;
-      conditions?.push(ilike(studioSamples?.name, term));
+      conditions?.push(ilike(studioSamples.name, term));
     }
     if (tags) {
       const tagList = (tags as string)
         .split(",")
         .map((t) => t?.trim().toLowerCase());
-      conditions?.push(arrayOverlaps(studioSamples?.tags, tagList));
+      conditions?.push(arrayOverlaps(studioSamples.tags, tagList));
     }
 
     // Query DB for samples. If DB has results, use them. If empty, serve built-in library.
@@ -647,11 +647,11 @@ router?.get("/samples", requireAuth, async (req: Request, res: Response) => {
       if (tempo) {
         const targetTempo = parseInt(tempo as string);
         dbSamples = dbSamples?.filter(
-          (s) => s?.tempo && Math?.abs(s?.tempo - targetTempo) <= 10,
+          (s) => s?.tempo && Math.abs(s?.tempo - targetTempo) <= 10,
         );
       }
 
-      return res?.json({
+      return res.json({
         samples: dbSamples.map((s) => ({
           id: s.id,
           name: s.name,
@@ -694,14 +694,14 @@ router?.get("/samples", requireAuth, async (req: Request, res: Response) => {
     }
     if (tempo) {
       const tgt = parseInt(tempo as string);
-      samples = samples?.filter((s) => s?.tempo && Math?.abs(s?.tempo - tgt) <= 10);
+      samples = samples?.filter((s) => s?.tempo && Math.abs(s?.tempo - tgt) <= 10);
     }
     if (key) samples = samples?.filter((s) => s?.key === key);
 
     const total = samples?.length;
     samples = samples?.slice(offsetNum, offsetNum + limitNum);
 
-    res?.json({
+    res.json({
       samples,
       categories: SAMPLE_CATEGORIES,
       total,
@@ -710,53 +710,53 @@ router?.get("/samples", requireAuth, async (req: Request, res: Response) => {
       source: "builtin",
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching samples:");
-    res?.status(500).json({ error: "Failed to fetch samples" });
+    logger.warn({ err: error }, "Error fetching samples:");
+    res.status(500).json({ error: "Failed to fetch samples" });
   }
 });
 
 // GET sample categories
-router?.get(
+router.get(
   "/samples/categories",
   requireAuth,
   async (_req: Request, res: Response) => {
     try {
-      res?.json({ categories: SAMPLE_CATEGORIES });
+      res.json({ categories: SAMPLE_CATEGORIES });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching sample categories:");
-      res?.status(500).json({ error: "Failed to fetch sample categories" });
+      logger.warn({ err: error }, "Error fetching sample categories:");
+      res.status(500).json({ error: "Failed to fetch sample categories" });
     }
   },
 );
 
 // GET single sample by ID
-router?.get(
+router.get(
   "/samples/:sampleId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { sampleId } = req?.params;
+      const { sampleId } = req.params;
       const sample = BUILT_IN_SAMPLES?.find((s) => s?.id === sampleId);
 
       if (!sample) {
-        return res?.status(404).json({ error: "Sample not found" });
+        return res.status(404).json({ error: "Sample not found" });
       }
 
-      res?.json(sample);
+      res.json(sample);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching sample:");
-      res?.status(500).json({ error: "Failed to fetch sample" });
+      logger.warn({ err: error }, "Error fetching sample:");
+      res.status(500).json({ error: "Failed to fetch sample" });
     }
   },
 );
 
 // POST search samples (advanced search)
-router?.post(
+router.post(
   "/samples/search",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { query, filters } = req?.body;
+      const { query, filters } = req.body;
       let samples = [...BUILT_IN_SAMPLES];
 
       if (query) {
@@ -797,30 +797,30 @@ router?.post(
         }
       }
 
-      res?.json({ samples, total: samples.length });
+      res.json({ samples, total: samples.length });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error searching samples:");
-      res?.status(500).json({ error: "Failed to search samples" });
+      logger.warn({ err: error }, "Error searching samples:");
+      res.status(500).json({ error: "Failed to search samples" });
     }
   },
 );
 
 // POST record upload — accepts multipart audio file from the browser MediaRecorder API
-router?.post(
+router.post(
   "/record/upload",
   requireAuth,
   audioUpload?.single("audio"),
   handleUploadError,
   async (req: Request, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const file = req?.file;
+      const userId = req.user!.id;
+      const file = req.file;
 
       if (!file) {
-        return res?.status(400).json({ error: "No audio file provided" });
+        return res.status(400).json({ error: "No audio file provided" });
       }
 
-      const { trackId, projectId, duration, name: recordingName } = req?.body;
+      const { trackId, projectId, duration, name: recordingName } = req.body;
 
       // Store to object storage and get a persistent URL
       const { url, key } = await storeUploadedFile(file, userId, "audio");
@@ -832,7 +832,7 @@ router?.post(
       // If trackId + projectId provided, persist as an audio clip
       if (trackId && projectId) {
         if (!(await verifyProjectOwnership(projectId, userId))) {
-          return res?.status(404).json({ error: "Project not found" });
+          return res.status(404).json({ error: "Project not found" });
         }
 
         const [clip] = await db
@@ -847,14 +847,14 @@ router?.post(
           })
           .returning();
 
-        logger?.info("Recording uploaded and persisted", {
+        logger.info("Recording uploaded and persisted", {
           clipId,
           trackId,
           projectId,
           userId,
         });
 
-        return res?.status(201).json({
+        return res.status(201).json({
           success: true,
           fileId: clipId,
           url,
@@ -865,7 +865,7 @@ router?.post(
       }
 
       // No track context — return URL only so client can place it manually
-      return res?.status(201).json({
+      return res.status(201).json({
         success: true,
         fileId: clipId,
         url,
@@ -873,8 +873,8 @@ router?.post(
         message: "Recording uploaded successfully",
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error uploading recording:");
-      res?.status(500).json({ error: "Failed to upload recording" });
+      logger.warn({ err: error }, "Error uploading recording:");
+      res.status(500).json({ error: "Failed to upload recording" });
     }
   },
 );
@@ -967,71 +967,71 @@ const DEFAULT_MIX_BUSSES: MixBusConfig[] = [
 ];
 
 // GET mix busses for project
-router?.get(
+router.get(
   "/projects/:projectId/mix-busses",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
 
-      const project = await db?.query.projects?.findFirst({
-        where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
+      const project = await db.query.projects.findFirst({
+        where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
       });
 
       if (!project) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
       const metadata = (project?.metadata as Record<string, unknown>) || {};
       const mixBusses =
         (metadata?.mixBusses as MixBusConfig[]) || DEFAULT_MIX_BUSSES;
 
-      res?.json(mixBusses);
+      res.json(mixBusses);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching mix busses:");
-      res?.status(500).json({ error: "Failed to fetch mix busses" });
+      logger.warn({ err: error }, "Error fetching mix busses:");
+      res.status(500).json({ error: "Failed to fetch mix busses" });
     }
   },
 );
 
-router?.get(
+router.get(
   "/projects/:projectId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
 
-      const project = await db?.query.projects?.findFirst({
-        where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
+      const project = await db.query.projects.findFirst({
+        where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
       });
 
       if (!project) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      res?.json(project);
+      res.json(project);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error getting project:");
-      res?.status(500).json({ error: "Failed to get project" });
+      logger.warn({ err: error }, "Error getting project:");
+      res.status(500).json({ error: "Failed to get project" });
     }
   },
 );
 
-router?.patch(
+router.patch(
   "/projects/:projectId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const data = updateProjectSchema?.parse(req?.body);
+      const data = updateProjectSchema?.parse(req.body);
 
       const [updated] = await db
         .update(projects)
@@ -1040,33 +1040,33 @@ router?.patch(
           bpm: data.tempo,
           updatedAt: new Date(),
         })
-        .where(and(eq(projects?.id, projectId), eq(projects?.userId, userId)))
+        .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
         .returning();
 
-      res?.json(updated);
+      res.json(updated);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error updating project:");
+      logger.warn({ err: error }, "Error updating project:");
       if (error instanceof z.ZodError) {
         return res
           .status(400)
           .json({ error: "Invalid data", details: error.issues });
       }
-      res?.status(500).json({ error: "Failed to update project" });
+      res.status(500).json({ error: "Failed to update project" });
     }
   },
 );
 
-router?.post(
+router.post(
   "/projects/:projectId/save-daw-state",
   requireAuth,
   express?.json({ limit: "10mb" }),
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
       const {
@@ -1078,10 +1078,10 @@ router?.post(
         bitDepth,
         description,
         version,
-      } = req?.body;
+      } = req.body;
 
-      const metadata = await db?.query.projects?.findFirst({
-        where: eq(projects?.id, projectId),
+      const metadata = await db.query.projects.findFirst({
+        where: eq(projects.id, projectId),
         columns: { metadata: true },
       });
 
@@ -1105,32 +1105,32 @@ router?.post(
           },
           updatedAt: new Date(),
         })
-        .where(and(eq(projects?.id, projectId), eq(projects?.userId, userId)))
+        .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
         .returning();
 
-      logger?.info(`[Studio] DAW state saved for project ${projectId}`);
-      res?.json({ success: true, project: updated });
+      logger.info(`[Studio] DAW state saved for project ${projectId}`);
+      res.json({ success: true, project: updated });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error saving DAW state:");
-      res?.status(500).json({ error: "Failed to save DAW state" });
+      logger.warn({ err: error }, "Error saving DAW state:");
+      res.status(500).json({ error: "Failed to save DAW state" });
     }
   },
 );
 
-router?.get(
+router.get(
   "/projects/:projectId/daw-state",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
 
-      const project = await db?.query.projects?.findFirst({
-        where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
+      const project = await db.query.projects.findFirst({
+        where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
       });
 
       if (!project) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
       const metadata = (project?.metadata as Record<string, unknown>) || {};
@@ -1138,7 +1138,7 @@ router?.get(
       const dawVersion = metadata?.dawVersion as number | undefined;
       const dawSavedAt = metadata?.dawSavedAt as string | undefined;
 
-      res?.json({
+      res.json({
         project: {
           id: project.id,
           title: project.title,
@@ -1156,25 +1156,25 @@ router?.get(
         dawSavedAt,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error getting DAW state:");
-      res?.status(500).json({ error: "Failed to get DAW state" });
+      logger.warn({ err: error }, "Error getting DAW state:");
+      res.status(500).json({ error: "Failed to get DAW state" });
     }
   },
 );
 
-router?.post(
+router.post(
   "/projects/:projectId/sync",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const { tracks, transport } = req?.body;
+      const { tracks, transport } = req.body;
 
       const updates: Record<string, unknown> = {
         updatedAt: new Date(),
@@ -1191,7 +1191,7 @@ router?.post(
       const [updated] = await db
         .update(projects)
         .set(updates)
-        .where(and(eq(projects?.id, projectId), eq(projects?.userId, userId)))
+        .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
         .returning();
 
       if (tracks && Array?.isArray(tracks)) {
@@ -1209,35 +1209,35 @@ router?.post(
               })
               .where(
                 and(
-                  eq(studioTracks?.id, track?.id),
-                  eq(studioTracks?.projectId, projectId),
+                  eq(studioTracks.id, track?.id),
+                  eq(studioTracks.projectId, projectId),
                 ),
               );
           }
         }
       }
 
-      res?.json({ success: true, project: updated });
+      res.json({ success: true, project: updated });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error syncing project:");
-      res?.status(500).json({ error: "Failed to sync project" });
+      logger.warn({ err: error }, "Error syncing project:");
+      res.status(500).json({ error: "Failed to sync project" });
     }
   },
 );
 
-router?.post(
+router.post(
   "/projects/:projectId/render",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const settings = req?.body || {};
+      const settings = req.body || {};
 
       const validFormats = ["wav", "flac", "aiff", "mp3", "aac", "ogg", "opus"];
       const validSampleRates = [44100, 48000, 88200, 96000, 176400, 192000];
@@ -1289,12 +1289,12 @@ router?.post(
           .json({ error: "Invalid UPC format. Expected: 12-14 digits" });
       }
 
-      const project = await db?.query.projects?.findFirst({
-        where: eq(projects?.id, projectId),
+      const project = await db.query.projects.findFirst({
+        where: eq(projects.id, projectId),
       });
 
       if (!project) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
       const renderJob = {
@@ -1377,7 +1377,7 @@ router?.post(
           fileSize = estimatedDuration * ((256 * 1000) / 8);
       }
 
-      logger?.info(
+      logger.info(
         `[Studio] Professional render completed for project ${projectId}`,
         {
           format: renderJob.settings.format,
@@ -1433,55 +1433,55 @@ router?.post(
         );
       }
 
-      res?.json(result);
+      res.json(result);
 
       setImmediate(async () => {
         try {
-          await notificationService?.sendProjectRenderCompleteNotification(
+          await notificationService.sendProjectRenderCompleteNotification(
             userId,
             project?.title || "Untitled Project",
             format,
             result?.downloadUrl,
           );
         } catch (err) {
-          logger?.warn(
+          logger.warn(
             { err: err },
             "[Studio] render complete notification error:",
           );
         }
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error rendering project:");
-      res?.status(500).json({ error: "Failed to render project" });
+      logger.warn({ err: error }, "Error rendering project:");
+      res.status(500).json({ error: "Failed to render project" });
     }
   },
 );
 
-router?.post("/tracks", requireAuth, async (req: Request, res: Response) => {
+router.post("/tracks", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
-    const data = createTrackSchema?.parse(req?.body);
+    const userId = req.user!.id;
+    const data = createTrackSchema?.parse(req.body);
 
     if (!(await verifyProjectOwnership(data?.projectId, userId))) {
-      return res?.status(404).json({ error: "Project not found" });
+      return res.status(404).json({ error: "Project not found" });
     }
 
     // Validate parentFolderId BEFORE creating track
     if (data?.parentFolderId) {
-      const folder = await db?.query.studioTracks?.findFirst({
+      const folder = await db.query.studioTracks.findFirst({
         where: and(
-          eq(studioTracks?.id, data?.parentFolderId),
-          eq(studioTracks?.trackType, "folder"),
-          eq(studioTracks?.projectId, data?.projectId),
+          eq(studioTracks.id, data?.parentFolderId),
+          eq(studioTracks.trackType, "folder"),
+          eq(studioTracks.projectId, data?.projectId),
         ),
       });
       if (!folder) {
-        return res?.status(400).json({ error: "Invalid folder ID" });
+        return res.status(400).json({ error: "Invalid folder ID" });
       }
     }
 
-    const existingTracks = await db?.query.studioTracks?.findMany({
-      where: eq(studioTracks?.projectId, data?.projectId),
+    const existingTracks = await db.query.studioTracks.findMany({
+      where: eq(studioTracks.projectId, data?.projectId),
     });
 
     const trackOrder = data?.trackNumber ?? existingTracks?.length;
@@ -1509,13 +1509,13 @@ router?.post("/tracks", requireAuth, async (req: Request, res: Response) => {
     // Store folder relationship in project metadata
     if (data?.parentFolderId) {
       // Get or create studioProject entry
-      let studioProject = await db?.query.studioProjects?.findFirst({
-        where: eq(studioProjects?.id, data?.projectId),
+      let studioProject = await db.query.studioProjects.findFirst({
+        where: eq(studioProjects.id, data?.projectId),
       });
 
       if (!studioProject) {
-        const regularProject = await db?.query.projects?.findFirst({
-          where: eq(projects?.id, data?.projectId),
+        const regularProject = await db.query.projects.findFirst({
+          where: eq(projects.id, data?.projectId),
         });
         if (regularProject) {
           const [created] = await db
@@ -1539,7 +1539,7 @@ router?.post("/tracks", requireAuth, async (req: Request, res: Response) => {
         await db
           .update(studioProjects)
           .set({ metadata: { ...metadata, trackFolders } })
-          .where(eq(studioProjects?.id, data?.projectId));
+          .where(eq(studioProjects.id, data?.projectId));
       }
     }
 
@@ -1547,41 +1547,41 @@ router?.post("/tracks", requireAuth, async (req: Request, res: Response) => {
       .status(201)
       .json({ ...track, parentFolderId: data.parentFolderId || null });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error creating track:");
+    logger.warn({ err: error }, "Error creating track:");
     if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({ error: "Invalid data", details: error.issues });
     }
-    res?.status(500).json({ error: "Failed to create track" });
+    res.status(500).json({ error: "Failed to create track" });
   }
 });
 
-router?.get(
+router.get(
   "/projects/:projectId/tracks",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      let tracks = await db?.query.studioTracks?.findMany({
-        where: eq(studioTracks?.projectId, projectId),
-        orderBy: (studioTracks, { asc }) => [asc(studioTracks?.order)],
+      let tracks = await db.query.studioTracks.findMany({
+        where: eq(studioTracks.projectId, projectId),
+        orderBy: (studioTracks, { asc }) => [asc(studioTracks.order)],
       });
 
       // If no tracks exist but project has an audioUrl, auto-create a track with clip
       if (tracks?.length === 0) {
-        const project = await db?.query.projects?.findFirst({
-          where: eq(projects?.id, projectId),
+        const project = await db.query.projects.findFirst({
+          where: eq(projects.id, projectId),
         });
 
         if (project?.audioUrl) {
-          logger?.info(
+          logger.info(
             `Auto-creating track for project ${projectId} with audio ${project?.audioUrl}`,
           );
 
@@ -1605,7 +1605,7 @@ router?.get(
 
           // Create an audio clip for this track
           if (newTrack) {
-            await db?.insert(audioClips).values({
+            await db.insert(audioClips).values({
               id: randomBytes(8).toString("hex"),
               projectId: projectId,
               trackId: newTrack.id,
@@ -1624,8 +1624,8 @@ router?.get(
       }
 
       // Fetch all clips for this project to include in the response
-      const clips = await db?.query.audioClips?.findMany({
-        where: eq(audioClips?.projectId, projectId),
+      const clips = await db.query.audioClips.findMany({
+        where: eq(audioClips.projectId, projectId),
       });
 
       // Map clips to use filePath for frontend compatibility
@@ -1642,35 +1642,35 @@ router?.get(
         fadeOut: clip.fadeOut || 0,
       }));
 
-      res?.json({ tracks, clips: mappedClips });
+      res.json({ tracks, clips: mappedClips });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error getting tracks:");
-      res?.status(500).json({ error: "Failed to get tracks" });
+      logger.warn({ err: error }, "Error getting tracks:");
+      res.status(500).json({ error: "Failed to get tracks" });
     }
   },
 );
 
-router?.patch(
+router.patch(
   "/tracks/:trackId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { trackId } = req?.params;
-      const userId = req?.user!.id;
+      const { trackId } = req.params;
+      const userId = req.user!.id;
 
-      const track = await db?.query.studioTracks?.findFirst({
-        where: eq(studioTracks?.id, trackId),
+      const track = await db.query.studioTracks.findFirst({
+        where: eq(studioTracks.id, trackId),
       });
 
       if (!track) {
-        return res?.status(404).json({ error: "Track not found" });
+        return res.status(404).json({ error: "Track not found" });
       }
 
       if (!(await verifyProjectOwnership(track?.projectId, userId))) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const data = updateTrackSchema?.parse(req?.body);
+      const data = updateTrackSchema?.parse(req.body);
 
       const dbData: Record<string, unknown> = {};
       if (data?.name !== undefined) dbData.name = data?.name;
@@ -1691,21 +1691,21 @@ router?.patch(
       if (data?.parentFolderId !== undefined) {
         // Validate folder exists if not null
         if (data?.parentFolderId !== null) {
-          const folder = await db?.query.studioTracks?.findFirst({
+          const folder = await db.query.studioTracks.findFirst({
             where: and(
-              eq(studioTracks?.id, data?.parentFolderId),
-              eq(studioTracks?.trackType, "folder"),
-              eq(studioTracks?.projectId, track?.projectId),
+              eq(studioTracks.id, data?.parentFolderId),
+              eq(studioTracks.trackType, "folder"),
+              eq(studioTracks.projectId, track?.projectId),
             ),
           });
           if (!folder) {
-            return res?.status(400).json({ error: "Invalid folder ID" });
+            return res.status(400).json({ error: "Invalid folder ID" });
           }
         }
 
         // Get or create studioProject entry
-        let studioProject = await db?.query.studioProjects?.findFirst({
-          where: eq(studioProjects?.id, track?.projectId),
+        let studioProject = await db.query.studioProjects.findFirst({
+          where: eq(studioProjects.id, track?.projectId),
         });
 
         // If studioProject doesn't exist, check if we have a regular project
@@ -4122,7 +4122,7 @@ router.get(
         }
       }
 
-      res?.json({
+      res.json({
         snapshot1: {
           id: snapshot1.id,
           name: snapshot1.name,
@@ -4137,8 +4137,8 @@ router.get(
         hasDifferences: differences.length > 0,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error comparing mix snapshots:");
-      res?.status(500).json({ error: "Failed to compare mix snapshots" });
+      logger.warn({ err: error }, "Error comparing mix snapshots:");
+      res.status(500).json({ error: "Failed to compare mix snapshots" });
     }
   },
 );
@@ -4148,40 +4148,40 @@ router.get(
 // ============================================================================
 
 // GET detailed project statistics
-router?.get(
+router.get(
   "/projects/:projectId/statistics",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { projectId } = req?.params;
+      const userId = req.user!.id;
+      const { projectId } = req.params;
 
       // Verify access
       const hasAccess = await ensureStudioProject(projectId, userId);
       if (!hasAccess) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const project = await db?.query.projects?.findFirst({
-        where: eq(projects?.id, projectId),
+      const project = await db.query.projects.findFirst({
+        where: eq(projects.id, projectId),
       });
 
-      const studioProject = await db?.query.studioProjects?.findFirst({
-        where: eq(studioProjects?.id, projectId),
+      const studioProject = await db.query.studioProjects.findFirst({
+        where: eq(studioProjects.id, projectId),
       });
 
       if (!project) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
       // Get tracks
-      const tracks = await db?.query.studioTracks?.findMany({
-        where: eq(studioTracks?.projectId, projectId),
+      const tracks = await db.query.studioTracks.findMany({
+        where: eq(studioTracks.projectId, projectId),
       });
 
       // Get clips
-      const clips = await db?.query.audioClips?.findMany({
-        where: eq(audioClips?.projectId, projectId),
+      const clips = await db.query.audioClips.findMany({
+        where: eq(audioClips.projectId, projectId),
       });
 
       // Calculate statistics
@@ -4219,9 +4219,9 @@ router?.get(
       // Count folders
       const folderCount = tracks?.filter((t) => t?.trackType === "folder").length;
       const trackFolders = metadata?.trackFolders || {};
-      const organizedTrackCount = Object?.keys(trackFolders).length;
+      const organizedTrackCount = Object.keys(trackFolders).length;
 
-      res?.json({
+      res.json({
         projectId,
         projectTitle: project.title,
         createdAt: project.createdAt,
@@ -4267,17 +4267,17 @@ router?.get(
           : null,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching project statistics:");
-      res?.status(500).json({ error: "Failed to fetch project statistics" });
+      logger.warn({ err: error }, "Error fetching project statistics:");
+      res.status(500).json({ error: "Failed to fetch project statistics" });
     }
   },
 );
 
 // Helper function to format duration
 function formatDuration(seconds: number): string {
-  const hours = Math?.floor(seconds / 3600);
-  const minutes = Math?.floor((seconds % 3600) / 60);
-  const secs = Math?.floor(seconds % 60);
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
 
   if (hours > 0) {
     return `${hours}h ${minutes}m ${secs}s`;
@@ -4290,12 +4290,12 @@ function formatDuration(seconds: number): string {
 
 // GET overall user studio statistics (for dashboard)
 // Uses SQL aggregation to avoid loading all rows into memory
-router?.get(
+router.get(
   "/user-statistics",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       const [
         projectStats,
@@ -4303,7 +4303,7 @@ router?.get(
         clipStats,
         templateStats,
         mostRecentProject,
-      ] = await Promise?.all([
+      ] = await Promise.all([
         // Aggregate project counts in a single query
         db
           .select({
@@ -4314,7 +4314,7 @@ router?.get(
             recentlyUpdated: drizzleSql<string>`COUNT(*) FILTER (WHERE updated_at > NOW() - INTERVAL '7 days')`,
           })
           .from(projects)
-          .where(eq(projects?.userId, userId)),
+          .where(eq(projects.userId, userId)),
 
         // Track count via subquery — no row fetch
         db
@@ -4342,12 +4342,12 @@ router?.get(
             totalUsage: drizzleSql<string>`COALESCE(SUM(usage_count), 0)`,
           })
           .from(studioTemplates)
-          .where(eq(studioTemplates?.userId, userId)),
+          .where(eq(studioTemplates.userId, userId)),
 
         // Most recently updated project — single row
-        db?.query.projects?.findFirst({
-          where: eq(projects?.userId, userId),
-          orderBy: [desc(projects?.updatedAt)],
+        db.query.projects.findFirst({
+          where: eq(projects.userId, userId),
+          orderBy: [desc(projects.updatedAt)],
           columns: { id: true, title: true, updatedAt: true },
         }),
       ]);
@@ -4368,14 +4368,14 @@ router?.get(
 
       const avgTracksPerProject =
         totalProjectCount > 0
-          ? Math?.round((trackTotal / totalProjectCount) * 10) / 10
+          ? Math.round((trackTotal / totalProjectCount) * 10) / 10
           : 0;
       const avgClipsPerProject =
         totalProjectCount > 0
-          ? Math?.round((clipTotal / totalProjectCount) * 10) / 10
+          ? Math.round((clipTotal / totalProjectCount) * 10) / 10
           : 0;
 
-      res?.json({
+      res.json({
         userId,
         projects: {
           total: totalProjectCount,
@@ -4413,8 +4413,8 @@ router?.get(
         },
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching user statistics:");
-      res?.status(500).json({ error: "Failed to fetch user statistics" });
+      logger.warn({ err: error }, "Error fetching user statistics:");
+      res.status(500).json({ error: "Failed to fetch user statistics" });
     }
   },
 );
@@ -4424,22 +4424,22 @@ router?.get(
 // ============================================================================
 
 // GET Start Hub summary - main data for the start page (Studio One-style)
-router?.get(
+router.get(
   "/start-hub/summary",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       // Get user info for profile section
-      const user = await db?.query.users?.findFirst({
-        where: eq(users?.id, userId),
+      const user = await db.query.users.findFirst({
+        where: eq(users.id, userId),
       });
 
       // Get all user projects for categorization
-      const allProjects = await db?.query.projects?.findMany({
-        where: eq(projects?.userId, userId),
-        orderBy: [desc(projects?.lastOpenedAt), desc(projects?.updatedAt)],
+      const allProjects = await db.query.projects.findMany({
+        where: eq(projects.userId, userId),
+        orderBy: [desc(projects.lastOpenedAt), desc(projects.updatedAt)],
       });
 
       // Categorize projects by type (Songs, Projects, Shows)
@@ -4471,8 +4471,8 @@ router?.get(
                 count: drizzleSql<number>`count(*)`,
               })
               .from(studioTracks)
-              .where(inArray(studioTracks?.projectId, projectIds))
-              .groupBy(studioTracks?.projectId)
+              .where(inArray(studioTracks.projectId, projectIds))
+              .groupBy(studioTracks.projectId)
           : [];
 
       // Batch query: Get clip counts grouped by projectId (avoid N+1)
@@ -4484,8 +4484,8 @@ router?.get(
                 count: drizzleSql<number>`count(*)`,
               })
               .from(audioClips)
-              .where(inArray(audioClips?.projectId, projectIds))
-              .groupBy(audioClips?.projectId)
+              .where(inArray(audioClips.projectId, projectIds))
+              .groupBy(audioClips.projectId)
           : [];
 
       // Map counts to lookup objects
@@ -4729,33 +4729,33 @@ router.get("/templates", requireAuth, async (req: Request, res: Response) => {
 
     // Build the where clause for user's templates OR built-in templates
     const baseCondition = or(
-      eq(studioTemplates?.userId, userId),
-      eq(studioTemplates?.isBuiltIn, true),
+      eq(studioTemplates.userId, userId),
+      eq(studioTemplates.isBuiltIn, true),
     );
 
     const whereCondition = category
-      ? and(baseCondition, eq(studioTemplates?.category, category))
+      ? and(baseCondition, eq(studioTemplates.category, category))
       : baseCondition;
 
-    const templates = await db?.query.studioTemplates?.findMany({
+    const templates = await db.query.studioTemplates.findMany({
       where: whereCondition,
       orderBy: [
-        desc(studioTemplates?.usageCount),
-        desc(studioTemplates?.createdAt),
+        desc(studioTemplates.usageCount),
+        desc(studioTemplates.createdAt),
       ],
     });
 
-    res?.json({ templates });
+    res.json({ templates });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching templates:");
-    res?.status(500).json({ error: "Failed to fetch templates" });
+    logger.warn({ err: error }, "Error fetching templates:");
+    res.status(500).json({ error: "Failed to fetch templates" });
   }
 });
 
 // POST create template from project
-router?.post("/templates", requireAuth, async (req: Request, res: Response) => {
+router.post("/templates", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const {
       name,
       description,
@@ -4769,7 +4769,7 @@ router?.post("/templates", requireAuth, async (req: Request, res: Response) => {
       pluginConfigs,
       mixBusConfig,
       tags,
-    } = req?.body;
+    } = req.body;
 
     // Build enhanced template data with track layouts and plugin configs
     const enhancedTemplateData = {
@@ -4798,49 +4798,49 @@ router?.post("/templates", requireAuth, async (req: Request, res: Response) => {
       })
       .returning();
 
-    res?.status(201).json({
+    res.status(201).json({
       ...template,
       trackCount: (trackLayout || []).length,
       hasMixBusConfig: !!mixBusConfig,
       tags: tags || [],
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error creating template:");
-    res?.status(500).json({ error: "Failed to create template" });
+    logger.warn({ err: error }, "Error creating template:");
+    res.status(500).json({ error: "Failed to create template" });
   }
 });
 
 // POST create template from existing project (capture current state)
-router?.post(
+router.post(
   "/projects/:projectId/save-as-template",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { projectId } = req?.params;
-      const { name, description, category, tags } = req?.body;
+      const userId = req.user!.id;
+      const { projectId } = req.params;
+      const { name, description, category, tags } = req.body;
 
       // Ensure studioProject exists
       const hasAccess = await ensureStudioProject(projectId, userId);
       if (!hasAccess) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const studioProject = await db?.query.studioProjects?.findFirst({
-        where: eq(studioProjects?.id, projectId),
+      const studioProject = await db.query.studioProjects.findFirst({
+        where: eq(studioProjects.id, projectId),
       });
 
-      const project = await db?.query.projects?.findFirst({
-        where: eq(projects?.id, projectId),
+      const project = await db.query.projects.findFirst({
+        where: eq(projects.id, projectId),
       });
 
       if (!studioProject || !project) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
       // Get all tracks from the project
-      const tracks = await db?.query.studioTracks?.findMany({
-        where: eq(studioTracks?.projectId, projectId),
+      const tracks = await db.query.studioTracks.findMany({
+        where: eq(studioTracks.projectId, projectId),
         orderBy: studioTracks.trackNumber,
       });
 
@@ -4888,41 +4888,41 @@ router?.post(
         })
         .returning();
 
-      res?.status(201).json({
+      res.status(201).json({
         ...template,
         trackCount: trackLayout.length,
         hasMixBusConfig: !!metadata?.mixBusConfig,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error saving project as template:");
-      res?.status(500).json({ error: "Failed to save as template" });
+      logger.warn({ err: error }, "Error saving project as template:");
+      res.status(500).json({ error: "Failed to save as template" });
     }
   },
 );
 
 // POST create project from template (creates project with preconfigured tracks)
-router?.post(
+router.post(
   "/templates/:templateId/create-project",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { templateId } = req?.params;
-      const userId = req?.user!.id;
-      const { title } = req?.body;
+      const { templateId } = req.params;
+      const userId = req.user!.id;
+      const { title } = req.body;
 
       // Get template with access check (built-in OR owned by user)
-      const template = await db?.query.studioTemplates?.findFirst({
+      const template = await db.query.studioTemplates.findFirst({
         where: and(
-          eq(studioTemplates?.id, templateId),
+          eq(studioTemplates.id, templateId),
           or(
-            eq(studioTemplates?.isBuiltIn, true),
-            eq(studioTemplates?.userId, userId),
+            eq(studioTemplates.isBuiltIn, true),
+            eq(studioTemplates.userId, userId),
           ),
         ),
       });
 
       if (!template) {
-        return res?.status(404).json({ error: "Template not found" });
+        return res.status(404).json({ error: "Template not found" });
       }
 
       const templateData =
@@ -4954,11 +4954,11 @@ router?.post(
               : "#3B82F6",
           volume:
             typeof track?.volume === "number"
-              ? Math?.max(0, Math?.min(1, track?.volume))
+              ? Math.max(0, Math.min(1, track?.volume))
               : 0.8,
           pan:
             typeof track?.pan === "number"
-              ? Math?.max(-1, Math?.min(1, track?.pan))
+              ? Math.max(-1, Math.min(1, track?.pan))
               : 0,
           muted: Boolean(track?.muted),
           soloed: Boolean(track?.soloed),
@@ -4996,7 +4996,7 @@ router?.post(
         project = newProject;
 
         // Step 2: Create studioProject entry for metadata persistence
-        await db?.insert(studioProjects).values({
+        await db.insert(studioProjects).values({
           id: projectId,
           userId,
           title: project.title,
@@ -5045,7 +5045,7 @@ router?.post(
           const trackDef = validatedTrackLayout[i];
           const trackId = randomBytes(8).toString("hex");
 
-          await db?.insert(studioTracks).values({
+          await db.insert(studioTracks).values({
             id: trackId,
             projectId,
             name: trackDef.name || `Track ${i + 1}`,
@@ -5067,65 +5067,65 @@ router?.post(
         // Step 4: Increment template usage count
         await db
           .update(studioTemplates)
-          .set({ usageCount: drizzleSql`${studioTemplates?.usageCount} + 1` })
-          .where(eq(studioTemplates?.id, templateId));
+          .set({ usageCount: drizzleSql`${studioTemplates.usageCount} + 1` })
+          .where(eq(studioTemplates.id, templateId));
 
-        res?.status(201).json({
+        res.status(201).json({
           ...project,
           tracksCreated,
           templateUsed: template.name,
         });
       } catch (innerError) {
         // Cleanup on failure: remove partially created records
-        logger?.warn("Error during project creation, cleaning up:", innerError);
+        logger.warn("Error during project creation, cleaning up:", innerError);
         try {
           await db
             .delete(studioTracks)
-            .where(eq(studioTracks?.projectId, projectId));
+            .where(eq(studioTracks.projectId, projectId));
           await db
             .delete(studioProjects)
-            .where(eq(studioProjects?.id, projectId));
-          await db?.delete(projects).where(eq(projects?.id, projectId));
+            .where(eq(studioProjects.id, projectId));
+          await db.delete(projects).where(eq(projects.id, projectId));
         } catch (cleanupError) {
-          logger?.warn("Error during cleanup:", cleanupError);
+          logger.warn("Error during cleanup:", cleanupError);
         }
         throw innerError;
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error creating project from template:");
-      res?.status(500).json({ error: "Failed to create project" });
+      logger.warn({ err: error }, "Error creating project from template:");
+      res.status(500).json({ error: "Failed to create project" });
     }
   },
 );
 
 // GET template details by ID
-router?.get(
+router.get(
   "/templates/:templateId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { templateId } = req?.params;
-      const userId = req?.user!.id;
+      const { templateId } = req.params;
+      const userId = req.user!.id;
 
       // Query only templates user has access to (built-in OR owned)
-      const template = await db?.query.studioTemplates?.findFirst({
+      const template = await db.query.studioTemplates.findFirst({
         where: and(
-          eq(studioTemplates?.id, templateId),
+          eq(studioTemplates.id, templateId),
           or(
-            eq(studioTemplates?.isBuiltIn, true),
-            eq(studioTemplates?.userId, userId),
+            eq(studioTemplates.isBuiltIn, true),
+            eq(studioTemplates.userId, userId),
           ),
         ),
       });
 
       if (!template) {
-        return res?.status(404).json({ error: "Template not found" });
+        return res.status(404).json({ error: "Template not found" });
       }
 
       const templateData =
         (template?.templateData as Record<string, unknown>) || {};
 
-      res?.json({
+      res.json({
         ...template,
         trackLayout: templateData.trackLayout || [],
         trackCount: (templateData?.trackLayout || []).length,
@@ -5133,19 +5133,19 @@ router?.get(
         tags: templateData.tags || [],
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching template:");
-      res?.status(500).json({ error: "Failed to fetch template" });
+      logger.warn({ err: error }, "Error fetching template:");
+      res.status(500).json({ error: "Failed to fetch template" });
     }
   },
 );
 
 // GET template categories with counts
-router?.get(
+router.get(
   "/template-categories",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       // Define all available categories with their metadata
       const categories = [
@@ -5206,10 +5206,10 @@ router?.get(
       ];
 
       // Get template counts per category
-      const templates = await db?.query.studioTemplates?.findMany({
+      const templates = await db.query.studioTemplates.findMany({
         where: or(
-          eq(studioTemplates?.userId, userId),
-          eq(studioTemplates?.isBuiltIn, true),
+          eq(studioTemplates.userId, userId),
+          eq(studioTemplates.isBuiltIn, true),
         ),
       });
 
@@ -5218,29 +5218,29 @@ router?.get(
         count: templates.filter((t) => t?.category === cat?.id).length,
       }));
 
-      res?.json({ categories: categoriesWithCounts });
+      res.json({ categories: categoriesWithCounts });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching template categories:");
-      res?.status(500).json({ error: "Failed to fetch template categories" });
+      logger.warn({ err: error }, "Error fetching template categories:");
+      res.status(500).json({ error: "Failed to fetch template categories" });
     }
   },
 );
 
 // PATCH update template
-router?.patch(
+router.patch(
   "/templates/:templateId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { templateId } = req?.params;
-      const userId = req?.user!.id;
-      const { name, description, category, tags, coverImageUrl } = req?.body;
+      const { templateId } = req.params;
+      const userId = req.user!.id;
+      const { name, description, category, tags, coverImageUrl } = req.body;
 
       // Verify ownership
-      const template = await db?.query.studioTemplates?.findFirst({
+      const template = await db.query.studioTemplates.findFirst({
         where: and(
-          eq(studioTemplates?.id, templateId),
-          eq(studioTemplates?.userId, userId),
+          eq(studioTemplates.id, templateId),
+          eq(studioTemplates.userId, userId),
         ),
       });
 
@@ -5271,25 +5271,25 @@ router?.patch(
       const [updated] = await db
         .update(studioTemplates)
         .set(updateData)
-        .where(eq(studioTemplates?.id, templateId))
+        .where(eq(studioTemplates.id, templateId))
         .returning();
 
-      res?.json(updated);
+      res.json(updated);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error updating template:");
-      res?.status(500).json({ error: "Failed to update template" });
+      logger.warn({ err: error }, "Error updating template:");
+      res.status(500).json({ error: "Failed to update template" });
     }
   },
 );
 
 // DELETE template
-router?.delete(
+router.delete(
   "/templates/:templateId",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { templateId } = req?.params;
-      const userId = req?.user!.id;
+      const { templateId } = req.params;
+      const userId = req.user!.id;
 
       // Verify ownership (can't delete built-in templates)
       const template = await db.query.studioTemplates.findFirst({
@@ -5628,18 +5628,18 @@ router.get(
           }
         }
       } catch (err) {
-        logger?.warn({ err: err }, "Error reading uploads directory:");
+        logger.warn({ err: err }, "Error reading uploads directory:");
       }
 
-      res?.json({
+      res.json({
         totalFiles,
         orphanedCount,
         orphanedSizeBytes: orphanedSize,
         orphanedSizeMB: Math.round((orphanedSize / (1024 * 1024)) * 100) / 100,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error getting orphaned uploads stats:");
-      res?.status(500).json({ error: "Failed to get orphaned uploads stats" });
+      logger.warn({ err: error }, "Error getting orphaned uploads stats:");
+      res.status(500).json({ error: "Failed to get orphaned uploads stats" });
     }
   },
 );
@@ -5681,20 +5681,20 @@ const masterSettingsSchema = z.object({
 });
 
 // POST apply mix settings
-router?.post(
+router.post(
   "/projects/:projectId/mix",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
 
       const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
-      const validation = mixSettingsSchema?.safeParse(req?.body);
+      const validation = mixSettingsSchema?.safeParse(req.body);
       if (!validation?.success) {
         return res
           .status(400)
@@ -5723,7 +5723,7 @@ router?.post(
             ? 0.15
             : 0);
 
-      res?.json({
+      res.json({
         success: true,
         outcome: {
           type: "mix_applied",
@@ -5736,27 +5736,27 @@ router?.post(
         },
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error applying mix settings:");
-      res?.status(500).json({ error: "Failed to apply mix settings" });
+      logger.warn({ err: error }, "Error applying mix settings:");
+      res.status(500).json({ error: "Failed to apply mix settings" });
     }
   },
 );
 
 // POST apply master settings
-router?.post(
+router.post(
   "/projects/:projectId/master",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
 
       const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
-      const validation = masterSettingsSchema?.safeParse(req?.body);
+      const validation = masterSettingsSchema?.safeParse(req.body);
       if (!validation?.success) {
         return res
           .status(400)
@@ -5771,7 +5771,7 @@ router?.post(
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       const limiterGain = masterSettings?.limiterCeiling
-        ? Math?.abs(masterSettings?.limiterCeiling) * 0.1
+        ? Math.abs(masterSettings?.limiterCeiling) * 0.1
         : 0;
       const loudnessMetrics = {
         integratedLUFS: parseFloat(
@@ -5790,7 +5790,7 @@ router?.post(
         loudnessRange: parseFloat((6.5 - limiterGain * 0.2).toFixed(1)),
       };
 
-      res?.json({
+      res.json({
         success: true,
         outcome: {
           type: "master_applied",
@@ -5802,35 +5802,35 @@ router?.post(
         },
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error applying master settings:");
-      res?.status(500).json({ error: "Failed to apply master settings" });
+      logger.warn({ err: error }, "Error applying master settings:");
+      res.status(500).json({ error: "Failed to apply master settings" });
     }
   },
 );
 
 // POST duplicate track
-router?.post(
+router.post(
   "/projects/:projectId/tracks/:trackId/duplicate",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId, trackId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId, trackId } = req.params;
+      const userId = req.user!.id;
 
       const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
-      const originalTrack = await db?.query.studioTracks?.findFirst({
+      const originalTrack = await db.query.studioTracks.findFirst({
         where: and(
-          eq(studioTracks?.id, trackId),
-          eq(studioTracks?.projectId, projectId),
+          eq(studioTracks.id, trackId),
+          eq(studioTracks.projectId, projectId),
         ),
       });
 
       if (!originalTrack) {
-        return res?.status(404).json({ error: "Track not found" });
+        return res.status(404).json({ error: "Track not found" });
       }
 
       const newTrackId = randomBytes(8).toString("hex");
@@ -5851,7 +5851,7 @@ router?.post(
         })
         .returning();
 
-      res?.json({
+      res.json({
         success: true,
         outcome: {
           type: "track_duplicated",
@@ -5863,40 +5863,40 @@ router?.post(
         },
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error duplicating track:");
-      res?.status(500).json({ error: "Failed to duplicate track" });
+      logger.warn({ err: error }, "Error duplicating track:");
+      res.status(500).json({ error: "Failed to duplicate track" });
     }
   },
 );
 
 // POST bounce track
-router?.post(
+router.post(
   "/projects/:projectId/tracks/:trackId/bounce",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId, trackId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId, trackId } = req.params;
+      const userId = req.user!.id;
       const {
         format = "wav",
         normalize = true,
         includeEffects = true,
-      } = req?.body;
+      } = req.body;
 
       const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
-      const track = await db?.query.studioTracks?.findFirst({
+      const track = await db.query.studioTracks.findFirst({
         where: and(
-          eq(studioTracks?.id, trackId),
-          eq(studioTracks?.projectId, projectId),
+          eq(studioTracks.id, trackId),
+          eq(studioTracks.projectId, projectId),
         ),
       });
 
       if (!track) {
-        return res?.status(404).json({ error: "Track not found" });
+        return res.status(404).json({ error: "Track not found" });
       }
 
       await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -5904,7 +5904,7 @@ router?.post(
       const filename = `${track?.name.replace(/[^a-zA-Z0-9-_]/g, "_")}_bounce.${format}`;
       const downloadUrl = `/api/studio/downloads/${filename}`;
 
-      res?.json({
+      res.json({
         success: true,
         outcome: {
           type: "track_bounced",
@@ -5921,29 +5921,29 @@ router?.post(
         },
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error bouncing track:");
-      res?.status(500).json({ error: "Failed to bounce track" });
+      logger.warn({ err: error }, "Error bouncing track:");
+      res.status(500).json({ error: "Failed to bounce track" });
     }
   },
 );
 
 // POST load plugin
-router?.post(
+router.post(
   "/projects/:projectId/plugins/load",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const userId = req?.user!.id;
-      const { pluginId, trackId } = req?.body;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
+      const { pluginId, trackId } = req.body;
 
       const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
       if (!pluginId) {
-        return res?.status(400).json({ error: "Plugin ID is required" });
+        return res.status(400).json({ error: "Plugin ID is required" });
       }
 
       await new Promise((resolve) => setTimeout(resolve, 500));
@@ -5970,7 +5970,7 @@ router?.post(
       );
 
       if (pluginNotFound) {
-        return res?.status(404).json({
+        return res.status(404).json({
           error: "Plugin not found",
           outcome: {
             type: "plugin_error",
@@ -5980,7 +5980,7 @@ router?.post(
         });
       }
 
-      res?.json({
+      res.json({
         success: true,
         outcome: {
           type: "plugin_loaded",
@@ -5993,24 +5993,24 @@ router?.post(
         },
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error loading plugin:");
-      res?.status(500).json({ error: "Failed to load plugin" });
+      logger.warn({ err: error }, "Error loading plugin:");
+      res.status(500).json({ error: "Failed to load plugin" });
     }
   },
 );
 
 // GET list presets for a plugin
-router?.get(
+router.get(
   "/projects/:projectId/plugins/:pluginId/presets",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId, pluginId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId, pluginId } = req.params;
+      const userId = req.user!.id;
 
       const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
       const presets = await db
@@ -6018,35 +6018,35 @@ router?.get(
         .from(pluginPresets)
         .where(
           and(
-            eq(pluginPresets?.pluginId, pluginId),
+            eq(pluginPresets.pluginId, pluginId),
             or(
-              eq(pluginPresets?.userId, userId),
-              eq(pluginPresets?.isFactory, true),
+              eq(pluginPresets.userId, userId),
+              eq(pluginPresets.isFactory, true),
             ),
           ).limit(200),
         )
-        .orderBy(pluginPresets?.name);
+        .orderBy(pluginPresets.name);
 
-      res?.json({ presets, pluginId });
+      res.json({ presets, pluginId });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching plugin presets:");
-      res?.status(500).json({ error: "Failed to fetch plugin presets" });
+      logger.warn({ err: error }, "Error fetching plugin presets:");
+      res.status(500).json({ error: "Failed to fetch plugin presets" });
     }
   },
 );
 
 // POST apply preset
-router?.post(
+router.post(
   "/projects/:projectId/plugins/:pluginId/presets/:presetId/apply",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId, pluginId, presetId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId, pluginId, presetId } = req.params;
+      const userId = req.user!.id;
 
       const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
       const [preset] = await db
@@ -6054,21 +6054,21 @@ router?.post(
         .from(pluginPresets)
         .where(
           and(
-            eq(pluginPresets?.id, presetId),
-            eq(pluginPresets?.pluginId, pluginId),
+            eq(pluginPresets.id, presetId),
+            eq(pluginPresets.pluginId, pluginId),
             or(
-              eq(pluginPresets?.userId, userId),
-              eq(pluginPresets?.isFactory, true),
+              eq(pluginPresets.userId, userId),
+              eq(pluginPresets.isFactory, true),
             ),
           ).limit(1),
         )
         .limit(1);
 
       if (!preset) {
-        return res?.status(404).json({ error: "Preset not found" });
+        return res.status(404).json({ error: "Preset not found" });
       }
 
-      res?.json({
+      res.json({
         success: true,
         outcome: {
           type: "preset_applied",
@@ -6083,29 +6083,29 @@ router?.post(
         },
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error applying preset:");
-      res?.status(500).json({ error: "Failed to apply preset" });
+      logger.warn({ err: error }, "Error applying preset:");
+      res.status(500).json({ error: "Failed to apply preset" });
     }
   },
 );
 
 // POST save preset
-router?.post(
+router.post(
   "/projects/:projectId/plugins/:pluginId/presets",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId, pluginId } = req?.params;
-      const userId = req?.user!.id;
-      const { name, settings } = req?.body;
+      const { projectId, pluginId } = req.params;
+      const userId = req.user!.id;
+      const { name, settings } = req.body;
 
       const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
       if (!name || typeof name !== "string") {
-        return res?.status(400).json({ error: "Preset name is required" });
+        return res.status(400).json({ error: "Preset name is required" });
       }
 
       const [preset] = await db
@@ -6120,7 +6120,7 @@ router?.post(
         })
         .returning();
 
-      res?.json({
+      res.json({
         success: true,
         outcome: {
           type: "preset_saved",
@@ -6136,31 +6136,31 @@ router?.post(
         },
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error saving preset:");
-      res?.status(500).json({ error: "Failed to save preset" });
+      logger.warn({ err: error }, "Error saving preset:");
+      res.status(500).json({ error: "Failed to save preset" });
     }
   },
 );
 
 // POST collaboration session save
-router?.post(
+router.post(
   "/projects/:projectId/collaboration/save",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
 
       const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      const version = Date?.now();
+      const version = Date.now();
 
-      res?.json({
+      res.json({
         success: true,
         outcome: {
           type: "session_saved",
@@ -6174,25 +6174,25 @@ router?.post(
         },
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error saving collaboration session:");
-      res?.status(500).json({ error: "Failed to save session" });
+      logger.warn({ err: error }, "Error saving collaboration session:");
+      res.status(500).json({ error: "Failed to save session" });
     }
   },
 );
 
 // POST resolve conflict
-router?.post(
+router.post(
   "/projects/:projectId/collaboration/resolve-conflict",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const userId = req?.user!.id;
-      const { conflictId, resolution } = req?.body;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
+      const { conflictId, resolution } = req.body;
 
       const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
       if (!conflictId || !["mine", "theirs", "merge"].includes(resolution)) {
@@ -6203,7 +6203,7 @@ router?.post(
 
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      res?.json({
+      res.json({
         success: true,
         outcome: {
           type: "conflict_resolved",
@@ -6217,81 +6217,81 @@ router?.post(
         },
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error resolving conflict:");
-      res?.status(500).json({ error: "Failed to resolve conflict" });
+      logger.warn({ err: error }, "Error resolving conflict:");
+      res.status(500).json({ error: "Failed to resolve conflict" });
     }
   },
 );
 
 // GET sync status
-router?.get(
+router.get(
   "/projects/:projectId/collaboration/sync-status",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
 
       const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
-      res?.json({
+      res.json({
         status: "synced",
         lastSyncedAt: new Date().toISOString(),
         pendingChanges: 0,
         collaborators: [],
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error getting sync status:");
-      res?.status(500).json({ error: "Failed to get sync status" });
+      logger.warn({ err: error }, "Error getting sync status:");
+      res.status(500).json({ error: "Failed to get sync status" });
     }
   },
 );
 
 // GET undo history
-router?.get(
+router.get(
   "/projects/:projectId/history",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
 
       const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
-      res?.json({
+      res.json({
         past: [],
         future: [],
         canUndo: false,
         canRedo: false,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching undo history:");
-      res?.status(500).json({ error: "Failed to fetch history" });
+      logger.warn({ err: error }, "Error fetching undo history:");
+      res.status(500).json({ error: "Failed to fetch history" });
     }
   },
 );
 
 // POST undo action
-router?.post(
+router.post(
   "/projects/:projectId/history/undo",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
 
       const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
-      res?.json({
+      res.json({
         success: true,
         outcome: {
           type: "undo",
@@ -6300,27 +6300,27 @@ router?.post(
         },
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error undoing action:");
-      res?.status(500).json({ error: "Failed to undo action" });
+      logger.warn({ err: error }, "Error undoing action:");
+      res.status(500).json({ error: "Failed to undo action" });
     }
   },
 );
 
 // POST redo action
-router?.post(
+router.post(
   "/projects/:projectId/history/redo",
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
 
       const hasAccess = await verifyProjectOwnership(projectId, userId);
       if (!hasAccess) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
-      res?.json({
+      res.json({
         success: true,
         outcome: {
           type: "redo",
@@ -6329,20 +6329,20 @@ router?.post(
         },
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error redoing action:");
-      res?.status(500).json({ error: "Failed to redo action" });
+      logger.warn({ err: error }, "Error redoing action:");
+      res.status(500).json({ error: "Failed to redo action" });
     }
   },
 );
 
 // POST generate - AI-powered audio/content generation
-router?.post("/generate", requireAuth, async (req: Request, res: Response) => {
+router.post("/generate", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
-    const { type, prompt, projectId, options } = req?.body;
+    const userId = req.user!.id;
+    const { type, prompt, projectId, options } = req.body;
 
     if (!type || !prompt) {
-      return res?.status(400).json({ error: "type and prompt are required" });
+      return res.status(400).json({ error: "type and prompt are required" });
     }
 
     const generationId = randomBytes(8).toString("hex");
@@ -6378,17 +6378,17 @@ router?.post("/generate", requireAuth, async (req: Request, res: Response) => {
       },
     };
 
-    logger?.info(
+    logger.info(
       `[Studio] AI generation completed: ${generationId} for user ${userId}`,
     );
 
-    res?.json({
+    res.json({
       success: true,
       generation: result,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error in AI generation:");
-    res?.status(500).json({ error: "Failed to generate content" });
+    logger.warn({ err: error }, "Error in AI generation:");
+    res.status(500).json({ error: "Failed to generate content" });
   }
 });
 

@@ -1852,7 +1852,7 @@ class DistributionDataTransferService {
       }
     } catch (err) {
       logger.warn(
-        `[DataTransfer] Failed to auto-discover SoundCloud client_id: ${err.message}`,
+        `[DataTransfer] Failed to auto-discover SoundCloud client_id: ${err instanceof Error ? err.message : String(err)}`,
       );
     }
     return null;
@@ -1869,7 +1869,14 @@ class DistributionDataTransferService {
           `https://api-v2.soundcloud.com/resolve?url=https://soundcloud.com/${permalink}&client_id=${clientId}`,
         );
         if (resp.ok) {
-          const user = (await resp.json()) as Record<string, unknown>;
+          const user = (await resp.json()) as {
+            username?: string;
+            followers_count?: number;
+            playback_count?: number;
+            description?: string;
+            avatar_url?: string;
+            permalink_url?: string;
+          };
           if (user && user.username) {
             return {
               artistName: user.username,
@@ -1949,7 +1956,10 @@ class DistributionDataTransferService {
             },
           );
           if (resp.ok) {
-            const artist = (await resp.json()) as Record<string, unknown>;
+            const artist = (await resp.json()) as {
+              name?: string;
+              picture?: string;
+            };
             return {
               artistName: artist.name,
               imageUrl: artist.picture
@@ -2060,7 +2070,16 @@ class DistributionDataTransferService {
         `https://api.audiomack.com/v1/artist/${slug}`,
       );
       if (!resp.ok) throw new Error(`Audiomack API returned ${resp.status}`);
-      const data = (await resp.json()) as Record<string, unknown>;
+      const data = (await resp.json()) as {
+        results?: {
+          name?: string;
+          followers?: number;
+          plays?: number;
+          image?: string;
+          url?: string;
+          bio?: string;
+        };
+      };
       const artist = data.results;
       if (!artist) return null;
 
@@ -2176,27 +2195,41 @@ class DistributionDataTransferService {
             break;
           }
 
-          const data = (await resp.json()) as Record<string, unknown>;
+          const data = (await resp.json()) as {
+            items?: Array<{
+              id?: string;
+              name?: string;
+              album_type?: string;
+              total_tracks?: number;
+              artists?: Array<{ name?: string }>;
+              release_date?: string;
+              images?: Array<{ url?: string }>;
+              external_urls?: { spotify?: string };
+              external_ids?: { upc?: string };
+              genres?: string[];
+            }>;
+            next?: string | null;
+          };
           for (const item of data.items || []) {
             const type =
               item.album_type === "album"
-                ? item.total_tracks >= 6
+                ? (item.total_tracks ?? 0) >= 6
                   ? "album"
                   : "EP"
                 : "single";
             results.push({
               id: `spotify-${item.id}`,
-              externalId: item.id,
+              externalId: item.id ?? "",
               platformId: "spotify",
-              title: item.name,
-              artistName: item.artists[0].name || artistName,
+              title: item.name ?? "",
+              artistName: item.artists?.[0]?.name || artistName,
               releaseType: type as "single" | "EP" | "album",
               releaseDate: item.release_date || null,
               trackCount: item.total_tracks || 1,
-              coverUrl: item.images[0].url,
-              platformUrl: item.external_urls.spotify,
-              upc: item.external_ids.upc,
-              genre: item.genres[0],
+              coverUrl: item.images?.[0]?.url,
+              platformUrl: item.external_urls?.spotify,
+              upc: item.external_ids?.upc,
+              genre: item.genres?.[0],
             });
           }
 
@@ -2217,17 +2250,22 @@ class DistributionDataTransferService {
                   },
                 );
                 if (tr.ok) {
-                  const td = (await tr.json()) as Record<string, unknown>;
-                  release.tracks = (td.items || []).map(
-                    (t: Record<string, unknown>, idx: number) => ({
-                      title: t.name,
-                      trackNumber: t.track_number || idx + 1,
-                      isrc: t.external_ids.isrc,
-                      duration: t.duration_ms
-                        ? Math.round(t.duration_ms / 1000)
-                        : undefined,
-                    }),
-                  );
+                  const td = (await tr.json()) as {
+                    items?: Array<{
+                      name?: string;
+                      track_number?: number;
+                      external_ids?: { isrc?: string };
+                      duration_ms?: number;
+                    }>;
+                  };
+                  release.tracks = (td.items || []).map((t, idx) => ({
+                    title: t.name ?? "",
+                    trackNumber: t.track_number || idx + 1,
+                    isrc: t.external_ids?.isrc,
+                    duration: t.duration_ms
+                      ? Math.round(t.duration_ms / 1000)
+                      : undefined,
+                  }));
                   release.trackCount =
                     release.tracks.length || release.trackCount;
                 }
@@ -2251,7 +2289,7 @@ class DistributionDataTransferService {
       } catch (err) {
         logger.warn(
           `[DataTransfer] Spotify album scan error for ${artistId}:`,
-          err.message,
+          err instanceof Error ? err.message : String(err),
         );
       }
     } else {
@@ -2307,7 +2345,9 @@ class DistributionDataTransferService {
       );
       if (!searchResp.ok) return [];
 
-      const searchData = (await searchResp.json()) as Record<string, unknown>;
+      const searchData = (await searchResp.json()) as {
+        results?: Record<string, unknown>[];
+      };
       const items: Record<string, unknown>[] = searchData.results || [];
       if (items.length === 0) return [];
 
@@ -2328,13 +2368,24 @@ class DistributionDataTransferService {
       );
       if (!lookupResp?.ok) return [];
 
-      const lookupData = (await lookupResp?.json()) as Record<string, unknown>;
-      const releases: Record<string, unknown>[] = (
-        lookupData?.results || []
-      ).filter(
+      const lookupData = (await lookupResp?.json()) as {
+        results?: Record<string, unknown>[];
+      };
+      interface ItunesCollection {
+        wrapperType?: string;
+        collectionId?: number | string;
+        collectionName?: string;
+        artistName?: string;
+        trackCount?: number;
+        releaseDate?: string;
+        artworkUrl100?: string;
+        collectionViewUrl?: string;
+        primaryGenreName?: string;
+      }
+      const releases = (lookupData?.results || []).filter(
         (r: Record<string, unknown>) =>
           r?.wrapperType === "collection" || r?.collectionId,
-      );
+      ) as ItunesCollection[];
 
       const resolvedArtistName = releases[0]?.artistName || artistName;
 
@@ -2344,13 +2395,14 @@ class DistributionDataTransferService {
         return "album";
       };
 
-      return releases?.map((item: Record<string, unknown>) => ({
+      return releases?.map((item): ScannedRelease => ({
         id: `itunes-${item?.collectionId}`,
         externalId: String(item?.collectionId),
         platformId,
         title:
           item?.collectionName?.replace(/ - Single$| - EP$/, "") ||
-          item?.collectionName,
+          item?.collectionName ||
+          "",
         artistName: item.artistName || resolvedArtistName,
         releaseType: item.collectionName?.endsWith(" - Single")
           ? "single"
@@ -2367,7 +2419,7 @@ class DistributionDataTransferService {
     } catch (err) {
       logger?.warn(
         `[DataTransfer] iTunes catalog lookup failed for "${artistName}":`,
-        err?.message,
+        err instanceof Error ? err.message : String(err),
       );
       return [];
     }
@@ -2403,9 +2455,14 @@ class DistributionDataTransferService {
           { headers: { "User-Agent": UA } },
         );
         if (urlResp?.ok) {
-          const urlData = (await urlResp?.json()) as Record<string, unknown>;
+          const urlData = (await urlResp?.json()) as {
+            relations?: Array<{
+              "target-type"?: string;
+              artist?: { id?: string };
+            }>;
+          };
           const artistRel = (urlData?.relations || []).find(
-            (r: Record<string, unknown>) => r["target-type"] === "artist",
+            (r) => r["target-type"] === "artist",
           );
           mbid = artistRel?.artist?.id || null;
         }
@@ -2422,10 +2479,9 @@ class DistributionDataTransferService {
             { headers: { "User-Agent": UA } },
           );
           if (searchResp?.ok) {
-            const searchData = (await searchResp?.json()) as Record<
-              string,
-              unknown
-            >;
+            const searchData = (await searchResp?.json()) as {
+              artists?: Array<{ id?: string }>;
+            };
             mbid = searchData?.artists?.[0]?.id || null;
           }
         } catch {
@@ -2448,8 +2504,24 @@ class DistributionDataTransferService {
       );
       if (!rgResp?.ok) return [];
 
-      const rgData = (await rgResp?.json()) as Record<string, unknown>;
-      const groups: Record<string, unknown>[] = rgData["release-groups"] || [];
+      interface MbRelease {
+        "track-count"?: number;
+        media?: Array<{ "track-count"?: number }>;
+        barcode?: string;
+      }
+      interface MbReleaseGroup {
+        id?: string;
+        title?: string;
+        "primary-type"?: string;
+        "secondary-types"?: string[];
+        "first-release-date"?: string;
+        releases?: MbRelease[];
+        tags?: Array<{ name?: string; count?: number }>;
+      }
+      const rgData = (await rgResp?.json()) as {
+        "release-groups"?: MbReleaseGroup[];
+      };
+      const groups: MbReleaseGroup[] = rgData["release-groups"] || [];
 
       const normalizeType = (
         primary: string,
@@ -2473,7 +2545,7 @@ class DistributionDataTransferService {
       for (let i = 0; i < groups.length; i += CAA_CONCURRENCY) {
         const chunk = groups?.slice(i, i + CAA_CONCURRENCY);
         await Promise?.allSettled(
-          chunk?.map(async (rg: Record<string, unknown>) => {
+          chunk?.map(async (rg) => {
             try {
               const caaResp = await timedFetch(
                 `https://coverartarchive.org/release-group/${rg.id}`,
@@ -2483,20 +2555,25 @@ class DistributionDataTransferService {
                 },
               );
               if (caaResp?.ok) {
-                const caaData = (await caaResp?.json()) as Record<
-                  string,
-                  unknown
-                >;
+                const caaData = (await caaResp?.json()) as {
+                  images?: Array<{
+                    front?: boolean;
+                    thumbnails?: {
+                      "500"?: string;
+                      large?: string;
+                    };
+                    image?: string;
+                  }>;
+                };
                 const frontImg =
-                  (caaData?.images || []).find(
-                    (img: Record<string, unknown>) => img?.front,
-                  ) || caaData?.images?.[0];
-                if (frontImg) {
+                  (caaData?.images || []).find((img) => img?.front) ||
+                  caaData?.images?.[0];
+                if (frontImg && rg.id) {
                   const url =
                     frontImg?.thumbnails?.["500"] ||
                     frontImg?.thumbnails?.large ||
                     frontImg?.image;
-                  if (url) coverUrlMap?.set(rg?.id, url);
+                  if (url) coverUrlMap?.set(rg.id, url);
                 }
               }
             } catch {
@@ -2506,38 +2583,35 @@ class DistributionDataTransferService {
         );
       }
 
-      const results: ScannedRelease[] = groups?.map(
-        (rg: Record<string, unknown>) => {
-          // Best-effort track count from the first release in the release-group
-          const firstRelease = (rg?.releases || [])[0];
-          const trackCount =
-            firstRelease?.["track-count"] ||
-            firstRelease?.media?.[0]?.["track-count"] ||
-            1;
-          // Top genre tag (highest vote count wins)
-          const topTag = (rg?.tags || []).sort(
-            (a: Record<string, unknown>, b: Record<string, unknown>) =>
-              (b?.count || 0) - (a?.count || 0),
-          )[0];
-          return {
-            id: `mb-${rg?.id}`,
-            externalId: rg.id,
-            platformId: "spotify",
-            title: rg.title,
-            artistName,
-            releaseType: normalizeType(
-              rg["primary-type"] || "album",
-              rg["secondary-types"] || [],
-            ),
-            releaseDate: rg["first-release-date"] || null,
-            trackCount,
-            coverUrl: coverUrlMap.get(rg?.id),
-            platformUrl: `https://musicbrainz.org/release-group/${rg.id}`,
-            genre: topTag.name,
-            upc: firstRelease.barcode,
-          };
-        },
-      );
+      const results: ScannedRelease[] = groups?.map((rg): ScannedRelease => {
+        // Best-effort track count from the first release in the release-group
+        const firstRelease = (rg?.releases || [])[0];
+        const trackCount =
+          firstRelease?.["track-count"] ||
+          firstRelease?.media?.[0]?.["track-count"] ||
+          1;
+        // Top genre tag (highest vote count wins)
+        const topTag = (rg?.tags || []).sort(
+          (a, b) => (b?.count || 0) - (a?.count || 0),
+        )[0];
+        return {
+          id: `mb-${rg?.id}`,
+          externalId: rg.id ?? "",
+          platformId: "spotify",
+          title: rg.title ?? "",
+          artistName,
+          releaseType: normalizeType(
+            rg["primary-type"] || "album",
+            rg["secondary-types"] || [],
+          ),
+          releaseDate: rg["first-release-date"] || null,
+          trackCount,
+          coverUrl: rg.id ? coverUrlMap.get(rg.id) : undefined,
+          platformUrl: `https://musicbrainz.org/release-group/${rg.id}`,
+          genre: topTag?.name,
+          upc: firstRelease?.barcode,
+        };
+      });
 
       logger?.info(
         `[DataTransfer] MusicBrainz returned ${results.length} release-group(s) for artist ${artistName} (mbid=${mbid}, ${coverUrlMap?.size} with cover art)`,

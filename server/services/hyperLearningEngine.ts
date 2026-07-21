@@ -1430,9 +1430,10 @@ class HyperLearningEngine extends EventEmitter {
     const emojiRegex = /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu;
 
     for (const post of top10Percent) {
-      const text = post.contentText || "";
+      const text = typeof post.contentText === "string" ? post.contentText : "";
+      const hashtags = Array.isArray(post.hashtags) ? post.hashtags : [];
       viralCharacteristics.avgLength += text.length;
-      viralCharacteristics.avgHashtags += (post.hashtags || []).length;
+      viralCharacteristics.avgHashtags += hashtags.length;
       viralCharacteristics.avgEmojis += (text.match(emojiRegex) || []).length;
       if (/\?/.test(text)) viralCharacteristics.questionRatio++;
       if (/!/.test(text)) viralCharacteristics.exclamationRatio++;
@@ -1441,9 +1442,10 @@ class HyperLearningEngine extends EventEmitter {
     }
 
     for (const post of bottom50Percent) {
-      const text = post.contentText || "";
+      const text = typeof post.contentText === "string" ? post.contentText : "";
+      const hashtags = Array.isArray(post.hashtags) ? post.hashtags : [];
       nonViralCharacteristics.avgLength += text.length;
-      nonViralCharacteristics.avgHashtags += (post.hashtags || []).length;
+      nonViralCharacteristics.avgHashtags += hashtags.length;
       nonViralCharacteristics.avgEmojis += (
         text.match(emojiRegex) || []
       ).length;
@@ -1454,16 +1456,16 @@ class HyperLearningEngine extends EventEmitter {
     }
 
     Object.keys(viralCharacteristics).forEach((key) => {
-      (viralCharacteristics as Record<string, unknown>)[key] /=
+      (viralCharacteristics as Record<string, number>)[key] /=
         top10Percent.length;
-      (nonViralCharacteristics as Record<string, unknown>)[key] /=
+      (nonViralCharacteristics as Record<string, number>)[key] /=
         bottom50Percent.length;
     });
 
     const significantDifferences = Object.keys(viralCharacteristics).filter(
       (key) => {
-        const viral = (viralCharacteristics as Record<string, unknown>)[key];
-        const nonViral = (nonViralCharacteristics as Record<string, unknown>)[
+        const viral = (viralCharacteristics as Record<string, number>)[key];
+        const nonViral = (nonViralCharacteristics as Record<string, number>)[
           key
         ];
         return Math.abs(viral - nonViral) / Math.max(0.1, nonViral) > 0.3;
@@ -1471,11 +1473,11 @@ class HyperLearningEngine extends EventEmitter {
     );
 
     for (const characteristic of significantDifferences) {
-      const viralValue = (viralCharacteristics as Record<string, unknown>)[
+      const viralValue = (viralCharacteristics as Record<string, number>)[
         characteristic
       ];
       const nonViralValue = (
-        nonViralCharacteristics as Record<string, unknown>
+        nonViralCharacteristics as Record<string, number>
       )[characteristic];
       const difference =
         ((viralValue - nonViralValue) / Math.max(0.1, nonViralValue)) * 100;
@@ -1584,12 +1586,13 @@ class HyperLearningEngine extends EventEmitter {
       });
 
       for (const platform of platformData) {
-        const platformPatternList =
-          platformPatterns.get(platform.platform) || [];
+        const platformName =
+          typeof platform.platform === "string" ? platform.platform : "";
+        const platformPatternList = platformPatterns.get(platformName) || [];
         const amplifiers = platformPatternList
           .filter((p) => p.correlation > 0.1)
           .map((p) => p.engagementImpact);
-        platformAmplifiers.set(platform.platform, amplifiers);
+        platformAmplifiers.set(platformName, amplifiers);
       }
 
       const synthesis: CrossPlatformSynthesis = {
@@ -1804,7 +1807,7 @@ class HyperLearningEngine extends EventEmitter {
       const viralityThresholds: Record<string, number> = {};
       for (const row of platformData) {
         const p90 = parseFloat(String(row?.avgEngagement) || "0") * 1.5; // approx 90th pct
-        if (row?.platform && p90 > 0)
+        if (typeof row?.platform === "string" && p90 > 0)
           viralityThresholds[row.platform] = Math?.round(p90 * 100) / 100;
       }
 
@@ -1876,13 +1879,13 @@ class HyperLearningEngine extends EventEmitter {
       if (!isFinite(eng)) continue;
       globalSum += eng;
       globalCount++;
-      if (row.hour != null) {
+      if (typeof row.hour === "number") {
         const s = hourSums.get(row.hour) ?? { total: 0, n: 0 };
         s.total += eng;
         s.n++;
         hourSums.set(row.hour, s);
       }
-      if (row.dayOfWeek != null) {
+      if (typeof row.dayOfWeek === "number") {
         const s = daySums.get(row.dayOfWeek) ?? { total: 0, n: 0 };
         s.total += eng;
         s.n++;
@@ -1947,10 +1950,16 @@ class HyperLearningEngine extends EventEmitter {
         const slotRows = engVelocity.filter(
           (r) => r.hour === hour && r.dayOfWeek === dayOfWeek,
         );
-        const slotDataPoints =
+        const rawPostCount =
           slotRows.length > 0
-            ? (slotRows[0] as Record<string, unknown>).postCount || 1
+            ? (slotRows[0] as Record<string, unknown>).postCount
             : 0;
+        const slotDataPoints =
+          typeof rawPostCount === "number" && rawPostCount > 0
+            ? rawPostCount
+            : slotRows.length > 0
+              ? 1
+              : 0;
         const confidence = hasBehavData
           ? Math.min(
               0.92,
@@ -2017,8 +2026,11 @@ class HyperLearningEngine extends EventEmitter {
     const allData: Record<string, unknown>[] = _hlGet<any[]>(microKey) ?? [];
     const baseEngagement =
       allData.length >= 10
-        ? allData.reduce((s, d) => s + (d.engagementRate || 0), 0) /
-          allData.length
+        ? allData.reduce(
+            (s, d) =>
+              s + (typeof d.engagementRate === "number" ? d.engagementRate : 0),
+            0,
+          ) / allData.length
         : 0;
 
     for (const hook of hookTypes.slice(0, 5)) {
@@ -2209,7 +2221,7 @@ class HyperLearningEngine extends EventEmitter {
       const insights = benchmarkData?.filter(
         (r: Record<string, unknown>) =>
           parseFloat(String(r?.avgEngagement) || "0") > overallMean * 1.15 &&
-          (r?.postCount ?? 0) >= 5,
+          (typeof r?.postCount === "number" ? r.postCount : 0) >= 5,
       );
 
       return { insightsFound: insights.length };
@@ -2348,8 +2360,10 @@ class HyperLearningEngine extends EventEmitter {
         source: "hyper_ab_test",
         trigger: "ab_winner",
         engagement_rate: winner.engagementRate,
-        platform: (test as Record<string, unknown>).platform || "unknown",
-        content_type: (test as Record<string, unknown>).contentType || "post",
+        platform:
+          (test as unknown as Record<string, unknown>).platform || "unknown",
+        content_type:
+          (test as unknown as Record<string, unknown>).contentType || "post",
         hook_type: (winner as Record<string, unknown>).hookType || "unknown",
         media_type: (winner as Record<string, unknown>).mediaType || "text",
         curriculum_hint: "reinforce_winning_visual_style",
@@ -2389,7 +2403,7 @@ class HyperLearningEngine extends EventEmitter {
     } catch {
       this?.pendingTrainingSignals.push({
         source: "hyper_ab_test",
-        test_id: test.id,
+        test_id: test.testId,
         winner_id: winner.id,
         queued_at: Date.now(),
       });
@@ -2683,7 +2697,7 @@ class HyperLearningEngine extends EventEmitter {
       allDataBase?.length >= 10
         ? allDataBase?.reduce(
             (s: number, d: Record<string, unknown>) =>
-              s + (d?.engagementRate || 0),
+              s + (typeof d?.engagementRate === "number" ? d.engagementRate : 0),
             0,
           ) / allDataBase?.length
         : null;

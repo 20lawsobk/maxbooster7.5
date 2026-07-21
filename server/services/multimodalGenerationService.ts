@@ -287,7 +287,7 @@ async function fetchUserContext(userId: string): Promise<UserContext> {
       uniqueSellingPoints:
         (prefs?.uniqueSellingPoints as string[] | null) ?? null,
       currentReleases:
-        (prefs?.currentReleases as Record<string, unknown>[] | null) ?? null,
+        (prefs?.currentReleases as UserContext["currentReleases"]) ?? null,
     };
 
     _userContextCache?.set(userId, {
@@ -777,7 +777,7 @@ async function scrapeHtml(url: string): Promise<PageMeta> {
             "i",
           ),
         );
-      if (m[1]) return decodeHtmlEntities(m[1]);
+      if (m?.[1]) return decodeHtmlEntities(m[1]);
     }
     return undefined;
   };
@@ -829,7 +829,7 @@ async function scrapeHtml(url: string): Promise<PageMeta> {
       html?.match(
         /<link[^>]+href=["']([^"']+)["'][^>]+type=["']application\/json\+oembed["']/i,
       );
-    if (oembedLink[1]) {
+    if (oembedLink?.[1]) {
       oembedResult = await tryOEmbed(oembedLink[1]);
     }
   } catch {
@@ -837,16 +837,16 @@ async function scrapeHtml(url: string): Promise<PageMeta> {
   }
 
   // ── 4. Fallback: h1 + first paragraph ─────────────────────────
-  const h1 = html.match(/<h1[^>]*>([^<]{3,200})<\/h1>/i)[1];
-  const firstPara = html.match(/<p[^>]*>([^<]{30,400})<\/p>/i)[1];
+  const h1 = html.match(/<h1[^>]*>([^<]{3,200})<\/h1>/i)?.[1];
+  const firstPara = html.match(/<p[^>]*>([^<]{30,400})<\/p>/i)?.[1];
 
   // ── 5. Assemble with priority ──────────────────────────────────
   // OG/twitter titles are already clean — only strip site-suffix from <title> tags
   const ogTitle =
-    oembedResult.title ??
+    oembedResult?.title ??
     getMeta("og:title", "twitter:title", "dc.title") ??
     jsonLdTitle;
-  const rawPageTitle = html.match(/<title[^>]*>([^<]{1,250})<\/title>/i)[1];
+  const rawPageTitle = html.match(/<title[^>]*>([^<]{1,250})<\/title>/i)?.[1];
   const h1Title = h1 ? decodeHtmlEntities(h1) : undefined;
 
   // Strip "Page Title | Site Name" or "Page Title - Site Name" only from <title> tag
@@ -856,7 +856,7 @@ async function scrapeHtml(url: string): Promise<PageMeta> {
         .trim()
     : undefined;
 
-  const siteNameFromMeta = oembedResult.siteName ?? getMeta("og:site_name");
+  const siteNameFromMeta = oembedResult?.siteName ?? getMeta("og:site_name");
   const inferredSiteName = inferSiteNameFromUrl(url);
   const effectiveSiteName = siteNameFromMeta ?? inferredSiteName;
 
@@ -884,7 +884,7 @@ async function scrapeHtml(url: string): Promise<PageMeta> {
       ? decodeHtmlEntities(firstPara.replace(/<[^>]+>/g, ""))
       : undefined);
 
-  const cleanDesc = rawDesc.replace(/<[^>]+>/g, "").trim();
+  const cleanDesc = rawDesc?.replace(/<[^>]+>/g, "").trim();
   const BOT_WALL_DESC = [
     /confirm.*you.*re a human/i,
     /not a (robot|bot|spambot)/i,
@@ -905,7 +905,7 @@ async function scrapeHtml(url: string): Promise<PageMeta> {
     siteName: effectiveSiteName ?? undefined,
     image: getMeta("og:image", "twitter:image") ?? undefined,
     author:
-      oembedResult.author ??
+      oembedResult?.author ??
       jsonLdAuthor ??
       getMeta("author", "dc.creator") ??
       undefined,
@@ -1041,7 +1041,7 @@ function getMaxBoosterRouteMeta(url: string): PageMeta | null {
 
 async function fetchUrlMetadata(
   url: string,
-  ctx: UrlContext,
+  _ctx: UrlContext,
 ): Promise<PageMeta> {
   // ── Max Booster own-app routes — no HTTP round-trip needed ─────
   const ownMeta = getMaxBoosterRouteMeta(url);
@@ -1052,7 +1052,7 @@ async function fetchUrlMetadata(
     const r = await tryOEmbed(
       `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
     );
-    if (r.title)
+    if (r?.title)
       return {
         ...r,
         siteName: "YouTube",
@@ -1063,7 +1063,7 @@ async function fetchUrlMetadata(
     const r = await tryOEmbed(
       `https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`,
     );
-    if (r.title)
+    if (r?.title)
       return {
         ...r,
         siteName: "Spotify",
@@ -1076,7 +1076,7 @@ async function fetchUrlMetadata(
     const r = await tryOEmbed(
       `https://soundcloud.com/oembed?url=${encodeURIComponent(url)}&format=json`,
     );
-    if (r.title)
+    if (r?.title)
       return {
         ...r,
         siteName: "SoundCloud",
@@ -1089,7 +1089,7 @@ async function fetchUrlMetadata(
     const r = await tryOEmbed(
       `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(url)}`,
     );
-    if (r.title)
+    if (r?.title)
       return {
         ...r,
         siteName: "Vimeo",
@@ -1100,13 +1100,13 @@ async function fetchUrlMetadata(
     const r = await tryOEmbed(
       `https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}&omit_script=true`,
     );
-    if (r.title) return { ...r, siteName: "X (Twitter)" };
+    if (r?.title) return { ...r, siteName: "X (Twitter)" };
   }
   if (url.includes("bandcamp.com")) {
     const r = await tryOEmbed(
       `https://bandcamp.com/api/oembed?url=${encodeURIComponent(url)}&format=json`,
     );
-    if (r.title)
+    if (r?.title)
       return {
         ...r,
         siteName: "Bandcamp",

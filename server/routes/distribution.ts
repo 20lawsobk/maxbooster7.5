@@ -1411,6 +1411,12 @@ router.post(
       const tracks = await storage.getDistroTracks(id);
 
       const metadata = (release.metadata as Record<string, unknown>) || {};
+      type DdexReleaseArg = Parameters<
+        typeof ddexPackageService.generateDDEXXML
+      >[0];
+      type DdexTrackArg = Parameters<
+        typeof ddexPackageService.generateDDEXXML
+      >[1][number];
       const xml = await ddexPackageService.generateDDEXXML(
         {
           id: release.id,
@@ -1419,7 +1425,7 @@ router.post(
           releaseType: metadata.releaseType || "Single",
           upc: metadata.upc || "",
           releaseDate:
-            release.releaseDate.toISOString().split("T")[0] ||
+            release.releaseDate?.toISOString().split("T")[0] ||
             new Date().toISOString().split("T")[0],
           labelName: metadata.labelName || "",
           copyrightYear:
@@ -1431,7 +1437,7 @@ router.post(
           isExplicit: metadata.isExplicit || false,
           coverArtPath: release.artworkUrl || metadata.coverArtUrl || null,
           territories: metadata.territories || ["worldwide"],
-        },
+        } as unknown as DdexReleaseArg,
         tracks.map((track: Record<string, unknown>, index: number) => {
           const trackMeta = (track.metadata as Record<string, unknown>) || {};
           return {
@@ -1447,7 +1453,7 @@ router.post(
             featuredArtists: trackMeta.featuredArtists,
             songwriters: trackMeta.songwriters,
             producers: trackMeta.producers,
-          };
+          } as unknown as DdexTrackArg;
         }),
       );
 
@@ -1496,6 +1502,12 @@ router.get(
       const outputPath = path.join(uploadDir, `ddex_${id}_${Date.now()}.zip`);
 
       try {
+        type DdexPkgReleaseArg = Parameters<
+          typeof ddexPackageService.createDDEXPackage
+        >[0];
+        type DdexPkgTrackArg = Parameters<
+          typeof ddexPackageService.createDDEXPackage
+        >[1][number];
         await ddexPackageService.createDDEXPackage(
           {
             id: release.id,
@@ -1504,7 +1516,7 @@ router.get(
             releaseType: metadata.releaseType || "Single",
             upc: upc,
             releaseDate:
-              release.releaseDate.toISOString().split("T")[0] ||
+              release.releaseDate?.toISOString().split("T")[0] ||
               new Date().toISOString().split("T")[0],
             labelName: metadata.labelName || "",
             copyrightYear:
@@ -1517,7 +1529,7 @@ router.get(
             isExplicit: metadata.isExplicit || false,
             coverArtPath: coverArtPath,
             territories: metadata.territories || ["worldwide"],
-          },
+          } as unknown as DdexPkgReleaseArg,
           tracks.map((track: Record<string, unknown>, index: number) => {
             const trackMeta = (track.metadata as Record<string, unknown>) || {};
             return {
@@ -1535,7 +1547,7 @@ router.get(
               featuredArtists: trackMeta.featuredArtists,
               songwriters: trackMeta.songwriters,
               producers: trackMeta.producers,
-            };
+            } as unknown as DdexPkgTrackArg;
           }),
           outputPath,
         );
@@ -1597,7 +1609,8 @@ router.post(
       }
 
       // HARDENING: Validate UPC before submission
-      if (!release.upc) {
+      const releaseUpc = (release as { upc?: string }).upc;
+      if (!releaseUpc) {
         return res.status(400).json({
           error: "Missing UPC",
           message:
@@ -1605,7 +1618,7 @@ router.post(
         });
       }
       // Basic UPC format validation (12-13 digits)
-      const upcClean = release.upc.replace(/\D/g, "");
+      const upcClean = releaseUpc.replace(/\D/g, "");
       if (upcClean.length !== 12 && upcClean.length !== 13) {
         return res.status(400).json({
           error: "Invalid UPC format",
@@ -5333,7 +5346,7 @@ router?.get(
 
       const tracks = await storage?.getDistroTracks(id);
       const registrations = tracks?.map((track: Record<string, unknown>) => {
-        const metadata = track?.metadata || {};
+        const metadata = (track?.metadata || {}) as Record<string, unknown>;
         return {
           id: `cid_${track?.id}`,
           trackId: track.id,
@@ -5440,14 +5453,14 @@ router?.post(
     try {
       const {  trackId } = req?.body;
 
-      const track = await storage?.getDistroTrack(trackId);
+      const track = await (storage as DistroStorage)?.getDistroTrack?.(trackId);
       if (!track) {
         return res?.status(404).json({ error: "Track not found" });
       }
 
-      await storage?.updateDistroTrack(trackId, {
+      await updateDistroTrackLoose(trackId, {
         metadata: {
-          ...track?.metadata,
+          ...(track?.metadata as Record<string, unknown> | undefined),
           contentIdStatus: "registered",
           contentIdRegisteredAt: new Date().toISOString(),
           contentIdPlatforms: ["YouTube", "Facebook", "Instagram", "TikTok"],
@@ -5602,7 +5615,8 @@ router?.get(
 
       const contentIdOutcomes = [];
       const tracksWithFingerprint = tracks?.filter(
-        (t: Record<string, unknown>) => t?.metadata?.fingerprint,
+        (t: Record<string, unknown>) =>
+          (t?.metadata as Record<string, unknown> | undefined)?.fingerprint,
       );
       if (tracksWithFingerprint?.length > 0) {
         contentIdOutcomes?.push({
@@ -5614,7 +5628,8 @@ router?.get(
       }
       const registeredTracks = tracks?.filter(
         (t: Record<string, unknown>) =>
-          t?.metadata?.contentIdStatus === "registered",
+          (t?.metadata as Record<string, unknown> | undefined)
+            ?.contentIdStatus === "registered",
       );
       if (registeredTracks?.length > 0) {
         contentIdOutcomes?.push({
@@ -5626,12 +5641,13 @@ router?.get(
       }
 
       const codeOutcomes = [];
-      if (release?.upc) {
+      const releaseUpc = (release as { upc?: string })?.upc;
+      if (releaseUpc) {
         codeOutcomes?.push({
           type: "upc_generated",
           status: "success",
-          message: `UPC code generated: ${release?.upc}`,
-          code: release.upc,
+          message: `UPC code generated: ${releaseUpc}`,
+          code: releaseUpc,
           codeType: "upc",
           timestamp: new Date().toISOString(),
         });
@@ -6774,7 +6790,7 @@ async function buildLabelGridPayload(
     releaseDate: release.releaseDate
       ? new Date(release?.releaseDate).toISOString().split("T")[0]
       : new Date().toISOString().split("T")[0],
-    upc: release.upc,
+    upc: (release as { upc?: string }).upc,
     artwork: metadata.artworkUrl || metadata?.artwork || "",
     genre: release.genre || metadata?.primaryGenre || "Other",
     label: metadata.label || undefined,

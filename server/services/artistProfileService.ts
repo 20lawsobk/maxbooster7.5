@@ -99,6 +99,144 @@ interface PlatformSearchResults {
   jiosaavn: JioSaavnArtistResult[];
 }
 
+// ── Raw external-API response shapes ─────────────────────────────────────────
+// These describe the loosely-typed JSON returned by third-party DSP APIs so the
+// mapping code below can read nested fields without `unknown` friction. All
+// fields are optional because the upstream payloads are not guaranteed.
+interface RawSpotifyArtist {
+  id?: string;
+  uri?: string;
+  name?: string;
+  images?: Array<{ url?: string }>;
+  genres?: string[];
+  followers?: { total?: number };
+  popularity?: number;
+  external_urls?: { spotify?: string };
+}
+
+interface RawSpotifySearchResponse {
+  artists?: { items?: RawSpotifyArtist[] };
+}
+
+interface RawAppleArtist {
+  artistId?: number | string;
+  artistName?: string;
+  primaryGenreName?: string;
+  genres?: string[];
+  artworkUrl100?: string;
+  artworkUrl60?: string;
+  artistLinkUrl?: string;
+}
+
+interface RawAppleSearchResponse {
+  results?: RawAppleArtist[];
+}
+
+interface RawDeezerArtist {
+  id?: number | string;
+  name?: string;
+  picture_xl?: string;
+  picture_big?: string;
+  picture_medium?: string;
+  picture_small?: string;
+  nb_fan?: number;
+  nb_album?: number;
+  link?: string;
+}
+
+interface RawDeezerSearchResponse {
+  error?: unknown;
+  data?: RawDeezerArtist[];
+}
+
+interface RawMusicBrainzTag {
+  name?: string;
+}
+
+interface RawMusicBrainzArtist {
+  id?: string;
+  name?: string;
+  score?: number | string;
+  type?: string | null;
+  country?: string | null;
+  tags?: RawMusicBrainzTag[];
+  "genre-list"?: Array<RawMusicBrainzTag | string>;
+  disambiguation?: string | null;
+}
+
+interface RawMusicBrainzResponse {
+  artists?: RawMusicBrainzArtist[];
+}
+
+interface RawAudiomackArtist {
+  id?: string | number;
+  url_slug?: string;
+  name?: string;
+  label?: string;
+  image?: string;
+  avatar?: string;
+  followers?: number;
+  fans?: number;
+}
+
+interface RawAudiomackResponse {
+  results?: RawAudiomackArtist[];
+}
+
+interface RawJioSaavnImage {
+  quality?: string;
+  url?: string;
+}
+
+interface RawJioSaavnArtist {
+  id?: string | number;
+  name?: string;
+  title?: string;
+  image?: RawJioSaavnImage[] | string;
+  url?: string;
+}
+
+interface RawSaavnDevResponse {
+  data?: { results?: RawJioSaavnArtist[] };
+  results?: RawJioSaavnArtist[];
+}
+
+interface RawJioSaavnAutocompleteResponse {
+  artists?: { data?: RawJioSaavnArtist[] };
+}
+
+interface RawItunesLookupItem {
+  wrapperType?: string;
+  kind?: string;
+  collectionType?: string;
+  artistId?: number | string;
+  artistName?: string;
+  collectionArtistName?: string;
+  primaryGenreName?: string;
+  artistLinkUrl?: string;
+  artistViewUrl?: string;
+  artworkUrl100?: string;
+  artworkUrl60?: string;
+}
+
+interface RawItunesLookupResponse {
+  results?: RawItunesLookupItem[];
+}
+
+interface RawDeezerAlbumResponse {
+  error?: unknown;
+  artist?: {
+    id?: number | string;
+    name?: string;
+    picture_xl?: string;
+    picture_big?: string;
+    picture_medium?: string;
+    picture_small?: string;
+    nb_fan?: number;
+    link?: string;
+  };
+}
+
 // All 97 DSP distribution platforms with URL templates
 // Used to generate artist profile search links for platforms without public search APIs
 const ALL_DSP_URL_TEMPLATES: Array<{
@@ -846,11 +984,16 @@ class ArtistProfileService {
         return await fn();
       } catch (err) {
         lastErr = err;
+        const e = err as {
+          name?: string;
+          message?: string;
+          cause?: { code?: string };
+        };
         const isRetryable =
-          err.name === "TimeoutError" ||
-          err.message.includes("timeout") ||
-          err.message.includes("network") ||
-          err.cause.code === "UND_ERR_CONNECT_TIMEOUT";
+          e.name === "TimeoutError" ||
+          !!e.message?.includes("timeout") ||
+          !!e.message?.includes("network") ||
+          e.cause?.code === "UND_ERR_CONNECT_TIMEOUT";
         if (isRetryable && attempt < maxAttempts) {
           await new Promise((r) => setTimeout(r, 300 * attempt));
           continue;
@@ -921,17 +1064,17 @@ class ArtistProfileService {
 
       if (!response.ok) return [];
 
-      const data = (await response.json()) as Record<string, unknown>;
-      return (data.artists.items || []).map(
-        (a: Record<string, unknown>): SpotifyArtistResult => ({
-          id: a.id,
-          uri: a.uri,
-          name: a.name,
-          imageUrl: a.images[0].url ?? null,
+      const data = (await response.json()) as RawSpotifySearchResponse;
+      return (data.artists?.items || []).map(
+        (a: RawSpotifyArtist): SpotifyArtistResult => ({
+          id: a.id ?? "",
+          uri: a.uri ?? "",
+          name: a.name ?? "",
+          imageUrl: a.images?.[0]?.url ?? null,
           genres: a.genres || [],
-          followers: a.followers.total ?? 0,
+          followers: a.followers?.total ?? 0,
           popularity: a.popularity ?? 0,
-          externalUrl: a.external_urls.spotify ?? "",
+          externalUrl: a.external_urls?.spotify ?? "",
         }),
       );
     } catch (err) {
@@ -957,16 +1100,16 @@ class ArtistProfileService {
 
       if (!response.ok) return null;
 
-      const a = (await response.json()) as Record<string, unknown>;
+      const a = (await response.json()) as RawSpotifyArtist;
       return {
-        id: a.id,
-        uri: a.uri,
-        name: a.name,
-        imageUrl: a.images[0].url ?? null,
+        id: a.id ?? "",
+        uri: a.uri ?? "",
+        name: a.name ?? "",
+        imageUrl: a.images?.[0]?.url ?? null,
         genres: a.genres || [],
-        followers: a.followers.total ?? 0,
+        followers: a.followers?.total ?? 0,
         popularity: a.popularity ?? 0,
-        externalUrl: a.external_urls.spotify ?? "",
+        externalUrl: a.external_urls?.spotify ?? "",
       };
     } catch (err) {
       logger.warn({ err: err }, "[ArtistProfile] Spotify verify error:");
@@ -981,13 +1124,13 @@ class ArtistProfileService {
 
       if (!response.ok) return [];
 
-      const data = (await response.json()) as Record<string, unknown>;
+      const data = (await response.json()) as RawAppleSearchResponse;
       return (data.results || [])
-        .filter((a: Record<string, unknown>) => a.artistId && a.artistName)
+        .filter((a: RawAppleArtist) => a.artistId && a.artistName)
         .map(
-          (a: Record<string, unknown>): AppleArtistResult => ({
+          (a: RawAppleArtist): AppleArtistResult => ({
             id: String(a.artistId),
-            name: a.artistName,
+            name: a.artistName ?? "",
             genres: [
               ...(a.primaryGenreName ? [a.primaryGenreName] : []),
               ...(a.genres || []),
@@ -1014,14 +1157,14 @@ class ArtistProfileService {
 
       if (!response.ok) return [];
 
-      const data = (await response.json()) as Record<string, unknown>;
+      const data = (await response.json()) as RawDeezerSearchResponse;
       if (data.error) return []; // Deezer returns {error:{...}} on quota/errors
       return (data.data || [])
-        .filter((a: Record<string, unknown>) => a.id && a.name)
+        .filter((a: RawDeezerArtist) => a.id && a.name)
         .map(
-          (a: Record<string, unknown>): DeezerArtistResult => ({
+          (a: RawDeezerArtist): DeezerArtistResult => ({
             id: String(a.id),
-            name: a.name,
+            name: a.name ?? "",
             // Prefer highest-resolution image: xl → big → medium → small
             pictureUrl:
               a.picture_xl ??
@@ -1050,24 +1193,24 @@ class ArtistProfileService {
     };
 
     const parseMbArtists = (
-      data: Record<string, unknown>,
+      data: RawMusicBrainzResponse,
     ): MusicBrainzArtistResult[] =>
       (data.artists || [])
-        .filter((a: Record<string, unknown>) => a.id && a.name)
+        .filter((a: RawMusicBrainzArtist) => a.id && a.name)
         .map(
-          (a: Record<string, unknown>): MusicBrainzArtistResult => ({
-            id: a.id,
-            name: a.name,
+          (a: RawMusicBrainzArtist): MusicBrainzArtistResult => ({
+            id: a.id ?? "",
+            name: a.name ?? "",
             score: Number(a.score ?? 0),
             type: a.type ?? null,
             country: a.country ?? null,
             // Include both genre tags and regular tags for richer scoring
             tags: [
-              ...(a.tags || []).map((t: Record<string, unknown>) =>
+              ...(a.tags || []).map((t: RawMusicBrainzTag) =>
                 String(t.name),
               ),
-              ...(a["genre-list"] || []).map((g: Record<string, unknown>) =>
-                String(g.name ?? g),
+              ...(a["genre-list"] || []).map((g: RawMusicBrainzTag | string) =>
+                String(typeof g === "string" ? g : (g.name ?? g)),
               ),
             ].filter((v, i, arr) => arr.indexOf(v) === i),
             disambiguation: a.disambiguation ?? null,
@@ -1130,9 +1273,9 @@ class ArtistProfileService {
       }
       if (!response.ok) return [];
 
-      const data = (await response.json()) as Record<string, unknown>;
+      const data = (await response.json()) as RawAudiomackResponse;
       return (data.results || []).slice(0, 5).map(
-        (a: Record<string, unknown>): AudiomackArtistResult => ({
+        (a: RawAudiomackArtist): AudiomackArtistResult => ({
           id: String(a.id ?? a.url_slug ?? ""),
           name: a.name ?? a.label ?? "",
           slug: a.url_slug ?? "",
@@ -1143,10 +1286,11 @@ class ArtistProfileService {
       );
     } catch (err) {
       // Suppress noise — Audiomack API consistently requires auth in production
-      if (!err.message.includes("401")) {
+      const e = err as { message?: string };
+      if (!e.message?.includes("401")) {
         logger.warn(
           "[ArtistProfile] Audiomack search error (non-fatal):",
-          err.message ?? err,
+          e.message ?? err,
         );
       }
       return [];
@@ -1164,12 +1308,12 @@ class ArtistProfileService {
         signal: AbortSignal.timeout(7000),
       });
       if (response.ok) {
-        const data = (await response.json()) as Record<string, unknown>;
-        const artists: Record<string, unknown>[] =
-          data.data.results ?? data.results ?? [];
+        const data = (await response.json()) as RawSaavnDevResponse;
+        const artists: RawJioSaavnArtist[] =
+          data.data?.results ?? data.results ?? [];
         if (artists.length > 0) {
           return artists.slice(0, 5).map(
-            (a: Record<string, unknown>): JioSaavnArtistResult => ({
+            (a: RawJioSaavnArtist): JioSaavnArtistResult => ({
               id: String(a.id ?? ""),
               name: a.name ?? a.title ?? "",
               // saavn.dev image array: [{quality:"50x50",url:...},{quality:"150x150",url:...},{quality:"500x500",url:...}]
@@ -1177,9 +1321,9 @@ class ArtistProfileService {
                 (Array.isArray(a.image)
                   ? (
                       a.image.find(
-                        (i: Record<string, unknown>) => i.quality === "500x500",
+                        (i: RawJioSaavnImage) => i.quality === "500x500",
                       ) ?? a.image[a.image.length - 1]
-                    ).url
+                    )?.url
                   : a.image) ?? null,
               url:
                 a.url ??
@@ -1200,13 +1344,13 @@ class ArtistProfileService {
         signal: AbortSignal.timeout(8000),
       });
       if (!response.ok) return [];
-      const data = (await response.json()) as Record<string, unknown>;
-      const artists: Record<string, unknown>[] = data.artists.data ?? [];
+      const data = (await response.json()) as RawJioSaavnAutocompleteResponse;
+      const artists: RawJioSaavnArtist[] = data.artists?.data ?? [];
       return artists.slice(0, 5).map(
-        (a: Record<string, unknown>): JioSaavnArtistResult => ({
+        (a: RawJioSaavnArtist): JioSaavnArtistResult => ({
           id: String(a.id ?? ""),
           name: a.title ?? a.name ?? "",
-          imageUrl: a.image ?? null,
+          imageUrl: typeof a.image === "string" ? a.image : null,
           url: a.url ? `https://www.jiosaavn.com${a.url}` : "",
         }),
       );

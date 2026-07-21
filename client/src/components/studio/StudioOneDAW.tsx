@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/context-menu";
 import { useUnifiedStore } from "@/stores/unifiedStoreAdapter";
 import { useStudioStore } from "@/stores/studioStore";
+import type { AudioClip, MidiClip } from "@/stores/studioStore";
 import type { WaveformPeakCache } from "@/lib/daw/AudioWorkletEngine";
 import { useToast } from "@/hooks/use-toast";
 import { useProjectSync } from "@/hooks/useProjectSync";
@@ -86,6 +87,20 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   const store = useUnifiedStore();
   const { tracks, masterTrack, transport,  project, canUndo, canRedo } =
     store;
+  // The unified store narrows away some fields that exist on the underlying
+  // studio store at runtime. These local views expose them without changing
+  // runtime behavior.
+  type ProjectMeta = typeof project & { description?: string };
+  const projectMeta = project as ProjectMeta;
+  const parseTimeSignature = (
+    ts: string,
+  ): { numerator: number; denominator: number } => {
+    const [num, den] = ts.split("/").map((v) => parseInt(v, 10));
+    return {
+      numerator: Number.isFinite(num) ? num : 4,
+      denominator: Number.isFinite(den) ? den : 4,
+    };
+  };
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
@@ -301,14 +316,15 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     const saveRecoveryData = () => {
       const t = transportRef.current;
       const s = storeRef.current;
+      const ts = parseTimeSignature(t.timeSignature);
       const recoveryData = {
         projectId,
         projectName: project.name,
-        projectDescription: project.description,
+        projectDescription: projectMeta.description,
         transport: {
           tempo: t.tempo,
-          timeSignatureNumerator: t.timeSignatureNumerator,
-          timeSignatureDenominator: t.timeSignatureDenominator,
+          timeSignatureNumerator: ts.numerator,
+          timeSignatureDenominator: ts.denominator,
           position: t.position,
           loopStart: t.loopStart,
           loopEnd: t.loopEnd,
@@ -335,7 +351,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
 
     const interval = setInterval(saveRecoveryData, 30000);
     return () => clearInterval(interval);
-  }, [projectId, project.isDirty, project.name, project.description]);
+  }, [projectId, project.isDirty, project.name, projectMeta.description]);
 
   // Clear recovery data after successful save
   useEffect(() => {
@@ -951,7 +967,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         for (const clip of track.audioClips || []) {
           const clipUrl =
             clip.sourceUrl ||
-            ((clip as Record<string, unknown>).filePath as string);
+            (clip as AudioClip & { filePath?: string }).filePath;
           if (!clipUrl) continue;
 
           const alreadyLoaded = loadedClipsRef.current.has(clip.id);

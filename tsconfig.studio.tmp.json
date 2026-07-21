@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["server/routes/studio.ts", "shared/**/*"],
+  "compilerOptions": {
+    "incremental": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  }
+}

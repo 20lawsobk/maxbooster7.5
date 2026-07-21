@@ -255,7 +255,7 @@ router?.post("/start-full", async (_req: Request, res: Response) => {
 // GET /api/simulation/status/:id - Get simulation status
 router?.get("/status/:id", (req: Request, res: Response) => {
   try {
-    const { id } = req?.params;
+    const id = String(req?.params?.id ?? "");
 
     const simulation = activeSimulations?.get(id);
     if (simulation) {
@@ -293,7 +293,7 @@ router?.get("/status/:id", (req: Request, res: Response) => {
 // GET /api/simulation/metrics/:id - Get real-time metrics
 router?.get("/metrics/:id", (req: Request, res: Response) => {
   try {
-    const { id } = req?.params;
+    const id = String(req?.params?.id ?? "");
 
     const simulation = activeSimulations?.get(id);
     if (simulation) {
@@ -329,22 +329,22 @@ router?.get("/metrics/:id", (req: Request, res: Response) => {
 // GET /api/simulation/snapshots/:id - Get simulation snapshots
 router?.get("/snapshots/:id", (req: Request, res: Response) => {
   try {
-    const { id } = req?.params;
+    const id = String(req?.params?.id ?? "");
 
     const result = simulationResults?.get(id);
     if (result && result?.snapshots) {
       return res?.json({
         success: true,
         snapshotCount: result.snapshots.length,
-        snapshots: result.snapshots.map((s: Record<string, unknown>) => ({
+        snapshots: result.snapshots.map((s: any) => ({
           dayNumber: s.dayNumber,
           simulatedDate: s.simulatedDate,
           realTimestamp: s.realTimestamp,
-          userCount: s.metrics.users?.total,
-          activeUsers: s.metrics.users?.active,
-          mrr: s.metrics.revenue?.mrr,
-          totalStreams: s.metrics.streams?.total,
-          uptime: s.metrics.platform?.uptime,
+          userCount: s.metrics?.users?.total,
+          activeUsers: s.metrics?.users?.active,
+          mrr: s.metrics?.revenue?.mrr,
+          totalStreams: s.metrics?.streams?.total,
+          uptime: s.metrics?.platform?.uptime,
         })),
       });
     }
@@ -363,7 +363,7 @@ router?.get("/snapshots/:id", (req: Request, res: Response) => {
 // GET /api/simulation/events/:id - Get simulation events
 router?.get("/events/:id", (req: Request, res: Response) => {
   try {
-    const { id } = req?.params;
+    const id = String(req?.params?.id ?? "");
     const { category, impact, limit = 100 } = req?.query;
 
     const result = simulationResults?.get(id);
@@ -417,7 +417,7 @@ router?.get("/events/:id", (req: Request, res: Response) => {
 // POST /api/simulation/pause/:id - Pause simulation
 router?.post("/pause/:id", (req: Request, res: Response) => {
   try {
-    const { id } = req?.params;
+    const id = String(req?.params?.id ?? "");
 
     const simulation = activeSimulations?.get(id);
     if (simulation) {
@@ -439,7 +439,7 @@ router?.post("/pause/:id", (req: Request, res: Response) => {
 // POST /api/simulation/resume/:id - Resume simulation
 router?.post("/resume/:id", (req: Request, res: Response) => {
   try {
-    const { id } = req?.params;
+    const id = String(req?.params?.id ?? "");
 
     const simulation = activeSimulations?.get(id);
     if (simulation) {
@@ -461,7 +461,7 @@ router?.post("/resume/:id", (req: Request, res: Response) => {
 // POST /api/simulation/stop/:id - Stop simulation
 router?.post("/stop/:id", (req: Request, res: Response) => {
   try {
-    const { id } = req?.params;
+    const id = String(req?.params?.id ?? "");
 
     const simulation = activeSimulations?.get(id);
     if (simulation) {
@@ -484,7 +484,7 @@ router?.post("/stop/:id", (req: Request, res: Response) => {
 // GET /api/simulation/results/:id - Get final results
 router?.get("/results/:id", (req: Request, res: Response) => {
   try {
-    const { id } = req?.params;
+    const id = String(req?.params?.id ?? "");
 
     const result = simulationResults?.get(id);
     if (result) {
@@ -522,7 +522,7 @@ router?.get("/results/:id", (req: Request, res: Response) => {
 // GET /api/simulation/report/:id - Generate detailed report
 router?.get("/report/:id", (req: Request, res: Response) => {
   try {
-    const { id } = req?.params;
+    const id = String(req?.params?.id ?? "");
 
     const result = simulationResults?.get(id);
     if (!result || result?.error) {
@@ -547,17 +547,17 @@ router?.get("/report/:id", (req: Request, res: Response) => {
   }
 });
 
-function safeFixed(val: Record<string, unknown>, digits: number): string {
+function safeFixed(val: unknown, digits: number): string {
   const n = Number(val);
   return isNaN(n) ? "0" : n?.toFixed(digits);
 }
 
-function safeLocale(val: Record<string, unknown>): string {
+function safeLocale(val: unknown): string {
   const n = Number(val);
   return isNaN(n) ? "0" : n?.toLocaleString();
 }
 
-function generateSimulationReport(result: Record<string, unknown>): string {
+function generateSimulationReport(result: any): string {
   const { config, finalMetrics, kpis, systemTests, recommendations } = result;
 
   const testStatus =
@@ -746,7 +746,7 @@ router?.post("/generate-event", (req: Request, res: Response) => {
 // GET /api/simulation/:id - Get overview of a specific simulation (must be after all literal paths)
 router?.get("/:id", (req: Request, res: Response) => {
   try {
-    const { id } = req?.params;
+    const id = String(req?.params?.id ?? "");
 
     const running = activeSimulations?.get(id);
     if (running) {
@@ -783,7 +783,7 @@ router?.get("/:id", (req: Request, res: Response) => {
 
 router?.delete("/:id", (req: Request, res: Response) => {
   try {
-    const { id } = req?.params;
+    const id = String(req?.params?.id ?? "");
 
     const simulation = activeSimulations?.get(id);
     if (simulation) {

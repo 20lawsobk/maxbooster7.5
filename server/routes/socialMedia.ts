@@ -38,9 +38,6 @@ import {
 let unifiedAIController:
   | typeof import("../services/unifiedAIController.js").unifiedAIController
   | null = null;
-let _contentQualityPipeline:
-  | typeof import("../services/contentQualityPipeline.js").contentQualityPipeline
-  | null = null;
 let competitorBenchmarkService:
   | typeof import("../services/competitorBenchmarkService.js").competitorBenchmarkService
   | null = null;
@@ -157,10 +154,19 @@ function pruneStaleFFmpegJobs() {
   }
 }
 
-// Type for authenticated requests
-interface AuthenticatedRequest extends Request {
-  user?: { id: string };
-}
+// Type for authenticated requests.
+// The global Express.Request augmentation (see server/routes.ts) already types
+// `user?` as the full `User` schema type, so we simply reuse `Request` here to
+// stay compatible with that augmentation. A few legacy handlers also read a
+// `userId` field off the user object; that seam is narrowed locally at the
+// usage site (see UserWithLegacyId below).
+type AuthenticatedRequest = Request;
+
+// Some legacy handlers read `req.user.userId` in addition to `req.user.id`.
+// `userId` is not part of the `User` schema (it resolves to `undefined` at
+// runtime, which the surrounding `|| ...` fallbacks already tolerate), so we
+// model it as an optional field via a local intersection at the read seam.
+type UserWithLegacyId = { id?: string; userId?: string };
 
 // Middleware to require authentication
 // =========================================
@@ -4724,8 +4730,11 @@ router.post(
 
       const filename = result.outputPath!.split("/").pop();
       const publicUrl = `/uploads/voices/${filename}`;
+      const legacyUser = req.user as UserWithLegacyId | undefined;
       const userId =
-        req.user.id.toString() || req.user.userId.toString() || "anonymous";
+        legacyUser?.id?.toString() ||
+        legacyUser?.userId?.toString() ||
+        "anonymous";
 
       // ── Persist to PDIM (non-blocking — response already sent after this) ──
       let pdimMeta: Record<string, unknown> | null = null;
@@ -5001,7 +5010,8 @@ router.post(
             });
             return;
           }
-          const userId = req.user?.id?.toString() || req.user?.userId?.toString() || "anon";
+          const legacyUser = req.user as UserWithLegacyId | undefined;
+          const userId = legacyUser?.id?.toString() || legacyUser?.userId?.toString() || "anon";
           const studioSvc = await getMusicVideoStudioService();
           const studioResult = await studioSvc.generateFullMusicVideo({
             audioPath: audioFile.path,
@@ -5154,9 +5164,10 @@ router.post(
         }
 
         // ── Persist rendered video to PDIM as primary storage ────────────────
+        const legacyUser = req.user as UserWithLegacyId | undefined;
         const userId =
-          req.user.id.toString() ||
-          req.user.userId.toString() ||
+          legacyUser?.id?.toString() ||
+          legacyUser?.userId?.toString() ||
           "anonymous";
         let pdimVideoMeta: Record<string, unknown> | null = null;
         try {

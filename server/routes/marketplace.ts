@@ -2257,7 +2257,7 @@ router?.post("/collaborations", async (req: Request, res: Response) => {
 // Producer by ID endpoint
 router?.get("/producers/:producerId", async (req: Request, res: Response) => {
   try {
-    const { producerId } = req?.params;
+    const { producerId } = req?.params as { producerId: string };
     const producer = await storage?.getUser(producerId);
     if (!producer) {
       return res?.status(404).json({ error: "Producer not found" });
@@ -2298,8 +2298,8 @@ router?.get("/producers/:producerId", async (req: Request, res: Response) => {
 
     if (avgRating === 0 && producerBeats?.length > 0) {
       const beatRatings = producerBeats
-        .filter((b: Record<string, unknown>) => (b?.avgRating || 0) > 0)
-        .map((b: Record<string, unknown>) => b?.avgRating);
+        .filter((b: Record<string, unknown>) => Number(b?.avgRating || 0) > 0)
+        .map((b: Record<string, unknown>) => Number(b?.avgRating || 0));
       if (beatRatings?.length > 0) {
         avgRating =
           Math?.round(
@@ -2324,7 +2324,7 @@ router?.get("/producers/:producerId", async (req: Request, res: Response) => {
       .map((beat: Record<string, unknown>) => ({
         id: beat.id,
         title: beat.title,
-        price: beat.price || (beat?.priceCents ? beat?.priceCents / 100 : 0),
+        price: beat.price || (beat?.priceCents ? Number(beat.priceCents) / 100 : 0),
         plays: beat.plays || 0,
         likes: beat.likes || 0,
         genre: beat.genre || "",
@@ -2371,7 +2371,7 @@ router?.get(
       if (!req?.isAuthenticated()) {
         return res?.status(401).json({ error: "Unauthorized" });
       }
-      const { producerId } = req?.params;
+      const { producerId } = req?.params as { producerId: string };
       const profile = await discoveryAlgorithmService?.getOrCreateTasteProfile(
         req?.user!.id,
       );
@@ -2391,7 +2391,7 @@ router?.post("/unfollow/:producerId", async (req: Request, res: Response) => {
     if (!req?.isAuthenticated()) {
       return res?.status(401).json({ error: "Unauthorized" });
     }
-    const { producerId } = req?.params;
+    const { producerId } = req?.params as { producerId: string };
     const result = await discoveryAlgorithmService?.unfollowProducer(
       req?.user!.id,
       producerId,
@@ -2409,7 +2409,7 @@ router?.post("/beats/:beatId/like", async (req: Request, res: Response) => {
     if (!req?.isAuthenticated()) {
       return res?.status(401).json({ error: "Unauthorized" });
     }
-    const { beatId } = req?.params;
+    const { beatId } = req?.params as { beatId: string };
 
     // Check if already liked
     const existingLike = await db
@@ -2420,7 +2420,7 @@ router?.post("/beats/:beatId/like", async (req: Request, res: Response) => {
           eq(beatInteractions?.userId, req?.user!.id),
           eq(beatInteractions?.beatId, beatId),
           eq(beatInteractions?.interactionType, "like"),
-        ).limit(1),
+        ),
       )
       .limit(1);
 
@@ -2446,7 +2446,7 @@ router?.post("/beats/:beatId/like", async (req: Request, res: Response) => {
       if (listing) {
         const currentMetadata =
           (listing?.metadata as Record<string, unknown>) || {};
-        newLikes = Math?.max(0, (currentMetadata?.likes || 0) - 1);
+        newLikes = Math?.max(0, Number(currentMetadata?.likes || 0) - 1);
         await db
           .update(listings)
           .set({ metadata: { ...currentMetadata, likes: newLikes } })
@@ -2472,7 +2472,7 @@ router?.post("/beats/:beatId/like", async (req: Request, res: Response) => {
       if (listing) {
         const currentMetadata =
           (listing?.metadata as Record<string, unknown>) || {};
-        const newLikes = (currentMetadata?.likes || 0) + 1;
+        const newLikes = Number(currentMetadata?.likes || 0) + 1;
         await db
           .update(listings)
           .set({ metadata: { ...currentMetadata, likes: newLikes } })
@@ -2496,7 +2496,7 @@ router?.get(
       if (!req?.isAuthenticated()) {
         return res?.status(401).json({ error: "Unauthorized" });
       }
-      const { beatId } = req?.params;
+      const { beatId } = req?.params as { beatId: string };
 
       // Check if user has liked this beat by checking interactions
       const likes = await db
@@ -2507,7 +2507,7 @@ router?.get(
             eq(beatInteractions?.userId, req?.user!.id),
             eq(beatInteractions?.beatId, beatId),
             eq(beatInteractions?.interactionType, "like"),
-          ).limit(1),
+          ),
         )
         .limit(1);
 
@@ -2525,7 +2525,7 @@ router?.post("/beats/:beatId/rate", async (req: Request, res: Response) => {
     if (!req?.isAuthenticated()) {
       return res?.status(401).json({ error: "Unauthorized" });
     }
-    const { beatId } = req?.params;
+    const { beatId } = req?.params as { beatId: string };
     const { rating } = req?.body;
 
     if (typeof rating !== "number" || rating < 1 || rating > 5) {
@@ -2550,9 +2550,13 @@ router?.post("/beats/:beatId/rate", async (req: Request, res: Response) => {
     if (listing) {
       const currentMetadata =
         (listing?.metadata as Record<string, unknown>) || {};
-      const currentRatings = currentMetadata?.ratings || [];
+      const currentRatings = (currentMetadata?.ratings as Array<{
+        userId: string;
+        rating: number;
+        createdAt?: string;
+      }>) || [];
       const userRatingIndex = currentRatings?.findIndex(
-        (r: Record<string, unknown>) => r?.userId === req?.user!.id,
+        (r) => r?.userId === req?.user!.id,
       );
 
       if (userRatingIndex >= 0) {
@@ -2566,10 +2570,8 @@ router?.post("/beats/:beatId/rate", async (req: Request, res: Response) => {
       }
 
       const avgRating =
-        currentRatings?.reduce(
-          (sum: number, r: Record<string, unknown>) => sum + r?.rating,
-          0,
-        ) / currentRatings?.length;
+        currentRatings?.reduce((sum: number, r) => sum + r?.rating, 0) /
+        currentRatings?.length;
 
       await db
         .update(listings)
@@ -2612,9 +2614,8 @@ router?.get("/beats/:beatId/rating", async (req: Request, res: Response) => {
 
     const metadata = (listing?.metadata as Record<string, unknown>) || {};
     const userRating = req?.isAuthenticated()
-      ? (metadata?.ratings || []).find(
-          (r: Record<string, unknown>) => r?.userId === req?.user!.id,
-        )?.rating || 0
+      ? ((metadata?.ratings as Array<{ userId: string; rating: number }>) || [])
+          .find((r) => r?.userId === req?.user!.id)?.rating || 0
       : 0;
 
     res?.json({
@@ -2655,7 +2656,7 @@ router?.post("/stems/:stemId/purchase", async (req: Request, res: Response) => {
     if (!req?.isAuthenticated()) {
       return res?.status(401).json({ error: "Unauthorized" });
     }
-    const { stemId } = req?.params;
+    const { stemId } = req?.params as { stemId: string };
     res?.json({
       success: true,
       purchaseId: `purchase_${Date?.now()}`,
@@ -2725,7 +2726,7 @@ router?.get(
   "/listings/:listingId/stems",
   async (req: Request, res: Response) => {
     try {
-      const { listingId } = req?.params;
+      const { listingId } = req?.params as { listingId: string };
       const stems = await db
         .select()
         .from(listingStems)
@@ -2746,7 +2747,7 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const userId = req?.user!.id;
-      const { listingId } = req?.params;
+      const { listingId } = req?.params as { listingId: string };
       const {
         stemName,
         stemType,
@@ -2794,7 +2795,7 @@ router?.delete(
   async (req: Request, res: Response) => {
     try {
       const userId = req?.user!.id;
-      const { stemId } = req?.params;
+      const { stemId } = req?.params as { stemId: string };
 
       const [deleted] = await db
         .delete(listingStems)
