@@ -45,7 +45,24 @@ To push schema changes: `npm run db:push`
 | `npm run db:push` | Sync Drizzle schema to database |
 | `npm run bootstrap:admin` | Create the initial admin user |
 
+## Self-Confinement Layer
+
+The self-confinement solution (`max_booster_self_confinement`) is implemented via:
+
+- **`server/config/index.ts`** — single entry point that exports a typed `config` object mapping all env vars; imported first in `server/index.ts`
+- **`server/services/maxcore.ts`** — `callMaxcore()` / `pingMaxcore()` using `config.maxcoreUrl`
+- **`server/services/pdim.ts`** — `callPdim()` / `pingPdim()` using `config.pdimUrl`
+
+All 100+ API keys and env vars are configured as Replit Secrets/env vars (shared environment).
+
+## Startup Note
+
+On fresh environment, `node_modules/.bin/` symlinks may be missing even if `node_modules/` exists.
+Fix: run the inline Node script that reads each package's `bin` field and creates symlinks manually.
+(pnpm and npm are blocked on `tar` by Replit's security policy on this project.)
+
 ## User Preferences
 
 - Use pnpm for package installation (npm install can OOM on this large project)
 - Run heavy installs via a Replit workflow, not ShellExec (detached bash gets reaped)
+- node_modules/.bin/ symlinks may need manual recreation if missing (see Startup Note above)

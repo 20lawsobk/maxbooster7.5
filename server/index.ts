@@ -1,3 +1,7 @@
+// ── Self-Confinement: initialise unified config before anything else ─────────
+// Validates all env vars and builds the typed config object. Must be first.
+import "./config/index.js";
+
 // Reconcile stale PDIM_* credentials against the working STORAGE_* token
 // BEFORE any other module reads process.env.PDIM_* — must stay first.
 import "./lib/pdimEnvFix.js";
