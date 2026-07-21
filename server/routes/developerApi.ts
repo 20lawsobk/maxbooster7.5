@@ -405,7 +405,7 @@ headers = {
 }
 
 response = requests.get('https://your-domain.com/api/v1/analytics/streams', headers=headers)
-data = response?.json()
+data = response.json()
 print(data)
       `.trim(),
       },

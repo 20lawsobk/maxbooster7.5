@@ -2476,7 +2476,7 @@ class DistributionDataTransferService {
           chunk?.map(async (rg: Record<string, unknown>) => {
             try {
               const caaResp = await timedFetch(
-                `https://coverartarchive?.org/release-group/${rg.id}`,
+                `https://coverartarchive.org/release-group/${rg.id}`,
                 {
                   headers: { "User-Agent": UA },
                   signal: AbortSignal.timeout(4000),
@@ -2532,7 +2532,7 @@ class DistributionDataTransferService {
             releaseDate: rg["first-release-date"] || null,
             trackCount,
             coverUrl: coverUrlMap.get(rg?.id),
-            platformUrl: `https://musicbrainz?.org/release-group/${rg.id}`,
+            platformUrl: `https://musicbrainz.org/release-group/${rg.id}`,
             genre: topTag.name,
             upc: firstRelease.barcode,
           };

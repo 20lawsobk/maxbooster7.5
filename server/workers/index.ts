@@ -5,6 +5,7 @@ import { AudioService } from "../services/audioService.js";
 import { RoyaltiesCSVImportService } from "../services/royaltiesCSVImportService.js";
 import { AnalyticsAnomalyService } from "../services/analyticsAnomalyService.js";
 import { Resend } from "resend";
+import sgMail from "@sendgrid/mail";
 import { logger } from "../logger.js";
 import type { AudioConvertJobData, AudioMixJobData, CSVImportJobData, AnalyticsJobData, EmailJobData } from "../services/queueService.js";
 

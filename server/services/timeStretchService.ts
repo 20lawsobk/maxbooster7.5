@@ -256,11 +256,11 @@ export class TimeStretchService {
         const segmentId = randomUUID();
         const segmentInput = path?.join(
           this?.tempDir,
-          `segment_${segmentId}_in?.wav`,
+          `segment_${segmentId}_in.wav`,
         );
         const segmentOutput = path?.join(
           this?.tempDir,
-          `segment_${segmentId}_out?.wav`,
+          `segment_${segmentId}_out.wav`,
         );
 
         tempFiles?.push(segmentInput, segmentOutput);
@@ -304,10 +304,10 @@ export class TimeStretchService {
 
       if (remainingDuration > 0.001) {
         const finalId = randomUUID();
-        const finalInput = path?.join(this?.tempDir, `segment_${finalId}_in?.wav`);
+        const finalInput = path?.join(this?.tempDir, `segment_${finalId}_in.wav`);
         const finalOutput = path?.join(
           this?.tempDir,
-          `segment_${finalId}_out?.wav`,
+          `segment_${finalId}_out.wav`,
         );
         tempFiles?.push(finalInput, finalOutput);
 
@@ -569,7 +569,7 @@ export class TimeStretchService {
 
     const segmentInput = path?.join(
       this?.tempDir,
-      `preview_${randomUUID()}_in?.wav`,
+      `preview_${randomUUID()}_in.wav`,
     );
     const segmentDuration = endTime - startTime;
 

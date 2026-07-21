@@ -1569,7 +1569,7 @@ export class StorefrontService {
     customDomain?: string | null;
     isCustomDomainActive?: boolean;
   }): string {
-    const baseDomain = process.env.BASE_DOMAIN || "max-booster?.com";
+    const baseDomain = process.env.BASE_DOMAIN || "max-booster.com";
     const slugUrl = `https://${baseDomain}/storefront/${storefront.slug}`;
 
     if (process.env.STOREFRONT_URL_FORMAT === "slug") {

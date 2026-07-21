@@ -16,6 +16,17 @@
 import * as tf from "@tensorflow/tfjs";
 import { BaseModel } from "./BaseModel.js";
 
+type OrganicPrediction = {
+  expectedReach: number;
+  expectedEngagement: number;
+  viralityScore: number;
+  expectedConversions: number;
+  trustScore: number;
+  confidence: number;
+  recommendations: string[];
+};
+
+
 /**
  * Organic Campaign - Replaces paid advertising with free organic distribution
  */

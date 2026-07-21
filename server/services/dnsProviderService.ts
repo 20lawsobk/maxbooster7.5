@@ -1479,7 +1479,7 @@ export function validateDnsRecord(record: DnsRecord): string | null {
     case "CAA": {
       const caaPattern = /^\d+ (issue|issuewild|iodef) ".+"$/;
       if (!caaPattern.test(record.value)) {
-        return 'CAA value must be: <flags> <tag> "<value>" e.g. 0 issue "letsencrypt?.org"';
+        return 'CAA value must be: <flags> <tag> "<value>" e.g. 0 issue "letsencrypt.org"';
       }
       break;
     }

@@ -899,7 +899,7 @@ Your advance eligibility is calculated using our AI revenue forecasting model, w
 1. Go to **Marketplace** in the sidebar
 2. Click **"Create Storefront"**
 3. Customize: display name, bio, logo, colors, banner image
-4. Get your custom URL: \`yourname?.maxbooster.app\`
+4. Get your custom URL: \`yourname.maxbooster.app\`
 5. Connect Stripe Connect for payment processing (one-time setup, takes 2 minutes)
 
 **Uploading Products:**
@@ -1007,13 +1007,13 @@ Your advance eligibility is calculated using our AI revenue forecasting model, w
     answer: `Your Max Booster Storefront is your own professional beat/music store.
 
 **Storefront Customization:**
-• **URL:** \`yourartistname?.maxbooster.app\` — fully custom, branded
+• **URL:** \`yourartistname.maxbooster.app\` — fully custom, branded
 • **Logo:** Upload your logo (PNG with transparency recommended)
 • **Banner:** 1920×400px header image
 • **Color Scheme:** Pick primary, accent, and background colors
 • **Bio:** Tell producers/artists about your style
 • **Social Links:** Link your Instagram, Twitter, YouTube, etc.
-• **Custom Domain:** Connect your own domain (e?.g., \`beats?.yourname.com\`)
+• **Custom Domain:** Connect your own domain (e.g., \`beats.yourname.com\`)
 
 **Store Features:**
 • Built-in audio player for previews

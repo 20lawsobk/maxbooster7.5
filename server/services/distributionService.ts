@@ -786,8 +786,8 @@ Release Date: ${pkg?.releaseDate?.toISOString().split("T")[0] || "Not set"}
 Label: ${pkg?.label || "Not set"}
 
 Files Included:
-- metadata?.json: DSP-compliant metadata
-- tracks?.csv: Track listing
+- metadata.json: DSP-compliant metadata
+- tracks.csv: Track listing
 ${pkg?.artworkUrl ? "- artwork: Album artwork" : ""}
 
 Generated: ${new Date().toISOString()}

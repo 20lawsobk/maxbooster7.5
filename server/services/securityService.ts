@@ -1,10 +1,12 @@
 import { randomBytes } from "crypto";
 
 import fsPromises from "fs/promises";
+import fs from "fs";
 import path from "path";
 import { logger } from "../logger.js";
 import { db } from "../db.js";
-import { sql } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
+import { users } from "../../shared/schema.js";
 
 export interface AuditLog {
   id: string;

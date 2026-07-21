@@ -1963,9 +1963,9 @@ export async function seedDistributionPlatforms() {
       .onConflictDoUpdate({
         target: dspProviders.slug,
         set: {
-          name: sql`excluded?.name`,
-          isActive: sql`excluded?.is_active`,
-          metadata: sql`excluded?.metadata`,
+          name: sql`excluded.name`,
+          isActive: sql`excluded.is_active`,
+          metadata: sql`excluded.metadata`,
         },
       });
 

@@ -2661,7 +2661,7 @@ export class AIMusicService {
       preset_application: `Applied ${input?.genre} preset at ${input?.intensity}% intensity with ${output?.suggestions?.length || 0} AI-generated suggestions`,
       reference_analysis: `Analyzed reference track: ${output?.loudnessMetrics.integrated?.toFixed(1)} LUFS integrated loudness, ${output?.dynamicRange.toFixed(1)}dB dynamic range`,
       reference_matching: `Generated ${output?.suggestions?.length || 0} specific adjustments to match reference with ${(confidence * 100).toFixed(1)}% confidence`,
-      loudness_measurement: `Measured ITU-R BS?.1770-4 loudness: ${output?.integrated.toFixed(1)} LUFS integrated, ${output?.truePeak.toFixed(1)}dB true peak`,
+      loudness_measurement: `Measured ITU-R BS.1770-4 loudness: ${output?.integrated.toFixed(1)} LUFS integrated, ${output?.truePeak.toFixed(1)}dB true peak`,
       loudness_normalization: `Normalized to ${input?.targetLUFS} LUFS with ${output?.appliedGain >= 0 ? "+" : ""}${output?.appliedGain.toFixed(1)}dB gain adjustment`,
     };
 

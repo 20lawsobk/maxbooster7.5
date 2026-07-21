@@ -228,7 +228,7 @@ class TensorFlowWorkerPool {
       `[TFWorkerPool] Loading ${withPath?.length} model(s) into worker pool…`,
     );
     const results = await Promise?.allSettled(
-      withPath?.map((m) => this?.loadModel(m?.id, `${m?.filePath}/model?.json`)),
+      withPath?.map((m) => this?.loadModel(m?.id, `${m?.filePath}/model.json`)),
     );
 
     const loaded = results?.filter((r) => r?.status === "fulfilled").length;

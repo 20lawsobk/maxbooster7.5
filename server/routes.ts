@@ -6099,7 +6099,7 @@ export async function registerRoutes(
         items: [{ price: resolvedPriceId }],
         payment_behavior: "default_incomplete",
         payment_settings: { save_default_payment_method: "on_subscription" },
-        expand: ["latest_invoice?.payment_intent"],
+        expand: ["latest_invoice.payment_intent"],
         metadata: { userId: user.id, planName: planName || "unknown" },
       });
 
@@ -7127,7 +7127,7 @@ export async function registerRoutes(
   // Stripe checkout session creation for subscription plans
   const stripe = process.env.STRIPE_SECRET_KEY
     ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-        apiVersion: "2025-12-15?.clover",
+        apiVersion: "2025-12-15.clover",
       })
     : null;
 

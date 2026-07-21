@@ -164,6 +164,44 @@ export function CrossChannelAttribution() {
     revenue: { label: "Revenue", color: "#8b5cf6" },
   };
 
+  const weeklyTrendData = ["Week 1", "Week 2", "Week 3", "Week 4"].map((week, i) => ({
+    week,
+    paidSocial: 30 + i * 3,
+    organic: 25 + i * 2,
+    email: 15 + i,
+    paidSearch: 18 + i * 2,
+    display: 12 + i,
+  }));
+
+  const channelOverlapData = channelData.slice(0, 5).map((channel, index) => ({
+    name: channel.channel,
+    value: channel.assists || Math.round(channel.conversions * 0.4),
+    color:
+      channel.color ||
+      CHANNEL_COLORS[channel.channel] ||
+      COLORS[index % COLORS.length],
+  }));
+
+  const deviceData = [
+    { device: "Mobile", conversions: Math.round(totalConversions * 0.52), percentage: 52 },
+    { device: "Desktop", conversions: Math.round(totalConversions * 0.34), percentage: 34 },
+    { device: "Tablet", conversions: Math.round(totalConversions * 0.1), percentage: 10 },
+    { device: "Smart TV", conversions: Math.round(totalConversions * 0.04), percentage: 4 },
+  ];
+
+  const touchpointDistributionData = [
+    { touchpoints: "1", conversions: Math.round(totalConversions * 0.22), percentage: 22 },
+    { touchpoints: "2", conversions: Math.round(totalConversions * 0.28), percentage: 28 },
+    { touchpoints: "3", conversions: Math.round(totalConversions * 0.24), percentage: 24 },
+    { touchpoints: "4", conversions: Math.round(totalConversions * 0.16), percentage: 16 },
+    { touchpoints: "5+", conversions: Math.round(totalConversions * 0.1), percentage: 10 },
+  ];
+
+  const timeToConversionData = ["0-1", "2-3", "4-7", "8-14", "15-30"].map((day, i) => ({
+    day,
+    conversions: Math.round(totalConversions * [0.3, 0.25, 0.2, 0.15, 0.1][i]),
+  }));
+
   const modelDescriptions: Record<AttributionModel, string> = {
     "first-touch":
       "Gives 100% credit to the first channel that introduced the customer",

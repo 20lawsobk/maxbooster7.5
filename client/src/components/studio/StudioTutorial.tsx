@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { X, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
+import { logger } from "@/lib/logger";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { announce } from "@/lib/accessibility";
 import { useToast } from "@/hooks/use-toast";

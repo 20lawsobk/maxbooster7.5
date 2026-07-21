@@ -251,17 +251,17 @@ export class SelfHealingSecuritySystem {
   // Start continuous security monitoring
   private startSecurityMonitoring(): void {
     setInterval(() => {
-      this?.performSecurityScan();
-      this?.updateSecurityMetrics();
-      this?.healDetectedThreats();
+      this.performSecurityScan();
+      this.updateSecurityMetrics();
+      this.healDetectedThreats();
     }, 5000); // Scan every 5 seconds
 
     setInterval(() => {
-      this?.performDeepSecurityScan();
+      this.performDeepSecurityScan();
     }, 60000); // Deep scan every minute
 
     setInterval(() => {
-      this?.optimizeSecurityRules();
+      this.optimizeSecurityRules();
     }, 300000); // Optimize rules every 5 minutes
   }
 
@@ -269,22 +269,22 @@ export class SelfHealingSecuritySystem {
   private async performSecurityScan(): Promise<void> {
     try {
       // Check for suspicious network activity
-      await this?.checkNetworkActivity();
+      await this.checkNetworkActivity();
 
       // Check for file system anomalies
-      await this?.checkFileSystemIntegrity();
+      await this.checkFileSystemIntegrity();
 
       // Check for process anomalies
-      await this?.checkProcessIntegrity();
+      await this.checkProcessIntegrity();
 
       // Check for memory anomalies
-      await this?.checkMemoryIntegrity();
+      await this.checkMemoryIntegrity();
 
       // Update security score
-      this?.calculateSecurityScore();
+      this.calculateSecurityScore();
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Security scan error:");
-      this?.handleSecurityError(error);
+      logger.warn({ err: error }, "Security scan error:");
+      this.handleSecurityError(error);
     }
   }
 
@@ -292,18 +292,18 @@ export class SelfHealingSecuritySystem {
   private async performDeepSecurityScan(): Promise<void> {
     try {
       // Vulnerability assessment
-      await this?.performVulnerabilityAssessment();
+      await this.performVulnerabilityAssessment();
 
       // Penetration testing simulation
-      await this?.simulatePenetrationTest();
+      await this.simulatePenetrationTest();
 
       // Security configuration audit
-      await this?.auditSecurityConfiguration();
+      await this.auditSecurityConfiguration();
 
       // Update threat database
-      await this?.updateThreatDatabase();
+      await this.updateThreatDatabase();
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Deep security scan error:");
+      logger.warn({ err: error }, "Deep security scan error:");
     }
   }
 
@@ -323,8 +323,8 @@ export class SelfHealingSecuritySystem {
         "STRIPE_SECRET_KEY",
       ];
       for (const envVar of sensitiveEnvVars) {
-        if (process?.env[envVar] && process?.env[envVar]!.length < 16) {
-          vulnerabilities?.push({
+        if (process.env[envVar] && process.env[envVar]!.length < 16) {
+          vulnerabilities.push({
             type: "weak-secret",
             severity: "high",
             description: `${envVar} appears to use a weak secret (short length)`,
@@ -1336,9 +1336,8 @@ export class SelfHealingSecuritySystem {
       }
 
       // Get or create user behavior profile
-      let profile = await db.query.securityBehaviorProfiles.findFirst({
-        where: (profiles, { eq }) => eq(profiles.userId, userId),
-      });
+      // security_behavior_profiles table is not provisioned (unbuilt feature) — analysis runs against an in-memory baseline only.
+      let profile: Record<string, unknown> | null = null;
 
       // Extract current session data
       const currentHour = new Date().getHours();
@@ -1348,28 +1347,24 @@ export class SelfHealingSecuritySystem {
 
       if (!profile) {
         // Create new profile with baseline data
-        const newProfile = await db
-          .insert(securityBehaviorProfiles)
-          .values({
-            userId,
-            sessionId,
-            loginTimes: [currentHour],
-            locations: [],
-            devices: [
-              {
-                userAgent: currentDevice,
-                fingerprint: crypto.randomBytes(16).toString("hex"),
-              },
-            ],
-            actionSequences: [],
-            typingPatterns: {},
-            riskScore: 0,
-            baselineEstablished: false,
-            profileVersion: 1,
-          })
-          .returning();
-
-        profile = newProfile[0];
+        // No persistence table — build an in-memory baseline profile for this analysis pass.
+        profile = {
+          userId,
+          sessionId,
+          loginTimes: [currentHour],
+          locations: [],
+          devices: [
+            {
+              userAgent: currentDevice,
+              fingerprint: crypto.randomBytes(16).toString("hex"),
+            },
+          ],
+          actionSequences: [],
+          typingPatterns: {},
+          riskScore: 0,
+          baselineEstablished: false,
+          profileVersion: 1,
+        };
       } else {
         // Analyze deviations from established baseline
         const loginTimes = (profile.loginTimes as number[]) || [];
@@ -1399,25 +1394,7 @@ export class SelfHealingSecuritySystem {
           riskScore += 30;
         }
 
-        // Update profile with new data
-        await db
-          .update(securityBehaviorProfiles)
-          .set({
-            loginTimes: [...loginTimes.slice(-50), currentHour], // Keep last 50 entries
-            devices: knownDevice
-              ? devices
-              : [
-                  ...devices.slice(-10),
-                  {
-                    userAgent: currentDevice,
-                    fingerprint: crypto.randomBytes(16).toString("hex"),
-                  },
-                ],
-            riskScore,
-            baselineEstablished: loginTimes.length >= 10,
-            lastUpdated: new Date(),
-          })
-          .where(eq(securityBehaviorProfiles.userId, userId));
+        // Update skipped: security persistence tables are not provisioned in the database (unbuilt feature) — skipping DB write, feature runs in-memory only
       }
 
       // Determine risk level
@@ -1580,23 +1557,9 @@ export class SelfHealingSecuritySystem {
 
       // Store anomaly in database
       if (isAnomaly) {
-        await db.insert(securityAnomalies).values({
-          userId,
-          sessionId: this.currentRequestContext.ipAddress,
-          actionType,
-          features,
-          anomalyScore,
-          anomalyType:
-            timeScore > 0.2
-              ? "time_based"
-              : freqScore > 0.2
-                ? "frequency_based"
-                : "pattern_based",
-          explanation,
-          featureImportance,
-          autoBlocked,
-          modelVersion: "v1.0",
-        });
+        logger?.warn(
+        "[Security] securityAnomalies write skipped — security persistence tables are not provisioned in the database (unbuilt feature) — skipping DB write, feature runs in-memory only",
+      );
       }
 
       // Log inference
@@ -1721,26 +1684,9 @@ export class SelfHealingSecuritySystem {
 
       // Store alert
       if (threatLevel !== "none") {
-        await db.insert(securityZeroDayAlerts).values({
-          payload,
-          source,
-          threatLevel,
-          threatSignatures: signatures,
-          heuristicAnalysis: {
-            obfuscationDetected,
-            patternScore,
-            suspiciousPatterns: signatures,
-          },
-          obfuscationDetected,
-          responseRecommendation: recommendation,
-          autoResponse: shouldBlock
-            ? "block"
-            : threatLevel === "medium"
-              ? "monitor"
-              : "alert",
-          patternMatchScore: patternScore,
-          modelVersion: "v1.0",
-        });
+        logger.warn(
+        "[Security] securityZeroDayAlerts write skipped — security persistence tables are not provisioned in the database (unbuilt feature) — skipping DB write, feature runs in-memory only",
+      );
       }
 
       // Log inference
@@ -1874,26 +1820,9 @@ export class SelfHealingSecuritySystem {
             : "No vulnerabilities found",
         });
 
-        await db.insert(securityPenTestResults).values({
-          testId,
-          targetEndpoint: targetEndpoint || "all_endpoints",
-          testType: test.type,
-          testPayload: {
-            payload: test.payload,
-            safe: true,
-            method: "config_audit",
-          },
-          vulnerabilityDetected: vulnerable,
-          vulnerabilityScore,
-          vulnerabilitySeverity: vulnerable ? test.severity : "none",
-          exploitSuccess: false,
-          remediationSuggestion: test.remediation,
-          affectedComponents: vulnerable ? ["api", "frontend"] : [],
-          testDuration: Date.now() - testStart,
-          requestsSent: 0,
-          frequency,
-          scheduledBy: "security_system",
-        });
+        logger?.warn(
+        "[Security] securityPenTestResults write skipped — security persistence tables are not provisioned in the database (unbuilt feature) — skipping DB write, feature runs in-memory only",
+      );
       }
 
       const vulnerabilitiesFound = results.filter((r) => r.vulnerable).length;
@@ -2033,18 +1962,9 @@ export class SelfHealingSecuritySystem {
       const complianceScore = (passedControls / totalControls) * 100;
 
       // Store report
-      await db.insert(securityComplianceReports).values({
-        reportId,
-        standard,
-        dateRange,
-        complianceScore,
-        passedControls,
-        failedControls,
-        findings,
-        recommendations,
-        exportFormat: "json",
-        generatedBy: "security_system",
-      });
+      logger?.warn(
+      "[Security] securityComplianceReports write skipped — security persistence tables are not provisioned in the database (unbuilt feature) — skipping DB write, feature runs in-memory only",
+    );
 
       return {
         reportId,
@@ -2390,3 +2310,4 @@ export const corsMiddleware = cors({
 });
 
 export default SelfHealingSecuritySystem;
+

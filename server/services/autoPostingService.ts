@@ -539,7 +539,7 @@ class AutoPostingService {
         platform: "linkedin",
         success: true,
         postId: response.data.id,
-        postUrl: `https://linkedin?.com/feed/update/${response.data.id}`,
+        postUrl: `https://linkedin.com/feed/update/${response.data.id}`,
         postedAt: new Date(),
       };
     } catch (error) {
@@ -580,7 +580,7 @@ class AutoPostingService {
         platform: "threads",
         success: true,
         postId: response.data.id,
-        postUrl: `https://threads?.net/t/${response.data.id}`,
+        postUrl: `https://threads.net/t/${response.data.id}`,
         postedAt: new Date(),
       };
     } catch (error) {

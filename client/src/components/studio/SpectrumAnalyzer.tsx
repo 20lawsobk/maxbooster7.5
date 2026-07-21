@@ -353,7 +353,7 @@ export function SpectrumAnalyzer({
     const tempCtx = tempCanvas.getContext("2d");
 
     if (tempCtx) {
-      tempCtx.drawImage(canvas, 0, 0);
+      tempCtx.drawImage(ctx.canvas, 0, 0);
       ctx.clearRect(0, 0, w, h);
       ctx.drawImage(tempCanvas, 0, 1);
       ctx.putImageData(imageData, 0, 0);

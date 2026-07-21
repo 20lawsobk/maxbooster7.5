@@ -88,7 +88,7 @@ export class MediaTranscoder {
     await this?.checkFfmpeg();
     const tmp = path?.join(os?.tmpdir(), randomBytes(8).toString("hex"));
     const inFile = `${tmp}${inputExt}`;
-    const outFile = `${tmp}out?.mp4`;
+    const outFile = `${tmp}out.mp4`;
 
     try {
       await fs?.writeFile(inFile, data);
@@ -116,7 +116,7 @@ export class MediaTranscoder {
     await this?.checkFfmpeg();
     const tmp = path?.join(os?.tmpdir(), randomBytes(8).toString("hex"));
     const inFile = `${tmp}${inputExt}`;
-    const outFile = `${tmp}out?.opus`;
+    const outFile = `${tmp}out.opus`;
 
     try {
       await fs?.writeFile(inFile, data);

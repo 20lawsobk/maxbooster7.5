@@ -1048,7 +1048,7 @@ async function fetchUrlMetadata(
   if (ownMeta) return ownMeta;
 
   // ── Known oEmbed endpoints (no need to scrape HTML first) ──────
-  if (url.includes("youtube?.com") || url.includes("youtu?.be")) {
+  if (url.includes("youtube.com") || url.includes("youtu.be")) {
     const r = await tryOEmbed(
       `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
     );
@@ -1059,7 +1059,7 @@ async function fetchUrlMetadata(
         description: `Video by ${r.author ?? "creator"}`,
       };
   }
-  if (url.includes("spotify?.com")) {
+  if (url.includes("spotify.com")) {
     const r = await tryOEmbed(
       `https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`,
     );
@@ -1072,7 +1072,7 @@ async function fetchUrlMetadata(
           : "Streaming on Spotify",
       };
   }
-  if (url.includes("soundcloud?.com")) {
+  if (url.includes("soundcloud.com")) {
     const r = await tryOEmbed(
       `https://soundcloud.com/oembed?url=${encodeURIComponent(url)}&format=json`,
     );
@@ -1085,7 +1085,7 @@ async function fetchUrlMetadata(
           : undefined,
       };
   }
-  if (url.includes("vimeo?.com")) {
+  if (url.includes("vimeo.com")) {
     const r = await tryOEmbed(
       `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(url)}`,
     );
@@ -1096,13 +1096,13 @@ async function fetchUrlMetadata(
         description: r.author ? `Video by ${r.author}` : undefined,
       };
   }
-  if (url.includes("twitter?.com") || url.includes("x?.com")) {
+  if (url.includes("twitter.com") || url.includes("x.com")) {
     const r = await tryOEmbed(
       `https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}&omit_script=true`,
     );
     if (r.title) return { ...r, siteName: "X (Twitter)" };
   }
-  if (url.includes("bandcamp?.com")) {
+  if (url.includes("bandcamp.com")) {
     const r = await tryOEmbed(
       `https://bandcamp.com/api/oembed?url=${encodeURIComponent(url)}&format=json`,
     );

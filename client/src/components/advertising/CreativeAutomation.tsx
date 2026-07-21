@@ -165,6 +165,41 @@ export function CreativeAutomation() {
     confidence: { label: "Confidence", color: "#8b5cf6" },
   };
 
+  const performanceTrendData = ["Day 1", "Day 2", "Day 3", "Day 4", "Day 5", "Day 6", "Day 7"].map(
+    (day, i) => ({
+      day,
+      variantA: 5.2 + i * 0.15,
+      variantB: 6.1 + i * 0.25,
+      variantC: 4.8 + i * 0.1,
+      variantD: 5.5 + i * 0.18,
+    }),
+  );
+
+  const confidenceHistoryData = ["0h", "12h", "24h", "36h", "48h", "60h", "72h"].map((hour, i) => ({
+    hour,
+    variantA: Math.min(100, 50 + i * 6),
+    variantB: Math.min(100, 55 + i * 7),
+    variantC: Math.min(100, 45 + i * 5),
+    variantD: Math.min(100, 48 + i * 5.5),
+  }));
+
+  const elementPerformanceData = [
+    { element: "Headline", variantA: 85, variantB: 92, variantC: 78 },
+    { element: "CTA", variantA: 78, variantB: 88, variantC: 82 },
+    { element: "Imagery", variantA: 82, variantB: 75, variantC: 90 },
+    { element: "Copy", variantA: 88, variantB: 84, variantC: 76 },
+    { element: "Offer", variantA: 90, variantB: 86, variantC: 80 },
+    { element: "Layout", variantA: 76, variantB: 82, variantC: 85 },
+  ];
+
+  const conversionFunnelData = [
+    { stage: "Impressions", variantA: 100, variantB: 100, variantC: 100, variantD: 100 },
+    { stage: "Clicks", variantA: 8, variantB: 10, variantC: 7, variantD: 9 },
+    { stage: "Engaged", variantA: 5, variantB: 7, variantC: 4, variantD: 6 },
+    { stage: "Add to Cart", variantA: 3, variantB: 4, variantC: 2, variantD: 3 },
+    { stage: "Conversions", variantA: 2, variantB: 3, variantC: 1.5, variantD: 2.2 },
+  ];
+
   variants.reduce((acc, v) => acc + v.impressions, 0);
   variants.reduce((acc, v) => acc + v.conversions, 0);
   const totalRevenue = variants.reduce((acc, v) => acc + v.revenue, 0);

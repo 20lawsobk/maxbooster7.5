@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { getRedisClient } from "../lib/redisClient.js";
 import crypto from "crypto";
 import { db } from "../db";
 import { apiKeys, apiUsage } from "@shared/schema";
@@ -179,6 +180,7 @@ export async function rateLimitApiKey(
     const now = Date.now();
     const windowSize = 1000; // 1 second window (for per-second rate limit)
     const redisKey = `api_rate_limit:${keyId}`;
+    const redisClient = getRedisClient();
 
     try {
       // Use Redis sorted set with sliding window.

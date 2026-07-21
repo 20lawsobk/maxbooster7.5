@@ -24,6 +24,13 @@ import {
   type EngagementScores,
 } from "../services/creativeModelService.js";
 
+import { AIUnavailableError } from "../lib/aiSource.js";
+
+// AIUnavailableError surfaces as 503 (MaxCore fail-explicit contract)
+function aiErrorStatus(error: unknown): number {
+  return error instanceof AIUnavailableError ? error.statusCode : 500;
+}
+
 const router = Router();
 
 function requireAuth(req: Request, res: Response): number | null {
@@ -91,7 +98,7 @@ router?.post("/generate", async (req: Request, res: Response) => {
   } catch (err) {
     logger?.warn("[CreativeModel] /generate error", { err });
     res
-      .status(500)
+      .status(aiErrorStatus(err))
       .json({ error: "Creative generation failed", detail: err.message });
   }
 });
@@ -114,7 +121,7 @@ router?.post("/plan", async (req: Request, res: Response) => {
     res?.json({ success: true, data: result });
   } catch (err) {
     logger?.warn("[CreativeModel] /plan error", { err });
-    res?.status(500).json({ error: "Planning failed", detail: err.message });
+    res?.status(aiErrorStatus(err)).json({ error: "Planning failed", detail: err.message });
   }
 });
 
@@ -144,7 +151,7 @@ router?.post("/score", async (req: Request, res: Response) => {
     res?.json({ success: true, data: scores });
   } catch (err) {
     logger?.warn("[CreativeModel] /score error", { err });
-    res?.status(500).json({ error: "Scoring failed", detail: err.message });
+    res?.status(aiErrorStatus(err)).json({ error: "Scoring failed", detail: err.message });
   }
 });
 
@@ -177,7 +184,7 @@ router?.post("/feedback", async (req: Request, res: Response) => {
   } catch (err) {
     logger?.warn("[CreativeModel] /feedback error", { err });
     res
-      .status(500)
+      .status(aiErrorStatus(err))
       .json({ error: "Feedback submission failed", detail: err.message });
   }
 });

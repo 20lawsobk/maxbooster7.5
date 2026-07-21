@@ -45,7 +45,7 @@ export class ReplitChunkStore implements ChunkStore {
   async putChunk(chunkId: ChunkId, data: Buffer): Promise<void> {
     const client = await this?.getClient();
     const { ok, error } = await client?.uploadFromBytes(this?.key(chunkId), data);
-    if (!ok) throw new Error(`ReplitChunkStore?.putChunk failed: ${error}`);
+    if (!ok) throw new Error(`ReplitChunkStore.putChunk failed: ${error}`);
   }
 
   async getChunk(chunkId: ChunkId): Promise<Buffer> {
@@ -53,14 +53,14 @@ export class ReplitChunkStore implements ChunkStore {
     const { ok, value, error } = await client?.downloadAsBytes(
       this?.key(chunkId),
     );
-    if (!ok) throw new Error(`ReplitChunkStore?.getChunk failed: ${error}`);
+    if (!ok) throw new Error(`ReplitChunkStore.getChunk failed: ${error}`);
     return Buffer?.from(value as Uint8Array);
   }
 
   async deleteChunk(chunkId: ChunkId): Promise<void> {
     const client = await this?.getClient();
     const { ok, error } = await client?.delete(this?.key(chunkId));
-    if (!ok) logger?.warn(`ReplitChunkStore?.deleteChunk: ${error}`);
+    if (!ok) logger?.warn(`ReplitChunkStore.deleteChunk: ${error}`);
   }
 
   async hasChunk(chunkId: ChunkId): Promise<boolean> {

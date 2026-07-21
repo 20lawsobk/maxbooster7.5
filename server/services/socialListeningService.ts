@@ -303,7 +303,7 @@ class SocialListeningService {
           authorHandle: `@${author?.username || "unknown"}`,
           authorFollowers: author.public_metrics?.followers_count || 0,
           authorVerified: author.verified || false,
-          url: `https://twitter?.com/${author?.username}/status/${tweet.id}`,
+          url: `https://twitter.com/${author?.username}/status/${tweet.id}`,
           timestamp: new Date(tweet?.created_at || Date?.now()),
           sentiment,
           reach: author.public_metrics?.followers_count || 0,

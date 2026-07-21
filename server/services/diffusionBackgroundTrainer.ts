@@ -267,7 +267,6 @@ async function _isExternalMaxCoreReachable(): Promise<boolean> {
     const res = await fetch(`${mcUrl}/api/health`, {
       headers: {
         Authorization: `Bearer ${mcKey}`,
-        "X-API-Key": mcKey,
       },
       signal: ctrl.signal,
       redirect: "manual",

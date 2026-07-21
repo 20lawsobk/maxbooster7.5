@@ -683,7 +683,7 @@ class OfflineModeService extends EventEmitter {
   }> {
     const cached = await this?.cacheProject(projectId, userId);
 
-    const filename = `${cached?.name.replace(/[^a-z0-9]/gi, "_")}_offline?.mbproj`;
+    const filename = `${cached?.name.replace(/[^a-z0-9]/gi, "_")}_offline.mbproj`;
     const downloadUrl = `/api/offline/download/${projectId}`;
 
     return {

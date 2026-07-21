@@ -3,7 +3,8 @@ import {
   useQuery,
   useMutation,
   useQueryClient,
-} from "@tantml:parameter>@/lib/queryClient";
+} from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import {
   Card,
   CardContent,

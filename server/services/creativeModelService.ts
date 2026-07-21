@@ -101,9 +101,8 @@ async function maxcorePost(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(MAXCORE_KEY
-        ? { Authorization: `Bearer ${MAXCORE_KEY}`, "X-API-Key": MAXCORE_KEY }
-        : {}),
+      // MaxCore auth is Bearer-ONLY — X-API-Key alongside Bearer triggers 401
+      ...(MAXCORE_KEY ? { Authorization: `Bearer ${MAXCORE_KEY}` } : {}),
     },
     body: JSON.stringify({ ...(body as object), source: "MaxCoreAI" }),
     signal: AbortSignal.timeout(timeoutMs),
@@ -128,9 +127,7 @@ async function maxcorePost(
 async function maxcoreGet(path: string, timeoutMs = 15_000): Promise<unknown> {
   const res = await fetch(`${MAXCORE_URL}${path}`, {
     method: "GET",
-    headers: MAXCORE_KEY
-      ? { Authorization: `Bearer ${MAXCORE_KEY}`, "X-API-Key": MAXCORE_KEY }
-      : {},
+    headers: MAXCORE_KEY ? { Authorization: `Bearer ${MAXCORE_KEY}` } : {},
     signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res?.ok) {
@@ -332,22 +329,13 @@ async function analyzeMusicStage(
       mood: Array.isArray(raw?.mood) ? raw?.mood : [brief?.tone],
     };
   } catch (err) {
-    logger?.warn(
-      "[CreativeModel] Music analysis — MaxCore call failed (transient), using local TF.js fallback",
-      { err },
-    );
-    return {
-      audioPat: audioPath,
-      bpm: 120,
-      key: "C major",
-      sections: [
-        { name: "intro", start: 0, end: 8 },
-        { name: "verse", start: 8, end: 24 },
-        { name: "chorus", start: 24, end: 40 },
-      ],
-      energyCurve: [0.4, 0.7, 0.9, 0.6],
-      mood: [brief?.tone],
-    };
+    // MaxCore-only fail-explicit contract: never substitute fabricated local
+    // analysis (fixed 120bpm / C major) for a failed MaxCore call.
+    logger?.warn("[CreativeModel] Music analysis — MaxCore call failed", {
+      err,
+    });
+    const { AIUnavailableError } = await import("../lib/aiSource.js");
+    throw new AIUnavailableError("music analysis");
   }
 }
 
@@ -788,16 +776,21 @@ async function scriptStage(
         .join("\n"),
     })) as GenerateTextResponse;
 
-    return (
-      raw?.text ??
-      raw?.script ??
-      raw?.caption ??
-      raw?.outputs?.[0]?.text ??
-      `[${brief?.platform.toUpperCase()} SCRIPT]\nHook: ${plan?.hooks[0]}\nOffer: ${brief?.offer}\nCTA: ${brief?.callToAction}`
-    );
+    const script =
+      raw?.text ?? raw?.script ?? raw?.caption ?? raw?.outputs?.[0]?.text;
+    if (typeof script === "string" && script.trim().length > 0) {
+      return script;
+    }
+    // Structurally-empty MaxCore response — fail explicitly, no template output
+    const { AIUnavailableError } = await import("../lib/aiSource.js");
+    throw new AIUnavailableError("script generation");
   } catch (err) {
-    logger?.warn("[CreativeModel] Script fallback", { err });
-    return `[${brief?.platform.toUpperCase()} SCRIPT]\nHook: ${plan?.hooks[0]}\nOffer: ${brief?.offer}\nCTA: ${brief?.callToAction}`;
+    logger?.warn("[CreativeModel] Script generation — MaxCore call failed", {
+      err,
+    });
+    const { AIUnavailableError } = await import("../lib/aiSource.js");
+    if (err instanceof AIUnavailableError) throw err;
+    throw new AIUnavailableError("script generation");
   }
 }
 

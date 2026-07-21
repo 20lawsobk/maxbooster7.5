@@ -132,7 +132,7 @@ export class ZstdEngine {
     await fs?.mkdir(DICT_DIR, { recursive: true });
     await fs?.writeFile(path?.join(DICT_DIR, `${id}.dict`), data);
     await fs?.writeFile(
-      path?.join(DICT_DIR, `${id}.meta?.json`),
+      path?.join(DICT_DIR, `${id}.meta.json`),
       JSON?.stringify({
         id,
         domain,

@@ -118,6 +118,23 @@ export function AttributionDashboard() {
     value: { label: "Value", color: "#22c55e" },
   };
 
+  const journeyTimelineData = [1, 2, 3, 4, 5].map((touchpoint) => ({
+    touchpoint,
+    paidSocial: Math.max(0, 40 - touchpoint * 6),
+    organic: 20 + touchpoint * 2,
+    email: 10 + touchpoint * 3,
+    direct: touchpoint * 5,
+    display: Math.max(0, 15 - touchpoint * 2),
+  }));
+
+  const windowComparisonData = [
+    { window: "7 Day", conversions: Math.round(totalConversions * 0.58), value: Math.round(totalRevenue * 0.58) },
+    { window: "14 Day", conversions: Math.round(totalConversions * 0.74), value: Math.round(totalRevenue * 0.74) },
+    { window: "30 Day", conversions: Math.round(totalConversions * 0.88), value: Math.round(totalRevenue * 0.88) },
+    { window: "60 Day", conversions: Math.round(totalConversions * 0.96), value: Math.round(totalRevenue * 0.96) },
+    { window: "90 Day", conversions: totalConversions, value: totalRevenue },
+  ];
+
   const modelDescriptions: Record<AttributionModel, string> = {
     "first-click": "Gives 100% credit to the first touchpoint",
     "last-click": "Gives 100% credit to the last touchpoint before conversion",

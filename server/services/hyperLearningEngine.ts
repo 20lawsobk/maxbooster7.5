@@ -2367,7 +2367,6 @@ class HyperLearningEngine extends EventEmitter {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${aiKey}`,
-          "X-API-Key": aiKey,
         },
         body: JSON.stringify(payload),
         signal: AbortSignal.timeout(5000),

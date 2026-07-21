@@ -89,7 +89,7 @@ async function runPeriodSimulation(periodName: string) {
   // Save results
   const reportPath = path?.join(
     process?.cwd(),
-    `SIMULATION_${periodName?.toUpperCase()}_RESULTS?.md`,
+    `SIMULATION_${periodName?.toUpperCase()}_RESULTS.md`,
   );
   fs?.writeFileSync(reportPath, generateReport(result));
   logger?.info(`\n📝 Report saved to: ${reportPath}\n`);

@@ -2,7 +2,8 @@ import { useState } from "react";
 import {
   useMutation,
   useQueryClient,
-} from "@tantml:parameter>@/lib/queryClient";
+} from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";

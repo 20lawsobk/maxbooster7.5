@@ -42,6 +42,9 @@ import { notificationService } from "../services/notificationService.js";
 import { createHardenedUpload } from "../middleware/uploadHandler.js";
 import path from "path";
 import fs from "fs";
+
+const uploadDir = path.join(process.cwd(), "uploads");
+fs.mkdirSync(uploadDir, { recursive: true });
 import fsPromises from "fs/promises";
 import os from "os";
 
@@ -6639,7 +6642,7 @@ router?.get(
       const userId = (req?.user as AuthenticatedUser).id;
       const { id } = req?.params;
 
-      const key = `distribution/packages/${userId}/${id}/tracks?.json`;
+      const key = `distribution/packages/${userId}/${id}/tracks.json`;
       const data = await storageService?.downloadFile(key).catch(() => null);
 
       if (!data) {
@@ -6676,7 +6679,7 @@ router?.post(
       const { trackId, title, isrc, duration, position, audioUrl } = req?.body;
       if (!title) return res?.status(400).json({ error: "title is required" });
 
-      const key = `distribution/packages/${userId}/${id}/tracks?.json`;
+      const key = `distribution/packages/${userId}/${id}/tracks.json`;
       let tracks: unknown[] = [];
       const existing = await storageService?.downloadFile(key).catch(() => null);
       if (existing) {
@@ -6725,7 +6728,7 @@ router?.get(
       const userId = (req?.user as AuthenticatedUser).id;
       const { id } = req?.params;
 
-      const tracksKey = `distribution/packages/${userId}/${id}/tracks?.json`;
+      const tracksKey = `distribution/packages/${userId}/${id}/tracks.json`;
       const tracksData = await storageService
         .downloadFile(tracksKey)
         .catch(() => null);

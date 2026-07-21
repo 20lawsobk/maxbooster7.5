@@ -379,7 +379,7 @@ export async function syncPlatformData(
           );
         syncedUsername = userData?.name || syncedUsername;
         syncedPlatformUserId = userData?.id || syncedPlatformUserId;
-        syncedProfileUrl = `https://www?.facebook.com/${userData.id}`;
+        syncedProfileUrl = `https://www.facebook.com/${userData.id}`;
         syncedMetadata = {
           ...syncedMetadata,
           picture: userData.picture?.data?.url,
@@ -399,7 +399,7 @@ export async function syncPlatformData(
           );
           const primaryPage = pagesData?.data[0];
           syncedFollowerCount = totalPageFollowers;
-          syncedProfileUrl = `https://www?.facebook.com/${primaryPage.id}`;
+          syncedProfileUrl = `https://www.facebook.com/${primaryPage.id}`;
           syncedMetadata = {
             ...syncedMetadata,
             pages: pagesData.data.map((pg: Record<string, unknown>) => ({
@@ -456,7 +456,7 @@ export async function syncPlatformData(
             syncedUsername = bestIgAccount?.username || syncedUsername;
             syncedFollowerCount = bestIgAccount?.followers_count;
             syncedPlatformUserId = bestIgAccount?.id;
-            syncedProfileUrl = `https://www?.instagram.com/${bestIgAccount.username}`;
+            syncedProfileUrl = `https://www.instagram.com/${bestIgAccount.username}`;
             syncedMetadata = {
               ...syncedMetadata,
               mediaCount: bestIgAccount.media_count,
@@ -480,7 +480,7 @@ export async function syncPlatformData(
           syncedFollowerCount =
             userData?.data.public_metrics?.followers_count || 0;
           syncedPlatformUserId = userData?.data.id || syncedPlatformUserId;
-          syncedProfileUrl = `https://x?.com/${userData.data.username}`;
+          syncedProfileUrl = `https://x.com/${userData.data.username}`;
           syncedMetadata = {
             ...syncedMetadata,
             followingCount: userData.data.public_metrics?.following_count || 0,
@@ -515,7 +515,7 @@ export async function syncPlatformData(
             10,
           );
           syncedPlatformUserId = channel?.id || syncedPlatformUserId;
-          syncedProfileUrl = `https://www?.youtube.com/channel/${channel.id}`;
+          syncedProfileUrl = `https://www.youtube.com/channel/${channel.id}`;
           syncedMetadata = {
             ...syncedMetadata,
             viewCount: parseInt(channel?.statistics?.viewCount || "0", 10),
@@ -664,7 +664,7 @@ export async function syncPlatformData(
           syncedUsername = userData?.username || syncedUsername;
           syncedPlatformUserId = userData?.id || syncedPlatformUserId;
           syncedFollowerCount = userData?.followers_count || 0;
-          syncedProfileUrl = `https://www?.threads.net/@${userData.username}`;
+          syncedProfileUrl = `https://www.threads.net/@${userData.username}`;
           syncedMetadata = {
             ...syncedMetadata,
             profilePictureUrl: userData.threads_profile_picture_url,
@@ -712,7 +712,7 @@ export async function syncPlatformData(
           const account = accountsData?.accounts?.[0];
           if (account) {
             const locRes = await timedFetch(
-              `https://mybusiness?.googleapis.com/v4/${account.name}/locations`,
+              `https://mybusiness.googleapis.com/v4/${account.name}/locations`,
               { headers: { Authorization: `Bearer ${accessToken}` } },
             );
             const locData = await locRes?.json();

@@ -204,6 +204,9 @@ export default function StorefrontBuilder() {
   const [requestingCustomDomain, setRequestingCustomDomain] = useState(false);
   const [verifyingDomain, setVerifyingDomain] = useState(false);
   const [domainVerified, setDomainVerified] = useState<boolean | null>(null);
+  const [customDomainInstructions, setCustomDomainInstructions] = useState<
+    string | null
+  >(null);
   const [newDnsZoneDomain, setNewDnsZoneDomain] = useState("");
   const [addedDnsZone, setAddedDnsZone] = useState<{
     id: string;
@@ -1831,7 +1834,7 @@ export default function StorefrontBuilder() {
                                 NS
                               </span>
                               <span className="text-blue-800 font-medium select-all flex-1">
-                                {ns}
+                                {addedDnsZone.nameserver1}
                               </span>
                             </div>
                             <p className="text-[11px] text-blue-600">

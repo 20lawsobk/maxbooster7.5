@@ -398,7 +398,7 @@ class SharpImageService {
       .png()
       .toBuffer();
 
-    const thumbnailFilename = result.filename.replace(".png", "-thumb?.png");
+    const thumbnailFilename = result.filename.replace(".png", "-thumb.png");
     const thumbnailPath = path.join(this.outputDir, thumbnailFilename);
     await fs.writeFile(thumbnailPath, thumbnailBuffer);
 

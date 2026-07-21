@@ -413,7 +413,7 @@ export class AuditSystem {
     // Real: an account/export endpoint must be registered.
     try {
       const grep = await execAsync(
-        `grep -rE "/account/export|/export/data|/gdpr/export" server/routes server/routes?.ts 2>/dev/null | head -1`,
+        `grep -rE "/account/export|/export/data|/gdpr/export" server/routes server/routes.ts 2>/dev/null | head -1`,
       );
       return grep?.stdout.trim().length > 0;
     } catch {
@@ -424,7 +424,7 @@ export class AuditSystem {
   private async checkRightToErasure(): Promise<boolean> {
     try {
       const grep = await execAsync(
-        `grep -rE "/account/delete|deleteAccount|deleteUser|/gdpr/erase" server/routes server/routes?.ts 2>/dev/null | head -1`,
+        `grep -rE "/account/delete|deleteAccount|deleteUser|/gdpr/erase" server/routes server/routes.ts 2>/dev/null | head -1`,
       );
       return grep?.stdout.trim().length > 0;
     } catch {
@@ -452,7 +452,7 @@ export class AuditSystem {
   private async checkOptOutMechanism(): Promise<boolean> {
     try {
       const grep = await execAsync(
-        `grep -rE "doNotSell|optOut|/privacy/opt-out|emailOptOut" server/routes server/routes?.ts client/src 2>/dev/null | head -1`,
+        `grep -rE "doNotSell|optOut|/privacy/opt-out|emailOptOut" server/routes server/routes.ts client/src 2>/dev/null | head -1`,
       );
       return grep?.stdout.trim().length > 0;
     } catch {
@@ -520,7 +520,7 @@ export class AuditSystem {
     // Helmet/CORS middleware presence + HTTPS in prod.
     try {
       const grep = await execAsync(
-        `grep -rE "helmet\\(\\)|app.use\\(helmet|cors\\(" server/index?.ts server/routes?.ts 2>/dev/null | head -1`,
+        `grep -rE "helmet\\(\\)|app.use\\(helmet|cors\\(" server/index.ts server/routes.ts 2>/dev/null | head -1`,
       );
       const hasMiddleware = grep?.stdout.trim().length > 0;
       const httpsOk =
@@ -1177,7 +1177,7 @@ class SEOAuditor {
             'client/index.html does not contain a <script type="application/ld+json"> block. Search engines benefit from structured data (Organization, WebSite, BreadcrumbList).',
           file: "client/index.html",
           recommendation:
-            "Add a JSON-LD <script> block describing your Organization and WebSite per schema?.org.",
+            "Add a JSON-LD <script> block describing your Organization and WebSite per schema.org.",
         });
         scoreDeduction += 5;
       }

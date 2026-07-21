@@ -10,6 +10,7 @@
  * - Normalization and dithering options
  */
 
+import { logger } from "./logger";
 import type { TrackEffects } from "./audioEngine";
 import type {
   AudioFormat,

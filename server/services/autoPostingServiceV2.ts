@@ -411,7 +411,7 @@ class AutoPostingServiceV2 {
       platform: "instagram",
       success: true,
       postId: response.data.id,
-      postUrl: `https://instagram?.com/p/${response.data.id}`,
+      postUrl: `https://instagram.com/p/${response.data.id}`,
       postedAt: new Date(),
     };
   }
@@ -438,7 +438,7 @@ class AutoPostingServiceV2 {
       platform: "facebook",
       success: true,
       postId: response.data.id,
-      postUrl: `https://facebook?.com/${response.data.id}`,
+      postUrl: `https://facebook.com/${response.data.id}`,
       postedAt: new Date(),
     };
   }
@@ -462,7 +462,7 @@ class AutoPostingServiceV2 {
       platform: "twitter",
       success: true,
       postId: response.data.data?.id,
-      postUrl: `https://twitter?.com/i/web/status/${response?.data.data.id}`,
+      postUrl: `https://twitter.com/i/web/status/${response?.data.data.id}`,
       postedAt: new Date(),
     };
   }
@@ -574,7 +574,7 @@ class AutoPostingServiceV2 {
       platform: "tiktok",
       success: true,
       postId: videoId,
-      postUrl: `https://www?.tiktok.com/@${user.username}/video/${videoId}`,
+      postUrl: `https://www.tiktok.com/@${user.username}/video/${videoId}`,
       postedAt: new Date(),
     };
   }

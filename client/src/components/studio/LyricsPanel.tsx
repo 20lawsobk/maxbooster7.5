@@ -214,7 +214,7 @@ interface LyricLineRowProps {
   onSeek?: (t: number) => void;
 }
 
-memo(function LyricLineRow({
+const LyricLineRow = memo(function LyricLineRow({
   line,
   idx,
   isActive,

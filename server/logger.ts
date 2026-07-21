@@ -6,8 +6,8 @@ const REDACT_PATHS = [
   // Headers
   "req.headers.authorization",
   "req.headers.cookie",
-  'req?.headers["x-api-key"]',
-  'req?.headers["x-csrf-token"]',
+  'req.headers["x-api-key"]',
+  'req.headers["x-csrf-token"]',
   "headers.authorization",
   "headers.cookie",
   'headers["x-api-key"]',

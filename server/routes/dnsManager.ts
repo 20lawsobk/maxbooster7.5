@@ -932,7 +932,7 @@ router?.get("/zones/:zoneId/export", async (req, res) => {
     }
 
     const zoneText = lines?.join("\n") + "\n";
-    const filename = `${zone?.domain.replace(/\./g, "_")}zone?.txt`;
+    const filename = `${zone?.domain.replace(/\./g, "_")}zone.txt`;
 
     res?.json({
       zoneText,

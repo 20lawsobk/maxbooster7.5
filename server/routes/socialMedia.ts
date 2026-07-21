@@ -2889,7 +2889,7 @@ router?.get(
                 access_token: string;
               };
               const artistRes = await fetch(
-                `https://api?.spotify.com/v1/artists/${profile.spotifyArtistId}`,
+                `https://api.spotify.com/v1/artists/${profile.spotifyArtistId}`,
                 {
                   headers: { Authorization: `Bearer ${access_token}` },
                   signal: AbortSignal.timeout(6000),

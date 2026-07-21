@@ -2019,7 +2019,6 @@ export default function Distribution() {
           doc.text(`User: ${user?.username || "Unknown"}`, 14, 36);
 
           // Prepare table data from actual releases
-          const releases = releasesData?.releases || [];
           const tableData = releases.map((release: Record<string, unknown>) => [
             release.title || "Untitled",
             (release.metadata as ReleaseMetadata)?.artistName ||

@@ -2147,7 +2147,7 @@ class ArtistProfileService {
         label: "YouTube Official Artist Channel",
         portalUrl: "https://studio.youtube.com/",
         artistPageUrl: profile.youtubeChannelId
-          ? `https://www?.youtube.com/channel/${profile.youtubeChannelId}`
+          ? `https://www.youtube.com/channel/${profile.youtubeChannelId}`
           : null,
         fieldKey: "youtubeChannelId",
         claimed: !!profile?.youtubeChannelId,
@@ -2163,7 +2163,7 @@ class ArtistProfileService {
         label: "Deezer for Creators",
         portalUrl: "https://creators.deezer.com/",
         artistPageUrl: profile.deezerArtistId
-          ? `https://www?.deezer.com/artist/${profile.deezerArtistId}`
+          ? `https://www.deezer.com/artist/${profile.deezerArtistId}`
           : null,
         fieldKey: "deezerArtistId",
         claimed: !!profile?.deezerArtistId,

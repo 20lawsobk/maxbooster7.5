@@ -44,4 +44,6 @@
 - [Beat Loop + MaxCore Audit](beat-loop-maxcore-audit.md) — live endpoint map, failure analysis, structural bugs fixed (scan context, adDeliveryLogs, adCampaigns columns, musicIndustryTrainingData)
 - [Beat Money Loop](beat-money-loop.md) — admin-only loop; MaxCore audio is async (job_id → poll audio-job), Bearer only; Tier-3 "fallback" is also MaxCore-gated by design
 - [MaxCore resilience patterns](maxcore-resilience.md) — never keep-alive via generation endpoints; 202+poll for >120s work; client has bulkhead+circuit breaker; proxy must absolutize MaxCore's relative media URLs
+- [MaxCore X-API-Key sweep](maxcore-xapikey-sweep.md) — X-API-Key debris recurs in service-local fetch helpers; grep whole server; viral-score/safety/distribution endpoints NOW exist; 500→503 aiErrorStatus helper pattern
+- [Embedded-string ?. debris](embedded-string-oc-debris.md) — `?.` in string literals is a bug only when the embedded language isn't JS (GLSL/shell/SQL/URLs/paths); scan with scripts/_scan_oc.cjs; the SQL fixer can append a stray trailing backtick
 - [Beat loop output quality](beat-loop-output-quality.md) — audio is 30s mono ~92kbps MP3-in-.wav & clips; old listings 404; scan context constant; ads "activate" but post 0 — verify servable audio + posts rows, not statuses

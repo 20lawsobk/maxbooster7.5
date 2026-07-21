@@ -2178,6 +2178,10 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
                     automationLanes={automationLanes}
                     onAutomationLanesChange={setAutomationLanes}
                     showVideoTrack={showVideoTrack}
+                    pendingImportVideoUrl={pendingImportVideoUrl}
+                    onPendingImportVideoConsumed={() =>
+                      setPendingImportVideoUrl(null)
+                    }
                     allTracks={tracks}
                     onAddTrack={handleAddTrack}
                   />
@@ -3742,6 +3746,8 @@ interface ArrangeViewProps {
   automationLanes?: Record<string, unknown>[];
   onAutomationLanesChange?: (lanes: Record<string, unknown>[]) => void;
   showVideoTrack?: boolean;
+  pendingImportVideoUrl?: string | null;
+  onPendingImportVideoConsumed?: () => void;
   allTracks?: Record<string, unknown>[];
   onAddTrack?: (type: "audio" | "instrument" | "midi" | "bus") => void;
 }
@@ -3766,6 +3772,8 @@ function ArrangeView({
   automationLanes = [],
   onAutomationLanesChange,
   showVideoTrack,
+  pendingImportVideoUrl,
+  onPendingImportVideoConsumed,
   allTracks = [],
   onAddTrack,
 }: ArrangeViewProps) {
@@ -3844,7 +3852,7 @@ function ArrangeView({
             duration={300}
             isPlaying={isPlaying}
             pendingImportUrl={pendingImportVideoUrl}
-            onPendingImportConsumed={() => setPendingImportVideoUrl(null)}
+            onPendingImportConsumed={onPendingImportVideoConsumed}
           />
         </div>
       )}

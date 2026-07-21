@@ -119,7 +119,7 @@ Disallow: /settings
 Disallow: /admin
 Disallow: /billing
 
-Sitemap: ${SITE_URL}/sitemap?.xml
+Sitemap: ${SITE_URL}/sitemap.xml
 `;
   res?.setHeader("Content-Type", "text/plain");
   res.setHeader("Cache-Control", "public, max-age=86400");

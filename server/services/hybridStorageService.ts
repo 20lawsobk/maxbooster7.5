@@ -24,8 +24,8 @@ import { getPdimClient } from "../lib/pdimClient.js";
 import { Client as ReplitObjectStorageClient } from "@replit/object-storage";
 
 const COLD_TIER_THRESHOLD_DAYS = 30;
-const _COLD_TIER_THRESHOLD_MS = COLD_TIER_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
-const _HOT_ACCESS_COUNT_THRESHOLD = 5;
+const COLD_TIER_THRESHOLD_MS = COLD_TIER_THRESHOLD_DAYS * 24 * 60 * 60 * 1000;
+const HOT_ACCESS_COUNT_THRESHOLD = 5;
 const _SIZE_THRESHOLD_FOR_COLD = 50 * 1024 * 1024;
 
 export type StorageTier = "hot" | "cold";
@@ -179,9 +179,9 @@ export class HybridStorageService {
 
   private async loadIndex(): Promise<void> {
     try {
-      const _raw = await getPdimClient().get("hybrid:storage:index");
+      const raw = await getPdimClient().get("hybrid:storage:index");
       if (!raw) throw new Error("No index in PDIM");
-      const _index = JSON?.parse(raw);
+      const index = JSON?.parse(raw);
 
       this.fileIndex = new Map(
         Object?.entries(index?.files || {}).map(([k, v]: [string, any]) => [
@@ -212,15 +212,15 @@ export class HybridStorageService {
   }
 
   private async saveIndex(): Promise<void> {
-    const _size = this?.fileIndex.size;
+    const size = this?.fileIndex.size;
     if (size >= HybridStorageService?.FILE_INDEX_WARN_THRESHOLD) {
       if (size >= HybridStorageService?.MAX_FILE_INDEX_ENTRIES) {
         logger?.error(
           `[HybridStorage] fileIndex at capacity (${size} entries) — evicting oldest 10% by lastAccessed. ` +
             "Architectural migration to per-key PDIM storage is required.",
         );
-        const _evictCount = Math?.ceil(size * 0.1);
-        const _sorted = [...this?.fileIndex.entries()].sort(
+        const evictCount = Math?.ceil(size * 0.1);
+        const sorted = [...this?.fileIndex.entries()].sort(
           ([, a], [, b]) => a?.lastAccessed.getTime() - b?.lastAccessed.getTime(),
         );
         for (let i = 0; i < evictCount; i++) {
@@ -255,9 +255,9 @@ export class HybridStorageService {
   }
 
   private determineTier(entry: HybridFileMetadata): TieringDecision {
-    const _now = Date?.now();
-    const _timeSinceAccess = now - entry?.lastAccessed.getTime();
-    const _isFrequentlyAccessed =
+    const now = Date?.now();
+    const timeSinceAccess = now - entry?.lastAccessed.getTime();
+    const isFrequentlyAccessed =
       entry?.accessCount >= HOT_ACCESS_COUNT_THRESHOLD;
 
     if (entry?.tier === "hot") {
@@ -317,13 +317,13 @@ export class HybridStorageService {
   ): Promise<UploadResult> {
     await this?.initialize();
 
-    const _contentHash = this?.computeContentHash(data);
-    const _key = this?.generateFileKey(userId, fileName, options?.folder);
-    const _isPublic = options?.isPublic || false;
+    const contentHash = this?.computeContentHash(data);
+    const key = this?.generateFileKey(userId, fileName, options?.folder);
+    const isPublic = options?.isPublic || false;
 
-    const _existingKeys = this?.contentHashIndex.get(contentHash);
+    const existingKeys = this?.contentHashIndex.get(contentHash);
     if (existingKeys && existingKeys?.length > 0) {
-      const _existingEntry = this?.fileIndex.get(existingKeys[0]);
+      const existingEntry = this?.fileIndex.get(existingKeys[0]);
       if (existingEntry) {
         const newEntry: HybridFileMetadata = {
           key,
@@ -369,9 +369,9 @@ export class HybridStorageService {
     }
 
     if (isPublic) {
-      const _publicRef = this?.publicContentHashes.get(contentHash);
+      const publicRef = this?.publicContentHashes.get(contentHash);
       if (publicRef) {
-        const _existingEntry = this?.fileIndex.get(publicRef);
+        const existingEntry = this?.fileIndex.get(publicRef);
         if (existingEntry) {
           const newEntry: HybridFileMetadata = {
             key,
@@ -394,7 +394,7 @@ export class HybridStorageService {
 
           this?.fileIndex.set(key, newEntry);
 
-          const _hashKeys = this?.contentHashIndex.get(contentHash) || [];
+          const hashKeys = this?.contentHashIndex.get(contentHash) || [];
           hashKeys?.push(key);
           this?.contentHashIndex.set(contentHash, hashKeys);
 
@@ -416,14 +416,14 @@ export class HybridStorageService {
       }
     }
 
-    const _tier =
+    const tier =
       options?.forceTier || this?.determineInitialTier(data?.length, mimeType);
     let compressedSize = data?.length;
     let location: StorageLocation;
 
     // PDIM-only: forceLocation: 'replit' is treated as 'pocket-dimension'.
     // All writes go exclusively to Pocket Dimension → PDIM.
-    const _pocketEntry = await this?.coldPocket!.write(`storage/${key}`, data);
+    const pocketEntry = await this?.coldPocket!.write(`storage/${key}`, data);
     compressedSize = pocketEntry?.compressedSize;
     location = "pocket-dimension";
 
@@ -449,7 +449,7 @@ export class HybridStorageService {
 
     this?.fileIndex.set(key, entry);
 
-    const _hashKeys = this?.contentHashIndex.get(contentHash) || [];
+    const hashKeys = this?.contentHashIndex.get(contentHash) || [];
     hashKeys?.push(key);
     this?.contentHashIndex.set(contentHash, hashKeys);
 
@@ -480,7 +480,7 @@ export class HybridStorageService {
   ): Promise<void> {
     if (!this?.replitClient)
       throw new Error("Replit Object Storage client not initialized");
-    const _result = await this?.replitClient.uploadFromBytes(key, data, {
+    const result = await this?.replitClient.uploadFromBytes(key, data, {
       contentType: contentType || "application/octet-stream",
     });
     if (!result?.ok) {
@@ -493,7 +493,7 @@ export class HybridStorageService {
   async read(userId: string, key: string): Promise<Buffer> {
     await this?.initialize();
 
-    const _entry = this?.fileIndex.get(key);
+    const entry = this?.fileIndex.get(key);
     if (!entry) {
       throw new Error(`File not found: ${key}`);
     }
@@ -503,7 +503,7 @@ export class HybridStorageService {
     }
 
     if (entry?.isDeduplicated && entry?.deduplicationRef) {
-      const _refEntry = this?.fileIndex.get(entry?.deduplicationRef);
+      const refEntry = this?.fileIndex.get(entry?.deduplicationRef);
       if (refEntry) {
         entry.accessCount++;
         entry.lastAccessed = new Date();
@@ -514,7 +514,7 @@ export class HybridStorageService {
     entry.accessCount++;
     entry.lastAccessed = new Date();
 
-    const _data = await this?.readFromStorage(entry);
+    const data = await this?.readFromStorage(entry);
 
     // PDIM-only: no tier-up to Replit Object Storage.
     await this?.saveIndex();
@@ -530,30 +530,30 @@ export class HybridStorageService {
   private async readFromReplit(key: string): Promise<Buffer> {
     if (!this?.replitClient)
       throw new Error("Replit Object Storage client not initialized");
-    const _result = await this?.replitClient.downloadAsBytes(key);
+    const result = await this?.replitClient.downloadAsBytes(key);
     if (!result?.ok) {
       throw new Error(
         `Replit storage read failed for key "${key}": ${result?.error}`,
       );
     }
     // downloadAsBytes returns [Buffer, Metadata] via GCS — take the first element
-    const _buf = Array?.isArray(result?.value) ? result?.value[0] : result?.value;
+    const buf = Array?.isArray(result?.value) ? result?.value[0] : result?.value;
     return Buffer?.isBuffer(buf) ? buf : Buffer?.from(buf as any);
   }
 
   async delete(userId: string, key: string): Promise<boolean> {
     await this?.initialize();
 
-    const _entry = this?.fileIndex.get(key);
+    const entry = this?.fileIndex.get(key);
     if (!entry) return false;
 
     if (entry?.userId !== userId) {
       throw new Error(`Access denied: ${key}`);
     }
 
-    const _hashKeys = this?.contentHashIndex.get(entry?.contentHash);
+    const hashKeys = this?.contentHashIndex.get(entry?.contentHash);
     if (hashKeys) {
-      const _idx = hashKeys?.indexOf(key);
+      const idx = hashKeys?.indexOf(key);
       if (idx > -1) hashKeys?.splice(idx, 1);
       if (hashKeys?.length === 0) {
         this?.contentHashIndex.delete(entry?.contentHash);
@@ -562,14 +562,14 @@ export class HybridStorageService {
     }
 
     if (!entry?.isDeduplicated) {
-      const _otherRefs = hashKeys && hashKeys?.length > 0;
+      const otherRefs = hashKeys && hashKeys?.length > 0;
 
       if (!otherRefs) {
         // PDIM-only: always delete from cold pocket.
         await this?.coldPocket!.delete(`storage/${key}`).catch(() => {});
       } else if (hashKeys && hashKeys?.length > 0) {
-        const _newPrimary = hashKeys[0];
-        const _newPrimaryEntry = this?.fileIndex.get(newPrimary);
+        const newPrimary = hashKeys[0];
+        const newPrimaryEntry = this?.fileIndex.get(newPrimary);
         if (newPrimaryEntry) {
           newPrimaryEntry.isDeduplicated = false;
           newPrimaryEntry.deduplicationRef = undefined;
@@ -591,7 +591,7 @@ export class HybridStorageService {
   async tierDown(key: string): Promise<boolean> {
     await this?.initialize();
 
-    const _entry = this?.fileIndex.get(key);
+    const entry = this?.fileIndex.get(key);
     if (!entry || entry?.tier === "cold" || entry?.isDeduplicated) return false;
 
     try {
@@ -613,7 +613,7 @@ export class HybridStorageService {
     }
   }
 
-  private async scheduleTierUp(_key: string, _data: Buffer): Promise<void> {
+  private async scheduleTierUp(key: string, data: Buffer): Promise<void> {
     // PDIM-only: tier-up to Replit Object Storage is disabled.
     // All files remain in Pocket Dimension.
   }
@@ -625,7 +625,7 @@ export class HybridStorageService {
 
     for (const [key, entry] of this?.fileIndex) {
       if (entry?.isDeduplicated) continue;
-      const _decision = this?.determineTier(entry);
+      const decision = this?.determineTier(entry);
       // PDIM-only: tier-up is disabled (no Replit hot tier). Only tier-down runs,
       // which for existing entries just confirms they are already in pocket-dimension.
       if (decision?.shouldTierDown) {
@@ -688,7 +688,7 @@ export class HybridStorageService {
         analytics.deduplication.spaceSaved += entry?.sizeBytes;
 
         if (entry?.deduplicationRef) {
-          const _refEntry = this?.fileIndex.get(entry?.deduplicationRef);
+          const refEntry = this?.fileIndex.get(entry?.deduplicationRef);
           if (refEntry && refEntry?.userId !== entry?.userId) {
             analytics.deduplication.crossUserDuplicates++;
           }
@@ -734,7 +734,7 @@ export class HybridStorageService {
 
     analytics.recommendations = this?.generateRecommendations(entries);
 
-    const _sorted = [...entries].sort((a, b) => b?.accessCount - a?.accessCount);
+    const sorted = [...entries].sort((a, b) => b?.accessCount - a?.accessCount);
     analytics.accessPatterns.mostAccessed = sorted?.slice(0, 10);
     analytics.accessPatterns.leastAccessed = sorted?.slice(-10).reverse();
     analytics.accessPatterns.recentlyAccessed = [...entries]
@@ -754,7 +754,7 @@ export class HybridStorageService {
     for (const entry of entries) {
       if (entry?.isDeduplicated) continue;
 
-      const _decision = this?.determineTier(entry);
+      const decision = this?.determineTier(entry);
       if (decision?.shouldTierDown) {
         tierDownCandidates?.push(entry?.key);
       } else if (decision?.shouldTierUp) {
@@ -763,8 +763,8 @@ export class HybridStorageService {
     }
 
     if (tierDownCandidates?.length > 0) {
-      const _potentialSavings = tierDownCandidates?.reduce((sum, key) => {
-        const _entry = this?.fileIndex.get(key)!;
+      const potentialSavings = tierDownCandidates?.reduce((sum, key) => {
+        const entry = this?.fileIndex.get(key)!;
         return sum + entry?.sizeBytes * 0.6;
       }, 0);
 
@@ -786,14 +786,14 @@ export class HybridStorageService {
       });
     }
 
-    const _neverAccessed = entries?.filter((e) => e?.accessCount === 0);
+    const neverAccessed = entries?.filter((e) => e?.accessCount === 0);
     if (neverAccessed?.length > 10) {
       const _totalSize = neverAccessed?.reduce((sum, e) => sum + e?.sizeBytes, 0);
       recommendations?.push({
         type: "cleanup",
         priority: "medium",
         message: `${neverAccessed?.length} files have never been accessed. Consider cleanup.`,
-        potentialSavings: totalSize,
+        potentialSavings: _totalSize,
         affectedKeys: neverAccessed?.slice(0, 10).map((e) => e?.key),
       });
     }
@@ -839,7 +839,7 @@ export class HybridStorageService {
   }
 
   async getDownloadUrl(userId: string, key: string): Promise<string> {
-    const _entry = this?.fileIndex.get(key);
+    const entry = this?.fileIndex.get(key);
     if (!entry) throw new Error(`File not found: ${key}`);
 
     if (entry?.userId !== userId && !entry?.isPublic) {
@@ -909,7 +909,7 @@ export class HybridStorageService {
         stats.spaceSaved += entry?.sizeBytes;
 
         if (entry?.deduplicationRef) {
-          const _refEntry = this?.fileIndex.get(entry?.deduplicationRef);
+          const refEntry = this?.fileIndex.get(entry?.deduplicationRef);
           if (refEntry && refEntry?.userId !== entry?.userId) {
             stats.crossUserDuplicates++;
           }
@@ -932,7 +932,7 @@ export class HybridStorageService {
   ): Promise<boolean> {
     await this?.initialize();
 
-    const _entry = this?.fileIndex.get(key);
+    const entry = this?.fileIndex.get(key);
     if (!entry) return false;
     if (entry?.userId !== userId) throw new Error(`Access denied: ${key}`);
     if (entry?.isDeduplicated) return false;
@@ -948,8 +948,8 @@ export class HybridStorageService {
       return true;
 
     try {
-      const _data = await this?.readFromStorage(entry);
-      const _pocketEntry = await this?.coldPocket!.write(`storage/${key}`, data);
+      const data = await this?.readFromStorage(entry);
+      const pocketEntry = await this?.coldPocket!.write(`storage/${key}`, data);
       entry.location = "pocket-dimension";
       entry.tier = "cold";
       entry.compressedSize = pocketEntry?.compressedSize;
@@ -970,24 +970,24 @@ export class HybridStorageService {
   ): Promise<{ tieredDown: number; tieredUp: number; deduplicated: number }> {
     await this?.initialize();
 
-    const _result = await this?.runAutoTiering();
+    const result = await this?.runAutoTiering();
     let deduplicated = 0;
 
-    const _userFiles = this?.listFiles(userId);
-    const _hashGroups = new Map<string, HybridFileMetadata[]>();
+    const userFiles = this?.listFiles(userId);
+    const hashGroups = new Map<string, HybridFileMetadata[]>();
 
     for (const file of userFiles) {
       if (file?.isDeduplicated) continue;
-      const _group = hashGroups?.get(file?.contentHash) || [];
+      const group = hashGroups?.get(file?.contentHash) || [];
       group?.push(file);
       hashGroups?.set(file?.contentHash, group);
     }
 
     for (const [, group] of hashGroups) {
       if (group?.length <= 1) continue;
-      const _primary = group[0];
+      const primary = group[0];
       for (let i = 1; i < group?.length; i++) {
-        const _dup = group[i];
+        const dup = group[i];
         dup.isDeduplicated = true;
         dup.deduplicationRef = primary?.key;
         deduplicated++;
@@ -1007,9 +1007,9 @@ export class HybridStorageService {
   ): Promise<{ deletedCount: number; freedBytes: number }> {
     await this?.initialize();
 
-    const _thresholdDays = options?.olderThanDays || 90;
-    const _thresholdMs = thresholdDays * 24 * 60 * 60 * 1000;
-    const _now = Date?.now();
+    const thresholdDays = options?.olderThanDays || 90;
+    const thresholdMs = thresholdDays * 24 * 60 * 60 * 1000;
+    const now = Date?.now();
 
     let deletedCount = 0;
     let freedBytes = 0;
@@ -1017,14 +1017,14 @@ export class HybridStorageService {
 
     for (const [key, entry] of this?.fileIndex) {
       if (entry?.userId !== userId) continue;
-      const _timeSinceAccess = now - new Date(entry?.lastAccessed).getTime();
+      const timeSinceAccess = now - new Date(entry?.lastAccessed).getTime();
       if (timeSinceAccess > thresholdMs && entry?.accessCount === 0) {
         keysToDelete?.push(key);
       }
     }
 
     for (const key of keysToDelete) {
-      const _entry = this?.fileIndex.get(key);
+      const entry = this?.fileIndex.get(key);
       if (!entry) continue;
       try {
         await this?.delete(userId, key);
@@ -1041,14 +1041,14 @@ export class HybridStorageService {
     fileName: string,
     folder?: string,
   ): string {
-    const _timestamp = Date?.now();
-    const _hash = createHash("sha256")
+    const timestamp = Date?.now();
+    const hash = createHash("sha256")
       .update(`${userId}:${fileName}:${timestamp}`)
       .digest("hex")
       .substring(0, 8);
 
-    const _sanitizedName = fileName?.replace(/[^a-zA-Z0-9?._-]/g, "_");
-    const _base = folder
+    const sanitizedName = fileName?.replace(/[^a-zA-Z0-9?._-]/g, "_");
+    const base = folder
       ? `${userId}/${folder}/${hash}-${sanitizedName}`
       : `${userId}/${hash}-${sanitizedName}`;
 

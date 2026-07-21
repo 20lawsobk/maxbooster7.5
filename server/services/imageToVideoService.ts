@@ -77,12 +77,12 @@ const TEMP_DIR = path?.join(process?.cwd(), "uploads", "video_temp");
 const FONT_DIR = "/usr/share/fonts/truetype/dejavu";
 
 const FONTS = {
-  bold: `${FONT_DIR}/DejaVuSans-Bold?.ttf`,
-  regular: `${FONT_DIR}/DejaVuSans?.ttf`,
-  mono: `${FONT_DIR}/DejaVuSansMono-Bold?.ttf`,
-  serif: `${FONT_DIR}/DejaVuSerif-Bold?.ttf`,
-  italic: `${FONT_DIR}/DejaVuSans-Oblique?.ttf`,
-  boldItalic: `${FONT_DIR}/DejaVuSansMono-BoldOblique?.ttf`,
+  bold: `${FONT_DIR}/DejaVuSans-Bold.ttf`,
+  regular: `${FONT_DIR}/DejaVuSans.ttf`,
+  mono: `${FONT_DIR}/DejaVuSansMono-Bold.ttf`,
+  serif: `${FONT_DIR}/DejaVuSerif-Bold.ttf`,
+  italic: `${FONT_DIR}/DejaVuSans-Oblique.ttf`,
+  boldItalic: `${FONT_DIR}/DejaVuSansMono-BoldOblique.ttf`,
 } as const;
 
 function tempPath(tag: string): string {

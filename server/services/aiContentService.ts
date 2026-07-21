@@ -1,5 +1,6 @@
 import { randomBytes } from "crypto";
 import { unifiedAIController } from "./unifiedAIController.js";
+import { AIUnavailableError } from "../lib/aiSource.js";
 import { renderVideo as renderAdvancedVideo } from "./advancedVideoRendererService.js";
 import { db } from "../db";
 

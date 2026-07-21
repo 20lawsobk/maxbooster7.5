@@ -64,7 +64,6 @@ async function fetchMaxCore<T = any>(
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${key}`,
-        "X-API-Key": key,
       },
       signal: AbortSignal.timeout(opts?.timeout ?? INFER_TIMEOUT),
     };
@@ -312,7 +311,6 @@ export async function pushTrainingFeedback(
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${MBS_KEY}`,
-          "X-API-Key": MBS_KEY,
         },
         body: JSON.stringify(enriched),
         signal: AbortSignal.timeout(5_000),

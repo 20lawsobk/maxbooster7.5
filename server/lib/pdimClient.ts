@@ -511,7 +511,7 @@ function _enqueueScriptExec(fn: () => Promise<unknown>): Promise<unknown> {
 // The gap value in each 429 is slightly different (AIMD multiplies it) but the
 // actionable signal is "429 received, gap is now X" — the final gap is what
 // matters, not the intermediate values during a burst.
-const __429_DEDUP_MS = 2_000; // burst window (ms)
+const _429_DEDUP_MS = 2_000; // burst window (ms)
 let _last429LoggedAt = 0;
 let _suppressed429Count = 0;
 let _last429Gap = 0;

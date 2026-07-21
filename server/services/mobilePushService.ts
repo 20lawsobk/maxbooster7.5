@@ -419,7 +419,7 @@ class MobilePushService {
 
     try {
       const response = await timedFetch(
-        `https://fcm?.googleapis.com/v1/projects/${this.projectId}/messages:send`,
+        `https://fcm.googleapis.com/v1/projects/${this.projectId}/messages:send`,
         {
           method: "POST",
           headers: {

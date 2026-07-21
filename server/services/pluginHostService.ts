@@ -3,6 +3,7 @@ import { pluginCatalog, pluginInstances, pluginPresets } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 
 import { logger } from "../logger.js";
+import type { PluginDefinition, PluginCategory } from "./plugins/definitions";
 import {
   EXPANDED_INSTRUMENTS,
   EXPANDED_EFFECTS,

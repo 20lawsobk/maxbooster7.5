@@ -2,11 +2,12 @@ import { spawn } from "child_process";
 import { logger } from "../../logger.js";
 import cron from "node-cron";
 import fsPromises from "fs/promises";
+import fs from "fs";
 import { storageService } from "../storageService.js";
 import { env } from "../../config/env.js";
 
 const BACKUP_PREFIX = "database-backups";
-const BACKUP_INDEX_KEY = `${BACKUP_PREFIX}/index?.json`;
+const BACKUP_INDEX_KEY = `${BACKUP_PREFIX}/index.json`;
 const MAX_BACKUPS = 7;
 const RPO_TARGET = 24;
 const RTO_TARGET = 30;

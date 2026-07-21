@@ -54,6 +54,8 @@ interface ReleaseData {
 }
 
 const GITHUB_ACTIONS_URL = "https://github.com/20lawsobk/maxbooster7.5/actions";
+const GITHUB_RELEASES_URL =
+  "https://github.com/20lawsobk/maxbooster7.5/releases";
 
 const platformDescriptions: Record<string, string> = {
   Android: "Android 8.0 or later",

@@ -1654,6 +1654,12 @@ export function StorefrontDnsZoneManager({
   const [showAddZone, setShowAddZone] = useState(false);
   const [newZoneDomain, setNewZoneDomain] = useState("");
 
+  // Delete confirmation — replaces native window.confirm()
+  const [pendingDeleteAction, setPendingDeleteAction] = useState<{
+    label: string;
+    onConfirm: () => void;
+  } | null>(null);
+
   // Domain usage (subscription perk: up to 2 custom domains)
   const { data: usageData } = useQuery({
     queryKey: ["/api/dns-manager/usage"],
@@ -2530,6 +2536,33 @@ export function StorefrontDnsZoneManager({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Dialog — replaces native window.confirm() */}
+      <AlertDialog
+        open={pendingDeleteAction !== null}
+        onOpenChange={() => setPendingDeleteAction(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDeleteAction?.label}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                pendingDeleteAction?.onConfirm();
+                setPendingDeleteAction(null);
+              }}
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

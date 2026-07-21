@@ -82,7 +82,7 @@ class MetricsCollector implements CustomMetrics {
 
   trackAPICall(endpoint: string, duration: number, statusCode: number): void {
     this?.increment(`api.${endpoint}.count`);
-    this?.increment(`api?.status.${statusCode}`);
+    this?.increment(`api.status.${statusCode}`);
     if (duration > 5000) {
       logger?.warn("⚠️ Slow API call", { endpoint, duration, statusCode });
     }
@@ -95,12 +95,12 @@ class MetricsCollector implements CustomMetrics {
 
   // User Metrics
   trackUserSignup(tier: string): void {
-    this?.increment(`user?.signup.${tier}`);
+    this?.increment(`user.signup.${tier}`);
     logger?.info("👤 User signup tracked", { tier });
   }
 
   trackUserLogin(method: string): void {
-    this?.increment(`user?.login.${method}`);
+    this?.increment(`user.login.${method}`);
     logger?.info("🔐 User login tracked", { method });
   }
 

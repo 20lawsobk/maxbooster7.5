@@ -274,6 +274,15 @@ export function FlowStateAIGenerate({
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Currently selected instrument — the specific instrument when one is chosen,
+  // otherwise the instrument group itself. Exposes a `.name` for display.
+  const selectedInstrument = {
+    name:
+      SPECIFIC_INSTRUMENTS[selectedGroup.id]?.find(
+        (i) => i.id === selectedSpecific,
+      )?.name || selectedGroup.name,
+  };
+
   const generateMutation = useMutation({
     mutationFn: generateAudio,
     onSuccess: (result) => {

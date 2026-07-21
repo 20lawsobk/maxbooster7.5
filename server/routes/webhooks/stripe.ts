@@ -196,7 +196,7 @@ registerWebhookHandler("checkout.session.completed", async (event) => {
         .returning({ id: users.id });
       if (updated?.length > 0) {
         logger?.info(
-          `[Stripe] checkout?.session.completed: user ${updated[0].id} tier set to ${planId}`,
+          `[Stripe] checkout.session.completed: user ${updated[0].id} tier set to ${planId}`,
         );
       }
     } catch (checkoutErr) {
@@ -244,7 +244,7 @@ registerWebhookHandler("customer.subscription.created", async (event) => {
       );
     } else {
       logger?.warn(
-        `[Stripe] No user found for Stripe customer ${customerId} on subscription?.created`,
+        `[Stripe] No user found for Stripe customer ${customerId} on subscription.created`,
       );
     }
   } catch (err) {
@@ -307,7 +307,7 @@ registerWebhookHandler("customer.subscription.updated", async (event) => {
       }
     } else {
       logger?.warn(
-        `[Stripe] No user found for Stripe customer ${customerId} on subscription?.updated`,
+        `[Stripe] No user found for Stripe customer ${customerId} on subscription.updated`,
       );
     }
   } catch (err) {
@@ -348,7 +348,7 @@ registerWebhookHandler("customer.subscription.deleted", async (event) => {
       );
     } else {
       logger?.warn(
-        `[Stripe] No user found for Stripe customer ${customerId} on subscription?.deleted`,
+        `[Stripe] No user found for Stripe customer ${customerId} on subscription.deleted`,
       );
     }
   } catch (err) {
@@ -448,7 +448,7 @@ registerWebhookHandler("payment_intent.succeeded", async (event) => {
   const userId = paymentIntent?.metadata?.userId;
   if (!userId) {
     logger?.warn(
-      `[Stripe] payment_intent?.succeeded has no userId in metadata: ${paymentIntent?.id}`,
+      `[Stripe] payment_intent.succeeded has no userId in metadata: ${paymentIntent?.id}`,
     );
     return {
       success: true,
@@ -465,11 +465,11 @@ registerWebhookHandler("payment_intent.succeeded", async (event) => {
 
     if (!existingOrder) {
       logger?.warn(
-        `[Stripe] payment_intent?.succeeded: no order found for ${paymentIntent?.id} — may have been handled via checkout?.session.completed or subscription event`,
+        `[Stripe] payment_intent.succeeded: no order found for ${paymentIntent?.id} — may have been handled via checkout.session.completed or subscription event`,
       );
     } else {
       logger?.info(
-        `[Stripe] payment_intent?.succeeded: order ${existingOrder?.id} confirmed for user ${userId}`,
+        `[Stripe] payment_intent.succeeded: order ${existingOrder?.id} confirmed for user ${userId}`,
       );
     }
 
@@ -480,7 +480,7 @@ registerWebhookHandler("payment_intent.succeeded", async (event) => {
       true,
     );
   } catch (err) {
-    logger?.warn(`[Stripe] payment_intent?.succeeded audit error: ${err}`);
+    logger?.warn(`[Stripe] payment_intent.succeeded audit error: ${err}`);
   }
 
   return { success: true, message: "Payment intent succeeded and audited" };

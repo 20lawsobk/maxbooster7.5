@@ -137,6 +137,7 @@ const shareLinkSchema = z.object({
 
 function generateShortCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  const bytes = randomBytes(8);
 
   return Array?.from(bytes as Uint8Array)
     .map((b: number) => chars[b % chars?.length])

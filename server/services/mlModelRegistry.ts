@@ -1036,7 +1036,7 @@ export class MLModelRegistry {
       throw new Error(`Model ${modelId} has no saved file path`);
     }
 
-    await modelInstance?.load(`file://${registeredModel?.filePath}/model?.json`);
+    await modelInstance?.load(`file://${registeredModel?.filePath}/model.json`);
     this?.modelInstances.set(modelId, modelInstance);
 
     logger?.info("Model loaded from file system", {

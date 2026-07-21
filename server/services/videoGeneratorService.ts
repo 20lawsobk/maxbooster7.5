@@ -76,14 +76,14 @@ path?.join(
 
 // ── FONTS ─────────────────────────────────────────────────────────────────────
 const FONTS = {
-  bold: `${FONT_DIR}/DejaVuSans-Bold?.ttf`,
-  regular: `${FONT_DIR}/DejaVuSans?.ttf`,
-  italic: `${FONT_DIR}/DejaVuSans-Oblique?.ttf`,
-  boldItalic: `${FONT_DIR}/DejaVuSansMono-BoldOblique?.ttf`,
-  serif: `${FONT_DIR}/DejaVuSerif-Bold?.ttf`,
-  serifReg: `${FONT_DIR}/DejaVuSerif?.ttf`,
-  mono: `${FONT_DIR}/DejaVuSansMono-Bold?.ttf`,
-  monoLight: `${FONT_DIR}/DejaVuSansMono?.ttf`,
+  bold: `${FONT_DIR}/DejaVuSans-Bold.ttf`,
+  regular: `${FONT_DIR}/DejaVuSans.ttf`,
+  italic: `${FONT_DIR}/DejaVuSans-Oblique.ttf`,
+  boldItalic: `${FONT_DIR}/DejaVuSansMono-BoldOblique.ttf`,
+  serif: `${FONT_DIR}/DejaVuSerif-Bold.ttf`,
+  serifReg: `${FONT_DIR}/DejaVuSerif.ttf`,
+  mono: `${FONT_DIR}/DejaVuSansMono-Bold.ttf`,
+  monoLight: `${FONT_DIR}/DejaVuSansMono.ttf`,
 } as const;
 
 type FontKey = keyof typeof FONTS;

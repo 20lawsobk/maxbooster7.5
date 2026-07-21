@@ -318,7 +318,7 @@ const INFERENCE_RULES: InferenceRule[] = [
     },
     explain: (s) => ({
       what: "PDIM is experiencing an unexpected outage after successful warm-up.",
-      why: `The circuit breaker opened after ${s?.pdim5xxCount} consecutive failures, well past the expected cold-start window. This indicates PDIM (pocketdimensionstorage?.replit.app) is either down, restarting, or has encountered an internal error.`,
+      why: `The circuit breaker opened after ${s?.pdim5xxCount} consecutive failures, well past the expected cold-start window. This indicates PDIM (pocketdimensionstorage.replit.app) is either down, restarting, or has encountered an internal error.`,
       impact:
         "All BullMQ job processing paused; real-time features relying on PDIM (WebSocket pub-sub, rate limiting, session store) are degraded. The system is operating in graceful-degradation mode.",
       severity: "high",
