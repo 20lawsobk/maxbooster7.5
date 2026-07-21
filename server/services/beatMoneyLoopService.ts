@@ -968,6 +968,7 @@ class BeatMoneyLoopService {
       //     WAV audio, so the campaign content carries the beat as video.
       let mediaUrl = args.audioUrl;
       let mediaLocalPath: string | null = null;
+      let videoRenderFailed = false;
       if (args.audioAbsPath) {
         try {
           const vid = await this._renderAdVideo(args.audioAbsPath);
@@ -977,8 +978,11 @@ class BeatMoneyLoopService {
             `[BeatMoneyLoop] Ad video rendered from beat audio: ${vid.relUrl}`,
           );
         } catch (err) {
+          // Social platforms cannot accept raw WAV audio — skip the dispatch
+          // entirely rather than posting an unplayable media URL.
+          videoRenderFailed = true;
           logger.warn(
-            `[BeatMoneyLoop] Ad video render failed (${(err as Error).message}) — creative will carry the audio URL`,
+            `[BeatMoneyLoop] Ad video render failed (${(err as Error).message}) — skipping social dispatch (raw WAV not postable)`,
           );
         }
       }
@@ -1010,9 +1014,21 @@ class BeatMoneyLoopService {
         .set({ creativeIds: [creative.id] })
         .where(eq(adCampaigns.id, campaign.id));
 
-      // 3. Dispatch to the connected social accounts. This ACTUALLY posts when
-      //    the admin has connected accounts; otherwise it returns a clear reason
-      //    and the cycle records the truth (beat listed, ads not sent).
+      // 3. Dispatch to the connected social accounts. Skip entirely when the
+      //    video render failed — social platforms reject raw WAV audio, so
+      //    dispatching would produce zero successful posts.
+      if (videoRenderFailed) {
+        logger.warn(
+          `[BeatMoneyLoop] campaign ${campaign.id} created but dispatch skipped — no postable video media`,
+        );
+        return {
+          campaignId: campaign.id,
+          posted: false,
+          reason: "Ad video render failed — dispatch skipped (no postable media)",
+        };
+      }
+      // This ACTUALLY posts when the admin has connected accounts; otherwise
+      // it returns a clear reason and the cycle records the truth.
       const result = await advertisingDispatchService.activateCampaign(
         campaign.id,
         BEAT_MONEY_LOOP_ADMIN_ID,

@@ -1,5 +1,5 @@
 import { randomBytes } from "crypto";
-import { storage } from "../storage";
+import { storage as baseStorage } from "../storage";
 import { db } from "../db.js";
 import { dspAnalytics, releases, royaltySplits } from "@shared/schema";
 import { eq, sql as drizzleSql } from "drizzle-orm";

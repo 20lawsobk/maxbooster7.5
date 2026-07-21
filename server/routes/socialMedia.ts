@@ -1149,6 +1149,9 @@ router?.get(
       trending?.sort((a, b) => b?.posts - a?.posts);
       res?.json(trending?.slice(0, 12));
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res?.status(503).json({ success: false, code: error.code, error: error.message });
+      }
       logger?.warn({ err: error }, "Failed to get trending hashtags:");
       res?.status(500).json({ error: "Failed to get trending hashtags" });
     }
@@ -2186,6 +2189,9 @@ router?.post(
         });
       }
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res?.status(503).json({ success: false, code: error.code, error: error.message });
+      }
       logger?.warn({ err: error }, "Failed to generate social content:");
       res?.status(500).json({
         success: false,
@@ -2622,6 +2628,9 @@ router?.post(
         },
       });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res?.status(503).json({ success: false, code: error.code, error: error.message });
+      }
       logger?.warn({ err: error }, "Failed to generate content from URL:");
       res?.status(500).json({ error: "Failed to generate content from URL" });
     }
@@ -4227,6 +4236,9 @@ router.post(
         ...specData,
       });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(503).json({ success: false, code: error.code, error: error.message });
+      }
       logger.warn({ err: error }, "Failed to generate social image:");
       res
         .status(500)
@@ -4472,6 +4484,9 @@ router.post(
         image_prompt: imagePrompt,
       });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(503).json({ success: false, code: error.code, error: error.message });
+      }
       logger.warn({ err: error }, "analyze-url failed:");
       res.status(500).json({ success: false, message: "URL analysis failed" });
     }
@@ -4545,6 +4560,9 @@ router.post(
         video_config: videoConfig,
       });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(503).json({ success: false, code: error.code, error: error.message });
+      }
       logger.warn({ err: error }, "analyze-audio failed:");
       res
         .status(500)
@@ -4619,6 +4637,9 @@ router.post(
         palette: analysis.palette.slice(0, 5),
       });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(503).json({ success: false, code: error.code, error: error.message });
+      }
       logger.warn({ err: error }, "analyze-image failed:");
       res
         .status(500)

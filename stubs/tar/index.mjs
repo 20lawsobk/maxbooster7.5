@@ -1,0 +1,11 @@
+export const create = () => Promise.resolve();
+export const extract = () => Promise.resolve();
+export const list = () => Promise.resolve();
+export const update = () => Promise.resolve();
+export const replace = () => Promise.resolve();
+export const c = () => Promise.resolve();
+export const x = () => Promise.resolve();
+export const t = () => Promise.resolve();
+export const u = () => Promise.resolve();
+export const r = () => Promise.resolve();
+export default { create, extract, list, update, replace, c, x, t, u, r };

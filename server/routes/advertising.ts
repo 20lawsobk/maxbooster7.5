@@ -1307,7 +1307,9 @@ router?.post(
             style: style || "modern",
           },
         );
-      } catch {
+      } catch (err) {
+        // Propagate 503 so callers know MaxCore is down, not just "no image"
+        if (err instanceof AIUnavailableError) throw err;
         mcImageData = null;
       }
 
