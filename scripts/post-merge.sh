@@ -1,10 +1,9 @@
 #!/bin/bash
 set -e
 
-# Post-merge setup script — runs after every task merge.
-# Must be idempotent, non-interactive, and fast.
+echo "=== Post-merge setup ==="
 
-echo "[post-merge] Installing dependencies..."
-pnpm install --prefer-offline 2>&1
+echo "Installing dependencies..."
+npm install --no-audit --no-fund --ignore-scripts --legacy-peer-deps 2>&1 | tail -5
 
-echo "[post-merge] Done."
+echo "=== Done ==="
