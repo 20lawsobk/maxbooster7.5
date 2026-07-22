@@ -65,9 +65,9 @@ const defaultState: BatchProgressState = {
 function formatTime(ms: number): string {
   if (ms <= 0) return "0s";
 
-  const seconds = Math?.floor(ms / 1000);
-  const minutes = Math?.floor(seconds / 60);
-  const hours = Math?.floor(minutes / 60);
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
 
   if (hours > 0) {
     return `${hours}h ${minutes % 60}m`;
@@ -124,7 +124,7 @@ export function useBatchProgress(
 
       const rate = current / elapsed;
       const remaining = total - current;
-      return Math?.round(remaining / rate);
+      return Math.round(remaining / rate);
     },
     [],
   );
@@ -156,7 +156,7 @@ export function useBatchProgress(
     (current: number, currentItem?: string) => {
       setState((prev) => {
         const percentage =
-          prev?.total > 0 ? Math?.round((current / prev?.total) * 100) : 0;
+          prev?.total > 0 ? Math.round((current / prev?.total) * 100) : 0;
         const estimatedTimeRemaining = calculateEstimatedTime(
           current,
           prev?.total,

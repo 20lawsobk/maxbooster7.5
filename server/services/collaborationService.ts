@@ -221,7 +221,7 @@ class CollaborationService {
             location: users.location,
           })
           .from(users)
-          .where(eq(users?.id, req?.requesterId))
+          .where(eq(users?.id, req.requesterId))
           .limit(1);
 
         return {
@@ -280,15 +280,15 @@ class CollaborationService {
         onboardingData: users.onboardingData,
       })
       .from(users)
-      .where(notInArray(users?.id, Array?.from(excludeIds)))
+      .where(notInArray(users?.id, Array.from(excludeIds)))
       .limit(100);
 
-    const userFactors = this?.extractMatchingFactors(currentUser);
+    const userFactors = this.extractMatchingFactors(currentUser);
     const scoredMatches: CollaboratorMatch[] = potentialMatches?.map((match) => {
-      const matchFactors = this?.extractMatchingFactors(
+      const matchFactors = this.extractMatchingFactors(
         match as Record<string, unknown>,
       );
-      const { score, reasons } = this?.calculateMatchScore(
+      const { score, reasons } = this.calculateMatchScore(
         userFactors,
         matchFactors,
       );
@@ -363,10 +363,10 @@ class CollaborationService {
 
     if (user?.followerCount > 0 && match?.followerCount > 0) {
       const ratio =
-        Math?.min(user?.followerCount, match?.followerCount) /
-        Math?.max(user?.followerCount, match?.followerCount);
+        Math.min(user?.followerCount, match?.followerCount) /
+        Math.max(user?.followerCount, match?.followerCount);
       if (ratio > 0.5) {
-        score += Math?.round(20 * ratio);
+        score += Math.round(20 * ratio);
         reasons?.push("Similar audience size");
       }
     }
@@ -381,7 +381,7 @@ class CollaborationService {
     }
 
     if (match?.lastActive) {
-      const daysSinceActive = Math?.floor(
+      const daysSinceActive = Math.floor(
         (Date?.now() - new Date(match?.lastActive).getTime()) /
           (1000 * 60 * 60 * 24),
       );

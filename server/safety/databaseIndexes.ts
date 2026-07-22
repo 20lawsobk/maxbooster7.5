@@ -11,7 +11,7 @@ import { logger } from "../logger.js";
 import fs from "fs";
 import path from "path";
 
-const INDEX_CACHE_FILE = path?.join(process?.cwd(), "dist", ".db-indexes-ok");
+const INDEX_CACHE_FILE = path?.join(process.cwd(), "dist", ".db-indexes-ok");
 const INDEX_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 interface IndexDefinition {
@@ -406,9 +406,9 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
   const expectedCount = REQUIRED_INDEXES?.length;
   try {
     const raw = fs?.readFileSync(INDEX_CACHE_FILE, "utf8").trim();
-    const { count, ts } = JSON?.parse(raw);
+    const { count, ts } = JSON.parse(raw);
     if (count === expectedCount && Date?.now() - ts < INDEX_CACHE_TTL_MS) {
-      logger?.info(
+      logger.info(
         `📊 DB indexes: cache hit (${count} indexes verified, skipping DB check)`,
       );
       return {
@@ -422,9 +422,9 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
     // Cache missing or unreadable — proceed with normal check.
   }
 
-  logger?.info("════════════════════════════════════════════════════════");
-  logger?.info("📊 VERIFYING DATABASE INDEXES");
-  logger?.info("════════════════════════════════════════════════════════");
+  logger.info("════════════════════════════════════════════════════════");
+  logger.info("📊 VERIFYING DATABASE INDEXES");
+  logger.info("════════════════════════════════════════════════════════");
 
   // Single batched query: fetch all existing index names in one round-trip instead
   // of 51 sequential SELECT queries.  On repeat boots (all indexes exist) this
@@ -444,11 +444,11 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
         (r: Record<string, unknown>) => r?.indexname as string,
       ),
     );
-    logger?.info(
+    logger.info(
       `   Batch check: ${existingSet?.size}/${allNames?.length} indexes already exist`,
     );
   } catch (batchErr: Record<string, unknown>) {
-    logger?.warn(
+    logger.warn(
       `[Indexes] Batch existence check failed (${batchErr?.message}) — will check individually`,
     );
   }
@@ -469,7 +469,7 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
 
       if (tableExists?.rows.length === 0) {
         skipped?.push(index?.name);
-        logger?.warn(
+        logger.warn(
           `   ⚠️ ${index?.name} - table '${index.table}' doesn't exist`,
         );
         continue;
@@ -494,27 +494,27 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
       }
 
       created?.push(index?.name);
-      logger?.info(
+      logger.info(
         `   ✓ Created ${index?.name} on ${index?.table}(${index?.columns.join(", ")})`,
       );
     } catch (error) {
       if (error?.message?.includes("does not exist")) {
         skipped?.push(index?.name);
-        logger?.warn(`   ⚠️ ${index?.name} - ${error?.message}`);
+        logger.warn(`   ⚠️ ${index?.name} - ${error?.message}`);
       } else {
         failed?.push({ name: index.name, error: error.message });
-        logger?.warn(`   ✗ ${index?.name} - ${error?.message}`);
+        logger.warn(`   ✗ ${index?.name} - ${error?.message}`);
       }
     }
   }
 
-  logger?.info("────────────────────────────────────────────────────────");
-  logger?.info(
+  logger.info("────────────────────────────────────────────────────────");
+  logger.info(
     `   Created: ${created?.length} | Skipped: ${skipped?.length} | Failed: ${failed?.length}`,
   );
-  logger?.info("════════════════════════════════════════════════════════");
-  logger?.info("   ✓ Database indexes verified");
-  logger?.info("════════════════════════════════════════════════════════");
+  logger.info("════════════════════════════════════════════════════════");
+  logger.info("   ✓ Database indexes verified");
+  logger.info("════════════════════════════════════════════════════════");
 
   const success = failed?.length === 0;
 
@@ -525,7 +525,7 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
       fs?.mkdirSync(path?.dirname(INDEX_CACHE_FILE), { recursive: true });
       fs?.writeFileSync(
         INDEX_CACHE_FILE,
-        JSON?.stringify({ count: expectedCount, ts: Date.now() }),
+        JSON.stringify({ count: expectedCount, ts: Date.now() }),
       );
     } catch {
       // Non-fatal — next boot will just re-check normally.

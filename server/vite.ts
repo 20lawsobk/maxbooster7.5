@@ -34,7 +34,7 @@ export async function setupVite(server: Server, app: Express) {
   app?.use(vite?.middlewares);
 
   app?.use("/{*splat}", async (req, res, next) => {
-    const url = req?.originalUrl;
+    const url = req.originalUrl;
 
     try {
       const clientTemplate = path?.resolve(
@@ -51,7 +51,7 @@ export async function setupVite(server: Server, app: Express) {
         `src="/src/main.tsx?v=${Date.now()}"`,
       );
       const page = await vite?.transformIndexHtml(url, template);
-      res?.status(200).set({ "Content-Type": "text/html" }).end(page);
+      res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
       vite?.ssrFixStacktrace(e as Error);
       next(e);

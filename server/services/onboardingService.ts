@@ -69,7 +69,7 @@ class OnboardingService {
       const completedCount = completedSteps?.length;
       const totalSteps = tasks?.length;
       const completionPercentage =
-        totalSteps > 0 ? Math?.round((completedCount / totalSteps) * 100) : 0;
+        totalSteps > 0 ? Math.round((completedCount / totalSteps) * 100) : 0;
 
       const tasksWithStatus: OnboardingTaskWithStatus[] = tasks?.map((task) => ({
         id: task.id,
@@ -84,7 +84,7 @@ class OnboardingService {
         completed: completedSteps.includes(task?.id),
       }));
 
-      const recommendedNextStep = await this?.getRecommendedNextStep(
+      const recommendedNextStep = await this.getRecommendedNextStep(
         userId,
         tasksWithStatus,
       );
@@ -116,7 +116,7 @@ class OnboardingService {
         recommendedNextStep,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting onboarding progress:");
+      logger.warn({ err: error }, "Error getting onboarding progress:");
       throw new Error("Failed to get onboarding progress");
     }
   }
@@ -195,7 +195,7 @@ class OnboardingService {
       let newDayStreak = progress?.dayStreak || 0;
 
       if (lastActivity) {
-        const daysDiff = Math?.floor(
+        const daysDiff = Math.floor(
           (today?.getTime() - lastActivity?.getTime()) / (1000 * 60 * 60 * 24),
         );
         if (daysDiff === 1) {
@@ -240,7 +240,7 @@ class OnboardingService {
           : `Task completed! +${pointsAwarded} points`,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Error completing onboarding step:");
+      logger.warn({ err: error }, "Error completing onboarding step:");
       throw new Error("Failed to complete step");
     }
   }
@@ -286,7 +286,7 @@ class OnboardingService {
         message: "Onboarding skipped. You can always complete tasks later!",
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Error skipping onboarding:");
+      logger.warn({ err: error }, "Error skipping onboarding:");
       throw new Error("Failed to skip onboarding");
     }
   }
@@ -355,7 +355,7 @@ class OnboardingService {
 
       return sortedByPriorityAndPoints[0] || null;
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting recommended next step:");
+      logger.warn({ err: error }, "Error getting recommended next step:");
       return null;
     }
   }
@@ -380,7 +380,7 @@ class OnboardingService {
         completed: false,
       }));
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting onboarding tasks:");
+      logger.warn({ err: error }, "Error getting onboarding tasks:");
       throw new Error("Failed to get tasks");
     }
   }
@@ -389,7 +389,7 @@ class OnboardingService {
     try {
       const existingTasks = await db?.select().from(onboardingTasks);
       if (existingTasks?.length > 0) {
-        logger?.info("Onboarding tasks already seeded, skipping...");
+        logger.info("Onboarding tasks already seeded, skipping...");
         return;
       }
 
@@ -507,9 +507,9 @@ class OnboardingService {
       ];
 
       await db?.insert(onboardingTasks).values(defaultTasks);
-      logger?.info(`Seeded ${defaultTasks?.length} default onboarding tasks`);
+      logger.info(`Seeded ${defaultTasks?.length} default onboarding tasks`);
     } catch (error) {
-      logger?.warn({ err: error }, "Error seeding onboarding tasks:");
+      logger.warn({ err: error }, "Error seeding onboarding tasks:");
       throw new Error("Failed to seed onboarding tasks");
     }
   }
@@ -561,12 +561,12 @@ class OnboardingService {
 
       if (tasksToInsert?.length > 0) {
         await db?.insert(onboardingTasks).values(tasksToInsert);
-        logger?.info(
+        logger.info(
           `Added ${tasksToInsert?.length} AI-related onboarding tasks`,
         );
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Error ensuring AI tasks exist:");
+      logger.warn({ err: error }, "Error ensuring AI tasks exist:");
     }
   }
 }

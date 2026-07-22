@@ -25,20 +25,20 @@ router?.get("/", requireAuth, async (req, res) => {
     const items = await db
       .select()
       .from(musicVideoProductions)
-      .where(eq(musicVideoProductions?.userId, req?.user!.id))
+      .where(eq(musicVideoProductions?.userId, req.user!.id))
       .orderBy(desc(musicVideoProductions?.createdAt))
       .limit(limit)
       .offset(offset);
-    res?.json(items);
+    res.json(items);
   } catch (error) {
-    logger?.warn({ err: error }, "[MusicVideos] Failed to list:");
-    res?.status(500).json({ error: "Failed to fetch music video productions" });
+    logger.warn({ err: error }, "[MusicVideos] Failed to list:");
+    res.status(500).json({ error: "Failed to fetch music video productions" });
   }
 });
 
 router?.get("/stats", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const cacheKey = createCacheKey("stats:musicVideos", userId);
 
     const stats = await queryCache?.getOrCompute(
@@ -68,21 +68,21 @@ router?.get("/stats", requireAuth, async (req, res) => {
       CACHE_TTL,
     );
 
-    res?.json(stats);
+    res.json(stats);
   } catch (error) {
-    logger?.warn({ err: error }, "[MusicVideos] Failed to fetch stats:");
-    res?.status(500).json({ error: "Failed to fetch stats" });
+    logger.warn({ err: error }, "[MusicVideos] Failed to fetch stats:");
+    res.status(500).json({ error: "Failed to fetch stats" });
   }
 });
 
 router?.post("/", requireAuth, async (req, res) => {
   try {
     const data = insertMusicVideoProductionSchema?.parse({
-      ...req?.body,
+      ...req.body,
       userId: req.user!.id,
       budget:
-        req?.body.budget !== "" && req?.body.budget != null
-          ? parseFloat(req?.body.budget)
+        req.body.budget !== "" && req.body.budget != null
+          ? parseFloat(req.body.budget)
           : undefined,
     });
     const [item] = await db
@@ -90,11 +90,11 @@ router?.post("/", requireAuth, async (req, res) => {
       .values(data)
       .returning();
     await queryCache?.invalidate(
-      createCacheKey("stats:musicVideos", req?.user!.id),
+      createCacheKey("stats:musicVideos", req.user!.id),
     );
-    res?.status(201).json(item);
+    res.status(201).json(item);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "[MusicVideos] Failed to create:");
+    logger.warn({ err: error }, "[MusicVideos] Failed to create:");
     if (error instanceof Error && error?.name === "ZodError") {
       return res
         .status(400)
@@ -103,14 +103,14 @@ router?.post("/", requireAuth, async (req, res) => {
           details: (error as Record<string, unknown>).flatten(),
         });
     }
-    res?.status(500).json({ error: "Failed to create music video production" });
+    res.status(500).json({ error: "Failed to create music video production" });
   }
 });
 
 router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { id } = req?.params;
+    const userId = req.user!.id;
+    const { id } = req.params;
 
     const existing = await db
       .select()
@@ -130,10 +130,10 @@ router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
     }
 
     const data = insertMusicVideoProductionSchema?.partial().parse({
-      ...req?.body,
+      ...req.body,
       budget:
-        req?.body.budget !== "" && req?.body.budget != null
-          ? parseFloat(req?.body.budget)
+        req.body.budget !== "" && req.body.budget != null
+          ? parseFloat(req.body.budget)
           : undefined,
     });
     const [item] = await db
@@ -147,9 +147,9 @@ router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
       )
       .returning();
     await queryCache?.invalidate(createCacheKey("stats:musicVideos", userId));
-    res?.json(item);
+    res.json(item);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "[MusicVideos] Failed to update:");
+    logger.warn({ err: error }, "[MusicVideos] Failed to update:");
     if (error instanceof Error && error?.name === "ZodError") {
       return res
         .status(400)
@@ -158,14 +158,14 @@ router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
           details: (error as Record<string, unknown>).flatten(),
         });
     }
-    res?.status(500).json({ error: "Failed to update music video production" });
+    res.status(500).json({ error: "Failed to update music video production" });
   }
 });
 
 router?.delete("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { id } = req?.params;
+    const userId = req.user!.id;
+    const { id } = req.params;
 
     const existing = await db
       .select()
@@ -193,10 +193,10 @@ router?.delete("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => 
         ),
       );
     await queryCache?.invalidate(createCacheKey("stats:musicVideos", userId));
-    res?.json({ success: true });
+    res.json({ success: true });
   } catch (error) {
-    logger?.warn({ err: error }, "[MusicVideos] Failed to delete:");
-    res?.status(500).json({ error: "Failed to delete music video production" });
+    logger.warn({ err: error }, "[MusicVideos] Failed to delete:");
+    res.status(500).json({ error: "Failed to delete music video production" });
   }
 });
 
@@ -208,8 +208,8 @@ router?.get("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
       .from(musicVideoProductions)
       .where(
         and(
-          eq(musicVideoProductions?.id, req?.params.id),
-          eq(musicVideoProductions?.userId, req?.user!.id),
+          eq(musicVideoProductions?.id, req.params.id),
+          eq(musicVideoProductions?.userId, req.user!.id),
         ),
       )
       .limit(1);
@@ -217,10 +217,10 @@ router?.get("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
       return res
         .status(404)
         .json({ error: "Music video production not found" });
-    res?.json(item);
+    res.json(item);
   } catch (error) {
-    logger?.warn({ err: error }, "[MusicVideos] Failed to fetch production:");
-    res?.status(500).json({ error: "Failed to fetch music video production" });
+    logger.warn({ err: error }, "[MusicVideos] Failed to fetch production:");
+    res.status(500).json({ error: "Failed to fetch music video production" });
   }
 });
 
@@ -229,21 +229,21 @@ router?.get("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
 router?.get("/diffusion/status", requireAuth, async (_req, res) => {
   try {
     const status = getDiffusionTrainingStatus();
-    res?.json({
+    res.json({
       ...status,
       message: status.trained
         ? `Neural model trained — ${status?.epochs} epochs, loss ${status?.finalLoss?.toFixed(4)}, ${status?.weightsSizeKB} KB`
         : "Model not trained. POST /diffusion/train to train from scratch.",
     });
   } catch (err) {
-    logger?.warn({ err: err }, "[Diffusion] Status error:");
-    res?.status(500).json({ error: "Failed to get diffusion model status" });
+    logger.warn({ err: err }, "[Diffusion] Status error:");
+    res.status(500).json({ error: "Failed to get diffusion model status" });
   }
 });
 
 router?.post("/diffusion/train", requireAuth, async (req, res) => {
   // tier: 'quick' (~19min) | 'medium' (~76min) | 'deep' (~190min, Veo-level depth)
-  const { tier = "quick", nSamples, nEpochs } = req?.body ?? {};
+  const { tier = "quick", nSamples, nEpochs } = req.body ?? {};
 
   const tierDefaults: Record<string, { n: number; e: number; eta: string }> = {
     quick: { n: 300, e: 10, eta: "~28 min" },
@@ -254,11 +254,11 @@ router?.post("/diffusion/train", requireAuth, async (req, res) => {
   const finalSamples = nSamples ?? cfg?.n;
   const finalEpochs = nEpochs ?? cfg?.e;
 
-  logger?.info(
+  logger.info(
     `[Diffusion] Training started: tier=${tier} ${finalSamples} samples × ${finalEpochs} epochs`,
   );
 
-  res?.json({
+  res.json({
     message: `Training started (tier='${tier}'): ${finalSamples} samples × ${finalEpochs} epochs (${cfg?.eta} on CPU).`,
     note: "Poll GET /api/music-videos/diffusion/status to check when done.",
     tier,
@@ -284,16 +284,16 @@ router?.post("/diffusion/train", requireAuth, async (req, res) => {
     nEpochs: nEpochs ?? undefined,
     onLog: (line) => {
       logs?.push(line);
-      logger?.info(`[Diffusion:train] ${line}`);
+      logger.info(`[Diffusion:train] ${line}`);
     },
   })
     .then((status) => {
-      logger?.info(
+      logger.info(
         `[Diffusion] Training complete. loss=${status?.finalLoss?.toFixed(4)}`,
       );
     })
     .catch((err) => {
-      logger?.warn({ err: err }, "[Diffusion] Training failed:");
+      logger.warn({ err: err }, "[Diffusion] Training failed:");
     });
 });
 
@@ -306,17 +306,17 @@ router?.post("/diffusion/generate", requireAuth, async (req, res) => {
       fps = 30,
       frameSize = 512,
       guidanceScale = 5.0,
-    } = req?.body ?? {};
+    } = req.body ?? {};
 
     const status = getDiffusionTrainingStatus();
     if (!status?.trained) {
-      return res?.status(400).json({
+      return res.status(400).json({
         error: "Diffusion model not trained yet.",
         hint: "POST /api/music-videos/diffusion/train first.",
       });
     }
 
-    logger?.info(
+    logger.info(
       `[Diffusion] Generating: prompt="${prompt}" genre=${genre} frames=${nFrames}`,
     );
 
@@ -329,7 +329,7 @@ router?.post("/diffusion/generate", requireAuth, async (req, res) => {
       guidanceScale,
     });
 
-    res?.json({
+    res.json({
       framePaths: result.framePaths,
       frameCount: result.frameCount,
       elapsedMs: result.elapsedMs,
@@ -337,7 +337,7 @@ router?.post("/diffusion/generate", requireAuth, async (req, res) => {
       message: `Generated ${result?.frameCount} frames in ${(result?.elapsedMs / 1000).toFixed(1)}s`,
     });
   } catch (err) {
-    logger?.warn({ err: err }, "[Diffusion] Generate error:");
+    logger.warn({ err: err }, "[Diffusion] Generate error:");
     res
       .status(500)
       .json({ error: "Diffusion generation failed", details: String(err) });
@@ -351,9 +351,9 @@ router?.get("/diffusion/background/status", requireAuth, async (_req, res) => {
     const { getBackgroundStatus } = await import(
       "../services/diffusionBackgroundTrainer.js"
     );
-    res?.json(getBackgroundStatus());
+    res.json(getBackgroundStatus());
   } catch {
-    res?.json({ running: false, error: "Background trainer not loaded" });
+    res.json({ running: false, error: "Background trainer not loaded" });
   }
 });
 
@@ -363,7 +363,7 @@ router?.post("/diffusion/background/start", requireAuth, async (_req, res) => {
       "../services/diffusionBackgroundTrainer.js"
     );
     startBackgroundTraining();
-    res?.json({
+    res.json({
       message: "Background self-training started",
       status: getBackgroundStatus(),
     });
@@ -379,7 +379,7 @@ router?.post("/diffusion/background/start", requireAuth, async (_req, res) => {
 
 router?.post("/diffusion/background/stop", requireAuth, async (req, res) => {
   try {
-    const { force } = req?.body ?? {};
+    const { force } = req.body ?? {};
     const {
       stopBackgroundTraining,
       forceStopBackgroundTraining,
@@ -390,7 +390,7 @@ router?.post("/diffusion/background/stop", requireAuth, async (req, res) => {
     } else {
       stopBackgroundTraining();
     }
-    res?.json({
+    res.json({
       message: force
         ? "Background training force-stopped"
         : "Background training will stop after current session",

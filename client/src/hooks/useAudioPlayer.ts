@@ -76,7 +76,7 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
       try {
         await engineRef?.current.initialize();
       } catch (error: unknown) {
-        logger?.error("Failed to initialize AudioEngine:", error);
+        logger.error("Failed to initialize AudioEngine:", error);
         if (options?.onError) {
           options?.onError(error as Error);
         }
@@ -142,7 +142,7 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
           isLoading: false,
         }));
       } catch (error: unknown) {
-        logger?.error("Error loading track:", error);
+        logger.error("Error loading track:", error);
         setState((prev) => ({ ...prev, isLoading: false }));
         if (options?.onError) {
           options?.onError(error as Error);
@@ -186,7 +186,7 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
         // Load the track buffer
         await loadTrack(track);
       } catch (error: unknown) {
-        logger?.error("Error adding track:", error);
+        logger.error("Error adding track:", error);
         if (options?.onError) {
           options?.onError(error as Error);
         }
@@ -205,7 +205,7 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
           tracks: prev.tracks.filter((t) => t?.id !== trackId),
         }));
       } catch (error: unknown) {
-        logger?.error("Error removing track:", error);
+        logger.error("Error removing track:", error);
         if (options?.onError) {
           options?.onError(error as Error);
         }
@@ -230,7 +230,7 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
         // Start time updates
         animationFrameRef.current = requestAnimationFrame(updateCurrentTime);
       } catch (error: unknown) {
-        logger?.error("Error starting playback:", error);
+        logger.error("Error starting playback:", error);
         if (options?.onError) {
           options?.onError(error as Error);
         }
@@ -255,7 +255,7 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
         currentTime: engineRef.current.getCurrentTime(),
       }));
     } catch (error: unknown) {
-      logger?.error("Error pausing playback:", error);
+      logger.error("Error pausing playback:", error);
       if (options?.onError) {
         options?.onError(error as Error);
       }
@@ -277,7 +277,7 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
         currentTime: 0,
       }));
     } catch (error: unknown) {
-      logger?.error("Error stopping playback:", error);
+      logger.error("Error stopping playback:", error);
       if (options?.onError) {
         options?.onError(error as Error);
       }
@@ -312,7 +312,7 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
           ),
         }));
       } catch (error: unknown) {
-        logger?.error("Error updating track gain:", error);
+        logger.error("Error updating track gain:", error);
         if (options?.onError) {
           options?.onError(error as Error);
         }
@@ -332,7 +332,7 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
           ),
         }));
       } catch (error: unknown) {
-        logger?.error("Error updating track pan:", error);
+        logger.error("Error updating track pan:", error);
         if (options?.onError) {
           options?.onError(error as Error);
         }
@@ -357,7 +357,7 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
           ),
         }));
       } catch (error: unknown) {
-        logger?.error("Error muting track:", error);
+        logger.error("Error muting track:", error);
         if (options?.onError) {
           options?.onError(error as Error);
         }
@@ -382,7 +382,7 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
           ),
         }));
       } catch (error: unknown) {
-        logger?.error("Error soloing track:", error);
+        logger.error("Error soloing track:", error);
         if (options?.onError) {
           options?.onError(error as Error);
         }
@@ -397,7 +397,7 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
         engineRef?.current.setMasterVolume(volume);
         setState((prev) => ({ ...prev, masterVolume: volume }));
       } catch (error: unknown) {
-        logger?.error("Error setting master volume:", error);
+        logger.error("Error setting master volume:", error);
         if (options?.onError) {
           options?.onError(error as Error);
         }
@@ -446,10 +446,10 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
 
       // Estimate CPU usage based on latency and active track count
       const activeTrackCount = state?.tracks.filter((t) => !t?.isMuted).length;
-      const baseUsage = Math?.min(totalLatency * 1000, 30); // Latency contribution
+      const baseUsage = Math.min(totalLatency * 1000, 30); // Latency contribution
       const trackUsage = activeTrackCount * 5; // ~5% per active track
 
-      return Math?.min(baseUsage + trackUsage, 100);
+      return Math.min(baseUsage + trackUsage, 100);
     } catch {
       return 0;
     }
@@ -497,7 +497,7 @@ export function getCPUUsage(): number {
     const avgDuration =
       recentEntries?.reduce((sum, e) => sum + e?.duration, 0) /
       recentEntries?.length;
-    return Math?.min(avgDuration / 10, 100); // Normalize to 0-100%
+    return Math.min(avgDuration / 10, 100); // Normalize to 0-100%
   } catch {
     return 0;
   }

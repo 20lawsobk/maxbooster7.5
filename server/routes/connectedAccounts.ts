@@ -77,7 +77,7 @@ function getAccountStatus(
 
 router?.get("/", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user.id;
+    const userId = req.user.id;
     const accounts = await db
       .select()
       .from(socialAccounts)
@@ -105,7 +105,7 @@ router?.get("/", async (req: Request, res: Response) => {
       permissions: getDefaultPermissions(account?.platform),
     }));
 
-    res?.json(safeAccounts);
+    res.json(safeAccounts);
 
     setImmediate(async () => {
       try {
@@ -126,19 +126,19 @@ router?.get("/", async (req: Request, res: Response) => {
           }
         }
       } catch (err) {
-        logger?.warn({ err: err }, "Social token expiring notification error:");
+        logger.warn({ err: err }, "Social token expiring notification error:");
       }
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching connected accounts:");
-    res?.status(500).json({ error: "Failed to fetch connected accounts" });
+    logger.warn({ err: error }, "Error fetching connected accounts:");
+    res.status(500).json({ error: "Failed to fetch connected accounts" });
   }
 });
 
 router?.delete("/:accountId", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user.id;
-    const { accountId } = req?.params;
+    const userId = req.user.id;
+    const { accountId } = req.params;
 
     const result = await db
       .update(socialAccounts)
@@ -152,20 +152,20 @@ router?.delete("/:accountId", async (req: Request, res: Response) => {
       .returning({ id: socialAccounts.id });
 
     if (result?.length === 0) {
-      return res?.status(404).json({ error: "Connected account not found" });
+      return res.status(404).json({ error: "Connected account not found" });
     }
 
-    res?.json({ success: true, message: "Account disconnected successfully" });
+    res.json({ success: true, message: "Account disconnected successfully" });
   } catch (error) {
-    logger?.warn({ err: error }, "Error disconnecting account:");
-    res?.status(500).json({ error: "Failed to disconnect account" });
+    logger.warn({ err: error }, "Error disconnecting account:");
+    res.status(500).json({ error: "Failed to disconnect account" });
   }
 });
 
 router?.post("/:accountId/refresh", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user.id;
-    const { accountId } = req?.params;
+    const userId = req.user.id;
+    const { accountId } = req.params;
 
     const now = new Date();
     const result = await db
@@ -180,10 +180,10 @@ router?.post("/:accountId/refresh", async (req: Request, res: Response) => {
       .returning({ id: socialAccounts.id });
 
     if (result?.length === 0) {
-      return res?.status(404).json({ error: "Connected account not found" });
+      return res.status(404).json({ error: "Connected account not found" });
     }
 
-    res?.json({
+    res.json({
       message: "Connection refreshed successfully",
       account: {
         id: accountId,
@@ -192,14 +192,14 @@ router?.post("/:accountId/refresh", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error refreshing account connection:");
-    res?.status(500).json({ error: "Failed to refresh account connection" });
+    logger.warn({ err: error }, "Error refreshing account connection:");
+    res.status(500).json({ error: "Failed to refresh account connection" });
   }
 });
 
 router?.post("/manual-token", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user.id;
+    const userId = req.user.id;
     const {
       platform,
       accessToken,
@@ -207,7 +207,7 @@ router?.post("/manual-token", async (req: Request, res: Response) => {
       username,
       platformUserId,
       expiresIn,
-    } = req?.body;
+    } = req.body;
 
     if (!platform || !accessToken) {
       return res
@@ -263,8 +263,8 @@ router?.post("/manual-token", async (req: Request, res: Response) => {
         })
         .where(eq(socialAccounts?.id, existing[0].id));
 
-      logger?.info(`[ManualToken] Updated ${platform} token for user ${userId}`);
-      res?.json({
+      logger.info(`[ManualToken] Updated ${platform} token for user ${userId}`);
+      res.json({
         success: true,
         message: `${platform} access token updated successfully`,
         id: existing[0].id,
@@ -284,24 +284,24 @@ router?.post("/manual-token", async (req: Request, res: Response) => {
         })
         .returning({ id: socialAccounts.id });
 
-      logger?.info(`[ManualToken] Created ${platform} token for user ${userId}`);
-      res?.json({
+      logger.info(`[ManualToken] Created ${platform} token for user ${userId}`);
+      res.json({
         success: true,
         message: `${platform} connected successfully`,
         id: newAccount.id,
       });
     }
   } catch (error) {
-    logger?.warn({ err: error }, "Error saving manual token:");
-    res?.status(500).json({ error: "Failed to save access token" });
+    logger.warn({ err: error }, "Error saving manual token:");
+    res.status(500).json({ error: "Failed to save access token" });
   }
 });
 
 router?.put("/:accountId/permissions", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user.id;
-    const { accountId } = req?.params;
-    const permissionUpdates = req?.body;
+    const userId = req.user.id;
+    const { accountId } = req.params;
+    const permissionUpdates = req.body;
 
     const accounts = await db
       .select()
@@ -315,26 +315,26 @@ router?.put("/:accountId/permissions", async (req: Request, res: Response) => {
       .limit(1);
 
     if (accounts?.length === 0) {
-      return res?.status(404).json({ error: "Connected account not found" });
+      return res.status(404).json({ error: "Connected account not found" });
     }
 
     const account = accounts[0];
     const permissions = getDefaultPermissions(account?.platform);
 
-    for (const [permId, enabled] of Object?.entries(permissionUpdates)) {
+    for (const [permId, enabled] of Object.entries(permissionUpdates)) {
       const permission = permissions?.find((p) => p?.id === permId);
       if (permission && !permission?.required) {
         permission.enabled = !!enabled;
       }
     }
 
-    res?.json({
+    res.json({
       message: "Permissions updated successfully",
       permissions,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error updating account permissions:");
-    res?.status(500).json({ error: "Failed to update account permissions" });
+    logger.warn({ err: error }, "Error updating account permissions:");
+    res.status(500).json({ error: "Failed to update account permissions" });
   }
 });
 

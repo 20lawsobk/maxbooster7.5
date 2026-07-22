@@ -29,43 +29,43 @@ class ShortcutManagerImpl {
 
   constructor(options: ShortcutManagerOptions = {}) {
     this.options = options;
-    this.handleKeyDown = this?.onKeyDown.bind(this);
+    this.handleKeyDown = this.onKeyDown.bind(this);
 
     if (typeof window !== "undefined") {
-      this?.loadCustomConfigs();
-      window?.addEventListener("keydown", this?.handleKeyDown);
+      this.loadCustomConfigs();
+      window?.addEventListener("keydown", this.handleKeyDown);
     }
   }
 
   private loadCustomConfigs(): void {
-    if (!this?.options.persistConfig) return;
+    if (!this.options.persistConfig) return;
 
     try {
       const stored = localStorage?.getItem(STORAGE_KEY);
       if (stored) {
-        const configs: ShortcutConfig[] = JSON?.parse(stored);
+        const configs: ShortcutConfig[] = JSON.parse(stored);
         configs?.forEach((config) => {
-          this?.customConfigs.set(config?.id, config);
+          this.customConfigs.set(config?.id, config);
         });
       }
     } catch (e) {
-      logger?.warn("Failed to load shortcut configs:", e);
+      logger.warn("Failed to load shortcut configs:", e);
     }
   }
 
   private saveCustomConfigs(): void {
-    if (!this?.options.persistConfig) return;
+    if (!this.options.persistConfig) return;
 
     try {
-      const configs = Array?.from(this?.customConfigs.values());
-      localStorage?.setItem(STORAGE_KEY, JSON?.stringify(configs));
+      const configs = Array.from(this.customConfigs.values());
+      localStorage?.setItem(STORAGE_KEY, JSON.stringify(configs));
     } catch (e) {
-      logger?.warn("Failed to save shortcut configs:", e);
+      logger.warn("Failed to save shortcut configs:", e);
     }
   }
 
   register(shortcut: ShortcutDefinition): void {
-    const customConfig = this?.customConfigs.get(shortcut?.id);
+    const customConfig = this.customConfigs.get(shortcut?.id);
     if (customConfig) {
       shortcut = {
         ...shortcut,
@@ -75,9 +75,9 @@ class ShortcutManagerImpl {
       };
     }
 
-    const conflicts = this?.detectConflicts(shortcut);
-    if (conflicts?.length > 0 && this?.options.onConflict) {
-      this?.options.onConflict({
+    const conflicts = this.detectConflicts(shortcut);
+    if (conflicts?.length > 0 && this.options.onConflict) {
+      this.options.onConflict({
         shortcutId: shortcut.id,
         conflictsWith: conflicts,
         key: shortcut.key,
@@ -85,33 +85,33 @@ class ShortcutManagerImpl {
       });
     }
 
-    this?.shortcuts.set(shortcut?.id, shortcut);
+    this.shortcuts.set(shortcut?.id, shortcut);
   }
 
   unregister(shortcutId: string): void {
-    this?.shortcuts.delete(shortcutId);
+    this.shortcuts.delete(shortcutId);
   }
 
   registerMany(shortcuts: ShortcutDefinition[]): void {
-    shortcuts?.forEach((s) => this?.register(s));
+    shortcuts?.forEach((s) => this.register(s));
   }
 
   getShortcut(id: string): ShortcutDefinition | undefined {
-    return this?.shortcuts.get(id);
+    return this.shortcuts.get(id);
   }
 
   getAllShortcuts(): ShortcutDefinition[] {
-    return Array?.from(this?.shortcuts.values());
+    return Array.from(this.shortcuts.values());
   }
 
   getShortcutsByContext(context: ShortcutContext): ShortcutDefinition[] {
-    return this?.getAllShortcuts().filter(
+    return this.getAllShortcuts().filter(
       (s) => s?.context === context || s?.context === "global",
     );
   }
 
   getShortcutsByCategory(category: string): ShortcutDefinition[] {
-    return this?.getAllShortcuts().filter((s) => s?.category === category);
+    return this.getAllShortcuts().filter((s) => s?.category === category);
   }
 
   setContext(context: ShortcutContext): void {
@@ -119,7 +119,7 @@ class ShortcutManagerImpl {
   }
 
   getContext(): ShortcutContext {
-    return this?.currentContext;
+    return this.currentContext;
   }
 
   setEnabled(enabled: boolean): void {
@@ -127,11 +127,11 @@ class ShortcutManagerImpl {
   }
 
   isEnabled(): boolean {
-    return this?.enabled;
+    return this.enabled;
   }
 
   customize(shortcutId: string, config: Partial<ShortcutConfig>): void {
-    const shortcut = this?.shortcuts.get(shortcutId);
+    const shortcut = this.shortcuts.get(shortcutId);
     if (!shortcut) return;
 
     const newConfig: ShortcutConfig = {
@@ -141,29 +141,29 @@ class ShortcutManagerImpl {
       enabled: config.enabled ?? shortcut?.enabled ?? true,
     };
 
-    this?.customConfigs.set(shortcutId, newConfig);
-    this?.shortcuts.set(shortcutId, {
+    this.customConfigs.set(shortcutId, newConfig);
+    this.shortcuts.set(shortcutId, {
       ...shortcut,
       ...newConfig,
     });
 
-    this?.saveCustomConfigs();
+    this.saveCustomConfigs();
   }
 
   resetShortcut(shortcutId: string): void {
-    this?.customConfigs.delete(shortcutId);
-    this?.saveCustomConfigs();
+    this.customConfigs.delete(shortcutId);
+    this.saveCustomConfigs();
   }
 
   resetAllShortcuts(): void {
-    this?.customConfigs.clear();
-    this?.saveCustomConfigs();
+    this.customConfigs.clear();
+    this.saveCustomConfigs();
   }
 
   private detectConflicts(shortcut: ShortcutDefinition): string[] {
     const conflicts: string[] = [];
 
-    this?.shortcuts.forEach((existing, id) => {
+    this.shortcuts.forEach((existing, id) => {
       if (id === shortcut?.id) return;
 
       const sameContext =
@@ -175,7 +175,7 @@ class ShortcutManagerImpl {
 
       if (!existing?.key || !shortcut?.key) return;
       const sameKey = existing?.key.toLowerCase() === shortcut?.key.toLowerCase();
-      const sameModifiers = this?.modifiersEqual(
+      const sameModifiers = this.modifiersEqual(
         existing?.modifiers || [],
         shortcut?.modifiers || [],
       );
@@ -199,17 +199,17 @@ class ShortcutManagerImpl {
   }
 
   addListener(callback: (event: ShortcutEvent) => void): string {
-    const id = Math?.random().toString(36).substr(2, 9);
-    this?.listeners.push({ id, callback });
+    const id = Math.random().toString(36).substr(2, 9);
+    this.listeners.push({ id, callback });
     return id;
   }
 
   removeListener(id: string): void {
-    this.listeners = this?.listeners.filter((l) => l?.id !== id);
+    this.listeners = this.listeners.filter((l) => l?.id !== id);
   }
 
   private onKeyDown(event: KeyboardEvent): void {
-    if (!this?.enabled) return;
+    if (!this.enabled) return;
 
     const target = event?.target as HTMLElement;
     const isInput =
@@ -217,11 +217,11 @@ class ShortcutManagerImpl {
       target?.tagName === "TEXTAREA" ||
       target?.isContentEditable;
 
-    for (const shortcut of this?.shortcuts.values()) {
+    for (const shortcut of this.shortcuts.values()) {
       if (shortcut?.enabled === false) continue;
       if (
         shortcut?.context !== "global" &&
-        shortcut?.context !== this?.currentContext
+        shortcut?.context !== this.currentContext
       )
         continue;
       if (isInput && !shortcut?.allowInInput) continue;
@@ -244,24 +244,24 @@ class ShortcutManagerImpl {
           shortcut?.action();
         }
 
-        this?.listeners.forEach((l) => l?.callback(shortcutEvent));
+        this.listeners.forEach((l) => l?.callback(shortcutEvent));
         return;
       }
     }
   }
 
   getFormattedShortcut(id: string): string {
-    const shortcut = this?.shortcuts.get(id);
+    const shortcut = this.shortcuts.get(id);
     if (!shortcut) return "";
     return formatShortcutKeys(shortcut?.key, shortcut?.modifiers);
   }
 
   destroy(): void {
     if (typeof window !== "undefined") {
-      window?.removeEventListener("keydown", this?.handleKeyDown);
+      window?.removeEventListener("keydown", this.handleKeyDown);
     }
-    this?.shortcuts.clear();
-    this?.customConfigs.clear();
+    this.shortcuts.clear();
+    this.customConfigs.clear();
     this.listeners = [];
   }
 }

@@ -18,20 +18,20 @@ router?.get("/", requireAuth, async (req, res) => {
     const items = await db
       .select()
       .from(labelSubmissions)
-      .where(eq(labelSubmissions?.userId, req?.user!.id))
+      .where(eq(labelSubmissions?.userId, req.user!.id))
       .orderBy(desc(labelSubmissions?.createdAt))
       .limit(limit)
       .offset(offset);
-    res?.json(items);
+    res.json(items);
   } catch (error) {
-    logger?.warn({ err: error }, "[LabelSubmissions] Failed to list:");
-    res?.status(500).json({ error: "Failed to fetch label submissions" });
+    logger.warn({ err: error }, "[LabelSubmissions] Failed to list:");
+    res.status(500).json({ error: "Failed to fetch label submissions" });
   }
 });
 
 router?.get("/stats", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const cacheKey = createCacheKey("stats:labelSubmissions", userId);
 
     const stats = await queryCache?.getOrCompute(
@@ -60,16 +60,16 @@ router?.get("/stats", requireAuth, async (req, res) => {
           accepted,
           pending,
           conversionRate:
-            submitted > 0 ? Math?.round((accepted / submitted) * 100) : 0,
+            submitted > 0 ? Math.round((accepted / submitted) * 100) : 0,
         };
       },
       CACHE_TTL,
     );
 
-    res?.json(stats);
+    res.json(stats);
   } catch (error) {
-    logger?.warn({ err: error }, "[LabelSubmissions] Failed to fetch stats:");
-    res?.status(500).json({ error: "Failed to fetch stats" });
+    logger.warn({ err: error }, "[LabelSubmissions] Failed to fetch stats:");
+    res.status(500).json({ error: "Failed to fetch stats" });
   }
 });
 
@@ -80,35 +80,35 @@ router?.get("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
       .from(labelSubmissions)
       .where(
         and(
-          eq(labelSubmissions?.id, req?.params.id),
-          eq(labelSubmissions?.userId, req?.user!.id),
+          eq(labelSubmissions?.id, req.params.id),
+          eq(labelSubmissions?.userId, req.user!.id),
         ),
       )
       .limit(1);
-    if (!item) return res?.status(404).json({ error: "Submission not found" });
-    res?.json(item);
+    if (!item) return res.status(404).json({ error: "Submission not found" });
+    res.json(item);
   } catch (error) {
-    logger?.warn(
+    logger.warn(
       { err: error },
       "[LabelSubmissions] Failed to fetch submission:",
     );
-    res?.status(500).json({ error: "Failed to fetch label submission" });
+    res.status(500).json({ error: "Failed to fetch label submission" });
   }
 });
 
 router?.post("/", requireAuth, async (req, res) => {
   try {
     const data = insertLabelSubmissionSchema?.parse({
-      ...req?.body,
+      ...req.body,
       userId: req.user!.id,
     });
     const [item] = await db?.insert(labelSubmissions).values(data).returning();
     await queryCache?.invalidate(
-      createCacheKey("stats:labelSubmissions", req?.user!.id),
+      createCacheKey("stats:labelSubmissions", req.user!.id),
     );
-    res?.status(201).json(item);
+    res.status(201).json(item);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "[LabelSubmissions] Failed to create:");
+    logger.warn({ err: error }, "[LabelSubmissions] Failed to create:");
     if (error instanceof Error && error?.name === "ZodError") {
       return res
         .status(400)
@@ -117,14 +117,14 @@ router?.post("/", requireAuth, async (req, res) => {
           details: (error as Record<string, unknown>).flatten(),
         });
     }
-    res?.status(500).json({ error: "Failed to create label submission" });
+    res.status(500).json({ error: "Failed to create label submission" });
   }
 });
 
 router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { id } = req?.params;
+    const userId = req.user!.id;
+    const { id } = req.params;
 
     const existing = await db
       .select()
@@ -135,10 +135,10 @@ router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
       .limit(1);
 
     if (existing?.length === 0) {
-      return res?.status(404).json({ error: "Submission not found" });
+      return res.status(404).json({ error: "Submission not found" });
     }
 
-    const parsed = insertLabelSubmissionSchema?.partial().parse(req?.body);
+    const parsed = insertLabelSubmissionSchema?.partial().parse(req.body);
     const { status: _status, userId: _parsedUserId, ...data } = parsed;
     const [item] = await db
       .update(labelSubmissions)
@@ -150,9 +150,9 @@ router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
     await queryCache?.invalidate(
       createCacheKey("stats:labelSubmissions", userId),
     );
-    res?.json(item);
+    res.json(item);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "[LabelSubmissions] Failed to update:");
+    logger.warn({ err: error }, "[LabelSubmissions] Failed to update:");
     if (error instanceof Error && error?.name === "ZodError") {
       return res
         .status(400)
@@ -161,7 +161,7 @@ router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
           details: (error as Record<string, unknown>).flatten(),
         });
     }
-    res?.status(500).json({ error: "Failed to update label submission" });
+    res.status(500).json({ error: "Failed to update label submission" });
   }
 });
 
@@ -172,8 +172,8 @@ router?.patch(
   requireUUIDParam("id"),
   async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const { id } = req?.params;
+      const userId = req.user!.id;
+      const { id } = req.params;
       const statusSchema = z.object({
         status: z.enum([
           "draft",
@@ -187,7 +187,7 @@ router?.patch(
         responseNote: z.string().max(2000).optional(),
         responseAt: z.string().datetime().optional(),
       });
-      const { status, responseNote, responseAt } = statusSchema?.parse(req?.body);
+      const { status, responseNote, responseAt } = statusSchema?.parse(req.body);
 
       const setFields: Record<string, unknown> = {
         status,
@@ -207,13 +207,13 @@ router?.patch(
         )
         .returning();
 
-      if (!item) return res?.status(404).json({ error: "Submission not found" });
+      if (!item) return res.status(404).json({ error: "Submission not found" });
       await queryCache?.invalidate(
         createCacheKey("stats:labelSubmissions", userId),
       );
-      res?.json(item);
+      res.json(item);
     } catch (error: unknown) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "[LabelSubmissions] Failed to update status:",
       );
@@ -225,7 +225,7 @@ router?.patch(
             details: (error as Record<string, unknown>).flatten(),
           });
       }
-      res?.status(500).json({ error: "Failed to update submission status" });
+      res.status(500).json({ error: "Failed to update submission status" });
     }
   },
 );
@@ -237,13 +237,13 @@ router?.post(
   requireUUIDParam("id"),
   async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const { id } = req?.params;
+      const userId = req.user!.id;
+      const { id } = req.params;
       const followupSchema = z.object({
         nextFollowUpAt: z.string().datetime().optional(),
         notes: z.string().max(2000).optional(),
       });
-      const { nextFollowUpAt, notes } = followupSchema?.parse(req?.body);
+      const { nextFollowUpAt, notes } = followupSchema?.parse(req.body);
 
       const setFields: Record<string, unknown> = {
         status: "following_up",
@@ -261,13 +261,13 @@ router?.post(
         )
         .returning();
 
-      if (!item) return res?.status(404).json({ error: "Submission not found" });
+      if (!item) return res.status(404).json({ error: "Submission not found" });
       await queryCache?.invalidate(
         createCacheKey("stats:labelSubmissions", userId),
       );
-      res?.json({ success: true, submission: item });
+      res.json({ success: true, submission: item });
     } catch (error: unknown) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "[LabelSubmissions] Failed to log follow-up:",
       );
@@ -279,15 +279,15 @@ router?.post(
             details: (error as Record<string, unknown>).flatten(),
           });
       }
-      res?.status(500).json({ error: "Failed to log follow-up" });
+      res.status(500).json({ error: "Failed to log follow-up" });
     }
   },
 );
 
 router?.delete("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { id } = req?.params;
+    const userId = req.user!.id;
+    const { id } = req.params;
 
     const existing = await db
       .select()
@@ -298,7 +298,7 @@ router?.delete("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => 
       .limit(1);
 
     if (existing?.length === 0) {
-      return res?.status(404).json({ error: "Submission not found" });
+      return res.status(404).json({ error: "Submission not found" });
     }
 
     await db
@@ -309,10 +309,10 @@ router?.delete("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => 
     await queryCache?.invalidate(
       createCacheKey("stats:labelSubmissions", userId),
     );
-    res?.json({ success: true });
+    res.json({ success: true });
   } catch (error) {
-    logger?.warn({ err: error }, "[LabelSubmissions] Failed to delete:");
-    res?.status(500).json({ error: "Failed to delete label submission" });
+    logger.warn({ err: error }, "[LabelSubmissions] Failed to delete:");
+    res.status(500).json({ error: "Failed to delete label submission" });
   }
 });
 

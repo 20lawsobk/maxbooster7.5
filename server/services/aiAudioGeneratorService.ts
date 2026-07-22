@@ -70,14 +70,14 @@ async function saveToWav(
 ): Promise<string> {
   const int16Data = new Int16Array(audioData?.length);
   for (let i = 0; i < audioData?.length; i++) {
-    int16Data[i] = Math?.max(
+    int16Data[i] = Math.max(
       -32768,
-      Math?.min(32767, Math?.floor(audioData[i] * 32767)),
+      Math.min(32767, Math.floor(audioData[i] * 32767)),
     );
   }
 
   const wav = new WaveFile();
-  wav?.fromScratch(1, sampleRate, "16", Array?.from(int16Data));
+  wav?.fromScratch(1, sampleRate, "16", Array.from(int16Data));
 
   const filename = `ai_generated_${Date?.now()}_${randomBytes(8).toString("hex")}.wav`;
   const key = `generated-content/audio/${filename}`;
@@ -92,7 +92,7 @@ export async function generateFromText(
 ): Promise<GenerationResult> {
   await ensureInitialized();
 
-  logger?.info(`[AI Audio] Generating from text: "${request.text}"`);
+  logger.info(`[AI Audio] Generating from text: "${request.text}"`);
 
   // ── MaxCore audio generation (async job pattern) ─────────────────────────
   // MaxCore returns { job_id, status: "processing" } immediately, then
@@ -130,7 +130,7 @@ export async function generateFromText(
     const deadline = Date.now() + POLL_BUDGET_MS;
     const jobPath = `/api/audio-job/${submitted.job_id}`;
 
-    logger?.info(`[AI Audio] Job submitted: ${submitted.job_id} — polling…`);
+    logger.info(`[AI Audio] Job submitted: ${submitted.job_id} — polling…`);
 
     while (Date.now() < deadline) {
       await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
@@ -145,7 +145,7 @@ export async function generateFromText(
 
       if (done) {
         mcAudio = jr;
-        logger?.info(`[AI Audio] Job ${submitted.job_id} completed`);
+        logger.info(`[AI Audio] Job ${submitted.job_id} completed`);
         break;
       }
     }
@@ -185,7 +185,7 @@ export async function generateFromText(
     }
   }
 
-  logger?.info(`[AI Audio] MaxCore audio generated → ${filename}`);
+  logger.info(`[AI Audio] MaxCore audio generated → ${filename}`);
   return {
     success: true,
     audioFilePath: `/uploads/audio/${filename}`,
@@ -207,7 +207,7 @@ export async function generateFromReference(
 ): Promise<GenerationResult> {
   await ensureInitialized();
 
-  logger?.info(
+  logger.info(
     `[AI Audio] Generating ${request?.targetType} from audio reference`,
   );
 
@@ -269,7 +269,7 @@ export async function generateFromReference(
     await writeFile(filePath, Buffer.from(await resp.arrayBuffer()));
   }
 
-  logger?.info(
+  logger.info(
     `[AI Audio] MaxCore audio (from reference) generated → ${filename}`,
   );
   return {

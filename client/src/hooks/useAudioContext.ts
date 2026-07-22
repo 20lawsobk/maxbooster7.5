@@ -145,11 +145,11 @@ export function useAudioAnalyser(sourceNode?: AudioNode | null) {
       let rightClip = false;
 
       for (let i = 0; i < fftSize; i++) {
-        const leftAbs = Math?.abs(leftBuffer[i]);
-        const rightAbs = Math?.abs(rightBuffer[i]);
+        const leftAbs = Math.abs(leftBuffer[i]);
+        const rightAbs = Math.abs(rightBuffer[i]);
 
-        leftMax = Math?.max(leftMax, leftAbs);
-        rightMax = Math?.max(rightMax, rightAbs);
+        leftMax = Math.max(leftMax, leftAbs);
+        rightMax = Math.max(rightMax, rightAbs);
         leftSum += leftBuffer[i] * leftBuffer[i];
         rightSum += rightBuffer[i] * rightBuffer[i];
 
@@ -157,11 +157,11 @@ export function useAudioAnalyser(sourceNode?: AudioNode | null) {
         if (rightAbs >= 0.99) rightClip = true;
       }
 
-      const leftRMS = Math?.sqrt(leftSum / fftSize);
-      const rightRMS = Math?.sqrt(rightSum / fftSize);
+      const leftRMS = Math.sqrt(leftSum / fftSize);
+      const rightRMS = Math.sqrt(rightSum / fftSize);
 
-      const leftDb = 20 * Math?.log10(Math?.max(leftMax, 1e-10));
-      const rightDb = 20 * Math?.log10(Math?.max(rightMax, 1e-10));
+      const leftDb = 20 * Math.log10(Math.max(leftMax, 1e-10));
+      const rightDb = 20 * Math.log10(Math.max(rightMax, 1e-10));
 
       const now = Date?.now();
       if (
@@ -181,7 +181,7 @@ export function useAudioAnalyser(sourceNode?: AudioNode | null) {
 
       const monoRMS = (leftRMS + rightRMS) / 2;
       const lufsInstant =
-        -0.691 + 10 * Math?.log10(Math?.max(monoRMS * monoRMS, 1e-10));
+        -0.691 + 10 * Math.log10(Math.max(monoRMS * monoRMS, 1e-10));
 
       lufsWindowRef?.current.push(lufsInstant);
       if (lufsWindowRef?.current.length > 30) {
@@ -192,12 +192,12 @@ export function useAudioAnalyser(sourceNode?: AudioNode | null) {
         lufsWindowRef?.current.length;
 
       setData({
-        leftLevel: Math.max(-60, Math?.min(3, leftDb)),
-        rightLevel: Math.max(-60, Math?.min(3, rightDb)),
+        leftLevel: Math.max(-60, Math.min(3, leftDb)),
+        rightLevel: Math.max(-60, Math.min(3, rightDb)),
         leftPeak: peakHoldRef.current.left,
         rightPeak: peakHoldRef.current.right,
         isClipping: leftClip || rightClip,
-        lufs: Math.max(-60, Math?.min(0, lufsAvg)),
+        lufs: Math.max(-60, Math.min(0, lufsAvg)),
       });
 
       animationFrameRef.current = requestAnimationFrame(analyze);
@@ -270,19 +270,19 @@ export function generateWaveformPeaks(
   targetWidth: number,
 ): number[] {
   const channelData = audioBuffer?.getChannelData(0);
-  const samplesPerPixel = Math?.max(
+  const samplesPerPixel = Math.max(
     1,
-    Math?.floor(channelData?.length / targetWidth),
+    Math.floor(channelData?.length / targetWidth),
   );
   const peaks: number[] = [];
 
   for (let i = 0; i < targetWidth; i++) {
     const start = i * samplesPerPixel;
-    const end = Math?.min(start + samplesPerPixel, channelData?.length);
+    const end = Math.min(start + samplesPerPixel, channelData?.length);
     let max = 0;
 
     for (let j = start; j < end; j++) {
-      const abs = Math?.abs(channelData[j]);
+      const abs = Math.abs(channelData[j]);
       if (abs > max) max = abs;
     }
 
@@ -303,16 +303,16 @@ export function generateWaveformPeaksPair(
   targetWidth: number,
 ): { maxPeaks: number[]; minPeaks: number[] } {
   const channelData = audioBuffer?.getChannelData(0);
-  const samplesPerPixel = Math?.max(
+  const samplesPerPixel = Math.max(
     1,
-    Math?.floor(channelData?.length / targetWidth),
+    Math.floor(channelData?.length / targetWidth),
   );
   const maxPeaks: number[] = [];
   const minPeaks: number[] = [];
 
   for (let i = 0; i < targetWidth; i++) {
     const start = i * samplesPerPixel;
-    const end = Math?.min(start + samplesPerPixel, channelData?.length);
+    const end = Math.min(start + samplesPerPixel, channelData?.length);
     let max = 0;
     let min = 0;
 
@@ -368,7 +368,7 @@ export function useAudioContext() {
 
       return context;
     } catch (error: unknown) {
-      logger?.error("Failed to initialize AudioContext:", error);
+      logger.error("Failed to initialize AudioContext:", error);
       setState((prev) => ({ ...prev, isSupported: false }));
     }
   };
@@ -430,7 +430,7 @@ export function useAudioContext() {
           await state?.context.decodeAudioData(impulseResponse);
         convolver.buffer = audioBuffer;
       } catch (error: unknown) {
-        logger?.error("Failed to decode impulse response:", error);
+        logger.error("Failed to decode impulse response:", error);
       }
     }
 
@@ -446,7 +446,7 @@ export function useAudioContext() {
         return { stream, source };
       }
     } catch (error: unknown) {
-      logger?.error("Failed to get user media:", error);
+      logger.error("Failed to get user media:", error);
     }
 
     return null;

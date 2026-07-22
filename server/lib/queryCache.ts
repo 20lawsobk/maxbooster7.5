@@ -55,7 +55,7 @@ class QueryCache {
     const ttl = ttlSeconds ?? DEFAULT_TTL;
     try {
       const redis = await getRedisClient();
-      await redis?.setex(`qcache:${key}`, ttl, JSON?.stringify(data));
+      await redis?.setex(`qcache:${key}`, ttl, JSON.stringify(data));
     } catch (err) {
       warnOnce("set", err);
     }
@@ -71,10 +71,10 @@ class QueryCache {
     computeFn: () => Promise<T>,
     ttlSeconds?: number,
   ): Promise<T> {
-    const cached = await this?.get<T>(key);
+    const cached = await this.get<T>(key);
     if (cached !== null) return cached;
     const result = await computeFn();
-    await this?.set(key, result, ttlSeconds);
+    await this.set(key, result, ttlSeconds);
     return result;
   }
 

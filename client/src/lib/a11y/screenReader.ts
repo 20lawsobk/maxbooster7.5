@@ -23,13 +23,13 @@ class ScreenReaderAnnouncer {
 
   constructor() {
     if (typeof document !== "undefined") {
-      this?.initializeRegions();
+      this.initializeRegions();
     }
   }
 
   private initializeRegions(): void {
-    this.politeRegion = this?.createLiveRegion("polite");
-    this.assertiveRegion = this?.createLiveRegion("assertive");
+    this.politeRegion = this.createLiveRegion("polite");
+    this.assertiveRegion = this.createLiveRegion("assertive");
   }
 
   private createLiveRegion(priority: AnnouncementPriority): HTMLDivElement {
@@ -64,14 +64,14 @@ class ScreenReaderAnnouncer {
     };
 
     if (priority === "assertive") {
-      this?.announceImmediately(announcement);
+      this.announceImmediately(announcement);
     } else {
-      this?.queueAnnouncement(announcement);
+      this.queueAnnouncement(announcement);
     }
   }
 
   private announceImmediately(announcement: Announcement): void {
-    const region = this?.assertiveRegion;
+    const region = this.assertiveRegion;
     if (!region) return;
 
     region.textContent = "";
@@ -81,33 +81,33 @@ class ScreenReaderAnnouncer {
   }
 
   private queueAnnouncement(announcement: Announcement): void {
-    this?.announcementQueue.push(announcement);
+    this.announcementQueue.push(announcement);
 
-    if (this?.debounceTimer) {
-      clearTimeout(this?.debounceTimer);
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
     }
 
     this.debounceTimer = setTimeout(() => {
-      this?.processQueue();
+      this.processQueue();
     }, 100);
   }
 
   private processQueue(): void {
-    if (this?.isProcessing || this?.announcementQueue.length === 0) return;
+    if (this.isProcessing || this.announcementQueue.length === 0) return;
 
     this.isProcessing = true;
-    const announcement = this?.announcementQueue.shift();
+    const announcement = this.announcementQueue.shift();
 
-    if (announcement && this?.politeRegion) {
+    if (announcement && this.politeRegion) {
       this.politeRegion.textContent = "";
       requestAnimationFrame(() => {
-        if (this?.politeRegion) {
+        if (this.politeRegion) {
           this.politeRegion.textContent = announcement?.message;
         }
         setTimeout(() => {
           this.isProcessing = false;
-          if (this?.announcementQueue.length > 0) {
-            this?.processQueue();
+          if (this.announcementQueue.length > 0) {
+            this.processQueue();
           }
         }, 500);
       });
@@ -120,19 +120,19 @@ class ScreenReaderAnnouncer {
     this.announcementQueue = [];
     if (this.politeRegion) this.politeRegion.textContent = "";
     if (this.assertiveRegion) this.assertiveRegion.textContent = "";
-    if (this?.debounceTimer) {
-      clearTimeout(this?.debounceTimer);
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
       this.debounceTimer = null;
     }
   }
 
   destroy(): void {
-    this?.clear();
-    if (this?.politeRegion?.parentNode) {
-      this?.politeRegion.parentNode?.removeChild(this?.politeRegion);
+    this.clear();
+    if (this.politeRegion?.parentNode) {
+      this.politeRegion.parentNode?.removeChild(this.politeRegion);
     }
-    if (this?.assertiveRegion?.parentNode) {
-      this?.assertiveRegion.parentNode?.removeChild(this?.assertiveRegion);
+    if (this.assertiveRegion?.parentNode) {
+      this.assertiveRegion.parentNode?.removeChild(this.assertiveRegion);
     }
     this.politeRegion = null;
     this.assertiveRegion = null;
@@ -172,7 +172,7 @@ export function announceFormValidation(
 }
 
 export function announceFormErrors(errors: Record<string, string>): void {
-  const errorMessages = Object?.entries(errors)
+  const errorMessages = Object.entries(errors)
     .map(([field, message]) => `${field}: ${message}`)
     .join(". ");
 

@@ -57,15 +57,15 @@ export function mixBuffers(
 }
 
 export function dbToLinear(db: number): number {
-  return Math?.pow(10, db / 20);
+  return Math.pow(10, db / 20);
 }
 
 export function linearToDb(linear: number): number {
-  return 20 * Math?.log10(Math?.max(linear, 1e-10));
+  return 20 * Math.log10(Math.max(linear, 1e-10));
 }
 
 export function msToSamples(ms: number, sampleRate: number): number {
-  return Math?.floor((ms / 1000) * sampleRate);
+  return Math.floor((ms / 1000) * sampleRate);
 }
 
 export function samplesToMs(samples: number, sampleRate: number): number {
@@ -77,16 +77,16 @@ export function hzToRadians(hz: number, sampleRate: number): number {
 }
 
 export function clamp(value: number, min: number, max: number): number {
-  return Math?.max(min, Math?.min(max, value));
+  return Math.max(min, Math.min(max, value));
 }
 
 export function softClip(x: number, threshold: number = 0.8): number {
-  if (Math?.abs(x) < threshold) return x;
+  if (Math.abs(x) < threshold) return x;
   const sign = x > 0 ? 1 : -1;
   return (
     sign *
     (threshold +
-      (1 - threshold) * Math?.tanh((Math?.abs(x) - threshold) / (1 - threshold)))
+      (1 - threshold) * Math.tanh((Math.abs(x) - threshold) / (1 - threshold)))
   );
 }
 
@@ -106,30 +106,30 @@ export class DelayLine {
 
   write(sample: number): void {
     this.buffer[this.writeIndex] = sample;
-    this.writeIndex = (this?.writeIndex + 1) % this?.maxDelay;
+    this.writeIndex = (this.writeIndex + 1) % this.maxDelay;
   }
 
   read(delaySamples: number): number {
     const readIndex =
-      (this?.writeIndex - Math?.floor(delaySamples) + this?.maxDelay) %
-      this?.maxDelay;
-    return this?.buffer[readIndex];
+      (this.writeIndex - Math.floor(delaySamples) + this.maxDelay) %
+      this.maxDelay;
+    return this.buffer[readIndex];
   }
 
   readInterpolated(delaySamples: number): number {
-    const intDelay = Math?.floor(delaySamples);
+    const intDelay = Math.floor(delaySamples);
     const frac = delaySamples - intDelay;
-    const idx1 = (this?.writeIndex - intDelay + this?.maxDelay) % this?.maxDelay;
-    const idx2 = (idx1 - 1 + this?.maxDelay) % this?.maxDelay;
-    return this?.buffer[idx1] * (1 - frac) + this?.buffer[idx2] * frac;
+    const idx1 = (this.writeIndex - intDelay + this.maxDelay) % this.maxDelay;
+    const idx2 = (idx1 - 1 + this.maxDelay) % this.maxDelay;
+    return this.buffer[idx1] * (1 - frac) + this.buffer[idx2] * frac;
   }
 
   tap(delaySamples: number): number {
-    return this?.read(delaySamples);
+    return this.read(delaySamples);
   }
 
   clear(): void {
-    this?.buffer.fill(0);
+    this.buffer.fill(0);
     this.writeIndex = 0;
   }
 }
@@ -146,14 +146,14 @@ export class AllPassFilter {
   }
 
   process(input: number): number {
-    const delayed = this?.delay.read(this?.delaySamples);
+    const delayed = this.delay.read(this.delaySamples);
     const output = -input + delayed;
-    this?.delay.write(input + delayed * this?.feedback);
+    this.delay.write(input + delayed * this.feedback);
     return output;
   }
 
   clear(): void {
-    this?.delay.clear();
+    this.delay.clear();
   }
 }
 
@@ -176,10 +176,10 @@ export class CombFilter {
   }
 
   process(input: number): number {
-    const output = this?.delay.read(this?.delaySamples);
+    const output = this.delay.read(this.delaySamples);
     this.filterStore =
-      output * (1 - this?.damping) + this?.filterStore * this?.damping;
-    this?.delay.write(input + this?.filterStore * this?.feedback);
+      output * (1 - this.damping) + this.filterStore * this.damping;
+    this.delay.write(input + this.filterStore * this.feedback);
     return output;
   }
 
@@ -192,7 +192,7 @@ export class CombFilter {
   }
 
   clear(): void {
-    this?.delay.clear();
+    this.delay.clear();
     this.filterStore = 0;
   }
 }
@@ -210,8 +210,8 @@ export class BiquadFilter {
 
   setLowpass(frequency: number, q: number, sampleRate: number): void {
     const omega = hzToRadians(frequency, sampleRate);
-    const sinOmega = Math?.sin(omega);
-    const cosOmega = Math?.cos(omega);
+    const sinOmega = Math.sin(omega);
+    const cosOmega = Math.cos(omega);
     const alpha = sinOmega / (2 * q);
 
     const a0 = 1 + alpha;
@@ -224,8 +224,8 @@ export class BiquadFilter {
 
   setHighpass(frequency: number, q: number, sampleRate: number): void {
     const omega = hzToRadians(frequency, sampleRate);
-    const sinOmega = Math?.sin(omega);
-    const cosOmega = Math?.cos(omega);
+    const sinOmega = Math.sin(omega);
+    const cosOmega = Math.cos(omega);
     const alpha = sinOmega / (2 * q);
 
     const a0 = 1 + alpha;
@@ -238,8 +238,8 @@ export class BiquadFilter {
 
   setBandpass(frequency: number, q: number, sampleRate: number): void {
     const omega = hzToRadians(frequency, sampleRate);
-    const sinOmega = Math?.sin(omega);
-    const cosOmega = Math?.cos(omega);
+    const sinOmega = Math.sin(omega);
+    const cosOmega = Math.cos(omega);
     const alpha = sinOmega / (2 * q);
 
     const a0 = 1 + alpha;
@@ -252,8 +252,8 @@ export class BiquadFilter {
 
   setNotch(frequency: number, q: number, sampleRate: number): void {
     const omega = hzToRadians(frequency, sampleRate);
-    const sinOmega = Math?.sin(omega);
-    const cosOmega = Math?.cos(omega);
+    const sinOmega = Math.sin(omega);
+    const cosOmega = Math.cos(omega);
     const alpha = sinOmega / (2 * q);
 
     const a0 = 1 + alpha;
@@ -270,10 +270,10 @@ export class BiquadFilter {
     gainDb: number,
     sampleRate: number,
   ): void {
-    const A = Math?.pow(10, gainDb / 40);
+    const A = Math.pow(10, gainDb / 40);
     const omega = hzToRadians(frequency, sampleRate);
-    const sinOmega = Math?.sin(omega);
-    const cosOmega = Math?.cos(omega);
+    const sinOmega = Math.sin(omega);
+    const cosOmega = Math.cos(omega);
     const alpha = sinOmega / (2 * q);
 
     const a0 = 1 + alpha / A;
@@ -285,43 +285,43 @@ export class BiquadFilter {
   }
 
   setLowShelf(frequency: number, gainDb: number, sampleRate: number): void {
-    const A = Math?.pow(10, gainDb / 40);
+    const A = Math.pow(10, gainDb / 40);
     const omega = hzToRadians(frequency, sampleRate);
-    const sinOmega = Math?.sin(omega);
-    const cosOmega = Math?.cos(omega);
-    const alpha = (sinOmega / 2) * Math?.sqrt((A + 1 / A) * (1 / 0.9 - 1) + 2);
+    const sinOmega = Math.sin(omega);
+    const cosOmega = Math.cos(omega);
+    const alpha = (sinOmega / 2) * Math.sqrt((A + 1 / A) * (1 / 0.9 - 1) + 2);
 
-    const a0 = A + 1 + (A - 1) * cosOmega + 2 * Math?.sqrt(A) * alpha;
+    const a0 = A + 1 + (A - 1) * cosOmega + 2 * Math.sqrt(A) * alpha;
     this.b0 =
-      (A * (A + 1 - (A - 1) * cosOmega + 2 * Math?.sqrt(A) * alpha)) / a0;
+      (A * (A + 1 - (A - 1) * cosOmega + 2 * Math.sqrt(A) * alpha)) / a0;
     this.b1 = (2 * A * (A - 1 - (A + 1) * cosOmega)) / a0;
     this.b2 =
-      (A * (A + 1 - (A - 1) * cosOmega - 2 * Math?.sqrt(A) * alpha)) / a0;
+      (A * (A + 1 - (A - 1) * cosOmega - 2 * Math.sqrt(A) * alpha)) / a0;
     this.a1 = (-2 * (A - 1 + (A + 1) * cosOmega)) / a0;
-    this.a2 = (A + 1 + (A - 1) * cosOmega - 2 * Math?.sqrt(A) * alpha) / a0;
+    this.a2 = (A + 1 + (A - 1) * cosOmega - 2 * Math.sqrt(A) * alpha) / a0;
   }
 
   setHighShelf(frequency: number, gainDb: number, sampleRate: number): void {
-    const A = Math?.pow(10, gainDb / 40);
+    const A = Math.pow(10, gainDb / 40);
     const omega = hzToRadians(frequency, sampleRate);
-    const sinOmega = Math?.sin(omega);
-    const cosOmega = Math?.cos(omega);
-    const alpha = (sinOmega / 2) * Math?.sqrt((A + 1 / A) * (1 / 0.9 - 1) + 2);
+    const sinOmega = Math.sin(omega);
+    const cosOmega = Math.cos(omega);
+    const alpha = (sinOmega / 2) * Math.sqrt((A + 1 / A) * (1 / 0.9 - 1) + 2);
 
-    const a0 = A + 1 - (A - 1) * cosOmega + 2 * Math?.sqrt(A) * alpha;
+    const a0 = A + 1 - (A - 1) * cosOmega + 2 * Math.sqrt(A) * alpha;
     this.b0 =
-      (A * (A + 1 + (A - 1) * cosOmega + 2 * Math?.sqrt(A) * alpha)) / a0;
+      (A * (A + 1 + (A - 1) * cosOmega + 2 * Math.sqrt(A) * alpha)) / a0;
     this.b1 = (-2 * A * (A - 1 + (A + 1) * cosOmega)) / a0;
     this.b2 =
-      (A * (A + 1 + (A - 1) * cosOmega - 2 * Math?.sqrt(A) * alpha)) / a0;
+      (A * (A + 1 + (A - 1) * cosOmega - 2 * Math.sqrt(A) * alpha)) / a0;
     this.a1 = (2 * (A - 1 - (A + 1) * cosOmega)) / a0;
-    this.a2 = (A + 1 - (A - 1) * cosOmega - 2 * Math?.sqrt(A) * alpha) / a0;
+    this.a2 = (A + 1 - (A - 1) * cosOmega - 2 * Math.sqrt(A) * alpha) / a0;
   }
 
   setAllpass(frequency: number, q: number, sampleRate: number): void {
     const omega = hzToRadians(frequency, sampleRate);
-    const sinOmega = Math?.sin(omega);
-    const cosOmega = Math?.cos(omega);
+    const sinOmega = Math.sin(omega);
+    const cosOmega = Math.cos(omega);
     const alpha = sinOmega / (2 * q);
 
     const a0 = 1 + alpha;
@@ -334,14 +334,14 @@ export class BiquadFilter {
 
   process(input: number): number {
     const output =
-      this?.b0 * input +
-      this?.b1 * this?.x1 +
-      this?.b2 * this?.x2 -
-      this?.a1 * this?.y1 -
-      this?.a2 * this?.y2;
-    this.x2 = this?.x1;
+      this.b0 * input +
+      this.b1 * this.x1 +
+      this.b2 * this.x2 -
+      this.a1 * this.y1 -
+      this.a2 * this.y2;
+    this.x2 = this.x1;
     this.x1 = input;
-    this.y2 = this?.y1;
+    this.y2 = this.y1;
     this.y1 = output;
     return output;
   }
@@ -357,19 +357,19 @@ export class OnePoleFilter {
   private y1: number = 0;
 
   setLowpass(frequency: number, sampleRate: number): void {
-    const x = Math?.exp((-2 * Math.PI * frequency) / sampleRate);
+    const x = Math.exp((-2 * Math.PI * frequency) / sampleRate);
     this.a0 = 1 - x;
     this.b1 = x;
   }
 
   setHighpass(frequency: number, sampleRate: number): void {
-    const x = Math?.exp((-2 * Math.PI * frequency) / sampleRate);
+    const x = Math.exp((-2 * Math.PI * frequency) / sampleRate);
     this.a0 = (1 + x) / 2;
     this.b1 = -x;
   }
 
   process(input: number): number {
-    const output = this?.a0 * input + this?.b1 * this?.y1;
+    const output = this.a0 * input + this.b1 * this.y1;
     this.y1 = output;
     return output;
   }
@@ -385,28 +385,28 @@ export class EnvelopeFollower {
   private envelope: number = 0;
 
   constructor(attackMs: number, releaseMs: number, sampleRate: number) {
-    this.attackCoeff = Math?.exp(-1 / msToSamples(attackMs, sampleRate));
-    this.releaseCoeff = Math?.exp(-1 / msToSamples(releaseMs, sampleRate));
+    this.attackCoeff = Math.exp(-1 / msToSamples(attackMs, sampleRate));
+    this.releaseCoeff = Math.exp(-1 / msToSamples(releaseMs, sampleRate));
   }
 
   setAttack(attackMs: number, sampleRate: number): void {
-    this.attackCoeff = Math?.exp(-1 / msToSamples(attackMs, sampleRate));
+    this.attackCoeff = Math.exp(-1 / msToSamples(attackMs, sampleRate));
   }
 
   setRelease(releaseMs: number, sampleRate: number): void {
-    this.releaseCoeff = Math?.exp(-1 / msToSamples(releaseMs, sampleRate));
+    this.releaseCoeff = Math.exp(-1 / msToSamples(releaseMs, sampleRate));
   }
 
   process(input: number): number {
-    const inputLevel = Math?.abs(input);
+    const inputLevel = Math.abs(input);
     const coeff =
-      inputLevel > this?.envelope ? this?.attackCoeff : this?.releaseCoeff;
-    this.envelope = this?.envelope * coeff + inputLevel * (1 - coeff);
-    return this?.envelope;
+      inputLevel > this.envelope ? this.attackCoeff : this.releaseCoeff;
+    this.envelope = this.envelope * coeff + inputLevel * (1 - coeff);
+    return this.envelope;
   }
 
   getEnvelope(): number {
-    return this?.envelope;
+    return this.envelope;
   }
 
   clear(): void {
@@ -423,34 +423,34 @@ export class LFO {
   }
 
   sine(): number {
-    const value = Math?.sin(this?.phase);
-    this?.advance();
+    const value = Math.sin(this.phase);
+    this.advance();
     return value;
   }
 
   triangle(): number {
-    const normalized = this?.phase / (2 * Math.PI);
-    const value = 4 * Math?.abs(normalized - 0.5) - 1;
-    this?.advance();
+    const normalized = this.phase / (2 * Math.PI);
+    const value = 4 * Math.abs(normalized - 0.5) - 1;
+    this.advance();
     return value;
   }
 
   saw(): number {
-    const normalized = this?.phase / (2 * Math.PI);
+    const normalized = this.phase / (2 * Math.PI);
     const value = 2 * normalized - 1;
-    this?.advance();
+    this.advance();
     return value;
   }
 
   square(): number {
-    const value = this?.phase < Math.PI ? 1 : -1;
-    this?.advance();
+    const value = this.phase < Math.PI ? 1 : -1;
+    this.advance();
     return value;
   }
 
   private advance(): void {
-    this.phase += this?.phaseIncrement;
-    if (this?.phase >= 2 * Math.PI) {
+    this.phase += this.phaseIncrement;
+    if (this.phase >= 2 * Math.PI) {
       this.phase -= 2 * Math.PI;
     }
   }
@@ -478,39 +478,39 @@ export class PitchShifter {
   }
 
   setPitch(semitones: number): void {
-    this.pitch = Math?.pow(2, semitones / 12);
+    this.pitch = Math.pow(2, semitones / 12);
   }
 
   process(input: number): number {
     this.buffer[this.writeIndex] = input;
 
-    const sample1 = this?.buffer[Math?.floor(this?.readIndex1) % this?.bufferSize];
-    const sample2 = this?.buffer[Math?.floor(this?.readIndex2) % this?.bufferSize];
+    const sample1 = this.buffer[Math.floor(this.readIndex1) % this.bufferSize];
+    const sample2 = this.buffer[Math.floor(this.readIndex2) % this.bufferSize];
 
-    const fadeIn = this?.crossfade / this?.grainSize;
+    const fadeIn = this.crossfade / this.grainSize;
     const fadeOut = 1 - fadeIn;
     const output = sample1 * fadeOut + sample2 * fadeIn;
 
-    this.writeIndex = (this?.writeIndex + 1) % this?.bufferSize;
-    this.readIndex1 += this?.pitch;
-    this.readIndex2 += this?.pitch;
+    this.writeIndex = (this.writeIndex + 1) % this.bufferSize;
+    this.readIndex1 += this.pitch;
+    this.readIndex2 += this.pitch;
     this.crossfade++;
 
-    if (this?.crossfade >= this?.grainSize) {
+    if (this.crossfade >= this.grainSize) {
       this.crossfade = 0;
-      this.readIndex1 = this?.readIndex2;
-      this.readIndex2 = this?.writeIndex - this?.grainSize / 2;
-      if (this.readIndex2 < 0) this.readIndex2 += this?.bufferSize;
+      this.readIndex1 = this.readIndex2;
+      this.readIndex2 = this.writeIndex - this.grainSize / 2;
+      if (this.readIndex2 < 0) this.readIndex2 += this.bufferSize;
     }
 
     return output;
   }
 
   clear(): void {
-    this?.buffer.fill(0);
+    this.buffer.fill(0);
     this.writeIndex = 0;
     this.readIndex1 = 0;
-    this.readIndex2 = this?.grainSize / 2;
+    this.readIndex2 = this.grainSize / 2;
     this.crossfade = 0;
   }
 }
@@ -524,62 +524,62 @@ export class Oscillator {
   }
 
   sine(): number {
-    const value = Math?.sin(2 * Math.PI * this?.phase);
-    this?.advance();
+    const value = Math.sin(2 * Math.PI * this.phase);
+    this.advance();
     return value;
   }
 
   saw(): number {
-    const value = 2 * this?.phase - 1;
-    this?.advance();
+    const value = 2 * this.phase - 1;
+    this.advance();
     return value;
   }
 
   sawBandLimited(numHarmonics: number = 20): number {
     let value = 0;
     for (let k = 1; k <= numHarmonics; k++) {
-      value += Math?.sin(2 * Math.PI * k * this?.phase) / k;
+      value += Math.sin(2 * Math.PI * k * this.phase) / k;
     }
     value *= 2 / Math.PI;
-    this?.advance();
+    this.advance();
     return value;
   }
 
   square(): number {
-    const value = this?.phase < 0.5 ? 1 : -1;
-    this?.advance();
+    const value = this.phase < 0.5 ? 1 : -1;
+    this.advance();
     return value;
   }
 
   squareBandLimited(numHarmonics: number = 20): number {
     let value = 0;
     for (let k = 1; k <= numHarmonics; k += 2) {
-      value += Math?.sin(2 * Math.PI * k * this?.phase) / k;
+      value += Math.sin(2 * Math.PI * k * this.phase) / k;
     }
     value *= 4 / Math.PI;
-    this?.advance();
+    this.advance();
     return value;
   }
 
   triangle(): number {
-    const value = 4 * Math?.abs(this?.phase - 0.5) - 1;
-    this?.advance();
+    const value = 4 * Math.abs(this.phase - 0.5) - 1;
+    this.advance();
     return value;
   }
 
   noise(): number {
-    return Math?.random() * 2 - 1;
+    return Math.random() * 2 - 1;
   }
 
   pulse(width: number = 0.5): number {
-    const value = this?.phase < width ? 1 : -1;
-    this?.advance();
+    const value = this.phase < width ? 1 : -1;
+    this.advance();
     return value;
   }
 
   private advance(): void {
-    this.phase += this?.phaseIncrement;
-    if (this?.phase >= 1) {
+    this.phase += this.phaseIncrement;
+    if (this.phase >= 1) {
       this.phase -= 1;
     }
   }
@@ -625,22 +625,22 @@ export class ADSR {
   }
 
   release(): void {
-    if (this?.state !== "idle") {
+    if (this.state !== "idle") {
       this.state = "release";
-      this.releaseLevel = this?.currentLevel;
+      this.releaseLevel = this.currentLevel;
       this.sampleCount = 0;
     }
   }
 
   process(): number {
-    const attackSamples = this?.attackTime * this?.sampleRate;
-    const decaySamples = this?.decayTime * this?.sampleRate;
-    const releaseSamples = this?.releaseTime * this?.sampleRate;
+    const attackSamples = this.attackTime * this.sampleRate;
+    const decaySamples = this.decayTime * this.sampleRate;
+    const releaseSamples = this.releaseTime * this.sampleRate;
 
-    switch (this?.state) {
+    switch (this.state) {
       case "attack":
-        if (this?.sampleCount < attackSamples) {
-          this.currentLevel = this?.sampleCount / attackSamples;
+        if (this.sampleCount < attackSamples) {
+          this.currentLevel = this.sampleCount / attackSamples;
           this.sampleCount++;
         } else {
           this.state = "decay";
@@ -649,9 +649,9 @@ export class ADSR {
         break;
 
       case "decay":
-        if (this?.sampleCount < decaySamples) {
+        if (this.sampleCount < decaySamples) {
           this.currentLevel =
-            1 - (1 - this?.sustainLevel) * (this?.sampleCount / decaySamples);
+            1 - (1 - this.sustainLevel) * (this.sampleCount / decaySamples);
           this.sampleCount++;
         } else {
           this.state = "sustain";
@@ -659,13 +659,13 @@ export class ADSR {
         break;
 
       case "sustain":
-        this.currentLevel = this?.sustainLevel;
+        this.currentLevel = this.sustainLevel;
         break;
 
       case "release":
-        if (this?.sampleCount < releaseSamples) {
+        if (this.sampleCount < releaseSamples) {
           this.currentLevel =
-            this?.releaseLevel * (1 - this?.sampleCount / releaseSamples);
+            this.releaseLevel * (1 - this.sampleCount / releaseSamples);
           this.sampleCount++;
         } else {
           this.state = "idle";
@@ -679,14 +679,14 @@ export class ADSR {
         break;
     }
 
-    return this?.currentLevel;
+    return this.currentLevel;
   }
 
   isActive(): boolean {
-    return this?.state !== "idle";
+    return this.state !== "idle";
   }
 
   getState(): string {
-    return this?.state;
+    return this.state;
   }
 }

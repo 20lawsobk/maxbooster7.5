@@ -590,7 +590,7 @@ export class LabelCopyLinter {
       .filter(Boolean)
       .join(" ");
 
-    const hasExplicitContent = this?.containsExplicitContent(textToCheck);
+    const hasExplicitContent = this.containsExplicitContent(textToCheck);
 
     if (hasExplicitContent && !release?.isExplicit) {
       warnings?.push({
@@ -637,7 +637,7 @@ export class LabelCopyLinter {
 
     tracks?.forEach((track, index) => {
       const { errors: titleErrors, warnings: titleWarnings } =
-        this?.validateTitle(track?.title, true);
+        this.validateTitle(track?.title, true);
       errors?.push(
         ...titleErrors?.map((e) => ({
           ...e,
@@ -756,7 +756,7 @@ export class LabelCopyLinter {
       regularErrors * 10 +
       warningsCount * 3 +
       infoCount * 1;
-    const score = Math?.max(0, 100 - basePenalty);
+    const score = Math.max(0, 100 - basePenalty);
 
     const breakdown = {
       metadata: Math.max(0, 100 - (criticalErrors * 20 + regularErrors * 10)),
@@ -773,7 +773,7 @@ export class LabelCopyLinter {
   ): LintResult["dspCompatibility"] {
     const compatibility: LintResult["dspCompatibility"] = {};
 
-    for (const [dsp, limits] of Object?.entries(DSP_CHAR_LIMITS)) {
+    for (const [dsp, limits] of Object.entries(DSP_CHAR_LIMITS)) {
       const issues: string[] = [];
 
       if (release?.title && release?.title.length > limits?.title) {
@@ -806,16 +806,16 @@ export class LabelCopyLinter {
     const allWarnings: LintWarning[] = [];
 
     const validations = [
-      this?.validateTitle(release?.title),
-      this?.validateArtist(release?.artist),
-      this?.validateGenre(release?.genre),
-      this?.validateReleaseDate(release?.releaseDate),
-      this?.validateCopyright(release),
-      this?.validateLabel(release?.label),
-      this?.validateLanguage(release?.language),
-      this?.validateExplicitContent(release),
-      this?.validateTracks(release?.tracks),
-      this?.validateCoverArt(release?.coverArt),
+      this.validateTitle(release?.title),
+      this.validateArtist(release?.artist),
+      this.validateGenre(release?.genre),
+      this.validateReleaseDate(release?.releaseDate),
+      this.validateCopyright(release),
+      this.validateLabel(release?.label),
+      this.validateLanguage(release?.language),
+      this.validateExplicitContent(release),
+      this.validateTracks(release?.tracks),
+      this.validateCoverArt(release?.coverArt),
     ];
 
     validations?.forEach(({ errors, warnings }) => {
@@ -823,8 +823,8 @@ export class LabelCopyLinter {
       allWarnings?.push(...warnings);
     });
 
-    const { score, breakdown } = this?.calculateScore(allErrors, allWarnings);
-    const dspCompatibility = this?.checkDSPCompatibility(release);
+    const { score, breakdown } = this.calculateScore(allErrors, allWarnings);
+    const dspCompatibility = this.checkDSPCompatibility(release);
 
     const result: LintResult = {
       valid: allErrors.filter((e) => e?.severity === "critical").length === 0,
@@ -835,7 +835,7 @@ export class LabelCopyLinter {
       dspCompatibility,
     };
 
-    logger?.info(
+    logger.info(
       `Label copy lint completed: score=${score}, errors=${allErrors.length}, warnings=${allWarnings?.length}`,
     );
 
@@ -843,7 +843,7 @@ export class LabelCopyLinter {
   }
 
   validateForDSP(release: ReleaseMetadata, dsp: string): LintResult {
-    const baseResult = this?.lint(release);
+    const baseResult = this.lint(release);
 
     const dspLimits = DSP_CHAR_LIMITS[dsp?.toLowerCase()];
     if (!dspLimits) {

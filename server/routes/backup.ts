@@ -11,10 +11,10 @@ const router = Router();
 router?.post("/create", requireAdmin, async (_req, res) => {
   try {
     const backupFile = await databaseBackupService?.createBackup();
-    res?.json({ success: true, backupFile });
+    res.json({ success: true, backupFile });
   } catch (error) {
-    logger?.warn({ err: error }, "[Backup] Failed to create backup:");
-    res?.status(500).json({ error: "Failed to create backup" });
+    logger.warn({ err: error }, "[Backup] Failed to create backup:");
+    res.status(500).json({ error: "Failed to create backup" });
   }
 });
 
@@ -22,10 +22,10 @@ router?.post("/create", requireAdmin, async (_req, res) => {
 router?.get("/list", requireAdmin, async (_req, res) => {
   try {
     const backups = await databaseBackupService?.listBackups();
-    res?.json({ backups });
+    res.json({ backups });
   } catch (error) {
-    logger?.warn({ err: error }, "[Backup] Failed to list backups:");
-    res?.status(500).json({ error: "Failed to list backups" });
+    logger.warn({ err: error }, "[Backup] Failed to list backups:");
+    res.status(500).json({ error: "Failed to list backups" });
   }
 });
 
@@ -33,10 +33,10 @@ router?.get("/list", requireAdmin, async (_req, res) => {
 router?.get("/metrics", requireAdmin, async (_req, res) => {
   try {
     const metrics = databaseBackupService?.getBackupMetrics();
-    res?.json(metrics);
+    res.json(metrics);
   } catch (error) {
-    logger?.warn({ err: error }, "[Backup] Failed to get backup metrics:");
-    res?.status(500).json({ error: "Failed to get backup metrics" });
+    logger.warn({ err: error }, "[Backup] Failed to get backup metrics:");
+    res.status(500).json({ error: "Failed to get backup metrics" });
   }
 });
 

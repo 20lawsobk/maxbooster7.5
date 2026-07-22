@@ -149,7 +149,7 @@ export function useAudioEngine(): AudioEngineHook {
   }, []);
 
   const setPositionTime = useCallback((seconds: number) => {
-    const sample = Math?.round(seconds * audioWorkletEngine?.getSampleRate());
+    const sample = Math.round(seconds * audioWorkletEngine?.getSampleRate());
     audioWorkletEngine?.setPosition(sample);
   }, []);
 

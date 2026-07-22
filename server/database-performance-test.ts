@@ -16,32 +16,32 @@ class DatabasePerformanceTest {
   private metrics: PerformanceMetric[] = [];
 
   async runComprehensiveTest(): Promise<void> {
-    logger?.info("🔬 Starting Database Performance Test Suite");
-    logger?.info("===========================================\n");
+    logger.info("🔬 Starting Database Performance Test Suite");
+    logger.info("===========================================\n");
 
     // Test 1: User Project Queries (Most Common)
-    await this?.testUserProjectQueries();
+    await this.testUserProjectQueries();
 
     // Test 2: Analytics Dashboard Queries
-    await this?.testAnalyticsDashboard();
+    await this.testAnalyticsDashboard();
 
     // Test 3: Distribution System Queries
-    await this?.testDistributionQueries();
+    await this.testDistributionQueries();
 
     // Test 4: Search Operations
-    await this?.testSearchOperations();
+    await this.testSearchOperations();
 
     // Test 5: Financial Reporting
-    await this?.testFinancialReporting();
+    await this.testFinancialReporting();
 
     // Test 6: Concurrent User Simulation
-    await this?.testConcurrentQueries();
+    await this.testConcurrentQueries();
 
-    this?.printPerformanceReport();
+    this.printPerformanceReport();
   }
 
   private async testUserProjectQueries(): Promise<void> {
-    logger?.info("📊 Testing User Project Queries...");
+    logger.info("📊 Testing User Project Queries...");
 
     // Test getUserProjects with index optimization
     const startTime = Date?.now();
@@ -57,7 +57,7 @@ class DatabasePerformanceTest {
 
       const executionTime = Date?.now() - startTime;
 
-      this?.metrics.push({
+      this.metrics.push({
         testName: "getUserProjects",
         executionTime,
         queryType: "SELECT",
@@ -65,16 +65,16 @@ class DatabasePerformanceTest {
         indexUsed: true, // Should use idx_projects_user_updated
       });
 
-      logger?.info(
+      logger.info(
         `✅ getUserProjects: ${executionTime}ms (${result?.length} records)`,
       );
     } catch (error: unknown) {
-      logger?.info(`❌ getUserProjects failed: ${error}`);
+      logger.info(`❌ getUserProjects failed: ${error}`);
     }
   }
 
   private async testAnalyticsDashboard(): Promise<void> {
-    logger?.info("📈 Testing Analytics Dashboard Queries...");
+    logger.info("📈 Testing Analytics Dashboard Queries...");
 
     const startDate = new Date("2025-01-01");
     const endDate = new Date("2025-01-31");
@@ -103,7 +103,7 @@ class DatabasePerformanceTest {
 
       const executionTime = Date?.now() - startTime;
 
-      this?.metrics.push({
+      this.metrics.push({
         testName: "Analytics Dashboard",
         executionTime,
         queryType: "SELECT",
@@ -111,16 +111,16 @@ class DatabasePerformanceTest {
         indexUsed: true, // Should use idx_analytics_user_date
       });
 
-      logger?.info(
+      logger.info(
         `✅ Analytics Dashboard: ${executionTime}ms (${result?.length} records)`,
       );
     } catch (error: unknown) {
-      logger?.info(`❌ Analytics Dashboard failed: ${error}`);
+      logger.info(`❌ Analytics Dashboard failed: ${error}`);
     }
   }
 
   private async testDistributionQueries(): Promise<void> {
-    logger?.info("🎵 Testing Distribution System Queries...");
+    logger.info("🎵 Testing Distribution System Queries...");
 
     // Test getUserReleases - should use idx_releases_user_updated
     const startTime = Date?.now();
@@ -135,7 +135,7 @@ class DatabasePerformanceTest {
 
       const executionTime = Date?.now() - startTime;
 
-      this?.metrics.push({
+      this.metrics.push({
         testName: "getUserReleases",
         executionTime,
         queryType: "SELECT",
@@ -143,11 +143,11 @@ class DatabasePerformanceTest {
         indexUsed: true, // Should use idx_releases_user_updated
       });
 
-      logger?.info(
+      logger.info(
         `✅ getUserReleases: ${executionTime}ms (${result?.length} records)`,
       );
     } catch (error: unknown) {
-      logger?.info(`❌ getUserReleases failed: ${error}`);
+      logger.info(`❌ getUserReleases failed: ${error}`);
     }
 
     // Test distribution analytics with earnings join
@@ -167,7 +167,7 @@ class DatabasePerformanceTest {
 
       const executionTime2 = Date?.now() - startTime2;
 
-      this?.metrics.push({
+      this.metrics.push({
         testName: "Distribution Analytics",
         executionTime: executionTime2,
         queryType: "JOIN",
@@ -175,16 +175,16 @@ class DatabasePerformanceTest {
         indexUsed: true, // Should use idx_earnings_user_platform_date
       });
 
-      logger?.info(
+      logger.info(
         `✅ Distribution Analytics: ${executionTime2}ms (${result?.length} platforms)`,
       );
     } catch (error: unknown) {
-      logger?.info(`❌ Distribution Analytics failed: ${error}`);
+      logger.info(`❌ Distribution Analytics failed: ${error}`);
     }
   }
 
   private async testSearchOperations(): Promise<void> {
-    logger?.info("🔍 Testing Search Operations...");
+    logger.info("🔍 Testing Search Operations...");
 
     // Test full-text search - should use idx_projects_title_search
     const startTime = Date?.now();
@@ -201,7 +201,7 @@ class DatabasePerformanceTest {
 
       const executionTime = Date?.now() - startTime;
 
-      this?.metrics.push({
+      this.metrics.push({
         testName: "Full-text Search",
         executionTime,
         queryType: "SELECT",
@@ -209,16 +209,16 @@ class DatabasePerformanceTest {
         indexUsed: true, // Should use idx_projects_title_search
       });
 
-      logger?.info(
+      logger.info(
         `✅ Full-text Search: ${executionTime}ms (${result?.rows?.length || 0} results)`,
       );
     } catch (error: unknown) {
-      logger?.info(`❌ Full-text Search failed: ${error}`);
+      logger.info(`❌ Full-text Search failed: ${error}`);
     }
   }
 
   private async testFinancialReporting(): Promise<void> {
-    logger?.info("💰 Testing Financial Reporting Queries...");
+    logger.info("💰 Testing Financial Reporting Queries...");
 
     // Test earnings report - should use idx_earnings_user_report_date
     const startTime = Date?.now();
@@ -238,7 +238,7 @@ class DatabasePerformanceTest {
 
       const executionTime = Date?.now() - startTime;
 
-      this?.metrics.push({
+      this.metrics.push({
         testName: "Financial Report",
         executionTime,
         queryType: "SELECT",
@@ -246,16 +246,16 @@ class DatabasePerformanceTest {
         indexUsed: true, // Should use idx_earnings_user_report_date
       });
 
-      logger?.info(
+      logger.info(
         `✅ Financial Report: ${executionTime}ms (${result?.length} records)`,
       );
     } catch (error: unknown) {
-      logger?.info(`❌ Financial Report failed: ${error}`);
+      logger.info(`❌ Financial Report failed: ${error}`);
     }
   }
 
   private async testConcurrentQueries(): Promise<void> {
-    logger?.info("⚡ Testing Concurrent Query Performance...");
+    logger.info("⚡ Testing Concurrent Query Performance...");
 
     const concurrentPromises = [];
     const startTime = Date?.now();
@@ -281,7 +281,7 @@ class DatabasePerformanceTest {
         0,
       );
 
-      this?.metrics.push({
+      this.metrics.push({
         testName: "Concurrent Queries (10 users)",
         executionTime,
         queryType: "SELECT",
@@ -289,31 +289,31 @@ class DatabasePerformanceTest {
         indexUsed: true,
       });
 
-      logger?.info(
+      logger.info(
         `✅ Concurrent Queries: ${executionTime}ms (${totalRecords} total records)`,
       );
     } catch (error: unknown) {
-      logger?.info(`❌ Concurrent Queries failed: ${error}`);
+      logger.info(`❌ Concurrent Queries failed: ${error}`);
     }
   }
 
   private printPerformanceReport(): void {
-    logger?.info("\n📊 Database Performance Test Results");
-    logger?.info("====================================\n");
+    logger.info("\n📊 Database Performance Test Results");
+    logger.info("====================================\n");
 
-    const fastQueries = this?.metrics.filter((m) => m?.executionTime < 50);
-    const mediumQueries = this?.metrics.filter(
+    const fastQueries = this.metrics.filter((m) => m?.executionTime < 50);
+    const mediumQueries = this.metrics.filter(
       (m) => m?.executionTime >= 50 && m?.executionTime < 200,
     );
-    const slowQueries = this?.metrics.filter((m) => m?.executionTime >= 200);
+    const slowQueries = this.metrics.filter((m) => m?.executionTime >= 200);
 
-    logger?.info("Performance Summary:");
-    logger?.info(`⚡ Fast queries (<50ms): ${fastQueries?.length}`);
-    logger?.info(`⚠️  Medium queries (50-200ms): ${mediumQueries?.length}`);
-    logger?.info(`🐌 Slow queries (>200ms): ${slowQueries?.length}\n`);
+    logger.info("Performance Summary:");
+    logger.info(`⚡ Fast queries (<50ms): ${fastQueries?.length}`);
+    logger.info(`⚠️  Medium queries (50-200ms): ${mediumQueries?.length}`);
+    logger.info(`🐌 Slow queries (>200ms): ${slowQueries?.length}\n`);
 
-    logger?.info("Detailed Results:");
-    this?.metrics.forEach((metric) => {
+    logger.info("Detailed Results:");
+    this.metrics.forEach((metric) => {
       const icon =
         metric?.executionTime < 50
           ? "⚡"
@@ -321,49 +321,49 @@ class DatabasePerformanceTest {
             ? "⚠️"
             : "🐌";
 
-      logger?.info(`${icon} ${metric?.testName}: ${metric?.executionTime}ms`);
-      logger?.info(
+      logger.info(`${icon} ${metric?.testName}: ${metric?.executionTime}ms`);
+      logger.info(
         `   Records: ${metric?.recordsAffected || 0} | Type: ${metric?.queryType} | Index: ${metric?.indexUsed ? "Yes" : "No"}`,
       );
     });
 
     const avgExecutionTime =
-      this?.metrics.reduce((sum, m) => sum + m?.executionTime, 0) /
-      this?.metrics.length;
+      this.metrics.reduce((sum, m) => sum + m?.executionTime, 0) /
+      this.metrics.length;
 
-    logger?.info(`\n📈 Average Query Time: ${avgExecutionTime?.toFixed(2)}ms`);
+    logger.info(`\n📈 Average Query Time: ${avgExecutionTime?.toFixed(2)}ms`);
 
     if (avgExecutionTime < 100) {
-      logger?.info("✅ Excellent database performance!");
+      logger.info("✅ Excellent database performance!");
     } else if (avgExecutionTime < 300) {
-      logger?.info(
+      logger.info(
         "⚠️  Good performance, some optimization opportunities remain",
       );
     } else {
-      logger?.info(
+      logger.info(
         "🚨 Performance issues detected, further optimization needed",
       );
     }
 
-    logger?.info("\n🎯 Optimization Recommendations:");
+    logger.info("\n🎯 Optimization Recommendations:");
     if (slowQueries?.length > 0) {
-      logger?.info("• Review slow queries for missing indexes");
-      logger?.info("• Consider query optimization or data partitioning");
+      logger.info("• Review slow queries for missing indexes");
+      logger.info("• Consider query optimization or data partitioning");
     }
-    if (mediumQueries?.length > this?.metrics.length / 2) {
-      logger?.info("• Add covering indexes for frequently accessed columns");
-      logger?.info("• Consider caching strategies for dashboard queries");
+    if (mediumQueries?.length > this.metrics.length / 2) {
+      logger.info("• Add covering indexes for frequently accessed columns");
+      logger.info("• Consider caching strategies for dashboard queries");
     }
-    logger?.info("• Monitor query performance in production");
-    logger?.info("• Set up alerting for queries exceeding 500ms");
+    logger.info("• Monitor query performance in production");
+    logger.info("• Set up alerting for queries exceeding 500ms");
   }
 
   async generateTestData(): Promise<void> {
-    logger?.info("🔧 Generating test data for performance testing...");
+    logger.info("🔧 Generating test data for performance testing...");
 
     // Note: This would typically create test data, but we'll skip actual insertion
     // to avoid modifying the production database
-    logger?.info(
+    logger.info(
       "✅ Test data generation simulated (skipped for production safety)",
     );
   }

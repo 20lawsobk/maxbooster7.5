@@ -61,7 +61,7 @@ export class DDEXPackageService {
     release: ReleaseMetadata,
     tracks: TrackMetadata[],
   ): Promise<string> {
-    const messageId = this?.generateMessageId(release?.id);
+    const messageId = this.generateMessageId(release?.id);
     const releaseId = `REL${release?.id.replace(/-/g, "").substring(0, 12).toUpperCase()}`;
 
     const doc = create({ version: "1.0", encoding: "UTF-8" }).ele(
@@ -117,7 +117,7 @@ export class DDEXPackageService {
       referenceTitle?.ele("TitleText").txt(track?.title);
 
       // Duration in ISO 8601 format (PT3M45S)
-      const duration = this?.formatDuration(track?.duration);
+      const duration = this.formatDuration(track?.duration);
       soundRecording?.ele("Duration").txt(duration);
 
       // Artists
@@ -179,7 +179,7 @@ export class DDEXPackageService {
         .txt(track?.audioFilePath)
         .up()
         .ele("HashSum", { HashSumAlgorithmType: "MD5" })
-        .txt(await this?.calculateMD5(track?.audioFilePath));
+        .txt(await this.calculateMD5(track?.audioFilePath));
     }
 
     // Add cover artwork
@@ -214,7 +214,7 @@ export class DDEXPackageService {
         .txt(release?.coverArtPath)
         .up()
         .ele("HashSum", { HashSumAlgorithmType: "MD5" })
-        .txt(await this?.calculateMD5(release?.coverArtPath));
+        .txt(await this.calculateMD5(release?.coverArtPath));
     }
 
     // Release List
@@ -349,11 +349,11 @@ export class DDEXPackageService {
       `ddex_track_${trackNumber}_${Date?.now()}.${ext}`,
     );
     const res = await timedFetch(url);
-    if (!res?.ok)
+    if (!res.ok)
       throw new Error(
-        `Failed to download audio for track ${trackNumber}: HTTP ${res?.status}`,
+        `Failed to download audio for track ${trackNumber}: HTTP ${res.status}`,
       );
-    const buf = Buffer?.from(await res?.arrayBuffer());
+    const buf = Buffer?.from(await res.arrayBuffer());
     await writeFile(tmpPath, buf);
     return tmpPath;
   }
@@ -370,13 +370,13 @@ export class DDEXPackageService {
         let audioFilePath = track?.audioFilePath;
         if (audioFilePath && audioFilePath?.startsWith("http")) {
           try {
-            audioFilePath = await this?.downloadAudioToTemp(
+            audioFilePath = await this.downloadAudioToTemp(
               audioFilePath,
               track?.trackNumber,
             );
             tempFiles?.push(audioFilePath);
           } catch (err) {
-            logger?.warn(
+            logger.warn(
               { err: err },
               `[DDEX] Could not download audio for track ${track?.trackNumber} — file will be omitted from package:`,
             );
@@ -388,7 +388,7 @@ export class DDEXPackageService {
     );
 
     // Generate XML with resolved (local) file paths so MD5 checksums are accurate.
-    const xml = await this?.generateDDEXXML(release, resolvedTracks);
+    const xml = await this.generateDDEXXML(release, resolvedTracks);
 
     // Create ZIP archive
     const archive = archiver("zip", {
@@ -508,9 +508,9 @@ export class DDEXPackageService {
   }
 
   private formatDuration(seconds: number): string {
-    const hours = Math?.floor(seconds / 3600);
-    const minutes = Math?.floor((seconds % 3600) / 60);
-    const secs = Math?.floor(seconds % 60);
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
 
     let duration = "PT";
     if (hours > 0) duration += `${hours}H`;
@@ -525,7 +525,7 @@ export class DDEXPackageService {
       const fileBuffer = await readFile(filePath);
       return createHash("md5").update(fileBuffer).digest("hex");
     } catch (error: unknown) {
-      logger?.warn({ err: error }, `Error calculating MD5 for ${filePath}:`);
+      logger.warn({ err: error }, `Error calculating MD5 for ${filePath}:`);
       return "";
     }
   }

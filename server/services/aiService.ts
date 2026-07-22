@@ -113,7 +113,7 @@ export class AIService {
   private readonly AUDIO_PATTERNS_PREFIX = "ai:audioPatterns:";
 
   constructor() {
-    this?.initializeAudioData();
+    this.initializeAudioData();
   }
 
   private async getRedis(): Promise<RedisClientType | null> {
@@ -123,10 +123,10 @@ export class AIService {
   private _seedRetryTimer: ReturnType<typeof setTimeout> | null = null;
 
   private _scheduleAudioDataRetry(delayMs = 60_000): void {
-    if (this?._seedRetryTimer) return; // already scheduled
+    if (this._seedRetryTimer) return; // already scheduled
     this._seedRetryTimer = setTimeout(() => {
       this._seedRetryTimer = null;
-      this?.initializeAudioData();
+      this.initializeAudioData();
     }, delayMs);
   }
 
@@ -219,18 +219,18 @@ export class AIService {
       // cold-start slow-lane), schedule a silent full retry.  The retry will
       // succeed once PDIM is healthy and won't re-warn for keys already seeded.
       if (anyFailed) {
-        this?._scheduleAudioDataRetry(60_000);
+        this._scheduleAudioDataRetry(60_000);
       }
     } catch (error: unknown) {
       const msg = error instanceof Error ? error?.message : String(error);
       if (msg?.includes("HTTP 5") || msg?.includes("PDIM")) {
         // PDIM cold-start error — retry silently instead of warning
-        this?._scheduleAudioDataRetry(60_000);
+        this._scheduleAudioDataRetry(60_000);
       } else if (
-        process?.env.NODE_ENV !== "development" ||
-        !!process?.env.REPLIT_DEPLOYMENT
+        process.env.NODE_ENV !== "development" ||
+        !!process.env.REPLIT_DEPLOYMENT
       ) {
-        logger?.warn(
+        logger.warn(
           { err: error },
           "Failed to initialize AI service audio data in Redis:",
         );
@@ -274,23 +274,23 @@ export class AIService {
       });
 
       // Calculate metrics based on actual input data
-      const audienceScore = this?.calculateAudienceScore(config?.targetAudience);
-      const campaignEfficiency = this?.calculateCampaignEfficiency(
+      const audienceScore = this.calculateAudienceScore(config?.targetAudience);
+      const campaignEfficiency = this.calculateCampaignEfficiency(
         config?.campaignType,
         musicData,
       );
-      const viralityScore = this?.calculateViralityPotential(config, musicData);
+      const viralityScore = this.calculateViralityPotential(config, musicData);
 
       // Generate campaign content using input data
-      const adContent = this?.generateTargetedAdContent(config, musicData);
-      const targeting = this?.calculatePrecisionTargeting(config?.targetAudience);
-      const distribution = this?.optimizeDistributionPlan(config, musicData);
+      const adContent = this.generateTargetedAdContent(config, musicData);
+      const targeting = this.calculatePrecisionTargeting(config?.targetAudience);
+      const distribution = this.optimizeDistributionPlan(config, musicData);
 
       return {
-        performanceBoost: `${Math?.round(audienceScore * 500)}% performance increase`,
-        costReduction: `${Math?.round(campaignEfficiency * 100)}% cost optimization`,
+        performanceBoost: `${Math.round(audienceScore * 500)}% performance increase`,
+        costReduction: `${Math.round(campaignEfficiency * 100)}% cost optimization`,
         viralityScore: viralityScore,
-        algorithmicAdvantage: `${Math?.round(viralityScore * 1000)}x platform advantage`,
+        algorithmicAdvantage: `${Math.round(viralityScore * 1000)}x platform advantage`,
         adContent: {
           primary: mcCampaign?.primary ?? adContent.primary,
           variations: mcCampaign?.variations ?? adContent.variations,
@@ -299,7 +299,7 @@ export class AIService {
         },
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "AI advertising error:");
+      logger.warn({ err: error }, "AI advertising error:");
       throw new Error("Failed to generate zero-cost ad campaign");
     }
   }
@@ -315,8 +315,8 @@ export class AIService {
   ): Promise<{ success: boolean; mixSettings: MixSettings }> {
     try {
       const analysis = audioData
-        ? await this?.analyzeAudio(audioData)
-        : await this?.getDefaultAnalysis();
+        ? await this.analyzeAudio(audioData)
+        : await this.getDefaultAnalysis();
 
       const mixSettings: MixSettings = {
         eq: this.calculateOptimalEQ(analysis),
@@ -327,7 +327,7 @@ export class AIService {
 
       return { success: true, mixSettings };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "AI mix error:");
+      logger.warn({ err: error }, "AI mix error:");
       throw new Error("Failed to mix track with AI");
     }
   }
@@ -343,8 +343,8 @@ export class AIService {
   ): Promise<{ success: boolean; masterSettings: MasterSettings }> {
     try {
       const analysis = audioData
-        ? await this?.analyzeAudio(audioData)
-        : await this?.getDefaultAnalysis();
+        ? await this.analyzeAudio(audioData)
+        : await this.getDefaultAnalysis();
 
       const masterSettings: MasterSettings = {
         multiband: this.calculateMultibandCompression(analysis),
@@ -356,7 +356,7 @@ export class AIService {
 
       return { success: true, masterSettings };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "AI master error:");
+      logger.warn({ err: error }, "AI master error:");
       throw new Error("Failed to master track with AI");
     }
   }
@@ -367,9 +367,9 @@ export class AIService {
    */
   async analyzeTrack(audioData: Buffer): Promise<AudioAnalysisResult> {
     try {
-      return await this?.analyzeAudio(audioData);
+      return await this.analyzeAudio(audioData);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "AI analysis error:");
+      logger.warn({ err: error }, "AI analysis error:");
       throw new Error("Failed to analyze track");
     }
   }
@@ -377,11 +377,11 @@ export class AIService {
   // Private helper methods for deterministic AI processing
 
   private async analyzeAudio(audioData: Buffer): Promise<AudioAnalysisResult> {
-    const bufferHash = this?.calculateBufferHash(audioData);
-    const detectedGenre = this?.detectGenreFromBuffer(audioData, bufferHash);
+    const bufferHash = this.calculateBufferHash(audioData);
+    const detectedGenre = this.detectGenreFromBuffer(audioData, bufferHash);
     const genreProfile =
-      (await this?.getGenreProfile(detectedGenre?.toLowerCase())) ||
-      (await this?.getGenreProfile("electronic"));
+      (await this.getGenreProfile(detectedGenre?.toLowerCase())) ||
+      (await this.getGenreProfile("electronic"));
 
     return {
       bpm: this.detectBPMFromBuffer(audioData, bufferHash),
@@ -428,7 +428,7 @@ export class AIService {
     for (let i = 0; i < Math.min(audioData.length, 1000); i += 4) {
       hash = ((hash << 5) - hash + audioData[i]) & 0xffffffff;
     }
-    return Math?.abs(hash);
+    return Math.abs(hash);
   }
 
   private detectBPMFromBuffer(audioData: Buffer, hash: number): number {
@@ -530,7 +530,7 @@ export class AIService {
   ): number {
     // Calculate score based on audience specificity and interests
     const ageSpecificity = audience?.age.includes("-") ? 1.5 : 1.0;
-    const interestDiversity = Math?.min(audience?.interests.length / 5, 2.0);
+    const interestDiversity = Math.min(audience?.interests.length / 5, 2.0);
     const locationSpecificity = audience?.location.length > 10 ? 1.3 : 1.0;
 
     return ageSpecificity * interestDiversity * locationSpecificity;
@@ -574,7 +574,7 @@ export class AIService {
     const audienceScore =
       config?.targetAudience.interests?.length > 3 ? 0.8 : 0.6;
 
-    return Math?.min(genreScore * campaignScore * audienceScore, 0.95);
+    return Math.min(genreScore * campaignScore * audienceScore, 0.95);
   }
 
   private generateTargetedAdContent(
@@ -762,7 +762,7 @@ export class AIService {
 
     // Adjust based on genre and energy
     const energyFactor = analysis?.energy * 0.5;
-    Object?.values(baseSettings).forEach((band) => {
+    Object.values(baseSettings).forEach((band) => {
       band.threshold += energyFactor * 2;
       band.ratio += analysis?.danceability * 0.5;
     });
@@ -822,13 +822,13 @@ export class AIService {
 
   private async getGenreProfile(genre: string): Promise<unknown> {
     try {
-      const redis = await this?.getRedis();
+      const redis = await this.getRedis();
       if (!redis) return null;
 
-      const val = await redis?.get(`${this?.GENRE_PROFILES_PREFIX}${genre}`);
-      return val ? JSON?.parse(val) : null;
+      const val = await redis?.get(`${this.GENRE_PROFILES_PREFIX}${genre}`);
+      return val ? JSON.parse(val) : null;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, `Failed to get genre profile for ${genre}:`);
+      logger.warn({ err: error }, `Failed to get genre profile for ${genre}:`);
       return null;
     }
   }

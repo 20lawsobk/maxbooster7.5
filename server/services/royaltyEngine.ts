@@ -296,7 +296,7 @@ export class RoyaltyEngine {
   ): Promise<RoyaltyCalculation> {
     const dspSlug = stream?.dsp.toLowerCase().replace(/\s+/g, "_");
 
-    const customRate = await this?.getDspRate(
+    const customRate = await this.getDspRate(
       dspSlug,
       stream?.territory,
       stream?.reportDate,
@@ -307,7 +307,7 @@ export class RoyaltyEngine {
     if (customRate) {
       baseRate = customRate;
     } else {
-      const dbRate = await this?.getPlatformBaseRateFromDB(dspSlug);
+      const dbRate = await this.getPlatformBaseRateFromDB(dspSlug);
       if (dbRate) {
         baseRate = dbRate?.baseRate;
         dbPremiumMultiplier = dbRate?.premiumMultiplier;
@@ -335,7 +335,7 @@ export class RoyaltyEngine {
       }
     }
 
-    const exchangeRate = await this?.getExchangeRate(
+    const exchangeRate = await this.getExchangeRate(
       stream?.currency,
       "USD",
       stream?.reportDate,
@@ -493,7 +493,7 @@ export class RoyaltyEngine {
     endDate: Date,
     releaseId?: string,
   ): Promise<PeriodStatement> {
-    const period = this?.formatPeriod(startDate);
+    const period = this.formatPeriod(startDate);
 
     const dateConditions = and(
       gte(revenueEvents?.occurredAt, startDate),
@@ -526,7 +526,7 @@ export class RoyaltyEngine {
     let totalDownloads = 0;
 
     for (const event of events) {
-      const calculation = await this?.calculateStream({
+      const calculation = await this.calculateStream({
         dsp: event.source,
         territory: event.sourceType || "GLOBAL",
         streams: 1,
@@ -570,7 +570,7 @@ export class RoyaltyEngine {
       dspMap?.set(dsp, dspData);
     }
 
-    const recoupmentDeductions = await this?.calculateRecoupmentDeductions(
+    const recoupmentDeductions = await this.calculateRecoupmentDeductions(
       userId,
       totalGross - totalPlatformFees - totalDistributionFees,
     );
@@ -578,7 +578,7 @@ export class RoyaltyEngine {
     const netRevenue = totalGross - totalPlatformFees - totalDistributionFees;
     const payableAmount = netRevenue - recoupmentDeductions;
 
-    const territoryBreakdown: TerritoryBreakdown[] = Array?.from(
+    const territoryBreakdown: TerritoryBreakdown[] = Array.from(
       territoryMap?.entries(),
     ).map(([territory, data]) => ({
       territory,
@@ -587,7 +587,7 @@ export class RoyaltyEngine {
       percentage: totalGross > 0 ? (data?.revenue / totalGross) * 100 : 0,
     }));
 
-    const dspBreakdown: DspBreakdown[] = Array?.from(dspMap?.entries()).map(
+    const dspBreakdown: DspBreakdown[] = Array.from(dspMap?.entries()).map(
       ([dsp, data]) => ({
         dsp,
         streams: data.streams,
@@ -652,7 +652,7 @@ export class RoyaltyEngine {
 
         const recoupmentRate = Number(account?.recoupmentRate) / 100;
         const maxRecoupable = remainingAmount * recoupmentRate;
-        const amountToRecoup = Math?.min(maxRecoupable, balance);
+        const amountToRecoup = Math.min(maxRecoupable, balance);
 
         const newBalance = balance - amountToRecoup;
         const isFullyRecouped = newBalance <= 0;
@@ -739,14 +739,14 @@ export class RoyaltyEngine {
     grossRevenue: number,
     netRevenue: number,
   ): Promise<SplitBreakdown[]> {
-    const splits = await this?.getSplitBreakdown(releaseId);
+    const splits = await this.getSplitBreakdown(releaseId);
 
     return await Promise?.all(
       splits?.map(async (split) => {
         const grossAmount = grossRevenue * (split?.splitPercentage / 100);
         const netAmount = netRevenue * (split?.splitPercentage / 100);
 
-        const recoupmentDeduction = await this?.calculateRecoupmentDeductions(
+        const recoupmentDeduction = await this.calculateRecoupmentDeductions(
           split?.participantId,
           netAmount,
         );
@@ -886,7 +886,7 @@ export class RoyaltyEngine {
     const now = Date?.now();
 
     // Populate cache if empty or expired
-    if (!this?._platformRatesCache || now > this?._platformRatesCache.expiresAt) {
+    if (!this._platformRatesCache || now > this._platformRatesCache.expiresAt) {
       try {
         const rows = await db?.select().from(platformRoyaltyRates);
         const map = new Map<
@@ -901,7 +901,7 @@ export class RoyaltyEngine {
         }
         this._platformRatesCache = { data: map, expiresAt: now + 3600_000 };
       } catch (err) {
-        logger?.warn(
+        logger.warn(
           { err: err },
           "Failed to load platform royalty rates from DB, using hardcoded fallback:",
         );
@@ -909,7 +909,7 @@ export class RoyaltyEngine {
       }
     }
 
-    return this?._platformRatesCache.data?.get(dspSlug) ?? null;
+    return this._platformRatesCache.data?.get(dspSlug) ?? null;
   }
 
   invalidatePlatformRatesCache() {
@@ -962,7 +962,7 @@ export class RoyaltyEngine {
       const balance = Number(account?.remainingBalance);
       const rate = Number(account?.recoupmentRate) / 100;
       const maxDeduction = remaining * rate;
-      const actualDeduction = Math?.min(maxDeduction, balance);
+      const actualDeduction = Math.min(maxDeduction, balance);
 
       totalDeduction += actualDeduction;
       remaining -= actualDeduction;
@@ -980,12 +980,12 @@ export class RoyaltyEngine {
   async seedDefaultDspRates(): Promise<void> {
     const existingRates = await db?.select().from(dspRates).limit(1);
     if (existingRates?.length > 0) {
-      logger?.info("DSP rates already seeded");
+      logger.info("DSP rates already seeded");
       return;
     }
 
     const now = new Date();
-    const ratesToInsert = Object?.entries(DSP_BASE_RATES).map(([dsp, rate]) => ({
+    const ratesToInsert = Object.entries(DSP_BASE_RATES).map(([dsp, rate]) => ({
       dspName: dsp.charAt(0).toUpperCase() + dsp?.slice(1).replace(/_/g, " "),
       dspSlug: dsp,
       territory: "GLOBAL",
@@ -995,7 +995,7 @@ export class RoyaltyEngine {
     }));
 
     await db?.insert(dspRates).values(ratesToInsert);
-    logger?.info(`Seeded ${ratesToInsert?.length} default DSP rates`);
+    logger.info(`Seeded ${ratesToInsert?.length} default DSP rates`);
   }
 }
 

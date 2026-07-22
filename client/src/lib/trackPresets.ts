@@ -1269,7 +1269,7 @@ export function getUserPresets(): TrackPreset[] {
   try {
     const stored = localStorage?.getItem(LOCAL_STORAGE_KEY);
     if (!stored) return [];
-    const parsed = JSON?.parse(stored);
+    const parsed = JSON.parse(stored);
     return parsed?.map((p: TrackPreset) => ({
       ...p,
       createdAt: new Date(p?.createdAt),
@@ -1289,14 +1289,14 @@ export function saveUserPreset(
   const userPresets = getUserPresets();
   const newPreset: TrackPreset = {
     ...preset,
-    id: `user-${Date?.now()}-${Math?.random().toString(36).slice(2, 9)}`,
+    id: `user-${Date?.now()}-${Math.random().toString(36).slice(2, 9)}`,
     isFactory: false,
     isUserPreset: true,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
   userPresets?.push(newPreset);
-  localStorage?.setItem(LOCAL_STORAGE_KEY, JSON?.stringify(userPresets));
+  localStorage?.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userPresets));
   return newPreset;
 }
 
@@ -1314,7 +1314,7 @@ export function updateUserPreset(
     updatedAt: new Date(),
   };
   userPresets[index] = updatedPreset;
-  localStorage?.setItem(LOCAL_STORAGE_KEY, JSON?.stringify(userPresets));
+  localStorage?.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userPresets));
   return updatedPreset;
 }
 
@@ -1322,7 +1322,7 @@ export function deleteUserPreset(presetId: string): boolean {
   const userPresets = getUserPresets();
   const filtered = userPresets?.filter((p) => p?.id !== presetId);
   if (filtered?.length === userPresets?.length) return false;
-  localStorage?.setItem(LOCAL_STORAGE_KEY, JSON?.stringify(filtered));
+  localStorage?.setItem(LOCAL_STORAGE_KEY, JSON.stringify(filtered));
   return true;
 }
 
@@ -1481,7 +1481,7 @@ export function createPresetFromTrack(
   };
 
   return {
-    id: `user-${Date?.now()}-${Math?.random().toString(36).slice(2, 9)}`,
+    id: `user-${Date?.now()}-${Math.random().toString(36).slice(2, 9)}`,
     name,
     description,
     category,
@@ -1559,7 +1559,7 @@ export function saveUndoState(undoState: PresetUndoState): void {
     if (history?.length > 50) {
       history?.shift();
     }
-    localStorage?.setItem(UNDO_HISTORY_KEY, JSON?.stringify(history));
+    localStorage?.setItem(UNDO_HISTORY_KEY, JSON.stringify(history));
   } catch {
     // Ignore storage errors
   }
@@ -1569,7 +1569,7 @@ export function getUndoHistory(): PresetUndoState[] {
   try {
     const stored = localStorage?.getItem(UNDO_HISTORY_KEY);
     if (!stored) return [];
-    return JSON?.parse(stored).map((s: PresetUndoState) => ({
+    return JSON.parse(stored).map((s: PresetUndoState) => ({
       ...s,
       appliedAt: new Date(s?.appliedAt),
     }));
@@ -1586,7 +1586,7 @@ export function getLastUndoState(trackId: string): PresetUndoState | undefined {
 export function clearUndoHistory(trackId?: string): void {
   if (trackId) {
     const history = getUndoHistory().filter((s) => s?.trackId !== trackId);
-    localStorage?.setItem(UNDO_HISTORY_KEY, JSON?.stringify(history));
+    localStorage?.setItem(UNDO_HISTORY_KEY, JSON.stringify(history));
   } else {
     localStorage?.removeItem(UNDO_HISTORY_KEY);
   }
@@ -1603,7 +1603,7 @@ export function exportPresets(presets: TrackPreset[]): string {
       isUserPreset: true,
     })),
   };
-  return JSON?.stringify(exportData, null, 2);
+  return JSON.stringify(exportData, null, 2);
 }
 
 export function importPresets(jsonString: string): {
@@ -1612,9 +1612,9 @@ export function importPresets(jsonString: string): {
   error?: string;
 } {
   try {
-    const data = JSON?.parse(jsonString);
+    const data = JSON.parse(jsonString);
 
-    if (!data?.version || !data?.presets || !Array?.isArray(data?.presets)) {
+    if (!data?.version || !data?.presets || !Array.isArray(data?.presets)) {
       return {
         success: false,
         presets: [],
@@ -1625,7 +1625,7 @@ export function importPresets(jsonString: string): {
     const importedPresets: TrackPreset[] = data?.presets.map(
       (p: Partial<TrackPreset>) => ({
         ...p,
-        id: `imported-${Date?.now()}-${Math?.random().toString(36).slice(2, 9)}`,
+        id: `imported-${Date?.now()}-${Math.random().toString(36).slice(2, 9)}`,
         isFactory: false,
         isUserPreset: true,
         createdAt: new Date(),
@@ -1635,7 +1635,7 @@ export function importPresets(jsonString: string): {
 
     const existingPresets = getUserPresets();
     const newPresets = [...existingPresets, ...importedPresets];
-    localStorage?.setItem(LOCAL_STORAGE_KEY, JSON?.stringify(newPresets));
+    localStorage?.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newPresets));
 
     return { success: true, presets: importedPresets };
   } catch (err) {

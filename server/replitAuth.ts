@@ -9,15 +9,15 @@ import connectPg from "connect-pg-simple";
 import { storage } from "./storage";
 import { env } from "./config/env.js";
 
-if (!process?.env.REPLIT_DOMAINS) {
+if (!process.env.REPLIT_DOMAINS) {
   throw new Error("Environment variable REPLIT_DOMAINS not provided");
 }
 
 const getOidcConfig = memoize(
   async () => {
     return await client?.discovery(
-      new URL(process?.env.ISSUER_URL ?? "https://replit.com/oidc"),
-      process?.env.REPL_ID!,
+      new URL(process.env.ISSUER_URL ?? "https://replit.com/oidc"),
+      process.env.REPL_ID!,
     );
   },
   { maxAge: 3600 * 1000 },
@@ -83,7 +83,7 @@ export async function setupAuth(app: Express) {
     verified(null, user);
   };
 
-  for (const domain of process?.env.REPLIT_DOMAINS!.split(",")) {
+  for (const domain of process.env.REPLIT_DOMAINS!.split(",")) {
     const strategy = new Strategy(
       {
         name: `replitauth:${domain}`,
@@ -100,25 +100,25 @@ export async function setupAuth(app: Express) {
   passport?.deserializeUser((user: Express.User, cb) => cb(null, user));
 
   app?.get("/api/login", (req, res, next) => {
-    passport?.authenticate(`replitauth:${req?.hostname}`, {
+    passport?.authenticate(`replitauth:${req.hostname}`, {
       prompt: "login consent",
       scope: ["openid", "email", "profile", "offline_access"],
     })(req, res, next);
   });
 
   app?.get("/api/callback", (req, res, next) => {
-    passport?.authenticate(`replitauth:${req?.hostname}`, {
+    passport?.authenticate(`replitauth:${req.hostname}`, {
       successReturnToOrRedirect: "/",
       failureRedirect: "/api/login",
     })(req, res, next);
   });
 
   app?.get("/api/logout", (req, res) => {
-    req?.logout(() => {
-      res?.redirect(
+    req.logout(() => {
+      res.redirect(
         client?.buildEndSessionUrl(config, {
           client_id: process.env.REPL_ID!,
-          post_logout_redirect_uri: `${req?.protocol}://${req?.hostname}`,
+          post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
         }).href,
       );
     });
@@ -126,20 +126,20 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
-  const user = req?.user as Record<string, unknown>;
+  const user = req.user as Record<string, unknown>;
 
-  if (!req?.isAuthenticated() || !user?.expires_at) {
-    return res?.status(401).json({ message: "Unauthorized" });
+  if (!req.isAuthenticated() || !user?.expires_at) {
+    return res.status(401).json({ message: "Unauthorized" });
   }
 
-  const now = Math?.floor(Date?.now() / 1000);
+  const now = Math.floor(Date?.now() / 1000);
   if (now <= user?.expires_at) {
     return next();
   }
 
   const refreshToken = user?.refresh_token;
   if (!refreshToken) {
-    res?.status(401).json({ message: "Unauthorized" });
+    res.status(401).json({ message: "Unauthorized" });
     return;
   }
 
@@ -149,7 +149,7 @@ export const isAuthenticated: RequestHandler = async (req, res, next) => {
     updateUserSession(user, tokenResponse);
     return next();
   } catch (error: unknown) {
-    res?.status(401).json({ message: "Unauthorized" });
+    res.status(401).json({ message: "Unauthorized" });
     return;
   }
 };

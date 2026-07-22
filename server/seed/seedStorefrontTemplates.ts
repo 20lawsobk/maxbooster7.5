@@ -139,7 +139,7 @@ export async function seedStorefrontTemplates() {
       .from(storefrontTemplates);
 
     if (existing > 0) {
-      logger?.info(
+      logger.info(
         `Storefront templates already seeded (${existing} found) — skipping.`,
       );
       return;
@@ -156,9 +156,9 @@ export async function seedStorefrontTemplates() {
       })),
     );
 
-    logger?.info(`Seeded ${TEMPLATES?.length} storefront templates.`);
+    logger.info(`Seeded ${TEMPLATES?.length} storefront templates.`);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Failed to seed storefront templates:");
+    logger.warn({ err: error }, "Failed to seed storefront templates:");
     throw error;
   }
 }

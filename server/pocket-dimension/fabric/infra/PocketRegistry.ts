@@ -28,7 +28,7 @@ export class PocketRegistry {
       .select()
       .from(fabricPockets)
       .where(eq(fabricPockets?.id, id));
-    return rows[0] ? this?.rowToPocket(rows[0]) : null;
+    return rows[0] ? this.rowToPocket(rows[0]) : null;
   }
 
   async listPockets(ownerId: string): Promise<FabricPocket[]> {
@@ -36,7 +36,7 @@ export class PocketRegistry {
       .select()
       .from(fabricPockets)
       .where(eq(fabricPockets?.ownerId, ownerId));
-    return rows?.map(this?.rowToPocket);
+    return rows?.map(this.rowToPocket);
   }
 
   async updatePolicy(id: PocketId, policy: PocketPolicy): Promise<void> {

@@ -352,7 +352,7 @@ Solutions to frequently encountered problems.
     ];
 
     await db?.insert(knowledgeBaseArticles).values(defaultArticles);
-    logger?.info("✅ Seeded default knowledge base articles");
+    logger.info("✅ Seeded default knowledge base articles");
   }
 }
 

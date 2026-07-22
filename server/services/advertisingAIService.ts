@@ -199,14 +199,14 @@ export class AdvertisingAIService {
     }
 
     // Calculate organic amplification potential (100%+ boost vs paid ads)
-    const viralityScore = this?.calculateViralityScore(creative);
+    const viralityScore = this.calculateViralityScore(creative);
     const organicReachMultiplier =
-      this?.calculateOrganicReachMultiplier(viralityScore);
-    const platformPerformance = this?.predictPlatformPerformance(
+      this.calculateOrganicReachMultiplier(viralityScore);
+    const platformPerformance = this.predictPlatformPerformance(
       creative,
       platforms,
     );
-    const engagementOptimizations = this?.generateEngagementOptimizations(
+    const engagementOptimizations = this.generateEngagementOptimizations(
       creative,
       platformPerformance,
     );
@@ -222,7 +222,7 @@ export class AdvertisingAIService {
       ),
       optimalPostSchedule: this.generatePostSchedule(platforms),
       expectedOrganicReach:
-        this?.calculateExpectedOrganicReach(platformPerformance),
+        this.calculateExpectedOrganicReach(platformPerformance),
       // MaxCore AI creative suggestions (required — authoritative source)
       aiSuggestedHook: mcCreative?.hook ?? null,
       aiSuggestedCaption: mcCreative?.caption ?? mcCreative?.body ?? null,
@@ -264,15 +264,15 @@ export class AdvertisingAIService {
 
     // Deterministic simulation based on industry benchmarks
     // Use competitor name hash for consistent results
-    const seed = this?.hashString(competitorName + platform);
-    const random = this?.seededRandom(seed);
+    const seed = this.hashString(competitorName + platform);
+    const random = this.seededRandom(seed);
 
     // Simulate competitor metrics (deterministic based on name)
     const postingFrequency = 3 + random() * 4; // 3-7 posts per week
     const avgEngagementRate = 0.03 + random() * 0.05; // 3-8%
-    const avgLikes = Math?.floor(500 + random() * 2000); // 500-2500
-    const avgComments = Math?.floor(50 + random() * 200); // 50-250
-    const avgShares = Math?.floor(20 + random() * 100); // 20-120
+    const avgLikes = Math.floor(500 + random() * 2000); // 500-2500
+    const avgComments = Math.floor(50 + random() * 200); // 50-250
+    const avgShares = Math.floor(20 + random() * 100); // 20-120
 
     // Content type distribution
     const contentTypes = [
@@ -295,7 +295,7 @@ export class AdvertisingAIService {
       "#pop",
       "#indie",
     ];
-    const topHashtags = hashtagPool?.slice(0, 5 + Math?.floor(random() * 3));
+    const topHashtags = hashtagPool?.slice(0, 5 + Math.floor(random() * 3));
 
     // Posting times analysis
     const postingTimes = [
@@ -405,7 +405,7 @@ export class AdvertisingAIService {
     // Deterministic k-means style clustering with fixed seed
     const numClusters = 7; // Optimal cluster count
     const seed = campaignId * 12345; // Deterministic seed
-    const random = this?.seededRandom(seed);
+    const random = this.seededRandom(seed);
 
     const segments: AudienceSegment[] = [];
 
@@ -611,7 +611,7 @@ export class AdvertisingAIService {
     // Create segments with deterministic variations
     for (let i = 0; i < numClusters; i++) {
       const template = segmentTemplates[i];
-      const size = Math?.floor(1000 + random() * 3000); // 1k-4k per segment
+      const size = Math.floor(1000 + random() * 3000); // 1k-4k per segment
       const predictedValue = (50 + random() * 200).toFixed(2); // $50-$250 LTV
 
       const segment = {
@@ -732,8 +732,8 @@ export class AdvertisingAIService {
     );
 
     // Feature extraction from creative
-    const features = this?.extractCreativeFeatures(creative);
-    const viralityScore = this?.calculateViralityScore(creative);
+    const features = this.extractCreativeFeatures(creative);
+    const viralityScore = this.calculateViralityScore(creative);
 
     // MaxCore is the authoritative source for predicted metrics — no local
     // seeded substitution. Missing metrics ⇒ unusable ⇒ explicit unavailability.
@@ -784,9 +784,9 @@ export class AdvertisingAIService {
           sql`CAST(${adCreativePredictions?.predictedCTR} AS FLOAT) < ${predictedCTR}`,
         );
       const below = Number(belowRow?.belowCount ?? 0);
-      percentile = Math?.round((below / historicalCount) * 100);
+      percentile = Math.round((below / historicalCount) * 100);
     } else {
-      percentile = Math?.min(95, Math?.round(60 + viralityScore / 3));
+      percentile = Math.min(95, Math.round(60 + viralityScore / 3));
     }
 
     const comparisonData = {
@@ -889,7 +889,7 @@ export class AdvertisingAIService {
 
     // Deterministic optimization algorithm
     const seed = campaignId * 67890;
-    const random = this?.seededRandom(seed);
+    const random = this.seededRandom(seed);
 
     // Platform allocation (based on ROI potential)
     const platformAllocations: Record<string, PlatformAllocation> = {};
@@ -979,7 +979,7 @@ export class AdvertisingAIService {
       expectedROI:
         totalBudget > 0
           ? (
-              Object?.values(platformAllocations).reduce(
+              Object.values(platformAllocations).reduce(
                 (sum: number, p: PlatformAllocation) =>
                   sum + p?.expectedConversions * 50,
                 0,
@@ -997,10 +997,10 @@ export class AdvertisingAIService {
       timeAllocation,
       expectedResults,
       recommendations: [
-        `Focus ${Object?.keys(platformAllocations)[0]} (highest ROI)`,
+        `Focus ${Object.keys(platformAllocations)[0]} (highest ROI)`,
         `Target "${segments[0].segmentName}" segment (highest value)`,
         `Increase spend during peak hours (12pm, 6-8pm)`,
-        `Monitor performance after day ${Math?.ceil(duration * 0.3)} for optimization`,
+        `Monitor performance after day ${Math.ceil(duration * 0.3)} for optimization`,
       ],
     };
 
@@ -1047,7 +1047,7 @@ export class AdvertisingAIService {
         for (const tp of touchpoints) {
           creativeFreq[tp.creativeId] = (creativeFreq[tp?.creativeId] || 0) + 1;
         }
-        attributedCreativeId = Object?.keys(creativeFreq).reduce((a, b) =>
+        attributedCreativeId = Object.keys(creativeFreq).reduce((a, b) =>
           creativeFreq[a] > creativeFreq[b] ? a : b,
         );
       }
@@ -1144,7 +1144,7 @@ export class AdvertisingAIService {
 
     // Deterministic forecasting
     const seed = (campaignId || 1) * 11111;
-    const random = this?.seededRandom(seed);
+    const random = this.seededRandom(seed);
 
     const dailyBudget = budget / duration;
 
@@ -1160,17 +1160,17 @@ export class AdvertisingAIService {
 
     for (let day = 1; day <= duration; day++) {
       // Deterministic growth curve (S-curve adoption)
-      const growthFactor = 1 / (1 + Math?.exp(-0.1 * (day - duration / 2)));
+      const growthFactor = 1 / (1 + Math.exp(-0.1 * (day - duration / 2)));
       const dailyMultiplier = 0.5 + growthFactor;
 
-      const dailyReach = Math?.floor(
+      const dailyReach = Math.floor(
         dailyBudget * 100 * dailyMultiplier * (1 + (random() - 0.5) * 0.2),
       );
-      const dailyImpressions = Math?.floor(dailyReach * (2 + random()));
-      const dailyClicks = Math?.floor(
+      const dailyImpressions = Math.floor(dailyReach * (2 + random()));
+      const dailyClicks = Math.floor(
         dailyImpressions * (0.02 + random() * 0.03),
       );
-      const dailyConversions = Math?.floor(
+      const dailyConversions = Math.floor(
         dailyClicks * (0.03 + random() * 0.02),
       );
       const dailySpendActual = dailyBudget * (0.9 + random() * 0.2); // 90-110% of budget
@@ -1215,7 +1215,7 @@ export class AdvertisingAIService {
 
       // Weekly aggregation
       if (day % 7 === 0 || day === duration) {
-        const weekStart = Math?.floor((day - 1) / 7) * 7 + 1;
+        const weekStart = Math.floor((day - 1) / 7) * 7 + 1;
         const weekData = dailyProjections?.slice(weekStart - 1, day);
 
         weeklyProjections?.push({
@@ -1328,16 +1328,16 @@ export class AdvertisingAIService {
     const wordCount = text?.split(/\s+/).length;
 
     // Hashtag virality (discovery mechanism)
-    score += Math?.min(hashtagCount * 5, 20); // +5 per hashtag, max +20
+    score += Math.min(hashtagCount * 5, 20); // +5 per hashtag, max +20
 
     // Question virality (drives comments)
     score += questionCount * 10; // +10 per question
 
     // Emoji virality (emotional connection)
-    score += Math?.min(emojiCount * 3, 15); // +3 per emoji, max +15
+    score += Math.min(emojiCount * 3, 15); // +3 per emoji, max +15
 
     // Mention virality (social amplification)
-    score += Math?.min(mentionCount * 4, 12); // +4 per mention, max +12
+    score += Math.min(mentionCount * 4, 12); // +4 per mention, max +12
 
     // Optimal length bonus (research-backed)
     if (wordCount >= 15 && wordCount <= 40) {
@@ -1353,7 +1353,7 @@ export class AdvertisingAIService {
     // Content type bonuses
     if (creative?.contentType === "carousel") score += 8; // High engagement format
 
-    return Math?.min(Math?.max(score, 0), 100);
+    return Math.min(Math.max(score, 0), 100);
   }
 
   /**
@@ -1367,7 +1367,7 @@ export class AdvertisingAIService {
     multiplier += 0.6; // algorithm bonus
     multiplier += 0.4; // share bonus
     multiplier += 0.3; // trust bonus
-    return Math?.round(multiplier * 100);
+    return Math.round(multiplier * 100);
   }
 
   /**
@@ -1380,8 +1380,8 @@ export class AdvertisingAIService {
     const predictions: Record<string, PlatformMetrics> = {};
 
     for (const platform of platforms) {
-      const baselineMetrics = this?.getOrganicBaselineMetrics(platform);
-      const contentMultiplier = this?.getContentTypeMultiplier(
+      const baselineMetrics = this.getOrganicBaselineMetrics(platform);
+      const contentMultiplier = this.getContentTypeMultiplier(
         creative?.contentType,
         platform,
       );
@@ -1523,14 +1523,14 @@ export class AdvertisingAIService {
       youtube: 0.6,
     };
 
-    for (const [platform, metrics] of Object?.entries(platformPerformance)) {
+    for (const [platform, metrics] of Object.entries(platformPerformance)) {
       const costPerEngagement = adCosts[platform] || 0.5;
       const organicEngagements =
         metrics?.estimatedReach * metrics?.estimatedEngagement;
       totalSavings += organicEngagements * costPerEngagement;
     }
 
-    return Math?.round(totalSavings);
+    return Math.round(totalSavings);
   }
 
   /**
@@ -1621,7 +1621,7 @@ export class AdvertisingAIService {
   private calculateExpectedOrganicReach(
     platformPerformance: Record<string, PlatformMetrics>,
   ): number {
-    return Object?.values(platformPerformance).reduce(
+    return Object.values(platformPerformance).reduce(
       (sum: number, metrics: PlatformMetrics) => sum + metrics?.estimatedReach,
       0,
     );
@@ -1755,6 +1755,6 @@ export class AdvertisingAIService {
       hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
-    return Math?.abs(hash);
+    return Math.abs(hash);
   }
 }

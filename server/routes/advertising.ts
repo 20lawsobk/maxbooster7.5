@@ -38,12 +38,12 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const campaigns = await storage?.getAdvertisingCampaigns(userId);
-      res?.json(campaigns);
+      res.json(campaigns);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get campaigns:");
-      res?.status(500).json({ error: "Failed to get campaigns" });
+      logger.warn({ err: error }, "Failed to get campaigns:");
+      res.status(500).json({ error: "Failed to get campaigns" });
     }
   },
 );
@@ -53,12 +53,12 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const insights = await storage?.getAdvertisingInsights(userId);
-      res?.json(insights);
+      res.json(insights);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get AI insights:");
-      res?.status(500).json({ error: "Failed to get AI insights" });
+      logger.warn({ err: error }, "Failed to get AI insights:");
+      res.status(500).json({ error: "Failed to get AI insights" });
     }
   },
 );
@@ -68,12 +68,12 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const segments = await storage?.getAudienceSegments(userId);
-      res?.json({ segments });
+      res.json({ segments });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get audience segments:");
-      res?.status(500).json({ error: "Failed to get audience segments" });
+      logger.warn({ err: error }, "Failed to get audience segments:");
+      res.status(500).json({ error: "Failed to get audience segments" });
     }
   },
 );
@@ -83,12 +83,12 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const creatives = await storage?.getCreativeFatigue(userId);
-      res?.json({ creatives });
+      res.json({ creatives });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get creative fatigue:");
-      res?.status(500).json({ error: "Failed to get creative fatigue" });
+      logger.warn({ err: error }, "Failed to get creative fatigue:");
+      res.status(500).json({ error: "Failed to get creative fatigue" });
     }
   },
 );
@@ -98,9 +98,9 @@ router?.patch(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { creativeId } = req?.params;
-      const { action } = req?.body as {
+      const userId = req.user!.id;
+      const { creativeId } = req.params;
+      const { action } = req.body as {
         action: "refresh" | "pause" | "resume" | "archive" | string;
       };
 
@@ -125,7 +125,7 @@ router?.patch(
         .limit(1);
 
       if (!existing) {
-        return res?.status(404).json({ error: "Creative not found" });
+        return res.status(404).json({ error: "Creative not found" });
       }
 
       const statusMap: Record<string, string> = {
@@ -153,13 +153,13 @@ router?.patch(
         )
         .returning();
 
-      return res?.json({
+      return res.json({
         creative: updated,
         message: `Creative ${action === "refresh" ? "refreshed" : action + "d"} successfully`,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to update creative:");
-      return res?.status(500).json({ error: "Failed to update creative" });
+      logger.warn({ err: error }, "Failed to update creative:");
+      return res.status(500).json({ error: "Failed to update creative" });
     }
   },
 );
@@ -169,12 +169,12 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const strategies = await storage?.getBiddingStrategies(userId);
-      res?.json({ strategies });
+      res.json({ strategies });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get bidding strategies:");
-      res?.status(500).json({ error: "Failed to get bidding strategies" });
+      logger.warn({ err: error }, "Failed to get bidding strategies:");
+      res.status(500).json({ error: "Failed to get bidding strategies" });
     }
   },
 );
@@ -184,12 +184,12 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const audiences = await storage?.getLookalikeAudiences(userId);
-      res?.json({ audiences });
+      res.json({ audiences });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get lookalike audiences:");
-      res?.status(500).json({ error: "Failed to get lookalike audiences" });
+      logger.warn({ err: error }, "Failed to get lookalike audiences:");
+      res.status(500).json({ error: "Failed to get lookalike audiences" });
     }
   },
 );
@@ -199,11 +199,11 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const { name, sourceAudience, targetPlatforms, estimatedSize, status } =
-        req?.body;
+        req.body;
       if (!name) {
-        return res?.status(400).json({ error: "Audience name is required" });
+        return res.status(400).json({ error: "Audience name is required" });
       }
       const existing = await storage?.getLookalikeAudiences(userId);
       const newAudience = {
@@ -226,10 +226,10 @@ router?.post(
           target: systemSettings.key,
           set: { value: updated as Record<string, unknown> },
         });
-      res?.status(201).json(newAudience);
+      res.status(201).json(newAudience);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to create lookalike audience:");
-      res?.status(500).json({ error: "Failed to create lookalike audience" });
+      logger.warn({ err: error }, "Failed to create lookalike audience:");
+      res.status(500).json({ error: "Failed to create lookalike audience" });
     }
   },
 );
@@ -239,17 +239,17 @@ router?.patch(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { id } = req?.params;
+      const userId = req.user!.id;
+      const { id } = req.params;
       const existing = await storage?.getLookalikeAudiences(userId);
       const idx = existing?.findIndex(
         (a: Record<string, unknown>) => a?.id === id,
       );
       if (idx === -1) {
-        return res?.status(404).json({ error: "Audience not found" });
+        return res.status(404).json({ error: "Audience not found" });
       }
       const { name, sourceAudience, targetPlatforms, estimatedSize, status } =
-        req?.body;
+        req.body;
       existing[idx] = {
         ...existing[idx],
         ...(name !== undefined && { name }),
@@ -269,10 +269,10 @@ router?.patch(
           target: systemSettings.key,
           set: { value: existing as Record<string, unknown> },
         });
-      res?.json(existing[idx]);
+      res.json(existing[idx]);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to update lookalike audience:");
-      res?.status(500).json({ error: "Failed to update lookalike audience" });
+      logger.warn({ err: error }, "Failed to update lookalike audience:");
+      res.status(500).json({ error: "Failed to update lookalike audience" });
     }
   },
 );
@@ -282,12 +282,12 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const forecasts = await storage?.getAdvertisingForecasts(userId);
-      res?.json({ forecasts: forecasts ? [forecasts] : [] });
+      res.json({ forecasts: forecasts ? [forecasts] : [] });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get forecasts:");
-      res?.status(500).json({ error: "Failed to get forecasts" });
+      logger.warn({ err: error }, "Failed to get forecasts:");
+      res.status(500).json({ error: "Failed to get forecasts" });
     }
   },
 );
@@ -297,19 +297,19 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const insights = await storage?.getCompetitorInsights(userId);
-      res?.json({ insights });
+      res.json({ insights });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get competitor insights:");
-      res?.status(500).json({ error: "Failed to get competitor insights" });
+      logger.warn({ err: error }, "Failed to get competitor insights:");
+      res.status(500).json({ error: "Failed to get competitor insights" });
     }
   },
 );
 
 router?.get("/ab-tests", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const creatives = await db
       .select()
       .from(adCreatives)
@@ -323,7 +323,7 @@ router?.get("/ab-tests", requireAuth, async (req: AuthenticatedRequest, res) => 
       .filter(
         (c) =>
           c?.variants &&
-          Array?.isArray(c?.variants) &&
+          Array.isArray(c?.variants) &&
           (c?.variants as unknown[]).length > 1,
       )
       .map((c) => ({
@@ -336,10 +336,10 @@ router?.get("/ab-tests", requireAuth, async (req: AuthenticatedRequest, res) => 
         createdAt: c.createdAt,
       }));
 
-    res?.json({ tests });
+    res.json({ tests });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get A/B tests:");
-    res?.status(500).json({ error: "Failed to get A/B tests" });
+    logger.warn({ err: error }, "Failed to get A/B tests:");
+    res.status(500).json({ error: "Failed to get A/B tests" });
   }
 });
 
@@ -348,7 +348,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const {
         name,
         platform: platformDirect,
@@ -357,16 +357,16 @@ router?.post(
         endDate,
         targetAudience,
         creativeIds,
-      } = req?.body;
+      } = req.body;
       const platform =
         platformDirect ||
-        (Array?.isArray(targetAudience?.platforms) &&
+        (Array.isArray(targetAudience?.platforms) &&
         targetAudience?.platforms.length > 0
           ? targetAudience?.platforms[0]
           : null);
 
       if (!name || typeof name !== "string") {
-        return res?.status(400).json({ error: "Campaign name is required" });
+        return res.status(400).json({ error: "Campaign name is required" });
       }
       if (!platform || typeof platform !== "string") {
         return res
@@ -378,7 +378,7 @@ router?.post(
       }
 
       const platforms =
-        Array?.isArray(targetAudience?.platforms) &&
+        Array.isArray(targetAudience?.platforms) &&
         targetAudience?.platforms.length > 0
           ? targetAudience?.platforms
           : [platform];
@@ -409,7 +409,7 @@ router?.post(
             name,
           );
         } catch (err) {
-          logger?.warn({ err: err }, "Ad campaign created notification error:");
+          logger.warn({ err: err }, "Ad campaign created notification error:");
         }
 
         try {
@@ -420,12 +420,12 @@ router?.post(
             objective || "awareness",
             null,
           );
-          logger?.info(
+          logger.info(
             { userId, campaignId: campaign.id },
             "MaxCore ad model primed for new campaign",
           );
         } catch (err) {
-          logger?.warn({ err }, "MaxCore ad model priming error (non-fatal):");
+          logger.warn({ err }, "MaxCore ad model priming error (non-fatal):");
         }
 
         try {
@@ -477,10 +477,10 @@ router.post(
           });
       }
       const { url, key } = await storeUploadedFile(file, userId, "images");
-      res?.json({ success: true, url, key });
+      res.json({ success: true, url, key });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to upload ad image:");
-      res?.status(500).json({ error: "Failed to upload image" });
+      logger.warn({ err: error }, "Failed to upload ad image:");
+      res.status(500).json({ error: "Failed to upload image" });
     }
   },
 );
@@ -498,7 +498,7 @@ function adEquivalentValue(platform: string, organicReach: number): number {
 // Advertising autopilot status — returns isRunning, config, modelStatus + campaign organic metrics
 router?.get("/status", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
     const [campaigns, autopilotConfig] = await Promise?.all([
       db
@@ -527,7 +527,7 @@ router?.get("/status", requireAuth, async (req: AuthenticatedRequest, res) => {
       return sum + adEquivalentValue(c?.platform, reach);
     }, 0);
 
-    res?.json({
+    res.json({
       isRunning: autopilotConfig?.isRunning || false,
       config: autopilotConfig || null,
       status: {
@@ -543,42 +543,42 @@ router?.get("/status", requireAuth, async (req: AuthenticatedRequest, res) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get advertising status:");
-    res?.status(500).json({ error: "Failed to get status" });
+    logger.warn({ err: error }, "Failed to get advertising status:");
+    res.status(500).json({ error: "Failed to get status" });
   }
 });
 
 // Start advertising autopilot
 router?.post("/start", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     let config = await storage?.getAdvertisingAutopilotConfig(userId);
     config = { ...(config || {}), isRunning: true, enabled: true };
     await storage?.saveAdvertisingAutopilotConfig(userId, config);
-    logger?.info(`✅ Advertising autopilot started for user ${userId}`);
-    res?.json({
+    logger.info(`✅ Advertising autopilot started for user ${userId}`);
+    res.json({
       success: true,
       message: "Advertising autopilot activated",
       config,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to start advertising autopilot:");
-    res?.status(500).json({ error: "Failed to start advertising autopilot" });
+    logger.warn({ err: error }, "Failed to start advertising autopilot:");
+    res.status(500).json({ error: "Failed to start advertising autopilot" });
   }
 });
 
 // Stop advertising autopilot
 router?.post("/stop", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     let config = await storage?.getAdvertisingAutopilotConfig(userId);
     config = { ...(config || {}), isRunning: false, enabled: false };
     await storage?.saveAdvertisingAutopilotConfig(userId, config);
-    logger?.info(`⏸️ Advertising autopilot paused for user ${userId}`);
-    res?.json({ success: true, message: "Advertising autopilot paused" });
+    logger.info(`⏸️ Advertising autopilot paused for user ${userId}`);
+    res.json({ success: true, message: "Advertising autopilot paused" });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to stop advertising autopilot:");
-    res?.status(500).json({ error: "Failed to stop advertising autopilot" });
+    logger.warn({ err: error }, "Failed to stop advertising autopilot:");
+    res.status(500).json({ error: "Failed to stop advertising autopilot" });
   }
 });
 
@@ -588,7 +588,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const existing = await storage?.getAdvertisingAutopilotConfig(userId);
       // Extract only known autopilot config fields — never spread the entire body.
       const {
@@ -614,9 +614,9 @@ router?.post(
         engagementThreshold,
         minConfidenceThreshold,
         autoAnalyzeBeforePosting,
-      } = req?.body;
-      const patch = Object?.fromEntries(
-        Object?.entries({
+      } = req.body;
+      const patch = Object.fromEntries(
+        Object.entries({
           enabled,
           platforms,
           campaignObjective,
@@ -643,14 +643,14 @@ router?.post(
       );
       const config = { ...(existing || {}), ...patch };
       await storage?.saveAdvertisingAutopilotConfig(userId, config);
-      logger?.info(`⚙️ Advertising autopilot configured for user ${userId}`);
-      res?.json({
+      logger.info(`⚙️ Advertising autopilot configured for user ${userId}`);
+      res.json({
         success: true,
         message: "Advertising autopilot configuration updated",
         config,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to configure advertising autopilot:");
+      logger.warn({ err: error }, "Failed to configure advertising autopilot:");
       res
         .status(500)
         .json({ error: "Failed to configure advertising autopilot" });
@@ -661,7 +661,7 @@ router?.post(
 // Variants endpoint
 router?.get("/variants", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const creatives = await db
       .select()
       .from(adCreatives)
@@ -670,7 +670,7 @@ router?.get("/variants", requireAuth, async (req: AuthenticatedRequest, res) => 
       .limit(100);
 
     const variants = creatives?.flatMap((c) => {
-      if (!c?.variants || !Array?.isArray(c?.variants)) return [];
+      if (!c?.variants || !Array.isArray(c?.variants)) return [];
       return (c?.variants as Record<string, unknown>[]).map(
         (v: Record<string, unknown>, idx: number) => ({
           id: `${c?.id}-v${idx}`,
@@ -682,10 +682,10 @@ router?.get("/variants", requireAuth, async (req: AuthenticatedRequest, res) => 
       );
     });
 
-    res?.json({ variants });
+    res.json({ variants });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get variants:");
-    res?.status(500).json({ error: "Failed to get variants" });
+    logger.warn({ err: error }, "Failed to get variants:");
+    res.status(500).json({ error: "Failed to get variants" });
   }
 });
 
@@ -695,7 +695,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const campaigns = await db
         .select({
           platform: adCampaigns.platform,
@@ -731,7 +731,7 @@ router?.get(
         channelMap?.set(c?.platform, entry);
       }
 
-      const channels = Array?.from(channelMap?.entries()).map(
+      const channels = Array.from(channelMap?.entries()).map(
         ([platform, data]) => ({
           platform,
           organicReach: data.organicReach,
@@ -743,10 +743,10 @@ router?.get(
         }),
       );
 
-      res?.json({ channels });
+      res.json({ channels });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get attribution channels:");
-      res?.status(500).json({ error: "Failed to get attribution channels" });
+      logger.warn({ err: error }, "Failed to get attribution channels:");
+      res.status(500).json({ error: "Failed to get attribution channels" });
     }
   },
 );
@@ -756,7 +756,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const campaigns = await db
         .select({
           platform: adCampaigns.platform,
@@ -783,10 +783,10 @@ router?.get(
           revenue: (c?.performance as Record<string, unknown>)?.revenue || 0,
         }));
 
-      res?.json({ paths });
+      res.json({ paths });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get attribution paths:");
-      res?.status(500).json({ error: "Failed to get attribution paths" });
+      logger.warn({ err: error }, "Failed to get attribution paths:");
+      res.status(500).json({ error: "Failed to get attribution paths" });
     }
   },
 );
@@ -797,7 +797,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const campaigns = await db
         .select({
           platform: adCampaigns.platform,
@@ -817,7 +817,7 @@ router?.get(
         total += rev;
       }
 
-      const channels = Array?.from(channelMap?.entries()).map(
+      const channels = Array.from(channelMap?.entries()).map(
         ([platform, revenue]) => ({
           platform,
           revenue,
@@ -825,10 +825,10 @@ router?.get(
         }),
       );
 
-      res?.json({ attribution: { channels, total } });
+      res.json({ attribution: { channels, total } });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get dashboard attribution:");
-      res?.status(500).json({ error: "Failed to get dashboard attribution" });
+      logger.warn({ err: error }, "Failed to get dashboard attribution:");
+      res.status(500).json({ error: "Failed to get dashboard attribution" });
     }
   },
 );
@@ -838,7 +838,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const campaigns = await db
         .select({
           platform: adCampaigns.platform,
@@ -859,10 +859,10 @@ router?.get(
             (c?.performance as Record<string, unknown>)?.conversions || 0,
         }));
 
-      res?.json({ paths });
+      res.json({ paths });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get dashboard paths:");
-      res?.status(500).json({ error: "Failed to get dashboard paths" });
+      logger.warn({ err: error }, "Failed to get dashboard paths:");
+      res.status(500).json({ error: "Failed to get dashboard paths" });
     }
   },
 );
@@ -873,7 +873,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const campaigns = await db
         .select({
           id: adCampaigns.id,
@@ -908,10 +908,10 @@ router?.get(
         };
       });
 
-      res?.json({ segments });
+      res.json({ segments });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get ROAS audience segments:");
-      res?.status(500).json({ error: "Failed to get ROAS audience segments" });
+      logger.warn({ err: error }, "Failed to get ROAS audience segments:");
+      res.status(500).json({ error: "Failed to get ROAS audience segments" });
     }
   },
 );
@@ -921,17 +921,17 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const campaigns = await db
         .select()
         .from(adCampaigns)
         .where(eq(adCampaigns?.userId, userId))
         .orderBy(desc(adCampaigns?.createdAt))
         .limit(100);
-      res?.json({ campaigns });
+      res.json({ campaigns });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get ROAS campaigns:");
-      res?.status(500).json({ error: "Failed to get ROAS campaigns" });
+      logger.warn({ err: error }, "Failed to get ROAS campaigns:");
+      res.status(500).json({ error: "Failed to get ROAS campaigns" });
     }
   },
 );
@@ -941,7 +941,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const creatives = await db
         .select()
         .from(adCreatives)
@@ -957,7 +957,7 @@ router?.get(
         const ctr = Number(perf?.ctr || 0);
         const impressions = Number(perf?.impressions || 0);
         const age = c?.createdAt
-          ? Math?.floor(
+          ? Math.floor(
               (Date?.now() - new Date(c?.createdAt).getTime()) /
                 (1000 * 60 * 60 * 24),
             )
@@ -975,8 +975,8 @@ router?.get(
           ageInDays: age,
           status: c.status,
           fatigueScore: isFatigued
-            ? Math?.min(100, age + (impressions > 10000 ? 30 : 0))
-            : Math?.max(0, age / 2),
+            ? Math.min(100, age + (impressions > 10000 ? 30 : 0))
+            : Math.max(0, age / 2),
         };
 
         if (isFatigued) {
@@ -986,9 +986,9 @@ router?.get(
         }
       }
 
-      res?.json({ analysis: { fatigued, healthy } });
+      res.json({ analysis: { fatigued, healthy } });
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "Failed to get ROAS creative fatigue analysis:",
       );
@@ -1004,7 +1004,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const campaigns = await db
         .select({
           budget: adCampaigns.budget,
@@ -1029,11 +1029,11 @@ router?.get(
         ? campaigns.reduce((sum, c) => sum + (PLATFORM_CPM[c?.platform] ?? 8.0), 0) / campaigns.length
         : 8.0;
 
-      const daily = Array?.from({ length: 7 }, (_, i) => {
+      const daily = Array.from({ length: 7 }, (_, i) => {
         const date = new Date();
         date?.setDate(date?.getDate() + i + 1);
         const growthFactor = 1 + (i * 0.04);
-        const jitter = 0.9 + Math?.random() * 0.2;
+        const jitter = 0.9 + Math.random() * 0.2;
         const projectedReach = Math.round(baselineDailyReach * growthFactor * jitter);
         const adEquiv = Math.round((projectedReach / 1000) * avgPlatformCpm * 100) / 100;
         return {
@@ -1044,19 +1044,19 @@ router?.get(
         };
       });
 
-      const weekly = Array?.from({ length: 4 }, (_, i) => {
+      const weekly = Array.from({ length: 4 }, (_, i) => {
         const projectedReach = Math.round(baselineDailyReach * 7 * (1 + i * 0.06));
         const adEquiv = Math.round((projectedReach / 1000) * avgPlatformCpm * 100) / 100;
         return { week: i + 1, projectedOrganicReach: projectedReach, estimatedAdEquivalent: adEquiv, adSpend: 0 };
       });
 
-      const monthly = Array?.from({ length: 3 }, (_, i) => {
+      const monthly = Array.from({ length: 3 }, (_, i) => {
         const projectedReach = Math.round(baselineDailyReach * 30 * (1 + i * 0.08));
         const adEquiv = Math.round((projectedReach / 1000) * avgPlatformCpm * 100) / 100;
         return { month: i + 1, projectedOrganicReach: projectedReach, estimatedAdEquivalent: adEquiv, adSpend: 0 };
       });
 
-      res?.json({
+      res.json({
         forecast: {
           daily,
           weekly,
@@ -1067,8 +1067,8 @@ router?.get(
         },
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get ROAS forecast:");
-      res?.status(500).json({ error: "Failed to get ROAS forecast" });
+      logger.warn({ err: error }, "Failed to get ROAS forecast:");
+      res.status(500).json({ error: "Failed to get ROAS forecast" });
     }
   },
 );
@@ -1076,10 +1076,10 @@ router?.get(
 // AI-powered campaign optimization
 router?.post("/optimize-campaign", requireAuth, async (req, res) => {
   try {
-    const { campaignId, performance } = req?.body;
+    const { campaignId, performance } = req.body;
 
     if (!campaignId) {
-      return res?.status(400).json({ error: "Campaign ID is required" });
+      return res.status(400).json({ error: "Campaign ID is required" });
     }
 
     // Build campaign object for MaxCore organic-amplification optimization
@@ -1135,10 +1135,10 @@ router?.post("/optimize-campaign", requireAuth, async (req, res) => {
     });
 
     if (!result?.success) {
-      return res?.status(500).json({ error: result.error });
+      return res.status(500).json({ error: result.error });
     }
 
-    res?.json({
+    res.json({
       success: true,
       campaignId,
       optimization: result.data,
@@ -1159,7 +1159,7 @@ router?.post("/optimize-campaign", requireAuth, async (req, res) => {
             topRec,
           );
         } catch (err) {
-          logger?.warn(
+          logger.warn(
             { err: err },
             "Ad campaign optimized notification error:",
           );
@@ -1170,8 +1170,8 @@ router?.post("/optimize-campaign", requireAuth, async (req, res) => {
     if (error instanceof AIUnavailableError) {
       return res.status(error.statusCode).json({ error: error.message });
     }
-    logger?.warn({ err: error }, "Failed to optimize campaign:");
-    res?.status(500).json({ error: "Failed to optimize campaign" });
+    logger.warn({ err: error }, "Failed to optimize campaign:");
+    res.status(500).json({ error: "Failed to optimize campaign" });
   }
 });
 
@@ -1184,7 +1184,7 @@ router?.post("/generate-content", requireAuthOnly, async (req, res) => {
       platform = "instagram",
       topic = "new music release",
       tone = "energetic",
-    } = req?.body;
+    } = req.body;
 
     const validPlatforms = [
       "instagram",
@@ -1206,10 +1206,10 @@ router?.post("/generate-content", requireAuthOnly, async (req, res) => {
     });
 
     if (!result?.success) {
-      return res?.status(500).json({ error: result.error });
+      return res.status(500).json({ error: result.error });
     }
 
-    res?.json({
+    res.json({
       success: true,
       campaignId,
       content: result.data,
@@ -1218,8 +1218,8 @@ router?.post("/generate-content", requireAuthOnly, async (req, res) => {
     if (error instanceof AIUnavailableError) {
       return res.status(error.statusCode).json({ success: false, code: error.code, error: error.message });
     }
-    logger?.warn({ err: error }, "Failed to generate ad content:");
-    res?.status(500).json({ error: "Failed to generate content" });
+    logger.warn({ err: error }, "Failed to generate ad content:");
+    res.status(500).json({ error: "Failed to generate content" });
   }
 });
 
@@ -1238,7 +1238,7 @@ router?.post(
         goal,
         artist_name,
         quality,
-      } = req?.body;
+      } = req.body;
 
       // Route through the Advanced Video Renderer (MaxCore → Python AI → FFmpeg)
       const result = await renderAdvancedVideo({
@@ -1262,12 +1262,12 @@ router?.post(
           });
       }
 
-      logger?.info(
+      logger.info(
         `[AdVideoGen] Video ready via ${result?.source || "renderer"}`,
       );
-      res?.json(result);
+      res.json(result);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to generate ad video:");
+      logger.warn({ err: error }, "Failed to generate ad video:");
       res
         .status(500)
         .json({ success: false, message: "Video generation failed" });
@@ -1280,7 +1280,7 @@ router?.post(
   requireAuthOnly,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { topic, platform, tone, goal, artist_name, style } = req?.body;
+      const { topic, platform, tone, goal, artist_name, style } = req.body;
 
       if (!topic) {
         return res
@@ -1317,13 +1317,13 @@ router?.post(
       }
 
       if (mcImageData?.url || mcImageData?.image_url) {
-        return res?.json({ success: true, ...mcImageData });
+        return res.json({ success: true, ...mcImageData });
       }
 
       // MaxCore is the sole image generation source — no Python AI fallback.
       // Return a structured visual spec so the caller can render a placeholder
       // until the next MaxCore request succeeds.
-      return res?.json({
+      return res.json({
         success: false,
         image_url: null,
         visual_spec: {
@@ -1341,7 +1341,7 @@ router?.post(
       if (error instanceof AIUnavailableError) {
         return res.status(error.statusCode).json({ success: false, code: error.code, error: error.message });
       }
-      logger?.warn({ err: error }, "Failed to generate ad image:");
+      logger.warn({ err: error }, "Failed to generate ad image:");
       res
         .status(500)
         .json({ success: false, message: "Image generation failed" });
@@ -1356,9 +1356,9 @@ router?.get(
     try {
       const result = await pythonAIService?.getCinematicTemplates();
       if (result?.success && result?.data) {
-        res?.json(result?.data);
+        res.json(result?.data);
       } else {
-        res?.json({
+        res.json({
           templates: [
             {
               id: "cinematic_promo",
@@ -1400,7 +1400,7 @@ router?.get(
         });
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get ad video templates:");
+      logger.warn({ err: error }, "Failed to get ad video templates:");
       res
         .status(500)
         .json({ success: false, message: "Failed to get templates" });

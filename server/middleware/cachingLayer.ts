@@ -28,11 +28,11 @@ class InMemoryCache {
       ...config,
     };
 
-    setInterval(() => this?.cleanup(), 60000);
+    setInterval(() => this.cleanup(), 60000);
   }
 
   private generateEtag(data: Record<string, unknown>): string {
-    const str = typeof data === "string" ? data : JSON?.stringify(data);
+    const str = typeof data === "string" ? data : JSON.stringify(data);
     let hash = 0;
     for (let i = 0; i < str?.length; i++) {
       const char = str?.charCodeAt(i);
@@ -47,50 +47,50 @@ class InMemoryCache {
     data: Record<string, unknown>,
     contentType: string = "application/json",
   ): void {
-    if (!this?.config.enabled) return;
+    if (!this.config.enabled) return;
 
-    if (this?.cache.size >= this?.config.maxEntries) {
-      const oldest = this?.accessOrder.shift();
+    if (this.cache.size >= this.config.maxEntries) {
+      const oldest = this.accessOrder.shift();
       if (oldest) {
-        this?.cache.delete(oldest);
+        this.cache.delete(oldest);
       }
     }
 
-    this?.cache.set(key, {
+    this.cache.set(key, {
       data,
       timestamp: Date.now(),
       etag: this.generateEtag(data),
       contentType,
     });
 
-    const existingIndex = this?.accessOrder.indexOf(key);
+    const existingIndex = this.accessOrder.indexOf(key);
     if (existingIndex > -1) {
-      this?.accessOrder.splice(existingIndex, 1);
+      this.accessOrder.splice(existingIndex, 1);
     }
-    this?.accessOrder.push(key);
+    this.accessOrder.push(key);
   }
 
   get(key: string): CacheEntry | null {
-    if (!this?.config.enabled) return null;
+    if (!this.config.enabled) return null;
 
-    const entry = this?.cache.get(key);
+    const entry = this.cache.get(key);
     if (!entry) {
       this.misses++;
       return null;
     }
 
-    if (Date?.now() - entry?.timestamp > this?.config.ttlMs) {
-      this?.cache.delete(key);
+    if (Date?.now() - entry?.timestamp > this.config.ttlMs) {
+      this.cache.delete(key);
       this.misses++;
       return null;
     }
 
     this.hits++;
 
-    const index = this?.accessOrder.indexOf(key);
+    const index = this.accessOrder.indexOf(key);
     if (index > -1) {
-      this?.accessOrder.splice(index, 1);
-      this?.accessOrder.push(key);
+      this.accessOrder.splice(index, 1);
+      this.accessOrder.push(key);
     }
 
     return entry;
@@ -99,7 +99,7 @@ class InMemoryCache {
   invalidate(pattern: string | RegExp): void {
     const keysToDelete: string[] = [];
 
-    for (const key of this?.cache.keys()) {
+    for (const key of this.cache.keys()) {
       if (typeof pattern === "string") {
         if (key?.includes(pattern)) {
           keysToDelete?.push(key);
@@ -112,16 +112,16 @@ class InMemoryCache {
     }
 
     for (const key of keysToDelete) {
-      this?.cache.delete(key);
-      const index = this?.accessOrder.indexOf(key);
+      this.cache.delete(key);
+      const index = this.accessOrder.indexOf(key);
       if (index > -1) {
-        this?.accessOrder.splice(index, 1);
+        this.accessOrder.splice(index, 1);
       }
     }
   }
 
   clear(): void {
-    this?.cache.clear();
+    this.cache.clear();
     this.accessOrder = [];
   }
 
@@ -129,27 +129,27 @@ class InMemoryCache {
     const now = Date?.now();
     const keysToDelete: string[] = [];
 
-    for (const [key, entry] of this?.cache.entries()) {
-      if (now - entry?.timestamp > this?.config.ttlMs) {
+    for (const [key, entry] of this.cache.entries()) {
+      if (now - entry?.timestamp > this.config.ttlMs) {
         keysToDelete?.push(key);
       }
     }
 
     for (const key of keysToDelete) {
-      this?.cache.delete(key);
-      const index = this?.accessOrder.indexOf(key);
+      this.cache.delete(key);
+      const index = this.accessOrder.indexOf(key);
       if (index > -1) {
-        this?.accessOrder.splice(index, 1);
+        this.accessOrder.splice(index, 1);
       }
     }
   }
 
   getStats(): { hits: number; misses: number; hitRate: number; size: number } {
-    const total = this?.hits + this?.misses;
+    const total = this.hits + this.misses;
     return {
       hits: this.hits,
       misses: this.misses,
-      hitRate: total > 0 ? this?.hits / total : 0,
+      hitRate: total > 0 ? this.hits / total : 0,
       size: this.cache.size,
     };
   }
@@ -186,13 +186,13 @@ export const createCachingMiddleware = (
     options?.keyGenerator ||
     ((req: Request) => {
       const userId = (req as Record<string, unknown>).user?.id || "anonymous";
-      return `${req?.method}:${req?.originalUrl}:${userId}`;
+      return `${req.method}:${req.originalUrl}:${userId}`;
     });
 
   const shouldCache =
     options?.shouldCache ||
     ((req: Request) => {
-      return req?.method === "GET" && !req?.originalUrl.includes("/auth/");
+      return req.method === "GET" && !req.originalUrl.includes("/auth/");
     });
 
   return (req: Request, res: Response, next: NextFunction): void => {
@@ -205,42 +205,42 @@ export const createCachingMiddleware = (
     const cached = cache?.get(key);
 
     if (cached) {
-      const clientEtag = req?.headers["if-none-match"];
+      const clientEtag = req.headers["if-none-match"];
 
       if (clientEtag === cached?.etag) {
-        res?.status(304).end();
+        res.status(304).end();
         return;
       }
 
-      res?.setHeader("X-Cache", "HIT");
-      res?.setHeader("ETag", cached?.etag);
+      res.setHeader("X-Cache", "HIT");
+      res.setHeader("ETag", cached?.etag);
       res.setHeader("Cache-Control", "private, max-age=30");
-      res?.setHeader("Content-Type", cached?.contentType);
+      res.setHeader("Content-Type", cached?.contentType);
 
       if (typeof cached?.data === "object") {
-        res?.json(cached?.data);
+        res.json(cached?.data);
       } else {
-        res?.send(cached?.data);
+        res.send(cached?.data);
       }
       return;
     }
 
-    res?.setHeader("X-Cache", "MISS");
+    res.setHeader("X-Cache", "MISS");
 
-    const originalJson = res?.json.bind(res);
-    const originalSend = res?.send.bind(res);
+    const originalJson = res.json.bind(res);
+    const originalSend = res.send.bind(res);
 
     res.json = (data: Record<string, unknown>) => {
-      if (res?.statusCode >= 200 && res?.statusCode < 300) {
+      if (res.statusCode >= 200 && res.statusCode < 300) {
         cache?.set(key, data, "application/json");
       }
       return originalJson(data);
     };
 
     res.send = (data: Record<string, unknown>) => {
-      if (res?.statusCode >= 200 && res?.statusCode < 300) {
+      if (res.statusCode >= 200 && res.statusCode < 300) {
         const contentType =
-          (res?.getHeader("Content-Type") as string) || "text/html";
+          (res.getHeader("Content-Type") as string) || "text/html";
         cache?.set(key, data, contentType);
       }
       return originalSend(data);
@@ -254,10 +254,10 @@ export const apiResponseCache = createCachingMiddleware({
   cacheInstance: shortTermCache,
   keyGenerator: (req) => {
     const userId = (req as Record<string, unknown>).user?.id || "anon";
-    return `api:${req?.originalUrl}:${userId}`;
+    return `api:${req.originalUrl}:${userId}`;
   },
   shouldCache: (req) => {
-    if (req?.method !== "GET") return false;
+    if (req.method !== "GET") return false;
 
     const noCachePaths = [
       "/api/auth",
@@ -266,13 +266,13 @@ export const apiResponseCache = createCachingMiddleware({
       "/api/messages",
     ];
 
-    return !noCachePaths?.some((path) => req?.originalUrl.startsWith(path));
+    return !noCachePaths?.some((path) => req.originalUrl.startsWith(path));
   },
 });
 
 export const staticDataCache = createCachingMiddleware({
   cacheInstance: longTermCache,
-  keyGenerator: (req) => `static:${req?.originalUrl}`,
+  keyGenerator: (req) => `static:${req.originalUrl}`,
   shouldCache: (req) => {
     const staticPaths = [
       "/api/distribution/platforms",
@@ -281,20 +281,20 @@ export const staticDataCache = createCachingMiddleware({
       "/api/instruments",
     ];
     return (
-      req?.method === "GET" &&
-      staticPaths?.some((p) => req?.originalUrl.startsWith(p))
+      req.method === "GET" &&
+      staticPaths?.some((p) => req.originalUrl.startsWith(p))
     );
   },
 });
 
 export const noCacheMiddleware: RequestHandler = (_req, res, next) => {
-  res?.setHeader(
+  res.setHeader(
     "Cache-Control",
     "no-store, no-cache, must-revalidate, proxy-revalidate",
   );
-  res?.setHeader("Pragma", "no-cache");
-  res?.setHeader("Expires", "0");
-  res?.setHeader("Surrogate-Control", "no-store");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.setHeader("Surrogate-Control", "no-store");
   next();
 };
 

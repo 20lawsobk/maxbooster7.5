@@ -25,35 +25,35 @@ class WebPushService {
   private initialized = false;
 
   constructor() {
-    this?.initialize();
+    this.initialize();
   }
 
   private initialize() {
-    const publicKey = process?.env.VAPID_PUBLIC_KEY;
-    const privateKey = process?.env.VAPID_PRIVATE_KEY;
+    const publicKey = process.env.VAPID_PUBLIC_KEY;
+    const privateKey = process.env.VAPID_PRIVATE_KEY;
     const subject =
-      process?.env.VAPID_SUBJECT || "mailto:notifications@maxbooster.ai";
+      process.env.VAPID_SUBJECT || "mailto:notifications@maxbooster.ai";
 
     if (!publicKey || !privateKey) {
-      logger?.warn("VAPID keys not configured - Web Push disabled");
+      logger.warn("VAPID keys not configured - Web Push disabled");
       return;
     }
 
     try {
       webpush?.setVapidDetails(subject, publicKey, privateKey);
       this.initialized = true;
-      logger?.info("Web Push service initialized with VAPID keys");
+      logger.info("Web Push service initialized with VAPID keys");
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to initialize Web Push:");
+      logger.warn({ err: error }, "Failed to initialize Web Push:");
     }
   }
 
   isReady(): boolean {
-    return this?.initialized;
+    return this.initialized;
   }
 
   getPublicKey(): string | null {
-    return process?.env.VAPID_PUBLIC_KEY || null;
+    return process.env.VAPID_PUBLIC_KEY || null;
   }
 
   async saveSubscription(
@@ -79,7 +79,7 @@ class WebPushService {
             updatedAt: new Date(),
           })
           .where(eq(pushSubscriptions?.endpoint, subscription?.endpoint));
-        logger?.info(`Push subscription updated for user ${userId}`);
+        logger.info(`Push subscription updated for user ${userId}`);
       } else {
         await db?.insert(pushSubscriptions).values({
           userId,
@@ -88,10 +88,10 @@ class WebPushService {
           auth: subscription.keys.auth,
           userAgent: userAgent || null,
         });
-        logger?.info(`Push subscription saved for user ${userId}`);
+        logger.info(`Push subscription saved for user ${userId}`);
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to save push subscription:");
+      logger.warn({ err: error }, "Failed to save push subscription:");
       throw error;
     }
   }
@@ -101,9 +101,9 @@ class WebPushService {
       await db
         .delete(pushSubscriptions)
         .where(eq(pushSubscriptions?.endpoint, endpoint));
-      logger?.info("Push subscription removed");
+      logger.info("Push subscription removed");
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to remove push subscription:");
+      logger.warn({ err: error }, "Failed to remove push subscription:");
       throw error;
     }
   }
@@ -113,9 +113,9 @@ class WebPushService {
       await db
         .delete(pushSubscriptions)
         .where(eq(pushSubscriptions?.userId, userId));
-      logger?.info(`All push subscriptions removed for user ${userId}`);
+      logger.info(`All push subscriptions removed for user ${userId}`);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to remove user push subscriptions:");
+      logger.warn({ err: error }, "Failed to remove user push subscriptions:");
       throw error;
     }
   }
@@ -127,7 +127,7 @@ class WebPushService {
         .from(pushSubscriptions)
         .where(eq(pushSubscriptions?.userId, userId));
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get user push subscriptions:");
+      logger.warn({ err: error }, "Failed to get user push subscriptions:");
       return [];
     }
   }
@@ -155,12 +155,12 @@ class WebPushService {
       } catch (error) {
         failed++;
         if (error?.statusCode === 410 || error?.statusCode === 404) {
-          logger?.info(
+          logger.info(
             `Removing expired push subscription: ${sub?.endpoint.substring(0, 50)}...`,
           );
-          await this?.removeSubscription(sub?.endpoint).catch(() => {});
+          await this.removeSubscription(sub?.endpoint).catch(() => {});
         } else {
-          logger?.warn(
+          logger.warn(
             `Push notification failed for subscription ${sub?.id}:`,
             error?.statusCode || error?.message,
           );
@@ -175,17 +175,17 @@ class WebPushService {
     userId: string,
     payload: PushPayload,
   ): Promise<{ sent: number; failed: number }> {
-    if (!this?.initialized) {
-      logger?.warn("Web Push not initialized, skipping push notification");
+    if (!this.initialized) {
+      logger.warn("Web Push not initialized, skipping push notification");
       return { sent: 0, failed: 0 };
     }
 
-    const subscriptions = await this?.getUserSubscriptions(userId);
+    const subscriptions = await this.getUserSubscriptions(userId);
     if (subscriptions?.length === 0) {
       return { sent: 0, failed: 0 };
     }
 
-    const pushPayload = JSON?.stringify({
+    const pushPayload = JSON.stringify({
       title: payload.title,
       body: payload.body,
       url: payload.url || "/",
@@ -204,13 +204,13 @@ class WebPushService {
       data: { ...payload?.data, url: payload.url || "/" },
     });
 
-    const result = await this?.deliverToSubscriptions(
+    const result = await this.deliverToSubscriptions(
       subscriptions,
       pushPayload,
     );
 
     if (result?.sent > 0) {
-      logger?.info(
+      logger.info(
         `Push notification sent to ${result?.sent}/${subscriptions?.length} devices for user ${userId}`,
       );
     }
@@ -222,17 +222,17 @@ class WebPushService {
     userId: string,
     richPayload: RichPushPayload,
   ): Promise<{ sent: number; failed: number }> {
-    if (!this?.initialized) {
-      logger?.warn("Web Push not initialized, skipping push notification");
+    if (!this.initialized) {
+      logger.warn("Web Push not initialized, skipping push notification");
       return { sent: 0, failed: 0 };
     }
 
-    const subscriptions = await this?.getUserSubscriptions(userId);
+    const subscriptions = await this.getUserSubscriptions(userId);
     if (subscriptions?.length === 0) {
       return { sent: 0, failed: 0 };
     }
 
-    const serialized = JSON?.stringify({
+    const serialized = JSON.stringify({
       title: richPayload.title,
       body: richPayload.body,
       url: richPayload.url,
@@ -250,16 +250,16 @@ class WebPushService {
       data: { ...richPayload?.data, url: richPayload.url },
     });
 
-    const result = await this?.deliverToSubscriptions(subscriptions, serialized);
+    const result = await this.deliverToSubscriptions(subscriptions, serialized);
 
     if (richPayload?.silent) {
       if (result?.sent > 0) {
-        logger?.info(
+        logger.info(
           `Silent push sent to ${result?.sent} device(s) for user ${userId} (${richPayload?.data?.reason || "background sync"})`,
         );
       }
     } else if (result?.sent > 0) {
-      logger?.info(
+      logger.info(
         `Rich push [${richPayload?.tag}] sent to ${result?.sent}/${subscriptions?.length} devices for user ${userId}`,
       );
     }

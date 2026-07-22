@@ -124,7 +124,7 @@ class PlatformCapsuleBuilder {
   private projectRoot: string;
   private pocket: PocketDimension | null = null;
 
-  constructor(projectRoot: string = process?.cwd()) {
+  constructor(projectRoot: string = process.cwd()) {
     this.projectRoot = projectRoot;
   }
 
@@ -133,10 +133,10 @@ class PlatformCapsuleBuilder {
    */
   async build(options: CapsuleBuildOptions): Promise<CapsuleMetadata> {
     const capsuleId = `capsule-${options?.version}-${Date?.now()}`;
-    logger?.info(`\n🧬 PLATFORM CAPSULE BUILDER`);
-    logger?.info(`   Creating capsule: ${capsuleId}`);
-    logger?.info(`   Version: ${options?.version}`);
-    logger?.info(`   Source: ${this?.projectRoot}\n`);
+    logger.info(`\n🧬 PLATFORM CAPSULE BUILDER`);
+    logger.info(`   Creating capsule: ${capsuleId}`);
+    logger.info(`   Version: ${options?.version}`);
+    logger.info(`   Source: ${this.projectRoot}\n`);
 
     // Create the pocket dimension for this capsule
     this.pocket = await pocketManager?.openPocket(capsuleId, {
@@ -146,16 +146,16 @@ class PlatformCapsuleBuilder {
     });
 
     // Collect all files
-    logger?.info("📦 Collecting files...");
-    const files = await this?.collectFiles(options);
-    logger?.info(`   Found ${files?.length} files to package`);
+    logger.info("📦 Collecting files...");
+    const files = await this.collectFiles(options);
+    logger.info(`   Found ${files?.length} files to package`);
 
     // Create manifest
-    logger?.info("📋 Building manifest...");
-    const manifest = await this?.buildManifest(files, options);
+    logger.info("📋 Building manifest...");
+    const manifest = await this.buildManifest(files, options);
 
     // Write files to pocket dimension
-    logger?.info("💾 Writing to pocket dimension...");
+    logger.info("💾 Writing to pocket dimension...");
     let totalSize = 0;
     let processedFiles = 0;
 
@@ -163,26 +163,26 @@ class PlatformCapsuleBuilder {
       const content = await fs?.readFile(file?.fullPath);
       const relativePath = file?.relativePath;
 
-      await this?.pocket.write(relativePath, content);
+      await this.pocket.write(relativePath, content);
       totalSize += content?.length;
       processedFiles++;
 
       if (processedFiles % 50 === 0) {
-        logger?.info(`   Processed ${processedFiles}/${files?.length} files...`);
+        logger.info(`   Processed ${processedFiles}/${files?.length} files...`);
       }
     }
 
     // Serialize manifest with consistent formatting for checksum
-    const manifestJson = JSON?.stringify(manifest, null, 2);
+    const manifestJson = JSON.stringify(manifest, null, 2);
 
     // Write manifest
-    await this?.pocket.write(
+    await this.pocket.write(
       "__capsule__/manifest.json",
       Buffer?.from(manifestJson),
     );
 
     // Get compression stats
-    const stats = this?.pocket.getStats();
+    const stats = this.pocket.getStats();
     const compressionRatio = stats?.compressedSize / stats?.originalSize;
 
     // Create metadata - IMPORTANT: hash the exact same string that was written
@@ -213,25 +213,25 @@ class PlatformCapsuleBuilder {
     };
 
     // Write metadata
-    await this?.pocket.write(
+    await this.pocket.write(
       "__capsule__/metadata.json",
-      Buffer?.from(JSON?.stringify(metadata, null, 2)),
+      Buffer?.from(JSON.stringify(metadata, null, 2)),
     );
 
-    logger?.info(`\n✅ CAPSULE CREATED SUCCESSFULLY`);
-    logger?.info(`   ID: ${capsuleId}`);
-    logger?.info(`   Files: ${files?.length}`);
-    logger?.info(`   Original Size: ${(totalSize / 1024 / 1024).toFixed(2)} MB`);
-    logger?.info(
+    logger.info(`\n✅ CAPSULE CREATED SUCCESSFULLY`);
+    logger.info(`   ID: ${capsuleId}`);
+    logger.info(`   Files: ${files?.length}`);
+    logger.info(`   Original Size: ${(totalSize / 1024 / 1024).toFixed(2)} MB`);
+    logger.info(
       `   Compressed: ${(stats?.compressedSize / 1024 / 1024).toFixed(2)} MB`,
     );
-    logger?.info(
+    logger.info(
       `   Compression: ${((1 - compressionRatio) * 100).toFixed(1)}% reduction`,
     );
-    logger?.info(`   Encrypted: ${options?.encrypt ? "Yes" : "No"}\n`);
+    logger.info(`   Encrypted: ${options?.encrypt ? "Yes" : "No"}\n`);
 
     // CRITICAL: Close the pocket to persist all data to disk
-    await this?.pocket.close();
+    await this.pocket.close();
     this.pocket = null;
 
     return metadata;
@@ -298,7 +298,7 @@ class PlatformCapsuleBuilder {
             path?.relative(baseDir, fullPath),
           );
         } else {
-          relativePath = path?.relative(this?.projectRoot, fullPath);
+          relativePath = path?.relative(this.projectRoot, fullPath);
         }
 
         // Check exclusions (skip for prod modules since they're pre-filtered)
@@ -627,12 +627,12 @@ class PlatformCapsuleLoader {
     await pocketManager?.closePocket(capsuleId);
 
     // Delete the capsule directory from storage
-    const capsulePath = path?.join(this?.storagePath, capsuleId);
+    const capsulePath = path?.join(this.storagePath, capsuleId);
     try {
       await fs?.rm(capsulePath, { recursive: true, force: true });
-      logger?.info(`Capsule ${capsuleId} deleted successfully`);
+      logger.info(`Capsule ${capsuleId} deleted successfully`);
     } catch (error) {
-      logger?.warn({ err: error }, `Failed to delete capsule ${capsuleId}:`);
+      logger.warn({ err: error }, `Failed to delete capsule ${capsuleId}:`);
       throw error;
     }
   }
@@ -654,15 +654,15 @@ class VirtualCapsuleFS {
 
   async readFile(filePath: string): Promise<Buffer> {
     // Check cache first
-    if (this?.cache.has(filePath)) {
-      return this?.cache.get(filePath)!;
+    if (this.cache.has(filePath)) {
+      return this.cache.get(filePath)!;
     }
 
     // Read from pocket
-    const content = await this?.pocket.read(filePath);
+    const content = await this.pocket.read(filePath);
 
     // Cache for future access
-    this?.cache.set(filePath, content);
+    this.cache.set(filePath, content);
 
     return content;
   }
@@ -671,29 +671,29 @@ class VirtualCapsuleFS {
     filePath: string,
     encoding: BufferEncoding = "utf-8",
   ): Promise<string> {
-    const buffer = await this?.readFile(filePath);
+    const buffer = await this.readFile(filePath);
     return buffer?.toString(encoding);
   }
 
   exists(filePath: string): boolean {
-    return this?.manifest.files?.some((f) => f?.path === filePath);
+    return this.manifest.files?.some((f) => f?.path === filePath);
   }
 
   listDir(dirPath: string): string[] {
     const normalized = dirPath?.endsWith("/") ? dirPath : dirPath + "/";
-    return this?.manifest.files
+    return this.manifest.files
       .filter((f) => f?.path.startsWith(normalized))
       .map((f) => f?.path.slice(normalized?.length).split("/")[0])
       .filter((v, i, a) => a?.indexOf(v) === i);
   }
 
   getManifest(): CapsuleManifest {
-    return this?.manifest;
+    return this.manifest;
   }
 
   getStats(): { cachedFiles: number; cacheSize: number } {
     let cacheSize = 0;
-    this?.cache.forEach((buf) => (cacheSize += buf?.length));
+    this.cache.forEach((buf) => (cacheSize += buf?.length));
     return {
       cachedFiles: this.cache.size,
       cacheSize,
@@ -701,7 +701,7 @@ class VirtualCapsuleFS {
   }
 
   clearCache(): void {
-    this?.cache.clear();
+    this.cache.clear();
   }
 }
 

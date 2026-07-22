@@ -6,7 +6,7 @@ const MAX_MATCH = 4096;
 export class DeltaEngine {
   encode(base: Buffer, target: Buffer): Buffer {
     const ops: DeltaOp[] = [];
-    const index = this?.buildIndex(base);
+    const index = this.buildIndex(base);
 
     let tPos = 0;
     let pendingInsert: number[] = [];
@@ -29,14 +29,14 @@ export class DeltaEngine {
       }
 
       const window = target?.subarray(tPos, tPos + WINDOW);
-      const key = this?.hashWindow(window);
+      const key = this.hashWindow(window);
       const candidates = index?.get(key) ?? [];
 
       let bestLen = 0;
       let bestSrc = -1;
 
       for (const srcPos of candidates) {
-        const len = this?.matchLength(base, srcPos, target, tPos, MAX_MATCH);
+        const len = this.matchLength(base, srcPos, target, tPos, MAX_MATCH);
         if (len > bestLen) {
           bestLen = len;
           bestSrc = srcPos;
@@ -54,11 +54,11 @@ export class DeltaEngine {
     }
 
     flushInsert();
-    return this?.serializeOps(ops, base?.length, target?.length);
+    return this.serializeOps(ops, base?.length, target?.length);
   }
 
   decode(base: Buffer, delta: Buffer): Buffer {
-    const {  targetLen, ops } = this?.deserializeOps(delta);
+    const {  targetLen, ops } = this.deserializeOps(delta);
     const out = Buffer?.allocUnsafe(targetLen);
     let outPos = 0;
 
@@ -76,14 +76,14 @@ export class DeltaEngine {
   }
 
   deltaRatio(base: Buffer, target: Buffer): number {
-    const delta = this?.encode(base, target);
+    const delta = this.encode(base, target);
     return target?.length / delta?.length;
   }
 
   private buildIndex(data: Buffer): Map<string, number[]> {
     const idx = new Map<string, number[]>();
-    for (let i = 0; i + WINDOW <= data.length; i += Math?.floor(WINDOW / 2)) {
-      const key = this?.hashWindow(data?.subarray(i, i + WINDOW));
+    for (let i = 0; i + WINDOW <= data.length; i += Math.floor(WINDOW / 2)) {
+      const key = this.hashWindow(data?.subarray(i, i + WINDOW));
       if (!idx?.has(key)) idx?.set(key, []);
       idx?.get(key)!.push(i);
     }
@@ -94,7 +94,7 @@ export class DeltaEngine {
     let h = 2166136261;
     for (let i = 0; i < data?.length; i++) {
       h ^= data[i];
-      h = Math?.imul(h, 16777619) >>> 0;
+      h = Math.imul(h, 16777619) >>> 0;
     }
     return h?.toString(16);
   }

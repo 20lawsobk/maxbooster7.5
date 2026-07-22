@@ -22,19 +22,19 @@ export class VCACompressorProcessor implements DSPProcessor {
 
     dbToLinear(threshold);
     const makeupLin = dbToLinear(makeupGain);
-    const attackCoeff = Math?.exp(-1 / msToSamples(attackMs, this?.sampleRate));
-    const releaseCoeff = Math?.exp(-1 / msToSamples(releaseMs, this?.sampleRate));
+    const attackCoeff = Math.exp(-1 / msToSamples(attackMs, this.sampleRate));
+    const releaseCoeff = Math.exp(-1 / msToSamples(releaseMs, this.sampleRate));
     const kneeWidth = knee / 2;
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       const inputL = input?.samples[0][i];
       const inputR = input?.samples[1][i];
-      const inputLevel = Math?.max(Math?.abs(inputL), Math?.abs(inputR));
+      const inputLevel = Math.max(Math.abs(inputL), Math.abs(inputR));
 
-      const coeff = inputLevel > this?.envelope ? attackCoeff : releaseCoeff;
-      this.envelope = this?.envelope * coeff + inputLevel * (1 - coeff);
+      const coeff = inputLevel > this.envelope ? attackCoeff : releaseCoeff;
+      this.envelope = this.envelope * coeff + inputLevel * (1 - coeff);
 
-      const inputDb = linearToDb(this?.envelope);
+      const inputDb = linearToDb(this.envelope);
       let gainReduction = 0;
 
       if (inputDb > threshold + kneeWidth) {
@@ -83,15 +83,15 @@ export class OpticalCompressorProcessor implements DSPProcessor {
 
     const thresholdLin = dbToLinear(threshold);
     const makeupLin = dbToLinear(makeup);
-    const attackCoeff = Math?.exp(-1 / msToSamples(attackMs, this?.sampleRate));
-    const releaseCoeff = Math?.exp(
-      -1 / msToSamples(releaseMs * 2, this?.sampleRate),
+    const attackCoeff = Math.exp(-1 / msToSamples(attackMs, this.sampleRate));
+    const releaseCoeff = Math.exp(
+      -1 / msToSamples(releaseMs * 2, this.sampleRate),
     );
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       const inputL = input?.samples[0][i];
       const inputR = input?.samples[1][i];
-      const inputLevel = Math?.max(Math?.abs(inputL), Math?.abs(inputR));
+      const inputLevel = Math.max(Math.abs(inputL), Math.abs(inputR));
 
       const targetResponse =
         inputLevel > thresholdLin
@@ -99,12 +99,12 @@ export class OpticalCompressorProcessor implements DSPProcessor {
           : 0;
 
       const opticalCoeff =
-        targetResponse > this?.opticalCell ? attackCoeff : releaseCoeff;
+        targetResponse > this.opticalCell ? attackCoeff : releaseCoeff;
       this.opticalCell =
-        this?.opticalCell * opticalCoeff + targetResponse * (1 - opticalCoeff);
+        this.opticalCell * opticalCoeff + targetResponse * (1 - opticalCoeff);
 
       const nonLinearResponse =
-        Math?.log1p(this?.opticalCell * 10) / Math?.log1p(10);
+        Math.log1p(this.opticalCell * 10) / Math.log1p(10);
 
       const gainReduction = nonLinearResponse * (1 - 1 / ratio);
       let gain = dbToLinear(-gainReduction * 20) * makeupLin;
@@ -113,8 +113,8 @@ export class OpticalCompressorProcessor implements DSPProcessor {
       let processedR = inputR * gain;
 
       if (warmth > 0) {
-        processedL = Math?.tanh(processedL * (1 + warmth)) / (1 + warmth * 0.5);
-        processedR = Math?.tanh(processedR * (1 + warmth)) / (1 + warmth * 0.5);
+        processedL = Math.tanh(processedL * (1 + warmth)) / (1 + warmth * 0.5);
+        processedR = Math.tanh(processedR * (1 + warmth)) / (1 + warmth * 0.5);
       }
 
       output.samples[0][i] = inputL * (1 - mix) + processedL * mix;
@@ -154,8 +154,8 @@ export class FETCompressorProcessor implements DSPProcessor {
     const thresholdLin = dbToLinear(threshold);
     const makeupLin = dbToLinear(makeup);
     const inputGain = dbToLinear(input_drive);
-    const attackCoeff = Math?.exp(-1 / msToSamples(attackMs, this?.sampleRate));
-    const releaseCoeff = Math?.exp(-1 / msToSamples(releaseMs, this?.sampleRate));
+    const attackCoeff = Math.exp(-1 / msToSamples(attackMs, this.sampleRate));
+    const releaseCoeff = Math.exp(-1 / msToSamples(releaseMs, this.sampleRate));
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       let inputL = input?.samples[0][i] * inputGain;
@@ -166,15 +166,15 @@ export class FETCompressorProcessor implements DSPProcessor {
         inputR = softClip(inputR * (1 + character), 0.7);
       }
 
-      const inputLevel = Math?.max(Math?.abs(inputL), Math?.abs(inputR));
+      const inputLevel = Math.max(Math.abs(inputL), Math.abs(inputR));
 
-      const fetResponse = Math?.pow(inputLevel, 0.8);
-      const coeff = fetResponse > this?.envelope ? attackCoeff : releaseCoeff;
-      this.envelope = this?.envelope * coeff + fetResponse * (1 - coeff);
+      const fetResponse = Math.pow(inputLevel, 0.8);
+      const coeff = fetResponse > this.envelope ? attackCoeff : releaseCoeff;
+      this.envelope = this.envelope * coeff + fetResponse * (1 - coeff);
 
       let gain = 1;
-      if (this?.envelope > thresholdLin) {
-        const overDb = linearToDb(this?.envelope / thresholdLin);
+      if (this.envelope > thresholdLin) {
+        const overDb = linearToDb(this.envelope / thresholdLin);
         const reduction = overDb * (1 - 1 / ratio);
         gain = dbToLinear(-reduction);
       }
@@ -183,9 +183,9 @@ export class FETCompressorProcessor implements DSPProcessor {
       let processedR = inputR * gain * makeupLin;
 
       processedL =
-        Math?.tanh(processedL * (1 + character * 0.3)) / (1 + character * 0.15);
+        Math.tanh(processedL * (1 + character * 0.3)) / (1 + character * 0.15);
       processedR =
-        Math?.tanh(processedR * (1 + character * 0.3)) / (1 + character * 0.15);
+        Math.tanh(processedR * (1 + character * 0.3)) / (1 + character * 0.15);
 
       output.samples[0][i] = input?.samples[0][i] * (1 - mix) + processedL * mix;
       output.samples[1][i] = input?.samples[1][i] * (1 - mix) + processedR * mix;
@@ -224,8 +224,8 @@ export class TubeCompressorProcessor implements DSPProcessor {
 
     const thresholdLin = dbToLinear(threshold);
     const makeupLin = dbToLinear(makeup);
-    const attackCoeff = Math?.exp(-1 / msToSamples(attackMs, this?.sampleRate));
-    const releaseCoeff = Math?.exp(-1 / msToSamples(releaseMs, this?.sampleRate));
+    const attackCoeff = Math.exp(-1 / msToSamples(attackMs, this.sampleRate));
+    const releaseCoeff = Math.exp(-1 / msToSamples(releaseMs, this.sampleRate));
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       let inputL = input?.samples[0][i];
@@ -234,15 +234,15 @@ export class TubeCompressorProcessor implements DSPProcessor {
       inputL = inputL + bias * 0.1;
       inputR = inputR + bias * 0.1;
 
-      const inputLevel = Math?.max(Math?.abs(inputL), Math?.abs(inputR));
+      const inputLevel = Math.max(Math.abs(inputL), Math.abs(inputR));
 
-      const coeff = inputLevel > this?.envelope ? attackCoeff : releaseCoeff;
-      this.envelope = this?.envelope * coeff + inputLevel * (1 - coeff);
+      const coeff = inputLevel > this.envelope ? attackCoeff : releaseCoeff;
+      this.envelope = this.envelope * coeff + inputLevel * (1 - coeff);
 
       let gain = 1;
-      if (this?.envelope > thresholdLin) {
-        const overDb = linearToDb(this?.envelope / thresholdLin);
-        const smoothOver = Math?.log1p(overDb);
+      if (this.envelope > thresholdLin) {
+        const overDb = linearToDb(this.envelope / thresholdLin);
+        const smoothOver = Math.log1p(overDb);
         const reduction = smoothOver * (1 - 1 / ratio) * 3;
         gain = dbToLinear(-reduction);
       }
@@ -253,7 +253,7 @@ export class TubeCompressorProcessor implements DSPProcessor {
       const tubeTransfer = (x: number) => {
         const driven = x * (1 + drive * 2);
         return (
-          (driven > 0 ? 1 - Math?.exp(-driven) : -1 + Math?.exp(driven)) /
+          (driven > 0 ? 1 - Math.exp(-driven) : -1 + Math.exp(driven)) /
           (1 + drive)
         );
       };
@@ -330,31 +330,31 @@ export class MultibandCompressorProcessor implements DSPProcessor {
     const release = (params?.release as number) ?? 100;
     const mix = (params?.mix as number) ?? 1;
 
-    const attackCoeff = Math?.exp(-1 / msToSamples(attack, this?.sampleRate));
-    const releaseCoeff = Math?.exp(-1 / msToSamples(release, this?.sampleRate));
+    const attackCoeff = Math.exp(-1 / msToSamples(attack, this.sampleRate));
+    const releaseCoeff = Math.exp(-1 / msToSamples(release, this.sampleRate));
 
-    this?.lowLPL.setLowpass(lowFreq, 0.707, this?.sampleRate);
-    this?.lowHPL.setHighpass(20, 0.707, this?.sampleRate);
-    this?.midLPL.setLowpass(highFreq, 0.707, this?.sampleRate);
-    this?.midHPL.setHighpass(lowFreq, 0.707, this?.sampleRate);
-    this?.highHPL.setHighpass(highFreq, 0.707, this?.sampleRate);
-    this?.lowLPR.setLowpass(lowFreq, 0.707, this?.sampleRate);
-    this?.lowHPR.setHighpass(20, 0.707, this?.sampleRate);
-    this?.midLPR.setLowpass(highFreq, 0.707, this?.sampleRate);
-    this?.midHPR.setHighpass(lowFreq, 0.707, this?.sampleRate);
-    this?.highHPR.setHighpass(highFreq, 0.707, this?.sampleRate);
+    this.lowLPL.setLowpass(lowFreq, 0.707, this.sampleRate);
+    this.lowHPL.setHighpass(20, 0.707, this.sampleRate);
+    this.midLPL.setLowpass(highFreq, 0.707, this.sampleRate);
+    this.midHPL.setHighpass(lowFreq, 0.707, this.sampleRate);
+    this.highHPL.setHighpass(highFreq, 0.707, this.sampleRate);
+    this.lowLPR.setLowpass(lowFreq, 0.707, this.sampleRate);
+    this.lowHPR.setHighpass(20, 0.707, this.sampleRate);
+    this.midLPR.setLowpass(highFreq, 0.707, this.sampleRate);
+    this.midHPR.setHighpass(lowFreq, 0.707, this.sampleRate);
+    this.highHPR.setHighpass(highFreq, 0.707, this.sampleRate);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       const sampleL = input?.samples[0][i];
       const sampleR = input?.samples[1][i];
 
-      const lowBandL = this?.lowLPL.process(this?.lowHPL.process(sampleL));
-      const midBandL = this?.midLPL.process(this?.midHPL.process(sampleL));
-      const highBandL = this?.highHPL.process(sampleL);
+      const lowBandL = this.lowLPL.process(this.lowHPL.process(sampleL));
+      const midBandL = this.midLPL.process(this.midHPL.process(sampleL));
+      const highBandL = this.highHPL.process(sampleL);
 
-      const lowBandR = this?.lowLPR.process(this?.lowHPR.process(sampleR));
-      const midBandR = this?.midLPR.process(this?.midHPR.process(sampleR));
-      const highBandR = this?.highHPR.process(sampleR);
+      const lowBandR = this.lowLPR.process(this.lowHPR.process(sampleR));
+      const midBandR = this.midLPR.process(this.midHPR.process(sampleR));
+      const highBandR = this.highHPR.process(sampleR);
 
       const compressBand = (
         sample: number,
@@ -362,7 +362,7 @@ export class MultibandCompressorProcessor implements DSPProcessor {
         threshold: number,
         ratio: number,
       ): { sample: number; env: number } => {
-        const level = Math?.abs(sample);
+        const level = Math.abs(sample);
         const threshLin = dbToLinear(threshold);
         const coeff = level > env ? attackCoeff : releaseCoeff;
         env = env * coeff + level * (1 - coeff);
@@ -378,38 +378,38 @@ export class MultibandCompressorProcessor implements DSPProcessor {
 
       const lowResultL = compressBand(
         lowBandL,
-        this?.lowEnvL,
+        this.lowEnvL,
         lowThreshold,
         lowRatio,
       );
       const midResultL = compressBand(
         midBandL,
-        this?.midEnvL,
+        this.midEnvL,
         midThreshold,
         midRatio,
       );
       const highResultL = compressBand(
         highBandL,
-        this?.highEnvL,
+        this.highEnvL,
         highThreshold,
         highRatio,
       );
 
       const lowResultR = compressBand(
         lowBandR,
-        this?.lowEnvR,
+        this.lowEnvR,
         lowThreshold,
         lowRatio,
       );
       const midResultR = compressBand(
         midBandR,
-        this?.midEnvR,
+        this.midEnvR,
         midThreshold,
         midRatio,
       );
       const highResultR = compressBand(
         highBandR,
-        this?.highEnvR,
+        this.highEnvR,
         highThreshold,
         highRatio,
       );
@@ -440,16 +440,16 @@ export class MultibandCompressorProcessor implements DSPProcessor {
     this.lowEnvR = 0;
     this.midEnvR = 0;
     this.highEnvR = 0;
-    this?.lowLPL.clear();
-    this?.lowHPL.clear();
-    this?.midLPL.clear();
-    this?.midHPL.clear();
-    this?.highHPL.clear();
-    this?.lowLPR.clear();
-    this?.lowHPR.clear();
-    this?.midLPR.clear();
-    this?.midHPR.clear();
-    this?.highHPR.clear();
+    this.lowLPL.clear();
+    this.lowHPL.clear();
+    this.midLPL.clear();
+    this.midHPL.clear();
+    this.highHPL.clear();
+    this.lowLPR.clear();
+    this.lowHPR.clear();
+    this.midLPR.clear();
+    this.midHPR.clear();
+    this.highHPR.clear();
   }
 }
 
@@ -474,20 +474,20 @@ export class ParallelCompressorProcessor implements DSPProcessor {
 
     const thresholdLin = dbToLinear(threshold);
     const makeupLin = dbToLinear(makeup);
-    const attackCoeff = Math?.exp(-1 / msToSamples(attack, this?.sampleRate));
-    const releaseCoeff = Math?.exp(-1 / msToSamples(release, this?.sampleRate));
+    const attackCoeff = Math.exp(-1 / msToSamples(attack, this.sampleRate));
+    const releaseCoeff = Math.exp(-1 / msToSamples(release, this.sampleRate));
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       const inputL = input?.samples[0][i];
       const inputR = input?.samples[1][i];
-      const inputLevel = Math?.max(Math?.abs(inputL), Math?.abs(inputR));
+      const inputLevel = Math.max(Math.abs(inputL), Math.abs(inputR));
 
-      const coeff = inputLevel > this?.envelope ? attackCoeff : releaseCoeff;
-      this.envelope = this?.envelope * coeff + inputLevel * (1 - coeff);
+      const coeff = inputLevel > this.envelope ? attackCoeff : releaseCoeff;
+      this.envelope = this.envelope * coeff + inputLevel * (1 - coeff);
 
       let gain = 1;
-      if (this?.envelope > thresholdLin) {
-        const overDb = linearToDb(this?.envelope / thresholdLin);
+      if (this.envelope > thresholdLin) {
+        const overDb = linearToDb(this.envelope / thresholdLin);
         gain = dbToLinear(-overDb * (1 - 1 / ratio));
       }
 
@@ -527,22 +527,22 @@ export class BusCompressorProcessor implements DSPProcessor {
 
     const thresholdLin = dbToLinear(threshold);
     const makeupLin = dbToLinear(makeup);
-    const attackCoeff = Math?.exp(-1 / msToSamples(attack, this?.sampleRate));
-    const releaseCoeff = Math?.exp(-1 / msToSamples(release, this?.sampleRate));
+    const attackCoeff = Math.exp(-1 / msToSamples(attack, this.sampleRate));
+    const releaseCoeff = Math.exp(-1 / msToSamples(release, this.sampleRate));
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       const inputL = input?.samples[0][i];
       const inputR = input?.samples[1][i];
 
       const stereoSum = (inputL + inputR) * 0.5;
-      const inputLevel = Math?.abs(stereoSum);
+      const inputLevel = Math.abs(stereoSum);
 
-      const coeff = inputLevel > this?.envelope ? attackCoeff : releaseCoeff;
-      this.envelope = this?.envelope * coeff + inputLevel * (1 - coeff);
+      const coeff = inputLevel > this.envelope ? attackCoeff : releaseCoeff;
+      this.envelope = this.envelope * coeff + inputLevel * (1 - coeff);
 
       let gain = 1;
-      if (this?.envelope > thresholdLin) {
-        const overDb = linearToDb(this?.envelope / thresholdLin);
+      if (this.envelope > thresholdLin) {
+        const overDb = linearToDb(this.envelope / thresholdLin);
         gain = dbToLinear(-overDb * (1 - 1 / ratio));
       }
 
@@ -590,29 +590,29 @@ export class MasteringCompressorProcessor implements DSPProcessor {
 
     dbToLinear(threshold);
     const makeupLin = dbToLinear(makeup);
-    const attackCoeff = Math?.exp(-1 / msToSamples(attack, this?.sampleRate));
-    const releaseCoeff = Math?.exp(-1 / msToSamples(release, this?.sampleRate));
-    msToSamples(lookahead, this?.sampleRate);
+    const attackCoeff = Math.exp(-1 / msToSamples(attack, this.sampleRate));
+    const releaseCoeff = Math.exp(-1 / msToSamples(release, this.sampleRate));
+    msToSamples(lookahead, this.sampleRate);
     const kneeWidth = knee / 2;
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       const inputL = input?.samples[0][i];
       const inputR = input?.samples[1][i];
 
-      const lookaheadL = this?.lookaheadBuffer[0][this?.bufferIndex];
-      const lookaheadR = this?.lookaheadBuffer[1][this?.bufferIndex];
+      const lookaheadL = this.lookaheadBuffer[0][this.bufferIndex];
+      const lookaheadR = this.lookaheadBuffer[1][this.bufferIndex];
 
       this.lookaheadBuffer[0][this.bufferIndex] = inputL;
       this.lookaheadBuffer[1][this.bufferIndex] = inputR;
       this.bufferIndex =
-        (this?.bufferIndex + 1) % this?.lookaheadBuffer[0].length;
+        (this.bufferIndex + 1) % this.lookaheadBuffer[0].length;
 
-      const inputLevel = Math?.max(Math?.abs(inputL), Math?.abs(inputR));
+      const inputLevel = Math.max(Math.abs(inputL), Math.abs(inputR));
 
-      const coeff = inputLevel > this?.envelope ? attackCoeff : releaseCoeff;
-      this.envelope = this?.envelope * coeff + inputLevel * (1 - coeff);
+      const coeff = inputLevel > this.envelope ? attackCoeff : releaseCoeff;
+      this.envelope = this.envelope * coeff + inputLevel * (1 - coeff);
 
-      const inputDb = linearToDb(this?.envelope);
+      const inputDb = linearToDb(this.envelope);
       let gainReduction = 0;
 
       if (inputDb > threshold + kneeWidth) {
@@ -636,7 +636,7 @@ export class MasteringCompressorProcessor implements DSPProcessor {
 
   reset(): void {
     this.envelope = 0;
-    this?.lookaheadBuffer.forEach((b) => b?.fill(0));
+    this.lookaheadBuffer.forEach((b) => b?.fill(0));
     this.bufferIndex = 0;
   }
 }
@@ -665,31 +665,31 @@ export class VintageCompressorProcessor implements DSPProcessor {
 
     const thresholdLin = dbToLinear(threshold);
     const makeupLin = dbToLinear(makeup);
-    const baseAttackCoeff = Math?.exp(-1 / msToSamples(attack, this?.sampleRate));
-    const baseReleaseCoeff = Math?.exp(
-      -1 / msToSamples(release, this?.sampleRate),
+    const baseAttackCoeff = Math.exp(-1 / msToSamples(attack, this.sampleRate));
+    const baseReleaseCoeff = Math.exp(
+      -1 / msToSamples(release, this.sampleRate),
     );
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       let inputL = input?.samples[0][i];
       let inputR = input?.samples[1][i];
-      const inputLevel = Math?.max(Math?.abs(inputL), Math?.abs(inputR));
+      const inputLevel = Math.max(Math.abs(inputL), Math.abs(inputR));
 
-      const programFactor = 1 + this?.programDependent * character;
-      const attackCoeff = Math?.pow(baseAttackCoeff, 1 / programFactor);
-      const releaseCoeff = Math?.pow(baseReleaseCoeff, programFactor);
+      const programFactor = 1 + this.programDependent * character;
+      const attackCoeff = Math.pow(baseAttackCoeff, 1 / programFactor);
+      const releaseCoeff = Math.pow(baseReleaseCoeff, programFactor);
 
-      const coeff = inputLevel > this?.envelope ? attackCoeff : releaseCoeff;
-      this.envelope = this?.envelope * coeff + inputLevel * (1 - coeff);
+      const coeff = inputLevel > this.envelope ? attackCoeff : releaseCoeff;
+      this.envelope = this.envelope * coeff + inputLevel * (1 - coeff);
 
       this.programDependent =
-        this?.programDependent * 0.999 +
-        (this?.envelope > thresholdLin ? 0.001 : 0);
+        this.programDependent * 0.999 +
+        (this.envelope > thresholdLin ? 0.001 : 0);
 
       let gain = 1;
-      if (this?.envelope > thresholdLin) {
-        const overDb = linearToDb(this?.envelope / thresholdLin);
-        const smoothRatio = ratio + (ratio - 1) * Math?.tanh(overDb / 10);
+      if (this.envelope > thresholdLin) {
+        const overDb = linearToDb(this.envelope / thresholdLin);
+        const smoothRatio = ratio + (ratio - 1) * Math.tanh(overDb / 10);
         gain = dbToLinear(-overDb * (1 - 1 / smoothRatio));
       }
 
@@ -697,8 +697,8 @@ export class VintageCompressorProcessor implements DSPProcessor {
       let processedR = inputR * gain * makeupLin;
 
       if (warmth > 0) {
-        processedL = Math?.tanh(processedL * (1 + warmth)) / (1 + warmth * 0.5);
-        processedR = Math?.tanh(processedR * (1 + warmth)) / (1 + warmth * 0.5);
+        processedL = Math.tanh(processedL * (1 + warmth)) / (1 + warmth * 0.5);
+        processedR = Math.tanh(processedR * (1 + warmth)) / (1 + warmth * 0.5);
 
         processedL += processedL * processedL * warmth * 0.05;
         processedR += processedR * processedR * warmth * 0.05;
@@ -739,23 +739,23 @@ export class GlueCompressorProcessor implements DSPProcessor {
 
     const thresholdLin = dbToLinear(threshold);
     const makeupLin = dbToLinear(makeup);
-    const attackCoeff = Math?.exp(-1 / msToSamples(attack, this?.sampleRate));
-    const releaseCoeff = Math?.exp(-1 / msToSamples(release, this?.sampleRate));
+    const attackCoeff = Math.exp(-1 / msToSamples(attack, this.sampleRate));
+    const releaseCoeff = Math.exp(-1 / msToSamples(release, this.sampleRate));
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       const inputL = input?.samples[0][i];
       const inputR = input?.samples[1][i];
 
       const stereoSum = (inputL + inputR) * 0.5;
-      const inputLevel = Math?.abs(stereoSum);
+      const inputLevel = Math.abs(stereoSum);
 
-      const coeff = inputLevel > this?.envelope ? attackCoeff : releaseCoeff;
-      this.envelope = this?.envelope * coeff + inputLevel * (1 - coeff);
+      const coeff = inputLevel > this.envelope ? attackCoeff : releaseCoeff;
+      this.envelope = this.envelope * coeff + inputLevel * (1 - coeff);
 
       let gainReduction = 0;
-      if (this?.envelope > thresholdLin) {
-        const overDb = linearToDb(this?.envelope / thresholdLin);
-        gainReduction = Math?.min(range, overDb * (1 - 1 / ratio));
+      if (this.envelope > thresholdLin) {
+        const overDb = linearToDb(this.envelope / thresholdLin);
+        gainReduction = Math.min(range, overDb * (1 - 1 / ratio));
       }
 
       const gain = dbToLinear(-gainReduction) * makeupLin;

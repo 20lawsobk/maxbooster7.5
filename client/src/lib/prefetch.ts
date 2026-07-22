@@ -220,7 +220,7 @@ export async function bootstrapUserData(qc: QueryClient): Promise<void> {
     if (data?.user) {
       qc?.setQueryData(["/api/auth/me"], data?.user, fresh);
     }
-    if (Array?.isArray(data?.projects)) {
+    if (Array.isArray(data?.projects)) {
       qc?.setQueryData(["/api/projects"], data?.projects, fresh);
       qc?.setQueryData(
         ["/api/projects", { limit: "5" }],
@@ -238,11 +238,11 @@ export async function bootstrapUserData(qc: QueryClient): Promise<void> {
         fresh,
       );
     }
-    if (Array?.isArray(data?.notifications)) {
+    if (Array.isArray(data?.notifications)) {
       qc?.setQueryData(["/api/notifications"], data?.notifications, fresh);
       qc?.setQueryData(["/api/notifications/unread"], data?.notifications, fresh);
     }
-    if (Array?.isArray(data?.releases)) {
+    if (Array.isArray(data?.releases)) {
       qc?.setQueryData(["/api/releases"], data?.releases, fresh);
     }
   } catch {

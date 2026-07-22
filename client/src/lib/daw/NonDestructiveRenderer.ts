@@ -67,7 +67,7 @@ export class NonDestructiveRenderer {
       },
       pixelToSampleX: (pixel: number) => {
         const timeSec = startTime + (pixel - x) / pixelsPerSecond;
-        return Math?.round(timeSec * sampleRate);
+        return Math.round(timeSec * sampleRate);
       },
       amplitudeToPixelY: (amplitude: number) => {
         return centerY - amplitude * amplitudeRange;
@@ -90,11 +90,11 @@ export class NonDestructiveRenderer {
     viewport: RenderViewport,
   ): WaveformRenderResult | null {
     const startMs = performance?.now();
-    const startSample = Math?.max(
+    const startSample = Math.max(
       0,
-      Math?.floor(viewport?.startTime * sampleRate),
+      Math.floor(viewport?.startTime * sampleRate),
     );
-    const endSample = Math?.ceil(viewport?.endTime * sampleRate);
+    const endSample = Math.ceil(viewport?.endTime * sampleRate);
 
     const peakResult = peakCacheEngine?.getPeaksForView(
       sourceId,
@@ -107,7 +107,7 @@ export class NonDestructiveRenderer {
       return null;
     }
 
-    const mapping = this?.createCoordinateMapping(viewport, sampleRate);
+    const mapping = this.createCoordinateMapping(viewport, sampleRate);
     const path: WaveformRenderResult["path"] = [];
     const peakDuration =
       (viewport?.endTime - viewport?.startTime) / peakResult?.peaks.length;
@@ -117,9 +117,9 @@ export class NonDestructiveRenderer {
       const timeOffset = viewport?.startTime + i * peakDuration;
       const pixelX = mapping?.timeToPixelX(timeOffset);
 
-      const scaledMin = peak?.min * this?.dataZoom.verticalScale;
-      const scaledMax = peak?.max * this?.dataZoom.verticalScale;
-      const scaledRms = peak?.rms * this?.dataZoom.verticalScale;
+      const scaledMin = peak?.min * this.dataZoom.verticalScale;
+      const scaledMax = peak?.max * this.dataZoom.verticalScale;
+      const scaledRms = peak?.rms * this.dataZoom.verticalScale;
 
       path?.push({
         x: pixelX,
@@ -156,7 +156,7 @@ export class NonDestructiveRenderer {
           gain = fade?.type === "fadeIn" ? t * t : (1 - t) * (1 - t);
           break;
         case "logarithmic":
-          gain = fade?.type === "fadeIn" ? Math?.sqrt(t) : Math.sqrt(1 - t);
+          gain = fade?.type === "fadeIn" ? Math.sqrt(t) : Math.sqrt(1 - t);
           break;
         case "s-curve":
           gain =
@@ -167,8 +167,8 @@ export class NonDestructiveRenderer {
         case "equal-power":
           gain =
             fade?.type === "fadeIn"
-              ? Math?.sin((t * Math.PI) / 2)
-              : Math?.cos((t * Math.PI) / 2);
+              ? Math.sin((t * Math.PI) / 2)
+              : Math.cos((t * Math.PI) / 2);
           break;
         default:
           gain = fade?.type === "fadeIn" ? t : 1 - t;
@@ -184,23 +184,23 @@ export class NonDestructiveRenderer {
   }
 
   setDataZoom(zoom: Partial<DataZoomState>): void {
-    this.dataZoom = { ...this?.dataZoom, ...zoom };
+    this.dataZoom = { ...this.dataZoom, ...zoom };
   }
 
   getDataZoom(): DataZoomState {
-    return { ...this?.dataZoom };
+    return { ...this.dataZoom };
   }
 
   setVerticalScale(scale: number): void {
-    this.dataZoom.verticalScale = Math?.max(0.1, Math?.min(10.0, scale));
+    this.dataZoom.verticalScale = Math.max(0.1, Math.min(10.0, scale));
   }
 
   setHorizontalZoom(zoom: number): void {
-    this.dataZoom.horizontalZoom = Math?.max(0.01, Math?.min(1000, zoom));
+    this.dataZoom.horizontalZoom = Math.max(0.01, Math.min(1000, zoom));
   }
 
   setScrollOffset(offset: number): void {
-    this.dataZoom.scrollOffset = Math?.max(0, offset);
+    this.dataZoom.scrollOffset = Math.max(0, offset);
   }
 
   autoFitVertical(sourceId: string, sampleRate: number): void {
@@ -215,11 +215,11 @@ export class NonDestructiveRenderer {
       verticalScale: 1,
     };
 
-    const result = this?.renderWaveform(sourceId, sampleRate, viewport);
+    const result = this.renderWaveform(sourceId, sampleRate, viewport);
     if (result && result?.path.length > 0) {
       let maxAmplitude = 0;
       for (const p of result?.path) {
-        const extent = Math?.max(Math?.abs(p?.yMin - 100), Math?.abs(p?.yMax - 100));
+        const extent = Math.max(Math.abs(p?.yMin - 100), Math.abs(p?.yMax - 100));
         if (extent > maxAmplitude) maxAmplitude = extent;
       }
 
@@ -237,8 +237,8 @@ export class NonDestructiveRenderer {
     horizontalZoom: number,
   ): { startTime: number; endTime: number; pixelsPerSecond: number } {
     const visibleDuration = totalDuration / horizontalZoom;
-    const maxOffset = Math?.max(0, totalDuration - visibleDuration);
-    const clampedOffset = Math?.min(scrollOffset, maxOffset);
+    const maxOffset = Math.max(0, totalDuration - visibleDuration);
+    const clampedOffset = Math.min(scrollOffset, maxOffset);
 
     return {
       startTime: clampedOffset,

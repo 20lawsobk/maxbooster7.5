@@ -68,12 +68,12 @@ import { cbAllowRequest, cbRecordFailure as cbRecord503, cbRecordSuccess, cbHalf
 // self-tunes via demand/backoff steps.  At rest it drifts up gently (1ms/step)
 // so the system stays quiet.  The multiplier gives per-worker jitter only.
 //
-const clusterWorkers = Math?.max(
+const clusterWorkers = Math.max(
   1,
-  parseInt(process?.env.PDIM_CLUSTER_WORKERS ?? "1", 10),
+  parseInt(process.env.PDIM_CLUSTER_WORKERS ?? "1", 10),
 );
-const cpuCores = Math?.max(1, os?.cpus().length);
-const autoMultiplier = clusterWorkers * Math?.max(1, Math?.ceil(cpuCores / 2));
+const cpuCores = Math.max(1, os?.cpus().length);
+const autoMultiplier = clusterWorkers * Math.max(1, Math.ceil(cpuCores / 2));
 
 // ── AIMD parameters ──────────────────────────────────────────────────────────
 //
@@ -117,7 +117,7 @@ const autoMultiplier = clusterWorkers * Math?.max(1, Math?.ceil(cpuCores / 2));
 // throughput is bounded indirectly: any 429 they receive raises
 // _rateLimitedUntil which BOTH chains honour on the next call.
 const _PDIM_GAP_FLOOR_BASE_MS = 6;
-const _PDIM_GAP_FLOOR_WORKER_MIN = Math?.max(
+const _PDIM_GAP_FLOOR_WORKER_MIN = Math.max(
   _PDIM_GAP_FLOOR_BASE_MS,
   clusterWorkers * _PDIM_GAP_FLOOR_BASE_MS,
 );
@@ -131,12 +131,12 @@ const _PDIM_GAP_INIT_MS = 1; // start at minimum — AIMD self-tunes from here
 // Recovery is still smooth: additive increase on success (1-100ms step).
 const _PDIM_MULT_429 = 2.5;
 
-logger?.info(
+logger.info(
   `[PDIM] Auto multiplier: ${autoMultiplier} ` +
     `(clusterWorkers=${clusterWorkers} × ceil(cpuCores=${cpuCores}/2)=` +
-    `${Math?.max(1, Math?.ceil(cpuCores / 2))}) — ` +
-    `AIMD init=1ms, floor=${_PDIM_GAP_FLOOR_MS}ms (${clusterWorkers}workers×${_PDIM_GAP_FLOOR_BASE_MS}ms, combined≤${Math?.round(1000 / _PDIM_GAP_FLOOR_BASE_MS)} req/s), ` +
-    `ZPOPMIN gap=${Math?.max(1, autoMultiplier)}ms`,
+    `${Math.max(1, Math.ceil(cpuCores / 2))}) — ` +
+    `AIMD init=1ms, floor=${_PDIM_GAP_FLOOR_MS}ms (${clusterWorkers}workers×${_PDIM_GAP_FLOOR_BASE_MS}ms, combined≤${Math.round(1000 / _PDIM_GAP_FLOOR_BASE_MS)} req/s), ` +
+    `ZPOPMIN gap=${Math.max(1, autoMultiplier)}ms`,
 );
 
 /** Permanently raise the PDIM gap floor — called by PermanentFixRegistry on startup
@@ -146,9 +146,9 @@ logger?.info(
  *  Applies only to direct PDIM calls; BullMQ Lua scripts use the 10ms fast-lane. */
 export function setPdimGapFloor(ms: number): void {
   // Never allow floor to drop below the worker-count-aware minimum.
-  _PDIM_GAP_FLOOR_MS = Math?.max(
+  _PDIM_GAP_FLOOR_MS = Math.max(
     _PDIM_GAP_FLOOR_WORKER_MIN,
-    Math?.min(2_000, Math?.round(ms)),
+    Math.min(2_000, Math.round(ms)),
   );
   // If the live gap is below the new floor, snap it up immediately so the change
   // takes effect on the very next enqueued request without waiting for AIMD.
@@ -264,7 +264,7 @@ let _fastFailLoggedAt = 0;
 function _pdimAdaptSuccess(): void {
   const q = _pdimQueueDepth;
   const step = q >= 10 ? 15 : q >= 5 ? 12 : q >= 2 ? 5 : 1;
-  _pdimGapMs = Math?.max(_PDIM_GAP_FLOOR_MS, _pdimGapMs - step);
+  _pdimGapMs = Math.max(_PDIM_GAP_FLOOR_MS, _pdimGapMs - step);
 }
 
 /** On each 429 response: multiply the gap (back off hard) and return new gap
@@ -275,8 +275,8 @@ function _pdimAdaptSuccess(): void {
  *  re-triggering a synchronized 429 storm.  Adding ±25% random noise to each
  *  backoff step ensures processes drift apart within 2–3 cycles and stay apart. */
 function _pdimAdapt429(): number {
-  const jitter = 0.75 + Math?.random() * 0.5; // uniform [0.75, 1.25]
-  _pdimGapMs = Math?.min(
+  const jitter = 0.75 + Math.random() * 0.5; // uniform [0.75, 1.25]
+  _pdimGapMs = Math.min(
     _PDIM_GAP_CEIL_MS,
     _pdimGapMs * _PDIM_MULT_429 * jitter,
   );
@@ -335,9 +335,9 @@ setInterval(() => {
   // treat as "infinitely quiet" so decay still drains startup-jitter init.
   if (_last429At > 0 && Date?.now() - _last429At < _PASSIVE_DECAY_IDLE_QUIET_MS)
     return;
-  _pdimGapMs = Math?.max(
+  _pdimGapMs = Math.max(
     _PDIM_GAP_FLOOR_MS,
-    Math?.floor(_pdimGapMs * _PASSIVE_DECAY_FACTOR),
+    Math.floor(_pdimGapMs * _PASSIVE_DECAY_FACTOR),
   );
 }, _PASSIVE_DECAY_INTERVAL_MS).unref();
 
@@ -357,7 +357,7 @@ export function getPdimScriptQueueDepth(): number {
 
 /** Allow PlatformAutoFixer to temporarily raise the polling gap under PDIM pressure. */
 export function setPdimAdaptiveGap(ms: number): void {
-  _pdimGapMs = Math?.max(_PDIM_GAP_FLOOR_MS, Math?.min(_PDIM_GAP_CEIL_MS, ms));
+  _pdimGapMs = Math.max(_PDIM_GAP_FLOOR_MS, Math.min(_PDIM_GAP_CEIL_MS, ms));
 }
 
 function _enqueueExec(fn: () => Promise<unknown>): Promise<unknown> {
@@ -393,8 +393,8 @@ function _enqueueExec(fn: () => Promise<unknown>): Promise<unknown> {
     const now = Date?.now();
     if (now - _fastFailLoggedAt > 5_000) {
       _fastFailLoggedAt = now;
-      logger?.warn(
-        `[PDIM] Direct-call fast-fail — est. queue wait ${Math?.round(estimatedWaitMs)}ms ` +
+      logger.warn(
+        `[PDIM] Direct-call fast-fail — est. queue wait ${Math.round(estimatedWaitMs)}ms ` +
           `(${_directQueueDepth} direct / ${_PDIM_DIRECT_LANES} lanes × ${gapForFastFail}ms capped [live=${_pdimGapMs}ms] + ` +
           `${_scriptQueueDepth} script × 10ms) > ${_MAX_DIRECT_WAIT_MS}ms threshold; ` +
           `caller falls back to PG/in-memory`,
@@ -402,7 +402,7 @@ function _enqueueExec(fn: () => Promise<unknown>): Promise<unknown> {
     }
     return Promise?.reject(
       new Error(
-        `[PDIM] Chain congested — est. wait ${Math?.round(estimatedWaitMs)}ms exceeds ${_MAX_DIRECT_WAIT_MS}ms; use fallback`,
+        `[PDIM] Chain congested — est. wait ${Math.round(estimatedWaitMs)}ms exceeds ${_MAX_DIRECT_WAIT_MS}ms; use fallback`,
       ),
     );
   }
@@ -416,8 +416,8 @@ function _enqueueExec(fn: () => Promise<unknown>): Promise<unknown> {
   if (_pdimDirectLaneRR >= 1_000_000) _pdimDirectLaneRR = 0; // prevent integer drift
   const next = _pdimDirectChains[laneIdx]
     .then(async () => {
-      _directQueueDepth = Math?.max(0, _directQueueDepth - 1);
-      _pdimQueueDepth = Math?.max(0, _pdimQueueDepth - 1);
+      _directQueueDepth = Math.max(0, _directQueueDepth - 1);
+      _pdimQueueDepth = Math.max(0, _pdimQueueDepth - 1);
       const result = await fn();
       // Adaptive gap fires AFTER the request completes — next caller in THIS lane
       // must wait this long before it starts.  Gap is read at completion time so
@@ -563,7 +563,7 @@ let _zpopminChain: Promise<unknown> = Promise.resolve();
 // VM Reserve 4-core (mult=2):  2ms  → ~500 polls/sec max
 // VM Reserve 8-core (mult=4):  4ms  → ~250 polls/sec max
 // Autoscale 6-worker 4-core (mult=12): 12ms → ~83 polls/sec per worker
-const ZPOPMIN_MIN_GAP_MS = Math?.max(1, autoMultiplier);
+const ZPOPMIN_MIN_GAP_MS = Math.max(1, autoMultiplier);
 
 function _serializedZpopmin(fn: () => Promise<unknown>): Promise<unknown> {
   const next = _zpopminChain
@@ -805,11 +805,11 @@ export class PdimRedisClient extends EventEmitter {
 
       let counted = false; // prevent double-counting in the catch block
       try {
-        const res = await fetch(this?.execUrl, {
+        const res = await fetch(this.execUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${this?.bearerToken}`,
+            Authorization: `Bearer ${this.bearerToken}`,
           },
           body: JSON.stringify({ cmd, args }),
           signal: AbortSignal.timeout(PDIM_EXEC_TIMEOUT_MS),
@@ -835,18 +835,18 @@ export class PdimRedisClient extends EventEmitter {
             // wait — more accurate than our AIMD estimate alone.  Honour whichever
             // is larger so we never under-wait relative to PDIM's own signal.
             let retryAfterMs = 0;
-            const retryAfterHdr = res?.headers.get("retry-after");
+            const retryAfterHdr = res.headers.get("retry-after");
             if (retryAfterHdr) {
               const secs = parseFloat(retryAfterHdr);
               if (!isNaN(secs) && secs > 0)
-                retryAfterMs = Math?.ceil(secs * 1000);
+                retryAfterMs = Math.ceil(secs * 1000);
             }
-            const holdMs = Math?.max(newGap, retryAfterMs);
+            const holdMs = Math.max(newGap, retryAfterMs);
             // Add per-call random jitter to _rateLimitedUntil so that processes
             // which got 429 at the same wall-clock time don't all release their
             // hold at the exact same moment — they'll be spread 0–500ms apart.
             PdimRedisClient?._set429Deadline(
-              Date?.now() + holdMs + Math?.floor(Math?.random() * 500),
+              Date?.now() + holdMs + Math.floor(Math.random() * 500),
             );
             const errMsg = `PDIM HTTP 429: Too many requests (gap→${newGap}ms${retryAfterMs > 0 ? `, retry-after=${retryAfterMs}ms` : ""})`;
             counted = true;
@@ -860,13 +860,13 @@ export class PdimRedisClient extends EventEmitter {
               _suppressed429Count++;
             } else {
               if (_suppressed429Count > 0) {
-                logger?.warn(
+                logger.warn(
                   `[PDIM] exec error [${cmd}]: PDIM HTTP 429 — gap→${newGap}ms ` +
                     `(+ ${_suppressed429Count} suppressed in last ${_429_DEDUP_MS}ms burst)`,
                 );
                 _suppressed429Count = 0;
               } else {
-                logger?.warn(
+                logger.warn(
                   `[PDIM] exec error [${cmd}]: PDIM HTTP 429 — gap→${newGap}ms`,
                 );
               }
@@ -920,9 +920,9 @@ export class PdimRedisClient extends EventEmitter {
 
         // Detect when PDIM returns non-JSON (e.g. Replit's "app not running" HTML page).
         // Treat this as a 503-equivalent — trip the circuit breaker.
-        const contentType = res?.headers.get("content-type") ?? "";
+        const contentType = res.headers.get("content-type") ?? "";
         if (!contentType?.includes("application/json")) {
-          const body = await res?.text().catch(() => "(unreadable)");
+          const body = await res.text().catch(() => "(unreadable)");
           cbRecord503();
           counted = true;
           const errMsg = `PDIM returned non-JSON (${contentType?.split(";")[0].trim() || "unknown type"}): ${body?.slice(0, 80)}`;
@@ -930,7 +930,7 @@ export class PdimRedisClient extends EventEmitter {
           throw new Error(errMsg);
         }
 
-        const data = await res?.json();
+        const data = await res.json();
         cbRecordSuccess(); // a successful response resets the counter + closes circuit
 
         if (data !== null && typeof data === "object") {
@@ -939,7 +939,7 @@ export class PdimRedisClient extends EventEmitter {
             const errMsg = String(data?.error);
             // Unsupported commands: return safe defaults instead of crashing
             if (errMsg?.startsWith("ERR unknown command")) {
-              logger?.warn(
+              logger.warn(
                 `[PDIM] Unsupported command [${cmd}] — returning null`,
               );
               return null;
@@ -1093,11 +1093,11 @@ export class PdimRedisClient extends EventEmitter {
   }
 
   multi() {
-    return this?.pipeline();
+    return this.pipeline();
   }
 
   duplicate() {
-    return new PdimRedisClient(this?.execUrl, this?.bearerToken);
+    return new PdimRedisClient(this.execUrl, this.bearerToken);
   }
 
   // Required by BullMQ's isRedisInstance() check: ['connect', 'disconnect', 'duplicate']
@@ -1135,10 +1135,10 @@ export class PdimRedisClient extends EventEmitter {
 
     (this as Record<string, unknown>)[name] = async function () {
       let flatArgs: unknown[];
-      if (arguments?.length === 1 && Array?.isArray(arguments[0])) {
+      if (arguments?.length === 1 && Array.isArray(arguments[0])) {
         flatArgs = arguments[0];
       } else {
-        flatArgs = Array?.from(arguments);
+        flatArgs = Array.from(arguments);
       }
 
       const result = await execLuaViaPdim(
@@ -1161,7 +1161,7 @@ export class PdimRedisClient extends EventEmitter {
       cmd === "PUNSUBSCRIBE"
     )
       return null;
-    return this?.exec(args);
+    return this.exec(args);
   }
 
   /**
@@ -1195,34 +1195,34 @@ export class PdimRedisClient extends EventEmitter {
 
       let counted = false;
       try {
-        const res = await fetch(this?.execUrl, {
+        const res = await fetch(this.execUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${this?.bearerToken}`,
+            Authorization: `Bearer ${this.bearerToken}`,
           },
           body: JSON.stringify({ cmd, args: strArgs }),
           signal: AbortSignal.timeout(15_000),
         });
 
-        if (!res?.ok) {
-          const text = await res?.text().catch(() => "");
-          if (res?.status === 429) {
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          if (res.status === 429) {
             const newGap = _pdimAdapt429();
             PdimRedisClient?._set429Deadline(Date?.now() + newGap);
             throw new Error(`PDIM HTTP 429 (script ${cmd}): gap→${newGap}ms`);
           }
           throw new Error(
-            `PDIM HTTP ${res?.status} (script ${cmd}): ${text?.slice(0, 200)}`,
+            `PDIM HTTP ${res.status} (script ${cmd}): ${text?.slice(0, 200)}`,
           );
         }
 
         PdimRedisClient?._clearRateLimitIfExpired();
         _pdimAdaptSuccess();
 
-        const contentType = res?.headers.get("content-type") ?? "";
+        const contentType = res.headers.get("content-type") ?? "";
         if (!contentType?.includes("application/json")) {
-          const body = await res?.text().catch(() => "(unreadable)");
+          const body = await res.text().catch(() => "(unreadable)");
           cbRecord503();
           counted = true;
           throw new Error(
@@ -1230,7 +1230,7 @@ export class PdimRedisClient extends EventEmitter {
           );
         }
 
-        const data = await res?.json();
+        const data = await res.json();
         counted = true;
         cbRecordSuccess();
 
@@ -1239,7 +1239,7 @@ export class PdimRedisClient extends EventEmitter {
           if ("error" in data) {
             const errMsg = String(data?.error);
             if (errMsg?.startsWith("ERR unknown command")) {
-              logger?.warn(
+              logger.warn(
                 `[PDIM] Unsupported command (script) [${cmd}] — returning null`,
               );
               return null;
@@ -1271,7 +1271,7 @@ export class PdimRedisClient extends EventEmitter {
   async get(key: string): Promise<string | null> {
     const stale = _l1Read(key);
     try {
-      const fresh = await this?.exec<string | null>(["GET", key]);
+      const fresh = await this.exec<string | null>(["GET", key]);
       _l1Write(key, fresh);
       return fresh;
     } catch (err) {
@@ -1282,97 +1282,97 @@ export class PdimRedisClient extends EventEmitter {
     }
   }
   async set(key: string, value: string, ...args: unknown[]): Promise<"OK"> {
-    const result = await this?.exec<"OK">(["SET", key, value, ...args]);
+    const result = await this.exec<"OK">(["SET", key, value, ...args]);
     _l1Write(key, value);
     return result;
   }
   async setex(key: string, secs: number, value: string): Promise<"OK"> {
-    const result = await this?.exec<"OK">(["SETEX", key, secs, value]);
+    const result = await this.exec<"OK">(["SETEX", key, secs, value]);
     _l1Write(key, value);
     return result;
   }
   async setnx(key: string, value: string): Promise<0 | 1> {
-    const result = await this?.exec<0 | 1>(["SETNX", key, value]);
+    const result = await this.exec<0 | 1>(["SETNX", key, value]);
     if (result === 1) _l1Write(key, value);
     return result;
   }
   async getset(key: string, value: string): Promise<string | null> {
-    const result = await this?.exec<string | null>(["GETSET", key, value]);
+    const result = await this.exec<string | null>(["GETSET", key, value]);
     _l1Write(key, value);
     return result;
   }
   async mget(...keys: string[]): Promise<(string | null)[]> {
-    return this?.exec<(string | null)[]>(["MGET", ...keys]);
+    return this.exec<(string | null)[]>(["MGET", ...keys]);
   }
   async mset(...args: string[]): Promise<"OK"> {
-    return this?.exec<"OK">(["MSET", ...args]);
+    return this.exec<"OK">(["MSET", ...args]);
   }
   async append(key: string, value: string): Promise<number> {
-    return this?.exec<number>(["APPEND", key, value]);
+    return this.exec<number>(["APPEND", key, value]);
   }
   async incr(key: string): Promise<number> {
-    return this?.exec<number>(["INCR", key]);
+    return this.exec<number>(["INCR", key]);
   }
   async decr(key: string): Promise<number> {
-    return this?.exec<number>(["DECR", key]);
+    return this.exec<number>(["DECR", key]);
   }
   async incrby(key: string, n: number): Promise<number> {
-    return this?.exec<number>(["INCRBY", key, n]);
+    return this.exec<number>(["INCRBY", key, n]);
   }
   async decrby(key: string, n: number): Promise<number> {
-    return this?.exec<number>(["DECRBY", key, n]);
+    return this.exec<number>(["DECRBY", key, n]);
   }
   async incrbyfloat(key: string, n: number): Promise<string> {
-    return this?.exec<string>(["INCRBYFLOAT", key, n]);
+    return this.exec<string>(["INCRBYFLOAT", key, n]);
   }
 
   // ── Key commands ──────────────────────────────────────────────────────────
   async del(...keys: string[]): Promise<number> {
-    const result = await this?.exec<number>(["DEL", ...keys]);
+    const result = await this.exec<number>(["DEL", ...keys]);
     _l1Evict(...keys);
     return result;
   }
   async exists(...keys: string[]): Promise<number> {
-    return this?.exec<number>(["EXISTS", ...keys]);
+    return this.exec<number>(["EXISTS", ...keys]);
   }
   async expire(key: string, secs: number): Promise<0 | 1> {
-    return this?.exec<0 | 1>(["EXPIRE", key, secs]);
+    return this.exec<0 | 1>(["EXPIRE", key, secs]);
   }
   async pexpire(key: string, ms: number): Promise<0 | 1> {
-    return this?.exec<0 | 1>(["PEXPIRE", key, ms]);
+    return this.exec<0 | 1>(["PEXPIRE", key, ms]);
   }
   async expireat(key: string, ts: number): Promise<0 | 1> {
-    return this?.exec<0 | 1>(["EXPIREAT", key, ts]);
+    return this.exec<0 | 1>(["EXPIREAT", key, ts]);
   }
   async persist(key: string): Promise<0 | 1> {
-    return this?.exec<0 | 1>(["PERSIST", key]);
+    return this.exec<0 | 1>(["PERSIST", key]);
   }
   async ttl(key: string): Promise<number> {
-    return this?.exec<number>(["TTL", key]);
+    return this.exec<number>(["TTL", key]);
   }
   async pttl(key: string): Promise<number> {
-    return this?.exec<number>(["PTTL", key]);
+    return this.exec<number>(["PTTL", key]);
   }
   async type(key: string): Promise<string> {
-    return this?.exec<string>(["TYPE", key]);
+    return this.exec<string>(["TYPE", key]);
   }
   async rename(key: string, newKey: string): Promise<"OK"> {
-    return this?.exec<"OK">(["RENAME", key, newKey]);
+    return this.exec<"OK">(["RENAME", key, newKey]);
   }
   async keys(pattern: string): Promise<string[]> {
-    return this?.exec<string[]>(["KEYS", pattern]);
+    return this.exec<string[]>(["KEYS", pattern]);
   }
   async scan(
     cursor: string | number,
     ...args: unknown[]
   ): Promise<[string, string[]]> {
-    return this?.exec<[string, string[]]>(["SCAN", cursor, ...args]);
+    return this.exec<[string, string[]]>(["SCAN", cursor, ...args]);
   }
   async dbsize(): Promise<number> {
-    return this?.exec<number>(["DBSIZE"]);
+    return this.exec<number>(["DBSIZE"]);
   }
   async randomkey(): Promise<string | null> {
-    return this?.exec<string | null>(["RANDOMKEY"]);
+    return this.exec<string | null>(["RANDOMKEY"]);
   }
 
   // ── Hash commands ─────────────────────────────────────────────────────────
@@ -1380,7 +1380,7 @@ export class PdimRedisClient extends EventEmitter {
     const l1Key = `${key}\x00${field}`;
     const stale = _l1Read(l1Key);
     try {
-      const fresh = await this?.exec<string | null>(["HGET", key, field]);
+      const fresh = await this.exec<string | null>(["HGET", key, field]);
       _l1Write(l1Key, fresh);
       return fresh;
     } catch (err) {
@@ -1389,121 +1389,121 @@ export class PdimRedisClient extends EventEmitter {
     }
   }
   async hset(key: string, ...args: unknown[]): Promise<number> {
-    return this?.exec<number>(["HSET", key, ...args]);
+    return this.exec<number>(["HSET", key, ...args]);
   }
   async hsetnx(key: string, field: string, value: string): Promise<0 | 1> {
-    return this?.exec<0 | 1>(["HSETNX", key, field, value]);
+    return this.exec<0 | 1>(["HSETNX", key, field, value]);
   }
   async hdel(key: string, ...fields: string[]): Promise<number> {
-    return this?.exec<number>(["HDEL", key, ...fields]);
+    return this.exec<number>(["HDEL", key, ...fields]);
   }
   async hmget(key: string, ...fields: string[]): Promise<(string | null)[]> {
-    return this?.exec<(string | null)[]>(["HMGET", key, ...fields]);
+    return this.exec<(string | null)[]>(["HMGET", key, ...fields]);
   }
   async hmset(key: string, ...args: unknown[]): Promise<"OK"> {
     // PDIM only accepts HSET with a single field-value pair.  Split HMSET
     // (which can carry N pairs) into sequential HSET calls.
     for (let i = 0; i < args.length - 1; i += 2) {
-      await this?.exec<"OK">(["HSET", key, args[i], args[i + 1]]);
+      await this.exec<"OK">(["HSET", key, args[i], args[i + 1]]);
     }
     return "OK";
   }
   async hgetall(key: string): Promise<Record<string, string>> {
-    const result = await this?.exec<Record<string, string>>(["HGETALL", key]);
+    const result = await this.exec<Record<string, string>>(["HGETALL", key]);
     return result ?? {};
   }
   async hkeys(key: string): Promise<string[]> {
-    return this?.exec<string[]>(["HKEYS", key]);
+    return this.exec<string[]>(["HKEYS", key]);
   }
   async hvals(key: string): Promise<string[]> {
-    return this?.exec<string[]>(["HVALS", key]);
+    return this.exec<string[]>(["HVALS", key]);
   }
   async hlen(key: string): Promise<number> {
-    return this?.exec<number>(["HLEN", key]);
+    return this.exec<number>(["HLEN", key]);
   }
   async hexists(key: string, field: string): Promise<0 | 1> {
-    return this?.exec<0 | 1>(["HEXISTS", key, field]);
+    return this.exec<0 | 1>(["HEXISTS", key, field]);
   }
   async hincrby(key: string, field: string, n: number): Promise<number> {
-    return this?.exec<number>(["HINCRBY", key, field, n]);
+    return this.exec<number>(["HINCRBY", key, field, n]);
   }
   async hincrbyfloat(key: string, field: string, n: number): Promise<string> {
-    return this?.exec<string>(["HINCRBYFLOAT", key, field, n]);
+    return this.exec<string>(["HINCRBYFLOAT", key, field, n]);
   }
 
   // ── List commands ─────────────────────────────────────────────────────────
   async lpush(key: string, ...values: unknown[]): Promise<number> {
-    return this?.exec<number>(["LPUSH", key, ...values]);
+    return this.exec<number>(["LPUSH", key, ...values]);
   }
   async rpush(key: string, ...values: unknown[]): Promise<number> {
-    return this?.exec<number>(["RPUSH", key, ...values]);
+    return this.exec<number>(["RPUSH", key, ...values]);
   }
   async lpop(key: string): Promise<string | null> {
-    return this?.exec<string | null>(["LPOP", key]);
+    return this.exec<string | null>(["LPOP", key]);
   }
   async rpop(key: string): Promise<string | null> {
-    return this?.exec<string | null>(["RPOP", key]);
+    return this.exec<string | null>(["RPOP", key]);
   }
   async llen(key: string): Promise<number> {
-    return this?.exec<number>(["LLEN", key]);
+    return this.exec<number>(["LLEN", key]);
   }
   async lrange(key: string, start: number, stop: number): Promise<string[]> {
-    return this?.exec<string[]>(["LRANGE", key, start, stop]);
+    return this.exec<string[]>(["LRANGE", key, start, stop]);
   }
   async lindex(key: string, index: number): Promise<string | null> {
-    return this?.exec<string | null>(["LINDEX", key, index]);
+    return this.exec<string | null>(["LINDEX", key, index]);
   }
   async lset(key: string, index: number, value: string): Promise<"OK"> {
-    return this?.exec<"OK">(["LSET", key, index, value]);
+    return this.exec<"OK">(["LSET", key, index, value]);
   }
   async lrem(key: string, count: number, value: string): Promise<number> {
-    return this?.exec<number>(["LREM", key, count, value]);
+    return this.exec<number>(["LREM", key, count, value]);
   }
   async ltrim(key: string, start: number, stop: number): Promise<"OK"> {
-    return this?.exec<"OK">(["LTRIM", key, start, stop]);
+    return this.exec<"OK">(["LTRIM", key, start, stop]);
   }
 
   // ── Set commands ──────────────────────────────────────────────────────────
   async sadd(key: string, ...members: unknown[]): Promise<number> {
-    return this?.exec<number>(["SADD", key, ...members]);
+    return this.exec<number>(["SADD", key, ...members]);
   }
   async srem(key: string, ...members: unknown[]): Promise<number> {
-    return this?.exec<number>(["SREM", key, ...members]);
+    return this.exec<number>(["SREM", key, ...members]);
   }
   async smembers(key: string): Promise<string[]> {
-    return this?.exec<string[]>(["SMEMBERS", key]);
+    return this.exec<string[]>(["SMEMBERS", key]);
   }
   async scard(key: string): Promise<number> {
-    return this?.exec<number>(["SCARD", key]);
+    return this.exec<number>(["SCARD", key]);
   }
   async sismember(key: string, member: string): Promise<0 | 1> {
-    return this?.exec<0 | 1>(["SISMEMBER", key, member]);
+    return this.exec<0 | 1>(["SISMEMBER", key, member]);
   }
   async sunion(...keys: string[]): Promise<string[]> {
-    return this?.exec<string[]>(["SUNION", ...keys]);
+    return this.exec<string[]>(["SUNION", ...keys]);
   }
   async sinter(...keys: string[]): Promise<string[]> {
-    return this?.exec<string[]>(["SINTER", ...keys]);
+    return this.exec<string[]>(["SINTER", ...keys]);
   }
   async sdiff(...keys: string[]): Promise<string[]> {
-    return this?.exec<string[]>(["SDIFF", ...keys]);
+    return this.exec<string[]>(["SDIFF", ...keys]);
   }
 
   // ── Sorted set commands ───────────────────────────────────────────────────
   async zadd(key: string, ...args: unknown[]): Promise<number> {
-    return this?.exec<number>(["ZADD", key, ...args]);
+    return this.exec<number>(["ZADD", key, ...args]);
   }
   async zrem(key: string, ...members: unknown[]): Promise<number> {
-    return this?.exec<number>(["ZREM", key, ...members]);
+    return this.exec<number>(["ZREM", key, ...members]);
   }
   async zscore(key: string, member: string): Promise<string | null> {
-    return this?.exec<string | null>(["ZSCORE", key, member]);
+    return this.exec<string | null>(["ZSCORE", key, member]);
   }
   async zrank(key: string, member: string): Promise<number | null> {
-    return this?.exec<number | null>(["ZRANK", key, member]);
+    return this.exec<number | null>(["ZRANK", key, member]);
   }
   async zrevrank(key: string, member: string): Promise<number | null> {
-    return this?.exec<number | null>(["ZREVRANK", key, member]);
+    return this.exec<number | null>(["ZREVRANK", key, member]);
   }
   async zrange(
     key: string,
@@ -1511,7 +1511,7 @@ export class PdimRedisClient extends EventEmitter {
     stop: number,
     ...args: unknown[]
   ): Promise<string[]> {
-    return this?.exec<string[]>(["ZRANGE", key, start, stop, ...args]);
+    return this.exec<string[]>(["ZRANGE", key, start, stop, ...args]);
   }
   async zrevrange(
     key: string,
@@ -1519,7 +1519,7 @@ export class PdimRedisClient extends EventEmitter {
     stop: number,
     ...args: unknown[]
   ): Promise<string[]> {
-    return this?.exec<string[]>(["ZREVRANGE", key, start, stop, ...args]);
+    return this.exec<string[]>(["ZREVRANGE", key, start, stop, ...args]);
   }
   async zrangebyscore(
     key: string,
@@ -1527,7 +1527,7 @@ export class PdimRedisClient extends EventEmitter {
     max: string | number,
     ...args: unknown[]
   ): Promise<string[]> {
-    return this?.exec<string[]>(["ZRANGEBYSCORE", key, min, max, ...args]);
+    return this.exec<string[]>(["ZRANGEBYSCORE", key, min, max, ...args]);
   }
   async zrevrangebyscore(
     key: string,
@@ -1535,38 +1535,38 @@ export class PdimRedisClient extends EventEmitter {
     min: string | number,
     ...args: unknown[]
   ): Promise<string[]> {
-    return this?.exec<string[]>(["ZREVRANGEBYSCORE", key, max, min, ...args]);
+    return this.exec<string[]>(["ZREVRANGEBYSCORE", key, max, min, ...args]);
   }
   async zcard(key: string): Promise<number> {
-    return this?.exec<number>(["ZCARD", key]);
+    return this.exec<number>(["ZCARD", key]);
   }
   async zcount(
     key: string,
     min: string | number,
     max: string | number,
   ): Promise<number> {
-    return this?.exec<number>(["ZCOUNT", key, min, max]);
+    return this.exec<number>(["ZCOUNT", key, min, max]);
   }
   async zincrby(
     key: string,
     increment: number,
     member: string,
   ): Promise<string> {
-    return this?.exec<string>(["ZINCRBY", key, increment, member]);
+    return this.exec<string>(["ZINCRBY", key, increment, member]);
   }
   async zremrangebyscore(
     key: string,
     min: string | number,
     max: string | number,
   ): Promise<number> {
-    return this?.exec<number>(["ZREMRANGEBYSCORE", key, min, max]);
+    return this.exec<number>(["ZREMRANGEBYSCORE", key, min, max]);
   }
   async zremrangebyrank(
     key: string,
     start: number,
     stop: number,
   ): Promise<number> {
-    return this?.exec<number>(["ZREMRANGEBYRANK", key, start, stop]);
+    return this.exec<number>(["ZREMRANGEBYRANK", key, start, stop]);
   }
 
   // ── Sorted set blocking commands (polyfilled — PDIM has no blocking support) ─
@@ -1597,12 +1597,12 @@ export class PdimRedisClient extends EventEmitter {
       let result: unknown = null;
       try {
         result = await _serializedZpopmin(() =>
-          this?.exec<[string, string, string] | null>(["ZPOPMIN", key, "1"]),
+          this.exec<[string, string, string] | null>(["ZPOPMIN", key, "1"]),
         );
       } catch {
         result = null;
       }
-      if (Array?.isArray(result) && result?.length >= 2) {
+      if (Array.isArray(result) && result?.length >= 2) {
         return [key, result[0] as string, result[1] as string];
       }
       // 1500ms additional wait after the serializer's 400ms gap completes,
@@ -1897,7 +1897,7 @@ export function getPdimClient(): PdimRedisClient {
 }
 
 export function isPdimConfigured(): boolean {
-  return !!(process?.env.PDIM_HTTP_EXEC_URL && process?.env.PDIM_BEARER_TOKEN);
+  return !!(process.env.PDIM_HTTP_EXEC_URL && process.env.PDIM_BEARER_TOKEN);
 }
 
 // ── Direct-HTTP circuit-recovery prober ──────────────────────────────────────

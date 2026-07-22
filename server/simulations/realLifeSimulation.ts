@@ -341,11 +341,11 @@ export class RealLifeSimulationEngine extends EventEmitter {
     };
 
     this.simulatedStartDate = new Date();
-    this.simulatedCurrentDate = new Date(this?.simulatedStartDate);
+    this.simulatedCurrentDate = new Date(this.simulatedStartDate);
     this.realStartTime = new Date();
 
-    this.metrics = this?.initializeMetrics();
-    this.marketConditions = this?.initializeMarketConditions();
+    this.metrics = this.initializeMetrics();
+    this.marketConditions = this.initializeMarketConditions();
     this.probabilities = { ...BASE_PROBABILITIES };
   }
 
@@ -444,11 +444,11 @@ export class RealLifeSimulationEngine extends EventEmitter {
   // Update market conditions with economic cycles
 
   private generateId(): string {
-    return `sim_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    return `sim_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
   private getRandomArchetype(): UserArchetype {
-    const roll = Math?.random();
+    const roll = Math.random();
     if (roll < 0.5) return "hobbyist";
     if (roll < 0.75) return "emerging_artist";
     if (roll < 0.9) return "established_artist";
@@ -465,24 +465,24 @@ export class RealLifeSimulationEngine extends EventEmitter {
       () => SimulatedUser["subscriptionTier"]
     > = {
       hobbyist: () =>
-        Math?.random() < 0.7
+        Math.random() < 0.7
           ? "monthly"
-          : Math?.random() < 0.9
+          : Math.random() < 0.9
             ? "yearly"
             : "lifetime",
       emerging_artist: () =>
-        Math?.random() < 0.5
+        Math.random() < 0.5
           ? "monthly"
-          : Math?.random() < 0.85
+          : Math.random() < 0.85
             ? "yearly"
             : "lifetime",
       established_artist: () =>
-        Math?.random() < 0.2
+        Math.random() < 0.2
           ? "monthly"
-          : Math?.random() < 0.6
+          : Math.random() < 0.6
             ? "yearly"
             : "lifetime",
-      label: () => (Math?.random() < 0.2 ? "yearly" : "lifetime"),
+      label: () => (Math.random() < 0.2 ? "yearly" : "lifetime"),
       enterprise: () => "lifetime",
     };
     return tiers[archetype]();
@@ -500,35 +500,35 @@ export class RealLifeSimulationEngine extends EventEmitter {
   }
 
   private createUser(): SimulatedUser {
-    const archetype = this?.getRandomArchetype();
-    const tier = this?.getSubscriptionTier(archetype);
+    const archetype = this.getRandomArchetype();
+    const tier = this.getSubscriptionTier(archetype);
 
     return {
       id: this.generateId(),
       archetype,
-      createdAt: new Date(this?.simulatedCurrentDate),
+      createdAt: new Date(this.simulatedCurrentDate),
       subscriptionTier: tier,
       monthlyRevenue: this.getMonthlyRevenue(tier),
       totalStreams: 0,
       releases: 0,
-      followers: Math.floor(Math?.random() * 1000),
-      engagementRate: 0.02 + Math?.random() * 0.08,
+      followers: Math.floor(Math.random() * 1000),
+      engagementRate: 0.02 + Math.random() * 0.08,
       viralPotential: Math.random() * 0.3,
-      churnRisk: 0.1 + Math?.random() * 0.2,
-      lastActiveAt: new Date(this?.simulatedCurrentDate),
+      churnRisk: 0.1 + Math.random() * 0.2,
+      lastActiveAt: new Date(this.simulatedCurrentDate),
       lifetimeValue: 0,
     };
   }
 
   private createRelease(userId: string): SimulatedRelease {
     const types: SimulatedRelease["type"][] = ["single", "EP", "album"];
-    const type = types[Math?.floor(Math?.random() * 3)];
+    const type = types[Math.floor(Math.random() * 3)];
 
     return {
       id: this.generateId(),
       userId,
       type,
-      releasedAt: new Date(this?.simulatedCurrentDate),
+      releasedAt: new Date(this.simulatedCurrentDate),
       totalStreams: 0,
       dailyStreams: 0,
       peakStreams: 0,
@@ -544,7 +544,7 @@ export class RealLifeSimulationEngine extends EventEmitter {
 
   // Fast day simulation - aggregates all events mathematically for 98% acceleration
   private async simulateDayFast(): Promise<void> {
-    const prob = this?.probabilities;
+    const prob = this.probabilities;
 
     // Reset daily metrics
     this.metrics.users.newToday = 0;
@@ -770,38 +770,38 @@ export class RealLifeSimulationEngine extends EventEmitter {
     // AGGREGATE TRACKING: Calculate churn mathematically, not per-user
     const monthlyChurnRate = 0.002; // 0.2% monthly churn (industry best)
     const dailyChurnRate = monthlyChurnRate / 30;
-    const churnedToday = Math?.floor(this?.metrics.users?.total * dailyChurnRate);
+    const churnedToday = Math.floor(this.metrics.users?.total * dailyChurnRate);
 
     // Churn is already factored into the growth trajectory, so we just track it
     this.metrics.users.churnedToday = churnedToday;
 
     // Remove some users from sample pool to keep it fresh
-    const sampleChurn = Math?.min(
-      Math?.floor(this?.users.size * dailyChurnRate * 2),
+    const sampleChurn = Math.min(
+      Math.floor(this.users.size * dailyChurnRate * 2),
       10,
     );
     let removed = 0;
-    for (const [userId, user] of this?.users.entries()) {
+    for (const [userId, user] of this.users.entries()) {
       if (removed >= sampleChurn) break;
-      if (Math?.random() < 0.01) {
-        this?.users.delete(userId);
+      if (Math.random() < 0.01) {
+        this.users.delete(userId);
         removed++;
       }
     }
 
     // Additional payments - ALL users are paying (no free tier)
-    const payingUsers = Array?.from(this?.users.values());
-    const expectedPayments = Math?.floor(
+    const payingUsers = Array.from(this.users.values());
+    const expectedPayments = Math.floor(
       payingUsers?.length * prob?.paymentReceived * hoursPerDay * 0.1,
     );
     for (let i = 0; i < expectedPayments; i++) {
-      this.metrics.revenue.daily += 9.99 + Math?.random() * 50;
+      this.metrics.revenue.daily += 9.99 + Math.random() * 50;
     }
 
     // System events (rare)
     if (
-      this?.config.enableSystemFailures &&
-      Math?.random() < prob?.systemFailure
+      this.config.enableSystemFailures &&
+      Math.random() < prob?.systemFailure
     ) {
       this.metrics.platform.uptime -= 0.001;
       this.metrics.autonomous.interventionsRequired++;
@@ -809,94 +809,94 @@ export class RealLifeSimulationEngine extends EventEmitter {
 
     // Market fluctuations
     if (
-      this?.config.enableMarketFluctuations &&
-      Math?.random() < prob?.marketShift
+      this.config.enableMarketFluctuations &&
+      Math.random() < prob?.marketShift
     ) {
-      const shift = (Math?.random() - 0.5) * 0.1;
-      this.marketConditions.growthMultiplier = Math?.max(
+      const shift = (Math.random() - 0.5) * 0.1;
+      this.marketConditions.growthMultiplier = Math.max(
         0.5,
-        Math?.min(2.0, this?.marketConditions.growthMultiplier + shift),
+        Math.min(2.0, this.marketConditions.growthMultiplier + shift),
       );
     }
 
     // Algorithm changes trigger autonomous adaptation
     if (
-      Math?.random() < prob?.algorithmChange &&
-      this?.config.enableAutonomousSystems
+      Math.random() < prob?.algorithmChange &&
+      this.config.enableAutonomousSystems
     ) {
       this.metrics.autonomous.decisionsAutoMade++;
     }
 
     // Update followers
-    for (const user of this?.users.values()) {
-      user.followers += Math?.floor(Math?.random() * 3 * user?.viralPotential);
+    for (const user of this.users.values()) {
+      user.followers += Math.floor(Math.random() * 3 * user?.viralPotential);
       // Randomly mark users as active
-      if (Math?.random() < 0.3) {
-        user.lastActiveAt = new Date(this?.simulatedCurrentDate);
+      if (Math.random() < 0.3) {
+        user.lastActiveAt = new Date(this.simulatedCurrentDate);
       }
     }
 
     // Update aggregated metrics
-    this.metrics.users.active = Array?.from(this?.users.values()).filter((u) => {
+    this.metrics.users.active = Array.from(this.users.values()).filter((u) => {
       const daysSince =
-        (this?.simulatedCurrentDate.getTime() - u?.lastActiveAt.getTime()) /
+        (this.simulatedCurrentDate.getTime() - u?.lastActiveAt.getTime()) /
         (24 * 60 * 60 * 1000);
       return daysSince < 7;
     }).length;
 
-    this.metrics.streams.total = Array?.from(this?.releases.values()).reduce(
+    this.metrics.streams.total = Array.from(this.releases.values()).reduce(
       (sum, r) => sum + r?.totalStreams,
       0,
     );
     this.metrics.streams.avgPerRelease =
-      this?.releases.size > 0
-        ? this?.metrics.streams?.total / this?.releases.size
+      this.releases.size > 0
+        ? this.metrics.streams?.total / this.releases.size
         : 0;
 
-    this.metrics.social.totalFollowers = Array?.from(this?.users.values()).reduce(
+    this.metrics.social.totalFollowers = Array.from(this.users.values()).reduce(
       (sum, u) => sum + u?.followers,
       0,
     );
 
-    this.metrics.revenue.monthly = this?.metrics.revenue?.mrr;
+    this.metrics.revenue.monthly = this.metrics.revenue?.mrr;
     this.metrics.revenue.yearly = this.metrics.revenue.arr =
-      this?.metrics.revenue?.mrr * 12;
-    this.metrics.revenue.lifetime += this?.metrics.revenue?.daily;
+      this.metrics.revenue?.mrr * 12;
+    this.metrics.revenue.lifetime += this.metrics.revenue?.daily;
 
     // Advance simulated time by 1 day
-    this?.simulatedCurrentDate.setDate(this?.simulatedCurrentDate.getDate() + 1);
+    this.simulatedCurrentDate.setDate(this.simulatedCurrentDate.getDate() + 1);
 
     this.metrics.timestamp = new Date();
-    this.metrics.simulatedTime = new Date(this?.simulatedCurrentDate);
+    this.metrics.simulatedTime = new Date(this.simulatedCurrentDate);
   }
 
   private async takeSnapshot(): Promise<void> {
-    const recentEvents = this?.events.slice(-100);
+    const recentEvents = this.events.slice(-100);
 
     const snapshot: SimulationSnapshot = {
       periodName: this.config.periodName,
       dayNumber: this.currentDay,
-      simulatedDate: new Date(this?.simulatedCurrentDate),
+      simulatedDate: new Date(this.simulatedCurrentDate),
       realTimestamp: new Date(),
-      metrics: JSON.parse(JSON?.stringify(this?.metrics)),
-      marketConditions: { ...this?.marketConditions },
+      metrics: JSON.parse(JSON.stringify(this.metrics)),
+      marketConditions: { ...this.marketConditions },
       recentEvents,
-      autonomousSystemStatus: { ...this?.autonomousSystemsStatus },
+      autonomousSystemStatus: { ...this.autonomousSystemsStatus },
     };
 
-    this?.snapshots.push(snapshot);
-    this?.emit("snapshot", snapshot);
+    this.snapshots.push(snapshot);
+    this.emit("snapshot", snapshot);
 
-    logger?.info(
-      `[SIMULATION] Day ${this?.currentDay}/${this?.config.daysToSimulate} snapshot taken`,
+    logger.info(
+      `[SIMULATION] Day ${this.currentDay}/${this.config.daysToSimulate} snapshot taken`,
     );
   }
 
   private seedInitialData(): void {
     // Create initial users
-    for (let i = 0; i < this?.config.initialUsers; i++) {
-      const user = this?.createUser();
-      this?.users.set(user?.id, user);
+    for (let i = 0; i < this.config.initialUsers; i++) {
+      const user = this.createUser();
+      this.users.set(user?.id, user);
       this.metrics.users.total++;
       this.metrics.users.byTier[user?.subscriptionTier]++;
       this.metrics.users.byArchetype[user?.archetype]++;
@@ -904,27 +904,27 @@ export class RealLifeSimulationEngine extends EventEmitter {
     }
 
     // Create initial releases
-    const userArray = Array?.from(this?.users.values());
-    for (let i = 0; i < this?.config.initialReleases; i++) {
-      const user = userArray[Math?.floor(Math?.random() * userArray?.length)];
-      const release = this?.createRelease(user?.id);
-      release.totalStreams = Math?.floor(Math?.random() * 10000);
+    const userArray = Array.from(this.users.values());
+    for (let i = 0; i < this.config.initialReleases; i++) {
+      const user = userArray[Math.floor(Math.random() * userArray?.length)];
+      const release = this.createRelease(user?.id);
+      release.totalStreams = Math.floor(Math.random() * 10000);
       release.revenue = release?.totalStreams * 0.004;
-      this?.releases.set(release?.id, release);
+      this.releases.set(release?.id, release);
       user.releases++;
       user.totalStreams += release?.totalStreams;
       user.lifetimeValue += release?.revenue;
     }
 
-    this.metrics.revenue.lifetime = this?.config.seedMoney;
+    this.metrics.revenue.lifetime = this.config.seedMoney;
 
-    logger?.info(
-      `[SIMULATION] Seeded ${this?.users.size} users and ${this?.releases.size} releases`,
+    logger.info(
+      `[SIMULATION] Seeded ${this.users.size} users and ${this.releases.size} releases`,
     );
   }
 
   public async runSimulation(): Promise<SimulationResult> {
-    if (this?.isRunning) {
+    if (this.isRunning) {
       throw new Error("Simulation is already running");
     }
 
@@ -932,32 +932,32 @@ export class RealLifeSimulationEngine extends EventEmitter {
     this.realStartTime = new Date();
 
     // Initialize Pocket Dimension storage for memory-efficient user tracking
-    const simId = `${this?.config.periodName}-${Date?.now()}`;
+    const simId = `${this.config.periodName}-${Date?.now()}`;
     this.pocketStorage = createPocketStorage(simId);
-    await this?.pocketStorage.initialize();
+    await this.pocketStorage.initialize();
 
-    logger?.info("═══════════════════════════════════════════════════════════");
-    logger?.info(`🚀 STARTING REAL-LIFE SIMULATION: ${this?.config.periodName}`);
-    logger?.info("═══════════════════════════════════════════════════════════");
-    logger?.info(`📅 Duration: ${this?.config.daysToSimulate} simulated days`);
-    logger?.info(
-      `⚡ Acceleration: ${((1 - this?.config.accelerationFactor) * 100).toFixed(0)}%`,
+    logger.info("═══════════════════════════════════════════════════════════");
+    logger.info(`🚀 STARTING REAL-LIFE SIMULATION: ${this.config.periodName}`);
+    logger.info("═══════════════════════════════════════════════════════════");
+    logger.info(`📅 Duration: ${this.config.daysToSimulate} simulated days`);
+    logger.info(
+      `⚡ Acceleration: ${((1 - this.config.accelerationFactor) * 100).toFixed(0)}%`,
     );
-    logger?.info(`👥 Initial users: ${this?.config.initialUsers}`);
-    logger?.info(`🎵 Initial releases: ${this?.config.initialReleases}`);
-    logger?.info(
-      `🤖 Autonomous systems: ${this?.config.enableAutonomousSystems ? "ENABLED" : "DISABLED"}`,
+    logger.info(`👥 Initial users: ${this.config.initialUsers}`);
+    logger.info(`🎵 Initial releases: ${this.config.initialReleases}`);
+    logger.info(
+      `🤖 Autonomous systems: ${this.config.enableAutonomousSystems ? "ENABLED" : "DISABLED"}`,
     );
-    logger?.info(`💾 Storage: Pocket Dimension (memory-optimized)`);
-    logger?.info(
+    logger.info(`💾 Storage: Pocket Dimension (memory-optimized)`);
+    logger.info(
       "═══════════════════════════════════════════════════════════\n",
     );
 
     // Seed initial data
-    this?.seedInitialData();
+    this.seedInitialData();
 
     // Take initial snapshot
-    await this?.takeSnapshot();
+    await this.takeSnapshot();
 
     // Run simulation loop with accelerated processing
     // Process multiple simulated days per real second for 98% acceleration
@@ -965,113 +965,113 @@ export class RealLifeSimulationEngine extends EventEmitter {
 
     for (
       this.currentDay = 1;
-      this?.currentDay <= this?.config.daysToSimulate;
+      this.currentDay <= this.config.daysToSimulate;
       this.currentDay++
     ) {
-      if (!this?.isRunning) break;
+      if (!this.isRunning) break;
 
-      while (this?.isPaused) {
+      while (this.isPaused) {
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
 
       // Fast simulation: aggregate hourly/minute events mathematically
       // Instead of simulating each minute, calculate probabilities for the full day
-      await this?.simulateDayFast();
+      await this.simulateDayFast();
 
       // Take snapshot at configured intervals
-      if (this?.currentDay % this?.config.snapshotIntervalDays === 0) {
-        await this?.takeSnapshot();
+      if (this.currentDay % this.config.snapshotIntervalDays === 0) {
+        await this.takeSnapshot();
       }
 
       // Emit progress periodically (not every day for performance)
       if (
-        this?.currentDay % 10 === 0 ||
-        this?.currentDay === this?.config.daysToSimulate
+        this.currentDay % 10 === 0 ||
+        this.currentDay === this.config.daysToSimulate
       ) {
-        this?.emit("progress", {
+        this.emit("progress", {
           day: this.currentDay,
           totalDays: this.config.daysToSimulate,
-          percentComplete: (this?.currentDay / this?.config.daysToSimulate) * 100,
+          percentComplete: (this.currentDay / this.config.daysToSimulate) * 100,
           metrics: this.metrics,
         });
       }
 
       // Log milestone progress
       if (
-        this?.currentDay === 30 ||
-        this?.currentDay === 90 ||
-        this?.currentDay === 180 ||
-        this?.currentDay === 365 ||
-        this?.currentDay % 365 === 0
+        this.currentDay === 30 ||
+        this.currentDay === 90 ||
+        this.currentDay === 180 ||
+        this.currentDay === 365 ||
+        this.currentDay % 365 === 0
       ) {
-        logger?.info(
-          `\n📊 MILESTONE: Day ${this?.currentDay} (${this?.getMilestoneLabel(this?.currentDay)})`,
+        logger.info(
+          `\n📊 MILESTONE: Day ${this.currentDay} (${this.getMilestoneLabel(this.currentDay)})`,
         );
-        logger?.info(
-          `   Users: ${this?.metrics.users?.total} (${this?.metrics.users?.active} active)`,
+        logger.info(
+          `   Users: ${this.metrics.users?.total} (${this.metrics.users?.active} active)`,
         );
-        logger?.info(`   MRR: $${this?.metrics.revenue?.mrr.toFixed(2)}`);
-        logger?.info(
-          `   Total Streams: ${this?.metrics.streams?.total.toLocaleString()}`,
+        logger.info(`   MRR: $${this.metrics.revenue?.mrr.toFixed(2)}`);
+        logger.info(
+          `   Total Streams: ${this.metrics.streams?.total.toLocaleString()}`,
         );
-        logger?.info(`   Viral Releases: ${this?.metrics.streams?.viralReleases}`);
+        logger.info(`   Viral Releases: ${this.metrics.streams?.viralReleases}`);
       }
 
       // Small yield every batch to prevent blocking event loop
-      if (this?.currentDay % batchSize === 0) {
+      if (this.currentDay % batchSize === 0) {
         await new Promise((resolve) => setImmediate(resolve));
       }
     }
 
     // Final snapshot
-    await this?.takeSnapshot();
+    await this.takeSnapshot();
 
     // Calculate final KPIs
-    const result = this?.generateResult();
+    const result = this.generateResult();
 
     this.isRunning = false;
 
     // Get pocket storage stats before cleanup
     let storageStats = null;
-    if (this?.pocketStorage) {
+    if (this.pocketStorage) {
       try {
-        storageStats = await this?.pocketStorage.getStorageStats();
-        await this?.pocketStorage.close();
+        storageStats = await this.pocketStorage.getStorageStats();
+        await this.pocketStorage.close();
       } catch (e) {
         // Ignore cleanup errors
       }
     }
 
-    logger?.info(
+    logger.info(
       "\n═══════════════════════════════════════════════════════════",
     );
-    logger?.info("✅ SIMULATION COMPLETE");
-    logger?.info("═══════════════════════════════════════════════════════════");
-    logger?.info(
-      `⏱️  Real duration: ${((Date?.now() - this?.realStartTime.getTime()) / 1000 / 60).toFixed(1)} minutes`,
+    logger.info("✅ SIMULATION COMPLETE");
+    logger.info("═══════════════════════════════════════════════════════════");
+    logger.info(
+      `⏱️  Real duration: ${((Date?.now() - this.realStartTime.getTime()) / 1000 / 60).toFixed(1)} minutes`,
     );
-    logger?.info(`📅 Simulated: ${this?.config.daysToSimulate} days`);
-    logger?.info(`👥 Final users: ${this?.metrics.users?.total}`);
-    logger?.info(`💰 Final MRR: $${this?.metrics.revenue?.mrr.toFixed(2)}`);
-    logger?.info(
-      `🎵 Total streams: ${this?.metrics.streams?.total.toLocaleString()}`,
+    logger.info(`📅 Simulated: ${this.config.daysToSimulate} days`);
+    logger.info(`👥 Final users: ${this.metrics.users?.total}`);
+    logger.info(`💰 Final MRR: $${this.metrics.revenue?.mrr.toFixed(2)}`);
+    logger.info(
+      `🎵 Total streams: ${this.metrics.streams?.total.toLocaleString()}`,
     );
-    logger?.info(
+    logger.info(
       `🧪 Tests passed: ${result?.systemTests.passed}/${result?.systemTests.passed + result?.systemTests.failed}`,
     );
     if (storageStats) {
-      logger?.info(
+      logger.info(
         `💾 Memory savings: ${storageStats?.estimatedMemorySavings} (Pocket Dimension)`,
       );
-      logger?.info(
+      logger.info(
         `   Sample pool: ${storageStats?.memoryUsers} users | Aggregate: ${storageStats?.aggregateUsers.toLocaleString()} users`,
       );
     }
-    logger?.info(
+    logger.info(
       "═══════════════════════════════════════════════════════════\n",
     );
 
-    this?.emit("complete", result);
+    this.emit("complete", result);
     return result;
   }
 
@@ -1082,33 +1082,33 @@ export class RealLifeSimulationEngine extends EventEmitter {
     if (day === 365) return "1 Year";
     if (day === 365 * 3) return "3 Years";
     if (day === 365 * 6) return "6 Years";
-    return `${Math?.floor(day / 365)} Years`;
+    return `${Math.floor(day / 365)} Years`;
   }
 
   private generateResult(): SimulationResult {
     const endTime = new Date();
-    const realDuration = endTime?.getTime() - this?.realStartTime.getTime();
-    const simulatedDuration = this?.config.daysToSimulate * 24 * 60 * 60 * 1000;
+    const realDuration = endTime?.getTime() - this.realStartTime.getTime();
+    const simulatedDuration = this.config.daysToSimulate * 24 * 60 * 60 * 1000;
 
     // Calculate KPIs
-    const initialUsers = this?.config.initialUsers;
-    const finalUsers = this?.metrics.users?.total;
+    const initialUsers = this.config.initialUsers;
+    const finalUsers = this.metrics.users?.total;
     const userGrowthRate = ((finalUsers - initialUsers) / initialUsers) * 100;
 
-    const churnedUsers = this?.events.filter(
+    const churnedUsers = this.events.filter(
       (e) => e?.type === "user_churn",
     ).length;
     const churnRate =
       (churnedUsers /
         (initialUsers +
-          this?.events.filter((e) => e?.type === "user_signup").length)) *
+          this.events.filter((e) => e?.type === "user_signup").length)) *
       100;
 
-    const ltv = this?.metrics.revenue?.lifetime / Math?.max(1, finalUsers);
+    const ltv = this.metrics.revenue?.lifetime / Math.max(1, finalUsers);
     const cac = 50; // Estimated customer acquisition cost
 
-    const viralReleases = this?.metrics.streams?.viralReleases;
-    const totalReleases = this?.releases.size;
+    const viralReleases = this.metrics.streams?.viralReleases;
+    const totalReleases = this.releases.size;
     const viralCoefficient =
       totalReleases > 0 ? (viralReleases / totalReleases) * 10 : 0;
 
@@ -1128,7 +1128,7 @@ export class RealLifeSimulationEngine extends EventEmitter {
     }
 
     // Test: Revenue growth
-    if (this?.metrics.revenue?.mrr > this?.config.initialUsers * 5)
+    if (this.metrics.revenue?.mrr > this.config.initialUsers * 5)
       systemTests.passed++;
     else {
       systemTests.failed++;
@@ -1136,16 +1136,16 @@ export class RealLifeSimulationEngine extends EventEmitter {
     }
 
     // Test: Platform uptime
-    if (this?.metrics.platform?.uptime > 99.5) systemTests.passed++;
-    else if (this?.metrics.platform?.uptime > 99) systemTests.warnings++;
+    if (this.metrics.platform?.uptime > 99.5) systemTests.passed++;
+    else if (this.metrics.platform?.uptime > 99) systemTests.warnings++;
     else {
       systemTests.failed++;
       systemTests?.criticalIssues.push("Platform uptime below 99%");
     }
 
     // Test: Error rate
-    if (this?.metrics.platform?.errorRate < 0.01) systemTests.passed++;
-    else if (this?.metrics.platform?.errorRate < 0.05) systemTests.warnings++;
+    if (this.metrics.platform?.errorRate < 0.01) systemTests.passed++;
+    else if (this.metrics.platform?.errorRate < 0.05) systemTests.warnings++;
     else {
       systemTests.failed++;
       systemTests?.criticalIssues.push("Error rate above 5%");
@@ -1153,8 +1153,8 @@ export class RealLifeSimulationEngine extends EventEmitter {
 
     // Test: Autonomous system effectiveness
     if (
-      this?.metrics.autonomous?.interventionsRequired <
-      this?.metrics.autonomous?.decisionsAutoMade * 0.1
+      this.metrics.autonomous?.interventionsRequired <
+      this.metrics.autonomous?.decisionsAutoMade * 0.1
     ) {
       systemTests.passed++;
     } else {
@@ -1183,13 +1183,13 @@ export class RealLifeSimulationEngine extends EventEmitter {
     if (churnRate > 5) {
       recommendations?.push("Implement retention campaigns for at-risk users");
     }
-    if (this?.metrics.platform?.uptime < 99.9) {
+    if (this.metrics.platform?.uptime < 99.9) {
       recommendations?.push("Improve system redundancy and failover mechanisms");
     }
     if (viralCoefficient < 0.5) {
       recommendations?.push("Enhance viral content optimization algorithms");
     }
-    if (this?.metrics.autonomous?.interventionsRequired > 10) {
+    if (this.metrics.autonomous?.interventionsRequired > 10) {
       recommendations?.push("Fine-tune autonomous decision thresholds");
     }
     if (ltv < 100) {
@@ -1202,14 +1202,14 @@ export class RealLifeSimulationEngine extends EventEmitter {
       endTime,
       realDuration,
       simulatedDuration,
-      finalMetrics: JSON.parse(JSON?.stringify(this?.metrics)),
+      finalMetrics: JSON.parse(JSON.stringify(this.metrics)),
       snapshots: this.snapshots,
       allEvents: this.events,
       kpis: {
         userGrowthRate,
         revenueGrowthRate:
-          ((this?.metrics.revenue?.mrr - this?.config.initialUsers * 10) /
-            (this?.config.initialUsers * 10)) *
+          ((this.metrics.revenue?.mrr - this.config.initialUsers * 10) /
+            (this.config.initialUsers * 10)) *
           100,
         churnRate,
         ltv,
@@ -1218,10 +1218,10 @@ export class RealLifeSimulationEngine extends EventEmitter {
         nps: 50 + userGrowthRate / 10 - churnRate * 2,
         systemUptime: this.metrics.platform?.uptime,
         autonomousEfficiency:
-          this?.metrics.autonomous?.decisionsAutoMade > 0
-            ? ((this?.metrics.autonomous?.decisionsAutoMade -
-                this?.metrics.autonomous?.interventionsRequired) /
-                this?.metrics.autonomous?.decisionsAutoMade) *
+          this.metrics.autonomous?.decisionsAutoMade > 0
+            ? ((this.metrics.autonomous?.decisionsAutoMade -
+                this.metrics.autonomous?.interventionsRequired) /
+                this.metrics.autonomous?.decisionsAutoMade) *
               100
             : 100,
       },
@@ -1232,20 +1232,20 @@ export class RealLifeSimulationEngine extends EventEmitter {
 
   public pause(): void {
     this.isPaused = true;
-    logger?.info("[SIMULATION] Paused");
-    this?.emit("paused");
+    logger.info("[SIMULATION] Paused");
+    this.emit("paused");
   }
 
   public resume(): void {
     this.isPaused = false;
-    logger?.info("[SIMULATION] Resumed");
-    this?.emit("resumed");
+    logger.info("[SIMULATION] Resumed");
+    this.emit("resumed");
   }
 
   public stop(): void {
     this.isRunning = false;
-    logger?.info("[SIMULATION] Stopped");
-    this?.emit("stopped");
+    logger.info("[SIMULATION] Stopped");
+    this.emit("stopped");
   }
 
   public getStatus(): {
@@ -1261,7 +1261,7 @@ export class RealLifeSimulationEngine extends EventEmitter {
       isPaused: this.isPaused,
       currentDay: this.currentDay,
       totalDays: this.config.daysToSimulate,
-      percentComplete: (this?.currentDay / this?.config.daysToSimulate) * 100,
+      percentComplete: (this.currentDay / this.config.daysToSimulate) * 100,
       metrics: this.metrics,
     };
   }
@@ -1273,40 +1273,40 @@ export async function runFullLifecycleSimulation(): Promise<
 > {
   const results: Record<string, SimulationResult> = {};
 
-  logger?.info("\n");
-  logger?.info(
+  logger.info("\n");
+  logger.info(
     "╔══════════════════════════════════════════════════════════════╗",
   );
-  logger?.info(
+  logger.info(
     "║         MAX BOOSTER FULL LIFECYCLE SIMULATION                ║",
   );
-  logger?.info(
+  logger.info(
     "║                                                              ║",
   );
-  logger?.info(
+  logger.info(
     "║   Testing all systems from 1 month to 50 years              ║",
   );
-  logger?.info(
+  logger.info(
     "║   98% accelerated speed | Real-time tracking                ║",
   );
-  logger?.info(
+  logger.info(
     "╚══════════════════════════════════════════════════════════════╝\n",
   );
 
-  const periods = Object?.entries(SIMULATION_PERIODS);
+  const periods = Object.entries(SIMULATION_PERIODS);
 
   for (const [periodName, days] of periods) {
-    logger?.info(`\n${"═".repeat(60)}`);
-    logger?.info(`Starting simulation period: ${periodName} (${days} days)`);
-    logger?.info(`${"═".repeat(60)}\n`);
+    logger.info(`\n${"═".repeat(60)}`);
+    logger.info(`Starting simulation period: ${periodName} (${days} days)`);
+    logger.info(`${"═".repeat(60)}\n`);
 
     const simulation = new RealLifeSimulationEngine({
       periodName: periodName as keyof typeof SIMULATION_PERIODS,
       daysToSimulate: days,
-      initialUsers: 100 + Math?.floor(days / 30) * 10, // Scale initial users with period
-      initialReleases: 50 + Math?.floor(days / 30) * 5,
+      initialUsers: 100 + Math.floor(days / 30) * 10, // Scale initial users with period
+      initialReleases: 50 + Math.floor(days / 30) * 5,
       seedMoney: 10000 + days * 100,
-      snapshotIntervalDays: Math.max(1, Math?.floor(days / 30)),
+      snapshotIntervalDays: Math.max(1, Math.floor(days / 30)),
     });
 
     results[periodName] = await simulation?.runSimulation();
@@ -1316,18 +1316,18 @@ export async function runFullLifecycleSimulation(): Promise<
   }
 
   // Generate summary report
-  logger?.info("\n");
-  logger?.info(
+  logger.info("\n");
+  logger.info(
     "╔══════════════════════════════════════════════════════════════╗",
   );
-  logger?.info(
+  logger.info(
     "║              FULL LIFECYCLE SIMULATION RESULTS               ║",
   );
-  logger?.info(
+  logger.info(
     "╚══════════════════════════════════════════════════════════════╝\n",
   );
 
-  for (const [period, result] of Object?.entries(results)) {
+  for (const [period, result] of Object.entries(results)) {
     const tests = result?.systemTests;
     const status =
       tests?.failed === 0
@@ -1336,23 +1336,23 @@ export async function runFullLifecycleSimulation(): Promise<
           ? "❌ FAIL"
           : "⚠️ WARN";
 
-    logger?.info(
+    logger.info(
       `${status} ${period?.padEnd(12)} | Users: ${result?.finalMetrics.users?.total.toString().padStart(6)} | MRR: $${result?.finalMetrics.revenue?.mrr.toFixed(2).padStart(10)} | Uptime: ${result?.finalMetrics.platform?.uptime.toFixed(2)}%`,
     );
   }
 
-  const allPassed = Object?.values(results).every(
+  const allPassed = Object.values(results).every(
     (r) => r?.systemTests.failed === 0,
   );
 
-  logger?.info("\n");
-  logger?.info(
+  logger.info("\n");
+  logger.info(
     "═══════════════════════════════════════════════════════════════",
   );
-  logger?.info(
+  logger.info(
     `FINAL VERDICT: ${allPassed ? "✅ ALL SIMULATIONS PASSED" : "⚠️ SOME SIMULATIONS NEED ATTENTION"}`,
   );
-  logger?.info(
+  logger.info(
     "═══════════════════════════════════════════════════════════════\n",
   );
 

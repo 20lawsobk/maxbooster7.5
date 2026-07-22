@@ -40,7 +40,7 @@ import { logger } from "../logger.js";
 const execFileAsync = promisify(execFile);
 
 function resolveFFmpegPath(): string {
-  if (process?.env.FFMPEG_PATH) return process?.env.FFMPEG_PATH;
+  if (process.env.FFMPEG_PATH) return process.env.FFMPEG_PATH;
   try {
     const p = execFileSync("/bin/sh", ["-c", "which ffmpeg"], { timeout: 3000 })
       .toString()
@@ -62,11 +62,11 @@ function resolveFFmpegPath(): string {
 }
 
 const FFMPEG = resolveFFmpegPath();
-const OUTPUT_DIR = path?.join(process?.cwd(), "uploads", "videos");
-const TEMP_DIR = path?.join(process?.cwd(), "uploads", "video_temp");
+const OUTPUT_DIR = path?.join(process.cwd(), "uploads", "videos");
+const TEMP_DIR = path?.join(process.cwd(), "uploads", "video_temp");
 const FONT_DIR = "/usr/share/fonts/truetype/dejavu";
 path?.join(
-  process?.cwd(),
+  process.cwd(),
   "server",
   "services",
   "frameGenerator.py",
@@ -163,11 +163,11 @@ function getBgVfPrefix(
   const aB = AB - B;
 
   // Spatial frequency divisors (pixels per full sine cycle ÷ 2π)
-  const dX1 = Math?.round(iW / 6.28); // 1 cycle across width
-  const dX2 = Math?.round(iW / 12.57); // 2 cycles across width
-  const dY1 = Math?.round(iH / 6.28); // 1 cycle across height
-  const dY2 = Math?.round(iH / 12.57); // 2 cycles across height
-  const dD1 = Math?.round(Math?.hypot(iW, iH) / 6.28); // 1 cycle across diagonal
+  const dX1 = Math.round(iW / 6.28); // 1 cycle across width
+  const dX2 = Math.round(iW / 12.57); // 2 cycles across width
+  const dY1 = Math.round(iH / 6.28); // 1 cycle across height
+  const dY2 = Math.round(iH / 12.57); // 2 cycles across height
+  const dD1 = Math.round(Math.hypot(iW, iH) / 6.28); // 1 cycle across diagonal
 
   switch (bgType) {
     case "plasma": {
@@ -183,9 +183,9 @@ function getBgVfPrefix(
 
     case "aurora": {
       // Tall horizontal curtains with luminance shimmer and subtle R accent.
-      const gAmp = Math?.min(aG, 180);
-      const bAmp = Math?.min(aB, 200);
-      const rAmp = Math?.min(aR, 60);
+      const gAmp = Math.min(aG, 180);
+      const bAmp = Math.min(aB, 200);
+      const rAmp = Math.min(aR, 60);
       return (
         `geq=` +
         `r='${R}+${rAmp}*(0.65*sin(X/${dX1}+T*0.3)*sin(X/${dX1}+T*0.3)*sin(Y/${dY2}*0.3)*sin(Y/${dY2}*0.3)+0.35*sin(Y/${dY1}+T*0.2)*sin(Y/${dY1}+T*0.2))':` +
@@ -226,8 +226,8 @@ function getBgVfPrefix(
 
     case "fire": {
       // Upward rolling heat with multiple hot columns — orange inferno.
-      const rAmp = Math?.min(220, 255 - R);
-      const gAmp = Math?.min(80, 255 - G);
+      const rAmp = Math.min(220, 255 - R);
+      const gAmp = Math.min(80, 255 - G);
       return (
         `geq=` +
         `r='${R}+${rAmp}*(0.55*sin(X/${dX2}+T*3.2)*sin(X/${dX2}+T*3.2)+0.30*sin(X/${dX1}*1.3+T*2.8)*sin(X/${dX1}*1.3+T*2.8)+0.15*sin(X/${dX2}*1.7+T*3.8)*sin(X/${dX2}*1.7+T*3.8))*(${iH}-Y)/${iH}':` +
@@ -292,8 +292,8 @@ function getBgVfPrefix(
       const bAmp = Math.min(90, 255 - B);
       return (
         `geq=` +
-        `r='${R}+${rAmp}*(${iH}-Y)/${iH}+${Math?.floor(rAmp * 0.2)}*sin(X/${dX1}+T*0.25)*sin(X/${dX1}+T*0.25)':` +
-        `g='${G}+${gAmp}*(${iH}-Y)*(${iH}-Y)/(${iH}*${iH})+${Math?.floor(gAmp * 0.3)}*sin(X/${dX1}*0.7+T*0.20)*sin(X/${dX1}*0.7+T*0.20)*(${iH}-Y)/${iH}':` +
+        `r='${R}+${rAmp}*(${iH}-Y)/${iH}+${Math.floor(rAmp * 0.2)}*sin(X/${dX1}+T*0.25)*sin(X/${dX1}+T*0.25)':` +
+        `g='${G}+${gAmp}*(${iH}-Y)*(${iH}-Y)/(${iH}*${iH})+${Math.floor(gAmp * 0.3)}*sin(X/${dX1}*0.7+T*0.20)*sin(X/${dX1}*0.7+T*0.20)*(${iH}-Y)/${iH}':` +
         `b='${B}+${bAmp}*sin(X/${dX1}+Y/${dY1}*0.5+T*0.18)*sin(X/${dX1}+Y/${dY1}*0.5+T*0.18)*(1-0.9*(${iH}-Y)/${iH})'`
       );
     }

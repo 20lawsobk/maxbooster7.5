@@ -23,7 +23,7 @@ export class VolumeRegistry {
       .select()
       .from(fabricVolumes)
       .where(eq(fabricVolumes?.id, id));
-    return rows[0] ? this?.rowToVolume(rows[0]) : null;
+    return rows[0] ? this.rowToVolume(rows[0]) : null;
   }
 
   async listVolumes(pocketId: PocketId): Promise<FabricVolume[]> {
@@ -31,7 +31,7 @@ export class VolumeRegistry {
       .select()
       .from(fabricVolumes)
       .where(eq(fabricVolumes?.pocketId, pocketId));
-    return rows?.map(this?.rowToVolume);
+    return rows?.map(this.rowToVolume);
   }
 
   async deleteVolume(id: VolumeId): Promise<void> {

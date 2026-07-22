@@ -62,7 +62,7 @@ export async function submitToProvider(
         logs: `${dispatch?.logs}\nProcessing started at ${new Date().toISOString()}`,
       })
       .catch((err) => {
-        logger?.warn(
+        logger.warn(
           { err: err },
           `Failed to update dispatch ${dispatch?.id} status:`,
         );

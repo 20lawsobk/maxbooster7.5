@@ -44,12 +44,12 @@ const dmcaNoticeLimiter = rateLimit({
   message: {
     error: "Too many DMCA notices from this IP. Please try again later.",
   },
-  skip: (req) => !!req?.user?.isAdmin,
+  skip: (req) => !!req.user?.isAdmin,
 });
 
 router?.post("/notice", dmcaNoticeLimiter, async (req, res) => {
   try {
-    const validated = dmcaNoticeSchema?.parse(req?.body);
+    const validated = dmcaNoticeSchema?.parse(req.body);
 
     if (validated?.type === "counter") {
       return res
@@ -59,17 +59,17 @@ router?.post("/notice", dmcaNoticeLimiter, async (req, res) => {
 
     const notice = await dmcaService?.submitNotice(validated);
 
-    res?.status(201).json({
+    res.status(201).json({
       success: true,
       notice,
       message:
         "DMCA notice submitted successfully. It will be reviewed within 24-48 hours.",
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error submitting DMCA notice:");
+    logger.warn({ err: error }, "Error submitting DMCA notice:");
 
     if (error instanceof z.ZodError) {
-      return res?.status(400).json({
+      return res.status(400).json({
         error: "Invalid request data",
         details: error.issues,
       });
@@ -77,30 +77,30 @@ router?.post("/notice", dmcaNoticeLimiter, async (req, res) => {
 
     const message =
       error instanceof Error ? error?.message : "Failed to submit DMCA notice";
-    res?.status(500).json({ error: message });
+    res.status(500).json({ error: message });
   }
 });
 
 router?.post("/counter", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const validated = counterNoticeSchema?.parse(req?.body);
+    const validated = counterNoticeSchema?.parse(req.body);
     const counterNotice = await dmcaService?.submitCounterNotice(validated);
 
-    res?.status(201).json({
+    res.status(201).json({
       success: true,
       notice: counterNotice,
       message:
         "Counter-notification submitted. The original claimant has 10-14 business days to respond.",
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error submitting counter-notice:");
+    logger.warn({ err: error }, "Error submitting counter-notice:");
 
     if (error instanceof z.ZodError) {
-      return res?.status(400).json({
+      return res.status(400).json({
         error: "Invalid request data",
         details: error.issues,
       });
@@ -110,107 +110,107 @@ router?.post("/counter", async (req, res) => {
       error instanceof Error
         ? error?.message
         : "Failed to submit counter-notification";
-    res?.status(500).json({ error: message });
+    res.status(500).json({ error: message });
   }
 });
 
 router?.get("/notices", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const notices = await dmcaService?.getNoticesByUser(req?.user.id);
-    const strikeInfo = await dmcaService?.getStrikeInfo(req?.user.id);
+    const notices = await dmcaService?.getNoticesByUser(req.user.id);
+    const strikeInfo = await dmcaService?.getStrikeInfo(req.user.id);
 
-    res?.json({
+    res.json({
       notices,
       strikes: strikeInfo,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching DMCA notices:");
+    logger.warn({ err: error }, "Error fetching DMCA notices:");
     const message =
       error instanceof Error ? error?.message : "Failed to fetch DMCA notices";
-    res?.status(500).json({ error: message });
+    res.status(500).json({ error: message });
   }
 });
 
 router?.get("/notices/:noticeId", async (req, res) => {
   try {
-    const { noticeId } = req?.params;
+    const { noticeId } = req.params;
     const notice = await dmcaService?.getNotice(noticeId);
 
     if (!notice) {
-      return res?.status(404).json({ error: "Notice not found" });
+      return res.status(404).json({ error: "Notice not found" });
     }
 
     if (
-      req?.user &&
-      notice?.contentOwnerId !== req?.user.id &&
-      !req?.user.isAdmin
+      req.user &&
+      notice?.contentOwnerId !== req.user.id &&
+      !req.user.isAdmin
     ) {
-      return res?.status(403).json({ error: "Access denied" });
+      return res.status(403).json({ error: "Access denied" });
     }
 
-    res?.json(notice);
+    res.json(notice);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching DMCA notice:");
+    logger.warn({ err: error }, "Error fetching DMCA notice:");
     const message =
       error instanceof Error ? error?.message : "Failed to fetch DMCA notice";
-    res?.status(500).json({ error: message });
+    res.status(500).json({ error: message });
   }
 });
 
 router?.get("/strikes", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const strikeInfo = await dmcaService?.getStrikeInfo(req?.user.id);
+    const strikeInfo = await dmcaService?.getStrikeInfo(req.user.id);
 
-    res?.json(strikeInfo);
+    res.json(strikeInfo);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching strike info:");
+    logger.warn({ err: error }, "Error fetching strike info:");
     const message =
       error instanceof Error
         ? error?.message
         : "Failed to fetch strike information";
-    res?.status(500).json({ error: message });
+    res.status(500).json({ error: message });
   }
 });
 
 router?.get("/admin/pending", async (req, res) => {
   try {
-    if (!req?.user?.isAdmin) {
-      return res?.status(403).json({ error: "Admin access required" });
+    if (!req.user?.isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
     }
 
     const pending = await dmcaService?.getPendingNotices();
 
-    res?.json({ notices: pending });
+    res.json({ notices: pending });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching pending notices:");
+    logger.warn({ err: error }, "Error fetching pending notices:");
     const message =
       error instanceof Error
         ? error?.message
         : "Failed to fetch pending notices";
-    res?.status(500).json({ error: message });
+    res.status(500).json({ error: message });
   }
 });
 
 router?.get("/admin/all", async (req, res) => {
   try {
-    if (!req?.user?.isAdmin) {
-      return res?.status(403).json({ error: "Admin access required" });
+    if (!req.user?.isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
     }
 
-    const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 500);
-    const offset = Math?.min(
-      Math?.max(parseInt(req?.query.offset as string) || 0, 0),
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
+    const offset = Math.min(
+      Math.max(parseInt(req.query.offset as string) || 0, 0),
       100_000,
     );
-    const status = req?.query.status as string | undefined;
+    const status = req.query.status as string | undefined;
 
     const result = await dmcaService?.getAllNotices({
       limit,
@@ -218,23 +218,23 @@ router?.get("/admin/all", async (req, res) => {
       status: status as Record<string, unknown>,
     });
 
-    res?.json(result);
+    res.json(result);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching all notices:");
+    logger.warn({ err: error }, "Error fetching all notices:");
     const message =
       error instanceof Error ? error?.message : "Failed to fetch notices";
-    res?.status(500).json({ error: message });
+    res.status(500).json({ error: message });
   }
 });
 
 router?.post("/admin/process/:noticeId", async (req, res) => {
   try {
-    if (!req?.user?.isAdmin) {
-      return res?.status(403).json({ error: "Admin access required" });
+    if (!req.user?.isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
     }
 
-    const { noticeId } = req?.params;
-    const { action, notes } = req?.body;
+    const { noticeId } = req.params;
+    const { action, notes } = req.body;
 
     if (!["approve", "reject"].includes(action)) {
       return res
@@ -244,93 +244,93 @@ router?.post("/admin/process/:noticeId", async (req, res) => {
 
     const notice = await dmcaService?.processNotice(
       noticeId,
-      req?.user.id,
+      req.user.id,
       action,
       notes,
     );
 
-    res?.json({
+    res.json({
       success: true,
       notice,
       message: `Notice ${action}d successfully`,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error processing notice:");
+    logger.warn({ err: error }, "Error processing notice:");
     const message =
       error instanceof Error ? error?.message : "Failed to process notice";
-    res?.status(500).json({ error: message });
+    res.status(500).json({ error: message });
   }
 });
 
 router?.post("/admin/strikes/:strikeId/revoke", async (req, res) => {
   try {
-    if (!req?.user?.isAdmin) {
-      return res?.status(403).json({ error: "Admin access required" });
+    if (!req.user?.isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
     }
 
-    const { strikeId } = req?.params;
-    const { reason } = req?.body;
+    const { strikeId } = req.params;
+    const { reason } = req.body;
 
     if (!reason) {
-      return res?.status(400).json({ error: "Revocation reason required" });
+      return res.status(400).json({ error: "Revocation reason required" });
     }
 
     const strike = await dmcaService?.revokeStrike(
       strikeId,
-      req?.user.id,
+      req.user.id,
       reason,
     );
 
-    res?.json({
+    res.json({
       success: true,
       strike,
       message: "Strike revoked successfully",
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error revoking strike:");
+    logger.warn({ err: error }, "Error revoking strike:");
     const message =
       error instanceof Error ? error?.message : "Failed to revoke strike";
-    res?.status(500).json({ error: message });
+    res.status(500).json({ error: message });
   }
 });
 
 router?.get("/legal-holds", async (req, res) => {
   try {
-    if (!req?.user?.isAdmin) {
-      return res?.status(403).json({ error: "Admin access required" });
+    if (!req.user?.isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
     }
 
-    const contentId = req?.query.contentId as string | undefined;
+    const contentId = req.query.contentId as string | undefined;
     const holds = await dmcaService?.getActiveLegalHolds(contentId);
 
-    res?.json({ holds });
+    res.json({ holds });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching legal holds:");
+    logger.warn({ err: error }, "Error fetching legal holds:");
     const message =
       error instanceof Error ? error?.message : "Failed to fetch legal holds";
-    res?.status(500).json({ error: message });
+    res.status(500).json({ error: message });
   }
 });
 
 router?.post("/legal-holds/:holdId/release", async (req, res) => {
   try {
-    if (!req?.user?.isAdmin) {
-      return res?.status(403).json({ error: "Admin access required" });
+    if (!req.user?.isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
     }
 
-    const { holdId } = req?.params;
-    const hold = await dmcaService?.releaseLegalHold(holdId, req?.user.id);
+    const { holdId } = req.params;
+    const hold = await dmcaService?.releaseLegalHold(holdId, req.user.id);
 
-    res?.json({
+    res.json({
       success: true,
       hold,
       message: "Legal hold released successfully",
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error releasing legal hold:");
+    logger.warn({ err: error }, "Error releasing legal hold:");
     const message =
       error instanceof Error ? error?.message : "Failed to release legal hold";
-    res?.status(500).json({ error: message });
+    res.status(500).json({ error: message });
   }
 });
 

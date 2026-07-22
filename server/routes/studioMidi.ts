@@ -155,7 +155,7 @@ const scaleSyncSchema = z.object({
 
 router?.post("/generate", requireAuth, async (req, res) => {
   try {
-    const { type, ...params } = req?.body;
+    const { type, ...params } = req.body;
 
     let result;
     switch (type) {
@@ -191,28 +191,28 @@ router?.post("/generate", requireAuth, async (req, res) => {
         break;
       }
       default:
-        return res?.status(400).json({ error: "Invalid generation type" });
+        return res.status(400).json({ error: "Invalid generation type" });
     }
 
-    res?.json({
+    res.json({
       success: true,
       notes: result,
       type,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error generating MIDI:");
+    logger.warn({ err: error }, "Error generating MIDI:");
     if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({ error: "Invalid request data", details: error.issues });
     }
-    res?.status(500).json({ error: "Failed to generate MIDI" });
+    res.status(500).json({ error: "Failed to generate MIDI" });
   }
 });
 
 router?.post("/transform", requireAuth, async (req, res) => {
   try {
-    const data = transformSchema?.parse(req?.body);
+    const data = transformSchema?.parse(req.body);
     const options = data?.options || {};
 
     let result;
@@ -268,28 +268,28 @@ router?.post("/transform", requireAuth, async (req, res) => {
         result = midiTransformService?.randomize(data?.notes, options);
         break;
       default:
-        return res?.status(400).json({ error: "Invalid transform type" });
+        return res.status(400).json({ error: "Invalid transform type" });
     }
 
-    res?.json({
+    res.json({
       success: true,
       notes: result,
       transform: data.transform,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error transforming MIDI:");
+    logger.warn({ err: error }, "Error transforming MIDI:");
     if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({ error: "Invalid request data", details: error.issues });
     }
-    res?.status(500).json({ error: "Failed to transform MIDI" });
+    res.status(500).json({ error: "Failed to transform MIDI" });
   }
 });
 
 router?.post("/arpeggiate", requireAuth, async (req, res) => {
   try {
-    const data = arpeggiateSchema?.parse(req?.body);
+    const data = arpeggiateSchema?.parse(req.body);
 
     const result = midiGeneratorService?.arpeggiate(
       data?.notes,
@@ -305,24 +305,24 @@ router?.post("/arpeggiate", requireAuth, async (req, res) => {
       data?.tempo,
     );
 
-    res?.json({
+    res.json({
       success: true,
       notes: result,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error creating arpeggio:");
+    logger.warn({ err: error }, "Error creating arpeggio:");
     if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({ error: "Invalid request data", details: error.issues });
     }
-    res?.status(500).json({ error: "Failed to create arpeggio" });
+    res.status(500).json({ error: "Failed to create arpeggio" });
   }
 });
 
 router?.post("/chords", requireAuth, async (req, res) => {
   try {
-    const data = generateChordsSchema?.parse(req?.body);
+    const data = generateChordsSchema?.parse(req.body);
 
     const result = midiGeneratorService?.generateChordProgression(
       data?.constraints,
@@ -335,25 +335,25 @@ router?.post("/chords", requireAuth, async (req, res) => {
       },
     );
 
-    res?.json({
+    res.json({
       success: true,
       chords: result.chords,
       notes: result.notes,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error generating chord progression:");
+    logger.warn({ err: error }, "Error generating chord progression:");
     if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({ error: "Invalid request data", details: error.issues });
     }
-    res?.status(500).json({ error: "Failed to generate chord progression" });
+    res.status(500).json({ error: "Failed to generate chord progression" });
   }
 });
 
 router?.post("/ornament", requireAuth, async (req, res) => {
   try {
-    const data = ornamentSchema?.parse(req?.body);
+    const data = ornamentSchema?.parse(req.body);
 
     const result = midiTransformService?.addOrnament(data?.notes, {
       type: data.type,
@@ -362,24 +362,24 @@ router?.post("/ornament", requireAuth, async (req, res) => {
       count: data.count,
     });
 
-    res?.json({
+    res.json({
       success: true,
       notes: result,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error adding ornament:");
+    logger.warn({ err: error }, "Error adding ornament:");
     if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({ error: "Invalid request data", details: error.issues });
     }
-    res?.status(500).json({ error: "Failed to add ornament" });
+    res.status(500).json({ error: "Failed to add ornament" });
   }
 });
 
 router?.post("/strum", requireAuth, async (req, res) => {
   try {
-    const data = strumSchema?.parse(req?.body);
+    const data = strumSchema?.parse(req.body);
 
     const result = midiTransformService?.applyStrumPattern(data?.notes, {
       direction: data.direction,
@@ -388,24 +388,24 @@ router?.post("/strum", requireAuth, async (req, res) => {
       humanize: data.humanize,
     });
 
-    res?.json({
+    res.json({
       success: true,
       notes: result,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error applying strum pattern:");
+    logger.warn({ err: error }, "Error applying strum pattern:");
     if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({ error: "Invalid request data", details: error.issues });
     }
-    res?.status(500).json({ error: "Failed to apply strum pattern" });
+    res.status(500).json({ error: "Failed to apply strum pattern" });
   }
 });
 
 router?.post("/fit-to-scale", requireAuth, async (req, res) => {
   try {
-    const data = fitToScaleSchema?.parse(req?.body);
+    const data = fitToScaleSchema?.parse(req.body);
 
     const result = microtonalService?.fitNotesToScale(
       data?.notes,
@@ -413,24 +413,24 @@ router?.post("/fit-to-scale", requireAuth, async (req, res) => {
       data?.scale,
     );
 
-    res?.json({
+    res.json({
       success: true,
       notes: result,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fitting to scale:");
+    logger.warn({ err: error }, "Error fitting to scale:");
     if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({ error: "Invalid request data", details: error.issues });
     }
-    res?.status(500).json({ error: "Failed to fit notes to scale" });
+    res.status(500).json({ error: "Failed to fit notes to scale" });
   }
 });
 
 router?.get("/scales", requireAuth, async (req, res) => {
   try {
-    const { category } = req?.query;
+    const { category } = req.query;
 
     let scales;
     if (category && typeof category === "string") {
@@ -446,26 +446,26 @@ router?.get("/scales", requireAuth, async (req, res) => {
       chordStyles: midiGeneratorService.getAvailableChordStyles(),
     };
 
-    res?.json({
+    res.json({
       success: true,
       scales,
       tunings,
       generators,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching scales:");
-    res?.status(500).json({ error: "Failed to fetch scales" });
+    logger.warn({ err: error }, "Error fetching scales:");
+    res.status(500).json({ error: "Failed to fetch scales" });
   }
 });
 
 router?.get("/scales/:id", requireAuth, async (req, res) => {
   try {
-    const { id } = req?.params;
-    const { rootNote, octaves } = req?.query;
+    const { id } = req.params;
+    const { rootNote, octaves } = req.query;
 
     const scale = microtonalService?.getScale(id);
     if (!scale) {
-      return res?.status(404).json({ error: "Scale not found" });
+      return res.status(404).json({ error: "Scale not found" });
     }
 
     const root = rootNote ? parseInt(rootNote as string) : 60;
@@ -478,40 +478,40 @@ router?.get("/scales/:id", requireAuth, async (req, res) => {
       octs,
     );
 
-    res?.json({
+    res.json({
       success: true,
       scale,
       notes,
       frequencies,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching scale:");
-    res?.status(500).json({ error: "Failed to fetch scale" });
+    logger.warn({ err: error }, "Error fetching scale:");
+    res.status(500).json({ error: "Failed to fetch scale" });
   }
 });
 
 router?.get("/tunings/:id", requireAuth, async (req, res) => {
   try {
-    const { id } = req?.params;
+    const { id } = req.params;
 
     const tuning = microtonalService?.getTuningSystem(id);
     if (!tuning) {
-      return res?.status(404).json({ error: "Tuning system not found" });
+      return res.status(404).json({ error: "Tuning system not found" });
     }
 
-    res?.json({
+    res.json({
       success: true,
       tuning,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching tuning:");
-    res?.status(500).json({ error: "Failed to fetch tuning" });
+    logger.warn({ err: error }, "Error fetching tuning:");
+    res.status(500).json({ error: "Failed to fetch tuning" });
   }
 });
 
 router?.post("/scale-sync", requireAuth, async (req, res) => {
   try {
-    const data = scaleSyncSchema?.parse(req?.body);
+    const data = scaleSyncSchema?.parse(req.body);
 
     microtonalService?.setScaleSync({
       projectId: data.projectId,
@@ -521,76 +521,76 @@ router?.post("/scale-sync", requireAuth, async (req, res) => {
       affectedClips: data.affectedClips || [],
     });
 
-    res?.json({
+    res.json({
       success: true,
       message: "Scale sync configured",
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error setting scale sync:");
+    logger.warn({ err: error }, "Error setting scale sync:");
     if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({ error: "Invalid request data", details: error.issues });
     }
-    res?.status(500).json({ error: "Failed to set scale sync" });
+    res.status(500).json({ error: "Failed to set scale sync" });
   }
 });
 
 router?.get("/scale-sync/:projectId", requireAuth, async (req, res) => {
   try {
-    const { projectId } = req?.params;
+    const { projectId } = req.params;
 
     const config = microtonalService?.getScaleSync(projectId);
 
-    res?.json({
+    res.json({
       success: true,
       config: config || null,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching scale sync:");
-    res?.status(500).json({ error: "Failed to fetch scale sync" });
+    logger.warn({ err: error }, "Error fetching scale sync:");
+    res.status(500).json({ error: "Failed to fetch scale sync" });
   }
 });
 
 router?.delete("/scale-sync/:projectId", requireAuth, async (req, res) => {
   try {
-    const { projectId } = req?.params;
+    const { projectId } = req.params;
 
     microtonalService?.removeScaleSync(projectId);
 
-    res?.status(204).send();
+    res.status(204).send();
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error removing scale sync:");
-    res?.status(500).json({ error: "Failed to remove scale sync" });
+    logger.warn({ err: error }, "Error removing scale sync:");
+    res.status(500).json({ error: "Failed to remove scale sync" });
   }
 });
 
 router?.post("/note-info", requireAuth, async (req, res) => {
   try {
-    const { note, tuningSystem } = req?.body;
+    const { note, tuningSystem } = req.body;
 
     if (typeof note !== "number" || note < 0 || note > 127) {
-      return res?.status(400).json({ error: "Invalid MIDI note" });
+      return res.status(400).json({ error: "Invalid MIDI note" });
     }
 
     const info = microtonalService?.getNoteInfo(note, tuningSystem || "equal12");
 
-    res?.json({
+    res.json({
       success: true,
       ...info,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error getting note info:");
-    res?.status(500).json({ error: "Failed to get note info" });
+    logger.warn({ err: error }, "Error getting note info:");
+    res.status(500).json({ error: "Failed to get note info" });
   }
 });
 
 router?.post("/frequency", requireAuth, async (req, res) => {
   try {
-    const { note, tuningSystem, referenceNote, referenceFrequency } = req?.body;
+    const { note, tuningSystem, referenceNote, referenceFrequency } = req.body;
 
     if (typeof note !== "number" || note < 0 || note > 127) {
-      return res?.status(400).json({ error: "Invalid MIDI note" });
+      return res.status(400).json({ error: "Invalid MIDI note" });
     }
 
     const frequency = microtonalService?.noteToFrequency(
@@ -600,13 +600,13 @@ router?.post("/frequency", requireAuth, async (req, res) => {
       referenceFrequency || 440,
     );
 
-    res?.json({
+    res.json({
       success: true,
       frequency,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error calculating frequency:");
-    res?.status(500).json({ error: "Failed to calculate frequency" });
+    logger.warn({ err: error }, "Error calculating frequency:");
+    res.status(500).json({ error: "Failed to calculate frequency" });
   }
 });
 

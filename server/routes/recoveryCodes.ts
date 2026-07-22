@@ -72,11 +72,11 @@ async function saveStore(
 
 router?.get("/status", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user.id;
+    const userId = req.user.id;
     const store = await getStore(userId);
 
     if (!store) {
-      return res?.json({
+      return res.json({
         enabled: false,
         codesRemaining: 0,
         totalCodes: 0,
@@ -85,7 +85,7 @@ router?.get("/status", async (req: Request, res: Response) => {
 
     const codesRemaining = store?.codes.filter((c) => !c?.used).length;
 
-    res?.json({
+    res.json({
       enabled: true,
       codesRemaining,
       totalCodes: store.codes.length,
@@ -93,14 +93,14 @@ router?.get("/status", async (req: Request, res: Response) => {
       lastUsedAt: store.lastUsedAt ?? null,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching recovery codes status:");
-    res?.status(500).json({ error: "Failed to fetch recovery codes status" });
+    logger.warn({ err: error }, "Error fetching recovery codes status:");
+    res.status(500).json({ error: "Failed to fetch recovery codes status" });
   }
 });
 
 router?.post("/generate", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user.id;
+    const userId = req.user.id;
 
     const rawCodes: string[] = [];
     for (let i = 0; i < 10; i++) {
@@ -119,28 +119,28 @@ router?.post("/generate", async (req: Request, res: Response) => {
 
     await saveStore(userId, store);
 
-    res?.json({
+    res.json({
       codes: rawCodes,
       generatedAt: store.generatedAt,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error generating recovery codes:");
-    res?.status(500).json({ error: "Failed to generate recovery codes" });
+    logger.warn({ err: error }, "Error generating recovery codes:");
+    res.status(500).json({ error: "Failed to generate recovery codes" });
   }
 });
 
 router?.post("/verify", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user.id;
-    const { code } = req?.body;
+    const userId = req.user.id;
+    const { code } = req.body;
 
     if (!code || typeof code !== "string") {
-      return res?.status(400).json({ error: "Recovery code is required" });
+      return res.status(400).json({ error: "Recovery code is required" });
     }
 
     const store = await getStore(userId);
     if (!store) {
-      return res?.status(400).json({ error: "No recovery codes set up" });
+      return res.status(400).json({ error: "No recovery codes set up" });
     }
 
     const codeHash = hashCode(code);
@@ -160,13 +160,13 @@ router?.post("/verify", async (req: Request, res: Response) => {
 
     const codesRemaining = store?.codes.filter((c) => !c?.used).length;
 
-    res?.json({
+    res.json({
       success: true,
       codesRemaining,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error verifying recovery code:");
-    res?.status(500).json({ error: "Failed to verify recovery code" });
+    logger.warn({ err: error }, "Error verifying recovery code:");
+    res.status(500).json({ error: "Failed to verify recovery code" });
   }
 });
 

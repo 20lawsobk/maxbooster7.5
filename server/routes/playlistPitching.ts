@@ -174,7 +174,7 @@ const CURATORS = [
 ];
 
 router?.get("/curators", (_req, res) => {
-  res?.json(CURATORS);
+  res.json(CURATORS);
 });
 
 router?.get("/", requireAuth, async (req, res) => {
@@ -183,21 +183,21 @@ router?.get("/", requireAuth, async (req, res) => {
     const pitches = await db
       .select()
       .from(playlistPitches)
-      .where(eq(playlistPitches?.userId, req?.user!.id))
+      .where(eq(playlistPitches?.userId, req.user!.id))
       .orderBy(desc(playlistPitches?.createdAt))
       .limit(limit)
       .offset(offset);
-    res?.json(pitches);
+    res.json(pitches);
   } catch (error) {
-    logger?.warn({ err: error }, "[PlaylistPitching] Failed to list pitches:");
-    res?.status(500).json({ error: "Failed to fetch playlist pitches" });
+    logger.warn({ err: error }, "[PlaylistPitching] Failed to list pitches:");
+    res.status(500).json({ error: "Failed to fetch playlist pitches" });
   }
 });
 
 router?.post("/", requireAuth, async (req, res) => {
   try {
     const validatedData = insertPlaylistPitchSchema?.parse({
-      ...req?.body,
+      ...req.body,
       userId: req.user!.id,
     });
     const [newPitch] = await db
@@ -205,17 +205,17 @@ router?.post("/", requireAuth, async (req, res) => {
       .values(validatedData)
       .returning();
     await queryCache?.invalidate(
-      createCacheKey("stats:playlistPitches", req?.user!.id),
+      createCacheKey("stats:playlistPitches", req.user!.id),
     );
-    res?.status(201).json(newPitch);
+    res.status(201).json(newPitch);
   } catch (error) {
-    logger?.warn({ err: error }, "[PlaylistPitching] Failed to create pitch:");
+    logger.warn({ err: error }, "[PlaylistPitching] Failed to create pitch:");
     if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({ error: "Validation error", details: error.flatten() });
     }
-    res?.status(500).json({ error: "Failed to create playlist pitch" });
+    res.status(500).json({ error: "Failed to create playlist pitch" });
   }
 });
 
@@ -224,40 +224,40 @@ router?.put("/:id", requireAuth, async (req, res) => {
     const validatedData = insertPlaylistPitchSchema
       .partial()
       .omit({ userId: true })
-      .parse(req?.body);
+      .parse(req.body);
     const [updatedPitch] = await db
       .update(playlistPitches)
       .set({ ...validatedData, updatedAt: new Date() })
       .where(
         and(
-          eq(playlistPitches?.id, req?.params.id),
-          eq(playlistPitches?.userId, req?.user!.id),
+          eq(playlistPitches?.id, req.params.id),
+          eq(playlistPitches?.userId, req.user!.id),
         ),
       )
       .returning();
 
     if (!updatedPitch)
-      return res?.status(404).json({ error: "Pitch not found" });
+      return res.status(404).json({ error: "Pitch not found" });
     await queryCache?.invalidate(
-      createCacheKey("stats:playlistPitches", req?.user!.id),
+      createCacheKey("stats:playlistPitches", req.user!.id),
     );
-    res?.json(updatedPitch);
+    res.json(updatedPitch);
   } catch (error) {
-    logger?.warn({ err: error }, "[PlaylistPitching] Failed to update pitch:");
+    logger.warn({ err: error }, "[PlaylistPitching] Failed to update pitch:");
     if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({ error: "Validation error", details: error.flatten() });
     }
-    res?.status(500).json({ error: "Failed to update playlist pitch" });
+    res.status(500).json({ error: "Failed to update playlist pitch" });
   }
 });
 
 // PATCH /api/playlist-pitching/:id/status — record pitch outcome (placed, rejected, etc.)
 router?.patch("/:id/status", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { id } = req?.params;
+    const userId = req.user!.id;
+    const { id } = req.params;
     const statusSchema = z.object({
       status: z.enum([
         "draft",
@@ -270,7 +270,7 @@ router?.patch("/:id/status", requireAuth, async (req, res) => {
       ]),
       responseNote: z.string().max(2000).optional(),
     });
-    const { status, responseNote } = statusSchema?.parse(req?.body);
+    const { status, responseNote } = statusSchema?.parse(req.body);
 
     const setFields: Record<string, unknown> = {
       status,
@@ -289,19 +289,19 @@ router?.patch("/:id/status", requireAuth, async (req, res) => {
       )
       .returning();
 
-    if (!updated) return res?.status(404).json({ error: "Pitch not found" });
+    if (!updated) return res.status(404).json({ error: "Pitch not found" });
     await queryCache?.invalidate(
       createCacheKey("stats:playlistPitches", userId),
     );
-    res?.json(updated);
+    res.json(updated);
   } catch (error) {
-    logger?.warn({ err: error }, "[PlaylistPitching] Failed to update status:");
+    logger.warn({ err: error }, "[PlaylistPitching] Failed to update status:");
     if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({ error: "Validation error", details: error.flatten() });
     }
-    res?.status(500).json({ error: "Failed to update pitch status" });
+    res.status(500).json({ error: "Failed to update pitch status" });
   }
 });
 
@@ -311,27 +311,27 @@ router?.delete("/:id", requireAuth, async (req, res) => {
       .delete(playlistPitches)
       .where(
         and(
-          eq(playlistPitches?.id, req?.params.id),
-          eq(playlistPitches?.userId, req?.user!.id),
+          eq(playlistPitches?.id, req.params.id),
+          eq(playlistPitches?.userId, req.user!.id),
         ),
       )
       .returning();
 
     if (!deletedPitch)
-      return res?.status(404).json({ error: "Pitch not found" });
+      return res.status(404).json({ error: "Pitch not found" });
     await queryCache?.invalidate(
-      createCacheKey("stats:playlistPitches", req?.user!.id),
+      createCacheKey("stats:playlistPitches", req.user!.id),
     );
-    res?.json({ success: true });
+    res.json({ success: true });
   } catch (error) {
-    logger?.warn({ err: error }, "[PlaylistPitching] Failed to delete pitch:");
-    res?.status(500).json({ error: "Failed to delete playlist pitch" });
+    logger.warn({ err: error }, "[PlaylistPitching] Failed to delete pitch:");
+    res.status(500).json({ error: "Failed to delete playlist pitch" });
   }
 });
 
 router?.get("/stats", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const cacheKey = createCacheKey("stats:playlistPitches", userId);
 
     const result = await queryCache?.getOrCompute(
@@ -374,10 +374,10 @@ router?.get("/stats", requireAuth, async (req, res) => {
       300,
     );
 
-    res?.json(result);
+    res.json(result);
   } catch (error) {
-    logger?.warn({ err: error }, "[PlaylistPitching] Failed to fetch stats:");
-    res?.status(500).json({ error: "Failed to fetch stats" });
+    logger.warn({ err: error }, "[PlaylistPitching] Failed to fetch stats:");
+    res.status(500).json({ error: "Failed to fetch stats" });
   }
 });
 
@@ -389,16 +389,16 @@ router?.get("/:id", requireAuth, async (req, res) => {
       .from(playlistPitches)
       .where(
         and(
-          eq(playlistPitches?.id, req?.params.id),
-          eq(playlistPitches?.userId, req?.user!.id),
+          eq(playlistPitches?.id, req.params.id),
+          eq(playlistPitches?.userId, req.user!.id),
         ),
       )
       .limit(1);
-    if (!item) return res?.status(404).json({ error: "Pitch not found" });
-    res?.json(item);
+    if (!item) return res.status(404).json({ error: "Pitch not found" });
+    res.json(item);
   } catch (error) {
-    logger?.warn({ err: error }, "[PlaylistPitching] Failed to fetch pitch:");
-    res?.status(500).json({ error: "Failed to fetch playlist pitch" });
+    logger.warn({ err: error }, "[PlaylistPitching] Failed to fetch pitch:");
+    res.status(500).json({ error: "Failed to fetch playlist pitch" });
   }
 });
 

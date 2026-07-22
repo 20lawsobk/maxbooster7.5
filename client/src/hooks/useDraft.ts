@@ -62,7 +62,7 @@ export function useDraft<T = unknown>(
         }
         isInitialized.current = true;
       } catch (error) {
-        logger?.error("[useDraft] Init error:", error);
+        logger.error("[useDraft] Init error:", error);
         onError?.(error as Error);
       }
     };
@@ -89,7 +89,7 @@ export function useDraft<T = unknown>(
         onSave?.(savedDraft);
         return savedDraft;
       } catch (error) {
-        logger?.error("[useDraft] Save error:", error);
+        logger.error("[useDraft] Save error:", error);
         onError?.(error as Error);
         throw error;
       } finally {
@@ -108,7 +108,7 @@ export function useDraft<T = unknown>(
       }
       return null;
     } catch (error) {
-      logger?.error("[useDraft] Recover error:", error);
+      logger.error("[useDraft] Recover error:", error);
       onError?.(error as Error);
       return null;
     }
@@ -121,7 +121,7 @@ export function useDraft<T = unknown>(
       setHasDraft(false);
       setLastSaved(null);
     } catch (error) {
-      logger?.error("[useDraft] Discard error:", error);
+      logger.error("[useDraft] Discard error:", error);
       onError?.(error as Error);
     }
   }, [formId, onError]);
@@ -142,7 +142,7 @@ export function useDraft<T = unknown>(
         }
         return conflict;
       } catch (error) {
-        logger?.error("[useDraft] Conflict check error:", error);
+        logger.error("[useDraft] Conflict check error:", error);
         onError?.(error as Error);
         return null;
       }
@@ -182,7 +182,7 @@ export function useAutoSaveDraft<T>(
       return;
     }
 
-    const dataStr = JSON?.stringify(debouncedData);
+    const dataStr = JSON.stringify(debouncedData);
     if (dataStr === lastDataRef?.current) return;
     if (!debouncedData || dataStr === "{}" || dataStr === "null") return;
 

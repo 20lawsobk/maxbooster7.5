@@ -55,7 +55,7 @@ export function usePendingSync(options?: {
         actions,
       }));
     } catch (error) {
-      logger?.error("[usePendingSync] Load stats error:", error);
+      logger.error("[usePendingSync] Load stats error:", error);
     }
   }, [loadActions, maxActions]);
 

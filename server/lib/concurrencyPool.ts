@@ -30,7 +30,7 @@ export async function pMap<T, R>(
   concurrency: number,
 ): Promise<Array<SettledResult<R>>> {
   if (items?.length === 0) return [];
-  const cap = Math?.max(1, Math?.min(concurrency, items?.length));
+  const cap = Math.max(1, Math.min(concurrency, items?.length));
   const results: Array<SettledResult<R>> = new Array(items?.length);
   let next = 0;
 
@@ -45,7 +45,7 @@ export async function pMap<T, R>(
     }
   }
 
-  await Promise?.all(Array?.from({ length: cap }, worker));
+  await Promise?.all(Array.from({ length: cap }, worker));
   return results;
 }
 
@@ -102,7 +102,7 @@ export async function drainN<T>(
   n: number,
 ): Promise<T[]> {
   const attempts = await Promise?.allSettled(
-    Array?.from({ length: n }, () => popFn()),
+    Array.from({ length: n }, () => popFn()),
   );
   return attempts
     .filter(

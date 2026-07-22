@@ -30,9 +30,9 @@ export class AdvertisingNormalizationService {
     ]);
 
     return {
-      patterns: patternRaw ? JSON?.parse(patternRaw) : {},
-      peaks: (peaksRaw || []).map((r: string) => JSON?.parse(r)),
-      globalPeaks: (globalRaw || []).map((r: string) => JSON?.parse(r)),
+      patterns: patternRaw ? JSON.parse(patternRaw) : {},
+      peaks: (peaksRaw || []).map((r: string) => JSON.parse(r)),
+      globalPeaks: (globalRaw || []).map((r: string) => JSON.parse(r)),
     };
   }
   // Platform content requirements for optimal organic performance
@@ -86,11 +86,11 @@ export class AdvertisingNormalizationService {
     artistId = "artist-001",
   ): Promise<Record<string, any>> {
     const variants: Record<string, any> = {};
-    const pdim = await this?.getPdimAdData(artistId);
+    const pdim = await this.getPdimAdData(artistId);
 
     for (const platform of platforms) {
       const limits =
-        this?.platformLimits[platform as keyof typeof this.platformLimits];
+        this.platformLimits[platform as keyof typeof this.platformLimits];
       if (!limits) continue;
 
       variants[platform] = {
@@ -159,7 +159,7 @@ export class AdvertisingNormalizationService {
       };
     }
 
-    const hasIssues = Object?.entries(issues).some(
+    const hasIssues = Object.entries(issues).some(
       ([key, value]) => key !== "engagement" && value === true,
     );
 
@@ -185,15 +185,15 @@ export class AdvertisingNormalizationService {
     switch (platform) {
       case "twitter":
         // Keep it punchy for Twitter
-        optimized = this?.addTwitterFormatting(optimized);
+        optimized = this.addTwitterFormatting(optimized);
         break;
       case "linkedin":
         // Professional tone for LinkedIn
-        optimized = this?.addLinkedInFormatting(optimized);
+        optimized = this.addLinkedInFormatting(optimized);
         break;
       case "tiktok":
         // Casual, energetic for TikTok
-        optimized = this?.addTikTokFormatting(optimized);
+        optimized = this.addTikTokFormatting(optimized);
         break;
     }
 
@@ -212,7 +212,7 @@ export class AdvertisingNormalizationService {
     const existingHashtags = text?.match(/#\w+/g) || [];
 
     // Add platform-optimized discovery hashtags
-    const platformHashtags = this?.getPlatformOptimizedHashtags(platform);
+    const platformHashtags = this.getPlatformOptimizedHashtags(platform);
 
     // Combine and deduplicate
     const allHashtags = [
@@ -267,7 +267,7 @@ export class AdvertisingNormalizationService {
     platform: string,
     patterns: Record<string, any> = {},
   ): string {
-    const platformKey = Object?.keys(patterns).find((k) =>
+    const platformKey = Object.keys(patterns).find((k) =>
       k?.startsWith(platform),
     );
     if (platformKey && patterns[platformKey]?.top_ctas?.length) {
@@ -326,7 +326,7 @@ export class AdvertisingNormalizationService {
   ): string[] {
     const hooks: string[] = [];
 
-    const platformKey = Object?.keys(patterns).find((k) =>
+    const platformKey = Object.keys(patterns).find((k) =>
       k?.startsWith(platform),
     );
     if (platformKey && patterns[platformKey]?.top_hooks?.length) {
@@ -355,7 +355,7 @@ export class AdvertisingNormalizationService {
   private detectSpamPatterns(text: string): boolean {
     // Check for excessive caps
     const capsRatio =
-      (text?.match(/[A-Z]/g) || []).length / Math?.max(text?.length, 1);
+      (text?.match(/[A-Z]/g) || []).length / Math.max(text?.length, 1);
     if (capsRatio > 0.5) return true;
 
     // Check for excessive exclamation marks

@@ -6,7 +6,7 @@ import { logger } from "../logger.js";
 
 const router = Router();
 
-const SITE_URL = process?.env.SITE_URL || "https://max-booster.com";
+const SITE_URL = process.env.SITE_URL || "https://max-booster.com";
 
 router?.get("/sitemap.xml", async (_req: Request, res: Response) => {
   try {
@@ -40,7 +40,7 @@ router?.get("/sitemap.xml", async (_req: Request, res: Response) => {
         )
         .join("\n");
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err: err },
         "Sitemap: failed to fetch beat listings, section will be omitted",
       );
@@ -65,7 +65,7 @@ router?.get("/sitemap.xml", async (_req: Request, res: Response) => {
         )
         .join("\n");
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err: err },
         "Sitemap: failed to fetch storefronts, section will be omitted",
       );
@@ -91,11 +91,11 @@ ${beatUrls}
 ${storefrontUrls}
 </urlset>`;
 
-    res?.setHeader("Content-Type", "application/xml");
+    res.setHeader("Content-Type", "application/xml");
     res.setHeader("Cache-Control", "public, max-age=3600, s-maxage=3600");
-    res?.send(xml);
+    res.send(xml);
   } catch (error) {
-    logger?.warn({ err: error }, "Sitemap generation failed entirely:");
+    logger.warn({ err: error }, "Sitemap generation failed entirely:");
     res
       .status(500)
       .send(
@@ -121,9 +121,9 @@ Disallow: /billing
 
 Sitemap: ${SITE_URL}/sitemap.xml
 `;
-  res?.setHeader("Content-Type", "text/plain");
+  res.setHeader("Content-Type", "text/plain");
   res.setHeader("Cache-Control", "public, max-age=86400");
-  res?.send(content);
+  res.send(content);
 });
 
 export default router;

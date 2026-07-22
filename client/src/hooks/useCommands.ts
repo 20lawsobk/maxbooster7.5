@@ -53,7 +53,7 @@ export function useCommands(options: UseCommandsOptions) {
 export function useCommand(command: Omit<Command, "id"> & { id?: string }) {
   const { registerCommand, unregisterCommand, executeCommand } = useShortcuts();
   const idRef = useRef(
-    command?.id || `cmd-${Math?.random().toString(36).substr(2, 9)}`,
+    command?.id || `cmd-${Math.random().toString(36).substr(2, 9)}`,
   );
 
   useEffect(() => {

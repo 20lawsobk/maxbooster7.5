@@ -85,7 +85,7 @@ const conflicts = new Map<string, ConflictResolution[]>();
 function sweepCollaborationMaps(): void {
   const cutoff = Date?.now() - SESSION_TTL_MS;
   for (const [sid, presence] of sessions) {
-    const lastActive = Math?.max(
+    const lastActive = Math.max(
       0,
       ...[...presence?.values()].map((p) => new Date(p?.lastActive).getTime()),
     );
@@ -145,7 +145,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const validatedData = resolveConflictSchema?.parse(req?.body);
+      const validatedData = resolveConflictSchema?.parse(req.body);
 
       const resolution: ConflictResolution = {
         id: validatedData.conflictId,
@@ -192,11 +192,11 @@ router?.post(
           break;
       }
 
-      logger?.info(
+      logger.info(
         `Conflict resolved: ${outcomeType} for project ${validatedData?.projectId}`,
       );
 
-      res?.json({
+      res.json({
         success: true,
         outcome: {
           type: outcomeType,
@@ -210,8 +210,8 @@ router?.post(
           .status(400)
           .json({ error: "Invalid request data", details: error.issues });
       }
-      logger?.warn({ err: error }, "Resolve conflict error:");
-      res?.status(500).json({ error: "Failed to resolve conflict" });
+      logger.warn({ err: error }, "Resolve conflict error:");
+      res.status(500).json({ error: "Failed to resolve conflict" });
     }
   },
 );
@@ -221,7 +221,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { sessionId } = req?.params;
+      const { sessionId } = req.params;
       const sessionPresence = sessions?.get(sessionId);
 
       if (!sessionPresence) {
@@ -1048,7 +1048,7 @@ router.post(
           },
         });
       } else {
-        res?.json({
+        res.json({
           conflict: false,
           outcome: {
             type: "no_conflict",
@@ -1057,8 +1057,8 @@ router.post(
         });
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Detect conflict error:");
-      res?.status(500).json({ error: "Failed to detect conflict" });
+      logger.warn({ err: error }, "Detect conflict error:");
+      res.status(500).json({ error: "Failed to detect conflict" });
     }
   },
 );

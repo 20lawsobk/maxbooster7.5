@@ -65,14 +65,14 @@ router?.post(
   requireAuth,
   async (req, res) => {
     try {
-      const { projectId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      const data = startExportSchema?.parse(req?.body);
+      const data = startExportSchema?.parse(req.body);
 
       const result = await stemExportService?.startStemExport({
         projectId,
@@ -90,7 +90,7 @@ router?.post(
         includeMasterBus: data.includeMasterBus,
       });
 
-      res?.status(202).json({
+      res.status(202).json({
         success: true,
         message: "Stem export started",
         ...result,
@@ -110,18 +110,18 @@ router?.post(
             trackCount,
           );
         } catch (err) {
-          logger?.warn({ err: err }, "[Studio] stem export notification error:");
+          logger.warn({ err: err }, "[Studio] stem export notification error:");
         }
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error starting stem export:");
+      logger.warn({ err: error }, "Error starting stem export:");
       if (error instanceof z.ZodError) {
-        return res?.status(400).json({
+        return res.status(400).json({
           error: "Invalid export options",
           details: error.issues,
         });
       }
-      res?.status(500).json({ error: "Failed to start stem export" });
+      res.status(500).json({ error: "Failed to start stem export" });
     }
   },
 );
@@ -131,25 +131,25 @@ router?.get(
   requireAuth,
   async (req, res) => {
     try {
-      const { projectId, exportId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId, exportId } = req.params;
+      const userId = req.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
       const status = await stemExportService?.getExportStatus(exportId, userId);
 
-      res?.json({
+      res.json({
         success: true,
         ...status,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching export status:");
+      logger.warn({ err: error }, "Error fetching export status:");
       if (error?.message === "Export not found") {
-        return res?.status(404).json({ error: "Export not found" });
+        return res.status(404).json({ error: "Export not found" });
       }
-      res?.status(500).json({ error: "Failed to fetch export status" });
+      res.status(500).json({ error: "Failed to fetch export status" });
     }
   },
 );
@@ -159,11 +159,11 @@ router?.get(
   requireAuth,
   async (req, res) => {
     try {
-      const { projectId, exportId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId, exportId } = req.params;
+      const userId = req.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
       const download = await stemExportService?.getExportDownload(
@@ -175,47 +175,47 @@ router?.get(
         download?.downloadUrl.startsWith("/") ||
         download?.downloadUrl.startsWith("./")
       ) {
-        return res?.download(download?.downloadUrl, download?.fileName);
+        return res.download(download?.downloadUrl, download?.fileName);
       }
 
-      res?.json({
+      res.json({
         success: true,
         downloadUrl: download.downloadUrl,
         fileName: download.fileName,
         fileSize: download.fileSize,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting export download:");
+      logger.warn({ err: error }, "Error getting export download:");
       if (error?.message === "Export not found") {
-        return res?.status(404).json({ error: "Export not found" });
+        return res.status(404).json({ error: "Export not found" });
       }
       if (error?.message === "Export is not ready for download") {
         return res
           .status(400)
           .json({ error: "Export is not ready for download" });
       }
-      res?.status(500).json({ error: "Failed to get export download" });
+      res.status(500).json({ error: "Failed to get export download" });
     }
   },
 );
 
 router?.get("/projects/:projectId/stems/list", requireAuth, async (req, res) => {
   try {
-    const { projectId } = req?.params;
-    const userId = req?.user!.id;
+    const { projectId } = req.params;
+    const userId = req.user!.id;
 
     if (!(await verifyProjectOwnership(projectId, userId))) {
-      return res?.status(404).json({ error: "Project not found" });
+      return res.status(404).json({ error: "Project not found" });
     }
 
-    const queryParams = listExportsSchema?.parse(req?.query);
+    const queryParams = listExportsSchema?.parse(req.query);
 
     const result = await stemExportService?.listExports(projectId, userId, {
       limit: queryParams.limit,
       offset: queryParams.offset,
     });
 
-    res?.json({
+    res.json({
       success: true,
       exports: result.exports,
       total: result.total,
@@ -223,14 +223,14 @@ router?.get("/projects/:projectId/stems/list", requireAuth, async (req, res) => 
       offset: queryParams.offset,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error listing exports:");
+    logger.warn({ err: error }, "Error listing exports:");
     if (error instanceof z.ZodError) {
-      return res?.status(400).json({
+      return res.status(400).json({
         error: "Invalid query parameters",
         details: error.issues,
       });
     }
-    res?.status(500).json({ error: "Failed to list exports" });
+    res.status(500).json({ error: "Failed to list exports" });
   }
 });
 
@@ -239,25 +239,25 @@ router?.delete(
   requireAuth,
   async (req, res) => {
     try {
-      const { projectId, exportId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId, exportId } = req.params;
+      const userId = req.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
       await stemExportService?.deleteExport(exportId, userId);
 
-      res?.json({
+      res.json({
         success: true,
         message: "Export deleted successfully",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error deleting export:");
+      logger.warn({ err: error }, "Error deleting export:");
       if (error?.message === "Export not found") {
-        return res?.status(404).json({ error: "Export not found" });
+        return res.status(404).json({ error: "Export not found" });
       }
-      res?.status(500).json({ error: "Failed to delete export" });
+      res.status(500).json({ error: "Failed to delete export" });
     }
   },
 );
@@ -267,28 +267,28 @@ router?.post(
   requireAuth,
   async (req, res) => {
     try {
-      const { projectId, exportId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId, exportId } = req.params;
+      const userId = req.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
       await stemExportService?.cancelExport(exportId, userId);
 
-      res?.json({
+      res.json({
         success: true,
         message: "Export cancelled",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error cancelling export:");
+      logger.warn({ err: error }, "Error cancelling export:");
       if (error?.message === "Export not found") {
-        return res?.status(404).json({ error: "Export not found" });
+        return res.status(404).json({ error: "Export not found" });
       }
       if (error?.message?.includes("Cannot cancel")) {
-        return res?.status(400).json({ error: "Invalid stem export request" });
+        return res.status(400).json({ error: "Invalid stem export request" });
       }
-      res?.status(500).json({ error: "Failed to cancel export" });
+      res.status(500).json({ error: "Failed to cancel export" });
     }
   },
 );
@@ -298,14 +298,14 @@ router?.get(
   requireAuth,
   async (req, res) => {
     try {
-      const { projectId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
 
       if (!(await verifyProjectOwnership(projectId, userId))) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
-      res?.json({
+      res.json({
         success: true,
         formats: [
           {
@@ -385,8 +385,8 @@ router?.get(
         ],
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching export formats:");
-      res?.status(500).json({ error: "Failed to fetch export formats" });
+      logger.warn({ err: error }, "Error fetching export formats:");
+      res.status(500).json({ error: "Failed to fetch export formats" });
     }
   },
 );

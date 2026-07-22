@@ -29,7 +29,7 @@ export function createGracefulRedisClient(
   }
 
   const pdim = getPdimClient();
-  logger?.info(`✅ ${serviceName}: Connected via PDIM`);
+  logger.info(`✅ ${serviceName}: Connected via PDIM`);
 
   return {
     client: pdim,

@@ -15,22 +15,22 @@ class ClusterSessionManager {
 
   private constructor() {
     const isProductionEnv =
-      process?.env.NODE_ENV === "production" || !!process?.env.REPLIT_DEPLOYMENT;
+      process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT;
     const rawSecret = env?.SESSION_SECRET;
     if (isProductionEnv && (!rawSecret || rawSecret?.length < 32)) {
-      logger?.warn(
+      logger.warn(
         "❌ CRITICAL: SESSION_SECRET missing or too short (<32 chars) — refusing to start in production",
       );
-      process?.exit(1);
+      process.exit(1);
     }
     this.config = {
       sessionSecret:
         rawSecret || "dev-only-insecure-fallback-not-for-production",
       sessionName: "maxbooster.sid",
-      maxAge: parseInt(process?.env.SESSION_MAX_AGE || "86400000"),
+      maxAge: parseInt(process.env.SESSION_MAX_AGE || "86400000"),
       secure:
-        process?.env.NODE_ENV === "production" ||
-        !!process?.env.REPLIT_DEPLOYMENT,
+        process.env.NODE_ENV === "production" ||
+        !!process.env.REPLIT_DEPLOYMENT,
     };
     this.isDistributedMode = true;
   }
@@ -43,11 +43,11 @@ class ClusterSessionManager {
   }
 
   async initialize(): Promise<void> {
-    logger?.info(`Cluster session manager ready (boosterstate mode)`);
+    logger.info(`Cluster session manager ready (boosterstate mode)`);
   }
 
   isDistributed(): boolean {
-    return this?.isDistributedMode;
+    return this.isDistributedMode;
   }
 
   getStatus(): { mode: string; connected: boolean; prefix: string } {
@@ -59,7 +59,7 @@ class ClusterSessionManager {
   }
 
   async shutdown(): Promise<void> {
-    logger?.info("Cluster session manager shutdown");
+    logger.info("Cluster session manager shutdown");
   }
 }
 

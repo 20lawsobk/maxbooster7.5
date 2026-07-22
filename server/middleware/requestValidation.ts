@@ -32,9 +32,9 @@ export function isSafeId(value: unknown): value is string {
  */
 export function requireUUIDParam(paramName: string): RequestHandler {
   return (req: Request, res: Response, next: NextFunction) => {
-    const val = req?.params[paramName];
+    const val = req.params[paramName];
     if (!isValidUUID(val)) {
-      return res?.status(400).json({
+      return res.status(400).json({
         error: "Invalid parameter",
         message: `Parameter '${paramName}' must be a valid UUID.`,
       });
@@ -51,9 +51,9 @@ export function requireUUIDParam(paramName: string): RequestHandler {
  */
 export function requireSafeParam(paramName: string): RequestHandler {
   return (req: Request, res: Response, next: NextFunction) => {
-    const val = req?.params[paramName];
+    const val = req.params[paramName];
     if (!isSafeId(val)) {
-      return res?.status(400).json({
+      return res.status(400).json({
         error: "Invalid parameter",
         message: `Parameter '${paramName}' contains invalid characters.`,
       });
@@ -87,23 +87,23 @@ const EXEMPT_PATH_PREFIXES = [
 ];
 
 function getAllowedOrigins(req: Request): string[] {
-  const host = req?.headers.host || "";
+  const host = req.headers.host || "";
   const proto =
-    req?.secure || req?.headers["x-forwarded-proto"] === "https"
+    req.secure || req.headers["x-forwarded-proto"] === "https"
       ? "https"
       : "http";
 
   const origins: string[] = [`${proto}://${host}`];
 
-  const replSlug = process?.env.REPL_SLUG;
-  const replOwner = process?.env.REPL_OWNER;
+  const replSlug = process.env.REPL_SLUG;
+  const replOwner = process.env.REPL_OWNER;
   if (replSlug && replOwner) {
     origins?.push(`https://${replSlug}.${replOwner}.repl.co`);
     origins?.push(`https://${replSlug}--${replOwner}.repl.co`);
     origins?.push(`https://${replSlug}.replit.app`);
   }
 
-  const appUrl = process?.env.APP_URL || process?.env.REPLIT_APP_URL;
+  const appUrl = process.env.APP_URL || process.env.REPLIT_APP_URL;
   if (appUrl) {
     try {
       origins?.push(new URL(appUrl).origin);
@@ -121,19 +121,19 @@ export const originValidation: RequestHandler = (
   res: Response,
   next: NextFunction,
 ) => {
-  if (SAFE_METHODS?.has(req?.method)) return next();
+  if (SAFE_METHODS?.has(req.method)) return next();
 
   const isExempt = EXEMPT_PATH_PREFIXES?.some((prefix) =>
-    req?.path.startsWith(prefix),
+    req.path.startsWith(prefix),
   );
   if (isExempt) return next();
 
-  const origin = req?.headers.origin as string | undefined;
-  const referer = req?.headers.referer as string | undefined;
+  const origin = req.headers.origin as string | undefined;
+  const referer = req.headers.referer as string | undefined;
 
   if (!origin && !referer) {
     if (!isProductionEnv()) return next();
-    logger?.warn(`Mutation without Origin: ${req?.method} ${req?.path}`, {
+    logger.warn(`Mutation without Origin: ${req.method} ${req.path}`, {
       ip: req.ip,
       userAgent: req.get("user-agent"),
     });
@@ -155,12 +155,12 @@ export const originValidation: RequestHandler = (
 
   const allowed = getAllowedOrigins(req);
   if (!allowed?.includes(requestOrigin)) {
-    logger?.warn(`Origin blocked: ${req?.method} ${req?.path}`, {
+    logger.warn(`Origin blocked: ${req.method} ${req.path}`, {
       requestOrigin,
       allowed,
       ip: req.ip,
     });
-    return res?.status(403).json({
+    return res.status(403).json({
       error: "Origin not allowed",
       message: "Request blocked: unexpected origin.",
     });

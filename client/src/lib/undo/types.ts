@@ -146,11 +146,11 @@ export interface ActionHistoryEntry {
 }
 
 export function createActionId(): string {
-  return `action_${Date?.now()}_${Math?.random().toString(36).substring(2, 9)}`;
+  return `action_${Date?.now()}_${Math.random().toString(36).substring(2, 9)}`;
 }
 
 export function createGroupId(): string {
-  return `group_${Date?.now()}_${Math?.random().toString(36).substring(2, 9)}`;
+  return `group_${Date?.now()}_${Math.random().toString(36).substring(2, 9)}`;
 }
 
 export function isDestructiveAction(type: ActionType): boolean {

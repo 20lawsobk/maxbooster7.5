@@ -75,7 +75,7 @@ export function useOfflineQueue(): UseOfflineQueueReturn {
       setConflictCount(stats?.conflict);
       setTotalCount(stats?.total);
     } catch (error) {
-      logger?.error("[useOfflineQueue] Failed to load stats:", error);
+      logger.error("[useOfflineQueue] Failed to load stats:", error);
     }
   }, []);
 
@@ -90,7 +90,7 @@ export function useOfflineQueue(): UseOfflineQueueReturn {
       setFailedActions(failed);
       setConflictActions(conflict);
     } catch (error) {
-      logger?.error("[useOfflineQueue] Failed to load actions:", error);
+      logger.error("[useOfflineQueue] Failed to load actions:", error);
     }
   }, []);
 

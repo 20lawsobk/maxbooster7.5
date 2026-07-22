@@ -38,7 +38,7 @@ export async function initRedisPubSub(): Promise<void> {
       // PDIM subscribe is HTTP-polled; register message handler if supported
       subscriber?.on?.("message", (channel: string, message: string) => {
         try {
-          const payload = JSON?.parse(message);
+          const payload = JSON.parse(message);
           if (channel === CHANNEL_USER && onUserNotify) {
             onUserNotify(payload?.userId, payload?.notification);
           } else if (channel === CHANNEL_BROADCAST && onBroadcast) {
@@ -50,11 +50,11 @@ export async function initRedisPubSub(): Promise<void> {
       });
       await subscriber?.subscribe(CHANNEL_USER, CHANNEL_BROADCAST);
       _ready = true;
-      logger?.info(
+      logger.info(
         "✅ [WS PubSub] Redis Pub/Sub active — WebSocket broadcasting is cross-instance",
       );
     } catch (err) {
-      logger?.warn(`[WS PubSub] PDIM Pub/Sub init warning: ${err?.message}`);
+      logger.warn(`[WS PubSub] PDIM Pub/Sub init warning: ${err?.message}`);
       _ready = !!publisher;
     }
     return;
@@ -62,7 +62,7 @@ export async function initRedisPubSub(): Promise<void> {
 
   const url = env?.REDIS_URL;
   if (!url) {
-    logger?.warn(
+    logger.warn(
       "[WS PubSub] REDIS_URL not set — cross-instance broadcasting disabled",
     );
     return;
@@ -74,7 +74,7 @@ export async function initRedisPubSub(): Promise<void> {
       enableReadyCheck: false,
       retryStrategy(times) {
         if (times > 10) return null;
-        return Math?.min(times * 300, 3000);
+        return Math.min(times * 300, 3000);
       },
     });
 
@@ -84,7 +84,7 @@ export async function initRedisPubSub(): Promise<void> {
 
     subscriber?.on("message", (channel: string, message: string) => {
       try {
-        const payload = JSON?.parse(message);
+        const payload = JSON.parse(message);
         if (channel === CHANNEL_USER && onUserNotify) {
           onUserNotify(payload?.userId, payload?.notification);
         } else if (channel === CHANNEL_BROADCAST && onBroadcast) {
@@ -97,11 +97,11 @@ export async function initRedisPubSub(): Promise<void> {
 
     await subscriber?.subscribe(CHANNEL_USER, CHANNEL_BROADCAST);
     _ready = true;
-    logger?.info(
+    logger.info(
       "✅ [WS PubSub] Redis Pub/Sub active — WebSocket broadcasting is cross-instance",
     );
   } catch (err) {
-    logger?.warn(
+    logger.warn(
       `[WS PubSub] Failed to init Redis Pub/Sub: ${err?.message} — single-instance only`,
     );
     publisher = null;
@@ -122,7 +122,7 @@ export async function publishUserNotification(
   try {
     await publisher?.publish(
       CHANNEL_USER,
-      JSON?.stringify({ userId, notification }),
+      JSON.stringify({ userId, notification }),
     );
   } catch {
     // silent — local delivery still works
@@ -134,7 +134,7 @@ export async function publishBroadcast(notification: object): Promise<void> {
   try {
     await publisher?.publish(
       CHANNEL_BROADCAST,
-      JSON?.stringify({ notification }),
+      JSON.stringify({ notification }),
     );
   } catch {
     // silent

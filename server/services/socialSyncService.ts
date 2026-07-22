@@ -39,11 +39,11 @@ async function refreshOAuth2Token(
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: body.toString(),
     });
-    const data = await res?.json();
+    const data = await res.json();
     if (!data?.access_token) {
-      logger?.warn(
+      logger.warn(
         `[TokenRefresh] No access_token in response from ${tokenUrl}:`,
-        JSON?.stringify(data),
+        JSON.stringify(data),
       );
       return null;
     }
@@ -56,7 +56,7 @@ async function refreshOAuth2Token(
       refreshToken: data.refresh_token || refreshToken,
     };
   } catch (err) {
-    logger?.warn(
+    logger.warn(
       { err: err },
       `[TokenRefresh] Failed to refresh token from ${tokenUrl}:`,
     );
@@ -86,7 +86,7 @@ async function getValidAccessToken(connection: {
 
   if (!isExpired) return token;
   if (!connection?.refreshToken) {
-    logger?.warn(
+    logger.warn(
       `[TokenRefresh] ${connection?.platform}: token expired but no refresh_token stored`,
     );
     return token; // return the expired token; the API call will fail and we'll log it
@@ -320,8 +320,8 @@ async function calcEngagementRate(
     }
     if (counted === 0) return 0;
     const avgInteractions = totalInteractions / counted;
-    return Math?.min(
-      Math?.round((avgInteractions / followers) * 10000) / 100,
+    return Math.min(
+      Math.round((avgInteractions / followers) * 10000) / 100,
       100,
     );
   } catch {
@@ -373,9 +373,9 @@ export async function syncPlatformData(
         );
         const userData = await userRes?.json();
         if (userData?.error)
-          logger?.warn(
+          logger.warn(
             `[SocialSync] Facebook profile error:`,
-            JSON?.stringify(userData?.error),
+            JSON.stringify(userData?.error),
           );
         syncedUsername = userData?.name || syncedUsername;
         syncedPlatformUserId = userData?.id || syncedPlatformUserId;
@@ -408,7 +408,7 @@ export async function syncPlatformData(
               followers: pg.followers_count || pg?.fan_count || 0,
             })),
           };
-          logger?.info(
+          logger.info(
             `[SocialSync] Facebook: ${pagesData.data.length} page(s), total followers=${totalPageFollowers}`,
           );
         }
@@ -462,12 +462,12 @@ export async function syncPlatformData(
               mediaCount: bestIgAccount.media_count,
               profilePictureUrl: bestIgAccount.profile_picture_url,
             };
-            logger?.info(
+            logger.info(
               `[SocialSync] Instagram: @${bestIgAccount.username}, followers=${bestIgAccount?.followers_count}`,
             );
           }
         } else {
-          logger?.warn(`[SocialSync] Instagram: no linked Facebook pages found`);
+          logger.warn(`[SocialSync] Instagram: no linked Facebook pages found`);
         }
       } else if (p === "twitter") {
         const userRes = await timedFetch(
@@ -491,8 +491,8 @@ export async function syncPlatformData(
         } else {
           const isAuthError =
             userData?.status === 401 || userData?.title === "Unauthorized";
-          logger?.warn(
-            `[SocialSync] Twitter response (no .data): ${JSON?.stringify(userData).slice(0, 400)}`,
+          logger.warn(
+            `[SocialSync] Twitter response (no .data): ${JSON.stringify(userData).slice(0, 400)}`,
           );
           if (isAuthError)
             syncedMetadata = {
@@ -524,8 +524,8 @@ export async function syncPlatformData(
             thumbnailUrl: channel.snippet?.thumbnails?.default?.url,
           };
         } else {
-          logger?.warn(
-            `[SocialSync] YouTube no channels: ${JSON?.stringify(userData).slice(0, 400)}`,
+          logger.warn(
+            `[SocialSync] YouTube no channels: ${JSON.stringify(userData).slice(0, 400)}`,
           );
         }
       } else if (p === "tiktok" || p === "tiktok_sandbox") {
@@ -548,8 +548,8 @@ export async function syncPlatformData(
           };
         } else {
           const errCode = userData?.error?.code;
-          logger?.warn(
-            `[SocialSync] TikTok no user data: ${JSON?.stringify(userData).slice(0, 400)}`,
+          logger.warn(
+            `[SocialSync] TikTok no user data: ${JSON.stringify(userData).slice(0, 400)}`,
           );
           if (
             errCode === "access_token_invalid" ||
@@ -574,8 +574,8 @@ export async function syncPlatformData(
           profileData?.error ||
           (profileData?.status === 401 ? profileData : null);
         if (liErr) {
-          logger?.warn(
-            `[SocialSync] LinkedIn profile error: ${JSON?.stringify(profileData).slice(0, 400)}`,
+          logger.warn(
+            `[SocialSync] LinkedIn profile error: ${JSON.stringify(profileData).slice(0, 400)}`,
           );
           // DISABLED_APPLICATION (65606) or any 401 means the OAuth app/token is invalid
           const isDisabled =
@@ -622,7 +622,7 @@ export async function syncPlatformData(
               connectionsData?.paging?._total ?? connectionsData?.paging?.total;
             if (typeof connCount === "number" && connCount > 0) {
               syncedFollowerCount = connCount;
-              logger?.info(
+              logger.info(
                 `[SocialSync] LinkedIn connections (r_network): ${connCount}`,
               );
             } else {
@@ -637,19 +637,19 @@ export async function syncPlatformData(
               const networkData = await networkRes?.json();
               if (typeof networkData?.firstDegreeSize === "number") {
                 syncedFollowerCount = networkData?.firstDegreeSize;
-                logger?.info(
+                logger.info(
                   `[SocialSync] LinkedIn company followers (r_organization_social): ${networkData?.firstDegreeSize}`,
                 );
               } else {
                 // LinkedIn OAuth 2.0 does not expose connection/follower counts without
                 // r_network or r_organization_social scope — 0 is correct until re-auth with those scopes.
-                logger?.debug(
-                  `[SocialSync] LinkedIn: no connection count accessible with current OAuth scopes — ${JSON?.stringify(connectionsData).slice(0, 150)}`,
+                logger.debug(
+                  `[SocialSync] LinkedIn: no connection count accessible with current OAuth scopes — ${JSON.stringify(connectionsData).slice(0, 150)}`,
                 );
               }
             }
           } catch (linkedInErr) {
-            logger?.debug(
+            logger.debug(
               `[SocialSync] LinkedIn follower count error: ${linkedInErr}`,
             );
           }
@@ -670,8 +670,8 @@ export async function syncPlatformData(
             profilePictureUrl: userData.threads_profile_picture_url,
           };
         } else {
-          logger?.warn(
-            `[SocialSync] Threads error: ${JSON?.stringify(userData).slice(0, 400)}`,
+          logger.warn(
+            `[SocialSync] Threads error: ${JSON.stringify(userData).slice(0, 400)}`,
           );
           const threadsErrCode = userData?.error?.code;
           if (
@@ -728,13 +728,13 @@ export async function syncPlatformData(
             }
           }
         } catch (gbErr) {
-          logger?.debug(
+          logger.debug(
             `[SocialSync] Google Business extended data unavailable: ${gbErr}`,
           );
         }
       }
     } catch (apiErr) {
-      logger?.warn(`[SocialSync] Failed to sync ${p} stats:`, apiErr);
+      logger.warn(`[SocialSync] Failed to sync ${p} stats:`, apiErr);
     }
 
     // Calculate engagement rate from our stored published posts
@@ -768,7 +768,7 @@ export async function syncPlatformData(
       metadata: syncedMetadata,
     };
 
-    logger?.info(
+    logger.info(
       `[SocialSync] ${p}: followers=${syncedFollowerCount}, engagement=${engagementRate}%`,
     );
   }

@@ -8,64 +8,64 @@ const router = Router();
 
 router?.get("/defaults", requireAuth, async (req: Request, res: Response) => {
   try {
-    const defaults = await personalizationService?.getDefaults(req?.user.id);
-    return res?.json(defaults);
+    const defaults = await personalizationService?.getDefaults(req.user.id);
+    return res.json(defaults);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching defaults:");
-    return res?.status(500).json({ error: "Failed to fetch defaults" });
+    logger.warn({ err: error }, "Error fetching defaults:");
+    return res.status(500).json({ error: "Failed to fetch defaults" });
   }
 });
 
 router?.put("/defaults", requireAuth, async (req: Request, res: Response) => {
   try {
     const { artistType, careerStage, primaryGoals, genres, enabledFeatures } =
-      req?.body;
-    await personalizationService?.updateDefaults(req?.user.id, {
+      req.body;
+    await personalizationService?.updateDefaults(req.user.id, {
       artistType,
       careerStage,
       primaryGoals,
       genres,
       enabledFeatures,
     });
-    await smartDefaultsService?.applyArtistTypeDefaults(req?.user.id, artistType);
-    return res?.json({ success: true });
+    await smartDefaultsService?.applyArtistTypeDefaults(req.user.id, artistType);
+    return res.json({ success: true });
   } catch (error) {
-    logger?.warn({ err: error }, "Error updating defaults:");
-    return res?.status(500).json({ error: "Failed to update defaults" });
+    logger.warn({ err: error }, "Error updating defaults:");
+    return res.status(500).json({ error: "Failed to update defaults" });
   }
 });
 
 router?.get("/preferences", requireAuth, async (req: Request, res: Response) => {
   try {
     const preferences = await personalizationService?.getPreferences(
-      req?.user.id,
+      req.user.id,
     );
-    return res?.json(preferences);
+    return res.json(preferences);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching preferences:");
-    return res?.status(500).json({ error: "Failed to fetch preferences" });
+    logger.warn({ err: error }, "Error fetching preferences:");
+    return res.status(500).json({ error: "Failed to fetch preferences" });
   }
 });
 
 router?.put("/preferences", requireAuth, async (req: Request, res: Response) => {
   try {
-    const preferences = req?.body;
-    await personalizationService?.updatePreferences(req?.user.id, preferences);
-    await smartDefaultsService?.updatePreferences(req?.user.id, preferences);
-    return res?.json({ success: true });
+    const preferences = req.body;
+    await personalizationService?.updatePreferences(req.user.id, preferences);
+    await smartDefaultsService?.updatePreferences(req.user.id, preferences);
+    return res.json({ success: true });
   } catch (error) {
-    logger?.warn({ err: error }, "Error updating preferences:");
-    return res?.status(500).json({ error: "Failed to update preferences" });
+    logger.warn({ err: error }, "Error updating preferences:");
+    return res.status(500).json({ error: "Failed to update preferences" });
   }
 });
 
 router?.get("/suggestions", requireAuth, async (req: Request, res: Response) => {
   try {
-    const suggestions = await smartDefaultsService?.getSuggestions(req?.user.id);
-    return res?.json(suggestions);
+    const suggestions = await smartDefaultsService?.getSuggestions(req.user.id);
+    return res.json(suggestions);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching suggestions:");
-    return res?.status(500).json({ error: "Failed to fetch suggestions" });
+    logger.warn({ err: error }, "Error fetching suggestions:");
+    return res.status(500).json({ error: "Failed to fetch suggestions" });
   }
 });
 
@@ -74,10 +74,10 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const layout = await smartDefaultsService?.getDashboardLayout(req?.user.id);
-      return res?.json(layout);
+      const layout = await smartDefaultsService?.getDashboardLayout(req.user.id);
+      return res.json(layout);
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching dashboard layout:");
+      logger.warn({ err: error }, "Error fetching dashboard layout:");
       return res
         .status(500)
         .json({ error: "Failed to fetch dashboard layout" });
@@ -90,14 +90,14 @@ router?.put(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { name, widgets } = req?.body;
-      await personalizationService?.updateDashboardLayout(req?.user.id, {
+      const { name, widgets } = req.body;
+      await personalizationService?.updateDashboardLayout(req.user.id, {
         name,
         widgets,
       });
-      return res?.json({ success: true });
+      return res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Error updating dashboard layout:");
+      logger.warn({ err: error }, "Error updating dashboard layout:");
       return res
         .status(500)
         .json({ error: "Failed to update dashboard layout" });
@@ -111,12 +111,12 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const presets = await personalizationService?.getLayoutPresets(
-        req?.user.id,
+        req.user.id,
       );
-      return res?.json(presets);
+      return res.json(presets);
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching layout presets:");
-      return res?.status(500).json({ error: "Failed to fetch layout presets" });
+      logger.warn({ err: error }, "Error fetching layout presets:");
+      return res.status(500).json({ error: "Failed to fetch layout presets" });
     }
   },
 );
@@ -126,20 +126,20 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { name, widgetIds } = req?.body;
-      if (!name || !Array?.isArray(widgetIds)) {
+      const { name, widgetIds } = req.body;
+      if (!name || !Array.isArray(widgetIds)) {
         return res
           .status(400)
           .json({ error: "Name and widgetIds are required" });
       }
       const preset = await personalizationService?.createLayoutPreset(
-        req?.user.id,
+        req.user.id,
         { name, widgetIds },
       );
-      return res?.json(preset);
+      return res.json(preset);
     } catch (error) {
-      logger?.warn({ err: error }, "Error creating layout preset:");
-      return res?.status(500).json({ error: "Failed to create layout preset" });
+      logger.warn({ err: error }, "Error creating layout preset:");
+      return res.status(500).json({ error: "Failed to create layout preset" });
     }
   },
 );
@@ -149,17 +149,17 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const platform = (req?.query.platform as string) || "all";
-      const contentType = (req?.query.contentType as string) || "post";
+      const platform = (req.query.platform as string) || "all";
+      const contentType = (req.query.contentType as string) || "post";
       const schedule = await smartDefaultsService?.getSmartSchedule(
-        req?.user.id,
+        req.user.id,
         platform,
         contentType,
       );
-      return res?.json(schedule);
+      return res.json(schedule);
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching smart schedule:");
-      return res?.status(500).json({ error: "Failed to fetch smart schedule" });
+      logger.warn({ err: error }, "Error fetching smart schedule:");
+      return res.status(500).json({ error: "Failed to fetch smart schedule" });
     }
   },
 );
@@ -169,18 +169,18 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { suggestionId, platform } = req?.body;
+      const { suggestionId, platform } = req.body;
       if (!suggestionId) {
-        return res?.status(400).json({ error: "Suggestion ID is required" });
+        return res.status(400).json({ error: "Suggestion ID is required" });
       }
       await personalizationService?.applyScheduleSuggestion(
-        req?.user.id,
+        req.user.id,
         suggestionId,
         platform,
       );
-      return res?.json({ success: true });
+      return res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Error applying schedule suggestion:");
+      logger.warn({ err: error }, "Error applying schedule suggestion:");
       return res
         .status(500)
         .json({ error: "Failed to apply schedule suggestion" });
@@ -190,11 +190,11 @@ router?.post(
 
 router?.get("/next-action", requireAuth, async (req: Request, res: Response) => {
   try {
-    const nextAction = await personalizationService?.getNextAction(req?.user.id);
-    return res?.json(nextAction);
+    const nextAction = await personalizationService?.getNextAction(req.user.id);
+    return res.json(nextAction);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching next action:");
-    return res?.status(500).json({ error: "Failed to fetch next action" });
+    logger.warn({ err: error }, "Error fetching next action:");
+    return res.status(500).json({ error: "Failed to fetch next action" });
   }
 });
 
@@ -203,14 +203,14 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const artistType = (req?.query.artistType as string) || "solo";
+      const artistType = (req.query.artistType as string) || "solo";
       const settings = await smartDefaultsService?.getRecommendedSettings(
-        req?.user.id,
+        req.user.id,
         artistType as string,
       );
-      return res?.json(settings);
+      return res.json(settings);
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching recommended settings:");
+      logger.warn({ err: error }, "Error fetching recommended settings:");
       return res
         .status(500)
         .json({ error: "Failed to fetch recommended settings" });
@@ -224,12 +224,12 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const analysis = await smartDefaultsService?.analyzeUserBehavior(
-        req?.user.id,
+        req.user.id,
       );
-      return res?.json(analysis);
+      return res.json(analysis);
     } catch (error) {
-      logger?.warn({ err: error }, "Error analyzing user behavior:");
-      return res?.status(500).json({ error: "Failed to analyze user behavior" });
+      logger.warn({ err: error }, "Error analyzing user behavior:");
+      return res.status(500).json({ error: "Failed to analyze user behavior" });
     }
   },
 );
@@ -240,11 +240,11 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const schedule = await smartDefaultsService?.predictOptimalSchedule(
-        req?.user.id,
+        req.user.id,
       );
-      return res?.json(schedule);
+      return res.json(schedule);
     } catch (error) {
-      logger?.warn({ err: error }, "Error predicting optimal schedule:");
+      logger.warn({ err: error }, "Error predicting optimal schedule:");
       return res
         .status(500)
         .json({ error: "Failed to predict optimal schedule" });
@@ -257,15 +257,15 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { feature } = req?.body;
+      const { feature } = req.body;
       if (!feature) {
-        return res?.status(400).json({ error: "Feature name is required" });
+        return res.status(400).json({ error: "Feature name is required" });
       }
-      await smartDefaultsService?.trackFeatureUsage(req?.user.id, feature);
-      return res?.json({ success: true });
+      await smartDefaultsService?.trackFeatureUsage(req.user.id, feature);
+      return res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Error tracking feature usage:");
-      return res?.status(500).json({ error: "Failed to track feature usage" });
+      logger.warn({ err: error }, "Error tracking feature usage:");
+      return res.status(500).json({ error: "Failed to track feature usage" });
     }
   },
 );
@@ -275,20 +275,20 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const event = req?.body;
+      const event = req.body;
       if (!event?.type || !event?.target) {
         return res
           .status(400)
           .json({ error: "Event type and target are required" });
       }
-      await personalizationService?.trackInteraction(req?.user.id, {
+      await personalizationService?.trackInteraction(req.user.id, {
         ...event,
         timestamp: event.timestamp || new Date(),
       });
-      return res?.json({ success: true });
+      return res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Error tracking interaction:");
-      return res?.status(500).json({ error: "Failed to track interaction" });
+      logger.warn({ err: error }, "Error tracking interaction:");
+      return res.status(500).json({ error: "Failed to track interaction" });
     }
   },
 );
@@ -298,19 +298,19 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { interactions } = req?.body;
-      if (!Array?.isArray(interactions)) {
+      const { interactions } = req.body;
+      if (!Array.isArray(interactions)) {
         return res
           .status(400)
           .json({ error: "Interactions array is required" });
       }
       await personalizationService?.trackBatchInteractions(
-        req?.user.id,
+        req.user.id,
         interactions,
       );
-      return res?.json({ success: true });
+      return res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Error tracking batch interactions:");
+      logger.warn({ err: error }, "Error tracking batch interactions:");
       return res
         .status(500)
         .json({ error: "Failed to track batch interactions" });
@@ -323,21 +323,21 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { widgetId, duration } = req?.body;
+      const { widgetId, duration } = req.body;
       if (!widgetId || duration === undefined) {
         return res
           .status(400)
           .json({ error: "Widget ID and duration are required" });
       }
       await personalizationService?.trackWidgetView(
-        req?.user.id,
+        req.user.id,
         widgetId,
         duration,
       );
-      return res?.json({ success: true });
+      return res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Error tracking widget view:");
-      return res?.status(500).json({ error: "Failed to track widget view" });
+      logger.warn({ err: error }, "Error tracking widget view:");
+      return res.status(500).json({ error: "Failed to track widget view" });
     }
   },
 );
@@ -348,12 +348,12 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const recommendations = await personalizationService?.getRecommendations(
-        req?.user.id,
+        req.user.id,
       );
-      return res?.json(recommendations);
+      return res.json(recommendations);
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching recommendations:");
-      return res?.status(500).json({ error: "Failed to fetch recommendations" });
+      logger.warn({ err: error }, "Error fetching recommendations:");
+      return res.status(500).json({ error: "Failed to fetch recommendations" });
     }
   },
 );
@@ -364,12 +364,12 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const featureUsage = await personalizationService?.getFeatureUsage(
-        req?.user.id,
+        req.user.id,
       );
-      return res?.json(featureUsage);
+      return res.json(featureUsage);
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching feature usage:");
-      return res?.status(500).json({ error: "Failed to fetch feature usage" });
+      logger.warn({ err: error }, "Error fetching feature usage:");
+      return res.status(500).json({ error: "Failed to fetch feature usage" });
     }
   },
 );
@@ -379,18 +379,18 @@ router?.put(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { featureId, isVisible, priority } = req?.body;
+      const { featureId, isVisible, priority } = req.body;
       if (!featureId) {
-        return res?.status(400).json({ error: "Feature ID is required" });
+        return res.status(400).json({ error: "Feature ID is required" });
       }
       await personalizationService?.updateFeaturePriority(
-        req?.user.id,
+        req.user.id,
         featureId,
         { isVisible, priority },
       );
-      return res?.json({ success: true });
+      return res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Error updating feature priority:");
+      logger.warn({ err: error }, "Error updating feature priority:");
       return res
         .status(500)
         .json({ error: "Failed to update feature priority" });
@@ -403,14 +403,14 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      await personalizationService?.getPreferences(req?.user.id);
-      await personalizationService?.updatePreferences(req?.user.id, {
+      await personalizationService?.getPreferences(req.user.id);
+      await personalizationService?.updatePreferences(req.user.id, {
         hiddenFeatures: [],
         featurePreferences: {},
       });
-      return res?.json({ success: true });
+      return res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Error resetting feature priorities:");
+      logger.warn({ err: error }, "Error resetting feature priorities:");
       return res
         .status(500)
         .json({ error: "Failed to reset feature priorities" });
@@ -423,12 +423,12 @@ router?.post(
   requireAuth,
   async (_req: Request, res: Response) => {
     try {
-      return res?.json({
+      return res.json({
         success: true,
         message: "Suggested priorities applied",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error applying suggested priorities:");
+      logger.warn({ err: error }, "Error applying suggested priorities:");
       return res
         .status(500)
         .json({ error: "Failed to apply suggested priorities" });
@@ -441,11 +441,11 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const state = await personalizationService?.getLearningState(req?.user.id);
-      return res?.json(state);
+      const state = await personalizationService?.getLearningState(req.user.id);
+      return res.json(state);
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching learning state:");
-      return res?.status(500).json({ error: "Failed to fetch learning state" });
+      logger.warn({ err: error }, "Error fetching learning state:");
+      return res.status(500).json({ error: "Failed to fetch learning state" });
     }
   },
 );
@@ -456,11 +456,11 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const insights = await personalizationService?.getLearningInsights(
-        req?.user.id,
+        req.user.id,
       );
-      return res?.json(insights);
+      return res.json(insights);
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching learning insights:");
+      logger.warn({ err: error }, "Error fetching learning insights:");
       return res
         .status(500)
         .json({ error: "Failed to fetch learning insights" });
@@ -474,11 +474,11 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const patterns = await personalizationService?.getInteractionPatterns(
-        req?.user.id,
+        req.user.id,
       );
-      return res?.json(patterns);
+      return res.json(patterns);
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching interaction patterns:");
+      logger.warn({ err: error }, "Error fetching interaction patterns:");
       return res
         .status(500)
         .json({ error: "Failed to fetch interaction patterns" });
@@ -491,12 +491,12 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { insightId } = req?.params;
-      await personalizationService?.applyInsight(req?.user.id, insightId);
-      return res?.json({ success: true });
+      const { insightId } = req.params;
+      await personalizationService?.applyInsight(req.user.id, insightId);
+      return res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Error applying insight:");
-      return res?.status(500).json({ error: "Failed to apply insight" });
+      logger.warn({ err: error }, "Error applying insight:");
+      return res.status(500).json({ error: "Failed to apply insight" });
     }
   },
 );
@@ -506,12 +506,12 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { insightId } = req?.params;
-      await personalizationService?.dismissInsight(req?.user.id, insightId);
-      return res?.json({ success: true });
+      const { insightId } = req.params;
+      await personalizationService?.dismissInsight(req.user.id, insightId);
+      return res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Error dismissing insight:");
-      return res?.status(500).json({ error: "Failed to dismiss insight" });
+      logger.warn({ err: error }, "Error dismissing insight:");
+      return res.status(500).json({ error: "Failed to dismiss insight" });
     }
   },
 );
@@ -521,11 +521,11 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      await personalizationService?.resetLearning(req?.user.id);
-      return res?.json({ success: true });
+      await personalizationService?.resetLearning(req.user.id);
+      return res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Error resetting learning:");
-      return res?.status(500).json({ error: "Failed to reset learning" });
+      logger.warn({ err: error }, "Error resetting learning:");
+      return res.status(500).json({ error: "Failed to reset learning" });
     }
   },
 );
@@ -535,25 +535,25 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { type, value } = req?.body;
+      const { type, value } = req.body;
 
       if (type === "artistType") {
         await personalizationService?.applyArtistTypeDefaults(
-          req?.user.id,
+          req.user.id,
           value,
         );
       } else if (type === "genre") {
-        await personalizationService?.applyGenreDefaults(req?.user.id, value);
+        await personalizationService?.applyGenreDefaults(req.user.id, value);
       } else {
         return res
           .status(400)
           .json({ error: 'Invalid type. Use "artistType" or "genre"' });
       }
 
-      return res?.json({ success: true });
+      return res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Error applying defaults:");
-      return res?.status(500).json({ error: "Failed to apply defaults" });
+      logger.warn({ err: error }, "Error applying defaults:");
+      return res.status(500).json({ error: "Failed to apply defaults" });
     }
   },
 );
@@ -563,11 +563,11 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      await personalizationService?.resetToDefaults(req?.user.id);
-      return res?.json({ success: true });
+      await personalizationService?.resetToDefaults(req.user.id);
+      return res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Error resetting to defaults:");
-      return res?.status(500).json({ error: "Failed to reset to defaults" });
+      logger.warn({ err: error }, "Error resetting to defaults:");
+      return res.status(500).json({ error: "Failed to reset to defaults" });
     }
   },
 );
@@ -577,13 +577,13 @@ router?.put(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { widgetId } = req?.params;
-      const updates = req?.body;
-      await personalizationService?.updateWidget(req?.user.id, widgetId, updates);
-      return res?.json({ success: true });
+      const { widgetId } = req.params;
+      const updates = req.body;
+      await personalizationService?.updateWidget(req.user.id, widgetId, updates);
+      return res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Error updating widget:");
-      return res?.status(500).json({ error: "Failed to update widget" });
+      logger.warn({ err: error }, "Error updating widget:");
+      return res.status(500).json({ error: "Failed to update widget" });
     }
   },
 );
@@ -593,11 +593,11 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { actionId } = req?.params;
-      return res?.json({ success: true, actionId, status: "completed" });
+      const { actionId } = req.params;
+      return res.json({ success: true, actionId, status: "completed" });
     } catch (error) {
-      logger?.warn({ err: error }, "Error completing action:");
-      return res?.status(500).json({ error: "Failed to complete action" });
+      logger.warn({ err: error }, "Error completing action:");
+      return res.status(500).json({ error: "Failed to complete action" });
     }
   },
 );
@@ -607,11 +607,11 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { actionId } = req?.params;
-      return res?.json({ success: true, actionId, status: "dismissed" });
+      const { actionId } = req.params;
+      return res.json({ success: true, actionId, status: "dismissed" });
     } catch (error) {
-      logger?.warn({ err: error }, "Error dismissing action:");
-      return res?.status(500).json({ error: "Failed to dismiss action" });
+      logger.warn({ err: error }, "Error dismissing action:");
+      return res.status(500).json({ error: "Failed to dismiss action" });
     }
   },
 );

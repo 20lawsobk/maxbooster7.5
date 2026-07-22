@@ -94,7 +94,7 @@ export function useOfflineCapable(): {
       }
     }
 
-    for (const [route, capability] of Object?.entries(OFFLINE_ROUTES)) {
+    for (const [route, capability] of Object.entries(OFFLINE_ROUTES)) {
       if (normalizedPath?.startsWith(route)) {
         return capability;
       }
@@ -104,13 +104,13 @@ export function useOfflineCapable(): {
   }, [isOffline, location]);
 
   const availableFeatures = useMemo(() => {
-    return Object?.entries(capabilities)
+    return Object.entries(capabilities)
       .filter(([, capability]) => capability !== "unavailable")
       .map(([feature]) => feature);
   }, [capabilities]);
 
   const unavailableFeatures = useMemo(() => {
-    return Object?.entries(capabilities)
+    return Object.entries(capabilities)
       .filter(([, capability]) => capability === "unavailable")
       .map(([feature]) => feature);
   }, [capabilities]);

@@ -66,7 +66,7 @@ class AchievementService {
       if (requirement?.eventType && requirement?.eventType !== eventType)
         continue;
 
-      const progress = this?.calculateProgress(
+      const progress = this.calculateProgress(
         eventType,
         eventData,
         requirement,
@@ -86,7 +86,7 @@ class AchievementService {
             })
             .where(eq(userAchievements?.id, existingProgress?.id));
         } else {
-          await db?.insert(userAchievements).values({
+          await db.insert(userAchievements).values({
             userId,
             achievementId: achievement.id,
             progress: 1,
@@ -111,7 +111,7 @@ class AchievementService {
             .set({ progress })
             .where(eq(userAchievements?.id, existingProgress?.id));
         } else {
-          await db?.insert(userAchievements).values({
+          await db.insert(userAchievements).values({
             userId,
             achievementId: achievement.id,
             progress,
@@ -132,17 +132,17 @@ class AchievementService {
 
     switch (requirement?.type) {
       case "streams":
-        return Math?.min(1, (eventData?.totalStreams || 0) / threshold);
+        return Math.min(1, (eventData?.totalStreams || 0) / threshold);
       case "uploads":
-        return Math?.min(1, (eventData?.totalUploads || 0) / threshold);
+        return Math.min(1, (eventData?.totalUploads || 0) / threshold);
       case "sales":
-        return Math?.min(1, (eventData?.totalSales || 0) / threshold);
+        return Math.min(1, (eventData?.totalSales || 0) / threshold);
       case "streak":
-        return Math?.min(1, (eventData?.currentStreak || 0) / threshold);
+        return Math.min(1, (eventData?.currentStreak || 0) / threshold);
       case "collabs":
-        return Math?.min(1, (eventData?.totalCollabs || 0) / threshold);
+        return Math.min(1, (eventData?.totalCollabs || 0) / threshold);
       case "socials":
-        return Math?.min(1, (eventData?.connectedSocials || 0) / threshold);
+        return Math.min(1, (eventData?.connectedSocials || 0) / threshold);
       case "viral":
         return eventData?.isViral ? 1 : 0;
       case "first":
@@ -244,7 +244,7 @@ class AchievementService {
         })
         .returning();
 
-      await this?.checkAndAwardAchievements(userId, "streak", {
+      await this.checkAndAwardAchievements(userId, "streak", {
         streakType,
         currentStreak: 1,
       });
@@ -269,7 +269,7 @@ class AchievementService {
       newCurrentStreak = (streak?.currentStreak || 0) + 1;
     }
 
-    const newLongestStreak = Math?.max(
+    const newLongestStreak = Math.max(
       streak?.longestStreak || 0,
       newCurrentStreak,
     );
@@ -285,7 +285,7 @@ class AchievementService {
       .where(eq(userStreaks?.id, streak?.id))
       .returning();
 
-    await this?.checkAndAwardAchievements(userId, "streak", {
+    await this.checkAndAwardAchievements(userId, "streak", {
       streakType,
       currentStreak: newCurrentStreak,
     });
@@ -355,7 +355,7 @@ class AchievementService {
       userPointsMap?.set(stat?.userId, existing);
     }
 
-    const userIds = Array?.from(userPointsMap?.keys());
+    const userIds = Array.from(userPointsMap?.keys());
 
     if (userIds?.length === 0) {
       return [];

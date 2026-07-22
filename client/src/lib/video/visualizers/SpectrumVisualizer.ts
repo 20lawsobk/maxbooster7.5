@@ -87,11 +87,11 @@ export class SpectrumVisualizer {
 
   constructor(options: Partial<SpectrumVisualizerOptions> = {}) {
     this.options = { ...SpectrumVisualizer?.defaultOptions, ...options };
-    this?.initializeBarStates();
+    this.initializeBarStates();
   }
 
   private initializeBarStates(): void {
-    this.barStates = Array?.from({ length: this.options.barCount }, () => ({
+    this.barStates = Array.from({ length: this.options.barCount }, () => ({
       currentHeight: 0,
       targetHeight: 0,
       capY: 0,
@@ -100,14 +100,14 @@ export class SpectrumVisualizer {
   }
 
   updateOptions(options: Partial<SpectrumVisualizerOptions>): void {
-    const prevBarCount = this?.options.barCount;
-    this.options = { ...this?.options, ...options };
+    const prevBarCount = this.options.barCount;
+    this.options = { ...this.options, ...options };
 
     if (options?.barCount && options?.barCount !== prevBarCount) {
-      this?.initializeBarStates();
+      this.initializeBarStates();
     }
 
-    this?.gradientCache.clear();
+    this.gradientCache.clear();
   }
 
   render(
@@ -117,40 +117,40 @@ export class SpectrumVisualizer {
     height: number,
     time: number,
   ): void {
-    const deltaTime = time - this?.lastUpdateTime;
+    const deltaTime = time - this.lastUpdateTime;
     this.lastUpdateTime = time;
 
-    const frequencyBands = this?.getFrequencyBands(audioData);
-    this?.updateBarStates(frequencyBands, deltaTime);
+    const frequencyBands = this.getFrequencyBands(audioData);
+    this.updateBarStates(frequencyBands, deltaTime);
 
     ctx?.save();
 
-    if (this?.options.glow) {
-      ctx.shadowColor = this?.options.glowColor;
-      ctx.shadowBlur = this?.options.glowBlur * this?.options.glowIntensity;
+    if (this.options.glow) {
+      ctx.shadowColor = this.options.glowColor;
+      ctx.shadowBlur = this.options.glowBlur * this.options.glowIntensity;
     }
 
-    const totalBarWidth = this?.options.barWidth + this?.options.barGap;
+    const totalBarWidth = this.options.barWidth + this.options.barGap;
     const totalWidth =
-      this?.options.barCount * totalBarWidth - this?.options.barGap;
+      this.options.barCount * totalBarWidth - this.options.barGap;
     const startX = (width - totalWidth) / 2;
 
-    const baseY = this?.getBaseY(height);
+    const baseY = this.getBaseY(height);
 
-    for (let i = 0; i < this?.options.barCount; i++) {
-      const state = this?.barStates[i];
+    for (let i = 0; i < this.options.barCount; i++) {
+      const state = this.barStates[i];
       const x = startX + i * totalBarWidth;
-      const barHeight = Math?.max(
-        this?.options.barMinHeight,
+      const barHeight = Math.max(
+        this.options.barMinHeight,
         state?.currentHeight,
       );
 
-      this?.drawBar(ctx, x, baseY, barHeight, i, audioData?.beatDetected);
+      this.drawBar(ctx, x, baseY, barHeight, i, audioData?.beatDetected);
 
-      if (this?.options.mirror) {
-        const mirrorY = baseY + this?.options.mirrorGap;
+      if (this.options.mirror) {
+        const mirrorY = baseY + this.options.mirrorGap;
         ctx.globalAlpha = 0.4;
-        this?.drawBar(
+        this.drawBar(
           ctx,
           x,
           mirrorY,
@@ -162,8 +162,8 @@ export class SpectrumVisualizer {
         ctx.globalAlpha = 1;
       }
 
-      if (this?.options.showCaps) {
-        this?.drawCap(ctx, x, baseY, state);
+      if (this.options.showCaps) {
+        this.drawCap(ctx, x, baseY, state);
       }
     }
 
@@ -174,20 +174,20 @@ export class SpectrumVisualizer {
     const { frequencyData } = audioData;
     const bands: number[] = [];
 
-    const minIndex = Math?.floor(
-      frequencyData?.length * this?.options.frequencyRange?.min,
+    const minIndex = Math.floor(
+      frequencyData?.length * this.options.frequencyRange?.min,
     );
-    const maxIndex = Math?.floor(
-      frequencyData?.length * this?.options.frequencyRange?.max,
+    const maxIndex = Math.floor(
+      frequencyData?.length * this.options.frequencyRange?.max,
     );
     const rangeLength = maxIndex - minIndex;
-    const binPerBand = rangeLength / this?.options.barCount;
+    const binPerBand = rangeLength / this.options.barCount;
 
-    for (let i = 0; i < this?.options.barCount; i++) {
+    for (let i = 0; i < this.options.barCount; i++) {
       let sum = 0;
-      const start = minIndex + Math?.floor(i * binPerBand);
-      const end = Math?.min(
-        minIndex + Math?.floor((i + 1) * binPerBand),
+      const start = minIndex + Math.floor(i * binPerBand);
+      const end = Math.min(
+        minIndex + Math.floor((i + 1) * binPerBand),
         frequencyData?.length,
       );
       const count = end - start;
@@ -197,8 +197,8 @@ export class SpectrumVisualizer {
       }
 
       const normalized =
-        count > 0 ? (sum / count / 255) * this?.options.sensitivity : 0;
-      bands?.push(Math?.min(1, normalized));
+        count > 0 ? (sum / count / 255) * this.options.sensitivity : 0;
+      bands?.push(Math.min(1, normalized));
     }
 
     return bands;
@@ -206,11 +206,11 @@ export class SpectrumVisualizer {
 
   private updateBarStates(frequencyBands: number[], deltaTime: number): void {
     const smoothFactor =
-      1 - Math?.pow(1 - this?.options.responsiveness, deltaTime * 60);
+      1 - Math.pow(1 - this.options.responsiveness, deltaTime * 60);
 
-    for (let i = 0; i < this?.options.barCount; i++) {
-      const state = this?.barStates[i];
-      const targetHeight = frequencyBands[i] * this?.options.barMaxHeight;
+    for (let i = 0; i < this.options.barCount; i++) {
+      const state = this.barStates[i];
+      const targetHeight = frequencyBands[i] * this.options.barMaxHeight;
 
       state.targetHeight = targetHeight;
       state.currentHeight +=
@@ -220,17 +220,17 @@ export class SpectrumVisualizer {
         state.capY = state?.currentHeight;
         state.velocity = 0;
       } else {
-        state.velocity += this?.options.capFallSpeed * deltaTime * 60;
+        state.velocity += this.options.capFallSpeed * deltaTime * 60;
         state.capY -= state?.velocity;
-        state.capY = Math?.max(state?.capY, state?.currentHeight);
+        state.capY = Math.max(state?.capY, state?.currentHeight);
       }
     }
   }
 
   private getBaseY(height: number): number {
-    switch (this?.options.alignment) {
+    switch (this.options.alignment) {
       case "top":
-        return this?.options.barMaxHeight + 20;
+        return this.options.barMaxHeight + 20;
       case "center":
         return height / 2;
       case "bottom":
@@ -248,7 +248,7 @@ export class SpectrumVisualizer {
     beatDetected: boolean,
     flipped: boolean = false,
   ): void {
-    const { barWidth, barRadius, style } = this?.options;
+    const { barWidth, barRadius, style } = this.options;
     const drawHeight = flipped ? height : -height;
     const y = flipped ? baseY : baseY;
 
@@ -256,25 +256,25 @@ export class SpectrumVisualizer {
 
     switch (style) {
       case "rounded":
-        this?.drawRoundedBar(ctx, x, y, barWidth, drawHeight, barRadius);
+        this.drawRoundedBar(ctx, x, y, barWidth, drawHeight, barRadius);
         break;
       case "blocks":
-        this?.drawBlockBar(ctx, x, y, barWidth, drawHeight);
+        this.drawBlockBar(ctx, x, y, barWidth, drawHeight);
         break;
       case "outline":
-        ctx.strokeStyle = this?.getBarColor(ctx, index, height, baseY);
+        ctx.strokeStyle = this.getBarColor(ctx, index, height, baseY);
         ctx.lineWidth = 2;
-        this?.drawRoundedBar(ctx, x, y, barWidth, drawHeight, barRadius);
+        this.drawRoundedBar(ctx, x, y, barWidth, drawHeight, barRadius);
         ctx?.stroke();
         return;
       default:
         ctx?.rect(x, y, barWidth, drawHeight);
     }
 
-    ctx.fillStyle = this?.getBarColor(ctx, index, height, baseY);
+    ctx.fillStyle = this.getBarColor(ctx, index, height, baseY);
 
     if (style === "neon" || beatDetected) {
-      ctx.shadowBlur = this?.options.glowBlur * (beatDetected ? 2 : 1);
+      ctx.shadowBlur = this.options.glowBlur * (beatDetected ? 2 : 1);
     }
 
     ctx?.fill();
@@ -288,7 +288,7 @@ export class SpectrumVisualizer {
     height: number,
     radius: number,
   ): void {
-    const actualRadius = Math?.min(radius, Math?.abs(height) / 2, width / 2);
+    const actualRadius = Math.min(radius, Math.abs(height) / 2, width / 2);
     const yEnd = y + height;
     const direction = height < 0 ? -1 : 1;
 
@@ -313,7 +313,7 @@ export class SpectrumVisualizer {
   ): void {
     const blockHeight = 4;
     const blockGap = 2;
-    const blockCount = Math?.ceil(Math?.abs(height) / (blockHeight + blockGap));
+    const blockCount = Math.ceil(Math.abs(height) / (blockHeight + blockGap));
     const direction = height < 0 ? -1 : 1;
 
     for (let i = 0; i < blockCount; i++) {
@@ -329,18 +329,18 @@ export class SpectrumVisualizer {
     baseY: number,
   ): string | CanvasGradient {
     const { style, color, secondaryColor, gradientColors, barCount } =
-      this?.options;
+      this.options;
 
     switch (style) {
       case "gradient": {
         const cacheKey = `vertical-${baseY}-${height}`;
-        let gradient = this?.gradientCache.get(cacheKey);
+        let gradient = this.gradientCache.get(cacheKey);
 
         if (!gradient) {
           gradient = ctx?.createLinearGradient(0, baseY, 0, baseY - height);
           gradient?.addColorStop(0, color);
           gradient?.addColorStop(1, secondaryColor);
-          this?.gradientCache.set(cacheKey, gradient);
+          this.gradientCache.set(cacheKey, gradient);
         }
 
         return gradient;
@@ -353,11 +353,11 @@ export class SpectrumVisualizer {
 
       default: {
         if (gradientColors?.length > 1) {
-          const colorIndex = Math?.floor(
+          const colorIndex = Math.floor(
             (index / barCount) * (gradientColors?.length - 1),
           );
           const t = ((index / barCount) * (gradientColors?.length - 1)) % 1;
-          return this?.interpolateColors(
+          return this.interpolateColors(
             gradientColors[colorIndex],
             gradientColors[colorIndex + 1] || gradientColors[colorIndex],
             t,
@@ -374,21 +374,21 @@ export class SpectrumVisualizer {
     baseY: number,
     state: BarState,
   ): void {
-    const { barWidth, capHeight, capColor } = this?.options;
+    const { barWidth, capHeight, capColor } = this.options;
 
     ctx.fillStyle = capColor;
     ctx?.fillRect(x, baseY - state?.capY - capHeight, barWidth, capHeight);
   }
 
   private interpolateColors(color1: string, color2: string, t: number): string {
-    const c1 = this?.hexToRgb(color1);
-    const c2 = this?.hexToRgb(color2);
+    const c1 = this.hexToRgb(color1);
+    const c2 = this.hexToRgb(color2);
 
     if (!c1 || !c2) return color1;
 
-    const r = Math?.round(c1?.r + (c2?.r - c1?.r) * t);
-    const g = Math?.round(c1?.g + (c2?.g - c1?.g) * t);
-    const b = Math?.round(c1?.b + (c2?.b - c1?.b) * t);
+    const r = Math.round(c1?.r + (c2?.r - c1?.r) * t);
+    const g = Math.round(c1?.g + (c2?.g - c1?.g) * t);
+    const b = Math.round(c1?.b + (c2?.b - c1?.b) * t);
 
     return `rgb(${r}, ${g}, ${b})`;
   }
@@ -405,13 +405,13 @@ export class SpectrumVisualizer {
   }
 
   reset(): void {
-    this?.initializeBarStates();
-    this?.gradientCache.clear();
+    this.initializeBarStates();
+    this.gradientCache.clear();
     this.lastUpdateTime = 0;
   }
 
   dispose(): void {
     this.barStates = [];
-    this?.gradientCache.clear();
+    this.gradientCache.clear();
   }
 }

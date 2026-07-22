@@ -17,8 +17,8 @@ const router = Router();
 
 router?.post("/validate", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const validatedData = bulkValidatePostSchema?.parse(req?.body);
+    const userId = req.user!.id;
+    const validatedData = bulkValidatePostSchema?.parse(req.body);
     const errors: Array<{ index: number; field: string; message: string }> = [];
     const warnings: Array<{ index: number; message: string }> = [];
 
@@ -136,30 +136,30 @@ router?.post("/validate", requireAuth, async (req, res) => {
       }
     }
 
-    return res?.json({
+    return res.json({
       valid: errors.length === 0,
       totalPosts: validatedData.posts.length,
       errors,
       warnings,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Bulk validation error:");
+    logger.warn({ err: error }, "Bulk validation error:");
     if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({ error: "Validation failed", details: error.issues });
     }
-    return res?.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
 router?.post("/schedule", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const validatedData = bulkSchedulePostSchema?.parse(req?.body);
+    const userId = req.user!.id;
+    const validatedData = bulkSchedulePostSchema?.parse(req.body);
 
     if (validatedData?.posts.length === 0) {
-      return res?.status(400).json({ error: "At least one post is required" });
+      return res.status(400).json({ error: "At least one post is required" });
     }
 
     if (validatedData?.posts.length > 500) {
@@ -213,7 +213,7 @@ router?.post("/schedule", requireAuth, async (req, res) => {
         (p) => p?.socialAccountId && !ownedIds?.has(p?.socialAccountId),
       );
       if (badIndex !== -1) {
-        return res?.status(403).json({
+        return res.status(403).json({
           error: "One or more social accounts do not belong to you",
           index: badIndex,
         });
@@ -244,7 +244,7 @@ router?.post("/schedule", requireAuth, async (req, res) => {
         (p) => p?.campaignId && !ownedCampaignIds?.has(p?.campaignId),
       );
       if (badCampaignIndex !== -1) {
-        return res?.status(403).json({
+        return res.status(403).json({
           error: "One or more campaigns do not belong to you",
           index: badCampaignIndex,
         });
@@ -301,7 +301,7 @@ router?.post("/schedule", requireAuth, async (req, res) => {
     await Promise?.all(
       insertedPosts?.map((post) => {
         const scheduledDate = post?.scheduledAt || new Date();
-        const delay = Math?.max(0, scheduledDate?.getTime() - Date?.now());
+        const delay = Math.max(0, scheduledDate?.getTime() - Date?.now());
         return socialQueueService?.addSocialPostJob(
           {
             postId: post.id,
@@ -318,7 +318,7 @@ router?.post("/schedule", requireAuth, async (req, res) => {
       }),
     );
 
-    return res?.status(201).json({
+    return res.status(201).json({
       success: true,
       batchId: batch.id,
       campaignId: defaultCampaignId,
@@ -326,23 +326,23 @@ router?.post("/schedule", requireAuth, async (req, res) => {
       message: "Batch scheduled successfully",
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Bulk schedule error:");
+    logger.warn({ err: error }, "Bulk schedule error:");
     if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({ error: "Validation failed", details: error.issues });
     }
-    return res?.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
 router?.get("/status/:batchId", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { batchId } = req?.params;
+    const userId = req.user!.id;
+    const { batchId } = req.params;
 
     if (!batchId || typeof batchId !== "string") {
-      return res?.status(400).json({ error: "Invalid batch ID" });
+      return res.status(400).json({ error: "Invalid batch ID" });
     }
 
     const batch = await db?.query.scheduledPostBatches?.findFirst({
@@ -353,7 +353,7 @@ router?.get("/status/:batchId", requireAuth, async (req, res) => {
     });
 
     if (!batch) {
-      return res?.status(404).json({ error: "Batch not found" });
+      return res.status(404).json({ error: "Batch not found" });
     }
 
     // Limit to 500 (the max batch size), ordered by schedule time
@@ -373,7 +373,7 @@ router?.get("/status/:batchId", requireAuth, async (req, res) => {
 
     const queueStats = await socialQueueService?.getQueueStats();
 
-    return res?.json({
+    return res.json({
       batchId: batch.id,
       status: batch.status,
       totalPosts: batch.totalPosts,
@@ -395,18 +395,18 @@ router?.get("/status/:batchId", requireAuth, async (req, res) => {
       })),
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Batch status error:");
-    return res?.status(500).json({ error: "Internal server error" });
+    logger.warn({ err: error }, "Batch status error:");
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
 router?.delete("/:batchId", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { batchId } = req?.params;
+    const userId = req.user!.id;
+    const { batchId } = req.params;
 
     if (!batchId || typeof batchId !== "string") {
-      return res?.status(400).json({ error: "Invalid batch ID" });
+      return res.status(400).json({ error: "Invalid batch ID" });
     }
 
     const cancelled = await socialQueueService?.cancelBatch(batchId, userId);
@@ -417,22 +417,22 @@ router?.delete("/:batchId", requireAuth, async (req, res) => {
         .json({ error: "Batch not found or already completed" });
     }
 
-    return res?.json({ success: true, message: "Batch cancelled successfully" });
+    return res.json({ success: true, message: "Batch cancelled successfully" });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Cancel batch error:");
-    return res?.status(500).json({ error: "Internal server error" });
+    logger.warn({ err: error }, "Cancel batch error:");
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
 router?.get("/batches", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const page = Math?.max(1, parseInt(String(req?.query.page || "1"), 10));
-    const pageSize = Math?.min(
+    const userId = req.user!.id;
+    const page = Math.max(1, parseInt(String(req.query.page || "1"), 10));
+    const pageSize = Math.min(
       100,
-      Math?.max(1, parseInt(String(req?.query.pageSize || "50"), 10)),
+      Math.max(1, parseInt(String(req.query.pageSize || "50"), 10)),
     );
-    const pageOffset = Math?.min((page - 1) * pageSize, 100_000);
+    const pageOffset = Math.min((page - 1) * pageSize, 100_000);
 
     const batches = await db?.query.scheduledPostBatches?.findMany({
       where: eq(scheduledPostBatches?.userId, userId),
@@ -441,7 +441,7 @@ router?.get("/batches", requireAuth, async (req, res) => {
       offset: pageOffset,
     });
 
-    return res?.json({
+    return res.json({
       page,
       pageSize,
       batches: batches.map((batch) => ({
@@ -457,22 +457,22 @@ router?.get("/batches", requireAuth, async (req, res) => {
       })),
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Get batches error:");
-    return res?.status(500).json({ error: "Internal server error" });
+    logger.warn({ err: error }, "Get batches error:");
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
 router?.get("/status", requireAuth, async (_req, res) => {
   try {
     const queueStats = await socialQueueService?.getQueueStats();
-    return res?.json({
+    return res.json({
       status: "ready",
       queuedPosts: queueStats.waiting ?? 0,
       processingPosts: queueStats.active ?? 0,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Get bulk status error:");
-    return res?.status(500).json({ error: "Internal server error" });
+    logger.warn({ err: error }, "Get bulk status error:");
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 

@@ -453,7 +453,7 @@ function getDefaultTransform(): TransformConfig {
 }
 
 function generateId(): string {
-  return `layer_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+  return `layer_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
 export function compileReleaseAnnouncement(
@@ -488,7 +488,7 @@ export function compileReleaseAnnouncement(
   });
 
   if (options?.coverArtUrl) {
-    const coverSize = Math?.min(width, height) * 0.4;
+    const coverSize = Math.min(width, height) * 0.4;
     const isPortrait = height > width;
     layers?.push({
       id: generateId(),
@@ -848,7 +848,7 @@ export function compileTourEvent(options: TourEventOptions): CompiledTemplate {
 
   const dateStartY = height * 0.28;
   const dateSpacing = height * 0.08;
-  const maxVisibleDates = Math?.min(options?.dates.length, 6);
+  const maxVisibleDates = Math.min(options?.dates.length, 6);
 
   options?.dates.slice(0, maxVisibleDates).forEach((dateInfo, index) => {
     const delayBase = 0.8 + index * 0.15;

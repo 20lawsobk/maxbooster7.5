@@ -39,7 +39,7 @@ let sessionStore: Record<string, unknown> | null = null;
 
 export function setSessionStore(store: Record<string, unknown>): void {
   sessionStore = store;
-  logger?.info("WebSocket session store configured");
+  logger.info("WebSocket session store configured");
 }
 
 interface AuthenticatedWebSocket extends WebSocket {
@@ -79,7 +79,7 @@ async function authenticateFromSession(
       );
     });
   } catch (error) {
-    logger?.warn({ err: error }, "WebSocket session auth error:");
+    logger.warn({ err: error }, "WebSocket session auth error:");
     return null;
   }
 }
@@ -96,7 +96,7 @@ function initializeNotificationServer(httpServer: HttpServer): void {
   // Server-level error handler: prevents protocol/handshake errors from becoming
   // uncaughtExceptions that crash the process.
   notificationWss?.on("error", (err: Error) => {
-    logger?.warn("[WS] Notification server error:", err?.message);
+    logger.warn("[WS] Notification server error:", err?.message);
   });
 
   httpServer?.on("upgrade", async (request, socket, head) => {
@@ -106,7 +106,7 @@ function initializeNotificationServer(httpServer: HttpServer): void {
     if (pathname === "/ws") {
       // Global connection cap — reject before paying the upgrade cost
       if (notificationClients?.size >= MAX_GLOBAL_WS_CONNECTIONS) {
-        logger?.warn(
+        logger.warn(
           `[WS] Global connection limit reached (${MAX_GLOBAL_WS_CONNECTIONS}) — rejecting upgrade`,
         );
         socket?.write(
@@ -123,7 +123,7 @@ function initializeNotificationServer(httpServer: HttpServer): void {
       if (userId) {
         const existing = userConnections?.get(userId);
         if (existing && existing?.size >= MAX_WS_CONNECTIONS_PER_USER) {
-          logger?.warn(
+          logger.warn(
             `[WS] Per-user connection limit reached for user ${userId} (${MAX_WS_CONNECTIONS_PER_USER} max)`,
           );
           socket?.write(
@@ -151,26 +151,26 @@ function initializeNotificationServer(httpServer: HttpServer): void {
             }
             userConnections?.get(userId)!.add(ws);
 
-            ws?.send(JSON?.stringify({ type: "auth_success", userId }));
-            logger?.info(
+            ws?.send(JSON.stringify({ type: "auth_success", userId }));
+            logger.info(
               `WebSocket authenticated via session for user: ${userId}`,
             );
           }
 
           ws?.on("message", (data) => {
             try {
-              const message = JSON?.parse(data?.toString());
+              const message = JSON.parse(data?.toString());
               // Echo back pings with pong
               if (message?.type === "ping") {
                 ws?.send(
-                  JSON?.stringify({ type: "pong", timestamp: Date.now() }),
+                  JSON.stringify({ type: "pong", timestamp: Date.now() }),
                 );
               }
               // Ignore client-side auth attempts - authentication is server-side only
               if (message?.type === "auth") {
                 if (!ws?.isAuthenticated) {
                   ws?.send(
-                    JSON?.stringify({
+                    JSON.stringify({
                       type: "auth_error",
                       message:
                         "Authentication failed. Please refresh the page.",
@@ -211,7 +211,7 @@ function initializeNotificationServer(httpServer: HttpServer): void {
 
           // Send welcome message
           ws?.send(
-            JSON?.stringify({
+            JSON.stringify({
               type: "connected",
               message: "Connected to Max Booster notifications",
               authenticated: !!userId,
@@ -227,7 +227,7 @@ function initializeNotificationServer(httpServer: HttpServer): void {
   (global as Record<string, unknown>).broadcastNotification =
     sendNotificationToUser;
 
-  logger?.info("General notification WebSocket server initialized at /ws");
+  logger.info("General notification WebSocket server initialized at /ws");
 }
 
 // Deliver a notification to connections on THIS instance only
@@ -237,7 +237,7 @@ function deliverLocalUserNotification(
 ): void {
   const connections = userConnections?.get(userId);
   if (connections && connections?.size > 0) {
-    const message = JSON?.stringify({
+    const message = JSON.stringify({
       type: "notification",
       data: notification,
     });
@@ -250,7 +250,7 @@ function deliverLocalUserNotification(
 }
 
 function deliverLocalBroadcast(notification: object): void {
-  const message = JSON?.stringify({ type: "notification", data: notification });
+  const message = JSON.stringify({ type: "notification", data: notification });
   notificationClients?.forEach((client) => {
     if (client?.readyState === WebSocket.OPEN) {
       client?.send(message);
@@ -270,7 +270,7 @@ export function sendNotificationToUser(
   });
   // Also deliver locally without waiting for the Redis round-trip
   deliverLocalUserNotification(userId, notification);
-  logger?.info(`Sent notification to user ${userId}`);
+  logger.info(`Sent notification to user ${userId}`);
 }
 
 // Broadcast to all notification clients on all instances
@@ -301,18 +301,18 @@ export async function initializeRealtimeServer(
       typeof studioCollabServer?.initialize === "function"
     ) {
       await studioCollabServer?.initialize(httpServer);
-      logger?.info("Studio collaboration WebSocket server initialized");
+      logger.info("Studio collaboration WebSocket server initialized");
     } else {
       // The collaboration server may auto-initialize, just log status
-      logger?.info("Studio collaboration server ready");
+      logger.info("Studio collaboration server ready");
     }
 
     // Initialize presence manager
     const { presenceManager } = await import("./presenceManager.js");
     if (presenceManager) {
-      logger?.info("Presence manager ready");
+      logger.info("Presence manager ready");
     }
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to initialize realtime server:");
+    logger.warn({ err: error }, "Failed to initialize realtime server:");
   }
 }

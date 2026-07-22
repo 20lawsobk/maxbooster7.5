@@ -16,19 +16,19 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
-      logger?.info(`Fetching stored forecasts for user ${userId}`);
+      logger.info(`Fetching stored forecasts for user ${userId}`);
 
       const forecasts = await revenueForecastService?.getStoredForecasts(userId);
 
-      res?.json({
+      res.json({
         success: true,
         data: forecasts,
       });
     } catch (error) {
-      logger?.warn("Error fetching stored forecasts:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error fetching stored forecasts:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -38,20 +38,20 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
-      logger?.info(`Getting revenue projections for user ${userId}`);
+      logger.info(`Getting revenue projections for user ${userId}`);
 
       const projections =
         await revenueForecastService?.getRevenueProjections(userId);
 
-      res?.json({
+      res.json({
         success: true,
         data: projections,
       });
     } catch (error) {
-      logger?.warn("Error getting revenue projections:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error getting revenue projections:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -61,19 +61,19 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
-      logger?.info(`Fetching forecast accuracy for user ${userId}`);
+      logger.info(`Fetching forecast accuracy for user ${userId}`);
 
       const accuracy = await revenueForecastService?.compareToActual(userId);
 
-      res?.json({
+      res.json({
         success: true,
         data: accuracy,
       });
     } catch (error) {
-      logger?.warn("Error fetching forecast accuracy:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error fetching forecast accuracy:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -83,14 +83,14 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
-      logger?.info(`Calculating stream-to-revenue rate for user ${userId}`);
+      logger.info(`Calculating stream-to-revenue rate for user ${userId}`);
 
       const rate =
         await revenueForecastService?.calculateStreamToRevenueRate(userId);
 
-      res?.json({
+      res.json({
         success: true,
         data: {
           rate,
@@ -98,8 +98,8 @@ router?.get(
         },
       });
     } catch (error) {
-      logger?.warn("Error calculating stream-to-revenue rate:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error calculating stream-to-revenue rate:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -109,24 +109,24 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const { months } = generateForecastSchema?.parse(req?.body);
+      const userId = req.user!.id;
+      const { months } = generateForecastSchema?.parse(req.body);
 
-      logger?.info(`Generating ${months}-month forecast for user ${userId}`);
+      logger.info(`Generating ${months}-month forecast for user ${userId}`);
 
       const forecast = await revenueForecastService?.generateForecast(
         userId,
         months,
       );
 
-      res?.json({
+      res.json({
         success: true,
         data: forecast,
         message: `Successfully generated ${months}-month revenue forecast`,
       });
     } catch (error) {
-      logger?.warn("Error generating forecast:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error generating forecast:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -136,8 +136,8 @@ router?.delete(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const { id } = req?.params;
+      const userId = req.user!.id;
+      const { id } = req.params;
 
       const deleted = await revenueForecastService?.deleteForecastById(
         userId,
@@ -150,10 +150,10 @@ router?.delete(
           .json({ error: "Forecast not found or does not belong to you" });
       }
 
-      res?.json({ success: true, message: "Forecast deleted" });
+      res.json({ success: true, message: "Forecast deleted" });
     } catch (error) {
-      logger?.warn("Error deleting forecast:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error deleting forecast:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );

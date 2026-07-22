@@ -32,13 +32,13 @@ const insertPublishingSchema = z.object({
 // GET /api/publishing - list registered works (paginated)
 router?.get("/", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 200);
+    const userId = req.user!.id;
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
     // Cap offset — an unbounded offset forces Postgres to scan and discard rows,
     // becoming a denial-of-service vector at scale (offset=99999999).
-    const rawOffset = parseInt(req?.query.offset as string) || 0;
-    const offset = Math?.min(
-      Number?.isFinite(rawOffset) && rawOffset >= 0 ? rawOffset : 0,
+    const rawOffset = parseInt(req.query.offset as string) || 0;
+    const offset = Math.min(
+      Number.isFinite(rawOffset) && rawOffset >= 0 ? rawOffset : 0,
       100_000,
     );
     const works = await db
@@ -48,21 +48,21 @@ router?.get("/", requireAuth, async (req, res) => {
       .orderBy(desc(publishingRights?.registeredAt))
       .limit(limit)
       .offset(offset);
-    res?.json(works);
+    res.json(works);
   } catch (error) {
-    logger?.warn(
+    logger.warn(
       { err: error },
       "[Publishing] Failed to fetch registered works:",
     );
-    res?.status(500).json({ error: "Failed to fetch registered works" });
+    res.status(500).json({ error: "Failed to fetch registered works" });
   }
 });
 
 // POST /api/publishing - register new work
 router?.post("/", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const parsed = insertPublishingSchema?.safeParse(req?.body);
+    const userId = req.user!.id;
+    const parsed = insertPublishingSchema?.safeParse(req.body);
     if (!parsed?.success) {
       return res
         .status(400)
@@ -78,19 +78,19 @@ router?.post("/", requireAuth, async (req, res) => {
         status: "pending",
       })
       .returning();
-    res?.json(work);
+    res.json(work);
   } catch (error) {
-    logger?.warn({ err: error }, "[Publishing] Failed to register work:");
-    res?.status(500).json({ error: "Failed to register work" });
+    logger.warn({ err: error }, "[Publishing] Failed to register work:");
+    res.status(500).json({ error: "Failed to register work" });
   }
 });
 
 // PUT /api/publishing/:id - update registration
 router?.put("/:id", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { id } = req?.params;
-    const parsed = insertPublishingSchema?.partial().safeParse(req?.body);
+    const userId = req.user!.id;
+    const { id } = req.params;
+    const parsed = insertPublishingSchema?.partial().safeParse(req.body);
     if (!parsed?.success) {
       return res
         .status(400)
@@ -104,37 +104,37 @@ router?.put("/:id", requireAuth, async (req, res) => {
         and(eq(publishingRights?.id, id), eq(publishingRights?.userId, userId)),
       )
       .returning();
-    if (!updated) return res?.status(404).json({ error: "Work not found" });
-    res?.json(updated);
+    if (!updated) return res.status(404).json({ error: "Work not found" });
+    res.json(updated);
   } catch (error) {
-    logger?.warn({ err: error }, "[Publishing] Failed to update work:");
-    res?.status(500).json({ error: "Failed to update work" });
+    logger.warn({ err: error }, "[Publishing] Failed to update work:");
+    res.status(500).json({ error: "Failed to update work" });
   }
 });
 
 // DELETE /api/publishing/:id - delete record
 router?.delete("/:id", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { id } = req?.params;
+    const userId = req.user!.id;
+    const { id } = req.params;
     const [deleted] = await db
       .delete(publishingRights)
       .where(
         and(eq(publishingRights?.id, id), eq(publishingRights?.userId, userId)),
       )
       .returning();
-    if (!deleted) return res?.status(404).json({ error: "Work not found" });
-    res?.json({ success: true });
+    if (!deleted) return res.status(404).json({ error: "Work not found" });
+    res.json({ success: true });
   } catch (error) {
-    logger?.warn({ err: error }, "[Publishing] Failed to delete record:");
-    res?.status(500).json({ error: "Failed to delete record" });
+    logger.warn({ err: error }, "[Publishing] Failed to delete record:");
+    res.status(500).json({ error: "Failed to delete record" });
   }
 });
 
 // GET /api/publishing/stats - aggregate stats via SQL
 router?.get("/stats", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const [stats] = await db
       .select({
         totalWorks: count(),
@@ -144,17 +144,17 @@ router?.get("/stats", requireAuth, async (req, res) => {
       .from(publishingRights)
       .where(eq(publishingRights?.userId, userId));
 
-    res?.json({
+    res.json({
       totalWorks: Number(stats?.totalWorks),
       pendingCount: Number(stats?.pendingCount),
       confirmedCount: Number(stats?.confirmedCount),
     });
   } catch (error) {
-    logger?.warn(
+    logger.warn(
       { err: error },
       "[Publishing] Failed to fetch publishing stats:",
     );
-    res?.status(500).json({ error: "Failed to fetch publishing stats" });
+    res.status(500).json({ error: "Failed to fetch publishing stats" });
   }
 });
 
@@ -166,16 +166,16 @@ router?.get("/:id", requireAuth, async (req, res) => {
       .from(publishingRights)
       .where(
         and(
-          eq(publishingRights?.id, req?.params.id),
-          eq(publishingRights?.userId, req?.user!.id),
+          eq(publishingRights?.id, req.params.id),
+          eq(publishingRights?.userId, req.user!.id),
         ),
       )
       .limit(1);
-    if (!work) return res?.status(404).json({ error: "Work not found" });
-    res?.json(work);
+    if (!work) return res.status(404).json({ error: "Work not found" });
+    res.json(work);
   } catch (error) {
-    logger?.warn({ err: error }, "[Publishing] Failed to fetch work:");
-    res?.status(500).json({ error: "Failed to fetch publishing record" });
+    logger.warn({ err: error }, "[Publishing] Failed to fetch work:");
+    res.status(500).json({ error: "Failed to fetch publishing record" });
   }
 });
 

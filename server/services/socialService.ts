@@ -37,7 +37,7 @@ async function getStoredToken(
       // Attempt inline AES-256-GCM decryption using TOKEN_ENCRYPTION_KEY
       const { createDecipheriv } = await import("crypto");
       const key = Buffer?.from(
-        (process?.env.TOKEN_ENCRYPTION_KEY || "")
+        (process.env.TOKEN_ENCRYPTION_KEY || "")
           .substring(0, 32)
           .padEnd(32, "0"),
       );
@@ -98,7 +98,7 @@ export class SocialService {
       const campaign = await storage?.createAdCampaign(data);
       return campaign;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error creating campaign:");
+      logger.warn({ err: error }, "Error creating campaign:");
       throw new Error("Failed to create campaign");
     }
   }
@@ -735,7 +735,7 @@ export class SocialService {
 
       return { totalReach, totalEngagement, platforms, timeline };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching campaign metrics:");
+      logger.warn({ err: error }, "Error fetching campaign metrics:");
       throw new Error("Failed to fetch campaign metrics");
     }
   }

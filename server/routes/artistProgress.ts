@@ -20,20 +20,20 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
-      logger?.info(`Fetching artist progress dashboard for user ${userId}`);
+      logger.info(`Fetching artist progress dashboard for user ${userId}`);
 
       const dashboardData =
         await artistProgressService?.getDashboardData(userId);
 
-      res?.json({
+      res.json({
         success: true,
         data: dashboardData,
       });
     } catch (error) {
-      logger?.warn("Error fetching artist progress dashboard:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error fetching artist progress dashboard:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -43,13 +43,13 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const { days = "30" } = req?.query as { days?: string };
+      const userId = req.user!.id;
+      const { days = "30" } = req.query as { days?: string };
 
       const parsedQuery = historyQuerySchema?.parse({ days });
       const daysCount = parsedQuery?.days || 30;
 
-      logger?.info(
+      logger.info(
         `Fetching progress history for user ${userId}, days=${daysCount}`,
       );
 
@@ -58,7 +58,7 @@ router?.get(
         daysCount,
       );
 
-      res?.json({
+      res.json({
         success: true,
         data: history,
         meta: {
@@ -67,8 +67,8 @@ router?.get(
         },
       });
     } catch (error) {
-      logger?.warn("Error fetching progress history:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error fetching progress history:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -78,20 +78,20 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
-      logger?.info(`Fetching career milestones for user ${userId}`);
+      logger.info(`Fetching career milestones for user ${userId}`);
 
       const milestones =
         await artistProgressService?.getCareerMilestones(userId);
 
-      res?.json({
+      res.json({
         success: true,
         data: milestones,
       });
     } catch (error) {
-      logger?.warn("Error fetching career milestones:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error fetching career milestones:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -101,20 +101,20 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
-      logger?.info(`Fetching growth metrics for user ${userId}`);
+      logger.info(`Fetching growth metrics for user ${userId}`);
 
       const growthMetrics =
         await artistProgressService?.calculateGrowthMetrics(userId);
 
-      res?.json({
+      res.json({
         success: true,
         data: growthMetrics,
       });
     } catch (error) {
-      logger?.warn("Error fetching growth metrics:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error fetching growth metrics:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -124,19 +124,19 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
-      logger?.info(`Manually capturing snapshot for user ${userId}`);
+      logger.info(`Manually capturing snapshot for user ${userId}`);
 
       await artistProgressService?.captureSnapshot(userId);
 
-      res?.json({
+      res.json({
         success: true,
         message: "Snapshot captured successfully",
       });
     } catch (error) {
-      logger?.warn("Error capturing snapshot:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error capturing snapshot:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );

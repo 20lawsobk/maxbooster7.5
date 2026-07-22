@@ -15,28 +15,28 @@ export class SemanticArchiver {
   ): Promise<ArchiveResult> {
     switch (contentClass) {
       case "json":
-        return this?.archiveJson(data);
+        return this.archiveJson(data);
       case "log":
-        return this?.archiveLogs(data);
+        return this.archiveLogs(data);
       case "metrics":
-        return this?.archiveMetrics(data);
+        return this.archiveMetrics(data);
       case "text":
-        return this?.archiveText(data);
+        return this.archiveText(data);
       default:
-        return this?.archiveGeneric(data);
+        return this.archiveGeneric(data);
     }
   }
 
   private archiveJson(data: Buffer): ArchiveResult {
     let parsed: Record<string, unknown>;
     try {
-      parsed = JSON?.parse(data?.toString("utf8"));
+      parsed = JSON.parse(data?.toString("utf8"));
     } catch {
-      return this?.archiveGeneric(data);
+      return this.archiveGeneric(data);
     }
 
-    const summary = this?.summarizeJsonValue(parsed, 0);
-    const compact = JSON?.stringify(summary);
+    const summary = this.summarizeJsonValue(parsed, 0);
+    const compact = JSON.stringify(summary);
     const out = Buffer?.from(compact, "utf8");
 
     return {
@@ -56,17 +56,17 @@ export class SemanticArchiver {
     depth: number,
   ): Record<string, unknown> {
     if (depth > 4) return "[truncated]";
-    if (Array?.isArray(val)) {
+    if (Array.isArray(val)) {
       const sample = val
         .slice(0, 5)
-        .map((v) => this?.summarizeJsonValue(v, depth + 1));
+        .map((v) => this.summarizeJsonValue(v, depth + 1));
       return { _type: "array", _count: val.length, sample: sample };
     }
     if (val !== null && typeof val === "object") {
-      const keys = Object?.keys(val);
+      const keys = Object.keys(val);
       const out: Record<string, any> = {};
       for (const k of keys?.slice(0, 32)) {
-        out[k] = this?.summarizeJsonValue(val[k], depth + 1);
+        out[k] = this.summarizeJsonValue(val[k], depth + 1);
       }
       if (keys?.length > 32)
         out["_truncated"] = `+${keys?.length - 32} more keys`;
@@ -118,7 +118,7 @@ export class SemanticArchiver {
       sampleLines: samples,
     };
 
-    const out = Buffer?.from(JSON?.stringify(summary, null, 2), "utf8");
+    const out = Buffer?.from(JSON.stringify(summary, null, 2), "utf8");
     return {
       data: out,
       originalBytes: data.length,
@@ -148,7 +148,7 @@ export class SemanticArchiver {
     }
 
     const aggregated: Record<string, any> = {};
-    for (const [name, values] of Object?.entries(series)) {
+    for (const [name, values] of Object.entries(series)) {
       const sorted = [...values].sort((a, b) => a - b);
       const sum = values?.reduce((a, b) => a + b, 0);
       aggregated[name] = {
@@ -156,15 +156,15 @@ export class SemanticArchiver {
         min: sorted[0],
         max: sorted[sorted?.length - 1],
         mean: sum / values?.length,
-        p50: sorted[Math?.floor(values?.length * 0.5)],
-        p95: sorted[Math?.floor(values?.length * 0.95)],
-        p99: sorted[Math?.floor(values?.length * 0.99)],
+        p50: sorted[Math.floor(values?.length * 0.5)],
+        p95: sorted[Math.floor(values?.length * 0.95)],
+        p99: sorted[Math.floor(values?.length * 0.99)],
         last: values[values?.length - 1],
       };
     }
 
     const out = Buffer?.from(
-      JSON?.stringify({ _type: "metrics-archive", series: aggregated }, null, 2),
+      JSON.stringify({ _type: "metrics-archive", series: aggregated }, null, 2),
       "utf8",
     );
     return {
@@ -190,7 +190,7 @@ export class SemanticArchiver {
       if (clean.length > 3) wordFreq[clean] = (wordFreq[clean] ?? 0) + 1;
     }
 
-    const topWords = Object?.entries(wordFreq)
+    const topWords = Object.entries(wordFreq)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 50)
       .map(([w, c]) => ({ word: w, count: c }));
@@ -209,7 +209,7 @@ export class SemanticArchiver {
       excerpt,
     };
 
-    const out = Buffer?.from(JSON?.stringify(summary, null, 2), "utf8");
+    const out = Buffer?.from(JSON.stringify(summary, null, 2), "utf8");
     return {
       data: out,
       originalBytes: data.length,

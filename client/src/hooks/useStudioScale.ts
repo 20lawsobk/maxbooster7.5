@@ -25,7 +25,7 @@ export function useStudioScale() {
       for (const entry of entries) {
         const width = entry?.contentRect.width;
         const raw = width / DESIGN_BASELINE;
-        setScale(Math?.min(1, Math?.max(0.5, raw)));
+        setScale(Math.min(1, Math.max(0.5, raw)));
       }
     });
 
@@ -33,19 +33,19 @@ export function useStudioScale() {
     return () => observer?.disconnect();
   }, []);
 
-  const trackHeaderWidth = Math?.round(BASE_SIZES?.trackHeaderW * scale);
-  const aiPanelWidth = Math?.round(BASE_SIZES?.aiPanelW * scale);
+  const trackHeaderWidth = Math.round(BASE_SIZES?.trackHeaderW * scale);
+  const aiPanelWidth = Math.round(BASE_SIZES?.aiPanelW * scale);
 
   const cssVars = useMemo(
     () => ({
-      "--track-header-w": `${Math?.round(BASE_SIZES?.trackHeaderW * scale)}px`,
-      "--transport-h": `${Math?.round(BASE_SIZES?.transportH * scale)}px`,
-      "--toolbar-h": `${Math?.round(BASE_SIZES?.toolbarH * scale)}px`,
-      "--inspector-w": `${Math?.round(BASE_SIZES?.inspectorW * scale)}px`,
-      "--ai-panel-w": `${Math?.round(BASE_SIZES?.aiPanelW * scale)}px`,
-      "--editor-h": `${Math?.round(BASE_SIZES?.editorH * scale)}px`,
-      "--mixer-h": `${Math?.round(BASE_SIZES?.mixerH * scale)}px`,
-      "--strip-w": `${Math?.round(BASE_SIZES?.stripW * scale)}px`,
+      "--track-header-w": `${Math.round(BASE_SIZES?.trackHeaderW * scale)}px`,
+      "--transport-h": `${Math.round(BASE_SIZES?.transportH * scale)}px`,
+      "--toolbar-h": `${Math.round(BASE_SIZES?.toolbarH * scale)}px`,
+      "--inspector-w": `${Math.round(BASE_SIZES?.inspectorW * scale)}px`,
+      "--ai-panel-w": `${Math.round(BASE_SIZES?.aiPanelW * scale)}px`,
+      "--editor-h": `${Math.round(BASE_SIZES?.editorH * scale)}px`,
+      "--mixer-h": `${Math.round(BASE_SIZES?.mixerH * scale)}px`,
+      "--strip-w": `${Math.round(BASE_SIZES?.stripW * scale)}px`,
       "--ui-scale": `${scale}`,
     }),
     [scale],

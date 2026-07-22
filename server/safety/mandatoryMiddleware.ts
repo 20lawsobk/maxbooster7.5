@@ -40,16 +40,16 @@ function sanitizeObject(
 ): Record<string, unknown> {
   if (depth > 10) return obj; // Prevent stack overflow
   if (obj === null || typeof obj !== "object") return obj;
-  if (Array?.isArray(obj)) {
+  if (Array.isArray(obj)) {
     return obj?.map((item) => sanitizeObject(item, depth + 1));
   }
 
   const dangerous = ["__proto__", "constructor", "prototype"];
   const sanitized: Record<string, unknown> = {};
 
-  for (const key of Object?.keys(obj)) {
+  for (const key of Object.keys(obj)) {
     if (dangerous?.includes(key)) {
-      logger?.warn(`[Security] Blocked prototype pollution attempt: ${key}`);
+      logger.warn(`[Security] Blocked prototype pollution attempt: ${key}`);
       continue;
     }
     sanitized[key] = sanitizeObject(obj[key], depth + 1);
@@ -68,24 +68,24 @@ export function prototypePollutionMiddleware(
   next: NextFunction,
 ): void {
   try {
-    if (req?.body && typeof req?.body === "object") {
-      req.body = sanitizeObject(req?.body);
+    if (req.body && typeof req.body === "object") {
+      req.body = sanitizeObject(req.body);
     }
-    if (req?.query && typeof req?.query === "object") {
-      const sanitized = sanitizeObject(req?.query);
-      for (const key of Object?.keys(req?.query)) {
+    if (req.query && typeof req.query === "object") {
+      const sanitized = sanitizeObject(req.query);
+      for (const key of Object.keys(req.query)) {
         if (!(key in sanitized))
-          delete (req?.query as Record<string, unknown>)[key];
+          delete (req.query as Record<string, unknown>)[key];
       }
-      Object?.assign(req?.query, sanitized);
+      Object.assign(req.query, sanitized);
     }
-    if (req?.params && typeof req?.params === "object") {
-      const sanitizedParams = sanitizeObject(req?.params);
-      Object?.assign(req?.params, sanitizedParams);
+    if (req.params && typeof req.params === "object") {
+      const sanitizedParams = sanitizeObject(req.params);
+      Object.assign(req.params, sanitizedParams);
     }
     next();
   } catch (error) {
-    logger?.warn({ err: error }, "Prototype pollution protection error:");
+    logger.warn({ err: error }, "Prototype pollution protection error:");
     next();
   }
 }
@@ -113,7 +113,7 @@ export function globalErrorHandler(
 
   if (err?.name === "ZodError") {
     statusCode = 400;
-    const issues = Array?.isArray((err as Record<string, unknown>).issues)
+    const issues = Array.isArray((err as Record<string, unknown>).issues)
       ? (err as Record<string, unknown>).issues
       : [];
     const firstIssue = issues[0];
@@ -130,14 +130,14 @@ export function globalErrorHandler(
   }
 
   if (statusCode >= 500) {
-    logger?.warn(
+    logger.warn(
       {
         requestId,
         error: err.message,
         stack: err.stack,
         path: req.path,
         method: req.method,
-        userId: (req?.user as Record<string, unknown>)?.id,
+        userId: (req.user as Record<string, unknown>)?.id,
       },
       `[${requestId}] Unhandled error: ${err?.message}`,
     );
@@ -145,9 +145,9 @@ export function globalErrorHandler(
       if (Sentry) {
         Sentry?.withScope((scope) => {
           scope?.setTag("requestId", requestId);
-          scope?.setTag("path", req?.path);
-          scope?.setTag("method", req?.method);
-          scope?.setUser({ id: (req?.user as Record<string, unknown>)?.id });
+          scope?.setTag("path", req.path);
+          scope?.setTag("method", req.method);
+          scope?.setUser({ id: (req.user as Record<string, unknown>)?.id });
           Sentry!.captureException(err);
         });
       }
@@ -344,7 +344,7 @@ export function applyMandatoryMiddleware(
           if (allowed) {
             callback(null, true);
           } else {
-            logger?.warn(`[CORS] Blocked origin in production: ${origin}`);
+            logger.warn(`[CORS] Blocked origin in production: ${origin}`);
             callback(new Error("Origin not allowed by CORS"));
           }
         },
@@ -366,10 +366,10 @@ export function applyMandatoryMiddleware(
       }),
     );
     loadedMiddleware?.push("cors");
-    logger?.info("   ✓ CORS middleware (production allowlist enforced)");
+    logger.info("   ✓ CORS middleware (production allowlist enforced)");
   } catch (error) {
     failedMiddleware?.push("cors");
-    logger?.warn({ err: error }, "   ✗ CORS middleware FAILED");
+    logger.warn({ err: error }, "   ✗ CORS middleware FAILED");
     throw new Error("Failed to load mandatory CORS middleware");
   }
 
@@ -377,10 +377,10 @@ export function applyMandatoryMiddleware(
   try {
     app?.use(prototypePollutionMiddleware);
     loadedMiddleware?.push("prototypePollution");
-    logger?.info("   ✓ Prototype pollution protection");
+    logger.info("   ✓ Prototype pollution protection");
   } catch (error) {
     failedMiddleware?.push("prototypePollution");
-    logger?.warn({ err: error }, "   ✗ Prototype pollution protection FAILED");
+    logger.warn({ err: error }, "   ✗ Prototype pollution protection FAILED");
     throw new Error("Failed to load mandatory prototype pollution middleware");
   }
 
@@ -388,8 +388,8 @@ export function applyMandatoryMiddleware(
   try {
     const isDev = !isProductionEnv();
     const isLoadTest =
-      process?.env.LOAD_TEST_MODE === "true" ||
-      process?.env.DISABLE_RATE_LIMIT === "true";
+      process.env.LOAD_TEST_MODE === "true" ||
+      process.env.DISABLE_RATE_LIMIT === "true";
     const maxRequests = isLoadTest ? 1_000_000 : isDev ? 100_000 : 1_000;
     const windowMs = 15 * 60 * 1000;
 
@@ -406,17 +406,17 @@ export function applyMandatoryMiddleware(
         maxRequests,
         skip: (req) => {
           if (isDev || isLoadTest) return true;
-          const ip = req?.ip || req?.socket?.remoteAddress || "";
+          const ip = req.ip || req.socket?.remoteAddress || "";
           if (isInternalIp(ip)) return true;
           return (
-            req?.path === "/health" ||
-            req?.path === "/api/health" ||
-            req?.path === "/api/version"
+            req.path === "/health" ||
+            req.path === "/api/health" ||
+            req.path === "/api/version"
           );
         },
         keyGenerator: (req) => {
           const userId = (req as Record<string, unknown>).user?.id;
-          const ip = req?.ip || req?.socket?.remoteAddress || "unknown";
+          const ip = req.ip || req.socket?.remoteAddress || "unknown";
           return `mandatory:${userId ?? ip}`;
         },
       },
@@ -425,12 +425,12 @@ export function applyMandatoryMiddleware(
     app?.use(limiter?.middleware());
     loadedMiddleware?.push("rateLimit");
     const backend = redisClient ? "Redis" : "in-memory";
-    logger?.info(
+    logger.info(
       `   ✓ Rate limiting middleware (max: ${maxRequests}/15min, backend: ${backend}, skip: ${isDev || isLoadTest ? "dev/test mode" : "disabled"})`,
     );
   } catch (error) {
     failedMiddleware?.push("rateLimit");
-    logger?.warn({ err: error }, "   ✗ Rate limiting middleware FAILED");
+    logger.warn({ err: error }, "   ✗ Rate limiting middleware FAILED");
     throw new Error("Failed to load mandatory rate limiting middleware");
   }
 
@@ -438,8 +438,8 @@ export function applyMandatoryMiddleware(
   try {
     const isDev = !isProductionEnv();
     const isLoadTest =
-      process?.env.LOAD_TEST_MODE === "true" ||
-      process?.env.DISABLE_RATE_LIMIT === "true";
+      process.env.LOAD_TEST_MODE === "true" ||
+      process.env.DISABLE_RATE_LIMIT === "true";
     const maxRequests = isDev || isLoadTest ? 100_000 : 200;
     const windowMs = 15 * 60 * 1000;
 
@@ -456,7 +456,7 @@ export function applyMandatoryMiddleware(
         maxRequests,
         skip: (req) => {
           if (isDev || isLoadTest) return true;
-          const ip = req?.ip || req?.socket?.remoteAddress || "";
+          const ip = req.ip || req.socket?.remoteAddress || "";
           if (isInternalIp(ip)) return true;
           // Session maintenance endpoints are exempt — they have their own rate limiter
           // and are required for every page load (not actual login attempts)
@@ -465,11 +465,11 @@ export function applyMandatoryMiddleware(
             "/api/auth/me",
             "/api/auth/heartbeat",
           ];
-          if (sessionPaths?.includes(req?.path)) return true;
+          if (sessionPaths?.includes(req.path)) return true;
           return false;
         },
         keyGenerator: (req) => {
-          const ip = req?.ip || req?.socket?.remoteAddress || "unknown";
+          const ip = req.ip || req.socket?.remoteAddress || "unknown";
           return `strict:${ip}`;
         },
       },
@@ -478,12 +478,12 @@ export function applyMandatoryMiddleware(
     app?.use("/api/auth", strictLimiter?.middleware());
     app?.use("/api/kill-switch", strictLimiter?.middleware());
     loadedMiddleware?.push("strictRateLimit");
-    logger?.info(
+    logger.info(
       `   ✓ Strict rate limiting for auth endpoints (skip: ${isDev || isLoadTest ? "dev/test mode" : "disabled"})`,
     );
   } catch (error) {
     failedMiddleware?.push("strictRateLimit");
-    logger?.warn({ err: error }, "   ✗ Strict rate limiting FAILED");
+    logger.warn({ err: error }, "   ✗ Strict rate limiting FAILED");
     throw new Error("Failed to load mandatory strict rate limiting middleware");
   }
 
@@ -491,20 +491,20 @@ export function applyMandatoryMiddleware(
   try {
     app?.use(selfHealingSecurityMiddleware);
     loadedMiddleware?.push("selfHealingSecurity");
-    logger?.info("   ✓ Self-Healing Security Engine (10x healing speed)");
+    logger.info("   ✓ Self-Healing Security Engine (10x healing speed)");
   } catch (error) {
     failedMiddleware?.push("selfHealingSecurity");
-    logger?.warn({ err: error }, "   ✗ Self-Healing Security Engine FAILED");
+    logger.warn({ err: error }, "   ✗ Self-Healing Security Engine FAILED");
     // Non-critical - log but don't throw
-    logger?.warn("   ⚠️ Self-healing security running in degraded mode");
+    logger.warn("   ⚠️ Self-healing security running in degraded mode");
   }
 
-  logger?.info("────────────────────────────────────────────────────────");
-  logger?.info(
+  logger.info("────────────────────────────────────────────────────────");
+  logger.info(
     `   Loaded: ${loadedMiddleware?.length} | Failed: ${failedMiddleware?.length}`,
   );
-  logger?.info("   ✅ All mandatory middleware loaded successfully");
-  logger?.info("════════════════════════════════════════════════════════");
+  logger.info("   ✅ All mandatory middleware loaded successfully");
+  logger.info("════════════════════════════════════════════════════════");
 
   return {
     success: failedMiddleware.length === 0,

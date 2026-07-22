@@ -134,7 +134,7 @@ export function useGlobalUndo(
           isDestructive: action.metadata.isDestructive,
         });
       } catch (error) {
-        logger?.warn("Failed to sync action to backend:", error);
+        logger.warn("Failed to sync action to backend:", error);
       }
     },
     [syncToBackend],
@@ -202,7 +202,7 @@ export function useGlobalUndo(
         const data = await response?.json();
         return data?.restorePointId;
       } catch (error) {
-        logger?.error("Failed to create restore point:", error);
+        logger.error("Failed to create restore point:", error);
         throw error;
       }
     },
@@ -215,7 +215,7 @@ export function useGlobalUndo(
       const data = await response?.json();
       return data?.restorePoints || [];
     } catch (error) {
-      logger?.error("Failed to get restore points:", error);
+      logger.error("Failed to get restore points:", error);
       return [];
     }
   }, []);
@@ -224,7 +224,7 @@ export function useGlobalUndo(
     try {
       await apiRequest("POST", `/api/undo/restore/${pointId}`);
     } catch (error) {
-      logger?.error("Failed to restore to point:", error);
+      logger.error("Failed to restore to point:", error);
       throw error;
     }
   }, []);
@@ -234,7 +234,7 @@ export function useGlobalUndo(
       try {
         await apiRequest("DELETE", `/api/undo/restore-points/${pointId}`);
       } catch (error) {
-        logger?.error("Failed to delete restore point:", error);
+        logger.error("Failed to delete restore point:", error);
         throw error;
       }
     },
@@ -264,7 +264,7 @@ export function useGlobalUndo(
           await undo();
         }
       } else if (stepsToUndo < 0) {
-        const stepsToRedo = Math?.abs(stepsToUndo);
+        const stepsToRedo = Math.abs(stepsToUndo);
         for (let i = 0; i < stepsToRedo; i++) {
           await redo();
         }

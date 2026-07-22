@@ -57,7 +57,7 @@ export async function generateApiKey(
       })
       .returning();
 
-    logger?.info(
+    logger.info(
       `🔑 Generated API key for user ${userId}: ${keyName} (${tier} tier, ${rateLimit} req/sec)`,
     );
 
@@ -270,7 +270,7 @@ export async function trackApiUsage(
     const responseTime = Date.now() - startTime;
 
     // Track usage asynchronously (don't wait)
-    if (req?.apiKey) {
+    if (req.apiKey) {
       trackUsageRecord({
         apiKeyId: req.apiKey.id,
         endpoint: req.path,
@@ -281,9 +281,9 @@ export async function trackApiUsage(
           userAgent: req.headers["user-agent"],
           ip: req.ip,
           queryParams:
-            Object?.keys(req?.query).length > 0 ? req?.query : undefined,
+            Object.keys(req.query).length > 0 ? req.query : undefined,
         },
-      }).catch((err) => logger?.warn({ err: err }, "Error tracking API usage:"));
+      }).catch((err) => logger.warn({ err: err }, "Error tracking API usage:"));
     }
 
     return originalSend?.call(this, data);
@@ -314,7 +314,7 @@ async function trackUsageRecord(usage: {
       metadata: usage.metadata,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Failed to track API usage:");
+    logger.warn({ err: error }, "Failed to track API usage:");
   }
 }
 
@@ -331,7 +331,7 @@ export async function getApiKeyById(keyId: string) {
 
     return key;
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching API key:");
+    logger.warn({ err: error }, "Error fetching API key:");
     throw new Error("Failed to fetch API key");
   }
 }
@@ -360,7 +360,7 @@ export async function listApiKeys(userId: string) {
 
     return keys;
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error listing API keys:");
+    logger.warn({ err: error }, "Error listing API keys:");
     throw new Error("Failed to list API keys");
   }
 }
@@ -380,10 +380,10 @@ export async function revokeApiKey(keyId: string, userId: string) {
       throw new Error("API key not found or unauthorized");
     }
 
-    logger?.info(`🔒 Revoked API key ${keyId} for user ${userId}`);
+    logger.info(`🔒 Revoked API key ${keyId} for user ${userId}`);
     return updated;
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error revoking API key:");
+    logger.warn({ err: error }, "Error revoking API key:");
     throw new Error("Failed to revoke API key");
   }
 }
@@ -454,7 +454,7 @@ export async function getApiKeyUsageStats(apiKeyId: string, days: number = 30) {
       byStatusCode,
     };
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching API usage stats:");
+    logger.warn({ err: error }, "Error fetching API usage stats:");
     throw new Error("Failed to fetch API usage statistics");
   }
 }
@@ -482,7 +482,7 @@ export async function getUserApiUsageStats(userId: string, days: number = 30) {
 
     return usageStats;
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching user API usage stats:");
+    logger.warn({ err: error }, "Error fetching user API usage stats:");
     throw new Error("Failed to fetch user API usage statistics");
   }
 }

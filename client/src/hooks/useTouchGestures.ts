@@ -60,8 +60,8 @@ export function useSwipeGesture<T extends HTMLElement = HTMLElement>(
         return;
       }
 
-      const absX = Math?.abs(deltaX);
-      const absY = Math?.abs(deltaY);
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
 
       let direction: SwipeDirection = null;
 
@@ -133,8 +133,8 @@ export function usePullToRefresh<T extends HTMLElement = HTMLElement>(
       if (!isPulling || isRefreshing) return;
 
       currentY.current = e?.touches[0].clientY;
-      const distance = Math?.max(0, currentY?.current - startY?.current);
-      const dampedDistance = Math?.min(distance * 0.5, threshold * 1.5);
+      const distance = Math.max(0, currentY?.current - startY?.current);
+      const dampedDistance = Math.min(distance * 0.5, threshold * 1.5);
       setPullDistance(dampedDistance);
     };
 
@@ -269,7 +269,7 @@ export function usePinchZoom<T extends HTMLElement = HTMLElement>(
       if (touches?.length < 2) return 0;
       const dx = touches[0].clientX - touches[1].clientX;
       const dy = touches[0].clientY - touches[1].clientY;
-      return Math?.sqrt(dx * dx + dy * dy);
+      return Math.sqrt(dx * dx + dy * dy);
     };
 
     const handleTouchStart = (e: TouchEvent) => {
@@ -283,9 +283,9 @@ export function usePinchZoom<T extends HTMLElement = HTMLElement>(
       if (e?.touches.length === 2 && initialDistance?.current > 0) {
         const currentDistance = getDistance(e?.touches);
         const scaleChange = currentDistance / initialDistance?.current;
-        const newScale = Math?.min(
+        const newScale = Math.min(
           maxScale,
-          Math?.max(minScale, initialScale?.current * scaleChange),
+          Math.max(minScale, initialScale?.current * scaleChange),
         );
         setScale(newScale);
         onZoomChange?.(newScale);

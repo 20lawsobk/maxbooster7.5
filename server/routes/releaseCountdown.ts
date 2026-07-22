@@ -38,10 +38,10 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const { status } = req?.query;
+      const userId = req.user!.id;
+      const { status } = req.query;
 
-      logger?.info(`Fetching countdowns for user ${userId}`);
+      logger.info(`Fetching countdowns for user ${userId}`);
 
       let countdowns;
       if (status === "active") {
@@ -69,13 +69,13 @@ router?.get(
         };
       });
 
-      res?.json({
+      res.json({
         success: true,
         data: countdownsWithProgress,
       });
     } catch (error) {
-      logger?.warn("Error in get countdowns:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in get countdowns:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -85,10 +85,10 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const data = createCountdownSchema?.parse(req?.body);
+      const userId = req.user!.id;
+      const data = createCountdownSchema?.parse(req.body);
 
-      logger?.info(`Creating countdown for user ${userId}: ${data?.title}`);
+      logger.info(`Creating countdown for user ${userId}: ${data?.title}`);
 
       const countdown = await releaseCountdownService?.createCountdown(
         userId,
@@ -96,7 +96,7 @@ router?.post(
       );
       const tasks = await releaseCountdownService?.getTasks(countdown?.id);
 
-      res?.status(201).json({
+      res.status(201).json({
         success: true,
         data: {
           countdown,
@@ -104,8 +104,8 @@ router?.post(
         },
       });
     } catch (error) {
-      logger?.warn("Error in create countdown:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in create countdown:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -115,10 +115,10 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const countdownId = req?.params.id;
+      const userId = req.user!.id;
+      const countdownId = req.params.id;
 
-      logger?.info(`Fetching countdown ${countdownId} for user ${userId}`);
+      logger.info(`Fetching countdown ${countdownId} for user ${userId}`);
 
       const result = await releaseCountdownService?.getCountdownWithTasks(
         countdownId,
@@ -126,7 +126,7 @@ router?.get(
       );
 
       if (!result) {
-        return res?.status(404).json({
+        return res.status(404).json({
           success: false,
           message: "Countdown not found",
         });
@@ -139,7 +139,7 @@ router?.get(
       const analytics =
         await releaseCountdownService?.getAnalyticsSummary(countdownId);
 
-      res?.json({
+      res.json({
         success: true,
         data: {
           ...result?.countdown,
@@ -150,8 +150,8 @@ router?.get(
         },
       });
     } catch (error) {
-      logger?.warn("Error in get countdown by id:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in get countdown by id:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -161,24 +161,24 @@ router?.patch(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const countdownId = req?.params.id;
+      const userId = req.user!.id;
+      const countdownId = req.params.id;
 
-      logger?.info(`Updating countdown ${countdownId} for user ${userId}`);
+      logger.info(`Updating countdown ${countdownId} for user ${userId}`);
 
       const countdown = await releaseCountdownService?.updateCountdown(
         countdownId,
         userId,
-        req?.body,
+        req.body,
       );
 
-      res?.json({
+      res.json({
         success: true,
         data: countdown,
       });
     } catch (error) {
-      logger?.warn("Error in update countdown:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in update countdown:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -188,8 +188,8 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const countdownId = req?.params.id;
+      const userId = req.user!.id;
+      const countdownId = req.params.id;
       const ownership = await releaseCountdownService?.getCountdownWithTasks(
         countdownId,
         userId,
@@ -198,19 +198,19 @@ router?.post(
         return res
           .status(404)
           .json({ success: false, message: "Countdown not found" });
-      const data = addTaskSchema?.parse(req?.body);
+      const data = addTaskSchema?.parse(req.body);
 
-      logger?.info(`Adding task to countdown ${countdownId}`);
+      logger.info(`Adding task to countdown ${countdownId}`);
 
       const task = await releaseCountdownService?.addTask(countdownId, data);
 
-      res?.status(201).json({
+      res.status(201).json({
         success: true,
         data: task,
       });
     } catch (error) {
-      logger?.warn("Error in add task:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in add task:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -220,8 +220,8 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const countdownId = req?.params.id;
+      const userId = req.user!.id;
+      const countdownId = req.params.id;
       const ownership = await releaseCountdownService?.getCountdownWithTasks(
         countdownId,
         userId,
@@ -231,12 +231,12 @@ router?.get(
           .status(404)
           .json({ success: false, message: "Countdown not found" });
 
-      logger?.info(`Fetching tasks for countdown ${countdownId}`);
+      logger.info(`Fetching tasks for countdown ${countdownId}`);
 
       const tasks = await releaseCountdownService?.getTasks(countdownId);
       const progress = releaseCountdownService?.calculateProgress(tasks);
 
-      res?.json({
+      res.json({
         success: true,
         data: tasks,
         meta: {
@@ -244,8 +244,8 @@ router?.get(
         },
       });
     } catch (error) {
-      logger?.warn("Error in get tasks:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in get tasks:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -255,9 +255,9 @@ router?.patch(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const countdownId = req?.params.id;
-      const taskId = req?.params.taskId;
+      const userId = req.user!.id;
+      const countdownId = req.params.id;
+      const taskId = req.params.taskId;
       const ownership = await releaseCountdownService?.getCountdownWithTasks(
         countdownId,
         userId,
@@ -266,9 +266,9 @@ router?.patch(
         return res
           .status(404)
           .json({ success: false, message: "Countdown not found" });
-      const data = updateTaskSchema?.parse(req?.body);
+      const data = updateTaskSchema?.parse(req.body);
 
-      logger?.info(`Updating task ${taskId} for countdown ${countdownId}`);
+      logger.info(`Updating task ${taskId} for countdown ${countdownId}`);
 
       let task;
       if (data?.completed !== undefined) {
@@ -287,13 +287,13 @@ router?.patch(
         task = await releaseCountdownService?.completeTask(countdownId, taskId);
       }
 
-      res?.json({
+      res.json({
         success: true,
         data: task,
       });
     } catch (error) {
-      logger?.warn("Error in update task:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in update task:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -303,8 +303,8 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const countdownId = req?.params.id;
+      const userId = req.user!.id;
+      const countdownId = req.params.id;
       const ownership = await releaseCountdownService?.getCountdownWithTasks(
         countdownId,
         userId,
@@ -314,18 +314,18 @@ router?.get(
           .status(404)
           .json({ success: false, message: "Countdown not found" });
 
-      logger?.info(`Fetching analytics for countdown ${countdownId}`);
+      logger.info(`Fetching analytics for countdown ${countdownId}`);
 
       const analytics =
         await releaseCountdownService?.getAnalyticsSummary(countdownId);
 
-      res?.json({
+      res.json({
         success: true,
         data: analytics,
       });
     } catch (error) {
-      logger?.warn("Error in get analytics:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in get analytics:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -335,8 +335,8 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const countdownId = req?.params.id;
+      const userId = req.user!.id;
+      const countdownId = req.params.id;
       const ownership = await releaseCountdownService?.getCountdownWithTasks(
         countdownId,
         userId,
@@ -345,9 +345,9 @@ router?.post(
         return res
           .status(404)
           .json({ success: false, message: "Countdown not found" });
-      const { presaves, shares, pageViews } = req?.body;
+      const { presaves, shares, pageViews } = req.body;
 
-      logger?.info(`Recording analytics for countdown ${countdownId}`);
+      logger.info(`Recording analytics for countdown ${countdownId}`);
 
       const analytics = await releaseCountdownService?.recordAnalytics(
         countdownId,
@@ -358,13 +358,13 @@ router?.post(
         },
       );
 
-      res?.json({
+      res.json({
         success: true,
         data: analytics,
       });
     } catch (error) {
-      logger?.warn("Error in track analytics:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in track analytics:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -374,8 +374,8 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const countdownId = req?.params.id;
+      const userId = req.user!.id;
+      const countdownId = req.params.id;
       const ownership = await releaseCountdownService?.getCountdownWithTasks(
         countdownId,
         userId,
@@ -384,9 +384,9 @@ router?.post(
         return res
           .status(404)
           .json({ success: false, message: "Countdown not found" });
-      const { genre, targetAudience } = req?.body;
+      const { genre, targetAudience } = req.body;
 
-      logger?.info(`Generating AI checklist for countdown ${countdownId}`);
+      logger.info(`Generating AI checklist for countdown ${countdownId}`);
 
       const tasks = await releaseCountdownService?.generateAISuggestedTasks(
         countdownId,
@@ -398,13 +398,13 @@ router?.post(
         tasks,
       );
 
-      res?.json({
+      res.json({
         success: true,
         data: addedTasks,
       });
     } catch (error) {
-      logger?.warn("Error in generate checklist:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in generate checklist:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );

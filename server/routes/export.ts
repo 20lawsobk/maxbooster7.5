@@ -139,7 +139,7 @@ function generateShortCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
   const bytes = randomBytes(8);
 
-  return Array?.from(bytes as Uint8Array)
+  return Array.from(bytes as Uint8Array)
     .map((b: number) => chars[b % chars?.length])
     .join("");
 }
@@ -188,7 +188,7 @@ function simulateExportProgress(jobId: string): void {
             : currentJob?.format === "flac"
               ? 88200
               : 20000;
-        currentJob.fileSize = Math?.floor(
+        currentJob.fileSize = Math.floor(
           trackCount * durationSec * qualityMultiplier,
         );
 
@@ -231,12 +231,12 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
 
-      const validation = audioExportSchema?.safeParse(req?.body);
+      const validation = audioExportSchema?.safeParse(req.body);
       if (!validation?.success) {
-        return res?.status(400).json({
+        return res.status(400).json({
           success: false,
           error: validation.error.message,
         });
@@ -278,14 +278,14 @@ router?.post(
           ? (options?.selectedTracks?.length || 8) * 15
           : 30;
 
-      res?.json({
+      res.json({
         success: true,
         jobId,
         estimatedTime: estimatedSeconds,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error starting audio export:");
-      res?.status(500).json({
+      logger.warn({ err: error }, "Error starting audio export:");
+      res.status(500).json({
         success: false,
         error: "Failed to start export",
       });
@@ -296,40 +296,40 @@ router?.post(
 // Get export job status
 router?.get("/jobs/:jobId", requireAuth, async (req: Request, res: Response) => {
   try {
-    const { jobId } = req?.params;
-    const userId = req?.user!.id;
+    const { jobId } = req.params;
+    const userId = req.user!.id;
 
     const job = exportJobs?.get(jobId);
     if (!job) {
-      return res?.status(404).json({ error: "Export job not found" });
+      return res.status(404).json({ error: "Export job not found" });
     }
 
     if (job?.userId !== userId) {
-      return res?.status(403).json({ error: "Access denied" });
+      return res.status(403).json({ error: "Access denied" });
     }
 
-    res?.json(job);
+    res.json(job);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching export job:");
-    res?.status(500).json({ error: "Failed to fetch export job" });
+    logger.warn({ err: error }, "Error fetching export job:");
+    res.status(500).json({ error: "Failed to fetch export job" });
   }
 });
 
 // Get all active export jobs for user
 router?.get("/jobs", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
-    const userJobs = Array?.from(exportJobs?.values())
+    const userJobs = Array.from(exportJobs?.values())
       .filter((job) => job?.userId === userId)
       .sort(
         (a, b) => (b?.startTime?.getTime() || 0) - (a?.startTime?.getTime() || 0),
       );
 
-    res?.json(userJobs);
+    res.json(userJobs);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching export jobs:");
-    res?.status(500).json({ error: "Failed to fetch export jobs" });
+    logger.warn({ err: error }, "Error fetching export jobs:");
+    res.status(500).json({ error: "Failed to fetch export jobs" });
   }
 });
 
@@ -339,27 +339,27 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { jobId } = req?.params;
-      const userId = req?.user!.id;
+      const { jobId } = req.params;
+      const userId = req.user!.id;
 
       const job = exportJobs?.get(jobId);
       if (!job) {
-        return res?.status(404).json({ error: "Export job not found" });
+        return res.status(404).json({ error: "Export job not found" });
       }
 
       if (job?.userId !== userId) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
       if (["complete", "failed", "cancelled"].includes(job?.status)) {
-        return res?.status(400).json({ error: "Cannot cancel completed job" });
+        return res.status(400).json({ error: "Cannot cancel completed job" });
       }
 
       job.status = "cancelled";
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error cancelling export job:");
-      res?.status(500).json({ error: "Failed to cancel export" });
+      logger.warn({ err: error }, "Error cancelling export job:");
+      res.status(500).json({ error: "Failed to cancel export" });
     }
   },
 );
@@ -370,20 +370,20 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { jobId } = req?.params;
-      const userId = req?.user!.id;
+      const { jobId } = req.params;
+      const userId = req.user!.id;
 
       const job = exportJobs?.get(jobId);
       if (!job) {
-        return res?.status(404).json({ error: "Export job not found" });
+        return res.status(404).json({ error: "Export job not found" });
       }
 
       if (job?.userId !== userId) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
       if (job?.status !== "failed") {
-        return res?.status(400).json({ error: "Can only retry failed jobs" });
+        return res.status(400).json({ error: "Can only retry failed jobs" });
       }
 
       job.status = "queued";
@@ -400,10 +400,10 @@ router?.post(
         }
       }, 500);
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error retrying export job:");
-      res?.status(500).json({ error: "Failed to retry export" });
+      logger.warn({ err: error }, "Error retrying export job:");
+      res.status(500).json({ error: "Failed to retry export" });
     }
   },
 );
@@ -415,11 +415,11 @@ router?.post(
 // Start data export
 router?.post("/data", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
-    const validation = dataExportSchema?.safeParse(req?.body);
+    const validation = dataExportSchema?.safeParse(req.body);
     if (!validation?.success) {
-      return res?.status(400).json({
+      return res.status(400).json({
         success: false,
         error: validation.error.message,
       });
@@ -461,14 +461,14 @@ router?.post("/data", requireAuth, async (req: Request, res: Response) => {
 
     const estimatedSeconds = options?.category === "backup" ? 120 : 30;
 
-    res?.json({
+    res.json({
       success: true,
       jobId,
       estimatedTime: estimatedSeconds,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error starting data export:");
-    res?.status(500).json({
+    logger.warn({ err: error }, "Error starting data export:");
+    res.status(500).json({
       success: false,
       error: "Failed to start export",
     });
@@ -482,8 +482,8 @@ router?.post("/data", requireAuth, async (req: Request, res: Response) => {
 // Get export history
 router?.get("/history", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
-    const { type, status, limit = "50", offset = "0" } = req?.query;
+    const userId = req.user!.id;
+    const { type, status, limit = "50", offset = "0" } = req.query;
 
     let filtered = exportHistory?.filter((item) => item?.userId === userId);
 
@@ -495,21 +495,21 @@ router?.get("/history", requireAuth, async (req: Request, res: Response) => {
       filtered = filtered?.filter((item) => item?.status === status);
     }
 
-    const limitNum = Math?.min(
-      Math?.max(parseInt(limit as string) || 50, 1),
+    const limitNum = Math.min(
+      Math.max(parseInt(limit as string) || 50, 1),
       1000,
     );
-    const offsetNum = Math?.min(
-      Math?.max(parseInt(offset as string) || 0, 0),
+    const offsetNum = Math.min(
+      Math.max(parseInt(offset as string) || 0, 0),
       100_000,
     );
 
     const paginated = filtered?.slice(offsetNum, offsetNum + limitNum);
 
-    res?.json(paginated);
+    res.json(paginated);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching export history:");
-    res?.status(500).json({ error: "Failed to fetch export history" });
+    logger.warn({ err: error }, "Error fetching export history:");
+    res.status(500).json({ error: "Failed to fetch export history" });
   }
 });
 
@@ -519,21 +519,21 @@ router?.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { id } = req?.params;
-      const userId = req?.user!.id;
+      const { id } = req.params;
+      const userId = req.user!.id;
 
       const index = exportHistory?.findIndex(
         (item) => item?.id === id && item?.userId === userId,
       );
       if (index === -1) {
-        return res?.status(404).json({ error: "Export not found" });
+        return res.status(404).json({ error: "Export not found" });
       }
 
       exportHistory?.splice(index, 1);
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error deleting export history item:");
-      res?.status(500).json({ error: "Failed to delete export" });
+      logger.warn({ err: error }, "Error deleting export history item:");
+      res.status(500).json({ error: "Failed to delete export" });
     }
   },
 );
@@ -548,9 +548,9 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
-      const validation = shareLinkSchema?.safeParse(req?.body);
+      const validation = shareLinkSchema?.safeParse(req.body);
       if (!validation?.success) {
         return res
           .status(400)
@@ -582,10 +582,10 @@ router?.post(
         })
         .returning();
 
-      res?.json(inserted);
+      res.json(inserted);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error creating share link:");
-      res?.status(500).json({ error: "Failed to create share link" });
+      logger.warn({ err: error }, "Error creating share link:");
+      res.status(500).json({ error: "Failed to create share link" });
     }
   },
 );
@@ -593,7 +593,7 @@ router?.post(
 // Get all share links for user
 router?.get("/share-links", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
     const rows = await db
       .select()
@@ -602,17 +602,17 @@ router?.get("/share-links", requireAuth, async (req: Request, res: Response) => 
       .orderBy(desc(shareLinksTable?.createdAt))
       .limit(100);
 
-    res?.json(rows);
+    res.json(rows);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching share links:");
-    res?.status(500).json({ error: "Failed to fetch share links" });
+    logger.warn({ err: error }, "Error fetching share links:");
+    res.status(500).json({ error: "Failed to fetch share links" });
   }
 });
 
 // Get share link by short code (public)
 router?.get("/share/:shortCode", async (req: Request, res: Response) => {
   try {
-    const { shortCode } = req?.params;
+    const { shortCode } = req.params;
 
     const [link] = await db
       .select()
@@ -621,16 +621,16 @@ router?.get("/share/:shortCode", async (req: Request, res: Response) => {
       .limit(1);
 
     if (!link) {
-      return res?.status(404).json({ error: "Link not found" });
+      return res.status(404).json({ error: "Link not found" });
     }
     if (!link?.isActive) {
-      return res?.status(410).json({ error: "Link has been revoked" });
+      return res.status(410).json({ error: "Link has been revoked" });
     }
     if (link?.expiresAt && new Date(link?.expiresAt) < new Date()) {
-      return res?.status(410).json({ error: "Link has expired" });
+      return res.status(410).json({ error: "Link has expired" });
     }
     if (link?.maxDownloads && link?.downloadCount >= link?.maxDownloads) {
-      return res?.status(410).json({ error: "Download limit reached" });
+      return res.status(410).json({ error: "Download limit reached" });
     }
 
     await db
@@ -638,7 +638,7 @@ router?.get("/share/:shortCode", async (req: Request, res: Response) => {
       .set({ viewCount: link.viewCount + 1, lastAccessedAt: new Date() })
       .where(eq(shareLinksTable?.id, link?.id));
 
-    res?.json({
+    res.json({
       id: link.id,
       name: link.name,
       resourceType: link.resourceType,
@@ -649,16 +649,16 @@ router?.get("/share/:shortCode", async (req: Request, res: Response) => {
         : null,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching share link:");
-    res?.status(500).json({ error: "Failed to fetch share link" });
+    logger.warn({ err: error }, "Error fetching share link:");
+    res.status(500).json({ error: "Failed to fetch share link" });
   }
 });
 
 // Verify share link password
 router?.post("/share/:shortCode/verify", async (req: Request, res: Response) => {
   try {
-    const { shortCode } = req?.params;
-    const { email } = req?.body;
+    const { shortCode } = req.params;
+    const { email } = req.body;
 
     const [link] = await db
       .select()
@@ -672,12 +672,12 @@ router?.post("/share/:shortCode/verify", async (req: Request, res: Response) => 
       .limit(1);
 
     if (!link) {
-      return res?.status(404).json({ error: "Link not found" });
+      return res.status(404).json({ error: "Link not found" });
     }
 
     if (link?.requiresEmail) {
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        return res?.status(400).json({ error: "Valid email address required" });
+        return res.status(400).json({ error: "Valid email address required" });
       }
       const allowed = link?.allowedEmails as string[] | null;
       if (
@@ -685,17 +685,17 @@ router?.post("/share/:shortCode/verify", async (req: Request, res: Response) => 
         allowed?.length > 0 &&
         !allowed?.includes(email?.toLowerCase())
       ) {
-        return res?.status(403).json({ error: "Email not authorized" });
+        return res.status(403).json({ error: "Email not authorized" });
       }
     }
 
-    res?.json({
+    res.json({
       success: true,
       downloadUrl: `/api/export/share/${shortCode}/download`,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error verifying share link:");
-    res?.status(500).json({ error: "Failed to verify link" });
+    logger.warn({ err: error }, "Error verifying share link:");
+    res.status(500).json({ error: "Failed to verify link" });
   }
 });
 
@@ -704,7 +704,7 @@ router?.get(
   "/share/:shortCode/download",
   async (req: Request, res: Response) => {
     try {
-      const { shortCode } = req?.params;
+      const { shortCode } = req.params;
 
       const [link] = await db
         .select()
@@ -718,13 +718,13 @@ router?.get(
         .limit(1);
 
       if (!link) {
-        return res?.status(404).json({ error: "Link not found" });
+        return res.status(404).json({ error: "Link not found" });
       }
       if (link?.expiresAt && new Date(link?.expiresAt) < new Date()) {
-        return res?.status(410).json({ error: "Link has expired" });
+        return res.status(410).json({ error: "Link has expired" });
       }
       if (link?.maxDownloads && link?.downloadCount >= link?.maxDownloads) {
-        return res?.status(410).json({ error: "Download limit reached" });
+        return res.status(410).json({ error: "Download limit reached" });
       }
 
       await db
@@ -735,14 +735,14 @@ router?.get(
         })
         .where(eq(shareLinksTable?.id, link?.id));
 
-      res?.json({
+      res.json({
         success: true,
         message: "Download initiated",
         fileName: link.name,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error downloading via share link:");
-      res?.status(500).json({ error: "Failed to download" });
+      logger.warn({ err: error }, "Error downloading via share link:");
+      res.status(500).json({ error: "Failed to download" });
     }
   },
 );
@@ -753,8 +753,8 @@ router?.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { id } = req?.params;
-      const userId = req?.user!.id;
+      const { id } = req.params;
+      const userId = req.user!.id;
 
       const [link] = await db
         .select({ id: shareLinksTable.id, userId: shareLinksTable.userId })
@@ -763,10 +763,10 @@ router?.delete(
         .limit(1);
 
       if (!link) {
-        return res?.status(404).json({ error: "Link not found" });
+        return res.status(404).json({ error: "Link not found" });
       }
       if (link?.userId !== userId) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
       await db
@@ -774,10 +774,10 @@ router?.delete(
         .set({ isActive: false })
         .where(eq(shareLinksTable?.id, id));
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error revoking share link:");
-      res?.status(500).json({ error: "Failed to revoke link" });
+      logger.warn({ err: error }, "Error revoking share link:");
+      res.status(500).json({ error: "Failed to revoke link" });
     }
   },
 );
@@ -788,9 +788,9 @@ router?.patch(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { id } = req?.params;
-      const userId = req?.user!.id;
-      const updates = req?.body;
+      const { id } = req.params;
+      const userId = req.user!.id;
+      const updates = req.body;
 
       const [link] = await db
         .select({ id: shareLinksTable.id, userId: shareLinksTable.userId })
@@ -799,10 +799,10 @@ router?.patch(
         .limit(1);
 
       if (!link) {
-        return res?.status(404).json({ error: "Link not found" });
+        return res.status(404).json({ error: "Link not found" });
       }
       if (link?.userId !== userId) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
       const patch: Record<string, unknown> = {};
@@ -822,10 +822,10 @@ router?.patch(
         )
         .returning();
 
-      res?.json(updated);
+      res.json(updated);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error updating share link:");
-      res?.status(500).json({ error: "Failed to update link" });
+      logger.warn({ err: error }, "Error updating share link:");
+      res.status(500).json({ error: "Failed to update link" });
     }
   },
 );
@@ -840,20 +840,20 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { jobId } = req?.params;
-      const userId = req?.user!.id;
+      const { jobId } = req.params;
+      const userId = req.user!.id;
 
       const job = exportJobs?.get(jobId);
       if (!job) {
-        return res?.status(404).json({ error: "Export not found" });
+        return res.status(404).json({ error: "Export not found" });
       }
 
       if (job?.userId !== userId) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
       if (job?.status !== "complete") {
-        return res?.status(400).json({ error: "Export not ready" });
+        return res.status(400).json({ error: "Export not ready" });
       }
 
       // Update download count in history
@@ -863,15 +863,15 @@ router?.get(
       }
 
       // In production, stream actual file
-      res?.json({
+      res.json({
         success: true,
         message: "Download initiated",
         fileName: `${job?.name}.${job?.format}`,
         fileSize: job.fileSize,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error downloading export:");
-      res?.status(500).json({ error: "Failed to download" });
+      logger.warn({ err: error }, "Error downloading export:");
+      res.status(500).json({ error: "Failed to download" });
     }
   },
 );
@@ -883,11 +883,11 @@ router?.get(
 // Start batch export
 router?.post("/batch", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
-    const { outputs, projectId, projectName } = req?.body;
+    const userId = req.user!.id;
+    const { outputs, projectId, projectName } = req.body;
 
-    if (!outputs || !Array?.isArray(outputs) || outputs?.length === 0) {
-      return res?.status(400).json({ error: "No outputs specified" });
+    if (!outputs || !Array.isArray(outputs) || outputs?.length === 0) {
+      return res.status(400).json({ error: "No outputs specified" });
     }
 
     const batchId = randomBytes(8).toString("hex");
@@ -928,15 +928,15 @@ router?.post("/batch", requireAuth, async (req: Request, res: Response) => {
       delay += 2000; // Stagger starts
     }
 
-    res?.json({
+    res.json({
       success: true,
       batchId,
       jobIds: jobs.map((j) => j?.id),
       totalJobs: jobs.length,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error starting batch export:");
-    res?.status(500).json({ error: "Failed to start batch export" });
+    logger.warn({ err: error }, "Error starting batch export:");
+    res.status(500).json({ error: "Failed to start batch export" });
   }
 });
 
@@ -946,8 +946,8 @@ router?.post("/batch", requireAuth, async (req: Request, res: Response) => {
 
 router?.post("/analytics", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
-    const { format, sections, filters, dateRange, includeCharts } = req?.body;
+    const userId = req.user!.id;
+    const { format, sections, filters, dateRange, includeCharts } = req.body;
 
     const jobId = randomBytes(8).toString("hex");
 
@@ -975,14 +975,14 @@ router?.post("/analytics", requireAuth, async (req: Request, res: Response) => {
       }
     }, 500);
 
-    res?.json({
+    res.json({
       success: true,
       jobId,
       downloadUrl: `/api/export/download/${jobId}`,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error starting analytics export:");
-    res?.status(500).json({ error: "Failed to start analytics export" });
+    logger.warn({ err: error }, "Error starting analytics export:");
+    res.status(500).json({ error: "Failed to start analytics export" });
   }
 });
 
@@ -1017,18 +1017,18 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { type } = req?.params;
-      const userId = req?.user!.id;
+      const { type } = req.params;
+      const userId = req.user!.id;
 
       if (!reportTypes?.includes(type as ReportType)) {
-        return res?.status(400).json({
+        return res.status(400).json({
           error: `Invalid report type. Valid types: ${reportTypes?.join(", ")}`,
         });
       }
 
-      const validation = reportTypeSchema?.safeParse(req?.body);
+      const validation = reportTypeSchema?.safeParse(req.body);
       if (!validation?.success) {
-        return res?.status(400).json({
+        return res.status(400).json({
           success: false,
           error: validation.error.message,
         });
@@ -1075,7 +1075,7 @@ router?.post(
       const estimatedSeconds =
         type === "tax" ? 60 : type === "contract" ? 45 : 30;
 
-      res?.json({
+      res.json({
         success: true,
         jobId,
         reportType: type,
@@ -1084,8 +1084,8 @@ router?.post(
         emailDelivery: options.emailDelivery,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error generating report:");
-      res?.status(500).json({ error: "Failed to generate report" });
+      logger.warn({ err: error }, "Error generating report:");
+      res.status(500).json({ error: "Failed to generate report" });
     }
   },
 );
@@ -1122,11 +1122,11 @@ const chartExportSchema = z.object({
 
 router?.post("/chart", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
-    const validation = chartExportSchema?.safeParse(req?.body);
+    const validation = chartExportSchema?.safeParse(req.body);
     if (!validation?.success) {
-      return res?.status(400).json({
+      return res.status(400).json({
         success: false,
         error: validation.error.message,
       });
@@ -1173,7 +1173,7 @@ router?.post("/chart", requireAuth, async (req: Request, res: Response) => {
       }
     }, 500);
 
-    res?.json({
+    res.json({
       success: true,
       jobId,
       chartType: options.chartType,
@@ -1181,8 +1181,8 @@ router?.post("/chart", requireAuth, async (req: Request, res: Response) => {
       downloadUrl: `/api/export/download/${jobId}`,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error exporting chart:");
-    res?.status(500).json({ error: "Failed to export chart" });
+    logger.warn({ err: error }, "Error exporting chart:");
+    res.status(500).json({ error: "Failed to export chart" });
   }
 });
 
@@ -1225,11 +1225,11 @@ const bulkExportSchema = z.object({
 
 router?.post("/bulk", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
-    const validation = bulkExportSchema?.safeParse(req?.body);
+    const validation = bulkExportSchema?.safeParse(req.body);
     if (!validation?.success) {
-      return res?.status(400).json({
+      return res.status(400).json({
         success: false,
         error: validation.error.message,
       });
@@ -1269,7 +1269,7 @@ router?.post("/bulk", requireAuth, async (req: Request, res: Response) => {
 
     const estimatedSeconds = items?.length * 5 + 30;
 
-    res?.json({
+    res.json({
       success: true,
       jobId,
       totalItems: items.length,
@@ -1282,8 +1282,8 @@ router?.post("/bulk", requireAuth, async (req: Request, res: Response) => {
         : "Export started.",
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error starting bulk export:");
-    res?.status(500).json({ error: "Failed to start bulk export" });
+    logger.warn({ err: error }, "Error starting bulk export:");
+    res.status(500).json({ error: "Failed to start bulk export" });
   }
 });
 
@@ -1293,23 +1293,23 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { jobId } = req?.params;
-      const userId = req?.user!.id;
+      const { jobId } = req.params;
+      const userId = req.user!.id;
 
       const job = exportJobs?.get(jobId);
       if (!job) {
-        return res?.status(404).json({ error: "Export not found" });
+        return res.status(404).json({ error: "Export not found" });
       }
 
       if (job?.userId !== userId) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
       if (job?.status !== "complete") {
-        return res?.status(400).json({ error: "Export not ready" });
+        return res.status(400).json({ error: "Export not ready" });
       }
 
-      res?.json({
+      res.json({
         success: true,
         message: "ZIP download initiated",
         fileName: `${job?.name.replace(/[^a-zA-Z0-9]/g, "_")}.zip`,
@@ -1318,8 +1318,8 @@ router?.get(
           (job?.settings as Record<string, unknown>)?.items?.length || 0,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error downloading ZIP:");
-      res?.status(500).json({ error: "Failed to download" });
+      logger.warn({ err: error }, "Error downloading ZIP:");
+      res.status(500).json({ error: "Failed to download" });
     }
   },
 );
@@ -1361,12 +1361,12 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
 
-      const validation = masteredExportSchema?.safeParse(req?.body);
+      const validation = masteredExportSchema?.safeParse(req.body);
       if (!validation?.success) {
-        return res?.status(400).json({
+        return res.status(400).json({
           success: false,
           error: validation.error.message,
         });
@@ -1440,15 +1440,15 @@ router?.post(
         }
       }, 500);
 
-      res?.json({
+      res.json({
         success: true,
         jobId,
         preset: options.preset,
         estimatedTime: 60,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error starting mastered export:");
-      res?.status(500).json({ error: "Failed to start mastered export" });
+      logger.warn({ err: error }, "Error starting mastered export:");
+      res.status(500).json({ error: "Failed to start mastered export" });
     }
   },
 );
@@ -1489,12 +1489,12 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { projectId } = req?.params;
-      const userId = req?.user!.id;
+      const { projectId } = req.params;
+      const userId = req.user!.id;
 
-      const validation = stemsExportSchema?.safeParse(req?.body);
+      const validation = stemsExportSchema?.safeParse(req.body);
       if (!validation?.success) {
-        return res?.status(400).json({
+        return res.status(400).json({
           success: false,
           error: validation.error.message,
         });
@@ -1530,15 +1530,15 @@ router?.post(
 
       const estimatedSeconds = options?.tracks.length * 15 + 30;
 
-      res?.json({
+      res.json({
         success: true,
         jobId,
         trackCount: options.tracks.length,
         estimatedTime: estimatedSeconds,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error starting stems export:");
-      res?.status(500).json({ error: "Failed to start stems export" });
+      logger.warn({ err: error }, "Error starting stems export:");
+      res.status(500).json({ error: "Failed to start stems export" });
     }
   },
 );
@@ -1552,16 +1552,16 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { exportId } = req?.params;
-      const userId = req?.user!.id;
+      const { exportId } = req.params;
+      const userId = req.user!.id;
 
       const job = exportJobs?.get(exportId);
       if (!job) {
-        return res?.status(404).json({ error: "Export not found" });
+        return res.status(404).json({ error: "Export not found" });
       }
 
       if (job?.userId !== userId) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
       const response = {
@@ -1582,10 +1582,10 @@ router?.get(
         retryCount: job.retryCount,
       };
 
-      res?.json(response);
+      res.json(response);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching export status:");
-      res?.status(500).json({ error: "Failed to fetch status" });
+      logger.warn({ err: error }, "Error fetching export status:");
+      res.status(500).json({ error: "Failed to fetch status" });
     }
   },
 );
@@ -1599,28 +1599,28 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { jobId } = req?.params;
-      const userId = req?.user!.id;
-      const { email } = req?.body;
+      const { jobId } = req.params;
+      const userId = req.user!.id;
+      const { email } = req.body;
 
       const job = exportJobs?.get(jobId);
       if (!job) {
-        return res?.status(404).json({ error: "Export not found" });
+        return res.status(404).json({ error: "Export not found" });
       }
 
       if (job?.userId !== userId) {
-        return res?.status(403).json({ error: "Access denied" });
+        return res.status(403).json({ error: "Access denied" });
       }
 
-      logger?.info(`Email notification requested for job ${jobId} to ${email}`);
+      logger.info(`Email notification requested for job ${jobId} to ${email}`);
 
-      res?.json({
+      res.json({
         success: true,
         message: `Notification will be sent to ${email} when export completes`,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error setting up notification:");
-      res?.status(500).json({ error: "Failed to set up notification" });
+      logger.warn({ err: error }, "Error setting up notification:");
+      res.status(500).json({ error: "Failed to set up notification" });
     }
   },
 );

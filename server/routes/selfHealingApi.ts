@@ -18,22 +18,22 @@ const router = Router();
 
 // Inline admin guard reused across routes
 function assertAdmin(req: Request, res: Response): boolean {
-  const user = req?.user;
+  const user = req.user;
   if (!user) {
-    res?.status(401).json({ success: false, error: "Authentication required" });
+    res.status(401).json({ success: false, error: "Authentication required" });
     return false;
   }
   if (user?.role !== "admin") {
-    res?.status(403).json({ success: false, error: "Admin access required" });
+    res.status(403).json({ success: false, error: "Admin access required" });
     return false;
   }
   return true;
 }
 
 function assertAuth(req: Request, res: Response): boolean {
-  const user = req?.user;
+  const user = req.user;
   if (!user) {
-    res?.status(401).json({ success: false, error: "Authentication required" });
+    res.status(401).json({ success: false, error: "Authentication required" });
     return false;
   }
   return true;
@@ -43,7 +43,7 @@ router?.get("/status", (req: Request, res: Response) => {
   if (!assertAuth(req, res)) return;
   try {
     const status = selfHealingEngine?.getStatus();
-    res?.json({
+    res.json({
       success: true,
       data: {
         ...status,
@@ -58,8 +58,8 @@ router?.get("/status", (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching self-healing status:");
-    res?.status(500).json({ success: false, error: "Failed to fetch status" });
+    logger.warn({ err: error }, "Error fetching self-healing status:");
+    res.status(500).json({ success: false, error: "Failed to fetch status" });
   }
 });
 
@@ -71,8 +71,8 @@ router?.get("/metrics", (req: Request, res: Response) => {
     const calculateP95 = (arr: number[]) => {
       if (arr?.length === 0) return 0;
       const sorted = [...arr].sort((a, b) => a - b);
-      const index = Math?.ceil(0.95 * sorted?.length) - 1;
-      return sorted[Math?.max(0, index)];
+      const index = Math.ceil(0.95 * sorted?.length) - 1;
+      return sorted[Math.max(0, index)];
     };
 
     const calculateAvg = (arr: number[]) => {
@@ -80,7 +80,7 @@ router?.get("/metrics", (req: Request, res: Response) => {
       return arr?.reduce((a, b) => a + b, 0) / arr?.length;
     };
 
-    res?.json({
+    res.json({
       success: true,
       data: {
         summary: {
@@ -123,8 +123,8 @@ router?.get("/metrics", (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching self-healing metrics:");
-    res?.status(500).json({ success: false, error: "Failed to fetch metrics" });
+    logger.warn({ err: error }, "Error fetching self-healing metrics:");
+    res.status(500).json({ success: false, error: "Failed to fetch metrics" });
   }
 });
 
@@ -136,15 +136,15 @@ router?.get("/proof", (req: Request, res: Response) => {
     const calculateP95 = (arr: number[]) => {
       if (arr?.length === 0) return 0;
       const sorted = [...arr].sort((a, b) => a - b);
-      const index = Math?.ceil(0.95 * sorted?.length) - 1;
-      return sorted[Math?.max(0, index)];
+      const index = Math.ceil(0.95 * sorted?.length) - 1;
+      return sorted[Math.max(0, index)];
     };
 
     const totalHealingP95 = calculateP95(metrics?.totalHealingTime) || 750;
     const attackDwellTime = 7500;
     const healingRatio = attackDwellTime / totalHealingP95;
 
-    res?.json({
+    res.json({
       success: true,
       data: {
         title: "Self-Healing Security Proof Certificate",
@@ -188,8 +188,8 @@ router?.get("/proof", (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error generating healing proof:");
-    res?.status(500).json({ success: false, error: "Failed to generate proof" });
+    logger.warn({ err: error }, "Error generating healing proof:");
+    res.status(500).json({ success: false, error: "Failed to generate proof" });
   }
 });
 
@@ -197,7 +197,7 @@ router?.get("/proof", (req: Request, res: Response) => {
 router?.post("/simulate-attack", async (req: Request, res: Response) => {
   if (!assertAdmin(req, res)) return;
   try {
-    const { type = "sql_injection" } = req?.body;
+    const { type = "sql_injection" } = req.body;
     const startTime = Date?.now();
 
     const testPayloads: Record<string, string> = {
@@ -229,7 +229,7 @@ router?.post("/simulate-attack", async (req: Request, res: Response) => {
     const healingTime = Date?.now() - startTime;
     const metrics = selfHealingEngine?.getMetrics();
 
-    res?.json({
+    res.json({
       success: true,
       data: {
         attackType: type,
@@ -244,8 +244,8 @@ router?.post("/simulate-attack", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Attack simulation error:");
-    res?.status(500).json({ success: false, error: "Simulation failed" });
+    logger.warn({ err: error }, "Attack simulation error:");
+    res.status(500).json({ success: false, error: "Simulation failed" });
   }
 });
 
@@ -253,13 +253,13 @@ router?.post("/simulate-attack", async (req: Request, res: Response) => {
 router?.delete("/blocked-ips/:ip", async (req: Request, res: Response) => {
   if (!assertAdmin(req, res)) return;
   try {
-    const { ip } = req?.params;
+    const { ip } = req.params;
     await selfHealingEngine?.unblockIp(ip);
-    logger?.info(`Admin ${req?.user.email} unblocked IP: ${ip}`);
-    res?.json({ success: true, message: `IP ${ip} unblocked` });
+    logger.info(`Admin ${req.user.email} unblocked IP: ${ip}`);
+    res.json({ success: true, message: `IP ${ip} unblocked` });
   } catch (error) {
-    logger?.warn({ err: error }, "Error unblocking IP:");
-    res?.status(500).json({ success: false, error: "Failed to unblock IP" });
+    logger.warn({ err: error }, "Error unblocking IP:");
+    res.status(500).json({ success: false, error: "Failed to unblock IP" });
   }
 });
 
@@ -268,10 +268,10 @@ router?.post("/clear-all-blocks", async (req: Request, res: Response) => {
   if (!assertAdmin(req, res)) return;
   try {
     await selfHealingEngine?.clearAllBlocks();
-    logger?.warn(`Admin ${req?.user.email} cleared ALL blocked IPs`);
-    res?.json({ success: true, message: "All blocked IPs cleared" });
+    logger.warn(`Admin ${req.user.email} cleared ALL blocked IPs`);
+    res.json({ success: true, message: "All blocked IPs cleared" });
   } catch (error) {
-    logger?.warn({ err: error }, "Error clearing blocked IPs:");
+    logger.warn({ err: error }, "Error clearing blocked IPs:");
     res
       .status(500)
       .json({ success: false, error: "Failed to clear blocked IPs" });
@@ -283,9 +283,9 @@ router?.get("/blocked-ips", async (req: Request, res: Response) => {
   if (!assertAdmin(req, res)) return;
   try {
     const blockedIps = selfHealingEngine?.getBlockedIps();
-    res?.json({ success: true, data: { blockedIps, count: blockedIps.length } });
+    res.json({ success: true, data: { blockedIps, count: blockedIps.length } });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching blocked IPs:");
+    logger.warn({ err: error }, "Error fetching blocked IPs:");
     res
       .status(500)
       .json({ success: false, error: "Failed to fetch blocked IPs" });

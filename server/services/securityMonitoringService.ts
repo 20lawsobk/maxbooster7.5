@@ -20,7 +20,7 @@ export function trackError() {
 }
 
 export async function getSecurityMetrics() {
-  const uptimeSeconds = Math?.floor(process?.uptime());
+  const uptimeSeconds = Math.floor(process.uptime());
 
   const fifteenMinutesAgo = new Date(Date?.now() - 15 * 60 * 1000);
   const yesterday = new Date(Date?.now() - 24 * 60 * 60 * 1000);
@@ -57,7 +57,7 @@ export async function getSecurityMetrics() {
   // Calculate real metrics from tracked data
   const minutesSinceReset = (Date?.now() - lastMetricsReset) / 60000;
   const requestsPerMinute =
-    minutesSinceReset > 0 ? Math?.round(requestCounter / minutesSinceReset) : 0;
+    minutesSinceReset > 0 ? Math.round(requestCounter / minutesSinceReset) : 0;
   const errorRate =
     requestCounter > 0 ? (errorCounter / requestCounter) * 100 : 0;
 
@@ -78,7 +78,7 @@ export async function getSecurityMetrics() {
     .where(gte(sessions?.createdAt, oneHourAgo))
     .limit(1);
 
-  const suspiciousActivity = Math?.max(
+  const suspiciousActivity = Math.max(
     0,
     (suspiciousActivityResult?.count || 0) - activeSessions,
   );
@@ -205,7 +205,7 @@ export async function detectSecurityAnomalies() {
     const percentageChange =
       ((recentSessions - previousSessions) / previousSessions) * 100;
 
-    if (Math?.abs(percentageChange) > 200) {
+    if (Math.abs(percentageChange) > 200) {
       anomalies?.push({
         type: "traffic_spike" as const,
         timestamp: new Date().toISOString(),
@@ -214,7 +214,7 @@ export async function detectSecurityAnomalies() {
         actualValue: recentSessions,
         severity:
           percentageChange > 0 ? ("high" as const) : ("medium" as const),
-        description: `Session creation ${percentageChange > 0 ? "increased" : "decreased"} by ${Math?.abs(percentageChange).toFixed(1)}% in the last 24 hours`,
+        description: `Session creation ${percentageChange > 0 ? "increased" : "decreased"} by ${Math.abs(percentageChange).toFixed(1)}% in the last 24 hours`,
       });
     }
   }
@@ -279,8 +279,8 @@ export async function getPentestResults() {
   }
 
   if (
-    !process?.env.STRIPE_SECRET_KEY ||
-    !process?.env.STRIPE_SECRET_KEY?.startsWith("sk_")
+    !process.env.STRIPE_SECRET_KEY ||
+    !process.env.STRIPE_SECRET_KEY?.startsWith("sk_")
   ) {
     vulnerabilities?.push({
       id: "vuln-stripe-001",

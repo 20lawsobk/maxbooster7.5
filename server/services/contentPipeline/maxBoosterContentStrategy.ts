@@ -350,7 +350,7 @@ export function generateMaxBoosterContent(
 
   const angle =
     feature?.contentAngles[
-      Math?.abs(
+      Math.abs(
         [...feature?.id].reduce((h, c) => (h * 31 + c?.charCodeAt(0)) | 0, 0),
       ) % feature?.contentAngles.length
     ];

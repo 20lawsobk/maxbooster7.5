@@ -56,49 +56,49 @@ const DEFAULT_SHORTCUTS: ShortcutConfig[] = [
 
 router?.get("/user", async (req: Request, res: Response) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Not authenticated" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
     }
 
     const user = await db
       .select()
       .from(users)
-      .where(eq(users?.id, req?.user.id))
+      .where(eq(users?.id, req.user.id))
       .limit(1);
 
     if (!user?.length) {
-      return res?.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: "User not found" });
     }
 
     const userPrefs = user[0].preferences as Record<string, any> | null;
     const preferences = userPrefs?.shortcuts as ShortcutPreferences | null;
 
     if (!preferences) {
-      return res?.json(null);
+      return res.json(null);
     }
 
-    return res?.json(preferences);
+    return res.json(preferences);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching user shortcuts:");
-    return res?.status(500).json({ error: "Failed to fetch shortcuts" });
+    logger.warn({ err: error }, "Error fetching user shortcuts:");
+    return res.status(500).json({ error: "Failed to fetch shortcuts" });
   }
 });
 
 router?.put("/user", async (req: Request, res: Response) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Not authenticated" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
     }
 
-    const { shortcuts } = req?.body;
+    const { shortcuts } = req.body;
 
-    if (!Array?.isArray(shortcuts)) {
-      return res?.status(400).json({ error: "Shortcuts must be an array" });
+    if (!Array.isArray(shortcuts)) {
+      return res.status(400).json({ error: "Shortcuts must be an array" });
     }
 
     for (const shortcut of shortcuts) {
       if (!shortcut?.id || typeof shortcut?.key !== "string") {
-        return res?.status(400).json({ error: "Invalid shortcut format" });
+        return res.status(400).json({ error: "Invalid shortcut format" });
       }
     }
 
@@ -112,26 +112,26 @@ router?.put("/user", async (req: Request, res: Response) => {
         await db
           .select({ preferences: users.preferences })
           .from(users)
-          .where(eq(users?.id, req?.user.id))
+          .where(eq(users?.id, req.user.id))
           .limit(1)
       )[0]?.preferences as Record<string, any>) || {};
 
     await db
       .update(users)
       .set({ preferences: { ...currentPrefs, shortcuts: preferences } })
-      .where(eq(users?.id, req?.user.id));
+      .where(eq(users?.id, req.user.id));
 
-    return res?.json(preferences);
+    return res.json(preferences);
   } catch (error) {
-    logger?.warn({ err: error }, "Error saving user shortcuts:");
-    return res?.status(500).json({ error: "Failed to save shortcuts" });
+    logger.warn({ err: error }, "Error saving user shortcuts:");
+    return res.status(500).json({ error: "Failed to save shortcuts" });
   }
 });
 
 router?.delete("/user", async (req: Request, res: Response) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Not authenticated" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
     }
 
     const currentPrefs =
@@ -139,7 +139,7 @@ router?.delete("/user", async (req: Request, res: Response) => {
         await db
           .select({ preferences: users.preferences })
           .from(users)
-          .where(eq(users?.id, req?.user.id))
+          .where(eq(users?.id, req.user.id))
           .limit(1)
       )[0]?.preferences as Record<string, any>) || {};
 
@@ -148,33 +148,33 @@ router?.delete("/user", async (req: Request, res: Response) => {
     await db
       .update(users)
       .set({ preferences: restPrefs })
-      .where(eq(users?.id, req?.user.id));
+      .where(eq(users?.id, req.user.id));
 
-    return res?.json({ success: true, message: "Shortcuts reset successfully" });
+    return res.json({ success: true, message: "Shortcuts reset successfully" });
   } catch (error) {
-    logger?.warn({ err: error }, "Error resetting shortcuts:");
-    return res?.status(500).json({ error: "Failed to reset shortcuts" });
+    logger.warn({ err: error }, "Error resetting shortcuts:");
+    return res.status(500).json({ error: "Failed to reset shortcuts" });
   }
 });
 
 router?.get("/defaults", async (_req: Request, res: Response) => {
   try {
-    return res?.json({
+    return res.json({
       shortcuts: DEFAULT_SHORTCUTS,
       version: "1.0.0",
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching default shortcuts:");
-    return res?.status(500).json({ error: "Failed to fetch defaults" });
+    logger.warn({ err: error }, "Error fetching default shortcuts:");
+    return res.status(500).json({ error: "Failed to fetch defaults" });
   }
 });
 
 router?.get("/conflicts", async (req: Request, res: Response) => {
   try {
-    const { key, modifiers,  excludeId } = req?.query;
+    const { key, modifiers,  excludeId } = req.query;
 
     if (!key) {
-      return res?.status(400).json({ error: "Key is required" });
+      return res.status(400).json({ error: "Key is required" });
     }
 
     const modifierList = modifiers
@@ -188,10 +188,10 @@ router?.get("/conflicts", async (req: Request, res: Response) => {
       return s?.modifiers.every((m) => modifierList?.includes(m));
     });
 
-    return res?.json({ conflicts });
+    return res.json({ conflicts });
   } catch (error) {
-    logger?.warn({ err: error }, "Error checking conflicts:");
-    return res?.status(500).json({ error: "Failed to check conflicts" });
+    logger.warn({ err: error }, "Error checking conflicts:");
+    return res.status(500).json({ error: "Failed to check conflicts" });
   }
 });
 

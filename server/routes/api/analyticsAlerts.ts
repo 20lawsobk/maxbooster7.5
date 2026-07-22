@@ -12,21 +12,21 @@ interface AuthenticatedRequest {
 const router = Router();
 
 function getUserId(req: AuthenticatedRequest): string | null {
-  return req?.user?.id ?? null;
+  return req.user?.id ?? null;
 }
 
 router?.get("/alerts", async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = getUserId(req);
     if (!userId) {
-      return res?.status(401).json({ error: "Unauthorized" });
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { type, priority, unreadOnly } = req?.query;
-    const rawLimit = parseInt(String(req?.query.limit ?? ""), 10);
+    const { type, priority, unreadOnly } = req.query;
+    const rawLimit = parseInt(String(req.query.limit ?? ""), 10);
     const limit =
-      Number?.isFinite(rawLimit) && rawLimit > 0
-        ? Math?.min(rawLimit, 500)
+      Number.isFinite(rawLimit) && rawLimit > 0
+        ? Math.min(rawLimit, 500)
         : undefined;
 
     const alerts = await analyticsAlertService?.getAlerts(userId, {
@@ -36,10 +36,10 @@ router?.get("/alerts", async (req: AuthenticatedRequest, res: Response) => {
       limit,
     });
 
-    return res?.json({ success: true, data: alerts });
+    return res.json({ success: true, data: alerts });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching alerts:");
-    return res?.status(500).json({ error: "Failed to fetch alerts" });
+    logger.warn({ err: error }, "Error fetching alerts:");
+    return res.status(500).json({ error: "Failed to fetch alerts" });
   }
 });
 
@@ -49,14 +49,14 @@ router?.get(
     try {
       const userId = getUserId(req);
       if (!userId) {
-        return res?.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
       const summary = await analyticsAlertService?.getAlertSummary(userId);
-      return res?.json({ success: true, data: summary });
+      return res.json({ success: true, data: summary });
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching alert summary:");
-      return res?.status(500).json({ error: "Failed to fetch alert summary" });
+      logger.warn({ err: error }, "Error fetching alert summary:");
+      return res.status(500).json({ error: "Failed to fetch alert summary" });
     }
   },
 );
@@ -67,14 +67,14 @@ router?.get(
     try {
       const userId = getUserId(req);
       if (!userId) {
-        return res?.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
       const count = await analyticsAlertService?.getUnreadCount(userId);
-      return res?.json({ success: true, data: { count } });
+      return res.json({ success: true, data: { count } });
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching unread count:");
-      return res?.status(500).json({ error: "Failed to fetch unread count" });
+      logger.warn({ err: error }, "Error fetching unread count:");
+      return res.status(500).json({ error: "Failed to fetch unread count" });
     }
   },
 );
@@ -85,22 +85,22 @@ router?.post(
     try {
       const userId = getUserId(req);
       if (!userId) {
-        return res?.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { alertId } = req?.params;
+      const { alertId } = req.params;
       const success = await analyticsAlertService?.markAlertAsRead(
         userId,
         alertId,
       );
 
-      return res?.json({
+      return res.json({
         success,
         message: success ? "Alert marked as read" : "Alert not found",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error marking alert as read:");
-      return res?.status(500).json({ error: "Failed to mark alert as read" });
+      logger.warn({ err: error }, "Error marking alert as read:");
+      return res.status(500).json({ error: "Failed to mark alert as read" });
     }
   },
 );
@@ -111,19 +111,19 @@ router?.post(
     try {
       const userId = getUserId(req);
       if (!userId) {
-        return res?.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { alertId } = req?.params;
+      const { alertId } = req.params;
       const success = await analyticsAlertService?.dismissAlert(userId, alertId);
 
-      return res?.json({
+      return res.json({
         success,
         message: success ? "Alert dismissed" : "Alert not found",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error dismissing alert:");
-      return res?.status(500).json({ error: "Failed to dismiss alert" });
+      logger.warn({ err: error }, "Error dismissing alert:");
+      return res.status(500).json({ error: "Failed to dismiss alert" });
     }
   },
 );
@@ -134,10 +134,10 @@ router?.get(
     try {
       const userId = getUserId(req);
       if (!userId) {
-        return res?.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { startDate, endDate } = req?.query;
+      const { startDate, endDate } = req.query;
       const start = startDate
         ? new Date(startDate as string)
         : new Date(Date?.now() - 7 * 24 * 60 * 60 * 1000);
@@ -147,10 +147,10 @@ router?.get(
         userId,
         { start, end },
       );
-      return res?.json({ success: true, data: triggerCities });
+      return res.json({ success: true, data: triggerCities });
     } catch (error) {
-      logger?.warn({ err: error }, "Error detecting trigger cities:");
-      return res?.status(500).json({ error: "Failed to detect trigger cities" });
+      logger.warn({ err: error }, "Error detecting trigger cities:");
+      return res.status(500).json({ error: "Failed to detect trigger cities" });
     }
   },
 );
@@ -161,15 +161,15 @@ router?.get(
     try {
       const userId = getUserId(req);
       if (!userId) {
-        return res?.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
       const triggerCities =
         await analyticsAlertService?.getTriggerCities(userId);
-      return res?.json({ success: true, data: triggerCities });
+      return res.json({ success: true, data: triggerCities });
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching cached trigger cities:");
-      return res?.status(500).json({ error: "Failed to fetch trigger cities" });
+      logger.warn({ err: error }, "Error fetching cached trigger cities:");
+      return res.status(500).json({ error: "Failed to fetch trigger cities" });
     }
   },
 );
@@ -180,13 +180,13 @@ router?.post(
     try {
       const userId = getUserId(req);
       if (!userId) {
-        return res?.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
       const changes = await analyticsAlertService?.trackPlaylistChanges(userId);
-      return res?.json({ success: true, data: changes });
+      return res.json({ success: true, data: changes });
     } catch (error) {
-      logger?.warn({ err: error }, "Error tracking playlist changes:");
+      logger.warn({ err: error }, "Error tracking playlist changes:");
       return res
         .status(500)
         .json({ error: "Failed to track playlist changes" });
@@ -200,10 +200,10 @@ router?.post(
     try {
       const userId = getUserId(req);
       if (!userId) {
-        return res?.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { platform, metrics } = req?.body;
+      const { platform, metrics } = req.body;
       if (!platform || !metrics) {
         return res
           .status(400)
@@ -215,10 +215,10 @@ router?.post(
         platform,
         metrics,
       );
-      return res?.json({ success: true, data: milestones });
+      return res.json({ success: true, data: milestones });
     } catch (error) {
-      logger?.warn({ err: error }, "Error checking milestones:");
-      return res?.status(500).json({ error: "Failed to check milestones" });
+      logger.warn({ err: error }, "Error checking milestones:");
+      return res.status(500).json({ error: "Failed to check milestones" });
     }
   },
 );
@@ -229,14 +229,14 @@ router?.get(
     try {
       const userId = getUserId(req);
       if (!userId) {
-        return res?.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
       const comparison =
         await analyticsAlertService?.getCrossPlatformComparison(userId);
-      return res?.json({ success: true, data: comparison });
+      return res.json({ success: true, data: comparison });
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting cross-platform comparison:");
+      logger.warn({ err: error }, "Error getting cross-platform comparison:");
       return res
         .status(500)
         .json({ error: "Failed to get cross-platform comparison" });
@@ -250,10 +250,10 @@ router?.post(
     try {
       const userId = getUserId(req);
       if (!userId) {
-        return res?.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { platform, currentMetrics, previousMetrics } = req?.body;
+      const { platform, currentMetrics, previousMetrics } = req.body;
       if (!platform || !currentMetrics || !previousMetrics) {
         return res
           .status(400)
@@ -269,9 +269,9 @@ router?.post(
         currentMetrics,
         previousMetrics,
       );
-      return res?.json({ success: true, message: "Growth anomalies analyzed" });
+      return res.json({ success: true, message: "Growth anomalies analyzed" });
     } catch (error) {
-      logger?.warn({ err: error }, "Error detecting growth anomalies:");
+      logger.warn({ err: error }, "Error detecting growth anomalies:");
       return res
         .status(500)
         .json({ error: "Failed to detect growth anomalies" });
@@ -285,10 +285,10 @@ router?.post(
     try {
       const userId = getUserId(req);
       if (!userId) {
-        return res?.status(401).json({ error: "Unauthorized" });
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { platform, metrics } = req?.body;
+      const { platform, metrics } = req.body;
       if (!platform || !metrics) {
         return res
           .status(400)
@@ -296,13 +296,13 @@ router?.post(
       }
 
       await analyticsAlertService?.detectViralContent(userId, platform, metrics);
-      return res?.json({
+      return res.json({
         success: true,
         message: "Viral content analysis complete",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error detecting viral content:");
-      return res?.status(500).json({ error: "Failed to detect viral content" });
+      logger.warn({ err: error }, "Error detecting viral content:");
+      return res.status(500).json({ error: "Failed to detect viral content" });
     }
   },
 );

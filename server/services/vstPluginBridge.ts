@@ -133,22 +133,22 @@ class VSTPluginBridge extends EventEmitter {
 
   async initialize(): Promise<void> {
     try {
-      logger?.info("Initializing VST Plugin Bridge...");
+      logger.info("Initializing VST Plugin Bridge...");
       this.bridgeReady = true;
-      this?.emit("bridgeReady");
-      logger?.info("VST Plugin Bridge initialized successfully");
+      this.emit("bridgeReady");
+      logger.info("VST Plugin Bridge initialized successfully");
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to initialize VST Plugin Bridge:");
+      logger.warn({ err: error }, "Failed to initialize VST Plugin Bridge:");
       throw error;
     }
   }
 
   isBridgeReady(): boolean {
-    return this?.bridgeReady;
+    return this.bridgeReady;
   }
 
   isDesktopConnected(): boolean {
-    return this?.desktopConnection !== null;
+    return this.desktopConnection !== null;
   }
 
   async connectDesktopApp(connectionInfo: {
@@ -156,35 +156,35 @@ class VSTPluginBridge extends EventEmitter {
     userId: string;
   }): Promise<boolean> {
     try {
-      logger?.info("Desktop app connection request:", connectionInfo);
+      logger.info("Desktop app connection request:", connectionInfo);
       this.desktopConnection = {
         sessionId: connectionInfo.sessionId,
         userId: connectionInfo.userId,
         connectedAt: new Date(),
       };
-      this?.emit("desktopConnected", this?.desktopConnection);
+      this.emit("desktopConnected", this.desktopConnection);
       return true;
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to connect desktop app:");
+      logger.warn({ err: error }, "Failed to connect desktop app:");
       return false;
     }
   }
 
   disconnectDesktopApp(): void {
-    if (this?.desktopConnection) {
-      this?.emit("desktopDisconnected", this?.desktopConnection);
+    if (this.desktopConnection) {
+      this.emit("desktopDisconnected", this.desktopConnection);
       this.desktopConnection = null;
     }
   }
 
   async scanPlugins(paths?: string[]): Promise<VSTScanResult> {
-    if (this?.isScanning) {
+    if (this.isScanning) {
       throw new Error("Plugin scan already in progress");
     }
 
     this.isScanning = true;
     const startTime = Date?.now();
-    const scanPaths = paths || this?.config.scanPaths;
+    const scanPaths = paths || this.config.scanPaths;
     const result: VSTScanResult = {
       scanned: 0,
       valid: 0,
@@ -195,12 +195,12 @@ class VSTPluginBridge extends EventEmitter {
     };
 
     try {
-      logger?.info("Starting VST plugin scan...", { paths: scanPaths });
-      this?.emit("scanStart", { paths: scanPaths });
+      logger.info("Starting VST plugin scan...", { paths: scanPaths });
+      this.emit("scanStart", { paths: scanPaths });
 
       for (const scanPath of scanPaths) {
         try {
-          const plugins = await this?.scanDirectory(scanPath);
+          const plugins = await this.scanDirectory(scanPath);
           result.scanned += plugins?.scanned;
           result.valid += plugins?.valid;
           result.invalid += plugins?.invalid;
@@ -212,20 +212,20 @@ class VSTPluginBridge extends EventEmitter {
       }
 
       for (const plugin of result?.plugins) {
-        this?.scannedPlugins.set(plugin?.id, plugin);
+        this.scannedPlugins.set(plugin?.id, plugin);
       }
 
       this.lastScanTime = new Date();
       result.scanTime = Date?.now() - startTime;
 
-      logger?.info("VST plugin scan completed", {
+      logger.info("VST plugin scan completed", {
         scanned: result.scanned,
         valid: result.valid,
         invalid: result.invalid,
         scanTime: result.scanTime,
       });
 
-      this?.emit("scanComplete", result);
+      this.emit("scanComplete", result);
       return result;
     } finally {
       this.isScanning = false;
@@ -242,7 +242,7 @@ class VSTPluginBridge extends EventEmitter {
       scanTime: 0,
     };
 
-    const samplePlugins = this?.getBuiltInVSTEmulations();
+    const samplePlugins = this.getBuiltInVSTEmulations();
     result.valid = samplePlugins?.length;
     result.scanned = samplePlugins?.length;
     result.plugins = samplePlugins;
@@ -1154,19 +1154,19 @@ class VSTPluginBridge extends EventEmitter {
   }
 
   getScannedPlugins(): VSTPluginInfo[] {
-    return Array?.from(this?.scannedPlugins.values());
+    return Array.from(this.scannedPlugins.values());
   }
 
   getPluginById(pluginId: string): VSTPluginInfo | undefined {
-    return this?.scannedPlugins.get(pluginId);
+    return this.scannedPlugins.get(pluginId);
   }
 
   getPluginsByCategory(category: "instrument" | "effect"): VSTPluginInfo[] {
-    return this?.getScannedPlugins().filter((p) => p?.category === category);
+    return this.getScannedPlugins().filter((p) => p?.category === category);
   }
 
   getPluginsByFormat(format: VSTFormat): VSTPluginInfo[] {
-    return this?.getScannedPlugins().filter((p) => p?.format === format);
+    return this.getScannedPlugins().filter((p) => p?.format === format);
   }
 
   async createInstance(
@@ -1177,14 +1177,14 @@ class VSTPluginBridge extends EventEmitter {
     sampleRate: number = 44100,
     blockSize: number = 512,
   ): Promise<VSTInstance> {
-    const plugin = this?.getPluginById(pluginId);
+    const plugin = this.getPluginById(pluginId);
     if (!plugin) {
       throw new Error(`Plugin not found: ${pluginId}`);
     }
 
-    if (this?.instances.size >= this?.config.maxInstances) {
+    if (this.instances.size >= this.config.maxInstances) {
       throw new Error(
-        `Maximum plugin instances reached: ${this?.config.maxInstances}`,
+        `Maximum plugin instances reached: ${this.config.maxInstances}`,
       );
     }
 
@@ -1207,10 +1207,10 @@ class VSTPluginBridge extends EventEmitter {
       updatedAt: new Date(),
     };
 
-    this?.instances.set(instance?.id, instance);
-    this?.emit("instanceCreated", instance);
+    this.instances.set(instance?.id, instance);
+    this.emit("instanceCreated", instance);
 
-    logger?.info("VST instance created:", {
+    logger.info("VST instance created:", {
       instanceId: instance.id,
       pluginName: plugin.name,
     });
@@ -1218,28 +1218,28 @@ class VSTPluginBridge extends EventEmitter {
   }
 
   async deleteInstance(instanceId: string): Promise<void> {
-    const instance = this?.instances.get(instanceId);
+    const instance = this.instances.get(instanceId);
     if (!instance) {
       throw new Error(`Instance not found: ${instanceId}`);
     }
 
-    this?.instances.delete(instanceId);
-    this?.emit("instanceDeleted", { instanceId });
-    logger?.info("VST instance deleted:", { instanceId });
+    this.instances.delete(instanceId);
+    this.emit("instanceDeleted", { instanceId });
+    logger.info("VST instance deleted:", { instanceId });
   }
 
   getInstance(instanceId: string): VSTInstance | undefined {
-    return this?.instances.get(instanceId);
+    return this.instances.get(instanceId);
   }
 
   getProjectInstances(projectId: string): VSTInstance[] {
-    return Array?.from(this?.instances.values()).filter(
+    return Array.from(this.instances.values()).filter(
       (i) => i?.projectId === projectId,
     );
   }
 
   getTrackInstances(trackId: string): VSTInstance[] {
-    return Array?.from(this?.instances.values()).filter(
+    return Array.from(this.instances.values()).filter(
       (i) => i?.trackId === trackId,
     );
   }
@@ -1248,7 +1248,7 @@ class VSTPluginBridge extends EventEmitter {
     instanceId: string,
     parameters: Record<string, number>,
   ): Promise<VSTInstance> {
-    const instance = this?.instances.get(instanceId);
+    const instance = this.instances.get(instanceId);
     if (!instance) {
       throw new Error(`Instance not found: ${instanceId}`);
     }
@@ -1256,12 +1256,12 @@ class VSTPluginBridge extends EventEmitter {
     instance.parameters = { ...instance?.parameters, ...parameters };
     instance.updatedAt = new Date();
 
-    this?.emit("parametersChanged", { instanceId, parameters });
+    this.emit("parametersChanged", { instanceId, parameters });
     return instance;
   }
 
   async setBypass(instanceId: string, bypassed: boolean): Promise<VSTInstance> {
-    const instance = this?.instances.get(instanceId);
+    const instance = this.instances.get(instanceId);
     if (!instance) {
       throw new Error(`Instance not found: ${instanceId}`);
     }
@@ -1269,12 +1269,12 @@ class VSTPluginBridge extends EventEmitter {
     instance.bypassed = bypassed;
     instance.updatedAt = new Date();
 
-    this?.emit("bypassChanged", { instanceId, bypassed });
+    this.emit("bypassChanged", { instanceId, bypassed });
     return instance;
   }
 
   async processAudio(request: VSTProcessRequest): Promise<Float32Array[]> {
-    const instance = this?.instances.get(request?.instanceId);
+    const instance = this.instances.get(request?.instanceId);
     if (!instance) {
       throw new Error(`Instance not found: ${request?.instanceId}`);
     }
@@ -1287,7 +1287,7 @@ class VSTPluginBridge extends EventEmitter {
   }
 
   async loadProgram(instanceId: string, programIndex: number): Promise<void> {
-    const instance = this?.instances.get(instanceId);
+    const instance = this.instances.get(instanceId);
     if (!instance) {
       throw new Error(`Instance not found: ${instanceId}`);
     }
@@ -1297,11 +1297,11 @@ class VSTPluginBridge extends EventEmitter {
       throw new Error(`Invalid program index: ${programIndex}`);
     }
 
-    logger?.info("VST program loaded:", {
+    logger.info("VST program loaded:", {
       instanceId,
       program: plugin.programs[programIndex],
     });
-    this?.emit("programChanged", {
+    this.emit("programChanged", {
       instanceId,
       programIndex,
       programName: plugin.programs[programIndex],
@@ -1309,7 +1309,7 @@ class VSTPluginBridge extends EventEmitter {
   }
 
   async openEditor(instanceId: string): Promise<{ windowId: string }> {
-    const instance = this?.instances.get(instanceId);
+    const instance = this.instances.get(instanceId);
     if (!instance) {
       throw new Error(`Instance not found: ${instanceId}`);
     }
@@ -1317,18 +1317,18 @@ class VSTPluginBridge extends EventEmitter {
     instance.editorOpen = true;
     const windowId = `editor-${instanceId}`;
 
-    this?.emit("editorOpened", { instanceId, windowId });
+    this.emit("editorOpened", { instanceId, windowId });
     return { windowId };
   }
 
   async closeEditor(instanceId: string): Promise<void> {
-    const instance = this?.instances.get(instanceId);
+    const instance = this.instances.get(instanceId);
     if (!instance) {
       throw new Error(`Instance not found: ${instanceId}`);
     }
 
     instance.editorOpen = false;
-    this?.emit("editorClosed", { instanceId });
+    this.emit("editorClosed", { instanceId });
   }
 
   getStats(): {
@@ -1340,7 +1340,7 @@ class VSTPluginBridge extends EventEmitter {
     desktopConnected: boolean;
   } {
     const instancesByFormat: Record<string, number> = {};
-    for (const instance of this?.instances.values()) {
+    for (const instance of this.instances.values()) {
       const format = instance?.pluginInfo.format;
       instancesByFormat[format] = (instancesByFormat[format] || 0) + 1;
     }

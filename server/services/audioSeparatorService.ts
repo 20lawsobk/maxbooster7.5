@@ -49,11 +49,11 @@ async function runSeparator(
   });
 
   if (stderr) {
-    logger?.warn("[AudioSeparator] Python stderr:", stderr?.slice(0, 500));
+    logger.warn("[AudioSeparator] Python stderr:", stderr?.slice(0, 500));
   }
 
   try {
-    return JSON?.parse(stdout?.trim());
+    return JSON.parse(stdout?.trim());
   } catch {
     throw new Error(
       `[AudioSeparator] Invalid JSON from separator: ${stdout?.slice(0, 200)}`,
@@ -131,7 +131,7 @@ export async function processUploadedBeat(
       .then(() => true)
       .catch(() => false))
   ) {
-    logger?.warn(`[AudioSeparator] WAV file not found on disk: ${localWavPath}`);
+    logger.warn(`[AudioSeparator] WAV file not found on disk: ${localWavPath}`);
     return { stemsAvailable: false };
   }
 
@@ -139,7 +139,7 @@ export async function processUploadedBeat(
   const tmpDir = path?.join(os?.tmpdir(), `audio_sep_${listingId}`);
   await fsPromises?.mkdir(tmpDir, { recursive: true });
 
-  logger?.info(
+  logger.info(
     `[AudioSeparator] Processing beat ${listingId} — MP3=${modes.mp3} stems=${modes?.stems}`,
   );
 
@@ -163,15 +163,15 @@ export async function processUploadedBeat(
       );
       result.mp3Key = key;
       result.mp3Url = url;
-      logger?.info(`[AudioSeparator] MP3 stored: ${key}`);
+      logger.info(`[AudioSeparator] MP3 stored: ${key}`);
     }
 
     // ── Upload stems ───────────────────────────────────────────────────────
-    if (modes?.stems && Object?.keys(output?.stems).length > 0) {
+    if (modes?.stems && Object.keys(output?.stems).length > 0) {
       const stemUrls: Record<string, string> = {};
       const stemInserts = [];
 
-      for (const [name, filePath] of Object?.entries(output?.stems)) {
+      for (const [name, filePath] of Object.entries(output?.stems)) {
         if (
           !(await fsPromises
             .access(filePath)
@@ -204,7 +204,7 @@ export async function processUploadedBeat(
           .where(eq(listingStems?.listingId, listingId));
 
         await db?.insert(listingStems).values(stemInserts);
-        logger?.info(
+        logger.info(
           `[AudioSeparator] Inserted ${stemInserts?.length} stems for listing ${listingId}`,
         );
       }
@@ -240,7 +240,7 @@ export async function processUploadedBeat(
       .set(updatePayload as Record<string, unknown>)
       .where(eq(listings?.id, listingId));
 
-    logger?.info(`[AudioSeparator] Updated listing ${listingId} metadata`);
+    logger.info(`[AudioSeparator] Updated listing ${listingId} metadata`);
 
     // ── Update any existing listingLicenseTiers rows ───────────────────────
     if (result?.mp3Url || result?.stemUrls) {
@@ -261,7 +261,7 @@ export async function processUploadedBeat(
           result?.stemUrls &&
           (lt === "unlimited" || lt === "exclusive")
         ) {
-          for (const [stemName, stemUrl] of Object?.entries(result?.stemUrls)) {
+          for (const [stemName, stemUrl] of Object.entries(result?.stemUrls)) {
             newUrls[`stem_${stemName}`] = stemUrl;
           }
         }
@@ -273,7 +273,7 @@ export async function processUploadedBeat(
       }
 
       if (tiers?.length > 0) {
-        logger?.info(
+        logger.info(
           `[AudioSeparator] Updated audioUrls on ${tiers?.length} license tier(s)`,
         );
       }

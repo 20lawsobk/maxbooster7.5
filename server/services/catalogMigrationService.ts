@@ -313,7 +313,7 @@ async function itunesFindArtistId(
     if (!counts[id]) counts[id] = { count: 0, name: item.artistName };
     counts[id].count++;
   }
-  const sorted = Object?.entries(counts).sort((a, b) => b[1].count - a[1].count);
+  const sorted = Object.entries(counts).sort((a, b) => b[1].count - a[1].count);
   if (!sorted?.length) return null;
   return { id: Number(sorted[0][0]), name: sorted[0][1].name };
 }
@@ -1003,7 +1003,7 @@ async function buildFromiTunesAndDeezer(
         title: t.trackName,
         isrc: undefined,
         trackNumber: t.trackNumber,
-        duration: t.trackTimeMillis ? Math?.round(t?.trackTimeMillis / 1000) : 0,
+        duration: t.trackTimeMillis ? Math.round(t?.trackTimeMillis / 1000) : 0,
       })),
     };
 
@@ -1034,14 +1034,14 @@ export async function buildMigrationPayload(
   artistName: string,
   userId?: string,
 ): Promise<MigrationPayload> {
-  logger?.info(
+  logger.info(
     `[CatalogMigration] Starting migration export for "${artistName}"` +
       (userId ? ` (userId: ${userId})` : ""),
   );
 
   // Pre-fetch streaming-platform discographies upfront so the authority /
   // validation layer can run per-release without re-fetching the artist index.
-  logger?.info(
+  logger.info(
     "[CatalogMigration] Pre-fetching Deezer + iTunes discographies (authority layer)",
   );
   const [deezerAlbums, itunesArtist] = await Promise?.all([
@@ -1049,22 +1049,22 @@ export async function buildMigrationPayload(
     itunesFindArtistId(artistName),
   ]);
 
-  logger?.info(
+  logger.info(
     `[CatalogMigration] Deezer: ${deezerAlbums?.length} album(s) found`,
   );
   let itunesAlbums: iTunesAlbumEntry[] = [];
   if (itunesArtist) {
     itunesAlbums = await itunesAlbumsByArtist(itunesArtist?.id);
-    logger?.info(
+    logger.info(
       `[CatalogMigration] Apple Music: ${itunesAlbums?.length} album(s) found for "${itunesArtist.name}"`,
     );
   }
 
   // ── Step 1: LabelGrid authority check ────────────────────────────────────
   // When LabelGrid returns releases they are the definitive catalog source.
-  logger?.info("[CatalogMigration] Querying LabelGrid authority layer");
+  logger.info("[CatalogMigration] Querying LabelGrid authority layer");
   const lgReleases = await labelGridService?.getUserCatalog();
-  logger?.info(
+  logger.info(
     `[CatalogMigration] LabelGrid returned ${lgReleases?.length} release(s)`,
   );
 
@@ -1073,7 +1073,7 @@ export async function buildMigrationPayload(
   if (lgReleases?.length > 0) {
     for (let i = 0; i < lgReleases?.length; i++) {
       const lgR = lgReleases[i];
-      logger?.info(
+      logger.info(
         `[CatalogMigration] LabelGrid ${i + 1}/${lgReleases?.length}: "${lgR.title}"`,
       );
       const migrated = await hydrateLabelGridRelease(
@@ -1089,7 +1089,7 @@ export async function buildMigrationPayload(
     // the raw catalog. LabelGrid is still the authority layer that validates
     // each release; it just isn't the data source when its API returns nothing.
     if (userId) {
-      logger?.info(
+      logger.info(
         "[CatalogMigration] LabelGrid empty — scanning linked streaming profiles",
       );
       const profileReleases = await buildFromLinkedProfiles(
@@ -1099,7 +1099,7 @@ export async function buildMigrationPayload(
         itunesAlbums,
       );
       if (profileReleases?.length > 0) {
-        logger?.info(
+        logger.info(
           `[CatalogMigration] Got ${profileReleases?.length} release(s) from linked profiles`,
         );
         releases?.push(...profileReleases);
@@ -1110,7 +1110,7 @@ export async function buildMigrationPayload(
     // Used when LabelGrid is empty and either no userId was supplied or all
     // profile scans returned zero releases.
     if (releases?.length === 0) {
-      logger?.info(
+      logger.info(
         "[CatalogMigration] No profile data — using iTunes + Deezer fallback",
       );
       const fallback = await buildFromiTunesAndDeezer(
@@ -1125,9 +1125,9 @@ export async function buildMigrationPayload(
   const totalTracks = releases?.reduce((acc, r) => acc + r?._meta.totalTracks, 0);
   const totalIsrcs = releases?.reduce((acc, r) => acc + r?._meta.isrcsCovered, 0);
   const isrcCoverage =
-    totalTracks > 0 ? `${Math?.round((totalIsrcs / totalTracks) * 100)}%` : "0%";
+    totalTracks > 0 ? `${Math.round((totalIsrcs / totalTracks) * 100)}%` : "0%";
 
-  logger?.info(
+  logger.info(
     `[CatalogMigration] Complete: ${releases?.length} releases, ` +
       `${totalTracks} tracks, ${isrcCoverage} ISRC coverage`,
   );

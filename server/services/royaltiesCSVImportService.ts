@@ -27,7 +27,7 @@ export class RoyaltiesCSVImportService {
     mapping: Record<string, string>,
   ): Partial<InsertRevenueEvent> {
     const mapped: Record<string, unknown> = {};
-    for (const [schemaField, csvColumn] of Object?.entries(mapping)) {
+    for (const [schemaField, csvColumn] of Object.entries(mapping)) {
       mapped[schemaField] = row[csvColumn];
     }
     return mapped;
@@ -56,21 +56,21 @@ export class RoyaltiesCSVImportService {
     mapping: Record<string, string>,
     _userId: string,
   ) {
-    const fileHash = this?.calculateFileHash(buffer);
+    const fileHash = this.calculateFileHash(buffer);
     const existing = await storage?.checkFileHash(fileHash);
 
     if (existing) {
       return { duplicate: true, existingImport: existing };
     }
 
-    const rows = this?.parseCSV(buffer);
+    const rows = this.parseCSV(buffer);
     const preview: unknown[] = [];
     let validCount = 0;
     let invalidCount = 0;
 
     for (const row of rows?.slice(0, 100)) {
-      const mapped = this?.mapColumns(row, mapping);
-      const validation = this?.validateRow(mapped);
+      const mapped = this.mapColumns(row, mapping);
+      const validation = this.validateRow(mapped);
 
       if (validation?.valid) {
         validCount++;
@@ -136,8 +136,8 @@ export class RoyaltiesCSVImportService {
         occurredAt: "occurredAt",
       };
 
-      const fileHash = this?.calculateFileHash(buffer);
-      const rows = this?.parseCSV(buffer);
+      const fileHash = this.calculateFileHash(buffer);
+      const rows = this.parseCSV(buffer);
 
       const importRecord = await storage?.createImportHistory({
         userId: data.userId,
@@ -154,13 +154,13 @@ export class RoyaltiesCSVImportService {
 
       for (let i = 0; i < rows?.length; i++) {
         const row = rows[i];
-        const mapped = this?.mapColumns(row, mapping);
+        const mapped = this.mapColumns(row, mapping);
 
         if (mapped?.occurredAt && typeof mapped?.occurredAt === "string") {
           mapped.occurredAt = new Date(mapped?.occurredAt);
         }
 
-        const validation = this?.validateRow(mapped);
+        const validation = this.validateRow(mapped);
         if (validation?.valid) {
           events?.push(mapped as InsertRevenueEvent);
         } else {
@@ -191,14 +191,14 @@ export class RoyaltiesCSVImportService {
         duration,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error processing CSV import:");
+      logger.warn({ err: error }, "Error processing CSV import:");
       throw error;
     } finally {
       // Clean up CSV file from storage
       try {
         await storageService?.deleteFile(data?.storageKey);
       } catch (error: unknown) {
-        logger?.warn({ err: error }, "Failed to clean up CSV file:");
+        logger.warn({ err: error }, "Failed to clean up CSV file:");
       }
     }
   }
@@ -209,8 +209,8 @@ export class RoyaltiesCSVImportService {
     userId: string,
     filename: string,
   ) {
-    const fileHash = this?.calculateFileHash(buffer);
-    const rows = this?.parseCSV(buffer);
+    const fileHash = this.calculateFileHash(buffer);
+    const rows = this.parseCSV(buffer);
 
     const importRecord = await storage?.createImportHistory({
       userId,
@@ -227,13 +227,13 @@ export class RoyaltiesCSVImportService {
 
     for (let i = 0; i < rows?.length; i++) {
       const row = rows[i];
-      const mapped = this?.mapColumns(row, mapping);
+      const mapped = this.mapColumns(row, mapping);
 
       if (mapped?.occurredAt && typeof mapped?.occurredAt === "string") {
         mapped.occurredAt = new Date(mapped?.occurredAt);
       }
 
-      const validation = this?.validateRow(mapped);
+      const validation = this.validateRow(mapped);
       if (validation?.valid) {
         events?.push(mapped as InsertRevenueEvent);
       } else {

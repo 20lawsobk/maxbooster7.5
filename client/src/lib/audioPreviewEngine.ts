@@ -226,7 +226,7 @@ export const useAudioPreviewStore = create<
 
   seek: (time: number) => {
     const { isPlaying, duration } = get();
-    const clampedTime = Math?.max(0, Math?.min(time, duration));
+    const clampedTime = Math.max(0, Math.min(time, duration));
 
     if (isPlaying) {
       get().pause();
@@ -239,7 +239,7 @@ export const useAudioPreviewStore = create<
 
   setPlaybackRate: (rate: number) => {
     const { sourceNode, isPlaying } = get();
-    const clampedRate = Math?.max(0.5, Math?.min(2.0, rate));
+    const clampedRate = Math.max(0.5, Math.min(2.0, rate));
 
     if (sourceNode && isPlaying) {
       sourceNode.playbackRate.value = clampedRate;
@@ -249,8 +249,8 @@ export const useAudioPreviewStore = create<
   },
 
   setPitchShift: (semitones: number) => {
-    const clampedPitch = Math?.max(-12, Math?.min(12, semitones));
-    const pitchRate = Math?.pow(2, clampedPitch / 12);
+    const clampedPitch = Math.max(-12, Math.min(12, semitones));
+    const pitchRate = Math.pow(2, clampedPitch / 12);
 
     set({ pitchShift: clampedPitch });
     get().setPlaybackRate(pitchRate);
@@ -258,7 +258,7 @@ export const useAudioPreviewStore = create<
 
   setVolume: (volume: number) => {
     const { gainNode } = get();
-    const clampedVolume = Math?.max(0, Math?.min(1, volume));
+    const clampedVolume = Math.max(0, Math.min(1, volume));
 
     if (gainNode) {
       gainNode.gain.value = clampedVolume;
@@ -269,7 +269,7 @@ export const useAudioPreviewStore = create<
 
   setTargetBpm: (bpm: number) => {
     const { originalBpm } = get();
-    const clampedBpm = Math?.max(60, Math?.min(200, bpm));
+    const clampedBpm = Math.max(60, Math.min(200, bpm));
     const rate = clampedBpm / originalBpm;
 
     set({ targetBpm: clampedBpm });

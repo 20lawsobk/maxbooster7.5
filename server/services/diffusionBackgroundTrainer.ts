@@ -35,7 +35,7 @@ const __metaUrl = (import.meta as Record<string, unknown>)?.url as
   | undefined;
 const __filename = __metaUrl
   ? fileURLToPath(__metaUrl)
-  : path?.resolve(process?.argv[1] ?? "");
+  : path?.resolve(process.argv[1] ?? "");
 const __dirname = path?.dirname(__filename);
 
 const SYNTH_SCRIPT = path?.join(__dirname, "diffusion", "synthesizer.py");
@@ -101,14 +101,14 @@ function _getTier(sessionIndex: number): "quick" | "medium" | "deep" {
 function _syncMemoryStats() {
   try {
     if (fs?.existsSync(MEMORY_PATH)) {
-      const raw = JSON?.parse(fs?.readFileSync(MEMORY_PATH, "utf8"));
+      const raw = JSON.parse(fs?.readFileSync(MEMORY_PATH, "utf8"));
       const s = raw?.state ?? {};
       state.totalSessions = s?.total_sessions ?? state?.totalSessions;
       state.totalSteps = s?.total_steps ?? state?.totalSteps;
       state.replayBuffer = (raw?.replay_buffer ?? []).length;
     }
     if (fs?.existsSync(META_PATH)) {
-      const meta = JSON?.parse(fs?.readFileSync(META_PATH, "utf8"));
+      const meta = JSON.parse(fs?.readFileSync(META_PATH, "utf8"));
       state.lastLoss = meta?.final_loss ?? state?.lastLoss;
     }
   } catch {
@@ -118,7 +118,7 @@ function _syncMemoryStats() {
 
 function _saveStatus() {
   try {
-    fs?.writeFileSync(STATUS_PATH, JSON?.stringify(state, null, 2));
+    fs?.writeFileSync(STATUS_PATH, JSON.stringify(state, null, 2));
   } catch {
     /* non-critical */
   }
@@ -158,10 +158,10 @@ function _runSession(tier: "quick" | "medium" | "deep"): Promise<boolean> {
         .forEach((line) => {
           _appendLog(line?.trim());
           if (
-            process?.env.NODE_ENV !== "production" &&
-            !process?.env.REPLIT_DEPLOYMENT
+            process.env.NODE_ENV !== "production" &&
+            !process.env.REPLIT_DEPLOYMENT
           ) {
-            process?.stdout.write(`[DiffBG] ${line}\n`);
+            process.stdout.write(`[DiffBG] ${line}\n`);
           }
         });
     });
@@ -244,8 +244,8 @@ async function _isMaxCoreGatewayRunning(): Promise<boolean> {
       signal: ctrl.signal,
     });
     clearTimeout(timer);
-    if (!res?.ok) return false;
-    const data = await res?.json().catch(() => null);
+    if (!res.ok) return false;
+    const data = await res.json().catch(() => null);
     return !!(data && (data as Record<string, unknown>).status === "ok");
   } catch {
     return false;
@@ -258,8 +258,8 @@ async function _isMaxCoreGatewayRunning(): Promise<boolean> {
  * local Python synthesizer — MaxCore IS the authoritative training source.
  */
 async function _isExternalMaxCoreReachable(): Promise<boolean> {
-  const mcUrl = (process?.env.AI_SERVER_URL || "").replace(/\/+$/, "");
-  const mcKey = process?.env.AI_SERVER_KEY || "";
+  const mcUrl = (process.env.AI_SERVER_URL || "").replace(/\/+$/, "");
+  const mcKey = process.env.AI_SERVER_KEY || "";
   if (!mcUrl || !mcKey) return false;
   try {
     const ctrl = new AbortController();
@@ -272,7 +272,7 @@ async function _isExternalMaxCoreReachable(): Promise<boolean> {
       redirect: "manual",
     });
     clearTimeout(timer);
-    return res?.ok;
+    return res.ok;
   } catch {
     return false;
   }
@@ -289,7 +289,7 @@ async function _isExternalMaxCoreReachable(): Promise<boolean> {
  */
 export async function startBackgroundTraining(): Promise<void> {
   if (state?.running) {
-    logger?.info("[DiffBG] Already running — ignoring start request");
+    logger.info("[DiffBG] Already running — ignoring start request");
     return;
   }
 
@@ -299,7 +299,7 @@ export async function startBackgroundTraining(): Promise<void> {
   // to it — running both would conflict on the same weights file and waste CPU.
   const gatewayUp = await _isMaxCoreGatewayRunning();
   if (gatewayUp) {
-    logger?.info(
+    logger.info(
       "[DiffBG] MaxCore Diffusion Gateway detected on port 8008 — " +
         "deferring diffusion training to Gateway (local synthesizer will not run)",
     );
@@ -313,7 +313,7 @@ export async function startBackgroundTraining(): Promise<void> {
   // defer to it — local Python training would be redundant and wasteful.
   const externalMcUp = await _isExternalMaxCoreReachable();
   if (externalMcUp) {
-    logger?.info(
+    logger.info(
       "[DiffBG] External MaxCore AI server reachable — " +
         "deferring diffusion training to MaxCore (local synthesizer will not run)",
     );
@@ -323,7 +323,7 @@ export async function startBackgroundTraining(): Promise<void> {
   // ── 3. Local Python fallback ─────────────────────────────────────────────
   // Neither the local Gateway nor the external MaxCore server responded.
   // Start the local synthesizer so training continues offline.
-  logger?.info(
+  logger.info(
     "[DiffBG] MaxCore not reachable — " +
       "starting local fallback self-training loop",
   );
@@ -333,9 +333,9 @@ export async function startBackgroundTraining(): Promise<void> {
   state.paused = false;
   _syncMemoryStats();
   _trainingLoop().catch((err) =>
-    logger?.warn({ err: err }, "[DiffBG] Unhandled loop error:"),
+    logger.warn({ err: err }, "[DiffBG] Unhandled loop error:"),
   );
-  logger?.info("[DiffBG] Local fallback self-training started");
+  logger.info("[DiffBG] Local fallback self-training started");
 }
 
 /**
@@ -350,7 +350,7 @@ export function stopBackgroundTraining(): void {
   }
   state.paused = true;
   _saveStatus();
-  logger?.info("[DiffBG] Stop requested — will halt after current session");
+  logger.info("[DiffBG] Stop requested — will halt after current session");
 }
 
 /**
@@ -372,7 +372,7 @@ export function forceStopBackgroundTraining(): void {
   state.paused = false;
   state.pid = null;
   _saveStatus();
-  logger?.info("[DiffBG] Force-stopped");
+  logger.info("[DiffBG] Force-stopped");
 }
 
 export function isBackgroundTraining(): boolean {
@@ -387,10 +387,10 @@ export function getBackgroundStatus(): BgStatus & { eta: string } {
     deep: 275,
   };
   const elapsedMin = state?.startedAt
-    ? Math?.round((Date?.now() - state?.startedAt) / 60_000)
+    ? Math.round((Date?.now() - state?.startedAt) / 60_000)
     : 0;
   const totalMin = tierMins[state?.currentTier] ?? 60;
-  const remaining = Math?.max(0, totalMin - elapsedMin);
+  const remaining = Math.max(0, totalMin - elapsedMin);
   const eta = state?.running
     ? `~${remaining}min remaining in current ${state?.currentTier} session`
     : "not running";

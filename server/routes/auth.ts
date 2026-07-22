@@ -24,10 +24,10 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const sessionId = req?.session?.id;
+      const sessionId = req.session?.id;
 
       if (!sessionId) {
-        return res?.status(400).json({
+        return res.status(400).json({
           success: false,
           error: "no_session",
           message: "No active session found",
@@ -42,7 +42,7 @@ router?.post(
         .limit(1);
 
       if (existingSession?.length === 0) {
-        return res?.status(401).json({
+        return res.status(401).json({
           success: false,
           error: "session_not_found",
           message: "Session not found or expired",
@@ -53,7 +53,7 @@ router?.post(
       const session = existingSession[0];
 
       if (session?.expiresAt && new Date(session?.expiresAt) < new Date()) {
-        return res?.status(401).json({
+        return res.status(401).json({
           success: false,
           error: "session_expired",
           message: "Session has expired",
@@ -71,15 +71,15 @@ router?.post(
         })
         .where(eq(sessions?.id, sessionId));
 
-      res?.json({
+      res.json({
         success: true,
         message: "Token refreshed successfully",
         expiresAt: newExpiresAt.toISOString(),
         outcome: "token_refresh_successful",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Token refresh error:");
-      res?.status(500).json({
+      logger.warn({ err: error }, "Token refresh error:");
+      res.status(500).json({
         success: false,
         error: "refresh_failed",
         message: "Failed to refresh token",
@@ -94,11 +94,11 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const sessionId = req?.session?.id;
-      const { extendMinutes = 30 } = req?.body;
+      const sessionId = req.session?.id;
+      const { extendMinutes = 30 } = req.body;
 
       if (!sessionId) {
-        return res?.status(400).json({
+        return res.status(400).json({
           success: false,
           error: "no_session",
           message: "No active session to extend",
@@ -112,7 +112,7 @@ router?.post(
         .limit(1);
 
       if (existingSession?.length === 0) {
-        return res?.status(401).json({
+        return res.status(401).json({
           success: false,
           error: "session_not_found",
           message: "Session not found",
@@ -120,15 +120,15 @@ router?.post(
       }
 
       const parsedMinutes = Number(extendMinutes);
-      if (!Number?.isFinite(parsedMinutes) || parsedMinutes <= 0) {
-        return res?.status(400).json({
+      if (!Number.isFinite(parsedMinutes) || parsedMinutes <= 0) {
+        return res.status(400).json({
           success: false,
           error: "invalid_extend_minutes",
           message: "extendMinutes must be a positive number",
         });
       }
       const maxExtendMinutes = 120;
-      const actualExtend = Math?.min(parsedMinutes, maxExtendMinutes);
+      const actualExtend = Math.min(parsedMinutes, maxExtendMinutes);
       const newExpiresAt = new Date(Date?.now() + actualExtend * 60 * 1000);
 
       await db
@@ -139,7 +139,7 @@ router?.post(
         })
         .where(eq(sessions?.id, sessionId));
 
-      res?.json({
+      res.json({
         success: true,
         message: `Session extended by ${actualExtend} minutes`,
         expiresAt: newExpiresAt.toISOString(),
@@ -147,8 +147,8 @@ router?.post(
         outcome: "session_extended",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Session extension error:");
-      res?.status(500).json({
+      logger.warn({ err: error }, "Session extension error:");
+      res.status(500).json({
         success: false,
         error: "extension_failed",
         message: "Failed to extend session",
@@ -162,8 +162,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const currentSessionId = req?.session?.id;
+      const userId = req.user!.id;
+      const currentSessionId = req.session?.id;
 
       const userSessions = await db
         .select()
@@ -220,14 +220,14 @@ router?.get(
         };
       });
 
-      res?.json({
+      res.json({
         sessions: formattedSessions,
         totalCount: formattedSessions.length,
         currentSessionId,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Get sessions error:");
-      res?.status(500).json({ error: "Failed to fetch sessions" });
+      logger.warn({ err: error }, "Get sessions error:");
+      res.status(500).json({ error: "Failed to fetch sessions" });
     }
   },
 );
@@ -237,12 +237,12 @@ router?.delete(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { sessionId } = req?.params;
-      const currentSessionId = req?.session?.id;
+      const userId = req.user!.id;
+      const { sessionId } = req.params;
+      const currentSessionId = req.session?.id;
 
       if (sessionId === currentSessionId) {
-        return res?.status(400).json({
+        return res.status(400).json({
           success: false,
           error: "cannot_terminate_current",
           message: "Cannot terminate current session. Use logout instead.",
@@ -256,7 +256,7 @@ router?.delete(
         .limit(1);
 
       if (sessionToDelete?.length === 0) {
-        return res?.status(404).json({
+        return res.status(404).json({
           success: false,
           error: "session_not_found",
           message: "Session not found or already terminated",
@@ -275,14 +275,14 @@ router?.delete(
         metadata: { action: "user_terminated_session" },
       });
 
-      res?.json({
+      res.json({
         success: true,
         message: "Session terminated successfully",
         outcome: "remote_session_terminated",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Delete session error:");
-      res?.status(500).json({
+      logger.warn({ err: error }, "Delete session error:");
+      res.status(500).json({
         success: false,
         error: "termination_failed",
         message: "Failed to terminate session",
@@ -296,8 +296,8 @@ router?.delete(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const currentSessionId = req?.session?.id;
+      const userId = req.user!.id;
+      const currentSessionId = req.session?.id;
 
       const otherSessions = await db
         .select({ id: sessions.id })
@@ -331,15 +331,15 @@ router?.delete(
         metadata: { action: "user_logged_out_all_devices" },
       });
 
-      res?.json({
+      res.json({
         success: true,
         message: `Logged out of ${terminatedCount} other sessions`,
         terminatedCount,
         outcome: "all_other_sessions_logged_out",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Delete other sessions error:");
-      res?.status(500).json({
+      logger.warn({ err: error }, "Delete other sessions error:");
+      res.status(500).json({
         success: false,
         error: "bulk_termination_failed",
         message: "Failed to terminate other sessions",
@@ -353,11 +353,11 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { deviceId, trusted } = req?.body;
+      const userId = req.user!.id;
+      const { deviceId, trusted } = req.body;
 
       if (!deviceId) {
-        return res?.status(400).json({
+        return res.status(400).json({
           success: false,
           error: "missing_device_id",
           message: "Device ID is required",
@@ -371,7 +371,7 @@ router?.post(
         .limit(1);
 
       if (session?.length === 0) {
-        return res?.status(404).json({
+        return res.status(404).json({
           success: false,
           error: "device_not_found",
           message: "Device/session not found",
@@ -385,7 +385,7 @@ router?.post(
 
       const outcome = trusted ? "device_trusted" : "device_untrusted";
 
-      res?.json({
+      res.json({
         success: true,
         message: trusted
           ? "Device marked as trusted"
@@ -395,8 +395,8 @@ router?.post(
         outcome,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Trust device error:");
-      res?.status(500).json({
+      logger.warn({ err: error }, "Trust device error:");
+      res.status(500).json({
         success: false,
         error: "trust_update_failed",
         message: "Failed to update device trust status",
@@ -410,11 +410,11 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const currentSessionId = req?.session?.id;
+      const userId = req.user!.id;
+      const currentSessionId = req.session?.id;
 
       if (!currentSessionId) {
-        return res?.json({
+        return res.json({
           valid: false,
           expiresAt: null,
           secondsRemaining: 0,
@@ -429,7 +429,7 @@ router?.get(
         .limit(1);
 
       if (session?.length === 0) {
-        return res?.json({
+        return res.json({
           valid: false,
           expiresAt: null,
           secondsRemaining: 0,
@@ -441,9 +441,9 @@ router?.get(
       const now = new Date();
       const isValid = expiresAt ? new Date(expiresAt) > now : true;
       const secondsRemaining = expiresAt
-        ? Math?.max(
+        ? Math.max(
             0,
-            Math?.floor((new Date(expiresAt).getTime() - now?.getTime()) / 1000),
+            Math.floor((new Date(expiresAt).getTime() - now?.getTime()) / 1000),
           )
         : null;
 
@@ -452,7 +452,7 @@ router?.get(
         .from(sessions)
         .where(and(eq(sessions?.userId, userId), gte(sessions?.expiresAt, now)));
 
-      res?.json({
+      res.json({
         valid: isValid,
         expiresAt: expiresAt.toISOString(),
         secondsRemaining,
@@ -460,8 +460,8 @@ router?.get(
         outcome: isValid ? "session_valid" : "session_expired",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Session status error:");
-      res?.status(500).json({ error: "Failed to check session status" });
+      logger.warn({ err: error }, "Session status error:");
+      res.status(500).json({ error: "Failed to check session status" });
     }
   },
 );
@@ -471,7 +471,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       const accounts = await db
         .select()
@@ -491,7 +491,7 @@ router?.get(
           ? new Date(tokenExpiresAt) < now
           : false;
         const expiresInSeconds = tokenExpiresAt
-          ? Math?.floor(
+          ? Math.floor(
               (new Date(tokenExpiresAt).getTime() - now?.getTime()) / 1000,
             )
           : null;
@@ -532,7 +532,7 @@ router?.get(
 
       const needsAttention = platformStatus?.filter((p) => p?.action !== null);
 
-      res?.json({
+      res.json({
         platforms: platformStatus,
         needsAttention,
         hasExpiredTokens: needsAttention.some((p) => p?.status === "expired"),
@@ -541,8 +541,8 @@ router?.get(
         ),
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Social token status error:");
-      res?.status(500).json({ error: "Failed to fetch social token status" });
+      logger.warn({ err: error }, "Social token status error:");
+      res.status(500).json({ error: "Failed to fetch social token status" });
     }
   },
 );
@@ -552,8 +552,8 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { platform } = req?.params;
+      const userId = req.user!.id;
+      const { platform } = req.params;
 
       const account = await db
         .select()
@@ -567,7 +567,7 @@ router?.post(
         .limit(1);
 
       if (account?.length === 0) {
-        return res?.status(404).json({
+        return res.status(404).json({
           success: false,
           error: "account_not_found",
           message: `No ${platform} account connected`,
@@ -576,7 +576,7 @@ router?.post(
       }
 
       if (!account[0].refreshToken) {
-        return res?.status(400).json({
+        return res.status(400).json({
           success: false,
           error: "no_refresh_token",
           message: "No refresh token available. Re-authorization required.",
@@ -585,15 +585,15 @@ router?.post(
         });
       }
 
-      res?.json({
+      res.json({
         success: true,
         message: `${platform} token refresh initiated`,
         platform,
         outcome: "token_refresh_initiated",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Social token refresh error:");
-      res?.status(500).json({
+      logger.warn({ err: error }, "Social token refresh error:");
+      res.status(500).json({
         success: false,
         error: "refresh_failed",
         message: "Failed to refresh token",
@@ -608,7 +608,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const sevenDaysAgo = new Date(Date?.now() - 7 * 24 * 60 * 60 * 1000);
 
       const userThreats = await db
@@ -746,7 +746,7 @@ router?.get(
         (a) => a?.severity === "critical" && !a?.resolved,
       ).length;
 
-      res?.json({
+      res.json({
         alerts,
         summary: {
           total: alerts.length,
@@ -756,8 +756,8 @@ router?.get(
         },
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching user security alerts:");
-      res?.status(500).json({ error: "Failed to fetch security alerts" });
+      logger.warn({ err: error }, "Error fetching user security alerts:");
+      res.status(500).json({ error: "Failed to fetch security alerts" });
     }
   },
 );
@@ -767,8 +767,8 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { alertId } = req?.params;
+      const userId = req.user!.id;
+      const { alertId } = req.params;
 
       await db
         .update(securityThreats)
@@ -780,10 +780,10 @@ router?.post(
           ),
         );
 
-      res?.json({ success: true, message: "Alert dismissed" });
+      res.json({ success: true, message: "Alert dismissed" });
     } catch (error) {
-      logger?.warn({ err: error }, "Error dismissing alert:");
-      res?.status(500).json({ error: "Failed to dismiss alert" });
+      logger.warn({ err: error }, "Error dismissing alert:");
+      res.status(500).json({ error: "Failed to dismiss alert" });
     }
   },
 );
@@ -793,16 +793,16 @@ router?.post(
   requireAuth,
   async (req: Record<string, unknown>, res) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const [user] = await db
         .select()
         .from(users)
         .where(eq(users?.id, userId))
         .limit(1);
-      if (!user) return res?.status(404).json({ error: "User not found" });
+      if (!user) return res.status(404).json({ error: "User not found" });
 
       if (user?.emailVerified) {
-        return res?.json({ success: true, message: "Email already verified" });
+        return res.json({ success: true, message: "Email already verified" });
       }
 
       const token = crypto?.randomBytes(32).toString("hex");
@@ -817,7 +817,7 @@ router?.post(
         .where(eq(users?.id, userId));
 
       const appUrl =
-        process?.env.APP_URL || process?.env.DOMAIN || "https://max-booster.com";
+        process.env.APP_URL || process.env.DOMAIN || "https://max-booster.com";
       const verificationUrl = `${appUrl}/verify-email?token=${token}`;
 
       try {
@@ -827,24 +827,24 @@ router?.post(
           html: `<h2>Email Verification</h2><p>Click the link below to verify your email address:</p><p><a href="${verificationUrl}">Verify Email</a></p><p>This link expires in 24 hours.</p>`,
         });
       } catch (emailError) {
-        logger?.warn(
+        logger.warn(
           "Email service unavailable — verification email not sent (token not logged).",
         );
       }
 
-      res?.json({ success: true, message: "Verification email sent" });
+      res.json({ success: true, message: "Verification email sent" });
     } catch (error) {
-      logger?.warn({ err: error }, "Error sending verification email:");
-      res?.status(500).json({ error: "Failed to send verification email" });
+      logger.warn({ err: error }, "Error sending verification email:");
+      res.status(500).json({ error: "Failed to send verification email" });
     }
   },
 );
 
 router?.get("/verify-email", async (req, res) => {
   try {
-    const { token } = req?.query;
+    const { token } = req.query;
     if (!token || typeof token !== "string") {
-      return res?.status(400).json({ error: "Verification token required" });
+      return res.status(400).json({ error: "Verification token required" });
     }
 
     const [user] = await db
@@ -879,10 +879,10 @@ router?.get("/verify-email", async (req, res) => {
       })
       .where(eq(users?.id, user?.id));
 
-    res?.json({ success: true, message: "Email verified successfully" });
+    res.json({ success: true, message: "Email verified successfully" });
   } catch (error) {
-    logger?.warn({ err: error }, "Error verifying email:");
-    res?.status(500).json({ error: "Failed to verify email" });
+    logger.warn({ err: error }, "Error verifying email:");
+    res.status(500).json({ error: "Failed to verify email" });
   }
 });
 
@@ -891,16 +891,16 @@ router?.get(
   requireAuth,
   async (req: Record<string, unknown>, res) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const [user] = await db
         .select({ emailVerified: users.emailVerified })
         .from(users)
         .where(eq(users?.id, userId))
         .limit(1);
-      res?.json({ emailVerified: user.emailVerified ?? false });
+      res.json({ emailVerified: user.emailVerified ?? false });
     } catch (error) {
-      logger?.warn({ err: error }, "Error checking email verification:");
-      res?.status(500).json({ error: "Failed to check verification status" });
+      logger.warn({ err: error }, "Error checking email verification:");
+      res.status(500).json({ error: "Failed to check verification status" });
     }
   },
 );

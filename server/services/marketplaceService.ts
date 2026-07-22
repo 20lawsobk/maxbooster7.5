@@ -9,8 +9,8 @@ import { logger } from "../logger.js";
 import { getBaseUrl } from "../config/defaults.js";
 
 // Initialize Stripe
-const stripe = process?.env.STRIPE_SECRET_KEY?.startsWith("sk_")
-  ? new Stripe(process?.env.STRIPE_SECRET_KEY, {
+const stripe = process.env.STRIPE_SECRET_KEY?.startsWith("sk_")
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: "2025-08-27.basil",
     })
   : null;
@@ -577,11 +577,11 @@ export class MarketplaceService {
         );
 
         if (payoutResult?.success) {
-          logger?.info(
+          logger.info(
             `✅ Instant payout successful: $${payoutResult?.amount} transferred to seller ${dbOrder?.sellerId}`,
           );
         } else {
-          logger?.warn(
+          logger.warn(
             `⚠️ Instant payout failed for order ${orderId}: ${payoutResult?.error}`,
           );
           // Payout failed but order still completes - seller can withdraw manually later
@@ -589,15 +589,15 @@ export class MarketplaceService {
       }
 
       // Generate license document
-      await this?.generateLicense(orderId);
+      await this.generateLicense(orderId);
 
       // Distribute royalty splits if applicable
-      await this?.distributeSplits(orderId);
+      await this.distributeSplits(orderId);
 
       // Convert database order to service order
       return toServiceOrder(updatedDBOrder);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error processing payment:");
+      logger.warn({ err: error }, "Error processing payment:");
       throw new Error("Failed to process payment");
     }
   }
@@ -619,7 +619,7 @@ export class MarketplaceService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error distributing splits:");
+      logger.warn({ err: error }, "Error distributing splits:");
       throw new Error("Failed to distribute royalty splits");
     }
   }
@@ -636,7 +636,7 @@ export class MarketplaceService {
       }
 
       // Fetch beat details
-      const beat = await this?.getListing(order?.listingId || "");
+      const beat = await this.getListing(order?.listingId || "");
       if (!beat) {
         throw new Error("Beat not found for license generation");
       }
@@ -698,13 +698,13 @@ export class MarketplaceService {
         },
       });
 
-      logger?.info(
+      logger.info(
         `Generated license document for order ${orderId}, type: ${licenseType}`,
       );
 
       return { licenseUrl };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error generating license:");
+      logger.warn({ err: error }, "Error generating license:");
       throw new Error("Failed to generate license");
     }
   }
@@ -759,7 +759,7 @@ export class MarketplaceService {
         throw new Error("Stripe not configured");
       }
 
-      const beat = await this?.getListing(data?.beatId);
+      const beat = await this.getListing(data?.beatId);
       if (!beat) {
         throw new Error("Beat not found");
       }
@@ -799,7 +799,7 @@ export class MarketplaceService {
         url: session.url!,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error creating checkout session:");
+      logger.warn({ err: error }, "Error creating checkout session:");
       throw new Error("Failed to create checkout session");
     }
   }
@@ -826,7 +826,7 @@ export class MarketplaceService {
       const dbOrders = await storage?.getSellerOrders(userId);
       return dbOrders?.map(toServiceOrder);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching user sales:");
+      logger.warn({ err: error }, "Error fetching user sales:");
       throw new Error("Failed to fetch user sales");
     }
   }
@@ -874,7 +874,7 @@ export class MarketplaceService {
 
       return { url: accountLink.url };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error setting up Stripe Connect:");
+      logger.warn({ err: error }, "Error setting up Stripe Connect:");
       throw new Error("Failed to setup Stripe Connect");
     }
   }
@@ -935,7 +935,7 @@ export class MarketplaceService {
         };
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching user listings:");
+      logger.warn({ err: error }, "Error fetching user listings:");
       return [];
     }
   }
@@ -998,7 +998,7 @@ export class MarketplaceService {
         };
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching producer listings:");
+      logger.warn({ err: error }, "Error fetching producer listings:");
       return [];
     }
   }
@@ -1030,7 +1030,7 @@ export class MarketplaceService {
       }
 
       // Validate update data
-      const validation = this?.validateListingData({
+      const validation = this.validateListingData({
         title: data.title || listing?.title,
         price: data.price ?? listing?.price,
         bpm: data.bpm,
@@ -1048,7 +1048,7 @@ export class MarketplaceService {
       if (data?.description !== undefined)
         updateData.description = data?.description;
       if (data?.price !== undefined)
-        updateData.priceCents = Math?.round(data?.price * 100);
+        updateData.priceCents = Math.round(data?.price * 100);
       if (data?.genre !== undefined) updateData.category = data?.genre;
       if (data?.audioUrl !== undefined) updateData.audioUrl = data?.audioUrl;
       if (data?.artworkUrl !== undefined)
@@ -1089,7 +1089,7 @@ export class MarketplaceService {
         createdAt: updatedListing.createdAt || new Date(),
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error updating listing:");
+      logger.warn({ err: error }, "Error updating listing:");
       throw error;
     }
   }
@@ -1107,7 +1107,7 @@ export class MarketplaceService {
       await storage?.deleteListing(listingId);
       return true;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error deleting listing:");
+      logger.warn({ err: error }, "Error deleting listing:");
       throw error;
     }
   }
@@ -1117,14 +1117,14 @@ export class MarketplaceService {
       const orders = await storage?.getUserOrders(userId);
       return orders || [];
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching user purchases:");
+      logger.warn({ err: error }, "Error fetching user purchases:");
       return [];
     }
   }
 
   async getSalesAnalytics(userId: string): Promise<unknown> {
     try {
-      const sales = await this?.getUserSales(userId);
+      const sales = await this.getUserSales(userId);
       const totalSales = sales?.reduce(
         (sum, sale) => sum + (sale?.amount || 0),
         0,
@@ -1138,7 +1138,7 @@ export class MarketplaceService {
         recentSales: sales.slice(0, 10),
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching sales analytics:");
+      logger.warn({ err: error }, "Error fetching sales analytics:");
       return {
         totalRevenue: 0,
         totalSales: 0,
@@ -1158,7 +1158,7 @@ export class MarketplaceService {
         throw new Error("Payment system not configured");
       }
 
-      const beat = await this?.getListing(beatId);
+      const beat = await this.getListing(beatId);
       if (!beat) {
         throw new Error("Beat not found");
       }
@@ -1193,7 +1193,7 @@ export class MarketplaceService {
         if (!license) {
           throw new Error("Invalid license type");
         }
-        priceInCents = Math?.round(license?.price * 100);
+        priceInCents = Math.round(license?.price * 100);
         licenseSnapshot = {
           licenseType,
           label: license.type,
@@ -1230,7 +1230,7 @@ export class MarketplaceService {
 
       return { url: session.url };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error initiating purchase:");
+      logger.warn({ err: error }, "Error initiating purchase:");
       const msg = (error as Error).message;
       if (
         msg === "Beat not found" ||

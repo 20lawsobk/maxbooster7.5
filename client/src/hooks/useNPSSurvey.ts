@@ -22,14 +22,14 @@ interface NPSSurveyState {
 function getState(): NPSSurveyState {
   try {
     const raw = localStorage?.getItem(STORAGE_KEY);
-    if (raw) return JSON?.parse(raw) as NPSSurveyState;
+    if (raw) return JSON.parse(raw) as NPSSurveyState;
   } catch {}
   return { lastShownAt: null, lastCompletedAt: null, dismissCount: 0 };
 }
 
 function saveState(state: NPSSurveyState) {
   try {
-    localStorage?.setItem(STORAGE_KEY, JSON?.stringify(state));
+    localStorage?.setItem(STORAGE_KEY, JSON.stringify(state));
   } catch {}
 }
 

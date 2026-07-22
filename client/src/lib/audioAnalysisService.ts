@@ -39,47 +39,47 @@ class AudioAnalysisService {
   private audioContext: AudioContext | null = null;
 
   private getAudioContext(): AudioContext {
-    if (!this?.audioContext) {
+    if (!this.audioContext) {
       this.audioContext = new (window?.AudioContext ||
         (window as Record<string, unknown>).webkitAudioContext)();
     }
-    return this?.audioContext;
+    return this.audioContext;
   }
 
   async analyzeAudioFile(audioFile: File): Promise<AudioAnalysisResult> {
     const arrayBuffer = await audioFile?.arrayBuffer();
-    const audioContext = this?.getAudioContext();
+    const audioContext = this.getAudioContext();
     const audioBuffer = await audioContext?.decodeAudioData(arrayBuffer);
 
     // Limit to first 10 seconds — sufficient for all feature extraction,
     // prevents allocating huge arrays for long tracks.
     const MAX_SECONDS = 10;
-    const maxSamples = Math?.min(
+    const maxSamples = Math.min(
       audioBuffer?.length,
-      Math?.floor(audioBuffer?.sampleRate * MAX_SECONDS),
+      Math.floor(audioBuffer?.sampleRate * MAX_SECONDS),
     );
-    const fullMono = this?.convertToMono(audioBuffer);
+    const fullMono = this.convertToMono(audioBuffer);
     const audioData = fullMono?.slice(0, maxSamples);
     const sampleRate = audioBuffer?.sampleRate;
 
     // Yield before each heavy phase so the browser can paint / handle events.
     await yieldToMain();
-    const bpm = this?.detectBPM(audioData, sampleRate);
+    const bpm = this.detectBPM(audioData, sampleRate);
 
     await yieldToMain();
-    const keyResult = this?.estimateKey(audioData, sampleRate);
+    const keyResult = this.estimateKey(audioData, sampleRate);
 
     await yieldToMain();
-    const energy = this?.calculateEnergy(audioData);
-    const loudness = this?.calculateLoudness(audioData);
-    const spectralCentroid = this?.calculateSpectralCentroid(
+    const energy = this.calculateEnergy(audioData);
+    const loudness = this.calculateLoudness(audioData);
+    const spectralCentroid = this.calculateSpectralCentroid(
       audioData,
       sampleRate,
     );
 
     await yieldToMain();
-    const beatPositions = this?.detectBeats(audioData, sampleRate);
-    const danceability = this?.estimateDanceability(beatPositions, energy);
+    const beatPositions = this.detectBeats(audioData, sampleRate);
+    const danceability = this.estimateDanceability(beatPositions, energy);
 
     return {
       bpm,
@@ -101,23 +101,23 @@ class AudioAnalysisService {
     try {
       const minBPM = 60;
       const maxBPM = 200;
-      const minLag = Math?.floor((sampleRate * 60) / maxBPM);
-      const maxLag = Math?.floor((sampleRate * 60) / minBPM);
+      const minLag = Math.floor((sampleRate * 60) / maxBPM);
+      const maxLag = Math.floor((sampleRate * 60) / minBPM);
 
       // At most 2 seconds of audio for the outer search window
-      const chunkSize = Math?.min(audioData?.length, sampleRate * 2);
+      const chunkSize = Math.min(audioData?.length, sampleRate * 2);
       const chunk = audioData?.slice(0, chunkSize);
 
       // Cap outer loop to ~100 lag values
-      const lagStep = Math?.max(1, Math?.ceil((maxLag - minLag) / 100));
+      const lagStep = Math.max(1, Math.ceil((maxLag - minLag) / 100));
       // Cap inner loop to 0.5 s of samples
-      const maxInner = Math?.floor(sampleRate / 2);
+      const maxInner = Math.floor(sampleRate / 2);
 
       let bestCorrelation = -Infinity;
       let bestLag = minLag;
 
       for (let lag = minLag; lag < maxLag; lag += lagStep) {
-        const samples = Math?.min(chunkSize - lag, maxInner);
+        const samples = Math.min(chunkSize - lag, maxInner);
         if (samples <= 0) continue;
         let correlation = 0;
         for (let i = 0; i < samples; i++) {
@@ -130,10 +130,10 @@ class AudioAnalysisService {
         }
       }
 
-      const bpm = Math?.round((sampleRate * 60) / bestLag);
-      return Math?.max(minBPM, Math?.min(maxBPM, bpm));
+      const bpm = Math.round((sampleRate * 60) / bestLag);
+      return Math.max(minBPM, Math.min(maxBPM, bpm));
     } catch (err) {
-      logger?.error("BPM detection error:", err);
+      logger.error("BPM detection error:", err);
       return 120;
     }
   }
@@ -165,7 +165,7 @@ class AudioAnalysisService {
 
       const fftSize = 512;
       const half = fftSize >> 1;
-      const limit = Math?.min(audioData?.length, fftSize);
+      const limit = Math.min(audioData?.length, fftSize);
 
       for (let k = 0; k < half; k++) {
         const freq = (k * sampleRate) / fftSize;
@@ -176,13 +176,13 @@ class AudioAnalysisService {
         const angleBase = (-2 * Math.PI * k) / fftSize;
         for (let n = 0; n < limit; n++) {
           const angle = angleBase * n;
-          real += audioData[n] * Math?.cos(angle);
-          imag += audioData[n] * Math?.sin(angle);
+          real += audioData[n] * Math.cos(angle);
+          imag += audioData[n] * Math.sin(angle);
         }
 
-        const midiNote = 12 * Math?.log2(freq / 440) + 69;
-        const chromaIndex = ((Math?.round(midiNote) % 12) + 12) % 12;
-        chroma[chromaIndex] += Math?.sqrt(real * real + imag * imag);
+        const midiNote = 12 * Math.log2(freq / 440) + 69;
+        const chromaIndex = ((Math.round(midiNote) % 12) + 12) % 12;
+        chroma[chromaIndex] += Math.sqrt(real * real + imag * imag);
       }
 
       let maxChroma = 0;
@@ -210,7 +210,7 @@ class AudioAnalysisService {
         scale: isMajor ? "major" : "minor",
       };
     } catch (err) {
-      logger?.error("Key estimation error:", err);
+      logger.error("Key estimation error:", err);
       return { musicalKey: "C", scale: "major" };
     }
   }
@@ -224,9 +224,9 @@ class AudioAnalysisService {
       for (let i = 0; i < audioData?.length; i++) {
         sum += audioData[i] * audioData[i];
       }
-      return Math?.min(1, Math?.sqrt(sum / audioData?.length) * 5);
+      return Math.min(1, Math.sqrt(sum / audioData?.length) * 5);
     } catch (err) {
-      logger?.error("Energy calculation error:", err);
+      logger.error("Energy calculation error:", err);
       return 0.5;
     }
   }
@@ -236,7 +236,7 @@ class AudioAnalysisService {
    */
   private estimateDanceability(beats: number[], energy: number): number {
     try {
-      if (beats?.length < 4) return Math?.round((0.3 + energy * 0.4) * 100) / 100;
+      if (beats?.length < 4) return Math.round((0.3 + energy * 0.4) * 100) / 100;
 
       const intervals: number[] = [];
       for (let i = 1; i < beats?.length; i++) {
@@ -248,9 +248,9 @@ class AudioAnalysisService {
       variance /= intervals?.length;
 
       const consistency = 1 / (1 + variance * 10);
-      return Math?.round((consistency * 0.6 + energy * 0.4) * 100) / 100;
+      return Math.round((consistency * 0.6 + energy * 0.4) * 100) / 100;
     } catch (err) {
-      logger?.error("Danceability estimation error:", err);
+      logger.error("Danceability estimation error:", err);
       return 0.5;
     }
   }
@@ -264,10 +264,10 @@ class AudioAnalysisService {
       for (let i = 0; i < audioData?.length; i++) {
         sum += audioData[i] * audioData[i];
       }
-      const db = 10 * Math?.log10(Math?.max(sum / audioData?.length, 1e-10));
-      return Math?.round((db + 30) * 100) / 100;
+      const db = 10 * Math.log10(Math.max(sum / audioData?.length, 1e-10));
+      return Math.round((db + 30) * 100) / 100;
     } catch (err) {
-      logger?.error("Loudness calculation error:", err);
+      logger.error("Loudness calculation error:", err);
       return -14.0;
     }
   }
@@ -283,7 +283,7 @@ class AudioAnalysisService {
     try {
       const fftSize = 512;
       const half = fftSize >> 1;
-      const limit = Math?.min(audioData?.length, fftSize);
+      const limit = Math.min(audioData?.length, fftSize);
 
       let weightedSum = 0;
       let totalMagnitude = 0;
@@ -297,19 +297,19 @@ class AudioAnalysisService {
         const angleBase = (-2 * Math.PI * k) / fftSize;
         for (let n = 0; n < limit; n++) {
           const angle = angleBase * n;
-          real += audioData[n] * Math?.cos(angle);
-          imag += audioData[n] * Math?.sin(angle);
+          real += audioData[n] * Math.cos(angle);
+          imag += audioData[n] * Math.sin(angle);
         }
-        const magnitude = Math?.sqrt(real * real + imag * imag);
+        const magnitude = Math.sqrt(real * real + imag * imag);
         weightedSum += freq * magnitude;
         totalMagnitude += magnitude;
       }
 
       return totalMagnitude > 0
-        ? Math?.round((weightedSum / totalMagnitude) * 100) / 100
+        ? Math.round((weightedSum / totalMagnitude) * 100) / 100
         : 1500;
     } catch (err) {
-      logger?.error("Spectral centroid calculation error:", err);
+      logger.error("Spectral centroid calculation error:", err);
       return 1500;
     }
   }
@@ -319,8 +319,8 @@ class AudioAnalysisService {
    */
   private detectBeats(audioData: Float32Array, sampleRate: number): number[] {
     try {
-      const hopSize = Math?.floor(sampleRate / 20);
-      const numFrames = Math?.floor(audioData?.length / hopSize);
+      const hopSize = Math.floor(sampleRate / 20);
+      const numFrames = Math.floor(audioData?.length / hopSize);
       const energies = new Float32Array(numFrames);
 
       for (let frame = 0; frame < numFrames; frame++) {
@@ -332,8 +332,8 @@ class AudioAnalysisService {
         energies[frame] = sum / hopSize;
       }
 
-      const sorted = Array?.from(energies).sort((a, b) => a - b);
-      const threshold = sorted[Math?.floor(sorted?.length / 2)] * 2;
+      const sorted = Array.from(energies).sort((a, b) => a - b);
+      const threshold = sorted[Math.floor(sorted?.length / 2)] * 2;
 
       const beats: number[] = [];
       for (let i = 1; i < numFrames; i++) {
@@ -341,13 +341,13 @@ class AudioAnalysisService {
         if (onset > threshold && energies[i] > threshold) {
           const time = (i * hopSize) / sampleRate;
           if (beats?.length === 0 || time - beats[beats?.length - 1] > 0.2) {
-            beats?.push(Math?.round(time * 100) / 100);
+            beats?.push(Math.round(time * 100) / 100);
           }
         }
       }
       return beats?.slice(0, 200);
     } catch (err) {
-      logger?.error("Beat detection error:", err);
+      logger.error("Beat detection error:", err);
       return [];
     }
   }
@@ -373,21 +373,21 @@ class AudioAnalysisService {
     const response = await fetch(url);
     const blob = await response?.blob();
     const file = new File([blob], "audio.wav", { type: blob.type });
-    return this?.analyzeAudioFile(file);
+    return this.analyzeAudioFile(file);
   }
 
   async analyzeAndSuggestMetadata(
     audioFile: File,
   ): Promise<BeatMetadataSuggestion> {
-    const analysis = await this?.analyzeAudioFile(audioFile);
-    return this?.inferMetadata(analysis);
+    const analysis = await this.analyzeAudioFile(audioFile);
+    return this.inferMetadata(analysis);
   }
 
   private inferMetadata(a: AudioAnalysisResult): BeatMetadataSuggestion {
-    const genre = this?.inferGenre(a);
-    const mood = this?.inferMood(a);
-    const tags = this?.inferTags(a, genre, mood);
-    const confidence = this?.calculateConfidence(a);
+    const genre = this.inferGenre(a);
+    const mood = this.inferMood(a);
+    const tags = this.inferTags(a, genre, mood);
+    const confidence = this.calculateConfidence(a);
     return {
       bpm: a.bpm,
       key: a.musicalKey,
@@ -491,7 +491,7 @@ class AudioAnalysisService {
     if (a.durationSeconds > 60) confidence += 0.1;
     if (a.beatPositions.length > 10) confidence += 0.15;
     if (a.energy > 0.1 && a.energy < 0.9) confidence += 0.1;
-    return Math?.min(0.95, Math?.round(confidence * 100) / 100);
+    return Math.min(0.95, Math.round(confidence * 100) / 100);
   }
 }
 

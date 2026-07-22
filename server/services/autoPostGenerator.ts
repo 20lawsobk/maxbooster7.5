@@ -785,7 +785,7 @@ class AutoPostGenerator {
 
     // Return average optimal hour across platforms
     const hours = platforms?.map((p) => optimalHours[p] || 12);
-    return Math?.round(hours?.reduce((a, b) => a + b, 0) / hours?.length);
+    return Math.round(hours?.reduce((a, b) => a + b, 0) / hours?.length);
   }
 }
 

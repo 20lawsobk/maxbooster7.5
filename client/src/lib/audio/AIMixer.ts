@@ -18,7 +18,7 @@ export class AIMixer {
     this.context = context;
     this.analyzer = new AIAnalyzer(context);
     this.masterBus = context?.createGain();
-    this?.masterBus.connect(context?.destination);
+    this.masterBus.connect(context?.destination);
   }
 
   /**
@@ -28,9 +28,9 @@ export class AIMixer {
     trackId: string,
     source: AudioBufferSourceNode | MediaElementAudioSourceNode,
   ): TrackChannel {
-    const channel = new TrackChannel(this?.context, trackId);
-    channel?.connect(source, this?.masterBus);
-    this?.tracks.set(trackId, channel);
+    const channel = new TrackChannel(this.context, trackId);
+    channel?.connect(source, this.masterBus);
+    this.tracks.set(trackId, channel);
     return channel;
   }
 
@@ -38,7 +38,7 @@ export class AIMixer {
    * Perform AI mixing on all tracks
    */
   async performAIMix(): Promise<MixResult> {
-    logger?.info("[AI MIXER] Starting intelligent mix analysis...");
+    logger.info("[AI MIXER] Starting intelligent mix analysis...");
 
     const mixResult: MixResult = {
       success: true,
@@ -47,30 +47,30 @@ export class AIMixer {
     };
 
     // Step 1: Analyze all tracks
-    const trackAnalysis = await this?.analyzeAllTracks();
+    const trackAnalysis = await this.analyzeAllTracks();
 
     // Step 2: Detect instrument types and frequency content
-    const instrumentMap = this?.detectInstruments(trackAnalysis);
+    const instrumentMap = this.detectInstruments(trackAnalysis);
 
     // Step 3: Apply automatic gain staging
-    this?.applyGainStaging(trackAnalysis, mixResult);
+    this.applyGainStaging(trackAnalysis, mixResult);
 
     // Step 4: Apply EQ to each track based on frequency masking
-    this?.applyIntelligentEQ(trackAnalysis, instrumentMap, mixResult);
+    this.applyIntelligentEQ(trackAnalysis, instrumentMap, mixResult);
 
     // Step 5: Apply compression based on dynamics
-    this?.applyDynamicCompression(trackAnalysis, instrumentMap, mixResult);
+    this.applyDynamicCompression(trackAnalysis, instrumentMap, mixResult);
 
     // Step 6: Set panning for stereo image
-    this?.applyStereoPanning(instrumentMap, mixResult);
+    this.applyStereoPanning(instrumentMap, mixResult);
 
     // Step 7: Add spatial effects (reverb)
-    this?.applySpatialEffects(instrumentMap, mixResult);
+    this.applySpatialEffects(instrumentMap, mixResult);
 
     // Step 8: Final loudness optimization
-    this?.optimizeLoudness(mixResult);
+    this.optimizeLoudness(mixResult);
 
-    logger?.info("[AI MIXER] Mix complete!", mixResult);
+    logger.info("[AI MIXER] Mix complete!", mixResult);
     return mixResult;
   }
 
@@ -80,18 +80,18 @@ export class AIMixer {
   private async analyzeAllTracks(): Promise<Map<string, TrackAnalysis>> {
     const analysis = new Map<string, TrackAnalysis>();
 
-    for (const [trackId, channel] of this?.tracks) {
+    for (const [trackId, channel] of this.tracks) {
       const buffer = await channel?.getBuffer();
       if (!buffer) continue;
 
-      const dynamicRange = this?.analyzer.analyzeDynamicRange(buffer);
-      const lufs = this?.analyzer.calculateLUFS(buffer);
-      const clipping = this?.analyzer.detectClipping(buffer);
+      const dynamicRange = this.analyzer.analyzeDynamicRange(buffer);
+      const lufs = this.analyzer.calculateLUFS(buffer);
+      const clipping = this.analyzer.detectClipping(buffer);
 
       // Get frequency analysis
-      const tempSource = this?.context.createBufferSource();
+      const tempSource = this.context.createBufferSource();
       tempSource.buffer = buffer;
-      const freqData = this?.analyzer.getFrequencyData(tempSource);
+      const freqData = this.analyzer.getFrequencyData(tempSource);
 
       analysis?.set(trackId, {
         trackId,
@@ -164,7 +164,7 @@ export class AIMixer {
     };
 
     for (const [trackId, data] of analysis) {
-      const channel = this?.tracks.get(trackId);
+      const channel = this.tracks.get(trackId);
       if (!channel) continue;
 
       // Calculate required gain adjustment
@@ -173,8 +173,8 @@ export class AIMixer {
       const gainAdjustment = targetLUFS - currentLUFS;
 
       // Apply gain with limiting to prevent clipping
-      const finalGain = Math?.max(-12, Math?.min(12, gainAdjustment));
-      channel?.setGain(Math?.pow(10, finalGain / 20));
+      const finalGain = Math.max(-12, Math.min(12, gainAdjustment));
+      channel?.setGain(Math.pow(10, finalGain / 20));
 
       result?.adjustments.push({
         trackId,
@@ -194,7 +194,7 @@ export class AIMixer {
     result: MixResult,
   ): void {
     for (const [trackId, instrument] of instruments) {
-      const channel = this?.tracks.get(trackId);
+      const channel = this.tracks.get(trackId);
       if (!channel) continue;
 
       const eq = channel?.getEQ();
@@ -267,7 +267,7 @@ export class AIMixer {
     result: MixResult,
   ): void {
     for (const [trackId, data] of analysis) {
-      const channel = this?.tracks.get(trackId);
+      const channel = this.tracks.get(trackId);
       const instrument = instruments?.get(trackId);
       if (!channel) continue;
 
@@ -332,7 +332,7 @@ export class AIMixer {
     const panIncrement = 1.4 / (instruments?.size - centerElements?.length);
 
     for (const [trackId, instrument] of instruments) {
-      const channel = this?.tracks.get(trackId);
+      const channel = this.tracks.get(trackId);
       if (!channel) continue;
 
       if (centerElements?.includes(instrument)) {
@@ -364,7 +364,7 @@ export class AIMixer {
     result: MixResult,
   ): void {
     for (const [trackId, instrument] of instruments) {
-      const channel = this?.tracks.get(trackId);
+      const channel = this.tracks.get(trackId);
       if (!channel) continue;
 
       const reverb = channel?.getReverb();
@@ -432,9 +432,9 @@ export class AIMixer {
     const currentLUFS = -18; // Placeholder
 
     const adjustment = targetLUFS - currentLUFS;
-    this?.masterBus.gain?.setValueAtTime(
-      Math?.pow(10, adjustment / 20),
-      this?.context.currentTime,
+    this.masterBus.gain?.setValueAtTime(
+      Math.pow(10, adjustment / 20),
+      this.context.currentTime,
     );
 
     result?.adjustments.push({
@@ -455,7 +455,7 @@ export class AIMixer {
    * Reset all AI adjustments
    */
   reset(): void {
-    for (const channel of this?.tracks.values()) {
+    for (const channel of this.tracks.values()) {
       channel?.reset();
     }
     this.masterBus.gain.value = 1;
@@ -465,12 +465,12 @@ export class AIMixer {
    * Cleanup resources
    */
   destroy(): void {
-    for (const channel of this?.tracks.values()) {
+    for (const channel of this.tracks.values()) {
       channel?.destroy();
     }
-    this?.tracks.clear();
-    this?.masterBus.disconnect();
-    this?.analyzer.destroy();
+    this.tracks.clear();
+    this.masterBus.disconnect();
+    this.analyzer.destroy();
   }
 }
 
@@ -503,16 +503,16 @@ class TrackChannel {
     this.reverb = new ReverbPlugin(context);
 
     // Connect chain: input -> EQ -> Compressor -> Reverb -> Panner -> Output
-    this?.input.connect(this?.eq.getInput());
-    this?.eq.connect(this?.compressor.getInput());
-    this?.compressor.connect(this?.reverb.getInput());
-    this?.reverb.connect(this?.panner);
-    this?.panner.connect(this?.output);
+    this.input.connect(this.eq.getInput());
+    this.eq.connect(this.compressor.getInput());
+    this.compressor.connect(this.reverb.getInput());
+    this.reverb.connect(this.panner);
+    this.panner.connect(this.output);
   }
 
   connect(source: AudioNode, destination: AudioNode): void {
-    source?.connect(this?.input);
-    this?.output.connect(destination);
+    source?.connect(this.input);
+    this.output.connect(destination);
   }
 
   setGain(value: number): void {
@@ -524,15 +524,15 @@ class TrackChannel {
   }
 
   getEQ(): EQPlugin {
-    return this?.eq;
+    return this.eq;
   }
 
   getCompressor(): CompressorPlugin {
-    return this?.compressor;
+    return this.compressor;
   }
 
   getReverb(): ReverbPlugin {
-    return this?.reverb;
+    return this.reverb;
   }
 
   setBuffer(buffer: AudioBuffer): void {
@@ -540,24 +540,24 @@ class TrackChannel {
   }
 
   async getBuffer(): Promise<AudioBuffer | undefined> {
-    return this?.buffer;
+    return this.buffer;
   }
 
   reset(): void {
     this.output.gain.value = 1;
     this.panner.pan.value = 0;
-    this?.eq.reset();
-    this?.compressor.setParameters({ bypass: true });
-    this?.reverb.setMix(0);
+    this.eq.reset();
+    this.compressor.setParameters({ bypass: true });
+    this.reverb.setMix(0);
   }
 
   destroy(): void {
-    this?.input.disconnect();
-    this?.output.disconnect();
-    this?.panner.disconnect();
-    this?.eq.destroy();
-    this?.compressor.destroy();
-    this?.reverb.destroy();
+    this.input.disconnect();
+    this.output.disconnect();
+    this.panner.disconnect();
+    this.eq.destroy();
+    this.compressor.destroy();
+    this.reverb.destroy();
   }
 }
 

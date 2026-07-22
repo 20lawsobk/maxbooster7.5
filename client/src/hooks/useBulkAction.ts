@@ -95,7 +95,7 @@ export function useBulkAction(
       setProgress((prev) => {
         const next = { ...prev, ...update };
         next.percentage =
-          next?.total > 0 ? Math?.round((next?.current / next?.total) * 100) : 0;
+          next?.total > 0 ? Math.round((next?.current / next?.total) * 100) : 0;
         onProgress?.(next);
         return next;
       });

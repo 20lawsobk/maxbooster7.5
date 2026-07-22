@@ -95,27 +95,27 @@ class MobilePushService {
   private accessTokenExpiry = 0;
 
   constructor() {
-    this?.initialize();
+    this.initialize();
   }
 
   private initialize() {
     const projectId =
-      process?.env.FCM_PROJECT_ID || process?.env.FIREBASE_PROJECT_ID;
+      process.env.FCM_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
     const serviceAccountRaw =
-      process?.env.FCM_SERVICE_ACCOUNT_KEY ||
-      process?.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+      process.env.FCM_SERVICE_ACCOUNT_KEY ||
+      process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
     const serverKey =
-      process?.env.FCM_SERVER_KEY || process?.env.FIREBASE_SERVER_KEY;
-    const clientEmail = process?.env.FCM_CLIENT_EMAIL;
+      process.env.FCM_SERVER_KEY || process.env.FIREBASE_SERVER_KEY;
+    const clientEmail = process.env.FCM_CLIENT_EMAIL;
 
     if (projectId && serviceAccountRaw) {
       // Option A: full JSON service account file
       try {
-        const parsed = JSON?.parse(serviceAccountRaw);
+        const parsed = JSON.parse(serviceAccountRaw);
         this.serviceAccountKey = parsed;
         this.projectId = projectId;
         this.mode = "fcm_v1";
-        logger?.info("📱 Mobile Push Service: FCM v1 API ready (full JSON)");
+        logger.info("📱 Mobile Push Service: FCM v1 API ready (full JSON)");
         return;
       } catch {
         // Not JSON — try Option B: raw private key + FCM_CLIENT_EMAIL
@@ -146,18 +146,18 @@ class MobilePushService {
           } as Record<string, string>;
           this.projectId = projectId;
           this.mode = "fcm_v1";
-          logger?.info(
+          logger.info(
             "📱 Mobile Push Service: FCM v1 API ready (raw key + email)",
           );
           return;
         } catch (err) {
-          logger?.warn(
+          logger.warn(
             { err: err },
             "📱 Mobile Push Service: Failed to reconstruct service account from raw key",
           );
         }
       } else {
-        logger?.warn(
+        logger.warn(
           "📱 Mobile Push Service: FCM_SERVICE_ACCOUNT_KEY is not valid JSON — set FCM_CLIENT_EMAIL to activate raw-key mode",
         );
       }
@@ -166,21 +166,21 @@ class MobilePushService {
     if (serverKey) {
       this.serverKey = serverKey;
       this.mode = "fcm_legacy";
-      logger?.info("📱 Mobile Push Service: FCM Legacy API ready");
+      logger.info("📱 Mobile Push Service: FCM Legacy API ready");
       return;
     }
 
-    logger?.info(
+    logger.info(
       "📱 Mobile Push Service: No credentials configured — mobile push unavailable. Set FCM_PROJECT_ID + FCM_SERVICE_ACCOUNT_KEY (+ FCM_CLIENT_EMAIL for raw key) to activate.",
     );
   }
 
   isReady(): boolean {
-    return this?.mode !== "unavailable";
+    return this.mode !== "unavailable";
   }
 
   getMode(): PushMode {
-    return this?.mode;
+    return this.mode;
   }
 
   // ── Device Token Management ─────────────────────────────────────────────────
@@ -212,7 +212,7 @@ class MobilePushService {
             updatedAt: new Date(),
           })
           .where(eq(mobileDeviceTokens?.token, token));
-        logger?.info(`📱 Mobile token updated for user ${userId} (${platform})`);
+        logger.info(`📱 Mobile token updated for user ${userId} (${platform})`);
       } else {
         await db?.insert(mobileDeviceTokens).values({
           userId,
@@ -222,12 +222,12 @@ class MobilePushService {
           appVersion: appVersion || null,
           isActive: true,
         });
-        logger?.info(
+        logger.info(
           `📱 Mobile token registered for user ${userId} (${platform})`,
         );
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to register mobile device token:");
+      logger.warn({ err: error }, "Failed to register mobile device token:");
       throw error;
     }
   }
@@ -239,7 +239,7 @@ class MobilePushService {
         .set({ isActive: false, updatedAt: new Date() })
         .where(eq(mobileDeviceTokens?.token, token));
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to deactivate mobile device token:");
+      logger.warn({ err: error }, "Failed to deactivate mobile device token:");
     }
   }
 
@@ -248,9 +248,9 @@ class MobilePushService {
       await db
         .delete(mobileDeviceTokens)
         .where(eq(mobileDeviceTokens?.userId, userId));
-      logger?.info(`📱 All mobile tokens removed for user ${userId}`);
+      logger.info(`📱 All mobile tokens removed for user ${userId}`);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to remove user mobile tokens:");
+      logger.warn({ err: error }, "Failed to remove user mobile tokens:");
     }
   }
 
@@ -266,13 +266,13 @@ class MobilePushService {
           ),
         )) as DeviceTokenRecord[];
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get user mobile tokens:");
+      logger.warn({ err: error }, "Failed to get user mobile tokens:");
       return [];
     }
   }
 
   async getUserTokenStatus(userId: string) {
-    const tokens = await this?.getUserTokens(userId);
+    const tokens = await this.getUserTokens(userId);
     return {
       hasTokens: tokens.length > 0,
       count: tokens.length,
@@ -289,18 +289,18 @@ class MobilePushService {
   // ── FCM v1 Access Token ────────────────────────────────────────────────────
 
   private async getAccessToken(): Promise<string | null> {
-    if (!this?.serviceAccountKey) return null;
-    if (this?.accessToken && Date?.now() < this?.accessTokenExpiry)
-      return this?.accessToken;
+    if (!this.serviceAccountKey) return null;
+    if (this.accessToken && Date?.now() < this.accessTokenExpiry)
+      return this.accessToken;
 
     try {
       const { createSign } = await import("crypto");
-      const now = Math?.floor(Date?.now() / 1000);
+      const now = Math.floor(Date?.now() / 1000);
       const header = Buffer?.from(
-        JSON?.stringify({ alg: "RS256", typ: "JWT" }),
+        JSON.stringify({ alg: "RS256", typ: "JWT" }),
       ).toString("base64url");
       const payload = Buffer?.from(
-        JSON?.stringify({
+        JSON.stringify({
           iss: this.serviceAccountKey.client_email,
           scope: "https://www.googleapis.com/auth/firebase.messaging",
           aud: "https://oauth2.googleapis.com/token",
@@ -313,7 +313,7 @@ class MobilePushService {
       const sign = createSign("RSA-SHA256");
       sign?.update(unsignedToken);
       const signature = sign?.sign(
-        this?.serviceAccountKey.private_key,
+        this.serviceAccountKey.private_key,
         "base64url",
       );
       const jwt = `${unsignedToken}.${signature}`;
@@ -328,7 +328,7 @@ class MobilePushService {
       });
 
       if (!response?.ok) {
-        logger?.warn("Failed to get FCM access token:", await response?.text());
+        logger.warn("Failed to get FCM access token:", await response?.text());
         return null;
       }
 
@@ -338,9 +338,9 @@ class MobilePushService {
       };
       this.accessToken = data?.access_token;
       this.accessTokenExpiry = Date?.now() + (data?.expires_in - 60) * 1000;
-      return this?.accessToken;
+      return this.accessToken;
     } catch (error) {
-      logger?.warn({ err: error }, "FCM access token error:");
+      logger.warn({ err: error }, "FCM access token error:");
       return null;
     }
   }
@@ -352,7 +352,7 @@ class MobilePushService {
     payload: MobilePushPayload,
     platform: string,
   ): Promise<boolean> {
-    const accessToken = await this?.getAccessToken();
+    const accessToken = await this.getAccessToken();
     if (!accessToken) return false;
 
     const androidConfig = {
@@ -433,9 +433,9 @@ class MobilePushService {
       if (!response?.ok) {
         const errText = await response?.text();
         if (response?.status === 404 || errText?.includes("UNREGISTERED")) {
-          await this?.deactivateToken(token);
+          await this.deactivateToken(token);
         }
-        logger?.warn(
+        logger.warn(
           `FCM v1 send failed (${response?.status}):`,
           errText?.substring(0, 200),
         );
@@ -443,7 +443,7 @@ class MobilePushService {
       }
       return true;
     } catch (error) {
-      logger?.warn({ err: error }, "FCM v1 network error:");
+      logger.warn({ err: error }, "FCM v1 network error:");
       return false;
     }
   }
@@ -454,7 +454,7 @@ class MobilePushService {
     token: string,
     payload: MobilePushPayload,
   ): Promise<boolean> {
-    if (!this?.serverKey) return false;
+    if (!this.serverKey) return false;
 
     const body = {
       to: token,
@@ -485,14 +485,14 @@ class MobilePushService {
       const response = await timedFetch("https://fcm.googleapis.com/fcm/send", {
         method: "POST",
         headers: {
-          Authorization: `key=${this?.serverKey}`,
+          Authorization: `key=${this.serverKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
       });
 
       if (!response?.ok) {
-        logger?.warn(`FCM legacy send failed (${response?.status})`);
+        logger.warn(`FCM legacy send failed (${response?.status})`);
         return false;
       }
 
@@ -504,13 +504,13 @@ class MobilePushService {
       if (result?.failure && result?.failure > 0 && result?.results?.[0]?.error) {
         const err = result?.results[0].error;
         if (err === "NotRegistered" || err === "InvalidRegistration") {
-          await this?.deactivateToken(token);
+          await this.deactivateToken(token);
         }
         return false;
       }
       return (result?.success ?? 0) > 0;
     } catch (error) {
-      logger?.warn({ err: error }, "FCM legacy network error:");
+      logger.warn({ err: error }, "FCM legacy network error:");
       return false;
     }
   }
@@ -521,11 +521,11 @@ class MobilePushService {
     userId: string,
     payload: MobilePushPayload,
   ): Promise<{ sent: number; failed: number }> {
-    if (!this?.isReady()) {
+    if (!this.isReady()) {
       return { sent: 0, failed: 0 };
     }
 
-    const tokens = await this?.getUserTokens(userId);
+    const tokens = await this.getUserTokens(userId);
     if (tokens?.length === 0) return { sent: 0, failed: 0 };
 
     let sent = 0;
@@ -533,16 +533,16 @@ class MobilePushService {
 
     for (const record of tokens) {
       const ok =
-        this?.mode === "fcm_v1"
-          ? await this?.sendViav1(record?.token, payload, record?.platform)
-          : await this?.sendViaLegacy(record?.token, payload);
+        this.mode === "fcm_v1"
+          ? await this.sendViav1(record?.token, payload, record?.platform)
+          : await this.sendViaLegacy(record?.token, payload);
 
       if (ok) sent++;
       else failed++;
     }
 
     if (sent > 0) {
-      logger?.info(
+      logger.info(
         `📱 Mobile push sent to ${sent}/${tokens?.length} device(s) for user ${userId}`,
       );
     }
@@ -585,7 +585,7 @@ class MobilePushService {
       },
     };
 
-    return this?.sendToUser(userId, payload);
+    return this.sendToUser(userId, payload);
   }
 
   // ── Utility ─────────────────────────────────────────────────────────────────

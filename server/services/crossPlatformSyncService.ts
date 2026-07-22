@@ -153,7 +153,7 @@ setInterval(
 function compareVersions(a: string, b: string): number {
   const partsA = a?.replace(/^v/, "").split(".").map(Number);
   const partsB = b?.replace(/^v/, "").split(".").map(Number);
-  const len = Math?.max(partsA?.length, partsB?.length);
+  const len = Math.max(partsA?.length, partsB?.length);
   for (let i = 0; i < len; i++) {
     const numA = partsA[i] || 0;
     const numB = partsB[i] || 0;
@@ -212,7 +212,7 @@ export function registerDevice(
   };
 
   devices?.set(device?.deviceId, deviceInfo);
-  logger?.info("Device registered", {
+  logger.info("Device registered", {
     userId,
     deviceId: device.deviceId,
     platform: device.platform,
@@ -225,7 +225,7 @@ export function unregisterDevice(userId: string, deviceId: string): boolean {
   const removed = devices?.delete(deviceId);
   if (removed) {
     deviceSyncVersions?.delete(`${userId}:${deviceId}`);
-    logger?.info("Device unregistered", { userId, deviceId });
+    logger.info("Device unregistered", { userId, deviceId });
   }
   return removed;
 }
@@ -240,7 +240,7 @@ export function heartbeat(userId: string, deviceId: string): DeviceInfo | null {
 
 export function listDevices(userId: string): DeviceInfo[] {
   const devices = getUserDevices(userId);
-  return Array?.from(devices?.values());
+  return Array.from(devices?.values());
 }
 
 export function isDeviceOnline(device: DeviceInfo): boolean {
@@ -341,7 +341,7 @@ export function pushUpdateNotification(
   }
   updateNotifications?.get("global")!.push(notification);
 
-  logger?.info("Update notification pushed", { platform, version, isForced });
+  logger.info("Update notification pushed", { platform, version, isForced });
   return notification;
 }
 
@@ -384,7 +384,7 @@ export function triggerRemoteUpdate(
   setLatestVersion(platform, targetVersion, changelog, "");
   pushUpdateNotification(platform, targetVersion, changelog, isForced);
 
-  logger?.info("Remote update triggered", {
+  logger.info("Remote update triggered", {
     rolloutId: rollout.id,
     platform,
     targetVersion,
@@ -412,7 +412,7 @@ export function getUpdateRolloutStatus(): Array<{
 }> {
   const results = [];
   for (const [, rollout] of updateRollouts?.entries()) {
-    const devices = Array?.from(rollout?.deviceStatuses.values());
+    const devices = Array.from(rollout?.deviceStatuses.values());
     const stats = {
       total: devices.length,
       pending: devices.filter((d) => d?.status === "pending").length,
@@ -481,7 +481,7 @@ export function pushSyncState(
       ...syncState?.notificationReadIds,
       ...changes?.notificationReadIds,
     ]);
-    syncState.notificationReadIds = Array?.from(merged);
+    syncState.notificationReadIds = Array.from(merged);
   }
 
   syncState.syncVersion += 1;
@@ -490,7 +490,7 @@ export function pushSyncState(
   const deviceSyncKey = `${userId}:${deviceId}`;
   deviceSyncVersions?.set(deviceSyncKey, syncState?.syncVersion);
 
-  logger?.info("Sync state updated", {
+  logger.info("Sync state updated", {
     userId,
     deviceId,
     syncVersion: syncState.syncVersion,

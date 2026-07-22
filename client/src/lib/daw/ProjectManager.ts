@@ -98,20 +98,20 @@ export class ProjectManager {
       recoveryData: null,
     };
 
-    this?.checkForRecovery();
-    this?.startDirtyCheck();
+    this.checkForRecovery();
+    this.startDirtyCheck();
   }
 
   getState(): Readonly<ProjectManagerState> {
-    return { ...this?.state };
+    return { ...this.state };
   }
 
   createNew(name: string = "Untitled Project"): void {
-    if (this?.state.isDirty) {
-      logger?.warn("Unsaved changes will be lost");
+    if (this.state.isDirty) {
+      logger.warn("Unsaved changes will be lost");
     }
 
-    const id = `proj_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    const id = `proj_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const now = Date?.now();
 
     this.state.currentProject = {
@@ -136,18 +136,18 @@ export class ProjectManager {
     this.state.mediaPool = [];
     this.state.missingFiles = [];
 
-    this?.takeSnapshot();
-    this?.startAutosave();
-    this?.notify();
+    this.takeSnapshot();
+    this.startAutosave();
+    this.notify();
   }
 
   save(): string {
-    if (!this?.state.currentProject) {
+    if (!this.state.currentProject) {
       throw new Error("No project to save");
     }
 
-    const projectState = this?.serializeProject();
-    const serialized = JSON?.stringify(projectState);
+    const projectState = this.serializeProject();
+    const serialized = JSON.stringify(projectState);
 
     try {
       localStorage?.setItem(STORAGE_KEY, serialized);
@@ -156,46 +156,46 @@ export class ProjectManager {
       this.state.currentProject.modifiedAt = Date?.now();
       this.state.isDirty = false;
 
-      this?.takeSnapshot();
-      this?.notify();
+      this.takeSnapshot();
+      this.notify();
 
       return serialized;
     } catch (error) {
-      logger?.error("Failed to save project:", error);
+      logger.error("Failed to save project:", error);
       throw error;
     }
   }
 
   saveAs(name: string): string {
-    if (!this?.state.currentProject) {
+    if (!this.state.currentProject) {
       throw new Error("No project to save");
     }
 
     this.state.currentProject = {
-      ...this?.state.currentProject,
-      id: `proj_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`,
+      ...this.state.currentProject,
+      id: `proj_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`,
       name,
       version: 1,
       createdAt: Date.now(),
     };
 
-    return this?.save();
+    return this.save();
   }
 
   load(data: string): void {
     try {
-      const projectState: ProjectState = JSON?.parse(data);
-      this?.deserializeProject(projectState);
+      const projectState: ProjectState = JSON.parse(data);
+      this.deserializeProject(projectState);
 
       this.state.currentProject = projectState?.metadata;
       this.state.isDirty = false;
 
-      this?.takeSnapshot();
-      this?.startAutosave();
-      this?.validateMediaPool();
-      this?.notify();
+      this.takeSnapshot();
+      this.startAutosave();
+      this.validateMediaPool();
+      this.notify();
     } catch (error) {
-      logger?.error("Failed to load project:", error);
+      logger.error("Failed to load project:", error);
       throw new Error("Invalid project file");
     }
   }
@@ -204,54 +204,54 @@ export class ProjectManager {
     try {
       const data = localStorage?.getItem(STORAGE_KEY);
       if (data) {
-        this?.load(data);
+        this.load(data);
         return true;
       }
       return false;
     } catch (error) {
-      logger?.error("Failed to load from storage:", error);
+      logger.error("Failed to load from storage:", error);
       return false;
     }
   }
 
   createVersion(name: string, description: string = ""): string {
-    if (!this?.state.currentProject) {
+    if (!this.state.currentProject) {
       throw new Error("No project open");
     }
 
-    const projectState = this?.serializeProject();
-    const serialized = JSON?.stringify(projectState);
+    const projectState = this.serializeProject();
+    const serialized = JSON.stringify(projectState);
 
     const version: ProjectVersion = {
-      id: `ver_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`,
+      id: `ver_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`,
       name,
       createdAt: Date.now(),
       data: serialized,
       description,
     };
 
-    this?.state.versions?.unshift(version);
+    this.state.versions?.unshift(version);
 
-    while (this?.state.versions?.length > this?.state.maxVersions) {
-      this?.state.versions?.pop();
+    while (this.state.versions?.length > this.state.maxVersions) {
+      this.state.versions?.pop();
     }
 
-    this?.notify();
+    this.notify();
     return version?.id;
   }
 
   loadVersion(versionId: string): void {
-    const version = this?.state.versions?.find((v) => v?.id === versionId);
+    const version = this.state.versions?.find((v) => v?.id === versionId);
     if (!version) {
       throw new Error("Version not found");
     }
 
-    this?.load(version?.data);
+    this.load(version?.data);
   }
 
   deleteVersion(versionId: string): void {
-    this.state.versions = this?.state.versions?.filter((v) => v?.id !== versionId);
-    this?.notify();
+    this.state.versions = this.state.versions?.filter((v) => v?.id !== versionId);
+    this.notify();
   }
 
   private serializeProject(): ProjectState {
@@ -279,7 +279,7 @@ export class ProjectManager {
   addToMediaPool(
     item: Omit<MediaPoolItem, "id" | "addedAt" | "usageCount" | "missing">,
   ): string {
-    const id = `media_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    const id = `media_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const newItem: MediaPoolItem = {
       ...item,
       id,
@@ -288,90 +288,90 @@ export class ProjectManager {
       missing: false,
     };
 
-    this?.state.mediaPool?.push(newItem);
-    this?.markDirty();
-    this?.notify();
+    this.state.mediaPool?.push(newItem);
+    this.markDirty();
+    this.notify();
     return id;
   }
 
   removeFromMediaPool(itemId: string): void {
-    const item = this?.state.mediaPool?.find((i) => i?.id === itemId);
+    const item = this.state.mediaPool?.find((i) => i?.id === itemId);
     if (item && item?.usageCount > 0) {
-      logger?.warn(
+      logger.warn(
         `Media item ${itemId} is still in use (${item?.usageCount} references)`,
       );
       return;
     }
 
-    this.state.mediaPool = this?.state.mediaPool?.filter((i) => i?.id !== itemId);
-    this?.markDirty();
-    this?.notify();
+    this.state.mediaPool = this.state.mediaPool?.filter((i) => i?.id !== itemId);
+    this.markDirty();
+    this.notify();
   }
 
   updateMediaPoolUsage(itemId: string, delta: number): void {
-    const item = this?.state.mediaPool?.find((i) => i?.id === itemId);
+    const item = this.state.mediaPool?.find((i) => i?.id === itemId);
     if (item) {
-      item.usageCount = Math?.max(0, item?.usageCount + delta);
-      this?.notify();
+      item.usageCount = Math.max(0, item?.usageCount + delta);
+      this.notify();
     }
   }
 
   private validateMediaPool(): void {
     this.state.missingFiles = [];
 
-    for (const item of this?.state.mediaPool) {
+    for (const item of this.state.mediaPool) {
       item.missing = false;
     }
 
-    this?.notify();
+    this.notify();
   }
 
   resolveMissingFile(originalPath: string, newPath: string): void {
-    const item = this?.state.mediaPool?.find((i) => i?.path === originalPath);
+    const item = this.state.mediaPool?.find((i) => i?.path === originalPath);
     if (item) {
       item.path = newPath;
       item.missing = false;
-      this.state.missingFiles = this?.state.missingFiles?.filter(
+      this.state.missingFiles = this.state.missingFiles?.filter(
         (p) => p !== originalPath,
       );
-      this?.markDirty();
-      this?.notify();
+      this.markDirty();
+      this.notify();
     }
   }
 
   private startAutosave(): void {
-    if (this?.autosaveTimer !== null) {
-      clearInterval(this?.autosaveTimer);
+    if (this.autosaveTimer !== null) {
+      clearInterval(this.autosaveTimer);
     }
 
-    if (this?.state.autosaveEnabled) {
+    if (this.state.autosaveEnabled) {
       this.autosaveTimer = window?.setInterval(() => {
-        this?.performAutosave();
-      }, this?.state.autosaveInterval);
+        this.performAutosave();
+      }, this.state.autosaveInterval);
     }
   }
 
   private stopAutosave(): void {
-    if (this?.autosaveTimer !== null) {
-      clearInterval(this?.autosaveTimer);
+    if (this.autosaveTimer !== null) {
+      clearInterval(this.autosaveTimer);
       this.autosaveTimer = null;
     }
   }
 
   private performAutosave(): void {
-    if (!this?.state.currentProject || !this?.state.isDirty) return;
+    if (!this.state.currentProject || !this.state.isDirty) return;
 
     try {
-      const projectState = this?.serializeProject();
-      const serialized = JSON?.stringify(projectState);
+      const projectState = this.serializeProject();
+      const serialized = JSON.stringify(projectState);
       localStorage?.setItem(AUTOSAVE_KEY, serialized);
       this.state.lastAutosave = Date?.now();
 
       localStorage?.setItem(RECOVERY_KEY, serialized);
 
-      this?.notify();
+      this.notify();
     } catch (error) {
-      logger?.error("Autosave failed:", error);
+      logger.error("Autosave failed:", error);
     }
   }
 
@@ -382,12 +382,12 @@ export class ProjectManager {
     }
 
     if (enabled) {
-      this?.startAutosave();
+      this.startAutosave();
     } else {
-      this?.stopAutosave();
+      this.stopAutosave();
     }
 
-    this?.notify();
+    this.notify();
   }
 
   private checkForRecovery(): void {
@@ -396,25 +396,25 @@ export class ProjectManager {
       if (recoveryData) {
         this.state.recoveryData = recoveryData;
         this.state.isRecovering = true;
-        this?.notify();
+        this.notify();
       }
     } catch (error) {
-      logger?.error("Failed to check for recovery data:", error);
+      logger.error("Failed to check for recovery data:", error);
     }
   }
 
   recoverProject(): void {
-    if (!this?.state.recoveryData) return;
+    if (!this.state.recoveryData) return;
 
     try {
-      this?.load(this?.state.recoveryData);
+      this.load(this.state.recoveryData);
       this.state.isRecovering = false;
       this.state.recoveryData = null;
       localStorage?.removeItem(RECOVERY_KEY);
-      this?.notify();
+      this.notify();
     } catch (error) {
-      logger?.error("Failed to recover project:", error);
-      this?.discardRecovery();
+      logger.error("Failed to recover project:", error);
+      this.discardRecovery();
     }
   }
 
@@ -422,32 +422,32 @@ export class ProjectManager {
     this.state.isRecovering = false;
     this.state.recoveryData = null;
     localStorage?.removeItem(RECOVERY_KEY);
-    this?.notify();
+    this.notify();
   }
 
   markDirty(): void {
-    if (!this?.state.isDirty) {
+    if (!this.state.isDirty) {
       this.state.isDirty = true;
-      this?.notify();
+      this.notify();
     }
   }
 
   private startDirtyCheck(): void {
     this.dirtyCheckTimer = window?.setInterval(() => {
-      const currentSnapshot = this?.takeSnapshotString();
-      if (currentSnapshot !== this?.lastSnapshot) {
-        this?.markDirty();
+      const currentSnapshot = this.takeSnapshotString();
+      if (currentSnapshot !== this.lastSnapshot) {
+        this.markDirty();
       }
     }, 5000);
   }
 
   private takeSnapshot(): void {
-    this.lastSnapshot = this?.takeSnapshotString();
+    this.lastSnapshot = this.takeSnapshotString();
   }
 
   private takeSnapshotString(): string {
     try {
-      return JSON?.stringify({
+      return JSON.stringify({
         timeline: timelineEngine.serialize(),
         automation: automationEngine.serialize(),
         midi: midiEngine.serialize(),
@@ -458,32 +458,32 @@ export class ProjectManager {
   }
 
   setProjectMetadata(updates: Partial<ProjectMetadata>): void {
-    if (!this?.state.currentProject) return;
+    if (!this.state.currentProject) return;
 
     this.state.currentProject = {
-      ...this?.state.currentProject,
+      ...this.state.currentProject,
       ...updates,
       modifiedAt: Date.now(),
     };
 
-    this?.markDirty();
-    this?.notify();
+    this.markDirty();
+    this.notify();
   }
 
   exportProject(): string {
-    if (!this?.state.currentProject) {
+    if (!this.state.currentProject) {
       throw new Error("No project to export");
     }
 
-    const projectState = this?.serializeProject();
-    return JSON?.stringify(projectState, null, 2);
+    const projectState = this.serializeProject();
+    return JSON.stringify(projectState, null, 2);
   }
 
   async saveToBackend(
     projectId?: string,
   ): Promise<{ success: boolean; projectId: string }> {
-    const projectState = this?.serializeProject();
-    const metadata = this?.state.currentProject;
+    const projectState = this.serializeProject();
+    const metadata = this.state.currentProject;
 
     const payload = {
       title: metadata.name || "Untitled Project",
@@ -515,10 +515,10 @@ export class ProjectManager {
         if (!response?.ok) throw new Error("Failed to save project");
 
         this.state.isDirty = false;
-        if (this?.state.currentProject) {
+        if (this.state.currentProject) {
           this.state.currentProject.lastSavedAt = Date?.now();
         }
-        this?.notify();
+        this.notify();
 
         return { success: true, projectId };
       } else {
@@ -534,17 +534,17 @@ export class ProjectManager {
         const data = await response?.json();
         const newProjectId = data?.id;
 
-        if (this?.state.currentProject) {
+        if (this.state.currentProject) {
           this.state.currentProject.id = newProjectId;
           this.state.currentProject.lastSavedAt = Date?.now();
         }
         this.state.isDirty = false;
-        this?.notify();
+        this.notify();
 
         return { success: true, projectId: newProjectId };
       }
     } catch (error) {
-      logger?.error("[ProjectManager] Backend save failed:", error);
+      logger.error("[ProjectManager] Backend save failed:", error);
       throw error;
     }
   }
@@ -555,20 +555,20 @@ export class ProjectManager {
         `/api/studio/projects/${projectId}/daw-state`,
       );
       if (!response?.ok) {
-        logger?.warn("[ProjectManager] No DAW state found for project");
+        logger.warn("[ProjectManager] No DAW state found for project");
         return false;
       }
 
       const data = await response?.json();
 
       if (data?.dawState) {
-        const projectState: ProjectState = JSON?.parse(data?.dawState);
-        this?.deserializeProject(projectState);
+        const projectState: ProjectState = JSON.parse(data?.dawState);
+        this.deserializeProject(projectState);
         this.state.currentProject = projectState?.metadata;
         this.state.isDirty = false;
-        this?.takeSnapshot();
-        this?.startAutosave();
-        this?.notify();
+        this.takeSnapshot();
+        this.startAutosave();
+        this.notify();
         return true;
       }
 
@@ -592,13 +592,13 @@ export class ProjectManager {
           tags: data.project.tags || [],
         };
         this.state.isDirty = false;
-        this?.startAutosave();
-        this?.notify();
+        this.startAutosave();
+        this.notify();
       }
 
       return true;
     } catch (error) {
-      logger?.error("[ProjectManager] Backend load failed:", error);
+      logger.error("[ProjectManager] Backend load failed:", error);
       return false;
     }
   }
@@ -616,7 +616,7 @@ export class ProjectManager {
         updatedAt: p.updatedAt || p?.createdAt,
       }));
     } catch (error) {
-      logger?.error("[ProjectManager] Failed to list projects:", error);
+      logger.error("[ProjectManager] Failed to list projects:", error);
       return [];
     }
   }
@@ -646,25 +646,25 @@ export class ProjectManager {
         0,
       ),
       mediaItems: this.state.mediaPool?.length,
-      estimatedSize: JSON.stringify(this?.serializeProject()).length,
+      estimatedSize: JSON.stringify(this.serializeProject()).length,
     };
   }
 
   subscribe(listener: () => void): () => void {
-    this?.listeners.add(listener);
-    return () => this?.listeners.delete(listener);
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
   }
 
   private notify(): void {
-    this?.listeners.forEach((l) => l());
+    this.listeners.forEach((l) => l());
   }
 
   dispose(): void {
-    this?.stopAutosave();
-    if (this?.dirtyCheckTimer !== null) {
-      clearInterval(this?.dirtyCheckTimer);
+    this.stopAutosave();
+    if (this.dirtyCheckTimer !== null) {
+      clearInterval(this.dirtyCheckTimer);
     }
-    this?.listeners.clear();
+    this.listeners.clear();
   }
 }
 

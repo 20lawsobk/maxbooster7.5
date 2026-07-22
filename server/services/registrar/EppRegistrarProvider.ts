@@ -17,7 +17,7 @@ import type {
 function getEppConfig() {
   return {
     host: process.env.EPP_HOST || "",
-    port: parseInt(process?.env.EPP_PORT || "700"),
+    port: parseInt(process.env.EPP_PORT || "700"),
     user: process.env.EPP_USERNAME || "",
     pass: process.env.EPP_PASSWORD || "",
     tlsCert: process.env.EPP_TLS_CERT,
@@ -34,8 +34,8 @@ function notConfigured(method: string): never {
   const msg =
     `EPP_NOT_CONFIGURED: ${method}() called but no EPP credentials are set. ` +
     `Set EPP_HOST + EPP_USERNAME + EPP_PASSWORD and set REGISTRAR_PROVIDER=epp.`;
-  logger?.warn(msg);
-  throw Object?.assign(new Error(msg), { code: "EPP_NOT_CONFIGURED" });
+  logger.warn(msg);
+  throw Object.assign(new Error(msg), { code: "EPP_NOT_CONFIGURED" });
 }
 
 // ── Provider ──────────────────────────────────────────────────────────────────
@@ -45,10 +45,10 @@ export class EppRegistrarProvider implements RegistrarProvider {
   private session: EppSession | null = null;
 
   private async getSession(): Promise<EppSession> {
-    if (!this?.session) {
+    if (!this.session) {
       this.session = new EppSession(getEppConfig());
     }
-    return this?.session;
+    return this.session;
   }
 
   private generateContactId(userId: string, fqdn: string): string {
@@ -66,7 +66,7 @@ export class EppRegistrarProvider implements RegistrarProvider {
       };
     }
     try {
-      const session = await this?.getSession();
+      const session = await this.getSession();
       await session?.connectAndLogin();
       return { ok: true };
     } catch (err) {
@@ -79,7 +79,7 @@ export class EppRegistrarProvider implements RegistrarProvider {
   async checkAvailability(fqdn: string): Promise<AvailabilityResult> {
     if (!isConfigured()) notConfigured("checkAvailability");
 
-    const session = await this?.getSession();
+    const session = await this.getSession();
     const available = await session?.checkAvailability(fqdn);
 
     return {
@@ -93,8 +93,8 @@ export class EppRegistrarProvider implements RegistrarProvider {
   async registerDomain(params: RegisterParams): Promise<RegisterResult> {
     if (!isConfigured()) notConfigured("registerDomain");
 
-    const session = await this?.getSession();
-    const contactId = this?.generateContactId(params?.userId, params?.fqdn);
+    const session = await this.getSession();
+    const contactId = this.generateContactId(params?.userId, params?.fqdn);
 
     // 1. Create contact
     await session?.createContact(contactId, params?.contact);
@@ -133,7 +133,7 @@ export class EppRegistrarProvider implements RegistrarProvider {
   async renewDomain(fqdn: string, years: number): Promise<RenewResult> {
     if (!isConfigured()) notConfigured("renewDomain");
 
-    const session = await this?.getSession();
+    const session = await this.getSession();
     const info = await session?.getDomainInfo(fqdn);
     const curExpDate = info?.resData.infData?.exDate;
 
@@ -156,10 +156,10 @@ export class EppRegistrarProvider implements RegistrarProvider {
   async setNameservers(fqdn: string, nameservers: string[]): Promise<void> {
     if (!isConfigured()) notConfigured("setNameservers");
 
-    const session = await this?.getSession();
+    const session = await this.getSession();
     const info = await session?.getDomainInfo(fqdn);
     const currentNs = info?.resData.infData?.ns?.hostObj || [];
-    const currentNsArray = Array?.isArray(currentNs) ? currentNs : [currentNs];
+    const currentNsArray = Array.isArray(currentNs) ? currentNs : [currentNs];
 
     const toAdd = nameservers?.filter((ns) => !currentNsArray?.includes(ns));
     const toRem = currentNsArray?.filter(
@@ -181,7 +181,7 @@ export class EppRegistrarProvider implements RegistrarProvider {
   async getDomainInfo(fqdn: string): Promise<DomainInfo> {
     if (!isConfigured()) notConfigured("getDomainInfo");
 
-    const session = await this?.getSession();
+    const session = await this.getSession();
     const resp = await session?.getDomainInfo(fqdn);
     if (resp?.code !== 1000) {
       throw new Error(
@@ -212,7 +212,7 @@ export class EppRegistrarProvider implements RegistrarProvider {
   async releaseDomain(fqdn: string): Promise<void> {
     if (!isConfigured()) notConfigured("releaseDomain");
     // EPP soft release is usually just letting it expire or disabling auto-renew if supported by extension
-    logger?.info(`Soft releasing domain ${fqdn} - will expire naturally`);
+    logger.info(`Soft releasing domain ${fqdn} - will expire naturally`);
   }
 
   // ── Transfer in ───────────────────────────────────────────────────────────────
@@ -220,7 +220,7 @@ export class EppRegistrarProvider implements RegistrarProvider {
   async initiateTransferIn(params: TransferParams): Promise<TransferResult> {
     if (!isConfigured()) notConfigured("initiateTransferIn");
 
-    const session = await this?.getSession();
+    const session = await this.getSession();
     const resp = await session?.transferDomain(params?.fqdn, params?.authCode);
 
     if (resp?.code !== 1000 && resp?.code !== 1001) {

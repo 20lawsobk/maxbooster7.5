@@ -52,27 +52,27 @@ class AIModelTelemetry {
   private readonly METRICS_RETENTION = 100;
 
   recordModelLoad(event: ModelLoadEvent): void {
-    this?.loadEvents.push(event);
+    this.loadEvents.push(event);
 
-    if (this?.loadEvents.length > this?.MAX_EVENT_HISTORY) {
-      this?.loadEvents.shift();
+    if (this.loadEvents.length > this.MAX_EVENT_HISTORY) {
+      this.loadEvents.shift();
     }
 
     if (event?.loadTimeMs > 1000) {
-      logger?.warn(
+      logger.warn(
         `⚠️ Slow AI model load: ${event?.modelType} for user ${event?.userId} took ${event?.loadTimeMs}ms`,
       );
     }
   }
 
   recordModelEviction(event: ModelEvictionEvent): void {
-    this?.evictionEvents.push(event);
+    this.evictionEvents.push(event);
 
-    if (this?.evictionEvents.length > this?.MAX_EVENT_HISTORY) {
-      this?.evictionEvents.shift();
+    if (this.evictionEvents.length > this.MAX_EVENT_HISTORY) {
+      this.evictionEvents.shift();
     }
 
-    logger?.info(
+    logger.info(
       `🗑️ AI model evicted: ${event?.modelType} for user ${event?.userId} (idle: ${(event?.idleTimeMs / 1000).toFixed(0)}s, reason: ${event?.reason})`,
     );
   }
@@ -83,7 +83,7 @@ class AIModelTelemetry {
     socialMaxSize: number,
     advertisingMaxSize: number,
   ): ModelCacheMetrics {
-    const recentLoads = this?.loadEvents.filter(
+    const recentLoads = this.loadEvents.filter(
       (e) => Date?.now() - e?.timestamp.getTime() < 300000,
     );
 
@@ -113,7 +113,7 @@ class AIModelTelemetry {
           advertisingLoads?.length
         : 0;
 
-    const recentEvictions = this?.evictionEvents.filter(
+    const recentEvictions = this.evictionEvents.filter(
       (e) => Date?.now() - e?.timestamp.getTime() < 300000,
     );
 
@@ -127,8 +127,8 @@ class AIModelTelemetry {
     const estimatedModelSizeMB = 50;
     const totalModels = socialCache?.size + advertisingCache?.size;
 
-    const usedMemory = process?.memoryUsage();
-    const usedMB = Math?.round(usedMemory?.heapUsed / 1024 / 1024);
+    const usedMemory = process.memoryUsage();
+    const usedMB = Math.round(usedMemory?.heapUsed / 1024 / 1024);
 
     const metrics: ModelCacheMetrics = {
       socialAutopilot: {
@@ -169,13 +169,13 @@ class AIModelTelemetry {
       timestamp: new Date(),
     };
 
-    this?.metricsHistory.push(metrics);
+    this.metricsHistory.push(metrics);
 
-    if (this?.metricsHistory.length > this?.METRICS_RETENTION) {
-      this?.metricsHistory.shift();
+    if (this.metricsHistory.length > this.METRICS_RETENTION) {
+      this.metricsHistory.shift();
     }
 
-    this?.checkAlerts(metrics);
+    this.checkAlerts(metrics);
 
     return metrics;
   }
@@ -226,26 +226,26 @@ class AIModelTelemetry {
     }
 
     if (alerts?.length > 0) {
-      logger?.warn(`🚨 AI Model Cache alerts:\n${alerts?.join("\n")}`);
+      logger.warn(`🚨 AI Model Cache alerts:\n${alerts?.join("\n")}`);
     }
   }
 
   getLatestMetrics(): ModelCacheMetrics | null {
-    return this?.metricsHistory.length > 0
-      ? this?.metricsHistory[this?.metricsHistory.length - 1]
+    return this.metricsHistory.length > 0
+      ? this.metricsHistory[this.metricsHistory.length - 1]
       : null;
   }
 
   getMetricsHistory(): ModelCacheMetrics[] {
-    return this?.metricsHistory;
+    return this.metricsHistory;
   }
 
   getRecentLoadEvents(limit: number = 100): ModelLoadEvent[] {
-    return this?.loadEvents.slice(-limit);
+    return this.loadEvents.slice(-limit);
   }
 
   getRecentEvictionEvents(limit: number = 100): ModelEvictionEvent[] {
-    return this?.evictionEvents.slice(-limit);
+    return this.evictionEvents.slice(-limit);
   }
 
   getSummary(): {
@@ -254,7 +254,7 @@ class AIModelTelemetry {
     avgCacheHitRate: number;
     avgLoadTime: number;
   } {
-    const allLoads = this?.loadEvents;
+    const allLoads = this.loadEvents;
     const cacheHits = allLoads?.filter((e) => e?.cacheHit).length;
     const avgLoadTime =
       allLoads?.length > 0

@@ -91,7 +91,7 @@ export const tfWorkerQueueDepth = new Gauge({
   help: "Current depth of the TensorFlow worker inference queue",
   registers: [registry],
   collect() {
-    this?.set(tfWorkerPool?.getQueueDepth());
+    this.set(tfWorkerPool?.getQueueDepth());
   },
 });
 
@@ -103,11 +103,11 @@ router?.get(
   requireAdmin,
   async (_req: Request, res: Response) => {
     try {
-      res?.set("Content-Type", registry?.contentType as RegistryContentType);
+      res.set("Content-Type", registry?.contentType as RegistryContentType);
       const metrics = await registry?.metrics();
-      res?.end(metrics);
+      res.end(metrics);
     } catch (err) {
-      res?.status(500).end("Failed to collect metrics");
+      res.status(500).end("Failed to collect metrics");
     }
   },
 );

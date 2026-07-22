@@ -111,7 +111,7 @@ export function usePrecisionTransport(): [
 
   const beatsPerBar = 4;
   const positionBeats = localPosition;
-  const positionBars = Math?.floor(localPosition / beatsPerBar) + 1;
+  const positionBars = Math.floor(localPosition / beatsPerBar) + 1;
 
   const state: PrecisionTransportState = {
     isPlaying: transport.isPlaying,
@@ -181,7 +181,7 @@ export function usePrecisionTransport(): [
 
   const setTempo = useCallback(
     (bpm: number) => {
-      const clampedBpm = Math?.max(20, Math?.min(999, bpm));
+      const clampedBpm = Math.max(20, Math.min(999, bpm));
       store?.setTempo(clampedBpm);
     },
     [store],
@@ -201,7 +201,7 @@ export function usePrecisionTransport(): [
 
   const nudgeBackward = useCallback(
     (amount = 1) => {
-      seek(Math?.max(0, localPosition - amount));
+      seek(Math.max(0, localPosition - amount));
     },
     [localPosition, seek],
   );

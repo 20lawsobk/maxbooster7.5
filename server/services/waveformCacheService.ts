@@ -38,24 +38,24 @@ class WaveformCacheService {
   async getWaveform(
     audioKey: string,
     audioBuffer?: Buffer,
-    resolution: number = this?.DEFAULT_RESOLUTION,
+    resolution: number = this.DEFAULT_RESOLUTION,
   ): Promise<WaveformData> {
     const cacheKey = `${audioKey}:${resolution}`;
     const cached = waveformCache?.get(cacheKey);
 
     if (cached && cached?.expiresAt > new Date()) {
-      logger?.debug("Waveform cache hit", { audioKey, resolution });
+      logger.debug("Waveform cache hit", { audioKey, resolution });
       return cached?.waveformData;
     }
 
-    logger?.debug("Waveform cache miss, generating", { audioKey, resolution });
+    logger.debug("Waveform cache miss, generating", { audioKey, resolution });
 
     let buffer = audioBuffer;
     if (!buffer) {
       try {
         buffer = await storageService?.downloadFile(audioKey);
       } catch (error) {
-        logger?.warn("Failed to download audio for waveform generation", {
+        logger.warn("Failed to download audio for waveform generation", {
           audioKey,
           error,
         });
@@ -65,16 +65,16 @@ class WaveformCacheService {
       }
     }
 
-    const waveformData = await this?.generateWaveform(buffer, resolution);
+    const waveformData = await this.generateWaveform(buffer, resolution);
 
-    this?.cacheWaveform(cacheKey, audioKey, waveformData);
+    this.cacheWaveform(cacheKey, audioKey, waveformData);
 
     return waveformData;
   }
 
   async generateWaveform(
     audioBuffer: Buffer,
-    resolution: number = this?.DEFAULT_RESOLUTION,
+    resolution: number = this.DEFAULT_RESOLUTION,
   ): Promise<WaveformData> {
     try {
       const wav = new WaveFile(audioBuffer);
@@ -85,7 +85,7 @@ class WaveformCacheService {
       let leftChannel: Float32Array;
       let rightChannel: Float32Array | null = null;
 
-      if (Array?.isArray(samples)) {
+      if (Array.isArray(samples)) {
         leftChannel = new Float32Array(samples[0]);
         if (samples?.length > 1) {
           rightChannel = new Float32Array(samples[1]);
@@ -94,22 +94,22 @@ class WaveformCacheService {
         leftChannel = new Float32Array(samples);
       }
 
-      const samplesPerBucket = Math?.floor(leftChannel?.length / resolution);
+      const samplesPerBucket = Math.floor(leftChannel?.length / resolution);
       const peaks: number[] = [];
       const rms: number[] = [];
 
       for (let i = 0; i < resolution; i++) {
         const start = i * samplesPerBucket;
-        const end = Math?.min(start + samplesPerBucket, leftChannel?.length);
+        const end = Math.min(start + samplesPerBucket, leftChannel?.length);
 
         let maxPeak = 0;
         let sumSquares = 0;
         let count = 0;
 
         for (let j = start; j < end; j++) {
-          const leftSample = Math?.abs(leftChannel[j]);
+          const leftSample = Math.abs(leftChannel[j]);
           const rightSample = rightChannel
-            ? Math?.abs(rightChannel[j])
+            ? Math.abs(rightChannel[j])
             : leftSample;
           const sample = (leftSample + rightSample) / (rightChannel ? 2 : 1);
 
@@ -119,7 +119,7 @@ class WaveformCacheService {
         }
 
         peaks?.push(maxPeak);
-        rms?.push(count > 0 ? Math?.sqrt(sumSquares / count) : 0);
+        rms?.push(count > 0 ? Math.sqrt(sumSquares / count) : 0);
       }
 
       const duration = leftChannel?.length / sampleRate;
@@ -133,8 +133,8 @@ class WaveformCacheService {
         resolution,
       };
     } catch (error) {
-      logger?.warn("Error generating waveform from WAV", { error });
-      return this?.generateFallbackWaveform(resolution);
+      logger.warn("Error generating waveform from WAV", { error });
+      return this.generateFallbackWaveform(resolution);
     }
   }
 
@@ -142,16 +142,16 @@ class WaveformCacheService {
     pcmData: Float32Array,
     sampleRate: number,
     channels: number,
-    resolution: number = this?.DEFAULT_RESOLUTION,
+    resolution: number = this.DEFAULT_RESOLUTION,
   ): Promise<WaveformData> {
-    const samplesPerChannel = Math?.floor(pcmData?.length / channels);
-    const samplesPerBucket = Math?.floor(samplesPerChannel / resolution);
+    const samplesPerChannel = Math.floor(pcmData?.length / channels);
+    const samplesPerBucket = Math.floor(samplesPerChannel / resolution);
     const peaks: number[] = [];
     const rms: number[] = [];
 
     for (let i = 0; i < resolution; i++) {
       const start = i * samplesPerBucket * channels;
-      const end = Math?.min(start + samplesPerBucket * channels, pcmData?.length);
+      const end = Math.min(start + samplesPerBucket * channels, pcmData?.length);
 
       let maxPeak = 0;
       let sumSquares = 0;
@@ -160,7 +160,7 @@ class WaveformCacheService {
       for (let j = start; j < end; j += channels) {
         let sampleSum = 0;
         for (let c = 0; c < channels; c++) {
-          sampleSum += Math?.abs(pcmData[j + c] || 0);
+          sampleSum += Math.abs(pcmData[j + c] || 0);
         }
         const sample = sampleSum / channels;
 
@@ -170,7 +170,7 @@ class WaveformCacheService {
       }
 
       peaks?.push(maxPeak);
-      rms?.push(count > 0 ? Math?.sqrt(sumSquares / count) : 0);
+      rms?.push(count > 0 ? Math.sqrt(sumSquares / count) : 0);
     }
 
     const duration = samplesPerChannel / sampleRate;
@@ -188,7 +188,7 @@ class WaveformCacheService {
   private generateFallbackWaveform(resolution: number): WaveformData {
     const peaks = new Array(resolution)
       .fill(0)
-      .map(() => Math?.random() * 0.5 + 0.1);
+      .map(() => Math.random() * 0.5 + 0.1);
     const rms = peaks?.map((p) => p * 0.7);
 
     return {
@@ -206,7 +206,7 @@ class WaveformCacheService {
     audioKey: string,
     waveformData: WaveformData,
   ): void {
-    if (waveformCache?.size >= this?.MAX_CACHE_SIZE) {
+    if (waveformCache?.size >= this.MAX_CACHE_SIZE) {
       const oldestKey = waveformCache?.keys().next().value;
       if (oldestKey) {
         waveformCache?.delete(oldestKey);
@@ -217,7 +217,7 @@ class WaveformCacheService {
       audioKey,
       waveformData,
       createdAt: new Date(),
-      expiresAt: new Date(Date?.now() + this?.CACHE_TTL_MS),
+      expiresAt: new Date(Date?.now() + this.CACHE_TTL_MS),
     });
   }
 
@@ -227,7 +227,7 @@ class WaveformCacheService {
         waveformCache?.delete(key);
       }
     }
-    logger?.debug("Waveform cache invalidated", { audioKey });
+    logger.debug("Waveform cache invalidated", { audioKey });
   }
 
   clearExpiredCache(): number {
@@ -242,7 +242,7 @@ class WaveformCacheService {
     }
 
     if (cleared > 0) {
-      logger?.info("Cleared expired waveform cache entries", { count: cleared });
+      logger.info("Cleared expired waveform cache entries", { count: cleared });
     }
 
     return cleared;

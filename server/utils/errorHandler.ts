@@ -82,7 +82,7 @@ export function logError(
     metadata: context.metadata,
   };
 
-  console?.error("[ERROR]", JSON?.stringify(logEntry));
+  console?.error("[ERROR]", JSON.stringify(logEntry));
 }
 
 /**
@@ -101,7 +101,7 @@ export async function retryWithBackoff<T>(
       return await fn();
     } catch (error) {
       lastError = error;
-      const delayMs = initialDelayMs * Math?.pow(2, attempt);
+      const delayMs = initialDelayMs * Math.pow(2, attempt);
 
       logError(error, {
         ...context,
@@ -165,7 +165,7 @@ export function safeJsonParse<T>(
   fallback?: T
 ): T {
   try {
-    return JSON?.parse(json) as T;
+    return JSON.parse(json) as T;
   } catch (error) {
     logError(error, { ...context, operation: `${context?.operation} (JSON parse)` });
     if (fallback !== undefined) {
@@ -269,20 +269,20 @@ export function errorHandlerMiddleware(
   _next: any
 ): void {
   if (err instanceof AppError) {
-    res?.status(err?.statusCode).json({
+    res.status(err?.statusCode).json({
       error: err.code,
       message: err.message,
       context: err.context,
     });
   } else if (err instanceof Error) {
     console?.error("[UNHANDLED_ERROR]", err);
-    res?.status(500).json({
+    res.status(500).json({
       error: "INTERNAL_SERVER_ERROR",
       message: "An unexpected error occurred",
     });
   } else {
     console?.error("[UNKNOWN_ERROR]", err);
-    res?.status(500).json({
+    res.status(500).json({
       error: "INTERNAL_SERVER_ERROR",
       message: "An unexpected error occurred",
     });

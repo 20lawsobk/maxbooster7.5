@@ -139,41 +139,41 @@ class AIHelpDeskService {
   private conversations: Map<string, ConversationContext> = new Map();
 
   constructor() {
-    setInterval(() => this?._sweepExpired(), HELPDESK_SESSION_TTL_MS).unref();
+    setInterval(() => this._sweepExpired(), HELPDESK_SESSION_TTL_MS).unref();
   }
 
   private _sweepExpired(): void {
     const now = Date?.now();
-    for (const [id, ctx] of this?.conversations) {
+    for (const [id, ctx] of this.conversations) {
       if (now - ctx?.lastAccessedAt > HELPDESK_SESSION_TTL_MS) {
-        this?.conversations.delete(id);
+        this.conversations.delete(id);
       }
     }
   }
 
   private _evictOldestIfFull(): void {
-    if (this?.conversations.size < HELPDESK_MAX_SESSIONS) return;
+    if (this.conversations.size < HELPDESK_MAX_SESSIONS) return;
     let oldestKey: string | null = null;
     let oldestTime = Infinity;
-    for (const [id, ctx] of this?.conversations) {
+    for (const [id, ctx] of this.conversations) {
       if (ctx?.lastAccessedAt < oldestTime) {
         oldestTime = ctx?.lastAccessedAt;
         oldestKey = id;
       }
     }
-    if (oldestKey) this?.conversations.delete(oldestKey);
+    if (oldestKey) this.conversations.delete(oldestKey);
   }
 
   /**
    * Get or create a conversation context
    */
   getConversation(sessionId: string, userId?: number): ConversationContext {
-    const existing = this?.conversations.get(sessionId);
+    const existing = this.conversations.get(sessionId);
     if (existing) {
       existing.lastAccessedAt = Date?.now();
       return existing;
     }
-    this?._evictOldestIfFull();
+    this._evictOldestIfFull();
     const ctx: ConversationContext = {
       sessionId,
       userId,
@@ -187,7 +187,7 @@ class AIHelpDeskService {
       resolved: false,
       lastAccessedAt: Date.now(),
     };
-    this?.conversations.set(sessionId, ctx);
+    this.conversations.set(sessionId, ctx);
     return ctx;
   }
 
@@ -200,7 +200,7 @@ class AIHelpDeskService {
     userMessage: string,
     userId?: number,
   ): Promise<HelpDeskResponse> {
-    const context = this?.getConversation(sessionId, userId);
+    const context = this.getConversation(sessionId, userId);
 
     // Add user message to history
     context?.messages.push({

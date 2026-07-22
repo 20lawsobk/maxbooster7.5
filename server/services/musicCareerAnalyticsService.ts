@@ -99,10 +99,10 @@ export async function predictCareerGrowth(
     if (historicalData?.length >= 2) {
       const firstPeriod = historicalData?.slice(
         0,
-        Math?.floor(historicalData?.length / 2),
+        Math.floor(historicalData?.length / 2),
       );
       const secondPeriod = historicalData?.slice(
-        Math?.floor(historicalData?.length / 2),
+        Math.floor(historicalData?.length / 2),
       );
 
       const firstPeriodAvg =
@@ -119,7 +119,7 @@ export async function predictCareerGrowth(
     }
   }
 
-  const predictedValue = Math?.round(currentValue * (1 + growthRate / 100));
+  const predictedValue = Math.round(currentValue * (1 + growthRate / 100));
 
   // Generate music career recommendations
   const recommendations: string[] = [];

@@ -76,7 +76,7 @@ export function usePushNotifications() {
         queryClient?.invalidateQueries({
           queryKey: ["/api/notifications/push-subscriptions/status"],
         });
-        logger?.info(
+        logger.info(
           "[Push] Subscription auto-renewed by service worker:",
           event?.data.endpoint,
         );
@@ -194,7 +194,7 @@ export function usePushNotifications() {
 
       return true;
     } catch (error) {
-      logger?.error("Push subscription failed:", error);
+      logger.error("Push subscription failed:", error);
       toast({
         title: "Subscription Failed",
         description:
@@ -234,7 +234,7 @@ export function usePushNotifications() {
 
       return true;
     } catch (error) {
-      logger?.error("Push unsubscribe failed:", error);
+      logger.error("Push unsubscribe failed:", error);
       toast({
         title: "Unsubscribe Failed",
         description:

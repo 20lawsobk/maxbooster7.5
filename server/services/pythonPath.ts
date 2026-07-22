@@ -2,7 +2,7 @@ import { execFileSync } from "child_process";
 import path from "path";
 import fs from "fs";
 
-const CWD = process?.cwd();
+const CWD = process.cwd();
 
 function probe(p: string): boolean {
   try {
@@ -38,7 +38,7 @@ export const PYTHON: string = resolved ?? "python3";
 export const PYTHON_AVAILABLE: boolean = resolved !== null;
 
 if (!PYTHON_AVAILABLE) {
-  process?.stdout.write(
+  process.stdout.write(
     "[Python] python3 not available — video/audio analysis features disabled (non-fatal, expected in production)\n",
   );
 }
@@ -57,9 +57,9 @@ export function ensureVenv(): void {
         timeout: 120_000,
         stdio: "inherit",
       });
-      process?.stdout.write("[Python] venv created and packages installed\n");
+      process.stdout.write("[Python] venv created and packages installed\n");
     } catch (e) {
-      process?.stderr.write(`[Python] Could not create venv: ${e?.message}\n`);
+      process.stderr.write(`[Python] Could not create venv: ${e?.message}\n`);
     }
   }
 }

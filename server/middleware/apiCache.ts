@@ -48,7 +48,7 @@ import { logger } from "../logger.js";
 // ── ETag ──────────────────────────────────────────────────────────────────────
 function generateETag(body: unknown): string {
   let hash = 0;
-  const str = typeof body === "string" ? body : JSON?.stringify(body);
+  const str = typeof body === "string" ? body : JSON.stringify(body);
   for (let i = 0; i < str?.length; i++) {
     hash = (hash << 5) - hash + str?.charCodeAt(i);
     hash |= 0;
@@ -62,18 +62,18 @@ function extractUserIdFromRequest(req: Request): string {
   if (user && typeof user === "object" && "id" in user)
     return String((user as { id: unknown }).id);
 
-  const sess = req?.session as Record<string, unknown> | undefined;
+  const sess = req.session as Record<string, unknown> | undefined;
   const sessionUid =
     sess?.userId ??
     (sess?.passport as Record<string, unknown> | undefined)?.user;
   if (sessionUid) return String(sessionUid);
 
-  const auth = req?.headers.authorization;
+  const auth = req.headers.authorization;
   if (auth?.startsWith("Bearer ")) {
     try {
       const parts = auth?.slice(7).split(".");
       if (parts?.length === 3) {
-        const payload = JSON?.parse(
+        const payload = JSON.parse(
           Buffer?.from(parts[1], "base64url").toString("utf8"),
         );
         if (payload?.userId) return String(payload?.userId);
@@ -84,7 +84,7 @@ function extractUserIdFromRequest(req: Request): string {
     }
   }
 
-  const cookieHeader = req?.headers.cookie || "";
+  const cookieHeader = req.headers.cookie || "";
   const tokenMatch = cookieHeader?.match(
     /(?:^|;\s*)(?:token|access_token|jwt)=([^;]+)/,
   );
@@ -92,7 +92,7 @@ function extractUserIdFromRequest(req: Request): string {
     try {
       const parts = tokenMatch[1].split(".");
       if (parts?.length === 3) {
-        const payload = JSON?.parse(
+        const payload = JSON.parse(
           Buffer?.from(parts[1], "base64url").toString("utf8"),
         );
         if (payload?.userId) return String(payload?.userId);
@@ -161,59 +161,59 @@ export class APIResponseCache {
 
   // ── L1 entry helpers ─────────────────────────────────────────────────────
   private l1Get(key: string): CacheEntry | undefined {
-    const hit = this?.l1.get(key);
+    const hit = this.l1.get(key);
     if (!hit) return undefined;
     if (Date?.now() > hit?.expiresAt) {
-      this?.l1.delete(key);
+      this.l1.delete(key);
       return undefined;
     }
     return hit?.entry;
   }
 
   private l1Set(key: string, entry: CacheEntry): void {
-    if (this?.l1.size >= L1_MAX) {
-      const oldest = this?.l1.keys().next().value;
-      if (oldest !== undefined) this?.l1.delete(oldest);
+    if (this.l1.size >= L1_MAX) {
+      const oldest = this.l1.keys().next().value;
+      if (oldest !== undefined) this.l1.delete(oldest);
     }
-    this?.l1.set(key, { entry, expiresAt: Date.now() + L1_ENTRY_TTL_MS });
+    this.l1.set(key, { entry, expiresAt: Date.now() + L1_ENTRY_TTL_MS });
   }
 
   private l1Del(key: string): void {
-    this?.l1.delete(key);
+    this.l1.delete(key);
   }
 
   private l1DelPrefix(prefix: string): void {
-    for (const k of this?.l1.keys()) {
-      if (k?.startsWith(prefix)) this?.l1.delete(k);
+    for (const k of this.l1.keys()) {
+      if (k?.startsWith(prefix)) this.l1.delete(k);
     }
   }
 
   private l1ApplyRegex(regex: RegExp): void {
-    for (const k of this?.l1.keys()) {
-      if (regex?.test(k)) this?.l1.delete(k);
+    for (const k of this.l1.keys()) {
+      if (regex?.test(k)) this.l1.delete(k);
     }
-    for (const k of this?.bustL1.keys()) {
-      if (regex?.test(k)) this?.bustL1.delete(k);
+    for (const k of this.bustL1.keys()) {
+      if (regex?.test(k)) this.bustL1.delete(k);
     }
   }
 
   // ── Bust-flag L1 helpers ─────────────────────────────────────────────────
   private bustL1Get(userId: string): number | undefined {
-    const hit = this?.bustL1.get(userId);
+    const hit = this.bustL1.get(userId);
     if (!hit) return undefined;
     if (Date?.now() > hit?.expiresAt) {
-      this?.bustL1.delete(userId);
+      this.bustL1.delete(userId);
       return undefined;
     }
     return hit?.bustAt;
   }
 
   private bustL1Set(userId: string, bustAt: number): void {
-    this?.bustL1.set(userId, { bustAt, expiresAt: Date.now() + BUST_L1_TTL_MS });
+    this.bustL1.set(userId, { bustAt, expiresAt: Date.now() + BUST_L1_TTL_MS });
   }
 
   private async getBustAt(userId: string): Promise<number> {
-    const l1 = this?.bustL1Get(userId);
+    const l1 = this.bustL1Get(userId);
     if (l1 !== undefined) return l1;
     if (!distributedCache?.isConnected()) return 0;
     try {
@@ -221,7 +221,7 @@ export class APIResponseCache {
         `${PDIM_BUST_PFX}${userId}`,
       );
       const bustAt = typeof val === "number" ? val : 0;
-      this?.bustL1Set(userId, bustAt);
+      this.bustL1Set(userId, bustAt);
       return bustAt;
     } catch {
       return 0;
@@ -234,22 +234,22 @@ export class APIResponseCache {
    * Call once after distributedCache?.connect() — handled in server/index?.ts.
    */
   startPoller(): void {
-    if (this?.pollTimer !== null) return;
+    if (this.pollTimer !== null) return;
     if (!isPdimConfigured()) {
-      logger?.info(
+      logger.info(
         "[APICache] PDIM not configured — cross-pod invalidation poller skipped (single-instance mode)",
       );
       return;
     }
-    this.pollTimer = setInterval(() => void this?.pollTick(), POLL_INTERVAL_MS);
-    logger?.info(
+    this.pollTimer = setInterval(() => void this.pollTick(), POLL_INTERVAL_MS);
+    logger.info(
       `[APICache] Cross-pod invalidation poller started (${POLL_INTERVAL_MS} ms interval, ~${POLL_INTERVAL_MS + 50} ms max propagation lag)`,
     );
   }
 
   stopPoller(): void {
-    if (this?.pollTimer !== null) {
-      clearInterval(this?.pollTimer);
+    if (this.pollTimer !== null) {
+      clearInterval(this.pollTimer);
       this.pollTimer = null;
     }
   }
@@ -272,7 +272,7 @@ export class APIResponseCache {
       // ── Fast path: check sequence number ──────────────────────────────────
       const seqRaw = await redis?.get(PDIM_INV_SEQ);
       const seq = seqRaw as string | null;
-      if (seq === this?.pollSeq) return;
+      if (seq === this.pollSeq) return;
 
       // ── Process user invalidation events ──────────────────────────────────
       const userEvents = (await redis?.hgetall(PDIM_INV_USERS)) as Record<
@@ -280,14 +280,14 @@ export class APIResponseCache {
         string
       > | null;
       if (userEvents) {
-        for (const [uid, tsStr] of Object?.entries(userEvents)) {
+        for (const [uid, tsStr] of Object.entries(userEvents)) {
           const ts = parseInt(tsStr, 10);
           if (isNaN(ts)) continue;
-          const lastSeen = this?.processedUsers.get(uid) ?? 0;
+          const lastSeen = this.processedUsers.get(uid) ?? 0;
           if (ts > lastSeen) {
-            this?.l1DelPrefix(`u:${uid}:`);
-            this?.bustL1.delete(uid);
-            this?.processedUsers.set(uid, ts);
+            this.l1DelPrefix(`u:${uid}:`);
+            this.bustL1.delete(uid);
+            this.processedUsers.set(uid, ts);
           }
         }
       }
@@ -304,9 +304,9 @@ export class APIResponseCache {
         if (lastColon === -1) continue;
         const pattern = event?.slice(0, lastColon);
         const ts = parseInt(event?.slice(lastColon + 1), 10);
-        if (isNaN(ts) || ts <= this?.lastPatternCleared) continue;
+        if (isNaN(ts) || ts <= this.lastPatternCleared) continue;
         try {
-          this?.l1ApplyRegex(new RegExp(pattern));
+          this.l1ApplyRegex(new RegExp(pattern));
         } catch {
           /* ignore malformed regex events in PDIM */
         }
@@ -322,12 +322,12 @@ export class APIResponseCache {
   // ── Public API ────────────────────────────────────────────────────────────
 
   async get(key: string, userId?: string): Promise<CacheEntry | undefined> {
-    const l1hit = this?.l1Get(key);
+    const l1hit = this.l1Get(key);
     if (l1hit) {
       if (userId) {
-        const bustAt = await this?.getBustAt(userId);
+        const bustAt = await this.getBustAt(userId);
         if (bustAt && l1hit?.timestamp < bustAt) {
-          this?.l1Del(key);
+          this.l1Del(key);
           this.missCount++;
           return undefined;
         }
@@ -343,7 +343,7 @@ export class APIResponseCache {
         );
         if (pdimEntry) {
           if (userId) {
-            const bustAt = await this?.getBustAt(userId);
+            const bustAt = await this.getBustAt(userId);
             if (bustAt && pdimEntry?.timestamp < bustAt) {
               distributedCache
                 .delete(`${PDIM_ENTRY_PFX}${key}`)
@@ -352,7 +352,7 @@ export class APIResponseCache {
               return undefined;
             }
           }
-          this?.l1Set(key, pdimEntry);
+          this.l1Set(key, pdimEntry);
           this.hitCount++;
           return pdimEntry;
         }
@@ -366,12 +366,12 @@ export class APIResponseCache {
   }
 
   set(key: string, entry: CacheEntry, ttlSeconds: number): void {
-    this?.l1Set(key, entry);
+    this.l1Set(key, entry);
     if (distributedCache?.isConnected()) {
       distributedCache
         .set(`${PDIM_ENTRY_PFX}${key}`, entry, ttlSeconds)
         .catch((err) =>
-          logger?.warn(
+          logger.warn(
             { err },
             "[APICache] PDIM write failed — entry in L1 only",
           ),
@@ -386,14 +386,14 @@ export class APIResponseCache {
    * Other pods: invalidation written to PDIM; pollers evict their L1 within ~150 ms.
    */
   invalidateForUser(userId: string): void {
-    this?.l1DelPrefix(`u:${userId}:`);
-    this?.bustL1.delete(userId);
-    this?.processedUsers.set(userId, Date?.now());
+    this.l1DelPrefix(`u:${userId}:`);
+    this.bustL1.delete(userId);
+    this.processedUsers.set(userId, Date?.now());
 
     if (!distributedCache?.isConnected()) return;
 
     const bustAt = Date?.now();
-    this?.bustL1Set(userId, bustAt);
+    this.bustL1Set(userId, bustAt);
 
     (async () => {
       try {
@@ -407,7 +407,7 @@ export class APIResponseCache {
           BUST_PDIM_TTL_S,
         );
       } catch (err) {
-        logger?.warn(
+        logger.warn(
           { err },
           "[APICache] PDIM user-invalidation write failed — cross-pod propagation degraded",
         );
@@ -425,9 +425,9 @@ export class APIResponseCache {
   invalidatePattern(pattern: string): void {
     // Local L1 — immediate
     const regex = new RegExp(pattern);
-    this?.l1ApplyRegex(regex);
+    this.l1ApplyRegex(regex);
     const ts = Date?.now();
-    this.lastPatternCleared = Math?.max(this?.lastPatternCleared, ts);
+    this.lastPatternCleared = Math.max(this.lastPatternCleared, ts);
 
     if (!distributedCache?.isConnected()) return;
 
@@ -441,7 +441,7 @@ export class APIResponseCache {
         await redis?.expire(PDIM_INV_PATTERNS, PDIM_INV_TTL_S);
         await redis?.incr(PDIM_INV_SEQ); // wake pollers
       } catch (err) {
-        logger?.warn(
+        logger.warn(
           { err },
           "[APICache] PDIM pattern-invalidation write failed — cross-pod propagation degraded",
         );
@@ -450,20 +450,20 @@ export class APIResponseCache {
   }
 
   clear(): void {
-    this?.l1.clear();
-    this?.bustL1.clear();
-    this?.processedUsers.clear();
+    this.l1.clear();
+    this.bustL1.clear();
+    this.processedUsers.clear();
     this.lastPatternCleared = 0;
   }
 
   getStats() {
-    const total = this?.hitCount + this?.missCount;
+    const total = this.hitCount + this.missCount;
     return {
       size: this.l1.size,
       hits: this.hitCount,
       misses: this.missCount,
       hitRate:
-        total > 0 ? ((this?.hitCount / total) * 100).toFixed(1) + "%" : "0%",
+        total > 0 ? ((this.hitCount / total) * 100).toFixed(1) + "%" : "0%",
       backend: distributedCache.isConnected() ? "pdim" : "memory",
       pollerActive: this.pollTimer !== null,
     };
@@ -471,10 +471,10 @@ export class APIResponseCache {
 
   /** Check whether a key exists in the in-process L1 cache. Used by tests only. */
   l1Has(key: string): boolean {
-    const hit = this?.l1.get(key);
+    const hit = this.l1.get(key);
     if (!hit) return false;
     if (Date?.now() > hit?.expiresAt) {
-      this?.l1.delete(key);
+      this.l1.delete(key);
       return false;
     }
     return true;
@@ -493,14 +493,14 @@ export function cacheMiddleware(options: CacheOptions = {}) {
     res: Response,
     next: NextFunction,
   ): Promise<void> => {
-    if (req?.method !== "GET") {
+    if (req.method !== "GET") {
       next();
       return;
     }
 
     const userId = varyByUser ? extractUserIdFromRequest(req) : "shared";
-    const queryStr = varyByQuery ? JSON?.stringify(req?.query) : "";
-    const cacheKey = `u:${userId}:${req?.path}:${queryStr}`;
+    const queryStr = varyByQuery ? JSON.stringify(req.query) : "";
+    const cacheKey = `u:${userId}:${req.path}:${queryStr}`;
 
     try {
       // Timeout guard: if PDIM is congested, the cache read can hang indefinitely.
@@ -515,22 +515,22 @@ export function cacheMiddleware(options: CacheOptions = {}) {
       if (cached) {
         const age = Date?.now() - cached?.timestamp;
         if (age < ttlSeconds * 1000) {
-          const clientETag = req?.headers["if-none-match"];
+          const clientETag = req.headers["if-none-match"];
           if (clientETag && clientETag === cached?.etag) {
-            res?.status(304).end();
+            res.status(304).end();
             return;
           }
-          res?.setHeader("X-Cache", "HIT");
-          res?.setHeader("X-Cache-Age", Math?.round(age / 1000).toString());
-          res?.setHeader("ETag", cached?.etag);
-          res?.setHeader(
+          res.setHeader("X-Cache", "HIT");
+          res.setHeader("X-Cache-Age", Math.round(age / 1000).toString());
+          res.setHeader("ETag", cached?.etag);
+          res.setHeader(
             "Cache-Control",
             `private, max-age=${ttlSeconds}, stale-while-revalidate=${ttlSeconds * 2}`,
           );
-          for (const [k, v] of Object?.entries(cached?.headers)) {
-            if (k?.toLowerCase() !== "transfer-encoding") res?.setHeader(k, v);
+          for (const [k, v] of Object.entries(cached?.headers)) {
+            if (k?.toLowerCase() !== "transfer-encoding") res.setHeader(k, v);
           }
-          res?.status(cached?.statusCode).json(cached?.body);
+          res.status(cached?.statusCode).json(cached?.body);
           return;
         }
       }
@@ -538,12 +538,12 @@ export function cacheMiddleware(options: CacheOptions = {}) {
       /* cache failure is non-fatal */
     }
 
-    const originalJson = res?.json.bind(res);
-    // Override res?.json using its own type signature — no any cast needed.
-    // typeof res?.json resolves to Express's `(body?: any) => Response`, so the
+    const originalJson = res.json.bind(res);
+    // Override res.json using its own type signature — no any cast needed.
+    // typeof res.json resolves to Express's `(body?: any) => Response`, so the
     // override is fully type-safe without suppressing lint rules.
     const jsonOverride: typeof res.json = function cachedJson(body) {
-      if (res?.statusCode >= 200 && res?.statusCode < 300) {
+      if (res.statusCode >= 200 && res.statusCode < 300) {
         const etag = generateETag(body);
         apiCache?.set(
           cacheKey,
@@ -556,9 +556,9 @@ export function cacheMiddleware(options: CacheOptions = {}) {
           } as CacheEntry,
           ttlSeconds,
         );
-        res?.setHeader("X-Cache", "MISS");
-        res?.setHeader("ETag", etag);
-        res?.setHeader(
+        res.setHeader("X-Cache", "MISS");
+        res.setHeader("ETag", etag);
+        res.setHeader(
           "Cache-Control",
           `private, max-age=${ttlSeconds}, stale-while-revalidate=${ttlSeconds * 2}`,
         );
@@ -573,12 +573,12 @@ export function cacheMiddleware(options: CacheOptions = {}) {
 
 export function invalidateCacheOnMutation() {
   return (req: Request, _res: Response, next: NextFunction): void => {
-    if (["POST", "PUT", "PATCH", "DELETE"].includes(req?.method)) {
+    if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
       const userId = extractUserIdFromRequest(req);
       if (userId && userId !== "anon") {
         apiCache?.invalidateForUser(userId);
       }
-      const basePath = req?.path.split("/").slice(0, 4).join("/");
+      const basePath = req.path.split("/").slice(0, 4).join("/");
       apiCache?.invalidatePattern(
         basePath?.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
       );

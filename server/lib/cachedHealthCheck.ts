@@ -95,7 +95,7 @@ async function checkDatabaseHealth() {
  * Process health check
  */
 async function checkProcessHealth() {
-  const memUsage = process?.memoryUsage();
+  const memUsage = process.memoryUsage();
 
   return {
     memory: {

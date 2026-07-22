@@ -370,7 +370,7 @@ export class TemplateManager {
   private previewCache: Map<string, ImageData[]> = new Map();
 
   getAllTemplates(): TemplateMetadata[] {
-    return Array?.from(TEMPLATE_REGISTRY?.values());
+    return Array.from(TEMPLATE_REGISTRY?.values());
   }
 
   getTemplate(id: string): TemplateMetadata | undefined {
@@ -380,22 +380,22 @@ export class TemplateManager {
   getTemplatesByCategory(
     category: TemplateMetadata["category"],
   ): TemplateMetadata[] {
-    return this?.getAllTemplates().filter((t) => t?.category === category);
+    return this.getAllTemplates().filter((t) => t?.category === category);
   }
 
   getTemplatesByPlatform(platform: Platform): TemplateMetadata[] {
-    return this?.getAllTemplates().filter((t) =>
+    return this.getAllTemplates().filter((t) =>
       t?.supportedPlatforms.includes(platform),
     );
   }
 
   getTemplatesByType(type: TemplateType): TemplateMetadata[] {
-    return this?.getAllTemplates().filter((t) => t?.type === type);
+    return this.getAllTemplates().filter((t) => t?.type === type);
   }
 
   searchTemplates(query: string): TemplateMetadata[] {
     const lowerQuery = query?.toLowerCase();
-    return this?.getAllTemplates().filter(
+    return this.getAllTemplates().filter(
       (t) =>
         t?.name.toLowerCase().includes(lowerQuery) ||
         t?.description.toLowerCase().includes(lowerQuery) ||
@@ -404,21 +404,21 @@ export class TemplateManager {
   }
 
   getPopularTemplates(limit: number = 5): TemplateMetadata[] {
-    return this?.getAllTemplates()
+    return this.getAllTemplates()
       .sort((a, b) => b?.popularity - a?.popularity)
       .slice(0, limit);
   }
 
   getNewTemplates(): TemplateMetadata[] {
-    return this?.getAllTemplates().filter((t) => t?.isNew);
+    return this.getAllTemplates().filter((t) => t?.isNew);
   }
 
   getPremiumTemplates(): TemplateMetadata[] {
-    return this?.getAllTemplates().filter((t) => t?.isPremium);
+    return this.getAllTemplates().filter((t) => t?.isPremium);
   }
 
   getFreeTemplates(): TemplateMetadata[] {
-    return this?.getAllTemplates().filter((t) => !t?.isPremium);
+    return this.getAllTemplates().filter((t) => !t?.isPremium);
   }
 
   getPresetsForTemplate(templateId: string): TemplatePreset[] {
@@ -438,17 +438,17 @@ export class TemplateManager {
     options: Partial<PromoTemplateOptions>,
     customization?: TemplateCustomization,
   ): CompiledTemplate {
-    const metadata = this?.getTemplate(templateId);
+    const metadata = this.getTemplate(templateId);
     if (!metadata) {
       throw new Error(`Template not found: ${templateId}`);
     }
 
-    const baseOptions = this?.createBaseOptions(
+    const baseOptions = this.createBaseOptions(
       metadata,
       options,
       customization,
     );
-    const fullOptions = this?.mergeTemplateOptions(
+    const fullOptions = this.mergeTemplateOptions(
       metadata?.type,
       baseOptions,
       options,
@@ -456,8 +456,8 @@ export class TemplateManager {
 
     const compiled = compileTemplate(fullOptions);
 
-    const cacheKey = this?.generateCacheKey(fullOptions);
-    this?.compiledCache.set(cacheKey, compiled);
+    const cacheKey = this.generateCacheKey(fullOptions);
+    this.compiledCache.set(cacheKey, compiled);
 
     return compiled;
   }
@@ -467,7 +467,7 @@ export class TemplateManager {
     options: Partial<PromoTemplateOptions>,
     customization?: TemplateCustomization,
   ): CompiledTemplate {
-    const preset = this?.getPreset(presetId);
+    const preset = this.getPreset(presetId);
     if (!preset) {
       throw new Error(`Preset not found: ${presetId}`);
     }
@@ -478,7 +478,7 @@ export class TemplateManager {
       background: { ...preset?.backgroundConfig, ...customization?.background },
     };
 
-    return this?.instantiateTemplate(
+    return this.instantiateTemplate(
       preset?.templateId,
       options,
       mergedCustomization,
@@ -494,7 +494,7 @@ export class TemplateManager {
       customization?.aspectRatio ||
       options?.aspectRatio ||
       metadata?.supportedAspectRatios[0];
-    const palette = this?.mergePalette(
+    const palette = this.mergePalette(
       DEFAULT_PALETTES?.modern,
       customization?.palette,
     );
@@ -509,13 +509,13 @@ export class TemplateManager {
       palette,
       background: this.mergeBackground(customization?.background, palette),
       logo: customization.logo
-        ? this?.mergeLogoConfig(customization?.logo)
+        ? this.mergeLogoConfig(customization?.logo)
         : options?.logo,
       callToAction: customization.callToAction
-        ? this?.mergeCTAConfig(customization?.callToAction)
+        ? this.mergeCTAConfig(customization?.callToAction)
         : options?.callToAction,
       audioReactive: customization.audioReactive
-        ? this?.mergeAudioReactive(customization?.audioReactive)
+        ? this.mergeAudioReactive(customization?.audioReactive)
         : options?.audioReactive,
     };
   }
@@ -527,37 +527,37 @@ export class TemplateManager {
   ): PromoTemplateOptions {
     switch (type) {
       case "release":
-        return this?.createReleaseOptions(
+        return this.createReleaseOptions(
           baseOptions,
           options as Partial<ReleaseAnnouncementOptions>,
         );
       case "tour":
-        return this?.createTourOptions(
+        return this.createTourOptions(
           baseOptions,
           options as Partial<TourEventOptions>,
         );
       case "bts":
-        return this?.createBTSOptions(
+        return this.createBTSOptions(
           baseOptions,
           options as Partial<BehindTheScenesOptions>,
         );
       case "quote":
-        return this?.createQuoteOptions(
+        return this.createQuoteOptions(
           baseOptions,
           options as Partial<QuoteLyricOptions>,
         );
       case "countdown":
-        return this?.createCountdownOptions(
+        return this.createCountdownOptions(
           baseOptions,
           options as Partial<CountdownTimerOptions>,
         );
       case "split":
-        return this?.createSplitOptions(
+        return this.createSplitOptions(
           baseOptions,
           options as Partial<SplitScreenOptions>,
         );
       case "teaser":
-        return this?.createTeaserOptions(
+        return this.createTeaserOptions(
           baseOptions,
           options as Partial<SocialTeaserOptions>,
         );
@@ -843,7 +843,7 @@ export class TemplateManager {
   }
 
   private generateCacheKey(options: PromoTemplateOptions): string {
-    return `${options?.type}_${options?.id}_${options?.aspectRatio}_${JSON?.stringify(options?.palette)}`;
+    return `${options?.type}_${options?.id}_${options?.aspectRatio}_${JSON.stringify(options?.palette)}`;
   }
 
   exportTemplateConfig(
@@ -870,7 +870,7 @@ export class TemplateManager {
   }
 
   importTemplateConfig(config: ExportedTemplateConfig): CompiledTemplate {
-    return this?.instantiateTemplate(
+    return this.instantiateTemplate(
       config?.templateId.split("_")[0],
       config?.options,
       config?.customizations,
@@ -883,8 +883,8 @@ export class TemplateManager {
   ): Promise<ImageData[]> {
     const cacheKey = `preview_${compiled?.id}_${config?.width}x${config?.height}_${config?.quality}`;
 
-    if (this?.previewCache.has(cacheKey)) {
-      return this?.previewCache.get(cacheKey)!;
+    if (this.previewCache.has(cacheKey)) {
+      return this.previewCache.get(cacheKey)!;
     }
 
     const canvas = document?.createElement("canvas");
@@ -914,7 +914,7 @@ export class TemplateManager {
           currentTime <= layer?.endTime &&
           layer?.visible
         ) {
-          this?.renderPreviewLayer(
+          this.renderPreviewLayer(
             ctx,
             layer,
             currentTime,
@@ -928,7 +928,7 @@ export class TemplateManager {
       frames?.push(ctx?.getImageData(0, 0, config?.width, config?.height));
     }
 
-    this?.previewCache.set(cacheKey, frames);
+    this.previewCache.set(cacheKey, frames);
     return frames;
   }
 
@@ -964,7 +964,7 @@ export class TemplateManager {
 
     switch (layer?.type) {
       case "background":
-        this?.renderBackgroundPreview(
+        this.renderBackgroundPreview(
           ctx,
           layer?.config as Record<string, unknown>,
           width,
@@ -972,10 +972,10 @@ export class TemplateManager {
         );
         break;
       case "text":
-        this?.renderTextPreview(ctx, layer?.config as Record<string, unknown>);
+        this.renderTextPreview(ctx, layer?.config as Record<string, unknown>);
         break;
       case "shape":
-        this?.renderShapePreview(ctx, layer?.config as Record<string, unknown>);
+        this.renderShapePreview(ctx, layer?.config as Record<string, unknown>);
         break;
     }
 
@@ -988,13 +988,13 @@ export class TemplateManager {
     width: number,
     height: number,
   ): void {
-    if (config?.type === "gradient" && Array?.isArray(config?.gradientColors)) {
+    if (config?.type === "gradient" && Array.isArray(config?.gradientColors)) {
       const angle = (config?.gradientAngle as number) || 135;
       const radians = (angle * Math.PI) / 180;
-      const x1 = width / 2 - Math?.cos(radians) * width;
-      const y1 = height / 2 - Math?.sin(radians) * height;
-      const x2 = width / 2 + Math?.cos(radians) * width;
-      const y2 = height / 2 + Math?.sin(radians) * height;
+      const x1 = width / 2 - Math.cos(radians) * width;
+      const y1 = height / 2 - Math.sin(radians) * height;
+      const x2 = width / 2 + Math.cos(radians) * width;
+      const y2 = height / 2 + Math.sin(radians) * height;
 
       const gradient = ctx?.createLinearGradient(x1, y1, x2, y2);
       const colors = config?.gradientColors as string[];
@@ -1059,7 +1059,7 @@ export class TemplateManager {
       AspectRatio,
       { width: number; height: number; name: string }
     >;
-    for (const [key, value] of Object?.entries(ASPECT_RATIOS)) {
+    for (const [key, value] of Object.entries(ASPECT_RATIOS)) {
       result[key as AspectRatio] = {
         width: value.width,
         height: value.height,
@@ -1074,8 +1074,8 @@ export class TemplateManager {
   }
 
   clearCache(): void {
-    this?.compiledCache.clear();
-    this?.previewCache.clear();
+    this.compiledCache.clear();
+    this.previewCache.clear();
   }
 
   getCacheStats(): { compiledCount: number; previewCount: number } {

@@ -80,14 +80,14 @@ class RevenueForecaster {
     const horizonDays = options?.horizonDays || 90;
     const granularity = options?.granularity || "daily";
 
-    const historicalData = await this?.getHistoricalData(userId, {
+    const historicalData = await this.getHistoricalData(userId, {
       platform: options.platform,
       days: 180,
     });
 
-    const trend = this?.analyzeTrend(historicalData);
-    const seasonality = this?.detectSeasonality(historicalData);
-    const momentum = this?.calculateMomentum(historicalData);
+    const trend = this.analyzeTrend(historicalData);
+    const seasonality = this.detectSeasonality(historicalData);
+    const momentum = this.calculateMomentum(historicalData);
 
     const forecasts: ForecastResult[] = [];
     const today = new Date();
@@ -99,25 +99,25 @@ class RevenueForecaster {
       const targetDate = new Date(today);
       targetDate?.setDate(targetDate?.getDate() + i);
 
-      const baseRevenue = this?.calculateBaseRevenue(historicalData);
-      const trendFactor = this?.applyTrend(i, trend);
-      const seasonalFactor = this?.applySeasonality(targetDate, seasonality);
-      const momentumFactor = this?.applyMomentum(i, momentum);
+      const baseRevenue = this.calculateBaseRevenue(historicalData);
+      const trendFactor = this.applyTrend(i, trend);
+      const seasonalFactor = this.applySeasonality(targetDate, seasonality);
+      const momentumFactor = this.applyMomentum(i, momentum);
 
       const predictedRevenue =
         baseRevenue * trendFactor * seasonalFactor * momentumFactor;
-      const predictedStreams = Math?.floor(predictedRevenue / 0.004);
-      const predictedListeners = Math?.floor(predictedStreams * 0.6);
+      const predictedStreams = Math.floor(predictedRevenue / 0.004);
+      const predictedListeners = Math.floor(predictedStreams * 0.6);
 
-      const confidenceLevel = this?.calculateConfidence(
+      const confidenceLevel = this.calculateConfidence(
         i,
         historicalData?.length,
       );
-      const volatility = this?.calculateVolatility(historicalData);
+      const volatility = this.calculateVolatility(historicalData);
       const confidenceRange =
         predictedRevenue * volatility * (1 - confidenceLevel);
 
-      const scenario = this?.calculateScenarios(
+      const scenario = this.calculateScenarios(
         predictedRevenue,
         volatility,
         trend,
@@ -142,7 +142,7 @@ class RevenueForecaster {
       });
     }
 
-    await this?.storeForecast(userId, forecasts, options?.platform);
+    await this.storeForecast(userId, forecasts, options?.platform);
 
     return forecasts;
   }
@@ -221,11 +221,11 @@ class RevenueForecaster {
     forecasts?.forEach((f) => {
       const predicted = Number(f?.predictedRevenue);
       const actual = Number(f?.actualRevenue || 0);
-      const error = actual > 0 ? Math?.abs(predicted - actual) / actual : 0;
-      const accuracy = Math?.max(0, (1 - error) * 100);
+      const error = actual > 0 ? Math.abs(predicted - actual) / actual : 0;
+      const accuracy = Math.max(0, (1 - error) * 100);
 
       totalError += error;
-      sumSquaredError += Math?.pow(predicted - actual, 2);
+      sumSquaredError += Math.pow(predicted - actual, 2);
 
       byPeriod?.push({
         period: f.forecastDate
@@ -238,8 +238,8 @@ class RevenueForecaster {
     });
 
     const mape = (totalError / forecasts?.length) * 100;
-    const rmse = Math?.sqrt(sumSquaredError / forecasts?.length);
-    const overallAccuracy = Math?.max(0, 100 - mape);
+    const rmse = Math.sqrt(sumSquaredError / forecasts?.length);
+    const overallAccuracy = Math.max(0, 100 - mape);
 
     const recentAccuracies = byPeriod?.slice(-12).map((p) => p?.accuracy);
     const olderAccuracies = byPeriod?.slice(0, -12).map((p) => p?.accuracy);
@@ -273,13 +273,13 @@ class RevenueForecaster {
       previousReleasePerformance?: number;
     },
   ): Promise<ReleaseImpactProjection> {
-    const historicalData = await this?.getHistoricalData(userId, { days: 365 });
-    const avgDailyRevenue = this?.calculateBaseRevenue(historicalData);
+    const historicalData = await this.getHistoricalData(userId, { days: 365 });
+    const avgDailyRevenue = this.calculateBaseRevenue(historicalData);
 
     const baseMultiplier = 3;
     const preSaveBoost = releaseData?.hasPreSaves ? 1.5 : 1;
     const marketingBoost = releaseData?.marketingBudget
-      ? 1 + Math?.log10(releaseData?.marketingBudget) * 0.1
+      ? 1 + Math.log10(releaseData?.marketingBudget) * 0.1
       : 1;
     const previousPerformanceFactor = releaseData?.previousReleasePerformance
       ? releaseData?.previousReleasePerformance / avgDailyRevenue
@@ -299,11 +299,11 @@ class RevenueForecaster {
       const dayRevenue =
         day < peakDay
           ? peakRevenue * (day / peakDay)
-          : peakRevenue * Math?.pow(decayRate, day - peakDay);
+          : peakRevenue * Math.pow(decayRate, day - peakDay);
       lifetimeRevenue += dayRevenue;
     }
 
-    const projectedStreams = Math?.floor(lifetimeRevenue / 0.004);
+    const projectedStreams = Math.floor(lifetimeRevenue / 0.004);
 
     return {
       releaseDate: releaseData.releaseDate,
@@ -365,11 +365,11 @@ class RevenueForecaster {
       growth: Math.random() * 20 - 5,
     }));
 
-    const forecast30 = await this?.generateForecast(userId, {
+    const forecast30 = await this.generateForecast(userId, {
       horizonDays: 30,
       granularity: "monthly",
     });
-    const forecast90 = await this?.generateForecast(userId, {
+    const forecast90 = await this.generateForecast(userId, {
       horizonDays: 90,
       granularity: "monthly",
     });
@@ -504,7 +504,7 @@ class RevenueForecaster {
       .orderBy(asc(dspAnalytics?.date));
 
     if (data?.length < 7) {
-      logger?.warn(
+      logger.warn(
         `Insufficient historical data for user ${userId}: ${data?.length} days found, need at least 7`,
       );
       // Return actual data with zeros for missing days to maintain data integrity
@@ -551,7 +551,7 @@ class RevenueForecaster {
 
     const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
     const avgValue = sumY / n;
-    const strength = Math?.abs(slope * n) / avgValue;
+    const strength = Math.abs(slope * n) / avgValue;
 
     const firstWeekAvg = data?.slice(0, 7).reduce((s, d) => s + d?.value, 0) / 7;
     const lastWeekAvg = data?.slice(-7).reduce((s, d) => s + d?.value, 0) / 7;
@@ -614,18 +614,18 @@ class RevenueForecaster {
   }
 
   private applyMomentum(daysAhead: number, momentum: number): number {
-    const decay = Math?.pow(this?.DECAY_FACTOR, daysAhead / 30);
+    const decay = Math.pow(this.DECAY_FACTOR, daysAhead / 30);
     return 1 + (momentum - 1) * decay;
   }
 
   private calculateConfidence(daysAhead: number, dataPoints: number): number {
-    const baseConfidence = this?.CONFIDENCE_BASE;
-    const dataConfidence = Math?.min(0.2, dataPoints / 500);
-    const timeDecay = Math?.pow(0.99, daysAhead);
+    const baseConfidence = this.CONFIDENCE_BASE;
+    const dataConfidence = Math.min(0.2, dataPoints / 500);
+    const timeDecay = Math.pow(0.99, daysAhead);
 
-    return Math?.max(
+    return Math.max(
       0.3,
-      Math?.min(0.95, (baseConfidence + dataConfidence) * timeDecay),
+      Math.min(0.95, (baseConfidence + dataConfidence) * timeDecay),
     );
   }
 
@@ -635,8 +635,8 @@ class RevenueForecaster {
     const values = data?.map((d) => d?.value);
     const mean = values?.reduce((a, b) => a + b, 0) / values?.length;
     const variance =
-      values?.reduce((sum, v) => sum + Math?.pow(v - mean, 2), 0) / values?.length;
-    const stdDev = Math?.sqrt(variance);
+      values?.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / values?.length;
+    const stdDev = Math.sqrt(variance);
 
     return stdDev / mean;
   }
@@ -654,7 +654,7 @@ class RevenueForecaster {
     return {
       best: predicted * bestMultiplier,
       expected: predicted,
-      worst: predicted * Math?.max(0.5, worstMultiplier),
+      worst: predicted * Math.max(0.5, worstMultiplier),
     };
   }
 
@@ -689,11 +689,11 @@ class RevenueForecaster {
       try {
         await db?.insert(revenueForecasts).values(forecastRecord);
       } catch (insertError) {
-        logger?.warn("Failed to store forecast record, skipping:", insertError);
+        logger.warn("Failed to store forecast record, skipping:", insertError);
       }
     }
 
-    logger?.info(`Stored ${forecasts?.length} forecasts for user ${userId}`);
+    logger.info(`Stored ${forecasts?.length} forecasts for user ${userId}`);
   }
 }
 

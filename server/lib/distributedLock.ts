@@ -26,7 +26,7 @@ export async function acquireLock(
     const result = await redis?.set(key, token, "EX", ttlSeconds, "NX");
     return result === "OK" ? token : null;
   } catch (err) {
-    logger?.warn({ err: err }, `[Lock] Failed to acquire lock ${lockName}:`);
+    logger.warn({ err: err }, `[Lock] Failed to acquire lock ${lockName}:`);
     throw err;
   }
 }
@@ -54,7 +54,7 @@ export async function releaseLock(
   try {
     await redis?.eval(lua, 1, key, token);
   } catch (err) {
-    logger?.warn({ err: err }, `[Lock] Failed to release lock ${lockName}:`);
+    logger.warn({ err: err }, `[Lock] Failed to release lock ${lockName}:`);
     throw err;
   }
 }
@@ -131,7 +131,7 @@ export async function withSchedLock(
     try {
       await fn();
     } catch (err) {
-      logger?.warn(`[SchedLock] ${name} error: ${(err as Error).message}`);
+      logger.warn(`[SchedLock] ${name} error: ${(err as Error).message}`);
     } finally {
       _heldLockCount--;
     }
@@ -144,14 +144,14 @@ export async function withSchedLock(
   } catch (err) {
     // PDIM unavailable — degrade gracefully: allow this pod to execute rather
     // than leaving the job unrun across the entire cluster during an outage.
-    logger?.warn(
+    logger.warn(
       `[SchedLock] PDIM error for ${name}, allowing execution: ${(err as Error).message}`,
     );
     _heldLockCount++;
     try {
       await fn();
     } catch (fnErr) {
-      logger?.warn(`[SchedLock] ${name} error: ${(fnErr as Error).message}`);
+      logger.warn(`[SchedLock] ${name} error: ${(fnErr as Error).message}`);
     } finally {
       _heldLockCount--;
     }
@@ -168,7 +168,7 @@ export async function withSchedLock(
   try {
     await fn();
   } catch (err) {
-    logger?.warn(`[SchedLock] ${name} error: ${(err as Error).message}`);
+    logger.warn(`[SchedLock] ${name} error: ${(err as Error).message}`);
   } finally {
     _heldLockCount--;
     // Non-Lua release: read current token, delete only if we still own the lock.

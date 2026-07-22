@@ -809,7 +809,7 @@ export class DistributionService {
   ): Promise<DistributionPackage> {
     try {
       // Validate UPC if provided
-      if (data?.upc && !this?.validateUPC(data?.upc)) {
+      if (data?.upc && !this.validateUPC(data?.upc)) {
         throw new Error("Invalid UPC format. Must be 12-13 digits.");
       }
 
@@ -855,7 +855,7 @@ export class DistributionService {
           genre: track.genre,
           duration: track.duration,
           explicitContent: track.explicitContent,
-          credits: track.credits ? JSON?.parse(track?.credits) : {},
+          credits: track.credits ? JSON.parse(track?.credits) : {},
           lyrics: track.lyrics,
         })),
         licensing: {
@@ -950,7 +950,7 @@ export class DistributionService {
 
       await new Promise<void>((resolve, reject) => {
         output?.on("close", () => {
-          logger?.info(`ZIP package created: ${archive?.pointer()} bytes`);
+          logger.info(`ZIP package created: ${archive?.pointer()} bytes`);
           resolve();
         });
 
@@ -959,14 +959,14 @@ export class DistributionService {
         archive?.pipe(output);
 
         // Add metadata?.json
-        this?.generateMetadataJSON(packageId)
+        this.generateMetadataJSON(packageId)
           .then((metadata) => {
-            archive?.append(JSON?.stringify(metadata, null, 2), {
+            archive?.append(JSON.stringify(metadata, null, 2), {
               name: "metadata.json",
             });
 
             // Add tracks?.csv
-            this?.generateCSV(packageId)
+            this.generateCSV(packageId)
               .then((csv) => {
                 archive?.append(csv, { name: "tracks.csv" });
 
@@ -975,7 +975,7 @@ export class DistributionService {
                   // Convert public URL path to filesystem path
                   // pkg?.artworkUrl is like "/distribution/artwork/artwork_123.jpg"
                   const artworkFilePath = path?.join(
-                    process?.cwd(),
+                    process.cwd(),
                     "public",
                     pkg?.artworkUrl,
                   );
@@ -986,7 +986,7 @@ export class DistributionService {
                       name: `artwork${artworkExt}`,
                     });
                   } else {
-                    logger?.warn(`Artwork file not found: ${artworkFilePath}`);
+                    logger.warn(`Artwork file not found: ${artworkFilePath}`);
                   }
                 }
 
@@ -1026,7 +1026,7 @@ Generated: ${new Date().toISOString()}
         "application/zip",
       );
 
-      logger?.info(`✅ Distribution package uploaded: ${zipKey}`);
+      logger.info(`✅ Distribution package uploaded: ${zipKey}`);
 
       return zipKey;
     } catch (error: unknown) {
@@ -1065,7 +1065,7 @@ Generated: ${new Date().toISOString()}
   ): Promise<DistributionPackage> {
     try {
       // Validate UPC if being updated
-      if (updates?.upc && !this?.validateUPC(updates?.upc)) {
+      if (updates?.upc && !this.validateUPC(updates?.upc)) {
         throw new Error("Invalid UPC format. Must be 12-13 digits.");
       }
 
@@ -1084,7 +1084,7 @@ Generated: ${new Date().toISOString()}
   ): Promise<DistributionTrack> {
     try {
       // Validate ISRC if provided
-      if (track?.isrc && !this?.validateISRC(track?.isrc)) {
+      if (track?.isrc && !this.validateISRC(track?.isrc)) {
         throw new Error("Invalid ISRC format. Expected: CC-XXX-YY-NNNNN");
       }
 
@@ -1141,7 +1141,7 @@ Generated: ${new Date().toISOString()}
             lastChecked: new Date(),
           };
         } catch (error: unknown) {
-          logger?.warn({ err: error }, "Error fetching status from LabelGrid:");
+          logger.warn({ err: error }, "Error fetching status from LabelGrid:");
         }
       }
 
@@ -1199,7 +1199,7 @@ Generated: ${new Date().toISOString()}
         deliveryPhase: "queued",
       });
 
-      logger?.info(
+      logger.info(
         `✅ SLA metric created for ${platform}: target ${DEFAULT_SLA_TARGET_HOURS}h delivery`,
       );
       return metric;
@@ -1238,7 +1238,7 @@ Generated: ${new Date().toISOString()}
         deliveryPhase: "live",
       });
 
-      logger?.info(
+      logger.info(
         `✅ Delivery confirmed: ${deliveryHours?.toFixed(1)}h (SLA ${metSLA ? "MET" : "MISSED"})`,
       );
       return updated;
@@ -1302,7 +1302,7 @@ Generated: ${new Date().toISOString()}
         if (m?.metSLA) byPlatform[m?.platform].onTime++;
       }
 
-      for (const platform of Object?.keys(byPlatform)) {
+      for (const platform of Object.keys(byPlatform)) {
         byPlatform[platform].rate =
           (byPlatform[platform].onTime / byPlatform[platform].total) * 100;
       }
@@ -1340,7 +1340,7 @@ Generated: ${new Date().toISOString()}
         errorMessage: null,
       });
 
-      logger?.info(
+      logger.info(
         `🔄 Retry initiated for ${metric?.platform} (attempt ${updated?.retryCount})`,
       );
       return updated;
@@ -1387,7 +1387,7 @@ Generated: ${new Date().toISOString()}
         submittedAt: new Date(),
       });
 
-      logger?.info(
+      logger.info(
         `✅ Content ID registration submitted for ISRC: ${data?.isrc}`,
       );
       return registration;
@@ -1483,7 +1483,7 @@ Generated: ${new Date().toISOString()}
   async createSyncLicense(data: InsertSyncLicense): Promise<SyncLicense> {
     try {
       const license = await storage?.createSyncLicense(data);
-      logger?.info(`✅ Sync license created for release: ${data?.releaseId}`);
+      logger.info(`✅ Sync license created for release: ${data?.releaseId}`);
       return license;
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error creating sync license:");
@@ -1533,7 +1533,7 @@ Generated: ${new Date().toISOString()}
       // Update inquiry count on license
       await storage?.incrementSyncLicenseInquiries(data?.syncLicenseId);
 
-      logger?.info(`📩 Sync inquiry received from ${data?.inquirerEmail}`);
+      logger.info(`📩 Sync inquiry received from ${data?.inquirerEmail}`);
       return inquiry;
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error submitting sync inquiry:");
@@ -1606,7 +1606,7 @@ Generated: ${new Date().toISOString()}
         inviteSentAt: new Date(),
       });
 
-      logger?.info(
+      logger.info(
         `✅ Royalty split created: ${data?.collaboratorName} (${data?.percentage}%)`,
       );
       return split;
@@ -1708,7 +1708,7 @@ Generated: ${new Date().toISOString()}
   async removeRoyaltySplit(splitId: string): Promise<void> {
     try {
       await storage?.deleteRoyaltySplit(splitId);
-      logger?.info(`🗑️ Royalty split removed: ${splitId}`);
+      logger.info(`🗑️ Royalty split removed: ${splitId}`);
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error removing royalty split:");
       throw new Error("Failed to remove royalty split");
@@ -1817,7 +1817,7 @@ Generated: ${new Date().toISOString()}
         emailSignups: 0,
       });
 
-      logger?.info(`✅ Pre-save campaign created: ${campaign?.name}`);
+      logger.info(`✅ Pre-save campaign created: ${campaign?.name}`);
       return campaign;
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error creating pre-save campaign:");
@@ -1886,7 +1886,7 @@ Generated: ${new Date().toISOString()}
         await storage?.updatePreSaveCampaign(data?.campaignId, updates);
       }
 
-      logger?.info(`✅ Pre-save recorded: ${data?.platform}`);
+      logger.info(`✅ Pre-save recorded: ${data?.platform}`);
       return entry;
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error recording pre-save:");
@@ -1947,7 +1947,7 @@ Generated: ${new Date().toISOString()}
         }
       }
 
-      const timeline = Object?.entries(byDate)
+      const timeline = Object.entries(byDate)
         .map(([date, saves]) => ({ date, saves }))
         .sort((a, b) => a?.date.localeCompare(b?.date));
 

@@ -198,7 +198,7 @@ class ContentVariantGeneratorService {
   };
 
   constructor() {
-    logger?.info("✅ Content Variant Generator service initialized");
+    logger.info("✅ Content Variant Generator service initialized");
   }
 
   private async getRedis(): Promise<RedisClientType | null> {
@@ -210,7 +210,7 @@ class ContentVariantGeneratorService {
     count: number = 30,
   ): Promise<string[]> {
     const variants: string[] = [];
-    const topic = this?.extractTopic(original);
+    const topic = this.extractTopic(original);
 
     // Hyper A/B: cycle all platforms × all tones for maximum variate coverage
     const platforms = [
@@ -265,7 +265,7 @@ class ContentVariantGeneratorService {
       aiVariantsGenerated++;
     }
 
-    logger?.info(
+    logger.info(
       `📝 Generated ${variants?.length} caption variates (${aiVariantsGenerated} AI-powered) for hyper A/B`,
     );
     return variants;
@@ -298,12 +298,12 @@ class ContentVariantGeneratorService {
     for (let i = 0; i < count; i++) {
       const set: string[] = [];
 
-      const viralTags = this?.shuffleArray([
-        ...this?.hashtagCategories.viral,
+      const viralTags = this.shuffleArray([
+        ...this.hashtagCategories.viral,
       ]).slice(0, config?.viral);
       set?.push(...viralTags);
 
-      const topicHashtags = this?.generateTopicHashtags(content?.caption);
+      const topicHashtags = this.generateTopicHashtags(content?.caption);
       set?.push(...topicHashtags?.slice(0, config?.niche));
 
       if (
@@ -312,14 +312,14 @@ class ContentVariantGeneratorService {
         content?.caption.toLowerCase().includes("song")
       ) {
         const musicTags = seededShuffle(
-          [...this?.hashtagCategories.music],
+          [...this.hashtagCategories.music],
           `${content?.id || content?.caption}:music-tags`,
         ).slice(0, 2);
         set?.push(...musicTags);
       }
 
       while (set?.length < config?.total) {
-        const allTags = Object?.values(this?.hashtagCategories).flat();
+        const allTags = Object.values(this.hashtagCategories).flat();
         const randomTag =
           allTags[
             seededIndex(
@@ -346,7 +346,7 @@ class ContentVariantGeneratorService {
       sets?.push([...new Set(set)].slice(0, config?.total));
     }
 
-    logger?.info(
+    logger.info(
       `#️⃣ Generated ${sets?.length} hashtag sets for ${content?.platform}`,
     );
     return sets;
@@ -354,9 +354,9 @@ class ContentVariantGeneratorService {
 
   async generateHookVariants(content: ContentData): Promise<Hook[]> {
     const hooks: Hook[] = [];
-    const topic = this?.extractTopic(content?.caption);
+    const topic = this.extractTopic(content?.caption);
 
-    for (const [type, templates] of Object?.entries(this?.hookTemplates)) {
+    for (const [type, templates] of Object.entries(this.hookTemplates)) {
       const template =
         templates[
           seededIndex(
@@ -367,7 +367,7 @@ class ContentVariantGeneratorService {
       const hookText = template
         .replace("{topic}", topic)
         .replace("{Topic}", topic?.charAt(0).toUpperCase() + topic?.slice(1))
-        .replace("{audience}", this?.inferAudience(content?.caption));
+        .replace("{audience}", this.inferAudience(content?.caption));
 
       hooks?.push({
         id: randomBytes(8).toString("hex"),
@@ -394,7 +394,7 @@ class ContentVariantGeneratorService {
     for (const variant of variants) {
       const variantMetrics = metricsMap?.get(variant?.id);
       if (variantMetrics) {
-        const score = this?.calculatePerformanceScore(variantMetrics);
+        const score = this.calculatePerformanceScore(variantMetrics);
         if (score > bestScore) {
           bestScore = score;
           bestVariant = variant;
@@ -409,22 +409,22 @@ class ContentVariantGeneratorService {
     content: ContentData,
     count: number = 5,
   ): Promise<VariantResult> {
-    const cacheKey = `${this?.CACHE_PREFIX}${content?.id || randomBytes(8).toString("hex")}`;
+    const cacheKey = `${this.CACHE_PREFIX}${content?.id || randomBytes(8).toString("hex")}`;
 
-    const redis = await this?.getRedis();
+    const redis = await this.getRedis();
     if (redis) {
       const cached = await redis?.get(cacheKey);
       if (cached) {
-        return JSON?.parse(cached);
+        return JSON.parse(cached);
       }
     }
 
-    const captionVariants = await this?.generateCaptionVariants(
+    const captionVariants = await this.generateCaptionVariants(
       content?.caption,
       count,
     );
-    const hashtagSets = await this?.generateHashtagSets(content, count);
-    const hooks = await this?.generateHookVariants(content);
+    const hashtagSets = await this.generateHashtagSets(content, count);
+    const hooks = await this.generateHookVariants(content);
 
     const variants: Variant[] = captionVariants?.map((caption, index) => ({
       id: randomBytes(8).toString("hex"),
@@ -438,8 +438,8 @@ class ContentVariantGeneratorService {
       changes: this.identifyChanges(content?.caption, caption),
     }));
 
-    const originalScore = this?.estimateOriginalScore(content);
-    const recommendations = this?.generateRecommendations(content, variants);
+    const originalScore = this.estimateOriginalScore(content);
+    const recommendations = this.generateRecommendations(content, variants);
 
     const result: VariantResult = {
       variants: variants.sort((a, b) => b?.predictedScore - a?.predictedScore),
@@ -448,10 +448,10 @@ class ContentVariantGeneratorService {
     };
 
     if (redis) {
-      await redis?.setEx(cacheKey, this?.REDIS_TTL, JSON?.stringify(result));
+      await redis?.setEx(cacheKey, this.REDIS_TTL, JSON.stringify(result));
     }
 
-    logger?.info(`🎯 Generated ${variants?.length} content variants`);
+    logger.info(`🎯 Generated ${variants?.length} content variants`);
     return result;
   }
 
@@ -543,7 +543,7 @@ class ContentVariantGeneratorService {
     if (/\d+/.test(hookText)) strength += 8;
     if (["question", "controversy", "mystery"].includes(type)) strength += 12;
 
-    const emotionWords = Object?.values(this?.emotionKeywords).flat();
+    const emotionWords = Object.values(this.emotionKeywords).flat();
     for (const word of emotionWords) {
       if (hookText?.toLowerCase().includes(word)) {
         strength += 5;
@@ -551,7 +551,7 @@ class ContentVariantGeneratorService {
       }
     }
 
-    return Math?.min(100, strength);
+    return Math.min(100, strength);
   }
 
   private getTargetEmotion(hookType: string): string {
@@ -614,7 +614,7 @@ class ContentVariantGeneratorService {
     if (content?.hashtags.length <= 15) score += 5;
     if (content.caption.includes("?")) score += 5;
 
-    return Math?.min(100, score);
+    return Math.min(100, score);
   }
 
   private generateRecommendations(
@@ -653,7 +653,7 @@ class ContentVariantGeneratorService {
     content: ContentData,
     variantCount: number = 30,
   ): Promise<{ variants: Variant[]; testId: string; recommendation: string }> {
-    const result = await this?.generateVariants(content, variantCount);
+    const result = await this.generateVariants(content, variantCount);
     const testId = randomBytes(8).toString("hex");
 
     return {

@@ -175,7 +175,7 @@ export class EventGenerator extends EventEmitter {
   constructor(simulatedDate: Date = new Date(), seed?: number) {
     super();
     this.simulatedDate = simulatedDate;
-    this.random = seed !== undefined ? this?.seededRandom(seed) : Math.random;
+    this.random = seed !== undefined ? this.seededRandom(seed) : Math.random;
   }
 
   private seededRandom(seed: number): () => number {
@@ -186,29 +186,29 @@ export class EventGenerator extends EventEmitter {
   }
 
   private generateId(): string {
-    return `evt_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    return `evt_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
   private getSeasonalModifier(type: keyof typeof SEASONAL_MODIFIERS): number {
-    const month = this?.simulatedDate.getMonth();
+    const month = this.simulatedDate.getMonth();
     return SEASONAL_MODIFIERS[type][month];
   }
 
   private getDayModifier(type: keyof typeof DAY_MODIFIERS): number {
-    const day = this?.simulatedDate.getDay();
+    const day = this.simulatedDate.getDay();
     return DAY_MODIFIERS[type][day];
   }
 
   private getHourModifier(type: keyof typeof HOUR_MODIFIERS): number {
-    const hour = this?.simulatedDate.getHours();
+    const hour = this.simulatedDate.getHours();
     return HOUR_MODIFIERS[type][hour];
   }
 
   public generateUserSignupEvent(baseProb: number = 0.15): GeneratedEvent {
-    const seasonalMod = this?.getSeasonalModifier("userGrowth");
-    const dayMod = this?.getDayModifier("userSignups");
+    const seasonalMod = this.getSeasonalModifier("userGrowth");
+    const dayMod = this.getDayModifier("userSignups");
     const finalProb = baseProb * seasonalMod * dayMod;
-    const triggered = this?.random() < finalProb;
+    const triggered = this.random() < finalProb;
 
     const archetypes = [
       "hobbyist",
@@ -218,7 +218,7 @@ export class EventGenerator extends EventEmitter {
       "enterprise",
     ];
     const weights = [0.5, 0.25, 0.15, 0.07, 0.03];
-    const archetype = this?.weightedChoice(archetypes, weights);
+    const archetype = this.weightedChoice(archetypes, weights);
 
     const tiers = ["monthly", "yearly", "lifetime"];
     const tierWeights =
@@ -227,16 +227,16 @@ export class EventGenerator extends EventEmitter {
         : archetype === "enterprise"
           ? [0.1, 0.3, 0.6]
           : [0.5, 0.35, 0.15];
-    const tier = this?.weightedChoice(tiers, tierWeights);
+    const tier = this.weightedChoice(tiers, tierWeights);
 
-    const genres = Object?.keys(GENRE_MULTIPLIERS);
-    const genre = genres[Math?.floor(this?.random() * genres?.length)];
+    const genres = Object.keys(GENRE_MULTIPLIERS);
+    const genre = genres[Math.floor(this.random() * genres?.length)];
 
     return {
       id: this.generateId(),
       type: "user_signup",
       category: "user",
-      timestamp: new Date(this?.simulatedDate),
+      timestamp: new Date(this.simulatedDate),
       data: {
         archetype,
         tier,
@@ -264,17 +264,17 @@ export class EventGenerator extends EventEmitter {
     const tierMultiplier =
       user?.tier === "monthly" ? 1.0 : user?.tier === "yearly" ? 0.7 : 0.5;
 
-    const finalProb = Math?.min(
+    const finalProb = Math.min(
       0.5,
       baseProbDaily * riskMultiplier * tierMultiplier,
     );
-    const triggered = this?.random() < finalProb;
+    const triggered = this.random() < finalProb;
 
     return {
       id: this.generateId(),
       type: "user_churn",
       category: "user",
-      timestamp: new Date(this?.simulatedDate),
+      timestamp: new Date(this.simulatedDate),
       data: {
         reason: this.weightedChoice(
           [
@@ -308,19 +308,19 @@ export class EventGenerator extends EventEmitter {
     genre: string;
     followers: number;
   }): GeneratedEvent {
-    const seasonalMod = this?.getSeasonalModifier("streaming");
-    const dayMod = this?.getDayModifier("streaming");
-    const hourMod = this?.getHourModifier("streaming");
+    const seasonalMod = this.getSeasonalModifier("streaming");
+    const dayMod = this.getDayModifier("streaming");
+    const hourMod = this.getHourModifier("streaming");
 
     const genreMultiplier =
       GENRE_MULTIPLIERS[release?.genre as keyof typeof GENRE_MULTIPLIERS]
         ?.streams || 1.0;
     const viralMultiplier = release?.isViral ? 50 : 1;
-    const decayFactor = Math?.exp(-release?.daysSinceRelease / 30); // 30-day half-life
-    const followerFactor = Math?.log10(Math?.max(10, release?.followers)) / 4;
+    const decayFactor = Math.exp(-release?.daysSinceRelease / 30); // 30-day half-life
+    const followerFactor = Math.log10(Math.max(10, release?.followers)) / 4;
 
     const baseStreams = INDUSTRY_BENCHMARKS?.avgStreamsPerRelease / (24 * 60);
-    const estimatedStreams = Math?.floor(
+    const estimatedStreams = Math.floor(
       baseStreams *
         seasonalMod *
         dayMod *
@@ -329,7 +329,7 @@ export class EventGenerator extends EventEmitter {
         viralMultiplier *
         decayFactor *
         followerFactor *
-        (1 + this?.random() * 0.5),
+        (1 + this.random() * 0.5),
     );
 
     const triggered = estimatedStreams > 0;
@@ -338,15 +338,15 @@ export class EventGenerator extends EventEmitter {
       id: this.generateId(),
       type: "stream_event",
       category: "content",
-      timestamp: new Date(this?.simulatedDate),
+      timestamp: new Date(this.simulatedDate),
       data: {
         streamCount: estimatedStreams,
         revenue: estimatedStreams * INDUSTRY_BENCHMARKS?.avgRevenuePerStream,
         platforms: Object.entries(PLATFORM_ENGAGEMENT)
-          .filter(() => this?.random() < 0.7)
+          .filter(() => this.random() < 0.7)
           .reduce(
             (acc, [platform, data]) => {
-              acc[platform] = Math?.floor(
+              acc[platform] = Math.floor(
                 estimatedStreams * data?.streamMultiplier,
               );
               return acc;
@@ -354,7 +354,7 @@ export class EventGenerator extends EventEmitter {
             {} as Record<string, number>,
           ),
         isPlaylistDriven:
-          this?.random() < INDUSTRY_BENCHMARKS?.playlistPickupRate,
+          this.random() < INDUSTRY_BENCHMARKS?.playlistPickupRate,
       },
       probability: 1,
       triggered,
@@ -375,16 +375,16 @@ export class EventGenerator extends EventEmitter {
     genre: string;
   }): GeneratedEvent {
     const baseProb = 0.001;
-    const streamFactor = Math?.min(2, release?.totalStreams / 50000);
-    const socialFactor = Math?.min(2, release?.socialEngagement / 5000);
+    const streamFactor = Math.min(2, release?.totalStreams / 50000);
+    const socialFactor = Math.min(2, release?.socialEngagement / 5000);
     const genreMultiplier =
       GENRE_MULTIPLIERS[release?.genre as keyof typeof GENRE_MULTIPLIERS]
         ?.viral || 1.0;
 
     const finalProb = baseProb * streamFactor * socialFactor * genreMultiplier;
-    const triggered = this?.random() < finalProb;
+    const triggered = this.random() < finalProb;
 
-    const viralTrigger = this?.weightedChoice(
+    const viralTrigger = this.weightedChoice(
       [
         "tiktok_trend",
         "playlist_feature",
@@ -400,12 +400,12 @@ export class EventGenerator extends EventEmitter {
       id: this.generateId(),
       type: "viral_moment",
       category: "content",
-      timestamp: new Date(this?.simulatedDate),
+      timestamp: new Date(this.simulatedDate),
       data: {
         trigger: viralTrigger,
-        estimatedReach: Math.floor(100000 + this?.random() * 900000),
-        projectedStreamIncrease: Math.floor(10 + this?.random() * 90), // 10x-100x
-        duration: Math.floor(3 + this?.random() * 14), // 3-17 days
+        estimatedReach: Math.floor(100000 + this.random() * 900000),
+        projectedStreamIncrease: Math.floor(10 + this.random() * 90), // 10x-100x
+        duration: Math.floor(3 + this.random() * 14), // 3-17 days
         platforms:
           viralTrigger === "tiktok_trend"
             ? ["tiktok", "instagram", "youtube"]
@@ -438,7 +438,7 @@ export class EventGenerator extends EventEmitter {
         id: this.generateId(),
         type: "payment_skipped",
         category: "financial",
-        timestamp: new Date(this?.simulatedDate),
+        timestamp: new Date(this.simulatedDate),
         data: { reason: "free_tier" },
         probability: 1,
         triggered: false,
@@ -448,13 +448,13 @@ export class EventGenerator extends EventEmitter {
 
     const triggered = isSubscription;
     const failureRate = 0.02;
-    const failed = triggered && this?.random() < failureRate;
+    const failed = triggered && this.random() < failureRate;
 
     return {
       id: this.generateId(),
       type: failed ? "payment_failed" : "payment_received",
       category: "financial",
-      timestamp: new Date(this?.simulatedDate),
+      timestamp: new Date(this.simulatedDate),
       data: {
         amount,
         currency: "USD",
@@ -465,7 +465,7 @@ export class EventGenerator extends EventEmitter {
         ),
         failed,
         failureReason: failed
-          ? this?.weightedChoice(
+          ? this.weightedChoice(
               [
                 "insufficient_funds",
                 "card_expired",
@@ -487,18 +487,18 @@ export class EventGenerator extends EventEmitter {
     engagementRate: number;
     platforms: string[];
   }): GeneratedEvent {
-    const seasonalMod = this?.getSeasonalModifier("socialActivity");
-    const dayMod = this?.getDayModifier("socialActivity");
-    const hourMod = this?.getHourModifier("socialActivity");
+    const seasonalMod = this.getSeasonalModifier("socialActivity");
+    const dayMod = this.getDayModifier("socialActivity");
+    const hourMod = this.getHourModifier("socialActivity");
 
     const baseProb = 0.1 * seasonalMod * dayMod * hourMod;
-    const triggered = this?.random() < baseProb;
+    const triggered = this.random() < baseProb;
 
     const platform =
-      user?.platforms[Math?.floor(this?.random() * user?.platforms.length)] ||
+      user?.platforms[Math.floor(this.random() * user?.platforms.length)] ||
       "instagram";
-    const estimatedEngagement = Math?.floor(
-      user?.followers * user?.engagementRate * (0.5 + this?.random()),
+    const estimatedEngagement = Math.floor(
+      user?.followers * user?.engagementRate * (0.5 + this.random()),
     );
 
     const isViral =
@@ -508,7 +508,7 @@ export class EventGenerator extends EventEmitter {
       id: this.generateId(),
       type: "social_post",
       category: "social",
-      timestamp: new Date(this?.simulatedDate),
+      timestamp: new Date(this.simulatedDate),
       data: {
         platform,
         contentType: this.weightedChoice(
@@ -516,12 +516,12 @@ export class EventGenerator extends EventEmitter {
           [0.25, 0.3, 0.2, 0.2, 0.05],
         ),
         estimatedReach: Math.floor(
-          user?.followers * (0.1 + this?.random() * 0.3),
+          user?.followers * (0.1 + this.random() * 0.3),
         ),
         estimatedEngagement,
         isViral,
-        hashtags: Math.floor(3 + this?.random() * 7),
-        mentions: Math.floor(this?.random() * 3),
+        hashtags: Math.floor(3 + this.random() * 7),
+        mentions: Math.floor(this.random() * 3),
       },
       probability: baseProb,
       triggered,
@@ -538,7 +538,7 @@ export class EventGenerator extends EventEmitter {
       "economic",
     ];
 
-    const type = this?.weightedChoice(
+    const type = this.weightedChoice(
       eventTypes,
       [0.3, 0.25, 0.25, 0.1, 0.1],
     ) as MarketEvent["type"];
@@ -550,7 +550,7 @@ export class EventGenerator extends EventEmitter {
       "youtube",
       "apple_music",
     ];
-    const platform = platforms[Math?.floor(this?.random() * platforms?.length)];
+    const platform = platforms[Math.floor(this.random() * platforms?.length)];
 
     const baseProb =
       type === "algorithm_change"
@@ -563,25 +563,25 @@ export class EventGenerator extends EventEmitter {
               ? 0.0001
               : 0.0003;
 
-    const triggered = this?.random() < baseProb;
+    const triggered = this.random() < baseProb;
 
     return {
       id: this.generateId(),
       type: `market_${type}`,
       category: "market",
-      timestamp: new Date(this?.simulatedDate),
+      timestamp: new Date(this.simulatedDate),
       data: {
         eventType: type,
         platform: type === "algorithm_change" ? platform : undefined,
-        impact: -0.2 + this?.random() * 0.4, // -20% to +20%
-        duration: Math.floor(7 + this?.random() * 83), // 7-90 days
+        impact: -0.2 + this.random() * 0.4, // -20% to +20%
+        duration: Math.floor(7 + this.random() * 83), // 7-90 days
         description: this.getMarketEventDescription(type, platform),
         affectedMetrics: this.getAffectedMetrics(type),
         requiresResponse: this.random() < 0.7,
       },
       probability: baseProb,
       triggered,
-      impact: Math.abs(-0.2 + this?.random() * 0.4) > 0.1 ? "high" : "medium",
+      impact: Math.abs(-0.2 + this.random() * 0.4) > 0.1 ? "high" : "medium",
     };
   }
 
@@ -596,12 +596,12 @@ export class EventGenerator extends EventEmitter {
       "security_alert",
     ];
 
-    const type = eventTypes[Math?.floor(this?.random() * eventTypes?.length)];
+    const type = eventTypes[Math.floor(this.random() * eventTypes?.length)];
 
     const baseProbDaily = 0.005; // 0.5% daily chance of any system event
-    const triggered = this?.random() < baseProbDaily;
+    const triggered = this.random() < baseProbDaily;
 
-    const severity = this?.random();
+    const severity = this.random();
     const impact: GeneratedEvent["impact"] =
       severity > 0.95
         ? "critical"
@@ -615,14 +615,14 @@ export class EventGenerator extends EventEmitter {
       id: this.generateId(),
       type: `system_${type}`,
       category: "system",
-      timestamp: new Date(this?.simulatedDate),
+      timestamp: new Date(this.simulatedDate),
       data: {
         eventType: type,
         severity,
         affectedServices: this.getAffectedServices(type),
-        estimatedResolutionTime: Math.floor(5 + this?.random() * 55), // 5-60 minutes
+        estimatedResolutionTime: Math.floor(5 + this.random() * 55), // 5-60 minutes
         autoRecoverable: this.random() < 0.7,
-        userImpact: Math.floor(this?.random() * 10), // % of users affected
+        userImpact: Math.floor(this.random() * 10), // % of users affected
       },
       probability: baseProbDaily,
       triggered,
@@ -632,7 +632,7 @@ export class EventGenerator extends EventEmitter {
 
   private weightedChoice<T>(choices: T[], weights: number[]): T {
     const total = weights?.reduce((a, b) => a + b, 0);
-    let random = this?.random() * total;
+    let random = this.random() * total;
 
     for (let i = 0; i < choices?.length; i++) {
       random -= weights[i];
@@ -688,9 +688,9 @@ export class EventGenerator extends EventEmitter {
   public generateBatchEvents(count: number, type: string): GeneratedEvent[] {
     const events: GeneratedEvent[] = [];
     const generators: Record<string, () => GeneratedEvent> = {
-      user_signup: () => this?.generateUserSignupEvent(),
-      market: () => this?.generateMarketEvent(),
-      system: () => this?.generateSystemEvent(),
+      user_signup: () => this.generateUserSignupEvent(),
+      market: () => this.generateMarketEvent(),
+      system: () => this.generateSystemEvent(),
     };
 
     const generator = generators[type];

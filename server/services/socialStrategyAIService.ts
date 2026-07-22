@@ -284,17 +284,17 @@ class SocialStrategyAIService {
       throw new AIUnavailableError("content recommendations");
     }
 
-    for (let i = 0; i < Math?.min(count, mergedIdeas?.length); i++) {
+    for (let i = 0; i < Math.min(count, mergedIdeas?.length); i++) {
       const idea = mergedIdeas[i];
       const platform = platforms[i % platforms?.length];
       const nextDate = new Date();
-      nextDate?.setDate(nextDate?.getDate() + Math?.floor(i / platforms?.length));
-      const optimalHours = this?.platformOptimalTimes[platform]?.[
-        this?.getDayName(nextDate)
+      nextDate?.setDate(nextDate?.getDate() + Math.floor(i / platforms?.length));
+      const optimalHours = this.platformOptimalTimes[platform]?.[
+        this.getDayName(nextDate)
       ] || [12];
       nextDate?.setHours(optimalHours[0] || 12, 0, 0, 0);
 
-      const suggestedContent = await this?.generateSuggestedContentAsync(
+      const suggestedContent = await this.generateSuggestedContentAsync(
         idea?.title,
         platform,
       );
@@ -307,7 +307,7 @@ class SocialStrategyAIService {
         suggestedContent,
         hashtags: this.generateHashtags(idea?.pillar, platform),
         bestTime: nextDate,
-        expectedEngagement: Math.floor(Math?.random() * 5000) + 1000,
+        expectedEngagement: Math.floor(Math.random() * 5000) + 1000,
         priority: i < 3 ? "high" : i < 6 ? "medium" : "low",
         reasoning: `This content aligns with the "${idea.trend}" trend and your "${idea.pillar}" content pillar.`,
         trendAlignment: idea.trend,
@@ -351,13 +351,13 @@ class SocialStrategyAIService {
         if (caption) return caption;
       }
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err: err },
         "[SocialStrategy] Advanced AI failed for suggested content:",
       );
     }
     // Last-resort: static template
-    return this?.generateSuggestedContent(title, platform);
+    return this.generateSuggestedContent(title, platform);
   }
 
   private generateSuggestedContent(title: string, platform: string): string {
@@ -689,8 +689,8 @@ class SocialStrategyAIService {
 
     for (const platform of platforms) {
       const platformTimes =
-        this?.platformOptimalTimes[platform] ||
-        this?.platformOptimalTimes.instagram;
+        this.platformOptimalTimes[platform] ||
+        this.platformOptimalTimes.instagram;
       let bestDay = "wednesday";
       let bestHour = 12;
       let maxScore = 0;
@@ -699,7 +699,7 @@ class SocialStrategyAIService {
       for (const day of days) {
         const hours = platformTimes[day] || [];
         hours?.map((hour) => {
-          const score = Math?.random() * 30 + 70;
+          const score = Math.random() * 30 + 70;
           if (score > maxScore) {
             maxScore = score;
             bestDay = day;
@@ -708,9 +708,9 @@ class SocialStrategyAIService {
           return {
             hour,
             score: Math.round(score),
-            audienceActivity: Math.round(Math?.random() * 30 + 60),
-            competitorActivity: Math.round(Math?.random() * 40 + 30),
-            reasoning: `${Math?.round(score)}% of your audience is typically active at this time`,
+            audienceActivity: Math.round(Math.random() * 30 + 60),
+            competitorActivity: Math.round(Math.random() * 40 + 30),
+            reasoning: `${Math.round(score)}% of your audience is typically active at this time`,
           };
         });
       }
@@ -721,16 +721,16 @@ class SocialStrategyAIService {
         times: Object.entries(platformTimes).flatMap(([day, hours]) =>
           hours?.map((hour) => ({
             hour,
-            score: Math.round(Math?.random() * 30 + 70),
-            audienceActivity: Math.round(Math?.random() * 30 + 60),
-            competitorActivity: Math.round(Math?.random() * 40 + 30),
+            score: Math.round(Math.random() * 30 + 70),
+            audienceActivity: Math.round(Math.random() * 30 + 60),
+            competitorActivity: Math.round(Math.random() * 40 + 30),
             reasoning: `High engagement potential on ${day} at ${hour}:00`,
           })),
         ),
         overallBest: {
           day: bestDay,
           hour: bestHour,
-          expectedEngagement: Math.floor(Math?.random() * 2000) + 1000,
+          expectedEngagement: Math.floor(Math.random() * 2000) + 1000,
         },
       });
     }
@@ -745,8 +745,8 @@ class SocialStrategyAIService {
     const predictions: GrowthPrediction[] = [];
 
     for (const platform of platforms) {
-      const currentFollowers = Math?.floor(Math?.random() * 50000) + 5000;
-      const monthlyGrowth = Math?.random() * 0.15 + 0.02;
+      const currentFollowers = Math.floor(Math.random() * 50000) + 5000;
+      const monthlyGrowth = Math.random() * 0.15 + 0.02;
 
       const futurePredictions: GrowthPrediction["predictions"] = [];
       let followers = currentFollowers;
@@ -754,7 +754,7 @@ class SocialStrategyAIService {
       for (let month = 1; month <= 12; month++) {
         const date = new Date();
         date?.setMonth(date?.getMonth() + month);
-        followers = Math?.floor(followers * (1 + monthlyGrowth));
+        followers = Math.floor(followers * (1 + monthlyGrowth));
         futurePredictions?.push({
           date,
           followers,
@@ -954,17 +954,17 @@ class SocialStrategyAIService {
       tiktok: ["video", "duet", "trend"],
     };
 
-    const daysBetween = Math?.ceil(
+    const daysBetween = Math.ceil(
       (endDate?.getTime() - startDate?.getTime()) / (24 * 60 * 60 * 1000),
     );
-    const totalPosts = Math?.ceil((daysBetween / 7) * postsPerWeek);
+    const totalPosts = Math.ceil((daysBetween / 7) * postsPerWeek);
 
     for (let i = 0; i < totalPosts; i++) {
       const platform = platforms[i % platforms?.length];
       const postDate = new Date(startDate);
-      postDate?.setDate(postDate?.getDate() + Math?.floor(i / platforms?.length));
-      const dayName = this?.getDayName(postDate);
-      const optimalHours = this?.platformOptimalTimes[platform]?.[dayName] || [
+      postDate?.setDate(postDate?.getDate() + Math.floor(i / platforms?.length));
+      const dayName = this.getDayName(postDate);
+      const optimalHours = this.platformOptimalTimes[platform]?.[dayName] || [
         12,
       ];
       const hour = optimalHours[i % optimalHours?.length] || 12;

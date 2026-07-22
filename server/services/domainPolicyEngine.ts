@@ -218,7 +218,7 @@ export async function onSubscriptionReactivated(userId: string): Promise<void> {
     "_all",
     { action: "subscription_reactivated", newStatus: "active" },
   );
-  logger?.info(
+  logger.info(
     { userId },
     "[PolicyEngine] subscription reactivated → non_renewing domains restored",
   );
@@ -290,11 +290,11 @@ export async function emitDomainEvent(
     await pool?.query(
       `INSERT INTO domain_events (domain_id, user_id, event_type, fqdn, metadata)
        VALUES ($1, $2, $3, $4, $5)`,
-      [domainId, userId, eventType, fqdn, JSON?.stringify(metadata ?? {})],
+      [domainId, userId, eventType, fqdn, JSON.stringify(metadata ?? {})],
     );
   } catch (e) {
     // Event ledger failures must never block the main operation
-    logger?.warn(
+    logger.warn(
       { eventType, domainId, err: e.message },
       "[PolicyEngine] emitDomainEvent failed (non-fatal)",
     );

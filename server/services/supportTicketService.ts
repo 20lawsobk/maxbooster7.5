@@ -74,8 +74,8 @@ export class SupportTicketService {
       }
     }
 
-    const messages = await this?.getTicketMessages(ticketId);
-    const tags = await this?.getTicketTags(ticketId);
+    const messages = await this.getTicketMessages(ticketId);
+    const tags = await this.getTicketTags(ticketId);
 
     return {
       ...result[0].ticket,

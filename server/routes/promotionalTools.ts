@@ -43,76 +43,76 @@ const preSavePageSchema = z.object({
 
 router?.post("/presave", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req?.user as Record<string, unknown>).id;
-    const data = preSavePageSchema?.parse(req?.body);
+    const userId = (req.user as Record<string, unknown>).id;
+    const data = preSavePageSchema?.parse(req.body);
     const page = await promotionalToolsService?.createPreSavePage(
       userId,
       data?.releaseId,
       data,
     );
-    res?.json(page);
+    res.json(page);
   } catch (error) {
-    logger?.warn({ err: error }, "Error creating pre-save page:");
-    res?.status(500).json({ error: "Failed to create pre-save page" });
+    logger.warn({ err: error }, "Error creating pre-save page:");
+    res.status(500).json({ error: "Failed to create pre-save page" });
   }
 });
 
 router?.get("/presave", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req?.user as Record<string, unknown>).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const pages = await promotionalToolsService?.getUserPreSavePages(userId);
-    res?.json(pages);
+    res.json(pages);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching pre-save pages:");
-    res?.status(500).json({ error: "Failed to fetch pre-save pages" });
+    logger.warn({ err: error }, "Error fetching pre-save pages:");
+    res.status(500).json({ error: "Failed to fetch pre-save pages" });
   }
 });
 
 router?.get("/presave/:id", async (req: Request, res: Response) => {
   try {
-    const page = await promotionalToolsService?.getPreSavePage(req?.params.id);
+    const page = await promotionalToolsService?.getPreSavePage(req.params.id);
     if (!page) {
-      return res?.status(404).json({ error: "Pre-save page not found" });
+      return res.status(404).json({ error: "Pre-save page not found" });
     }
     await promotionalToolsService?.recordPreSaveAnalytics(page?.id, "view");
-    res?.json(page);
+    res.json(page);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching pre-save page:");
-    res?.status(500).json({ error: "Failed to fetch pre-save page" });
+    logger.warn({ err: error }, "Error fetching pre-save page:");
+    res.status(500).json({ error: "Failed to fetch pre-save page" });
   }
 });
 
 router?.get("/presave/slug/:slug", async (req: Request, res: Response) => {
   try {
     const page = await promotionalToolsService?.getPreSavePageBySlug(
-      req?.params.slug,
+      req.params.slug,
     );
     if (!page) {
-      return res?.status(404).json({ error: "Pre-save page not found" });
+      return res.status(404).json({ error: "Pre-save page not found" });
     }
     await promotionalToolsService?.recordPreSaveAnalytics(page?.id, "view");
-    res?.json(page);
+    res.json(page);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching pre-save page:");
-    res?.status(500).json({ error: "Failed to fetch pre-save page" });
+    logger.warn({ err: error }, "Error fetching pre-save page:");
+    res.status(500).json({ error: "Failed to fetch pre-save page" });
   }
 });
 
 router?.put("/presave/:id", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req?.user as Record<string, unknown>).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const page = await promotionalToolsService?.updatePreSavePage(
-      req?.params.id,
+      req.params.id,
       userId,
-      req?.body,
+      req.body,
     );
-    res?.json(page);
+    res.json(page);
   } catch (error) {
     if (error?.message === "Pre-save page not found") {
-      return res?.status(404).json({ error: "Pre-save page not found" });
+      return res.status(404).json({ error: "Pre-save page not found" });
     }
-    logger?.warn({ err: error }, "Error updating pre-save page:");
-    res?.status(500).json({ error: "Failed to update pre-save page" });
+    logger.warn({ err: error }, "Error updating pre-save page:");
+    res.status(500).json({ error: "Failed to update pre-save page" });
   }
 });
 
@@ -122,48 +122,48 @@ const PLATFORM_RE = /^[a-zA-Z0-9_-]{1,32}$/;
 
 router?.post("/presave/:id/analytics", async (req: Request, res: Response) => {
   try {
-    const { event, platform } = req?.body;
+    const { event, platform } = req.body;
     if (!PRESAVE_EVENTS?.includes(event as PresaveEvent)) {
-      return res?.status(400).json({ error: "Invalid event type" });
+      return res.status(400).json({ error: "Invalid event type" });
     }
     if (
       platform !== undefined &&
       (typeof platform !== "string" || !PLATFORM_RE?.test(platform))
     ) {
-      return res?.status(400).json({ error: "Invalid platform value" });
+      return res.status(400).json({ error: "Invalid platform value" });
     }
     await promotionalToolsService?.recordPreSaveAnalytics(
-      req?.params.id,
+      req.params.id,
       event as PresaveEvent,
       platform,
     );
-    res?.json({ success: true });
+    res.json({ success: true });
   } catch (error) {
-    logger?.warn({ err: error }, "Error recording analytics:");
-    res?.status(500).json({ error: "Failed to record analytics" });
+    logger.warn({ err: error }, "Error recording analytics:");
+    res.status(500).json({ error: "Failed to record analytics" });
   }
 });
 
 router?.post("/presave/:id/email", async (req: Request, res: Response) => {
   try {
-    const { email } = req?.body;
+    const { email } = req.body;
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return res?.status(400).json({ error: "Valid email address required" });
+      return res.status(400).json({ error: "Valid email address required" });
     }
     const success = await promotionalToolsService?.captureEmail(
-      req?.params.id,
+      req.params.id,
       email,
     );
     if (success) {
       await promotionalToolsService?.recordPreSaveAnalytics(
-        req?.params.id,
+        req.params.id,
         "email",
       );
     }
-    res?.json({ success });
+    res.json({ success });
   } catch (error) {
-    logger?.warn({ err: error }, "Error capturing email:");
-    res?.status(500).json({ error: "Failed to capture email" });
+    logger.warn({ err: error }, "Error capturing email:");
+    res.status(500).json({ error: "Failed to capture email" });
   }
 });
 
@@ -172,17 +172,17 @@ router?.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as Record<string, unknown>).id;
+      const userId = (req.user as Record<string, unknown>).id;
       const deleted = await promotionalToolsService?.deletePreSavePage(
-        req?.params.id,
+        req.params.id,
         userId,
       );
       if (!deleted)
-        return res?.status(404).json({ error: "Pre-save page not found" });
-      res?.json({ success: true });
+        return res.status(404).json({ error: "Pre-save page not found" });
+      res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Error deleting pre-save page:");
-      res?.status(500).json({ error: "Failed to delete pre-save page" });
+      logger.warn({ err: error }, "Error deleting pre-save page:");
+      res.status(500).json({ error: "Failed to delete pre-save page" });
     }
   },
 );
@@ -203,42 +203,42 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as Record<string, unknown>).id;
-      const data = promoCardSchema?.parse(req?.body);
+      const userId = (req.user as Record<string, unknown>).id;
+      const data = promoCardSchema?.parse(req.body);
       const card = await promotionalToolsService?.createPromoCard(
         userId,
         data?.releaseId,
         data,
       );
-      res?.json(card);
+      res.json(card);
     } catch (error) {
-      logger?.warn({ err: error }, "Error creating promo card:");
-      res?.status(500).json({ error: "Failed to create promo card" });
+      logger.warn({ err: error }, "Error creating promo card:");
+      res.status(500).json({ error: "Failed to create promo card" });
     }
   },
 );
 
 router?.get("/promo-cards", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req?.user as Record<string, unknown>).id;
-    const releaseId = req?.query.releaseId as string | undefined;
+    const userId = (req.user as Record<string, unknown>).id;
+    const releaseId = req.query.releaseId as string | undefined;
     const cards = await promotionalToolsService?.getPromoCards(
       userId,
       releaseId,
     );
-    res?.json(cards);
+    res.json(cards);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching promo cards:");
-    res?.status(500).json({ error: "Failed to fetch promo cards" });
+    logger.warn({ err: error }, "Error fetching promo cards:");
+    res.status(500).json({ error: "Failed to fetch promo cards" });
   }
 });
 
 router?.get("/promo-cards/templates", async (_req: Request, res: Response) => {
   try {
-    res?.json(promotionalToolsService?.getPromoCardTemplates());
+    res.json(promotionalToolsService?.getPromoCardTemplates());
   } catch (error) {
-    logger?.warn("Error in promo card templates:", error?.message);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Error in promo card templates:", error?.message);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
@@ -247,17 +247,17 @@ router?.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as Record<string, unknown>).id;
+      const userId = (req.user as Record<string, unknown>).id;
       const deleted = await promotionalToolsService?.deletePromoCard(
-        req?.params.id,
+        req.params.id,
         userId,
       );
       if (!deleted)
-        return res?.status(404).json({ error: "Promo card not found" });
-      res?.json({ success: true });
+        return res.status(404).json({ error: "Promo card not found" });
+      res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Error deleting promo card:");
-      res?.status(500).json({ error: "Failed to delete promo card" });
+      logger.warn({ err: error }, "Error deleting promo card:");
+      res.status(500).json({ error: "Failed to delete promo card" });
     }
   },
 );
@@ -281,33 +281,33 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as Record<string, unknown>).id;
-      const data = miniVideoSchema?.parse(req?.body);
+      const userId = (req.user as Record<string, unknown>).id;
+      const data = miniVideoSchema?.parse(req.body);
       const video = await promotionalToolsService?.createMiniVideo(
         userId,
         data?.releaseId,
         data,
       );
-      res?.json(video);
+      res.json(video);
     } catch (error) {
-      logger?.warn({ err: error }, "Error creating mini video:");
-      res?.status(500).json({ error: "Failed to create mini video" });
+      logger.warn({ err: error }, "Error creating mini video:");
+      res.status(500).json({ error: "Failed to create mini video" });
     }
   },
 );
 
 router?.get("/mini-videos", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req?.user as Record<string, unknown>).id;
-    const releaseId = req?.query.releaseId as string | undefined;
+    const userId = (req.user as Record<string, unknown>).id;
+    const releaseId = req.query.releaseId as string | undefined;
     const videos = await promotionalToolsService?.getMiniVideos(
       userId,
       releaseId,
     );
-    res?.json(videos);
+    res.json(videos);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching mini videos:");
-    res?.status(500).json({ error: "Failed to fetch mini videos" });
+    logger.warn({ err: error }, "Error fetching mini videos:");
+    res.status(500).json({ error: "Failed to fetch mini videos" });
   }
 });
 
@@ -316,17 +316,17 @@ router?.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as Record<string, unknown>).id;
+      const userId = (req.user as Record<string, unknown>).id;
       const deleted = await promotionalToolsService?.deleteMiniVideo(
-        req?.params.id,
+        req.params.id,
         userId,
       );
       if (!deleted)
-        return res?.status(404).json({ error: "Mini video not found" });
-      res?.json({ success: true });
+        return res.status(404).json({ error: "Mini video not found" });
+      res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Error deleting mini video:");
-      res?.status(500).json({ error: "Failed to delete mini video" });
+      logger.warn({ err: error }, "Error deleting mini video:");
+      res.status(500).json({ error: "Failed to delete mini video" });
     }
   },
 );
@@ -344,18 +344,18 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as Record<string, unknown>).id;
-      const data = spotifyCanvasSchema?.parse(req?.body);
+      const userId = (req.user as Record<string, unknown>).id;
+      const data = spotifyCanvasSchema?.parse(req.body);
       const canvas = await promotionalToolsService?.createSpotifyCanvas(
         userId,
         data?.releaseId,
         data?.trackId,
         data,
       );
-      res?.json(canvas);
+      res.json(canvas);
     } catch (error) {
-      logger?.warn({ err: error }, "Error creating Spotify Canvas:");
-      res?.status(500).json({ error: "Failed to create Spotify Canvas" });
+      logger.warn({ err: error }, "Error creating Spotify Canvas:");
+      res.status(500).json({ error: "Failed to create Spotify Canvas" });
     }
   },
 );
@@ -365,16 +365,16 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as Record<string, unknown>).id;
-      const releaseId = req?.query.releaseId as string | undefined;
+      const userId = (req.user as Record<string, unknown>).id;
+      const releaseId = req.query.releaseId as string | undefined;
       const canvases = await promotionalToolsService?.getSpotifyCanvases(
         userId,
         releaseId,
       );
-      res?.json(canvases);
+      res.json(canvases);
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching Spotify Canvases:");
-      res?.status(500).json({ error: "Failed to fetch Spotify Canvases" });
+      logger.warn({ err: error }, "Error fetching Spotify Canvases:");
+      res.status(500).json({ error: "Failed to fetch Spotify Canvases" });
     }
   },
 );
@@ -385,12 +385,12 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const canvas = await promotionalToolsService?.processSpotifyCanvas(
-        req?.params.id,
+        req.params.id,
       );
-      res?.json(canvas);
+      res.json(canvas);
     } catch (error) {
-      logger?.warn({ err: error }, "Error processing Spotify Canvas:");
-      res?.status(500).json({ error: "Failed to process Spotify Canvas" });
+      logger.warn({ err: error }, "Error processing Spotify Canvas:");
+      res.status(500).json({ error: "Failed to process Spotify Canvas" });
     }
   },
 );
@@ -401,12 +401,12 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const canvas = await promotionalToolsService?.submitSpotifyCanvas(
-        req?.params.id,
+        req.params.id,
       );
-      res?.json(canvas);
+      res.json(canvas);
     } catch (error) {
-      logger?.warn({ err: error }, "Error submitting Spotify Canvas:");
-      res?.status(500).json({ error: "Failed to submit Spotify Canvas" });
+      logger.warn({ err: error }, "Error submitting Spotify Canvas:");
+      res.status(500).json({ error: "Failed to submit Spotify Canvas" });
     }
   },
 );
@@ -416,11 +416,11 @@ router?.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      await promotionalToolsService?.deleteSpotifyCanvas(req?.params.id);
-      res?.json({ success: true });
+      await promotionalToolsService?.deleteSpotifyCanvas(req.params.id);
+      res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Error deleting Spotify Canvas:");
-      res?.status(500).json({ error: "Failed to delete Spotify Canvas" });
+      logger.warn({ err: error }, "Error deleting Spotify Canvas:");
+      res.status(500).json({ error: "Failed to delete Spotify Canvas" });
     }
   },
 );
@@ -438,34 +438,34 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as Record<string, unknown>).id;
-      const data = lyricsSyncSchema?.parse(req?.body);
+      const userId = (req.user as Record<string, unknown>).id;
+      const data = lyricsSyncSchema?.parse(req.body);
       const sync = await promotionalToolsService?.createLyricsSync(
         userId,
         data?.releaseId,
         data?.trackId,
         data,
       );
-      res?.json(sync);
+      res.json(sync);
     } catch (error) {
-      logger?.warn({ err: error }, "Error creating lyrics sync:");
-      res?.status(500).json({ error: "Failed to create lyrics sync" });
+      logger.warn({ err: error }, "Error creating lyrics sync:");
+      res.status(500).json({ error: "Failed to create lyrics sync" });
     }
   },
 );
 
 router?.get("/lyrics-sync", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req?.user as Record<string, unknown>).id;
-    const releaseId = req?.query.releaseId as string | undefined;
+    const userId = (req.user as Record<string, unknown>).id;
+    const releaseId = req.query.releaseId as string | undefined;
     const syncs = await promotionalToolsService?.getLyricsSyncs(
       userId,
       releaseId,
     );
-    res?.json(syncs);
+    res.json(syncs);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching lyrics syncs:");
-    res?.status(500).json({ error: "Failed to fetch lyrics syncs" });
+    logger.warn({ err: error }, "Error fetching lyrics syncs:");
+    res.status(500).json({ error: "Failed to fetch lyrics syncs" });
   }
 });
 
@@ -474,15 +474,15 @@ router?.put(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { lyrics } = req?.body;
+      const { lyrics } = req.body;
       const sync = await promotionalToolsService?.updateLyricsSync(
-        req?.params.id,
+        req.params.id,
         lyrics,
       );
-      res?.json(sync);
+      res.json(sync);
     } catch (error) {
-      logger?.warn({ err: error }, "Error updating lyrics sync:");
-      res?.status(500).json({ error: "Failed to update lyrics sync" });
+      logger.warn({ err: error }, "Error updating lyrics sync:");
+      res.status(500).json({ error: "Failed to update lyrics sync" });
     }
   },
 );
@@ -493,12 +493,12 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const sync = await promotionalToolsService?.submitLyricsToplatforms(
-        req?.params.id,
+        req.params.id,
       );
-      res?.json(sync);
+      res.json(sync);
     } catch (error) {
-      logger?.warn({ err: error }, "Error submitting lyrics:");
-      res?.status(500).json({ error: "Failed to submit lyrics" });
+      logger.warn({ err: error }, "Error submitting lyrics:");
+      res.status(500).json({ error: "Failed to submit lyrics" });
     }
   },
 );
@@ -509,22 +509,22 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const syncs = await promotionalToolsService?.getLyricsSyncs(
-        (req?.user as Record<string, unknown>).id,
+        (req.user as Record<string, unknown>).id,
       );
-      const sync = syncs?.find((s) => s?.id === req?.params.id);
+      const sync = syncs?.find((s) => s?.id === req.params.id);
       if (!sync) {
-        return res?.status(404).json({ error: "Lyrics sync not found" });
+        return res.status(404).json({ error: "Lyrics sync not found" });
       }
       const lrc = promotionalToolsService?.exportLRC(sync);
-      res?.setHeader("Content-Type", "text/plain");
-      res?.setHeader(
+      res.setHeader("Content-Type", "text/plain");
+      res.setHeader(
         "Content-Disposition",
         `attachment; filename="lyrics-${sync.id}.lrc"`,
       );
-      res?.send(lrc);
+      res.send(lrc);
     } catch (error) {
-      logger?.warn({ err: error }, "Error exporting LRC:");
-      res?.status(500).json({ error: "Failed to export LRC" });
+      logger.warn({ err: error }, "Error exporting LRC:");
+      res.status(500).json({ error: "Failed to export LRC" });
     }
   },
 );
@@ -535,22 +535,22 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const syncs = await promotionalToolsService?.getLyricsSyncs(
-        (req?.user as Record<string, unknown>).id,
+        (req.user as Record<string, unknown>).id,
       );
-      const sync = syncs?.find((s) => s?.id === req?.params.id);
+      const sync = syncs?.find((s) => s?.id === req.params.id);
       if (!sync) {
-        return res?.status(404).json({ error: "Lyrics sync not found" });
+        return res.status(404).json({ error: "Lyrics sync not found" });
       }
       const srt = promotionalToolsService?.exportSRT(sync);
-      res?.setHeader("Content-Type", "text/plain");
-      res?.setHeader(
+      res.setHeader("Content-Type", "text/plain");
+      res.setHeader(
         "Content-Disposition",
         `attachment; filename="lyrics-${sync.id}.srt"`,
       );
-      res?.send(srt);
+      res.send(srt);
     } catch (error) {
-      logger?.warn({ err: error }, "Error exporting SRT:");
-      res?.status(500).json({ error: "Failed to export SRT" });
+      logger.warn({ err: error }, "Error exporting SRT:");
+      res.status(500).json({ error: "Failed to export SRT" });
     }
   },
 );
@@ -560,11 +560,11 @@ router?.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      await promotionalToolsService?.deleteLyricsSync(req?.params.id);
-      res?.json({ success: true });
+      await promotionalToolsService?.deleteLyricsSync(req.params.id);
+      res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Error deleting lyrics sync:");
-      res?.status(500).json({ error: "Failed to delete lyrics sync" });
+      logger.warn({ err: error }, "Error deleting lyrics sync:");
+      res.status(500).json({ error: "Failed to delete lyrics sync" });
     }
   },
 );

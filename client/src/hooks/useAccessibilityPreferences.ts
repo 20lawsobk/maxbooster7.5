@@ -95,7 +95,7 @@ export function useAccessibilityPreferences() {
       await updateMutation?.mutateAsync(preferences);
       announce("Accessibility preferences saved to your profile");
     } catch (error) {
-      logger?.error("Failed to save accessibility preferences:", error);
+      logger.error("Failed to save accessibility preferences:", error);
     }
   }, [
     reducedMotion,
@@ -129,7 +129,7 @@ export function useAccessibilityPreferences() {
       try {
         await updateMutation?.mutateAsync({ [key]: value });
       } catch (error) {
-        logger?.error(`Failed to update ${key}:`, error);
+        logger.error(`Failed to update ${key}:`, error);
       }
     },
     [
@@ -150,7 +150,7 @@ export function useAccessibilityPreferences() {
       });
       announce("Accessibility preferences reset to defaults");
     } catch (error) {
-      logger?.error("Failed to reset accessibility preferences:", error);
+      logger.error("Failed to reset accessibility preferences:", error);
     }
   }, [resetAllPreferences, queryClient, announce]);
 

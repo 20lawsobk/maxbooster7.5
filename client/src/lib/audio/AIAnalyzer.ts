@@ -12,8 +12,8 @@ export class AIAnalyzer {
   constructor(context: AudioContext) {
     this.context = context;
     this.analyser = context?.createAnalyser();
-    this.analyser.fftSize = this?.fftSize;
-    this.analyser.smoothingTimeConstant = this?.smoothingTimeConstant;
+    this.analyser.fftSize = this.fftSize;
+    this.analyser.smoothingTimeConstant = this.smoothingTimeConstant;
   }
 
   /**
@@ -26,24 +26,24 @@ export class AIAnalyzer {
     dominantFrequency: number;
   } {
     // Connect source to analyser
-    source?.connect(this?.analyser);
+    source?.connect(this.analyser);
 
-    const bufferLength = this?.analyser.frequencyBinCount;
+    const bufferLength = this.analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
-    this?.analyser.getByteFrequencyData(dataArray);
+    this.analyser.getByteFrequencyData(dataArray);
 
     // Find peaks
-    const peaks = this?.findPeaks(dataArray);
+    const peaks = this.findPeaks(dataArray);
 
     // Calculate average level
     const averageLevel =
       dataArray?.reduce((sum, val) => sum + val, 0) / bufferLength;
 
     // Find dominant frequency
-    const dominantFrequency = this?.findDominantFrequency(dataArray);
+    const dominantFrequency = this.findDominantFrequency(dataArray);
 
     // Disconnect to avoid memory leaks
-    source?.disconnect(this?.analyser);
+    source?.disconnect(this.analyser);
 
     return {
       frequencies: dataArray,
@@ -66,11 +66,11 @@ export class AIAnalyzer {
     }
 
     // K-weighting filter coefficients (ITU-R BS?.1770)
-    const preFilter = this?.createKWeightingPreFilter(sampleRate);
-    const highShelf = this?.createKWeightingHighShelf(sampleRate);
+    const preFilter = this.createKWeightingPreFilter(sampleRate);
+    const highShelf = this.createKWeightingHighShelf(sampleRate);
 
     let totalPower = 0;
-    const blockSize = Math?.floor(sampleRate * 0.4); // 400ms blocks
+    const blockSize = Math.floor(sampleRate * 0.4); // 400ms blocks
     let blockCount = 0;
 
     for (
@@ -84,7 +84,7 @@ export class AIAnalyzer {
         const block = channelData[channel].slice(start, start + blockSize);
 
         // Apply K-weighting
-        const filtered = this?.applyKWeighting(block, preFilter, highShelf);
+        const filtered = this.applyKWeighting(block, preFilter, highShelf);
 
         // Calculate mean square
         const meanSquare =
@@ -103,7 +103,7 @@ export class AIAnalyzer {
 
     // Calculate LUFS
     const meanPower = totalPower / blockCount;
-    const lufs = -0.691 + 10 * Math?.log10(meanPower);
+    const lufs = -0.691 + 10 * Math.log10(meanPower);
 
     return isFinite(lufs) ? lufs : -70; // Return -70 LUFS for silence
   }
@@ -147,7 +147,7 @@ export class AIAnalyzer {
     }
 
     // Convert bin index to frequency
-    const nyquist = this?.context.sampleRate / 2;
+    const nyquist = this.context.sampleRate / 2;
     const frequency = (maxIndex * nyquist) / data?.length;
 
     return frequency;
@@ -162,7 +162,7 @@ export class AIAnalyzer {
   } {
     // High-pass filter at 100 Hz
     const fc = 100 / sampleRate;
-    const K = Math?.tan(Math.PI * fc);
+    const K = Math.tan(Math.PI * fc);
     const norm = 1 / (1 + K / 1.41421356 + K * K);
 
     return {
@@ -180,17 +180,17 @@ export class AIAnalyzer {
   } {
     // High shelf at 2 kHz, +4 dB
     const fc = 2000 / sampleRate;
-    const V0 = Math?.pow(10, 4 / 20);
-    const K = Math?.tan(Math.PI * fc);
-    const norm = 1 / (1 + Math?.sqrt(2) * K + K * K);
+    const V0 = Math.pow(10, 4 / 20);
+    const K = Math.tan(Math.PI * fc);
+    const norm = 1 / (1 + Math.sqrt(2) * K + K * K);
 
     return {
       b: [
-        (V0 + Math?.sqrt(2 * V0) * K + K * K) * norm,
+        (V0 + Math.sqrt(2 * V0) * K + K * K) * norm,
         2 * (K * K - V0) * norm,
-        (V0 - Math?.sqrt(2 * V0) * K + K * K) * norm,
+        (V0 - Math.sqrt(2 * V0) * K + K * K) * norm,
       ],
-      a: [1, 2 * (K * K - 1) * norm, (1 - Math?.sqrt(2) * K + K * K) * norm],
+      a: [1, 2 * (K * K - 1) * norm, (1 - Math.sqrt(2) * K + K * K) * norm],
     };
   }
 
@@ -258,13 +258,13 @@ export class AIAnalyzer {
       rightPower += rightChannel[i] * rightChannel[i];
     }
 
-    correlation = correlation / Math?.sqrt(leftPower * rightPower);
+    correlation = correlation / Math.sqrt(leftPower * rightPower);
 
     // Calculate balance
     const balance = (rightPower - leftPower) / (rightPower + leftPower);
 
     // Calculate width (0 = mono, 1 = wide stereo)
-    const width = 1 - Math?.abs(correlation);
+    const width = 1 - Math.abs(correlation);
 
     return {
       correlation: isFinite(correlation) ? correlation : 0,
@@ -291,7 +291,7 @@ export class AIAnalyzer {
       const channelData = buffer?.getChannelData(channel);
 
       for (let i = 0; i < channelData?.length; i++) {
-        if (Math?.abs(channelData[i]) >= threshold) {
+        if (Math.abs(channelData[i]) >= threshold) {
           clippedSamples++;
         }
       }
@@ -323,15 +323,15 @@ export class AIAnalyzer {
       const channelData = buffer?.getChannelData(channel);
 
       for (let i = 0; i < channelData?.length; i++) {
-        const sample = Math?.abs(channelData[i]);
-        peak = Math?.max(peak, sample);
+        const sample = Math.abs(channelData[i]);
+        peak = Math.max(peak, sample);
         sumOfSquares += channelData[i] * channelData[i];
         sampleCount++;
       }
     }
 
-    const rms = Math?.sqrt(sumOfSquares / sampleCount);
-    const dynamicRange = 20 * Math?.log10(peak / rms);
+    const rms = Math.sqrt(sumOfSquares / sampleCount);
+    const dynamicRange = 20 * Math.log10(peak / rms);
     const crestFactor = peak / rms;
 
     return {
@@ -365,6 +365,6 @@ export class AIAnalyzer {
    * Cleanup resources
    */
   destroy(): void {
-    this?.analyser.disconnect();
+    this.analyser.disconnect();
   }
 }

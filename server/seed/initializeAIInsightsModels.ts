@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { logger } from "../logger.js";
 
 export async function initializeAIInsightsModels() {
-  logger?.info("📊 Initializing AI Insights Engine Models...");
+  logger.info("📊 Initializing AI Insights Engine Models...");
 
   try {
     const models = [
@@ -91,11 +91,11 @@ export async function initializeAIInsightsModels() {
       let modelId: string;
       if (existing) {
         modelId = existing?.id;
-        logger?.info(`   ✓ AI Model ${modelData?.modelName} already exists`);
+        logger.info(`   ✓ AI Model ${modelData?.modelName} already exists`);
       } else {
         const [model] = await db?.insert(aiModels).values(modelData).returning();
         modelId = model?.id;
-        logger?.info(`   ✓ Created AI Model: ${model?.modelName}`);
+        logger.info(`   ✓ Created AI Model: ${model?.modelName}`);
       }
 
       const versionHash = `${modelData?.modelName}_init`;
@@ -119,13 +119,13 @@ export async function initializeAIInsightsModels() {
             deployedAt: new Date(),
           })
           .returning();
-        logger?.info(`   ✓ Created version for ${modelData?.modelName}`);
+        logger.info(`   ✓ Created version for ${modelData?.modelName}`);
       }
     }
 
-    logger?.info("✅ AI Insights Engine Models initialized");
+    logger.info("✅ AI Insights Engine Models initialized");
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "❌ Failed to initialize AI Insights Models:");
+    logger.warn({ err: error }, "❌ Failed to initialize AI Insights Models:");
     throw error;
   }
 }

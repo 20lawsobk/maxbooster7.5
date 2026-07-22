@@ -34,11 +34,11 @@ class FocusManager {
   }
 
   push(): void {
-    this?.stack.push(saveFocusState());
+    this.stack.push(saveFocusState());
   }
 
   pop(): void {
-    const state = this?.stack.pop();
+    const state = this.stack.pop();
     if (state) {
       requestAnimationFrame(() => {
         restoreFocusState(state);
@@ -51,7 +51,7 @@ class FocusManager {
   }
 
   get depth(): number {
-    return this?.stack.length;
+    return this.stack.length;
   }
 }
 

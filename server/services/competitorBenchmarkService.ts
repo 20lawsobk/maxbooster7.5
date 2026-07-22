@@ -114,7 +114,7 @@ export class CompetitorBenchmarkService {
         competitor: this.mapToCompetitorMetrics(competitor),
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Add competitor error:");
+      logger.warn({ err: error }, "Add competitor error:");
       return { success: false, error: "Failed to add competitor" };
     }
   }
@@ -135,7 +135,7 @@ export class CompetitorBenchmarkService {
 
       return { success: true };
     } catch (error) {
-      logger?.warn({ err: error }, "Remove competitor error:");
+      logger.warn({ err: error }, "Remove competitor error:");
       return { success: false, error: "Failed to remove competitor" };
     }
   }
@@ -153,17 +153,17 @@ export class CompetitorBenchmarkService {
         )
         .orderBy(desc(competitorProfiles?.followers));
 
-      return competitors?.map(this?.mapToCompetitorMetrics);
+      return competitors?.map(this.mapToCompetitorMetrics);
     } catch (error) {
-      logger?.warn({ err: error }, "Get competitors error:");
+      logger.warn({ err: error }, "Get competitors error:");
       return [];
     }
   }
 
   async getBenchmarkComparison(userId: string): Promise<BenchmarkComparison[]> {
     try {
-      const competitors = await this?.getCompetitors(userId);
-      const yourStats = await this?.getYourStats(userId);
+      const competitors = await this.getCompetitors(userId);
+      const yourStats = await this.getYourStats(userId);
 
       const competitorAvgFollowers =
         competitors?.length > 0
@@ -237,15 +237,15 @@ export class CompetitorBenchmarkService {
 
       return comparisons;
     } catch (error) {
-      logger?.warn({ err: error }, "Get benchmark comparison error:");
+      logger.warn({ err: error }, "Get benchmark comparison error:");
       return [];
     }
   }
 
   async getShareOfVoice(userId: string): Promise<ShareOfVoice> {
     try {
-      const competitors = await this?.getCompetitors(userId);
-      const yourStats = await this?.getYourStats(userId);
+      const competitors = await this.getCompetitors(userId);
+      const yourStats = await this.getYourStats(userId);
 
       // Social mention counts require live social API access — return follower-proportional estimates
       const yourReach = yourStats?.totalFollowers;
@@ -277,7 +277,7 @@ export class CompetitorBenchmarkService {
         industryTotal: 0,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Get share of voice error:");
+      logger.warn({ err: error }, "Get share of voice error:");
       return {
         yourBrand: { mentions: 0, percentage: 0, reach: 0, sentiment: 0 },
         competitors: [],
@@ -288,8 +288,8 @@ export class CompetitorBenchmarkService {
 
   async getInsights(userId: string): Promise<CompetitorInsight[]> {
     try {
-      const competitors = await this?.getCompetitors(userId);
-      const yourStats = await this?.getYourStats(userId);
+      const competitors = await this.getCompetitors(userId);
+      const yourStats = await this.getYourStats(userId);
       const insights: CompetitorInsight[] = [];
 
       if (competitors?.length > 0) {
@@ -299,7 +299,7 @@ export class CompetitorBenchmarkService {
             id: randomBytes(8).toString("hex"),
             type: "opportunity",
             title: "Engagement Gap Detected",
-            description: `${topCompetitor?.name} has ${Math?.round((topCompetitor?.avgEngagementRate / Math?.max(yourStats?.engagementRate, 0.1) - 1) * 100)}% higher engagement rate. Analyze their content strategy for improvements.`,
+            description: `${topCompetitor?.name} has ${Math.round((topCompetitor?.avgEngagementRate / Math.max(yourStats?.engagementRate, 0.1) - 1) * 100)}% higher engagement rate. Analyze their content strategy for improvements.`,
             competitorId: topCompetitor.id,
             competitorName: topCompetitor.name,
             actionable: true,
@@ -348,7 +348,7 @@ export class CompetitorBenchmarkService {
 
       return insights;
     } catch (error) {
-      logger?.warn({ err: error }, "Get insights error:");
+      logger.warn({ err: error }, "Get insights error:");
       return [];
     }
   }
@@ -390,11 +390,11 @@ export class CompetitorBenchmarkService {
         }
       });
 
-      const avgLikes = totalPosts > 0 ? Math?.round(totalLikes / totalPosts) : 0;
+      const avgLikes = totalPosts > 0 ? Math.round(totalLikes / totalPosts) : 0;
       const avgComments =
-        totalPosts > 0 ? Math?.round(totalComments / totalPosts) : 0;
+        totalPosts > 0 ? Math.round(totalComments / totalPosts) : 0;
       const avgShares =
-        totalPosts > 0 ? Math?.round(totalShares / totalPosts) : 0;
+        totalPosts > 0 ? Math.round(totalShares / totalPosts) : 0;
 
       return {
         totalFollowers: 10000,
@@ -407,7 +407,7 @@ export class CompetitorBenchmarkService {
         totalPosts,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Get your stats error:");
+      logger.warn({ err: error }, "Get your stats error:");
       return {
         totalFollowers: 0,
         followersGrowth: 0,

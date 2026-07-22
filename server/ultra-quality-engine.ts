@@ -112,38 +112,38 @@ class InfiniteCache extends EventEmitter {
   private cleanupInterval: NodeJS.Timeout | null = null;
 
   async initialize(): Promise<void> {
-    if (this?.initialized) return;
+    if (this.initialized) return;
 
     try {
-      this.pocket = await pocketManager?.openPocket(this?.pocketId, {
+      this.pocket = await pocketManager?.openPocket(this.pocketId, {
         name: "Infinite Cache Storage",
         compressionLevel: 9,
         enableDeduplication: true,
       });
-      await this?.loadTagIndex();
+      await this.loadTagIndex();
       this.initialized = true;
-      logger?.info(
+      logger.info(
         "[CACHE] Infinite Cache System initialized with Pocket Dimension backing",
       );
     } catch (error) {
-      logger?.warn({ err: error }, "[CACHE] Failed to initialize:");
+      logger.warn({ err: error }, "[CACHE] Failed to initialize:");
       throw error;
     }
 
     // Start TTL cleanup every 5 minutes
     this.cleanupInterval = setInterval(
-      () => this?.cleanupExpiredEntries(),
+      () => this.cleanupExpiredEntries(),
       5 * 60 * 1000,
     );
   }
 
   private async loadTagIndex(): Promise<void> {
-    if (!this?.pocket) return;
+    if (!this.pocket) return;
     try {
-      const indexBuffer = await this?.pocket.read("__tag_index__");
-      const index = JSON?.parse(indexBuffer?.toString());
+      const indexBuffer = await this.pocket.read("__tag_index__");
+      const index = JSON.parse(indexBuffer?.toString());
       this.tagIndex = new Map(
-        Object?.entries(index).map(([tag, keys]) => [
+        Object.entries(index).map(([tag, keys]) => [
           tag,
           new Set(keys as string[]),
         ]),
@@ -154,14 +154,14 @@ class InfiniteCache extends EventEmitter {
   }
 
   private async saveTagIndex(): Promise<void> {
-    if (!this?.pocket) return;
+    if (!this.pocket) return;
     const indexObj: Record<string, string[]> = {};
-    for (const [tag, keys] of this?.tagIndex) {
-      indexObj[tag] = Array?.from(keys);
+    for (const [tag, keys] of this.tagIndex) {
+      indexObj[tag] = Array.from(keys);
     }
-    await this?.pocket.write(
+    await this.pocket.write(
       "__tag_index__",
-      Buffer?.from(JSON?.stringify(indexObj)),
+      Buffer?.from(JSON.stringify(indexObj)),
     );
   }
 
@@ -173,35 +173,35 @@ class InfiniteCache extends EventEmitter {
   }
 
   async get(key: string): Promise<Buffer | null> {
-    await this?.initialize();
+    await this.initialize();
 
-    if (this?.memoryCache.has(key)) {
-      const entry = this?.memoryCache.get(key)!;
+    if (this.memoryCache.has(key)) {
+      const entry = this.memoryCache.get(key)!;
 
       // Check TTL expiration
-      if (this?.isExpired(entry?.metadata)) {
-        await this?.invalidate(key);
-        this?.emit("cache-miss", { key, reason: "expired" });
+      if (this.isExpired(entry?.metadata)) {
+        await this.invalidate(key);
+        this.emit("cache-miss", { key, reason: "expired" });
         return null;
       }
 
       entry.metadata.accessCount++;
       entry.metadata.lastAccessed = new Date();
-      this?.logAccess(key);
-      this?.emit("cache-hit", { key, tier: "memory" });
+      this.logAccess(key);
+      this.emit("cache-hit", { key, tier: "memory" });
       return entry?.data;
     }
 
-    if (this?.pocket) {
+    if (this.pocket) {
       try {
-        const data = await this?.pocket.read(`cache/${key}`);
-        const metaBuffer = await this?.pocket.read(`cache-meta/${key}`);
-        const metadata = JSON?.parse(metaBuffer?.toString());
+        const data = await this.pocket.read(`cache/${key}`);
+        const metaBuffer = await this.pocket.read(`cache-meta/${key}`);
+        const metadata = JSON.parse(metaBuffer?.toString());
 
         // Check TTL expiration
-        if (this?.isExpired(metadata)) {
-          await this?.invalidate(key);
-          this?.emit("cache-miss", { key, reason: "expired" });
+        if (this.isExpired(metadata)) {
+          await this.invalidate(key);
+          this.emit("cache-miss", { key, reason: "expired" });
           return null;
         }
 
@@ -215,12 +215,12 @@ class InfiniteCache extends EventEmitter {
           },
         };
 
-        this?.promoteToMemory(key, entry);
-        this?.logAccess(key);
-        this?.emit("cache-hit", { key, tier: "pocket" });
+        this.promoteToMemory(key, entry);
+        this.logAccess(key);
+        this.emit("cache-hit", { key, tier: "pocket" });
         return data;
       } catch {
-        this?.emit("cache-miss", { key });
+        this.emit("cache-miss", { key });
         return null;
       }
     }
@@ -237,7 +237,7 @@ class InfiniteCache extends EventEmitter {
       tags?: string[];
     } = {},
   ): Promise<void> {
-    await this?.initialize();
+    await this.initialize();
 
     const entry: CacheEntry = {
       key,
@@ -254,61 +254,61 @@ class InfiniteCache extends EventEmitter {
       },
     };
 
-    this?.memoryCache.set(key, entry);
-    this?.evictMemoryIfNeeded();
+    this.memoryCache.set(key, entry);
+    this.evictMemoryIfNeeded();
 
     // Update tag index
     for (const tag of entry?.metadata.tags) {
-      if (!this?.tagIndex.has(tag)) {
-        this?.tagIndex.set(tag, new Set());
+      if (!this.tagIndex.has(tag)) {
+        this.tagIndex.set(tag, new Set());
       }
-      this?.tagIndex.get(tag)!.add(key);
+      this.tagIndex.get(tag)!.add(key);
     }
 
-    if (this?.pocket) {
-      await this?.pocket.write(`cache/${key}`, data);
-      await this?.pocket.write(
+    if (this.pocket) {
+      await this.pocket.write(`cache/${key}`, data);
+      await this.pocket.write(
         `cache-meta/${key}`,
-        Buffer?.from(JSON?.stringify(entry?.metadata)),
+        Buffer?.from(JSON.stringify(entry?.metadata)),
       );
-      await this?.saveTagIndex();
+      await this.saveTagIndex();
     }
 
-    this?.emit("cache-set", { key, size: data.length });
+    this.emit("cache-set", { key, size: data.length });
   }
 
   async invalidate(key: string): Promise<void> {
     // Remove from memory cache
-    const entry = this?.memoryCache.get(key);
-    this?.memoryCache.delete(key);
+    const entry = this.memoryCache.get(key);
+    this.memoryCache.delete(key);
 
     // Remove from tag index
     if (entry) {
       for (const tag of entry?.metadata.tags) {
-        const tagKeys = this?.tagIndex.get(tag);
+        const tagKeys = this.tagIndex.get(tag);
         if (tagKeys) {
           tagKeys?.delete(key);
           if (tagKeys?.size === 0) {
-            this?.tagIndex.delete(tag);
+            this.tagIndex.delete(tag);
           }
         }
       }
     }
 
     // Remove from pocket dimension
-    if (this?.pocket) {
+    if (this.pocket) {
       try {
         // Also try to get metadata from pocket to clean up tags
         if (!entry) {
           try {
-            const metaBuffer = await this?.pocket.read(`cache-meta/${key}`);
-            const metadata = JSON?.parse(metaBuffer?.toString());
+            const metaBuffer = await this.pocket.read(`cache-meta/${key}`);
+            const metadata = JSON.parse(metaBuffer?.toString());
             for (const tag of metadata?.tags || []) {
-              const tagKeys = this?.tagIndex.get(tag);
+              const tagKeys = this.tagIndex.get(tag);
               if (tagKeys) {
                 tagKeys?.delete(key);
                 if (tagKeys?.size === 0) {
-                  this?.tagIndex.delete(tag);
+                  this.tagIndex.delete(tag);
                 }
               }
             }
@@ -317,30 +317,30 @@ class InfiniteCache extends EventEmitter {
           }
         }
 
-        await this?.pocket.delete(`cache/${key}`);
-        await this?.pocket.delete(`cache-meta/${key}`);
-        await this?.saveTagIndex();
+        await this.pocket.delete(`cache/${key}`);
+        await this.pocket.delete(`cache-meta/${key}`);
+        await this.saveTagIndex();
       } catch {
         // Cache entry may already be deleted - safe to ignore
       }
     }
-    this?.emit("cache-invalidate", { key });
+    this.emit("cache-invalidate", { key });
   }
 
   async invalidateByTag(tag: string): Promise<number> {
-    await this?.initialize();
+    await this.initialize();
 
     // Get all keys for this tag from the index (covers both memory and pocket dimension)
-    const keysToInvalidate = this?.tagIndex.get(tag);
+    const keysToInvalidate = this.tagIndex.get(tag);
     if (!keysToInvalidate || keysToInvalidate?.size === 0) {
       return 0;
     }
 
     let count = 0;
-    const keys = Array?.from(keysToInvalidate);
+    const keys = Array.from(keysToInvalidate);
 
     for (const key of keys) {
-      await this?.invalidate(key);
+      await this.invalidate(key);
       count++;
     }
 
@@ -348,49 +348,49 @@ class InfiniteCache extends EventEmitter {
   }
 
   private async cleanupExpiredEntries(): Promise<void> {
-    if (!this?.initialized) return;
+    if (!this.initialized) return;
 
     let cleaned = 0;
 
     // Clean memory cache
-    for (const [key, entry] of this?.memoryCache) {
-      if (this?.isExpired(entry?.metadata)) {
-        await this?.invalidate(key);
+    for (const [key, entry] of this.memoryCache) {
+      if (this.isExpired(entry?.metadata)) {
+        await this.invalidate(key);
         cleaned++;
       }
     }
 
     if (cleaned > 0) {
-      logger?.info(`[CACHE] Cleaned up ${cleaned} expired entries`);
+      logger.info(`[CACHE] Cleaned up ${cleaned} expired entries`);
     }
   }
 
   private promoteToMemory(key: string, entry: CacheEntry): void {
-    this?.memoryCache.set(key, entry);
-    this?.evictMemoryIfNeeded();
+    this.memoryCache.set(key, entry);
+    this.evictMemoryIfNeeded();
   }
 
   private evictMemoryIfNeeded(): void {
-    if (this?.memoryCache.size <= this?.maxMemoryItems) return;
+    if (this.memoryCache.size <= this.maxMemoryItems) return;
 
-    const entries = Array?.from(this?.memoryCache.entries()).sort(
+    const entries = Array.from(this.memoryCache.entries()).sort(
       (a, b) =>
         a[1].metadata?.lastAccessed.getTime() -
         b[1].metadata?.lastAccessed.getTime(),
     );
 
-    const toEvict = entries?.slice(0, entries?.length - this?.maxMemoryItems);
+    const toEvict = entries?.slice(0, entries?.length - this.maxMemoryItems);
     for (const [key] of toEvict) {
-      this?.memoryCache.delete(key);
+      this.memoryCache.delete(key);
     }
   }
 
   private logAccess(key: string): void {
     const now = Date?.now();
-    if (!this?.accessLog.has(key)) {
-      this?.accessLog.set(key, []);
+    if (!this.accessLog.has(key)) {
+      this.accessLog.set(key, []);
     }
-    const log = this?.accessLog.get(key)!;
+    const log = this.accessLog.get(key)!;
     log?.push(now);
     if (log?.length > 100) {
       log?.splice(0, log?.length - 100);
@@ -405,13 +405,13 @@ class InfiniteCache extends EventEmitter {
   }
 
   async close(): Promise<void> {
-    if (this?.cleanupInterval) {
-      clearInterval(this?.cleanupInterval);
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
       this.cleanupInterval = null;
     }
-    if (this?.pocket) {
-      await this?.saveTagIndex();
-      await this?.pocket.close();
+    if (this.pocket) {
+      await this.saveTagIndex();
+      await this.pocket.close();
     }
   }
 }
@@ -427,10 +427,10 @@ class VersionInfinity extends EventEmitter {
   private initialized = false;
 
   async initialize(): Promise<void> {
-    if (this?.initialized) return;
+    if (this.initialized) return;
 
     try {
-      this.pocket = await pocketManager?.openPocket(this?.pocketId, {
+      this.pocket = await pocketManager?.openPocket(this.pocketId, {
         name: "Infinite Version History",
         compressionLevel: 9,
         enableDeduplication: true,
@@ -438,17 +438,17 @@ class VersionInfinity extends EventEmitter {
       });
 
       try {
-        const indexBuffer = await this?.pocket.read("__index__");
-        const index = JSON?.parse(indexBuffer?.toString());
-        this.versionIndex = new Map(Object?.entries(index));
-        logger?.info("[VERSION] Version Infinity System loaded existing data");
+        const indexBuffer = await this.pocket.read("__index__");
+        const index = JSON.parse(indexBuffer?.toString());
+        this.versionIndex = new Map(Object.entries(index));
+        logger.info("[VERSION] Version Infinity System loaded existing data");
       } catch {
-        logger?.info("[VERSION] Version Infinity System created new");
+        logger.info("[VERSION] Version Infinity System created new");
       }
 
       this.initialized = true;
     } catch (error) {
-      logger?.warn({ err: error }, "[VERSION] Failed to initialize:");
+      logger.warn({ err: error }, "[VERSION] Failed to initialize:");
       throw error;
     }
   }
@@ -458,10 +458,10 @@ class VersionInfinity extends EventEmitter {
     data: Buffer,
     metadata: { createdBy: string; description?: string },
   ): Promise<VersionEntry> {
-    await this?.initialize();
-    if (!this?.pocket) throw new Error("Pocket not initialized");
+    await this.initialize();
+    if (!this.pocket) throw new Error("Pocket not initialized");
 
-    const versions = this?.versionIndex.get(resourceId) || [];
+    const versions = this.versionIndex.get(resourceId) || [];
     const newVersion = versions?.length + 1;
 
     const checksum = crypto?.createHash("sha256").update(data).digest("hex");
@@ -480,17 +480,17 @@ class VersionInfinity extends EventEmitter {
       },
     };
 
-    await this?.pocket.write(`versions/${resourceId}/v${newVersion}/data`, data);
-    await this?.pocket.write(
+    await this.pocket.write(`versions/${resourceId}/v${newVersion}/data`, data);
+    await this.pocket.write(
       `versions/${resourceId}/v${newVersion}/meta`,
-      Buffer?.from(JSON?.stringify(entry?.metadata)),
+      Buffer?.from(JSON.stringify(entry?.metadata)),
     );
 
     versions?.push(newVersion);
-    this?.versionIndex.set(resourceId, versions);
-    await this?.saveIndex();
+    this.versionIndex.set(resourceId, versions);
+    await this.saveIndex();
 
-    this?.emit("version-created", { resourceId, version: newVersion });
+    this.emit("version-created", { resourceId, version: newVersion });
     return entry;
   }
 
@@ -498,22 +498,22 @@ class VersionInfinity extends EventEmitter {
     resourceId: string,
     version?: number,
   ): Promise<VersionEntry | null> {
-    await this?.initialize();
-    if (!this?.pocket) return null;
+    await this.initialize();
+    if (!this.pocket) return null;
 
-    const versions = this?.versionIndex.get(resourceId) || [];
+    const versions = this.versionIndex.get(resourceId) || [];
     const targetVersion = version || versions[versions?.length - 1];
 
     if (!targetVersion) return null;
 
     try {
-      const data = await this?.pocket.read(
+      const data = await this.pocket.read(
         `versions/${resourceId}/v${targetVersion}/data`,
       );
-      const metaBuffer = await this?.pocket.read(
+      const metaBuffer = await this.pocket.read(
         `versions/${resourceId}/v${targetVersion}/meta`,
       );
-      const metadata = JSON?.parse(metaBuffer?.toString());
+      const metadata = JSON.parse(metaBuffer?.toString());
 
       return {
         id: `${resourceId}:v${targetVersion}`,
@@ -531,16 +531,16 @@ class VersionInfinity extends EventEmitter {
   async getVersionHistory(
     resourceId: string,
   ): Promise<{ version: number; metadata: Record<string, unknown> }[]> {
-    await this?.initialize();
-    if (!this?.pocket) return [];
+    await this.initialize();
+    if (!this.pocket) return [];
 
-    const versions = this?.versionIndex.get(resourceId) || [];
+    const versions = this.versionIndex.get(resourceId) || [];
     const history: { version: number; metadata: Record<string, unknown> }[] =
       [];
 
     for (const v of versions) {
       try {
-        const metaBuffer = await this?.pocket.read(
+        const metaBuffer = await this.pocket.read(
           `versions/${resourceId}/v${v}/meta`,
         );
         history?.push({
@@ -565,8 +565,8 @@ class VersionInfinity extends EventEmitter {
     sizeDiff: number;
     checksumMatch: boolean;
   } | null> {
-    const entry1 = await this?.getVersion(resourceId, v1);
-    const entry2 = await this?.getVersion(resourceId, v2);
+    const entry1 = await this.getVersion(resourceId, v1);
+    const entry2 = await this.getVersion(resourceId, v2);
 
     if (!entry1 || !entry2) return null;
 
@@ -579,15 +579,15 @@ class VersionInfinity extends EventEmitter {
   }
 
   private async saveIndex(): Promise<void> {
-    if (!this?.pocket) return;
-    const indexObj = Object?.fromEntries(this?.versionIndex);
-    await this?.pocket.write("__index__", Buffer?.from(JSON?.stringify(indexObj)));
+    if (!this.pocket) return;
+    const indexObj = Object.fromEntries(this.versionIndex);
+    await this.pocket.write("__index__", Buffer?.from(JSON.stringify(indexObj)));
   }
 
   async close(): Promise<void> {
-    if (this?.pocket) {
-      await this?.saveIndex();
-      await this?.pocket.close();
+    if (this.pocket) {
+      await this.saveIndex();
+      await this.pocket.close();
     }
   }
 }
@@ -604,30 +604,30 @@ class AIModelVault extends EventEmitter {
   private initialized = false;
 
   async initialize(): Promise<void> {
-    if (this?.initialized) return;
+    if (this.initialized) return;
 
     try {
-      this.pocket = await pocketManager?.openPocket(this?.pocketId, {
+      this.pocket = await pocketManager?.openPocket(this.pocketId, {
         name: "AI Model Vault",
         compressionLevel: 9,
         enableDeduplication: true,
       });
 
       try {
-        const indexBuffer = await this?.pocket.read("__model_index__");
-        const index = JSON?.parse(indexBuffer?.toString());
-        this.modelIndex = new Map(Object?.entries(index?.models || {}));
+        const indexBuffer = await this.pocket.read("__model_index__");
+        const index = JSON.parse(indexBuffer?.toString());
+        this.modelIndex = new Map(Object.entries(index?.models || {}));
         this.trainingDataIndex = new Map(
-          Object?.entries(index?.trainingData || {}),
+          Object.entries(index?.trainingData || {}),
         );
-        logger?.info("[AI-VAULT] AI Model Vault loaded existing data");
+        logger.info("[AI-VAULT] AI Model Vault loaded existing data");
       } catch {
-        logger?.info("[AI-VAULT] AI Model Vault created new");
+        logger.info("[AI-VAULT] AI Model Vault created new");
       }
 
       this.initialized = true;
     } catch (error) {
-      logger?.warn({ err: error }, "[AI-VAULT] Failed to initialize:");
+      logger.warn({ err: error }, "[AI-VAULT] Failed to initialize:");
       throw error;
     }
   }
@@ -638,15 +638,15 @@ class AIModelVault extends EventEmitter {
     weights: Buffer,
     metadata: Record<string, any>,
   ): Promise<void> {
-    await this?.initialize();
-    if (!this?.pocket) throw new Error("Vault not initialized");
+    await this.initialize();
+    if (!this.pocket) throw new Error("Vault not initialized");
 
     const path = `models/${modelName}/${version}`;
-    await this?.pocket.write(`${path}/weights`, weights);
-    await this?.pocket.write(
+    await this.pocket.write(`${path}/weights`, weights);
+    await this.pocket.write(
       `${path}/metadata`,
       Buffer?.from(
-        JSON?.stringify({
+        JSON.stringify({
           ...metadata,
           storedAt: new Date().toISOString(),
           weightsSize: weights.length,
@@ -654,14 +654,14 @@ class AIModelVault extends EventEmitter {
       ),
     );
 
-    const versions = this?.modelIndex.get(modelName) || [];
+    const versions = this.modelIndex.get(modelName) || [];
     if (!versions?.includes(version)) {
       versions?.push(version);
-      this?.modelIndex.set(modelName, versions);
-      await this?.saveIndex();
+      this.modelIndex.set(modelName, versions);
+      await this.saveIndex();
     }
 
-    this?.emit("model-stored", { modelName, version, size: weights.length });
+    this.emit("model-stored", { modelName, version, size: weights.length });
   }
 
   async loadModel(
@@ -671,18 +671,18 @@ class AIModelVault extends EventEmitter {
     weights: Buffer;
     metadata: Record<string, any>;
   } | null> {
-    await this?.initialize();
-    if (!this?.pocket) return null;
+    await this.initialize();
+    if (!this.pocket) return null;
 
-    const versions = this?.modelIndex.get(modelName) || [];
+    const versions = this.modelIndex.get(modelName) || [];
     const targetVersion = version || versions[versions?.length - 1];
 
     if (!targetVersion) return null;
 
     try {
       const path = `models/${modelName}/${targetVersion}`;
-      const weights = await this?.pocket.read(`${path}/weights`);
-      const metaBuffer = await this?.pocket.read(`${path}/metadata`);
+      const weights = await this.pocket.read(`${path}/weights`);
+      const metaBuffer = await this.pocket.read(`${path}/metadata`);
 
       return {
         weights,
@@ -698,18 +698,18 @@ class AIModelVault extends EventEmitter {
     data: Buffer,
     metadata: Record<string, any>,
   ): Promise<number> {
-    await this?.initialize();
-    if (!this?.pocket) throw new Error("Vault not initialized");
+    await this.initialize();
+    if (!this.pocket) throw new Error("Vault not initialized");
 
-    const currentCount = this?.trainingDataIndex.get(datasetName) || 0;
+    const currentCount = this.trainingDataIndex.get(datasetName) || 0;
     const newIndex = currentCount + 1;
 
     const path = `training/${datasetName}/${newIndex}`;
-    await this?.pocket.write(`${path}/data`, data);
-    await this?.pocket.write(
+    await this.pocket.write(`${path}/data`, data);
+    await this.pocket.write(
       `${path}/metadata`,
       Buffer?.from(
-        JSON?.stringify({
+        JSON.stringify({
           ...metadata,
           storedAt: new Date().toISOString(),
           dataSize: data.length,
@@ -718,10 +718,10 @@ class AIModelVault extends EventEmitter {
       ),
     );
 
-    this?.trainingDataIndex.set(datasetName, newIndex);
-    await this?.saveIndex();
+    this.trainingDataIndex.set(datasetName, newIndex);
+    await this.saveIndex();
 
-    this?.emit("training-data-stored", {
+    this.emit("training-data-stored", {
       datasetName,
       index: newIndex,
       size: data.length,
@@ -730,34 +730,34 @@ class AIModelVault extends EventEmitter {
   }
 
   async getTrainingDataCount(datasetName: string): Promise<number> {
-    await this?.initialize();
-    return this?.trainingDataIndex.get(datasetName) || 0;
+    await this.initialize();
+    return this.trainingDataIndex.get(datasetName) || 0;
   }
 
   async listModels(): Promise<{ name: string; versions: string[] }[]> {
-    await this?.initialize();
-    return Array?.from(this?.modelIndex.entries()).map(([name, versions]) => ({
+    await this.initialize();
+    return Array.from(this.modelIndex.entries()).map(([name, versions]) => ({
       name,
       versions,
     }));
   }
 
   private async saveIndex(): Promise<void> {
-    if (!this?.pocket) return;
+    if (!this.pocket) return;
     const index = {
-      models: Object.fromEntries(this?.modelIndex),
-      trainingData: Object.fromEntries(this?.trainingDataIndex),
+      models: Object.fromEntries(this.modelIndex),
+      trainingData: Object.fromEntries(this.trainingDataIndex),
     };
-    await this?.pocket.write(
+    await this.pocket.write(
       "__model_index__",
-      Buffer?.from(JSON?.stringify(index)),
+      Buffer?.from(JSON.stringify(index)),
     );
   }
 
   async close(): Promise<void> {
-    if (this?.pocket) {
-      await this?.saveIndex();
-      await this?.pocket.close();
+    if (this.pocket) {
+      await this.saveIndex();
+      await this.pocket.close();
     }
   }
 }
@@ -772,18 +772,18 @@ class AudioQualityMaximizer extends EventEmitter {
   private initialized = false;
 
   async initialize(): Promise<void> {
-    if (this?.initialized) return;
+    if (this.initialized) return;
 
     try {
-      this.pocket = await pocketManager?.openPocket(this?.pocketId, {
+      this.pocket = await pocketManager?.openPocket(this.pocketId, {
         name: "Lossless Audio Vault",
         compressionLevel: 9,
         enableDeduplication: true,
       });
       this.initialized = true;
-      logger?.info("[AUDIO] Audio Quality Maximizer initialized");
+      logger.info("[AUDIO] Audio Quality Maximizer initialized");
     } catch (error) {
-      logger?.warn({ err: error }, "[AUDIO] Failed to initialize:");
+      logger.warn({ err: error }, "[AUDIO] Failed to initialize:");
       throw error;
     }
   }
@@ -801,16 +801,16 @@ class AudioQualityMaximizer extends EventEmitter {
       channels: number;
     },
   ): Promise<void> {
-    await this?.initialize();
-    if (!this?.pocket) throw new Error("Audio vault not initialized");
+    await this.initialize();
+    if (!this.pocket) throw new Error("Audio vault not initialized");
 
     const path = `tracks/${trackId}`;
 
-    await this?.pocket.write(`${path}/lossless`, audioData);
-    await this?.pocket.write(
+    await this.pocket.write(`${path}/lossless`, audioData);
+    await this.pocket.write(
       `${path}/metadata`,
       Buffer?.from(
-        JSON?.stringify({
+        JSON.stringify({
           ...metadata,
           storedAt: new Date().toISOString(),
           originalSize: audioData.length,
@@ -819,7 +819,7 @@ class AudioQualityMaximizer extends EventEmitter {
       ),
     );
 
-    this?.emit("audio-stored", {
+    this.emit("audio-stored", {
       trackId,
       size: audioData.length,
       quality: "lossless",
@@ -830,13 +830,13 @@ class AudioQualityMaximizer extends EventEmitter {
     data: Buffer;
     metadata: Record<string, any>;
   } | null> {
-    await this?.initialize();
-    if (!this?.pocket) return null;
+    await this.initialize();
+    if (!this.pocket) return null;
 
     try {
       const path = `tracks/${trackId}`;
-      const data = await this?.pocket.read(`${path}/lossless`);
-      const metaBuffer = await this?.pocket.read(`${path}/metadata`);
+      const data = await this.pocket.read(`${path}/lossless`);
+      const metaBuffer = await this.pocket.read(`${path}/metadata`);
 
       return {
         data,
@@ -851,14 +851,14 @@ class AudioQualityMaximizer extends EventEmitter {
     trackId: string,
     qualities: { quality: keyof typeof QUALITY_PRESETS.AUDIO; data: Buffer }[],
   ): Promise<void> {
-    await this?.initialize();
-    if (!this?.pocket) throw new Error("Audio vault not initialized");
+    await this.initialize();
+    if (!this.pocket) throw new Error("Audio vault not initialized");
 
     for (const { quality, data } of qualities) {
-      await this?.pocket.write(`tracks/${trackId}/${quality}`, data);
+      await this.pocket.write(`tracks/${trackId}/${quality}`, data);
     }
 
-    this?.emit("multi-quality-stored", {
+    this.emit("multi-quality-stored", {
       trackId,
       qualities: qualities.map((q) => q?.quality),
     });
@@ -868,11 +868,11 @@ class AudioQualityMaximizer extends EventEmitter {
     trackId: string,
     quality: keyof typeof QUALITY_PRESETS.AUDIO,
   ): Promise<Buffer | null> {
-    await this?.initialize();
-    if (!this?.pocket) return null;
+    await this.initialize();
+    if (!this.pocket) return null;
 
     try {
-      return await this?.pocket.read(`tracks/${trackId}/${quality}`);
+      return await this.pocket.read(`tracks/${trackId}/${quality}`);
     } catch {
       return null;
     }
@@ -883,8 +883,8 @@ class AudioQualityMaximizer extends EventEmitter {
   }
 
   async close(): Promise<void> {
-    if (this?.pocket) {
-      await this?.pocket.close();
+    if (this.pocket) {
+      await this.pocket.close();
     }
   }
 }
@@ -909,11 +909,11 @@ class PredictivePreloader extends EventEmitter {
 
   recordAccess(userId: string, resourceId: string, context: string[]): void {
     const key = userId;
-    if (!this?.accessPatterns.has(key)) {
-      this?.accessPatterns.set(key, []);
+    if (!this.accessPatterns.has(key)) {
+      this.accessPatterns.set(key, []);
     }
 
-    const patterns = this?.accessPatterns.get(key)!;
+    const patterns = this.accessPatterns.get(key)!;
     patterns?.push({
       resources: [...context, resourceId],
       count: 1,
@@ -925,7 +925,7 @@ class PredictivePreloader extends EventEmitter {
   }
 
   predictNext(userId: string, currentContext: string[]): string[] {
-    const patterns = this?.accessPatterns.get(userId) || [];
+    const patterns = this.accessPatterns.get(userId) || [];
     const predictions: Map<string, number> = new Map();
 
     for (const pattern of patterns) {
@@ -944,7 +944,7 @@ class PredictivePreloader extends EventEmitter {
       }
     }
 
-    return Array?.from(predictions?.entries())
+    return Array.from(predictions?.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([resource]) => resource);
@@ -955,16 +955,16 @@ class PredictivePreloader extends EventEmitter {
     loader: (id: string) => Promise<Buffer>,
   ): Promise<void> {
     for (const id of resourceIds) {
-      if (this?.preloadQueue.has(id)) continue;
+      if (this.preloadQueue.has(id)) continue;
 
-      const cached = await this?.cache.get(id);
+      const cached = await this.cache.get(id);
       if (cached) continue;
 
-      this?.preloadQueue.add(id);
+      this.preloadQueue.add(id);
     }
 
-    if (!this?.isPreloading) {
-      this?.runPreloadQueue(loader);
+    if (!this.isPreloading) {
+      this.runPreloadQueue(loader);
     }
   }
 
@@ -973,16 +973,16 @@ class PredictivePreloader extends EventEmitter {
   ): Promise<void> {
     this.isPreloading = true;
 
-    while (this?.preloadQueue.size > 0) {
-      const id = Array?.from(this?.preloadQueue)[0];
-      this?.preloadQueue.delete(id);
+    while (this.preloadQueue.size > 0) {
+      const id = Array.from(this.preloadQueue)[0];
+      this.preloadQueue.delete(id);
 
       try {
         const data = await loader(id);
-        await this?.cache.set(id, data, { tags: ["preloaded"] });
-        this?.emit("preloaded", { id, size: data.length });
+        await this.cache.set(id, data, { tags: ["preloaded"] });
+        this.emit("preloaded", { id, size: data.length });
       } catch (error) {
-        this?.emit("preload-error", { id, error });
+        this.emit("preload-error", { id, error });
       }
     }
 
@@ -1037,66 +1037,66 @@ export class UltraQualityEngine extends EventEmitter {
     this.versions = new VersionInfinity();
     this.aiVault = new AIModelVault();
     this.audioMaximizer = new AudioQualityMaximizer();
-    this.preloader = new PredictivePreloader(this?.cache);
+    this.preloader = new PredictivePreloader(this.cache);
 
-    this?.setupEventListeners();
+    this.setupEventListeners();
   }
 
   async initialize(): Promise<void> {
-    if (this?.initialized) return;
+    if (this.initialized) return;
 
-    logger?.info("\n============================================");
-    logger?.info("   ULTRA-QUALITY ENGINE INITIALIZATION");
-    logger?.info("============================================");
-    logger?.info(`   Audio Quality: ${this?.config.audioQuality?.toUpperCase()}`);
-    logger?.info(`   Image Quality: ${this?.config.imageQuality?.toUpperCase()}`);
-    logger?.info(`   Video Quality: ${this?.config.videoQuality?.toUpperCase()}`);
-    logger?.info(`   Version History: ${this?.config.versionHistoryDepth}`);
-    logger?.info(`   Compression Level: ${this?.config.compressionLevel}/9`);
-    logger?.info("============================================\n");
+    logger.info("\n============================================");
+    logger.info("   ULTRA-QUALITY ENGINE INITIALIZATION");
+    logger.info("============================================");
+    logger.info(`   Audio Quality: ${this.config.audioQuality?.toUpperCase()}`);
+    logger.info(`   Image Quality: ${this.config.imageQuality?.toUpperCase()}`);
+    logger.info(`   Video Quality: ${this.config.videoQuality?.toUpperCase()}`);
+    logger.info(`   Version History: ${this.config.versionHistoryDepth}`);
+    logger.info(`   Compression Level: ${this.config.compressionLevel}/9`);
+    logger.info("============================================\n");
 
     await Promise?.all([
-      this?.cache.initialize(),
-      this?.versions.initialize(),
-      this?.aiVault.initialize(),
-      this?.audioMaximizer.initialize(),
+      this.cache.initialize(),
+      this.versions.initialize(),
+      this.aiVault.initialize(),
+      this.audioMaximizer.initialize(),
     ]);
 
     this.initialized = true;
-    logger?.info("[QUALITY] Ultra-Quality Engine fully initialized");
-    logger?.info("[QUALITY] All systems operating at MAXIMUM QUALITY");
-    this?.emit("initialized");
+    logger.info("[QUALITY] Ultra-Quality Engine fully initialized");
+    logger.info("[QUALITY] All systems operating at MAXIMUM QUALITY");
+    this.emit("initialized");
   }
 
   private setupEventListeners(): void {
-    this?.cache.on("cache-hit", () => this?.updateMetrics());
-    this?.cache.on("cache-miss", () => this?.updateMetrics());
-    this?.versions.on("version-created", (data) =>
-      this?.emit("version-created", data),
+    this.cache.on("cache-hit", () => this.updateMetrics());
+    this.cache.on("cache-miss", () => this.updateMetrics());
+    this.versions.on("version-created", (data) =>
+      this.emit("version-created", data),
     );
-    this?.aiVault.on("model-stored", (data) => this?.emit("model-stored", data));
-    this?.audioMaximizer.on("audio-stored", (data) =>
-      this?.emit("audio-stored", data),
+    this.aiVault.on("model-stored", (data) => this.emit("model-stored", data));
+    this.audioMaximizer.on("audio-stored", (data) =>
+      this.emit("audio-stored", data),
     );
-    this?.preloader.on("preloaded", (data) => this?.emit("preloaded", data));
+    this.preloader.on("preloaded", (data) => this.emit("preloaded", data));
   }
 
   private updateMetrics(): void {
-    const cacheStats = this?.cache.getStats();
-    this?.preloader.getStats();
+    const cacheStats = this.cache.getStats();
+    this.preloader.getStats();
 
     this.metrics = {
-      ...this?.metrics,
+      ...this.metrics,
       cacheHitRate: cacheStats.hitRate,
     };
   }
 
   getMetrics(): QualityMetrics {
-    return { ...this?.metrics };
+    return { ...this.metrics };
   }
 
   getConfig(): QualityConfig {
-    return { ...this?.config };
+    return { ...this.config };
   }
 
   getQualityPresets() {
@@ -1131,12 +1131,12 @@ export class UltraQualityEngine extends EventEmitter {
 
   async close(): Promise<void> {
     await Promise?.all([
-      this?.cache.close(),
-      this?.versions.close(),
-      this?.aiVault.close(),
-      this?.audioMaximizer.close(),
+      this.cache.close(),
+      this.versions.close(),
+      this.aiVault.close(),
+      this.audioMaximizer.close(),
     ]);
-    logger?.info("[QUALITY] Ultra-Quality Engine shut down gracefully");
+    logger.info("[QUALITY] Ultra-Quality Engine shut down gracefully");
   }
 }
 

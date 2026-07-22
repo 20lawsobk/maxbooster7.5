@@ -13,11 +13,11 @@ export class ConnectionGuard {
       const utilization = activeConnections / config?.database.poolSize;
 
       if (utilization >= maxPoolUtilization) {
-        logger?.warn(
+        logger.warn(
           `⚠️ Database pool near capacity: ${activeConnections}/${config?.database.poolSize} connections`,
         );
 
-        return res?.status(503).json({
+        return res.status(503).json({
           error: "Service temporarily unavailable",
           message:
             "The system is currently at capacity. Please try again in a few moments.",
@@ -27,7 +27,7 @@ export class ConnectionGuard {
 
       next();
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Connection guard error:");
+      logger.warn({ err: error }, "Connection guard error:");
       next(); // Fail open to avoid blocking legitimate requests
     }
   }

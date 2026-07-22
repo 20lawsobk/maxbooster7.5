@@ -180,12 +180,12 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const posts = (await storage?.getSocialPosts?.(userId)) || [];
-      res?.json(posts);
+      res.json(posts);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get social posts:");
-      res?.status(500).json({ error: "Failed to get social posts:" });
+      logger.warn({ err: error }, "Failed to get social posts:");
+      res.status(500).json({ error: "Failed to get social posts:" });
     }
   },
 );
@@ -213,9 +213,9 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
-      const parsed = schedulePostSchema?.safeParse(req?.body);
+      const parsed = schedulePostSchema?.safeParse(req.body);
       if (!parsed?.success) {
         return res
           .status(400)
@@ -237,7 +237,7 @@ router?.post(
         })
         .returning();
 
-      res?.json({ success: true, post });
+      res.json({ success: true, post });
 
       if (scheduledDate) {
         setImmediate(async () => {
@@ -249,7 +249,7 @@ router?.post(
               scheduledDate,
             );
           } catch (err) {
-            logger?.warn(
+            logger.warn(
               { err: err },
               "Social post scheduled notification error:",
             );
@@ -257,8 +257,8 @@ router?.post(
         });
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to schedule post:");
-      res?.status(500).json({ error: "Failed to schedule post" });
+      logger.warn({ err: error }, "Failed to schedule post:");
+      res.status(500).json({ error: "Failed to schedule post" });
     }
   },
 );
@@ -268,8 +268,8 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { postId } = req?.params;
+      const userId = req.user!.id;
+      const { postId } = req.params;
 
       const [post] = await db
         .select()
@@ -277,7 +277,7 @@ router?.post(
         .where(and(eq(posts?.id, postId), eq(posts?.userId, userId)))
         .limit(1);
       if (!post) {
-        return res?.status(404).json({ error: "Post not found" });
+        return res.status(404).json({ error: "Post not found" });
       }
 
       const [updated] = await db
@@ -286,7 +286,7 @@ router?.post(
         .where(and(eq(posts?.id, postId), eq(posts?.userId, userId)))
         .returning();
 
-      res?.json({ success: true, post: updated });
+      res.json({ success: true, post: updated });
 
       setImmediate(async () => {
         try {
@@ -298,15 +298,15 @@ router?.post(
             content,
           );
         } catch (err) {
-          logger?.warn(
+          logger.warn(
             { err: err },
             "Social post published notification error:",
           );
         }
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to publish post:");
-      res?.status(500).json({ error: "Failed to publish post" });
+      logger.warn({ err: error }, "Failed to publish post:");
+      res.status(500).json({ error: "Failed to publish post" });
     }
   },
 );
@@ -317,7 +317,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const metrics = (await storage?.getSocialMetrics?.(userId)) || {
         totalFollowers: 0,
         totalEngagement: 0,
@@ -330,10 +330,10 @@ router?.get(
         platformGrowth: null,
         aiRecommendation: null,
       };
-      res?.json(metrics);
+      res.json(metrics);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get social metrics:");
-      res?.json({
+      logger.warn({ err: error }, "Failed to get social metrics:");
+      res.json({
         totalFollowers: 0,
         totalEngagement: 0,
         totalReach: 0,
@@ -355,15 +355,15 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const events = await Promise.race([
         storage?.getSocialCalendarEvents?.(userId) ?? Promise.resolve([]),
         new Promise<unknown[]>(resolve => setTimeout(() => resolve([]), 5_000)),
       ]).catch(() => []) as unknown[];
-      res?.json(events || []);
+      res.json(events || []);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get social calendar:");
-      res?.json([]);
+      logger.warn({ err: error }, "Failed to get social calendar:");
+      res.json([]);
     }
   },
 );
@@ -375,15 +375,15 @@ router?.get(
   async (req: AuthenticatedRequest, res: Response) => {
     const emptyStats = { totalScheduled: 0, pendingApproval: 0, published: 0, drafts: 0 };
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const stats = await Promise.race([
         storage?.getSocialCalendarStats?.(userId) ?? Promise.resolve(emptyStats),
         new Promise<typeof emptyStats>(resolve => setTimeout(() => resolve(emptyStats), 5_000)),
       ]).catch(() => emptyStats);
-      res?.json(stats || emptyStats);
+      res.json(stats || emptyStats);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get calendar stats:");
-      res?.json(emptyStats);
+      logger.warn({ err: error }, "Failed to get calendar stats:");
+      res.json(emptyStats);
     }
   },
 );
@@ -394,8 +394,8 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { platform, content, mediaUrls, scheduledAt, status } = req?.body;
+      const userId = req.user!.id;
+      const { platform, content, mediaUrls, scheduledAt, status } = req.body;
 
       if (!platform || !content) {
         return res
@@ -428,15 +428,15 @@ router?.post(
               scheduledDate,
             );
           } catch (err) {
-            logger?.warn({ err }, "Calendar post scheduled notification error:");
+            logger.warn({ err }, "Calendar post scheduled notification error:");
           }
         });
       }
 
-      res?.status(201).json(post);
+      res.status(201).json(post);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to create calendar post:");
-      res?.status(500).json({ error: "Failed to create calendar post" });
+      logger.warn({ err: error }, "Failed to create calendar post:");
+      res.status(500).json({ error: "Failed to create calendar post" });
     }
   },
 );
@@ -447,9 +447,9 @@ router?.put(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { postId } = req?.params;
-      const { platform, content, mediaUrls, scheduledAt, status } = req?.body;
+      const userId = req.user!.id;
+      const { postId } = req.params;
+      const { platform, content, mediaUrls, scheduledAt, status } = req.body;
 
       const existing = await db
         .select()
@@ -458,7 +458,7 @@ router?.put(
         .limit(1);
 
       if (!existing?.length) {
-        return res?.status(404).json({ error: "Post not found" });
+        return res.status(404).json({ error: "Post not found" });
       }
 
       const updates: Record<string, unknown> = {};
@@ -475,10 +475,10 @@ router?.put(
         .where(and(eq(posts?.id, postId), eq(posts?.userId, userId)))
         .returning();
 
-      res?.json(updated);
+      res.json(updated);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to update calendar post:");
-      res?.status(500).json({ error: "Failed to update calendar post" });
+      logger.warn({ err: error }, "Failed to update calendar post:");
+      res.status(500).json({ error: "Failed to update calendar post" });
     }
   },
 );
@@ -493,8 +493,8 @@ router?.patch(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { postIds, updates } = req?.body as {
+      const userId = req.user!.id;
+      const { postIds, updates } = req.body as {
         postIds: string[];
         updates: {
           status?: string;
@@ -504,12 +504,12 @@ router?.patch(
         };
       };
 
-      if (!Array?.isArray(postIds) || postIds?.length === 0) {
+      if (!Array.isArray(postIds) || postIds?.length === 0) {
         return res
           .status(400)
           .json({ error: "postIds must be a non-empty array" });
       }
-      if (!updates || Object?.keys(updates).length === 0) {
+      if (!updates || Object.keys(updates).length === 0) {
         return res
           .status(400)
           .json({ error: "updates must contain at least one field" });
@@ -523,7 +523,7 @@ router?.patch(
 
       const validIds = existing?.map((r) => r?.id);
       if (validIds?.length === 0) {
-        return res?.status(404).json({ error: "No matching posts found" });
+        return res.status(404).json({ error: "No matching posts found" });
       }
 
       const dbUpdates: Record<string, unknown> = {};
@@ -542,10 +542,10 @@ router?.patch(
         .where(and(inArray(posts?.id, validIds), eq(posts?.userId, userId)))
         .returning();
 
-      res?.json({ updated: updated.length, posts: updated });
+      res.json({ updated: updated.length, posts: updated });
     } catch (error) {
-      logger?.warn({ err: error }, "Batch calendar update error");
-      res?.status(500).json({ error: "Failed to batch update posts" });
+      logger.warn({ err: error }, "Batch calendar update error");
+      res.status(500).json({ error: "Failed to batch update posts" });
     }
   },
 );
@@ -556,10 +556,10 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { postIds } = req?.body as { postIds: string[] };
+      const userId = req.user!.id;
+      const { postIds } = req.body as { postIds: string[] };
 
-      if (!Array?.isArray(postIds) || postIds?.length === 0) {
+      if (!Array.isArray(postIds) || postIds?.length === 0) {
         return res
           .status(400)
           .json({ error: "postIds must be a non-empty array" });
@@ -571,7 +571,7 @@ router?.post(
         .where(and(inArray(posts?.id, postIds), eq(posts?.userId, userId)));
 
       if (existing?.length === 0) {
-        return res?.status(404).json({ error: "No matching posts found" });
+        return res.status(404).json({ error: "No matching posts found" });
       }
 
       const results: { id: string; success: boolean; error?: string }[] = [];
@@ -606,10 +606,10 @@ router?.post(
       }
 
       const successCount = results?.filter((r) => r?.success).length;
-      res?.json({ published: successCount, results });
+      res.json({ published: successCount, results });
     } catch (error) {
-      logger?.warn({ err: error }, "Batch publish error");
-      res?.status(500).json({ error: "Failed to batch publish posts" });
+      logger.warn({ err: error }, "Batch publish error");
+      res.status(500).json({ error: "Failed to batch publish posts" });
     }
   },
 );
@@ -620,10 +620,10 @@ router?.delete(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       // Support both JSON body and query-string for DELETE
-      const rawIds = req?.body?.postIds ?? req?.query?.postIds;
-      const postIds: string[] = Array?.isArray(rawIds)
+      const rawIds = req.body?.postIds ?? req.query?.postIds;
+      const postIds: string[] = Array.isArray(rawIds)
         ? rawIds
         : typeof rawIds === "string"
           ? [rawIds]
@@ -642,17 +642,17 @@ router?.delete(
 
       const validIds = existing?.map((r) => r?.id);
       if (validIds?.length === 0) {
-        return res?.status(404).json({ error: "No matching posts found" });
+        return res.status(404).json({ error: "No matching posts found" });
       }
 
       await db
         .delete(posts)
         .where(and(inArray(posts?.id, validIds), eq(posts?.userId, userId)));
 
-      res?.json({ deleted: validIds.length, ids: validIds });
+      res.json({ deleted: validIds.length, ids: validIds });
     } catch (error) {
-      logger?.warn({ err: error }, "Batch delete error");
-      res?.status(500).json({ error: "Failed to batch delete posts" });
+      logger.warn({ err: error }, "Batch delete error");
+      res.status(500).json({ error: "Failed to batch delete posts" });
     }
   },
 );
@@ -663,8 +663,8 @@ router?.delete(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { postId } = req?.params;
+      const userId = req.user!.id;
+      const { postId } = req.params;
 
       const existing = await db
         .select()
@@ -673,17 +673,17 @@ router?.delete(
         .limit(1);
 
       if (!existing?.length) {
-        return res?.status(404).json({ error: "Post not found" });
+        return res.status(404).json({ error: "Post not found" });
       }
 
       await db
         .delete(posts)
         .where(and(eq(posts?.id, postId), eq(posts?.userId, userId)));
 
-      res?.json({ success: true, id: postId });
+      res.json({ success: true, id: postId });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to delete calendar post:");
-      res?.status(500).json({ error: "Failed to delete calendar post" });
+      logger.warn({ err: error }, "Failed to delete calendar post:");
+      res.status(500).json({ error: "Failed to delete calendar post" });
     }
   },
 );
@@ -694,12 +694,12 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const activity = (await storage?.getSocialActivity?.(userId)) || [];
-      res?.json(activity);
+      res.json(activity);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get social activity:");
-      res?.status(500).json({ error: "Failed to get social activity:" });
+      logger.warn({ err: error }, "Failed to get social activity:");
+      res.status(500).json({ error: "Failed to get social activity:" });
     }
   },
 );
@@ -710,12 +710,12 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const stats = (await storage?.getSocialWeeklyStats?.(userId)) || [];
-      res?.json(stats);
+      res.json(stats);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get weekly stats:");
-      res?.status(500).json({ error: "Failed to get weekly stats:" });
+      logger.warn({ err: error }, "Failed to get weekly stats:");
+      res.status(500).json({ error: "Failed to get weekly stats:" });
     }
   },
 );
@@ -726,14 +726,14 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const insights = await (
         storage?.getSocialAIInsights?.(userId) ?? Promise?.resolve([])
       ).catch(() => []);
-      res?.json(insights);
+      res.json(insights);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get AI insights:");
-      res?.json([]);
+      logger.warn({ err: error }, "Failed to get AI insights:");
+      res.json([]);
     }
   },
 );
@@ -749,7 +749,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       // Get actual OAuth connections from socialAccounts table
       const connections = await db
@@ -803,13 +803,13 @@ router?.get(
         if (hasPreBootStale) {
           // Pre-boot data used the old sync code — block and wait so the response
           // contains fresh follower/engagement numbers rather than stale zeros.
-          logger?.info(
+          logger.info(
             `[SocialSync] Pre-boot stale data detected — running blocking sync for ${[...uniquePlatforms].join(", ")}`,
           );
           await Promise?.all(
             [...uniquePlatforms].map((p) =>
               syncPlatformData(userId, p).catch((err) =>
-                logger?.warn({ err: err }, `Blocking sync failed for ${p}:`),
+                logger.warn({ err: err }, `Blocking sync failed for ${p}:`),
               ),
             ),
           );
@@ -827,7 +827,7 @@ router?.get(
           // Normal background refresh — return current data immediately
           for (const p of uniquePlatforms) {
             syncPlatformData(userId, p).catch((err) => {
-              logger?.warn({ err: err }, `Background sync failed for ${p}:`);
+              logger.warn({ err: err }, `Background sync failed for ${p}:`);
             });
           }
         }
@@ -840,7 +840,7 @@ router?.get(
         {
           id: "tiktok",
           name:
-            process?.env.TIKTOK_ENV === "sandbox"
+            process.env.TIKTOK_ENV === "sandbox"
               ? "TikTok (Sandbox)"
               : "TikTok",
         },
@@ -870,7 +870,7 @@ router?.get(
           );
           const engagement =
             rates?.length > 0
-              ? Math?.round(
+              ? Math.round(
                   (rates?.reduce((a: number, b: number) => a + b, 0) /
                     rates?.length) *
                     100,
@@ -885,7 +885,7 @@ router?.get(
             ? new Date(igMeta?.lastSyncedAt).getTime()
             : 0;
           const lastSync = new Date(
-            Math?.max(fbSync, igSync) || Date?.now(),
+            Math.max(fbSync, igSync) || Date?.now(),
           ).toISOString();
 
           // Primary conn for username/profileUrl — prefer IG, fall back to FB
@@ -952,10 +952,10 @@ router?.get(
         };
       });
 
-      res?.json(platformStatus);
+      res.json(platformStatus);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get platform status:");
-      res?.status(500).json({ error: "Failed to get platform status:" });
+      logger.warn({ err: error }, "Failed to get platform status:");
+      res.status(500).json({ error: "Failed to get platform status:" });
     }
   },
 );
@@ -965,7 +965,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       const connections = await db
         .select()
@@ -988,14 +988,14 @@ router?.post(
       for (const p of activePlatforms) {
         try {
           const result = await syncPlatformData(userId, p);
-          Object?.assign(allResults, result);
+          Object.assign(allResults, result);
         } catch (err) {
-          logger?.warn({ err: err }, `sync-all: failed to sync ${p}:`);
+          logger.warn({ err: err }, `sync-all: failed to sync ${p}:`);
           allResults[p] = { error: "Sync failed" };
         }
       }
 
-      res?.json({ success: true, results: allResults });
+      res.json({ success: true, results: allResults });
 
       setImmediate(async () => {
         try {
@@ -1016,12 +1016,12 @@ router?.post(
             }
           }
         } catch (err) {
-          logger?.warn({ err: err }, "Follower milestone notification error:");
+          logger.warn({ err: err }, "Follower milestone notification error:");
         }
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to sync all platforms:");
-      res?.status(500).json({ error: "Failed to sync all platforms" });
+      logger.warn({ err: error }, "Failed to sync all platforms:");
+      res.status(500).json({ error: "Failed to sync all platforms" });
     }
   },
 );
@@ -1036,12 +1036,12 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const keywords =
         (await storage?.getSocialListeningKeywords?.(userId)) || [];
-      res?.json(keywords);
+      res.json(keywords);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get social listening keywords:");
+      logger.warn({ err: error }, "Failed to get social listening keywords:");
       res
         .status(500)
         .json({ error: "Failed to get social listening keywords:" });
@@ -1054,7 +1054,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const user = await storage?.getUser(userId);
 
       const FALLBACK_HASHTAGS = [
@@ -1085,7 +1085,7 @@ router?.get(
         let h = 2166136261;
         for (let i = 0; i < tag?.length; i++) {
           h ^= tag?.charCodeAt(i);
-          h = Math?.imul(h, 16777619) >>> 0;
+          h = Math.imul(h, 16777619) >>> 0;
         }
         return base + (h % base);
       }
@@ -1116,13 +1116,13 @@ router?.get(
 
       function guessCategory(tag: string): string {
         const t = tag?.replace(/^#/, "").toLowerCase();
-        for (const [key, cat] of Object?.entries(categoryMap)) {
+        for (const [key, cat] of Object.entries(categoryMap)) {
           if (t?.includes(key)) return cat;
         }
         return "general";
       }
 
-      const dayOfYear = Math?.floor(
+      const dayOfYear = Math.floor(
         (Date?.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) /
           86400000,
       );
@@ -1131,8 +1131,8 @@ router?.get(
       const trending = rawTags?.map((tag, i) => {
         const base = hashVolume(tag, 15000);
         const timeFactor =
-          Math?.sin((dayOfYear + i) * 0.3 + hourOfDay * 0.1) * 0.15;
-        const volume = Math?.round(base * (1 + timeFactor));
+          Math.sin((dayOfYear + i) * 0.3 + hourOfDay * 0.1) * 0.15;
+        const volume = Math.round(base * (1 + timeFactor));
         return {
           hashtag: tag.startsWith("#") ? tag : `#${tag}`,
           posts: volume,
@@ -1147,13 +1147,13 @@ router?.get(
       });
 
       trending?.sort((a, b) => b?.posts - a?.posts);
-      res?.json(trending?.slice(0, 12));
+      res.json(trending?.slice(0, 12));
     } catch (error) {
       if (error instanceof AIUnavailableError) {
-        return res?.status(503).json({ success: false, code: error.code, error: error.message });
+        return res.status(503).json({ success: false, code: error.code, error: error.message });
       }
-      logger?.warn({ err: error }, "Failed to get trending hashtags:");
-      res?.status(500).json({ error: "Failed to get trending hashtags" });
+      logger.warn({ err: error }, "Failed to get trending hashtags:");
+      res.status(500).json({ error: "Failed to get trending hashtags" });
     }
   },
 );
@@ -1164,12 +1164,12 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const trending =
         (await storage?.getSocialListeningTrending?.(userId)) || [];
-      res?.json(trending);
+      res.json(trending);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get social listening trending:");
+      logger.warn({ err: error }, "Failed to get social listening trending:");
       res
         .status(500)
         .json({ error: "Failed to get social listening trending:" });
@@ -1183,12 +1183,12 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const influencers =
         (await storage?.getSocialListeningInfluencers?.(userId)) || [];
-      res?.json(influencers);
+      res.json(influencers);
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "Failed to get social listening influencers:",
       );
@@ -1205,12 +1205,12 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const alerts = (await storage?.getSocialListeningAlerts?.(userId)) || [];
-      res?.json(alerts);
+      res.json(alerts);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get social listening alerts:");
-      res?.status(500).json({ error: "Failed to get social listening alerts:" });
+      logger.warn({ err: error }, "Failed to get social listening alerts:");
+      res.status(500).json({ error: "Failed to get social listening alerts:" });
     }
   },
 );
@@ -1225,14 +1225,14 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const competitors = await (
         await getCompetitorBenchmark()
       ).getCompetitors(userId);
-      res?.json(competitors);
+      res.json(competitors);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get competitors:");
-      res?.status(500).json({ error: "Failed to get competitors:" });
+      logger.warn({ err: error }, "Failed to get competitors:");
+      res.status(500).json({ error: "Failed to get competitors:" });
     }
   },
 );
@@ -1243,11 +1243,11 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { name, handle, platforms } = req?.body;
+      const userId = req.user!.id;
+      const { name, handle, platforms } = req.body;
 
       if (!name || !handle) {
-        return res?.status(400).json({ error: "Name and handle are required" });
+        return res.status(400).json({ error: "Name and handle are required" });
       }
 
       const result = await (
@@ -1255,13 +1255,13 @@ router?.post(
       ).addCompetitor(userId, { name, handle, platforms });
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.status(201).json(result?.competitor);
+      res.status(201).json(result?.competitor);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to add competitor:");
-      res?.status(500).json({ error: "Failed to add competitor" });
+      logger.warn({ err: error }, "Failed to add competitor:");
+      res.status(500).json({ error: "Failed to add competitor" });
     }
   },
 );
@@ -1272,21 +1272,21 @@ router?.delete(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { id } = req?.params;
+      const userId = req.user!.id;
+      const { id } = req.params;
 
       const result = await (
         await getCompetitorBenchmark()
       ).removeCompetitor(userId, id);
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to remove competitor:");
-      res?.status(500).json({ error: "Failed to remove competitor" });
+      logger.warn({ err: error }, "Failed to remove competitor:");
+      res.status(500).json({ error: "Failed to remove competitor" });
     }
   },
 );
@@ -1297,12 +1297,12 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const stats = (await storage?.getUserSocialStats?.(userId)) || null;
-      res?.json(stats);
+      res.json(stats);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get your social stats:");
-      res?.json(null);
+      logger.warn({ err: error }, "Failed to get your social stats:");
+      res.json(null);
     }
   },
 );
@@ -1313,7 +1313,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const competitors = await (
         await getCompetitorBenchmark()
       ).getCompetitors(userId);
@@ -1323,10 +1323,10 @@ router?.get(
       const comparison = await (
         await getCompetitorBenchmark()
       ).getBenchmarkComparison(userId);
-      res?.json({ competitors, yourBrand, comparison });
+      res.json({ competitors, yourBrand, comparison });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get benchmark competitors:");
-      res?.json({ competitors: [], yourBrand: null, comparison: [] });
+      logger.warn({ err: error }, "Failed to get benchmark competitors:");
+      res.json({ competitors: [], yourBrand: null, comparison: [] });
     }
   },
 );
@@ -1337,14 +1337,14 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const insights = await (
         await getCompetitorBenchmark()
       ).getInsights(userId);
-      res?.json(insights);
+      res.json(insights);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get benchmark insights:");
-      res?.status(500).json({ error: "Failed to get benchmark insights:" });
+      logger.warn({ err: error }, "Failed to get benchmark insights:");
+      res.status(500).json({ error: "Failed to get benchmark insights:" });
     }
   },
 );
@@ -1355,14 +1355,14 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const shareOfVoice = await (
         await getCompetitorBenchmark()
       ).getShareOfVoice(userId);
-      res?.json(shareOfVoice);
+      res.json(shareOfVoice);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get share of voice:");
-      res?.status(500).json({ error: "Failed to get share of voice" });
+      logger.warn({ err: error }, "Failed to get share of voice:");
+      res.status(500).json({ error: "Failed to get share of voice" });
     }
   },
 );
@@ -1377,7 +1377,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const {
         platform,
         status,
@@ -1385,15 +1385,15 @@ router?.get(
         sentiment,
         limit = "50",
         offset = "0",
-      } = req?.query;
+      } = req.query;
 
       let query = db
         .select()
         .from(socialInboxMessages)
         .where(eq(socialInboxMessages?.userId, userId))
         .orderBy(desc(socialInboxMessages?.createdAt))
-        .limit(Math?.max(1, Math?.min(200, Number(limit) || 50)))
-        .offset(Math?.min(Math?.max(0, Number(offset) || 0), 100_000));
+        .limit(Math.max(1, Math.min(200, Number(limit) || 50)))
+        .offset(Math.min(Math.max(0, Number(offset) || 0), 100_000));
 
       const messages = await query;
 
@@ -1408,7 +1408,7 @@ router?.get(
         return true;
       });
 
-      res?.json({
+      res.json({
         messages: filteredMessages.map((m) => ({
           id: m.id,
           platform: m.platform,
@@ -1437,8 +1437,8 @@ router?.get(
         total: filteredMessages.length,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get inbox messages:");
-      res?.json({ messages: [], total: 0 });
+      logger.warn({ err: error }, "Failed to get inbox messages:");
+      res.json({ messages: [], total: 0 });
     }
   },
 );
@@ -1449,7 +1449,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const messages = await db
         .select()
         .from(socialInboxMessages)
@@ -1474,10 +1474,10 @@ router?.get(
           linkedin: messages.filter((m) => m?.platform === "linkedin").length,
         },
       };
-      res?.json(stats);
+      res.json(stats);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get inbox stats:");
-      res?.json({
+      logger.warn({ err: error }, "Failed to get inbox stats:");
+      res.json({
         total: 0,
         unread: 0,
         highPriority: 0,
@@ -1494,8 +1494,8 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { id } = req?.params;
+      const userId = req.user!.id;
+      const { id } = req.params;
 
       await db
         .update(socialInboxMessages)
@@ -1510,10 +1510,10 @@ router?.post(
           ),
         );
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to mark message as read:");
-      res?.status(500).json({ error: "Failed to mark message as read" });
+      logger.warn({ err: error }, "Failed to mark message as read:");
+      res.status(500).json({ error: "Failed to mark message as read" });
     }
   },
 );
@@ -1524,11 +1524,11 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { messageIds } = req?.body;
+      const userId = req.user!.id;
+      const { messageIds } = req.body;
 
-      if (!Array?.isArray(messageIds)) {
-        return res?.status(400).json({ error: "messageIds must be an array" });
+      if (!Array.isArray(messageIds)) {
+        return res.status(400).json({ error: "messageIds must be an array" });
       }
 
       for (const id of messageIds) {
@@ -1546,10 +1546,10 @@ router?.post(
           );
       }
 
-      res?.json({ success: true, updated: messageIds.length });
+      res.json({ success: true, updated: messageIds.length });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to mark messages as read:");
-      res?.status(500).json({ error: "Failed to mark messages as read" });
+      logger.warn({ err: error }, "Failed to mark messages as read:");
+      res.status(500).json({ error: "Failed to mark messages as read" });
     }
   },
 );
@@ -1560,12 +1560,12 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { id } = req?.params;
-      const { content } = req?.body;
+      const userId = req.user!.id;
+      const { id } = req.params;
+      const { content } = req.body;
 
       if (!content) {
-        return res?.status(400).json({
+        return res.status(400).json({
           error: "Reply content is required",
           outcome: {
             status: "error",
@@ -1588,7 +1588,7 @@ router?.post(
         .limit(1);
 
       if (!message) {
-        return res?.status(404).json({
+        return res.status(404).json({
           error: "Message not found",
           outcome: {
             status: "error",
@@ -1612,7 +1612,7 @@ router?.post(
           ),
         );
 
-      res?.json({
+      res.json({
         success: true,
         outcome: {
           status: "success",
@@ -1624,8 +1624,8 @@ router?.post(
         },
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to reply to message:");
-      res?.status(500).json({
+      logger.warn({ err: error }, "Failed to reply to message:");
+      res.status(500).json({
         error: "Failed to reply to message",
         outcome: {
           status: "error",
@@ -1645,9 +1645,9 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { id } = req?.params;
-      const { assigneeId, assigneeName } = req?.body;
+      const userId = req.user!.id;
+      const { id } = req.params;
+      const { assigneeId, assigneeName } = req.body;
 
       await db
         .update(socialInboxMessages)
@@ -1659,7 +1659,7 @@ router?.post(
           ),
         );
 
-      res?.json({
+      res.json({
         success: true,
         outcome: {
           status: "success",
@@ -1670,8 +1670,8 @@ router?.post(
         },
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to assign message:");
-      res?.status(500).json({
+      logger.warn({ err: error }, "Failed to assign message:");
+      res.status(500).json({
         error: "Failed to assign message",
         outcome: {
           status: "error",
@@ -1691,8 +1691,8 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { id } = req?.params;
+      const userId = req.user!.id;
+      const { id } = req.params;
 
       await db
         .update(socialInboxMessages)
@@ -1704,10 +1704,10 @@ router?.post(
           ),
         );
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to archive message:");
-      res?.status(500).json({ error: "Failed to archive message" });
+      logger.warn({ err: error }, "Failed to archive message:");
+      res.status(500).json({ error: "Failed to archive message" });
     }
   },
 );
@@ -1718,10 +1718,10 @@ router?.get(
   requireAuth,
   async (_req: AuthenticatedRequest, res: Response) => {
     try {
-      res?.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ error: "Internal server error" });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get reply templates:");
-      res?.status(500).json({ error: "Failed to get reply templates:" });
+      logger.warn({ err: error }, "Failed to get reply templates:");
+      res.status(500).json({ error: "Failed to get reply templates:" });
     }
   },
 );
@@ -1732,10 +1732,10 @@ router?.get(
   requireAuth,
   async (_req: AuthenticatedRequest, res: Response) => {
     try {
-      res?.status(500).json({ error: "Internal server error" });
+      res.status(500).json({ error: "Internal server error" });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get team members:");
-      res?.status(500).json({ error: "Failed to get team members:" });
+      logger.warn({ err: error }, "Failed to get team members:");
+      res.status(500).json({ error: "Failed to get team members:" });
     }
   },
 );
@@ -1746,14 +1746,14 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const connections = await db
         .select()
         .from(socialAccounts)
         .where(eq(socialAccounts?.userId, userId))
         .limit(50);
 
-      res?.json(
+      res.json(
         connections
           .filter((c) => c?.isActive)
           .map((c) => ({
@@ -1768,8 +1768,8 @@ router?.get(
           })),
       );
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get connections:");
-      res?.status(500).json({ error: "Failed to get connections:" });
+      logger.warn({ err: error }, "Failed to get connections:");
+      res.status(500).json({ error: "Failed to get connections:" });
     }
   },
 );
@@ -1783,7 +1783,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       // Scheduled social posts (includes autopilot-created posts with status 'pending')
       const scheduledPosts = await db
@@ -1822,7 +1822,7 @@ router?.get(
             const meta = eng?._autopilotMeta ? eng : {};
             let parsedContent: Record<string, unknown> = {};
             try {
-              parsedContent = JSON?.parse(p?.content ?? "{}");
+              parsedContent = JSON.parse(p?.content ?? "{}");
             } catch {
               parsedContent = {};
             }
@@ -1862,10 +1862,10 @@ router?.get(
         })),
       ];
 
-      return res?.json({ posts: allPosts, total: allPosts.length });
+      return res.json({ posts: allPosts, total: allPosts.length });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get unified calendar posts:");
-      return res?.json({ posts: [], total: 0 });
+      logger.warn({ err: error }, "Failed to get unified calendar posts:");
+      return res.json({ posts: [], total: 0 });
     }
   },
 );
@@ -1875,7 +1875,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       const userCampaigns = await db
         .select()
@@ -1884,13 +1884,13 @@ router?.get(
         .orderBy(desc(campaigns?.createdAt))
         .limit(100);
 
-      return res?.json({
+      return res.json({
         campaigns: userCampaigns,
         total: userCampaigns.length,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get unified calendar campaigns:");
-      return res?.json({ campaigns: [], total: 0 });
+      logger.warn({ err: error }, "Failed to get unified calendar campaigns:");
+      return res.json({ campaigns: [], total: 0 });
     }
   },
 );
@@ -1976,13 +1976,13 @@ router?.get(
   requireAuth,
   async (_req: AuthenticatedRequest, res: Response) => {
     try {
-      return res?.json({
+      return res.json({
         holidays: MUSIC_INDUSTRY_HOLIDAYS,
         total: MUSIC_INDUSTRY_HOLIDAYS.length,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get unified calendar holidays:");
-      return res?.json({ holidays: [], total: 0 });
+      logger.warn({ err: error }, "Failed to get unified calendar holidays:");
+      return res.json({ holidays: [], total: 0 });
     }
   },
 );
@@ -1992,7 +1992,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       // Posts that are scheduled but not yet published (the publishing queue)
       const queuedPosts = await db
@@ -2008,10 +2008,10 @@ router?.get(
         .orderBy(posts?.scheduledAt)
         .limit(100);
 
-      return res?.json({ queue: queuedPosts, total: queuedPosts.length });
+      return res.json({ queue: queuedPosts, total: queuedPosts.length });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get unified calendar queue:");
-      return res?.json({ queue: [], total: 0 });
+      logger.warn({ err: error }, "Failed to get unified calendar queue:");
+      return res.json({ queue: [], total: 0 });
     }
   },
 );
@@ -2031,7 +2031,7 @@ router?.post(
         contentType = "post",
         topic = "new music",
         tone = "energetic",
-      } = req?.body;
+      } = req.body;
 
       const validPlatforms = [
         "instagram",
@@ -2134,7 +2134,7 @@ router?.post(
       );
       const optimalTime = generatedContent[0]?.optimalPostTime || null;
 
-      res?.json({
+      res.json({
         success: generatedContent.length > 0,
         generatedContent,
         platforms,
@@ -2163,7 +2163,7 @@ router?.post(
         },
       });
 
-      if (generatedContent?.length > 0 && req?.user?.id) {
+      if (generatedContent?.length > 0 && req.user?.id) {
         setImmediate(async () => {
           try {
             const firstPiece = generatedContent[0];
@@ -2176,12 +2176,12 @@ router?.post(
               ""
             ).slice(0, 100);
             await notificationService?.sendSocialContentGeneratedNotification(
-              req?.user!.id,
+              req.user!.id,
               platformLabel,
               snippet,
             );
           } catch (err) {
-            logger?.warn(
+            logger.warn(
               { err: err },
               "[SocialMedia] content generated notification error:",
             );
@@ -2190,10 +2190,10 @@ router?.post(
       }
     } catch (error) {
       if (error instanceof AIUnavailableError) {
-        return res?.status(503).json({ success: false, code: error.code, error: error.message });
+        return res.status(503).json({ success: false, code: error.code, error: error.message });
       }
-      logger?.warn({ err: error }, "Failed to generate social content:");
-      res?.status(500).json({
+      logger.warn({ err: error }, "Failed to generate social content:");
+      res.status(500).json({
         success: false,
         message: "Failed to generate content",
         outcome: {
@@ -2232,10 +2232,10 @@ function assertSafeExternalUrl(raw: string): void {
   try {
     parsed = new URL(raw);
   } catch {
-    throw Object?.assign(new Error("Invalid URL"), { status: 400 });
+    throw Object.assign(new Error("Invalid URL"), { status: 400 });
   }
   if (!["http:", "https:"].includes(parsed?.protocol)) {
-    throw Object?.assign(new Error("Only http/https URLs are permitted"), {
+    throw Object.assign(new Error("Only http/https URLs are permitted"), {
       status: 400,
     });
   }
@@ -2260,7 +2260,7 @@ function assertSafeExternalUrl(raw: string): void {
     /\.local$/i,
   ];
   if (blocked?.some((re) => re?.test(h))) {
-    throw Object?.assign(
+    throw Object.assign(
       new Error("URL resolves to a restricted network range"),
       { status: 400 },
     );
@@ -2281,10 +2281,10 @@ router?.post(
         tone = "energetic",
         format = "text",
         targetAudience = "",
-      } = req?.body;
+      } = req.body;
 
       if (!url) {
-        return res?.status(400).json({ error: "URL is required" });
+        return res.status(400).json({ error: "URL is required" });
       }
 
       // Reject obviously oversized URLs before any parsing or network fetch
@@ -2308,7 +2308,7 @@ router?.post(
       try {
         analysis = await analyzeUrl(url?.trim());
       } catch (analyzeErr) {
-        logger?.warn(
+        logger.warn(
           "[generate-from-url] URL analysis failed — using URL-derived stub:",
           analyzeErr?.message,
         );
@@ -2541,7 +2541,7 @@ router?.post(
       if (generatedContent?.length === 0) {
         // All parallel calls failed (MaxCore transient or cold-start).
         // Log the failure details and retry serially with a minimal payload.
-        logger?.warn(
+        logger.warn(
           `[generate-from-url] All ${platforms.length} parallel generateContent calls ` +
             `returned no data — retrying serially (topic="${topic.slice(0, 60)}")`,
         );
@@ -2611,7 +2611,7 @@ router?.post(
         }
       }
 
-      res?.json({
+      res.json({
         success: true,
         generatedContent,
         url,
@@ -2629,10 +2629,10 @@ router?.post(
       });
     } catch (error) {
       if (error instanceof AIUnavailableError) {
-        return res?.status(503).json({ success: false, code: error.code, error: error.message });
+        return res.status(503).json({ success: false, code: error.code, error: error.message });
       }
-      logger?.warn({ err: error }, "Failed to generate content from URL:");
-      res?.status(500).json({ error: "Failed to generate content from URL" });
+      logger.warn({ err: error }, "Failed to generate content from URL:");
+      res.status(500).json({ error: "Failed to generate content from URL" });
     }
   },
 );
@@ -2643,12 +2643,12 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const scheduledPosts = (await storage?.getScheduledPosts?.(userId)) || [];
-      res?.json(scheduledPosts);
+      res.json(scheduledPosts);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get scheduled posts:");
-      res?.status(500).json({ error: "Failed to get scheduled posts:" });
+      logger.warn({ err: error }, "Failed to get scheduled posts:");
+      res.status(500).json({ error: "Failed to get scheduled posts:" });
     }
   },
 );
@@ -2659,8 +2659,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { platform, period = "30d" } = req?.query;
+      const userId = req.user!.id;
+      const { platform, period = "30d" } = req.query;
 
       const days = period === "7d" ? 7 : period === "90d" ? 90 : 30;
       const periodStart = new Date(Date?.now() - days * 24 * 60 * 60 * 1000);
@@ -2717,7 +2717,7 @@ router?.get(
       }
       for (const p of stalePlatforms) {
         syncPlatformData(userId, p).catch((err) =>
-          logger?.warn({ err: err }, `[Analytics] BG sync failed for ${p}:`),
+          logger.warn({ err: err }, `[Analytics] BG sync failed for ${p}:`),
         );
       }
 
@@ -2797,7 +2797,7 @@ router?.get(
       );
       const engagementRate =
         totalViews > 0
-          ? Math?.round((totalEngagement / totalViews) * 10000) / 100
+          ? Math.round((totalEngagement / totalViews) * 10000) / 100
           : 0;
 
       // Platform breakdown enriched with follower counts from connected accounts
@@ -2884,8 +2884,8 @@ router?.get(
       const profile = artistProfile[0];
       if (profile?.spotifyArtistId) {
         try {
-          const clientId = process?.env.SPOTIFY_CLIENT_ID;
-          const clientSecret = process?.env.SPOTIFY_CLIENT_SECRET;
+          const clientId = process.env.SPOTIFY_CLIENT_ID;
+          const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
           if (clientId && clientSecret) {
             const tokenRes = await fetch(
               "https://accounts.spotify.com/api/token",
@@ -2927,14 +2927,14 @@ router?.get(
             }
           }
         } catch (spotifyErr) {
-          logger?.warn(
+          logger.warn(
             "[Analytics] Spotify artist stats fetch failed:",
             spotifyErr,
           );
         }
       }
 
-      res?.json({
+      res.json({
         period,
         platform: platform || "all",
         syncedAt: new Date().toISOString(),
@@ -2958,8 +2958,8 @@ router?.get(
         connectedPlatforms: accounts.filter((a) => a?.isActive).length,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get social analytics:");
-      res?.status(500).json({ error: "Failed to get analytics" });
+      logger.warn({ err: error }, "Failed to get social analytics:");
+      res.status(500).json({ error: "Failed to get analytics" });
     }
   },
 );
@@ -2989,9 +2989,9 @@ router?.post(
         genre,
         user_audio_path,
         voiceover,
-      } = req?.body;
+      } = req.body;
 
-      const userId = req?.user?.id;
+      const userId = req.user?.id;
 
       // ── Validate: at least one content source must be provided ───────────────
       if (!topic && !rawHook && !rawBody) {
@@ -3006,7 +3006,7 @@ router?.post(
       // proxy timeouts that the client misreads as auth failures.  All paths
       // (Python AI and FFmpeg) now run in a background job and store their
       // result in the ffmpegJobs map so the polling endpoint can serve it.
-      const jobId = `video_${Date?.now()}_${Math?.random().toString(36).slice(2, 8)}`;
+      const jobId = `video_${Date?.now()}_${Math.random().toString(36).slice(2, 8)}`;
       pruneStaleFFmpegJobs();
       ffmpegJobs?.set(jobId, { status: "processing", createdAt: Date.now() });
 
@@ -3068,7 +3068,7 @@ router?.post(
           };
 
           // Stages 2–4 — Advanced Video Renderer (MaxCore)
-          logger?.info(
+          logger.info(
             `[VideoGen] Routing job ${jobId} through Advanced Video Renderer`,
           );
           const result = await (
@@ -3084,7 +3084,7 @@ router?.post(
               result,
               createdAt: Date.now(),
             });
-            logger?.info(
+            logger.info(
               `[VideoGen] Job ${jobId} done via ${result.source || "renderer"} — url=${result?.url}`,
             );
           } else {
@@ -3095,7 +3095,7 @@ router?.post(
               error: errMsg,
               createdAt: Date.now(),
             });
-            logger?.warn(`[VideoGen] Job ${jobId} FAILED — ${errMsg}`);
+            logger.warn(`[VideoGen] Job ${jobId} FAILED — ${errMsg}`);
           }
         } catch (err) {
           ffmpegJobs?.set(jobId, {
@@ -3105,17 +3105,17 @@ router?.post(
               "Video generation failed",
             createdAt: Date.now(),
           });
-          logger?.warn(
+          logger.warn(
             { err: err },
             `[VideoGen] Background job ${jobId} threw:`,
           );
         }
       })();
 
-      logger?.info(`[VideoGen] Job ${jobId} queued — responding immediately`);
-      return res?.json({ success: true, job_id: jobId, status: "processing" });
+      logger.info(`[VideoGen] Job ${jobId} queued — responding immediately`);
+      return res.json({ success: true, job_id: jobId, status: "processing" });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to start video generation:");
+      logger.warn({ err: error }, "Failed to start video generation:");
       res
         .status(500)
         .json({ success: false, message: "Video generation failed" });
@@ -3128,14 +3128,14 @@ router?.get(
   requireAuthOnly,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { jobId } = req?.params;
+      const { jobId } = req.params;
 
       // Check the local FFmpeg job map first (jobs created by the async generate-video route).
       // FFmpeg job IDs are prefixed with "ffmpeg_" so they never collide with Python AI job IDs.
       const ffmpegJob = ffmpegJobs?.get(jobId);
       if (ffmpegJob) {
         if (ffmpegJob?.status === "processing") {
-          return res?.json({ status: "processing", progress: 50 });
+          return res.json({ status: "processing", progress: 50 });
         }
         if (ffmpegJob?.status === "done" && ffmpegJob?.result) {
           const r = ffmpegJob?.result;
@@ -3144,12 +3144,12 @@ router?.get(
           // polling until the 3-minute timeout fires.
           const resolvedUrl = r.url || r.video_url || null;
           if (!resolvedUrl) {
-            return res?.status(500).json({
+            return res.status(500).json({
               status: "error",
               error: "Video was generated but no file URL was returned. Please try again.",
             });
           }
-          return res?.json({
+          return res.json({
             ...r,
             status: "completed",
             url: resolvedUrl,
@@ -3161,7 +3161,7 @@ router?.get(
         // error or unknown state — use `error` (the field the client reads),
         // keep `message` for any older consumers.
         const jobErr = ffmpegJob.error ?? "Video generation failed";
-        return res?.status(500).json({
+        return res.status(500).json({
           status: "error",
           error: jobErr,
           message: jobErr,
@@ -3220,17 +3220,17 @@ router.get(
     // 1. Check local cache first — if it was written to disk AND is a real video, serve it directly.
     //    Minimum 10 KB: MaxCore's SPA returns ~683-byte HTML pages for unknown paths.
     //    Anything smaller than 10 KB is a corrupted/HTML cache entry — skip and re-proxy.
-    const localPath = path?.join(process?.cwd(), "uploads", "videos", filename);
+    const localPath = path?.join(process.cwd(), "uploads", "videos", filename);
     try {
       const stat = await fsPromises?.stat(localPath);
       if (stat?.size > 10_240) {
-        res?.setHeader("Content-Type", "video/mp4");
+        res.setHeader("Content-Type", "video/mp4");
         res.setHeader("Cache-Control", "public, max-age=86400");
-        res?.setHeader("Accept-Ranges", "bytes");
+        res.setHeader("Accept-Ranges", "bytes");
         return fs?.createReadStream(localPath).pipe(res);
       }
       // Corrupted/HTML entry — delete it so we re-fetch from MaxCore
-      logger?.warn(
+      logger.warn(
         `[VideoProxy] Local cache entry ${filename} is too small (${stat?.size} bytes) — deleting stale cache`,
       );
       await fsPromises?.unlink(localPath).catch(() => {
@@ -3315,7 +3315,7 @@ router.get(
           signal: AbortSignal.timeout(8_000),
         });
         if (!upstream?.ok) {
-          logger?.info(
+          logger.info(
             `[VideoProxy] Candidate ${url} → HTTP ${upstream.status} ct="${upstream.headers.get("content-type") ?? ""}"`,
           );
           continue;
@@ -3364,18 +3364,18 @@ router.get(
         const ct = upstream?.headers.get("content-type") ?? "";
         if (!isRealVideo) {
           reader?.cancel();
-          logger?.info(
+          logger.info(
             `[VideoProxy] Candidate ${url} → NOT video (HTTP 200, ct="${ct}", peek="${peekText.slice(0, 60).replace(/\n/g, "\\n")}")`,
           );
           continue;
         }
 
         const cl = upstream?.headers.get("content-length");
-        res?.setHeader("Content-Type", "video/mp4");
-        if (cl) res?.setHeader("Content-Length", cl);
+        res.setHeader("Content-Type", "video/mp4");
+        if (cl) res.setHeader("Content-Length", cl);
         res.setHeader("Cache-Control", "public, max-age=86400");
-        res?.setHeader("Accept-Ranges", "bytes");
-        res?.writeHead(200);
+        res.setHeader("Accept-Ranges", "bytes");
+        res.writeHead(200);
 
         // Stream: write the peeked chunk first, then pipe the rest
         const nodeStream = new (await import("stream")).PassThrough();
@@ -3398,11 +3398,11 @@ router.get(
             const buf = Buffer?.concat(chunks);
             if (buf?.length > 10_240) {
               await fsPromises?.mkdir(
-                path?.join(process?.cwd(), "uploads", "videos"),
+                path?.join(process.cwd(), "uploads", "videos"),
                 { recursive: true },
               );
               await fsPromises?.writeFile(localPath, buf);
-              logger?.info(
+              logger.info(
                 `[VideoProxy] Cached ${filename} to disk (${(buf?.length / 1024).toFixed(0)} KB)`,
               );
             }
@@ -3411,16 +3411,16 @@ router.get(
           }
         })();
 
-        logger?.info(`[VideoProxy] Streaming ${filename} from ${url}`);
+        logger.info(`[VideoProxy] Streaming ${filename} from ${url}`);
         return;
       } catch (err) {
-        logger?.info(
+        logger.info(
           `[VideoProxy] Candidate ${url} fetch error: ${err?.message}`,
         );
       }
     }
 
-    logger?.warn(
+    logger.warn(
       `[VideoProxy] Could not retrieve ${filename} from any MaxCore path`,
     );
     return res
@@ -3439,7 +3439,7 @@ router?.get(
     try {
       const result = await (await getPythonAI()).getCinematicTemplates();
       if (result?.success && result?.data) {
-        res?.json({
+        res.json({
           ...result?.data,
           aspect_ratios: [
             {
@@ -3465,7 +3465,7 @@ router?.get(
           ],
         });
       } else {
-        res?.json({
+        res.json({
           templates: [
             {
               id: "cinematic_promo",
@@ -3566,7 +3566,7 @@ router?.get(
         });
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get video templates:");
+      logger.warn({ err: error }, "Failed to get video templates:");
       res
         .status(500)
         .json({ success: false, message: "Failed to get templates" });
@@ -3596,10 +3596,10 @@ router?.post(
         targets,
         audio_duration_sec,
         track_id,
-      } = req?.body;
+      } = req.body;
 
       if (!title || !artist) {
-        return res?.status(400).json({
+        return res.status(400).json({
           success: false,
           message: "Track title and artist name are required",
         });
@@ -3630,15 +3630,15 @@ router?.post(
       });
 
       if (!result?.success) {
-        return res?.status(500).json({
+        return res.status(500).json({
           success: false,
           message: result.error || "Video campaign generation failed",
         });
       }
 
-      res?.json(result);
+      res.json(result);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to generate Veo campaign:");
+      logger.warn({ err: error }, "Failed to generate Veo campaign:");
       res
         .status(500)
         .json({ success: false, message: "Video campaign generation failed" });
@@ -3652,10 +3652,10 @@ router?.post(
   aiRateLimiter,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { title, artist, platform, mood, story, lyrics, tone } = req?.body;
+      const { title, artist, platform, mood, story, lyrics, tone } = req.body;
 
       if (!title || !artist || !platform) {
-        return res?.status(400).json({
+        return res.status(400).json({
           success: false,
           message: "Track title, artist, and platform are required",
         });
@@ -3674,15 +3674,15 @@ router?.post(
       });
 
       if (!asset) {
-        return res?.status(500).json({
+        return res.status(500).json({
           success: false,
           message: "Failed to generate video for platform",
         });
       }
 
-      res?.json({ success: true, asset });
+      res.json({ success: true, asset });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to generate single Veo video:");
+      logger.warn({ err: error }, "Failed to generate single Veo video:");
       res
         .status(500)
         .json({ success: false, message: "Video generation failed" });
@@ -3697,14 +3697,14 @@ router?.get(
     try {
       const data = await (await getVeoMusic()).getAvailablePlatforms();
       if (!data) {
-        return res?.status(503).json({
+        return res.status(503).json({
           success: false,
           message: "Veo Music pipeline not available",
         });
       }
-      res?.json({ success: true, ...data });
+      res.json({ success: true, ...data });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get Veo platforms:");
+      logger.warn({ err: error }, "Failed to get Veo platforms:");
       res
         .status(500)
         .json({ success: false, message: "Failed to get platforms" });
@@ -3719,15 +3719,15 @@ router?.get(
     try {
       const data = await (await getVeoMusic()).getAvailableGoals();
       if (!data) {
-        return res?.status(503).json({
+        return res.status(503).json({
           success: false,
           message: "Veo Music pipeline not available",
         });
       }
-      res?.json({ success: true, ...data });
+      res.json({ success: true, ...data });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get Veo goals:");
-      res?.status(500).json({ success: false, message: "Failed to get goals" });
+      logger.warn({ err: error }, "Failed to get Veo goals:");
+      res.status(500).json({ success: false, message: "Failed to get goals" });
     }
   },
 );
@@ -3737,17 +3737,17 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { platform } = req?.params;
+      const { platform } = req.params;
       const data = await (await getVeoMusic()).getRecommendedGoals(platform);
       if (!data) {
-        return res?.status(404).json({
+        return res.status(404).json({
           success: false,
           message: `No recommendations for platform: ${platform}`,
         });
       }
-      res?.json({ success: true, ...data });
+      res.json({ success: true, ...data });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get Veo recommendations:");
+      logger.warn({ err: error }, "Failed to get Veo recommendations:");
       res
         .status(500)
         .json({ success: false, message: "Failed to get recommendations" });
@@ -3762,15 +3762,15 @@ router?.get(
     try {
       const status = await (await getVeoMusic()).getPipelineStatus();
       if (!status) {
-        return res?.status(503).json({
+        return res.status(503).json({
           success: false,
           message: "Veo Music pipeline not available",
         });
       }
-      res?.json({ success: true, ...status });
+      res.json({ success: true, ...status });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get Veo status:");
-      res?.status(500).json({ success: false, message: "Failed to get status" });
+      logger.warn({ err: error }, "Failed to get Veo status:");
+      res.status(500).json({ success: false, message: "Failed to get status" });
     }
   },
 );
@@ -3780,9 +3780,9 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { url } = req?.body;
+      const { url } = req.body;
       if (!url || typeof url !== "string") {
-        return res?.status(400).json({
+        return res.status(400).json({
           success: false,
           message: 'Missing or invalid "url" field',
         });
@@ -3790,14 +3790,14 @@ router?.post(
 
       const data = await (await getVeoMusic()).extractUrlMetadata(url);
       if (!data) {
-        return res?.status(503).json({
+        return res.status(503).json({
           success: false,
           message: "Veo Music pipeline not available",
         });
       }
-      res?.json(data);
+      res.json(data);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to extract URL metadata:");
+      logger.warn({ err: error }, "Failed to extract URL metadata:");
       res
         .status(500)
         .json({
@@ -3813,9 +3813,9 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { url, ...overrides } = req?.body;
+      const { url, ...overrides } = req.body;
       if (!url || typeof url !== "string") {
-        return res?.status(400).json({
+        return res.status(400).json({
           success: false,
           message: 'Missing or invalid "url" field',
         });
@@ -3832,9 +3832,9 @@ router?.post(
             message: result.error || "Campaign generation from URL failed",
           });
       }
-      res?.json(result);
+      res.json(result);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to generate campaign from URL:");
+      logger.warn({ err: error }, "Failed to generate campaign from URL:");
       res
         .status(500)
         .json({
@@ -3850,13 +3850,13 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user?.id;
+      const userId = req.user?.id;
       if (!userId)
         return res
           .status(401)
           .json({ success: false, message: "Not authenticated" });
 
-      const { slug, platforms, mood, brand_notes, campaign_notes } = req?.body;
+      const { slug, platforms, mood, brand_notes, campaign_notes } = req.body;
 
       let storefront: Record<string, unknown> | null = null;
       if (slug) {
@@ -3975,7 +3975,7 @@ router?.post(
           });
       }
 
-      res?.json({
+      res.json({
         ...result,
         storefront: {
           id: storefront.id,
@@ -3986,7 +3986,7 @@ router?.post(
         },
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to promote storefront:");
+      logger.warn({ err: error }, "Failed to promote storefront:");
       res
         .status(500)
         .json({
@@ -4002,14 +4002,14 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user?.id;
+      const userId = req.user?.id;
       if (!userId)
         return res
           .status(401)
           .json({ success: false, message: "Not authenticated" });
 
       const { listingId, platforms, mood, brand_notes, campaign_notes } =
-        req?.body;
+        req.body;
       if (!listingId)
         return res
           .status(400)
@@ -5265,7 +5265,7 @@ router?.get(
   "/music-video-job/:jobId",
   requireAuthOnly,
   async (req: AuthenticatedRequest, res: Response) => {
-    const { jobId } = req?.params;
+    const { jobId } = req.params;
     const job = musicVideoJobs?.get(jobId);
 
     if (!job) {
@@ -5275,7 +5275,7 @@ router?.get(
     }
 
     if (job?.status === "processing") {
-      return res?.json({
+      return res.json({
         success: true,
         status: "processing",
         message: "Music video is being rendered…",
@@ -5284,7 +5284,7 @@ router?.get(
 
     if (job?.status === "error") {
       // 200 (not 500) so the client poll can read the failure instead of throwing.
-      return res?.json({
+      return res.json({
         success: false,
         status: "failed",
         error: job.error,
@@ -5294,7 +5294,7 @@ router?.get(
     // Normalize to the contract the client expects: status "completed" plus a
     // flat videoUrl/thumbnailUrl (poster) so the new VideoPlayer can render.
     const doneResult = job.result as Record<string, unknown> | undefined;
-    res?.json({
+    res.json({
       success: true,
       status: "completed",
       videoUrl: (doneResult?.url as string) ?? null,
@@ -5317,7 +5317,7 @@ router?.get(
         getVoiceSynthService(),
         getImageToVideoService(),
       ]);
-      res?.json({
+      res.json({
         success: true,
         voices: voiceSvc.listVoiceProfiles().map((p) => ({
           id: p.id,

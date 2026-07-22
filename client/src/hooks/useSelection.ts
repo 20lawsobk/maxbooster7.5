@@ -60,7 +60,7 @@ export function useSelection<T extends SelectionItem = SelectionItem>(
       try {
         const stored = localStorage?.getItem(`selection-${persistKey}`);
         if (stored) {
-          return new Set(JSON?.parse(stored));
+          return new Set(JSON.parse(stored));
         }
       } catch {}
     }
@@ -75,7 +75,7 @@ export function useSelection<T extends SelectionItem = SelectionItem>(
       try {
         localStorage?.setItem(
           `selection-${persistKey}`,
-          JSON?.stringify(Array?.from(selectedIds)),
+          JSON.stringify(Array.from(selectedIds)),
         );
       } catch {}
     }
@@ -86,7 +86,7 @@ export function useSelection<T extends SelectionItem = SelectionItem>(
       setSelectedIds(newSelection);
       if (onSelectionChange) {
         const selectedItems = items?.filter((item) => newSelection?.has(item?.id));
-        onSelectionChange(Array?.from(newSelection), selectedItems);
+        onSelectionChange(Array.from(newSelection), selectedItems);
       }
     },
     [items, onSelectionChange],

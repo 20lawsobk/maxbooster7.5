@@ -127,7 +127,7 @@ export class DiscoveryAlgorithmService {
 
       return newProfile;
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting/creating taste profile:");
+      logger.warn({ err: error }, "Error getting/creating taste profile:");
       throw error;
     }
   }
@@ -152,7 +152,7 @@ export class DiscoveryAlgorithmService {
         sessionId: data.sessionId,
       });
 
-      await this?.updateTasteProfileFromInteraction(
+      await this.updateTasteProfileFromInteraction(
         data?.userId,
         data?.beatId,
         data?.interactionType,
@@ -161,7 +161,7 @@ export class DiscoveryAlgorithmService {
 
       return { success: true };
     } catch (error) {
-      logger?.warn({ err: error }, "Error recording interaction:");
+      logger.warn({ err: error }, "Error recording interaction:");
       throw error;
     }
   }
@@ -189,7 +189,7 @@ export class DiscoveryAlgorithmService {
       const mood = metadata?.mood;
       const bpm = metadata?.bpm || metadata?.tempo;
 
-      const profile = await this?.getOrCreateTasteProfile(userId);
+      const profile = await this.getOrCreateTasteProfile(userId);
       const genreScores = {
         ...((profile?.genreScores as Record<string, number>) || {}),
       };
@@ -210,34 +210,34 @@ export class DiscoveryAlgorithmService {
 
       const effectiveLearningRate = baseLearningRate * completionBoost;
       const normalizedWeight =
-        weight / Math?.max(...Object?.values(INTERACTION_WEIGHTS));
+        weight / Math.max(...Object.values(INTERACTION_WEIGHTS));
 
       // Update genre preference
       if (genre && genreScores[genre] !== undefined) {
         const delta = effectiveLearningRate * normalizedWeight;
-        genreScores[genre] = Math?.min(
+        genreScores[genre] = Math.min(
           1.0,
-          Math?.max(0.0, genreScores[genre] + delta),
+          Math.max(0.0, genreScores[genre] + delta),
         );
       } else if (genre) {
         // New genre not in default list — add it
-        genreScores[genre] = Math?.min(
+        genreScores[genre] = Math.min(
           1.0,
-          Math?.max(0.0, 0.5 + effectiveLearningRate * normalizedWeight),
+          Math.max(0.0, 0.5 + effectiveLearningRate * normalizedWeight),
         );
       }
 
       // Update mood preference
       if (mood && moodScores[mood] !== undefined) {
         const delta = effectiveLearningRate * normalizedWeight;
-        moodScores[mood] = Math?.min(
+        moodScores[mood] = Math.min(
           1.0,
-          Math?.max(0.0, moodScores[mood] + delta),
+          Math.max(0.0, moodScores[mood] + delta),
         );
       } else if (mood) {
-        moodScores[mood] = Math?.min(
+        moodScores[mood] = Math.min(
           1.0,
-          Math?.max(0.0, 0.5 + effectiveLearningRate * normalizedWeight),
+          Math.max(0.0, 0.5 + effectiveLearningRate * normalizedWeight),
         );
       }
 
@@ -253,14 +253,14 @@ export class DiscoveryAlgorithmService {
         const currentMax = profile?.preferredTempoMax || 150;
         // Gradually expand or shift tempo range toward liked tempos
         if (bpm < currentMin && weight > 1) {
-          tempoUpdates.preferredTempoMin = Math?.max(
+          tempoUpdates.preferredTempoMin = Math.max(
             40,
-            Math?.round(currentMin - (currentMin - bpm) * 0.15),
+            Math.round(currentMin - (currentMin - bpm) * 0.15),
           );
         } else if (bpm > currentMax && weight > 1) {
-          tempoUpdates.preferredTempoMax = Math?.min(
+          tempoUpdates.preferredTempoMax = Math.min(
             220,
-            Math?.round(currentMax + (bpm - currentMax) * 0.15),
+            Math.round(currentMax + (bpm - currentMax) * 0.15),
           );
         }
       }
@@ -281,7 +281,7 @@ export class DiscoveryAlgorithmService {
         })
         .where(eq(userTasteProfiles?.userId, userId));
     } catch (error) {
-      logger?.warn({ err: error }, "Error updating taste profile:");
+      logger.warn({ err: error }, "Error updating taste profile:");
     }
   }
 
@@ -296,10 +296,10 @@ export class DiscoveryAlgorithmService {
     } = {},
   ) {
     try {
-      const limit = Math?.min(options?.limit || 20, 50);
+      const limit = Math.min(options?.limit || 20, 50);
       const offset = options?.offset || 0;
 
-      const profile = await this?.getOrCreateTasteProfile(userId);
+      const profile = await this.getOrCreateTasteProfile(userId);
       const genreScores = (profile?.genreScores as Record<string, number>) || {};
       const moodScores = (profile?.moodScores as Record<string, number>) || {};
       const followedProducers = (profile?.followedProducers as string[]) || [];
@@ -357,7 +357,7 @@ export class DiscoveryAlgorithmService {
 
           // Apply trending genre boost
           const trendingBoost = GENRE_TRENDING_BOOST[genre] || 1.0;
-          genreScore = Math?.min(1.0, genreScore * trendingBoost);
+          genreScore = Math.min(1.0, genreScore * trendingBoost);
 
           // Weighted average of genre and mood (genre is slightly more predictive)
           tasteScore = genreScore * 0.6 + moodScore * 0.4;
@@ -372,11 +372,11 @@ export class DiscoveryAlgorithmService {
         const tempoMax = profile?.preferredTempoMax || 160;
         let tempoScore = 1.0;
         if (tempo < tempoMin || tempo > tempoMax) {
-          const distance = Math?.min(
-            Math?.abs(tempo - tempoMin),
-            Math?.abs(tempo - tempoMax),
+          const distance = Math.min(
+            Math.abs(tempo - tempoMin),
+            Math.abs(tempo - tempoMax),
           );
-          tempoScore = Math?.max(0.1, 1.0 - distance / 60); // Softer penalty curve
+          tempoScore = Math.max(0.1, 1.0 - distance / 60); // Softer penalty curve
         }
 
         // ── Freshness score (time decay) ───────────────────────────────────────
@@ -392,9 +392,9 @@ export class DiscoveryAlgorithmService {
           const daysSince =
             (now?.getTime() - createdAt?.getTime()) / (24 * 60 * 60 * 1000);
           // Exponential decay with slower curve (τ = 45 days vs original 30)
-          freshnessScore = Math?.max(
+          freshnessScore = Math.max(
             0.15,
-            0.7 * Math?.exp(-(daysSince - 7) / 45),
+            0.7 * Math.exp(-(daysSince - 7) / 45),
           );
         } else {
           freshnessScore = 0.15; // Floor for older content — don't completely bury it
@@ -407,9 +407,9 @@ export class DiscoveryAlgorithmService {
 
         // ── Social proof (popularity signals) ─────────────────────────────────
         // Soft popularity signal — prevents completely unproven content from topping feed
-        const popularityScore = Math?.min(
+        const popularityScore = Math.min(
           1.0,
-          Math?.log1p(plays) / 12 + Math?.log1p(likes) / 8,
+          Math.log1p(plays) / 12 + Math.log1p(likes) / 8,
         );
 
         // ── Final discovery score (weighted blend) ─────────────────────────────
@@ -466,7 +466,7 @@ export class DiscoveryAlgorithmService {
             return { beat, discoveryScore: 0 };
           }
           // Search matches get a boost to surface them higher
-          discoveryScore = Math?.min(1.0, discoveryScore * 1.3);
+          discoveryScore = Math.min(1.0, discoveryScore * 1.3);
         }
 
         return { beat, discoveryScore };
@@ -479,7 +479,7 @@ export class DiscoveryAlgorithmService {
       filteredBeats?.sort((a, b) => b?.discoveryScore - a?.discoveryScore);
 
       // Inject diversity: avoid top-5 all being same genre
-      const diversifiedBeats = this?.diversifyResults(filteredBeats);
+      const diversifiedBeats = this.diversifyResults(filteredBeats);
       const paginatedResults = diversifiedBeats?.slice(offset, offset + limit);
 
       return paginatedResults?.map(({ beat, discoveryScore }) => {
@@ -528,7 +528,7 @@ export class DiscoveryAlgorithmService {
         };
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting personalized feed:");
+      logger.warn({ err: error }, "Error getting personalized feed:");
       throw error;
     }
   }
@@ -568,7 +568,7 @@ export class DiscoveryAlgorithmService {
 
   async followProducer(userId: string, producerId: string) {
     try {
-      const profile = await this?.getOrCreateTasteProfile(userId);
+      const profile = await this.getOrCreateTasteProfile(userId);
       const followedProducers = [
         ...((profile?.followedProducers as string[]) || []),
       ];
@@ -581,17 +581,17 @@ export class DiscoveryAlgorithmService {
           .where(eq(userTasteProfiles?.userId, userId));
       }
 
-      await this?.syncStorefrontFollow(userId, producerId, true);
+      await this.syncStorefrontFollow(userId, producerId, true);
       return { success: true, following: true };
     } catch (error) {
-      logger?.warn({ err: error }, "Error following producer:");
+      logger.warn({ err: error }, "Error following producer:");
       throw error;
     }
   }
 
   async unfollowProducer(userId: string, producerId: string) {
     try {
-      const profile = await this?.getOrCreateTasteProfile(userId);
+      const profile = await this.getOrCreateTasteProfile(userId);
       const followedProducers = (
         (profile?.followedProducers as string[]) || []
       ).filter((id) => id !== producerId);
@@ -601,10 +601,10 @@ export class DiscoveryAlgorithmService {
         .set({ followedProducers, lastUpdated: new Date() })
         .where(eq(userTasteProfiles?.userId, userId));
 
-      await this?.syncStorefrontFollow(userId, producerId, false);
+      await this.syncStorefrontFollow(userId, producerId, false);
       return { success: true, following: false };
     } catch (error) {
-      logger?.warn({ err: error }, "Error unfollowing producer:");
+      logger.warn({ err: error }, "Error unfollowing producer:");
       throw error;
     }
   }
@@ -650,7 +650,7 @@ export class DiscoveryAlgorithmService {
           );
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Error syncing storefront follow:");
+      logger.warn({ err: error }, "Error syncing storefront follow:");
     }
   }
 
@@ -664,18 +664,18 @@ export class DiscoveryAlgorithmService {
         (row: Record<string, unknown>) => row?.user_id as string,
       );
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting producer followers:");
+      logger.warn({ err: error }, "Error getting producer followers:");
       return [];
     }
   }
 
   async getTasteInsights(userId: string) {
     try {
-      const profile = await this?.getOrCreateTasteProfile(userId);
+      const profile = await this.getOrCreateTasteProfile(userId);
       const genreScores = (profile?.genreScores as Record<string, number>) || {};
       const moodScores = (profile?.moodScores as Record<string, number>) || {};
 
-      const topGenres = Object?.entries(genreScores)
+      const topGenres = Object.entries(genreScores)
         .filter(([, score]) => score > 0.5) // Only show genuine preferences
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5)
@@ -684,7 +684,7 @@ export class DiscoveryAlgorithmService {
           score: Math.round(score * 100) / 100,
         }));
 
-      const topMoods = Object?.entries(moodScores)
+      const topMoods = Object.entries(moodScores)
         .filter(([, score]) => score > 0.5)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 5)
@@ -714,11 +714,11 @@ export class DiscoveryAlgorithmService {
         recentActivityCount: recentInteractions.length,
         profileMaturity: Math.min(
           100,
-          Math?.round((profile?.totalInteractions || 0) / 0.5),
+          Math.round((profile?.totalInteractions || 0) / 0.5),
         ),
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting taste insights:");
+      logger.warn({ err: error }, "Error getting taste insights:");
       throw error;
     }
   }

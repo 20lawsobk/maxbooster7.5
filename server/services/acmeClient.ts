@@ -34,11 +34,11 @@ import { logger } from "../logger.js";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
-const ACME_ENABLED = process?.env.ACME_ENABLED === "true";
+const ACME_ENABLED = process.env.ACME_ENABLED === "true";
 const ACME_DIRECTORY_URL =
-  process?.env.ACME_DIRECTORY_URL || acme?.directory.letsencrypt?.staging;
+  process.env.ACME_DIRECTORY_URL || acme?.directory.letsencrypt?.staging;
 const ACME_CONTACT_EMAIL =
-  process?.env.ACME_CONTACT_EMAIL || "admin@max-booster.com";
+  process.env.ACME_CONTACT_EMAIL || "admin@max-booster.com";
 
 const RENEWAL_THRESHOLD_DAYS = 30; // Renew when < this many days remain
 const MAX_PROVISION_ATTEMPTS = 5;
@@ -66,7 +66,7 @@ async function getEncryptionKey(): Promise<Buffer> {
   if (_encryptionKey) return _encryptionKey;
 
   // 1. Env override (must be 64 hex chars / 32 bytes — fail loudly otherwise).
-  const env = process?.env.ACME_KEY_ENCRYPTION_KEY;
+  const env = process.env.ACME_KEY_ENCRYPTION_KEY;
   if (env) {
     const parsed = parseKeyHex(env);
     if (!parsed) {
@@ -725,7 +725,7 @@ export async function activateAcmePersistValidation(
       zoneInfo?.zoneId,
     ]);
     const status = (upd?.rowCount ?? 0) > 0 ? "written" : "unchanged";
-    logger?.info(
+    logger.info(
       { domain: rootDomain, status },
       "[acme/persist] _validation-persist TXT",
     );
@@ -735,7 +735,7 @@ export async function activateAcmePersistValidation(
   await pool.query(`UPDATE dns_zones SET updated_at = now() WHERE id = $1`, [
     zoneInfo?.zoneId,
   ]);
-  logger?.info(
+  logger.info(
     { domain: rootDomain, recordValue },
     "[acme/persist] _validation-persist TXT written",
   );

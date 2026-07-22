@@ -236,7 +236,7 @@ class ViralScoringService {
   async compareVariants(variants: ContentData[]): Promise<VariantComparison> {
     const scoredVariants = await Promise?.all(
       variants?.map(async (variant) => {
-        const score = await this?.scoreContent(variant);
+        const score = await this.scoreContent(variant);
         return {
           variant,
           score,
@@ -321,7 +321,7 @@ class ViralScoringService {
   private getRecommendedPlatform(
     platformScores: ViralScore["platformScores"],
   ): string {
-    return Object?.entries(platformScores).reduce(
+    return Object.entries(platformScores).reduce(
       (best, [platform, score]) =>
         score > (platformScores[best as keyof typeof platformScores] || 0)
           ? platform

@@ -9,7 +9,7 @@ function seededIndex(seed: string, length: number): number {
   let h = 2166136261;
   for (let i = 0; i < seed?.length; i++) {
     h ^= seed?.charCodeAt(i);
-    h = Math?.imul(h, 16777619);
+    h = Math.imul(h, 16777619);
     h >>>= 0;
   }
   return h % length;
@@ -339,8 +339,8 @@ class DynamicTrendsService {
   }
 
   private isCacheValid(): boolean {
-    if (!this?.trendCache) return false;
-    return this?.trendCache.expiresAt > new Date();
+    if (!this.trendCache) return false;
+    return this.trendCache.expiresAt > new Date();
   }
 
   async getTrendingTopics(
@@ -348,16 +348,16 @@ class DynamicTrendsService {
     genre?: string,
     region?: string,
   ): Promise<TrendingTopic[]> {
-    const cacheKey = this?.getCacheKey(platform, genre, region);
+    const cacheKey = this.getCacheKey(platform, genre, region);
 
-    if (this?.isCacheValid() && this?.trendCache) {
-      const cached = this?.trendCache.data?.filter(
+    if (this.isCacheValid() && this.trendCache) {
+      const cached = this.trendCache.data?.filter(
         (t) =>
           (!t?.platform || t?.platform === platform) &&
           (!t?.region || t?.region === region),
       );
       if (cached?.length > 0) {
-        logger?.debug(
+        logger.debug(
           `Returning ${cached?.length} cached trends for ${cacheKey}`,
         );
         return cached?.slice(0, 10);
@@ -425,7 +425,7 @@ class DynamicTrendsService {
     this.trendCache = {
       data: sortedTrends,
       fetchedAt: new Date(),
-      expiresAt: new Date(Date?.now() + this?.CACHE_DURATION_MS),
+      expiresAt: new Date(Date?.now() + this.CACHE_DURATION_MS),
     };
 
     return sortedTrends;
@@ -687,7 +687,7 @@ class DynamicTrendsService {
       return acc;
     }, [] as HashtagData[]);
 
-    const balanced = this?.balanceHashtagMix(uniqueHashtags, count);
+    const balanced = this.balanceHashtagMix(uniqueHashtags, count);
 
     return balanced;
   }
@@ -702,8 +702,8 @@ class DynamicTrendsService {
 
     const result: HashtagData[] = [];
 
-    const highCount = Math?.ceil(count * 0.3);
-    const mediumCount = Math?.ceil(count * 0.4);
+    const highCount = Math.ceil(count * 0.3);
+    const mediumCount = Math.ceil(count * 0.4);
     const nicheCount = count - highCount - mediumCount;
 
     result?.push(
@@ -875,7 +875,7 @@ class DynamicTrendsService {
       }
     }
 
-    const baseHashtags = await this?.getOptimizedHashtags(
+    const baseHashtags = await this.getOptimizedHashtags(
       platform,
       genre,
       undefined,
@@ -939,7 +939,7 @@ class DynamicTrendsService {
         }
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Error saving hashtag research:");
+      logger.warn({ err: error }, "Error saving hashtag research:");
     }
   }
 }

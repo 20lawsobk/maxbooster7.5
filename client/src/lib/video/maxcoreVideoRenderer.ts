@@ -1321,10 +1321,10 @@ function sceneAlpha(scene: Scene, t: number): number {
   const w = end - start;
   if (t < start || t > end) return 0;
   const lt = (t - start) / w;
-  const fadeW = Math?.min(0.15, w * 0.3);
+  const fadeW = Math.min(0.15, w * 0.3);
   const inA = lt < fadeW / w ? lt / (fadeW / w) : 1;
   const outA = lt > 1 - fadeW / w ? (1 - lt) / (fadeW / w) : 1;
-  return Math?.min(inA, outA);
+  return Math.min(inA, outA);
 }
 
 function drawFrame(
@@ -1389,7 +1389,7 @@ function drawFrame(
 
   // 3. Photorealistic film grain (pre-baked Gaussian, soft-light blend)
   if (grainFrames) {
-    compositeGrain(ctx, w, h, grainFrames, Math?.floor(time * fps), p);
+    compositeGrain(ctx, w, h, grainFrames, Math.floor(time * fps), p);
   }
 
   // Global fade in / out
@@ -1419,19 +1419,19 @@ export async function renderMaxcoreVideo(
 ): Promise<RenderResult> {
   const { fps = 30, onProgress, signal } = opts;
 
-  const duration = Math?.max(3, Math?.min(60, meta?.duration || 10));
+  const duration = Math.max(3, Math.min(60, meta?.duration || 10));
 
   // Cap canvas resolution for browser performance
   const rawW = meta?.width || (meta?.aspect_ratio === "16:9" ? 1920 : 1080);
   const rawH = meta?.height || (meta?.aspect_ratio === "16:9" ? 1080 : 1920);
-  const scale = Math?.min(1, 1280 / Math?.max(rawW, rawH));
-  const W = Math?.round(rawW * scale);
-  const H = Math?.round(rawH * scale);
+  const scale = Math.min(1, 1280 / Math.max(rawW, rawH));
+  const W = Math.round(rawW * scale);
+  const H = Math.round(rawH * scale);
 
   const p = getPalette(meta);
-  const base = Math?.max(14, Math?.round(W * 0.045));
+  const base = Math.max(14, Math.round(W * 0.045));
   const template = meta?.template || meta?.template_name || "default";
-  const totalFrames = Math?.ceil(duration * fps);
+  const totalFrames = Math.ceil(duration * fps);
 
   const scenes = buildScenes(W, H, meta, p, base, template);
 
@@ -1457,7 +1457,7 @@ export async function renderMaxcoreVideo(
 
   // Bitrate: photorealistic quality requires higher data budget
   // Target ~0.14 bits per pixel per frame — matches broadcast quality
-  const targetBps = Math?.min(20_000_000, W * H * fps * 0.14);
+  const targetBps = Math.min(20_000_000, W * H * fps * 0.14);
   const recorder = new MediaRecorder(stream, {
     mimeType,
     videoBitsPerSecond: targetBps,
@@ -1492,10 +1492,10 @@ export async function renderMaxcoreVideo(
     const time = frame / fps;
 
     drawFrame(ctx, W, H, meta, p, scenes, t, time, fps, grainFrames);
-    onProgress?.(Math?.round(t * 95));
+    onProgress?.(Math.round(t * 95));
 
     const elapsed = performance?.now() - frameStart;
-    const wait = Math?.max(0, frameDurationMs - elapsed);
+    const wait = Math.max(0, frameDurationMs - elapsed);
     await new Promise<void>((r) => setTimeout(r, wait));
   }
 

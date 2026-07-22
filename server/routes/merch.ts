@@ -62,22 +62,22 @@ router?.get("/", requireAuth, async (req: Request, res: Response) => {
     const items = await db
       .select()
       .from(merchItems)
-      .where(eq(merchItems?.userId, req?.user!.id))
+      .where(eq(merchItems?.userId, req.user!.id))
       .orderBy(desc(merchItems?.createdAt))
       .limit(limit)
       .offset(offset);
 
-    res?.json(items);
+    res.json(items);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching merch items:");
-    res?.status(500).json({ error: "Failed to fetch merch items" });
+    logger.warn({ err: error }, "Error fetching merch items:");
+    res.status(500).json({ error: "Failed to fetch merch items" });
   }
 });
 
 // POST /api/merch - create merch item
 router?.post("/", requireAuth, async (req: Request, res: Response) => {
   try {
-    const parsed = createMerchSchema?.safeParse(req?.body);
+    const parsed = createMerchSchema?.safeParse(req.body);
     if (!parsed?.success) {
       return res
         .status(400)
@@ -105,10 +105,10 @@ router?.post("/", requireAuth, async (req: Request, res: Response) => {
       })
       .returning();
 
-    res?.status(201).json(item);
+    res.status(201).json(item);
   } catch (error) {
-    logger?.warn({ err: error }, "Error creating merch item:");
-    res?.status(500).json({ error: "Failed to create merch item" });
+    logger.warn({ err: error }, "Error creating merch item:");
+    res.status(500).json({ error: "Failed to create merch item" });
   }
 });
 
@@ -119,9 +119,9 @@ router?.put(
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
-      const { id } = req?.params;
+      const { id } = req.params;
 
-      const parsed = updateMerchSchema?.safeParse(req?.body);
+      const parsed = updateMerchSchema?.safeParse(req.body);
       if (!parsed?.success) {
         return res
           .status(400)
@@ -131,11 +131,11 @@ router?.put(
       const existing = await db
         .select()
         .from(merchItems)
-        .where(and(eq(merchItems?.id, id), eq(merchItems?.userId, req?.user!.id)))
+        .where(and(eq(merchItems?.id, id), eq(merchItems?.userId, req.user!.id)))
         .limit(1);
 
       if (existing?.length === 0) {
-        return res?.status(404).json({ error: "Merch item not found" });
+        return res.status(404).json({ error: "Merch item not found" });
       }
 
       const data = parsed?.data;
@@ -160,20 +160,20 @@ router?.put(
       if (data?.downloadUrl !== undefined)
         allowedUpdates.downloadUrl = data?.downloadUrl || null;
 
-      if (Object?.keys(allowedUpdates).length === 0) {
-        return res?.status(400).json({ error: "No valid fields to update" });
+      if (Object.keys(allowedUpdates).length === 0) {
+        return res.status(400).json({ error: "No valid fields to update" });
       }
 
       const [updated] = await db
         .update(merchItems)
         .set(allowedUpdates)
-        .where(and(eq(merchItems?.id, id), eq(merchItems?.userId, req?.user!.id)))
+        .where(and(eq(merchItems?.id, id), eq(merchItems?.userId, req.user!.id)))
         .returning();
 
-      res?.json(updated);
+      res.json(updated);
     } catch (error) {
-      logger?.warn({ err: error }, "Error updating merch item:");
-      res?.status(500).json({ error: "Failed to update merch item" });
+      logger.warn({ err: error }, "Error updating merch item:");
+      res.status(500).json({ error: "Failed to update merch item" });
     }
   },
 );
@@ -185,25 +185,25 @@ router?.delete(
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
-      const { id } = req?.params;
+      const { id } = req.params;
       const existing = await db
         .select()
         .from(merchItems)
-        .where(and(eq(merchItems?.id, id), eq(merchItems?.userId, req?.user!.id)))
+        .where(and(eq(merchItems?.id, id), eq(merchItems?.userId, req.user!.id)))
         .limit(1);
 
       if (existing?.length === 0) {
-        return res?.status(404).json({ error: "Merch item not found" });
+        return res.status(404).json({ error: "Merch item not found" });
       }
 
       await db
         .delete(merchItems)
-        .where(and(eq(merchItems?.id, id), eq(merchItems?.userId, req?.user!.id)));
+        .where(and(eq(merchItems?.id, id), eq(merchItems?.userId, req.user!.id)));
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Error deleting merch item:");
-      res?.status(500).json({ error: "Failed to delete merch item" });
+      logger.warn({ err: error }, "Error deleting merch item:");
+      res.status(500).json({ error: "Failed to delete merch item" });
     }
   },
 );
@@ -215,24 +215,24 @@ router?.get("/orders", requireAuth, async (req: Request, res: Response) => {
     const orders = await db
       .select()
       .from(merchOrders)
-      .where(eq(merchOrders?.userId, req?.user!.id))
+      .where(eq(merchOrders?.userId, req.user!.id))
       .orderBy(desc(merchOrders?.createdAt))
       .limit(limit)
       .offset(offset);
 
-    res?.json(orders);
+    res.json(orders);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching merch orders:");
-    res?.status(500).json({ error: "Failed to fetch merch orders" });
+    logger.warn({ err: error }, "Error fetching merch orders:");
+    res.status(500).json({ error: "Failed to fetch merch orders" });
   }
 });
 
 // PUT /api/merch/orders/:id - update order status
 router?.put("/orders/:id", requireAuth, async (req: Request, res: Response) => {
   try {
-    const { id } = req?.params;
+    const { id } = req.params;
 
-    const parsed = updateOrderSchema?.safeParse(req?.body);
+    const parsed = updateOrderSchema?.safeParse(req.body);
     if (!parsed?.success) {
       return res
         .status(400)
@@ -242,11 +242,11 @@ router?.put("/orders/:id", requireAuth, async (req: Request, res: Response) => {
     const existing = await db
       .select()
       .from(merchOrders)
-      .where(and(eq(merchOrders?.id, id), eq(merchOrders?.userId, req?.user!.id)))
+      .where(and(eq(merchOrders?.id, id), eq(merchOrders?.userId, req.user!.id)))
       .limit(1);
 
     if (existing?.length === 0) {
-      return res?.status(404).json({ error: "Order not found" });
+      return res.status(404).json({ error: "Order not found" });
     }
 
     const { status, trackingNumber } = parsed?.data;
@@ -259,20 +259,20 @@ router?.put("/orders/:id", requireAuth, async (req: Request, res: Response) => {
             ? trackingNumber
             : existing[0].trackingNumber,
       })
-      .where(and(eq(merchOrders?.id, id), eq(merchOrders?.userId, req?.user!.id)))
+      .where(and(eq(merchOrders?.id, id), eq(merchOrders?.userId, req.user!.id)))
       .returning();
 
-    res?.json(updated);
+    res.json(updated);
   } catch (error) {
-    logger?.warn({ err: error }, "Error updating merch order:");
-    res?.status(500).json({ error: "Failed to update merch order" });
+    logger.warn({ err: error }, "Error updating merch order:");
+    res.status(500).json({ error: "Failed to update merch order" });
   }
 });
 
 // GET /api/merch/stats - revenue, orders, bestsellers, inventory alerts
 router?.get("/stats", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
     const [orderStats] = await db
       .select({
@@ -317,7 +317,7 @@ router?.get("/stats", requireAuth, async (req: Request, res: Response) => {
       )
       .limit(50);
 
-    res?.json({
+    res.json({
       totalRevenue: Number(orderStats?.totalRevenue || 0),
       totalOrders: Number(orderStats?.totalOrders || 0),
       ordersThisMonth: Number(monthlyOrders?.count || 0),
@@ -326,8 +326,8 @@ router?.get("/stats", requireAuth, async (req: Request, res: Response) => {
       lowInventoryItems,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching merch stats:");
-    res?.status(500).json({ error: "Failed to fetch merch stats" });
+    logger.warn({ err: error }, "Error fetching merch stats:");
+    res.status(500).json({ error: "Failed to fetch merch stats" });
   }
 });
 
@@ -343,16 +343,16 @@ router?.get(
         .from(merchItems)
         .where(
           and(
-            eq(merchItems?.id, req?.params.id),
-            eq(merchItems?.userId, req?.user!.id),
+            eq(merchItems?.id, req.params.id),
+            eq(merchItems?.userId, req.user!.id),
           ),
         )
         .limit(1);
-      if (!item) return res?.status(404).json({ error: "Merch item not found" });
-      res?.json(item);
+      if (!item) return res.status(404).json({ error: "Merch item not found" });
+      res.json(item);
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching merch item:");
-      res?.status(500).json({ error: "Failed to fetch merch item" });
+      logger.warn({ err: error }, "Error fetching merch item:");
+      res.status(500).json({ error: "Failed to fetch merch item" });
     }
   },
 );

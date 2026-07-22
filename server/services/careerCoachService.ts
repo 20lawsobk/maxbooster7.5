@@ -552,7 +552,7 @@ const CAREER_COACH_PATTERNS: CoachPattern[] = [
     trigger: (s) => s?.totalStreams < 10000 && s?.totalStreams > 500,
     severity: () => "high",
     title: (s) =>
-      `${Math?.round(10000 - s?.totalStreams).toLocaleString()} streams to your first major milestone — accelerate now`,
+      `${Math.round(10000 - s?.totalStreams).toLocaleString()} streams to your first major milestone — accelerate now`,
     description: () =>
       "10,000 streams is the threshold where Spotify's algorithm begins to take an artist seriously for Discover Weekly and Release Radar placements. It's also the point where you start earning meaningful royalties and attracting curator attention.",
     actionUrl: "/distribution",
@@ -630,7 +630,7 @@ class CareerCoachService {
     userId: string,
   ): Promise<CareerCoachRecommendation[]> {
     try {
-      logger?.info(`Generating daily recommendations for user ${userId}`);
+      logger.info(`Generating daily recommendations for user ${userId}`);
 
       const today = new Date();
       today?.setHours(0, 0, 0, 0);
@@ -647,13 +647,13 @@ class CareerCoachService {
         );
 
       if (existingToday?.length > 0) {
-        logger?.info(
+        logger.info(
           `Found ${existingToday?.length} existing recommendations for today`,
         );
         return existingToday;
       }
 
-      const snapshot = await this?.getUserAnalyticsSnapshot(userId);
+      const snapshot = await this.getUserAnalyticsSnapshot(userId);
       const recommendations: InsertCareerCoachRecommendation[] = [];
 
       // Route through MaxCore — it is the sole AI source for career coaching.
@@ -740,12 +740,12 @@ class CareerCoachService {
         inserted?.push(result);
       }
 
-      logger?.info(
+      logger.info(
         `Generated ${inserted?.length} recommendations for user ${userId}`,
       );
       return inserted;
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `Error generating recommendations for user ${userId}:`,
       );
@@ -754,7 +754,7 @@ class CareerCoachService {
   }
 
   async analyzeCareerGaps(userId: string): Promise<CareerGap[]> {
-    const snapshot = await this?.getUserAnalyticsSnapshot(userId);
+    const snapshot = await this.getUserAnalyticsSnapshot(userId);
 
     // Route through MaxCore — sole AI source for career gap analysis.
     const mcResult = requireMaxCore(
@@ -804,7 +804,7 @@ class CareerCoachService {
     goalType: string,
   ): Promise<CareerGoal | null> {
     try {
-      const suggestion = await this?.suggestSmartGoal(userId, goalType);
+      const suggestion = await this.suggestSmartGoal(userId, goalType);
       if (!suggestion) return null;
 
       const deadline = new Date();
@@ -826,10 +826,10 @@ class CareerCoachService {
         })
         .returning();
 
-      logger?.info(`Created SMART goal for user ${userId}: ${goal?.title}`);
+      logger.info(`Created SMART goal for user ${userId}: ${goal?.title}`);
       return goal;
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `Error creating SMART goal for user ${userId}:`,
       );
@@ -855,7 +855,7 @@ class CareerCoachService {
 
       return !!updated;
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `Error dismissing recommendation ${recommendationId}:`,
       );
@@ -881,7 +881,7 @@ class CareerCoachService {
 
       return !!updated;
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `Error completing recommendation ${recommendationId}:`,
       );
@@ -963,7 +963,7 @@ class CareerCoachService {
         currentValue,
         updatedAt: new Date(),
         status:
-          currentValue >= (await this?.getGoalTarget(goalId))
+          currentValue >= (await this.getGoalTarget(goalId))
             ? "completed"
             : "active",
       })
@@ -1052,7 +1052,7 @@ class CareerCoachService {
       }
 
       topPlatform =
-        Object?.entries(platformStreams).sort((a, b) => b[1] - a[1])[0]?.[0] ||
+        Object.entries(platformStreams).sort((a, b) => b[1] - a[1])[0]?.[0] ||
         null;
 
       avgEngagementRate = totalStreams > 0 ? totalEngagement / totalStreams : 0;
@@ -1060,7 +1060,7 @@ class CareerCoachService {
 
     const lastReleaseDate = releasesData[0]?.createdAt || null;
     const daysSinceRelease = lastReleaseDate
-      ? Math?.floor(
+      ? Math.floor(
           (Date?.now() - new Date(lastReleaseDate).getTime()) /
             (1000 * 60 * 60 * 24),
         )
@@ -1086,7 +1086,7 @@ class CareerCoachService {
     userId: string,
     goalType: string,
   ): Promise<SmartGoalSuggestion | null> {
-    const snapshot = await this?.getUserAnalyticsSnapshot(userId);
+    const snapshot = await this.getUserAnalyticsSnapshot(userId);
 
     const suggestions: Record<string, SmartGoalSuggestion> = {
       streams: {
@@ -1094,7 +1094,7 @@ class CareerCoachService {
         title: "Increase Monthly Streams",
         description:
           "Grow your monthly streaming numbers through consistent releases and promotion",
-        targetValue: Math.max(Math?.round(snapshot?.totalStreams * 1.5), 10000),
+        targetValue: Math.max(Math.round(snapshot?.totalStreams * 1.5), 10000),
         unit: "streams",
         deadlineDays: 30,
         reasoning: `Based on your current ${snapshot?.totalStreams.toLocaleString()} streams, a 50% growth target is ambitious but achievable with focused playlist pitching and a new release.`,
@@ -1103,7 +1103,7 @@ class CareerCoachService {
         goalType: "followers",
         title: "Grow Your Fanbase",
         description: "Build your follower count across all connected platforms",
-        targetValue: Math.max(Math?.round(snapshot?.totalFollowers * 1.25), 1000),
+        targetValue: Math.max(Math.round(snapshot?.totalFollowers * 1.25), 1000),
         unit: "followers",
         deadlineDays: 60,
         reasoning: `Growing your fanbase by 25% from ${snapshot?.totalFollowers.toLocaleString()} over 2 months aligns with industry growth rates. Focus on collaborations and consistent posting.`,

@@ -83,7 +83,7 @@ class ArtistProgressService {
         .limit(1);
 
       if (existingSnapshot?.length > 0) {
-        logger?.info(`Snapshot already exists for user ${userId} on ${today}`);
+        logger.info(`Snapshot already exists for user ${userId} on ${today}`);
         return;
       }
 
@@ -114,13 +114,13 @@ class ArtistProgressService {
       const releaseCount = releasesCount[0]?.count || 0;
       const projectCount = projectsCount[0]?.count || 0;
 
-      const engagementScore = this?.calculateEngagementScore(
+      const engagementScore = this.calculateEngagementScore(
         Number(stats?.totalStreams),
         Number(stats?.totalFollowers),
         releaseCount,
       );
 
-      const growthRate = await this?.calculateCurrentGrowthRate(userId);
+      const growthRate = await this.calculateCurrentGrowthRate(userId);
 
       await db?.insert(artistProgressSnapshots).values({
         userId,
@@ -133,11 +133,11 @@ class ArtistProgressService {
         growthRate,
       });
 
-      logger?.info(
+      logger.info(
         `Captured snapshot for user ${userId}: streams=${stats.totalStreams}, followers=${stats?.totalFollowers}`,
       );
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `Error capturing snapshot for user ${userId}:`,
       );
@@ -178,7 +178,7 @@ class ArtistProgressService {
         growthRate: snapshot.growthRate,
       }));
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `Error getting progress history for user ${userId}:`,
       );
@@ -196,22 +196,22 @@ class ArtistProgressService {
 
       const [currentWeek, previousWeek, currentMonth, previousMonth] =
         await Promise?.all([
-          this?.getAverageMetrics(
+          this.getAverageMetrics(
             userId,
             oneWeekAgo?.toISOString().split("T")[0],
             now?.toISOString().split("T")[0],
           ),
-          this?.getAverageMetrics(
+          this.getAverageMetrics(
             userId,
             twoWeeksAgo?.toISOString().split("T")[0],
             oneWeekAgo?.toISOString().split("T")[0],
           ),
-          this?.getAverageMetrics(
+          this.getAverageMetrics(
             userId,
             oneMonthAgo?.toISOString().split("T")[0],
             now?.toISOString().split("T")[0],
           ),
-          this?.getAverageMetrics(
+          this.getAverageMetrics(
             userId,
             twoMonthsAgo?.toISOString().split("T")[0],
             oneMonthAgo?.toISOString().split("T")[0],
@@ -261,15 +261,15 @@ class ArtistProgressService {
         3;
       const trend =
         avgGrowth > 5 ? "rising" : avgGrowth < -5 ? "declining" : "stable";
-      const velocity = Math?.abs(avgGrowth);
+      const velocity = Math.abs(avgGrowth);
 
       return { weekOverWeek, monthOverMonth, trend, velocity };
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `Error calculating growth metrics for user ${userId}:`,
       );
-      return this?.getDefaultGrowthMetrics();
+      return this.getDefaultGrowthMetrics();
     }
   }
 
@@ -292,35 +292,35 @@ class ArtistProgressService {
 
       const milestones: CareerMilestone[] = [];
 
-      this?.addMilestones(
+      this.addMilestones(
         milestones,
         "streams",
         Number(snapshot?.totalStreams),
         "Streams",
         "🎵",
       );
-      this?.addMilestones(
+      this.addMilestones(
         milestones,
         "followers",
         Number(snapshot?.totalFollowers),
         "Followers",
         "👥",
       );
-      this?.addMilestones(
+      this.addMilestones(
         milestones,
         "revenue",
         Number(snapshot?.totalRevenue),
         "Revenue",
         "💰",
       );
-      this?.addMilestones(
+      this.addMilestones(
         milestones,
         "releases",
         Number(snapshot?.totalReleases),
         "Releases",
         "💿",
       );
-      this?.addMilestones(
+      this.addMilestones(
         milestones,
         "engagement",
         Number(snapshot?.engagementScore),
@@ -329,27 +329,27 @@ class ArtistProgressService {
       );
 
       if (milestones?.length === 0) {
-        return this?.getDefaultMilestones();
+        return this.getDefaultMilestones();
       }
 
       return milestones
         .sort((a, b) => b?.achievedAt.getTime() - a?.achievedAt.getTime())
         .slice(0, 10);
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `Error getting career milestones for user ${userId}:`,
       );
-      return this?.getDefaultMilestones();
+      return this.getDefaultMilestones();
     }
   }
 
   async getDashboardData(userId: string): Promise<DashboardData> {
     try {
-      await this?.captureSnapshot(userId);
+      await this.captureSnapshot(userId);
 
-      const history = await this?.getProgressHistory(userId, 60);
-      const growthMetrics = await this?.calculateGrowthMetrics(userId);
+      const history = await this.getProgressHistory(userId, 60);
+      const growthMetrics = await this.calculateGrowthMetrics(userId);
 
       const current = history[history?.length - 1] || {
         streams: 0,
@@ -361,9 +361,9 @@ class ArtistProgressService {
       };
 
       const thirtyDaysAgo =
-        history[Math?.max(0, history?.length - 31)] || current;
+        history[Math.max(0, history?.length - 31)] || current;
 
-      const careerScore = this?.calculateCareerScore(
+      const careerScore = this.calculateCareerScore(
         Number(current?.streams),
         Number(current?.followers),
         Number(current?.revenue),
@@ -371,7 +371,7 @@ class ArtistProgressService {
         growthMetrics?.velocity,
       );
 
-      const percentileRank = this?.calculatePercentileRank(careerScore);
+      const percentileRank = this.calculatePercentileRank(careerScore);
 
       return {
         careerScore,
@@ -393,11 +393,11 @@ class ArtistProgressService {
         growthMetrics,
       };
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `Error getting dashboard data for user ${userId}:`,
       );
-      return this?.getDefaultDashboardData();
+      return this.getDefaultDashboardData();
     }
   }
 
@@ -408,10 +408,10 @@ class ArtistProgressService {
   ): number {
     if (followers === 0) return 0;
     const streamsPerFollower = streams / followers;
-    const releasesBonus = Math?.min(releases * 2, 20);
-    return Math?.min(
+    const releasesBonus = Math.min(releases * 2, 20);
+    return Math.min(
       100,
-      Math?.round(Math?.log10(streamsPerFollower + 1) * 20 + releasesBonus),
+      Math.round(Math.log10(streamsPerFollower + 1) * 20 + releasesBonus),
     );
   }
 
@@ -444,7 +444,7 @@ class ArtistProgressService {
       const newTotal =
         Number(newest?.totalStreams) + Number(newest?.totalFollowers);
 
-      return this?.calculatePercentChange(oldTotal, newTotal);
+      return this.calculatePercentChange(oldTotal, newTotal);
     } catch {
       return 0;
     }
@@ -482,7 +482,7 @@ class ArtistProgressService {
 
   private calculatePercentChange(oldValue: number, newValue: number): number {
     if (oldValue === 0) return newValue > 0 ? 100 : 0;
-    return Math?.round(((newValue - oldValue) / oldValue) * 100 * 10) / 10;
+    return Math.round(((newValue - oldValue) / oldValue) * 100 * 10) / 10;
   }
 
   private calculateCareerScore(
@@ -492,13 +492,13 @@ class ArtistProgressService {
     engagement: number,
     velocity: number,
   ): number {
-    const streamScore = Math?.min(30, Math?.log10(streams + 1) * 5);
-    const followerScore = Math?.min(25, Math?.log10(followers + 1) * 4);
-    const revenueScore = Math?.min(20, Math?.log10(revenue + 1) * 4);
-    const engagementScore = Math?.min(15, engagement * 0.15);
-    const velocityScore = Math?.min(10, velocity * 0.5);
+    const streamScore = Math.min(30, Math.log10(streams + 1) * 5);
+    const followerScore = Math.min(25, Math.log10(followers + 1) * 4);
+    const revenueScore = Math.min(20, Math.log10(revenue + 1) * 4);
+    const engagementScore = Math.min(15, engagement * 0.15);
+    const velocityScore = Math.min(10, velocity * 0.5);
 
-    return Math?.round(
+    return Math.round(
       streamScore +
         followerScore +
         revenueScore +
@@ -522,14 +522,14 @@ class ArtistProgressService {
     label: string,
     icon: string,
   ): void {
-    const thresholds = this?.milestoneThresholds[type];
+    const thresholds = this.milestoneThresholds[type];
     for (const threshold of thresholds) {
       if (currentValue >= threshold) {
         milestones?.push({
           id: `${type}-${threshold}`,
           type,
-          title: `${this?.formatNumber(threshold)} ${label}`,
-          description: `Reached ${this?.formatNumber(threshold)} ${label?.toLowerCase()}!`,
+          title: `${this.formatNumber(threshold)} ${label}`,
+          description: `Reached ${this.formatNumber(threshold)} ${label?.toLowerCase()}!`,
           value: threshold,
           achievedAt: new Date(),
           icon,

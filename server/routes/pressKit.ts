@@ -26,19 +26,19 @@ router?.get("/", requireAuth, async (req, res) => {
     const [pressKit] = await db
       .select()
       .from(pressKits)
-      .where(eq(pressKits?.userId, req?.user!.id))
+      .where(eq(pressKits?.userId, req.user!.id))
       .limit(1);
-    res?.json(pressKit ?? null);
+    res.json(pressKit ?? null);
   } catch (error) {
-    logger?.warn({ err: error }, "[PressKit] Failed to fetch press kit:");
-    res?.status(500).json({ error: "Failed to fetch press kit" });
+    logger.warn({ err: error }, "[PressKit] Failed to fetch press kit:");
+    res.status(500).json({ error: "Failed to fetch press kit" });
   }
 });
 
 router?.put("/", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const validatedData = insertPressKitSchema?.parse({ ...req?.body, userId });
+    const userId = req.user!.id;
+    const validatedData = insertPressKitSchema?.parse({ ...req.body, userId });
 
     const [existing] = await db
       .select()
@@ -57,9 +57,9 @@ router?.put("/", requireAuth, async (req, res) => {
       [result] = await db?.insert(pressKits).values(validatedData).returning();
     }
 
-    res?.json(result);
+    res.json(result);
   } catch (error) {
-    logger?.warn({ err: error }, "[PressKit] Failed to update press kit:");
+    logger.warn({ err: error }, "[PressKit] Failed to update press kit:");
     if (error instanceof z.ZodError) {
       return res
         .status(400)
@@ -75,11 +75,11 @@ router?.put("/", requireAuth, async (req, res) => {
 // Upload the file first via POST /api/storage/upload, then pass the returned URL here.
 router?.post("/photo", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { url, caption } = req?.body;
+    const userId = req.user!.id;
+    const { url, caption } = req.body;
 
     if (!url || typeof url !== "string") {
-      return res?.status(400).json({
+      return res.status(400).json({
         error:
           "url is required. Upload the file first via POST /api/storage/upload, then pass the returned URL.",
       });
@@ -89,7 +89,7 @@ router?.post("/photo", requireAuth, async (req, res) => {
     try {
       new URL(url);
     } catch {
-      return res?.status(400).json({ error: "url must be a valid URL" });
+      return res.status(400).json({ error: "url must be a valid URL" });
     }
 
     const [pressKit] = await db
@@ -118,20 +118,20 @@ router?.post("/photo", requireAuth, async (req, res) => {
         .returning();
     }
 
-    res?.json(updated);
+    res.json(updated);
   } catch (error) {
-    logger?.warn({ err: error }, "[PressKit] Failed to add photo:");
-    res?.status(500).json({ error: "Failed to add photo" });
+    logger.warn({ err: error }, "[PressKit] Failed to add photo:");
+    res.status(500).json({ error: "Failed to add photo" });
   }
 });
 
 router?.delete("/photo/:index", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const index = parseInt(req?.params.index);
+    const userId = req.user!.id;
+    const index = parseInt(req.params.index);
 
     if (isNaN(index) || index < 0) {
-      return res?.status(400).json({ error: "Invalid index" });
+      return res.status(400).json({ error: "Invalid index" });
     }
 
     const [pressKit] = await db
@@ -140,11 +140,11 @@ router?.delete("/photo/:index", requireAuth, async (req, res) => {
       .where(eq(pressKits?.userId, userId))
       .limit(1);
     if (!pressKit)
-      return res?.status(404).json({ error: "Press kit not found" });
+      return res.status(404).json({ error: "Press kit not found" });
 
     const photos = (pressKit?.photos as unknown[]) || [];
     if (index >= photos?.length)
-      return res?.status(400).json({ error: "Invalid photo index" });
+      return res.status(400).json({ error: "Invalid photo index" });
 
     const newPhotos = [...photos];
     newPhotos?.splice(index, 1);
@@ -155,10 +155,10 @@ router?.delete("/photo/:index", requireAuth, async (req, res) => {
       .where(eq(pressKits?.id, pressKit?.id))
       .returning();
 
-    res?.json(updated);
+    res.json(updated);
   } catch (error) {
-    logger?.warn({ err: error }, "[PressKit] Failed to delete photo:");
-    res?.status(500).json({ error: "Failed to delete photo" });
+    logger.warn({ err: error }, "[PressKit] Failed to delete photo:");
+    res.status(500).json({ error: "Failed to delete photo" });
   }
 });
 
@@ -167,25 +167,25 @@ router?.get("/public/:slug", async (req, res) => {
     const [pressKit] = await db
       .select()
       .from(pressKits)
-      .where(eq(pressKits?.slug, req?.params.slug))
+      .where(eq(pressKits?.slug, req.params.slug))
       .limit(1);
 
     if (!pressKit || !pressKit?.isPublic) {
-      return res?.status(404).json({ error: "Press kit not found or private" });
+      return res.status(404).json({ error: "Press kit not found or private" });
     }
 
-    res?.json(pressKit);
+    res.json(pressKit);
   } catch (error) {
-    logger?.warn({ err: error }, "[PressKit] Failed to fetch public press kit:");
-    res?.status(500).json({ error: "Failed to fetch public press kit" });
+    logger.warn({ err: error }, "[PressKit] Failed to fetch public press kit:");
+    res.status(500).json({ error: "Failed to fetch public press kit" });
   }
 });
 
 router?.post("/publish", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
-    const parsed = publishSchema?.safeParse(req?.body);
+    const parsed = publishSchema?.safeParse(req.body);
     if (!parsed?.success) {
       return res
         .status(400)
@@ -200,7 +200,7 @@ router?.post("/publish", requireAuth, async (req, res) => {
       .where(eq(pressKits?.userId, userId))
       .limit(1);
     if (!existing)
-      return res?.status(404).json({ error: "Press kit not found" });
+      return res.status(404).json({ error: "Press kit not found" });
 
     const [updated] = await db
       .update(pressKits)
@@ -208,10 +208,10 @@ router?.post("/publish", requireAuth, async (req, res) => {
       .where(eq(pressKits?.id, existing?.id))
       .returning();
 
-    res?.json(updated);
+    res.json(updated);
   } catch (error) {
-    logger?.warn({ err: error }, "[PressKit] Failed to publish press kit:");
-    res?.status(500).json({ error: "Failed to publish press kit" });
+    logger.warn({ err: error }, "[PressKit] Failed to publish press kit:");
+    res.status(500).json({ error: "Failed to publish press kit" });
   }
 });
 

@@ -16,8 +16,8 @@ export function useLocalStorage<T>(
   options: UseLocalStorageOptions<T> = {},
 ): [T, (value: SetValue<T>) => void, () => void] {
   const {
-    serializer = JSON?.stringify,
-    deserializer = JSON?.parse,
+    serializer = JSON.stringify,
+    deserializer = JSON.parse,
     syncTabs = true,
     onError,
   } = options;
@@ -27,7 +27,7 @@ export function useLocalStorage<T>(
       const item = window?.localStorage.getItem(key);
       return item ? deserializer(item) : initialValue;
     } catch (error) {
-      logger?.error(`[useLocalStorage] Error reading key "${key}":`, error);
+      logger.error(`[useLocalStorage] Error reading key "${key}":`, error);
       onError?.(error as Error);
       return initialValue;
     }
@@ -51,7 +51,7 @@ export function useLocalStorage<T>(
           }),
         );
       } catch (error) {
-        logger?.error(
+        logger.error(
           `[useLocalStorage] Error setting key "${keyRef.current}":`,
           error,
         );
@@ -66,7 +66,7 @@ export function useLocalStorage<T>(
       window?.localStorage.removeItem(keyRef?.current);
       setStoredValue(initialValue);
     } catch (error) {
-      logger?.error(
+      logger.error(
         `[useLocalStorage] Error removing key "${keyRef.current}":`,
         error,
       );
@@ -82,7 +82,7 @@ export function useLocalStorage<T>(
         try {
           setStoredValue(deserializer(event?.newValue));
         } catch (error) {
-          logger?.error(
+          logger.error(
             `[useLocalStorage] Error syncing key "${keyRef.current}":`,
             error,
           );
@@ -125,8 +125,8 @@ export function useSessionStorage<T>(
   options: Omit<UseLocalStorageOptions<T>, "syncTabs"> = {},
 ): [T, (value: SetValue<T>) => void, () => void] {
   const {
-    serializer = JSON?.stringify,
-    deserializer = JSON?.parse,
+    serializer = JSON.stringify,
+    deserializer = JSON.parse,
     onError,
   } = options;
 
@@ -135,7 +135,7 @@ export function useSessionStorage<T>(
       const item = window?.sessionStorage.getItem(key);
       return item ? deserializer(item) : initialValue;
     } catch (error) {
-      logger?.error(`[useSessionStorage] Error reading key "${key}":`, error);
+      logger.error(`[useSessionStorage] Error reading key "${key}":`, error);
       onError?.(error as Error);
       return initialValue;
     }
@@ -152,7 +152,7 @@ export function useSessionStorage<T>(
         setStoredValue(valueToStore);
         window?.sessionStorage.setItem(keyRef?.current, serializer(valueToStore));
       } catch (error) {
-        logger?.error(
+        logger.error(
           `[useSessionStorage] Error setting key "${keyRef.current}":`,
           error,
         );
@@ -167,7 +167,7 @@ export function useSessionStorage<T>(
       window?.sessionStorage.removeItem(keyRef?.current);
       setStoredValue(initialValue);
     } catch (error) {
-      logger?.error(
+      logger.error(
         `[useSessionStorage] Error removing key "${keyRef.current}":`,
         error,
       );

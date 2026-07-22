@@ -28,7 +28,7 @@ import { logger } from "../logger.js";
 const execFileAsync = promisify(execFile);
 
 function resolveFFmpegPath(): string {
-  if (process?.env.FFMPEG_PATH) return process?.env.FFMPEG_PATH;
+  if (process.env.FFMPEG_PATH) return process.env.FFMPEG_PATH;
   try {
     const p = execFileSync("/bin/sh", ["-c", "which ffmpeg"], { timeout: 3000 })
       .toString()
@@ -452,14 +452,14 @@ async function analyzeBeatLibrosa(
       }, 60_000);
     });
 
-    const data = JSON?.parse(raw);
+    const data = JSON.parse(raw);
     if (data?.error || data?.tier === "unavailable") {
-      logger?.debug("[BeatSync] librosa unavailable:", data?.error);
+      logger.debug("[BeatSync] librosa unavailable:", data?.error);
       return null;
     }
 
     const duration = data?.duration as number;
-    const bpm = Math?.max(60, Math?.min(220, data?.bpm as number));
+    const bpm = Math.max(60, Math.min(220, data?.bpm as number));
     const beats = (data?.beats as number[]).filter(
       (b) => b >= 0 && b <= duration,
     );
@@ -479,12 +479,12 @@ async function analyzeBeatLibrosa(
     const variance = ibiList?.length
       ? ibiList?.reduce((s, x) => s + (x - avgIbi) ** 2, 0) / ibiList?.length
       : 1;
-    const confidence = Math?.max(
+    const confidence = Math.max(
       0.6,
-      Math?.min(0.98, 1 - Math?.sqrt(variance) / avgIbi),
+      Math.min(0.98, 1 - Math.sqrt(variance) / avgIbi),
     );
 
-    logger?.info(
+    logger.info(
       `[BeatSync] librosa analysis — BPM=${bpm.toFixed(1)} beats=${beats.length} confidence=${(confidence * 100).toFixed(0)}%`,
     );
 
@@ -501,7 +501,7 @@ async function analyzeBeatLibrosa(
       tier: "librosa",
     };
   } catch (e) {
-    logger?.debug(
+    logger.debug(
       "[BeatSync] librosa analysis failed:",
       e?.message?.slice(0, 100),
     );
@@ -524,7 +524,7 @@ function findMajorPeaks(
   const peaks: number[] = [];
   let lastPeak = -999;
   for (let i = 5; i < envelope?.length - 5; i++) {
-    const localMax = Math?.max(...envelope?.slice(i - 5, i + 5));
+    const localMax = Math.max(...envelope?.slice(i - 5, i + 5));
     if (
       envelope[i] >= threshold &&
       envelope[i] === localMax &&
@@ -546,7 +546,7 @@ export async function analyzeAudio(audioPath: string): Promise<BeatAnalysis> {
   const librosaResult = await analyzeBeatLibrosa(audioPath);
   if (librosaResult) return librosaResult;
 
-  logger?.info(
+  logger.info(
     "[BeatSync] Using FFmpeg-based beat analysis (librosa unavailable)",
   );
   return analyzeBeatFFmpeg(audioPath);
@@ -581,7 +581,7 @@ export function getBeatAlignedCuts(
     let minDist = Infinity;
 
     for (const beat of candidates) {
-      const dist = Math?.abs(beat - idealTime);
+      const dist = Math.abs(beat - idealTime);
       if (dist < minDist && dist < idealSpacing * 0.45) {
         minDist = dist;
         closest = beat;

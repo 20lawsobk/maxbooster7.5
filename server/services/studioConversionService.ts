@@ -18,12 +18,12 @@ async function initializeFfmpeg() {
         ffmpeg?.setFfmpegPath(ffmpegStatic?.default);
       }
     } catch {
-      logger?.warn("ffmpeg-static not available, using system ffmpeg");
+      logger.warn("ffmpeg-static not available, using system ffmpeg");
     }
     ffmpegAvailable = true;
     return true;
   } catch (error) {
-    logger?.warn(
+    logger.warn(
       { err: error },
       "FFmpeg not available - audio conversion features will be limited:",
     );
@@ -134,7 +134,7 @@ export async function convertAudioFile(
   try {
     // Sanitize and validate source path
     const sanitizedSource = sanitizePath(sourcePath);
-    const fullSourcePath = path?.join(process?.cwd(), sanitizedSource);
+    const fullSourcePath = path?.join(process.cwd(), sanitizedSource);
 
     // Validate source file exists
     if (!existsSync(fullSourcePath)) {
@@ -149,7 +149,7 @@ export async function convertAudioFile(
 
     // Create output directory: uploads/conversions/<projectId>/
     const outputDir = path?.join(
-      process?.cwd(),
+      process.cwd(),
       "uploads",
       "conversions",
       projectId,
@@ -164,7 +164,7 @@ export async function convertAudioFile(
     const timestamp = Date?.now();
     const outputFilename = `${sourceBasename}_${timestamp}.${targetFormat?.toLowerCase()}`;
     const outputPath = path?.join(outputDir, outputFilename);
-    const relativeOutputPath = path?.relative(process?.cwd(), outputPath);
+    const relativeOutputPath = path?.relative(process.cwd(), outputPath);
 
     // Configure FFmpeg command
     const command = ffmpeg(fullSourcePath)
@@ -226,8 +226,8 @@ export async function convertAudioFile(
               parseInt(timeParts[0]) * 3600 +
               parseInt(timeParts[1]) * 60 +
               parseFloat(timeParts[2]);
-            const percentage = Math?.min(
-              Math?.round((currentTime / duration) * 100),
+            const percentage = Math.min(
+              Math.round((currentTime / duration) * 100),
               99,
             );
 
@@ -237,7 +237,7 @@ export async function convertAudioFile(
                 progress: percentage,
               });
             } catch (err: unknown) {
-              logger?.warn(
+              logger.warn(
                 { err: err },
                 "Failed to update conversion progress:",
               );
@@ -268,7 +268,7 @@ export async function convertAudioFile(
               completedAt: new Date(),
             });
           } catch (updateErr: unknown) {
-            logger?.warn("Failed to update conversion error:", updateErr);
+            logger.warn("Failed to update conversion error:", updateErr);
           }
           activeProcesses?.delete(conversionId);
           reject(err);
@@ -305,7 +305,7 @@ export async function processConversion(
 
     // Check if already processing or completed
     if (conversion?.status !== "pending") {
-      logger?.info(
+      logger.info(
         `Conversion ${conversionId} already ${conversion?.status}, skipping`,
       );
       return;
@@ -324,9 +324,9 @@ export async function processConversion(
       storage,
     );
 
-    logger?.info(`Conversion ${conversionId} completed successfully`);
+    logger.info(`Conversion ${conversionId} completed successfully`);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, `Conversion ${conversionId} failed:`);
+    logger.warn({ err: error }, `Conversion ${conversionId} failed:`);
     throw error;
   } finally {
     // Remove from queue
@@ -357,7 +357,7 @@ export async function enqueueConversion(
 
   // Don't await - let it process in background
   promise?.catch((err) => {
-    logger?.warn({ err: err }, `Background conversion ${conversionId} error:`);
+    logger.warn({ err: err }, `Background conversion ${conversionId} error:`);
   });
 }
 
@@ -372,10 +372,10 @@ export async function cancelConversion(
   const process = activeProcesses?.get(conversionId);
   if (process) {
     try {
-      process?.kill("SIGKILL");
+      process.kill("SIGKILL");
       activeProcesses?.delete(conversionId);
     } catch (err: unknown) {
-      logger?.warn(
+      logger.warn(
         { err: err },
         `Failed to kill conversion process ${conversionId}:`,
       );
@@ -395,12 +395,12 @@ export async function cancelConversion(
   const conversion = await storage?.getConversion(conversionId);
   if (conversion?.outputFilePath) {
     try {
-      const fullPath = path?.join(process?.cwd(), conversion?.outputFilePath);
+      const fullPath = path?.join(process.cwd(), conversion?.outputFilePath);
       if (existsSync(fullPath)) {
         await fs?.unlink(fullPath);
       }
     } catch (err: unknown) {
-      logger?.warn(
+      logger.warn(
         { err: err },
         `Failed to delete partial file for ${conversionId}:`,
       );

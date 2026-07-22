@@ -108,9 +108,9 @@ export async function initializeSafetySystems(): Promise<{
 }> {
   const errors: string[] = [];
 
-  logger?.info("════════════════════════════════════════════════════════");
-  logger?.info("🛡️ INITIALIZING PRODUCTION SAFETY SYSTEMS");
-  logger?.info("════════════════════════════════════════════════════════");
+  logger.info("════════════════════════════════════════════════════════");
+  logger.info("🛡️ INITIALIZING PRODUCTION SAFETY SYSTEMS");
+  logger.info("════════════════════════════════════════════════════════");
 
   // 1. Validate environment (non-strict mode - log but don't fail)
   try {
@@ -145,42 +145,42 @@ export async function initializeSafetySystems(): Promise<{
     }
   } catch (error) {
     // Non-critical - log but don't fail
-    logger?.warn("[Safety] Database index creation skipped:", error?.message);
+    logger.warn("[Safety] Database index creation skipped:", error?.message);
   }
 
   // 4. Register refund webhook handlers
   try {
     const { registerRefundWebhookHandlers } = await import("./refundHandler");
     registerRefundWebhookHandlers();
-    logger?.info("   ✓ Refund webhook handlers registered");
+    logger.info("   ✓ Refund webhook handlers registered");
   } catch (error) {
     errors?.push(`Refund handlers failed: ${error?.message}`);
-    logger?.warn({ err: error }, "[Safety] Refund handler error:");
+    logger.warn({ err: error }, "[Safety] Refund handler error:");
   }
 
   // 5. Initialize kill switch (always succeeds)
   try {
     const { killSwitch } = await import("./killSwitch");
     const state = killSwitch?.getState();
-    logger?.info(
+    logger.info(
       `   ✓ Kill switch ready (global killed: ${state?.globalKilled})`,
     );
   } catch (error) {
     errors?.push(`Kill switch failed: ${error?.message}`);
-    logger?.warn({ err: error }, "[Safety] Kill switch error:");
+    logger.warn({ err: error }, "[Safety] Kill switch error:");
   }
 
   const success = errors?.length === 0;
 
-  logger?.info("────────────────────────────────────────────────────────");
+  logger.info("────────────────────────────────────────────────────────");
   if (success) {
-    logger?.info("   ✅ All safety systems initialized successfully");
+    logger.info("   ✅ All safety systems initialized successfully");
   } else {
-    logger?.warn(
+    logger.warn(
       `   ⚠ Safety systems initialized with ${errors?.length} warnings`,
     );
   }
-  logger?.info("════════════════════════════════════════════════════════");
+  logger.info("════════════════════════════════════════════════════════");
 
   return { success, errors };
 }

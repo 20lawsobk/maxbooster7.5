@@ -538,7 +538,7 @@ class TimingOptimizerService {
   };
 
   constructor() {
-    logger?.info("✅ Timing Optimizer service initialized");
+    logger.info("✅ Timing Optimizer service initialized");
   }
 
   private async getRedis(): Promise<RedisClientType | null> {

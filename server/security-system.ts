@@ -86,9 +86,9 @@ export class SelfHealingSecuritySystem {
   private constructor() {
     this.anomalyDetector = new AnomalyDetector();
     this.autoHealer = new AutoHealer();
-    this?.initializeSecurityRules();
-    this?.initializeAIModels();
-    this?.startSecurityMonitoring();
+    this.initializeSecurityRules();
+    this.initializeAIModels();
+    this.startSecurityMonitoring();
   }
 
   // Initialize AI Models for professional security
@@ -133,11 +133,11 @@ export class SelfHealingSecuritySystem {
             isActive: true,
             isBeta: false,
           });
-          logger?.info(`✅ AI Model registered: ${model?.modelName}`);
+          logger.info(`✅ AI Model registered: ${model?.modelName}`);
         }
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error initializing AI models:");
+      logger.warn({ err: error }, "Error initializing AI models:");
     }
   }
 
@@ -333,7 +333,7 @@ export class SelfHealingSecuritySystem {
       }
 
       // Check for insecure headers in recent requests
-      const recentThreats = this?.recentThreats.filter(
+      const recentThreats = this.recentThreats.filter(
         (t) => t?.type === "missing-security-headers",
       );
       if (recentThreats?.length > 5) {
@@ -345,7 +345,7 @@ export class SelfHealingSecuritySystem {
       }
 
       // Check for rate limiting effectiveness
-      const bruteForceThreats = this?.recentThreats.filter(
+      const bruteForceThreats = this.recentThreats.filter(
         (t) => t?.type === "brute-force",
       );
       if (bruteForceThreats?.length > 10) {
@@ -359,14 +359,14 @@ export class SelfHealingSecuritySystem {
 
       // Log vulnerabilities found
       if (vulnerabilities?.length > 0) {
-        logger?.warn(
+        logger.warn(
           `Vulnerability assessment found ${vulnerabilities?.length} issues`,
           { vulnerabilities },
         );
         this.securityMetrics.suspiciousActivities += vulnerabilities?.length;
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error in vulnerability assessment:");
+      logger.warn({ err: error }, "Error in vulnerability assessment:");
     }
   }
 
@@ -1557,7 +1557,7 @@ export class SelfHealingSecuritySystem {
 
       // Store anomaly in database
       if (isAnomaly) {
-        logger?.warn(
+        logger.warn(
         "[Security] securityAnomalies write skipped — security persistence tables are not provisioned in the database (unbuilt feature) — skipping DB write, feature runs in-memory only",
       );
       }
@@ -1820,7 +1820,7 @@ export class SelfHealingSecuritySystem {
             : "No vulnerabilities found",
         });
 
-        logger?.warn(
+        logger.warn(
         "[Security] securityPenTestResults write skipped — security persistence tables are not provisioned in the database (unbuilt feature) — skipping DB write, feature runs in-memory only",
       );
       }
@@ -1962,7 +1962,7 @@ export class SelfHealingSecuritySystem {
       const complianceScore = (passedControls / totalControls) * 100;
 
       // Store report
-      logger?.warn(
+      logger.warn(
       "[Security] securityComplianceReports write skipped — security persistence tables are not provisioned in the database (unbuilt feature) — skipping DB write, feature runs in-memory only",
     );
 

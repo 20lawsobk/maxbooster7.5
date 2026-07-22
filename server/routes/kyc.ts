@@ -97,11 +97,11 @@ const taxFormSchema = z.object({
 
 router?.post("/start", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const validated = startVerificationSchema?.parse(req?.body);
+    const validated = startVerificationSchema?.parse(req.body);
 
     const verification = await kycService?.startVerification({
       userId: req.user.id,
@@ -109,17 +109,17 @@ router?.post("/start", async (req, res) => {
       level: validated.level,
     });
 
-    res?.status(201).json({
+    res.status(201).json({
       success: true,
       verification,
       message:
         "Verification process started. Please provide your information and documents.",
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error starting KYC verification:");
+    logger.warn({ err: error }, "Error starting KYC verification:");
 
     if (error instanceof z.ZodError) {
-      return res?.status(400).json({
+      return res.status(400).json({
         error: "Invalid request data",
         details: error.issues,
       });
@@ -127,20 +127,20 @@ router?.post("/start", async (req, res) => {
 
     const message =
       error instanceof Error ? error?.message : "Failed to start verification";
-    res?.status(500).json({ error: message });
+    res.status(500).json({ error: message });
   }
 });
 
 router?.get("/status", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const status = await kycService?.getVerificationStatus(req?.user.id);
+    const status = await kycService?.getVerificationStatus(req.user.id);
 
     if (!status) {
-      return res?.json({
+      return res.json({
         status: "not_started",
         message:
           "No verification in progress. Start a new verification to receive payouts.",
@@ -151,20 +151,20 @@ router?.get("/status", async (req, res) => {
       });
     }
 
-    res?.json(status);
+    res.json(status);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching KYC status:");
+    logger.warn({ err: error }, "Error fetching KYC status:");
     const message =
       error instanceof Error
         ? error?.message
         : "Failed to fetch verification status";
-    res?.status(500).json({ error: message });
+    res.status(500).json({ error: message });
   }
 });
 
 router?.get("/support", async (_req, res) => {
   try {
-    res?.json({
+    res.json({
       supportContact: kycService.getSupportContact(),
       faq: [
         {
@@ -726,67 +726,67 @@ router.post("/admin/review/:verificationId", async (req, res) => {
     if (action === "approve") {
       verification = await kycService?.approveVerification(
         verificationId,
-        req?.user.id,
+        req.user.id,
         notes,
       );
     } else {
       if (!reason) {
-        return res?.status(400).json({ error: "Rejection reason required" });
+        return res.status(400).json({ error: "Rejection reason required" });
       }
       verification = await kycService?.rejectVerification(
         verificationId,
-        req?.user.id,
+        req.user.id,
         reason,
       );
     }
 
-    res?.json({
+    res.json({
       success: true,
       verification,
       message: `Verification ${action}d successfully`,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error reviewing verification:");
+    logger.warn({ err: error }, "Error reviewing verification:");
     const message =
       error instanceof Error ? error?.message : "Failed to review verification";
-    res?.status(500).json({ error: message });
+    res.status(500).json({ error: message });
   }
 });
 
 router?.post("/admin/documents/:documentId/review", async (req, res) => {
   try {
-    if (!req?.user?.isAdmin) {
-      return res?.status(403).json({ error: "Admin access required" });
+    if (!req.user?.isAdmin) {
+      return res.status(403).json({ error: "Admin access required" });
     }
 
-    const { documentId } = req?.params;
-    const { approved, reason } = req?.body;
+    const { documentId } = req.params;
+    const { approved, reason } = req.body;
 
     if (typeof approved !== "boolean") {
-      return res?.status(400).json({ error: "Approved status required" });
+      return res.status(400).json({ error: "Approved status required" });
     }
 
     if (!approved && !reason) {
-      return res?.status(400).json({ error: "Rejection reason required" });
+      return res.status(400).json({ error: "Rejection reason required" });
     }
 
     const document = await kycService?.reviewDocument(
       documentId,
-      req?.user.id,
+      req.user.id,
       approved,
       reason,
     );
 
-    res?.json({
+    res.json({
       success: true,
       document,
       message: `Document ${approved ? "approved" : "rejected"} successfully`,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error reviewing document:");
+    logger.warn({ err: error }, "Error reviewing document:");
     const message =
       error instanceof Error ? error?.message : "Failed to review document";
-    res?.status(500).json({ error: message });
+    res.status(500).json({ error: message });
   }
 });
 

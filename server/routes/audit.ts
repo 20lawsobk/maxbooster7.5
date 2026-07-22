@@ -13,11 +13,11 @@ import { logger } from "../logger.js";
 const router = Router();
 
 const requireAdmin: RequestHandler = (req, res, next) => {
-  if (!req?.isAuthenticated()) {
-    return res?.status(401).json({ error: "Authentication required" });
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Authentication required" });
   }
-  if (req?.user?.role !== "admin") {
-    return res?.status(403).json({ error: "Admin access required" });
+  if (req.user?.role !== "admin") {
+    return res.status(403).json({ error: "Admin access required" });
   }
   next();
 };
@@ -47,14 +47,14 @@ router?.get("/results", async (_req, res) => {
       securityIssues = 0;
     }
 
-    const securityScore = Math?.max(70, 100 - securityIssues * 5);
+    const securityScore = Math.max(70, 100 - securityIssues * 5);
     const functionalityScore = userCount[0]?.count ? 95 : 80;
     const performanceScore = 92;
     const codeQualityScore = 88;
     const accessibilityScore = 85;
     const seoScore = 90;
 
-    const overallScore = Math?.round(
+    const overallScore = Math.round(
       (securityScore +
         functionalityScore +
         performanceScore +
@@ -163,7 +163,7 @@ router?.get("/results", async (_req, res) => {
     ).length;
     const failCount = auditItems?.filter((i) => i?.status === "fail").length;
 
-    res?.json({
+    res.json({
       overallScore,
       securityScore,
       functionalityScore,
@@ -193,22 +193,22 @@ router?.get("/results", async (_req, res) => {
       ],
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching audit results:");
-    res?.status(500).json({ error: "Failed to fetch audit results" });
+    logger.warn({ err: error }, "Error fetching audit results:");
+    res.status(500).json({ error: "Failed to fetch audit results" });
   }
 });
 
 router?.post("/run", async (_req, res) => {
   try {
-    logger?.info("Manual audit triggered by admin");
-    res?.json({
+    logger.info("Manual audit triggered by admin");
+    res.json({
       success: true,
       message: "Audit started",
       estimatedTime: "2 minutes",
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error running audit:");
-    res?.status(500).json({ error: "Failed to start audit" });
+    logger.warn({ err: error }, "Error running audit:");
+    res.status(500).json({ error: "Failed to start audit" });
   }
 });
 

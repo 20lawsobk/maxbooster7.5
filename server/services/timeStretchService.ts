@@ -25,12 +25,12 @@ async function initializeFfmpeg() {
         ffmpeg?.setFfmpegPath(ffmpegStatic?.default);
       }
     } catch {
-      logger?.warn("ffmpeg-static not available, using system ffmpeg");
+      logger.warn("ffmpeg-static not available, using system ffmpeg");
     }
     ffmpegAvailable = true;
     return true;
   } catch (error) {
-    logger?.warn(
+    logger.warn(
       { err: error },
       "FFmpeg not available - time stretch features will be limited:",
     );
@@ -87,14 +87,14 @@ export class TimeStretchService {
 
   constructor() {
     this.tempDir = path?.join(os?.tmpdir(), "max-booster-warp");
-    this?.ensureTempDir();
+    this.ensureTempDir();
   }
 
   private async ensureTempDir(): Promise<void> {
     try {
-      await fsPromises?.mkdir(this?.tempDir, { recursive: true });
+      await fsPromises?.mkdir(this.tempDir, { recursive: true });
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "Failed to create temp directory for warp processing",
       );
@@ -161,7 +161,7 @@ export class TimeStretchService {
       const filters: string[] = [];
 
       if (algorithm === "rubberband") {
-        const pitchFactor = Math?.pow(2, pitchShift / 12);
+        const pitchFactor = Math.pow(2, pitchShift / 12);
         let rubberBandFilter = `rubberband=tempo=${stretchRatio}:pitch=${pitchFactor}`;
         if (preserveFormants) {
           rubberBandFilter += ":formant=preserved";
@@ -169,9 +169,9 @@ export class TimeStretchService {
         filters?.push(rubberBandFilter);
       } else if (algorithm === "wsola") {
         const tempoValue = 1 / stretchRatio;
-        filters.push(`atempo=${Math?.min(Math?.max(tempoValue, 0.5), 2.0)}`);
+        filters.push(`atempo=${Math.min(Math.max(tempoValue, 0.5), 2.0)}`);
         if (pitchShift !== 0) {
-          const pitchFactor = Math?.pow(2, pitchShift / 12);
+          const pitchFactor = Math.pow(2, pitchShift / 12);
           filters.push(`asetrate=44100*${pitchFactor}`);
           filters.push(`aresample=44100`);
         }
@@ -200,7 +200,7 @@ export class TimeStretchService {
         }
 
         if (pitchShift !== 0) {
-          const pitchFactor = Math?.pow(2, pitchShift / 12);
+          const pitchFactor = Math.pow(2, pitchShift / 12);
           filters.push(`asetrate=44100*${pitchFactor}`);
           filters.push(`aresample=44100`);
           if (preserveFormants) {
@@ -243,7 +243,7 @@ export class TimeStretchService {
     const sortedMarkers = [...markers].sort(
       (a, b) => a?.sourceTime - b?.sourceTime,
     );
-    const metadata = await this?.getAudioMetadata(inputPath);
+    const metadata = await this.getAudioMetadata(inputPath);
     const segments: string[] = [];
     const tempFiles: string[] = [];
 
@@ -255,11 +255,11 @@ export class TimeStretchService {
         const marker = sortedMarkers[i];
         const segmentId = randomUUID();
         const segmentInput = path?.join(
-          this?.tempDir,
+          this.tempDir,
           `segment_${segmentId}_in.wav`,
         );
         const segmentOutput = path?.join(
-          this?.tempDir,
+          this.tempDir,
           `segment_${segmentId}_out.wav`,
         );
 
@@ -269,7 +269,7 @@ export class TimeStretchService {
         const targetDuration = marker?.targetTime - lastTargetTime;
 
         if (segmentDuration > 0.001) {
-          await this?.extractAudioSegment(
+          await this.extractAudioSegment(
             inputPath,
             segmentInput,
             lastSourceTime,
@@ -278,10 +278,10 @@ export class TimeStretchService {
 
           const stretchRatio = targetDuration / segmentDuration;
           if (
-            Math?.abs(stretchRatio - 1.0) > 0.001 ||
+            Math.abs(stretchRatio - 1.0) > 0.001 ||
             (options?.pitchShift && options?.pitchShift !== 0)
           ) {
-            await this?.timeStretch(
+            await this.timeStretch(
               segmentInput,
               segmentOutput,
               stretchRatio,
@@ -304,14 +304,14 @@ export class TimeStretchService {
 
       if (remainingDuration > 0.001) {
         const finalId = randomUUID();
-        const finalInput = path?.join(this?.tempDir, `segment_${finalId}_in.wav`);
+        const finalInput = path?.join(this.tempDir, `segment_${finalId}_in.wav`);
         const finalOutput = path?.join(
-          this?.tempDir,
+          this.tempDir,
           `segment_${finalId}_out.wav`,
         );
         tempFiles?.push(finalInput, finalOutput);
 
-        await this?.extractAudioSegment(
+        await this.extractAudioSegment(
           inputPath,
           finalInput,
           finalSourceTime,
@@ -319,7 +319,7 @@ export class TimeStretchService {
         );
 
         if (options?.pitchShift && options?.pitchShift !== 0) {
-          await this?.timeStretch(finalInput, finalOutput, 1.0, options);
+          await this.timeStretch(finalInput, finalOutput, 1.0, options);
         } else {
           await fsPromises?.copyFile(finalInput, finalOutput);
         }
@@ -328,7 +328,7 @@ export class TimeStretchService {
       }
 
       if (segments?.length > 0) {
-        await this?.concatenateSegments(segments, outputPath);
+        await this.concatenateSegments(segments, outputPath);
       }
     } finally {
       for (const tempFile of tempFiles) {
@@ -387,7 +387,7 @@ export class TimeStretchService {
       );
     }
 
-    const listFile = path?.join(this?.tempDir, `concat_${randomUUID()}.txt`);
+    const listFile = path?.join(this.tempDir, `concat_${randomUUID()}.txt`);
     const listContent = segments?.map((s) => `file '${s}'`).join("\n");
     await fsPromises?.writeFile(listFile, listContent);
 
@@ -424,11 +424,11 @@ export class TimeStretchService {
       minTransientGap = 0.05,
       detectBeats = true,
     } = options;
-    const metadata = await this?.getAudioMetadata(inputPath);
+    const metadata = await this.getAudioMetadata(inputPath);
     const transients: TransientData[] = [];
 
-    const peakData = await this?.extractPeakEnvelope(inputPath);
-    const threshold = this?.calculateAdaptiveThreshold(peakData, sensitivity);
+    const peakData = await this.extractPeakEnvelope(inputPath);
+    const threshold = this.calculateAdaptiveThreshold(peakData, sensitivity);
 
     let lastTransientTime = -minTransientGap;
 
@@ -445,7 +445,7 @@ export class TimeStretchService {
         peakData[i] > threshold;
 
       if (isPeak) {
-        const strength = Math?.min(peakData[i] / threshold, 1.0);
+        const strength = Math.min(peakData[i] / threshold, 1.0);
         transients?.push({
           time,
           strength,
@@ -459,7 +459,7 @@ export class TimeStretchService {
 
     if (detectBeats && transients?.length >= 4) {
       const intervals: number[] = [];
-      for (let i = 1; i < Math?.min(transients?.length, 50); i++) {
+      for (let i = 1; i < Math.min(transients?.length, 50); i++) {
         intervals?.push(transients[i].time - transients[i - 1].time);
       }
 
@@ -475,8 +475,8 @@ export class TimeStretchService {
         const beatInterval = 60 / detectedBpm;
         for (const transient of transients) {
           const beatPosition = transient?.time / beatInterval;
-          const nearestBeat = Math?.round(beatPosition);
-          if (Math?.abs(beatPosition - nearestBeat) < 0.2) {
+          const nearestBeat = Math.round(beatPosition);
+          if (Math.abs(beatPosition - nearestBeat) < 0.2) {
             transient.suggestedBeat = nearestBeat;
           }
         }
@@ -493,10 +493,10 @@ export class TimeStretchService {
   private async extractPeakEnvelope(inputPath: string): Promise<number[]> {
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
-      logger?.warn("FFmpeg not available - using synthetic peak data");
-      return this?.generateSyntheticPeaks(inputPath);
+      logger.warn("FFmpeg not available - using synthetic peak data");
+      return this.generateSyntheticPeaks(inputPath);
     }
-    const outputFile = path?.join(this?.tempDir, `peaks_${randomUUID()}.raw`);
+    const outputFile = path?.join(this.tempDir, `peaks_${randomUUID()}.raw`);
 
     try {
       await new Promise<void>((resolve, _reject) => {
@@ -517,25 +517,25 @@ export class TimeStretchService {
 
       if (fs?.existsSync(outputFile)) {
         const data = await fsPromises?.readFile(outputFile);
-        const peaks = Array?.from(data).map((v) => v / 255);
+        const peaks = Array.from(data).map((v) => v / 255);
         await fsPromises?.unlink(outputFile);
         return peaks?.length > 0
           ? peaks
-          : this?.generateSyntheticPeaks(inputPath);
+          : this.generateSyntheticPeaks(inputPath);
       }
     } catch {}
 
-    return this?.generateSyntheticPeaks(inputPath);
+    return this.generateSyntheticPeaks(inputPath);
   }
 
   private async generateSyntheticPeaks(inputPath: string): Promise<number[]> {
-    const metadata = await this?.getAudioMetadata(inputPath);
-    const numPoints = Math?.ceil(metadata?.duration * 100);
+    const metadata = await this.getAudioMetadata(inputPath);
+    const numPoints = Math.ceil(metadata?.duration * 100);
     const peaks: number[] = [];
 
     for (let i = 0; i < numPoints; i++) {
       const t = i / numPoints;
-      peaks?.push(0.3 + 0.4 * Math?.random() + 0.3 * Math?.sin(t * Math.PI * 10));
+      peaks?.push(0.3 + 0.4 * Math.random() + 0.3 * Math.sin(t * Math.PI * 10));
     }
 
     return peaks;
@@ -546,8 +546,8 @@ export class TimeStretchService {
     sensitivity: number,
   ): number {
     const sorted = [...peakData].sort((a, b) => b - a);
-    const percentile = Math?.floor(sorted?.length * (1 - sensitivity * 0.3));
-    return sorted[Math?.min(percentile, sorted?.length - 1)] * 0.8;
+    const percentile = Math.floor(sorted?.length * (1 - sensitivity * 0.3));
+    return sorted[Math.min(percentile, sorted?.length - 1)] * 0.8;
   }
 
   async generateWarpPreview(
@@ -568,13 +568,13 @@ export class TimeStretchService {
     );
 
     const segmentInput = path?.join(
-      this?.tempDir,
+      this.tempDir,
       `preview_${randomUUID()}_in.wav`,
     );
     const segmentDuration = endTime - startTime;
 
     try {
-      await this?.extractAudioSegment(
+      await this.extractAudioSegment(
         inputPath,
         segmentInput,
         startTime,
@@ -588,7 +588,7 @@ export class TimeStretchService {
       }));
 
       if (adjustedMarkers?.length > 0) {
-        await this?.processWarpMarkers(
+        await this.processWarpMarkers(
           segmentInput,
           outputPath,
           adjustedMarkers,
@@ -655,9 +655,9 @@ export class TimeStretchService {
   }
 
   async processWarpJob(payload: WarpJobPayload): Promise<WarpJobResult> {
-    const tempInput = path?.join(this?.tempDir, `warp_input_${randomUUID()}.wav`);
+    const tempInput = path?.join(this.tempDir, `warp_input_${randomUUID()}.wav`);
     const tempOutput = path?.join(
-      this?.tempDir,
+      this.tempDir,
       `warp_output_${randomUUID()}.wav`,
     );
 
@@ -665,7 +665,7 @@ export class TimeStretchService {
       const inputBuffer = await storageService?.downloadFile(payload?.storageKey);
       await fsPromises?.writeFile(tempInput, inputBuffer);
 
-      await this?.processWarpMarkers(tempInput, tempOutput, payload?.markers, {
+      await this.processWarpMarkers(tempInput, tempOutput, payload?.markers, {
         pitchShift: payload.pitchShift,
         preserveFormants: payload.preserveFormants,
         algorithm: payload.algorithm,
@@ -676,7 +676,7 @@ export class TimeStretchService {
       const newStorageKey = `${payload?.storageKey}_warped_${Date?.now()}`;
       await storageService?.uploadFile(newStorageKey, outputBuffer);
 
-      const metadata = await this?.getAudioMetadata(tempOutput);
+      const metadata = await this.getAudioMetadata(tempOutput);
 
       return {
         storageKey: newStorageKey,
@@ -699,7 +699,7 @@ export class TimeStretchService {
     payload: TransientDetectionPayload,
   ): Promise<TransientDetectionResult> {
     const tempInput = path?.join(
-      this?.tempDir,
+      this.tempDir,
       `transient_input_${randomUUID()}.wav`,
     );
 
@@ -707,7 +707,7 @@ export class TimeStretchService {
       const inputBuffer = await storageService?.downloadFile(payload?.storageKey);
       await fsPromises?.writeFile(tempInput, inputBuffer);
 
-      return await this?.detectTransients(tempInput, {
+      return await this.detectTransients(tempInput, {
         sensitivity: payload.sensitivity,
         minTransientGap: payload.minTransientGap,
         detectBeats: true,
@@ -726,7 +726,7 @@ export class TimeStretchService {
   ): TempoMapping {
     const sourceBeatInterval = 60 / sourceBpm;
     const targetBeatInterval = 60 / targetBpm;
-    const numBeats = Math?.floor(duration / sourceBeatInterval);
+    const numBeats = Math.floor(duration / sourceBeatInterval);
 
     const beatGrid: number[] = [];
     const barPositions: number[] = [];
@@ -774,7 +774,7 @@ export class TimeStretchService {
     }
 
     if (markers?.length > 0) {
-      await this?.processWarpMarkers(inputPath, outputPath, markers);
+      await this.processWarpMarkers(inputPath, outputPath, markers);
     }
 
     return markers;

@@ -511,7 +511,7 @@ router.get("/storage-usage", async (req: Request, res: Response) => {
       .from(userStorageFiles)
       .where(
         and(
-          eq(userStorageFiles?.userId, req?.user.id),
+          eq(userStorageFiles?.userId, req.user.id),
           isNull(userStorageFiles?.deletedAt),
         ),
       );
@@ -539,7 +539,7 @@ router.get("/storage-usage", async (req: Request, res: Response) => {
       },
     };
 
-    const usedPercent = Math?.round(
+    const usedPercent = Math.round(
       (storage?.totalBytes / storage?.quotaBytes) * 100,
     );
 
@@ -550,7 +550,7 @@ router.get("/storage-usage", async (req: Request, res: Response) => {
     else if (usedPercent >= 90) warningLevel = "medium";
     else if (usedPercent >= 80) warningLevel = "low";
 
-    return res?.json({
+    return res.json({
       success: true,
       storage: {
         used: storage.totalBytes,
@@ -573,7 +573,7 @@ router.get("/storage-usage", async (req: Request, res: Response) => {
         count: value.count,
         percentage:
           storage?.totalBytes > 0
-            ? Math?.round((value?.used / storage?.totalBytes) * 100)
+            ? Math.round((value?.used / storage?.totalBytes) * 100)
             : 0,
       })),
       thresholds: {
@@ -584,15 +584,15 @@ router.get("/storage-usage", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Storage usage error:");
-    return res?.status(500).json({ error: "Failed to get storage usage" });
+    logger.warn({ err: error }, "Storage usage error:");
+    return res.status(500).json({ error: "Failed to get storage usage" });
   }
 });
 
 router?.get("/list", async (req: Request, res: Response) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Authentication required" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Authentication required" });
     }
 
     const {
@@ -601,24 +601,24 @@ router?.get("/list", async (req: Request, res: Response) => {
       
       
       includeDeleted = "false",
-    } = req?.query;
-    const rawLimit2 = Number(req?.query.limit ?? 50);
-    const rawOffset2 = Number(req?.query.offset ?? 0);
-    const limit = Math?.min(
-      Number?.isFinite(rawLimit2) && rawLimit2 > 0 ? rawLimit2 : 50,
+    } = req.query;
+    const rawLimit2 = Number(req.query.limit ?? 50);
+    const rawOffset2 = Number(req.query.offset ?? 0);
+    const limit = Math.min(
+      Number.isFinite(rawLimit2) && rawLimit2 > 0 ? rawLimit2 : 50,
       500,
     );
-    const offset = Math?.min(
-      Number?.isFinite(rawOffset2) && rawOffset2 >= 0 ? rawOffset2 : 0,
+    const offset = Math.min(
+      Number.isFinite(rawOffset2) && rawOffset2 >= 0 ? rawOffset2 : 0,
       100_000,
     );
 
     // Filter out soft-deleted files unless explicitly requested
     const baseConditions =
       includeDeleted === "true"
-        ? eq(userStorageFiles?.userId, req?.user.id)
+        ? eq(userStorageFiles?.userId, req.user.id)
         : and(
-            eq(userStorageFiles?.userId, req?.user.id),
+            eq(userStorageFiles?.userId, req.user.id),
             isNull(userStorageFiles?.deletedAt),
           );
 
@@ -630,7 +630,7 @@ router?.get("/list", async (req: Request, res: Response) => {
       .limit(Number(limit))
       .offset(Number(offset));
 
-    return res?.json({
+    return res.json({
       success: true,
       files: files.map((f) => ({
         id: f.id,
@@ -651,8 +651,8 @@ router?.get("/list", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "List files error:");
-    return res?.status(500).json({ error: "Failed to list files" });
+    logger.warn({ err: error }, "List files error:");
+    return res.status(500).json({ error: "Failed to list files" });
   }
 });
 
@@ -661,12 +661,12 @@ router?.delete(
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
-      if (!req?.user) {
-        return res?.status(401).json({ error: "Authentication required" });
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
       }
 
-      const { id } = req?.params;
-      const { permanent = "false" } = req?.query;
+      const { id } = req.params;
+      const { permanent = "false" } = req.query;
 
       const [file] = await db
         .select()
@@ -674,14 +674,14 @@ router?.delete(
         .where(
           and(
             eq(userStorageFiles?.id, id),
-            eq(userStorageFiles?.userId, req?.user.id),
+            eq(userStorageFiles?.userId, req.user.id),
             isNull(userStorageFiles?.deletedAt),
           ),
         )
         .limit(1);
 
       if (!file) {
-        return res?.status(404).json({
+        return res.status(404).json({
           success: false,
           error: "File not found",
           outcome: "not_found",
@@ -700,9 +700,9 @@ router?.delete(
             totalBytes: sql`GREATEST(${userStorage?.totalBytes} - ${file?.sizeBytes || 0}, 0)`,
             fileCount: sql`GREATEST(${userStorage?.fileCount} - 1, 0)`,
           })
-          .where(eq(userStorage?.userId, req?.user.id));
+          .where(eq(userStorage?.userId, req.user.id));
 
-        return res?.json({
+        return res.json({
           success: true,
           outcome: "file_permanently_deleted",
           file: {
@@ -719,7 +719,7 @@ router?.delete(
           .set({ deletedAt: new Date() })
           .where(eq(userStorageFiles?.id, id));
 
-        return res?.json({
+        return res.json({
           success: true,
           outcome: "file_deleted",
           file: {
@@ -732,8 +732,8 @@ router?.delete(
         });
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Delete file error:");
-      return res?.status(500).json({
+      logger.warn({ err: error }, "Delete file error:");
+      return res.status(500).json({
         success: false,
         error: "Failed to delete file",
         outcome: "delete_failed",
@@ -744,14 +744,14 @@ router?.delete(
 
 router?.post("/bulk-delete", async (req: Request, res: Response) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Authentication required" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Authentication required" });
     }
 
-    const { fileIds, permanent = false } = req?.body;
+    const { fileIds, permanent = false } = req.body;
 
-    if (!Array?.isArray(fileIds) || fileIds?.length === 0) {
-      return res?.status(400).json({ error: "No files specified" });
+    if (!Array.isArray(fileIds) || fileIds?.length === 0) {
+      return res.status(400).json({ error: "No files specified" });
     }
     if (fileIds?.length > 500) {
       return res
@@ -773,7 +773,7 @@ router?.post("/bulk-delete", async (req: Request, res: Response) => {
             .where(
               and(
                 eq(userStorageFiles?.id, fileId),
-                eq(userStorageFiles?.userId, req?.user!.id),
+                eq(userStorageFiles?.userId, req.user!.id),
                 isNull(userStorageFiles?.deletedAt),
               ),
             )
@@ -795,7 +795,7 @@ router?.post("/bulk-delete", async (req: Request, res: Response) => {
                 totalBytes: sql`GREATEST(${userStorage?.totalBytes} - ${file?.sizeBytes || 0}, 0)`,
                 fileCount: sql`GREATEST(${userStorage?.fileCount} - 1, 0)`,
               })
-              .where(eq(userStorage?.userId, req?.user!.id));
+              .where(eq(userStorage?.userId, req.user!.id));
           } else {
             await db
               .update(userStorageFiles)
@@ -813,7 +813,7 @@ router?.post("/bulk-delete", async (req: Request, res: Response) => {
       }),
     );
 
-    return res?.json({
+    return res.json({
       success: true,
       outcome: "bulk_delete_complete",
       results,
@@ -826,8 +826,8 @@ router?.post("/bulk-delete", async (req: Request, res: Response) => {
         : 0,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Bulk delete error:");
-    return res?.status(500).json({ error: "Bulk delete failed" });
+    logger.warn({ err: error }, "Bulk delete error:");
+    return res.status(500).json({ error: "Bulk delete failed" });
   }
 });
 
@@ -836,11 +836,11 @@ router?.get(
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
-      if (!req?.user) {
-        return res?.status(401).json({ error: "Authentication required" });
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
       }
 
-      const { id } = req?.params;
+      const { id } = req.params;
 
       const [file] = await db
         .select()
@@ -848,13 +848,13 @@ router?.get(
         .where(
           and(
             eq(userStorageFiles?.id, id),
-            eq(userStorageFiles?.userId, req?.user.id),
+            eq(userStorageFiles?.userId, req.user.id),
           ),
         )
         .limit(1);
 
       if (!file) {
-        return res?.status(404).json({
+        return res.status(404).json({
           success: false,
           error: "File not found",
           outcome: "not_found",
@@ -866,7 +866,7 @@ router?.get(
         3600,
       );
 
-      return res?.json({
+      return res.json({
         success: true,
         outcome: "download_ready",
         file: {
@@ -880,8 +880,8 @@ router?.get(
         expiresIn: 3600,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Download error:");
-      return res?.status(500).json({
+      logger.warn({ err: error }, "Download error:");
+      return res.status(500).json({
         success: false,
         error: "Failed to generate download link",
         outcome: "download_failed",
@@ -896,15 +896,15 @@ router?.post(
   upload?.single("file"),
   async (req: Request, res: Response) => {
     try {
-      if (!req?.user) {
-        return res?.status(401).json({ error: "Authentication required" });
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
       }
 
-      if (!req?.file) {
-        return res?.status(400).json({ error: "No file provided" });
+      if (!req.file) {
+        return res.status(400).json({ error: "No file provided" });
       }
 
-      const file = req?.file;
+      const file = req.file;
       const validationResults: {
         check: string;
         status: "pass" | "fail" | "warning";
@@ -1008,7 +1008,7 @@ router?.post(
         }
       }
 
-      const storage = await getOrCreateUserStorage(req?.user.id);
+      const storage = await getOrCreateUserStorage(req.user.id);
       const quotaAfterUpload = storage?.totalBytes + file?.size;
       if (quotaAfterUpload <= storage?.quotaBytes) {
         validationResults?.push({
@@ -1029,7 +1029,7 @@ router?.post(
       const hasFailures = validationResults?.some((r) => r?.status === "fail");
       const hasWarnings = validationResults?.some((r) => r?.status === "warning");
 
-      return res?.json({
+      return res.json({
         success: true,
         outcome: hasFailures
           ? "validation_failed"
@@ -1052,8 +1052,8 @@ router?.post(
         },
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Validation error:");
-      return res?.status(500).json({
+      logger.warn({ err: error }, "Validation error:");
+      return res.status(500).json({
         success: false,
         error: "Validation failed",
         outcome: "validation_error",
@@ -1067,11 +1067,11 @@ router?.post(
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
-      if (!req?.user) {
-        return res?.status(401).json({ error: "Authentication required" });
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
       }
 
-      const { id } = req?.params;
+      const { id } = req.params;
 
       // Find the soft-deleted file
       const [deletedFile] = await db
@@ -1080,14 +1080,14 @@ router?.post(
         .where(
           and(
             eq(userStorageFiles?.id, id),
-            eq(userStorageFiles?.userId, req?.user.id),
+            eq(userStorageFiles?.userId, req.user.id),
             isNotNull(userStorageFiles?.deletedAt),
           ),
         )
         .limit(1);
 
       if (!deletedFile) {
-        return res?.status(404).json({
+        return res.status(404).json({
           success: false,
           error: "File not found or has already been permanently deleted.",
           outcome: "not_found",
@@ -1098,7 +1098,7 @@ router?.post(
       const cutoffDate = new Date();
       cutoffDate?.setDate(cutoffDate?.getDate() - PERMANENT_DELETE_DAYS);
       if (deletedFile?.deletedAt && deletedFile?.deletedAt < cutoffDate) {
-        return res?.status(410).json({
+        return res.status(410).json({
           success: false,
           error:
             "Restoration window has expired. The file can no longer be recovered.",
@@ -1112,7 +1112,7 @@ router?.post(
         .set({ deletedAt: null })
         .where(eq(userStorageFiles?.id, id));
 
-      return res?.json({
+      return res.json({
         success: true,
         outcome: "file_restored",
         message: "File has been restored from trash",
@@ -1124,8 +1124,8 @@ router?.post(
         },
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Restore error:");
-      return res?.status(500).json({
+      logger.warn({ err: error }, "Restore error:");
+      return res.status(500).json({
         success: false,
         error: "Failed to restore file",
         outcome: "restore_failed",
@@ -1139,12 +1139,12 @@ router?.post(
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
-      if (!req?.user) {
-        return res?.status(401).json({ error: "Authentication required" });
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
       }
 
-      const { id } = req?.params;
-      const { targetFormat = "mp3", quality = "high" } = req?.body;
+      const { id } = req.params;
+      const { targetFormat = "mp3", quality = "high" } = req.body;
 
       const [file] = await db
         .select()
@@ -1152,13 +1152,13 @@ router?.post(
         .where(
           and(
             eq(userStorageFiles?.id, id),
-            eq(userStorageFiles?.userId, req?.user.id),
+            eq(userStorageFiles?.userId, req.user.id),
           ),
         )
         .limit(1);
 
       if (!file) {
-        return res?.status(404).json({
+        return res.status(404).json({
           success: false,
           error: "File not found",
           outcome: "not_found",
@@ -1167,7 +1167,7 @@ router?.post(
 
       const jobId = crypto?.randomUUID();
       const fileSizeMB = (file?.sizeBytes || 0) / (1024 * 1024);
-      const estimatedDurationMs = Math?.max(5000, Math?.ceil(fileSizeMB * 2000));
+      const estimatedDurationMs = Math.max(5000, Math.ceil(fileSizeMB * 2000));
 
       transcodeJobs?.set(jobId, {
         startedAt: Date.now(),
@@ -1175,7 +1175,7 @@ router?.post(
         userId: req.user!.id,
       });
 
-      return res?.json({
+      return res.json({
         success: true,
         outcome: "transcoding_started",
         jobId,
@@ -1189,8 +1189,8 @@ router?.post(
         estimatedTime: Math.ceil(estimatedDurationMs / 1000),
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Transcode error:");
-      return res?.status(500).json({
+      logger.warn({ err: error }, "Transcode error:");
+      return res.status(500).json({
         success: false,
         error: "Transcoding failed to start",
         outcome: "transcode_failed",
@@ -1204,15 +1204,15 @@ router?.get(
   requireSafeParam("jobId"),
   async (req: Request, res: Response) => {
     try {
-      if (!req?.user) {
-        return res?.status(401).json({ error: "Authentication required" });
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
       }
 
-      const jobId = req?.params.jobId;
+      const jobId = req.params.jobId;
       const tracked = transcodeJobs?.get(jobId);
 
       if (!tracked) {
-        return res?.json({
+        return res.json({
           success: true,
           jobId,
           status: "complete",
@@ -1221,15 +1221,15 @@ router?.get(
         });
       }
 
-      if (tracked?.userId !== req?.user!.id) {
-        return res?.status(404).json({ error: "Job not found" });
+      if (tracked?.userId !== req.user!.id) {
+        return res.status(404).json({ error: "Job not found" });
       }
 
       const elapsedMs = Date?.now() - tracked?.startedAt;
       const estimatedDurationMs = tracked?.estimatedDurationMs || 30000;
-      const progress = Math?.min(
+      const progress = Math.min(
         100,
-        Math?.floor((elapsedMs / estimatedDurationMs) * 100),
+        Math.floor((elapsedMs / estimatedDurationMs) * 100),
       );
       const status =
         progress >= 100 ? "complete" : progress > 0 ? "processing" : "queued";
@@ -1238,7 +1238,7 @@ router?.get(
         transcodeJobs?.delete(jobId);
       }
 
-      return res?.json({
+      return res.json({
         success: true,
         jobId,
         status,
@@ -1249,8 +1249,8 @@ router?.get(
             : "transcode_in_progress",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Transcode status error:");
-      return res?.status(500).json({ error: "Failed to get transcode status" });
+      logger.warn({ err: error }, "Transcode status error:");
+      return res.status(500).json({ error: "Failed to get transcode status" });
     }
   },
 );
@@ -1260,11 +1260,11 @@ router?.post(
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
-      if (!req?.user) {
-        return res?.status(401).json({ error: "Authentication required" });
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
       }
 
-      const { id } = req?.params;
+      const { id } = req.params;
 
       const [file] = await db
         .select()
@@ -1272,20 +1272,20 @@ router?.post(
         .where(
           and(
             eq(userStorageFiles?.id, id),
-            eq(userStorageFiles?.userId, req?.user.id),
+            eq(userStorageFiles?.userId, req.user.id),
           ),
         )
         .limit(1);
 
       if (!file) {
-        return res?.status(404).json({
+        return res.status(404).json({
           success: false,
           error: "File not found",
           outcome: "not_found",
         });
       }
 
-      return res?.json({
+      return res.json({
         success: true,
         outcome: "preview_generated",
         file: {
@@ -1299,14 +1299,14 @@ router?.post(
             : null,
           duration: file.mimeType?.startsWith("audio/")
             ? file?.size
-              ? Math?.floor(file?.size / 16000)
+              ? Math.floor(file?.size / 16000)
               : null
             : null,
         },
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Preview generation error:");
-      return res?.status(500).json({
+      logger.warn({ err: error }, "Preview generation error:");
+      return res.status(500).json({
         success: false,
         error: "Failed to generate preview",
         outcome: "preview_failed",

@@ -48,9 +48,9 @@ router?.post(
         "promotional",
       ] as const;
 
-      const rawTone = req?.body.tone as string;
-      const rawPlatform = req?.body.platform as string;
-      const rawContentType = req?.body.contentType as string;
+      const rawTone = req.body.tone as string;
+      const rawPlatform = req.body.platform as string;
+      const rawContentType = req.body.contentType as string;
 
       const tone = (VALID_TONES as readonly string[]).includes(rawTone)
         ? (rawTone as (typeof VALID_TONES)[number])
@@ -83,18 +83,18 @@ router?.post(
       const result = await unifiedAIController?.generateContent(options);
 
       if (!result?.success) {
-        return res?.status(500).json({ error: result.error });
+        return res.status(500).json({ error: result.error });
       }
 
-      res?.json({
+      res.json({
         success: true,
         data: result.data,
         processingTimeMs: result.processingTimeMs,
         confidence: result.confidence,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Content generation route error:");
-      res?.status(500).json({ error: "Failed to generate content" });
+      logger.warn({ err: error }, "Content generation route error:");
+      res.status(500).json({ error: "Failed to generate content" });
     }
   },
 );
@@ -110,7 +110,7 @@ router?.post(
         includeToxicity,
         includeAspects,
         aspects,
-      } = req?.body;
+      } = req.body;
 
       if (!text || typeof text !== "string") {
         return res
@@ -129,10 +129,10 @@ router?.post(
       const result = await unifiedAIController?.analyzeSentiment(options);
 
       if (!result?.success) {
-        return res?.status(500).json({ error: result.error });
+        return res.status(500).json({ error: result.error });
       }
 
-      res?.json({
+      res.json({
         success: true,
         data: result.data,
         processingTimeMs: result.processingTimeMs,
@@ -142,8 +142,8 @@ router?.post(
       if (error instanceof AIUnavailableError) {
         return res.status(error.statusCode).json({ error: error.message });
       }
-      logger?.warn({ err: error }, "Sentiment analysis route error:");
-      res?.status(500).json({ error: "Failed to analyze sentiment" });
+      logger.warn({ err: error }, "Sentiment analysis route error:");
+      res.status(500).json({ error: "Failed to analyze sentiment" });
     }
   },
 );
@@ -153,7 +153,7 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { type, seedIds, limit, hybridWeight } = req?.body;
+      const { type, seedIds, limit, hybridWeight } = req.body;
 
       if (!type || !["tracks", "artists", "similar"].includes(type)) {
         return res
@@ -175,18 +175,18 @@ router?.post(
       const result = await unifiedAIController?.getRecommendations(options);
 
       if (!result?.success) {
-        return res?.status(500).json({ error: result.error });
+        return res.status(500).json({ error: result.error });
       }
 
-      res?.json({
+      res.json({
         success: true,
         data: result.data,
         processingTimeMs: result.processingTimeMs,
         confidence: result.confidence,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Recommendations route error:");
-      res?.status(500).json({ error: "Failed to get recommendations" });
+      logger.warn({ err: error }, "Recommendations route error:");
+      res.status(500).json({ error: "Failed to get recommendations" });
     }
   },
 );
@@ -197,10 +197,10 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const { campaign, action, campaigns, totalBudget, forecastPeriod } =
-        req?.body;
+        req.body;
 
       if (!campaign) {
-        return res?.status(400).json({ error: "Campaign data is required" });
+        return res.status(400).json({ error: "Campaign data is required" });
       }
 
       if (
@@ -269,10 +269,10 @@ router?.post(
       const result = await unifiedAIController?.optimizeAd(options);
 
       if (!result?.success) {
-        return res?.status(500).json({ error: result.error });
+        return res.status(500).json({ error: result.error });
       }
 
-      res?.json({
+      res.json({
         success: true,
         data: result.data,
         processingTimeMs: result.processingTimeMs,
@@ -282,8 +282,8 @@ router?.post(
       if (error instanceof AIUnavailableError) {
         return res.status(error.statusCode).json({ error: error.message });
       }
-      logger?.warn({ err: error }, "Ad optimization route error:");
-      res?.status(500).json({ error: "Failed to optimize ads" });
+      logger.warn({ err: error }, "Ad optimization route error:");
+      res.status(500).json({ error: "Failed to optimize ads" });
     }
   },
 );
@@ -293,10 +293,10 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { platform, content, action, postsPerWeek } = req?.body;
+      const { platform, content, action, postsPerWeek } = req.body;
 
       if (!platform) {
-        return res?.status(400).json({ error: "Platform is required" });
+        return res.status(400).json({ error: "Platform is required" });
       }
 
       if (
@@ -334,14 +334,14 @@ router?.post(
       const result = await unifiedAIController?.predictEngagement(options);
 
       if (!result?.success) {
-        return res?.status(500).json({ error: result.error });
+        return res.status(500).json({ error: result.error });
       }
 
-      if (action === "viral_potential" && result?.data && req?.user?.id) {
+      if (action === "viral_potential" && result?.data && req.user?.id) {
         const score: number =
           (result?.data as Record<string, unknown>).overallScore ?? 0;
         if (score >= 0.75) {
-          const pct = Math?.round(score * 100);
+          const pct = Math.round(score * 100);
           const platformLabel =
             platform?.charAt(0).toUpperCase() + platform?.slice(1);
           notificationService
@@ -358,7 +358,7 @@ router?.post(
               },
             })
             .catch((err) =>
-              logger?.warn(
+              logger.warn(
                 { err: err },
                 "Failed to send viral opportunity notification:",
               ),
@@ -366,7 +366,7 @@ router?.post(
         }
       }
 
-      res?.json({
+      res.json({
         success: true,
         data: result.data,
         processingTimeMs: result.processingTimeMs,
@@ -376,15 +376,15 @@ router?.post(
       if (error instanceof AIUnavailableError) {
         return res.status(error.statusCode).json({ error: error.message });
       }
-      logger?.warn({ err: error }, "Social prediction route error:");
-      res?.status(500).json({ error: "Failed to predict social engagement" });
+      logger.warn({ err: error }, "Social prediction route error:");
+      res.status(500).json({ error: "Failed to predict social engagement" });
     }
   },
 );
 
 router?.post("/forecast", requireAuth, async (req: Request, res: Response) => {
   try {
-    const { metric, horizon, historicalData, timestamps } = req?.body;
+    const { metric, horizon, historicalData, timestamps } = req.body;
 
     if (
       !metric ||
@@ -406,7 +406,7 @@ router?.post("/forecast", requireAuth, async (req: Request, res: Response) => {
 
     if (
       !historicalData ||
-      !Array?.isArray(historicalData) ||
+      !Array.isArray(historicalData) ||
       historicalData?.length < 10
     ) {
       return res
@@ -424,18 +424,18 @@ router?.post("/forecast", requireAuth, async (req: Request, res: Response) => {
     const result = await unifiedAIController?.forecastMetrics(options);
 
     if (!result?.success) {
-      return res?.status(500).json({ error: result.error });
+      return res.status(500).json({ error: result.error });
     }
 
-    res?.json({
+    res.json({
       success: true,
       data: result.data,
       processingTimeMs: result.processingTimeMs,
       confidence: result.confidence,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Forecast route error:");
-    res?.status(500).json({ error: "Failed to generate forecast" });
+    logger.warn({ err: error }, "Forecast route error:");
+    res.status(500).json({ error: "Failed to generate forecast" });
   }
 });
 
@@ -449,14 +449,14 @@ router?.get("/health", requireAuth, async (_req: Request, res: Response) => {
     // deployment health checks and uptime monitors stay green.
     const statusCode = health?.overall === "healthy" ? 200 : 207;
 
-    res?.status(statusCode).json({
+    res.status(statusCode).json({
       success: true,
       data: health,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "AI health check route error:");
+    logger.warn({ err: error }, "AI health check route error:");
     // Always return 200 — AI service failures are non-fatal, platform still works
-    res?.status(200).json({
+    res.status(200).json({
       success: false,
       error: "Failed to get AI health status",
       data: {
@@ -474,7 +474,7 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { topic, genre, platform, tone, count } = req?.body;
+      const { topic, genre, platform, tone, count } = req.body;
 
       if (!topic || typeof topic !== "string" || !topic.trim()) {
         return res
@@ -490,13 +490,13 @@ router?.post(
         count: count ?? 10,
       });
 
-      res?.json({
+      res.json({
         success: true,
         data: { hashtags },
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Hashtag generation route error:");
-      res?.status(500).json({ error: "Failed to generate hashtags" });
+      logger.warn({ err: error }, "Hashtag generation route error:");
+      res.status(500).json({ error: "Failed to generate hashtags" });
     }
   },
 );
@@ -506,7 +506,7 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { text } = req?.body;
+      const { text } = req.body;
 
       if (!text || typeof text !== "string") {
         return res
@@ -516,7 +516,7 @@ router?.post(
 
       const result = await unifiedAIController?.analyzeToxicity(text);
 
-      res?.json({
+      res.json({
         success: true,
         data: result,
       });
@@ -524,8 +524,8 @@ router?.post(
       if (error instanceof AIUnavailableError) {
         return res.status(error.statusCode).json({ error: error.message });
       }
-      logger?.warn({ err: error }, "Toxicity analysis route error:");
-      res?.status(500).json({ error: "Failed to analyze toxicity" });
+      logger.warn({ err: error }, "Toxicity analysis route error:");
+      res.status(500).json({ error: "Failed to analyze toxicity" });
     }
   },
 );
@@ -535,7 +535,7 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { text } = req?.body;
+      const { text } = req.body;
 
       if (!text || typeof text !== "string") {
         return res
@@ -545,7 +545,7 @@ router?.post(
 
       const result = await unifiedAIController?.detectEmotions(text);
 
-      res?.json({
+      res.json({
         success: true,
         data: result,
       });
@@ -553,29 +553,29 @@ router?.post(
       if (error instanceof AIUnavailableError) {
         return res.status(error.statusCode).json({ error: error.message });
       }
-      logger?.warn({ err: error }, "Emotion detection route error:");
-      res?.status(500).json({ error: "Failed to detect emotions" });
+      logger.warn({ err: error }, "Emotion detection route error:");
+      res.status(500).json({ error: "Failed to detect emotions" });
     }
   },
 );
 
 router?.get("/trends", requireAuth, async (req: Request, res: Response) => {
   try {
-    const platforms = req?.query.platforms
-      ? (req?.query.platforms as string).split(",")
+    const platforms = req.query.platforms
+      ? (req.query.platforms as string).split(",")
       : ["twitter", "instagram", "tiktok"];
 
     const trends = unifiedAIController?.detectTrends(
       platforms as Record<string, unknown>,
     );
 
-    res?.json({
+    res.json({
       success: true,
       data: trends,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Trends detection route error:");
-    res?.status(500).json({ error: "Failed to detect trends" });
+    logger.warn({ err: error }, "Trends detection route error:");
+    res.status(500).json({ error: "Failed to detect trends" });
   }
 });
 
@@ -584,7 +584,7 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { content, originalPlatform, targetPlatform } = req?.body;
+      const { content, originalPlatform, targetPlatform } = req.body;
 
       if (!content || !originalPlatform || !targetPlatform) {
         return res
@@ -600,20 +600,20 @@ router?.post(
         targetPlatform,
       );
 
-      res?.json({
+      res.json({
         success: true,
         data: adaptedContent,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Content adaptation route error:");
-      res?.status(500).json({ error: "Failed to adapt content" });
+      logger.warn({ err: error }, "Content adaptation route error:");
+      res.status(500).json({ error: "Failed to adapt content" });
     }
   },
 );
 
 router?.get("/models", requireAuth, async (req: Request, res: Response) => {
   try {
-    const { status, type } = req?.query;
+    const { status, type } = req.query;
 
     let query = db?.select().from(aiModels);
     const conditions: unknown[] = [];
@@ -631,13 +631,13 @@ router?.get("/models", requireAuth, async (req: Request, res: Response) => {
       models = await query?.limit(500);
     }
 
-    res?.json({
+    res.json({
       success: true,
       data: models,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Get models route error:");
-    res?.status(500).json({ error: "Failed to get registered models" });
+    logger.warn({ err: error }, "Get models route error:");
+    res.status(500).json({ error: "Failed to get registered models" });
   }
 });
 
@@ -646,7 +646,7 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { modelId } = req?.params;
+      const { modelId } = req.params;
 
       const versions = await db
         .select()
@@ -659,7 +659,7 @@ router?.get(
         .where(eq(aiModels?.id, modelId))
         .limit(1);
 
-      res?.json({
+      res.json({
         success: true,
         data: {
           model: model || null,
@@ -668,8 +668,8 @@ router?.get(
         },
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Get model performance route error:");
-      res?.status(500).json({ error: "Failed to get model performance" });
+      logger.warn({ err: error }, "Get model performance route error:");
+      res.status(500).json({ error: "Failed to get model performance" });
     }
   },
 );
@@ -678,13 +678,13 @@ router?.get("/stats", requireAuth, async (_req: Request, res: Response) => {
   try {
     const stats = unifiedAIController?.getServiceStats();
 
-    res?.json({
+    res.json({
       success: true,
       data: stats,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Get AI stats route error:");
-    res?.status(500).json({ error: "Failed to get AI stats" });
+    logger.warn({ err: error }, "Get AI stats route error:");
+    res.status(500).json({ error: "Failed to get AI stats" });
   }
 });
 
@@ -693,7 +693,7 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { metric, timeframe } = req?.body;
+      const { metric, timeframe } = req.body;
 
       if (!metric || !["streams", "engagement", "revenue"].includes(metric)) {
         return res
@@ -714,13 +714,13 @@ router?.post(
         timeframe,
       });
 
-      res?.json({
+      res.json({
         success: true,
         data: prediction,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Analytics prediction route error:");
-      res?.status(500).json({ error: "Failed to predict analytics metric" });
+      logger.warn({ err: error }, "Analytics prediction route error:");
+      res.status(500).json({ error: "Failed to predict analytics metric" });
     }
   },
 );
@@ -729,13 +729,13 @@ router?.get("/insights", requireAuth, async (_req: Request, res: Response) => {
   try {
     const insights = await unifiedAIController?.generateInsights();
 
-    res?.json({
+    res.json({
       success: true,
       data: insights,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Generate insights route error:");
-    res?.status(500).json({ error: "Failed to generate insights" });
+    logger.warn({ err: error }, "Generate insights route error:");
+    res.status(500).json({ error: "Failed to generate insights" });
   }
 });
 
@@ -743,13 +743,13 @@ router?.get("/anomalies", requireAuth, async (_req: Request, res: Response) => {
   try {
     const anomalies = await unifiedAIController?.detectAnomalies();
 
-    res?.json({
+    res.json({
       success: true,
       data: anomalies,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Detect anomalies route error:");
-    res?.status(500).json({ error: "Failed to detect anomalies" });
+    logger.warn({ err: error }, "Detect anomalies route error:");
+    res.status(500).json({ error: "Failed to detect anomalies" });
   }
 });
 
@@ -760,13 +760,13 @@ router?.post(
     try {
       const prediction = await unifiedAIController?.predictChurn();
 
-      res?.json({
+      res.json({
         success: true,
         data: prediction,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Churn prediction route error:");
-      res?.status(500).json({ error: "Failed to predict churn" });
+      logger.warn({ err: error }, "Churn prediction route error:");
+      res.status(500).json({ error: "Failed to predict churn" });
     }
   },
 );
@@ -776,19 +776,19 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { timeframe } = req?.body;
+      const { timeframe } = req.body;
 
       const forecast = await unifiedAIController?.forecastRevenue(
         timeframe || "30d",
       );
 
-      res?.json({
+      res.json({
         success: true,
         data: forecast,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Revenue forecast route error:");
-      res?.status(500).json({ error: "Failed to forecast revenue" });
+      logger.warn({ err: error }, "Revenue forecast route error:");
+      res.status(500).json({ error: "Failed to forecast revenue" });
     }
   },
 );
@@ -803,16 +803,16 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { profiles, content, goals } = req?.body;
+      const { profiles, content, goals } = req.body;
 
-      if (!profiles || !Array?.isArray(profiles)) {
+      if (!profiles || !Array.isArray(profiles)) {
         return res
           .status(400)
           .json({ error: "Social profiles array is required" });
       }
 
       if (!content || !content?.text) {
-        return res?.status(400).json({ error: "Content with text is required" });
+        return res.status(400).json({ error: "Content with text is required" });
       }
 
       const result = await unifiedAIController?.optimizeOrganicGrowth({
@@ -821,14 +821,14 @@ router?.post(
         goals: goals || {},
       });
 
-      res?.json({
+      res.json({
         success: true,
         data: result,
         message: "Personal Ad Network optimization complete",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Organic optimization route error:");
-      res?.status(500).json({ error: "Failed to optimize organic growth" });
+      logger.warn({ err: error }, "Organic optimization route error:");
+      res.status(500).json({ error: "Failed to optimize organic growth" });
     }
   },
 );
@@ -838,7 +838,7 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { platformResults } = req?.body;
+      const { platformResults } = req.body;
 
       if (!platformResults) {
         return res
@@ -862,14 +862,14 @@ router?.post(
         ),
       });
 
-      res?.json({
+      res.json({
         success: true,
         data: result,
         message: "Organic ROI calculated - see equivalent ad spend savings",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Organic ROI route error:");
-      res?.status(500).json({ error: "Failed to calculate organic ROI" });
+      logger.warn({ err: error }, "Organic ROI route error:");
+      res.status(500).json({ error: "Failed to calculate organic ROI" });
     }
   },
 );
@@ -879,15 +879,15 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { profiles, contentQueue, goals } = req?.body;
+      const { profiles, contentQueue, goals } = req.body;
 
-      if (!profiles || !Array?.isArray(profiles)) {
+      if (!profiles || !Array.isArray(profiles)) {
         return res
           .status(400)
           .json({ error: "Social profiles array is required" });
       }
 
-      if (!contentQueue || !Array?.isArray(contentQueue)) {
+      if (!contentQueue || !Array.isArray(contentQueue)) {
         return res
           .status(400)
           .json({ error: "Content queue array is required" });
@@ -899,14 +899,14 @@ router?.post(
         goals: goals || {},
       });
 
-      res?.json({
+      res.json({
         success: true,
         data: result,
         message: "Optimal organic posting schedule generated",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Organic schedule route error:");
-      res?.status(500).json({ error: "Failed to generate organic schedule" });
+      logger.warn({ err: error }, "Organic schedule route error:");
+      res.status(500).json({ error: "Failed to generate organic schedule" });
     }
   },
 );
@@ -917,16 +917,16 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const networkAnalysis =
-        await unifiedAIController?.analyzePersonalAdNetwork(req?.user?.id);
+        await unifiedAIController?.analyzePersonalAdNetwork(req.user?.id);
 
-      res?.json({
+      res.json({
         success: true,
         data: networkAnalysis,
         message: "Personal Ad Network analysis complete",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Network analysis route error:");
-      res?.status(500).json({ error: "Failed to analyze personal ad network" });
+      logger.warn({ err: error }, "Network analysis route error:");
+      res.status(500).json({ error: "Failed to analyze personal ad network" });
     }
   },
 );
@@ -951,7 +951,7 @@ router?.get(
           .json({ error: "Diffusion gateway unavailable", port: 8008 });
       }
       const data = await ctrl?.json();
-      res?.json({ success: true, data });
+      res.json({ success: true, data });
     } catch (err) {
       res
         .status(503)
@@ -978,7 +978,7 @@ router?.get(
           .json({ error: "Simulator endpoint unavailable", port: 8008 });
       }
       const data = await ctrl?.json();
-      res?.json({ success: true, data });
+      res.json({ success: true, data });
     } catch (err) {
       res
         .status(503)
@@ -997,9 +997,9 @@ router?.get("/diffusion/ready", async (_req: Request, res: Response) => {
       signal: AbortSignal.timeout(3_000),
     });
     const data = ctrl?.ok ? await ctrl?.json() : { ready: false };
-    res?.json({ success: true, data });
+    res.json({ success: true, data });
   } catch {
-    res?.json({
+    res.json({
       success: true,
       data: { ready: false, reason: "gateway_offline" },
     });

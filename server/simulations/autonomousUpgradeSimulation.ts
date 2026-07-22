@@ -10,8 +10,8 @@ class SeededRandom {
     this.seed = seed;
   }
   random(): number {
-    const x = Math?.sin(this.seed++) * 10000;
-    return x - Math?.floor(x);
+    const x = Math.sin(this.seed++) * 10000;
+    return x - Math.floor(x);
   }
 }
 
@@ -73,7 +73,7 @@ function simulateDetection(
   const variance = baseTime * 0.2;
   const actualTime = baseTime + (rng?.random() - 0.5) * 2 * variance;
 
-  return Math?.max(0, actualTime);
+  return Math.max(0, actualTime);
 }
 
 /**
@@ -368,9 +368,9 @@ function generateIndustryScenarios(
   for (let i = 0; i < count; i++) {
     const template = scenarioTemplates[i % scenarioTemplates?.length];
     const platform =
-      template?.platforms[Math?.floor(rng?.random() * template?.platforms.length)];
+      template?.platforms[Math.floor(rng?.random() * template?.platforms.length)];
     const change =
-      template?.changes[Math?.floor(rng?.random() * template?.changes.length)];
+      template?.changes[Math.floor(rng?.random() * template?.changes.length)];
 
     const detectionTime = simulateDetection(template?.severity, rng);
     const upgrade = simulateUpgrade(
@@ -512,7 +512,7 @@ export async function simulateLongTermAdaptation(
   scenarioCount = 52,
   seed = 12345,
 ): Promise<SimulationResult> {
-  logger?.info(
+  logger.info(
     `\n🔄 Starting 1-year long-term simulation (${scenarioCount} scenarios)...\n`,
   );
 
@@ -622,8 +622,8 @@ export async function simulateLongTermAdaptation(
  * Format time in human-readable format
  */
 function formatTime(ms: number): string {
-  const hours = Math?.floor(ms / (60 * 60 * 1000));
-  const minutes = Math?.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
+  const hours = Math.floor(ms / (60 * 60 * 1000));
+  const minutes = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
 
   if (hours > 0) {
     return `${hours}h ${minutes}m`;

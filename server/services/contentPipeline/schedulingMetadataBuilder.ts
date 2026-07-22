@@ -172,7 +172,7 @@ export function buildScheduleManifest(
     const scheduled = new Set<string>(); // prevent duplicate day+hour slots
 
     for (const slot of contentSlots) {
-      if (postCount >= weeklyTarget * Math?.ceil(durationDays / 7)) break;
+      if (postCount >= weeklyTarget * Math.ceil(durationDays / 7)) break;
 
       // Find the next available window that hasn't been scheduled
       let attempts = 0;
@@ -219,7 +219,7 @@ export function buildScheduleManifest(
   // Sort by scheduledAt ascending
   entries?.sort((a, b) => a?.scheduledAt.getTime() - b?.scheduledAt.getTime());
 
-  logger?.info(
+  logger.info(
     `[SchedulingMetadataBuilder] Built ${entries?.length} schedule entries for ${byPlatform?.size} platforms`,
   );
 

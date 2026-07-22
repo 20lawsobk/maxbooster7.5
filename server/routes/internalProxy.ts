@@ -11,15 +11,15 @@
 import { Router, Request, Response } from "express";
 import { logger } from "../logger.js";
 
-const PYTHON_AI_PORT = parseInt(process?.env.PYTHON_AI_PORT || "9878", 10);
+const PYTHON_AI_PORT = parseInt(process.env.PYTHON_AI_PORT || "9878", 10);
 const AI_SERVICE_TARGET = `http://127.0.0.1:${PYTHON_AI_PORT}`;
-const INTERNAL_SECRET = process?.env.BOOSTERSTATE_SECRET || "";
+const INTERNAL_SECRET = process.env.BOOSTERSTATE_SECRET || "";
 
 function checkInternalSecret(req: Request, res: Response): boolean {
-  const auth = req?.headers["authorization"];
+  const auth = req.headers["authorization"];
   const provided = auth?.startsWith("Bearer ") ? auth?.slice(7) : "";
   if (!INTERNAL_SECRET || provided !== INTERNAL_SECRET) {
-    res?.status(401).json({ error: "Unauthorized" });
+    res.status(401).json({ error: "Unauthorized" });
     return false;
   }
   return true;
@@ -37,13 +37,13 @@ async function proxyTo(
   label: string,
 ): Promise<void> {
   const isHealthProbe =
-    req?.path === "/health" || req?.path === "/ping" || req?.path === "/ready";
+    req.path === "/health" || req.path === "/ping" || req.path === "/ready";
   const timeoutMs = isHealthProbe ? HEALTH_PROBE_TIMEOUT_MS : PROXY_TIMEOUT_MS;
 
-  const qs = Object?.keys(req?.query).length
-    ? "?" + new URLSearchParams(req?.query as Record<string, string>).toString()
+  const qs = Object.keys(req.query).length
+    ? "?" + new URLSearchParams(req.query as Record<string, string>).toString()
     : "";
-  const url = `${target}${req?.path}${qs}`;
+  const url = `${target}${req.path}${qs}`;
   try {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -53,22 +53,22 @@ async function proxyTo(
       headers,
       signal: AbortSignal.timeout(timeoutMs),
     };
-    if (req?.method !== "GET" && req?.method !== "HEAD") {
-      opts.body = JSON?.stringify(req?.body);
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      opts.body = JSON.stringify(req.body);
     }
     const upstream = await fetch(url, opts);
     const ct = upstream?.headers.get("content-type") || "application/json";
-    res?.status(upstream?.status).setHeader("Content-Type", ct);
+    res.status(upstream?.status).setHeader("Content-Type", ct);
     if (ct?.includes("application/json")) {
-      res?.json(await upstream?.json());
+      res.json(await upstream?.json());
     } else {
-      res?.send(await upstream?.text());
+      res.send(await upstream?.text());
     }
   } catch (err) {
     // For health probes: return 200/degraded instead of 503 so monitoring does not
     // treat an offline Python sidecar as a full server outage and log at error level.
     if (isHealthProbe) {
-      logger?.debug(
+      logger.debug(
         `[${label}] sidecar unreachable on health probe — reporting degraded`,
       );
       res
@@ -76,8 +76,8 @@ async function proxyTo(
         .json({ status: "degraded", available: false, service: label });
       return;
     }
-    logger?.debug(`[${label}] proxy → ${url} failed: ${(err as Error).message}`);
-    res?.status(503).json({ error: `${label} unavailable` });
+    logger.debug(`[${label}] proxy → ${url} failed: ${(err as Error).message}`);
+    res.status(503).json({ error: `${label} unavailable` });
   }
 }
 
@@ -92,7 +92,7 @@ aiServiceProxyRouter?.use((req: Request, res: Response) => {
 // BOOSTERSTATE_PORT may equal PORT when the one-port config is active; never use
 // it here — that would proxy back to the main app and create a loop.
 const BOOSTERSTATE_SIDECAR_PORT = parseInt(
-  process?.env.BOOSTERSTATE_SIDECAR_PORT || "9877",
+  process.env.BOOSTERSTATE_SIDECAR_PORT || "9877",
   10,
 );
 const BOOSTERSTATE_TARGET = `http://127.0.0.1:${BOOSTERSTATE_SIDECAR_PORT}`;

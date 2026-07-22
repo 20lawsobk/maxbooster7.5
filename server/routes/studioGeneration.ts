@@ -51,7 +51,7 @@ async function persistGeneratedSample(opts: {
       userId: opts.userId,
     });
   } catch (err) {
-    logger?.warn(
+    logger.warn(
       { err: err },
       "[Studio Generation] Could not persist sample to library:",
     );
@@ -130,7 +130,7 @@ const audioGenerationSchema = z.object({
 // MaxCore proxy) for completion and gets the audio URL from the completed job.
 router?.post("/text", requireAuth, aiRateLimiter, async (req, res) => {
   try {
-    const validatedData = textGenerationSchema?.parse(req?.body);
+    const validatedData = textGenerationSchema?.parse(req.body);
 
     let userText = (validatedData?.text || "").trim();
     if (validatedData?.tempo) {
@@ -162,7 +162,7 @@ router?.post("/text", requireAuth, aiRateLimiter, async (req, res) => {
     }
 
     const enhancedText = parts?.join(" ").trim() || "trap beat";
-    logger?.info(`[Studio Generation] Text-to-audio submit: "${enhancedText}"`);
+    logger.info(`[Studio Generation] Text-to-audio submit: "${enhancedText}"`);
 
     // Submit job to MaxCore — returns {job_id} almost immediately.
     const submitted = requireMaxCore(
@@ -183,17 +183,17 @@ router?.post("/text", requireAuth, aiRateLimiter, async (req, res) => {
     // If MaxCore returned audio synchronously (rare fast path), serve it directly.
     const syncAudioUrl = submitted.audioUrl ?? submitted.audio_url ?? null;
     if (syncAudioUrl && !submitted.job_id) {
-      return res?.json({ success: true, audioUrl: syncAudioUrl, status: "completed", sourceType: "MaxCoreAI" });
+      return res.json({ success: true, audioUrl: syncAudioUrl, status: "completed", sourceType: "MaxCoreAI" });
     }
 
     const jobId = submitted.job_id;
     if (!jobId) throw new AIUnavailableError("studio audio generation — no job_id returned");
 
-    logger?.info(`[Studio Generation] Audio job ${jobId} submitted — client should poll /api/audio-job/${jobId}`);
+    logger.info(`[Studio Generation] Audio job ${jobId} submitted — client should poll /api/audio-job/${jobId}`);
 
     // Return the job reference immediately — Replit's proxy would kill a long-held
     // connection before the job finishes. Client polls GET /api/audio-job/:jobId.
-    return res?.json({
+    return res.json({
       success: true,
       jobId,
       status: "processing",
@@ -202,14 +202,14 @@ router?.post("/text", requireAuth, aiRateLimiter, async (req, res) => {
       sourceType: "MaxCoreAI",
     });
   } catch (error) {
-    logger?.warn({ err: error }, "[Studio Generation] Text-to-audio failed:");
+    logger.warn({ err: error }, "[Studio Generation] Text-to-audio failed:");
     if (error instanceof z.ZodError) {
-      return res?.status(400).json({ success: false, message: "Invalid request parameters", errors: error.issues });
+      return res.status(400).json({ success: false, message: "Invalid request parameters", errors: error.issues });
     }
     if (error instanceof AIUnavailableError) {
-      return res?.status(error.statusCode).json({ success: false, code: error.code, message: error.message });
+      return res.status(error.statusCode).json({ success: false, code: error.code, message: error.message });
     }
-    res?.status(500).json({ success: false, message: (error as Error).message || "Failed to submit audio job" });
+    res.status(500).json({ success: false, message: (error as Error).message || "Failed to submit audio job" });
   }
 });
 
@@ -220,8 +220,8 @@ router?.post(
   upload?.single("audio"),
   async (req, res) => {
     try {
-      if (!req?.file) {
-        return res?.status(400).json({
+      if (!req.file) {
+        return res.status(400).json({
           success: false,
           message: "No audio file provided",
         });
@@ -231,13 +231,13 @@ router?.post(
         targetType: req.body.targetType,
         text: req.body.text,
         projectId: req.body.projectId,
-        bars: req.body.bars ? parseInt(req?.body.bars, 10) : undefined,
+        bars: req.body.bars ? parseInt(req.body.bars, 10) : undefined,
       };
 
       const validatedData = audioGenerationSchema?.parse(bodyData);
 
-      logger?.info(
-        `[Studio Generation] Audio-to-audio request, file size: ${req?.file.size} bytes`,
+      logger.info(
+        `[Studio Generation] Audio-to-audio request, file size: ${req.file.size} bytes`,
       );
 
       const result = await generateFromReference({
@@ -248,7 +248,7 @@ router?.post(
         projectId: validatedData.projectId,
       });
 
-      const userId2 = req?.user?.id || "unknown";
+      const userId2 = req.user?.id || "unknown";
       await persistGeneratedSample({
         name: `AI Style Transfer: ${validatedData?.targetType || "drums"}`,
         category: validatedData.targetType === "drums" ? "drums" : "synths",
@@ -261,7 +261,7 @@ router?.post(
         userId: userId2,
       });
 
-      res?.json({
+      res.json({
         success: true,
         audioFilePath: result.audioFilePath,
         parameters: result.parameters,
@@ -271,13 +271,13 @@ router?.post(
         generatedChords: result.generatedChords || [],
       });
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "[Studio Generation] Audio generation failed:",
       );
 
       if (error instanceof z.ZodError) {
-        return res?.status(400).json({
+        return res.status(400).json({
           success: false,
           message: "Invalid request parameters",
           errors: error.issues,
@@ -285,14 +285,14 @@ router?.post(
       }
 
       if (error instanceof AIUnavailableError) {
-        return res?.status(error.statusCode).json({
+        return res.status(error.statusCode).json({
           success: false,
           code: error.code,
           message: error.message,
         });
       }
 
-      res?.status(500).json({
+      res.status(500).json({
         success: false,
         message: error.message || "Failed to generate audio from reference",
       });
@@ -360,10 +360,10 @@ router?.get("/presets", requireAuth, async (_req, res) => {
       ],
     };
 
-    res?.json(presets);
+    res.json(presets);
   } catch (error) {
-    logger?.warn({ err: error }, "[Studio Generation] Failed to get presets:");
-    res?.status(500).json({
+    logger.warn({ err: error }, "[Studio Generation] Failed to get presets:");
+    res.status(500).json({
       success: false,
       message: "Failed to get presets",
     });
@@ -386,40 +386,40 @@ const patternGenerationSchema = z.object({
 router?.get("/pattern/instruments", requireAuth, async (_req, res) => {
   try {
     const instruments = melodyPatternService?.getAvailableInstruments();
-    res?.json(instruments);
+    res.json(instruments);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching instruments:");
-    res?.status(500).json({ error: "Failed to fetch instruments" });
+    logger.warn({ err: error }, "Error fetching instruments:");
+    res.status(500).json({ error: "Failed to fetch instruments" });
   }
 });
 
 router?.get("/pattern/genres", requireAuth, async (_req, res) => {
   try {
     const genres = melodyPatternService?.getAvailableGenres();
-    res?.json(genres);
+    res.json(genres);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching genres:");
-    res?.status(500).json({ error: "Failed to fetch genres" });
+    logger.warn({ err: error }, "Error fetching genres:");
+    res.status(500).json({ error: "Failed to fetch genres" });
   }
 });
 
 router?.get("/pattern/styles", requireAuth, async (_req, res) => {
   try {
     const styles = melodyPatternService?.getAvailableStyles();
-    res?.json(styles);
+    res.json(styles);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching styles:");
-    res?.status(500).json({ error: "Failed to fetch styles" });
+    logger.warn({ err: error }, "Error fetching styles:");
+    res.status(500).json({ error: "Failed to fetch styles" });
   }
 });
 
 router?.get("/pattern/scales", requireAuth, async (_req, res) => {
   try {
     const scales = melodyPatternService?.getAvailableScales();
-    res?.json(scales);
+    res.json(scales);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching scales:");
-    res?.status(500).json({ error: "Failed to fetch scales" });
+    logger.warn({ err: error }, "Error fetching scales:");
+    res.status(500).json({ error: "Failed to fetch scales" });
   }
 });
 
@@ -429,7 +429,7 @@ router?.get("/pattern/stats", requireAuth, async (_req, res) => {
     const instruments = melodyPatternService?.getAvailableInstruments();
     const genres = melodyPatternService?.getAvailableGenres();
 
-    res?.json({
+    res.json({
       ...stats,
       totalPatterns: stats.melody + stats?.drums,
       instruments: {
@@ -456,16 +456,16 @@ router?.get("/pattern/stats", requireAuth, async (_req, res) => {
       scales: melodyPatternService.getAvailableScales().length,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching stats:");
-    res?.status(500).json({ error: "Failed to fetch stats" });
+    logger.warn({ err: error }, "Error fetching stats:");
+    res.status(500).json({ error: "Failed to fetch stats" });
   }
 });
 
 router?.post("/pattern/melody", requireAuth, aiRateLimiter, async (req, res) => {
   try {
-    const validation = patternGenerationSchema?.safeParse(req?.body);
+    const validation = patternGenerationSchema?.safeParse(req.body);
     if (!validation?.success) {
-      return res?.status(400).json({ error: validation.error.message });
+      return res.status(400).json({ error: validation.error.message });
     }
 
     const params: GenerationParams = validation?.data;
@@ -518,25 +518,25 @@ router?.post("/pattern/melody", requireAuth, aiRateLimiter, async (req, res) => 
       ...(textDesc ? { description: textDesc } : {}),
       sourceType: "MaxCoreAI",
     };
-    logger?.info(`[Generation] MaxCore melody: ${params.instrument} ${params.genre}`);
-    return res?.json({ success: true, pattern, params });
+    logger.info(`[Generation] MaxCore melody: ${params.instrument} ${params.genre}`);
+    return res.json({ success: true, pattern, params });
   } catch (error) {
     if (error instanceof AIUnavailableError) {
-      logger?.warn(`[Generation] MaxCore unavailable (melody): ${error.message}`);
+      logger.warn(`[Generation] MaxCore unavailable (melody): ${error.message}`);
       return res
         ?.status(error.statusCode)
         .json({ error: error.message, code: error.code });
     }
-    logger?.warn({ err: error }, "Error generating melody:");
-    res?.status(500).json({ error: "Failed to generate melody" });
+    logger.warn({ err: error }, "Error generating melody:");
+    res.status(500).json({ error: "Failed to generate melody" });
   }
 });
 
 router?.post("/pattern/drums", requireAuth, aiRateLimiter, async (req, res) => {
   try {
-    const validation = patternGenerationSchema?.safeParse(req?.body);
+    const validation = patternGenerationSchema?.safeParse(req.body);
     if (!validation?.success) {
-      return res?.status(400).json({ error: validation.error.message });
+      return res.status(400).json({ error: validation.error.message });
     }
 
     const params: GenerationParams = validation?.data;
@@ -582,25 +582,25 @@ router?.post("/pattern/drums", requireAuth, aiRateLimiter, async (req, res) => {
       ...(textDesc ? { description: textDesc } : {}),
       sourceType: "MaxCoreAI",
     };
-    logger?.info(`[Generation] MaxCore drums: ${params.instrument} ${params.genre}`);
-    return res?.json({ success: true, pattern, params });
+    logger.info(`[Generation] MaxCore drums: ${params.instrument} ${params.genre}`);
+    return res.json({ success: true, pattern, params });
   } catch (error) {
     if (error instanceof AIUnavailableError) {
-      logger?.warn(`[Generation] MaxCore unavailable (drums): ${error.message}`);
+      logger.warn(`[Generation] MaxCore unavailable (drums): ${error.message}`);
       return res
         ?.status(error.statusCode)
         .json({ error: error.message, code: error.code });
     }
-    logger?.warn({ err: error }, "Error generating drums:");
-    res?.status(500).json({ error: "Failed to generate drums" });
+    logger.warn({ err: error }, "Error generating drums:");
+    res.status(500).json({ error: "Failed to generate drums" });
   }
 });
 
 router?.post("/pattern/chords", requireAuth, aiRateLimiter, async (req, res) => {
   try {
-    const validation = patternGenerationSchema?.safeParse(req?.body);
+    const validation = patternGenerationSchema?.safeParse(req.body);
     if (!validation?.success) {
-      return res?.status(400).json({ error: validation.error.message });
+      return res.status(400).json({ error: validation.error.message });
     }
 
     const params: GenerationParams = validation?.data;
@@ -645,17 +645,17 @@ router?.post("/pattern/chords", requireAuth, aiRateLimiter, async (req, res) => 
       ...(textDesc ? { description: textDesc } : {}),
       sourceType: "MaxCoreAI",
     };
-    logger?.info(`[Generation] MaxCore chords: ${params.key} ${params.scale} ${params.genre}`);
-    return res?.json({ success: true, progression, params });
+    logger.info(`[Generation] MaxCore chords: ${params.key} ${params.scale} ${params.genre}`);
+    return res.json({ success: true, progression, params });
   } catch (error) {
     if (error instanceof AIUnavailableError) {
-      logger?.warn(`[Generation] MaxCore unavailable (chords): ${error.message}`);
+      logger.warn(`[Generation] MaxCore unavailable (chords): ${error.message}`);
       return res
         ?.status(error.statusCode)
         .json({ error: error.message, code: error.code });
     }
-    logger?.warn({ err: error }, "Error generating chords:");
-    res?.status(500).json({ error: "Failed to generate chords" });
+    logger.warn({ err: error }, "Error generating chords:");
+    res.status(500).json({ error: "Failed to generate chords" });
   }
 });
 
@@ -665,9 +665,9 @@ router?.post(
   aiRateLimiter,
   async (req, res) => {
     try {
-      const validation = patternGenerationSchema?.safeParse(req?.body);
+      const validation = patternGenerationSchema?.safeParse(req.body);
       if (!validation?.success) {
-        return res?.status(400).json({ error: validation.error.message });
+        return res.status(400).json({ error: validation.error.message });
       }
 
       const params: GenerationParams = validation?.data;
@@ -722,19 +722,19 @@ router?.post(
         ...(textDesc ? { description: textDesc } : {}),
         sourceType: "MaxCoreAI",
       };
-      logger?.info(`[Generation] MaxCore arrangement: ${params.genre} style`);
-      return res?.json({ success: true, arrangement, params });
+      logger.info(`[Generation] MaxCore arrangement: ${params.genre} style`);
+      return res.json({ success: true, arrangement, params });
     } catch (error) {
       if (error instanceof AIUnavailableError) {
-        logger?.warn(
+        logger.warn(
           `[Generation] MaxCore unavailable (arrangement): ${error.message}`,
         );
         return res
           ?.status(error.statusCode)
           .json({ error: error.message, code: error.code });
       }
-      logger?.warn({ err: error }, "Error generating full arrangement:");
-      res?.status(500).json({ error: "Failed to generate arrangement" });
+      logger.warn({ err: error }, "Error generating full arrangement:");
+      res.status(500).json({ error: "Failed to generate arrangement" });
     }
   },
 );
@@ -745,9 +745,9 @@ router?.post(
   aiRateLimiter,
   upload?.single("audio"),
   async (req, res) => {
-    const file = req?.file;
+    const file = req.file;
     if (!file) {
-      return res?.status(400).json({ error: "No audio file provided" });
+      return res.status(400).json({ error: "No audio file provided" });
     }
 
     const rawExt = (file?.originalname.split(".").pop() || "wav")
@@ -774,7 +774,7 @@ router?.post(
           execErr?.stderr?.trim() ||
           execErr?.message ||
           "Pitch tracking process failed";
-        logger?.warn("[audio-to-melody] execFile error:", msg);
+        logger.warn("[audio-to-melody] execFile error:", msg);
         return res
           .status(500)
           .json({
@@ -785,9 +785,9 @@ router?.post(
 
       let result: Record<string, unknown>;
       try {
-        result = JSON?.parse(stdout?.trim());
+        result = JSON.parse(stdout?.trim());
       } catch {
-        logger?.warn(
+        logger.warn(
           "[audio-to-melody] Invalid JSON from pitch tracker. stderr:",
           stderr,
         );
@@ -797,7 +797,7 @@ router?.post(
       }
 
       if (result?.error) {
-        return res?.status(422).json({ error: result.error });
+        return res.status(422).json({ error: result.error });
       }
 
       const NOTES = [
@@ -824,7 +824,7 @@ router?.post(
         }),
       );
 
-      res?.json({
+      res.json({
         success: true,
         notes: melodyNotes,
         detected_key: result.detected_key,
@@ -832,8 +832,8 @@ router?.post(
         note_count: result.note_count,
       });
     } catch (err) {
-      logger?.warn({ err: err }, "[audio-to-melody] Error:");
-      res?.status(500).json({ error: "Pitch tracking failed" });
+      logger.warn({ err: err }, "[audio-to-melody] Error:");
+      res.status(500).json({ error: "Pitch tracking failed" });
     } finally {
       fsPromises?.unlink(tmpPath).catch(() => {
         /* intentional: temp-file cleanup */

@@ -6,7 +6,7 @@ import { storageService } from "./storageService.js";
 import { logger } from "../logger.js";
 
 const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
-const TEMP_DIR = path?.join(process?.cwd(), "tmp", "uploads", "sessions");
+const TEMP_DIR = path?.join(process.cwd(), "tmp", "uploads", "sessions");
 
 async function ensureTempDir(sessionId: string): Promise<string> {
   const sessionDir = path?.join(TEMP_DIR, sessionId);
@@ -19,7 +19,7 @@ export async function initializeSession(
   filename: string,
   totalSize: number,
 ): Promise<{ sessionId: string; totalChunks: number; chunkSize: number }> {
-  const totalChunks = Math?.ceil(totalSize / CHUNK_SIZE);
+  const totalChunks = Math.ceil(totalSize / CHUNK_SIZE);
 
   const session = await storage?.createUploadSession({
     userId,
@@ -198,7 +198,7 @@ export async function finalizeUpload(sessionId: string): Promise<{
     // Clean up session directory
     await fs?.rm(sessionDir, { recursive: true, force: true });
 
-    logger?.info(`✅ Chunked upload completed: ${storageKey}`);
+    logger.info(`✅ Chunked upload completed: ${storageKey}`);
 
     return {
       success: true,

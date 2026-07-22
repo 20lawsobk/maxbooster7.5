@@ -100,7 +100,7 @@ export class ApiError extends Error {
     let parsed: Record<string, unknown> = {};
 
     try {
-      parsed = JSON?.parse(body);
+      parsed = JSON.parse(body);
     } catch {
       parsed = { message: body || res?.statusText };
     }
@@ -405,7 +405,7 @@ export async function apiRequest(
     const res = await fetch(url, {
       method,
       headers,
-      body: isFormData ? data : data ? JSON?.stringify(data) : undefined,
+      body: isFormData ? data : data ? JSON.stringify(data) : undefined,
       credentials: "include",
       signal,
     });
@@ -483,7 +483,7 @@ export async function uploadWithProgress(
 
     xhr?.upload.addEventListener("progress", (event) => {
       if (event?.lengthComputable && options?.onProgress) {
-        const percentComplete = Math?.round((event?.loaded / event?.total) * 100);
+        const percentComplete = Math.round((event?.loaded / event?.total) * 100);
         options?.onProgress(percentComplete);
       }
     });
@@ -491,7 +491,7 @@ export async function uploadWithProgress(
     xhr?.addEventListener("load", () => {
       if (xhr?.status >= 200 && xhr?.status < 300) {
         try {
-          resolve(JSON?.parse(xhr?.responseText));
+          resolve(JSON.parse(xhr?.responseText));
         } catch {
           resolve({ success: true });
         }
@@ -504,7 +504,7 @@ export async function uploadWithProgress(
           errorMessage = "You do not have permission to upload files";
         } else {
           try {
-            const errorData = JSON?.parse(xhr?.responseText);
+            const errorData = JSON.parse(xhr?.responseText);
             errorMessage = errorData?.error || errorData?.message || errorMessage;
           } catch {
             // Use default error message
@@ -564,9 +564,9 @@ function buildUrlFromQueryKey(queryKey: readonly unknown[]): string {
   for (const part of queryKey) {
     if (typeof part === "string") {
       urlParts?.push(part);
-    } else if (part && typeof part === "object" && !Array?.isArray(part)) {
+    } else if (part && typeof part === "object" && !Array.isArray(part)) {
       // Object - convert to query parameters
-      for (const [key, value] of Object?.entries(part)) {
+      for (const [key, value] of Object.entries(part)) {
         if (value !== undefined && value !== null) {
           queryParams?.append(key, String(value));
         }

@@ -56,13 +56,13 @@ export class AIAdvertisingEngine {
     const md = MusicDataSchema?.safeParse(musicData);
     const ta = TargetAudienceSchema?.safeParse(targetAudience);
     if (!md?.success) {
-      logger?.warn(
+      logger.warn(
         { issues: md.error.issues },
         "[ai-advertising] invalid musicData",
       );
     }
     if (!ta?.success) {
-      logger?.warn(
+      logger.warn(
         { issues: ta.error.issues },
         "[ai-advertising] invalid targetAudience",
       );
@@ -74,21 +74,21 @@ export class AIAdvertisingEngine {
     // This system completely eliminates the need for Facebook Ads, Google Ads, TikTok Ads, etc.
     return {
       platformReplacement: {
-        facebook: await this?.replaceFacebookAds(musicData, targetAudience),
-        google: await this?.replaceGoogleAds(musicData, targetAudience),
-        tiktok: await this?.replaceTikTokAds(musicData, targetAudience),
-        instagram: await this?.replaceInstagramAds(musicData, targetAudience),
-        youtube: await this?.replaceYouTubeAds(musicData, targetAudience),
-        spotify: await this?.replaceSpotifyAds(musicData, targetAudience),
-        twitter: await this?.replaceTwitterAds(musicData, targetAudience),
-        snapchat: await this?.replaceSnapchatAds(musicData, targetAudience),
+        facebook: await this.replaceFacebookAds(musicData, targetAudience),
+        google: await this.replaceGoogleAds(musicData, targetAudience),
+        tiktok: await this.replaceTikTokAds(musicData, targetAudience),
+        instagram: await this.replaceInstagramAds(musicData, targetAudience),
+        youtube: await this.replaceYouTubeAds(musicData, targetAudience),
+        spotify: await this.replaceSpotifyAds(musicData, targetAudience),
+        twitter: await this.replaceTwitterAds(musicData, targetAudience),
+        snapchat: await this.replaceSnapchatAds(musicData, targetAudience),
       },
-      organicDomination: await this?.dominateOrganicReach(
+      organicDomination: await this.dominateOrganicReach(
         musicData,
         targetAudience,
       ),
-      algorithmHijacking: await this?.hijackRecommendationAlgorithms(musicData),
-      viralEngineering: await this?.engineerViralContent(
+      algorithmHijacking: await this.hijackRecommendationAlgorithms(musicData),
+      viralEngineering: await this.engineerViralContent(
         musicData,
         targetAudience,
       ),
@@ -109,7 +109,7 @@ export class AIAdvertisingEngine {
     const artist = musicData?.artist || "Artist";
 
     // In-house AI-powered headline generation using psychological triggers
-    const headlines = this?.generatePsychologicalHeadlines(
+    const headlines = this.generatePsychologicalHeadlines(
       genre,
       mood,
       title,
@@ -117,7 +117,7 @@ export class AIAdvertisingEngine {
     );
 
     // Proprietary caption generation for each platform
-    const captions = this?.generatePlatformOptimizedCaptions(
+    const captions = this.generatePlatformOptimizedCaptions(
       genre,
       mood,
       title,
@@ -125,16 +125,16 @@ export class AIAdvertisingEngine {
     );
 
     // In-house emotional trigger mapping
-    const emotionalTriggers = this?.mapGenreEmotionalTriggers(genre, mood);
+    const emotionalTriggers = this.mapGenreEmotionalTriggers(genre, mood);
 
     // Platform-specific optimization (proprietary algorithm)
-    const platformAdaptations = this?.generatePlatformAdaptations(
+    const platformAdaptations = this.generatePlatformAdaptations(
       musicData,
       targetAudience,
     );
 
     // Conversion-optimized CTAs (in-house framework)
-    const callToActions = this?.generateOptimizedCTAs(targetAudience);
+    const callToActions = this.generateOptimizedCTAs(targetAudience);
 
     return {
       headlines,
@@ -202,8 +202,8 @@ export class AIAdvertisingEngine {
           engagementBoost: 340,
         },
       ],
-      lookalikeAudiences: await this?.generateLookalikeAudiences(musicProfile),
-      crossPlatformSynergies: await this?.identifyPlatformSynergies(),
+      lookalikeAudiences: await this.generateLookalikeAudiences(musicProfile),
+      crossPlatformSynergies: await this.identifyPlatformSynergies(),
       realTimeOptimization: true,
       predictiveScaling: true,
     };
@@ -216,10 +216,10 @@ export class AIAdvertisingEngine {
     campaignData: unknown,
   ): Promise<SmartBidding> {
     // Simulate advanced AI bidding that outperforms native systems
-    const baselinePerformance = await this?.analyzeBaselinePerformance();
+    const baselinePerformance = await this.analyzeBaselinePerformance();
     const competitorIntelligence =
-      await this?.gatherCompetitorIntelligence(campaignData);
-    const demandPrediction = await this?.predictDemandCycles(campaignData);
+      await this.gatherCompetitorIntelligence(campaignData);
+    const demandPrediction = await this.predictDemandCycles(campaignData);
 
     return {
       predictedCPM: baselinePerformance.averageCPM * 0.4, // 60% cost reduction
@@ -239,19 +239,19 @@ export class AIAdvertisingEngine {
     performance: unknown,
   ): Promise<unknown> {
     return {
-      dynamicHeadlines: await this?.generateDynamicHeadlines(performance),
-      adaptiveVisuals: await this?.optimizeVisualElements(
+      dynamicHeadlines: await this.generateDynamicHeadlines(performance),
+      adaptiveVisuals: await this.optimizeVisualElements(
         adContent,
         performance,
       ),
-      personalizedMessages: await this?.createPersonalizedMessages(performance),
+      personalizedMessages: await this.createPersonalizedMessages(performance),
       realTimeAdjustments: {
         enabled: true,
         optimizationInterval: "15min",
         performanceThreshold: 150, // 50% above industry average
         autoScaling: true,
       },
-      crossPlatformOptimization: await this?.optimizeAcrossPlatforms(adContent),
+      crossPlatformOptimization: await this.optimizeAcrossPlatforms(adContent),
     };
   }
 

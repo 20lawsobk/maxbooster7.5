@@ -117,7 +117,7 @@ export function useStudioController({
     try {
       // Check if Web Audio API is supported before creating instance
       if (!AudioEngine?.isSupported()) {
-        logger?.warn("Web Audio API not supported in this browser");
+        logger.warn("Web Audio API not supported in this browser");
         if (onError) {
           onError(
             new Error(
@@ -129,7 +129,7 @@ export function useStudioController({
       }
       audioEngineRef.current = AudioEngine?.getInstance();
     } catch (error) {
-      logger?.error("Failed to get AudioEngine instance:", error);
+      logger.error("Failed to get AudioEngine instance:", error);
       if (onError) {
         onError(
           error instanceof Error
@@ -145,7 +145,7 @@ export function useStudioController({
           audioEngineRef?.current.stop();
         }
       } catch (cleanupError) {
-        logger?.warn("Error during AudioEngine cleanup:", cleanupError);
+        logger.warn("Error during AudioEngine cleanup:", cleanupError);
       }
     };
   }, [onError]);
@@ -175,7 +175,7 @@ export function useStudioController({
   useEffect(() => {
     const dbToLinear = (db: number): number => {
       if (db <= -60) return 0;
-      return Math?.pow(10, db / 20);
+      return Math.pow(10, db / 20);
     };
 
     if (isPlaying && audioEngineRef?.current) {
@@ -190,8 +190,8 @@ export function useStudioController({
         for (const track of tracks) {
           const peakData = engine?.getTrackPeakLevel(track?.id);
           const linearPeak = peakData ? dbToLinear(peakData?.peak) : 0;
-          const safeLevel = Number?.isFinite(linearPeak)
-            ? Math?.max(0, Math?.min(1, linearPeak))
+          const safeLevel = Number.isFinite(linearPeak)
+            ? Math.max(0, Math.min(1, linearPeak))
             : 0;
           newLevels?.set(track?.id, [safeLevel, safeLevel]);
         }
@@ -199,8 +199,8 @@ export function useStudioController({
 
         const masterPeak = engine?.getMasterPeakLevel();
         const masterLinear = masterPeak ? dbToLinear(masterPeak?.peak) : 0;
-        const safeMaster = Number?.isFinite(masterLinear)
-          ? Math?.max(0, Math?.min(1, masterLinear))
+        const safeMaster = Number.isFinite(masterLinear)
+          ? Math.max(0, Math.min(1, masterLinear))
           : 0;
         setMasterMeterLevels([safeMaster, safeMaster]);
 
@@ -240,7 +240,7 @@ export function useStudioController({
                 .loadBuffer(clip?.id, url)
                 .then(() => {})
                 .catch((e) => {
-                  logger?.warn(`Failed to preload clip ${clip?.id}:`, e);
+                  logger.warn(`Failed to preload clip ${clip?.id}:`, e);
                 }),
             );
           }
@@ -248,9 +248,9 @@ export function useStudioController({
       }
 
       await Promise?.all(loadPromises);
-      logger?.info(`Preloaded ${loadPromises?.length} audio buffers`);
+      logger.info(`Preloaded ${loadPromises?.length} audio buffers`);
     } catch (error) {
-      logger?.warn("Error during audio preload:", error);
+      logger.warn("Error during audio preload:", error);
     }
   }, [trackClips]);
 
@@ -347,7 +347,7 @@ export function useStudioController({
       const isReady = await audioEngineRef?.current.ensureReady();
       if (!isReady) {
         // Still not ready, but we can continue - it might unlock mid-playback
-        logger?.warn("Audio engine not fully ready, attempting playback anyway");
+        logger.warn("Audio engine not fully ready, attempting playback anyway");
       }
       setAudioEngineInitialized(true);
 
@@ -401,7 +401,7 @@ export function useStudioController({
                 })),
               )
               .catch((e) => {
-                logger?.warn(`Failed to load track ${track?.id}:`, e);
+                logger.warn(`Failed to load track ${track?.id}:`, e);
               });
           }
         }
@@ -411,7 +411,7 @@ export function useStudioController({
       await audioEngineRef?.current.play(currentTime);
       setStoreIsPlaying(true);
     } catch (error: unknown) {
-      logger?.error("Failed to play:", error);
+      logger.error("Failed to play:", error);
       if (onError) onError(error as Error);
     }
   }, [
@@ -432,7 +432,7 @@ export function useStudioController({
       setStoreCurrentTime(engineTime);
       setStoreIsPlaying(false);
     } catch (error: unknown) {
-      logger?.error("Failed to pause:", error);
+      logger.error("Failed to pause:", error);
       if (onError) onError(error as Error);
     }
   }, [setStoreCurrentTime, setStoreIsPlaying, onError]);
@@ -446,7 +446,7 @@ export function useStudioController({
       setStoreIsPlaying(false);
       setStoreIsRecording(false);
     } catch (error: unknown) {
-      logger?.error("Failed to stop:", error);
+      logger.error("Failed to stop:", error);
       if (onError) onError(error as Error);
     }
   }, [setStoreCurrentTime, setStoreIsPlaying, setStoreIsRecording, onError]);
@@ -459,7 +459,7 @@ export function useStudioController({
         await audioEngineRef?.current.seek(time);
         setStoreCurrentTime(time);
       } catch (error: unknown) {
-        logger?.error("Failed to seek:", error);
+        logger.error("Failed to seek:", error);
         if (onError) onError(error as Error);
       }
     },
@@ -483,7 +483,7 @@ export function useStudioController({
         apiRequest("PATCH", `/api/studio/projects/${projectId}`, {
           tempo: newTempo,
         }).catch((error) => {
-          logger?.error("Failed to persist tempo:", error);
+          logger.error("Failed to persist tempo:", error);
           if (onError) onError(error as Error);
         });
       }
@@ -530,7 +530,7 @@ export function useStudioController({
             const clips: AudioClipData[] = await response?.json();
             clipsMap?.set(track?.id, clips || []);
           } catch (error: unknown) {
-            logger?.error(`Failed to load clips for track ${track?.id}:`, error);
+            logger.error(`Failed to load clips for track ${track?.id}:`, error);
             if (onError) onError(error as Error);
           }
         }
@@ -574,7 +574,7 @@ export function useStudioController({
         });
         return result;
       } catch (error: unknown) {
-        logger?.error("Failed to create track:", error);
+        logger.error("Failed to create track:", error);
         if (onError) onError(error as Error);
         throw error;
       }
@@ -609,7 +609,7 @@ export function useStudioController({
         // Persist to backend
         await updateTrackMutation?.mutateAsync({ trackId, updates });
       } catch (error: unknown) {
-        logger?.error("Failed to update track:", error);
+        logger.error("Failed to update track:", error);
         if (onError) onError(error as Error);
         throw error;
       }
@@ -636,7 +636,7 @@ export function useStudioController({
         // Persist to backend
         await deleteTrackMutation?.mutateAsync(trackId);
       } catch (error: unknown) {
-        logger?.error("Failed to delete track:", error);
+        logger.error("Failed to delete track:", error);
         if (onError) onError(error as Error);
         throw error;
       }
@@ -809,7 +809,7 @@ export function useStudioController({
           }
         }
       } catch (error: unknown) {
-        logger?.error("Failed to update clip:", error);
+        logger.error("Failed to update clip:", error);
         if (onError) onError(error as Error);
         throw error;
       }
@@ -822,9 +822,9 @@ export function useStudioController({
       try {
         await deleteClipMutation?.mutateAsync(clipId);
         removeClipFromMap(trackId, clipId);
-        logger?.info("Clip deleted successfully", { trackId, clipId });
+        logger.info("Clip deleted successfully", { trackId, clipId });
       } catch (error: unknown) {
-        logger?.error("Failed to delete clip:", error);
+        logger.error("Failed to delete clip:", error);
         if (onError) onError(error as Error);
         throw error;
       }
@@ -844,7 +844,7 @@ export function useStudioController({
       }
     }
     // Return at least 60 seconds for empty projects
-    return Math?.max(maxDuration, 60);
+    return Math.max(maxDuration, 60);
   }, [trackClips]);
 
   // Get AudioContext from engine

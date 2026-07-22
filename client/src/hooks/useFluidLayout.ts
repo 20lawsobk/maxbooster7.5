@@ -139,7 +139,7 @@ export function getFluidGridCols(
     case "tablet":
       return "grid-cols-2";
     case "desktop":
-      return `grid-cols-${Math?.min(defaultCols, 3)}`;
+      return `grid-cols-${Math.min(defaultCols, 3)}`;
     case "wide":
       return `grid-cols-${defaultCols}`;
   }

@@ -62,20 +62,20 @@ export class WaveformVisualizer {
 
   constructor(options: Partial<WaveformVisualizerOptions> = {}) {
     this.options = { ...WaveformVisualizer?.defaultOptions, ...options };
-    this?.initializeData();
+    this.initializeData();
   }
 
   private initializeData(): void {
-    this.smoothedData = new Array(this?.options.sampleCount).fill(0.5);
-    this.previousData = new Array(this?.options.sampleCount).fill(0.5);
+    this.smoothedData = new Array(this.options.sampleCount).fill(0.5);
+    this.previousData = new Array(this.options.sampleCount).fill(0.5);
   }
 
   updateOptions(options: Partial<WaveformVisualizerOptions>): void {
-    const prevSampleCount = this?.options.sampleCount;
-    this.options = { ...this?.options, ...options };
+    const prevSampleCount = this.options.sampleCount;
+    this.options = { ...this.options, ...options };
 
     if (options?.sampleCount && options?.sampleCount !== prevSampleCount) {
-      this?.initializeData();
+      this.initializeData();
     }
   }
 
@@ -86,40 +86,40 @@ export class WaveformVisualizer {
     height: number,
     _time: number,
   ): void {
-    const waveformData = this?.getWaveformData(audioData);
-    this?.updateSmoothedData(waveformData);
+    const waveformData = this.getWaveformData(audioData);
+    this.updateSmoothedData(waveformData);
 
-    if (this?.options.beatReactive && audioData?.beatDetected) {
-      this.beatScale = this?.options.beatAmplitudeMultiplier;
+    if (this.options.beatReactive && audioData?.beatDetected) {
+      this.beatScale = this.options.beatAmplitudeMultiplier;
     } else {
-      this.beatScale += (1 - this?.beatScale) * 0.1;
+      this.beatScale += (1 - this.beatScale) * 0.1;
     }
 
     ctx?.save();
 
-    if (this?.options.glow) {
-      ctx.shadowColor = this?.options.glowColor;
-      ctx.shadowBlur = this?.options.glowBlur * this?.options.glowIntensity;
+    if (this.options.glow) {
+      ctx.shadowColor = this.options.glowColor;
+      ctx.shadowBlur = this.options.glowBlur * this.options.glowIntensity;
     }
 
-    const centerY = height / 2 + this?.options.yOffset;
+    const centerY = height / 2 + this.options.yOffset;
 
-    switch (this?.options.mode) {
+    switch (this.options.mode) {
       case "filled":
-        this?.renderFilled(ctx, width, height, centerY);
+        this.renderFilled(ctx, width, height, centerY);
         break;
       case "mirrored":
-        this?.renderMirrored(ctx, width, height, centerY);
+        this.renderMirrored(ctx, width, height, centerY);
         break;
       case "bars":
-        this?.renderBars(ctx, width, height, centerY);
+        this.renderBars(ctx, width, height, centerY);
         break;
       case "dots":
-        this?.renderDots(ctx, width, height, centerY);
+        this.renderDots(ctx, width, height, centerY);
         break;
       case "line":
       default:
-        this?.renderLine(ctx, width, height, centerY);
+        this.renderLine(ctx, width, height, centerY);
         break;
     }
 
@@ -129,10 +129,10 @@ export class WaveformVisualizer {
   private getWaveformData(audioData: AudioAnalysisData): number[] {
     const { timeDomainData } = audioData;
     const data: number[] = [];
-    const step = Math?.floor(timeDomainData?.length / this?.options.sampleCount);
+    const step = Math.floor(timeDomainData?.length / this.options.sampleCount);
 
-    for (let i = 0; i < this?.options.sampleCount; i++) {
-      const index = Math?.min(i * step, timeDomainData?.length - 1);
+    for (let i = 0; i < this.options.sampleCount; i++) {
+      const index = Math.min(i * step, timeDomainData?.length - 1);
       data?.push(timeDomainData[index] / 255);
     }
 
@@ -140,12 +140,12 @@ export class WaveformVisualizer {
   }
 
   private updateSmoothedData(newData: number[]): void {
-    const smoothFactor = this?.options.smoothing;
+    const smoothFactor = this.options.smoothing;
 
-    for (let i = 0; i < this?.options.sampleCount; i++) {
-      this.previousData[i] = this?.smoothedData[i];
+    for (let i = 0; i < this.options.sampleCount; i++) {
+      this.previousData[i] = this.smoothedData[i];
       this.smoothedData[i] =
-        this?.smoothedData[i] * smoothFactor + newData[i] * (1 - smoothFactor);
+        this.smoothedData[i] * smoothFactor + newData[i] * (1 - smoothFactor);
     }
   }
 
@@ -155,21 +155,21 @@ export class WaveformVisualizer {
     height: number,
     centerY: number,
   ): void {
-    const amplitude = (height / 2) * this?.options.amplitude * this?.beatScale;
+    const amplitude = (height / 2) * this.options.amplitude * this.beatScale;
 
-    ctx.strokeStyle = this?.createGradient(ctx, width, height, false);
-    ctx.lineWidth = this?.options.lineWidth;
+    ctx.strokeStyle = this.createGradient(ctx, width, height, false);
+    ctx.lineWidth = this.options.lineWidth;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
     ctx?.beginPath();
 
-    const points = this?.getPoints(width, amplitude, centerY);
+    const points = this.getPoints(width, amplitude, centerY);
 
-    if (this?.options.tension > 0) {
-      this?.drawSmoothCurve(ctx, points);
+    if (this.options.tension > 0) {
+      this.drawSmoothCurve(ctx, points);
     } else {
-      this?.drawLinearPath(ctx, points);
+      this.drawLinearPath(ctx, points);
     }
 
     ctx?.stroke();
@@ -181,35 +181,35 @@ export class WaveformVisualizer {
     height: number,
     centerY: number,
   ): void {
-    const amplitude = (height / 2) * this?.options.amplitude * this?.beatScale;
-    const points = this?.getPoints(width, amplitude, centerY);
+    const amplitude = (height / 2) * this.options.amplitude * this.beatScale;
+    const points = this.getPoints(width, amplitude, centerY);
 
     ctx?.beginPath();
     ctx?.moveTo(0, centerY);
 
-    if (this?.options.tension > 0) {
-      this?.drawSmoothCurve(ctx, points, true);
+    if (this.options.tension > 0) {
+      this.drawSmoothCurve(ctx, points, true);
     } else {
-      this?.drawLinearPath(ctx, points, true);
+      this.drawLinearPath(ctx, points, true);
     }
 
     ctx?.lineTo(width, centerY);
     ctx?.closePath();
 
-    const gradient = this?.createGradient(ctx, width, height, true);
+    const gradient = this.createGradient(ctx, width, height, true);
     ctx.fillStyle = gradient;
-    ctx.globalAlpha = this?.options.fillOpacity;
+    ctx.globalAlpha = this.options.fillOpacity;
     ctx?.fill();
     ctx.globalAlpha = 1;
 
-    ctx.strokeStyle = this?.createGradient(ctx, width, height, false);
-    ctx.lineWidth = this?.options.lineWidth;
+    ctx.strokeStyle = this.createGradient(ctx, width, height, false);
+    ctx.lineWidth = this.options.lineWidth;
 
     ctx?.beginPath();
-    if (this?.options.tension > 0) {
-      this?.drawSmoothCurve(ctx, points);
+    if (this.options.tension > 0) {
+      this.drawSmoothCurve(ctx, points);
     } else {
-      this?.drawLinearPath(ctx, points);
+      this.drawLinearPath(ctx, points);
     }
     ctx?.stroke();
   }
@@ -220,8 +220,8 @@ export class WaveformVisualizer {
     height: number,
     centerY: number,
   ): void {
-    const amplitude = (height / 4) * this?.options.amplitude * this?.beatScale;
-    const points = this?.getPoints(width, amplitude, centerY);
+    const amplitude = (height / 4) * this.options.amplitude * this.beatScale;
+    const points = this.getPoints(width, amplitude, centerY);
     const mirroredPoints = points?.map((p) => ({
       x: p.x,
       y: centerY + (centerY - p?.y),
@@ -229,10 +229,10 @@ export class WaveformVisualizer {
 
     ctx?.beginPath();
 
-    if (this?.options.tension > 0) {
-      this?.drawSmoothCurve(ctx, points, true);
+    if (this.options.tension > 0) {
+      this.drawSmoothCurve(ctx, points, true);
     } else {
-      this?.drawLinearPath(ctx, points, true);
+      this.drawLinearPath(ctx, points, true);
     }
 
     for (let i = mirroredPoints?.length - 1; i >= 0; i--) {
@@ -241,28 +241,28 @@ export class WaveformVisualizer {
 
     ctx?.closePath();
 
-    const gradient = this?.createGradient(ctx, width, height, true);
+    const gradient = this.createGradient(ctx, width, height, true);
     ctx.fillStyle = gradient;
-    ctx.globalAlpha = this?.options.fillOpacity;
+    ctx.globalAlpha = this.options.fillOpacity;
     ctx?.fill();
     ctx.globalAlpha = 1;
 
-    ctx.strokeStyle = this?.createGradient(ctx, width, height, false);
-    ctx.lineWidth = this?.options.lineWidth;
+    ctx.strokeStyle = this.createGradient(ctx, width, height, false);
+    ctx.lineWidth = this.options.lineWidth;
 
     ctx?.beginPath();
-    if (this?.options.tension > 0) {
-      this?.drawSmoothCurve(ctx, points);
+    if (this.options.tension > 0) {
+      this.drawSmoothCurve(ctx, points);
     } else {
-      this?.drawLinearPath(ctx, points);
+      this.drawLinearPath(ctx, points);
     }
     ctx?.stroke();
 
     ctx?.beginPath();
-    if (this?.options.tension > 0) {
-      this?.drawSmoothCurve(ctx, mirroredPoints);
+    if (this.options.tension > 0) {
+      this.drawSmoothCurve(ctx, mirroredPoints);
     } else {
-      this?.drawLinearPath(ctx, mirroredPoints);
+      this.drawLinearPath(ctx, mirroredPoints);
     }
     ctx?.stroke();
   }
@@ -273,21 +273,21 @@ export class WaveformVisualizer {
     height: number,
     centerY: number,
   ): void {
-    const amplitude = (height / 2) * this?.options.amplitude * this?.beatScale;
-    const barWidth = this?.options.barWidth;
+    const amplitude = (height / 2) * this.options.amplitude * this.beatScale;
+    const barWidth = this.options.barWidth;
     const gap =
-      (width - this?.options.sampleCount * barWidth) /
-      (this?.options.sampleCount - 1);
+      (width - this.options.sampleCount * barWidth) /
+      (this.options.sampleCount - 1);
 
-    ctx.fillStyle = this?.createGradient(ctx, width, height, true);
+    ctx.fillStyle = this.createGradient(ctx, width, height, true);
 
-    for (let i = 0; i < this?.options.sampleCount; i++) {
+    for (let i = 0; i < this.options.sampleCount; i++) {
       const x = i * (barWidth + gap);
-      const value = (this?.smoothedData[i] - 0.5) * 2 * amplitude;
+      const value = (this.smoothedData[i] - 0.5) * 2 * amplitude;
 
       ctx?.fillRect(x, centerY, barWidth, -value);
 
-      if (this?.options.mirror) {
+      if (this.options.mirror) {
         ctx.globalAlpha = 0.4;
         ctx?.fillRect(x, centerY, barWidth, value * 0.5);
         ctx.globalAlpha = 1;
@@ -301,26 +301,26 @@ export class WaveformVisualizer {
     height: number,
     centerY: number,
   ): void {
-    const amplitude = (height / 2) * this?.options.amplitude * this?.beatScale;
-    const points = this?.getPoints(width, amplitude, centerY);
+    const amplitude = (height / 2) * this.options.amplitude * this.beatScale;
+    const points = this.getPoints(width, amplitude, centerY);
 
-    ctx.fillStyle = this?.createGradient(ctx, width, height, true);
+    ctx.fillStyle = this.createGradient(ctx, width, height, true);
 
     for (const point of points) {
       ctx?.beginPath();
-      ctx?.arc(point?.x, point?.y, this?.options.dotSize, 0, Math.PI * 2);
+      ctx?.arc(point?.x, point?.y, this.options.dotSize, 0, Math.PI * 2);
       ctx?.fill();
     }
 
-    if (this?.options.lineWidth > 0) {
-      ctx.strokeStyle = this?.createGradient(ctx, width, height, false);
-      ctx.lineWidth = this?.options.lineWidth / 2;
+    if (this.options.lineWidth > 0) {
+      ctx.strokeStyle = this.createGradient(ctx, width, height, false);
+      ctx.lineWidth = this.options.lineWidth / 2;
 
       ctx?.beginPath();
-      if (this?.options.tension > 0) {
-        this?.drawSmoothCurve(ctx, points);
+      if (this.options.tension > 0) {
+        this.drawSmoothCurve(ctx, points);
       } else {
-        this?.drawLinearPath(ctx, points);
+        this.drawLinearPath(ctx, points);
       }
       ctx?.stroke();
     }
@@ -332,11 +332,11 @@ export class WaveformVisualizer {
     centerY: number,
   ): { x: number; y: number }[] {
     const points: { x: number; y: number }[] = [];
-    const step = width / (this?.options.sampleCount - 1);
+    const step = width / (this.options.sampleCount - 1);
 
-    for (let i = 0; i < this?.options.sampleCount; i++) {
+    for (let i = 0; i < this.options.sampleCount; i++) {
       const x = i * step;
-      const value = (this?.smoothedData[i] - 0.5) * 2 * amplitude;
+      const value = (this.smoothedData[i] - 0.5) * 2 * amplitude;
       points?.push({ x, y: centerY - value });
     }
 
@@ -368,7 +368,7 @@ export class WaveformVisualizer {
   ): void {
     if (points?.length < 2) return;
 
-    const tension = this?.options.tension;
+    const tension = this.options.tension;
 
     if (startFromFirst) {
       ctx?.moveTo(points[0].x, points[0].y);
@@ -377,10 +377,10 @@ export class WaveformVisualizer {
     }
 
     for (let i = 0; i < points?.length - 1; i++) {
-      const p0 = points[Math?.max(0, i - 1)];
+      const p0 = points[Math.max(0, i - 1)];
       const p1 = points[i];
       const p2 = points[i + 1];
-      const p3 = points[Math?.min(points?.length - 1, i + 2)];
+      const p3 = points[Math.min(points?.length - 1, i + 2)];
 
       const cp1x = p1?.x + ((p2?.x - p0?.x) * tension) / 6;
       const cp1y = p1?.y + ((p2?.y - p0?.y) * tension) / 6;
@@ -397,18 +397,18 @@ export class WaveformVisualizer {
     height: number,
     forFill: boolean,
   ): string | CanvasGradient {
-    if (!this?.options.useGradient) {
-      return forFill ? this?.options.color : this?.options.color;
+    if (!this.options.useGradient) {
+      return forFill ? this.options.color : this.options.color;
     }
 
     const colors =
-      this?.options.gradientColors?.length > 0
-        ? this?.options.gradientColors
-        : [this?.options.color, this?.options.secondaryColor];
+      this.options.gradientColors?.length > 0
+        ? this.options.gradientColors
+        : [this.options.color, this.options.secondaryColor];
 
     let gradient: CanvasGradient;
 
-    if (this?.options.gradientDirection === "horizontal") {
+    if (this.options.gradientDirection === "horizontal") {
       gradient = ctx?.createLinearGradient(0, 0, width, 0);
     } else {
       gradient = ctx?.createLinearGradient(0, 0, 0, height);
@@ -422,7 +422,7 @@ export class WaveformVisualizer {
   }
 
   reset(): void {
-    this?.initializeData();
+    this.initializeData();
     this.beatScale = 1;
   }
 

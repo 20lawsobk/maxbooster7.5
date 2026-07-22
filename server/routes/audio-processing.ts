@@ -28,7 +28,7 @@ const processAudioSchema = z.object({
 });
 
 function calculateLUFS(samples: number[], sampleRate: number): number {
-  const blockSize = Math?.floor(sampleRate * 0.4);
+  const blockSize = Math.floor(sampleRate * 0.4);
   if (samples?.length < blockSize) return -70;
 
   let totalPower = 0;
@@ -37,7 +37,7 @@ function calculateLUFS(samples: number[], sampleRate: number): number {
   for (
     let start = 0;
     start < samples?.length - blockSize;
-    start += Math?.floor(blockSize / 2)
+    start += Math.floor(blockSize / 2)
   ) {
     const block = samples?.slice(start, start + blockSize);
     const meanSquare = block?.reduce((sum, s) => sum + s * s, 0) / block?.length;
@@ -47,21 +47,21 @@ function calculateLUFS(samples: number[], sampleRate: number): number {
 
   if (blockCount === 0) return -70;
   const meanPower = totalPower / blockCount;
-  const lufs = -0.691 + 10 * Math?.log10(meanPower);
-  return isFinite(lufs) ? Math?.round(lufs * 100) / 100 : -70;
+  const lufs = -0.691 + 10 * Math.log10(meanPower);
+  return isFinite(lufs) ? Math.round(lufs * 100) / 100 : -70;
 }
 
 function calculatePeakDB(samples: number[]): number {
   if (samples?.length === 0) return -Infinity;
-  const peak = Math?.max(...samples?.map(Math?.abs));
-  const peakDB = 20 * Math?.log10(peak);
-  return isFinite(peakDB) ? Math?.round(peakDB * 100) / 100 : -Infinity;
+  const peak = Math.max(...samples?.map(Math.abs));
+  const peakDB = 20 * Math.log10(peak);
+  return isFinite(peakDB) ? Math.round(peakDB * 100) / 100 : -Infinity;
 }
 
 function calculateRMS(samples: number[]): number {
   if (samples?.length === 0) return 0;
   const sumOfSquares = samples?.reduce((sum, s) => sum + s * s, 0);
-  return Math?.sqrt(sumOfSquares / samples?.length);
+  return Math.sqrt(sumOfSquares / samples?.length);
 }
 
 function calculateDynamicRange(samples: number[]): {
@@ -74,19 +74,19 @@ function calculateDynamicRange(samples: number[]): {
     return { peak: 0, rms: 0, dynamicRange: 0, crestFactor: 0 };
   }
 
-  const peak = Math?.max(...samples?.map(Math?.abs));
+  const peak = Math.max(...samples?.map(Math.abs));
   const rms = calculateRMS(samples);
-  const dynamicRange = peak > 0 && rms > 0 ? 20 * Math?.log10(peak / rms) : 0;
+  const dynamicRange = peak > 0 && rms > 0 ? 20 * Math.log10(peak / rms) : 0;
   const crestFactor = rms > 0 ? peak / rms : 0;
 
   return {
     peak: Math.round(peak * 10000) / 10000,
     rms: Math.round(rms * 10000) / 10000,
     dynamicRange: isFinite(dynamicRange)
-      ? Math?.round(dynamicRange * 100) / 100
+      ? Math.round(dynamicRange * 100) / 100
       : 0,
     crestFactor: isFinite(crestFactor)
-      ? Math?.round(crestFactor * 100) / 100
+      ? Math.round(crestFactor * 100) / 100
       : 0,
   };
 }
@@ -101,7 +101,7 @@ function detectClipping(
 } {
   let clippedSamples = 0;
   for (const sample of samples) {
-    if (Math?.abs(sample) >= threshold) {
+    if (Math.abs(sample) >= threshold) {
       clippedSamples++;
     }
   }
@@ -128,7 +128,7 @@ function analyzeStereoImage(
   let leftPower = 0;
   let rightPower = 0;
 
-  const length = Math?.min(leftChannel?.length, rightChannel?.length);
+  const length = Math.min(leftChannel?.length, rightChannel?.length);
 
   for (let i = 0; i < length; i++) {
     correlation += leftChannel[i] * rightChannel[i];
@@ -137,26 +137,26 @@ function analyzeStereoImage(
   }
 
   const normalizedCorrelation =
-    Math?.sqrt(leftPower * rightPower) > 0
-      ? correlation / Math?.sqrt(leftPower * rightPower)
+    Math.sqrt(leftPower * rightPower) > 0
+      ? correlation / Math.sqrt(leftPower * rightPower)
       : 0;
 
   const totalPower = leftPower + rightPower;
   const balance = totalPower > 0 ? (rightPower - leftPower) / totalPower : 0;
-  const width = 1 - Math?.abs(normalizedCorrelation);
+  const width = 1 - Math.abs(normalizedCorrelation);
 
   return {
     correlation: isFinite(normalizedCorrelation)
-      ? Math?.round(normalizedCorrelation * 1000) / 1000
+      ? Math.round(normalizedCorrelation * 1000) / 1000
       : 0,
-    balance: isFinite(balance) ? Math?.round(balance * 1000) / 1000 : 0,
-    width: isFinite(width) ? Math?.round(width * 1000) / 1000 : 0,
+    balance: isFinite(balance) ? Math.round(balance * 1000) / 1000 : 0,
+    width: isFinite(width) ? Math.round(width * 1000) / 1000 : 0,
   };
 }
 
 function applyGain(samples: number[], gainDB: number): number[] {
-  const gainLinear = Math?.pow(10, gainDB / 20);
-  return samples?.map((s) => Math?.max(-1, Math?.min(1, s * gainLinear)));
+  const gainLinear = Math.pow(10, gainDB / 20);
+  return samples?.map((s) => Math.max(-1, Math.min(1, s * gainLinear)));
 }
 
 function applyCompressor(
@@ -167,27 +167,27 @@ function applyCompressor(
   release: number,
   sampleRate: number,
 ): number[] {
-  const thresholdLinear = Math?.pow(10, threshold / 20);
-  const attackSamples = Math?.floor(attack * sampleRate);
-  const releaseSamples = Math?.floor(release * sampleRate);
+  const thresholdLinear = Math.pow(10, threshold / 20);
+  const attackSamples = Math.floor(attack * sampleRate);
+  const releaseSamples = Math.floor(release * sampleRate);
 
   const output = new Array(samples?.length);
   let envelope = 0;
 
   for (let i = 0; i < samples?.length; i++) {
-    const inputLevel = Math?.abs(samples[i]);
+    const inputLevel = Math.abs(samples[i]);
 
     if (inputLevel > envelope) {
-      envelope += (inputLevel - envelope) / Math?.max(1, attackSamples);
+      envelope += (inputLevel - envelope) / Math.max(1, attackSamples);
     } else {
-      envelope += (inputLevel - envelope) / Math?.max(1, releaseSamples);
+      envelope += (inputLevel - envelope) / Math.max(1, releaseSamples);
     }
 
     let gain = 1;
     if (envelope > thresholdLinear) {
-      const overDB = 20 * Math?.log10(envelope / thresholdLinear);
+      const overDB = 20 * Math.log10(envelope / thresholdLinear);
       const compressedOverDB = overDB / ratio;
-      gain = Math?.pow(10, (compressedOverDB - overDB) / 20);
+      gain = Math.pow(10, (compressedOverDB - overDB) / 20);
     }
 
     output[i] = samples[i] * gain;
@@ -197,9 +197,9 @@ function applyCompressor(
 }
 
 function applyLimiter(samples: number[], ceiling: number): number[] {
-  const ceilingLinear = Math?.pow(10, ceiling / 20);
+  const ceilingLinear = Math.pow(10, ceiling / 20);
   return samples?.map((s) => {
-    if (Math?.abs(s) > ceilingLinear) {
+    if (Math.abs(s) > ceilingLinear) {
       return s > 0 ? ceilingLinear : -ceilingLinear;
     }
     return s;
@@ -208,7 +208,7 @@ function applyLimiter(samples: number[], ceiling: number): number[] {
 
 router?.post("/analyze", requireAuth, async (req: Request, res: Response) => {
   try {
-    const validation = analyzeAudioSchema?.safeParse(req?.body);
+    const validation = analyzeAudioSchema?.safeParse(req.body);
     if (!validation?.success) {
       return res
         .status(400)
@@ -235,14 +235,14 @@ router?.post("/analyze", requireAuth, async (req: Request, res: Response) => {
       left = leftChannel;
       right = rightChannel;
       allSamples = [];
-      for (let i = 0; i < Math?.max(left?.length, right?.length); i++) {
+      for (let i = 0; i < Math.max(left?.length, right?.length); i++) {
         if (i < left?.length) allSamples?.push(left[i]);
         if (i < right?.length) allSamples?.push(right[i]);
       }
     }
 
     if (allSamples?.length === 0) {
-      return res?.status(400).json({ error: "No audio samples provided" });
+      return res.status(400).json({ error: "No audio samples provided" });
     }
 
     const lufs = calculateLUFS(allSamples, sampleRate);
@@ -251,7 +251,7 @@ router?.post("/analyze", requireAuth, async (req: Request, res: Response) => {
     const clipping = detectClipping(allSamples);
     const stereo = channels === 2 ? analyzeStereoImage(left, right) : null;
 
-    res?.json({
+    res.json({
       success: true,
       metrics: {
         lufs,
@@ -260,7 +260,7 @@ router?.post("/analyze", requireAuth, async (req: Request, res: Response) => {
         rms: dynamics.rms,
         rmsDB:
           dynamics?.rms > 0
-            ? Math?.round(20 * Math?.log10(dynamics?.rms) * 100) / 100
+            ? Math.round(20 * Math.log10(dynamics?.rms) * 100) / 100
             : -Infinity,
         dynamicRange: dynamics.dynamicRange,
         crestFactor: dynamics.crestFactor,
@@ -271,14 +271,14 @@ router?.post("/analyze", requireAuth, async (req: Request, res: Response) => {
       },
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Audio analysis error:");
-    res?.status(500).json({ error: "Audio analysis failed" });
+    logger.warn({ err: error }, "Audio analysis error:");
+    res.status(500).json({ error: "Audio analysis failed" });
   }
 });
 
 router?.post("/process", requireAuth, async (req: Request, res: Response) => {
   try {
-    const validation = processAudioSchema?.safeParse(req?.body);
+    const validation = processAudioSchema?.safeParse(req.body);
     if (!validation?.success) {
       return res
         .status(400)
@@ -301,7 +301,7 @@ router?.post("/process", requireAuth, async (req: Request, res: Response) => {
     } else if (leftChannel && rightChannel) {
       for (
         let i = 0;
-        i < Math?.max(leftChannel?.length, rightChannel?.length);
+        i < Math.max(leftChannel?.length, rightChannel?.length);
         i++
       ) {
         if (i < leftChannel?.length) processedSamples?.push(leftChannel[i]);
@@ -310,7 +310,7 @@ router?.post("/process", requireAuth, async (req: Request, res: Response) => {
     }
 
     if (processedSamples?.length === 0) {
-      return res?.status(400).json({ error: "No audio samples provided" });
+      return res.status(400).json({ error: "No audio samples provided" });
     }
 
     for (const processor of processingChain) {
@@ -352,15 +352,15 @@ router?.post("/process", requireAuth, async (req: Request, res: Response) => {
       lufs: calculateLUFS(processedSamples, sampleRate),
     };
 
-    res?.json({
+    res.json({
       success: true,
       processedSamples,
       metrics: postMetrics,
       processingApplied: processingChain.map((p) => p?.type),
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Audio processing error:");
-    res?.status(500).json({ error: "Audio processing failed" });
+    logger.warn({ err: error }, "Audio processing error:");
+    res.status(500).json({ error: "Audio processing failed" });
   }
 });
 
@@ -627,13 +627,13 @@ router?.get("/presets", requireAuth, async (_req: Request, res: Response) => {
       ],
     };
 
-    res?.json({
+    res.json({
       success: true,
       presets,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching presets:");
-    res?.status(500).json({ error: "Failed to fetch presets" });
+    logger.warn({ err: error }, "Error fetching presets:");
+    res.status(500).json({ error: "Failed to fetch presets" });
   }
 });
 
@@ -642,7 +642,7 @@ router?.get(
   requireAuth,
   async (_req: Request, res: Response) => {
     try {
-      res?.json({
+      res.json({
         success: true,
         capabilities: {
           analysis: {
@@ -683,8 +683,8 @@ router?.get(
         },
       });
     } catch (error) {
-      logger?.warn("Error in audio capabilities:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in audio capabilities:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   },
 );
@@ -700,9 +700,9 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { filePath, detailed = false } = req?.body;
+      const { filePath, detailed = false } = req.body;
       if (!filePath || typeof filePath !== "string") {
-        return res?.status(400).json({ error: "filePath is required" });
+        return res.status(400).json({ error: "filePath is required" });
       }
       const { pythonAIService } = await import(
         "../services/pythonAIService.js"
@@ -722,10 +722,10 @@ router?.post(
           .status(500)
           .json({ error: result.error || "Analysis failed" });
       }
-      return res?.json({ success: true, ...result?.data });
+      return res.json({ success: true, ...result?.data });
     } catch (error) {
-      logger?.warn("Audio file analysis error:", error?.message);
-      res?.status(500).json({ error: "Audio analysis failed" });
+      logger.warn("Audio file analysis error:", error?.message);
+      res.status(500).json({ error: "Audio analysis failed" });
     }
   },
 );
@@ -738,9 +738,9 @@ router?.get("/analysis-features", async (_req: Request, res: Response) => {
   try {
     const { pythonAIService } = await import("../services/pythonAIService.js");
     const result = await pythonAIService?.getAudioFeatureInfo();
-    return res?.json(result?.data ?? { available: false });
+    return res.json(result?.data ?? { available: false });
   } catch (error) {
-    res?.json({ available: false, error: error.message });
+    res.json({ available: false, error: error.message });
   }
 });
 
@@ -752,9 +752,9 @@ router?.get("/analysis-features", async (_req: Request, res: Response) => {
  */
 router?.post("/transcribe", requireAuth, async (req: Request, res: Response) => {
   try {
-    const { filePath } = req?.body;
+    const { filePath } = req.body;
     if (!filePath || typeof filePath !== "string") {
-      return res?.status(400).json({ error: "filePath is required" });
+      return res.status(400).json({ error: "filePath is required" });
     }
     const { pythonAIService } = await import("../services/pythonAIService.js");
     const available = await pythonAIService?.isAvailable();
@@ -769,10 +769,10 @@ router?.post("/transcribe", requireAuth, async (req: Request, res: Response) => 
         .status(500)
         .json({ error: result.error || "Transcription failed" });
     }
-    return res?.json(result?.data);
+    return res.json(result?.data);
   } catch (error) {
-    logger?.warn("MIDI transcription error:", error?.message);
-    res?.status(500).json({ error: "MIDI transcription failed" });
+    logger.warn("MIDI transcription error:", error?.message);
+    res.status(500).json({ error: "MIDI transcription failed" });
   }
 });
 

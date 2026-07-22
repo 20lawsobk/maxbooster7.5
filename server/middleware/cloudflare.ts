@@ -86,7 +86,7 @@ declare global {
  * When a request arrives through Cloudflare:
  *   - Validates the connecting IP is actually Cloudflare
  *   - Extracts the real client IP from CF-Connecting-IP (injected by Cloudflare, not spoofable)
- *   - Attaches req?.cfRay and req?.isBehindCloudflare for downstream middleware
+ *   - Attaches req.cfRay and req.isBehindCloudflare for downstream middleware
  *   - Adds Cloudflare-specific cache/security response headers
  *
  * When NOT behind Cloudflare (dev, direct access):
@@ -97,9 +97,9 @@ export function cloudflareMiddleware(
   res: Response,
   next: NextFunction,
 ) {
-  const cfRay = req?.headers["cf-ray"] as string | undefined;
-  const cfConnectingIp = req?.headers["cf-connecting-ip"] as string | undefined;
-  const connectingIp = (req?.socket.remoteAddress || "").replace("::ffff:", "");
+  const cfRay = req.headers["cf-ray"] as string | undefined;
+  const cfConnectingIp = req.headers["cf-connecting-ip"] as string | undefined;
+  const connectingIp = (req.socket.remoteAddress || "").replace("::ffff:", "");
 
   const behindCf = !!(cfRay && cfConnectingIp && isCloudflareIP(connectingIp));
 
@@ -109,14 +109,14 @@ export function cloudflareMiddleware(
   if (behindCf && cfConnectingIp) {
     req.realClientIp = cfConnectingIp;
   } else {
-    req.realClientIp = req?.ip || connectingIp;
+    req.realClientIp = req.ip || connectingIp;
   }
 
   // Tell Cloudflare what to do with API responses
-  if (req?.path.startsWith("/api/")) {
-    res?.setHeader("Cache-Control", "no-store");
-    res?.setHeader("CDN-Cache-Control", "no-store");
-    res?.setHeader("Cloudflare-CDN-Cache-Control", "no-store");
+  if (req.path.startsWith("/api/")) {
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("CDN-Cache-Control", "no-store");
+    res.setHeader("Cloudflare-CDN-Cache-Control", "no-store");
   }
 
   next();

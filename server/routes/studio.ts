@@ -1194,7 +1194,7 @@ router.post(
         .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
         .returning();
 
-      if (tracks && Array?.isArray(tracks)) {
+      if (tracks && Array.isArray(tracks)) {
         for (const track of tracks) {
           if (track?.id) {
             await db
@@ -1592,7 +1592,7 @@ router.get(
               id: randomBytes(8).toString("hex"),
               projectId,
               name: project.title || "Audio Track 1",
-              type: "audio",
+              trackType: "audio",
               order: 0,
               color: "#3b82f6",
               volume: 0.8,
@@ -3169,10 +3169,10 @@ router.post("/folders", requireAuth, async (req: Request, res: Response) => {
         trackType: "folder",
         volume: 1,
         pan: 0,
-        mute: false,
-        solo: false,
+        isMuted: false,
+        isSolo: false,
         color: color || "#6366f1",
-        trackNumber: position ?? 0,
+        order: position ?? 0,
       })
       .returning();
 
@@ -5049,16 +5049,16 @@ router.post(
             id: trackId,
             projectId,
             name: trackDef.name || `Track ${i + 1}`,
-            trackNumber: i + 1,
+            order: i,
             trackType: trackDef.trackType,
             color: trackDef.color,
-            volume: trackDef.volume,
-            pan: trackDef.pan,
-            muted: trackDef.muted,
-            soloed: trackDef.soloed,
-            armed: false,
-            plugins: trackDef.plugins,
-            routingBus: trackDef.routingBus,
+            volume: trackDef.volume ?? 1,
+            pan: trackDef.pan ?? 0,
+            isMuted: trackDef.muted ?? false,
+            isSolo: trackDef.soloed ?? false,
+            isArmed: false,
+            outputBus: trackDef.routingBus,
+            metadata: trackDef.plugins?.length ? { plugins: trackDef.plugins } : undefined,
           });
 
           tracksCreated++;
@@ -5844,10 +5844,10 @@ router.post(
           color: originalTrack.color,
           volume: originalTrack.volume,
           pan: originalTrack.pan,
-          mute: originalTrack.mute,
-          solo: originalTrack.solo,
-          armed: false,
-          trackNumber: (originalTrack?.trackNumber || 0) + 1,
+          isMuted: originalTrack.isMuted,
+          isSolo: originalTrack.isSolo,
+          isArmed: false,
+          order: (originalTrack?.order ?? 0) + 1,
         })
         .returning();
 

@@ -138,11 +138,11 @@ class TaxFormService {
   private static readonly MAX_TAX_FORMS = 100_000;
 
   private cacheTaxForm(id: string, form: GeneratedTaxForm): void {
-    if (this?.taxForms.size >= TaxFormService.MAX_TAX_FORMS) {
-      const oldest = this?.taxForms.keys().next().value;
-      if (oldest !== undefined) this?.taxForms.delete(oldest);
+    if (this.taxForms.size >= TaxFormService.MAX_TAX_FORMS) {
+      const oldest = this.taxForms.keys().next().value;
+      if (oldest !== undefined) this.taxForms.delete(oldest);
     }
-    this?.taxForms.set(id, form);
+    this.taxForms.set(id, form);
   }
 
   // DB-backed treaty rate cache (TTL: 1 hour)
@@ -153,8 +153,8 @@ class TaxFormService {
 
   private async getTreatyRatesFromDB(): Promise<Record<string, number>> {
     const now = Date?.now();
-    if (this?._treatyCache && now < this?._treatyCache.expiresAt) {
-      return this?._treatyCache.data;
+    if (this._treatyCache && now < this._treatyCache.expiresAt) {
+      return this._treatyCache.data;
     }
     try {
       const rows = await db?.select().from(taxTreatyRates).limit(300);
@@ -167,7 +167,7 @@ class TaxFormService {
       this._treatyCache = { data: map, expiresAt: now + 3600_000 };
       return map;
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err: err },
         "Failed to load tax treaty rates from DB, using hardcoded fallback:",
       );
@@ -187,7 +187,7 @@ class TaxFormService {
     hasValidW9?: boolean,
     hasBackupWithholding?: boolean,
   ): Promise<WithholdingCalculation> {
-    const dbTreatyRates = await this?.getTreatyRatesFromDB();
+    const dbTreatyRates = await this.getTreatyRatesFromDB();
 
     if (isUSPerson) {
       if (hasBackupWithholding || !hasValidW9) {
@@ -314,8 +314,8 @@ class TaxFormService {
       updatedAt: new Date(),
     };
 
-    this?.cacheTaxForm(form?.id, form);
-    logger?.info(`Generated W-9 form ${form?.id} for user ${userId}`);
+    this.cacheTaxForm(form?.id, form);
+    logger.info(`Generated W-9 form ${form?.id} for user ${userId}`);
     return form;
   }
 
@@ -335,8 +335,8 @@ class TaxFormService {
       updatedAt: new Date(),
     };
 
-    this?.cacheTaxForm(form?.id, form);
-    logger?.info(`Generated W-8BEN form ${form?.id} for user ${userId}`);
+    this.cacheTaxForm(form?.id, form);
+    logger.info(`Generated W-8BEN form ${form?.id} for user ${userId}`);
     return form;
   }
 
@@ -368,8 +368,8 @@ class TaxFormService {
       updatedAt: new Date(),
     };
 
-    this?.cacheTaxForm(form?.id, form);
-    logger?.info(`Generated 1099-NEC form ${form?.id} for tax year ${taxYear}`);
+    this.cacheTaxForm(form?.id, form);
+    logger.info(`Generated 1099-NEC form ${form?.id} for tax year ${taxYear}`);
     return form;
   }
 
@@ -419,8 +419,8 @@ class TaxFormService {
       updatedAt: new Date(),
     };
 
-    this?.cacheTaxForm(form?.id, form);
-    logger?.info(`Generated 1099-MISC form ${form?.id} for tax year ${taxYear}`);
+    this.cacheTaxForm(form?.id, form);
+    logger.info(`Generated 1099-MISC form ${form?.id} for tax year ${taxYear}`);
     return form;
   }
 
@@ -466,29 +466,29 @@ class TaxFormService {
       updatedAt: new Date(),
     };
 
-    this?.cacheTaxForm(form?.id, form);
-    logger?.info(`Generated 1099-K form ${form?.id} for tax year ${taxYear}`);
+    this.cacheTaxForm(form?.id, form);
+    logger.info(`Generated 1099-K form ${form?.id} for tax year ${taxYear}`);
     return form;
   }
 
   getTaxForm(formId: string): GeneratedTaxForm | undefined {
-    return this?.taxForms.get(formId);
+    return this.taxForms.get(formId);
   }
 
   getTaxFormsByUser(userId: string): GeneratedTaxForm[] {
-    return Array?.from(this?.taxForms.values()).filter(
+    return Array.from(this.taxForms.values()).filter(
       (form) => form?.userId === userId,
     );
   }
 
   getTaxFormsByYear(userId: string, taxYear: number): GeneratedTaxForm[] {
-    return Array?.from(this?.taxForms.values()).filter(
+    return Array.from(this.taxForms.values()).filter(
       (form) => form?.userId === userId && form?.taxYear === taxYear,
     );
   }
 
   signTaxForm(formId: string, signatureHash: string): GeneratedTaxForm {
-    const form = this?.taxForms.get(formId);
+    const form = this.taxForms.get(formId);
     if (!form) {
       throw new Error("Tax form not found");
     }
@@ -498,8 +498,8 @@ class TaxFormService {
     form.signatureHash = signatureHash;
     form.updatedAt = new Date();
 
-    this?.cacheTaxForm(formId, form);
-    logger?.info(`Tax form ${formId} signed`);
+    this.cacheTaxForm(formId, form);
+    logger.info(`Tax form ${formId} signed`);
     return form;
   }
 
@@ -514,7 +514,7 @@ class TaxFormService {
       withholding: number;
     }>,
   ): TaxSummary {
-    const forms = this?.getTaxFormsByYear(userId, taxYear);
+    const forms = this.getTaxFormsByYear(userId, taxYear);
 
     const bySource = earnings?.map((e) => ({
       ...e,
@@ -542,7 +542,7 @@ class TaxFormService {
   }
 
   generateW9PDF(formId: string): Buffer {
-    const form = this?.taxForms.get(formId);
+    const form = this.taxForms.get(formId);
     if (!form || form?.formType !== "W-9") {
       throw new Error("W-9 form not found");
     }
@@ -659,13 +659,13 @@ class TaxFormService {
 
     doc?.setFont("helvetica", "normal");
     doc?.text(
-      `Social security number: ${info?.tinType === "ssn" ? this?.maskTIN(info?.tin || "") : "___-__-____"}`,
+      `Social security number: ${info?.tinType === "ssn" ? this.maskTIN(info?.tin || "") : "___-__-____"}`,
       margin,
       y,
     );
     y += 6;
     doc?.text(
-      `Employer identification number: ${info?.tinType === "ein" ? this?.maskTIN(info?.tin || "") : "__-_______"}`,
+      `Employer identification number: ${info?.tinType === "ein" ? this.maskTIN(info?.tin || "") : "__-_______"}`,
       margin,
       y,
     );
@@ -723,7 +723,7 @@ class TaxFormService {
   }
 
   generateW8BENPDF(formId: string): Buffer {
-    const form = this?.taxForms.get(formId);
+    const form = this.taxForms.get(formId);
     if (!form || form?.formType !== "W-8BEN") {
       throw new Error("W-8BEN form not found");
     }
@@ -808,7 +808,7 @@ class TaxFormService {
     );
     y += 5;
     doc?.setFont("helvetica", "normal");
-    doc?.text(this?.maskTIN(info?.tin || ""), margin, y);
+    doc?.text(this.maskTIN(info?.tin || ""), margin, y);
     y += 8;
 
     if (info?.dateOfBirth) {
@@ -905,7 +905,7 @@ class TaxFormService {
   }
 
   generate1099PDF(formId: string): Buffer {
-    const form = this?.taxForms.get(formId);
+    const form = this.taxForms.get(formId);
     if (!form || !form?.formType.startsWith("1099")) {
       throw new Error("1099 form not found");
     }
@@ -958,7 +958,7 @@ class TaxFormService {
     doc.text("PAYER'S TIN", margin, y);
     y += 5;
     doc?.setFont("helvetica", "normal");
-    doc?.text(this?.maskTIN(payerInfo?.tin || ""), margin, y);
+    doc?.text(this.maskTIN(payerInfo?.tin || ""), margin, y);
     y += 10;
 
     const recipientInfo = form?.recipientInfo;
@@ -973,7 +973,7 @@ class TaxFormService {
     doc.text("RECIPIENT'S TIN", margin, y);
     y += 5;
     doc?.setFont("helvetica", "normal");
-    doc?.text(this?.maskTIN(recipientInfo?.tin || ""), margin, y);
+    doc?.text(this.maskTIN(recipientInfo?.tin || ""), margin, y);
     y += 8;
 
     doc?.setFont("helvetica", "bold");
@@ -1000,7 +1000,7 @@ class TaxFormService {
     y += 8;
 
     const amounts = form?.amounts || {};
-    const amountEntries = Object?.entries(amounts).filter(([_, v]) => v > 0);
+    const amountEntries = Object.entries(amounts).filter(([_, v]) => v > 0);
 
     for (const [key, value] of amountEntries) {
       const label = key?.replace(/_/g, " ").replace(/box\d+\s?/, "Box ");

@@ -23,8 +23,8 @@ export class AppError extends Error {
     this.code = code;
     this.context = context;
 
-    Object?.setPrototypeOf(this, AppError?.prototype);
-    Error?.captureStackTrace(this, this?.constructor);
+    Object.setPrototypeOf(this, AppError?.prototype);
+    Error?.captureStackTrace(this, this.constructor);
   }
 }
 
@@ -273,7 +273,7 @@ export function globalErrorHandler(
   });
 
   if (statusCode >= 500 && !isOperational) {
-    logger?.warn("CRITICAL ERROR:", {
+    logger.warn("CRITICAL ERROR:", {
       timestamp: new Date().toISOString(),
       method: req.method,
       url: req.originalUrl,
@@ -285,8 +285,8 @@ export function globalErrorHandler(
     });
   }
 
-  if (res?.headersSent) {
-    logger?.warn(
+  if (res.headersSent) {
+    logger.warn(
       "[errorHandler] Headers already sent, cannot send error response",
       {
         method: req.method,
@@ -297,7 +297,7 @@ export function globalErrorHandler(
     return;
   }
 
-  res?.status(statusCode).json(errorResponse);
+  res.status(statusCode).json(errorResponse);
 }
 
 export function asyncHandler(fn: Function) {
@@ -307,7 +307,7 @@ export function asyncHandler(fn: Function) {
 }
 
 export function handleUnhandledRejection(server?: Server) {
-  process?.on(
+  process.on(
     "unhandledRejection",
     (reason: unknown, _promise: Promise<unknown>) => {
       const info = extractReasonInfo(reason);
@@ -329,7 +329,7 @@ export function handleUnhandledRejection(server?: Server) {
           info?.message,
         );
       if (isNonFatal) {
-        logger?.warn(
+        logger.warn(
           `Non-fatal stream rejection (${info?.code ?? "unknown"}): ${info?.message.split("\n")[0]}`,
         );
         return;
@@ -345,7 +345,7 @@ export function handleUnhandledRejection(server?: Server) {
         return;
       }
 
-      logger?.warn("UNHANDLED PROMISE REJECTION:", {
+      logger.warn("UNHANDLED PROMISE REJECTION:", {
         reason: info.message,
         stack: info.stack,
         timestamp: new Date().toISOString(),
@@ -366,7 +366,7 @@ export function handleUnhandledRejection(server?: Server) {
       });
 
       if (isProductionEnv()) {
-        logger?.info(
+        logger.info(
           "Starting graceful shutdown due to unhandled promise rejection...",
         );
         gracefulShutdown(server, "UNHANDLED_REJECTION");
@@ -376,15 +376,15 @@ export function handleUnhandledRejection(server?: Server) {
 }
 
 export function handleUncaughtException(server?: Server) {
-  process?.on("uncaughtException", (error: Error) => {
+  process.on("uncaughtException", (error: Error) => {
     // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors
     // (e?.g. FFmpeg exits mid-render, client disconnects mid-stream)
     const code = (error as NodeJS.ErrnoException).code;
     if (code === "EPIPE" || code === "ECONNRESET" || code === "ECONNABORTED") {
-      logger?.warn(`Non-fatal stream error (${code}): ${error?.message}`);
+      logger.warn(`Non-fatal stream error (${code}): ${error?.message}`);
       return;
     }
-    logger?.warn("UNCAUGHT EXCEPTION:", {
+    logger.warn("UNCAUGHT EXCEPTION:", {
       error: error.message,
       stack: error.stack,
       timestamp: new Date().toISOString(),
@@ -404,42 +404,42 @@ export function handleUncaughtException(server?: Server) {
       risk: "critical",
     });
 
-    logger?.info("Starting graceful shutdown due to uncaught exception...");
+    logger.info("Starting graceful shutdown due to uncaught exception...");
     gracefulShutdown(server, "UNCAUGHT_EXCEPTION");
   });
 }
 
 function gracefulShutdown(server: Server | undefined, reason: string) {
-  logger?.info(`Graceful shutdown initiated (${reason})`);
+  logger.info(`Graceful shutdown initiated (${reason})`);
 
   if (server && typeof server?.close === "function") {
     server?.close((err?: Error) => {
       if (err) {
-        logger?.warn("Error during server shutdown:", { error: err.message });
+        logger.warn("Error during server shutdown:", { error: err.message });
       } else {
-        logger?.info("HTTP server closed");
+        logger.info("HTTP server closed");
       }
 
       setTimeout(() => {
-        logger?.info("Force exit after graceful shutdown timeout");
-        process?.exit(1);
+        logger.info("Force exit after graceful shutdown timeout");
+        process.exit(1);
       }, 10000);
 
-      process?.exit(1);
+      process.exit(1);
     });
   } else {
-    process?.exit(1);
+    process.exit(1);
   }
 }
 
 export function setupGracefulShutdown(server: Server) {
-  process?.on("SIGTERM", () => {
-    logger?.info("SIGTERM received");
+  process.on("SIGTERM", () => {
+    logger.info("SIGTERM received");
     gracefulShutdown(server, "SIGTERM");
   });
 
-  process?.on("SIGINT", () => {
-    logger?.info("SIGINT received");
+  process.on("SIGINT", () => {
+    logger.info("SIGINT received");
     gracefulShutdown(server, "SIGINT");
   });
 }

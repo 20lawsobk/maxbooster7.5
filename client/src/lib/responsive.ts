@@ -125,7 +125,7 @@ export function containerColumns(
   width: number,
   minColWidth: number = 300,
 ): number {
-  return Math?.max(1, Math?.floor(width / minColWidth));
+  return Math.max(1, Math.floor(width / minColWidth));
 }
 
 export function aspectRatioHeight(
@@ -133,5 +133,5 @@ export function aspectRatioHeight(
   aspectRatio: string = "16/9",
 ): number {
   const [w, h] = aspectRatio?.split("/").map(Number);
-  return Math?.round(width * (h / w));
+  return Math.round(width * (h / w));
 }

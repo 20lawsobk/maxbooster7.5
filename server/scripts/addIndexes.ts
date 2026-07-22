@@ -176,10 +176,10 @@ async function run() {
   }
 
   console?.log(`\nDone: ${created} succeeded, ${failed} failed.`);
-  process?.exit(failed > 0 ? 1 : 0);
+  process.exit(failed > 0 ? 1 : 0);
 }
 
 run().catch((err) => {
   console?.error("Fatal error:", err);
-  process?.exit(1);
+  process.exit(1);
 });

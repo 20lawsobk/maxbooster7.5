@@ -44,17 +44,17 @@ class WeeklyInsightsService {
   private resend: Resend | null = null;
 
   constructor() {
-    this?.initialize();
+    this.initialize();
   }
 
   private initialize() {
-    if (!this?.isInitialized && env?.RESEND_API_KEY) {
+    if (!this.isInitialized && env?.RESEND_API_KEY) {
       try {
         this.resend = new Resend(env?.RESEND_API_KEY);
         this.isInitialized = true;
-        logger?.info("✅ Weekly Insights Service initialized");
+        logger.info("✅ Weekly Insights Service initialized");
       } catch (error) {
-        logger?.warn(
+        logger.warn(
           { err: error },
           "❌ Failed to initialize Weekly Insights Service:",
         );
@@ -107,7 +107,7 @@ class WeeklyInsightsService {
       const streamsChange = streamsThisWeek - streamsLastWeek;
       const streamsChangePercent =
         streamsLastWeek > 0
-          ? Math?.round((streamsChange / streamsLastWeek) * 100)
+          ? Math.round((streamsChange / streamsLastWeek) * 100)
           : streamsThisWeek > 0
             ? 100
             : 0;
@@ -213,7 +213,7 @@ class WeeklyInsightsService {
         upcomingPosts,
       };
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `Failed to generate weekly report for user ${userId}:`,
       );
@@ -238,15 +238,15 @@ class WeeklyInsightsService {
           ),
         );
 
-      logger?.info(
+      logger.info(
         `Processing weekly insights for ${optedInUsers?.length} users`,
       );
 
       for (const { userId } of optedInUsers) {
         try {
-          const report = await this?.generateWeeklyReport(userId);
+          const report = await this.generateWeeklyReport(userId);
           if (report) {
-            const success = await this?.sendWeeklyEmail(report);
+            const success = await this.sendWeeklyEmail(report);
             if (success) {
               sent++;
             } else {
@@ -254,7 +254,7 @@ class WeeklyInsightsService {
             }
           }
         } catch (error) {
-          logger?.warn(
+          logger.warn(
             { err: error },
             `Failed to send weekly insights to user ${userId}:`,
           );
@@ -262,17 +262,17 @@ class WeeklyInsightsService {
         }
       }
 
-      logger?.info(`Weekly insights complete: ${sent} sent, ${failed} failed`);
+      logger.info(`Weekly insights complete: ${sent} sent, ${failed} failed`);
       return { sent, failed };
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to process weekly insights batch:");
+      logger.warn({ err: error }, "Failed to process weekly insights batch:");
       return { sent, failed };
     }
   }
 
   private async sendWeeklyEmail(report: WeeklyReport): Promise<boolean> {
-    if (!this?.isInitialized || !this?.resend) {
-      logger?.warn("SendGrid not initialized, skipping weekly insights email");
+    if (!this.isInitialized || !this.resend) {
+      logger.warn("SendGrid not initialized, skipping weekly insights email");
       return false;
     }
 
@@ -291,11 +291,11 @@ class WeeklyInsightsService {
       .returning();
 
     const emailId = sentEmailRecord?.id;
-    const baseUrl = process?.env.APP_URL || "https://maxbooster.ai";
+    const baseUrl = process.env.APP_URL || "https://maxbooster.ai";
     const trackingPixel = `${baseUrl}/api/emails/track/${emailId}/open`;
     const clickTrackUrl = `${baseUrl}/api/emails/track/${emailId}/click`;
 
-    const html = this?.generateEmailTemplate(
+    const html = this.generateEmailTemplate(
       report,
       trackingPixel,
       clickTrackUrl,
@@ -303,7 +303,7 @@ class WeeklyInsightsService {
     const fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
 
     try {
-      await this?.resend!.emails?.send({
+      await this.resend!.emails?.send({
         to: report.userEmail,
         from: fromEmail,
         subject: `📊 Your Week in Music - ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
@@ -311,7 +311,7 @@ class WeeklyInsightsService {
         text: this.generatePlainTextEmail(report),
       });
 
-      logger?.info(`📧 Weekly insights email sent to ${report?.userEmail}`);
+      logger.info(`📧 Weekly insights email sent to ${report?.userEmail}`);
 
       const changeLabel =
         report?.streamsChange >= 0
@@ -337,7 +337,7 @@ class WeeklyInsightsService {
           },
         })
         .catch((err) =>
-          logger?.warn(
+          logger.warn(
             { err: err },
             "Failed to send weekly insights in-app notification:",
           ),
@@ -345,7 +345,7 @@ class WeeklyInsightsService {
 
       return true;
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `Failed to send weekly email to ${report?.userEmail}:`,
       );
@@ -549,7 +549,7 @@ Unsubscribe: https://maxbooster.ai/api/email-preferences/unsubscribe
         );
       return true;
     } catch (error) {
-      logger?.warn({ err: error }, `Failed to track email open for ${emailId}:`);
+      logger.warn({ err: error }, `Failed to track email open for ${emailId}:`);
       return false;
     }
   }
@@ -565,7 +565,7 @@ Unsubscribe: https://maxbooster.ai/api/email-preferences/unsubscribe
         .where(eq(sentEmails?.id, emailId));
       return true;
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `Failed to track email click for ${emailId}:`,
       );
@@ -602,7 +602,7 @@ Unsubscribe: https://maxbooster.ai/api/email-preferences/unsubscribe
       revenueAlerts: boolean;
     }>,
   ) {
-    const existing = await this?.getEmailPreferences(userId);
+    const existing = await this.getEmailPreferences(userId);
 
     const [updated] = await db
       .update(emailPreferences)
@@ -629,7 +629,7 @@ Unsubscribe: https://maxbooster.ai/api/email-preferences/unsubscribe
   }
 
   async getPreviewData(userId: string): Promise<WeeklyReport | null> {
-    return this?.generateWeeklyReport(userId);
+    return this.generateWeeklyReport(userId);
   }
 }
 

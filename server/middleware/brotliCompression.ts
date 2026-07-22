@@ -22,31 +22,31 @@ const MIN_SIZE = 256;
  *
  * Safety guarantees:
  * - Idempotent: skips responses already carrying `Content-Encoding`
- * - Skips HEAD requests, streaming responses (res?.write called before res?.json),
+ * - Skips HEAD requests, streaming responses (res.write called before res.json),
  *   and non-compressible MIME types
  * - Falls back to original send on any compression error
  */
 export function brotliMiddleware() {
   return (req: Request, res: Response, next: NextFunction): void => {
-    if (req?.method === "HEAD") {
+    if (req.method === "HEAD") {
       return next();
     }
 
-    const acceptEncoding = req?.headers["accept-encoding"] || "";
+    const acceptEncoding = req.headers["accept-encoding"] || "";
     if (!acceptEncoding?.includes("br")) {
       return next();
     }
 
-    res?.setHeader("Vary", "Accept-Encoding");
+    res.setHeader("Vary", "Accept-Encoding");
 
-    const originalJson = res?.json.bind(res);
+    const originalJson = res.json.bind(res);
 
     res.json = function (body: unknown): Response {
-      if (res?.headersSent) {
+      if (res.headersSent) {
         return originalJson(body);
       }
 
-      const existingEncoding = res?.getHeader("Content-Encoding") as
+      const existingEncoding = res.getHeader("Content-Encoding") as
         | string
         | undefined;
       if (existingEncoding) {
@@ -54,13 +54,13 @@ export function brotliMiddleware() {
       }
 
       const contentType =
-        (res?.getHeader("Content-Type") as string | undefined) ??
+        (res.getHeader("Content-Type") as string | undefined) ??
         "application/json";
       if (!COMPRESSIBLE_MIME_PATTERN?.test(contentType)) {
         return originalJson(body);
       }
 
-      const json = JSON?.stringify(body);
+      const json = JSON.stringify(body);
       if (json?.length < MIN_SIZE) {
         return originalJson(body);
       }
@@ -74,14 +74,14 @@ export function brotliMiddleware() {
         },
       })
         .then((compressed) => {
-          if (res?.headersSent) return;
-          res?.setHeader("Content-Encoding", "br");
+          if (res.headersSent) return;
+          res.setHeader("Content-Encoding", "br");
           res.setHeader("Content-Type", "application/json; charset=utf-8");
-          res?.setHeader("Content-Length", compressed?.length);
-          res?.status(res?.statusCode).end(compressed);
+          res.setHeader("Content-Length", compressed?.length);
+          res.status(res.statusCode).end(compressed);
         })
         .catch(() => {
-          if (!res?.headersSent) {
+          if (!res.headersSent) {
             originalJson(body);
           }
         });

@@ -88,7 +88,7 @@ function cacheSet(name: string, type: number, entry: CacheEntry): void {
   if (cache?.size >= CACHE_MAX_SIZE) {
     // Evict oldest 5%
     let evicted = 0;
-    const target = Math?.floor(CACHE_MAX_SIZE * 0.05);
+    const target = Math.floor(CACHE_MAX_SIZE * 0.05);
     for (const k of cache?.keys()) {
       cache?.delete(k);
       if (++evicted >= target) break;
@@ -103,7 +103,7 @@ export function getCacheStats(): { size: number; maxSize: number } {
 
 export function flushCache(): void {
   cache?.clear();
-  logger?.info("[Resolver] Cache flushed");
+  logger.info("[Resolver] Cache flushed");
 }
 
 // ── Wire-format builder ───────────────────────────────────────────────────────
@@ -506,7 +506,7 @@ async function resolveIterative(
     }
   }
 
-  logger?.warn(
+  logger.warn(
     { name, type, depth, err: lastErr.message },
     "[Resolver] All NS failed",
   );
@@ -542,7 +542,7 @@ export async function resolveRecursive(
       negative: result.negative,
     };
   } catch (err) {
-    logger?.warn(
+    logger.warn(
       { name, type, err: err.message },
       "[Resolver] resolveRecursive error",
     );

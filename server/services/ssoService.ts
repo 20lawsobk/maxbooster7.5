@@ -82,7 +82,7 @@ export class SSOService {
       configuredBy: string;
     },
   ): Promise<{ success: boolean; config?: SSOConfig; error?: string }> {
-    return this?.configureSSOInternal({
+    return this.configureSSOInternal({
       workspaceId,
       provider: "saml",
       metadata,
@@ -102,7 +102,7 @@ export class SSOService {
       configuredBy: string;
     },
   ): Promise<{ success: boolean; config?: SSOConfig; error?: string }> {
-    return this?.configureSSOInternal({
+    return this.configureSSOInternal({
       workspaceId,
       provider: "oidc",
       metadata,
@@ -114,7 +114,7 @@ export class SSOService {
     params: ConfigureSSOParams,
   ): Promise<{ success: boolean; config?: SSOConfig; error?: string }> {
     try {
-      const existingConfig = await this?.getSSOConfig(params?.workspaceId);
+      const existingConfig = await this.getSSOConfig(params?.workspaceId);
 
       if (existingConfig) {
         const [config] = await db
@@ -137,7 +137,7 @@ export class SSOService {
           .where(eq(ssoConfigs?.workspaceId, params?.workspaceId))
           .returning();
 
-        await this?.logAuditEvent({
+        await this.logAuditEvent({
           workspaceId: params.workspaceId,
           userId: params.configuredBy,
           action: "sso.updated",
@@ -169,7 +169,7 @@ export class SSOService {
         })
         .returning();
 
-      await this?.logAuditEvent({
+      await this.logAuditEvent({
         workspaceId: params.workspaceId,
         userId: params.configuredBy,
         action: "sso.configured",
@@ -180,7 +180,7 @@ export class SSOService {
 
       return { success: true, config };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Configure SSO error:");
+      logger.warn({ err: error }, "Configure SSO error:");
       return { success: false, error: "Failed to configure SSO" };
     }
   }
@@ -194,7 +194,7 @@ export class SSOService {
         .limit(1);
       return config || null;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get SSO config error:");
+      logger.warn({ err: error }, "Get SSO config error:");
       return null;
     }
   }
@@ -204,7 +204,7 @@ export class SSOService {
     enabledBy: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const config = await this?.getSSOConfig(workspaceId);
+      const config = await this.getSSOConfig(workspaceId);
       if (!config) {
         return {
           success: false,
@@ -217,7 +217,7 @@ export class SSOService {
         .set({ enabled: true, updatedAt: new Date() })
         .where(eq(ssoConfigs?.workspaceId, workspaceId));
 
-      await this?.logAuditEvent({
+      await this.logAuditEvent({
         workspaceId,
         userId: enabledBy,
         action: "sso.enabled",
@@ -227,7 +227,7 @@ export class SSOService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Enable SSO error:");
+      logger.warn({ err: error }, "Enable SSO error:");
       return { success: false, error: "Failed to enable SSO" };
     }
   }
@@ -237,7 +237,7 @@ export class SSOService {
     disabledBy: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const config = await this?.getSSOConfig(workspaceId);
+      const config = await this.getSSOConfig(workspaceId);
       if (!config) {
         return {
           success: false,
@@ -250,7 +250,7 @@ export class SSOService {
         .set({ enabled: false, updatedAt: new Date() })
         .where(eq(ssoConfigs?.workspaceId, workspaceId));
 
-      await this?.logAuditEvent({
+      await this.logAuditEvent({
         workspaceId,
         userId: disabledBy,
         action: "sso.disabled",
@@ -260,7 +260,7 @@ export class SSOService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Disable SSO error:");
+      logger.warn({ err: error }, "Disable SSO error:");
       return { success: false, error: "Failed to disable SSO" };
     }
   }
@@ -275,7 +275,7 @@ export class SSOService {
     error?: string;
   }> {
     try {
-      const config = await this?.getSSOConfig(workspaceId);
+      const config = await this.getSSOConfig(workspaceId);
       if (!config) {
         return {
           success: false,
@@ -283,7 +283,7 @@ export class SSOService {
         };
       }
 
-      const token = this?.generateSCIMToken();
+      const token = this.generateSCIMToken();
       const endpoint = `/api/scim/v2/${workspaceId}`;
 
       await db
@@ -296,7 +296,7 @@ export class SSOService {
         })
         .where(eq(ssoConfigs?.workspaceId, workspaceId));
 
-      await this?.logAuditEvent({
+      await this.logAuditEvent({
         workspaceId,
         userId: enabledBy,
         action: "scim.enabled",
@@ -306,7 +306,7 @@ export class SSOService {
 
       return { success: true, token, endpoint };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Enable SCIM error:");
+      logger.warn({ err: error }, "Enable SCIM error:");
       return { success: false, error: "Failed to enable SCIM" };
     }
   }
@@ -316,7 +316,7 @@ export class SSOService {
     disabledBy: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const config = await this?.getSSOConfig(workspaceId);
+      const config = await this.getSSOConfig(workspaceId);
       if (!config) {
         return {
           success: false,
@@ -333,7 +333,7 @@ export class SSOService {
         })
         .where(eq(ssoConfigs?.workspaceId, workspaceId));
 
-      await this?.logAuditEvent({
+      await this.logAuditEvent({
         workspaceId,
         userId: disabledBy,
         action: "scim.disabled",
@@ -343,7 +343,7 @@ export class SSOService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Disable SCIM error:");
+      logger.warn({ err: error }, "Disable SCIM error:");
       return { success: false, error: "Failed to disable SCIM" };
     }
   }
@@ -353,7 +353,7 @@ export class SSOService {
     rotatedBy: string,
   ): Promise<{ success: boolean; token?: string; error?: string }> {
     try {
-      const config = await this?.getSSOConfig(workspaceId);
+      const config = await this.getSSOConfig(workspaceId);
       if (!config || !config?.scimEnabled) {
         return {
           success: false,
@@ -361,7 +361,7 @@ export class SSOService {
         };
       }
 
-      const newToken = this?.generateSCIMToken();
+      const newToken = this.generateSCIMToken();
 
       await db
         .update(ssoConfigs)
@@ -371,7 +371,7 @@ export class SSOService {
         })
         .where(eq(ssoConfigs?.workspaceId, workspaceId));
 
-      await this?.logAuditEvent({
+      await this.logAuditEvent({
         workspaceId,
         userId: rotatedBy,
         action: "scim.token_rotated",
@@ -381,7 +381,7 @@ export class SSOService {
 
       return { success: true, token: newToken };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Rotate SCIM token error:");
+      logger.warn({ err: error }, "Rotate SCIM token error:");
       return { success: false, error: "Failed to rotate SCIM token" };
     }
   }
@@ -391,10 +391,10 @@ export class SSOService {
     token: string,
   ): Promise<boolean> {
     try {
-      const config = await this?.getSSOConfig(workspaceId);
+      const config = await this.getSSOConfig(workspaceId);
       return config?.scimEnabled === true && config?.scimToken === token;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Validate SCIM token error:");
+      logger.warn({ err: error }, "Validate SCIM token error:");
       return false;
     }
   }
@@ -409,7 +409,7 @@ export class SSOService {
     error?: string;
   }> {
     try {
-      const config = await this?.getSSOConfig(workspaceId);
+      const config = await this.getSSOConfig(workspaceId);
       if (!config || !config?.enabled || config?.provider !== "saml") {
         return {
           success: false,
@@ -480,7 +480,7 @@ export class SSOService {
           });
         }
 
-        await this?.logAuditEvent({
+        await this.logAuditEvent({
           workspaceId,
           userId,
           action: "sso.jit_provision",
@@ -497,7 +497,7 @@ export class SSOService {
 
       return { success: true, userId, isNewUser };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Handle SAML response error:");
+      logger.warn({ err: error }, "Handle SAML response error:");
       return { success: false, error: "Failed to process SAML response" };
     }
   }
@@ -513,7 +513,7 @@ export class SSOService {
     error?: string;
   }> {
     try {
-      const config = await this?.getSSOConfig(workspaceId);
+      const config = await this.getSSOConfig(workspaceId);
       if (!config || !config?.enabled || config?.provider !== "oidc") {
         return {
           success: false,
@@ -584,7 +584,7 @@ export class SSOService {
           });
         }
 
-        await this?.logAuditEvent({
+        await this.logAuditEvent({
           workspaceId,
           userId,
           action: "sso.jit_provision",
@@ -601,7 +601,7 @@ export class SSOService {
 
       return { success: true, userId, isNewUser };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Handle OIDC callback error:");
+      logger.warn({ err: error }, "Handle OIDC callback error:");
       return { success: false, error: "Failed to process OIDC callback" };
     }
   }
@@ -615,7 +615,7 @@ export class SSOService {
     error?: string;
   }> {
     try {
-      const config = await this?.getSSOConfig(workspaceId);
+      const config = await this.getSSOConfig(workspaceId);
       if (!config || !config?.scimEnabled) {
         return {
           success: false,
@@ -661,9 +661,9 @@ export class SSOService {
         });
       }
 
-      await this?.updateSyncStatus(workspaceId, "success");
+      await this.updateSyncStatus(workspaceId, "success");
 
-      await this?.logAuditEvent({
+      await this.logAuditEvent({
         workspaceId,
         action: "scim.user_created",
         resourceType: "user",
@@ -687,8 +687,8 @@ export class SSOService {
         },
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Create SCIM user error:");
-      await this?.updateSyncStatus(workspaceId, "error", String(error));
+      logger.warn({ err: error }, "Create SCIM user error:");
+      await this.updateSyncStatus(workspaceId, "error", String(error));
       return { success: false, error: "Failed to create user" };
     }
   }
@@ -703,7 +703,7 @@ export class SSOService {
     error?: string;
   }> {
     try {
-      const config = await this?.getSSOConfig(workspaceId);
+      const config = await this.getSSOConfig(workspaceId);
       if (!config || !config?.scimEnabled) {
         return {
           success: false,
@@ -727,7 +727,7 @@ export class SSOService {
         updates.lastName = scimUser?.name.familyName;
       if (scimUser.emails[0].value) updates.email = scimUser?.emails[0].value;
 
-      if (Object?.keys(updates).length > 0) {
+      if (Object.keys(updates).length > 0) {
         await db
           .update(users)
           .set({ ...updates, updatedAt: new Date() })
@@ -749,9 +749,9 @@ export class SSOService {
           );
       }
 
-      await this?.updateSyncStatus(workspaceId, "success");
+      await this.updateSyncStatus(workspaceId, "success");
 
-      await this?.logAuditEvent({
+      await this.logAuditEvent({
         workspaceId,
         action: "scim.user_updated",
         resourceType: "user",
@@ -781,8 +781,8 @@ export class SSOService {
         },
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Update SCIM user error:");
-      await this?.updateSyncStatus(workspaceId, "error", String(error));
+      logger.warn({ err: error }, "Update SCIM user error:");
+      await this.updateSyncStatus(workspaceId, "error", String(error));
       return { success: false, error: "Failed to update user" };
     }
   }
@@ -792,7 +792,7 @@ export class SSOService {
     userId: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const config = await this?.getSSOConfig(workspaceId);
+      const config = await this.getSSOConfig(workspaceId);
       if (!config || !config?.scimEnabled) {
         return {
           success: false,
@@ -810,9 +810,9 @@ export class SSOService {
           ),
         );
 
-      await this?.updateSyncStatus(workspaceId, "success");
+      await this.updateSyncStatus(workspaceId, "success");
 
-      await this?.logAuditEvent({
+      await this.logAuditEvent({
         workspaceId,
         action: "scim.user_deleted",
         resourceType: "user",
@@ -821,8 +821,8 @@ export class SSOService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Delete SCIM user error:");
-      await this?.updateSyncStatus(workspaceId, "error", String(error));
+      logger.warn({ err: error }, "Delete SCIM user error:");
+      await this.updateSyncStatus(workspaceId, "error", String(error));
       return { success: false, error: "Failed to delete user" };
     }
   }
@@ -878,7 +878,7 @@ export class SSOService {
         Resources: resources,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get SCIM users error:");
+      logger.warn({ err: error }, "Get SCIM users error:");
       return {
         totalResults: 0,
         itemsPerPage: count,
@@ -904,7 +904,7 @@ export class SSOService {
         })
         .where(eq(ssoConfigs?.workspaceId, workspaceId));
     } catch (err: unknown) {
-      logger?.warn({ err: err }, "Update sync status error:");
+      logger.warn({ err: err }, "Update sync status error:");
     }
   }
 
@@ -912,7 +912,7 @@ export class SSOService {
     try {
       await db?.insert(workspaceAuditLog).values(params);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Log audit event error:");
+      logger.warn({ err: error }, "Log audit event error:");
     }
   }
 
@@ -924,7 +924,7 @@ export class SSOService {
     error?: string;
   }> {
     try {
-      const config = await this?.getSSOConfig(workspaceId);
+      const config = await this.getSSOConfig(workspaceId);
       if (!config) {
         return {
           success: false,
@@ -934,7 +934,7 @@ export class SSOService {
 
       return { success: true, metadata: config.metadata };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get IdP metadata error:");
+      logger.warn({ err: error }, "Get IdP metadata error:");
       return { success: false, error: "Failed to get IdP metadata" };
     }
   }
@@ -943,7 +943,7 @@ export class SSOService {
     workspaceId: string,
   ): Promise<{ success: boolean; message?: string; error?: string }> {
     try {
-      const config = await this?.getSSOConfig(workspaceId);
+      const config = await this.getSSOConfig(workspaceId);
       if (!config) {
         return { success: false, error: "SSO is not configured" };
       }
@@ -966,7 +966,7 @@ export class SSOService {
 
       return { success: true, message: "SSO configuration is valid" };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Test SSO connection error:");
+      logger.warn({ err: error }, "Test SSO connection error:");
       return { success: false, error: "Failed to test SSO connection" };
     }
   }

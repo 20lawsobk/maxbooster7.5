@@ -91,7 +91,7 @@ function pickAllowed(
 ): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const key of allowed) {
-    if (Object?.prototype.hasOwnProperty?.call(changes, key)) {
+    if (Object.prototype.hasOwnProperty?.call(changes, key)) {
       result[key] = changes[key];
     }
   }
@@ -118,7 +118,7 @@ const ACTION_HANDLERS: Record<
 
       if (data?.isStudio) {
         const allowed = pickAllowed(changes, ALLOWED_STUDIO_PROJECT_FIELDS);
-        if (Object?.keys(allowed).length === 0)
+        if (Object.keys(allowed).length === 0)
           return {
             success: true,
             data: { updated: false, reason: "no allowed fields" },
@@ -142,7 +142,7 @@ const ACTION_HANDLERS: Record<
       }
 
       const allowed = pickAllowed(changes, ALLOWED_PROJECT_FIELDS);
-      if (Object?.keys(allowed).length === 0)
+      if (Object.keys(allowed).length === 0)
         return {
           success: true,
           data: { updated: false, reason: "no allowed fields" },
@@ -161,7 +161,7 @@ const ACTION_HANDLERS: Record<
         data: { updated: !!updated, projectId: data.projectId },
       };
     } catch (error) {
-      logger?.warn({ err: error }, "[sync] project.update failed");
+      logger.warn({ err: error }, "[sync] project.update failed");
       return { success: false, error: String(error) };
     }
   },
@@ -191,7 +191,7 @@ const ACTION_HANDLERS: Record<
 
       return { success: true, data: { projectId: created.id } };
     } catch (error) {
-      logger?.warn({ err: error }, "[sync] project.create failed");
+      logger.warn({ err: error }, "[sync] project.create failed");
       return { success: false, error: String(error) };
     }
   },
@@ -214,7 +214,7 @@ const ACTION_HANDLERS: Record<
 
       return { success: true, data: { trackId: created.id } };
     } catch (error) {
-      logger?.warn({ err: error }, "[sync] track.add failed");
+      logger.warn({ err: error }, "[sync] track.add failed");
       return { success: false, error: String(error) };
     }
   },
@@ -226,7 +226,7 @@ const ACTION_HANDLERS: Record<
         changes: Record<string, unknown>;
       };
       const allowed = pickAllowed(data?.changes ?? {}, ALLOWED_TRACK_FIELDS);
-      if (Object?.keys(allowed).length === 0)
+      if (Object.keys(allowed).length === 0)
         return {
           success: true,
           data: { updated: false, reason: "no allowed fields" },
@@ -243,7 +243,7 @@ const ACTION_HANDLERS: Record<
         data: { updated: !!updated, trackId: data.trackId },
       };
     } catch (error) {
-      logger?.warn({ err: error }, "[sync] track.update failed");
+      logger.warn({ err: error }, "[sync] track.update failed");
       return { success: false, error: String(error) };
     }
   },
@@ -256,7 +256,7 @@ const ACTION_HANDLERS: Record<
 
       return { success: true, data: { deleted: true, trackId: data.trackId } };
     } catch (error) {
-      logger?.warn({ err: error }, "[sync] track.delete failed");
+      logger.warn({ err: error }, "[sync] track.delete failed");
       return { success: false, error: String(error) };
     }
   },
@@ -288,7 +288,7 @@ const ACTION_HANDLERS: Record<
 
       return { success: true, data: { updated: true } };
     } catch (error) {
-      logger?.warn({ err: error }, "[sync] settings.update failed");
+      logger.warn({ err: error }, "[sync] settings.update failed");
       return { success: false, error: String(error) };
     }
   },
@@ -308,17 +308,17 @@ const ACTION_HANDLERS: Record<
 
   // ── Fallback ─────────────────────────────────────────────────────────────
   default: async (_payload, userId) => {
-    logger?.warn("[sync] Unhandled action type", { userId });
+    logger.warn("[sync] Unhandled action type", { userId });
     return { success: true, data: { processed: true } };
   },
 };
 
 router?.post("/batch", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { actions } = batchSyncRequestSchema?.parse(req?.body);
+    const userId = req.user!.id;
+    const { actions } = batchSyncRequestSchema?.parse(req.body);
 
-    logger?.info("Processing batch sync request", {
+    logger.info("Processing batch sync request", {
       userId,
       actionCount: actions.length,
     });
@@ -340,7 +340,7 @@ router?.post("/batch", requireAuth, async (req, res) => {
             : { error: result.error ?? "Unknown error" }),
         });
       } catch (error: unknown) {
-        logger?.warn("Sync action failed", { actionId: action.id, error });
+        logger.warn("Sync action failed", { actionId: action.id, error });
         results?.push({
           actionId: action.id,
           success: false,
@@ -352,7 +352,7 @@ router?.post("/batch", requireAuth, async (req, res) => {
     const successCount = results?.filter((r) => r?.success).length;
     const failCount = results?.filter((r) => !r?.success).length;
 
-    logger?.info("Batch sync completed", {
+    logger.info("Batch sync completed", {
       userId,
       total: actions.length,
       success: successCount,
@@ -360,7 +360,7 @@ router?.post("/batch", requireAuth, async (req, res) => {
       conflicts: conflicts.length,
     });
 
-    res?.json({
+    res.json({
       results,
       conflicts,
       summary: {
@@ -371,39 +371,39 @@ router?.post("/batch", requireAuth, async (req, res) => {
       },
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Batch sync request failed:");
+    logger.warn({ err: error }, "Batch sync request failed:");
 
     if (error instanceof z.ZodError) {
-      return res?.status(400).json({
+      return res.status(400).json({
         error: "Invalid request data",
         details: error.issues,
       });
     }
 
-    res?.status(500).json({ error: "Failed to process batch sync" });
+    res.status(500).json({ error: "Failed to process batch sync" });
   }
 });
 
 router?.get("/status", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
-    res?.json({
+    res.json({
       success: true,
       serverTime: Date.now(),
       userId,
       syncEnabled: true,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Sync status check failed:");
-    res?.status(500).json({ error: "Failed to check sync status" });
+    logger.warn({ err: error }, "Sync status check failed:");
+    res.status(500).json({ error: "Failed to check sync status" });
   }
 });
 
 router?.post("/resolve-conflict", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { actionId, resolution } = req?.body;
+    const userId = req.user!.id;
+    const { actionId, resolution } = req.body;
 
     if (!actionId || !["local", "server", "merged"].includes(resolution)) {
       return res
@@ -411,17 +411,17 @@ router?.post("/resolve-conflict", requireAuth, async (req, res) => {
         .json({ error: "Invalid conflict resolution request" });
     }
 
-    logger?.info("Resolving sync conflict", { userId, actionId, resolution });
+    logger.info("Resolving sync conflict", { userId, actionId, resolution });
 
-    res?.json({
+    res.json({
       success: true,
       actionId,
       resolution,
       resolved: true,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Conflict resolution failed:");
-    res?.status(500).json({ error: "Failed to resolve conflict" });
+    logger.warn({ err: error }, "Conflict resolution failed:");
+    res.status(500).json({ error: "Failed to resolve conflict" });
   }
 });
 

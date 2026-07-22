@@ -1080,12 +1080,12 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   setLoopEnabled: (enabled) => set({ loopEnabled: enabled }),
   setLoopStart: (time) => set({ loopStart: time }),
   setLoopEnd: (time) => set({ loopEnd: time }),
-  setTempo: (tempo) => set({ tempo: Math.max(40, Math?.min(240, tempo)) }),
+  setTempo: (tempo) => set({ tempo: Math.max(40, Math.min(240, tempo)) }),
   setTimeSignature: (signature) => set({ timeSignature: signature }),
   setMetronomeEnabled: (enabled) => set({ metronomeEnabled: enabled }),
 
   // View Actions
-  setZoom: (zoom) => set({ zoom: Math.max(0.1, Math?.min(10, zoom)) }),
+  setZoom: (zoom) => set({ zoom: Math.max(0.1, Math.min(10, zoom)) }),
   setScrollPosition: (position) =>
     set({ scrollPosition: Math.max(0, position) }),
   toggleSnap: () => set((state) => ({ snapEnabled: !state?.snapEnabled })),
@@ -1129,14 +1129,14 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     set((state) => ({
       tracks: state.tracks.map((t) =>
         t?.id === trackId
-          ? { ...t, volume: Math.max(0, Math?.min(1, volume)) }
+          ? { ...t, volume: Math.max(0, Math.min(1, volume)) }
           : t,
       ),
     })),
   setTrackPan: (trackId, pan) =>
     set((state) => ({
       tracks: state.tracks.map((t) =>
-        t?.id === trackId ? { ...t, pan: Math.max(-1, Math?.min(1, pan)) } : t,
+        t?.id === trackId ? { ...t, pan: Math.max(-1, Math.min(1, pan)) } : t,
       ),
     })),
   setTrackMute: (trackId, mute) =>
@@ -1195,7 +1195,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   // Metronome Actions
   setMetronomeVolume: (volume) =>
-    set({ metronomeVolume: Math.max(0, Math?.min(1, volume)) }),
+    set({ metronomeVolume: Math.max(0, Math.min(1, volume)) }),
 
   // Punch Recording Actions
   setPunchMode: (enabled) => set({ punchMode: enabled }),
@@ -1446,9 +1446,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   // Recording Mode Actions
   setRecordingMode: (mode) => set({ recordingMode: mode }),
   setPreRollBars: (bars) =>
-    set({ preRollBars: Math.max(0, Math?.min(8, bars)) }),
+    set({ preRollBars: Math.max(0, Math.min(8, bars)) }),
   setCountInBars: (bars) =>
-    set({ countInBars: Math.max(0, Math?.min(8, bars)) }),
+    set({ countInBars: Math.max(0, Math.min(8, bars)) }),
   setReturnToStartOnStop: (enabled) => set({ returnToStartOnStop: enabled }),
   setInputMonitoring: (enabled) => set({ inputMonitoring: enabled }),
 
@@ -1473,7 +1473,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   // Crossfade Actions
   setCrossfadeLength: (length) =>
-    set({ crossfadeLength: Math.max(0.001, Math?.min(5, length)) }),
+    set({ crossfadeLength: Math.max(0.001, Math.min(5, length)) }),
   setCrossfadeCurve: (curve) => set({ crossfadeCurve: curve }),
 
   // Infinite Timeline Actions (Studio One style)
@@ -1504,7 +1504,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     set((state) => {
       // Add 10% padding after content
       const paddedDuration = contentEndTime * 1.1;
-      const newDuration = Math?.max(state?.minProjectDuration, paddedDuration);
+      const newDuration = Math.max(state?.minProjectDuration, paddedDuration);
       return {
         projectDuration: newDuration,
         projectEndMarker: contentEndTime,
@@ -1592,7 +1592,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
     set({ isFreezing: true, freezingTrackId: trackId });
 
     // Mock freeze process - simulate render time proportional to duration
-    const renderTime = Math?.min(2000, Math?.max(500, duration * 200));
+    const renderTime = Math.min(2000, Math.max(500, duration * 200));
     await new Promise((resolve) => setTimeout(resolve, renderTime));
 
     const frozenState: FrozenTrackState = {
@@ -1646,7 +1646,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
 
   setGlobalTranspose: (semitones) =>
     set({
-      globalTranspose: Math.max(-12, Math?.min(12, semitones)),
+      globalTranspose: Math.max(-12, Math.min(12, semitones)),
     }),
 
   transposeUp: () =>
@@ -2004,7 +2004,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
   addLauncherScene: (scene) => {
     const state = get();
     const maxIndex = state?.launcherScenes.reduce(
-      (max, s) => Math?.max(max, s?.index),
+      (max, s) => Math.max(max, s?.index),
       -1,
     );
     const newScene: LauncherScene = {
@@ -2171,7 +2171,7 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         (s) => s?.id === state?.performanceState.currentSetlistId,
       );
       if (!setlist) return {};
-      const nextIndex = Math?.min(
+      const nextIndex = Math.min(
         state?.performanceState.currentItemIndex + 1,
         setlist?.items.length - 1,
       );
@@ -2200,9 +2200,9 @@ export const useStudioStore = create<StudioState>((set, get) => ({
         (s) => s?.id === state?.performanceState.currentSetlistId,
       );
       if (!setlist) return {};
-      const clampedIndex = Math?.max(
+      const clampedIndex = Math.max(
         0,
-        Math?.min(index, setlist?.items.length - 1),
+        Math.min(index, setlist?.items.length - 1),
       );
       return {
         performanceState: {

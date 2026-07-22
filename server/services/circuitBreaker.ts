@@ -85,67 +85,67 @@ export class CircuitBreaker extends EventEmitter {
       volumeThreshold: options.volumeThreshold ?? 10,
     };
 
-    this?.startMonitoring();
-    logger?.info(`🔌 Circuit breaker initialized: ${this?.options.name}`);
+    this.startMonitoring();
+    logger.info(`🔌 Circuit breaker initialized: ${this.options.name}`);
   }
 
   get name(): string {
-    return this?.options.name;
+    return this.options.name;
   }
 
   async execute<T>(
     fn: () => Promise<T>,
     fallback?: () => Promise<T> | T,
   ): Promise<T> {
-    if (this?.state === "OPEN") {
-      const elapsed = this?.lastFailure
-        ? Date?.now() - this?.lastFailure.getTime()
-        : this?.options.resetTimeout;
+    if (this.state === "OPEN") {
+      const elapsed = this.lastFailure
+        ? Date?.now() - this.lastFailure.getTime()
+        : this.options.resetTimeout;
 
-      if (elapsed >= this?.options.resetTimeout) {
-        this?.transitionTo("HALF_OPEN");
+      if (elapsed >= this.options.resetTimeout) {
+        this.transitionTo("HALF_OPEN");
       } else {
         if (fallback) {
-          this?.emitEvent("fallback");
+          this.emitEvent("fallback");
           return Promise?.resolve(fallback());
         }
         throw new CircuitBreakerError(
-          this?.options.name,
-          this?.state,
-          `Circuit breaker ${this?.options.name} is OPEN. Service temporarily unavailable.`,
+          this.options.name,
+          this.state,
+          `Circuit breaker ${this.options.name} is OPEN. Service temporarily unavailable.`,
         );
       }
     }
 
     if (
-      this?.state === "HALF_OPEN" &&
-      this?.halfOpenRequests >= this?.maxHalfOpenRequests
+      this.state === "HALF_OPEN" &&
+      this.halfOpenRequests >= this.maxHalfOpenRequests
     ) {
       if (fallback) {
-        this?.emitEvent("fallback");
+        this.emitEvent("fallback");
         return Promise?.resolve(fallback());
       }
       throw new CircuitBreakerError(
-        this?.options.name,
-        this?.state,
-        `Circuit breaker ${this?.options.name} is in HALF_OPEN state with max requests reached.`,
+        this.options.name,
+        this.state,
+        `Circuit breaker ${this.options.name} is in HALF_OPEN state with max requests reached.`,
       );
     }
 
     this.totalRequests++;
-    if (this?.state === "HALF_OPEN") {
+    if (this.state === "HALF_OPEN") {
       this.halfOpenRequests++;
     }
 
     try {
-      const result = await this?.withTimeout(fn(), this?.options.timeout);
-      this?.onSuccess();
+      const result = await this.withTimeout(fn(), this.options.timeout);
+      this.onSuccess();
       return result;
     } catch (error) {
-      this?.onFailure(error as Error);
+      this.onFailure(error as Error);
 
       if (fallback) {
-        this?.emitEvent("fallback");
+        this.emitEvent("fallback");
         return Promise?.resolve(fallback());
       }
 
@@ -158,7 +158,7 @@ export class CircuitBreaker extends EventEmitter {
 
     const timeoutPromise = new Promise<never>((_, reject) => {
       timeoutId = setTimeout(() => {
-        reject(new TimeoutError(this?.options.name, ms));
+        reject(new TimeoutError(this.options.name, ms));
       }, ms);
     });
 
@@ -169,7 +169,7 @@ export class CircuitBreaker extends EventEmitter {
     } catch (error) {
       clearTimeout(timeoutId!);
       if (error instanceof TimeoutError) {
-        this?.emitEvent("timeout", error);
+        this.emitEvent("timeout", error);
       }
       throw error;
     }
@@ -180,11 +180,11 @@ export class CircuitBreaker extends EventEmitter {
     this.consecutiveSuccesses++;
     this.consecutiveFailures = 0;
     this.lastSuccess = new Date();
-    this?.emitEvent("success");
+    this.emitEvent("success");
 
-    if (this?.state === "HALF_OPEN") {
-      if (this?.consecutiveSuccesses >= this?.options.successThreshold) {
-        this?.transitionTo("CLOSED");
+    if (this.state === "HALF_OPEN") {
+      if (this.consecutiveSuccesses >= this.options.successThreshold) {
+        this.transitionTo("CLOSED");
         this.halfOpenRequests = 0;
       }
     }
@@ -195,31 +195,31 @@ export class CircuitBreaker extends EventEmitter {
     this.consecutiveFailures++;
     this.consecutiveSuccesses = 0;
     this.lastFailure = new Date();
-    this?.emitEvent("failure", error);
+    this.emitEvent("failure", error);
 
-    if (this?.state === "HALF_OPEN") {
-      this?.transitionTo("OPEN");
+    if (this.state === "HALF_OPEN") {
+      this.transitionTo("OPEN");
       this.halfOpenRequests = 0;
-    } else if (this?.state === "CLOSED") {
-      if (this?.consecutiveFailures >= this?.options.failureThreshold) {
-        this?.transitionTo("OPEN");
+    } else if (this.state === "CLOSED") {
+      if (this.consecutiveFailures >= this.options.failureThreshold) {
+        this.transitionTo("OPEN");
       }
     }
   }
 
   private transitionTo(newState: CircuitState): void {
-    const previousState = this?.state;
+    const previousState = this.state;
     this.state = newState;
 
-    if (this?.resetTimer) {
-      clearTimeout(this?.resetTimer);
+    if (this.resetTimer) {
+      clearTimeout(this.resetTimer);
       this.resetTimer = null;
     }
 
     if (newState === "OPEN") {
       this.resetTimer = setTimeout(() => {
-        this?.transitionTo("HALF_OPEN");
-      }, this?.options.resetTimeout);
+        this.transitionTo("HALF_OPEN");
+      }, this.options.resetTimeout);
     }
 
     if (newState === "CLOSED") {
@@ -227,11 +227,11 @@ export class CircuitBreaker extends EventEmitter {
       this.consecutiveSuccesses = 0;
     }
 
-    logger?.info(
-      `🔌 Circuit breaker ${this?.options.name}: ${previousState} → ${newState}`,
+    logger.info(
+      `🔌 Circuit breaker ${this.options.name}: ${previousState} → ${newState}`,
     );
 
-    this?.emit("state_change", {
+    this.emit("state_change", {
       name: this.options.name,
       type: "state_change",
       previousState,
@@ -241,7 +241,7 @@ export class CircuitBreaker extends EventEmitter {
   }
 
   private emitEvent(type: CircuitBreakerEvent["type"], error?: Error): void {
-    this?.emit(type, {
+    this.emit(type, {
       name: this.options.name,
       type,
       error,
@@ -251,18 +251,18 @@ export class CircuitBreaker extends EventEmitter {
 
   private startMonitoring(): void {
     this.monitorTimer = setInterval(() => {
-      this?.emit("health_check", this?.getStats());
-    }, this?.options.monitorInterval);
+      this.emit("health_check", this.getStats());
+    }, this.options.monitorInterval);
   }
 
   getState(): CircuitState {
-    return this?.state;
+    return this.state;
   }
 
   getStats(): CircuitBreakerStats {
     const failureRate =
-      this?.totalRequests > 0
-        ? Math?.round((this?.failures / this?.totalRequests) * 100 * 100) / 100
+      this.totalRequests > 0
+        ? Math.round((this.failures / this.totalRequests) * 100 * 100) / 100
         : 0;
 
     return {
@@ -291,31 +291,31 @@ export class CircuitBreaker extends EventEmitter {
     this.lastSuccess = null;
     this.halfOpenRequests = 0;
 
-    if (this?.resetTimer) {
-      clearTimeout(this?.resetTimer);
+    if (this.resetTimer) {
+      clearTimeout(this.resetTimer);
       this.resetTimer = null;
     }
 
-    logger?.info(`🔌 Circuit breaker ${this?.options.name} reset`);
-    this?.emit("reset", { name: this.options.name, timestamp: new Date() });
+    logger.info(`🔌 Circuit breaker ${this.options.name} reset`);
+    this.emit("reset", { name: this.options.name, timestamp: new Date() });
   }
 
   forceOpen(): void {
-    this?.transitionTo("OPEN");
+    this.transitionTo("OPEN");
   }
 
   forceClose(): void {
-    this?.transitionTo("CLOSED");
+    this.transitionTo("CLOSED");
   }
 
   destroy(): void {
-    if (this?.resetTimer) {
-      clearTimeout(this?.resetTimer);
+    if (this.resetTimer) {
+      clearTimeout(this.resetTimer);
     }
-    if (this?.monitorTimer) {
-      clearInterval(this?.monitorTimer);
+    if (this.monitorTimer) {
+      clearInterval(this.monitorTimer);
     }
-    this?.removeAllListeners();
+    this.removeAllListeners();
   }
 }
 
@@ -356,19 +356,19 @@ export class CircuitBreakerRegistry {
   }
 
   register(breaker: CircuitBreaker): void {
-    this?.breakers.set(breaker?.name, breaker);
+    this.breakers.set(breaker?.name, breaker);
   }
 
   get(name: string): CircuitBreaker | undefined {
-    return this?.breakers.get(name);
+    return this.breakers.get(name);
   }
 
   getAll(): CircuitBreaker[] {
-    return Array?.from(this?.breakers.values());
+    return Array.from(this.breakers.values());
   }
 
   getAllStats(): CircuitBreakerStats[] {
-    return this?.getAll().map((b) => b?.getStats());
+    return this.getAll().map((b) => b?.getStats());
   }
 
   getHealthSummary(): {
@@ -377,7 +377,7 @@ export class CircuitBreakerRegistry {
     unhealthy: number;
     circuits: CircuitBreakerStats[];
   } {
-    const stats = this?.getAllStats();
+    const stats = this.getAllStats();
     const healthy = stats?.filter((s) => s?.isHealthy).length;
 
     return {
@@ -389,12 +389,12 @@ export class CircuitBreakerRegistry {
   }
 
   resetAll(): void {
-    this?.breakers.forEach((b) => b?.reset());
+    this.breakers.forEach((b) => b?.reset());
   }
 
   destroy(): void {
-    this?.breakers.forEach((b) => b?.destroy());
-    this?.breakers.clear();
+    this.breakers.forEach((b) => b?.destroy());
+    this.breakers.clear();
   }
 }
 

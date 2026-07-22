@@ -30,7 +30,7 @@ export function setupReliabilityEndpoints(
       const uptimeStats = reliabilityCoordinator?.getUptimeStats();
       const queryMetrics = getQueryTelemetry();
 
-      res?.json({
+      res.json({
         status: systemHealth.status,
         timestamp: new Date().toISOString(),
         uptime: uptimeStats,
@@ -56,7 +56,7 @@ export function setupReliabilityEndpoints(
         scheduler_leader: isSchedulerLeader(),
       });
     } catch (error: unknown) {
-      res?.status(500).json({
+      res.status(500).json({
         status: "error",
         message: "Health check failed",
         error: (error as Error).message,
@@ -72,7 +72,7 @@ export function setupReliabilityEndpoints(
       const maxBoosterHealth = maxBooster247?.getHealthSummary();
 
       // Simple response for external monitoring with real metrics
-      res?.json({
+      res.json({
         status: health.status === "healthy" ? "ok" : "degraded",
         uptime_seconds: Math.floor(health?.uptime / 1000),
         uptime_percentage: health.reliability.uptimePercentage,
@@ -85,7 +85,7 @@ export function setupReliabilityEndpoints(
         timestamp: new Date().toISOString(),
       });
     } catch (error: unknown) {
-      res?.status(500).json({
+      res.status(500).json({
         status: "error",
         timestamp: new Date().toISOString(),
       });
@@ -97,13 +97,13 @@ export function setupReliabilityEndpoints(
     try {
       const status = getGeoDnsStatus();
       const stale = status.dbAgeDays !== null && status.dbAgeDays > 35;
-      res?.json({
+      res.json({
         ...status,
         stale,
         nextRefresh: "1st of each month, 03:15 UTC",
       });
     } catch (error: unknown) {
-      res?.status(500).json({
+      res.status(500).json({
         error: "GeoDNS status unavailable",
         message: (error as Error).message,
       });
@@ -117,7 +117,7 @@ export function setupReliabilityEndpoints(
       const summary = processMonitor?.getHealthSummary();
       const alerts = processMonitor?.getAlerts(50);
 
-      res?.json({
+      res.json({
         health: processHealth,
         summary,
         alerts,
@@ -127,7 +127,7 @@ export function setupReliabilityEndpoints(
         },
       });
     } catch (error: unknown) {
-      res?.status(500).json({
+      res.status(500).json({
         error: "Process monitoring data unavailable",
         message: (error as Error).message,
       });
@@ -141,7 +141,7 @@ export function setupReliabilityEndpoints(
       memoryManager?.getCurrentUsage();
       const history = memoryManager?.getUsageHistory(60); // Last hour
 
-      res?.json({
+      res.json({
         current: memorySummary.current,
         trend: memorySummary.trend,
         thresholds: memorySummary.thresholds,
@@ -157,7 +157,7 @@ export function setupReliabilityEndpoints(
         },
       });
     } catch (error: unknown) {
-      res?.status(500).json({
+      res.status(500).json({
         error: "Memory monitoring data unavailable",
         message: (error as Error).message,
       });
@@ -170,7 +170,7 @@ export function setupReliabilityEndpoints(
       const dbHealth = databaseResilience?.getHealthMetrics();
       const poolStatus = databaseResilience?.getPoolStatus();
 
-      res?.json({
+      res.json({
         health: dbHealth,
         pool: {
           activeConnections: poolStatus.activeConnections,
@@ -185,7 +185,7 @@ export function setupReliabilityEndpoints(
         },
       });
     } catch (error: unknown) {
-      res?.status(500).json({
+      res.status(500).json({
         error: "Database monitoring data unavailable",
         message: (error as Error).message,
       });
@@ -248,7 +248,7 @@ export function setupReliabilityEndpoints(
           );
         }
 
-        res?.json({
+        res.json({
           status: "success",
           metrics: {
             windowed: {
@@ -256,7 +256,7 @@ export function setupReliabilityEndpoints(
               slowQueries: metrics.windowedSlow,
               slowQueryPercentage:
                 metrics?.windowedQueries > 0
-                  ? Math?.round(
+                  ? Math.round(
                       (metrics?.windowedSlow / metrics?.windowedQueries) * 10000,
                     ) / 100
                   : 0,
@@ -269,7 +269,7 @@ export function setupReliabilityEndpoints(
               slowQueries: metrics.lifetimeSlow,
               slowQueryPercentage:
                 metrics?.lifetimeTotal > 0
-                  ? Math?.round(
+                  ? Math.round(
                       (metrics?.lifetimeSlow / metrics?.lifetimeTotal) * 10000,
                     ) / 100
                   : 0,
@@ -293,7 +293,7 @@ export function setupReliabilityEndpoints(
           },
         });
       } catch (error: unknown) {
-        res?.status(500).json({
+        res.status(500).json({
           status: "error",
           error: "Database query metrics unavailable",
           message: (error as Error).message,
@@ -312,7 +312,7 @@ export function setupReliabilityEndpoints(
       const metrics = [
         `# HELP max_booster_uptime_seconds Total uptime in seconds`,
         `# TYPE max_booster_uptime_seconds counter`,
-        `max_booster_uptime_seconds ${Math?.floor(health?.uptime / 1000)}`,
+        `max_booster_uptime_seconds ${Math.floor(health?.uptime / 1000)}`,
 
         `# HELP max_booster_memory_usage_bytes Current memory usage in bytes`,
         `# TYPE max_booster_memory_usage_bytes gauge`,
@@ -324,7 +324,7 @@ export function setupReliabilityEndpoints(
 
         `# HELP max_booster_response_time_ms Average response time in milliseconds`,
         `# TYPE max_booster_response_time_ms gauge`,
-        `max_booster_response_time_ms ${Math?.round(health?.reliability.avgResponseTime)}`,
+        `max_booster_response_time_ms ${Math.round(health?.reliability.avgResponseTime)}`,
 
         `# HELP max_booster_error_rate Percentage of failed requests`,
         `# TYPE max_booster_error_rate gauge`,
@@ -339,28 +339,28 @@ export function setupReliabilityEndpoints(
         `max_booster_system_status ${health?.status === "healthy" ? 0 : health?.status === "degraded" ? 1 : 2}`,
       ].join("\n");
 
-      res?.set("Content-Type", "text/plain");
-      res?.send(metrics);
+      res.set("Content-Type", "text/plain");
+      res.send(metrics);
     } catch (error: unknown) {
-      res?.status(500).send("# Error generating metrics");
+      res.status(500).send("# Error generating metrics");
     }
   });
 
   // Manual system controls (admin only)
   app?.post("/api/system/gc", (req: Request, res: Response) => {
-    const user = req?.user;
+    const user = req.user;
     if (!user)
-      return res?.status(401).json({ error: "Authentication required" });
+      return res.status(401).json({ error: "Authentication required" });
     if (user?.role !== "admin")
-      return res?.status(403).json({ error: "Admin access required" });
+      return res.status(403).json({ error: "Admin access required" });
     try {
       memoryManager?.scheduleGarbageCollection();
-      res?.json({
+      res.json({
         message: "Garbage collection triggered",
         timestamp: new Date().toISOString(),
       });
     } catch (error: unknown) {
-      res?.status(500).json({
+      res.status(500).json({
         error: "Failed to trigger garbage collection",
         message: (error as Error).message,
       });
@@ -370,19 +370,19 @@ export function setupReliabilityEndpoints(
   app?.post(
     "/api/system/reset-circuit-breaker",
     (req: Request, res: Response) => {
-      const user = req?.user;
+      const user = req.user;
       if (!user)
-        return res?.status(401).json({ error: "Authentication required" });
+        return res.status(401).json({ error: "Authentication required" });
       if (user?.role !== "admin")
-        return res?.status(403).json({ error: "Admin access required" });
+        return res.status(403).json({ error: "Admin access required" });
       try {
         databaseResilience?.resetCircuitBreaker();
-        res?.json({
+        res.json({
           message: "Database circuit breaker reset",
           timestamp: new Date().toISOString(),
         });
       } catch (error: unknown) {
-        res?.status(500).json({
+        res.status(500).json({
           error: "Failed to reset circuit breaker",
           message: (error as Error).message,
         });
@@ -395,7 +395,7 @@ export function setupReliabilityEndpoints(
       const circuitHealth = getCircuitHealthSummary();
       const retryQueue = getRetryQueue();
 
-      res?.json({
+      res.json({
         status: circuitHealth.unhealthy === 0 ? "healthy" : "degraded",
         timestamp: new Date().toISOString(),
         summary: {
@@ -431,7 +431,7 @@ export function setupReliabilityEndpoints(
         },
       });
     } catch (error: unknown) {
-      res?.status(500).json({
+      res.status(500).json({
         error: "Failed to retrieve circuit breaker status",
         message: (error as Error).message,
       });
@@ -440,17 +440,17 @@ export function setupReliabilityEndpoints(
 
   app?.get("/api/health/circuits/:name", (req: Request, res: Response) => {
     try {
-      const { name } = req?.params;
+      const { name } = req.params;
       const stats = getCircuitStats(name);
 
       if (!stats) {
-        return res?.status(404).json({
+        return res.status(404).json({
           error: "Circuit breaker not found",
           name,
         });
       }
 
-      res?.json({
+      res.json({
         name: stats.name,
         state: stats.state,
         isHealthy: stats.isHealthy,
@@ -467,7 +467,7 @@ export function setupReliabilityEndpoints(
         timestamp: new Date().toISOString(),
       });
     } catch (error: unknown) {
-      res?.status(500).json({
+      res.status(500).json({
         error: "Failed to retrieve circuit breaker status",
         message: (error as Error).message,
       });
@@ -477,28 +477,28 @@ export function setupReliabilityEndpoints(
   app?.post(
     "/api/health/circuits/:name/reset",
     (req: Request, res: Response) => {
-      const user = req?.user;
+      const user = req.user;
       if (!user)
-        return res?.status(401).json({ error: "Authentication required" });
+        return res.status(401).json({ error: "Authentication required" });
       if (user?.role !== "admin")
-        return res?.status(403).json({ error: "Admin access required" });
+        return res.status(403).json({ error: "Admin access required" });
       try {
-        const { name } = req?.params;
+        const { name } = req.params;
         const success = resetCircuit(name);
 
         if (!success) {
-          return res?.status(404).json({
+          return res.status(404).json({
             error: "Circuit breaker not found",
             name,
           });
         }
 
-        res?.json({
+        res.json({
           message: `Circuit breaker '${name}' reset successfully`,
           timestamp: new Date().toISOString(),
         });
       } catch (error: unknown) {
-        res?.status(500).json({
+        res.status(500).json({
           error: "Failed to reset circuit breaker",
           message: (error as Error).message,
         });
@@ -507,20 +507,20 @@ export function setupReliabilityEndpoints(
   );
 
   app?.post("/api/health/circuits/reset-all", (req: Request, res: Response) => {
-    const user = req?.user;
+    const user = req.user;
     if (!user)
-      return res?.status(401).json({ error: "Authentication required" });
+      return res.status(401).json({ error: "Authentication required" });
     if (user?.role !== "admin")
-      return res?.status(403).json({ error: "Admin access required" });
+      return res.status(403).json({ error: "Admin access required" });
     try {
       resetAllCircuits();
 
-      res?.json({
+      res.json({
         message: "All circuit breakers reset successfully",
         timestamp: new Date().toISOString(),
       });
     } catch (error: unknown) {
-      res?.status(500).json({
+      res.status(500).json({
         error: "Failed to reset circuit breakers",
         message: (error as Error).message,
       });
@@ -528,41 +528,41 @@ export function setupReliabilityEndpoints(
   });
 
   app?.delete("/api/health/retry-queue", (req: Request, res: Response) => {
-    const user = req?.user;
+    const user = req.user;
     if (!user)
-      return res?.status(401).json({ error: "Authentication required" });
+      return res.status(401).json({ error: "Authentication required" });
     if (user?.role !== "admin")
-      return res?.status(403).json({ error: "Admin access required" });
+      return res.status(403).json({ error: "Admin access required" });
     try {
       clearRetryQueue();
 
-      res?.json({
+      res.json({
         message: "Retry queue cleared",
         timestamp: new Date().toISOString(),
       });
     } catch (error: unknown) {
-      res?.status(500).json({
+      res.status(500).json({
         error: "Failed to clear retry queue",
         message: (error as Error).message,
       });
     }
   });
 
-  logger?.info("✅ 24/7 Reliability endpoints configured");
-  logger?.info("📊 Available endpoints:");
-  logger?.info("   GET /api/system/health - Comprehensive system health");
-  logger?.info("   GET /api/system/status - External monitoring status");
-  logger?.info("   GET /api/system/metrics - Prometheus metrics");
-  logger?.info("   GET /api/system/process - Process monitoring details");
-  logger?.info("   GET /api/system/memory - Memory monitoring details");
-  logger?.info("   GET /api/system/database - Database monitoring details");
-  logger?.info("   GET /api/system/database/metrics - Database query telemetry");
-  logger?.info(
+  logger.info("✅ 24/7 Reliability endpoints configured");
+  logger.info("📊 Available endpoints:");
+  logger.info("   GET /api/system/health - Comprehensive system health");
+  logger.info("   GET /api/system/status - External monitoring status");
+  logger.info("   GET /api/system/metrics - Prometheus metrics");
+  logger.info("   GET /api/system/process - Process monitoring details");
+  logger.info("   GET /api/system/memory - Memory monitoring details");
+  logger.info("   GET /api/system/database - Database monitoring details");
+  logger.info("   GET /api/system/database/metrics - Database query telemetry");
+  logger.info(
     "   GET /api/health/circuits - External service circuit breaker status",
   );
-  logger?.info("   GET /api/health/circuits/:name - Individual circuit status");
-  logger?.info(
+  logger.info("   GET /api/health/circuits/:name - Individual circuit status");
+  logger.info(
     "   POST /api/health/circuits/:name/reset - Reset individual circuit",
   );
-  logger?.info("   POST /api/health/circuits/reset-all - Reset all circuits");
+  logger.info("   POST /api/health/circuits/reset-all - Reset all circuits");
 }

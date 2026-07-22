@@ -53,23 +53,23 @@ class EmailService {
   private resend: Resend | null = null;
 
   constructor() {
-    this?.initialize();
+    this.initialize();
   }
 
   private initialize() {
-    if (!this?.isInitialized && env?.RESEND_API_KEY) {
+    if (!this.isInitialized && env?.RESEND_API_KEY) {
       try {
         this.resend = new Resend(env?.RESEND_API_KEY);
         this.isInitialized = true;
-        logger?.info("✅ Resend EmailService initialized");
+        logger.info("✅ Resend EmailService initialized");
       } catch (error: unknown) {
-        logger?.warn(
+        logger.warn(
           { err: error },
           "❌ Failed to initialize Resend EmailService:",
         );
       }
     } else if (!env?.RESEND_API_KEY) {
-      logger?.warn(
+      logger.warn(
         "⚠️  Resend API key not configured. Email features will be disabled.",
       );
     }
@@ -79,11 +79,11 @@ class EmailService {
     emailData: EmailData,
     shouldQueue: boolean = true,
   ): Promise<boolean> {
-    if (!this?.resend) return false;
+    if (!this.resend) return false;
     const startTime = Date?.now();
 
     try {
-      await this?.resend.emails?.send({
+      await this.resend.emails?.send({
         from: emailData.from,
         to: emailData.to as string,
         subject: emailData.subject,
@@ -96,7 +96,7 @@ class EmailService {
     } catch (error: unknown) {
       const deliveryTime = Date?.now() - startTime;
       const errorMessage = (error as Error).message || "Unknown error";
-      logger?.warn(`⚠️ Resend error for ${emailData?.to}: ${errorMessage}`);
+      logger.warn(`⚠️ Resend error for ${emailData?.to}: ${errorMessage}`);
       emailMonitor?.logEmail(
         emailData as any,
         "failed",
@@ -108,22 +108,22 @@ class EmailService {
           to: emailData.to,
           subject: emailData.subject,
         });
-        logger?.info(`📥 Email to ${emailData?.to} queued for retry`);
+        logger.info(`📥 Email to ${emailData?.to} queued for retry`);
       }
       return false;
     }
   }
 
   async sendInvitationEmail(data: InvitationEmailData): Promise<boolean> {
-    if (!this?.isInitialized) {
-      logger?.warn(
+    if (!this.isInitialized) {
+      logger.warn(
         "⚠️  SendGrid not initialized, skipping invitation email to:",
         data?.to,
       );
       return false;
     }
 
-    const template = this?.getInvitationTemplate(data);
+    const template = this.getInvitationTemplate(data);
     const fromEmail = env?.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
 
     const emailData = {
@@ -134,9 +134,9 @@ class EmailService {
       html: template.html,
     };
 
-    const success = await this?.sendWithCircuitBreaker(emailData);
+    const success = await this.sendWithCircuitBreaker(emailData);
     if (success) {
-      logger?.info(
+      logger.info(
         `📧 Invitation email sent to ${data?.to} from ${data?.inviterName}`,
       );
     }
@@ -150,7 +150,7 @@ class EmailService {
     projectName: string,
     role: string,
   ): Promise<boolean> {
-    return this?.sendInvitationEmail({
+    return this.sendInvitationEmail({
       to,
       inviterName,
       inviterEmail,
@@ -166,7 +166,7 @@ class EmailService {
     inviterEmail: string,
     role: string,
   ): Promise<boolean> {
-    return this?.sendInvitationEmail({
+    return this.sendInvitationEmail({
       to,
       inviterName,
       inviterEmail,
@@ -181,7 +181,7 @@ class EmailService {
     inviterEmail: string,
     inviteLink?: string,
   ): Promise<boolean> {
-    return this?.sendInvitationEmail({
+    return this.sendInvitationEmail({
       to,
       inviterName,
       inviterEmail,
@@ -196,8 +196,8 @@ class EmailService {
     ticketSubject: string,
     ticketId: string,
   ): Promise<boolean> {
-    if (!this?.isInitialized) {
-      logger?.warn(
+    if (!this.isInitialized) {
+      logger.warn(
         "⚠️  SendGrid not initialized, skipping ticket created email",
       );
       return false;
@@ -241,7 +241,7 @@ class EmailService {
       text: `Hi ${userName},\n\nYour support ticket has been created.\n\nSubject: ${ticketSubject}\nTicket ID: ${ticketId}\n\nOur team will respond as soon as possible.\n\nView your ticket: https://maxbooster.ai/support/tickets/${ticketId}`,
     };
 
-    return this?.sendWithCircuitBreaker(emailData);
+    return this.sendWithCircuitBreaker(emailData);
   }
 
   async sendTicketReplyEmail(
@@ -251,8 +251,8 @@ class EmailService {
     ticketId: string,
     replyMessage: string,
   ): Promise<boolean> {
-    if (!this?.isInitialized) {
-      logger?.warn("⚠️  SendGrid not initialized, skipping ticket reply email");
+    if (!this.isInitialized) {
+      logger.warn("⚠️  SendGrid not initialized, skipping ticket reply email");
       return false;
     }
 
@@ -296,7 +296,7 @@ class EmailService {
       text: `Hi ${userName},\n\nYou have a new reply on your support ticket: ${ticketSubject}\n\nReply: ${truncatedMessage}\n\nView full conversation: https://maxbooster.ai/support/tickets/${ticketId}`,
     };
 
-    return this?.sendWithCircuitBreaker(emailData);
+    return this.sendWithCircuitBreaker(emailData);
   }
 
   async sendTicketStatusUpdateEmail(
@@ -306,8 +306,8 @@ class EmailService {
     ticketId: string,
     newStatus: string,
   ): Promise<boolean> {
-    if (!this?.isInitialized) {
-      logger?.warn(
+    if (!this.isInitialized) {
+      logger.warn(
         "⚠️  SendGrid not initialized, skipping ticket status update email",
       );
       return false;
@@ -356,12 +356,12 @@ class EmailService {
       text: `Hi ${userName},\n\nYour support ticket status has been updated to: ${newStatus?.replace("_", " ").toUpperCase()}\n\nTicket: ${ticketSubject}\n\n${statusMessages[newStatus] || "Status has been updated."}\n\nView ticket: https://maxbooster.ai/support/tickets/${ticketId}`,
     };
 
-    return this?.sendWithCircuitBreaker(emailData);
+    return this.sendWithCircuitBreaker(emailData);
   }
 
   async sendWelcomeEmail(data: WelcomeEmailData): Promise<boolean> {
-    if (!this?.isInitialized) {
-      logger?.warn("⚠️  SendGrid not initialized, skipping welcome email");
+    if (!this.isInitialized) {
+      logger.warn("⚠️  SendGrid not initialized, skipping welcome email");
       return false;
     }
 
@@ -778,7 +778,7 @@ If you did not expect this invitation, you can safely ignore this email.
       subject,
       html,
     };
-    return this?.sendWithCircuitBreaker(emailData, true);
+    return this.sendWithCircuitBreaker(emailData, true);
   }
 
   /**
@@ -791,8 +791,8 @@ If you did not expect this invitation, you can safely ignore this email.
     text?: string;
     from?: string;
   }): Promise<boolean> {
-    if (!this?.isInitialized) {
-      logger?.warn(
+    if (!this.isInitialized) {
+      logger.warn(
         "⚠️  SendGrid not initialized — skipping email to:",
         options?.to,
       );
@@ -806,7 +806,7 @@ If you did not expect this invitation, you can safely ignore this email.
       html: options.html,
       text: options.text ?? options?.html.replace(/<[^>]+>/g, ""),
     };
-    return this?.sendWithCircuitBreaker(emailData, true);
+    return this.sendWithCircuitBreaker(emailData, true);
   }
 }
 

@@ -29,15 +29,15 @@ export interface PaginationParams {
  */
 export function parsePaginationParams(req: Request): PaginationParams {
   const rawLimit = parseInt(
-    String(req?.query.limit ?? req?.query.pageSize ?? DEFAULT_PAGE_SIZE),
+    String(req.query.limit ?? req.query.pageSize ?? DEFAULT_PAGE_SIZE),
     10,
   );
-  const rawPage = parseInt(String(req?.query.page ?? 1), 10);
+  const rawPage = parseInt(String(req.query.page ?? 1), 10);
 
-  const page = Number?.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1;
+  const page = Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1;
   const limit =
-    Number?.isFinite(rawLimit) && rawLimit >= 1
-      ? Math?.min(rawLimit, MAX_PAGE_SIZE)
+    Number.isFinite(rawLimit) && rawLimit >= 1
+      ? Math.min(rawLimit, MAX_PAGE_SIZE)
       : DEFAULT_PAGE_SIZE;
   const offset = (page - 1) * limit;
 

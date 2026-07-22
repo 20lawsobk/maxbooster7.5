@@ -134,13 +134,13 @@ router?.post(
   requirePremium,
   async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const parsed = dailyLoopSchema?.parse(req?.body);
+      const userId = req.user!.id;
+      const parsed = dailyLoopSchema?.parse(req.body);
       const date = parsed?.date ? new Date(parsed?.date) : new Date();
 
       const schedule = await socialFanbaseService?.dailySocialLoop(userId, date);
 
-      res?.json({
+      res.json({
         success: true,
         data: schedule,
       });
@@ -154,7 +154,7 @@ router?.post(
             details: error.issues,
           });
       }
-      logger?.warn({ err: error }, "Error in daily social loop:");
+      logger.warn({ err: error }, "Error in daily social loop:");
       res
         .status(500)
         .json({ success: false, error: "Failed to run daily social loop" });
@@ -164,20 +164,20 @@ router?.post(
 
 router?.get("/fanbase/music-impact", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 500);
+    const userId = req.user!.id;
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
 
     const metrics = await socialFanbaseService?.getMusicImpactMetrics(
       userId,
       limit,
     );
 
-    res?.json({
+    res.json({
       success: true,
       data: metrics,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching music impact metrics:");
+    logger.warn({ err: error }, "Error fetching music impact metrics:");
     res
       .status(500)
       .json({ success: false, error: "Failed to fetch music impact metrics" });
@@ -186,8 +186,8 @@ router?.get("/fanbase/music-impact", requireAuth, async (req, res) => {
 
 router?.post("/fanbase/segments", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const parsed = createSegmentSchema?.parse(req?.body);
+    const userId = req.user!.id;
+    const parsed = createSegmentSchema?.parse(req.body);
 
     const segment = await socialFanbaseService?.createSegment(
       userId,
@@ -201,7 +201,7 @@ router?.post("/fanbase/segments", requireAuth, async (req, res) => {
         .json({ success: false, error: "Failed to create segment" });
     }
 
-    res?.status(201).json({
+    res.status(201).json({
       success: true,
       data: segment,
     });
@@ -215,7 +215,7 @@ router?.post("/fanbase/segments", requireAuth, async (req, res) => {
           details: error.issues,
         });
     }
-    logger?.warn({ err: error }, "Error creating fan segment:");
+    logger.warn({ err: error }, "Error creating fan segment:");
     res
       .status(500)
       .json({ success: false, error: "Failed to create fan segment" });
@@ -224,16 +224,16 @@ router?.post("/fanbase/segments", requireAuth, async (req, res) => {
 
 router?.get("/fanbase/segments", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
     const segments = await socialFanbaseService?.getFanSegments(userId);
 
-    res?.json({
+    res.json({
       success: true,
       data: segments,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching fan segments:");
+    logger.warn({ err: error }, "Error fetching fan segments:");
     res
       .status(500)
       .json({ success: false, error: "Failed to fetch fan segments" });
@@ -242,8 +242,8 @@ router?.get("/fanbase/segments", requireAuth, async (req, res) => {
 
 router?.put("/fanbase/segments/:id", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const segmentId = req?.params.id;
+    const userId = req.user!.id;
+    const segmentId = req.params.id;
     const [owned] = await db
       .select({ id: fanSegments.id })
       .from(fanSegments)
@@ -253,7 +253,7 @@ router?.put("/fanbase/segments/:id", requireAuth, async (req, res) => {
       return res
         .status(404)
         .json({ success: false, error: "Segment not found" });
-    const parsed = updateSegmentSchema?.parse(req?.body);
+    const parsed = updateSegmentSchema?.parse(req.body);
 
     const segment = await socialFanbaseService?.updateSegmentBehavior(
       segmentId,
@@ -266,7 +266,7 @@ router?.put("/fanbase/segments/:id", requireAuth, async (req, res) => {
         .json({ success: false, error: "Segment not found" });
     }
 
-    res?.json({
+    res.json({
       success: true,
       data: segment,
     });
@@ -280,7 +280,7 @@ router?.put("/fanbase/segments/:id", requireAuth, async (req, res) => {
           details: error.issues,
         });
     }
-    logger?.warn({ err: error }, "Error updating fan segment:");
+    logger.warn({ err: error }, "Error updating fan segment:");
     res
       .status(500)
       .json({ success: false, error: "Failed to update fan segment" });
@@ -289,8 +289,8 @@ router?.put("/fanbase/segments/:id", requireAuth, async (req, res) => {
 
 router?.delete("/fanbase/segments/:id", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const segmentId = req?.params.id;
+    const userId = req.user!.id;
+    const segmentId = req.params.id;
     const [owned] = await db
       .select({ id: fanSegments.id })
       .from(fanSegments)
@@ -312,12 +312,12 @@ router?.delete("/fanbase/segments/:id", requireAuth, async (req, res) => {
         });
     }
 
-    res?.json({
+    res.json({
       success: true,
       message: "Segment deleted successfully",
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error deleting fan segment:");
+    logger.warn({ err: error }, "Error deleting fan segment:");
     res
       .status(500)
       .json({ success: false, error: "Failed to delete fan segment" });
@@ -326,16 +326,16 @@ router?.delete("/fanbase/segments/:id", requireAuth, async (req, res) => {
 
 router?.get("/fanbase/patterns", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
     const patterns = await socialFanbaseService?.getPatternAggregates(userId);
 
-    res?.json({
+    res.json({
       success: true,
       data: patterns,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching pattern aggregates:");
+    logger.warn({ err: error }, "Error fetching pattern aggregates:");
     res
       .status(500)
       .json({ success: false, error: "Failed to fetch pattern aggregates" });
@@ -344,8 +344,8 @@ router?.get("/fanbase/patterns", requireAuth, async (req, res) => {
 
 router?.post("/fanbase/content", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const parsed = createContentSchema?.parse(req?.body);
+    const userId = req.user!.id;
+    const parsed = createContentSchema?.parse(req.body);
 
     const content = await socialFanbaseService?.createContent(userId, {
       ...parsed,
@@ -360,7 +360,7 @@ router?.post("/fanbase/content", requireAuth, async (req, res) => {
         .json({ success: false, error: "Failed to create content" });
     }
 
-    res?.status(201).json({
+    res.status(201).json({
       success: true,
       data: content,
     });
@@ -374,7 +374,7 @@ router?.post("/fanbase/content", requireAuth, async (req, res) => {
           details: error.issues,
         });
     }
-    logger?.warn({ err: error }, "Error creating autopilot content:");
+    logger.warn({ err: error }, "Error creating autopilot content:");
     res
       .status(500)
       .json({ success: false, error: "Failed to create autopilot content" });
@@ -386,8 +386,8 @@ router?.put(
   requireAuth,
   async (req, res) => {
     try {
-      const contentId = req?.params.id;
-      const parsed = updateContentPerformanceSchema?.parse(req?.body);
+      const contentId = req.params.id;
+      const parsed = updateContentPerformanceSchema?.parse(req.body);
 
       const content = await socialFanbaseService?.updateContentPerformance(
         contentId,
@@ -400,7 +400,7 @@ router?.put(
           .json({ success: false, error: "Content not found" });
       }
 
-      res?.json({
+      res.json({
         success: true,
         data: content,
       });
@@ -414,7 +414,7 @@ router?.put(
             details: error.issues,
           });
       }
-      logger?.warn({ err: error }, "Error updating content performance:");
+      logger.warn({ err: error }, "Error updating content performance:");
       res
         .status(500)
         .json({
@@ -427,20 +427,20 @@ router?.put(
 
 router?.get("/fanbase/content/top", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const limit = Math?.min(parseInt(req?.query.limit as string) || 10, 100);
+    const userId = req.user!.id;
+    const limit = Math.min(parseInt(req.query.limit as string) || 10, 100);
 
     const content = await socialFanbaseService?.getTopPerformingContent(
       userId,
       limit,
     );
 
-    res?.json({
+    res.json({
       success: true,
       data: content,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching top performing content:");
+    logger.warn({ err: error }, "Error fetching top performing content:");
     res
       .status(500)
       .json({
@@ -456,16 +456,16 @@ router?.post(
   requirePremium,
   async (req, res) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       await socialFanbaseService?.compressToLongTermMemory(userId);
 
-      res?.json({
+      res.json({
         success: true,
         message: "Memory compression completed",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error compressing memory:");
+      logger.warn({ err: error }, "Error compressing memory:");
       res
         .status(500)
         .json({ success: false, error: "Failed to compress memory" });
@@ -479,16 +479,16 @@ router?.post(
   requirePremium,
   async (req, res) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       await socialFanbaseService?.applyTimeDecay(userId);
 
-      res?.json({
+      res.json({
         success: true,
         message: "Time decay applied successfully",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error applying time decay:");
+      logger.warn({ err: error }, "Error applying time decay:");
       res
         .status(500)
         .json({ success: false, error: "Failed to apply time decay" });
@@ -502,8 +502,8 @@ router?.post(
   requirePremium,
   async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const parsed = weeklyLoopSchema?.parse(req?.body);
+      const userId = req.user!.id;
+      const parsed = weeklyLoopSchema?.parse(req.body);
       const weekStart = parsed?.weekStart
         ? new Date(parsed?.weekStart)
         : new Date();
@@ -514,7 +514,7 @@ router?.post(
         parsed?.timeBudgetHours,
       );
 
-      res?.json({
+      res.json({
         success: true,
         data: state,
       });
@@ -528,7 +528,7 @@ router?.post(
             details: error.issues,
           });
       }
-      logger?.warn({ err: error }, "Error in weekly organic loop:");
+      logger.warn({ err: error }, "Error in weekly organic loop:");
       res
         .status(500)
         .json({ success: false, error: "Failed to run weekly organic loop" });
@@ -538,15 +538,15 @@ router?.post(
 
 router?.post("/organic/assets", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const parsed = createAssetSchema?.parse(req?.body);
+    const userId = req.user!.id;
+    const parsed = createAssetSchema?.parse(req.body);
 
     const asset = await organicCompoundingService?.createAsset(userId, {
       id: undefined as Record<string, unknown>,
       ...parsed,
     });
 
-    res?.status(201).json({
+    res.status(201).json({
       success: true,
       data: asset,
     });
@@ -560,7 +560,7 @@ router?.post("/organic/assets", requireAuth, async (req, res) => {
           details: error.issues,
         });
     }
-    logger?.warn({ err: error }, "Error creating organic asset:");
+    logger.warn({ err: error }, "Error creating organic asset:");
     res
       .status(500)
       .json({ success: false, error: "Failed to create organic asset" });
@@ -569,16 +569,16 @@ router?.post("/organic/assets", requireAuth, async (req, res) => {
 
 router?.get("/organic/assets", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
     const assets = await organicCompoundingService?.getAssets(userId);
 
-    res?.json({
+    res.json({
       success: true,
       data: assets,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching organic assets:");
+    logger.warn({ err: error }, "Error fetching organic assets:");
     res
       .status(500)
       .json({ success: false, error: "Failed to fetch organic assets" });
@@ -587,8 +587,8 @@ router?.get("/organic/assets", requireAuth, async (req, res) => {
 
 router?.put("/organic/assets/:id/performance", requireAuth, async (req, res) => {
   try {
-    const assetId = req?.params.id;
-    const parsed = updateAssetPerformanceSchema?.parse(req?.body);
+    const assetId = req.params.id;
+    const parsed = updateAssetPerformanceSchema?.parse(req.body);
 
     const asset = await organicCompoundingService?.updateAssetPerformance(
       assetId,
@@ -596,10 +596,10 @@ router?.put("/organic/assets/:id/performance", requireAuth, async (req, res) => 
     );
 
     if (!asset) {
-      return res?.status(404).json({ success: false, error: "Asset not found" });
+      return res.status(404).json({ success: false, error: "Asset not found" });
     }
 
-    res?.json({
+    res.json({
       success: true,
       data: asset,
     });
@@ -613,7 +613,7 @@ router?.put("/organic/assets/:id/performance", requireAuth, async (req, res) => 
           details: error.issues,
         });
     }
-    logger?.warn({ err: error }, "Error updating asset performance:");
+    logger.warn({ err: error }, "Error updating asset performance:");
     res
       .status(500)
       .json({ success: false, error: "Failed to update asset performance" });
@@ -622,20 +622,20 @@ router?.put("/organic/assets/:id/performance", requireAuth, async (req, res) => 
 
 router?.get("/organic/assets/top", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const limit = Math?.min(parseInt(req?.query.limit as string) || 10, 100);
+    const userId = req.user!.id;
+    const limit = Math.min(parseInt(req.query.limit as string) || 10, 100);
 
     const assets = await organicCompoundingService?.getTopPerformingAssets(
       userId,
       limit,
     );
 
-    res?.json({
+    res.json({
       success: true,
       data: assets,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching top performing assets:");
+    logger.warn({ err: error }, "Error fetching top performing assets:");
     res
       .status(500)
       .json({ success: false, error: "Failed to fetch top performing assets" });
@@ -644,15 +644,15 @@ router?.get("/organic/assets/top", requireAuth, async (req, res) => {
 
 router?.post("/organic/channels", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const parsed = createChannelSchema?.parse(req?.body);
+    const userId = req.user!.id;
+    const parsed = createChannelSchema?.parse(req.body);
 
     const channel = await organicCompoundingService?.createChannel(userId, {
       id: undefined as Record<string, unknown>,
       ...parsed,
     });
 
-    res?.status(201).json({
+    res.status(201).json({
       success: true,
       data: channel,
     });
@@ -666,7 +666,7 @@ router?.post("/organic/channels", requireAuth, async (req, res) => {
           details: error.issues,
         });
     }
-    logger?.warn({ err: error }, "Error creating organic channel:");
+    logger.warn({ err: error }, "Error creating organic channel:");
     res
       .status(500)
       .json({ success: false, error: "Failed to create organic channel" });
@@ -675,16 +675,16 @@ router?.post("/organic/channels", requireAuth, async (req, res) => {
 
 router?.get("/organic/channels", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
     const channels = await organicCompoundingService?.getChannels(userId);
 
-    res?.json({
+    res.json({
       success: true,
       data: channels,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching organic channels:");
+    logger.warn({ err: error }, "Error fetching organic channels:");
     res
       .status(500)
       .json({ success: false, error: "Failed to fetch organic channels" });
@@ -696,8 +696,8 @@ router?.put(
   requireAuth,
   async (req, res) => {
     try {
-      const channelId = req?.params.id;
-      const parsed = updateChannelEfficiencySchema?.parse(req?.body);
+      const channelId = req.params.id;
+      const parsed = updateChannelEfficiencySchema?.parse(req.body);
 
       const channel = await organicCompoundingService?.updateChannelEfficiency(
         channelId,
@@ -710,7 +710,7 @@ router?.put(
           .json({ success: false, error: "Channel not found" });
       }
 
-      res?.json({
+      res.json({
         success: true,
         data: channel,
       });
@@ -724,7 +724,7 @@ router?.put(
             details: error.issues,
           });
       }
-      logger?.warn({ err: error }, "Error updating channel efficiency:");
+      logger.warn({ err: error }, "Error updating channel efficiency:");
       res
         .status(500)
         .json({ success: false, error: "Failed to update channel efficiency" });
@@ -734,20 +734,20 @@ router?.put(
 
 router?.get("/organic/roi/:assetId", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const assetId = req?.params.assetId;
+    const userId = req.user!.id;
+    const assetId = req.params.assetId;
 
     const history = await organicCompoundingService?.getRoiHistory(
       userId,
       assetId,
     );
 
-    res?.json({
+    res.json({
       success: true,
       data: history,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching ROI history:");
+    logger.warn({ err: error }, "Error fetching ROI history:");
     res
       .status(500)
       .json({ success: false, error: "Failed to fetch ROI history" });
@@ -756,8 +756,8 @@ router?.get("/organic/roi/:assetId", requireAuth, async (req, res) => {
 
 router?.get("/organic/lifetime/:assetId", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const assetId = req?.params.assetId;
+    const userId = req.user!.id;
+    const assetId = req.params.assetId;
 
     const stats = await organicCompoundingService?.getLifetimeStats(
       userId,
@@ -770,12 +770,12 @@ router?.get("/organic/lifetime/:assetId", requireAuth, async (req, res) => {
         .json({ success: false, error: "Lifetime stats not found" });
     }
 
-    res?.json({
+    res.json({
       success: true,
       data: stats,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching lifetime stats:");
+    logger.warn({ err: error }, "Error fetching lifetime stats:");
     res
       .status(500)
       .json({ success: false, error: "Failed to fetch lifetime stats" });
@@ -784,17 +784,17 @@ router?.get("/organic/lifetime/:assetId", requireAuth, async (req, res) => {
 
 router?.get("/organic/compounding-metrics", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
     const metrics =
       await organicCompoundingService?.getCompoundingMetrics(userId);
 
-    res?.json({
+    res.json({
       success: true,
       data: metrics,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching compounding metrics:");
+    logger.warn({ err: error }, "Error fetching compounding metrics:");
     res
       .status(500)
       .json({ success: false, error: "Failed to fetch compounding metrics" });
@@ -803,35 +803,35 @@ router?.get("/organic/compounding-metrics", requireAuth, async (req, res) => {
 
 router?.post("/insights/sync", requireAuth, requirePremium, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
     const result = await bridgeInsightsService?.syncInsights(userId);
 
-    res?.json({
+    res.json({
       success: true,
       data: result,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error syncing insights:");
-    res?.status(500).json({ success: false, error: "Failed to sync insights" });
+    logger.warn({ err: error }, "Error syncing insights:");
+    res.status(500).json({ success: false, error: "Failed to sync insights" });
   }
 });
 
 router?.get("/insights/social-to-organic", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
     const insights = await bridgeInsightsService?.getLatestInsights(
       userId,
       "social_to_organic",
     );
 
-    res?.json({
+    res.json({
       success: true,
       data: insights,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching social-to-organic insights:");
+    logger.warn({ err: error }, "Error fetching social-to-organic insights:");
     res
       .status(500)
       .json({
@@ -843,19 +843,19 @@ router?.get("/insights/social-to-organic", requireAuth, async (req, res) => {
 
 router?.get("/insights/organic-to-social", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
     const insights = await bridgeInsightsService?.getLatestInsights(
       userId,
       "organic_to_social",
     );
 
-    res?.json({
+    res.json({
       success: true,
       data: insights,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching organic-to-social insights:");
+    logger.warn({ err: error }, "Error fetching organic-to-social insights:");
     res
       .status(500)
       .json({
@@ -867,16 +867,16 @@ router?.get("/insights/organic-to-social", requireAuth, async (req, res) => {
 
 router?.get("/insights/summary", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
     const summary = await bridgeInsightsService?.getInsightsSummary(userId);
 
-    res?.json({
+    res.json({
       success: true,
       data: summary,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching insights summary:");
+    logger.warn({ err: error }, "Error fetching insights summary:");
     res
       .status(500)
       .json({ success: false, error: "Failed to fetch insights summary" });
@@ -889,8 +889,8 @@ router?.post(
   requirePremium,
   async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const parsed = applyOrganicInsightsSchema?.parse(req?.body);
+      const userId = req.user!.id;
+      const parsed = applyOrganicInsightsSchema?.parse(req.body);
 
       const result = await bridgeInsightsService?.applyInsightsToOrganic(
         userId,
@@ -902,7 +902,7 @@ router?.post(
         },
       );
 
-      res?.json({
+      res.json({
         success: true,
         data: result,
       });
@@ -916,7 +916,7 @@ router?.post(
             details: error.issues,
           });
       }
-      logger?.warn({ err: error }, "Error applying insights to organic:");
+      logger.warn({ err: error }, "Error applying insights to organic:");
       res
         .status(500)
         .json({ success: false, error: "Failed to apply insights to organic" });
@@ -930,8 +930,8 @@ router?.post(
   requirePremium,
   async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const parsed = applySocialInsightsSchema?.parse(req?.body);
+      const userId = req.user!.id;
+      const parsed = applySocialInsightsSchema?.parse(req.body);
 
       const result = await bridgeInsightsService?.applyInsightsToSocial(userId, {
         exportType: "organic_to_social_insights",
@@ -941,7 +941,7 @@ router?.post(
         highValueIntents: parsed.highValueIntents,
       });
 
-      res?.json({
+      res.json({
         success: true,
         data: result,
       });
@@ -955,7 +955,7 @@ router?.post(
             details: error.issues,
           });
       }
-      logger?.warn({ err: error }, "Error applying insights to social:");
+      logger.warn({ err: error }, "Error applying insights to social:");
       res
         .status(500)
         .json({ success: false, error: "Failed to apply insights to social" });

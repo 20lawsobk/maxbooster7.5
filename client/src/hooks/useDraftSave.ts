@@ -55,7 +55,7 @@ export function useDraftSave<T = unknown>({
         }
         isInitialized.current = true;
       } catch (error) {
-        logger?.error("[useDraftSave] Init error:", error);
+        logger.error("[useDraftSave] Init error:", error);
       }
     };
     init();
@@ -64,7 +64,7 @@ export function useDraftSave<T = unknown>({
   useEffect(() => {
     if (!enabled || !isInitialized?.current) return;
 
-    const dataStr = JSON?.stringify(debouncedData);
+    const dataStr = JSON.stringify(debouncedData);
     if (dataStr === lastDataRef?.current) return;
     if (!debouncedData || dataStr === "{}" || dataStr === "null") return;
 
@@ -81,7 +81,7 @@ export function useDraftSave<T = unknown>({
         setDraft(savedDraft);
         onSave?.(savedDraft);
       } catch (error) {
-        logger?.error("[useDraftSave] Save error:", error);
+        logger.error("[useDraftSave] Save error:", error);
         onError?.(error as Error);
       } finally {
         setIsSaving(false);
@@ -104,7 +104,7 @@ export function useDraftSave<T = unknown>({
       setDraft(savedDraft);
       onSave?.(savedDraft);
     } catch (error) {
-      logger?.error("[useDraftSave] Manual save error:", error);
+      logger.error("[useDraftSave] Manual save error:", error);
       onError?.(error as Error);
     } finally {
       setIsSaving(false);
@@ -120,7 +120,7 @@ export function useDraftSave<T = unknown>({
       }
       return null;
     } catch (error) {
-      logger?.error("[useDraftSave] Recover error:", error);
+      logger.error("[useDraftSave] Recover error:", error);
       onError?.(error as Error);
       return null;
     }
@@ -134,7 +134,7 @@ export function useDraftSave<T = unknown>({
       setLastSaved(null);
       lastDataRef.current = "";
     } catch (error) {
-      logger?.error("[useDraftSave] Discard error:", error);
+      logger.error("[useDraftSave] Discard error:", error);
       onError?.(error as Error);
     }
   }, [formId, onError]);

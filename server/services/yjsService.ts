@@ -32,9 +32,9 @@ export class YjsCollaborationService {
     new Map();
 
   constructor() {
-    if (this?.YJS_PUBSUB_ENABLED) {
-      this?.initPubSub().catch((err) =>
-        logger?.warn({ err: err }, "Failed to init YJS PubSub:"),
+    if (this.YJS_PUBSUB_ENABLED) {
+      this.initPubSub().catch((err) =>
+        logger.warn({ err: err }, "Failed to init YJS PubSub:"),
       );
     }
   }
@@ -42,12 +42,12 @@ export class YjsCollaborationService {
   private async initPubSub() {
     try {
       this.subClient = await createRedisClient();
-      if (this?.subClient && typeof this?.subClient.on === "function") {
-        this?.subClient.on("message", (channel: string, message: string) => {
+      if (this.subClient && typeof this.subClient.on === "function") {
+        this.subClient.on("message", (channel: string, message: string) => {
           if (channel?.startsWith("yjs:updates:")) {
             const projectId = channel?.split(":").pop();
             if (projectId) {
-              const callbacks = this?.pubSubCallbacks.get(projectId);
+              const callbacks = this.pubSubCallbacks.get(projectId);
               if (callbacks) {
                 const update = new Uint8Array(Buffer?.from(message, "base64"));
                 callbacks?.forEach((cb) => cb(update));
@@ -57,7 +57,7 @@ export class YjsCollaborationService {
         });
       }
     } catch (error) {
-      logger?.warn({ err: error }, "YJS PubSub init error:");
+      logger.warn({ err: error }, "YJS PubSub init error:");
     }
   }
 
@@ -65,25 +65,25 @@ export class YjsCollaborationService {
     projectId: string,
     callback: (update: Uint8Array) => void,
   ) {
-    if (!this?.YJS_PUBSUB_ENABLED || !this?.subClient) return;
+    if (!this.YJS_PUBSUB_ENABLED || !this.subClient) return;
 
-    if (!this?.pubSubCallbacks.has(projectId)) {
-      this?.pubSubCallbacks.set(projectId, new Set());
+    if (!this.pubSubCallbacks.has(projectId)) {
+      this.pubSubCallbacks.set(projectId, new Set());
       const channel = `yjs:updates:${projectId}`;
       try {
-        await this?.subClient.subscribe(channel);
-        logger?.info(`Subscribed to YJS updates for project: ${projectId}`);
+        await this.subClient.subscribe(channel);
+        logger.info(`Subscribed to YJS updates for project: ${projectId}`);
       } catch (error) {
-        logger?.warn({ err: error }, `Failed to subscribe to ${channel}:`);
+        logger.warn({ err: error }, `Failed to subscribe to ${channel}:`);
       }
     }
-    this?.pubSubCallbacks.get(projectId)?.add(callback);
+    this.pubSubCallbacks.get(projectId)?.add(callback);
   }
 
   // Load Yjs document for project
   async loadDocument(projectId: string): Promise<Y.Doc> {
     // Try to load from Redis cache first (shared across all server instances)
-    const redisKey = `${this?.REDIS_DOC_PREFIX}${projectId}`;
+    const redisKey = `${this.REDIS_DOC_PREFIX}${projectId}`;
     let cachedState: string | null = null;
 
     try {
@@ -110,7 +110,7 @@ export class YjsCollaborationService {
         const buffer = Buffer?.from(cachedState, "base64");
         Y?.applyUpdate(doc, new Uint8Array(buffer));
       } catch (error: unknown) {
-        logger?.warn("Failed to load from Redis cache:", projectId, error);
+        logger.warn("Failed to load from Redis cache:", projectId, error);
         // Fall through to database load
       }
     }
@@ -130,7 +130,7 @@ export class YjsCollaborationService {
             if (redis) {
               await redis?.setEx(
                 redisKey,
-                this?.REDIS_TTL,
+                this.REDIS_TTL,
                 snapshot?.documentState,
               );
             }
@@ -138,7 +138,7 @@ export class YjsCollaborationService {
             // Redis cache update failed, but document is loaded from DB
           }
         } catch (error: unknown) {
-          logger?.warn("Failed to load snapshot for project:", projectId, error);
+          logger.warn("Failed to load snapshot for project:", projectId, error);
         }
       }
     }
@@ -146,7 +146,7 @@ export class YjsCollaborationService {
     // Auto-save on changes (debounced)
     doc?.on("update", async (update: Uint8Array) => {
       // PUBLISH the update to other nodes
-      if (this?.YJS_PUBSUB_ENABLED) {
+      if (this.YJS_PUBSUB_ENABLED) {
         try {
           const redis = await getRedisClient();
           if (redis) {
@@ -154,12 +154,12 @@ export class YjsCollaborationService {
             await redis?.publish(`yjs:updates:${projectId}`, base64Update);
           }
         } catch (error) {
-          logger?.warn({ err: error }, "Failed to publish YJS update:");
+          logger.warn({ err: error }, "Failed to publish YJS update:");
         }
       }
 
       // Clear existing timer
-      const existingTimer = this?.saveTimers.get(projectId);
+      const existingTimer = this.saveTimers.get(projectId);
       if (existingTimer) {
         clearTimeout(existingTimer);
       }
@@ -184,7 +184,7 @@ export class YjsCollaborationService {
           try {
             const redis = await getRedisClient();
             if (redis) {
-              await redis?.setEx(redisKey, this?.REDIS_TTL, base64State);
+              await redis?.setEx(redisKey, this.REDIS_TTL, base64State);
             }
           } catch (error: unknown) {
             // Redis cache update failed, but snapshot saved to DB
@@ -193,11 +193,11 @@ export class YjsCollaborationService {
           // Clean up old snapshots (keep last 10)
           await storage?.deleteOldCollabSnapshots(projectId, 10);
         } catch (error: unknown) {
-          logger?.warn({ err: error }, "Failed to save collab snapshot:");
+          logger.warn({ err: error }, "Failed to save collab snapshot:");
         }
-      }, this?.SAVE_DEBOUNCE_MS);
+      }, this.SAVE_DEBOUNCE_MS);
 
-      this?.saveTimers.set(projectId, timer);
+      this.saveTimers.set(projectId, timer);
     });
 
     return doc;
@@ -208,7 +208,7 @@ export class YjsCollaborationService {
     try {
       const fullDocumentState = Y?.encodeStateAsUpdate(doc);
       const base64State = Buffer?.from(fullDocumentState).toString("base64");
-      const redisKey = `${this?.REDIS_DOC_PREFIX}${projectId}`;
+      const redisKey = `${this.REDIS_DOC_PREFIX}${projectId}`;
 
       await storage?.saveCollabSnapshot({
         projectId,
@@ -219,13 +219,13 @@ export class YjsCollaborationService {
       try {
         const redis = await getRedisClient();
         if (redis) {
-          await redis?.setEx(redisKey, this?.REDIS_TTL, base64State);
+          await redis?.setEx(redisKey, this.REDIS_TTL, base64State);
         }
       } catch (error: unknown) {
-        logger?.warn("Redis cache update failed during force save:", projectId);
+        logger.warn("Redis cache update failed during force save:", projectId);
       }
     } catch (error: unknown) {
-      logger?.warn("Failed to force save document:", projectId, error);
+      logger.warn("Failed to force save document:", projectId, error);
       throw error;
     }
   }
@@ -237,28 +237,28 @@ export class YjsCollaborationService {
     clearCache: boolean = false,
   ) {
     // Clear pending save timer first
-    const timer = this?.saveTimers.get(projectId);
+    const timer = this.saveTimers.get(projectId);
     if (timer) {
       clearTimeout(timer);
-      this?.saveTimers.delete(projectId);
+      this.saveTimers.delete(projectId);
     }
 
     // Force save before unload to ensure no data loss
     if (doc) {
       try {
-        await this?.forceSave(projectId, doc);
+        await this.forceSave(projectId, doc);
       } catch (error: unknown) {
-        logger?.warn("Failed to force save during unload:", projectId, error);
+        logger.warn("Failed to force save during unload:", projectId, error);
       }
     }
 
     // Unsubscribe from pub/sub
-    if (this?.YJS_PUBSUB_ENABLED && this?.subClient) {
+    if (this.YJS_PUBSUB_ENABLED && this.subClient) {
       try {
-        await this?.subClient.unsubscribe(`yjs:updates:${projectId}`);
-        this?.pubSubCallbacks.delete(projectId);
+        await this.subClient.unsubscribe(`yjs:updates:${projectId}`);
+        this.pubSubCallbacks.delete(projectId);
       } catch (error) {
-        logger?.warn(
+        logger.warn(
           { err: error },
           `Failed to unsubscribe from yjs:updates:${projectId}:`,
         );
@@ -268,13 +268,13 @@ export class YjsCollaborationService {
     // Optionally clear Redis cache (useful when project is deleted)
     if (clearCache) {
       try {
-        const redisKey = `${this?.REDIS_DOC_PREFIX}${projectId}`;
+        const redisKey = `${this.REDIS_DOC_PREFIX}${projectId}`;
         const redis = await getRedisClient();
         if (redis) {
           await redis?.del(redisKey);
         }
       } catch (error: unknown) {
-        logger?.warn("Redis cache clear failed:", projectId);
+        logger.warn("Redis cache clear failed:", projectId);
       }
     }
   }
@@ -282,7 +282,7 @@ export class YjsCollaborationService {
   // Invalidate Redis cache for a project (forces reload from database)
   async invalidateCache(projectId: string) {
     try {
-      const redisKey = `${this?.REDIS_DOC_PREFIX}${projectId}`;
+      const redisKey = `${this.REDIS_DOC_PREFIX}${projectId}`;
       const redis = await getRedisClient();
       if (redis) {
         await redis?.del(redisKey);
@@ -295,7 +295,7 @@ export class YjsCollaborationService {
   // Check if document exists in Redis cache
   async isCached(projectId: string): Promise<boolean> {
     try {
-      const redisKey = `${this?.REDIS_DOC_PREFIX}${projectId}`;
+      const redisKey = `${this.REDIS_DOC_PREFIX}${projectId}`;
       const redis = await getRedisClient();
       if (redis) {
         const exists = await redis?.exists(redisKey);

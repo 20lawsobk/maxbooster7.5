@@ -127,21 +127,21 @@ export class MIDIEngine {
    * the browser permission dialog only ever appears on /studio.
    */
   async initialize(): Promise<void> {
-    if (this?.midiInitialized) return;
+    if (this.midiInitialized) return;
     this.midiInitialized = true;
-    await this?.initWebMIDI();
+    await this.initWebMIDI();
   }
 
   private async initWebMIDI(): Promise<void> {
     if ("requestMIDIAccess" in navigator) {
       try {
         this.midiAccess = await navigator?.requestMIDIAccess({ sysex: false });
-        this?.midiAccess.inputs?.forEach((input) => {
-          input.onmidimessage = this?.handleMIDIMessage.bind(this);
+        this.midiAccess.inputs?.forEach((input) => {
+          input.onmidimessage = this.handleMIDIMessage.bind(this);
         });
         localStorage?.setItem("midi_access_prompted", "1");
       } catch (err) {
-        logger?.info("Web MIDI not available:", err);
+        logger.info("Web MIDI not available:", err);
         localStorage?.setItem("midi_access_prompted", "1");
       }
     }
@@ -183,26 +183,26 @@ export class MIDIEngine {
       time: performance.now(),
     };
 
-    this?.midiListeners.forEach((l) => l(event));
+    this.midiListeners.forEach((l) => l(event));
 
-    if (this?.transport.getState().isRecording && this?.state.editingClipId) {
-      this?.recordMIDIEvent(event);
+    if (this.transport.getState().isRecording && this.state.editingClipId) {
+      this.recordMIDIEvent(event);
     }
   }
 
   private recordMIDIEvent(event: MIDIEvent): void {
-    const clip = this?.state.clips?.find(
-      (c) => c?.id === this?.state.editingClipId,
+    const clip = this.state.clips?.find(
+      (c) => c?.id === this.state.editingClipId,
     );
     if (!clip) return;
 
-    const currentBeat = this?.timeline.secondsToBeats(
-      this?.transport.getCurrentPosition().seconds,
+    const currentBeat = this.timeline.secondsToBeats(
+      this.transport.getCurrentPosition().seconds,
     );
     const relativeBeat = currentBeat - clip?.startBeat;
 
     if (event?.type === "note-on") {
-      const noteId = `note_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+      const noteId = `note_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const note: MIDINote = {
         id: noteId,
         pitch: event.data1,
@@ -213,30 +213,30 @@ export class MIDIEngine {
         selected: false,
         muted: false,
       };
-      this?.activeNotes.set(event?.data1, note);
+      this.activeNotes.set(event?.data1, note);
     } else if (event?.type === "note-off") {
-      const note = this?.activeNotes.get(event?.data1);
+      const note = this.activeNotes.get(event?.data1);
       if (note) {
-        note.durationBeats = Math?.max(0.0625, relativeBeat - note?.startBeat);
+        note.durationBeats = Math.max(0.0625, relativeBeat - note?.startBeat);
         clip?.notes.push(note);
-        this?.activeNotes.delete(event?.data1);
-        this?.notify();
+        this.activeNotes.delete(event?.data1);
+        this.notify();
       }
     } else if (event?.type === "control-change") {
       const cc: MIDIControlChange = {
-        id: `cc_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`,
+        id: `cc_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`,
         controller: event.data1,
         value: event.data2,
         time: relativeBeat,
         channel: event.channel,
       };
       clip?.controlChanges.push(cc);
-      this?.notify();
+      this.notify();
     }
   }
 
   getState(): Readonly<MIDIEngineState> {
-    return { ...this?.state };
+    return { ...this.state };
   }
 
   createClip(
@@ -245,7 +245,7 @@ export class MIDIEngine {
     durationBeats: number = 4,
     name?: string,
   ): string {
-    const id = `midi_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    const id = `midi_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const clip: MIDIClip = {
       id,
       trackId,
@@ -262,30 +262,30 @@ export class MIDIEngine {
       locked: false,
     };
 
-    this?.state.clips?.push(clip);
-    this?.notify();
+    this.state.clips?.push(clip);
+    this.notify();
     return id;
   }
 
   removeClip(clipId: string): void {
-    const index = this?.state.clips?.findIndex((c) => c?.id === clipId);
+    const index = this.state.clips?.findIndex((c) => c?.id === clipId);
     if (index !== -1) {
-      this?.state.clips?.splice(index, 1);
-      if (this?.state.selectedClipId === clipId) {
+      this.state.clips?.splice(index, 1);
+      if (this.state.selectedClipId === clipId) {
         this.state.selectedClipId = null;
       }
-      if (this?.state.editingClipId === clipId) {
+      if (this.state.editingClipId === clipId) {
         this.state.editingClipId = null;
       }
-      this?.notify();
+      this.notify();
     }
   }
 
   duplicateClip(clipId: string, newStartBeat?: number): string | null {
-    const clip = this?.state.clips?.find((c) => c?.id === clipId);
+    const clip = this.state.clips?.find((c) => c?.id === clipId);
     if (!clip) return null;
 
-    const newId = `midi_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    const newId = `midi_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const newClip: MIDIClip = {
       ...structuredClone(clip),
       id: newId,
@@ -293,34 +293,34 @@ export class MIDIEngine {
       startBeat: newStartBeat ?? clip?.startBeat + clip?.durationBeats,
       notes: clip.notes.map((n) => ({
         ...n,
-        id: `note_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`,
+        id: `note_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`,
       })),
     };
 
-    this?.state.clips?.push(newClip);
-    this?.notify();
+    this.state.clips?.push(newClip);
+    this.notify();
     return newId;
   }
 
   selectClip(clipId: string | null): void {
     this.state.selectedClipId = clipId;
-    this?.notify();
+    this.notify();
   }
 
   editClip(clipId: string | null): void {
     this.state.editingClipId = clipId;
     this.state.selectedNoteIds = [];
-    this?.notify();
+    this.notify();
   }
 
   addNote(
     clipId: string,
     note: Omit<MIDINote, "id" | "selected" | "muted">,
   ): string | null {
-    const clip = this?.state.clips?.find((c) => c?.id === clipId);
+    const clip = this.state.clips?.find((c) => c?.id === clipId);
     if (!clip || clip?.locked) return null;
 
-    const id = `note_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    const id = `note_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const newNote: MIDINote = {
       ...note,
       id,
@@ -330,21 +330,21 @@ export class MIDIEngine {
 
     clip?.notes.push(newNote);
     clip?.notes.sort((a, b) => a?.startBeat - b?.startBeat);
-    this?.notify();
+    this.notify();
     return id;
   }
 
   removeNote(clipId: string, noteId: string): void {
-    const clip = this?.state.clips?.find((c) => c?.id === clipId);
+    const clip = this.state.clips?.find((c) => c?.id === clipId);
     if (!clip || clip?.locked) return;
 
     const index = clip?.notes.findIndex((n) => n?.id === noteId);
     if (index !== -1) {
       clip?.notes.splice(index, 1);
-      this.state.selectedNoteIds = this?.state.selectedNoteIds?.filter(
+      this.state.selectedNoteIds = this.state.selectedNoteIds?.filter(
         (id) => id !== noteId,
       );
-      this?.notify();
+      this.notify();
     }
   }
 
@@ -354,45 +354,45 @@ export class MIDIEngine {
     newPitch: number,
     newStartBeat: number,
   ): void {
-    const clip = this?.state.clips?.find((c) => c?.id === clipId);
+    const clip = this.state.clips?.find((c) => c?.id === clipId);
     if (!clip || clip?.locked) return;
 
     const note = clip?.notes.find((n) => n?.id === noteId);
     if (note) {
-      note.pitch = Math?.max(0, Math?.min(127, newPitch));
-      note.startBeat = Math?.max(0, newStartBeat);
+      note.pitch = Math.max(0, Math.min(127, newPitch));
+      note.startBeat = Math.max(0, newStartBeat);
       clip?.notes.sort((a, b) => a?.startBeat - b?.startBeat);
-      this?.notify();
+      this.notify();
     }
   }
 
   resizeNote(clipId: string, noteId: string, newDuration: number): void {
-    const clip = this?.state.clips?.find((c) => c?.id === clipId);
+    const clip = this.state.clips?.find((c) => c?.id === clipId);
     if (!clip || clip?.locked) return;
 
     const note = clip?.notes.find((n) => n?.id === noteId);
     if (note) {
-      note.durationBeats = Math?.max(0.0625, newDuration);
-      this?.notify();
+      note.durationBeats = Math.max(0.0625, newDuration);
+      this.notify();
     }
   }
 
   setNoteVelocity(clipId: string, noteId: string, velocity: number): void {
-    const clip = this?.state.clips?.find((c) => c?.id === clipId);
+    const clip = this.state.clips?.find((c) => c?.id === clipId);
     if (!clip || clip?.locked) return;
 
     const note = clip?.notes.find((n) => n?.id === noteId);
     if (note) {
-      note.velocity = Math?.max(1, Math?.min(127, velocity));
-      this?.notify();
+      note.velocity = Math.max(1, Math.min(127, velocity));
+      this.notify();
     }
   }
 
   selectNotes(noteIds: string[]): void {
     this.state.selectedNoteIds = noteIds;
 
-    const clip = this?.state.clips?.find(
-      (c) => c?.id === this?.state.editingClipId,
+    const clip = this.state.clips?.find(
+      (c) => c?.id === this.state.editingClipId,
     );
     if (clip) {
       for (const note of clip?.notes) {
@@ -400,22 +400,22 @@ export class MIDIEngine {
       }
     }
 
-    this?.notify();
+    this.notify();
   }
 
   selectAllNotes(clipId: string): void {
-    const clip = this?.state.clips?.find((c) => c?.id === clipId);
+    const clip = this.state.clips?.find((c) => c?.id === clipId);
     if (!clip) return;
 
     this.state.selectedNoteIds = clip?.notes.map((n) => n?.id);
     for (const note of clip?.notes) {
       note.selected = true;
     }
-    this?.notify();
+    this.notify();
   }
 
   quantizeNotes(clipId: string, options: QuantizeOptions): void {
-    const clip = this?.state.clips?.find((c) => c?.id === clipId);
+    const clip = this.state.clips?.find((c) => c?.id === clipId);
     if (!clip || clip?.locked) return;
 
     const notesToQuantize = options?.selectedOnly
@@ -424,59 +424,59 @@ export class MIDIEngine {
 
     for (const note of notesToQuantize) {
       const quantized =
-        Math?.round(note?.startBeat / options?.value) * options?.value;
+        Math.round(note?.startBeat / options?.value) * options?.value;
       let offset = (quantized - note?.startBeat) * options?.strength;
 
       if (options?.humanize > 0) {
         const randomOffset =
-          (Math?.random() - 0.5) * 2 * options?.humanize * options?.value;
+          (Math.random() - 0.5) * 2 * options?.humanize * options?.value;
         offset += randomOffset;
       }
 
-      note.startBeat = Math?.max(0, note?.startBeat + offset);
+      note.startBeat = Math.max(0, note?.startBeat + offset);
 
       if (!options?.startOnly) {
         const endBeat = note?.startBeat + note?.durationBeats;
         const quantizedEnd =
-          Math?.round(endBeat / options?.value) * options?.value;
-        note.durationBeats = Math?.max(0.0625, quantizedEnd - note?.startBeat);
+          Math.round(endBeat / options?.value) * options?.value;
+        note.durationBeats = Math.max(0.0625, quantizedEnd - note?.startBeat);
       }
     }
 
     clip?.notes.sort((a, b) => a?.startBeat - b?.startBeat);
-    this?.notify();
+    this.notify();
   }
 
   humanizeNotes(clipId: string, amount: number): void {
-    const clip = this?.state.clips?.find((c) => c?.id === clipId);
+    const clip = this.state.clips?.find((c) => c?.id === clipId);
     if (!clip || clip?.locked) return;
 
     const selectedNotes = clip?.notes.filter((n) =>
-      this?.state.selectedNoteIds?.includes(n?.id),
+      this.state.selectedNoteIds?.includes(n?.id),
     );
     const notesToHumanize =
       selectedNotes?.length > 0 ? selectedNotes : clip?.notes;
 
     for (const note of notesToHumanize) {
-      const timeOffset = (Math?.random() - 0.5) * amount * 0.1;
-      const velocityOffset = Math?.round((Math?.random() - 0.5) * amount * 20);
+      const timeOffset = (Math.random() - 0.5) * amount * 0.1;
+      const velocityOffset = Math.round((Math.random() - 0.5) * amount * 20);
 
-      note.startBeat = Math?.max(0, note?.startBeat + timeOffset);
-      note.velocity = Math?.max(
+      note.startBeat = Math.max(0, note?.startBeat + timeOffset);
+      note.velocity = Math.max(
         1,
-        Math?.min(127, note?.velocity + velocityOffset),
+        Math.min(127, note?.velocity + velocityOffset),
       );
     }
 
-    this?.notify();
+    this.notify();
   }
 
   editVelocity(clipId: string, options: VelocityEditOptions): void {
-    const clip = this?.state.clips?.find((c) => c?.id === clipId);
+    const clip = this.state.clips?.find((c) => c?.id === clipId);
     if (!clip || clip?.locked) return;
 
     const selectedNotes = clip?.notes.filter((n) =>
-      this?.state.selectedNoteIds?.includes(n?.id),
+      this.state.selectedNoteIds?.includes(n?.id),
     );
     const notesToEdit = selectedNotes?.length > 0 ? selectedNotes : clip?.notes;
 
@@ -489,46 +489,46 @@ export class MIDIEngine {
           note.velocity += options?.value;
           break;
         case "scale":
-          note.velocity = Math?.round(note?.velocity * (options?.value / 100));
+          note.velocity = Math.round(note?.velocity * (options?.value / 100));
           break;
         case "compress": {
           const min = options?.min ?? 60;
           const max = options?.max ?? 100;
           const range = max - min;
-          note.velocity = Math?.round(min + (note?.velocity / 127) * range);
+          note.velocity = Math.round(min + (note?.velocity / 127) * range);
           break;
         }
         case "humanize": {
-          const offset = Math?.round((Math?.random() - 0.5) * options?.value);
+          const offset = Math.round((Math.random() - 0.5) * options?.value);
           note.velocity += offset;
           break;
         }
       }
-      note.velocity = Math?.max(1, Math?.min(127, note?.velocity));
+      note.velocity = Math.max(1, Math.min(127, note?.velocity));
     }
 
-    this?.notify();
+    this.notify();
   }
 
   transposeNotes(clipId: string, semitones: number): void {
-    const clip = this?.state.clips?.find((c) => c?.id === clipId);
+    const clip = this.state.clips?.find((c) => c?.id === clipId);
     if (!clip || clip?.locked) return;
 
     const selectedNotes = clip?.notes.filter((n) =>
-      this?.state.selectedNoteIds?.includes(n?.id),
+      this.state.selectedNoteIds?.includes(n?.id),
     );
     const notesToTranspose =
       selectedNotes?.length > 0 ? selectedNotes : clip?.notes;
 
     for (const note of notesToTranspose) {
-      note.pitch = Math?.max(0, Math?.min(127, note?.pitch + semitones));
+      note.pitch = Math.max(0, Math.min(127, note?.pitch + semitones));
     }
 
-    this?.notify();
+    this.notify();
   }
 
   legato(clipId: string): void {
-    const clip = this?.state.clips?.find((c) => c?.id === clipId);
+    const clip = this.state.clips?.find((c) => c?.id === clipId);
     if (!clip || clip?.locked) return;
 
     const sortedNotes = [...clip?.notes].sort(
@@ -549,32 +549,32 @@ export class MIDIEngine {
       }
     }
 
-    this?.notify();
+    this.notify();
   }
 
   addControlChange(
     clipId: string,
     cc: Omit<MIDIControlChange, "id">,
   ): string | null {
-    const clip = this?.state.clips?.find((c) => c?.id === clipId);
+    const clip = this.state.clips?.find((c) => c?.id === clipId);
     if (!clip || clip?.locked) return null;
 
-    const id = `cc_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    const id = `cc_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const newCC: MIDIControlChange = { ...cc, id };
     clip?.controlChanges.push(newCC);
     clip?.controlChanges.sort((a, b) => a?.time - b?.time);
-    this?.notify();
+    this.notify();
     return id;
   }
 
   removeControlChange(clipId: string, ccId: string): void {
-    const clip = this?.state.clips?.find((c) => c?.id === clipId);
+    const clip = this.state.clips?.find((c) => c?.id === clipId);
     if (!clip || clip?.locked) return;
 
     const index = clip?.controlChanges.findIndex((cc) => cc?.id === ccId);
     if (index !== -1) {
       clip?.controlChanges.splice(index, 1);
-      this?.notify();
+      this.notify();
     }
   }
 
@@ -593,7 +593,7 @@ export class MIDIEngine {
       "A#",
       "B",
     ];
-    const octave = Math?.floor(pitch / 12) - 1;
+    const octave = Math.floor(pitch / 12) - 1;
     const note = noteNames[pitch % 12];
     return `${note}${octave}`;
   }
@@ -623,26 +623,26 @@ export class MIDIEngine {
   }
 
   onMIDIEvent(listener: MIDIEventListener): () => void {
-    this?.midiListeners.add(listener);
-    return () => this?.midiListeners.delete(listener);
+    this.midiListeners.add(listener);
+    return () => this.midiListeners.delete(listener);
   }
 
   subscribe(listener: () => void): () => void {
-    this?.listeners.add(listener);
-    return () => this?.listeners.delete(listener);
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
   }
 
   private notify(): void {
-    this?.listeners.forEach((l) => l());
+    this.listeners.forEach((l) => l());
   }
 
   serialize(): MIDIEngineState {
-    return structuredClone(this?.state);
+    return structuredClone(this.state);
   }
 
   deserialize(state: MIDIEngineState): void {
     this.state = structuredClone(state);
-    this?.notify();
+    this.notify();
   }
 }
 

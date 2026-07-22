@@ -265,9 +265,9 @@ class LabelGridService {
   private circuitBreaker: CircuitBreaker;
 
   constructor() {
-    this.apiToken = process?.env.LABELGRID_API_TOKEN;
-    this.baseUrl = process?.env.LABELGRID_API_URL || "https://api.labelgrid.com";
-    this.webhookSecret = process?.env.LABELGRID_WEBHOOK_SECRET;
+    this.apiToken = process.env.LABELGRID_API_TOKEN;
+    this.baseUrl = process.env.LABELGRID_API_URL || "https://api.labelgrid.com";
+    this.webhookSecret = process.env.LABELGRID_WEBHOOK_SECRET;
     this.endpoints = {};
     this.authHeaderFormat = "Bearer {token}";
 
@@ -278,16 +278,16 @@ class LabelGridService {
       resetTimeout: 60000,
     });
 
-    if (!this?.apiToken) {
-      logger?.warn(
+    if (!this.apiToken) {
+      logger.warn(
         "⚠️  LabelGrid API token not configured. Distribution features will use simulated mode.",
       );
-      logger?.warn(
+      logger.warn(
         "   Set LABELGRID_API_TOKEN in your environment to enable real distribution.",
       );
     } else {
       this.isConfigured = true;
-      logger?.info("✅ LabelGrid API client initialized");
+      logger.info("✅ LabelGrid API client initialized");
     }
 
     this.client = axios?.create({
@@ -295,22 +295,22 @@ class LabelGridService {
       timeout: 30000,
       headers: {
         "Content-Type": "application/json",
-        ...(this?.apiToken && { Authorization: `Bearer ${this?.apiToken}` }),
+        ...(this.apiToken && { Authorization: `Bearer ${this.apiToken}` }),
       },
     });
 
-    this?.client.interceptors?.response.use(
+    this.client.interceptors?.response.use(
       (response) => response,
       (error) => {
-        this?.logError("LabelGrid API Error", error);
+        this.logError("LabelGrid API Error", error);
         return Promise?.reject(error);
       },
     );
 
     // Wrap the axios adapter with circuit breaker so all API calls are
     // automatically protected — opens after 5 consecutive failures, resets after 60s.
-    const originalAdapter = this?.client.defaults?.adapter;
-    const cb = this?.circuitBreaker;
+    const originalAdapter = this.client.defaults?.adapter;
+    const cb = this.circuitBreaker;
     this.client.defaults.adapter = async (config: Record<string, unknown>) => {
       return cb?.execute(
         () => (originalAdapter as Record<string, unknown>)(config),
@@ -323,11 +323,11 @@ class LabelGridService {
     };
 
     // Load config from database on initialization
-    this?.loadConfig();
+    this.loadConfig();
   }
 
   private async loadConfig() {
-    if (this?.configLoaded) return;
+    if (this.configLoaded) return;
 
     try {
       const provider = await storage?.getDistributionProvider("labelgrid");
@@ -335,52 +335,52 @@ class LabelGridService {
       if (provider) {
         // Use actual fields from the schema
         this.baseUrl =
-          provider?.apiBase || this?.baseUrl || "https://api.labelgrid.com";
+          provider?.apiBase || this.baseUrl || "https://api.labelgrid.com";
         this.endpoints = provider?.requirements?.endpoints || {};
         this.authHeaderFormat =
           provider?.authType === "api_key"
             ? "X-API-Key: {token}"
             : "Bearer {token}";
         this.webhookSecret =
-          provider?.requirements?.webhookSecret || this?.webhookSecret;
+          provider?.requirements?.webhookSecret || this.webhookSecret;
         this.configLoaded = true;
 
         // Update axios client base URL
-        this.client.defaults.baseURL = this?.baseUrl;
+        this.client.defaults.baseURL = this.baseUrl;
 
-        logger?.info("✅ LabelGrid configuration loaded from database");
-        logger?.info(`   Base URL: ${this?.baseUrl}`);
-        logger?.info(
-          `   Endpoints configured: ${Object?.keys(this?.endpoints).length}`,
+        logger.info("✅ LabelGrid configuration loaded from database");
+        logger.info(`   Base URL: ${this.baseUrl}`);
+        logger.info(
+          `   Endpoints configured: ${Object.keys(this.endpoints).length}`,
         );
       } else {
         // Fallback to environment variables (expected until provider is configured)
         this.baseUrl =
-          process?.env.LABELGRID_API_URL || "https://api.labelgrid.com";
+          process.env.LABELGRID_API_URL || "https://api.labelgrid.com";
         this.endpoints = {};
         this.authHeaderFormat = "Bearer {token}";
         this.configLoaded = true;
         // Silent fallback - provider will be added when distribution is configured
       }
     } catch (error: unknown) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "Failed to load LabelGrid config from database:",
       );
       this.baseUrl =
-        process?.env.LABELGRID_API_URL || "https://api.labelgrid.com";
+        process.env.LABELGRID_API_URL || "https://api.labelgrid.com";
       this.endpoints = {};
       this.authHeaderFormat = "Bearer {token}";
     }
   }
 
   private getEndpoint(key: string, fallback: string): string {
-    return this?.endpoints[key] || fallback;
+    return this.endpoints[key] || fallback;
   }
 
   private async retryWithBackoff<T>(
     fn: () => Promise<T>,
-    retries: number = this?.maxRetries,
+    retries: number = this.maxRetries,
   ): Promise<T> {
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
@@ -400,8 +400,8 @@ class LabelGridService {
           throw error;
         }
 
-        const delay = Math?.min(this?.baseDelay * Math?.pow(2, attempt), 16000);
-        logger?.info(
+        const delay = Math.min(this.baseDelay * Math.pow(2, attempt), 16000);
+        logger.info(
           `⏳ LabelGrid API retry ${attempt + 1}/${retries} after ${delay}ms`,
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
@@ -412,7 +412,7 @@ class LabelGridService {
 
   private logError(context: string, error: unknown): void {
     const err = error as Record<string, unknown>;
-    logger?.warn(`${context}: ${err?.message || "Unknown error"}`, {
+    logger.warn(`${context}: ${err?.message || "Unknown error"}`, {
       context,
       message: err.message,
       code: err.code,
@@ -422,7 +422,7 @@ class LabelGridService {
   }
 
   private logApiCall(method: string, endpoint: string, data?: unknown): void {
-    logger?.info(`LabelGrid API ${method} ${endpoint}`, {
+    logger.info(`LabelGrid API ${method} ${endpoint}`, {
       endpoint,
       method,
       hasData: !!data,
@@ -433,7 +433,7 @@ class LabelGridService {
    * Check if LabelGrid API is configured
    */
   isApiConfigured(): boolean {
-    return !!this?.apiToken;
+    return !!this.apiToken;
   }
 
   /**
@@ -537,21 +537,21 @@ class LabelGridService {
    * the caller can narrow the result without a client-side loop.
    */
   async getUserCatalog(platform?: string): Promise<LabelGridCatalogRelease[]> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "[LabelGrid] API not configured — getUserCatalog unavailable",
       );
       return [];
     }
 
-    const endpoint = this?.getEndpoint("getUserCatalog", "/v1/releases");
-    this?.logApiCall("GET", endpoint, { platform });
+    const endpoint = this.getEndpoint("getUserCatalog", "/v1/releases");
+    this.logApiCall("GET", endpoint, { platform });
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.get<
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<
           { releases: LabelGridCatalogRelease[] } | LabelGridCatalogRelease[]
         >(endpoint, {
           params: {
@@ -561,16 +561,16 @@ class LabelGridService {
         });
       });
 
-      const releases: LabelGridCatalogRelease[] = Array?.isArray(response?.data)
+      const releases: LabelGridCatalogRelease[] = Array.isArray(response?.data)
         ? response?.data
         : ((response?.data as Record<string, unknown>)?.releases ?? []);
 
-      logger?.info(
+      logger.info(
         `[LabelGrid] getUserCatalog: ${releases?.length} release(s) returned`,
       );
       return releases;
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         "[LabelGrid] getUserCatalog failed (non-fatal):",
         err?.message ?? err,
       );
@@ -585,28 +585,28 @@ class LabelGridService {
   async getReleaseDetail(
     releaseId: string,
   ): Promise<LabelGridCatalogRelease | null> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "[LabelGrid] API not configured — getReleaseDetail unavailable",
       );
       return null;
     }
 
-    const endpoint = this?.getEndpoint(
+    const endpoint = this.getEndpoint(
       "getReleaseDetail",
       "/v1/releases/:id",
     ).replace(":id", encodeURIComponent(releaseId));
-    this?.logApiCall("GET", endpoint);
+    this.logApiCall("GET", endpoint);
 
     try {
-      const response = await this?.retryWithBackoff(async () =>
-        this?.client.get<LabelGridCatalogRelease>(endpoint),
+      const response = await this.retryWithBackoff(async () =>
+        this.client.get<LabelGridCatalogRelease>(endpoint),
       );
       return response?.data ?? null;
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         `[LabelGrid] getReleaseDetail failed for ${releaseId}:`,
         err?.message ?? err,
       );
@@ -617,21 +617,21 @@ class LabelGridService {
   async createRelease(
     releaseData: LabelGridRelease,
   ): Promise<LabelGridReleaseResponse> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "⚠️  LabelGrid not configured - returning simulated response",
       );
-      return this?.simulateCreateRelease(releaseData);
+      return this.simulateCreateRelease(releaseData);
     }
 
-    const endpoint = this?.getEndpoint("createRelease", "/v1/releases");
-    this?.logApiCall("POST", endpoint, releaseData);
+    const endpoint = this.getEndpoint("createRelease", "/v1/releases");
+    this.logApiCall("POST", endpoint, releaseData);
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.post<LabelGridReleaseResponse>(endpoint, {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.post<LabelGridReleaseResponse>(endpoint, {
           title: releaseData.title,
           artist: releaseData.artist,
           release_date: releaseData.releaseDate,
@@ -657,7 +657,7 @@ class LabelGridService {
         });
       });
 
-      logger?.info("LabelGrid release created successfully", {
+      logger.info("LabelGrid release created successfully", {
         releaseId: response.data.releaseId,
         status: response.data.status,
       });
@@ -665,7 +665,7 @@ class LabelGridService {
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to create LabelGrid release", error);
+      this.logError("Failed to create LabelGrid release", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -673,30 +673,30 @@ class LabelGridService {
   }
 
   async getReleaseStatus(releaseId: string): Promise<LabelGridReleaseResponse> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "⚠️  LabelGrid not configured - returning simulated response",
       );
-      return this?.simulateGetReleaseStatus(releaseId);
+      return this.simulateGetReleaseStatus(releaseId);
     }
 
-    const endpoint = this?.getEndpoint(
+    const endpoint = this.getEndpoint(
       "getReleaseStatus",
       `/v1/releases/:id/status`,
     ).replace(":id", releaseId);
-    this?.logApiCall("GET", endpoint);
+    this.logApiCall("GET", endpoint);
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.get<LabelGridReleaseResponse>(endpoint);
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<LabelGridReleaseResponse>(endpoint);
       });
 
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to get LabelGrid release status", error);
+      this.logError("Failed to get LabelGrid release status", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -707,25 +707,25 @@ class LabelGridService {
     artist: string,
     title: string,
   ): Promise<LabelGridCodeResponse> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn("⚠️  LabelGrid not configured - generating local ISRC");
-      return this?.simulateGenerateISRC(artist, title);
+    if (!this.isConfigured) {
+      logger.warn("⚠️  LabelGrid not configured - generating local ISRC");
+      return this.simulateGenerateISRC(artist, title);
     }
 
-    const endpoint = this?.getEndpoint("generateISRC", "/v1/codes/isrc");
-    this?.logApiCall("POST", endpoint, { artist, title });
+    const endpoint = this.getEndpoint("generateISRC", "/v1/codes/isrc");
+    this.logApiCall("POST", endpoint, { artist, title });
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.post<LabelGridCodeResponse>(endpoint, {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.post<LabelGridCodeResponse>(endpoint, {
           artist,
           title,
         });
       });
 
-      logger?.info("ISRC generated successfully", {
+      logger.info("ISRC generated successfully", {
         code: response.data.code,
         artist,
         title,
@@ -734,7 +734,7 @@ class LabelGridService {
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to generate ISRC", error);
+      this.logError("Failed to generate ISRC", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -742,24 +742,24 @@ class LabelGridService {
   }
 
   async generateUPC(releaseTitle: string): Promise<LabelGridCodeResponse> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn("⚠️  LabelGrid not configured - generating local UPC");
-      return this?.simulateGenerateUPC(releaseTitle);
+    if (!this.isConfigured) {
+      logger.warn("⚠️  LabelGrid not configured - generating local UPC");
+      return this.simulateGenerateUPC(releaseTitle);
     }
 
-    const endpoint = this?.getEndpoint("generateUPC", "/v1/codes/upc");
-    this?.logApiCall("POST", endpoint, { releaseTitle });
+    const endpoint = this.getEndpoint("generateUPC", "/v1/codes/upc");
+    this.logApiCall("POST", endpoint, { releaseTitle });
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.post<LabelGridCodeResponse>(endpoint, {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.post<LabelGridCodeResponse>(endpoint, {
           release_title: releaseTitle,
         });
       });
 
-      logger?.info("UPC generated successfully", {
+      logger.info("UPC generated successfully", {
         code: response.data.code,
         releaseTitle,
       });
@@ -767,7 +767,7 @@ class LabelGridService {
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to generate UPC", error);
+      this.logError("Failed to generate UPC", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -775,30 +775,30 @@ class LabelGridService {
   }
 
   async getReleaseAnalytics(releaseId: string): Promise<LabelGridAnalytics> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "⚠️  LabelGrid not configured - returning simulated analytics",
       );
-      return this?.simulateGetReleaseAnalytics(releaseId);
+      return this.simulateGetReleaseAnalytics(releaseId);
     }
 
-    const endpoint = this?.getEndpoint(
+    const endpoint = this.getEndpoint(
       "getReleaseAnalytics",
       "/v1/releases/:id/analytics",
     ).replace(":id", releaseId);
-    this?.logApiCall("GET", endpoint);
+    this.logApiCall("GET", endpoint);
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.get<LabelGridAnalytics>(endpoint);
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<LabelGridAnalytics>(endpoint);
       });
 
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to get LabelGrid release analytics", error);
+      this.logError("Failed to get LabelGrid release analytics", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -809,37 +809,37 @@ class LabelGridService {
     releaseId: string,
     updates: Partial<LabelGridRelease>,
   ): Promise<LabelGridReleaseResponse> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "⚠️  LabelGrid not configured - returning simulated response",
       );
-      return this?.simulateUpdateRelease(releaseId, updates);
+      return this.simulateUpdateRelease(releaseId, updates);
     }
 
-    const endpoint = this?.getEndpoint(
+    const endpoint = this.getEndpoint(
       "updateRelease",
       "/v1/releases/:id",
     ).replace(":id", releaseId);
-    this?.logApiCall("PATCH", endpoint, updates);
+    this.logApiCall("PATCH", endpoint, updates);
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.patch<LabelGridReleaseResponse>(
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.patch<LabelGridReleaseResponse>(
           endpoint,
           updates,
         );
       });
 
-      logger?.info("LabelGrid release updated successfully", {
+      logger.info("LabelGrid release updated successfully", {
         releaseId,
       });
 
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to update LabelGrid release", error);
+      this.logError("Failed to update LabelGrid release", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -847,34 +847,34 @@ class LabelGridService {
   }
 
   async takedownRelease(releaseId: string): Promise<{ success: boolean }> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "⚠️  LabelGrid not configured - returning simulated response",
       );
       return { success: true };
     }
 
-    const endpoint = this?.getEndpoint(
+    const endpoint = this.getEndpoint(
       "takedownRelease",
       "/v1/releases/:id/takedown",
     ).replace(":id", releaseId);
-    this?.logApiCall("DELETE", endpoint);
+    this.logApiCall("DELETE", endpoint);
 
     try {
-      await this?.retryWithBackoff(async () => {
-        return await this?.client.delete(endpoint);
+      await this.retryWithBackoff(async () => {
+        return await this.client.delete(endpoint);
       });
 
-      logger?.info("LabelGrid release takedown initiated", {
+      logger.info("LabelGrid release takedown initiated", {
         releaseId,
       });
 
       return { success: true };
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to takedown LabelGrid release", error);
+      this.logError("Failed to takedown LabelGrid release", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -882,30 +882,30 @@ class LabelGridService {
   }
 
   async getArtistAnalytics(artistId: string): Promise<LabelGridAnalytics> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "⚠️  LabelGrid not configured - returning simulated analytics",
       );
-      return this?.simulateGetArtistAnalytics(artistId);
+      return this.simulateGetArtistAnalytics(artistId);
     }
 
-    const endpoint = this?.getEndpoint(
+    const endpoint = this.getEndpoint(
       "getArtistAnalytics",
       "/v1/artists/:id/analytics",
     ).replace(":id", artistId);
-    this?.logApiCall("GET", endpoint);
+    this.logApiCall("GET", endpoint);
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.get<LabelGridAnalytics>(endpoint);
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<LabelGridAnalytics>(endpoint);
       });
 
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to get LabelGrid artist analytics", error);
+      this.logError("Failed to get LabelGrid artist analytics", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -913,8 +913,8 @@ class LabelGridService {
   }
 
   verifyWebhookSignature(payload: string, signature: string): boolean {
-    if (!this?.webhookSecret) {
-      logger?.warn(
+    if (!this.webhookSecret) {
+      logger.warn(
         "⚠️  LabelGrid webhook secret not configured - skipping verification",
       );
       return true;
@@ -923,7 +923,7 @@ class LabelGridService {
     try {
       const crypto = require("crypto");
       const expectedSignature = crypto
-        .createHmac("sha256", this?.webhookSecret)
+        .createHmac("sha256", this.webhookSecret)
         .update(payload)
         .digest("hex");
 
@@ -932,7 +932,7 @@ class LabelGridService {
         Buffer?.from(expectedSignature),
       );
     } catch (error: unknown) {
-      this?.logError("Webhook signature verification failed", error);
+      this.logError("Webhook signature verification failed", error);
       return false;
     }
   }
@@ -941,24 +941,24 @@ class LabelGridService {
     releaseId: string,
     metadata: LabelGridPublishingMetadata,
   ): Promise<{ success: boolean; releaseId: string }> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "⚠️  LabelGrid not configured - returning simulated response",
       );
-      return this?.simulateSetPublishingMetadata(releaseId, metadata);
+      return this.simulateSetPublishingMetadata(releaseId, metadata);
     }
 
-    const endpoint = this?.getEndpoint(
+    const endpoint = this.getEndpoint(
       "setPublishingMetadata",
       `/v1/releases/${releaseId}/publishing`,
     );
-    this?.logApiCall("POST", endpoint, metadata);
+    this.logApiCall("POST", endpoint, metadata);
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.post<{ success: boolean; releaseId: string }>(
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.post<{ success: boolean; releaseId: string }>(
           endpoint,
           {
             writers: metadata.writers,
@@ -969,11 +969,11 @@ class LabelGridService {
         );
       });
 
-      logger?.info("Publishing metadata set successfully", { releaseId });
+      logger.info("Publishing metadata set successfully", { releaseId });
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to set publishing metadata", error);
+      this.logError("Failed to set publishing metadata", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -983,30 +983,30 @@ class LabelGridService {
   async getPublishingMetadata(
     releaseId: string,
   ): Promise<LabelGridPublishingMetadata> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "⚠️  LabelGrid not configured - returning simulated response",
       );
-      return this?.simulateGetPublishingMetadata(releaseId);
+      return this.simulateGetPublishingMetadata(releaseId);
     }
 
-    const endpoint = this?.getEndpoint(
+    const endpoint = this.getEndpoint(
       "getPublishingMetadata",
       `/v1/releases/${releaseId}/publishing`,
     );
-    this?.logApiCall("GET", endpoint);
+    this.logApiCall("GET", endpoint);
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.get<LabelGridPublishingMetadata>(endpoint);
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<LabelGridPublishingMetadata>(endpoint);
       });
 
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to get publishing metadata", error);
+      this.logError("Failed to get publishing metadata", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -1017,35 +1017,35 @@ class LabelGridService {
     releaseId: string,
     data: { genres: string[]; moods: string[]; notes?: string },
   ): Promise<LabelGridSyncSubmission> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "⚠️  LabelGrid not configured - returning simulated response",
       );
-      return this?.simulateSubmitForSync(releaseId, data);
+      return this.simulateSubmitForSync(releaseId, data);
     }
 
-    const endpoint = this?.getEndpoint(
+    const endpoint = this.getEndpoint(
       "submitForSync",
       `/v1/releases/${releaseId}/sync`,
     );
-    this?.logApiCall("POST", endpoint, data);
+    this.logApiCall("POST", endpoint, data);
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.post<LabelGridSyncSubmission>(endpoint, {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.post<LabelGridSyncSubmission>(endpoint, {
           genres: data.genres,
           moods: data.moods,
           notes: data.notes,
         });
       });
 
-      logger?.info("Release submitted for sync licensing", { releaseId });
+      logger.info("Release submitted for sync licensing", { releaseId });
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to submit for sync", error);
+      this.logError("Failed to submit for sync", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -1056,24 +1056,24 @@ class LabelGridService {
     genre?: string;
     minBudget?: number;
   }): Promise<LabelGridSyncOpportunity[]> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "⚠️  LabelGrid not configured - returning simulated response",
       );
-      return this?.simulateGetSyncOpportunities(filters);
+      return this.simulateGetSyncOpportunities(filters);
     }
 
-    const endpoint = this?.getEndpoint(
+    const endpoint = this.getEndpoint(
       "getSyncOpportunities",
       "/v1/sync/opportunities",
     );
-    this?.logApiCall("GET", endpoint, filters);
+    this.logApiCall("GET", endpoint, filters);
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.get<LabelGridSyncOpportunity[]>(endpoint, {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<LabelGridSyncOpportunity[]>(endpoint, {
           params: filters,
         });
       });
@@ -1081,7 +1081,7 @@ class LabelGridService {
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to get sync opportunities", error);
+      this.logError("Failed to get sync opportunities", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -1092,33 +1092,33 @@ class LabelGridService {
     submissionId: string,
     action: "accept" | "reject",
   ): Promise<LabelGridSyncSubmission> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "⚠️  LabelGrid not configured - returning simulated response",
       );
-      return this?.simulateUpdateSyncSubmission(submissionId, action);
+      return this.simulateUpdateSyncSubmission(submissionId, action);
     }
 
-    const endpoint = this?.getEndpoint(
+    const endpoint = this.getEndpoint(
       "updateSyncSubmission",
       `/v1/sync/submissions/${submissionId}`,
     );
-    this?.logApiCall("PUT", endpoint, { action });
+    this.logApiCall("PUT", endpoint, { action });
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.put<LabelGridSyncSubmission>(endpoint, {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.put<LabelGridSyncSubmission>(endpoint, {
           action,
         });
       });
 
-      logger?.info("Sync submission updated", { submissionId, action });
+      logger.info("Sync submission updated", { submissionId, action });
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to update sync submission", error);
+      this.logError("Failed to update sync submission", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -1129,35 +1129,35 @@ class LabelGridService {
     releaseId: string,
     options?: { customSlug?: string; platforms?: string[] },
   ): Promise<LabelGridSmartLink> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "⚠️  LabelGrid not configured - returning simulated response",
       );
-      return this?.simulateCreateSmartLink(releaseId, options);
+      return this.simulateCreateSmartLink(releaseId, options);
     }
 
-    const endpoint = this?.getEndpoint("createSmartLink", "/v1/smartlinks");
-    this?.logApiCall("POST", endpoint, { releaseId, ...options });
+    const endpoint = this.getEndpoint("createSmartLink", "/v1/smartlinks");
+    this.logApiCall("POST", endpoint, { releaseId, ...options });
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.post<LabelGridSmartLink>(endpoint, {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.post<LabelGridSmartLink>(endpoint, {
           release_id: releaseId,
           custom_slug: options.customSlug,
           platforms: options.platforms,
         });
       });
 
-      logger?.info("Smart link created", {
+      logger.info("Smart link created", {
         releaseId,
         linkId: response.data.id,
       });
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to create smart link", error);
+      this.logError("Failed to create smart link", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -1165,30 +1165,30 @@ class LabelGridService {
   }
 
   async getSmartLink(linkId: string): Promise<LabelGridSmartLink> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "⚠️  LabelGrid not configured - returning simulated response",
       );
-      return this?.simulateGetSmartLink(linkId);
+      return this.simulateGetSmartLink(linkId);
     }
 
-    const endpoint = this?.getEndpoint(
+    const endpoint = this.getEndpoint(
       "getSmartLink",
       `/v1/smartlinks/${linkId}`,
     );
-    this?.logApiCall("GET", endpoint);
+    this.logApiCall("GET", endpoint);
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.get<LabelGridSmartLink>(endpoint);
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<LabelGridSmartLink>(endpoint);
       });
 
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to get smart link", error);
+      this.logError("Failed to get smart link", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -1199,24 +1199,24 @@ class LabelGridService {
     linkId: string,
     dateRange?: { start: string; end: string },
   ): Promise<LabelGridSmartLinkAnalytics> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "⚠️  LabelGrid not configured - returning simulated response",
       );
-      return this?.simulateGetSmartLinkAnalytics(linkId, dateRange);
+      return this.simulateGetSmartLinkAnalytics(linkId, dateRange);
     }
 
-    const endpoint = this?.getEndpoint(
+    const endpoint = this.getEndpoint(
       "getSmartLinkAnalytics",
       `/v1/smartlinks/${linkId}/analytics`,
     );
-    this?.logApiCall("GET", endpoint, dateRange);
+    this.logApiCall("GET", endpoint, dateRange);
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.get<LabelGridSmartLinkAnalytics>(endpoint, {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<LabelGridSmartLinkAnalytics>(endpoint, {
           params: dateRange,
         });
       });
@@ -1224,7 +1224,7 @@ class LabelGridService {
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to get smart link analytics", error);
+      this.logError("Failed to get smart link analytics", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -1236,35 +1236,35 @@ class LabelGridService {
     startDate: string,
     endDate?: string,
   ): Promise<LabelGridPreSave> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "⚠️  LabelGrid not configured - returning simulated response",
       );
-      return this?.simulateCreatePreSaveCampaign(releaseId, startDate, endDate);
+      return this.simulateCreatePreSaveCampaign(releaseId, startDate, endDate);
     }
 
-    const endpoint = this?.getEndpoint("createPreSaveCampaign", "/v1/presaves");
-    this?.logApiCall("POST", endpoint, { releaseId, startDate, endDate });
+    const endpoint = this.getEndpoint("createPreSaveCampaign", "/v1/presaves");
+    this.logApiCall("POST", endpoint, { releaseId, startDate, endDate });
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.post<LabelGridPreSave>(endpoint, {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.post<LabelGridPreSave>(endpoint, {
           release_id: releaseId,
           start_date: startDate,
           end_date: endDate,
         });
       });
 
-      logger?.info("Pre-save campaign created", {
+      logger.info("Pre-save campaign created", {
         releaseId,
         campaignId: response.data.id,
       });
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to create pre-save campaign", error);
+      this.logError("Failed to create pre-save campaign", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -1272,30 +1272,30 @@ class LabelGridService {
   }
 
   async getPreSaveCampaign(campaignId: string): Promise<LabelGridPreSave> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "⚠️  LabelGrid not configured - returning simulated response",
       );
-      return this?.simulateGetPreSaveCampaign(campaignId);
+      return this.simulateGetPreSaveCampaign(campaignId);
     }
 
-    const endpoint = this?.getEndpoint(
+    const endpoint = this.getEndpoint(
       "getPreSaveCampaign",
       `/v1/presaves/${campaignId}`,
     );
-    this?.logApiCall("GET", endpoint);
+    this.logApiCall("GET", endpoint);
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.get<LabelGridPreSave>(endpoint);
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<LabelGridPreSave>(endpoint);
       });
 
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to get pre-save campaign", error);
+      this.logError("Failed to get pre-save campaign", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -1307,24 +1307,24 @@ class LabelGridService {
     limit?: number,
     offset?: number,
   ): Promise<{ subscribers: LabelGridPreSaveSubscriber[]; total: number }> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "⚠️  LabelGrid not configured - returning simulated response",
       );
-      return this?.simulateGetPreSaveSubscribers(campaignId, limit, offset);
+      return this.simulateGetPreSaveSubscribers(campaignId, limit, offset);
     }
 
-    const endpoint = this?.getEndpoint(
+    const endpoint = this.getEndpoint(
       "getPreSaveSubscribers",
       `/v1/presaves/${campaignId}/subscribers`,
     );
-    this?.logApiCall("GET", endpoint, { limit, offset });
+    this.logApiCall("GET", endpoint, { limit, offset });
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.get<{
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<{
           subscribers: LabelGridPreSaveSubscriber[];
           total: number;
         }>(endpoint, {
@@ -1335,7 +1335,7 @@ class LabelGridService {
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to get pre-save subscribers", error);
+      this.logError("Failed to get pre-save subscribers", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -1346,34 +1346,34 @@ class LabelGridService {
     releaseId: string,
     platforms: string[],
   ): Promise<LabelGridContentClaim[]> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "⚠️  LabelGrid not configured - returning simulated response",
       );
-      return this?.simulateSubmitContentClaim(releaseId, platforms);
+      return this.simulateSubmitContentClaim(releaseId, platforms);
     }
 
-    const endpoint = this?.getEndpoint(
+    const endpoint = this.getEndpoint(
       "submitContentClaim",
       "/v1/contentid/claim",
     );
-    this?.logApiCall("POST", endpoint, { releaseId, platforms });
+    this.logApiCall("POST", endpoint, { releaseId, platforms });
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.post<LabelGridContentClaim[]>(endpoint, {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.post<LabelGridContentClaim[]>(endpoint, {
           release_id: releaseId,
           platforms,
         });
       });
 
-      logger?.info("Content claim submitted", { releaseId, platforms });
+      logger.info("Content claim submitted", { releaseId, platforms });
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to submit content claim", error);
+      this.logError("Failed to submit content claim", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -1381,24 +1381,24 @@ class LabelGridService {
   }
 
   async getContentClaims(releaseId?: string): Promise<LabelGridContentClaim[]> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "⚠️  LabelGrid not configured - returning simulated response",
       );
-      return this?.simulateGetContentClaims(releaseId);
+      return this.simulateGetContentClaims(releaseId);
     }
 
-    const endpoint = this?.getEndpoint(
+    const endpoint = this.getEndpoint(
       "getContentClaims",
       "/v1/contentid/claims",
     );
-    this?.logApiCall("GET", endpoint, { releaseId });
+    this.logApiCall("GET", endpoint, { releaseId });
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.get<LabelGridContentClaim[]>(endpoint, {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<LabelGridContentClaim[]>(endpoint, {
           params: releaseId ? { release_id: releaseId } : undefined,
         });
       });
@@ -1406,7 +1406,7 @@ class LabelGridService {
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to get content claims", error);
+      this.logError("Failed to get content claims", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -1417,24 +1417,24 @@ class LabelGridService {
     start: string;
     end: string;
   }): Promise<LabelGridContentRevenue> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "⚠️  LabelGrid not configured - returning simulated response",
       );
-      return this?.simulateGetContentRevenue(dateRange);
+      return this.simulateGetContentRevenue(dateRange);
     }
 
-    const endpoint = this?.getEndpoint(
+    const endpoint = this.getEndpoint(
       "getContentRevenue",
       "/v1/contentid/revenue",
     );
-    this?.logApiCall("GET", endpoint, dateRange);
+    this.logApiCall("GET", endpoint, dateRange);
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.get<LabelGridContentRevenue>(endpoint, {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<LabelGridContentRevenue>(endpoint, {
           params: dateRange,
         });
       });
@@ -1442,7 +1442,7 @@ class LabelGridService {
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to get content revenue", error);
+      this.logError("Failed to get content revenue", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -1450,30 +1450,30 @@ class LabelGridService {
   }
 
   async getRoyaltySummary(): Promise<LabelGridRoyaltySummary> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "⚠️  LabelGrid not configured - returning simulated response",
       );
-      return this?.simulateGetRoyaltySummary();
+      return this.simulateGetRoyaltySummary();
     }
 
-    const endpoint = this?.getEndpoint(
+    const endpoint = this.getEndpoint(
       "getRoyaltySummary",
       "/v1/royalties/summary",
     );
-    this?.logApiCall("GET", endpoint);
+    this.logApiCall("GET", endpoint);
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.get<LabelGridRoyaltySummary>(endpoint);
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<LabelGridRoyaltySummary>(endpoint);
       });
 
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to get royalty summary", error);
+      this.logError("Failed to get royalty summary", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -1483,24 +1483,24 @@ class LabelGridService {
   async getRoyaltyStatements(
     year?: number,
   ): Promise<LabelGridRoyaltyStatement[]> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "⚠️  LabelGrid not configured - returning simulated response",
       );
-      return this?.simulateGetRoyaltyStatements(year);
+      return this.simulateGetRoyaltyStatements(year);
     }
 
-    const endpoint = this?.getEndpoint(
+    const endpoint = this.getEndpoint(
       "getRoyaltyStatements",
       "/v1/royalties/statements",
     );
-    this?.logApiCall("GET", endpoint, { year });
+    this.logApiCall("GET", endpoint, { year });
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.get<LabelGridRoyaltyStatement[]>(endpoint, {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<LabelGridRoyaltyStatement[]>(endpoint, {
           params: year ? { year } : undefined,
         });
       });
@@ -1508,7 +1508,7 @@ class LabelGridService {
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to get royalty statements", error);
+      this.logError("Failed to get royalty statements", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -1519,31 +1519,31 @@ class LabelGridService {
     amount: number,
     method?: "paypal" | "bank",
   ): Promise<LabelGridPayoutRequest> {
-    await this?.loadConfig();
+    await this.loadConfig();
 
-    if (!this?.isConfigured) {
-      logger?.warn(
+    if (!this.isConfigured) {
+      logger.warn(
         "⚠️  LabelGrid not configured - returning simulated response",
       );
-      return this?.simulateRequestPayout(amount, method);
+      return this.simulateRequestPayout(amount, method);
     }
 
-    const endpoint = this?.getEndpoint("requestPayout", "/v1/payouts/request");
-    this?.logApiCall("POST", endpoint, { amount, method });
+    const endpoint = this.getEndpoint("requestPayout", "/v1/payouts/request");
+    this.logApiCall("POST", endpoint, { amount, method });
 
     try {
-      const response = await this?.retryWithBackoff(async () => {
-        return await this?.client.post<LabelGridPayoutRequest>(endpoint, {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.post<LabelGridPayoutRequest>(endpoint, {
           amount,
           method: method || "paypal",
         });
       });
 
-      logger?.info("Payout requested", { amount, method: method || "paypal" });
+      logger.info("Payout requested", { amount, method: method || "paypal" });
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
-      this?.logError("Failed to request payout", error);
+      this.logError("Failed to request payout", error);
       throw new Error(
         `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
       );
@@ -1797,7 +1797,7 @@ class LabelGridService {
     data: { genres: string[]; moods: string[]; notes?: string },
   ): LabelGridSyncSubmission {
     return {
-      id: `sync_sim_${Date?.now()}_${Math?.random().toString(36).substring(7)}`,
+      id: `sync_sim_${Date?.now()}_${Math.random().toString(36).substring(7)}`,
       releaseId,
       opportunityId: "",
       status: "pending",
@@ -1856,7 +1856,7 @@ class LabelGridService {
     startDate: string,
     endDate?: string,
   ): LabelGridPreSave {
-    const id = `ps_sim_${Date?.now()}_${Math?.random().toString(36).substring(7)}`;
+    const id = `ps_sim_${Date?.now()}_${Math.random().toString(36).substring(7)}`;
     return {
       id,
       releaseId,
@@ -1895,7 +1895,7 @@ class LabelGridService {
     platforms: string[],
   ): LabelGridContentClaim[] {
     return platforms?.map((platform) => ({
-      id: `cc_sim_${Date?.now()}_${Math?.random().toString(36).substring(7)}`,
+      id: `cc_sim_${Date?.now()}_${Math.random().toString(36).substring(7)}`,
       releaseId,
       platform,
       status: "pending" as const,

@@ -50,7 +50,7 @@ const MAX_CONCURRENT_WORKERS = 1;
 let _maxWaitMs = 90_000;
 /** Permanently increase the LuaExecutor slot-wait timeout — called by PermanentFixRegistry. */
 export function setLuaScriptTimeout(ms: number): void {
-  _maxWaitMs = Math?.max(90_000, Math?.min(180_000, ms));
+  _maxWaitMs = Math.max(90_000, Math.min(180_000, ms));
 }
 export function getLuaScriptTimeout(): number {
   return _maxWaitMs;
@@ -203,8 +203,8 @@ export function isLuaRegistrationMode(): boolean {
   return _luaRegistrationMode;
 }
 
-// process?.cwd() always resolves to the project root regardless of CJS/ESM build format
-const _projectRoot = process?.cwd();
+// process.cwd() always resolves to the project root regardless of CJS/ESM build format
+const _projectRoot = process.cwd();
 const _wasmoonUrl = `file://${_projectRoot}/node_modules/wasmoon/dist/index.js`;
 const _msgpackrUrl = `file://${_projectRoot}/node_modules/msgpackr/dist/node.cjs`;
 
@@ -245,7 +245,7 @@ function syncRedisCall(cmd, args) {
   // Lua nil is the correct nil substitute: passes "~= nil" guards as false.
   // Lua false would pass "~= nil" (false ~= nil is TRUE) causing BullMQ to
   // treat optional args (parentKey, repeatJobKey …) as real values → -5 error.
-  return JSON?.parse(raw, (_k, v) => v === null ? undefined : v);
+  return JSON.parse(raw, (_k, v) => v === null ? undefined : v);
 }
 
 // Recursively replace every null with undefined so that wasmoon maps the
@@ -257,7 +257,7 @@ function syncRedisCall(cmd, args) {
 // so false triggers those guards as if a real value were present.
 function _replaceNulls(v) {
   if (v === null || v === undefined) return undefined;
-  if (Array?.isArray(v)) return v?.map(_replaceNulls);
+  if (Array.isArray(v)) return v?.map(_replaceNulls);
   if (typeof v === 'object') {
     const out = {};
     for (const k of Object.keys(v)) out[k] = _replaceNulls(v[k]);
@@ -325,12 +325,12 @@ try {
   engine?.global.set('cjson', {
     decode(s) {
       try {
-        const v = JSON?.parse(s);
+        const v = JSON.parse(s);
         // null → undefined (Lua nil) to avoid wasmoon .then probe on null
         return v === null ? undefined : v;
       } catch { return undefined; }
     },
-    encode(v) { return JSON?.stringify(v); }
+    encode(v) { return JSON.stringify(v); }
   });
 
   // Lua 5.1 compat: unpack() was moved to table?.unpack() in Lua 5.2+
@@ -425,7 +425,7 @@ export async function execLuaViaPdim(
   // Node.js's internal worker-thread MessagePort machinery writes the raw
   // "Error: Error: ERR PDIM HTTP 5xx" block to stderr using a C++ fast-path
   // that fires BEFORE JavaScript-level unhandledRejection / uncaughtException
-  // handlers run, and BEFORE our process?.stderr.write interceptor can suppress
+  // handlers run, and BEFORE our process.stderr.write interceptor can suppress
   // it.  The trigger is a brief window between the moment reject() is called
   // inside the 'message' event handler and the moment BullMQ's job-processor
   // `await` registers its own .catch().
@@ -541,7 +541,7 @@ export async function execLuaViaPdim(
         // Demote the watchdog tick to debug so it doesn't produce a false WARN
         // cascade for every job in the registration for-loop.
         if (_luaRegistrationMode) {
-          logger?.debug(
+          logger.debug(
             `[LuaExecutor] script still running after ${elapsedS}s — ` +
               `registration in progress (active=${_activeWorkers}, queued=${_waitQueue?.length})`,
           );
@@ -551,7 +551,7 @@ export async function execLuaViaPdim(
         // LuaExecutor stalls that look alarming but are entirely expected.
         // Demote to debug so the log stream stays clean during boot.
         if (Date?.now() - _executorBootTs < 120_000) {
-          logger?.debug(
+          logger.debug(
             `[LuaExecutor] script still running after ${elapsedS}s — ` +
               `boot settling window (active=${_activeWorkers}, queued=${_waitQueue?.length})`,
           );
@@ -563,7 +563,7 @@ export async function execLuaViaPdim(
           if (depth > 100) {
             // Hundreds of callers queued: stall is due to PDIM back-pressure,
             // not a WASM/Lua bug.  Log at debug to avoid log avalanche.
-            logger?.debug(
+            logger.debug(
               `[LuaExecutor] script paused ${elapsedS}s — PDIM back-pressure ` +
                 `(${depth} queued, active=${_activeWorkers})`,
             );
@@ -572,7 +572,7 @@ export async function execLuaViaPdim(
         } catch {
           /* pdimClient not yet loaded — fall through to warn */
         }
-        logger?.warn(
+        logger.warn(
           `[LuaExecutor] script still running after ${elapsedS}s — ` +
             `active=${_activeWorkers}, queued=${_waitQueue?.length}`,
         );

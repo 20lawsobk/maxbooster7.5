@@ -7,7 +7,7 @@ import { logger } from "../logger.js";
 // hosting environments. REPLIT_DEPLOYMENT is always set by Replit autoscale,
 // so we treat either flag as production to prevent bypass via misconfig.
 const isProductionEnv = (): boolean =>
-  process?.env.NODE_ENV === "production" || !!process?.env.REPLIT_DEPLOYMENT;
+  process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT;
 
 // ── Production rate limits calibrated for 90M-user scale ─────────────────────
 // At 90M users with ~1% DAU = 900K concurrent-peak, these limits prevent
@@ -28,13 +28,13 @@ export const RATE_LIMITS = {
     // tight enough to blunt DDoS amplification.
     perIP: {
       windowMs: 60_000,
-      max: Number(process?.env.RATE_LIMIT_GLOBAL_IP ?? 300),
+      max: Number(process.env.RATE_LIMIT_GLOBAL_IP ?? 300),
     },
     // 2 000 req/min per authenticated user — covers heavy dashboard use,
     // real-time analytics refresh, and bulk playlist operations.
     perUser: {
       windowMs: 60_000,
-      max: Number(process?.env.RATE_LIMIT_GLOBAL_USER ?? 2_000),
+      max: Number(process.env.RATE_LIMIT_GLOBAL_USER ?? 2_000),
     },
   },
   auth: {
@@ -48,21 +48,21 @@ export const RATE_LIMITS = {
     // 60 req/min — Stripe calls are expensive; prevent runaway retry loops.
     perUser: {
       windowMs: 60_000,
-      max: Number(process?.env.RATE_LIMIT_BILLING ?? 60),
+      max: Number(process.env.RATE_LIMIT_BILLING ?? 60),
     },
   },
   uploads: {
     // 50 uploads per hour — prevents storage exhaustion via rapid-fire uploads.
     perUser: {
       windowMs: 3_600_000,
-      max: Number(process?.env.RATE_LIMIT_UPLOADS ?? 50),
+      max: Number(process.env.RATE_LIMIT_UPLOADS ?? 50),
     },
   },
   ai: {
     // 100 AI requests per hour — balances GPU cost against user experience.
     perUser: {
       windowMs: 3_600_000,
-      max: Number(process?.env.RATE_LIMIT_AI ?? 100),
+      max: Number(process.env.RATE_LIMIT_AI ?? 100),
     },
   },
   payouts: {
@@ -70,7 +70,7 @@ export const RATE_LIMITS = {
     // accidental or malicious payout floods.
     perUser: {
       windowMs: 3_600_000,
-      max: Number(process?.env.RATE_LIMIT_PAYOUTS ?? 10),
+      max: Number(process.env.RATE_LIMIT_PAYOUTS ?? 10),
     },
   },
   kyc: {
@@ -78,7 +78,7 @@ export const RATE_LIMITS = {
     // also guards against identity-verification abuse.
     perUser: {
       windowMs: 3_600_000,
-      max: Number(process?.env.RATE_LIMIT_KYC ?? 5),
+      max: Number(process.env.RATE_LIMIT_KYC ?? 5),
     },
   },
 };
@@ -105,16 +105,16 @@ class InMemoryDegradedRateLimiter {
     maxRequests: number,
   ): SlidingWindowResult {
     const now = Date?.now();
-    const degradedMax = Math?.max(
+    const degradedMax = Math.max(
       1,
-      Math?.floor(maxRequests * DEGRADED_RATE_FRACTION),
+      Math.floor(maxRequests * DEGRADED_RATE_FRACTION),
     );
 
-    if (now - this?.lastPrune > 60_000) {
-      this?.prune(now);
+    if (now - this.lastPrune > 60_000) {
+      this.prune(now);
     }
 
-    if (!this?.store.has(key) && this?.store.size >= DEGRADED_MAX_KEYS) {
+    if (!this.store.has(key) && this.store.size >= DEGRADED_MAX_KEYS) {
       return {
         allowed: false,
         remaining: 0,
@@ -124,12 +124,12 @@ class InMemoryDegradedRateLimiter {
     }
 
     const windowStart = now - windowMs;
-    const timestamps = (this?.store.get(key) || []).filter(
+    const timestamps = (this.store.get(key) || []).filter(
       (t) => t > windowStart,
     );
 
     if (timestamps?.length >= degradedMax) {
-      this?.store.set(key, timestamps);
+      this.store.set(key, timestamps);
       return {
         allowed: false,
         remaining: 0,
@@ -139,7 +139,7 @@ class InMemoryDegradedRateLimiter {
     }
 
     timestamps?.push(now);
-    this?.store.set(key, timestamps);
+    this.store.set(key, timestamps);
     return {
       allowed: true,
       remaining: degradedMax - timestamps?.length,
@@ -150,10 +150,10 @@ class InMemoryDegradedRateLimiter {
 
   private prune(now: number): void {
     const cutoff = now - 3_600_000;
-    for (const [key, timestamps] of this?.store) {
+    for (const [key, timestamps] of this.store) {
       const fresh = timestamps?.filter((t) => t > cutoff);
-      if (fresh?.length === 0) this?.store.delete(key);
-      else this?.store.set(key, fresh);
+      if (fresh?.length === 0) this.store.delete(key);
+      else this.store.set(key, fresh);
     }
     this.lastPrune = now;
   }
@@ -164,17 +164,17 @@ const degradedLimiter = new InMemoryDegradedRateLimiter();
 function getClientIP(req: Request): string {
   // Prefer the validated real client IP set by cloudflareMiddleware (uses CF-Connecting-IP
   // only when the socket originates from a verified Cloudflare IP range, preventing spoofing).
-  // Fall back to req?.ip which respects Express trust proxy configuration.
+  // Fall back to req.ip which respects Express trust proxy configuration.
   return (
     (req as Record<string, unknown>).realClientIp ||
-    req?.ip ||
-    req?.socket.remoteAddress ||
+    req.ip ||
+    req.socket.remoteAddress ||
     "unknown"
   );
 }
 
 function getUserId(req: Request): string | null {
-  const user = req?.user as Record<string, unknown>;
+  const user = req.user as Record<string, unknown>;
   return user?.id || null;
 }
 
@@ -188,7 +188,7 @@ async function slidingWindowCheck(
   const redis = await getRedisClient();
 
   if (!redis) {
-    logger?.warn("[RateLimit] Redis unavailable — degraded mode (25% limits)");
+    logger.warn("[RateLimit] Redis unavailable — degraded mode (25% limits)");
     return degradedLimiter?.check(key, windowMs, maxRequests);
   }
 
@@ -225,7 +225,7 @@ async function slidingWindowCheck(
         const requestId = `${now}:${randomBytes(4).toString("hex")}`;
         await redis?.zadd(redisKey, now, requestId);
         // fire-and-forget expire — doesn't need to block the response
-        redis?.expire(redisKey, Math?.ceil(windowMs / 1000) + 60).catch(() => {});
+        redis?.expire(redisKey, Math.ceil(windowMs / 1000) + 60).catch(() => {});
 
         return {
           allowed: true,
@@ -248,7 +248,7 @@ async function slidingWindowCheck(
     ]);
     return result;
   } catch (error) {
-    logger?.warn(
+    logger.warn(
       { err: error },
       "[RateLimit] Redis error — degraded mode (25% limits):",
     );
@@ -262,15 +262,15 @@ function setRateLimitHeaders(
   remaining: number,
   resetAt: number,
 ): void {
-  res?.setHeader("X-RateLimit-Limit", limit?.toString());
-  res?.setHeader("X-RateLimit-Remaining", Math?.max(0, remaining).toString());
-  res?.setHeader("X-RateLimit-Reset", Math?.ceil(resetAt / 1000).toString());
+  res.setHeader("X-RateLimit-Limit", limit?.toString());
+  res.setHeader("X-RateLimit-Remaining", Math.max(0, remaining).toString());
+  res.setHeader("X-RateLimit-Reset", Math.ceil(resetAt / 1000).toString());
 }
 
 function sendRateLimitExceeded(res: Response, resetAt: number): void {
-  const retryAfter = Math?.ceil((resetAt - Date?.now()) / 1000);
-  res?.setHeader("Retry-After", Math?.max(1, retryAfter).toString());
-  res?.status(429).json({
+  const retryAfter = Math.ceil((resetAt - Date?.now()) / 1000);
+  res.setHeader("Retry-After", Math.max(1, retryAfter).toString());
+  res.status(429).json({
     error: "Too Many Requests",
     message: "Rate limit exceeded. Please try again later.",
     retryAfter: Math.max(1, retryAfter),
@@ -283,15 +283,15 @@ function shouldSkipRateLimiting(req: Request): boolean {
   }
 
   const isMonitoring =
-    req?.path.startsWith("/api/monitoring/") ||
-    req?.path.startsWith("/api/system/") ||
-    req?.path.startsWith("/api/health") ||
-    req?.path === "/api/version";
+    req.path.startsWith("/api/monitoring/") ||
+    req.path.startsWith("/api/system/") ||
+    req.path.startsWith("/api/health") ||
+    req.path === "/api/version";
 
   const isStaticAsset =
-    req?.path.startsWith("/@fs/") ||
-    req?.path.startsWith("/src/") ||
-    req?.path.startsWith("/node_modules/");
+    req.path.startsWith("/@fs/") ||
+    req.path.startsWith("/src/") ||
+    req.path.startsWith("/node_modules/");
 
   return isMonitoring || isStaticAsset;
 }
@@ -314,7 +314,7 @@ export const globalIPRateLimiter: RequestHandler = async (
   setRateLimitHeaders(res, perIP?.max, result?.remaining, result?.resetAt);
 
   if (!result?.allowed) {
-    logger?.warn(`Rate limit exceeded for IP: ${ip}`);
+    logger.warn(`Rate limit exceeded for IP: ${ip}`);
     sendRateLimitExceeded(res, result?.resetAt);
     return;
   }
@@ -345,7 +345,7 @@ export const globalUserRateLimiter: RequestHandler = async (
   setRateLimitHeaders(res, perUser?.max, result?.remaining, result?.resetAt);
 
   if (!result?.allowed) {
-    logger?.warn(`Rate limit exceeded for user: ${userId}`);
+    logger.warn(`Rate limit exceeded for user: ${userId}`);
     sendRateLimitExceeded(res, result?.resetAt);
     return;
   }
@@ -382,7 +382,7 @@ export const loginRateLimiter: RequestHandler = async (
   setRateLimitHeaders(res, login?.max, result?.remaining, result?.resetAt);
 
   if (!result?.allowed) {
-    logger?.warn(`Login rate limit exceeded for IP: ${ip}`);
+    logger.warn(`Login rate limit exceeded for IP: ${ip}`);
     sendRateLimitExceeded(res, result?.resetAt);
     return;
   }
@@ -420,7 +420,7 @@ export const registerRateLimiter: RequestHandler = async (
   setRateLimitHeaders(res, register?.max, result?.remaining, result?.resetAt);
 
   if (!result?.allowed) {
-    logger?.warn(`Registration rate limit exceeded for IP: ${ip}`);
+    logger.warn(`Registration rate limit exceeded for IP: ${ip}`);
     sendRateLimitExceeded(res, result?.resetAt);
     return;
   }
@@ -455,7 +455,7 @@ export const forgotPasswordRateLimiter: RequestHandler = async (
   );
 
   if (!result?.allowed) {
-    logger?.warn(`Forgot password rate limit exceeded for IP: ${ip}`);
+    logger.warn(`Forgot password rate limit exceeded for IP: ${ip}`);
     sendRateLimitExceeded(res, result?.resetAt);
     return;
   }
@@ -486,7 +486,7 @@ export const twoFactorRateLimiter: RequestHandler = async (
   setRateLimitHeaders(res, twoFactor?.max, result?.remaining, result?.resetAt);
 
   if (!result?.allowed) {
-    logger?.warn(
+    logger.warn(
       `2FA rate limit exceeded for ${userId ? `user ${userId}` : `IP ${ip}`}`,
     );
     sendRateLimitExceeded(res, result?.resetAt);
@@ -519,7 +519,7 @@ export const billingRateLimiter: RequestHandler = async (
   setRateLimitHeaders(res, perUser?.max, result?.remaining, result?.resetAt);
 
   if (!result?.allowed) {
-    logger?.warn(`Billing rate limit exceeded for user: ${userId}`);
+    logger.warn(`Billing rate limit exceeded for user: ${userId}`);
     sendRateLimitExceeded(res, result?.resetAt);
     return;
   }
@@ -550,7 +550,7 @@ export const uploadRateLimiter: RequestHandler = async (
   setRateLimitHeaders(res, perUser?.max, result?.remaining, result?.resetAt);
 
   if (!result?.allowed) {
-    logger?.warn(`Upload rate limit exceeded for user: ${userId}`);
+    logger.warn(`Upload rate limit exceeded for user: ${userId}`);
     sendRateLimitExceeded(res, result?.resetAt);
     return;
   }
@@ -581,7 +581,7 @@ export const aiRateLimiter: RequestHandler = async (
   setRateLimitHeaders(res, perUser?.max, result?.remaining, result?.resetAt);
 
   if (!result?.allowed) {
-    logger?.warn(`AI rate limit exceeded for user: ${userId}`);
+    logger.warn(`AI rate limit exceeded for user: ${userId}`);
     sendRateLimitExceeded(res, result?.resetAt);
     return;
   }
@@ -612,7 +612,7 @@ export const payoutsRateLimiter: RequestHandler = async (
   setRateLimitHeaders(res, perUser?.max, result?.remaining, result?.resetAt);
 
   if (!result?.allowed) {
-    logger?.warn(`Payout rate limit exceeded for user: ${userId}`);
+    logger.warn(`Payout rate limit exceeded for user: ${userId}`);
     sendRateLimitExceeded(res, result?.resetAt);
     return;
   }
@@ -643,7 +643,7 @@ export const kycRateLimiter: RequestHandler = async (
   setRateLimitHeaders(res, perUser?.max, result?.remaining, result?.resetAt);
 
   if (!result?.allowed) {
-    logger?.warn(`KYC rate limit exceeded for user: ${userId}`);
+    logger.warn(`KYC rate limit exceeded for user: ${userId}`);
     sendRateLimitExceeded(res, result?.resetAt);
     return;
   }
@@ -703,7 +703,7 @@ export async function getRateLimitStatus(
       total: count,
     };
   } catch (error) {
-    logger?.warn({ err: error }, "Error getting rate limit status:");
+    logger.warn({ err: error }, "Error getting rate limit status:");
     return null;
   }
 }
@@ -745,7 +745,7 @@ export async function resetRateLimit(
     await redis?.del(redisKey);
     return true;
   } catch (error) {
-    logger?.warn({ err: error }, "Error resetting rate limit:");
+    logger.warn({ err: error }, "Error resetting rate limit:");
     return false;
   }
 }

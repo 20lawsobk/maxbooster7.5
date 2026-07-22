@@ -83,9 +83,9 @@ function calculateGap(width: number): number {
   const minWidth = 320;
   const maxWidth = 1920;
 
-  const clampedWidth = Math?.max(minWidth, Math?.min(maxWidth, width));
+  const clampedWidth = Math.max(minWidth, Math.min(maxWidth, width));
   const ratio = (clampedWidth - minWidth) / (maxWidth - minWidth);
-  return Math?.round(minGap + ratio * (maxGap - minGap));
+  return Math.round(minGap + ratio * (maxGap - minGap));
 }
 
 function calculatePadding(width: number): number {
@@ -94,22 +94,22 @@ function calculatePadding(width: number): number {
   const minWidth = 320;
   const maxWidth = 1920;
 
-  const clampedWidth = Math?.max(minWidth, Math?.min(maxWidth, width));
+  const clampedWidth = Math.max(minWidth, Math.min(maxWidth, width));
   const ratio = (clampedWidth - minWidth) / (maxWidth - minWidth);
-  return Math?.round(minPadding + ratio * (maxPadding - minPadding));
+  return Math.round(minPadding + ratio * (maxPadding - minPadding));
 }
 
 function calculateFontSizes(width: number) {
-  const scale = Math?.max(0.85, Math?.min(1.15, width / 1200));
+  const scale = Math.max(0.85, Math.min(1.15, width / 1200));
 
   return {
-    xs: `${Math?.round(10 * scale)}px`,
-    sm: `${Math?.round(12 * scale)}px`,
-    base: `${Math?.round(14 * scale)}px`,
-    lg: `${Math?.round(16 * scale)}px`,
-    xl: `${Math?.round(18 * scale)}px`,
-    "2xl": `${Math?.round(22 * scale)}px`,
-    "3xl": `${Math?.round(28 * scale)}px`,
+    xs: `${Math.round(10 * scale)}px`,
+    sm: `${Math.round(12 * scale)}px`,
+    base: `${Math.round(14 * scale)}px`,
+    lg: `${Math.round(16 * scale)}px`,
+    xl: `${Math.round(18 * scale)}px`,
+    "2xl": `${Math.round(22 * scale)}px`,
+    "3xl": `${Math.round(28 * scale)}px`,
   };
 }
 
@@ -159,7 +159,7 @@ export function useDynamicLayout(): DynamicLayoutResult {
 
   const getGridCols = useCallback(
     (maxCols: number = 6): number => {
-      return Math?.min(columns, maxCols);
+      return Math.min(columns, maxCols);
     },
     [columns],
   );
@@ -168,8 +168,8 @@ export function useDynamicLayout(): DynamicLayoutResult {
     (minWidth: number = 280, maxWidth: number = 400): string => {
       const cols = columns;
       const availableWidth = width - padding * 2 - (cols - 1) * gap;
-      const cardWidth = Math?.floor(availableWidth / cols);
-      const clampedWidth = Math?.max(minWidth, Math?.min(maxWidth, cardWidth));
+      const cardWidth = Math.floor(availableWidth / cols);
+      const clampedWidth = Math.max(minWidth, Math.min(maxWidth, cardWidth));
       return `${clampedWidth}px`;
     },
     [columns, width, padding, gap],
@@ -177,14 +177,14 @@ export function useDynamicLayout(): DynamicLayoutResult {
 
   const getSpacing = useCallback(
     (base: number = 1): number => {
-      return Math?.round(gap * base);
+      return Math.round(gap * base);
     },
     [gap],
   );
 
   const clamp = useCallback(
     (min: number, preferred: number, max: number): number => {
-      return Math?.max(min, Math?.min(max, preferred));
+      return Math.max(min, Math.min(max, preferred));
     },
     [],
   );
@@ -268,7 +268,7 @@ export function getDynamicGridClass(
       6: "grid-cols-6",
     },
   };
-  return colMap[breakpoint][Math?.min(maxCols, 6) as 1 | 2 | 3 | 4 | 5 | 6];
+  return colMap[breakpoint][Math.min(maxCols, 6) as 1 | 2 | 3 | 4 | 5 | 6];
 }
 
 export function getDynamicSpacingClass(breakpoint: BreakpointKey): {

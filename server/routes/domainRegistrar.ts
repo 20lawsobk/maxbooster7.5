@@ -344,7 +344,7 @@ router.post("/claim", async (req, res) => {
 
 router?.get("/my-domains", async (req, res) => {
   try {
-    const userId = (req?.user as Record<string, unknown>).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const domains = await db
       .select()
       .from(claimedDomains)
@@ -353,10 +353,10 @@ router?.get("/my-domains", async (req, res) => {
 
     const quota = await getDomainQuota(userId);
 
-    return res?.json({ ok: true, domains, quota });
+    return res.json({ ok: true, domains, quota });
   } catch (err) {
-    logger?.warn({ err }, "[domainRegistrar] my-domains error");
-    return res?.status(500).json({ ok: false, error: "Internal error." });
+    logger.warn({ err }, "[domainRegistrar] my-domains error");
+    return res.status(500).json({ ok: false, error: "Internal error." });
   }
 });
 
@@ -364,22 +364,22 @@ router?.get("/my-domains", async (req, res) => {
 
 router?.get("/my-domains/:id", async (req, res) => {
   try {
-    const userId = (req?.user as Record<string, unknown>).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const [row] = await db
       .select()
       .from(claimedDomains)
-      .where(eq(claimedDomains?.id, req?.params.id))
+      .where(eq(claimedDomains?.id, req.params.id))
       .limit(1);
 
     if (!row)
-      return res?.status(404).json({ ok: false, error: "Domain not found." });
+      return res.status(404).json({ ok: false, error: "Domain not found." });
     if (row?.userId !== userId)
-      return res?.status(403).json({ ok: false, error: "Forbidden." });
+      return res.status(403).json({ ok: false, error: "Forbidden." });
 
-    return res?.json({ ok: true, domain: row });
+    return res.json({ ok: true, domain: row });
   } catch (err) {
-    logger?.warn({ err }, "[domainRegistrar] get-domain error");
-    return res?.status(500).json({ ok: false, error: "Internal error." });
+    logger.warn({ err }, "[domainRegistrar] get-domain error");
+    return res.status(500).json({ ok: false, error: "Internal error." });
   }
 });
 
@@ -387,16 +387,16 @@ router?.get("/my-domains/:id", async (req, res) => {
 
 router?.post("/my-domains/:id/release", async (req, res) => {
   try {
-    const userId = (req?.user as Record<string, unknown>).id;
-    await softReleaseDomain(req?.params.id, userId);
+    const userId = (req.user as Record<string, unknown>).id;
+    await softReleaseDomain(req.params.id, userId);
 
-    return res?.json({
+    return res.json({
       ok: true,
       message:
         "Domain released. It will remain registered until natural expiry but no longer counts toward your quota.",
     });
   } catch (err) {
-    logger?.warn({ err }, "[domainRegistrar] release error");
+    logger.warn({ err }, "[domainRegistrar] release error");
     const status = err?.message?.includes("Forbidden")
       ? 403
       : err?.message?.includes("not found")
@@ -404,7 +404,7 @@ router?.post("/my-domains/:id/release", async (req, res) => {
         : err?.message?.includes("already released")
           ? 409
           : 500;
-    return res?.status(status).json({ ok: false, error: err.message });
+    return res.status(status).json({ ok: false, error: err.message });
   }
 });
 
@@ -412,8 +412,8 @@ router?.post("/my-domains/:id/release", async (req, res) => {
 
 router?.post("/my-domains/:id/renew", async (req, res) => {
   try {
-    const userId = (req?.user as Record<string, unknown>).id;
-    const years = Math?.max(1, Math?.min(10, Number(req?.body.years ?? 1)));
+    const userId = (req.user as Record<string, unknown>).id;
+    const years = Math.max(1, Math.min(10, Number(req.body.years ?? 1)));
 
     const [row] = await db
       .select({
@@ -422,13 +422,13 @@ router?.post("/my-domains/:id/renew", async (req, res) => {
         status: claimedDomains.status,
       })
       .from(claimedDomains)
-      .where(eq(claimedDomains?.id, req?.params.id))
+      .where(eq(claimedDomains?.id, req.params.id))
       .limit(1);
 
     if (!row)
-      return res?.status(404).json({ ok: false, error: "Domain not found." });
+      return res.status(404).json({ ok: false, error: "Domain not found." });
     if (row?.userId !== userId)
-      return res?.status(403).json({ ok: false, error: "Forbidden." });
+      return res.status(403).json({ ok: false, error: "Forbidden." });
     if (row?.status === "released" || row?.status === "expired") {
       return res
         .status(409)
@@ -437,15 +437,15 @@ router?.post("/my-domains/:id/renew", async (req, res) => {
 
     const result = await getRegistrarProvider().renewDomain(row?.domain, years);
 
-    await emitDomainEvent("DomainRenewed", req?.params.id, userId, row?.domain, {
+    await emitDomainEvent("DomainRenewed", req.params.id, userId, row?.domain, {
       years,
       newExpiresAt: result.expiresAt,
       manual: true,
     });
 
-    return res?.json({ ok: true, expiresAt: result.expiresAt, years });
+    return res.json({ ok: true, expiresAt: result.expiresAt, years });
   } catch (err) {
-    logger?.warn({ err }, "[domainRegistrar] renew error");
+    logger.warn({ err }, "[domainRegistrar] renew error");
     return res
       .status(500)
       .json({ ok: false, error: err.message || "Renewal failed." });
@@ -456,25 +456,25 @@ router?.post("/my-domains/:id/renew", async (req, res) => {
 
 router?.get("/my-domains/:id/events", async (req, res) => {
   try {
-    const userId = (req?.user as Record<string, unknown>).id;
+    const userId = (req.user as Record<string, unknown>).id;
 
     // Verify ownership
     const [row] = await db
       .select({ userId: claimedDomains.userId })
       .from(claimedDomains)
-      .where(eq(claimedDomains?.id, req?.params.id))
+      .where(eq(claimedDomains?.id, req.params.id))
       .limit(1);
 
     if (!row)
-      return res?.status(404).json({ ok: false, error: "Domain not found." });
+      return res.status(404).json({ ok: false, error: "Domain not found." });
     if (row?.userId !== userId)
-      return res?.status(403).json({ ok: false, error: "Forbidden." });
+      return res.status(403).json({ ok: false, error: "Forbidden." });
 
-    const events = await getDomainEvents(req?.params.id, userId);
-    return res?.json({ ok: true, events });
+    const events = await getDomainEvents(req.params.id, userId);
+    return res.json({ ok: true, events });
   } catch (err) {
-    logger?.warn({ err }, "[domainRegistrar] events error");
-    return res?.status(500).json({ ok: false, error: "Internal error." });
+    logger.warn({ err }, "[domainRegistrar] events error");
+    return res.status(500).json({ ok: false, error: "Internal error." });
   }
 });
 
@@ -482,22 +482,22 @@ router?.get("/my-domains/:id/events", async (req, res) => {
 
 router?.delete("/my-domains/:id", async (req, res) => {
   try {
-    const userId = (req?.user as Record<string, unknown>).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const [row] = await db
       .select({ userId: claimedDomains.userId, domain: claimedDomains.domain })
       .from(claimedDomains)
-      .where(eq(claimedDomains?.id, req?.params.id))
+      .where(eq(claimedDomains?.id, req.params.id))
       .limit(1);
 
     if (!row)
-      return res?.status(404).json({ ok: false, error: "Domain not found." });
+      return res.status(404).json({ ok: false, error: "Domain not found." });
     if (row?.userId !== userId)
-      return res?.status(403).json({ ok: false, error: "Forbidden." });
+      return res.status(403).json({ ok: false, error: "Forbidden." });
 
-    await emitDomainEvent("DomainReleased", req?.params.id, userId, row?.domain, {
+    await emitDomainEvent("DomainReleased", req.params.id, userId, row?.domain, {
       hardDelete: true,
     });
-    await db?.delete(claimedDomains).where(eq(claimedDomains?.id, req?.params.id));
+    await db?.delete(claimedDomains).where(eq(claimedDomains?.id, req.params.id));
 
     try {
       await pool?.query(
@@ -505,16 +505,16 @@ router?.delete("/my-domains/:id", async (req, res) => {
         [row?.domain, userId],
       );
     } catch (zoneErr: Record<string, unknown>) {
-      logger?.warn(
+      logger.warn(
         { err: zoneErr },
         "[domainRegistrar] DNS zone cleanup failed (non-fatal)",
       );
     }
 
-    return res?.json({ ok: true });
+    return res.json({ ok: true });
   } catch (err) {
-    logger?.warn({ err }, "[domainRegistrar] delete error");
-    return res?.status(500).json({ ok: false, error: "Internal error." });
+    logger.warn({ err }, "[domainRegistrar] delete error");
+    return res.status(500).json({ ok: false, error: "Internal error." });
   }
 });
 
@@ -522,7 +522,7 @@ router?.delete("/my-domains/:id", async (req, res) => {
 
 router?.get("/contacts", async (req, res) => {
   try {
-    const userId = (req?.user as Record<string, unknown>).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const contacts = await db
       .select()
       .from(domainContacts)
@@ -532,20 +532,20 @@ router?.get("/contacts", async (req, res) => {
     // If none exist, derive one from the user account
     if (contacts?.length === 0) {
       const derived = await buildContactProfile(userId);
-      return res?.json({ ok: true, contacts: [], derived });
+      return res.json({ ok: true, contacts: [], derived });
     }
 
-    return res?.json({ ok: true, contacts });
+    return res.json({ ok: true, contacts });
   } catch (err) {
-    logger?.warn({ err }, "[domainRegistrar] contacts error");
-    return res?.status(500).json({ ok: false, error: "Internal error." });
+    logger.warn({ err }, "[domainRegistrar] contacts error");
+    return res.status(500).json({ ok: false, error: "Internal error." });
   }
 });
 
 router?.put("/contacts", async (req, res) => {
   try {
-    const userId = (req?.user as Record<string, unknown>).id;
-    const { name, org, email, phone, address } = req?.body;
+    const userId = (req.user as Record<string, unknown>).id;
+    const { name, org, email, phone, address } = req.body;
 
     if (!name || !email) {
       return res
@@ -594,10 +594,10 @@ router?.put("/contacts", async (req, res) => {
       { name, email },
     );
 
-    return res?.json({ ok: true });
+    return res.json({ ok: true });
   } catch (err) {
-    logger?.warn({ err }, "[domainRegistrar] contacts update error");
-    return res?.status(500).json({ ok: false, error: "Internal error." });
+    logger.warn({ err }, "[domainRegistrar] contacts update error");
+    return res.status(500).json({ ok: false, error: "Internal error." });
   }
 });
 

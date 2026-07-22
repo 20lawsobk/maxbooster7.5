@@ -1013,8 +1013,8 @@ router.get("/zone/:domain", async (req, res) => {
  * Admin-only.
  */
 router?.post("/provision-wildcard", async (req, res) => {
-  if (!req?.isAuthenticated() || !(req?.user as any)?.isAdmin) {
-    return res?.status(403).json({ error: "Admin required" });
+  if (!req.isAuthenticated() || !(req.user as any)?.isAdmin) {
+    return res.status(403).json({ error: "Admin required" });
   }
   try {
     const { provisionCertificate } = await import("../services/acmeClient.js");
@@ -1022,10 +1022,10 @@ router?.post("/provision-wildcard", async (req, res) => {
       provisionCertificate("*.max-booster.com"),
       provisionCertificate("max-booster.com"),
     ]);
-    res?.json({ ok: true, wildcard: wildcardResult, root: rootResult });
+    res.json({ ok: true, wildcard: wildcardResult, root: rootResult });
   } catch (err) {
-    logger?.error({ err }, "[dns] provision-wildcard error");
-    res?.status(500).json({ error: "Cert provisioning failed" });
+    logger.error({ err }, "[dns] provision-wildcard error");
+    res.status(500).json({ error: "Cert provisioning failed" });
   }
 });
 
@@ -1044,17 +1044,17 @@ router?.post("/provision-wildcard", async (req, res) => {
  * Admin-only.
  */
 router?.post("/activate-persist-validation", async (req, res) => {
-  if (!req?.isAuthenticated() || !(req?.user as any)?.isAdmin) {
-    return res?.status(403).json({ error: "Admin required" });
+  if (!req.isAuthenticated() || !(req.user as any)?.isAdmin) {
+    return res.status(403).json({ error: "Admin required" });
   }
   try {
     const { activateAcmePersistValidation } = await import(
       "../services/acmeClient.js"
     );
     const result = await activateAcmePersistValidation("max-booster.com");
-    res?.json({ ok: true, ...result });
+    res.json({ ok: true, ...result });
   } catch (err) {
-    logger?.error({ err }, "[dns] activate-persist-validation error");
+    logger.error({ err }, "[dns] activate-persist-validation error");
     res
       .status(500)
       .json({ error: "Failed to activate DNS-PERSIST-01 validation" });

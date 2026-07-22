@@ -60,9 +60,9 @@ export class AudioNormalizationService {
     sampleRate: number,
     channels: number = 2,
   ): LUFSAnalysis {
-    const blockSize = Math?.floor(sampleRate * 0.4);
-    const hopSize = Math?.floor(sampleRate * 0.1);
-    const samplesPerChannel = Math?.floor(samples?.length / channels);
+    const blockSize = Math.floor(sampleRate * 0.4);
+    const hopSize = Math.floor(sampleRate * 0.1);
+    const samplesPerChannel = Math.floor(samples?.length / channels);
 
     const leftChannel = new Float32Array(samplesPerChannel);
     const rightChannel = new Float32Array(samplesPerChannel);
@@ -73,8 +73,8 @@ export class AudioNormalizationService {
         channels > 1 ? samples[i * channels + 1] : samples[i * channels];
     }
 
-    const leftFiltered = this?.applyKWeighting(leftChannel, sampleRate);
-    const rightFiltered = this?.applyKWeighting(rightChannel, sampleRate);
+    const leftFiltered = this.applyKWeighting(leftChannel, sampleRate);
+    const rightFiltered = this.applyKWeighting(rightChannel, sampleRate);
 
     const momentaryLoudness: number[] = [];
     const shortTermLoudness: number[] = [];
@@ -83,15 +83,15 @@ export class AudioNormalizationService {
       const leftBlock = leftFiltered?.slice(i, i + blockSize);
       const rightBlock = rightFiltered?.slice(i, i + blockSize);
 
-      const leftMean = this?.meanSquare(leftBlock);
-      const rightMean = this?.meanSquare(rightBlock);
+      const leftMean = this.meanSquare(leftBlock);
+      const rightMean = this.meanSquare(rightBlock);
 
-      const blockLoudness = -0.691 + 10 * Math?.log10(leftMean + rightMean);
+      const blockLoudness = -0.691 + 10 * Math.log10(leftMean + rightMean);
       momentaryLoudness?.push(blockLoudness);
     }
 
-    const shortTermBlockSize = Math?.floor(sampleRate * 3);
-    const shortTermHopSize = Math?.floor(sampleRate);
+    const shortTermBlockSize = Math.floor(sampleRate * 3);
+    const shortTermHopSize = Math.floor(sampleRate);
 
     for (
       let i = 0;
@@ -101,38 +101,38 @@ export class AudioNormalizationService {
       const leftBlock = leftFiltered?.slice(i, i + shortTermBlockSize);
       const rightBlock = rightFiltered?.slice(i, i + shortTermBlockSize);
 
-      const leftMean = this?.meanSquare(leftBlock);
-      const rightMean = this?.meanSquare(rightBlock);
+      const leftMean = this.meanSquare(leftBlock);
+      const rightMean = this.meanSquare(rightBlock);
 
-      const blockLoudness = -0.691 + 10 * Math?.log10(leftMean + rightMean);
+      const blockLoudness = -0.691 + 10 * Math.log10(leftMean + rightMean);
       shortTermLoudness?.push(blockLoudness);
     }
 
-    const gatedBlocks = this?.gatingPass(momentaryLoudness, -70);
-    const relativeThreshold = this?.calculateMean(gatedBlocks) - 10;
+    const gatedBlocks = this.gatingPass(momentaryLoudness, -70);
+    const relativeThreshold = this.calculateMean(gatedBlocks) - 10;
     const finalBlocks = gatedBlocks?.filter((l) => l > relativeThreshold);
     const integratedLoudness =
-      finalBlocks?.length > 0 ? this?.calculateMean(finalBlocks) : -70;
+      finalBlocks?.length > 0 ? this.calculateMean(finalBlocks) : -70;
 
-    const loudnessRange = this?.calculateLoudnessRange(shortTermLoudness);
+    const loudnessRange = this.calculateLoudnessRange(shortTermLoudness);
 
-    const truePeakLeft = this?.calculateTruePeak(leftChannel, sampleRate);
-    const truePeakRight = this?.calculateTruePeak(rightChannel, sampleRate);
-    const truePeak = Math?.max(truePeakLeft, truePeakRight);
+    const truePeakLeft = this.calculateTruePeak(leftChannel, sampleRate);
+    const truePeakRight = this.calculateTruePeak(rightChannel, sampleRate);
+    const truePeak = Math.max(truePeakLeft, truePeakRight);
 
-    const samplePeakLeft = this?.calculateSamplePeak(leftChannel);
-    const samplePeakRight = this?.calculateSamplePeak(rightChannel);
+    const samplePeakLeft = this.calculateSamplePeak(leftChannel);
+    const samplePeakRight = this.calculateSamplePeak(rightChannel);
 
     return {
       integratedLoudness,
       loudnessRange,
-      truePeak: 20 * Math?.log10(truePeak),
+      truePeak: 20 * Math.log10(truePeak),
       shortTermMax:
-        shortTermLoudness?.length > 0 ? Math?.max(...shortTermLoudness) : -70,
+        shortTermLoudness?.length > 0 ? Math.max(...shortTermLoudness) : -70,
       momentaryMax:
-        momentaryLoudness?.length > 0 ? Math?.max(...momentaryLoudness) : -70,
-      samplePeakLeft: 20 * Math?.log10(samplePeakLeft),
-      samplePeakRight: 20 * Math?.log10(samplePeakRight),
+        momentaryLoudness?.length > 0 ? Math.max(...momentaryLoudness) : -70,
+      samplePeakLeft: 20 * Math.log10(samplePeakLeft),
+      samplePeakRight: 20 * Math.log10(samplePeakRight),
     };
   }
 
@@ -143,9 +143,9 @@ export class AudioNormalizationService {
     targetLUFS: number,
     preventClipping: boolean = true,
   ): { samples: Float32Array; result: NormalizationResult } {
-    const analysis = this?.analyzeLUFS(samples, sampleRate, channels);
+    const analysis = this.analyzeLUFS(samples, sampleRate, channels);
     const gainDb = targetLUFS - analysis?.integratedLoudness;
-    let gainLinear = Math?.pow(10, gainDb / 20);
+    let gainLinear = Math.pow(10, gainDb / 20);
 
     const truePeakDb = analysis?.truePeak;
     const projectedPeakAfterGain = truePeakDb + gainDb;
@@ -153,10 +153,10 @@ export class AudioNormalizationService {
 
     if (preventClipping && projectedPeakAfterGain > -1) {
       const availableHeadroom = -1 - truePeakDb;
-      const clampedGainDb = Math?.min(gainDb, availableHeadroom);
-      gainLinear = Math?.pow(10, clampedGainDb / 20);
+      const clampedGainDb = Math.min(gainDb, availableHeadroom);
+      gainLinear = Math.pow(10, clampedGainDb / 20);
       clippingPrevented = true;
-      logger?.info("Clipping prevention applied", {
+      logger.info("Clipping prevention applied", {
         originalGainDb: gainDb,
         clampedGainDb,
         truePeakBefore: truePeakDb,
@@ -169,7 +169,7 @@ export class AudioNormalizationService {
       normalizedSamples[i] = samples[i] * gainLinear;
     }
 
-    const normalizedAnalysis = this?.analyzeLUFS(
+    const normalizedAnalysis = this.analyzeLUFS(
       normalizedSamples,
       sampleRate,
       channels,
@@ -180,7 +180,7 @@ export class AudioNormalizationService {
       result: {
         originalLUFS: analysis.integratedLoudness,
         targetLUFS,
-        gainAdjustment: 20 * Math?.log10(gainLinear),
+        gainAdjustment: 20 * Math.log10(gainLinear),
         truePeakBefore: analysis.truePeak,
         truePeakAfter: normalizedAnalysis.truePeak,
         clippingPrevented,
@@ -202,7 +202,7 @@ export class AudioNormalizationService {
     targetLUFS: number,
     tolerance: number = 1,
   ): boolean {
-    return Math?.abs(analysis?.integratedLoudness - targetLUFS) <= tolerance;
+    return Math.abs(analysis?.integratedLoudness - targetLUFS) <= tolerance;
   }
 
   private applyKWeighting(
@@ -212,7 +212,7 @@ export class AudioNormalizationService {
     const result = new Float32Array(samples?.length);
     const fc = 1500;
     const Q = 0.707;
-    const K = Math?.tan((Math.PI * fc) / sampleRate);
+    const K = Math.tan((Math.PI * fc) / sampleRate);
     const norm = 1 / (1 + K / Q + K * K);
     const a0 = K * K * norm;
     const a1 = 2 * a0;
@@ -259,13 +259,13 @@ export class AudioNormalizationService {
 
     const sorted = [...shortTermValues].sort((a, b) => a - b);
     const gated = sorted?.filter(
-      (v) => v > sorted[Math?.floor(sorted?.length * 0.1)],
+      (v) => v > sorted[Math.floor(sorted?.length * 0.1)],
     );
 
     if (gated?.length < 2) return 0;
 
-    const low = gated[Math?.floor(gated?.length * 0.1)];
-    const high = gated[Math?.floor(gated?.length * 0.95)];
+    const low = gated[Math.floor(gated?.length * 0.1)];
+    const high = gated[Math.floor(gated?.length * 0.95)];
 
     return high - low;
   }
@@ -275,12 +275,12 @@ export class AudioNormalizationService {
     let maxPeak = 0;
 
     for (let i = 0; i < samples?.length - 1; i++) {
-      const sample = Math?.abs(samples[i]);
+      const sample = Math.abs(samples[i]);
       if (sample > maxPeak) maxPeak = sample;
 
       for (let j = 1; j < oversamplingFactor; j++) {
         const t = j / oversamplingFactor;
-        const interpolated = Math?.abs(
+        const interpolated = Math.abs(
           samples[i] * (1 - t) + samples[i + 1] * t,
         );
         if (interpolated > maxPeak) maxPeak = interpolated;
@@ -293,7 +293,7 @@ export class AudioNormalizationService {
   private calculateSamplePeak(samples: Float32Array): number {
     let max = 0;
     for (let i = 0; i < samples?.length; i++) {
-      const abs = Math?.abs(samples[i]);
+      const abs = Math.abs(samples[i]);
       if (abs > max) max = abs;
     }
     return max || 0.0001;

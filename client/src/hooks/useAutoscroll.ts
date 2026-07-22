@@ -52,7 +52,7 @@ export function useAutoscroll({
           container.scrollLeft = playheadPosition - pageMargin;
           setScrollPosition(container?.scrollLeft);
         } else if (playheadPosition < currentScroll) {
-          container.scrollLeft = Math?.max(0, playheadPosition - pageMargin);
+          container.scrollLeft = Math.max(0, playheadPosition - pageMargin);
           setScrollPosition(container?.scrollLeft);
         }
         break;
@@ -60,7 +60,7 @@ export function useAutoscroll({
 
       case "continuous-centered": {
         const targetScroll = playheadPosition - containerWidth / 2;
-        container.scrollLeft = Math?.max(0, targetScroll);
+        container.scrollLeft = Math.max(0, targetScroll);
         setScrollPosition(container?.scrollLeft);
         break;
       }
@@ -68,7 +68,7 @@ export function useAutoscroll({
       case "continuous-left": {
         const leftMargin = containerWidth * 0.1;
         const targetScroll = playheadPosition - leftMargin;
-        container.scrollLeft = Math?.max(0, targetScroll);
+        container.scrollLeft = Math.max(0, targetScroll);
         setScrollPosition(container?.scrollLeft);
         break;
       }
@@ -118,7 +118,7 @@ export function useAutoscroll({
       if (!containerRef?.current) return;
       const containerWidth = getContainerWidth();
       const position = timeToPixels(time);
-      containerRef.current.scrollLeft = Math?.max(
+      containerRef.current.scrollLeft = Math.max(
         0,
         position - containerWidth / 2,
       );

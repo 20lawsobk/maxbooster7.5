@@ -139,7 +139,7 @@ export interface CrossPlatformResult {
 function streamingVelocity(current: number, previous: number): number {
   if (previous <= 0) return current > 0 ? 15 : 0;
   const growthPct = ((current - previous) / previous) * 100;
-  return Math?.max(0, growthPct);
+  return Math.max(0, growthPct);
 }
 
 class AdvancedAnalyticsService {
@@ -169,7 +169,7 @@ class AdvancedAnalyticsService {
         metadata: row.metadata as Record<string, unknown>,
       }));
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching multi-platform data:");
+      logger.warn({ err: error }, "Error fetching multi-platform data:");
       return [];
     }
   }
@@ -395,7 +395,7 @@ class AdvancedAnalyticsService {
       await db?.insert(playlistJourneys).values(journey);
     }
 
-    logger?.info(
+    logger.info(
       `Tracked playlist journey for track ${data?.trackId} on ${data?.playlistName}`,
     );
   }
@@ -475,7 +475,7 @@ class AdvancedAnalyticsService {
         ),
       );
 
-    const platformData = await this?.fetchMultiPlatformData(
+    const platformData = await this.fetchMultiPlatformData(
       userId,
       startDate,
       endDate,
@@ -508,23 +508,23 @@ class AdvancedAnalyticsService {
         ),
       );
 
-    const streamingScore = Math?.min(
+    const streamingScore = Math.min(
       100,
       (analyticsData?.totalStreams || 0) / 10000,
     );
-    const socialScore = Math?.min(
+    const socialScore = Math.min(
       100,
       (analyticsData?.totalFollowers || 0) / 5000,
     );
     const playlistCount = Number(activePlaylistCount[0]?.count || 0);
-    const playlistScore = Math?.min(100, playlistCount * 8);
+    const playlistScore = Math.min(100, playlistCount * 8);
     const shazamPlatform = platformData?.find((p) => p?.platform === "shazam");
-    const shazamScore = Math?.min(
+    const shazamScore = Math.min(
       100,
       (shazamPlatform?.streams || 0) / 500 + streamingScore * 0.3,
     );
     const radioPlatform = platformData?.find((p) => p?.platform === "radio");
-    const radioScore = Math?.min(
+    const radioScore = Math.min(
       100,
       (radioPlatform?.streams || 0) / 200 + socialScore * 0.4,
     );
@@ -536,9 +536,9 @@ class AdvancedAnalyticsService {
         : currentStreams > 0
           ? 10
           : 0;
-    const viralScore = Math?.min(
+    const viralScore = Math.min(
       100,
-      Math?.max(0, streamingScore * 0.5 + Math?.max(0, growthRate) * 1.5),
+      Math.max(0, streamingScore * 0.5 + Math.max(0, growthRate) * 1.5),
     );
 
     const maxScore =
@@ -551,20 +551,20 @@ class AdvancedAnalyticsService {
 
     const platformScores: Record<string, number> = {};
     platformData?.forEach((p) => {
-      platformScores[p.platform] = Math?.min(100, (p?.streams || 0) / 1000);
+      platformScores[p.platform] = Math.min(100, (p?.streams || 0) / 1000);
     });
 
     const globalRank =
       maxScore > 0
-        ? Math?.max(1, Math?.round(100000 / Math?.max(1, maxScore)))
+        ? Math.max(1, Math.round(100000 / Math.max(1, maxScore)))
         : 99999;
     const genreRank =
       maxScore > 0
-        ? Math?.max(1, Math?.round(5000 / Math?.max(1, maxScore)))
+        ? Math.max(1, Math.round(5000 / Math.max(1, maxScore)))
         : 4999;
     const countryRank =
       maxScore > 0
-        ? Math?.max(1, Math?.round(1000 / Math?.max(1, maxScore)))
+        ? Math.max(1, Math.round(1000 / Math.max(1, maxScore)))
         : 999;
 
     const ranking: InsertGlobalRanking = {
@@ -745,28 +745,28 @@ class AdvancedAnalyticsService {
     const playlistCount = Number(activePlaylistRows[0]?.count || 0);
     const playlistReach = Number(activePlaylistRows[0]?.totalFollowers || 0);
 
-    const growthScore = Math?.min(100, Math?.max(0, growthRate + 50));
+    const growthScore = Math.min(100, Math.max(0, growthRate + 50));
     const engagementScore =
       followerCount > 0
-        ? Math?.min(100, (monthlyListeners / followerCount) * 10)
+        ? Math.min(100, (monthlyListeners / followerCount) * 10)
         : currentStreams > 0
           ? 20
           : 0;
-    const viralityScore = Math?.min(
+    const viralityScore = Math.min(
       100,
-      Math?.max(0, streamingVelocity(currentStreams, prevStreams) * 2),
+      Math.max(0, streamingVelocity(currentStreams, prevStreams) * 2),
     );
-    const audienceQualityScore = Math?.min(
+    const audienceQualityScore = Math.min(
       100,
       followerCount > 0
-        ? Math?.min(100, (currentStreams / Math?.max(1, followerCount)) * 5 + 40)
+        ? Math.min(100, (currentStreams / Math.max(1, followerCount)) * 5 + 40)
         : 40,
     );
-    const playlistPotentialScore = Math?.min(
+    const playlistPotentialScore = Math.min(
       100,
       playlistCount * 15 + (playlistReach > 0 ? 20 : 0),
     );
-    const syncPotentialScore = Math?.min(
+    const syncPotentialScore = Math.min(
       100,
       growthScore * 0.4 + engagementScore * 0.3 + 20,
     );
@@ -779,7 +779,7 @@ class AdvancedAnalyticsService {
       playlistPotentialScore * 0.15 +
       syncPotentialScore * 0.1;
 
-    const signingPotentialScore = Math?.min(
+    const signingPotentialScore = Math.min(
       100,
       overallScore * (growthRate > 20 ? 1.2 : growthRate > 0 ? 1.0 : 0.8),
     );
@@ -937,7 +937,7 @@ class AdvancedAnalyticsService {
           streams: Number(r?.streams),
           percentage:
             totalStreams > 0
-              ? Math?.round((Number(r?.streams) / totalStreams) * 1000) / 10
+              ? Math.round((Number(r?.streams) / totalStreams) * 1000) / 10
               : 0,
         }));
 
@@ -1001,7 +1001,7 @@ class AdvancedAnalyticsService {
           revenue: Number(r?.revenue),
           growth:
             prevMap[r?.platform || ""] > 0
-              ? Math?.round(
+              ? Math.round(
                   ((Number(r?.streams) - prevMap[r?.platform || ""]) /
                     prevMap[r?.platform || ""]) *
                     1000,
@@ -1068,7 +1068,7 @@ class AdvancedAnalyticsService {
         const prevTotal = Number(prev?.total || 0);
         const change =
           prevTotal > 0
-            ? Math?.round(((currentTotal - prevTotal) / prevTotal) * 1000) / 10
+            ? Math.round(((currentTotal - prevTotal) / prevTotal) * 1000) / 10
             : 0;
 
         data = {
@@ -1076,7 +1076,7 @@ class AdvancedAnalyticsService {
           change,
           period: entities.timeframe || "last 30 days",
         };
-        summary = `You have ${currentTotal?.toLocaleString()} total streams in the ${entities?.timeframe || "last 30 days"}${change !== 0 ? `, ${change > 0 ? "up" : "down"} ${Math?.abs(change)}% from the previous period` : ""}`;
+        summary = `You have ${currentTotal?.toLocaleString()} total streams in the ${entities?.timeframe || "last 30 days"}${change !== 0 ? `, ${change > 0 ? "up" : "down"} ${Math.abs(change)}% from the previous period` : ""}`;
       } else if (
         lowerQuery?.includes("revenue") ||
         lowerQuery?.includes("earnings")
@@ -1113,11 +1113,11 @@ class AdvancedAnalyticsService {
         const prevRev = Number(prev?.total || 0);
         const change =
           prevRev > 0
-            ? Math?.round(((currentRev - prevRev) / prevRev) * 1000) / 10
+            ? Math.round(((currentRev - prevRev) / prevRev) * 1000) / 10
             : 0;
 
         data = { value: currentRev, change, currency: "USD" };
-        summary = `Your total revenue is $${currentRev?.toFixed(2)} over the last 30 days${change !== 0 ? `, ${change > 0 ? "up" : "down"} ${Math?.abs(change)}% from the previous period` : ""}`;
+        summary = `Your total revenue is $${currentRev?.toFixed(2)} over the last 30 days${change !== 0 ? `, ${change > 0 ? "up" : "down"} ${Math.abs(change)}% from the previous period` : ""}`;
       } else if (lowerQuery?.includes("playlist")) {
         intent = "playlist_info";
         responseType = "table";
@@ -1183,14 +1183,14 @@ class AdvancedAnalyticsService {
         const lastVal = rows[rows?.length - 1]?.streams || 0;
         const growthRate =
           firstVal > 0
-            ? Math?.round(((lastVal - firstVal) / firstVal) * 1000) / 10
+            ? Math.round(((lastVal - firstVal) / firstVal) * 1000) / 10
             : 0;
         const trend = growthRate > 0 ? "up" : growthRate < 0 ? "down" : "flat";
 
         data = { timeline: rows, trend, growthRate };
         summary =
           rows?.length > 0
-            ? `Your streams are trending ${trend} with a ${Math?.abs(growthRate)}% growth rate over the last 30 days`
+            ? `Your streams are trending ${trend} with a ${Math.abs(growthRate)}% growth rate over the last 30 days`
             : "Insufficient data to determine growth trend";
       } else {
         intent = "general";
@@ -1316,7 +1316,7 @@ class AdvancedAnalyticsService {
 
     const milestones = data
       .filter(
-        (d) => d?.milestones && Object?.keys(d?.milestones as object).length > 0,
+        (d) => d?.milestones && Object.keys(d?.milestones as object).length > 0,
       )
       .map((d) => ({
         date: d.date,
@@ -1380,7 +1380,7 @@ class AdvancedAnalyticsService {
       >,
     );
 
-    return Object?.values(groupedByTrack).map((track) => ({
+    return Object.values(groupedByTrack).map((track) => ({
       ...track,
       totalStreamLift: track.placements.reduce(
         (sum, p) => sum + p?.streamLift,
@@ -1406,7 +1406,7 @@ class AdvancedAnalyticsService {
       ...placement,
       userId,
     });
-    logger?.info(
+    logger.info(
       `Tracked sync placement for track ${placement?.trackId} on ${placement?.mediaTitle}`,
     );
   }
@@ -1499,10 +1499,10 @@ class AdvancedAnalyticsService {
     );
     const audienceOverlap =
       uniqueListeners > 0
-        ? Math?.min(
+        ? Math.min(
             25,
-            Math?.round(
-              (uniqueListeners / Math?.max(totalStreams, 1)) * 20 * 10,
+            Math.round(
+              (uniqueListeners / Math.max(totalStreams, 1)) * 20 * 10,
             ) / 10,
           )
         : 20;
@@ -1537,8 +1537,8 @@ class AdvancedAnalyticsService {
   private calculateTrend(values: number[]): "up" | "down" | "stable" {
     if (values?.length < 2) return "stable";
 
-    const recentHalf = values?.slice(0, Math?.ceil(values?.length / 2));
-    const olderHalf = values?.slice(Math?.ceil(values?.length / 2));
+    const recentHalf = values?.slice(0, Math.ceil(values?.length / 2));
+    const olderHalf = values?.slice(Math.ceil(values?.length / 2));
 
     const recentAvg = recentHalf?.reduce((a, b) => a + b, 0) / recentHalf?.length;
     const olderAvg = olderHalf?.reduce((a, b) => a + b, 0) / olderHalf?.length;

@@ -123,7 +123,7 @@ class ReleaseWorkflowService {
 
       const currentStatus = (release[0].status || "draft") as ReleaseStatus;
 
-      if (!this?.canTransition(currentStatus, targetStatus)) {
+      if (!this.canTransition(currentStatus, targetStatus)) {
         return {
           success: false,
           previousStatus: currentStatus,
@@ -156,7 +156,7 @@ class ReleaseWorkflowService {
         })
         .where(eq(releases?.id, releaseId));
 
-      await this?.createVersionHistoryEntry(
+      await this.createVersionHistoryEntry(
         releaseId,
         userId,
         "status_change",
@@ -165,7 +165,7 @@ class ReleaseWorkflowService {
         options?.reason,
       );
 
-      logger?.info(
+      logger.info(
         `Release ${releaseId} transitioned from ${currentStatus} to ${targetStatus}`,
       );
 
@@ -176,7 +176,7 @@ class ReleaseWorkflowService {
         requestId: request.id,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Error transitioning release:");
+      logger.warn({ err: error }, "Error transitioning release:");
       return {
         success: false,
         previousStatus: "draft",
@@ -190,7 +190,7 @@ class ReleaseWorkflowService {
     releaseId: string,
     userId: string,
   ): Promise<WorkflowTransitionResult> {
-    return this?.transition(
+    return this.transition(
       releaseId,
       userId,
       "pending_review",
@@ -203,7 +203,7 @@ class ReleaseWorkflowService {
     reviewerId: string,
     notes?: string,
   ): Promise<WorkflowTransitionResult> {
-    return this?.transition(releaseId, reviewerId, "approved", "approve", {
+    return this.transition(releaseId, reviewerId, "approved", "approve", {
       reason: notes,
       metadata: { approvedAt: new Date() },
     });
@@ -214,7 +214,7 @@ class ReleaseWorkflowService {
     reviewerId: string,
     reason: string,
   ): Promise<WorkflowTransitionResult> {
-    return this?.transition(releaseId, reviewerId, "rejected", "reject", {
+    return this.transition(releaseId, reviewerId, "rejected", "reject", {
       reason,
       metadata: { rejectedAt: new Date() },
     });
@@ -225,7 +225,7 @@ class ReleaseWorkflowService {
     userId: string,
     scheduledDate: Date,
   ): Promise<WorkflowTransitionResult> {
-    const result = await this?.transition(
+    const result = await this.transition(
       releaseId,
       userId,
       "scheduled",
@@ -251,7 +251,7 @@ class ReleaseWorkflowService {
     releaseId: string,
     userId: string,
   ): Promise<WorkflowTransitionResult> {
-    const processingResult = await this?.transition(
+    const processingResult = await this.transition(
       releaseId,
       userId,
       "processing",
@@ -262,7 +262,7 @@ class ReleaseWorkflowService {
       return processingResult;
     }
 
-    return this?.transition(releaseId, userId, "live", "publish", {
+    return this.transition(releaseId, userId, "live", "publish", {
       metadata: { publishedAt: new Date() },
     });
   }
@@ -270,7 +270,7 @@ class ReleaseWorkflowService {
   async requestTakedown(
     request: TakedownRequest,
   ): Promise<WorkflowTransitionResult> {
-    return this?.transition(
+    return this.transition(
       request?.releaseId,
       request?.userId,
       "takedown_requested",
@@ -290,7 +290,7 @@ class ReleaseWorkflowService {
     releaseId: string,
     adminId: string,
   ): Promise<WorkflowTransitionResult> {
-    return this?.transition(
+    return this.transition(
       releaseId,
       adminId,
       "taken_down",
@@ -304,7 +304,7 @@ class ReleaseWorkflowService {
   async requestUpdate(
     request: UpdateRequest,
   ): Promise<WorkflowTransitionResult> {
-    return this?.transition(
+    return this.transition(
       request?.releaseId,
       request?.userId,
       "update_requested",
@@ -323,7 +323,7 @@ class ReleaseWorkflowService {
     releaseId: string,
     userId: string,
   ): Promise<WorkflowTransitionResult> {
-    const pendingResult = await this?.transition(
+    const pendingResult = await this.transition(
       releaseId,
       userId,
       "update_pending",
@@ -334,7 +334,7 @@ class ReleaseWorkflowService {
       return pendingResult;
     }
 
-    return this?.transition(releaseId, userId, "live", "apply_update", {
+    return this.transition(releaseId, userId, "live", "apply_update", {
       metadata: { updatedAt: new Date() },
     });
   }
@@ -344,7 +344,7 @@ class ReleaseWorkflowService {
     userId: string,
     reason: string,
   ): Promise<WorkflowTransitionResult> {
-    return this?.transition(
+    return this.transition(
       releaseId,
       userId,
       "reinstated",
@@ -361,7 +361,7 @@ class ReleaseWorkflowService {
     userId: string,
     reason?: string,
   ): Promise<WorkflowTransitionResult> {
-    return this?.transition(releaseId, userId, "archived", "archive", {
+    return this.transition(releaseId, userId, "archived", "archive", {
       reason,
     });
   }
@@ -458,7 +458,7 @@ class ReleaseWorkflowService {
         })
         .where(eq(releases?.id, releaseId));
 
-      await this?.createVersionHistoryEntry(
+      await this.createVersionHistoryEntry(
         releaseId,
         userId,
         "metadata_update",
@@ -479,7 +479,7 @@ class ReleaseWorkflowService {
         version: latestVersion[0]?.version || 1,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Error updating release metadata:");
+      logger.warn({ err: error }, "Error updating release metadata:");
       return {
         success: false,
         version: 0,

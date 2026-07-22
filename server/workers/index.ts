@@ -13,11 +13,11 @@ const audioService = new AudioService();
 const csvImportService = new RoyaltiesCSVImportService();
 const anomalyService = new AnalyticsAnomalyService();
 
-if (process?.env.SENDGRID_API_KEY) {
-  sgMail?.setApiKey(process?.env.SENDGRID_API_KEY);
-  logger?.info("✅ SendGrid initialized for email worker");
+if (process.env.SENDGRID_API_KEY) {
+  sgMail?.setApiKey(process.env.SENDGRID_API_KEY);
+  logger.info("✅ SendGrid initialized for email worker");
 } else {
-  logger?.warn(
+  logger.warn(
     "⚠️  SendGrid API key not configured. Email worker will fail to send emails.",
   );
 }
@@ -30,16 +30,16 @@ function checkMemoryUsage(workerName: string): void {
   const now = Date?.now();
   if (now - lastMemoryLog < 30000) return;
   lastMemoryLog = now;
-  const { heapUsed } = process?.memoryUsage();
-  const heapUsedMB = Math?.round(heapUsed / 1024 / 1024);
+  const { heapUsed } = process.memoryUsage();
+  const heapUsedMB = Math.round(heapUsed / 1024 / 1024);
   if (heapUsed > MEMORY_CRITICAL_THRESHOLD) {
-    logger?.warn(`🚨 ${workerName}: CRITICAL memory usage ${heapUsedMB}MB`);
+    logger.warn(`🚨 ${workerName}: CRITICAL memory usage ${heapUsedMB}MB`);
     if (global?.gc) {
-      logger?.info(`🧹 Forcing GC...`);
+      logger.info(`🧹 Forcing GC...`);
       global?.gc();
     }
   } else if (heapUsed > MEMORY_WARNING_THRESHOLD) {
-    logger?.warn(`⚠️  ${workerName}: High memory ${heapUsedMB}MB`);
+    logger.warn(`⚠️  ${workerName}: High memory ${heapUsedMB}MB`);
   }
 }
 
@@ -48,7 +48,7 @@ function workerOpts(concurrency: number) {
   // script costs ~100-300 ms over the network.  Keep concurrency low and add a
   // generous drainDelay so idle workers back off instead of hammering the Lua
   // executor with continuous moveToActive polls.
-  const pdimConcurrency = Math?.min(concurrency, 2);
+  const pdimConcurrency = Math.min(concurrency, 2);
   return {
     connection: newBullMQRedisConnection(),
     concurrency: pdimConcurrency,
@@ -73,7 +73,7 @@ function workerOpts(concurrency: number) {
 function startWorkerSafe(w: Worker, name: string): void {
   setImmediate(() => {
     w?.run().catch((err) =>
-      logger?.warn({ err: err }, `[Worker] ${name} run loop failed:`),
+      logger.warn({ err: err }, `[Worker] ${name} run loop failed:`),
     );
   });
 }
@@ -87,7 +87,7 @@ function createAudioWorker(): Worker {
   const w = new Worker(
     "audio",
     async (job: Job) => {
-      logger?.info(`🎵 Audio job ${job?.id} (${job?.name}) starting...`);
+      logger.info(`🎵 Audio job ${job?.id} (${job?.name}) starting...`);
       checkMemoryUsage("AudioWorker");
       switch (job?.name) {
         case "convert":
@@ -106,9 +106,9 @@ function createAudioWorker(): Worker {
     },
     workerOpts(config?.queue.concurrency?.audio),
   );
-  w?.on("completed", (job) => logger?.info(`✅ Audio job ${job?.id} completed`));
+  w?.on("completed", (job) => logger.info(`✅ Audio job ${job?.id} completed`));
   w?.on("failed", (job, err) =>
-    logger?.warn(`❌ Audio job ${job?.id} failed: ${err?.message}`),
+    logger.warn(`❌ Audio job ${job?.id} failed: ${err?.message}`),
   );
   return w;
 }
@@ -117,15 +117,15 @@ function createCsvWorker(): Worker {
   const w = new Worker(
     "csv",
     async (job: Job) => {
-      logger?.info(`📊 CSV import job ${job?.id} starting...`);
+      logger.info(`📊 CSV import job ${job?.id} starting...`);
       checkMemoryUsage("CSVWorker");
       return csvImportService?.processCSVImport(job?.data as CSVImportJobData);
     },
     workerOpts(config?.queue.concurrency?.csv),
   );
-  w?.on("completed", (job) => logger?.info(`✅ CSV job ${job?.id} completed`));
+  w?.on("completed", (job) => logger.info(`✅ CSV job ${job?.id} completed`));
   w?.on("failed", (job, err) =>
-    logger?.warn(`❌ CSV job ${job?.id} failed: ${err?.message}`),
+    logger.warn(`❌ CSV job ${job?.id} failed: ${err?.message}`),
   );
   return w;
 }
@@ -134,7 +134,7 @@ function createAnalyticsWorker(): Worker {
   const w = new Worker(
     "analytics",
     async (job: Job) => {
-      logger?.info(`📈 Analytics job ${job?.id} (${job?.data.type}) starting...`);
+      logger.info(`📈 Analytics job ${job?.id} (${job?.data.type}) starting...`);
       checkMemoryUsage("AnalyticsWorker");
       switch (job?.data.type) {
         case "anomaly-detection":
@@ -148,10 +148,10 @@ function createAnalyticsWorker(): Worker {
     workerOpts(config?.queue.concurrency?.analytics),
   );
   w?.on("completed", (job) =>
-    logger?.info(`✅ Analytics job ${job?.id} completed`),
+    logger.info(`✅ Analytics job ${job?.id} completed`),
   );
   w?.on("failed", (job, err) =>
-    logger?.warn(`❌ Analytics job ${job?.id} failed: ${err?.message}`),
+    logger.warn(`❌ Analytics job ${job?.id} failed: ${err?.message}`),
   );
   return w;
 }
@@ -161,31 +161,31 @@ function createEmailWorker(): Worker {
     "email",
     async (job: Job) => {
       const { to, subject, html, from } = job?.data as EmailJobData;
-      logger?.info(`📧 Email job ${job?.id} → ${to}`);
+      logger.info(`📧 Email job ${job?.id} → ${to}`);
       checkMemoryUsage("EmailWorker");
 
-      if (!process?.env.RESEND_API_KEY) {
-        logger?.warn("⚠️  Resend not configured, skipping email send");
+      if (!process.env.RESEND_API_KEY) {
+        logger.warn("⚠️  Resend not configured, skipping email send");
         return;
       }
 
-      const resend = new Resend(process?.env.RESEND_API_KEY);
+      const resend = new Resend(process.env.RESEND_API_KEY);
       const fromEmail =
-        from || process?.env.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
+        from || process.env.SENDGRID_FROM_EMAIL || "noreply@max-booster.com";
       await resend?.emails.send({ to, from: fromEmail, subject, html });
-      logger?.info(`✅ Email sent to ${to}`);
+      logger.info(`✅ Email sent to ${to}`);
     },
     workerOpts(config?.queue.concurrency?.email),
   );
-  w?.on("completed", (job) => logger?.info(`✅ Email job ${job?.id} completed`));
+  w?.on("completed", (job) => logger.info(`✅ Email job ${job?.id} completed`));
   w?.on("failed", (job, err) =>
-    logger?.warn(`❌ Email job ${job?.id} failed: ${err?.message}`),
+    logger.warn(`❌ Email job ${job?.id} failed: ${err?.message}`),
   );
   return w;
 }
 
 async function gracefulShutdown(signal: string): Promise<void> {
-  logger?.info(`\n🛑 Received ${signal}, shutting down workers...`);
+  logger.info(`\n🛑 Received ${signal}, shutting down workers...`);
   try {
     await Promise?.all([
       audioWorker?.close(),
@@ -197,26 +197,26 @@ async function gracefulShutdown(signal: string): Promise<void> {
       import("./autonomousWorker.js")
         .then((m) => m?.closeAutonomousWorker())
         .catch((e) =>
-          logger?.warn(
+          logger.warn(
             "[Workers] Failed to close autonomous worker:",
             e?.message,
           ),
         ),
     ]);
-    logger?.info(
+    logger.info(
       "✅ All BullMQ workers closed (audio, csv, analytics, email, autonomous)",
     );
-    process?.exit(0);
+    process.exit(0);
   } catch (error) {
-    logger?.warn({ err: error }, "❌ Error during shutdown:");
-    process?.exit(1);
+    logger.warn({ err: error }, "❌ Error during shutdown:");
+    process.exit(1);
   }
 }
 
-process?.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-process?.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
-process?.on("uncaughtException", (error) => {
+process.on("uncaughtException", (error) => {
   // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors (e?.g. FFmpeg exits mid-render)
   const code = (error as NodeJS.ErrnoException).code;
   if (code === "EPIPE" || code === "ECONNRESET" || code === "ECONNABORTED")
@@ -273,8 +273,8 @@ async function waitForPdimReady(
   maxWaitMs = 130_000,
   retryMs = 2_000,
 ): Promise<void> {
-  const pdimUrl = process?.env.PDIM_HTTP_EXEC_URL;
-  const pdimToken = process?.env.PDIM_BEARER_TOKEN;
+  const pdimUrl = process.env.PDIM_HTTP_EXEC_URL;
+  const pdimToken = process.env.PDIM_BEARER_TOKEN;
   if (!pdimUrl || !pdimToken) return; // no PDIM configured — skip gate
 
   const deadline = Date?.now() + maxWaitMs;
@@ -292,31 +292,31 @@ async function waitForPdimReady(
         body: JSON.stringify({ cmd: "PING", args: [] }),
         signal: AbortSignal.timeout(5_000),
       });
-      if (res?.ok) {
+      if (res.ok) {
         const elapsed = Date?.now() - (deadline - maxWaitMs);
-        logger?.info(
+        logger.info(
           `[Workers] PDIM ready after ${attempt} probe(s) (${elapsed}ms) — starting BullMQ workers`,
         );
         return;
       }
-      logger?.debug(
-        `[Workers] PDIM probe #${attempt}: HTTP ${res?.status} — retrying in ${retryMs}ms`,
+      logger.debug(
+        `[Workers] PDIM probe #${attempt}: HTTP ${res.status} — retrying in ${retryMs}ms`,
       );
     } catch (err) {
-      logger?.debug(
+      logger.debug(
         `[Workers] PDIM probe #${attempt} error: ${(err as Error).message}`,
       );
     }
     await new Promise<void>((r) => setTimeout(r, retryMs));
   }
 
-  logger?.warn(
+  logger.warn(
     `[Workers] PDIM not ready after ${maxWaitMs / 1000}s — starting BullMQ workers anyway`,
   );
 }
 
 export async function initializeWorkers(): Promise<void> {
-  logger?.info(
+  logger.info(
     "🚀 BullMQ workers initializing (Redis-backed, ack + DLQ + retry)...",
   );
 
@@ -327,17 +327,17 @@ export async function initializeWorkers(): Promise<void> {
   analyticsWorker = createAnalyticsWorker();
   emailWorker = createEmailWorker();
 
-  logger?.info(
+  logger.info(
     "📋 Active BullMQ workers (staggered startup — 5s apart after PDIM is ready):",
   );
-  logger?.info(
+  logger.info(
     `   - Audio     (concurrency: ${config?.queue.concurrency?.audio})`,
   );
-  logger?.info(`   - CSV       (concurrency: ${config?.queue.concurrency?.csv})`);
-  logger?.info(
+  logger.info(`   - CSV       (concurrency: ${config?.queue.concurrency?.csv})`);
+  logger.info(
     `   - Analytics (concurrency: ${config?.queue.concurrency?.analytics})`,
   );
-  logger?.info(
+  logger.info(
     `   - Email     (concurrency: ${config?.queue.concurrency?.email})`,
   );
 
@@ -347,7 +347,7 @@ export async function initializeWorkers(): Promise<void> {
     );
     initializeWeeklyInsightsCron();
   } catch (error) {
-    logger?.warn(
+    logger.warn(
       { err: error },
       "⚠️  Could not initialize weekly insights cron:",
     );
@@ -374,13 +374,13 @@ export async function initializeWorkers(): Promise<void> {
   );
   setTimeout(() => startWorkerSafe(emailWorker!, "email"), 3 * STAGGER_MS);
 
-  logger?.info("⏳ BullMQ workers listening for jobs (staggered)...");
+  logger.info("⏳ BullMQ workers listening for jobs (staggered)...");
 }
 
 export async function shutdownWorkers(): Promise<void> {
   await gracefulShutdown("shutdownWorkers");
 }
 
-if (process?.argv[1]?.includes("workers/index")) {
+if (process.argv[1]?.includes("workers/index")) {
   initializeWorkers();
 }

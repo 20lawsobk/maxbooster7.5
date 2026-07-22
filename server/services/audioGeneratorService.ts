@@ -20,7 +20,7 @@ import { logger } from "../logger.js";
 const execFileAsync = promisify(execFile);
 
 function resolveFFmpegPath(): string {
-  if (process?.env.FFMPEG_PATH) return process?.env.FFMPEG_PATH;
+  if (process.env.FFMPEG_PATH) return process.env.FFMPEG_PATH;
   try {
     const p = execFileSync("/bin/sh", ["-c", "which ffmpeg"], { timeout: 3000 })
       .toString()
@@ -42,7 +42,7 @@ function resolveFFmpegPath(): string {
 }
 
 const FFMPEG = resolveFFmpegPath();
-const AUDIO_DIR = path?.join(process?.cwd(), "uploads", "audio");
+const AUDIO_DIR = path?.join(process.cwd(), "uploads", "audio");
 
 interface AudioProfile {
   bass: string;
@@ -302,7 +302,7 @@ export async function generateAudio(
     return { success: false, error: "FFmpeg produced no output file" };
   }
 
-  logger?.info(
+  logger.info(
     `[AudioGen] ✅ ${filename} — ${genre} | ${duration}s | TTS: ${!!voPath}`,
   );
   return {

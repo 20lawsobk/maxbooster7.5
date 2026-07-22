@@ -1178,8 +1178,8 @@ class AlgorithmIntelligenceService {
     }>;
     benchmarks: { userAvg: number; platformAvg: number; topCreators: number };
   }> {
-    const health = await this?.checkAlgorithmHealth(platform, userId);
-    const benchmarks = this?.platformBenchmarks[platform] || {
+    const health = await this.checkAlgorithmHealth(platform, userId);
+    const benchmarks = this.platformBenchmarks[platform] || {
       userAvg: 2.5,
       good: 5.0,
       topCreators: 9.0,
@@ -1262,7 +1262,7 @@ class AlgorithmIntelligenceService {
     followerGrowth: number;
     hashtagReach: number;
   } {
-    const benchmark = this?.platformBenchmarks[platform] || {
+    const benchmark = this.platformBenchmarks[platform] || {
       userAvg: 3.0,
       good: 5.0,
       topCreators: 9.0,
@@ -1281,9 +1281,9 @@ class AlgorithmIntelligenceService {
     const { impressions, engagement, followers, hashtagReach } = recentMetrics;
 
     // Compare recent half vs earlier half for trend
-    const mid = Math?.floor(impressions?.length / 2);
-    const recentImp = this?.calculateAverage(impressions?.slice(mid));
-    const previousImp = this?.calculateAverage(impressions?.slice(0, mid));
+    const mid = Math.floor(impressions?.length / 2);
+    const recentImp = this.calculateAverage(impressions?.slice(mid));
+    const previousImp = this.calculateAverage(impressions?.slice(0, mid));
     const impChange =
       previousImp > 0 ? ((recentImp - previousImp) / previousImp) * 100 : 0;
 
@@ -1291,16 +1291,16 @@ class AlgorithmIntelligenceService {
     if (impChange > 8) reachTrend = "increasing";
     else if (impChange < -8) reachTrend = "declining";
 
-    const totalImp = this?.calculateSum(impressions);
-    const totalEng = this?.calculateSum(engagement);
+    const totalImp = this.calculateSum(impressions);
+    const totalEng = this.calculateSum(engagement);
     const engagementRate =
-      totalImp > 0 ? Math?.round((totalEng / totalImp) * 1000) / 10 : 0;
+      totalImp > 0 ? Math.round((totalEng / totalImp) * 1000) / 10 : 0;
 
     const followerGrowth =
       followers?.length >= 2
-        ? Math?.round(
+        ? Math.round(
             ((followers[followers?.length - 1] - followers[0]) /
-              Math?.max(1, followers[0])) *
+              Math.max(1, followers[0])) *
               1000,
           ) / 10
         : 0;
@@ -1310,8 +1310,8 @@ class AlgorithmIntelligenceService {
       engagementRate,
       impressionRatio: Math.min(
         95,
-        Math?.round(
-          55 + (recentImp / Math?.max(1, totalImp / impressions?.length)) * 20,
+        Math.round(
+          55 + (recentImp / Math.max(1, totalImp / impressions?.length)) * 20,
         ),
       ),
       followerGrowth,
@@ -1325,7 +1325,7 @@ class AlgorithmIntelligenceService {
     _userId: string,
   ): Promise<AlgorithmAlert[]> {
     const alerts: AlgorithmAlert[] = [];
-    const benchmark = this?.platformBenchmarks[platform] || {
+    const benchmark = this.platformBenchmarks[platform] || {
       userAvg: 3.0,
       good: 5.0,
       topCreators: 9.0,
@@ -1373,13 +1373,13 @@ class AlgorithmIntelligenceService {
     }
 
     if (
-      metrics?.hashtagReach < this?.shadowbanIndicators.hashtagVisibilityThreshold
+      metrics?.hashtagReach < this.shadowbanIndicators.hashtagVisibilityThreshold
     ) {
       alerts?.push({
         id: randomBytes(8).toString("hex"),
         type: "shadowban",
         severity: metrics.hashtagReach < 15 ? "critical" : "high",
-        message: `Hashtag visibility at ${Math?.round(metrics?.hashtagReach)}% — possible reach restriction active`,
+        message: `Hashtag visibility at ${Math.round(metrics?.hashtagReach)}% — possible reach restriction active`,
         detectedAt: new Date(),
         suggestedAction:
           "Run full shadowban check and audit hashtag strategy immediately",
@@ -1431,8 +1431,8 @@ class AlgorithmIntelligenceService {
     alerts: AlgorithmAlert[],
   ): string[] {
     const recommendations: string[] = [];
-    const profile = this?.platformAlgorithms[platform];
-    const benchmark = this?.platformBenchmarks[platform] || {
+    const profile = this.platformAlgorithms[platform];
+    const benchmark = this.platformBenchmarks[platform] || {
       userAvg: 3.0,
       good: 5.0,
       topCreators: 9.0,
@@ -1545,7 +1545,7 @@ class AlgorithmIntelligenceService {
     platform: string,
   ): number {
     let score = 65; // Start at 65 (above baseline, room to go both ways)
-    const benchmark = this?.platformBenchmarks[platform] || {
+    const benchmark = this.platformBenchmarks[platform] || {
       userAvg: 3.0,
       good: 5.0,
       topCreators: 9.0,
@@ -1571,7 +1571,7 @@ class AlgorithmIntelligenceService {
     // Hashtag reach
     if (metrics.hashtagReach > 60) score += 6;
     else if (
-      metrics?.hashtagReach < this?.shadowbanIndicators.hashtagVisibilityThreshold
+      metrics?.hashtagReach < this.shadowbanIndicators.hashtagVisibilityThreshold
     )
       score -= 12;
 
@@ -1583,7 +1583,7 @@ class AlgorithmIntelligenceService {
       else score -= 3;
     }
 
-    return Math?.max(0, Math?.min(100, Math?.round(score)));
+    return Math.max(0, Math.min(100, Math.round(score)));
   }
 
   private getRecentPlatformChanges(platform: string): AlgorithmChange[] {
@@ -1768,7 +1768,7 @@ class AlgorithmIntelligenceService {
 
   private calculateAverage(arr: number[]): number {
     if (arr?.length === 0) return 0;
-    return Math?.round((arr?.reduce((a, b) => a + b, 0) / arr?.length) * 10) / 10;
+    return Math.round((arr?.reduce((a, b) => a + b, 0) / arr?.length) * 10) / 10;
   }
 
   private calculateSum(arr: number[]): number {

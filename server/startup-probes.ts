@@ -26,7 +26,7 @@ const __metaUrl = (import.meta as Record<string, unknown>)?.url as
   | undefined;
 const __filename = __metaUrl
   ? fileURLToPath(__metaUrl)
-  : resolve(process?.argv[1] ?? "");
+  : resolve(process.argv[1] ?? "");
 dirname(__filename);
 
 interface ProbeStatus {
@@ -71,10 +71,10 @@ class StartupProbeManager {
     };
 
     // Load deployment phases from capsule loader if available
-    if (process?.env.DEPLOYMENT_PHASES) {
+    if (process.env.DEPLOYMENT_PHASES) {
       try {
-        this.status.deploymentPhases = JSON?.parse(
-          process?.env.DEPLOYMENT_PHASES,
+        this.status.deploymentPhases = JSON.parse(
+          process.env.DEPLOYMENT_PHASES,
         );
       } catch {
         // Ignore parse errors
@@ -94,14 +94,14 @@ class StartupProbeManager {
         this.status.probes.database.lastCheck = new Date();
         this.status.probes.database.latencyMs = Date?.now() - startTime;
         this.status.probes.database.error = undefined;
-        logger?.info(
-          `✅ Database probe ready (attempt ${attempt}, ${this?.status.probes?.database.latencyMs}ms)`,
+        logger.info(
+          `✅ Database probe ready (attempt ${attempt}, ${this.status.probes?.database.latencyMs}ms)`,
         );
         return true;
       } catch (error) {
-        const jitter = Math?.random() * 1000; // 0-1000ms jitter
-        const backoff = Math?.min(
-          1000 * Math?.pow(2, attempt - 1) + jitter,
+        const jitter = Math.random() * 1000; // 0-1000ms jitter
+        const backoff = Math.min(
+          1000 * Math.pow(2, attempt - 1) + jitter,
           30000,
         );
 
@@ -109,8 +109,8 @@ class StartupProbeManager {
           error instanceof Error ? error?.message : String(error);
         this.status.probes.database.lastCheck = new Date();
 
-        logger?.warn(
-          `⚠️ Database probe failed (attempt ${attempt}/${maxRetries}): ${this?.status.probes?.database.error}`,
+        logger.warn(
+          `⚠️ Database probe failed (attempt ${attempt}/${maxRetries}): ${this.status.probes?.database.error}`,
         );
 
         if (attempt < maxRetries) {
@@ -120,7 +120,7 @@ class StartupProbeManager {
     }
 
     this.status.probes.database.status = "failed";
-    logger?.warn("❌ Database probe exhausted all retries");
+    logger.warn("❌ Database probe exhausted all retries");
     return false;
   }
 
@@ -139,8 +139,8 @@ class StartupProbeManager {
       this.status.probes.redis.lastCheck = new Date();
       this.status.probes.redis.latencyMs = Date?.now() - startTime;
       this.status.probes.redis.error = undefined;
-      logger?.info(
-        `✅ PDIM probe ready (${this?.status.probes?.redis.latencyMs}ms)`,
+      logger.info(
+        `✅ PDIM probe ready (${this.status.probes?.redis.latencyMs}ms)`,
       );
       return true;
     } catch (error) {
@@ -148,8 +148,8 @@ class StartupProbeManager {
       this.status.probes.redis.lastCheck = new Date();
       this.status.probes.redis.error =
         error instanceof Error ? error?.message : String(error);
-      logger?.warn(
-        `⚠️ BoosterState probe failed: ${this?.status.probes?.redis.error}`,
+      logger.warn(
+        `⚠️ BoosterState probe failed: ${this.status.probes?.redis.error}`,
       );
       return true;
     }
@@ -165,8 +165,8 @@ class StartupProbeManager {
         this.status.probes.tensorflow.status = "degraded";
         this.status.probes.tensorflow.lastCheck = new Date();
         this.status.probes.tensorflow.error = `Initialization timed out after ${timeoutMs}ms`;
-        logger?.warn(
-          `⚠️ TensorFlow probe: ${this?.status.probes?.tensorflow.error}`,
+        logger.warn(
+          `⚠️ TensorFlow probe: ${this.status.probes?.tensorflow.error}`,
         );
         resolve(true); // Degraded but we continue
       }, timeoutMs);
@@ -322,16 +322,16 @@ export function setupStartupEndpoints(app: import("express").Express): void {
   // in <repo>/server/public/index?.html.  An earlier version of this code used
   // resolve(__dirname, 'public', 'index.html'), which always missed the file
   // and registered an empty `app?.get('/')` handler — causing GET / to return
-  // a zero-byte body in production.  Resolve the path against process?.cwd()
+  // a zero-byte body in production.  Resolve the path against process.cwd()
   // so it works whether we run via tsx (dev), node dist/ (built), or cluster.
   if (isProductionEnv()) {
-    const indexPath = resolve(process?.cwd(), "dist", "public", "index.html");
+    const indexPath = resolve(process.cwd(), "dist", "public", "index.html");
     if (existsSync(indexPath)) {
       const html = readFileSync(indexPath, "utf8");
       app?.get("/", (_req, res) => {
         res.setHeader("Content-Type", "text/html; charset=utf-8");
-        res?.setHeader("Cache-Control", "no-cache");
-        res?.status(200).send(html);
+        res.setHeader("Cache-Control", "no-cache");
+        res.status(200).send(html);
       });
     }
     // If the build is missing entirely, do NOT register a fallback that returns
@@ -346,7 +346,7 @@ export function setupStartupEndpoints(app: import("express").Express): void {
     const status = startupProbes?.getStatus();
     const httpStatus = status?.phase === "failed" ? 503 : 200;
 
-    res?.status(httpStatus).json({
+    res.status(httpStatus).json({
       ...status,
       uptime: startupProbes.getUptimeSeconds(),
       timestamp: new Date().toISOString(),
@@ -355,13 +355,13 @@ export function setupStartupEndpoints(app: import("express").Express): void {
 
   app?.get("/status", (_req, res) => {
     if (startupProbes?.isReady()) {
-      res?.status(200).json({
+      res.status(200).json({
         status: "ok",
         uptime: startupProbes.getUptimeSeconds(),
         timestamp: new Date().toISOString(),
       });
     } else {
-      res?.status(503).json({
+      res.status(503).json({
         status: "starting",
         phase: startupProbes.getStatus().phase,
         timestamp: new Date().toISOString(),
@@ -372,14 +372,14 @@ export function setupStartupEndpoints(app: import("express").Express): void {
   // Override /ready to use probe status
   app?.get("/ready", (_req, res) => {
     if (startupProbes?.isReady()) {
-      res?.status(200).json({
+      res.status(200).json({
         status: "ready",
         phase: startupProbes.getStatus().phase,
         uptime: startupProbes.getUptimeSeconds(),
         timestamp: new Date().toISOString(),
       });
     } else {
-      res?.status(503).json({
+      res.status(503).json({
         status: "not_ready",
         phase: startupProbes.getStatus().phase,
         probes: startupProbes.getStatus().probes,
@@ -392,14 +392,14 @@ export function setupStartupEndpoints(app: import("express").Express): void {
   // Registered before middleware so uptime monitors never hit the middleware chain.
   app?.get("/readyz", (_req, res) => {
     if (startupProbes?.isReady()) {
-      res?.status(200).json({
+      res.status(200).json({
         status: "ready",
         phase: startupProbes.getStatus().phase,
         uptime: startupProbes.getUptimeSeconds(),
         timestamp: new Date().toISOString(),
       });
     } else {
-      res?.status(503).json({
+      res.status(503).json({
         status: "not_ready",
         phase: startupProbes.getStatus().phase,
         probes: startupProbes.getStatus().probes,

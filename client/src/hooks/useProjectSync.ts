@@ -448,20 +448,20 @@ export function useProjectSync(projectId: string | null) {
 
       if (response?.ok) {
         getStoreState().markSaved();
-        logger?.info(
+        logger.info(
           `[ProjectSync] Full DAW state saved for project ${projectId}`,
         );
         invalidateProjectQueries();
         return true;
       } else {
-        logger?.error(
+        logger.error(
           "[ProjectSync] Failed to save full state:",
           await response?.text(),
         );
         return false;
       }
     } catch (error) {
-      logger?.error("[ProjectSync] Failed to save full state:", error);
+      logger.error("[ProjectSync] Failed to save full state:", error);
       return false;
     }
   }, [projectId, getStoreState, serializeFullState, invalidateProjectQueries]);
@@ -476,7 +476,7 @@ export function useProjectSync(projectId: string | null) {
       );
 
       if (!response?.ok) {
-        logger?.error("[ProjectSync] Failed to load DAW state");
+        logger.error("[ProjectSync] Failed to load DAW state");
         return false;
       }
 
@@ -486,7 +486,7 @@ export function useProjectSync(projectId: string | null) {
         try {
           const dawState: SerializedDAWState =
             typeof data?.dawState === "string"
-              ? JSON?.parse(data?.dawState)
+              ? JSON.parse(data?.dawState)
               : data?.dawState;
 
           if (dawState?.version && dawState?.tracks) {
@@ -502,19 +502,19 @@ export function useProjectSync(projectId: string | null) {
             }
 
             store?.markSaved();
-            logger?.info(
+            logger.info(
               `[ProjectSync] Full DAW state loaded for project ${projectId}`,
             );
             return true;
           }
         } catch (parseError) {
-          logger?.error("[ProjectSync] Failed to parse DAW state:", parseError);
+          logger.error("[ProjectSync] Failed to parse DAW state:", parseError);
         }
       }
 
       return false;
     } catch (error) {
-      logger?.error("[ProjectSync] Failed to load full state:", error);
+      logger.error("[ProjectSync] Failed to load full state:", error);
       return false;
     }
   }, [projectId, store, deserializeAndRestoreState]);
@@ -552,7 +552,7 @@ export function useProjectSync(projectId: string | null) {
       () => {
         debouncedSync();
       },
-      { equalityFn: (a, b) => JSON?.stringify(a) === JSON?.stringify(b) },
+      { equalityFn: (a, b) => JSON.stringify(a) === JSON.stringify(b) },
     );
 
     return () => {
@@ -587,7 +587,7 @@ export function useProjectSync(projectId: string | null) {
         }
       }
     } catch (error) {
-      logger?.error("[ProjectSync] Failed to refresh:", error);
+      logger.error("[ProjectSync] Failed to refresh:", error);
     }
   }, [projectId, store]);
 
@@ -601,7 +601,7 @@ export function useProjectSync(projectId: string | null) {
       return true;
     }
 
-    logger?.info(
+    logger.info(
       "[ProjectSync] No DAW state found, falling back to database tracks",
     );
 
@@ -614,7 +614,7 @@ export function useProjectSync(projectId: string | null) {
       ]);
 
       if (!projectRes?.ok || !tracksRes?.ok) {
-        logger?.error("[ProjectSync] Failed to load project data");
+        logger.error("[ProjectSync] Failed to load project data");
         return false;
       }
 
@@ -690,12 +690,12 @@ export function useProjectSync(projectId: string | null) {
       // downloading audio files twice just to check duration.
 
       store?.markSaved();
-      logger?.info(
+      logger.info(
         `[ProjectSync] Loaded project ${projectId} with ${backendTracks?.length} tracks from database`,
       );
       return true;
     } catch (error) {
-      logger?.error("[ProjectSync] Failed to load project data:", error);
+      logger.error("[ProjectSync] Failed to load project data:", error);
       return false;
     }
   }, [projectId, store, loadFullState, getStoreState]);

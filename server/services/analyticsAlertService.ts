@@ -105,40 +105,40 @@ class AnalyticsAlertService {
   private lastAccess: Map<string, number> = new Map();
 
   constructor() {
-    setInterval(() => this?._sweepExpired(), ALERT_USER_TTL_MS).unref();
+    setInterval(() => this._sweepExpired(), ALERT_USER_TTL_MS).unref();
   }
 
   private _sweepExpired(): void {
     const cutoff = Date?.now() - ALERT_USER_TTL_MS;
-    for (const [uid, ts] of this?.lastAccess) {
+    for (const [uid, ts] of this.lastAccess) {
       if (ts < cutoff) {
-        this?.alertStore.delete(uid);
-        this?.triggerCityCache.delete(uid);
-        this?.playlistTracking.delete(uid);
-        this?.lastAccess.delete(uid);
+        this.alertStore.delete(uid);
+        this.triggerCityCache.delete(uid);
+        this.playlistTracking.delete(uid);
+        this.lastAccess.delete(uid);
       }
     }
   }
 
   private _touch(userId: string): void {
-    this?.lastAccess.set(userId, Date?.now());
+    this.lastAccess.set(userId, Date?.now());
   }
 
   private _evictIfFull(): void {
-    if (this?.alertStore.size < ALERT_MAX_USERS) return;
+    if (this.alertStore.size < ALERT_MAX_USERS) return;
     let oldestKey: string | null = null;
     let oldestTime = Infinity;
-    for (const [uid, ts] of this?.lastAccess) {
+    for (const [uid, ts] of this.lastAccess) {
       if (ts < oldestTime) {
         oldestTime = ts;
         oldestKey = uid;
       }
     }
     if (oldestKey) {
-      this?.alertStore.delete(oldestKey);
-      this?.triggerCityCache.delete(oldestKey);
-      this?.playlistTracking.delete(oldestKey);
-      this?.lastAccess.delete(oldestKey);
+      this.alertStore.delete(oldestKey);
+      this.triggerCityCache.delete(oldestKey);
+      this.playlistTracking.delete(oldestKey);
+      this.lastAccess.delete(oldestKey);
     }
   }
 
@@ -163,7 +163,7 @@ class AnalyticsAlertService {
     period: { start: Date; end: Date },
   ): Promise<TriggerCity[]> {
     try {
-      logger?.info(`Detecting trigger cities for user ${userId}`);
+      logger.info(`Detecting trigger cities for user ${userId}`);
 
       const halfPeriod = new Date(
         period?.start.getTime() +
@@ -194,7 +194,7 @@ class AnalyticsAlertService {
       ]);
 
       if (!currentData || currentData?.length === 0) {
-        logger?.info(`No geographic data available for user ${userId}`);
+        logger.info(`No geographic data available for user ${userId}`);
         return [];
       }
 
@@ -260,7 +260,7 @@ class AnalyticsAlertService {
             : data?.streams > 0
               ? 100
               : 0;
-        const isHotspot = growthPercentage >= this?.hotspotThreshold;
+        const isHotspot = growthPercentage >= this.hotspotThreshold;
         const trendDirection =
           growthPercentage > 10
             ? ("rising" as const)
@@ -289,7 +289,7 @@ class AnalyticsAlertService {
       const hotspots = triggerCities?.filter((city) => city?.isHotspot);
 
       for (const city of hotspots) {
-        await this?.createAlert({
+        await this.createAlert({
           userId,
           type: "trigger_city",
           priority:
@@ -304,13 +304,13 @@ class AnalyticsAlertService {
         });
       }
 
-      this?._evictIfFull();
-      this?.triggerCityCache.set(userId, triggerCities);
-      this?._touch(userId);
+      this._evictIfFull();
+      this.triggerCityCache.set(userId, triggerCities);
+      this._touch(userId);
 
       return triggerCities;
     } catch (error) {
-      logger?.warn({ err: error }, "Error detecting trigger cities:");
+      logger.warn({ err: error }, "Error detecting trigger cities:");
       return [];
     }
   }
@@ -321,13 +321,13 @@ class AnalyticsAlertService {
 
   async trackPlaylistChanges(userId: string): Promise<PlaylistChange[]> {
     try {
-      logger?.info(`Tracking playlist changes for user ${userId}`);
-      logger?.info(
+      logger.info(`Tracking playlist changes for user ${userId}`);
+      logger.info(
         "No real playlist tracking integration available. Returning empty results.",
       );
       return [];
     } catch (error) {
-      logger?.warn({ err: error }, "Error tracking playlist changes:");
+      logger.warn({ err: error }, "Error tracking playlist changes:");
       return [];
     }
   }
@@ -342,9 +342,9 @@ class AnalyticsAlertService {
     try {
       const milestones: MilestoneAlert[] = [];
 
-      for (const [metric, value] of Object?.entries(metrics)) {
+      for (const [metric, value] of Object.entries(metrics)) {
         const thresholds =
-          this?.milestoneThresholds[
+          this.milestoneThresholds[
             metric as keyof typeof this.milestoneThresholds
           ];
         if (!thresholds) continue;
@@ -353,7 +353,7 @@ class AnalyticsAlertService {
           if (value >= milestone * 0.9 && value < milestone) {
             const percentageOfMilestone = (value / milestone) * 100;
             const growthRate = 0.05;
-            const estimatedDays = Math?.ceil(
+            const estimatedDays = Math.ceil(
               (milestone - value) / (value * growthRate),
             );
 
@@ -367,7 +367,7 @@ class AnalyticsAlertService {
               estimatedTimeToMilestone: estimatedDays,
             });
 
-            await this?.createAlert({
+            await this.createAlert({
               userId,
               type: "milestone",
               priority: "high",
@@ -383,7 +383,7 @@ class AnalyticsAlertService {
               platform,
             });
           } else if (value >= milestone) {
-            const previousValue = Math?.floor(value * 0.95);
+            const previousValue = Math.floor(value * 0.95);
             if (previousValue < milestone && value >= milestone) {
               milestones?.push({
                 metric,
@@ -395,7 +395,7 @@ class AnalyticsAlertService {
                 estimatedTimeToMilestone: 0,
               });
 
-              await this?.createAlert({
+              await this.createAlert({
                 userId,
                 type: "milestone",
                 priority: "critical",
@@ -411,7 +411,7 @@ class AnalyticsAlertService {
 
       return milestones;
     } catch (error) {
-      logger?.warn({ err: error }, "Error checking milestones:");
+      logger.warn({ err: error }, "Error checking milestones:");
       return [];
     }
   }
@@ -423,15 +423,15 @@ class AnalyticsAlertService {
     previousMetrics: Record<string, number>,
   ): Promise<void> {
     try {
-      for (const [metric, currentValue] of Object?.entries(currentMetrics)) {
+      for (const [metric, currentValue] of Object.entries(currentMetrics)) {
         const previousValue = previousMetrics[metric];
         if (!previousValue || previousValue === 0) continue;
 
         const growthPercentage =
           ((currentValue - previousValue) / previousValue) * 100;
 
-        if (growthPercentage >= this?.growthSpikeThreshold) {
-          await this?.createAlert({
+        if (growthPercentage >= this.growthSpikeThreshold) {
+          await this.createAlert({
             userId,
             type: "growth_spike",
             priority:
@@ -453,8 +453,8 @@ class AnalyticsAlertService {
           });
         }
 
-        if (growthPercentage <= this?.declineWarningThreshold) {
-          await this?.createAlert({
+        if (growthPercentage <= this.declineWarningThreshold) {
+          await this.createAlert({
             userId,
             type: "decline_warning",
             priority:
@@ -464,7 +464,7 @@ class AnalyticsAlertService {
                   ? "high"
                   : "medium",
             title: `📉 Decline Warning: ${metric}`,
-            message: `Your ${metric} on ${platform} decreased by ${Math?.abs(growthPercentage).toFixed(1)}% compared to the previous period. Current: ${currentValue?.toLocaleString()}, Previous: ${previousValue?.toLocaleString()}. Consider reviewing your strategy.`,
+            message: `Your ${metric} on ${platform} decreased by ${Math.abs(growthPercentage).toFixed(1)}% compared to the previous period. Current: ${currentValue?.toLocaleString()}, Previous: ${previousValue?.toLocaleString()}. Consider reviewing your strategy.`,
             data: {
               metric,
               platform,
@@ -477,7 +477,7 @@ class AnalyticsAlertService {
         }
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Error detecting growth anomalies:");
+      logger.warn({ err: error }, "Error detecting growth anomalies:");
     }
   }
 
@@ -488,22 +488,22 @@ class AnalyticsAlertService {
   ): Promise<void> {
     try {
       const viralityScore =
-        (metrics?.shares / Math?.max(metrics?.views, 1)) * 1000 +
+        (metrics?.shares / Math.max(metrics?.views, 1)) * 1000 +
         metrics?.engagementRate;
 
       if (viralityScore > 50 || metrics?.engagementRate > 15) {
-        await this?.createAlert({
+        await this.createAlert({
           userId,
           type: "viral_alert",
           priority: viralityScore > 100 ? "critical" : "high",
           title: `🚀 Viral Content Detected on ${platform}!`,
-          message: `Your content is going viral! Share rate: ${((metrics?.shares / Math?.max(metrics?.views, 1)) * 100).toFixed(2)}%, Engagement: ${metrics?.engagementRate.toFixed(1)}%. Capitalize on this momentum by posting more content and engaging with your audience.`,
+          message: `Your content is going viral! Share rate: ${((metrics?.shares / Math.max(metrics?.views, 1)) * 100).toFixed(2)}%, Engagement: ${metrics?.engagementRate.toFixed(1)}%. Capitalize on this momentum by posting more content and engaging with your audience.`,
           data: { platform, viralityScore, ...metrics },
           platform,
         });
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Error detecting viral content:");
+      logger.warn({ err: error }, "Error detecting viral content:");
     }
   }
 
@@ -580,7 +580,7 @@ class AnalyticsAlertService {
         recommendations,
       };
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "Error generating cross-platform comparison:",
       );
@@ -598,18 +598,18 @@ class AnalyticsAlertService {
       ...alertData,
     };
 
-    this?._evictIfFull();
-    const userAlerts = this?.alertStore.get(alertData?.userId) || [];
+    this._evictIfFull();
+    const userAlerts = this.alertStore.get(alertData?.userId) || [];
     userAlerts?.unshift(alert);
 
     if (userAlerts?.length > ALERT_MAX_PER_USER) {
       userAlerts?.splice(ALERT_MAX_PER_USER);
     }
 
-    this?.alertStore.set(alertData?.userId, userAlerts);
-    this?._touch(alertData?.userId);
+    this.alertStore.set(alertData?.userId, userAlerts);
+    this._touch(alertData?.userId);
 
-    logger?.info(
+    logger.info(
       `Created ${alert?.type} alert for user ${alertData?.userId}: ${alert?.title}`,
     );
 
@@ -625,7 +625,7 @@ class AnalyticsAlertService {
       limit?: number;
     },
   ): Promise<Alert[]> {
-    let alerts = this?.alertStore.get(userId) || [];
+    let alerts = this.alertStore.get(userId) || [];
 
     if (options?.type) {
       alerts = alerts?.filter((a) => a?.type === options?.type);
@@ -644,7 +644,7 @@ class AnalyticsAlertService {
   }
 
   async markAlertAsRead(userId: string, alertId: string): Promise<boolean> {
-    const alerts = this?.alertStore.get(userId);
+    const alerts = this.alertStore.get(userId);
     if (!alerts) return false;
 
     const alert = alerts?.find((a) => a?.id === alertId);
@@ -655,7 +655,7 @@ class AnalyticsAlertService {
   }
 
   async dismissAlert(userId: string, alertId: string): Promise<boolean> {
-    const alerts = this?.alertStore.get(userId);
+    const alerts = this.alertStore.get(userId);
     if (!alerts) return false;
 
     const alert = alerts?.find((a) => a?.id === alertId);
@@ -666,12 +666,12 @@ class AnalyticsAlertService {
   }
 
   async getUnreadCount(userId: string): Promise<number> {
-    const alerts = this?.alertStore.get(userId) || [];
+    const alerts = this.alertStore.get(userId) || [];
     return alerts?.filter((a) => !a?.readAt && !a?.dismissed).length;
   }
 
   async getTriggerCities(userId: string): Promise<TriggerCity[]> {
-    return this?.triggerCityCache.get(userId) || [];
+    return this.triggerCityCache.get(userId) || [];
   }
 
   async getAlertSummary(userId: string): Promise<{
@@ -681,7 +681,7 @@ class AnalyticsAlertService {
     byPriority: Record<AlertPriority, number>;
     recentHighPriority: Alert[];
   }> {
-    const alerts = this?.alertStore.get(userId) || [];
+    const alerts = this.alertStore.get(userId) || [];
 
     const byType: Record<AlertType, number> = {
       milestone: 0,

@@ -13,10 +13,10 @@ async function getSharp() {
   try {
     sharpModule = (await import("sharp")).default;
     _sharpAvailable = true;
-    logger?.info("Sharp module loaded for image processing");
+    logger.info("Sharp module loaded for image processing");
     return sharpModule;
   } catch (error) {
-    logger?.warn(
+    logger.warn(
       `Sharp not available - image processing will be limited: ${error instanceof Error ? error.message : String(error)}`,
     );
     sharpModule = false;
@@ -120,7 +120,7 @@ export async function validateImageFormat(buffer: Buffer): Promise<{
       height: metadata.height,
     };
   } catch (error) {
-    logger?.warn("Image format validation failed", { error });
+    logger.warn("Image format validation failed", { error });
     return { valid: false, error: "Invalid or corrupted image file" };
   }
 }
@@ -143,11 +143,11 @@ export async function processImage(
 
   const categoryLimits = UPLOAD_LIMITS[category];
   if (categoryLimits?.maxDimensions) {
-    options.maxWidth = Math?.min(
+    options.maxWidth = Math.min(
       options?.maxWidth || categoryLimits?.maxDimensions.width,
       categoryLimits?.maxDimensions.width,
     );
-    options.maxHeight = Math?.min(
+    options.maxHeight = Math.min(
       options?.maxHeight || categoryLimits?.maxDimensions.height,
       categoryLimits?.maxDimensions.height,
     );
@@ -178,10 +178,10 @@ export async function processImage(
     ) {
       const widthRatio = options?.maxWidth / originalWidth;
       const heightRatio = options?.maxHeight / originalHeight;
-      const ratio = Math?.min(widthRatio, heightRatio);
+      const ratio = Math.min(widthRatio, heightRatio);
 
-      targetWidth = Math?.round(originalWidth * ratio);
-      targetHeight = Math?.round(originalHeight * ratio);
+      targetWidth = Math.round(originalWidth * ratio);
+      targetHeight = Math.round(originalHeight * ratio);
 
       pipeline = pipeline?.resize(targetWidth, targetHeight, {
         fit: "inside",
@@ -224,7 +224,7 @@ export async function processImage(
     webp: "image/webp",
   };
 
-  logger?.info("Image processed successfully", {
+  logger.info("Image processed successfully", {
     originalSize: buffer.length,
     processedSize: processedBuffer.length,
     originalDimensions: `${originalWidth}x${originalHeight}`,
@@ -254,14 +254,14 @@ export async function stripImageMetadata(buffer: Buffer): Promise<Buffer> {
   try {
     const result = await sharpInstance(buffer).rotate().toBuffer();
 
-    logger?.debug("Image metadata stripped", {
+    logger.debug("Image metadata stripped", {
       originalSize: buffer.length,
       strippedSize: result.length,
     });
 
     return result;
   } catch (error) {
-    logger?.warn("Failed to strip image metadata", { error });
+    logger.warn("Failed to strip image metadata", { error });
     throw new Error("Failed to process image metadata");
   }
 }
@@ -304,7 +304,7 @@ export async function convertToSafeFormat(
       mimeType: mimeTypes[targetFormat],
     };
   } catch (error) {
-    logger?.warn("Failed to convert image format", { error, targetFormat });
+    logger.warn("Failed to convert image format", { error, targetFormat });
     throw new Error(`Failed to convert image to ${targetFormat}`);
   }
 }
@@ -328,7 +328,7 @@ export async function resizeImage(
       })
       .toBuffer();
   } catch (error) {
-    logger?.warn("Failed to resize image", { error, maxWidth, maxHeight });
+    logger.warn("Failed to resize image", { error, maxWidth, maxHeight });
     throw new Error("Failed to resize image");
   }
 }
@@ -348,7 +348,7 @@ export async function getImageDimensions(
     }
     return { width: metadata.width, height: metadata.height };
   } catch (error) {
-    logger?.warn("Failed to get image dimensions", { error });
+    logger.warn("Failed to get image dimensions", { error });
     throw new Error("Failed to get image dimensions");
   }
 }

@@ -85,7 +85,7 @@ export class MediaTranscoder {
     data: Buffer,
     inputExt = ".mp4",
   ): Promise<TranscodeResult> {
-    await this?.checkFfmpeg();
+    await this.checkFfmpeg();
     const tmp = path?.join(os?.tmpdir(), randomBytes(8).toString("hex"));
     const inFile = `${tmp}${inputExt}`;
     const outFile = `${tmp}out.mp4`;
@@ -113,7 +113,7 @@ export class MediaTranscoder {
     data: Buffer,
     inputExt = ".wav",
   ): Promise<TranscodeResult> {
-    await this?.checkFfmpeg();
+    await this.checkFfmpeg();
     const tmp = path?.join(os?.tmpdir(), randomBytes(8).toString("hex"));
     const inFile = `${tmp}${inputExt}`;
     const outFile = `${tmp}out.opus`;
@@ -158,12 +158,12 @@ export class MediaTranscoder {
     originalName: string,
   ): Promise<TranscodeResult | null> {
     const ext =
-      path?.extname(originalName).toLowerCase() || this?.classToExt(contentClass);
+      path?.extname(originalName).toLowerCase() || this.classToExt(contentClass);
 
     try {
-      if (contentClass === "video") return await this?.transcodeVideo(data, ext);
-      if (contentClass === "audio") return await this?.transcodeAudio(data, ext);
-      if (contentClass === "image") return await this?.transcodeImage(data);
+      if (contentClass === "video") return await this.transcodeVideo(data, ext);
+      if (contentClass === "audio") return await this.transcodeAudio(data, ext);
+      if (contentClass === "image") return await this.transcodeImage(data);
     } catch {
       return null;
     }
@@ -179,8 +179,8 @@ export class MediaTranscoder {
   }
 
   private async checkFfmpeg(): Promise<void> {
-    if (this?.ffmpegAvailable === false) throw new Error("ffmpeg not available");
-    if (this?.ffmpegAvailable === null) {
+    if (this.ffmpegAvailable === false) throw new Error("ffmpeg not available");
+    if (this.ffmpegAvailable === null) {
       try {
         await execAsync("ffmpeg -version 2>/dev/null");
         this.ffmpegAvailable = true;

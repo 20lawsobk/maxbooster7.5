@@ -37,14 +37,14 @@ export async function multiTenantRouter(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const host = (req?.headers.host || "").toLowerCase().split(":")[0];
+    const host = (req.headers.host || "").toLowerCase().split(":")[0];
 
     // Always skip: internal hosts, API paths, Vite internals, static assets
     if (
       isInternalHost(host) ||
-      req?.path.startsWith("/api/") ||
-      req?.path.startsWith("/_") ||
-      isStaticAssetPath(req?.path)
+      req.path.startsWith("/api/") ||
+      req.path.startsWith("/_") ||
+      isStaticAssetPath(req.path)
     ) {
       return next();
     }
@@ -78,12 +78,12 @@ export async function multiTenantRouter(
     (req as Record<string, unknown>).storefront = hostRow?.storefront;
     (req as Record<string, unknown>).artist = user ?? null;
 
-    logger?.debug(
+    logger.debug(
       `[multiTenant] Resolved ${host} → storefront ${hostRow?.storefront.id}`,
     );
     next();
   } catch (err) {
-    logger?.warn({ err }, "[multiTenant] Error resolving storefront");
+    logger.warn({ err }, "[multiTenant] Error resolving storefront");
     next();
   }
 }

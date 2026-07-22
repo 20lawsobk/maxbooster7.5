@@ -14,7 +14,7 @@ import { and, eq } from "drizzle-orm";
 const __filename = fileURLToPath(import.meta.url);
 path?.dirname(__filename);
 
-const SITE_URL = process?.env.SITE_URL || "https://max-booster.com";
+const SITE_URL = process.env.SITE_URL || "https://max-booster.com";
 
 interface CacheEntry<T> {
   value: T;

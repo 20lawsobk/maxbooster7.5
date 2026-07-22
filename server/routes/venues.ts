@@ -17,20 +17,20 @@ router?.get("/", requireAuth, async (req, res) => {
     const items = await db
       .select()
       .from(venueContacts)
-      .where(eq(venueContacts?.userId, req?.user!.id))
+      .where(eq(venueContacts?.userId, req.user!.id))
       .orderBy(desc(venueContacts?.createdAt))
       .limit(limit)
       .offset(offset);
-    res?.json(items);
+    res.json(items);
   } catch (error) {
-    logger?.warn({ err: error }, "[Venues] Failed to list:");
-    res?.status(500).json({ error: "Failed to fetch venue contacts" });
+    logger.warn({ err: error }, "[Venues] Failed to list:");
+    res.status(500).json({ error: "Failed to fetch venue contacts" });
   }
 });
 
 router?.get("/stats", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const cacheKey = createCacheKey("stats:venues", userId);
 
     const stats = await queryCache?.getOrCompute(
@@ -56,16 +56,16 @@ router?.get("/stats", requireAuth, async (req, res) => {
           contacted: Number(totals?.contacted),
           booked: Number(totals?.booked),
           declined: Number(totals?.declined),
-          avgCapacity: total > 0 ? Math?.round(totalCapacity / total) : 0,
+          avgCapacity: total > 0 ? Math.round(totalCapacity / total) : 0,
         };
       },
       CACHE_TTL,
     );
 
-    res?.json(stats);
+    res.json(stats);
   } catch (error) {
-    logger?.warn({ err: error }, "[Venues] Failed to fetch stats:");
-    res?.status(500).json({ error: "Failed to fetch stats" });
+    logger.warn({ err: error }, "[Venues] Failed to fetch stats:");
+    res.status(500).json({ error: "Failed to fetch stats" });
   }
 });
 
@@ -76,31 +76,31 @@ router?.get("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
       .from(venueContacts)
       .where(
         and(
-          eq(venueContacts?.id, req?.params.id),
-          eq(venueContacts?.userId, req?.user!.id),
+          eq(venueContacts?.id, req.params.id),
+          eq(venueContacts?.userId, req.user!.id),
         ),
       )
       .limit(1);
     if (!item)
-      return res?.status(404).json({ error: "Venue contact not found" });
-    res?.json(item);
+      return res.status(404).json({ error: "Venue contact not found" });
+    res.json(item);
   } catch (error) {
-    logger?.warn({ err: error }, "[Venues] Failed to fetch venue contact:");
-    res?.status(500).json({ error: "Failed to fetch venue contact" });
+    logger.warn({ err: error }, "[Venues] Failed to fetch venue contact:");
+    res.status(500).json({ error: "Failed to fetch venue contact" });
   }
 });
 
 router?.post("/", requireAuth, async (req, res) => {
   try {
     const data = insertVenueContactSchema?.parse({
-      ...req?.body,
+      ...req.body,
       userId: req.user!.id,
     });
     const [item] = await db?.insert(venueContacts).values(data).returning();
-    await queryCache?.invalidate(createCacheKey("stats:venues", req?.user!.id));
-    res?.status(201).json(item);
+    await queryCache?.invalidate(createCacheKey("stats:venues", req.user!.id));
+    res.status(201).json(item);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "[Venues] Failed to create:");
+    logger.warn({ err: error }, "[Venues] Failed to create:");
     if (error instanceof Error && error?.name === "ZodError") {
       return res
         .status(400)
@@ -109,14 +109,14 @@ router?.post("/", requireAuth, async (req, res) => {
           details: (error as Record<string, unknown>).flatten(),
         });
     }
-    res?.status(500).json({ error: "Failed to create venue contact" });
+    res.status(500).json({ error: "Failed to create venue contact" });
   }
 });
 
 router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { id } = req?.params;
+    const userId = req.user!.id;
+    const { id } = req.params;
 
     const existing = await db
       .select()
@@ -125,19 +125,19 @@ router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
       .limit(1);
 
     if (existing?.length === 0) {
-      return res?.status(404).json({ error: "Venue contact not found" });
+      return res.status(404).json({ error: "Venue contact not found" });
     }
 
-    const data = insertVenueContactSchema?.partial().parse(req?.body);
+    const data = insertVenueContactSchema?.partial().parse(req.body);
     const [item] = await db
       .update(venueContacts)
       .set({ ...data, updatedAt: new Date() })
       .where(and(eq(venueContacts?.id, id), eq(venueContacts?.userId, userId)))
       .returning();
     await queryCache?.invalidate(createCacheKey("stats:venues", userId));
-    res?.json(item);
+    res.json(item);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "[Venues] Failed to update:");
+    logger.warn({ err: error }, "[Venues] Failed to update:");
     if (error instanceof Error && error?.name === "ZodError") {
       return res
         .status(400)
@@ -146,14 +146,14 @@ router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
           details: (error as Record<string, unknown>).flatten(),
         });
     }
-    res?.status(500).json({ error: "Failed to update venue contact" });
+    res.status(500).json({ error: "Failed to update venue contact" });
   }
 });
 
 router?.delete("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { id } = req?.params;
+    const userId = req.user!.id;
+    const { id } = req.params;
 
     const existing = await db
       .select()
@@ -162,17 +162,17 @@ router?.delete("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => 
       .limit(1);
 
     if (existing?.length === 0) {
-      return res?.status(404).json({ error: "Venue contact not found" });
+      return res.status(404).json({ error: "Venue contact not found" });
     }
 
     await db
       .delete(venueContacts)
       .where(and(eq(venueContacts?.id, id), eq(venueContacts?.userId, userId)));
     await queryCache?.invalidate(createCacheKey("stats:venues", userId));
-    res?.json({ success: true });
+    res.json({ success: true });
   } catch (error) {
-    logger?.warn({ err: error }, "[Venues] Failed to delete:");
-    res?.status(500).json({ error: "Failed to delete venue contact" });
+    logger.warn({ err: error }, "[Venues] Failed to delete:");
+    res.status(500).json({ error: "Failed to delete venue contact" });
   }
 });
 

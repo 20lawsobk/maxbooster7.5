@@ -2,12 +2,12 @@ import Stripe from "stripe";
 import { logger } from "../logger.js";
 
 const stripeKey =
-  process?.env.STRIPE_SECRET_KEY || process?.env.TESTING_STRIPE_SECRET_KEY;
+  process.env.STRIPE_SECRET_KEY || process.env.TESTING_STRIPE_SECRET_KEY;
 
 if (!stripeKey || !stripeKey?.startsWith("sk_")) {
-  logger?.warn("⚠️  Stripe setup skipped - invalid API key");
+  logger.warn("⚠️  Stripe setup skipped - invalid API key");
 } else {
-  logger?.info("✅ Initializing Stripe product and price setup...");
+  logger.info("✅ Initializing Stripe product and price setup...");
 }
 
 const stripe =
@@ -30,7 +30,7 @@ export async function ensureStripeProductsAndPrices(): Promise<StripePriceIds> {
   }
 
   if (!stripe) {
-    logger?.warn("⚠️  Stripe not configured - using fallback price IDs");
+    logger.warn("⚠️  Stripe not configured - using fallback price IDs");
     // Return fallback IDs that will fail at payment time (graceful degradation)
     cachedPriceIds = {
       monthly: "price_monthly_placeholder",
@@ -41,7 +41,7 @@ export async function ensureStripeProductsAndPrices(): Promise<StripePriceIds> {
   }
 
   try {
-    logger?.info("🔧 Setting up Stripe products and prices...");
+    logger.info("🔧 Setting up Stripe products and prices...");
 
     // Check if products already exist
     const existingProducts = await stripe?.products.list({ limit: 100 });
@@ -58,9 +58,9 @@ export async function ensureStripeProductsAndPrices(): Promise<StripePriceIds> {
           app: "max-booster",
         },
       });
-      logger?.info("✅ Created Stripe product:", product?.id);
+      logger.info("✅ Created Stripe product:", product?.id);
     } else {
-      logger?.info("✅ Found existing Stripe product:", product?.id);
+      logger.info("✅ Found existing Stripe product:", product?.id);
     }
 
     // Check existing prices for this product
@@ -81,7 +81,7 @@ export async function ensureStripeProductsAndPrices(): Promise<StripePriceIds> {
       );
 
       if (existing) {
-        logger?.info(`✅ Found existing ${type} price:`, existing?.id);
+        logger.info(`✅ Found existing ${type} price:`, existing?.id);
         return existing?.id;
       }
 
@@ -101,7 +101,7 @@ export async function ensureStripeProductsAndPrices(): Promise<StripePriceIds> {
       }
 
       const price = await stripe!.prices?.create(priceParams);
-      logger?.info(`✅ Created ${type} price:`, price?.id, `($${amount})`);
+      logger.info(`✅ Created ${type} price:`, price?.id, `($${amount})`);
       return price?.id;
     };
 
@@ -120,15 +120,15 @@ export async function ensureStripeProductsAndPrices(): Promise<StripePriceIds> {
       lifetime: lifetimePriceId,
     };
 
-    logger?.info("✅ Stripe setup complete:");
-    logger?.info("   Monthly ($49):", monthlyPriceId);
-    logger?.info("   Yearly ($468):", yearlyPriceId);
-    logger?.info("   Lifetime ($699):", lifetimePriceId);
+    logger.info("✅ Stripe setup complete:");
+    logger.info("   Monthly ($49):", monthlyPriceId);
+    logger.info("   Yearly ($468):", yearlyPriceId);
+    logger.info("   Lifetime ($699):", lifetimePriceId);
 
     return cachedPriceIds;
   } catch (error: unknown) {
     const message = error instanceof Error ? error?.message : String(error);
-    logger?.warn("❌ Error setting up Stripe products/prices:", message);
+    logger.warn("❌ Error setting up Stripe products/prices:", message);
     // Do NOT cache placeholder IDs here — Stripe is configured but had a transient
     // error. Leaving cachedPriceIds as null forces a retry on the next call and
     // ensures billing routes surface a clear 500 rather than silently using stale IDs.

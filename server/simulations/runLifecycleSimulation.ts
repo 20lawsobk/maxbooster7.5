@@ -26,14 +26,14 @@ import fs from "fs";
 import path from "path";
 
 async function runQuickSimulation() {
-  logger?.info("\n");
-  logger?.info(
+  logger.info("\n");
+  logger.info(
     "╔══════════════════════════════════════════════════════════════╗",
   );
-  logger?.info(
+  logger.info(
     "║         MAX BOOSTER QUICK SIMULATION (1 Month)               ║",
   );
-  logger?.info(
+  logger.info(
     "╚══════════════════════════════════════════════════════════════╝\n",
   );
 
@@ -49,26 +49,26 @@ async function runQuickSimulation() {
   const result = await simulation?.runSimulation();
 
   // Save results
-  const reportPath = path?.join(process?.cwd(), "SIMULATION_QUICK_RESULTS.md");
+  const reportPath = path?.join(process.cwd(), "SIMULATION_QUICK_RESULTS.md");
   fs?.writeFileSync(reportPath, generateReport(result));
-  logger?.info(`\n📝 Report saved to: ${reportPath}\n`);
+  logger.info(`\n📝 Report saved to: ${reportPath}\n`);
 
   return result?.systemTests.failed === 0;
 }
 
 async function runPeriodSimulation(periodName: string) {
   if (!SIMULATION_PERIODS[periodName as keyof typeof SIMULATION_PERIODS]) {
-    logger?.warn(`Invalid period: ${periodName}`);
-    logger?.warn(`Valid periods: ${Object?.keys(SIMULATION_PERIODS).join(", ")}`);
-    process?.exit(1);
+    logger.warn(`Invalid period: ${periodName}`);
+    logger.warn(`Valid periods: ${Object.keys(SIMULATION_PERIODS).join(", ")}`);
+    process.exit(1);
   }
 
-  logger?.info("\n");
-  logger?.info(
+  logger.info("\n");
+  logger.info(
     "╔══════════════════════════════════════════════════════════════╗",
   );
-  logger?.info(`║         MAX BOOSTER SIMULATION: ${periodName?.padEnd(25)}║`);
-  logger?.info(
+  logger.info(`║         MAX BOOSTER SIMULATION: ${periodName?.padEnd(25)}║`);
+  logger.info(
     "╚══════════════════════════════════════════════════════════════╝\n",
   );
 
@@ -78,21 +78,21 @@ async function runPeriodSimulation(periodName: string) {
   const simulation = new RealLifeSimulationEngine({
     periodName: periodName as keyof typeof SIMULATION_PERIODS,
     daysToSimulate: days,
-    initialUsers: 100 + Math?.floor(days / 30) * 10,
-    initialReleases: 50 + Math?.floor(days / 30) * 5,
+    initialUsers: 100 + Math.floor(days / 30) * 10,
+    initialReleases: 50 + Math.floor(days / 30) * 5,
     seedMoney: 10000 + days * 100,
-    snapshotIntervalDays: Math.max(1, Math?.floor(days / 30)),
+    snapshotIntervalDays: Math.max(1, Math.floor(days / 30)),
   });
 
   const result = await simulation?.runSimulation();
 
   // Save results
   const reportPath = path?.join(
-    process?.cwd(),
+    process.cwd(),
     `SIMULATION_${periodName?.toUpperCase()}_RESULTS.md`,
   );
   fs?.writeFileSync(reportPath, generateReport(result));
-  logger?.info(`\n📝 Report saved to: ${reportPath}\n`);
+  logger.info(`\n📝 Report saved to: ${reportPath}\n`);
 
   return result?.systemTests.failed === 0;
 }
@@ -102,13 +102,13 @@ async function runFullSimulation() {
 
   // Generate comprehensive report
   const reportPath = path?.join(
-    process?.cwd(),
+    process.cwd(),
     "SIMULATION_FULL_LIFECYCLE_RESULTS.md",
   );
   fs?.writeFileSync(reportPath, generateFullReport(results));
-  logger?.info(`\n📝 Full lifecycle report saved to: ${reportPath}\n`);
+  logger.info(`\n📝 Full lifecycle report saved to: ${reportPath}\n`);
 
-  const allPassed = Object?.values(results).every(
+  const allPassed = Object.values(results).every(
     (r) => r?.systemTests.failed === 0,
   );
   return allPassed;
@@ -223,7 +223,7 @@ ${
 }
 
 function generateFullReport(results: Record<string, any>): string {
-  const periods = Object?.entries(results);
+  const periods = Object.entries(results);
   const allPassed = periods?.every(([_, r]) => r?.systemTests?.failed === 0);
 
   let report = `# Max Booster Full Lifecycle Simulation Report
@@ -281,16 +281,16 @@ function generateFullReport(results: Record<string, any>): string {
   report += `### User Growth Over Time
 `;
   for (const s of snapshots) {
-    const bars = "█".repeat(Math?.min(50, Math?.floor(s?.users / 100)));
+    const bars = "█".repeat(Math.min(50, Math.floor(s?.users / 100)));
     report += `${s?.period.padEnd(12)} | ${bars} ${s?.users.toLocaleString()}\n`;
   }
 
   report += `
 ### Revenue Growth Over Time
 `;
-  const maxMRR = Math?.max(...snapshots?.map((s) => s?.mrr));
+  const maxMRR = Math.max(...snapshots?.map((s) => s?.mrr));
   for (const s of snapshots) {
-    const bars = "█".repeat(Math?.min(50, Math?.floor((s?.mrr / maxMRR) * 50)));
+    const bars = "█".repeat(Math.min(50, Math.floor((s?.mrr / maxMRR) * 50)));
     report += `${s?.period.padEnd(12)} | ${bars} $${s?.mrr.toFixed(2)}\n`;
   }
 
@@ -382,7 +382,7 @@ Consider running targeted simulations after fixes to verify improvements.
 }
 
 async function main() {
-  const args = process?.argv.slice(2);
+  const args = process.argv.slice(2);
   const command = args[0] || "quick";
 
   let success = false;
@@ -403,13 +403,13 @@ async function main() {
       case "period":
         const period = args[1];
         if (!period) {
-          logger?.warn(
+          logger.warn(
             "Please specify a period. Example: npm run simulate:period 1_year",
           );
-          logger?.warn(
-            `Available periods: ${Object?.keys(SIMULATION_PERIODS).join(", ")}`,
+          logger.warn(
+            `Available periods: ${Object.keys(SIMULATION_PERIODS).join(", ")}`,
           );
-          process?.exit(1);
+          process.exit(1);
         }
         success = await runPeriodSimulation(period);
         break;
@@ -418,22 +418,22 @@ async function main() {
         if (SIMULATION_PERIODS[command as keyof typeof SIMULATION_PERIODS]) {
           success = await runPeriodSimulation(command);
         } else {
-          logger?.warn(`Unknown command: ${command}`);
-          logger?.warn("Usage:");
-          logger?.warn("  quick     - Run 1-month simulation");
-          logger?.warn("  full      - Run full 50-year lifecycle");
-          logger?.warn(
+          logger.warn(`Unknown command: ${command}`);
+          logger.warn("Usage:");
+          logger.warn("  quick     - Run 1-month simulation");
+          logger.warn("  full      - Run full 50-year lifecycle");
+          logger.warn(
             "  period X  - Run specific period (1_month, 1_year, etc.)",
           );
-          process?.exit(1);
+          process.exit(1);
         }
     }
   } catch (error) {
-    logger?.warn({ err: error }, "Simulation failed:");
-    process?.exit(1);
+    logger.warn({ err: error }, "Simulation failed:");
+    process.exit(1);
   }
 
-  process?.exit(success ? 0 : 1);
+  process.exit(success ? 0 : 1);
 }
 
 main();

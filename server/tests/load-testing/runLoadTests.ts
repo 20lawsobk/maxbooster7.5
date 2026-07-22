@@ -94,7 +94,7 @@ const TEST_SUITES: TestSuite[] = [
 
 async function getAuthCookie(): Promise<string> {
   return new Promise((resolve, reject) => {
-    const postData = JSON?.stringify({});
+    const postData = JSON.stringify({});
 
     const req = http?.request(
       {
@@ -108,7 +108,7 @@ async function getAuthCookie(): Promise<string> {
         },
       },
       (res) => {
-        const cookies = res?.headers["set-cookie"];
+        const cookies = res.headers["set-cookie"];
         if (cookies && cookies?.length > 0) {
           const sessionCookie = cookies?.find((c) => c?.includes("connect.sid"));
           if (sessionCookie) {
@@ -116,33 +116,33 @@ async function getAuthCookie(): Promise<string> {
           }
         }
         let body = "";
-        res?.on("data", (chunk) => (body += chunk));
-        res?.on("end", () => {
-          if (!res?.headers["set-cookie"]) {
+        res.on("data", (chunk) => (body += chunk));
+        res.on("end", () => {
+          if (!res.headers["set-cookie"]) {
             reject(new Error("No session cookie received"));
           }
         });
       },
     );
 
-    req?.on("error", reject);
-    req?.write(postData);
-    req?.end();
+    req.on("error", reject);
+    req.write(postData);
+    req.end();
   });
 }
 
 async function runAllLoadTests(): Promise<void> {
-  logger?.info(
+  logger.info(
     "Max Booster Load Testing Suite - Testing scalability up to 80 BILLION simulated users",
   );
 
   let authCookie = "";
   try {
-    logger?.info("Authenticating...");
+    logger.info("Authenticating...");
     authCookie = await getAuthCookie();
-    logger?.info("Authentication successful");
+    logger.info("Authentication successful");
   } catch (error) {
-    logger?.warn("Failed to authenticate", { error });
+    logger.warn("Failed to authenticate", { error });
     return;
   }
 
@@ -152,7 +152,7 @@ async function runAllLoadTests(): Promise<void> {
   const fixes: string[] = [];
 
   for (const suite of TEST_SUITES) {
-    logger?.info(`Testing: ${suite?.name.toUpperCase()}`, {
+    logger.info(`Testing: ${suite?.name.toUpperCase()}`, {
       endpoint: suite.endpoint,
     });
 
@@ -182,18 +182,18 @@ async function runAllLoadTests(): Promise<void> {
         }
       }
     } catch (error) {
-      logger?.warn(`${suite?.name} test failed`, { error: error.message });
+      logger.warn(`${suite?.name} test failed`, { error: error.message });
       issues?.push(`${suite?.name}: Test execution failed - ${error?.message}`);
     }
   }
 
-  logger?.info("COMPREHENSIVE SCALABILITY REPORT");
+  logger.info("COMPREHENSIVE SCALABILITY REPORT");
 
   for (const [name, results] of allResults?.entries()) {
     const maxResult = results[results?.length - 1];
     const passRate =
       (results?.filter((r) => r?.passed).length / results?.length) * 100;
-    logger?.info(`Endpoint summary: ${name}`, {
+    logger.info(`Endpoint summary: ${name}`, {
       maxTested: `${maxResult?.scale || "N/A"} (${formatNumber(maxResult?.simulatedUsers || 0)} users)`,
       passRate: `${passRate?.toFixed(0)}%`,
       status: maxResult.passed ? "PASSED" : "NEEDS OPTIMIZATION",
@@ -201,10 +201,10 @@ async function runAllLoadTests(): Promise<void> {
   }
 
   if (issues?.length === 0) {
-    logger?.info("No issues detected");
+    logger.info("No issues detected");
   } else {
     const uniqueIssues = [...new Set(issues)];
-    logger?.warn("Identified issues", { issues: uniqueIssues });
+    logger.warn("Identified issues", { issues: uniqueIssues });
   }
 
   const uniqueFixes = [...new Set(fixes)];
@@ -221,19 +221,19 @@ async function runAllLoadTests(): Promise<void> {
     "Implement geo-distributed deployment",
   ];
 
-  logger?.info("Recommended optimizations for 80B scale", {
+  logger.info("Recommended optimizations for 80B scale", {
     recommendations: [...uniqueFixes, ...criticalFixes].slice(0, 15),
   });
 
   const avgThroughput =
-    Array?.from(allResults?.values())
+    Array.from(allResults?.values())
       .map((r) => r[r?.length - 1]?.results?.requestsPerSecond || 0)
       .reduce((a, b) => a + b, 0) / allResults?.size;
 
-  logger?.info("Theoretical capacity analysis for 80 billion users", {
-    currentThroughput: `~${formatNumber(Math?.round(avgThroughput))} req/sec per instance`,
+  logger.info("Theoretical capacity analysis for 80 billion users", {
+    currentThroughput: `~${formatNumber(Math.round(avgThroughput))} req/sec per instance`,
     requiredFor80BDAU: `~${formatNumber(80000000000 / 86400)} req/sec`,
-    instancesNeeded: `~${formatNumber(Math?.ceil(80000000000 / 86400 / avgThroughput))} server instances`,
+    instancesNeeded: `~${formatNumber(Math.ceil(80000000000 / 86400 / avgThroughput))} server instances`,
     recommendedArchitecture: [
       "1000+ Kubernetes pods across 50+ regions",
       "500+ PostgreSQL shards with read replicas",
@@ -243,7 +243,7 @@ async function runAllLoadTests(): Promise<void> {
     ],
   });
 
-  logger?.info("Load testing complete");
+  logger.info("Load testing complete");
 }
 
 function formatNumber(num: number): string {
@@ -255,5 +255,5 @@ function formatNumber(num: number): string {
 }
 
 runAllLoadTests().catch((err) =>
-  logger?.warn("Load test suite failed", { error: err }),
+  logger.warn("Load test suite failed", { error: err }),
 );

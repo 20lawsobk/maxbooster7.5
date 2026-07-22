@@ -17,7 +17,7 @@ const anonChatLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => !!req?.user,
+  skip: (req) => !!req.user,
   message: {
     error: "Too many messages — please sign in or wait before sending again.",
   },
@@ -226,7 +226,7 @@ router.post(
           .where(eq(assistantConversations?.id, conversationId));
       }
 
-      return res?.json({
+      return res.json({
         content: aiResponse.content,
         category: aiResponse.category,
         confidence: aiResponse.confidence,
@@ -237,7 +237,7 @@ router.post(
         assistantMessageId,
       });
     } catch (error) {
-      logger?.warn("[assistant] Error processing chat:", error?.message);
+      logger.warn("[assistant] Error processing chat:", error?.message);
       return res
         .status(500)
         .json({ error: "Failed to process your message. Please try again." });
@@ -249,9 +249,9 @@ router.post(
 // Clears all messages and conversation records for the user.
 router?.delete("/history", async (req: Request, res: Response) => {
   try {
-    const user = req?.user;
+    const user = req.user;
     if (!user) {
-      return res?.status(401).json({ error: "Not authenticated" });
+      return res.status(401).json({ error: "Not authenticated" });
     }
 
     const conversations = await db
@@ -271,10 +271,10 @@ router?.delete("/history", async (req: Request, res: Response) => {
       .delete(assistantConversations)
       .where(eq(assistantConversations?.userId, user?.id));
 
-    return res?.json({ success: true });
+    return res.json({ success: true });
   } catch (error) {
-    logger?.warn("[assistant] Error clearing history:", error?.message);
-    return res?.status(500).json({ error: "Failed to clear history" });
+    logger.warn("[assistant] Error clearing history:", error?.message);
+    return res.status(500).json({ error: "Failed to clear history" });
   }
 });
 

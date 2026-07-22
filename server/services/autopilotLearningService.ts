@@ -69,7 +69,7 @@ class AutopilotLearningService {
       const postingHour = postedAt?.getHours();
       const postingDayOfWeek = postedAt?.getDay();
 
-      const engagementRate = this?.calculateEngagementScore(analytics);
+      const engagementRate = this.calculateEngagementScore(analytics);
 
       const [record] = await db
         .insert(autopilotLearningData)
@@ -96,11 +96,11 @@ class AutopilotLearningService {
         })
         .returning();
 
-      logger?.info(
+      logger.info(
         `Recorded performance for user ${userId} on ${postData?.platform}`,
       );
 
-      await this?.updateInsightsIfNeeded(userId, postData?.platform);
+      await this.updateInsightsIfNeeded(userId, postData?.platform);
 
       // Feed real engagement back to the quality gate so its PDIM threshold
       // and MaxCore training signal adapt to what actually resonated.
@@ -114,16 +114,16 @@ class AutopilotLearningService {
           0, // qualityScore unknown at this point — gate recorded it at publish time
         )
         .catch((err) =>
-          logger?.warn(
+          logger.warn(
             { err: err },
             "[AutopilotLearning] Quality gate feedback skipped (non-fatal):",
           ),
         );
 
       if (engagementRate >= CURRICULUM_TRIGGER_ENGAGEMENT_THRESHOLD) {
-        this?.dispatchCurriculumSessionAsync(engagementRate, postData).catch(
+        this.dispatchCurriculumSessionAsync(engagementRate, postData).catch(
           (err) =>
-            logger?.warn(
+            logger.warn(
               { err: err },
               "[AutopilotLearning] CurriculumTrainer dispatch skipped:",
             ),
@@ -132,7 +132,7 @@ class AutopilotLearningService {
 
       return record?.id;
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to record performance:");
+      logger.warn({ err: error }, "Failed to record performance:");
       throw error;
     }
   }
@@ -147,7 +147,7 @@ class AutopilotLearningService {
       (analytics?.clicks || 0);
 
     const engagementRate = (totalEngagements / impressions) * 100;
-    return Math?.round(engagementRate * 100) / 100;
+    return Math.round(engagementRate * 100) / 100;
   }
 
   async getOptimalPostingTimes(
@@ -187,7 +187,7 @@ class AutopilotLearningService {
           avgEngagement: parseFloat(String(r?.avgEngagement)) || 0,
         }));
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get optimal posting times:");
+      logger.warn({ err: error }, "Failed to get optimal posting times:");
       return [];
     }
   }
@@ -228,7 +228,7 @@ class AutopilotLearningService {
           count: Number(r?.count),
         }));
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "Failed to get top performing content types:",
       );
@@ -284,12 +284,12 @@ class AutopilotLearningService {
       for (const row of populated) {
         const eng = parseFloat(String(row?.avgEngagement)) || 0;
         const relativeWeight = globalAvg > 0 ? eng / globalAvg : 1.0;
-        weights[row.hookType!] = Math?.max(0.5, Math?.min(2.5, relativeWeight));
+        weights[row.hookType!] = Math.max(0.5, Math.min(2.5, relativeWeight));
       }
 
       return weights;
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get content pattern weights:");
+      logger.warn({ err: error }, "Failed to get content pattern weights:");
       return {};
     }
   }
@@ -300,10 +300,10 @@ class AutopilotLearningService {
 
       const [optimalTimes, topContentTypes, patterns, insights] =
         await Promise?.all([
-          this?.getOptimalPostingTimes(userId, "all"),
-          this?.getTopPerformingContentTypes(userId),
-          this?.detectPatterns(userId),
-          this?.getActiveInsights(userId),
+          this.getOptimalPostingTimes(userId, "all"),
+          this.getTopPerformingContentTypes(userId),
+          this.detectPatterns(userId),
+          this.getActiveInsights(userId),
         ]);
 
       if (optimalTimes?.length > 0) {
@@ -375,7 +375,7 @@ class AutopilotLearningService {
 
       return recommendations?.sort((a, b) => a?.priority - b?.priority);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get recommendations:");
+      logger.warn({ err: error }, "Failed to get recommendations:");
       return [];
     }
   }
@@ -419,7 +419,7 @@ class AutopilotLearningService {
           {} as Record<string, number>,
         );
 
-        const topHook = Object?.entries(hookCounts).sort(
+        const topHook = Object.entries(hookCounts).sort(
           (a, b) => b[1] - a[1],
         )[0];
         if (topHook && topHook[1] >= 2) {
@@ -482,7 +482,7 @@ class AutopilotLearningService {
 
         const allHashtags: string[] = [];
         highPerformers?.forEach((d) => {
-          if (Array?.isArray(d?.hashtags)) {
+          if (Array.isArray(d?.hashtags)) {
             allHashtags?.push(...d?.hashtags);
           }
         });
@@ -495,7 +495,7 @@ class AutopilotLearningService {
           {} as Record<string, number>,
         );
 
-        const topHashtags = Object?.entries(hashtagCounts)
+        const topHashtags = Object.entries(hashtagCounts)
           .sort((a, b) => b[1] - a[1])
           .slice(0, 5);
 
@@ -512,7 +512,7 @@ class AutopilotLearningService {
 
       return patterns;
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to detect patterns:");
+      logger.warn({ err: error }, "Failed to detect patterns:");
       return [];
     }
   }
@@ -547,7 +547,7 @@ class AutopilotLearningService {
         total: Number(countResult[0]?.count || 0),
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get performance history:");
+      logger.warn({ err: error }, "Failed to get performance history:");
       return { data: [], total: 0 };
     }
   }
@@ -570,7 +570,7 @@ class AutopilotLearningService {
         )
         .limit(50);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get active insights:");
+      logger.warn({ err: error }, "Failed to get active insights:");
       return [];
     }
   }
@@ -579,10 +579,10 @@ class AutopilotLearningService {
     try {
       const [optimalTimes, topContentTypes, patterns, platformStats] =
         await Promise?.all([
-          this?.getOptimalPostingTimes(userId, "all"),
-          this?.getTopPerformingContentTypes(userId),
-          this?.detectPatterns(userId),
-          this?.getPlatformStatistics(userId),
+          this.getOptimalPostingTimes(userId, "all"),
+          this.getTopPerformingContentTypes(userId),
+          this.detectPatterns(userId),
+          this.getPlatformStatistics(userId),
         ]);
 
       const insights: LearningInsight[] = [];
@@ -629,7 +629,7 @@ class AutopilotLearningService {
 
       return insights;
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get learning insights:");
+      logger.warn({ err: error }, "Failed to get learning insights:");
       return [];
     }
   }
@@ -666,7 +666,7 @@ class AutopilotLearningService {
         postCount: Number(r?.postCount),
       }));
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to get platform statistics:");
+      logger.warn({ err: error }, "Failed to get platform statistics:");
       return [];
     }
   }
@@ -693,7 +693,7 @@ class AutopilotLearningService {
 
       // Regenerate DB insights every 5 new posts once past 10
       if (total >= 10 && total % 5 === 0) {
-        await this?.generateInsights(userId);
+        await this.generateInsights(userId);
       }
 
       // Retrain the Social ML model on real user data every 25 new posts once past 50.
@@ -757,11 +757,11 @@ class AutopilotLearningService {
       await socialModel?.trainOnUserEngagementData(posts);
       await aiModelManager?.saveSocialModel(userId);
 
-      logger?.info(
+      logger.info(
         `[AutopilotLearning] Social AI retrained for user ${userId} — ${posts?.length} real data points (total tracked: ${dataPoints})`,
       );
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         `[AutopilotLearning] Social retraining failed for ${userId}:`,
         err instanceof Error ? err?.message : String(err),
       );
@@ -770,12 +770,12 @@ class AutopilotLearningService {
 
   async generateInsights(userId: string): Promise<void> {
     try {
-      logger?.info(`Generating insights for user ${userId}`);
+      logger.info(`Generating insights for user ${userId}`);
 
       const [optimalTimes, topContentTypes, patterns] = await Promise?.all([
-        this?.getOptimalPostingTimes(userId, "all"),
-        this?.getTopPerformingContentTypes(userId),
-        this?.detectPatterns(userId),
+        this.getOptimalPostingTimes(userId, "all"),
+        this.getTopPerformingContentTypes(userId),
+        this.detectPatterns(userId),
       ]);
 
       await db
@@ -846,12 +846,12 @@ class AutopilotLearningService {
 
       if (insightsToInsert?.length > 0) {
         await db?.insert(autopilotInsights).values(insightsToInsert);
-        logger?.info(
+        logger.info(
           `Generated ${insightsToInsert?.length} insights for user ${userId}`,
         );
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to generate insights:");
+      logger.warn({ err: error }, "Failed to generate insights:");
     }
   }
 

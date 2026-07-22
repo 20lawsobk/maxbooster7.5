@@ -29,8 +29,8 @@ function authRequired(
   res: Record<string, unknown>,
   next: Record<string, unknown>,
 ) {
-  if (!req?.isAuthenticated())
-    return res?.status(401).json({ error: "Unauthorized" });
+  if (!req.isAuthenticated())
+    return res.status(401).json({ error: "Unauthorized" });
   next();
 }
 
@@ -39,11 +39,11 @@ router?.get("/status", async (_req, res) => {
   try {
     const ready = await hnsReady();
     if (!ready) {
-      return res?.json({
+      return res.json({
         ok: false,
         message:
           "HNS node not configured. Set HNS_HOST, HNS_PORT, HNS_API_KEY env vars.",
-        configured: !!process?.env.HNS_API_KEY,
+        configured: !!process.env.HNS_API_KEY,
       });
     }
 
@@ -52,7 +52,7 @@ router?.get("/status", async (_req, res) => {
       hnsClient?.getWalletBalance().catch(() => null),
     ]);
 
-    res?.json({
+    res.json({
       ok: true,
       network: process.env.HNS_NETWORK || "main",
       version: info.version,
@@ -65,51 +65,51 @@ router?.get("/status", async (_req, res) => {
         : null,
     });
   } catch (err) {
-    logger?.warn({ err: err.message }, "[HNS] /status error");
-    res?.status(503).json({ ok: false, error: err.message });
+    logger.warn({ err: err.message }, "[HNS] /status error");
+    res.status(503).json({ ok: false, error: err.message });
   }
 });
 
 // ── Name info ─────────────────────────────────────────────────────────────────
 router?.get("/name/:name", authRequired, async (req, res) => {
   try {
-    const name = req?.params.name?.toLowerCase().replace(/[^a-z0-9-]/g, "");
-    if (!name) return res?.status(400).json({ error: "Invalid name" });
+    const name = req.params.name?.toLowerCase().replace(/[^a-z0-9-]/g, "");
+    if (!name) return res.status(400).json({ error: "Invalid name" });
 
     const [avail, resource] = await Promise?.all([
       hnsClient?.checkAvailability(name),
       hnsClient?.getNameResource(name).catch(() => null),
     ]);
 
-    res?.json({ name, ...avail, resource });
+    res.json({ name, ...avail, resource });
   } catch (err) {
-    logger?.warn({ err: err.message }, "[HNS] /name error");
-    res?.status(500).json({ error: err.message });
+    logger.warn({ err: err.message }, "[HNS] /name error");
+    res.status(500).json({ error: err.message });
   }
 });
 
 // ── Auction list ──────────────────────────────────────────────────────────────
 router?.get("/auctions", authRequired, async (req, res) => {
   try {
-    const userId = (req?.user as Record<string, unknown>).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const auctions = await hnsManager?.listAuctions(userId);
-    res?.json({ auctions });
+    res.json({ auctions });
   } catch (err) {
-    logger?.warn({ err: err.message }, "[HNS] list auctions error");
-    res?.status(500).json({ error: err.message });
+    logger.warn({ err: err.message }, "[HNS] list auctions error");
+    res.status(500).json({ error: err.message });
   }
 });
 
 // ── Auction detail ────────────────────────────────────────────────────────────
 router?.get("/auctions/:id", authRequired, async (req, res) => {
   try {
-    const userId = (req?.user as Record<string, unknown>).id;
-    const auction = await hnsManager?.getAuction(req?.params.id, userId);
-    if (!auction) return res?.status(404).json({ error: "Auction not found" });
-    res?.json({ auction });
+    const userId = (req.user as Record<string, unknown>).id;
+    const auction = await hnsManager?.getAuction(req.params.id, userId);
+    if (!auction) return res.status(404).json({ error: "Auction not found" });
+    res.json({ auction });
   } catch (err) {
-    logger?.warn({ err: err.message }, "[HNS] get auction error");
-    res?.status(500).json({ error: err.message });
+    logger.warn({ err: err.message }, "[HNS] get auction error");
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -130,12 +130,12 @@ const openSchema = z
   });
 
 router?.post("/auctions", authRequired, async (req, res) => {
-  const parsed = openSchema?.safeParse(req?.body);
+  const parsed = openSchema?.safeParse(req.body);
   if (!parsed?.success)
-    return res?.status(400).json({ error: parsed.error.issues });
+    return res.status(400).json({ error: parsed.error.issues });
 
   try {
-    const userId = (req?.user as Record<string, unknown>).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const { name, bidHNS, lockupHNS } = parsed?.data;
     const auction = await hnsManager?.openAuction(
       userId,
@@ -143,34 +143,34 @@ router?.post("/auctions", authRequired, async (req, res) => {
       bidHNS,
       lockupHNS,
     );
-    res?.status(201).json({ auction });
+    res.status(201).json({ auction });
   } catch (err) {
-    logger?.warn({ err: err.message }, "[HNS] open auction error");
-    res?.status(500).json({ error: err.message });
+    logger.warn({ err: err.message }, "[HNS] open auction error");
+    res.status(500).json({ error: err.message });
   }
 });
 
 // ── Place bid ─────────────────────────────────────────────────────────────────
 router?.post("/auctions/:id/bid", authRequired, async (req, res) => {
   try {
-    const userId = (req?.user as Record<string, unknown>).id;
-    const auction = await hnsManager?.placeBid(req?.params.id, userId);
-    res?.json({ auction });
+    const userId = (req.user as Record<string, unknown>).id;
+    const auction = await hnsManager?.placeBid(req.params.id, userId);
+    res.json({ auction });
   } catch (err) {
-    logger?.warn({ err: err.message }, "[HNS] place bid error");
-    res?.status(500).json({ error: err.message });
+    logger.warn({ err: err.message }, "[HNS] place bid error");
+    res.status(500).json({ error: err.message });
   }
 });
 
 // ── Reveal bid ────────────────────────────────────────────────────────────────
 router?.post("/auctions/:id/reveal", authRequired, async (req, res) => {
   try {
-    const userId = (req?.user as Record<string, unknown>).id;
-    const auction = await hnsManager?.revealBid(req?.params.id, userId);
-    res?.json({ auction });
+    const userId = (req.user as Record<string, unknown>).id;
+    const auction = await hnsManager?.revealBid(req.params.id, userId);
+    res.json({ auction });
   } catch (err) {
-    logger?.warn({ err: err.message }, "[HNS] reveal bid error");
-    res?.status(500).json({ error: err.message });
+    logger.warn({ err: err.message }, "[HNS] reveal bid error");
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -182,35 +182,35 @@ const registerSchema = z.object({
 });
 
 router?.post("/auctions/:id/register", authRequired, async (req, res) => {
-  const parsed = registerSchema?.safeParse(req?.body);
+  const parsed = registerSchema?.safeParse(req.body);
   if (!parsed?.success)
-    return res?.status(400).json({ error: parsed.error.issues });
+    return res.status(400).json({ error: parsed.error.issues });
 
   try {
-    const userId = (req?.user as Record<string, unknown>).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const { ns1IP, ns2IP } = parsed?.data;
     const auction = await hnsManager?.registerName(
-      req?.params.id,
+      req.params.id,
       userId,
       ns1IP,
       ns2IP,
     );
-    res?.json({ auction });
+    res.json({ auction });
   } catch (err) {
-    logger?.warn({ err: err.message }, "[HNS] register name error");
-    res?.status(500).json({ error: err.message });
+    logger.warn({ err: err.message }, "[HNS] register name error");
+    res.status(500).json({ error: err.message });
   }
 });
 
 // ── Sync state ────────────────────────────────────────────────────────────────
 router?.post("/auctions/:id/sync", authRequired, async (req, res) => {
   try {
-    const userId = (req?.user as Record<string, unknown>).id;
-    const auction = await hnsManager?.syncState(req?.params.id, userId);
-    res?.json({ auction });
+    const userId = (req.user as Record<string, unknown>).id;
+    const auction = await hnsManager?.syncState(req.params.id, userId);
+    res.json({ auction });
   } catch (err) {
-    logger?.warn({ err: err.message }, "[HNS] sync state error");
-    res?.status(500).json({ error: err.message });
+    logger.warn({ err: err.message }, "[HNS] sync state error");
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -221,7 +221,7 @@ router?.get("/wallet", authRequired, async (_req, res) => {
       hnsClient?.getWalletInfo(),
       hnsClient?.getWalletBalance(),
     ]);
-    res?.json({
+    res.json({
       wallet: process.env.HNS_WALLET || "primary",
       balance: {
         confirmed: (balance?.confirmed / 1_000_000).toFixed(6) + " HNS",
@@ -230,18 +230,18 @@ router?.get("/wallet", authRequired, async (_req, res) => {
       info,
     });
   } catch (err) {
-    logger?.warn({ err: err.message }, "[HNS] wallet error");
-    res?.status(500).json({ error: err.message });
+    logger.warn({ err: err.message }, "[HNS] wallet error");
+    res.status(500).json({ error: err.message });
   }
 });
 
 router?.get("/wallet/address", authRequired, async (_req, res) => {
   try {
     const address = await hnsClient?.getReceiveAddress();
-    res?.json({ address, network: process.env.HNS_NETWORK || "main" });
+    res.json({ address, network: process.env.HNS_NETWORK || "main" });
   } catch (err) {
-    logger?.warn({ err: err.message }, "[HNS] wallet address error");
-    res?.status(500).json({ error: err.message });
+    logger.warn({ err: err.message }, "[HNS] wallet address error");
+    res.status(500).json({ error: err.message });
   }
 });
 

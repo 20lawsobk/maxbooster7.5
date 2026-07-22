@@ -15,7 +15,7 @@ export class MetricsService {
   ): Promise<void> {
     try {
       const now = new Date();
-      const bucketStart = new Date(Math?.floor(now?.getTime() / 60000) * 60000);
+      const bucketStart = new Date(Math.floor(now?.getTime() / 60000) * 60000);
 
       await db
         .insert(systemMetrics)
@@ -45,7 +45,7 @@ export class MetricsService {
           },
         });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Failed to record metric:");
+      logger.warn({ err: error }, "Failed to record metric:");
     }
   }
 
@@ -94,7 +94,7 @@ export class MetricsService {
         maxValue: parseFloat(r?.maxValue || "0"),
       }));
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Failed to get metrics:");
+      logger.warn({ err: error }, "Failed to get metrics:");
       return [];
     }
   }
@@ -106,7 +106,7 @@ export class MetricsService {
     try {
       await db?.insert(alertRules).values(data);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Failed to create alert rule:");
+      logger.warn({ err: error }, "Failed to create alert rule:");
       throw error;
     }
   }
@@ -128,7 +128,7 @@ export class MetricsService {
           endTime?.getTime() - (rule?.durationSecs || 300) * 1000,
         );
 
-        const metrics = await this?.getMetrics(
+        const metrics = await this.getMetrics(
           rule?.metricName,
           startTime,
           endTime,
@@ -148,10 +148,10 @@ export class MetricsService {
             shouldTrigger = latestValue < threshold;
             break;
           case "outside":
-            shouldTrigger = Math?.abs(latestValue) > threshold;
+            shouldTrigger = Math.abs(latestValue) > threshold;
             break;
           case "inside":
-            shouldTrigger = Math?.abs(latestValue) < threshold;
+            shouldTrigger = Math.abs(latestValue) < threshold;
             break;
         }
 
@@ -179,7 +179,7 @@ export class MetricsService {
               },
             });
 
-            logger?.info(
+            logger.info(
               `Alert triggered: ${rule?.name} (${latestValue} ${rule?.condition} ${threshold})`,
             );
           }
@@ -199,7 +199,7 @@ export class MetricsService {
         }
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Failed to evaluate alerts:");
+      logger.warn({ err: error }, "Failed to evaluate alerts:");
     }
   }
 
@@ -220,7 +220,7 @@ export class MetricsService {
 
       return incidents;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Failed to get active incidents:");
+      logger.warn({ err: error }, "Failed to get active incidents:");
       return [];
     }
   }

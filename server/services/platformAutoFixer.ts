@@ -201,14 +201,14 @@ class PlatformAutoFixer extends EventEmitter {
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
 
   start(): void {
-    if (this?.started) return;
+    if (this.started) return;
     this.started = true;
 
     // Intercept log entries for error-rate tracking
-    addLogTransport(this?._logTransport.bind(this));
+    addLogTransport(this._logTransport.bind(this));
 
     // Initial probe after a short warm-up, then adaptive recursive scheduling.
-    setTimeout(() => this?._scheduleNextScan(), 5_000);
+    setTimeout(() => this._scheduleNextScan(), 5_000);
 
     // Daily report — staggered with random jitter so two cluster workers don't log at the same ms.
     const jitterMs = Math.floor(Math.random() * 60_000);
@@ -583,9 +583,9 @@ class PlatformAutoFixer extends EventEmitter {
       // never compete with real traffic for the shared PDIM channel.  Uses the
       // same env-var precedence as PdimRedisClient's constructor.
       const url =
-        process?.env.PDIM_EXEC_URL || process?.env.PDIM_HTTP_EXEC_URL || "";
+        process.env.PDIM_EXEC_URL || process.env.PDIM_HTTP_EXEC_URL || "";
       const token =
-        process?.env.PDIM_EXEC_TOKEN || process?.env.PDIM_BEARER_TOKEN || "";
+        process.env.PDIM_EXEC_TOKEN || process.env.PDIM_BEARER_TOKEN || "";
 
       const pingStart = Date?.now();
       const res = await fetch(url, {
@@ -710,12 +710,12 @@ class PlatformAutoFixer extends EventEmitter {
       }
     }
 
-    return this?.result("pdim", status, Date?.now() - t0, message, details);
+    return this.result("pdim", status, Date?.now() - t0, message, details);
   }
 
   private async probeMemory(): Promise<ProbeResult> {
     const t0 = Date?.now();
-    const mem = process?.memoryUsage();
+    const mem = process.memoryUsage();
     const heapUsed = mem?.heapUsed;
     const heapTotal = mem?.heapTotal;
     const external = mem?.external;
@@ -728,7 +728,7 @@ class PlatformAutoFixer extends EventEmitter {
     const heapRatio = heapUsed / heapLimit;
 
     let status: ProbeStatus = "healthy";
-    let message = `${Math?.round(heapUsed / 1e6)}MB / ${Math?.round(heapLimit / 1e6)}MB heap`;
+    let message = `${Math.round(heapUsed / 1e6)}MB / ${Math.round(heapLimit / 1e6)}MB heap`;
 
     // Use permanently tuned thresholds from registry (tighten over time as memory pressure recurs)
     const heapWarnRatio = permanentFixRegistry?.getHeapWarnRatio();
@@ -736,13 +736,13 @@ class PlatformAutoFixer extends EventEmitter {
 
     if (heapRatio >= heapPatchRatio) {
       status = "critical";
-      message = `Heap critical: ${Math?.round(heapRatio * 100)}% of limit`;
+      message = `Heap critical: ${Math.round(heapRatio * 100)}% of limit`;
     } else if (heapRatio >= heapWarnRatio) {
       status = "degraded";
-      message = `Heap pressure: ${Math?.round(heapRatio * 100)}% of limit`;
+      message = `Heap pressure: ${Math.round(heapRatio * 100)}% of limit`;
     }
 
-    return this?.result("memory", status, Date?.now() - t0, message, {
+    return this.result("memory", status, Date?.now() - t0, message, {
       heapUsedMB: Math.round(heapUsed / 1e6),
       heapTotalMB: Math.round(heapTotal / 1e6),
       heapLimitMB: Math.round(heapLimit / 1e6),
@@ -771,7 +771,7 @@ class PlatformAutoFixer extends EventEmitter {
       // causing transient queued≥3.  That is not overload — suppress the
       // degraded/critical rating for the duration of the registration window
       // so the probe does not emit a false WARN.
-      const inBootGraceL = Date?.now() - this?._bootTs < 120_000;
+      const inBootGraceL = Date?.now() - this._bootTs < 120_000;
       if (isLuaRegistrationMode()) {
         message = `${stats?.active}/${stats?.max} slots active, ${stats?.queued} queued (registration in progress)`;
       } else if (inBootGraceL) {
@@ -797,7 +797,7 @@ class PlatformAutoFixer extends EventEmitter {
       message = "LuaExecutor probe unavailable";
     }
 
-    return this?.result(
+    return this.result(
       "lua_executor",
       status,
       Date?.now() - t0,
@@ -814,7 +814,7 @@ class PlatformAutoFixer extends EventEmitter {
 
     try {
       // Check queue log error accumulation
-      const queueErrors = this?.logErrorCounts.get("queues") ?? 0;
+      const queueErrors = this.logErrorCounts.get("queues") ?? 0;
       details = { loggedQueueErrors: queueErrors };
 
       if (queueErrors > 50) {
@@ -828,7 +828,7 @@ class PlatformAutoFixer extends EventEmitter {
       }
 
       // Reset counter after reading
-      this?.logErrorCounts.set("queues", 0);
+      this.logErrorCounts.set("queues", 0);
 
       // Also probe the PDIM chain queue depth — high depth means all BullMQ Lua
       // script calls are stalling behind the AIMD serialisation gate.
@@ -846,7 +846,7 @@ class PlatformAutoFixer extends EventEmitter {
             pdimChainQueueDepth: pdimQueue,
             pdimGapMs: pdimGap,
           };
-          const inBootGrace = Date?.now() - this?._bootTs < 120_000;
+          const inBootGrace = Date?.now() - this._bootTs < 120_000;
           let inRegistration = false;
           try {
             const { isLuaRegistrationMode } = await import(
@@ -874,7 +874,7 @@ class PlatformAutoFixer extends EventEmitter {
       message = "Queue probe unavailable";
     }
 
-    return this?.result("queues", status, Date?.now() - t0, message, details);
+    return this.result("queues", status, Date?.now() - t0, message, details);
   }
 
   private async probeRoutes(): Promise<ProbeResult> {
@@ -892,7 +892,7 @@ class PlatformAutoFixer extends EventEmitter {
 
       const rate =
         entry?.total > 0
-          ? entry?.timestamps.length / Math?.min(entry?.total, 100)
+          ? entry?.timestamps.length / Math.min(entry?.total, 100)
           : 0;
       if (rate >= ROUTE_ERROR_THRESHOLD && entry?.timestamps.length >= 3) {
         entry.degraded = true;
@@ -914,7 +914,7 @@ class PlatformAutoFixer extends EventEmitter {
         ? `${degradedRoutes?.length} route(s) degraded (>20% 5xx): ${degradedRoutes?.slice(0, 3).join(", ")}`
         : `${totalReqs} total reqs tracked, ${totalErrs} errors`;
 
-    return this?.result("routes", status, Date?.now() - t0, message, {
+    return this.result("routes", status, Date?.now() - t0, message, {
       degradedRoutes,
       totalRequests: totalReqs,
       totalErrors: totalErrs,
@@ -969,7 +969,7 @@ class PlatformAutoFixer extends EventEmitter {
         // 5s and generating noise in the health dashboard.
         status = "unknown";
         message = `Session probe timed out (likely Neon cold-start reconnect)`;
-        details = { error: msg, uptimeSec: Math.round(process?.uptime()) };
+        details = { error: msg, uptimeSec: Math.round(process.uptime()) };
       } else {
         status = "degraded";
         message = `Session probe failed: ${msg}`;
@@ -977,7 +977,7 @@ class PlatformAutoFixer extends EventEmitter {
       }
     }
 
-    return this?.result("sessions", status, Date?.now() - t0, message, details);
+    return this.result("sessions", status, Date?.now() - t0, message, details);
   }
 
   private async probeEntropy(): Promise<ProbeResult> {
@@ -988,8 +988,8 @@ class PlatformAutoFixer extends EventEmitter {
 
     try {
       // 1. Check system uptime (very long uptimes can accumulate subtle leaks)
-      const uptimeHours = process?.uptime() / 3600;
-      details.uptimeHours = Math?.round(uptimeHours * 10) / 10;
+      const uptimeHours = process.uptime() / 3600;
+      details.uptimeHours = Math.round(uptimeHours * 10) / 10;
 
       // 2. Check open file descriptor count via /proc/self/fd (Linux only)
       try {
@@ -1023,29 +1023,29 @@ class PlatformAutoFixer extends EventEmitter {
       }
 
       // 4. RSS growth check — if RSS > 2× heap limit, we have external memory pressure
-      const mem = process?.memoryUsage();
+      const mem = process.memoryUsage();
       const rssMB = mem?.rss / 1e6;
       const heapLimitMB =
         (await import("v8")).getHeapStatistics().heap_size_limit / 1e6;
-      details.rssMB = Math?.round(rssMB);
-      details.heapLimitMB = Math?.round(heapLimitMB);
+      details.rssMB = Math.round(rssMB);
+      details.heapLimitMB = Math.round(heapLimitMB);
       if (rssMB > heapLimitMB * 2) {
         status = status === "healthy" ? "degraded" : status;
         message =
           message === "OK"
-            ? `RSS (${Math?.round(rssMB)}MB) >> heap limit (${Math?.round(heapLimitMB)}MB) — possible native memory leak`
+            ? `RSS (${Math.round(rssMB)}MB) >> heap limit (${Math.round(heapLimitMB)}MB) — possible native memory leak`
             : message;
       }
 
       if (status === "healthy") {
-        message = `entropy OK (${Math?.round(uptimeHours)}h uptime, ${details?.openFds ?? "n/a"} FDs, ${Math?.round(rssMB)}MB RSS)`;
+        message = `entropy OK (${Math.round(uptimeHours)}h uptime, ${details?.openFds ?? "n/a"} FDs, ${Math.round(rssMB)}MB RSS)`;
       }
     } catch (err) {
       status = "unknown";
       message = `Entropy probe error: ${err?.message}`;
     }
 
-    return this?.result("entropy", status, Date?.now() - t0, message, details);
+    return this.result("entropy", status, Date?.now() - t0, message, details);
   }
 
   // ─── Result builder ─────────────────────────────────────────────────────────
@@ -1065,7 +1065,7 @@ class PlatformAutoFixer extends EventEmitter {
       probedAt: Date.now(),
       message,
     };
-    this?.probeResults.set(subsystem, result);
+    this.probeResults.set(subsystem, result);
     return result;
   }
 
@@ -1076,9 +1076,9 @@ class PlatformAutoFixer extends EventEmitter {
 
     if (status === "healthy" || status === "unknown") {
       // Auto-revert patches for subsystems that recovered
-      for (const patch of this?.patches.values()) {
+      for (const patch of this.patches.values()) {
         if (patch?.subsystem === subsystem && patch?.status === "active") {
-          this?.revertPatch(patch?.id, "auto — subsystem recovered");
+          this.revertPatch(patch?.id, "auto — subsystem recovered");
         }
       }
       return;
@@ -1088,14 +1088,14 @@ class PlatformAutoFixer extends EventEmitter {
     // Cooldown is 5 min: chronic PDIM-congestion / queue-stall states can persist
     // for many minutes; the 1-min window caused a warn every probe cycle.
     const key = `${subsystem}:${status}`;
-    const last = this?.logErrorCounts.get(`probe:${key}`) ?? 0;
+    const last = this.logErrorCounts.get(`probe:${key}`) ?? 0;
     const now = Date?.now();
     const cooldownMs = status === "critical" ? 120_000 : 300_000; // 2 min critical, 5 min degraded
     if (now - last > cooldownMs) {
-      logger?.warn(
+      logger.warn(
         `[PlatformAutoFixer] ${subsystem} ${status}: ${result?.message}`,
       );
-      this?.logErrorCounts.set(`probe:${key}`, now);
+      this.logErrorCounts.set(`probe:${key}`, now);
     }
 
     // Apply patches based on subsystem and status
@@ -1104,14 +1104,14 @@ class PlatformAutoFixer extends EventEmitter {
         (result?.details as Record<string, unknown>)?.heapRatio ?? 0;
 
       // Read live thresholds from permanentFixRegistry (permanently tuned over time)
-      const warnPct = Math?.round(permanentFixRegistry?.getHeapWarnRatio() * 100);
-      const patchPct = Math?.round(
+      const warnPct = Math.round(permanentFixRegistry?.getHeapWarnRatio() * 100);
+      const patchPct = Math.round(
         permanentFixRegistry?.getHeapPatchRatio() * 100,
       );
 
       if (status === "degraded" && heapRatio >= warnPct) {
         // Tier 1: warn + GC only
-        this?.applyPatch({
+        this.applyPatch({
           subsystem: "memory",
           name: "Memory pressure — GC",
           description: `Heap at ${heapRatio}% — running garbage collection`,
@@ -1120,8 +1120,8 @@ class PlatformAutoFixer extends EventEmitter {
           action: async () => {
             if (typeof global?.gc === "function") {
               global?.gc();
-              const after = Math?.round(process?.memoryUsage().heapUsed / 1e6);
-              logger?.info(
+              const after = Math.round(process.memoryUsage().heapUsed / 1e6);
+              logger.info(
                 `[PlatformAutoFixer] GC triggered (heap ${heapRatio}%) — heap now ${after}MB`,
               );
             }
@@ -1131,7 +1131,7 @@ class PlatformAutoFixer extends EventEmitter {
 
       if (status === "critical" && heapRatio >= patchPct) {
         // Tier 2: GC + cache eviction
-        this?.applyPatch({
+        this.applyPatch({
           subsystem: "memory",
           name: "Memory critical — GC + cache eviction",
           description: `Heap at ${heapRatio}% — GC + evicting expired cache entries`,
@@ -1146,7 +1146,7 @@ class PlatformAutoFixer extends EventEmitter {
               await (
                 distributedCache as Record<string, unknown>
               )?.evictExpired?.();
-              logger?.info(
+              logger.info(
                 `[PlatformAutoFixer] Heap critical (${heapRatio}%) — GC + cache eviction complete`,
               );
             } catch {
@@ -1157,7 +1157,7 @@ class PlatformAutoFixer extends EventEmitter {
 
         // Tier 3: if truly extreme (>= 96%), also flush the full cache
         if (heapRatio >= 96) {
-          this?.applyPatch({
+          this.applyPatch({
             subsystem: "memory",
             name: "Memory extreme — cache flush",
             description: `Heap at ${heapRatio}% — flushing entire distributed cache to recover memory`,
@@ -1169,7 +1169,7 @@ class PlatformAutoFixer extends EventEmitter {
                   "./distributedCacheService.js"
                 );
                 await (distributedCache as Record<string, unknown>)?.flush?.();
-                logger?.warn(
+                logger.warn(
                   `[PlatformAutoFixer] EXTREME heap pressure (${heapRatio}%) — full cache flush executed`,
                 );
               } catch {
@@ -1182,7 +1182,7 @@ class PlatformAutoFixer extends EventEmitter {
     }
 
     if (subsystem === "lua_executor" && status === "critical") {
-      this?.applyPatch({
+      this.applyPatch({
         subsystem: "lua_executor",
         name: "Reset LuaExecutor semaphore",
         description:
@@ -1194,7 +1194,7 @@ class PlatformAutoFixer extends EventEmitter {
             "../lib/luaExecutor.js"
           );
           const released = resetLuaExecutorSemaphore();
-          logger?.info(
+          logger.info(
             `[PlatformAutoFixer] LuaExecutor semaphore reset — released ${released} slot(s)`,
           );
         },
@@ -1210,7 +1210,7 @@ class PlatformAutoFixer extends EventEmitter {
     // correctly; no manual gap raise is needed for high-queue-depth situations.
 
     if (subsystem === "database" && status === "critical") {
-      this?.applyPatch({
+      this.applyPatch({
         subsystem: "database",
         name: "DB pool pressure alert",
         description:
@@ -1218,10 +1218,10 @@ class PlatformAutoFixer extends EventEmitter {
         triggeredBy: result.message,
         runtimeEffect: "Admin notified; idle connections pruned",
         action: async () => {
-          logger?.warn(
+          logger.warn(
             `[PlatformAutoFixer] DB POOL CRITICAL: ${result?.message} — admin action may be required`,
           );
-          this?.openIncident(
+          this.openIncident(
             "DB pool exhausted",
             "critical",
             ["database"],
@@ -1235,7 +1235,7 @@ class PlatformAutoFixer extends EventEmitter {
       const details = result?.details as { degradedRoutes?: string[] };
       const badRoutes = details?.degradedRoutes ?? [];
       if (badRoutes?.length > 0) {
-        this?.openIncident(
+        this.openIncident(
           `Route degradation: ${badRoutes?.slice(0, 2).join(", ")}`,
           status === "critical" ? "high" : "medium",
           ["routes"],
@@ -1245,7 +1245,7 @@ class PlatformAutoFixer extends EventEmitter {
     }
 
     if (subsystem === "sessions" && status === "critical") {
-      this?.applyPatch({
+      this.applyPatch({
         subsystem: "sessions",
         name: "Session store reconnect",
         description: "Session store failing — attempting DB pool reconnect",
@@ -1255,11 +1255,11 @@ class PlatformAutoFixer extends EventEmitter {
           try {
             const { pool } = await import("../db.js");
             await pool?.query("SELECT 1");
-            logger?.info(
+            logger.info(
               "[PlatformAutoFixer] Session store ping recovered after critical failure",
             );
           } catch (err) {
-            logger?.warn(
+            logger.warn(
               "[PlatformAutoFixer] Session store reconnect failed:",
               err?.message,
             );
@@ -1273,7 +1273,7 @@ class PlatformAutoFixer extends EventEmitter {
       // these require investigation.  But we log a detailed alert for visibility.
       const details = result?.details as Record<string, unknown>;
       if (status === "critical") {
-        this?.openIncident(
+        this.openIncident(
           `Entropy critical: ${result?.message}`,
           "high",
           ["entropy"],
@@ -1454,7 +1454,7 @@ class PlatformAutoFixer extends EventEmitter {
   ): void {
     // Don't re-open the same incident within 5 min
     const now = Date?.now();
-    const duplicate = this?.incidents.find(
+    const duplicate = this.incidents.find(
       (i) =>
         !i?.resolvedAt && i?.title === title && now - i?.openedAt < 5 * 60_000,
     );
@@ -1473,11 +1473,11 @@ class PlatformAutoFixer extends EventEmitter {
       events: [details],
     };
 
-    this?.incidents.unshift(incident);
-    if (this?.incidents.length > MAX_INCIDENTS) this?.incidents.pop();
+    this.incidents.unshift(incident);
+    if (this.incidents.length > MAX_INCIDENTS) this.incidents.pop();
 
-    logger?.warn(`[PlatformAutoFixer] Incident opened [${severity}]: ${title}`);
-    this?.emit("incident:opened", incident);
+    logger.warn(`[PlatformAutoFixer] Incident opened [${severity}]: ${title}`);
+    this.emit("incident:opened", incident);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1501,10 +1501,10 @@ class PlatformAutoFixer extends EventEmitter {
   private async _runOffensiveSweep(): Promise<void> {
     this._lastOffensiveSweepAt = Date?.now();
     await Promise?.allSettled([
-      this?._forecastThreatTrajectory(),
-      this?._adversarialStressProbe(),
-      this?._probeMemoryGrowthRate(),
-      this?._sweepRouteAttackSurface(),
+      this._forecastThreatTrajectory(),
+      this._adversarialStressProbe(),
+      this._probeMemoryGrowthRate(),
+      this._sweepRouteAttackSurface(),
     ]);
   }
 
@@ -1543,13 +1543,13 @@ class PlatformAutoFixer extends EventEmitter {
     const currentScore = scores[scores?.length - 1];
     if (slope <= 0 || currentScore <= 0) {
       // Improving or stable — clear forecasts
-      this?._forecasts.clear();
+      this._forecasts.clear();
       return;
     }
 
-    const scansToThreshold = Math?.max(0, (6 - currentScore) / slope);
-    const msPerScan = this?.currentProbeIntervalMs;
-    const estMsToCritical = Math?.round(scansToThreshold * msPerScan);
+    const scansToThreshold = Math.max(0, (6 - currentScore) / slope);
+    const msPerScan = this.currentProbeIntervalMs;
+    const estMsToCritical = Math.round(scansToThreshold * msPerScan);
 
     const FIVE_MINUTES_MS = 5 * 60_000;
     const THREE_MINUTES_MS = 3 * 60_000;
@@ -1560,11 +1560,11 @@ class PlatformAutoFixer extends EventEmitter {
       // trajectory forecaster fires every probe scan (5s in critical mode),
       // which would produce dozens of identical WARNs per incident window.
       const now2 = Date?.now();
-      if (now2 - this?._threatTrajectoryLastWarn >= TWO_MINUTES_MS) {
+      if (now2 - this._threatTrajectoryLastWarn >= TWO_MINUTES_MS) {
         this._threatTrajectoryLastWarn = now2;
-        logger?.warn(
+        logger.warn(
           `[PlatformAutoFixer] 🎯 OFFENSIVE: Threat trajectory detected — ` +
-            `full-critical state projected in ~${Math?.round((estMsToCritical / 60_000) * 10) / 10} min ` +
+            `full-critical state projected in ~${Math.round((estMsToCritical / 60_000) * 10) / 10} min ` +
             `(slope=${slope.toFixed(2)} score-units/scan, current=${currentScore}). Pre-emptive action triggered.`,
         );
       }
@@ -1581,10 +1581,10 @@ class PlatformAutoFixer extends EventEmitter {
       }
 
       // Record forecast for visibility
-      for (const name of this?.probeResults.keys()) {
-        const r = this?.probeResults.get(name)!;
+      for (const name of this.probeResults.keys()) {
+        const r = this.probeResults.get(name)!;
         if (r?.status === "degraded" || r?.status === "healthy") {
-          this?._forecasts.set(name, { estMsToCritical, forecastedAt: now });
+          this._forecasts.set(name, { estMsToCritical, forecastedAt: now });
         }
       }
 
@@ -1665,7 +1665,7 @@ class PlatformAutoFixer extends EventEmitter {
       const latency = Date?.now() - t0;
       if (latency > STRESS_TIMEOUT_MS * 0.75) {
         // Borderline — close to the stress limit
-        logger?.info(
+        logger.info(
           `[PlatformAutoFixer] 🎯 OFFENSIVE: DB stress probe borderline (${latency}ms / ${STRESS_TIMEOUT_MS}ms budget). ` +
             `Pre-warming connection pool.`,
         );
@@ -1677,10 +1677,10 @@ class PlatformAutoFixer extends EventEmitter {
       }
     } catch {
       // DB failed the stress probe — apply the same patch as a degraded DB probe would
-      logger?.warn(
+      logger.warn(
         "[PlatformAutoFixer] 🎯 OFFENSIVE: DB failed adversarial stress probe — pre-patching before user impact",
       );
-      this?._applyPatch({
+      this._applyPatch({
         subsystem: "database",
         name: "Offensive pre-emptive DB pool warm-up",
         description:
@@ -1923,11 +1923,11 @@ class PlatformAutoFixer extends EventEmitter {
       status: "active",
       runtimeEffect: opts.runtimeEffect,
     };
-    this?.patches.set(id, patch);
-    this?.patchHistory.unshift(patch);
-    if (this?.patchHistory.length > MAX_HISTORY)
+    this.patches.set(id, patch);
+    this.patchHistory.unshift(patch);
+    if (this.patchHistory.length > MAX_HISTORY)
       this.patchHistory.length = MAX_HISTORY;
-    logger?.info(
+    logger.info(
       `[PlatformAutoFixer] 🎯 Offensive patch applied: ${opts?.name} (${id})`,
     );
   }
@@ -1939,7 +1939,7 @@ class PlatformAutoFixer extends EventEmitter {
     details: string,
   ): void {
     // Don't open a duplicate if one with the same title is still open
-    const alreadyOpen = this?.incidents.some(
+    const alreadyOpen = this.incidents.some(
       (i) => !i?.resolvedAt && i?.title === title,
     );
     if (alreadyOpen) return;
@@ -1954,20 +1954,20 @@ class PlatformAutoFixer extends EventEmitter {
       events: [details],
     };
 
-    this?.incidents.unshift(incident);
-    if (this?.incidents.length > MAX_INCIDENTS) this?.incidents.pop();
+    this.incidents.unshift(incident);
+    if (this.incidents.length > MAX_INCIDENTS) this.incidents.pop();
 
-    logger?.warn(
+    logger.warn(
       `[PlatformAutoFixer] 🎯 Offensive incident opened [${severity}]: ${title}`,
     );
-    this?.emit("incident:opened", incident);
+    this.emit("incident:opened", incident);
   }
 
   // ─── Public API ─────────────────────────────────────────────────────────────
 
   getStatus() {
-    const probes = Object?.fromEntries(this?.probeResults.entries());
-    const statuses = [...this?.probeResults.values()].map((p) => p?.status);
+    const probes = Object.fromEntries(this.probeResults.entries());
+    const statuses = [...this.probeResults.values()].map((p) => p?.status);
     const overallStatus = statuses?.includes("critical")
       ? "critical"
       : statuses?.includes("degraded")
@@ -1976,15 +1976,15 @@ class PlatformAutoFixer extends EventEmitter {
           ? "healthy"
           : "unknown";
 
-    const trend = this?._analyzeTrend(20);
+    const trend = this._analyzeTrend(20);
     const now = Date?.now();
 
     // Build forecast summary
-    const forecastSummary = [...this?._forecasts.entries()]
+    const forecastSummary = [...this._forecasts.entries()]
       .map(([subsystem, f]) => ({
         subsystem,
         estMinsRemaining:
-          Math?.round(
+          Math.round(
             ((f?.estMsToCritical - (now - f?.forecastedAt)) / 60_000) * 10,
           ) / 10,
         forecastedAt: f.forecastedAt,
@@ -1996,7 +1996,7 @@ class PlatformAutoFixer extends EventEmitter {
       scanCount: this.scanCount,
       started: this.started,
       probeIntervalMs: this.currentProbeIntervalMs,
-      activePatches: [...this?.patches.values()].map((p) => ({
+      activePatches: [...this.patches.values()].map((p) => ({
         ...p,
         revert: undefined,
       })),
@@ -2027,14 +2027,14 @@ class PlatformAutoFixer extends EventEmitter {
   }
 
   getSubsystems() {
-    return Object?.fromEntries(
-      [...this?.probeResults.entries()].map(([k, v]) => [k, v]),
+    return Object.fromEntries(
+      [...this.probeResults.entries()].map(([k, v]) => [k, v]),
     );
   }
 
   getPatches() {
     return {
-      active: [...this?.patches.values()].map((p) => ({
+      active: [...this.patches.values()].map((p) => ({
         ...p,
         revert: undefined,
       })),
@@ -2053,19 +2053,19 @@ class PlatformAutoFixer extends EventEmitter {
 
   async forceProbe(name: SubsystemName): Promise<ProbeResult | null> {
     const probers: Record<SubsystemName, () => Promise<ProbeResult>> = {
-      database: () => this?.probeDatabase(),
-      pdim: () => this?.probePDIM(),
-      memory: () => this?.probeMemory(),
-      lua_executor: () => this?.probeLuaExecutor(),
-      queues: () => this?.probeQueues(),
-      routes: () => this?.probeRoutes(),
-      sessions: () => this?.probeSessions(),
-      entropy: () => this?.probeEntropy(),
+      database: () => this.probeDatabase(),
+      pdim: () => this.probePDIM(),
+      memory: () => this.probeMemory(),
+      lua_executor: () => this.probeLuaExecutor(),
+      queues: () => this.probeQueues(),
+      routes: () => this.probeRoutes(),
+      sessions: () => this.probeSessions(),
+      entropy: () => this.probeEntropy(),
     };
     const fn = probers[name];
     if (!fn) return null;
     const result = await fn();
-    this?.handleProbeResult(result);
+    this.handleProbeResult(result);
     return result;
   }
 
@@ -2095,9 +2095,9 @@ export function platformFixerMiddleware(
   res: Record<string, unknown>,
   next: () => void,
 ): void {
-  res?.on("finish", () => {
-    const route = req?.route?.path ?? req?.path ?? "unknown";
-    recordRouteRequest(route, res?.statusCode);
+  res.on("finish", () => {
+    const route = req.route?.path ?? req.path ?? "unknown";
+    recordRouteRequest(route, res.statusCode);
   });
   next();
 }

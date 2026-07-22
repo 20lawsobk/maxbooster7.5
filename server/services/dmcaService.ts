@@ -72,11 +72,11 @@ export class DMCAService {
       throw new Error("All required statements must be affirmed");
     }
 
-    if (!this?.isValidEmail(submission?.claimantEmail)) {
+    if (!this.isValidEmail(submission?.claimantEmail)) {
       throw new Error("Invalid claimant email address");
     }
 
-    const contentOwner = await this?.findContentOwner(
+    const contentOwner = await this.findContentOwner(
       submission?.contentId,
       submission?.contentType,
     );
@@ -103,10 +103,10 @@ export class DMCAService {
       })
       .returning();
 
-    logger?.info(`DMCA notice submitted: ${notice?.id}, type: ${notice?.type}`);
+    logger.info(`DMCA notice submitted: ${notice?.id}, type: ${notice?.type}`);
 
-    await this?.notifyContentOwner(notice);
-    await this?.notifyAdministrators(notice);
+    await this.notifyContentOwner(notice);
+    await this.notifyAdministrators(notice);
 
     return notice;
   }
@@ -114,7 +114,7 @@ export class DMCAService {
   async submitCounterNotice(
     submission: CounterNoticeSubmission,
   ): Promise<DMCANotice> {
-    const originalNotice = await this?.getNotice(submission?.originalNoticeId);
+    const originalNotice = await this.getNotice(submission?.originalNoticeId);
     if (!originalNotice) {
       throw new Error("Original DMCA notice not found");
     }
@@ -156,13 +156,13 @@ export class DMCAService {
       .set({ status: "disputed" })
       .where(eq(dmcaNotices?.id, originalNotice?.id));
 
-    logger?.info(
+    logger.info(
       `Counter-notice submitted: ${counterNotice?.id} for original: ${originalNotice?.id}`,
     );
 
-    await this?.notifyOriginalClaimant(counterNotice, originalNotice);
-    await this?.notifyAdministrators(counterNotice);
-    await this?.scheduleContentRestoration(counterNotice);
+    await this.notifyOriginalClaimant(counterNotice, originalNotice);
+    await this.notifyAdministrators(counterNotice);
+    await this.scheduleContentRestoration(counterNotice);
 
     return counterNotice;
   }
@@ -173,7 +173,7 @@ export class DMCAService {
     action: "approve" | "reject",
     notes?: string,
   ): Promise<DMCANotice> {
-    const notice = await this?.getNotice(noticeId);
+    const notice = await this.getNotice(noticeId);
     if (!notice) {
       throw new Error("Notice not found");
     }
@@ -184,16 +184,16 @@ export class DMCAService {
 
     if (action === "approve") {
       if (notice?.type === "takedown") {
-        await this?.executeTakedown(notice);
+        await this.executeTakedown(notice);
         if (notice?.contentOwnerId) {
-          await this?.addStrike(
+          await this.addStrike(
             notice?.contentOwnerId,
             notice?.id,
             "DMCA takedown processed",
           );
         }
       } else {
-        await this?.executeRestoration(notice);
+        await this.executeRestoration(notice);
       }
     }
 
@@ -210,13 +210,13 @@ export class DMCAService {
       .where(eq(dmcaNotices?.id, noticeId))
       .returning();
 
-    logger?.info(`DMCA notice ${noticeId} ${action}ed by ${adminId}`);
+    logger.info(`DMCA notice ${noticeId} ${action}ed by ${adminId}`);
 
     return updatedNotice;
   }
 
   async executeTakedown(notice: DMCANotice): Promise<void> {
-    await this?.createLegalHold({
+    await this.createLegalHold({
       contentId: notice.contentId,
       contentType: notice.contentType,
       holdReason: `DMCA takedown notice ${notice?.id}`,
@@ -224,7 +224,7 @@ export class DMCAService {
       dmcaNoticeId: notice.id,
     });
 
-    logger?.info(
+    logger.info(
       `Content ${notice?.contentId} taken down due to DMCA notice ${notice?.id}`,
     );
   }
@@ -258,7 +258,7 @@ export class DMCAService {
         .where(eq(dmcaNotices?.id, notice?.relatedNoticeId));
     }
 
-    logger?.info(
+    logger.info(
       `Content ${notice?.contentId} restored after counter-notice ${notice?.id}`,
     );
   }
@@ -268,7 +268,7 @@ export class DMCAService {
     noticeId: string,
     reason: string,
   ): Promise<DMCAStrike> {
-    const strikeInfo = await this?.getStrikeInfo(userId);
+    const strikeInfo = await this.getStrikeInfo(userId);
     const newStrikeNumber = strikeInfo?.activeStrikes + 1;
 
     const expiresAt = new Date();
@@ -286,14 +286,14 @@ export class DMCAService {
       })
       .returning();
 
-    logger?.info(
+    logger.info(
       `Strike ${newStrikeNumber} added for user ${userId}, notice: ${noticeId}`,
     );
 
     if (newStrikeNumber >= MAX_STRIKES) {
-      await this?.handleRepeatInfringer(userId);
+      await this.handleRepeatInfringer(userId);
     } else if (newStrikeNumber === MAX_STRIKES - 1) {
-      await this?.sendFinalWarning(userId);
+      await this.sendFinalWarning(userId);
     }
 
     return strike;
@@ -315,7 +315,7 @@ export class DMCAService {
       .where(eq(dmcaStrikes?.id, strikeId))
       .returning();
 
-    logger?.info(`Strike ${strikeId} revoked by ${adminId}: ${reason}`);
+    logger.info(`Strike ${strikeId} revoked by ${adminId}: ${reason}`);
 
     return strike;
   }
@@ -354,11 +354,11 @@ export class DMCAService {
   }
 
   async handleRepeatInfringer(userId: string): Promise<void> {
-    logger?.warn(
+    logger.warn(
       `User ${userId} is a repeat infringer (3+ strikes). Initiating account termination.`,
     );
 
-    await this?.notifyRepeatInfringer(userId);
+    await this.notifyRepeatInfringer(userId);
 
     const userProjects = await db
       .select({ id: projects.id })
@@ -366,7 +366,7 @@ export class DMCAService {
       .where(eq(projects?.userId, userId));
 
     for (const project of userProjects) {
-      await this?.createLegalHold({
+      await this.createLegalHold({
         contentId: project.id,
         contentType: "project",
         holdReason: "Repeat infringer policy - account terminated",
@@ -388,7 +388,7 @@ export class DMCAService {
       })
       .returning();
 
-    logger?.info(
+    logger.info(
       `Legal hold created: ${hold?.id} for content ${request?.contentId}`,
     );
 
@@ -406,7 +406,7 @@ export class DMCAService {
       .where(eq(legalHolds?.id, holdId))
       .returning();
 
-    logger?.info(`Legal hold ${holdId} released by ${adminId}`);
+    logger.info(`Legal hold ${holdId} released by ${adminId}`);
 
     return hold;
   }
@@ -488,7 +488,7 @@ export class DMCAService {
 
       return uniqueNotices;
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching notices by user:");
+      logger.warn({ err: error }, "Error fetching notices by user:");
       return [];
     }
   }
@@ -556,7 +556,7 @@ export class DMCAService {
         }
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Error finding content owner:");
+      logger.warn({ err: error }, "Error finding content owner:");
     }
     return null;
   }
@@ -592,12 +592,12 @@ export class DMCAService {
         });
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Error notifying content owner:");
+      logger.warn({ err: error }, "Error notifying content owner:");
     }
   }
 
   private async notifyAdministrators(notice: DMCANotice): Promise<void> {
-    logger?.info(
+    logger.info(
       `Admin notification: New DMCA ${notice?.type} notice ${notice?.id} requires review`,
     );
   }
@@ -619,7 +619,7 @@ export class DMCAService {
         `,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error notifying original claimant:");
+      logger.warn({ err: error }, "Error notifying original claimant:");
     }
   }
 
@@ -629,7 +629,7 @@ export class DMCAService {
       restorationDate?.getDate() + COUNTER_NOTICE_WAIT_DAYS,
     );
 
-    logger?.info(
+    logger.info(
       `Content ${notice?.contentId} scheduled for restoration on ${restorationDate?.toISOString()} unless legal action is filed`,
     );
   }
@@ -655,7 +655,7 @@ export class DMCAService {
         });
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Error sending final warning:");
+      logger.warn({ err: error }, "Error sending final warning:");
     }
   }
 
@@ -681,7 +681,7 @@ export class DMCAService {
         });
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Error notifying repeat infringer:");
+      logger.warn({ err: error }, "Error notifying repeat infringer:");
     }
   }
 }

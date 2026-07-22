@@ -16,7 +16,7 @@ function seededIndex(seed: string, length: number): number {
   let h = 2166136261;
   for (let i = 0; i < seed?.length; i++) {
     h ^= seed?.charCodeAt(i);
-    h = Math?.imul(h, 16777619);
+    h = Math.imul(h, 16777619);
     h >>>= 0;
   }
   return h % length;
@@ -96,7 +96,7 @@ export class AutopilotEngine extends EventEmitter {
   constructor(userId: string) {
     super();
     this.userId = userId;
-    this.config = this?.getDefaultConfig();
+    this.config = this.getDefaultConfig();
   }
 
   static createForSocialAndAds(userId: string): AutopilotEngine {
@@ -163,80 +163,80 @@ export class AutopilotEngine extends EventEmitter {
 
   // Autopilot Configuration
   async configure(config: Partial<AutopilotConfig>): Promise<void> {
-    this.config = { ...this?.config, ...config };
+    this.config = { ...this.config, ...config };
 
-    if (this?.config.enabled && !this?.isRunning) {
-      await this?.start();
-    } else if (!this?.config.enabled && this?.isRunning) {
-      await this?.stop();
+    if (this.config.enabled && !this.isRunning) {
+      await this.start();
+    } else if (!this.config.enabled && this.isRunning) {
+      await this.stop();
     }
 
-    this?.emit("configUpdated", this?.config);
+    this.emit("configUpdated", this.config);
   }
 
   async getConfig(): Promise<AutopilotConfig> {
-    return this?.config;
+    return this.config;
   }
 
   // Autopilot Lifecycle
   async start(): Promise<void> {
-    if (this?.isRunning) return;
+    if (this.isRunning) return;
 
     this.isRunning = true;
-    this?.emit("autopilotStarted");
+    this.emit("autopilotStarted");
 
     // Initialize content generation jobs
-    await this?.scheduleContentGeneration();
+    await this.scheduleContentGeneration();
 
     // Start the job scheduler
     this.schedulerInterval = setInterval(() => {
-      this?.processJobs();
-      this?.pruneCompletedJobs();
+      this.processJobs();
+      this.pruneCompletedJobs();
     }, 60000); // Check every minute
 
-    logger?.info("Autopilot started with config:", this?.config);
+    logger.info("Autopilot started with config:", this.config);
   }
 
   /** Remove completed/failed jobs older than 24 h to prevent the Map growing unbounded. */
   private pruneCompletedJobs(): void {
     const cutoff = Date?.now() - 86_400_000;
-    for (const [id, job] of this?.jobs.entries()) {
+    for (const [id, job] of this.jobs.entries()) {
       if (
         (job?.status === "completed" || job?.status === "failed") &&
         job?.scheduledAt.getTime() < cutoff
       ) {
-        this?.jobs.delete(id);
+        this.jobs.delete(id);
       }
     }
   }
 
   async stop(): Promise<void> {
-    if (!this?.isRunning) return;
+    if (!this.isRunning) return;
 
     this.isRunning = false;
 
-    if (this?.schedulerInterval) {
-      clearInterval(this?.schedulerInterval);
+    if (this.schedulerInterval) {
+      clearInterval(this.schedulerInterval);
       this.schedulerInterval = null;
     }
 
     // Cancel pending jobs
-    this?.jobs.forEach((job) => {
+    this.jobs.forEach((job) => {
       if (job?.status === "pending") {
         job.status = "failed";
       }
     });
 
-    this?.emit("autopilotStopped");
-    logger?.info("Autopilot stopped");
+    this.emit("autopilotStopped");
+    logger.info("Autopilot stopped");
   }
 
   // Content Generation Pipeline
   private async scheduleContentGeneration(): Promise<void> {
-    if (!this?.config.enabled || this?.config.platforms?.length === 0) return;
+    if (!this.config.enabled || this.config.platforms?.length === 0) return;
 
-    for (const platform of this?.config.platforms) {
-      const nextPostTime = await this?.calculateNextPostTime(platform);
+    for (const platform of this.config.platforms) {
+      const nextPostTime = await this.calculateNextPostTime(platform);
 
       // Schedule content generation 30 minutes before posting
       const generationTime = new Date(nextPostTime?.getTime() - 30 * 60 * 1000);
@@ -256,7 +256,7 @@ export class AutopilotEngine extends EventEmitter {
         maxRetries: 3,
       };
 
-      this?.jobs.set(job?.id, job);
+      this.jobs.set(job?.id, job);
 
       // Schedule the actual publishing
       const publishJob: AutopilotJob = {
@@ -270,24 +270,24 @@ export class AutopilotEngine extends EventEmitter {
         maxRetries: 2,
       };
 
-      this?.jobs.set(publishJob?.id, publishJob);
+      this.jobs.set(publishJob?.id, publishJob);
     }
 
     // Schedule next batch based on frequency
-    const nextBatchTime = this?.calculateNextBatchTime();
+    const nextBatchTime = this.calculateNextBatchTime();
     setTimeout(() => {
-      this?.scheduleContentGeneration();
+      this.scheduleContentGeneration();
     }, nextBatchTime - Date?.now());
   }
 
   private async calculateNextPostTime(platform: string): Promise<Date> {
     const now = new Date();
-    const optimalTimes = await this?.getOptimalTimesForPlatform(platform);
+    const optimalTimes = await this.getOptimalTimesForPlatform(platform);
 
     // Find next optimal time
     let nextTime = new Date(now);
 
-    switch (this?.config.postingFrequency) {
+    switch (this.config.postingFrequency) {
       case "hourly":
         nextTime?.setHours(now?.getHours() + 1, 0, 0, 0);
         break;
@@ -328,7 +328,7 @@ export class AutopilotEngine extends EventEmitter {
 
   private calculateNextBatchTime(): number {
     const now = Date?.now();
-    const frequency = this?.config.postingFrequency;
+    const frequency = this.config.postingFrequency;
 
     switch (frequency) {
       case "hourly":
@@ -667,14 +667,14 @@ export class AutopilotEngine extends EventEmitter {
     topic: string,
     platform: string,
   ): Promise<UrlContentBrief | undefined> {
-    const urls = this?.config.sourceUrls;
+    const urls = this.config.sourceUrls;
     if (!urls || urls.length === 0) return undefined;
     const chosen = urls[seededIndex(`${topic}|${platform}`, urls.length)];
     try {
       const parsed = await advancedUrlParser.parseUrl(chosen);
       return advancedUrlParser.toContentBrief(parsed);
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err: (err as Error)?.message },
         `[Autopilot] Source URL parse failed for ${platform} — falling back to topic-only generation`,
       );
@@ -744,7 +744,7 @@ export class AutopilotEngine extends EventEmitter {
       const posting = evolutionRegistry?.getPostingOptimization(
         params?.platform.toLowerCase(),
       );
-      let objective = this?.mapGoalsToObjective(params?.businessGoals);
+      let objective = this.mapGoalsToObjective(params?.businessGoals);
       if (posting?.engagementTargeting === "high") {
         objective = "engagement";
       }
@@ -778,7 +778,7 @@ export class AutopilotEngine extends EventEmitter {
           callToActionStrength,
         });
 
-      logger?.info(
+      logger.info(
         `[Autopilot] Generated content with Advanced AI: score=${advancedResult.scoring.overall.toFixed(1)}, viral=${advancedResult?.viralPotential.score?.toFixed(1)}`,
       );
 
@@ -794,7 +794,7 @@ export class AutopilotEngine extends EventEmitter {
       // surface the error rather than degrading to a generic on-box generator
       // — silent fallback was producing low-quality, off-brand content and
       // hiding real MaxCore outages from the operator.
-      logger?.warn(
+      logger.warn(
         { err: error },
         `[Autopilot] Advanced AI generation failed for ${params?.platform} — skipping this generation cycle`,
       );
@@ -878,7 +878,7 @@ export class AutopilotEngine extends EventEmitter {
     // recommendations engine — so every published piece of content now
     // measurably tightens the feedback loop for this artist.
     const a = (analytics ?? {}) as Record<string, unknown>;
-    const cached = this?.performanceData.get(contentId) as
+    const cached = this.performanceData.get(contentId) as
       | Record<string, unknown>
       | undefined;
     const platform = String(cached?.platform ?? a?.platform ?? "unknown");
@@ -886,7 +886,7 @@ export class AutopilotEngine extends EventEmitter {
 
     try {
       await autopilotLearningService?.recordPerformance(
-        this?.userId,
+        this.userId,
         {
           platform,
           contentType: String(cached?.contentType ?? "social_post"),
@@ -914,18 +914,18 @@ export class AutopilotEngine extends EventEmitter {
         },
       );
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err },
         `[Autopilot] Failed to record performance for ${contentId}`,
       );
     }
 
-    if (engagementRate > this?.config.engagementThreshold * 2) {
-      logger?.info(
+    if (engagementRate > this.config.engagementThreshold * 2) {
+      logger.info(
         `High performing content detected: ${contentId} (${engagementRate}% engagement)`,
       );
-    } else if (engagementRate < this?.config.engagementThreshold * 0.5) {
-      logger?.info(
+    } else if (engagementRate < this.config.engagementThreshold * 0.5) {
+      logger.info(
         `Low performing content detected: ${contentId} (${engagementRate}% engagement)`,
       );
     }
@@ -940,7 +940,7 @@ export class AutopilotEngine extends EventEmitter {
     failedJobs: number;
     nextScheduledJob?: Date;
   }> {
-    const jobs = Array?.from(this?.jobs.values());
+    const jobs = Array.from(this.jobs.values());
     const pendingJobs = jobs?.filter((j) => j?.status === "pending");
     const nextJob = pendingJobs?.sort(
       (a, b) => a?.scheduledAt.getTime() - b?.scheduledAt.getTime(),
@@ -957,7 +957,7 @@ export class AutopilotEngine extends EventEmitter {
   }
 
   async getRecentActivity(limit: number = 10): Promise<AutopilotJob[]> {
-    return Array?.from(this?.jobs.values())
+    return Array.from(this.jobs.values())
       .sort((a, b) => b?.scheduledAt.getTime() - a?.scheduledAt.getTime())
       .slice(0, limit);
   }
@@ -967,16 +967,16 @@ export class AutopilotEngine extends EventEmitter {
     platform?: string,
   ): Promise<Map<string, any[]> | any[]> {
     if (platform) {
-      return this?.contentQueue.get(platform) || [];
+      return this.contentQueue.get(platform) || [];
     }
-    return this?.contentQueue;
+    return this.contentQueue;
   }
 
   async clearContentQueue(platform?: string): Promise<void> {
     if (platform) {
-      this?.contentQueue.delete(platform);
+      this.contentQueue.delete(platform);
     } else {
-      this?.contentQueue.clear();
+      this.contentQueue.clear();
     }
   }
 }

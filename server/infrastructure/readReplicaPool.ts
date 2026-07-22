@@ -36,8 +36,8 @@ class ReadReplicaPool {
       connectionTimeoutMillis: config.connectionTimeout,
     });
 
-    this?.primaryPool.on("error", (err) => {
-      logger?.warn({ err: err }, "Primary pool error:");
+    this.primaryPool.on("error", (err) => {
+      logger.warn({ err: err }, "Primary pool error:");
     });
 
     for (let i = 0; i < config?.replicas.length; i++) {
@@ -54,19 +54,19 @@ class ReadReplicaPool {
       });
 
       pool?.on("error", (err) => {
-        logger?.warn({ err: err }, `Replica ${i} pool error:`);
-        this?.healthyReplicas.delete(i);
+        logger.warn({ err: err }, `Replica ${i} pool error:`);
+        this.healthyReplicas.delete(i);
       });
 
-      this?.replicaPools.push(pool);
+      this.replicaPools.push(pool);
       const weight = replica?.weight || 1;
-      this?.replicaWeights.push(weight);
+      this.replicaWeights.push(weight);
       this.totalWeight += weight;
-      this?.healthyReplicas.add(i);
+      this.healthyReplicas.add(i);
     }
 
-    this?.startHealthChecks();
-    logger?.info(
+    this.startHealthChecks();
+    logger.info(
       `Read replica pool initialized with ${config?.replicas.length} replicas`,
     );
   }
@@ -88,7 +88,7 @@ class ReadReplicaPool {
 
   private static buildConfigFromEnv(): ReadReplicaPoolConfig {
     const primaryUrl = env?.DATABASE_URL || "";
-    const replicaUrls = (process?.env.DATABASE_REPLICA_URLS || "")
+    const replicaUrls = (process.env.DATABASE_REPLICA_URLS || "")
       .split(",")
       .filter(Boolean);
 
@@ -126,48 +126,48 @@ class ReadReplicaPool {
     return {
       primary: parseUrl(primaryUrl),
       replicas,
-      maxPoolSize: parseInt(process?.env.DB_MAX_POOL_SIZE || "20"),
-      idleTimeout: parseInt(process?.env.DB_IDLE_TIMEOUT || "30000"),
-      connectionTimeout: parseInt(process?.env.DB_CONNECTION_TIMEOUT || "5000"),
+      maxPoolSize: parseInt(process.env.DB_MAX_POOL_SIZE || "20"),
+      idleTimeout: parseInt(process.env.DB_IDLE_TIMEOUT || "30000"),
+      connectionTimeout: parseInt(process.env.DB_CONNECTION_TIMEOUT || "5000"),
     };
   }
 
   private startHealthChecks(): void {
     this.healthCheckInterval = setInterval(async () => {
-      for (let i = 0; i < this?.replicaPools.length; i++) {
+      for (let i = 0; i < this.replicaPools.length; i++) {
         try {
-          const client = await this?.replicaPools[i].connect();
+          const client = await this.replicaPools[i].connect();
           await client?.query("SELECT 1");
           client?.release();
-          this?.healthyReplicas.add(i);
+          this.healthyReplicas.add(i);
         } catch (error) {
-          logger?.warn({ err: error }, `Replica ${i} health check failed:`);
-          this?.healthyReplicas.delete(i);
+          logger.warn({ err: error }, `Replica ${i} health check failed:`);
+          this.healthyReplicas.delete(i);
         }
       }
     }, 30000);
   }
 
   private selectReplica(): Pool | null {
-    if (this?.healthyReplicas.size === 0) {
+    if (this.healthyReplicas.size === 0) {
       return null;
     }
 
-    const healthyIndices = Array?.from(this?.healthyReplicas);
+    const healthyIndices = Array.from(this.healthyReplicas);
     let healthyWeight = 0;
     for (const index of healthyIndices) {
-      healthyWeight += this?.replicaWeights[index];
+      healthyWeight += this.replicaWeights[index];
     }
 
-    let random = Math?.random() * healthyWeight;
+    let random = Math.random() * healthyWeight;
     for (const index of healthyIndices) {
-      random -= this?.replicaWeights[index];
+      random -= this.replicaWeights[index];
       if (random <= 0) {
-        return this?.replicaPools[index];
+        return this.replicaPools[index];
       }
     }
 
-    return this?.replicaPools[healthyIndices[0]];
+    return this.replicaPools[healthyIndices[0]];
   }
 
   async query(
@@ -175,15 +175,15 @@ class ReadReplicaPool {
     params?: unknown[],
     preferReplica: boolean = false,
   ): Promise<unknown> {
-    const isReadQuery = this?.isReadOnlyQuery(text);
+    const isReadQuery = this.isReadOnlyQuery(text);
 
-    if (isReadQuery && preferReplica && this?.replicaPools.length > 0) {
-      const replicaPool = this?.selectReplica();
+    if (isReadQuery && preferReplica && this.replicaPools.length > 0) {
+      const replicaPool = this.selectReplica();
       if (replicaPool) {
         try {
           return await replicaPool?.query(text, params);
         } catch (error) {
-          logger?.warn(
+          logger.warn(
             { err: error },
             "Replica query failed, falling back to primary:",
           );
@@ -191,7 +191,7 @@ class ReadReplicaPool {
       }
     }
 
-    return await this?.primaryPool.query(text, params);
+    return await this.primaryPool.query(text, params);
   }
 
   private isReadOnlyQuery(text: string): boolean {
@@ -204,15 +204,15 @@ class ReadReplicaPool {
   }
 
   async queryRead(text: string, params?: unknown[]): Promise<unknown> {
-    return this?.query(text, params, true);
+    return this.query(text, params, true);
   }
 
   async getPrimaryClient(): Promise<PoolClient> {
-    return await this?.primaryPool.connect();
+    return await this.primaryPool.connect();
   }
 
   async getReplicaClient(): Promise<PoolClient | null> {
-    const replicaPool = this?.selectReplica();
+    const replicaPool = this.selectReplica();
     if (replicaPool) {
       return await replicaPool?.connect();
     }
@@ -244,16 +244,16 @@ class ReadReplicaPool {
   }
 
   async shutdown(): Promise<void> {
-    if (this?.healthCheckInterval) {
-      clearInterval(this?.healthCheckInterval);
+    if (this.healthCheckInterval) {
+      clearInterval(this.healthCheckInterval);
     }
 
-    await this?.primaryPool.end();
-    for (const pool of this?.replicaPools) {
+    await this.primaryPool.end();
+    for (const pool of this.replicaPools) {
       await pool?.end();
     }
 
-    logger?.info("Read replica pool shut down");
+    logger.info("Read replica pool shut down");
   }
 }
 

@@ -273,14 +273,14 @@ function getLevel(verification: KYCVerification): KYCLevel {
 
 export class KYCService {
   async startVerification(request: KYCStartRequest): Promise<KYCVerification> {
-    const existingVerification = await this?.getActiveVerification(
+    const existingVerification = await this.getActiveVerification(
       request?.userId,
     );
 
     if (existingVerification) {
       if (
         existingVerification?.status === "verified" &&
-        !this?.isExpired(existingVerification)
+        !this.isExpired(existingVerification)
       ) {
         throw new Error("User already has an active verified status");
       }
@@ -306,7 +306,7 @@ export class KYCService {
       })
       .returning();
 
-    logger?.info(
+    logger.info(
       `KYC verification started: ${verification?.id} for user ${request?.userId}`,
     );
 
@@ -318,7 +318,7 @@ export class KYCService {
     info: IndividualInfo,
     userId: string,
   ): Promise<KYCVerification> {
-    const verification = await this?.getVerification(verificationId);
+    const verification = await this.getVerification(verificationId);
     if (!verification) {
       throw new Error("Verification not found");
     }
@@ -346,7 +346,7 @@ export class KYCService {
       .where(eq(kycVerifications?.id, verificationId))
       .returning();
 
-    logger?.info(`Individual info updated for verification ${verificationId}`);
+    logger.info(`Individual info updated for verification ${verificationId}`);
 
     return updated;
   }
@@ -356,7 +356,7 @@ export class KYCService {
     info: BusinessInfo,
     userId: string,
   ): Promise<KYCVerification> {
-    const verification = await this?.getVerification(verificationId);
+    const verification = await this.getVerification(verificationId);
     if (!verification) {
       throw new Error("Verification not found");
     }
@@ -384,13 +384,13 @@ export class KYCService {
       .where(eq(kycVerifications?.id, verificationId))
       .returning();
 
-    logger?.info(`Business info updated for verification ${verificationId}`);
+    logger.info(`Business info updated for verification ${verificationId}`);
 
     return updated;
   }
 
   async uploadDocument(request: DocumentUploadRequest): Promise<KYCDocument> {
-    const verification = await this?.getVerification(request?.verificationId);
+    const verification = await this.getVerification(request?.verificationId);
     if (!verification) {
       throw new Error("Verification not found");
     }
@@ -420,22 +420,22 @@ export class KYCService {
       })
       .returning();
 
-    logger?.info(
+    logger.info(
       `Document uploaded: ${document?.id} type: ${request?.documentType} for verification ${request?.verificationId}`,
     );
 
-    await this?.checkAndUpdateVerificationStatus(request?.verificationId);
+    await this.checkAndUpdateVerificationStatus(request?.verificationId);
 
     return document;
   }
 
   async submitTaxForm(submission: TaxFormSubmission): Promise<KYCVerification> {
-    const verification = await this?.getVerification(submission?.verificationId);
+    const verification = await this.getVerification(submission?.verificationId);
     if (!verification) {
       throw new Error("Verification not found");
     }
 
-    await this?.uploadDocument({
+    await this.uploadDocument({
       verificationId: submission.verificationId,
       userId: submission.userId,
       documentType: submission.formType.toLowerCase() as DocumentType,
@@ -460,7 +460,7 @@ export class KYCService {
       .where(eq(kycVerifications?.id, submission?.verificationId))
       .returning();
 
-    logger?.info(
+    logger.info(
       `Tax form ${submission?.formType} submitted for verification ${submission?.verificationId}`,
     );
 
@@ -473,7 +473,7 @@ export class KYCService {
     approved: boolean,
     reason?: string,
   ): Promise<KYCDocument> {
-    const existingDoc = await this?.getDocument(documentId);
+    const existingDoc = await this.getDocument(documentId);
     if (!existingDoc) {
       throw new Error("Document not found");
     }
@@ -496,14 +496,14 @@ export class KYCService {
       .where(eq(kycDocuments?.id, documentId))
       .returning();
 
-    logger?.info(
+    logger.info(
       `Document ${documentId} ${approved ? "approved" : "rejected"} by ${reviewerId}`,
     );
 
     const verificationId = existingMeta?.verificationId;
     if (verificationId) {
-      const allDocs = await this?.getVerificationDocuments(verificationId);
-      await this?.checkAndUpdateVerificationStatus(verificationId, allDocs);
+      const allDocs = await this.getVerificationDocuments(verificationId);
+      await this.checkAndUpdateVerificationStatus(verificationId, allDocs);
     }
 
     return document;
@@ -514,7 +514,7 @@ export class KYCService {
     reviewerId: string,
     notes?: string,
   ): Promise<KYCVerification> {
-    const verification = await this?.getVerification(verificationId);
+    const verification = await this.getVerification(verificationId);
     if (!verification) {
       throw new Error("Verification not found");
     }
@@ -540,9 +540,9 @@ export class KYCService {
       .where(eq(kycVerifications?.id, verificationId))
       .returning();
 
-    logger?.info(`Verification ${verificationId} approved by ${reviewerId}`);
+    logger.info(`Verification ${verificationId} approved by ${reviewerId}`);
 
-    await this?.notifyVerificationComplete(updated);
+    await this.notifyVerificationComplete(updated);
 
     return updated;
   }
@@ -552,7 +552,7 @@ export class KYCService {
     reviewerId: string,
     reason: string,
   ): Promise<KYCVerification> {
-    const verification = await this?.getVerification(verificationId);
+    const verification = await this.getVerification(verificationId);
     if (!verification) {
       throw new Error("Verification not found");
     }
@@ -573,11 +573,11 @@ export class KYCService {
       .where(eq(kycVerifications?.id, verificationId))
       .returning();
 
-    logger?.info(
+    logger.info(
       `Verification ${verificationId} rejected by ${reviewerId}: ${reason}`,
     );
 
-    await this?.notifyVerificationRejected(updated);
+    await this.notifyVerificationRejected(updated);
 
     return updated;
   }
@@ -585,7 +585,7 @@ export class KYCService {
   async getVerificationStatus(
     userId: string,
   ): Promise<VerificationResult | null> {
-    const verification = await this?.getActiveVerification(userId);
+    const verification = await this.getActiveVerification(userId);
     if (!verification) {
       return null;
     }
@@ -593,7 +593,7 @@ export class KYCService {
     const metadata = getMetadata(verification);
     const level = getLevel(verification);
     const verificationType = verification?.verificationType as KYCType;
-    const documents = await this?.getVerificationDocuments(verification?.id);
+    const documents = await this.getVerificationDocuments(verification?.id);
     const requiredDocs = DOCUMENT_REQUIREMENTS[level][verificationType];
     const submittedTypes = documents?.map((d) => d?.documentType);
     const pendingTypes = documents
@@ -606,7 +606,7 @@ export class KYCService {
       .filter((d) => d?.status === "approved")
       .map((d) => d?.documentType);
 
-    const taxFormRequired = this?.isTaxFormRequired(verification);
+    const taxFormRequired = this.isTaxFormRequired(verification);
 
     const infoSubmitted =
       verificationType === "individual"
@@ -645,7 +645,7 @@ export class KYCService {
       };
     });
 
-    const nextSteps = this?.getNextSteps(
+    const nextSteps = this.getNextSteps(
       verification,
       infoSubmitted,
       allDocumentsUploaded,
@@ -833,7 +833,7 @@ export class KYCService {
   async getVerificationDocuments(
     verificationId: string,
   ): Promise<KYCDocument[]> {
-    const verification = await this?.getVerification(verificationId);
+    const verification = await this.getVerification(verificationId);
     if (!verification) {
       return [];
     }
@@ -901,7 +901,7 @@ export class KYCService {
 
     const results = await Promise?.all(
       verifications?.map(async (v) => {
-        const documents = await this?.getVerificationDocuments(v?.id);
+        const documents = await this.getVerificationDocuments(v?.id);
         const metadata = (v?.metadata as KYCMetadata) || {};
         const individualInfo = metadata?.individualInfo;
         const businessInfo = metadata?.businessInfo;
@@ -945,7 +945,7 @@ export class KYCService {
     requiredLevel?: KYCLevel;
     currentLevel?: KYCLevel;
   }> {
-    const verification = await this?.getActiveVerification(userId);
+    const verification = await this.getActiveVerification(userId);
 
     if (!verification || verification?.status !== "verified") {
       return {
@@ -958,7 +958,7 @@ export class KYCService {
     const level = getLevel(verification);
     const metadata = getMetadata(verification);
 
-    if (this?.isExpired(verification)) {
+    if (this.isExpired(verification)) {
       return {
         eligible: false,
         reason: "KYC verification has expired. Please renew.",
@@ -969,7 +969,7 @@ export class KYCService {
 
     const threshold = PAYOUT_THRESHOLDS[level];
     if (amount > threshold) {
-      const requiredLevel = this?.getRequiredLevelForAmount(amount);
+      const requiredLevel = this.getRequiredLevelForAmount(amount);
       return {
         eligible: false,
         reason: `Payout amount exceeds ${level} tier limit. Please upgrade to ${requiredLevel}.`,
@@ -978,7 +978,7 @@ export class KYCService {
       };
     }
 
-    if (this?.isTaxFormRequired(verification) && !metadata?.taxFormSubmitted) {
+    if (this.isTaxFormRequired(verification) && !metadata?.taxFormSubmitted) {
       return {
         eligible: false,
         reason: "Tax form submission required before payouts",
@@ -994,7 +994,7 @@ export class KYCService {
     newLevel: KYCLevel,
     userId: string,
   ): Promise<KYCVerification> {
-    const verification = await this?.getVerification(verificationId);
+    const verification = await this.getVerification(verificationId);
     if (!verification) {
       throw new Error("Verification not found");
     }
@@ -1027,7 +1027,7 @@ export class KYCService {
       .where(eq(kycVerifications?.id, verificationId))
       .returning();
 
-    logger?.info(`Verification ${verificationId} upgraded to ${newLevel}`);
+    logger.info(`Verification ${verificationId} upgraded to ${newLevel}`);
 
     return updated;
   }
@@ -1036,7 +1036,7 @@ export class KYCService {
     verificationId: string,
     userId: string,
   ): Promise<KYCVerification> {
-    const verification = await this?.getVerification(verificationId);
+    const verification = await this.getVerification(verificationId);
     if (!verification) {
       throw new Error("Verification not found");
     }
@@ -1052,7 +1052,7 @@ export class KYCService {
       throw new Error("Verification already submitted or verified");
     }
 
-    const documents = await this?.getVerificationDocuments(verificationId);
+    const documents = await this.getVerificationDocuments(verificationId);
     if (documents?.length === 0) {
       throw new Error("At least one document is required before submission");
     }
@@ -1072,7 +1072,7 @@ export class KYCService {
       .where(eq(kycVerifications?.id, verificationId))
       .returning();
 
-    logger?.info(
+    logger.info(
       `Verification ${verificationId} submitted for review by user ${userId}`,
     );
 
@@ -1083,12 +1083,12 @@ export class KYCService {
     verificationId: string,
     existingDocs?: KYCDocument[],
   ): Promise<void> {
-    const verification = await this?.getVerification(verificationId);
+    const verification = await this.getVerification(verificationId);
     if (!verification) return;
 
     const level = getLevel(verification);
     const documents =
-      existingDocs || (await this?.getVerificationDocuments(verificationId));
+      existingDocs || (await this.getVerificationDocuments(verificationId));
     const requiredDocs =
       DOCUMENT_REQUIREMENTS[level][verification?.verificationType as KYCType];
 
@@ -1113,7 +1113,7 @@ export class KYCService {
         })
         .where(eq(kycVerifications?.id, verificationId));
 
-      logger?.info(`Verification ${verificationId} moved to under_review`);
+      logger.info(`Verification ${verificationId} moved to under_review`);
     }
   }
 
@@ -1134,7 +1134,7 @@ export class KYCService {
   }
 
   private isPayoutEligible(verification: KYCVerification): boolean {
-    return verification?.status === "verified" && !this?.isExpired(verification);
+    return verification?.status === "verified" && !this.isExpired(verification);
   }
 
   private getRequiredLevelForAmount(amount: number): KYCLevel {
@@ -1153,7 +1153,7 @@ export class KYCService {
       case "under_review":
         return "Your verification is under review. This typically takes 1-2 business days.";
       case "verified":
-        return this?.isExpired(verification)
+        return this.isExpired(verification)
           ? "Your verification has expired. Please renew."
           : "Your account is verified.";
       case "rejected":
@@ -1190,7 +1190,7 @@ export class KYCService {
         });
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Error notifying verification complete:");
+      logger.warn({ err: error }, "Error notifying verification complete:");
     }
   }
 
@@ -1220,7 +1220,7 @@ export class KYCService {
         });
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Error notifying verification rejected:");
+      logger.warn({ err: error }, "Error notifying verification rejected:");
     }
   }
 }

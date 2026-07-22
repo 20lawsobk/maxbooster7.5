@@ -2124,9 +2124,9 @@ class DistributionDataTransferService {
         case "apple_music":
           // Use shared Spotify catalog when available — skip Apple's own song lookup
           // so the release catalog is only imported once per sync cycle.
-          return await this?.fetchAppleMusicData(artistId, sharedTopTracks);
+          return await this.fetchAppleMusicData(artistId, sharedTopTracks);
         case "youtube_music":
-          return await this?.fetchYouTubeMusicData(artistId);
+          return await this.fetchYouTubeMusicData(artistId);
         case "deezer":
           // Use shared Spotify catalog when available — skip Deezer's own top-track fetch.
           return await this.fetchDeezerData(artistId, sharedTopTracks);
@@ -2303,22 +2303,22 @@ class DistributionDataTransferService {
     // iTunes catalog is the authoritative mirror of what's on Spotify.  We search
     // by artist name (extracted from the Spotify profile) and page through all
     // their releases.  No API key required.
-    const itunesReleases = await this?.fetchItunesCatalogByArtistName(
+    const itunesReleases = await this.fetchItunesCatalogByArtistName(
       artistName,
       "spotify",
     );
     if (itunesReleases?.length > 0) {
-      logger?.info(
+      logger.info(
         `[DataTransfer] iTunes catalog returned ${itunesReleases?.length} releases for "${artistName}"`,
       );
       return itunesReleases;
     }
 
     // ── MusicBrainz last-resort fallback ─────────────────────────────────────
-    logger?.info(
+    logger.info(
       `[DataTransfer] iTunes returned 0 results — trying MusicBrainz for artist ${artistId}`,
     );
-    return this?.fetchMusicBrainzAlbums(artistId, artistName);
+    return this.fetchMusicBrainzAlbums(artistId, artistName);
   }
 
   /**
@@ -2358,7 +2358,7 @@ class DistributionDataTransferService {
         if (aid) idCounts[aid] = (idCounts[aid] || 0) + 1;
       }
       const bestId = Number(
-        Object?.entries(idCounts).sort((a, b) => b[1] - a[1])[0]?.[0],
+        Object.entries(idCounts).sort((a, b) => b[1] - a[1])[0]?.[0],
       );
       if (!bestId) return [];
 
@@ -2417,7 +2417,7 @@ class DistributionDataTransferService {
         genre: item.primaryGenreName || undefined,
       }));
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         `[DataTransfer] iTunes catalog lookup failed for "${artistName}":`,
         err instanceof Error ? err.message : String(err),
       );
@@ -2490,7 +2490,7 @@ class DistributionDataTransferService {
       }
 
       if (!mbid) {
-        logger?.warn(
+        logger.warn(
           `[DataTransfer] MusicBrainz: could not resolve MBID for Spotify artist ${spotifyArtistId}`,
         );
         return [];
@@ -2613,12 +2613,12 @@ class DistributionDataTransferService {
         };
       });
 
-      logger?.info(
+      logger.info(
         `[DataTransfer] MusicBrainz returned ${results.length} release-group(s) for artist ${artistName} (mbid=${mbid}, ${coverUrlMap?.size} with cover art)`,
       );
       return results;
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         `[DataTransfer] MusicBrainz fallback failed for ${spotifyArtistId}:`,
         err?.message,
       );
@@ -2659,7 +2659,7 @@ class DistributionDataTransferService {
         genre: item.primaryGenreName,
       }));
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err: err },
         `[DataTransfer] Apple Music album scan failed for ${artistId}:`,
       );
@@ -2698,7 +2698,7 @@ class DistributionDataTransferService {
         genre: item.genres?.data?.[0]?.name,
       }));
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err: err },
         `[DataTransfer] Deezer album scan failed for ${artistId}:`,
       );
@@ -2767,7 +2767,7 @@ class DistributionDataTransferService {
         genre: item.genres?.data?.[0]?.name,
       }));
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         `[DataTransfer] Deezer catalog proxy failed for "${artistName}":`,
         err?.message,
       );
@@ -2780,7 +2780,7 @@ class DistributionDataTransferService {
     artistName: string,
   ): Promise<ScannedRelease[]> {
     try {
-      const clientId = await this?.getSoundCloudClientId();
+      const clientId = await this.getSoundCloudClientId();
       if (!clientId) return [];
 
       const userResp = await timedFetch(
@@ -2845,7 +2845,7 @@ class DistributionDataTransferService {
 
       return results;
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err: err },
         `[DataTransfer] SoundCloud album scan failed for ${permalink}:`,
       );
@@ -3249,7 +3249,7 @@ class DistributionDataTransferService {
       const releases = await this.parseDistributorCSV(csvContent, distributor);
 
       const lines = csvContent.split("\n").filter((line) => line?.trim());
-      const totalRows = Math?.max(0, lines?.length - 1);
+      const totalRows = Math.max(0, lines?.length - 1);
 
       for (const release of releases) {
         if (release?.title && release?.artistName) {

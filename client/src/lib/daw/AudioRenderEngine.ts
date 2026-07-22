@@ -508,7 +508,7 @@ export class AudioRenderEngine {
     settings: RenderSettings,
     onProgress?: (progress: RenderProgress) => void,
   ): Promise<RenderResult> {
-    if (this?.isRendering) {
+    if (this.isRendering) {
       throw new Error("Render already in progress");
     }
 
@@ -517,11 +517,11 @@ export class AudioRenderEngine {
 
     const notify = (progress: RenderProgress) => {
       if (onProgress) onProgress(progress);
-      this?.listeners.forEach((l) => l(progress));
+      this.listeners.forEach((l) => l(progress));
     };
 
     try {
-      const validation = this?.validateSettings(settings);
+      const validation = this.validateSettings(settings);
       if (!validation?.valid) {
         throw new Error(`Invalid settings: ${validation?.errors.join(", ")}`);
       }
@@ -575,18 +575,18 @@ export class AudioRenderEngine {
   }
 
   abort(): void {
-    if (this?.abortController) {
-      this?.abortController.abort();
+    if (this.abortController) {
+      this.abortController.abort();
     }
   }
 
   subscribe(listener: (progress: RenderProgress) => void): () => void {
-    this?.listeners.add(listener);
-    return () => this?.listeners.delete(listener);
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
   }
 
   getIsRendering(): boolean {
-    return this?.isRendering;
+    return this.isRendering;
   }
 }
 

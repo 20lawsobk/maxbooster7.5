@@ -46,7 +46,7 @@ export class AuditSystem {
     this.accessibilityAuditor = new AccessibilityAuditor();
     this.seoAuditor = new SEOAuditor();
 
-    this?.initializeAuditSystem();
+    this.initializeAuditSystem();
   }
 
   public static getInstance(): AuditSystem {
@@ -59,17 +59,17 @@ export class AuditSystem {
   // Initialize audit system
   private async initializeAuditSystem(): Promise<void> {
     try {
-      logger?.info("🔍 Initializing comprehensive audit system...");
+      logger.info("🔍 Initializing comprehensive audit system...");
 
       // Start continuous auditing
-      this?.startContinuousAuditing();
+      this.startContinuousAuditing();
 
       // Perform initial audit
-      await this?.performFullAudit();
+      await this.performFullAudit();
 
-      logger?.info("✅ Audit system initialized");
+      logger.info("✅ Audit system initialized");
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "❌ Failed to initialize audit system:");
+      logger.warn({ err: error }, "❌ Failed to initialize audit system:");
     }
   }
 
@@ -78,7 +78,7 @@ export class AuditSystem {
     // Security audit every 5 minutes
     setInterval(async () => {
       try {
-        await this?.performSecurityAudit();
+        await this.performSecurityAudit();
       } catch {
         /* non-fatal */
       }
@@ -87,7 +87,7 @@ export class AuditSystem {
     // Performance audit every 10 minutes
     setInterval(async () => {
       try {
-        await this?.performPerformanceAudit();
+        await this.performPerformanceAudit();
       } catch {
         /* non-fatal */
       }
@@ -96,7 +96,7 @@ export class AuditSystem {
     // Functionality audit every hour
     setInterval(async () => {
       try {
-        await this?.performFunctionalityAudit();
+        await this.performFunctionalityAudit();
       } catch {
         /* non-fatal */
       }
@@ -105,7 +105,7 @@ export class AuditSystem {
     // Full audit every 24 hours
     setInterval(async () => {
       try {
-        await this?.performFullAudit();
+        await this.performFullAudit();
       } catch {
         /* non-fatal */
       }
@@ -114,71 +114,71 @@ export class AuditSystem {
 
   // Perform full audit
   public async performFullAudit(): Promise<AuditResults> {
-    logger?.info("🔍 Starting comprehensive audit...");
+    logger.info("🔍 Starting comprehensive audit...");
 
     try {
       // Security audit
-      const securityResults = await this?.securityAuditor.audit();
+      const securityResults = await this.securityAuditor.audit();
       this.auditResults.securityScore = securityResults?.score;
-      this?.auditResults.issues?.push(...securityResults?.issues);
-      this?.auditResults.recommendations?.push(
+      this.auditResults.issues?.push(...securityResults?.issues);
+      this.auditResults.recommendations?.push(
         ...securityResults?.recommendations,
       );
 
       // Functionality audit
-      const functionalityResults = await this?.functionalityAuditor.audit();
+      const functionalityResults = await this.functionalityAuditor.audit();
       this.auditResults.functionalityScore = functionalityResults?.score;
-      this?.auditResults.issues?.push(...functionalityResults?.issues);
-      this?.auditResults.recommendations?.push(
+      this.auditResults.issues?.push(...functionalityResults?.issues);
+      this.auditResults.recommendations?.push(
         ...functionalityResults?.recommendations,
       );
 
       // Performance audit
-      const performanceResults = await this?.performanceAuditor.audit();
+      const performanceResults = await this.performanceAuditor.audit();
       this.auditResults.performanceScore = performanceResults?.score;
-      this?.auditResults.issues?.push(...performanceResults?.issues);
-      this?.auditResults.recommendations?.push(
+      this.auditResults.issues?.push(...performanceResults?.issues);
+      this.auditResults.recommendations?.push(
         ...performanceResults?.recommendations,
       );
 
       // Code quality audit
-      const codeQualityResults = await this?.codeQualityAuditor.audit();
+      const codeQualityResults = await this.codeQualityAuditor.audit();
       this.auditResults.codeQualityScore = codeQualityResults?.score;
-      this?.auditResults.issues?.push(...codeQualityResults?.issues);
-      this?.auditResults.recommendations?.push(
+      this.auditResults.issues?.push(...codeQualityResults?.issues);
+      this.auditResults.recommendations?.push(
         ...codeQualityResults?.recommendations,
       );
 
       // Accessibility audit
-      const accessibilityResults = await this?.accessibilityAuditor.audit();
+      const accessibilityResults = await this.accessibilityAuditor.audit();
       this.auditResults.accessibilityScore = accessibilityResults?.score;
-      this?.auditResults.issues?.push(...accessibilityResults?.issues);
-      this?.auditResults.recommendations?.push(
+      this.auditResults.issues?.push(...accessibilityResults?.issues);
+      this.auditResults.recommendations?.push(
         ...accessibilityResults?.recommendations,
       );
 
       // SEO audit
-      const seoResults = await this?.seoAuditor.audit();
+      const seoResults = await this.seoAuditor.audit();
       this.auditResults.seoScore = seoResults?.score;
-      this?.auditResults.issues?.push(...seoResults?.issues);
-      this?.auditResults.recommendations?.push(...seoResults?.recommendations);
+      this.auditResults.issues?.push(...seoResults?.issues);
+      this.auditResults.recommendations?.push(...seoResults?.recommendations);
 
       // Calculate overall score
-      this?.calculateOverallScore();
+      this.calculateOverallScore();
 
       // Check compliance
-      await this?.checkCompliance();
+      await this.checkCompliance();
 
       // Update last audit time
       this.auditResults.lastAudit = Date?.now();
 
-      logger?.info(
-        `✅ Audit completed. Overall score: ${this?.auditResults.overallScore}/100`,
+      logger.info(
+        `✅ Audit completed. Overall score: ${this.auditResults.overallScore}/100`,
       );
 
-      return this?.auditResults;
+      return this.auditResults;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "❌ Audit failed:");
+      logger.warn({ err: error }, "❌ Audit failed:");
       throw error;
     }
   }
@@ -186,46 +186,46 @@ export class AuditSystem {
   // Perform security audit
   private async performSecurityAudit(): Promise<void> {
     try {
-      const results = await this?.securityAuditor.audit();
+      const results = await this.securityAuditor.audit();
       this.auditResults.securityScore = results?.score;
 
       if (results?.score < 90) {
-        logger?.info(`⚠️ Security score below threshold: ${results?.score}/100`);
+        logger.info(`⚠️ Security score below threshold: ${results?.score}/100`);
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Security audit error:");
+      logger.warn({ err: error }, "Security audit error:");
     }
   }
 
   // Perform performance audit
   private async performPerformanceAudit(): Promise<void> {
     try {
-      const results = await this?.performanceAuditor.audit();
+      const results = await this.performanceAuditor.audit();
       this.auditResults.performanceScore = results?.score;
 
       if (results?.score < 85) {
-        logger?.info(
+        logger.info(
           `⚠️ Performance score below threshold: ${results?.score}/100`,
         );
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Performance audit error:");
+      logger.warn({ err: error }, "Performance audit error:");
     }
   }
 
   // Perform functionality audit
   private async performFunctionalityAudit(): Promise<void> {
     try {
-      const results = await this?.functionalityAuditor.audit();
+      const results = await this.functionalityAuditor.audit();
       this.auditResults.functionalityScore = results?.score;
 
       if (results?.score < 95) {
-        logger?.info(
+        logger.info(
           `⚠️ Functionality score below threshold: ${results?.score}/100`,
         );
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Functionality audit error:");
+      logger.warn({ err: error }, "Functionality audit error:");
     }
   }
 
@@ -240,43 +240,43 @@ export class AuditSystem {
       seo: 0.05,
     };
 
-    this.auditResults.overallScore = Math?.round(
-      this?.auditResults.securityScore * weights?.security +
-        this?.auditResults.functionalityScore * weights?.functionality +
-        this?.auditResults.performanceScore * weights?.performance +
-        this?.auditResults.codeQualityScore * weights?.codeQuality +
-        this?.auditResults.accessibilityScore * weights?.accessibility +
-        this?.auditResults.seoScore * weights?.seo,
+    this.auditResults.overallScore = Math.round(
+      this.auditResults.securityScore * weights?.security +
+        this.auditResults.functionalityScore * weights?.functionality +
+        this.auditResults.performanceScore * weights?.performance +
+        this.auditResults.codeQualityScore * weights?.codeQuality +
+        this.auditResults.accessibilityScore * weights?.accessibility +
+        this.auditResults.seoScore * weights?.seo,
     );
   }
 
   // Check compliance
   private async checkCompliance(): Promise<void> {
     // GDPR compliance
-    this.auditResults.compliance.gdpr = await this?.checkGDPRCompliance();
+    this.auditResults.compliance.gdpr = await this.checkGDPRCompliance();
 
     // CCPA compliance
-    this.auditResults.compliance.ccpa = await this?.checkCCPACompliance();
+    this.auditResults.compliance.ccpa = await this.checkCCPACompliance();
 
     // SOX compliance
-    this.auditResults.compliance.sox = await this?.checkSOXCompliance();
+    this.auditResults.compliance.sox = await this.checkSOXCompliance();
 
     // HIPAA compliance
-    this.auditResults.compliance.hipaa = await this?.checkHIPAACompliance();
+    this.auditResults.compliance.hipaa = await this.checkHIPAACompliance();
 
     // PCI compliance
-    this.auditResults.compliance.pci = await this?.checkPCICompliance();
+    this.auditResults.compliance.pci = await this.checkPCICompliance();
   }
 
   // Check GDPR compliance
   private async checkGDPRCompliance(): Promise<boolean> {
     try {
       // Check for data protection measures
-      const hasDataEncryption = await this?.checkDataEncryption();
-      const hasDataRetention = await this?.checkDataRetention();
-      const hasUserConsent = await this?.checkUserConsent();
-      const hasDataPortability = await this?.checkDataPortability();
-      const hasRightToErasure = await this?.checkRightToErasure();
+      const hasDataEncryption = await this.checkDataEncryption();
+      const hasDataRetention = await this.checkDataRetention();
+      const hasUserConsent = await this.checkUserConsent();
+      const hasDataPortability = await this.checkDataPortability();
+      const hasRightToErasure = await this.checkRightToErasure();
 
       return (
         hasDataEncryption &&
@@ -286,7 +286,7 @@ export class AuditSystem {
         hasRightToErasure
       );
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "GDPR compliance check error:");
+      logger.warn({ err: error }, "GDPR compliance check error:");
       return false;
     }
   }
@@ -295,13 +295,13 @@ export class AuditSystem {
   private async checkCCPACompliance(): Promise<boolean> {
     try {
       // Check for California Consumer Privacy Act compliance
-      const hasPrivacyNotice = await this?.checkPrivacyNotice();
-      const hasOptOut = await this?.checkOptOutMechanism();
-      const hasDataDisclosure = await this?.checkDataDisclosure();
+      const hasPrivacyNotice = await this.checkPrivacyNotice();
+      const hasOptOut = await this.checkOptOutMechanism();
+      const hasDataDisclosure = await this.checkDataDisclosure();
 
       return hasPrivacyNotice && hasOptOut && hasDataDisclosure;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "CCPA compliance check error:");
+      logger.warn({ err: error }, "CCPA compliance check error:");
       return false;
     }
   }
@@ -310,13 +310,13 @@ export class AuditSystem {
   private async checkSOXCompliance(): Promise<boolean> {
     try {
       // Check for Sarbanes-Oxley compliance
-      const hasFinancialControls = await this?.checkFinancialControls();
-      const hasAuditTrail = await this?.checkAuditTrail();
-      const hasDataIntegrity = await this?.checkDataIntegrity();
+      const hasFinancialControls = await this.checkFinancialControls();
+      const hasAuditTrail = await this.checkAuditTrail();
+      const hasDataIntegrity = await this.checkDataIntegrity();
 
       return hasFinancialControls && hasAuditTrail && hasDataIntegrity;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "SOX compliance check error:");
+      logger.warn({ err: error }, "SOX compliance check error:");
       return false;
     }
   }
@@ -325,13 +325,13 @@ export class AuditSystem {
   private async checkHIPAACompliance(): Promise<boolean> {
     try {
       // Check for HIPAA compliance
-      const hasAccessControls = await this?.checkAccessControls();
-      const hasAuditLogs = await this?.checkAuditLogs();
-      const hasDataEncryption = await this?.checkDataEncryption();
+      const hasAccessControls = await this.checkAccessControls();
+      const hasAuditLogs = await this.checkAuditLogs();
+      const hasDataEncryption = await this.checkDataEncryption();
 
       return hasAccessControls && hasAuditLogs && hasDataEncryption;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "HIPAA compliance check error:");
+      logger.warn({ err: error }, "HIPAA compliance check error:");
       return false;
     }
   }
@@ -340,16 +340,16 @@ export class AuditSystem {
   private async checkPCICompliance(): Promise<boolean> {
     try {
       // Check for PCI DSS compliance
-      const hasSecureNetwork = await this?.checkSecureNetwork();
-      const hasCardholderData = await this?.checkCardholderData();
+      const hasSecureNetwork = await this.checkSecureNetwork();
+      const hasCardholderData = await this.checkCardholderData();
       const hasVulnerabilityManagement =
-        await this?.checkVulnerabilityManagement();
+        await this.checkVulnerabilityManagement();
 
       return (
         hasSecureNetwork && hasCardholderData && hasVulnerabilityManagement
       );
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "PCI compliance check error:");
+      logger.warn({ err: error }, "PCI compliance check error:");
       return false;
     }
   }
@@ -372,37 +372,37 @@ export class AuditSystem {
     // Real: verify TLS is on (production), DB connection uses SSL, and a
     // bcrypt/argon password hashing salt rounds env is sane.
     const inProd =
-      process?.env.NODE_ENV === "production" || !!process?.env.REPLIT_DEPLOYMENT;
-    const dbUrl = process?.env.DATABASE_URL || "";
+      process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT;
+    const dbUrl = process.env.DATABASE_URL || "";
     const dbHasSsl =
       dbUrl.includes("sslmode=require") ||
       dbUrl.includes("sslmode=verify") ||
       !inProd;
     const tlsOk =
-      !inProd || !!process?.env.TLS_CERT_PATH || !!process?.env.REPLIT_DEPLOYMENT;
+      !inProd || !!process.env.TLS_CERT_PATH || !!process.env.REPLIT_DEPLOYMENT;
     return dbHasSsl && tlsOk;
   }
 
   private async checkDataRetention(): Promise<boolean> {
     // Real: a retention policy file must exist OR an env var must declare it.
-    const hasPolicyFile = await this?.fileExists(
-      path?.join(process?.cwd(), "server/compliance/policies/data-retention.md"),
+    const hasPolicyFile = await this.fileExists(
+      path?.join(process.cwd(), "server/compliance/policies/data-retention.md"),
     );
-    return hasPolicyFile || !!process?.env.DATA_RETENTION_DAYS;
+    return hasPolicyFile || !!process.env.DATA_RETENTION_DAYS;
   }
 
   private async checkUserConsent(): Promise<boolean> {
     // Real: a cookie/consent banner component must exist on the client.
     return (
-      (await this?.fileExists(
-        path?.join(process?.cwd(), "client/src/components/CookieConsent.tsx"),
+      (await this.fileExists(
+        path?.join(process.cwd(), "client/src/components/CookieConsent.tsx"),
       )) ||
-      (await this?.fileExists(
-        path?.join(process?.cwd(), "client/src/components/CookieBanner.tsx"),
+      (await this.fileExists(
+        path?.join(process.cwd(), "client/src/components/CookieBanner.tsx"),
       )) ||
-      (await this?.fileExists(
+      (await this.fileExists(
         path?.join(
-          process?.cwd(),
+          process.cwd(),
           "client/src/components/legal/CookieConsent.tsx",
         ),
       ))
@@ -434,15 +434,15 @@ export class AuditSystem {
 
   private async checkPrivacyNotice(): Promise<boolean> {
     return (
-      (await this?.fileExists(
-        path?.join(process?.cwd(), "client/src/pages/Privacy.tsx"),
+      (await this.fileExists(
+        path?.join(process.cwd(), "client/src/pages/Privacy.tsx"),
       )) ||
-      (await this?.fileExists(
-        path?.join(process?.cwd(), "client/src/pages/PrivacyPolicy.tsx"),
+      (await this.fileExists(
+        path?.join(process.cwd(), "client/src/pages/PrivacyPolicy.tsx"),
       )) ||
-      (await this?.fileExists(
+      (await this.fileExists(
         path?.join(
-          process?.cwd(),
+          process.cwd(),
           "server/compliance/policies/privacy-policy.md",
         ),
       ))
@@ -462,35 +462,35 @@ export class AuditSystem {
 
   private async checkDataDisclosure(): Promise<boolean> {
     return (
-      (await this?.fileExists(
+      (await this.fileExists(
         path?.join(
-          process?.cwd(),
+          process.cwd(),
           "server/compliance/policies/data-processing-agreement.md",
         ),
       )) ||
-      (await this?.fileExists(
-        path?.join(process?.cwd(), "client/src/pages/DataDisclosure.tsx"),
+      (await this.fileExists(
+        path?.join(process.cwd(), "client/src/pages/DataDisclosure.tsx"),
       ))
     );
   }
 
   private async checkFinancialControls(): Promise<boolean> {
     // Real: payments routed through Stripe with webhook signature verification.
-    const hasStripe = !!process?.env.STRIPE_SECRET_KEY;
-    const hasWebhookSecret = !!process?.env.STRIPE_WEBHOOK_SECRET;
+    const hasStripe = !!process.env.STRIPE_SECRET_KEY;
+    const hasWebhookSecret = !!process.env.STRIPE_WEBHOOK_SECRET;
     return hasStripe && hasWebhookSecret;
   }
 
   private async checkAuditTrail(): Promise<boolean> {
     return (
-      (await this?.fileExists(
-        path?.join(process?.cwd(), "server/services/auditLoggerService.ts"),
+      (await this.fileExists(
+        path?.join(process.cwd(), "server/services/auditLoggerService.ts"),
       )) ||
-      (await this?.fileExists(
-        path?.join(process?.cwd(), "server/safety/auditLogger.ts"),
+      (await this.fileExists(
+        path?.join(process.cwd(), "server/safety/auditLogger.ts"),
       )) ||
-      (await this?.fileExists(
-        path?.join(process?.cwd(), "server/middleware/auditLogger.ts"),
+      (await this.fileExists(
+        path?.join(process.cwd(), "server/middleware/auditLogger.ts"),
       ))
     );
   }
@@ -498,22 +498,22 @@ export class AuditSystem {
   private async checkDataIntegrity(): Promise<boolean> {
     // Real: DB migrations directory + drizzle config must exist.
     return (
-      (await this?.fileExists(path?.join(process?.cwd(), "drizzle.config.ts"))) ||
-      (await this?.fileExists(path?.join(process?.cwd(), "drizzle.config.js")))
+      (await this.fileExists(path?.join(process.cwd(), "drizzle.config.ts"))) ||
+      (await this.fileExists(path?.join(process.cwd(), "drizzle.config.js")))
     );
   }
 
   private async checkAccessControls(): Promise<boolean> {
     return (
-      (await this?.fileExists(path?.join(process?.cwd(), "server/auth.ts"))) &&
-      (await this?.fileExists(
-        path?.join(process?.cwd(), "server/middleware/auth.ts"),
+      (await this.fileExists(path?.join(process.cwd(), "server/auth.ts"))) &&
+      (await this.fileExists(
+        path?.join(process.cwd(), "server/middleware/auth.ts"),
       ))
     );
   }
 
   private async checkAuditLogs(): Promise<boolean> {
-    return this?.checkAuditTrail();
+    return this.checkAuditTrail();
   }
 
   private async checkSecureNetwork(): Promise<boolean> {
@@ -524,8 +524,8 @@ export class AuditSystem {
       );
       const hasMiddleware = grep?.stdout.trim().length > 0;
       const httpsOk =
-        process?.env.NODE_ENV !== "production" ||
-        !!process?.env.REPLIT_DEPLOYMENT;
+        process.env.NODE_ENV !== "production" ||
+        !!process.env.REPLIT_DEPLOYMENT;
       return hasMiddleware && httpsOk;
     } catch {
       return false;

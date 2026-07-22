@@ -32,23 +32,23 @@ const requireWorkspaceMember = async (
   next: Function,
 ) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const workspaceId = req?.params.id || req?.params.workspaceId;
+    const workspaceId = req.params.id || req.params.workspaceId;
     const isMember = await workspaceService?.isWorkspaceMember(
       workspaceId,
-      req?.user.id,
+      req.user.id,
     );
 
     if (!isMember) {
-      return res?.status(403).json({ error: "Not a member of this workspace" });
+      return res.status(403).json({ error: "Not a member of this workspace" });
     }
     next();
   } catch (error) {
-    logger?.warn("Error in workspace member check:", error?.message);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Error in workspace member check:", error?.message);
+    res.status(500).json({ error: "Failed to process request" });
   }
 };
 
@@ -58,20 +58,20 @@ const requireWorkspaceAdmin = async (
   next: Function,
 ) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const workspaceId = req?.params.id || req?.params.workspaceId;
-    const isAdmin = await rbacService?.isAdmin(workspaceId, req?.user.id);
+    const workspaceId = req.params.id || req.params.workspaceId;
+    const isAdmin = await rbacService?.isAdmin(workspaceId, req.user.id);
 
     if (!isAdmin) {
-      return res?.status(403).json({ error: "Admin access required" });
+      return res.status(403).json({ error: "Admin access required" });
     }
     next();
   } catch (error) {
-    logger?.warn("Error in workspace admin check:", error?.message);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Error in workspace admin check:", error?.message);
+    res.status(500).json({ error: "Failed to process request" });
   }
 };
 
@@ -106,7 +106,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const validatedData = createWorkspaceSchema?.parse(req?.body);
+      const validatedData = createWorkspaceSchema?.parse(req.body);
 
       const result = await workspaceService?.createWorkspace({
         ...validatedData,
@@ -114,18 +114,18 @@ router?.post(
       });
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.status(201).json({ workspace: result.workspace });
+      res.status(201).json({ workspace: result.workspace });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res
           .status(400)
           .json({ error: "Invalid request data", details: error.issues });
       }
-      logger?.warn({ err: error }, "Create workspace error:");
-      res?.status(500).json({ error: "Failed to create workspace" });
+      logger.warn({ err: error }, "Create workspace error:");
+      res.status(500).json({ error: "Failed to create workspace" });
     }
   },
 );
@@ -136,16 +136,16 @@ router?.get(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const workspace = await workspaceService?.getWorkspace(req?.params.id);
+      const workspace = await workspaceService?.getWorkspace(req.params.id);
 
       if (!workspace) {
-        return res?.status(404).json({ error: "Workspace not found" });
+        return res.status(404).json({ error: "Workspace not found" });
       }
 
-      res?.json({ workspace });
+      res.json({ workspace });
     } catch (error) {
-      logger?.warn({ err: error }, "Get workspace error:");
-      res?.status(500).json({ error: "Failed to get workspace" });
+      logger.warn({ err: error }, "Get workspace error:");
+      res.status(500).json({ error: "Failed to get workspace" });
     }
   },
 );
@@ -155,11 +155,11 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const workspaces = await workspaceService?.getUserWorkspaces(req?.user!.id);
-      res?.json({ workspaces });
+      const workspaces = await workspaceService?.getUserWorkspaces(req.user!.id);
+      res.json({ workspaces });
     } catch (error) {
-      logger?.warn({ err: error }, "Get user workspaces error:");
-      res?.status(500).json({ error: "Failed to get workspaces" });
+      logger.warn({ err: error }, "Get user workspaces error:");
+      res.status(500).json({ error: "Failed to get workspaces" });
     }
   },
 );
@@ -171,19 +171,19 @@ router?.put(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const result = await workspaceService?.updateWorkspace(
-        req?.params.id,
-        req?.body,
-        req?.user!.id,
+        req.params.id,
+        req.body,
+        req.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({ workspace: result.workspace });
+      res.json({ workspace: result.workspace });
     } catch (error) {
-      logger?.warn({ err: error }, "Update workspace error:");
-      res?.status(500).json({ error: "Failed to update workspace" });
+      logger.warn({ err: error }, "Update workspace error:");
+      res.status(500).json({ error: "Failed to update workspace" });
     }
   },
 );
@@ -195,18 +195,18 @@ router?.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const result = await workspaceService?.deleteWorkspace(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Delete workspace error:");
-      res?.status(500).json({ error: "Failed to delete workspace" });
+      logger.warn({ err: error }, "Delete workspace error:");
+      res.status(500).json({ error: "Failed to delete workspace" });
     }
   },
 );
@@ -217,11 +217,11 @@ router?.get(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const members = await workspaceService?.getMembers(req?.params.id);
-      res?.json({ members });
+      const members = await workspaceService?.getMembers(req.params.id);
+      res.json({ members });
     } catch (error) {
-      logger?.warn({ err: error }, "Get members error:");
-      res?.status(500).json({ error: "Failed to get members" });
+      logger.warn({ err: error }, "Get members error:");
+      res.status(500).json({ error: "Failed to get members" });
     }
   },
 );
@@ -239,7 +239,7 @@ router?.post(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const validatedData = inviteSchema?.parse(req?.body);
+      const validatedData = inviteSchema?.parse(req.body);
 
       const result = await workspaceService?.inviteMember({
         workspaceId: req.params.id,
@@ -251,18 +251,18 @@ router?.post(
       });
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.status(201).json({ invitation: result.invitation });
+      res.status(201).json({ invitation: result.invitation });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res
           .status(400)
           .json({ error: "Invalid request data", details: error.issues });
       }
-      logger?.warn({ err: error }, "Invite member error:");
-      res?.status(500).json({ error: "Failed to send invitation" });
+      logger.warn({ err: error }, "Invite member error:");
+      res.status(500).json({ error: "Failed to send invitation" });
     }
   },
 );
@@ -272,25 +272,25 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { token } = req?.body;
+      const { token } = req.body;
 
       if (!token) {
-        return res?.status(400).json({ error: "Invitation token is required" });
+        return res.status(400).json({ error: "Invitation token is required" });
       }
 
       const result = await workspaceService?.acceptInvitation(
         token,
-        req?.user!.id,
+        req.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Accept invitation error:");
-      res?.status(500).json({ error: "Failed to accept invitation" });
+      logger.warn({ err: error }, "Accept invitation error:");
+      res.status(500).json({ error: "Failed to accept invitation" });
     }
   },
 );
@@ -302,12 +302,12 @@ router?.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const invitations = await workspaceService?.getPendingInvitations(
-        req?.params.id,
+        req.params.id,
       );
-      res?.json({ invitations });
+      res.json({ invitations });
     } catch (error) {
-      logger?.warn({ err: error }, "Get invitations error:");
-      res?.status(500).json({ error: "Failed to get invitations" });
+      logger.warn({ err: error }, "Get invitations error:");
+      res.status(500).json({ error: "Failed to get invitations" });
     }
   },
 );
@@ -319,18 +319,18 @@ router?.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const result = await workspaceService?.cancelInvitation(
-        req?.params.invitationId,
-        req?.user!.id,
+        req.params.invitationId,
+        req.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Cancel invitation error:");
-      res?.status(500).json({ error: "Failed to cancel invitation" });
+      logger.warn({ err: error }, "Cancel invitation error:");
+      res.status(500).json({ error: "Failed to cancel invitation" });
     }
   },
 );
@@ -346,29 +346,29 @@ router?.put(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const validatedData = updateMemberRoleSchema?.parse(req?.body);
+      const validatedData = updateMemberRoleSchema?.parse(req.body);
 
       const result = await workspaceService?.updateMemberRole(
-        req?.params.id,
-        req?.params.memberId,
+        req.params.id,
+        req.params.memberId,
         validatedData?.role,
         validatedData?.roleId,
-        req?.user!.id,
+        req.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res
           .status(400)
           .json({ error: "Invalid request data", details: error.issues });
       }
-      logger?.warn({ err: error }, "Update member role error:");
-      res?.status(500).json({ error: "Failed to update member role" });
+      logger.warn({ err: error }, "Update member role error:");
+      res.status(500).json({ error: "Failed to update member role" });
     }
   },
 );
@@ -380,19 +380,19 @@ router?.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const result = await workspaceService?.removeMember(
-        req?.params.id,
-        req?.params.memberId,
-        req?.user!.id,
+        req.params.id,
+        req.params.memberId,
+        req.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Remove member error:");
-      res?.status(500).json({ error: "Failed to remove member" });
+      logger.warn({ err: error }, "Remove member error:");
+      res.status(500).json({ error: "Failed to remove member" });
     }
   },
 );
@@ -403,11 +403,11 @@ router?.get(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const roles = await rbacService?.getWorkspaceRoles(req?.params.id);
-      res?.json({ roles });
+      const roles = await rbacService?.getWorkspaceRoles(req.params.id);
+      res.json({ roles });
     } catch (error) {
-      logger?.warn({ err: error }, "Get roles error:");
-      res?.status(500).json({ error: "Failed to get roles" });
+      logger.warn({ err: error }, "Get roles error:");
+      res.status(500).json({ error: "Failed to get roles" });
     }
   },
 );
@@ -450,9 +450,9 @@ router?.post(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const validatedData = createRoleSchema?.parse(req?.body);
+      const validatedData = createRoleSchema?.parse(req.body);
 
-      const result = await rbacService?.createRole(req?.params.id, {
+      const result = await rbacService?.createRole(req.params.id, {
         name: validatedData.name,
         description: validatedData.description,
         permissions: validatedData.permissions as Permission[],
@@ -461,18 +461,18 @@ router?.post(
       });
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.status(201).json({ role: result.role });
+      res.status(201).json({ role: result.role });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res
           .status(400)
           .json({ error: "Invalid request data", details: error.issues });
       }
-      logger?.warn({ err: error }, "Create role error:");
-      res?.status(500).json({ error: "Failed to create role" });
+      logger.warn({ err: error }, "Create role error:");
+      res.status(500).json({ error: "Failed to create role" });
     }
   },
 );
@@ -483,16 +483,16 @@ router?.put(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const result = await rbacService?.updateRole(req?.params.roleId, req?.body);
+      const result = await rbacService?.updateRole(req.params.roleId, req.body);
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({ role: result.role });
+      res.json({ role: result.role });
     } catch (error) {
-      logger?.warn({ err: error }, "Update role error:");
-      res?.status(500).json({ error: "Failed to update role" });
+      logger.warn({ err: error }, "Update role error:");
+      res.status(500).json({ error: "Failed to update role" });
     }
   },
 );
@@ -503,16 +503,16 @@ router?.delete(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const result = await rbacService?.deleteRole(req?.params.roleId);
+      const result = await rbacService?.deleteRole(req.params.roleId);
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Delete role error:");
-      res?.status(500).json({ error: "Failed to delete role" });
+      logger.warn({ err: error }, "Delete role error:");
+      res.status(500).json({ error: "Failed to delete role" });
     }
   },
 );
@@ -523,10 +523,10 @@ router?.get(
   async (_req: AuthenticatedRequest, res: Response) => {
     try {
       const templates = rbacService?.getRoleTemplates();
-      res?.json({ templates });
+      res.json({ templates });
     } catch (error) {
-      logger?.warn({ err: error }, "Get role templates error:");
-      res?.status(500).json({ error: "Failed to get role templates" });
+      logger.warn({ err: error }, "Get role templates error:");
+      res.status(500).json({ error: "Failed to get role templates" });
     }
   },
 );
@@ -538,13 +538,13 @@ router?.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const permissions = await rbacService?.getUserPermissions(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
       );
-      res?.json({ permissions });
+      res.json({ permissions });
     } catch (error) {
-      logger?.warn({ err: error }, "Get my permissions error:");
-      res?.status(500).json({ error: "Failed to get permissions" });
+      logger.warn({ err: error }, "Get my permissions error:");
+      res.status(500).json({ error: "Failed to get permissions" });
     }
   },
 );
@@ -556,12 +556,12 @@ router?.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const workflows = await approvalWorkflowService?.getWorkspaceWorkflows(
-        req?.params.id,
+        req.params.id,
       );
-      res?.json({ workflows });
+      res.json({ workflows });
     } catch (error) {
-      logger?.warn({ err: error }, "Get workflows error:");
-      res?.status(500).json({ error: "Failed to get workflows" });
+      logger.warn({ err: error }, "Get workflows error:");
+      res.status(500).json({ error: "Failed to get workflows" });
     }
   },
 );
@@ -605,7 +605,7 @@ router?.post(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const validatedData = createWorkflowSchema?.parse(req?.body);
+      const validatedData = createWorkflowSchema?.parse(req.body);
 
       const result = await approvalWorkflowService?.createWorkflow({
         workspaceId: req.params.id,
@@ -619,18 +619,18 @@ router?.post(
       });
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.status(201).json({ workflow: result.workflow });
+      res.status(201).json({ workflow: result.workflow });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res
           .status(400)
           .json({ error: "Invalid request data", details: error.issues });
       }
-      logger?.warn({ err: error }, "Create workflow error:");
-      res?.status(500).json({ error: "Failed to create workflow" });
+      logger.warn({ err: error }, "Create workflow error:");
+      res.status(500).json({ error: "Failed to create workflow" });
     }
   },
 );
@@ -642,19 +642,19 @@ router?.put(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const result = await approvalWorkflowService?.updateWorkflow(
-        req?.params.workflowId,
-        req?.body,
-        req?.user!.id,
+        req.params.workflowId,
+        req.body,
+        req.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({ workflow: result.workflow });
+      res.json({ workflow: result.workflow });
     } catch (error) {
-      logger?.warn({ err: error }, "Update workflow error:");
-      res?.status(500).json({ error: "Failed to update workflow" });
+      logger.warn({ err: error }, "Update workflow error:");
+      res.status(500).json({ error: "Failed to update workflow" });
     }
   },
 );
@@ -666,18 +666,18 @@ router?.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const result = await approvalWorkflowService?.deleteWorkflow(
-        req?.params.workflowId,
-        req?.user!.id,
+        req.params.workflowId,
+        req.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Delete workflow error:");
-      res?.status(500).json({ error: "Failed to delete workflow" });
+      logger.warn({ err: error }, "Delete workflow error:");
+      res.status(500).json({ error: "Failed to delete workflow" });
     }
   },
 );
@@ -690,13 +690,13 @@ router?.get(
     try {
       const pendingApprovals =
         await approvalWorkflowService?.getPendingApprovals(
-          req?.params.id,
-          req?.user!.id,
+          req.params.id,
+          req.user!.id,
         );
-      res?.json({ approvals: pendingApprovals });
+      res.json({ approvals: pendingApprovals });
     } catch (error) {
-      logger?.warn({ err: error }, "Get pending approvals error:");
-      res?.status(500).json({ error: "Failed to get pending approvals" });
+      logger.warn({ err: error }, "Get pending approvals error:");
+      res.status(500).json({ error: "Failed to get pending approvals" });
     }
   },
 );
@@ -707,15 +707,15 @@ router?.get(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 500);
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
       const history = await approvalWorkflowService?.getApprovalHistory(
-        req?.params.id,
+        req.params.id,
         limit,
       );
-      res?.json({ history });
+      res.json({ history });
     } catch (error) {
-      logger?.warn({ err: error }, "Get approval history error:");
-      res?.status(500).json({ error: "Failed to get approval history" });
+      logger.warn({ err: error }, "Get approval history error:");
+      res.status(500).json({ error: "Failed to get approval history" });
     }
   },
 );
@@ -727,17 +727,17 @@ router?.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const result = await approvalWorkflowService?.getApprovalRequestWithSteps(
-        req?.params.requestId,
+        req.params.requestId,
       );
 
       if (!result) {
-        return res?.status(404).json({ error: "Approval request not found" });
+        return res.status(404).json({ error: "Approval request not found" });
       }
 
-      res?.json(result);
+      res.json(result);
     } catch (error) {
-      logger?.warn({ err: error }, "Get approval request error:");
-      res?.status(500).json({ error: "Failed to get approval request" });
+      logger.warn({ err: error }, "Get approval request error:");
+      res.status(500).json({ error: "Failed to get approval request" });
     }
   },
 );
@@ -753,30 +753,30 @@ router?.post(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const validatedData = approvalDecisionSchema?.parse(req?.body);
-      const { stepNumber } = req?.body;
+      const validatedData = approvalDecisionSchema?.parse(req.body);
+      const { stepNumber } = req.body;
 
       const result = await approvalWorkflowService?.processApprovalDecision(
-        req?.params.requestId,
+        req.params.requestId,
         stepNumber,
         validatedData?.decision,
-        req?.user!.id,
+        req.user!.id,
         validatedData?.comment,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res
           .status(400)
           .json({ error: "Invalid request data", details: error.issues });
       }
-      logger?.warn({ err: error }, "Process approval decision error:");
-      res?.status(500).json({ error: "Failed to process decision" });
+      logger.warn({ err: error }, "Process approval decision error:");
+      res.status(500).json({ error: "Failed to process decision" });
     }
   },
 );
@@ -787,13 +787,13 @@ router?.get(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 500);
-      const offset = Math?.min(
-        Math?.max(parseInt(req?.query.offset as string) || 0, 0),
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
+      const offset = Math.min(
+        Math.max(parseInt(req.query.offset as string) || 0, 0),
         100_000,
       );
       const activities = await workspaceService?.getAuditLog(
-        req?.params.id,
+        req.params.id,
         limit,
         offset,
       );
@@ -811,10 +811,10 @@ router?.get(
         metadata: log.changes,
       }));
 
-      res?.json({ activities: formattedActivities });
+      res.json({ activities: formattedActivities });
     } catch (error) {
-      logger?.warn({ err: error }, "Get activity error:");
-      res?.status(500).json({ error: "Failed to get activity" });
+      logger.warn({ err: error }, "Get activity error:");
+      res.status(500).json({ error: "Failed to get activity" });
     }
   },
 );
@@ -825,11 +825,11 @@ router?.get(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const format = (req?.query.format as string) || "json";
-      const startDate = req?.query.startDate as string;
-      const endDate = req?.query.endDate as string;
+      const format = (req.query.format as string) || "json";
+      const startDate = req.query.startDate as string;
+      const endDate = req.query.endDate as string;
 
-      const logs = await workspaceService?.getAuditLog(req?.params.id, 1000, 0);
+      const logs = await workspaceService?.getAuditLog(req.params.id, 1000, 0);
 
       let filteredLogs = logs;
       if (startDate) {
@@ -863,29 +863,29 @@ router?.get(
           .join("\n");
 
         // Strip non-safe characters to prevent HTTP response splitting via header injection.
-        const safeId = req?.params.id
+        const safeId = req.params.id
           .replace(/[^a-zA-Z0-9_\-]/g, "")
           .slice(0, 64);
-        res?.setHeader("Content-Type", "text/csv");
-        res?.setHeader(
+        res.setHeader("Content-Type", "text/csv");
+        res.setHeader(
           "Content-Disposition",
           `attachment; filename=audit-log-${safeId}.csv`,
         );
-        res?.send(csvHeaders + csvRows);
+        res.send(csvHeaders + csvRows);
       } else {
-        const safeId = req?.params.id
+        const safeId = req.params.id
           .replace(/[^a-zA-Z0-9_\-]/g, "")
           .slice(0, 64);
-        res?.setHeader("Content-Type", "application/json");
-        res?.setHeader(
+        res.setHeader("Content-Type", "application/json");
+        res.setHeader(
           "Content-Disposition",
           `attachment; filename=audit-log-${safeId}.json`,
         );
-        res?.json({ logs: filteredLogs, exportedAt: new Date().toISOString() });
+        res.json({ logs: filteredLogs, exportedAt: new Date().toISOString() });
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Export audit log error:");
-      res?.status(500).json({ error: "Failed to export audit log" });
+      logger.warn({ err: error }, "Export audit log error:");
+      res.status(500).json({ error: "Failed to export audit log" });
     }
   },
 );
@@ -901,7 +901,7 @@ router?.post(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const validatedData = shareProjectSchema?.parse(req?.body);
+      const validatedData = shareProjectSchema?.parse(req.body);
 
       const result = await workspaceService?.shareProject({
         workspaceId: req.params.id,
@@ -912,18 +912,18 @@ router?.post(
       });
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({ shares: result.shares });
+      res.json({ shares: result.shares });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res
           .status(400)
           .json({ error: "Invalid request data", details: error.issues });
       }
-      logger?.warn({ err: error }, "Share project error:");
-      res?.status(500).json({ error: "Failed to share project" });
+      logger.warn({ err: error }, "Share project error:");
+      res.status(500).json({ error: "Failed to share project" });
     }
   },
 );
@@ -935,12 +935,12 @@ router?.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const shares = await workspaceService?.getProjectShares(
-        req?.params.projectId,
+        req.params.projectId,
       );
-      res?.json({ shares });
+      res.json({ shares });
     } catch (error) {
-      logger?.warn({ err: error }, "Get project shares error:");
-      res?.status(500).json({ error: "Failed to get project shares" });
+      logger.warn({ err: error }, "Get project shares error:");
+      res.status(500).json({ error: "Failed to get project shares" });
     }
   },
 );
@@ -951,21 +951,21 @@ router?.put(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { permission } = req?.body;
+      const { permission } = req.body;
       const result = await workspaceService?.updateSharePermission(
-        req?.params.shareId,
+        req.params.shareId,
         permission,
-        req?.user!.id,
+        req.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Update share permission error:");
-      res?.status(500).json({ error: "Failed to update share permission" });
+      logger.warn({ err: error }, "Update share permission error:");
+      res.status(500).json({ error: "Failed to update share permission" });
     }
   },
 );
@@ -977,18 +977,18 @@ router?.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const result = await workspaceService?.revokeShare(
-        req?.params.shareId,
-        req?.user!.id,
+        req.params.shareId,
+        req.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Revoke share error:");
-      res?.status(500).json({ error: "Failed to revoke share" });
+      logger.warn({ err: error }, "Revoke share error:");
+      res.status(500).json({ error: "Failed to revoke share" });
     }
   },
 );
@@ -1007,7 +1007,7 @@ router?.post(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const validatedData = createShareLinkSchema?.parse(req?.body);
+      const validatedData = createShareLinkSchema?.parse(req.body);
 
       const result = await workspaceService?.createShareLink({
         workspaceId: req.params.id,
@@ -1017,18 +1017,18 @@ router?.post(
       });
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.status(201).json({ link: result.link });
+      res.status(201).json({ link: result.link });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res
           .status(400)
           .json({ error: "Invalid request data", details: error.issues });
       }
-      logger?.warn({ err: error }, "Create share link error:");
-      res?.status(500).json({ error: "Failed to create share link" });
+      logger.warn({ err: error }, "Create share link error:");
+      res.status(500).json({ error: "Failed to create share link" });
     }
   },
 );
@@ -1039,11 +1039,11 @@ router?.get(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const links = await workspaceService?.getShareLinks(req?.params.projectId);
-      res?.json({ links });
+      const links = await workspaceService?.getShareLinks(req.params.projectId);
+      res.json({ links });
     } catch (error) {
-      logger?.warn({ err: error }, "Get share links error:");
-      res?.status(500).json({ error: "Failed to get share links" });
+      logger.warn({ err: error }, "Get share links error:");
+      res.status(500).json({ error: "Failed to get share links" });
     }
   },
 );
@@ -1055,18 +1055,18 @@ router?.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const result = await workspaceService?.revokeShareLink(
-        req?.params.linkId,
-        req?.user!.id,
+        req.params.linkId,
+        req.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Revoke share link error:");
-      res?.status(500).json({ error: "Failed to revoke share link" });
+      logger.warn({ err: error }, "Revoke share link error:");
+      res.status(500).json({ error: "Failed to revoke share link" });
     }
   },
 );
@@ -1078,12 +1078,12 @@ router?.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const presence = await workspaceService?.getWorkspacePresence(
-        req?.params.id,
+        req.params.id,
       );
-      res?.json({ presence });
+      res.json({ presence });
     } catch (error) {
-      logger?.warn({ err: error }, "Get workspace presence error:");
-      res?.status(500).json({ error: "Failed to get presence" });
+      logger.warn({ err: error }, "Get workspace presence error:");
+      res.status(500).json({ error: "Failed to get presence" });
     }
   },
 );
@@ -1094,8 +1094,8 @@ router?.post(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const workspaceId = req?.params.id;
+      const userId = req.user!.id;
+      const workspaceId = req.params.id;
       await db
         .update(workspaceMembers)
         .set({ lastActiveAt: new Date() })
@@ -1105,10 +1105,10 @@ router?.post(
             eq(workspaceMembers?.userId, userId),
           ),
         );
-      res?.json({ ok: true, ts: new Date().toISOString() });
+      res.json({ ok: true, ts: new Date().toISOString() });
     } catch (error) {
-      logger?.warn({ err: error }, "Presence heartbeat error:");
-      res?.status(500).json({ error: "Heartbeat failed" });
+      logger.warn({ err: error }, "Presence heartbeat error:");
+      res.status(500).json({ error: "Heartbeat failed" });
     }
   },
 );
@@ -1119,11 +1119,11 @@ router?.get(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const config = await ssoService?.getSSOConfig(req?.params.id);
-      res?.json({ config });
+      const config = await ssoService?.getSSOConfig(req.params.id);
+      res.json({ config });
     } catch (error) {
-      logger?.warn({ err: error }, "Get SSO config error:");
-      res?.status(500).json({ error: "Failed to get SSO config" });
+      logger.warn({ err: error }, "Get SSO config error:");
+      res.status(500).json({ error: "Failed to get SSO config" });
     }
   },
 );
@@ -1171,12 +1171,12 @@ router?.put(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const validatedData = ssoConfigSchema?.parse(req?.body);
+      const validatedData = ssoConfigSchema?.parse(req.body);
 
       let result;
       if (validatedData?.provider === "saml") {
         result = await ssoService?.configureSAML(
-          req?.params.id,
+          req.params.id,
           validatedData?.metadata as SAMLMetadata,
           {
             attributeMapping: validatedData.attributeMapping,
@@ -1189,7 +1189,7 @@ router?.put(
         );
       } else {
         result = await ssoService?.configureOIDC(
-          req?.params.id,
+          req.params.id,
           validatedData?.metadata as OIDCMetadata,
           {
             attributeMapping: validatedData.attributeMapping,
@@ -1203,18 +1203,18 @@ router?.put(
       }
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({ config: result.config });
+      res.json({ config: result.config });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res
           .status(400)
           .json({ error: "Invalid request data", details: error.issues });
       }
-      logger?.warn({ err: error }, "Configure SSO error:");
-      res?.status(500).json({ error: "Failed to configure SSO" });
+      logger.warn({ err: error }, "Configure SSO error:");
+      res.status(500).json({ error: "Failed to configure SSO" });
     }
   },
 );
@@ -1225,16 +1225,16 @@ router?.post(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const result = await ssoService?.enableSSO(req?.params.id, req?.user!.id);
+      const result = await ssoService?.enableSSO(req.params.id, req.user!.id);
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Enable SSO error:");
-      res?.status(500).json({ error: "Failed to enable SSO" });
+      logger.warn({ err: error }, "Enable SSO error:");
+      res.status(500).json({ error: "Failed to enable SSO" });
     }
   },
 );
@@ -1245,16 +1245,16 @@ router?.post(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const result = await ssoService?.disableSSO(req?.params.id, req?.user!.id);
+      const result = await ssoService?.disableSSO(req.params.id, req.user!.id);
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Disable SSO error:");
-      res?.status(500).json({ error: "Failed to disable SSO" });
+      logger.warn({ err: error }, "Disable SSO error:");
+      res.status(500).json({ error: "Failed to disable SSO" });
     }
   },
 );
@@ -1265,16 +1265,16 @@ router?.post(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const result = await ssoService?.testSSOConnection(req?.params.id);
+      const result = await ssoService?.testSSOConnection(req.params.id);
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({ success: true, message: result.message });
+      res.json({ success: true, message: result.message });
     } catch (error) {
-      logger?.warn({ err: error }, "Test SSO error:");
-      res?.status(500).json({ error: "Failed to test SSO connection" });
+      logger.warn({ err: error }, "Test SSO error:");
+      res.status(500).json({ error: "Failed to test SSO connection" });
     }
   },
 );
@@ -1285,20 +1285,20 @@ router?.post(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const result = await ssoService?.enableSCIM(req?.params.id, req?.user!.id);
+      const result = await ssoService?.enableSCIM(req.params.id, req.user!.id);
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({
+      res.json({
         success: true,
         token: result.token,
         endpoint: result.endpoint,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Enable SCIM error:");
-      res?.status(500).json({ error: "Failed to enable SCIM" });
+      logger.warn({ err: error }, "Enable SCIM error:");
+      res.status(500).json({ error: "Failed to enable SCIM" });
     }
   },
 );
@@ -1309,16 +1309,16 @@ router?.post(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const result = await ssoService?.disableSCIM(req?.params.id, req?.user!.id);
+      const result = await ssoService?.disableSCIM(req.params.id, req.user!.id);
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Disable SCIM error:");
-      res?.status(500).json({ error: "Failed to disable SCIM" });
+      logger.warn({ err: error }, "Disable SCIM error:");
+      res.status(500).json({ error: "Failed to disable SCIM" });
     }
   },
 );
@@ -1330,18 +1330,18 @@ router?.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const result = await ssoService?.rotateSCIMToken(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({ success: true, token: result.token });
+      res.json({ success: true, token: result.token });
     } catch (error) {
-      logger?.warn({ err: error }, "Rotate SCIM token error:");
-      res?.status(500).json({ error: "Failed to rotate SCIM token" });
+      logger.warn({ err: error }, "Rotate SCIM token error:");
+      res.status(500).json({ error: "Failed to rotate SCIM token" });
     }
   },
 );
@@ -1352,21 +1352,21 @@ router?.get(
   requireWorkspaceAdmin,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const limit = Math?.min(parseInt(req?.query.limit as string) || 100, 500);
-      const offset = Math?.min(
-        Math?.max(parseInt(req?.query.offset as string) || 0, 0),
+      const limit = Math.min(parseInt(req.query.limit as string) || 100, 500);
+      const offset = Math.min(
+        Math.max(parseInt(req.query.offset as string) || 0, 0),
         100_000,
       );
 
       const logs = await workspaceService?.getAuditLog(
-        req?.params.id,
+        req.params.id,
         limit,
         offset,
       );
-      res?.json({ logs });
+      res.json({ logs });
     } catch (error) {
-      logger?.warn({ err: error }, "Get audit log error:");
-      res?.status(500).json({ error: "Failed to get audit log" });
+      logger.warn({ err: error }, "Get audit log error:");
+      res.status(500).json({ error: "Failed to get audit log" });
     }
   },
 );
@@ -1377,11 +1377,11 @@ router?.get(
   requireWorkspaceMember,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const catalog = await workspaceService?.getCatalog(req?.params.id);
-      res?.json({ catalog });
+      const catalog = await workspaceService?.getCatalog(req.params.id);
+      res.json({ catalog });
     } catch (error) {
-      logger?.warn({ err: error }, "Get catalog error:");
-      res?.status(500).json({ error: "Failed to get catalog" });
+      logger.warn({ err: error }, "Get catalog error:");
+      res.status(500).json({ error: "Failed to get catalog" });
     }
   },
 );
@@ -1393,30 +1393,30 @@ router?.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const hasPermission = await rbacService?.checkPermission(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
         "catalog",
         "create",
       );
       if (!hasPermission) {
-        return res?.status(403).json({ error: "Permission denied" });
+        return res.status(403).json({ error: "Permission denied" });
       }
 
-      const { projectId } = req?.body;
+      const { projectId } = req.body;
       const result = await workspaceService?.addToCatalog(
-        req?.params.id,
+        req.params.id,
         projectId,
-        req?.user!.id,
+        req.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Add to catalog error:");
-      res?.status(500).json({ error: "Failed to add to catalog" });
+      logger.warn({ err: error }, "Add to catalog error:");
+      res.status(500).json({ error: "Failed to add to catalog" });
     }
   },
 );
@@ -1428,29 +1428,29 @@ router?.delete(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const hasPermission = await rbacService?.checkPermission(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
         "catalog",
         "delete",
       );
       if (!hasPermission) {
-        return res?.status(403).json({ error: "Permission denied" });
+        return res.status(403).json({ error: "Permission denied" });
       }
 
       const result = await workspaceService?.removeFromCatalog(
-        req?.params.id,
-        req?.params.projectId,
-        req?.user!.id,
+        req.params.id,
+        req.params.projectId,
+        req.user!.id,
       );
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Remove from catalog error:");
-      res?.status(500).json({ error: "Failed to remove from catalog" });
+      logger.warn({ err: error }, "Remove from catalog error:");
+      res.status(500).json({ error: "Failed to remove from catalog" });
     }
   },
 );

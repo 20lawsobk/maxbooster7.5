@@ -27,12 +27,12 @@ import { logger } from "../logger.js";
 import { pMap } from "../lib/concurrencyPool.js";
 
 const POLL_INTERVAL_MS = parseInt(
-  process?.env.DOMAIN_VERIFY_INTERVAL_MS ?? "60000",
+  process.env.DOMAIN_VERIFY_INTERVAL_MS ?? "60000",
   10,
 );
 const BATCH_SIZE = 20; // max domains fetched per tick
 const VERIFY_CONCURRENCY = parseInt(
-  process?.env.DOMAIN_VERIFY_CONCURRENCY ?? "5",
+  process.env.DOMAIN_VERIFY_CONCURRENCY ?? "5",
   10,
 ); // parallel DoH checks
 const MAX_FAILURE_BACKOFF = 60; // after N failures, back off to hourly retry
@@ -76,7 +76,7 @@ async function runVerificationTick(): Promise<void> {
     );
     rows = result?.rows;
   } catch (err) {
-    logger?.warn({ err }, "[domainVerify] failed to query pending domains");
+    logger.warn({ err }, "[domainVerify] failed to query pending domains");
     return;
   }
 
@@ -85,7 +85,7 @@ async function runVerificationTick(): Promise<void> {
   );
 
   if (eligible?.length > 0) {
-    logger?.debug(
+    logger.debug(
       {
         total: rows.length,
         eligible: eligible.length,
@@ -105,12 +105,12 @@ async function runVerificationTick(): Promise<void> {
     async ({ id, domain }) => {
       const result = await verifyStorefrontDomain(id);
       if (result === "verified") {
-        logger?.info(
+        logger.info(
           { domain },
           "[domainVerify] ✅ domain verified and activated",
         );
       } else if (result === "failed") {
-        logger?.warn(
+        logger.warn(
           { domain },
           "[domainVerify] domain verification permanently failed",
         );
@@ -123,9 +123,9 @@ async function runVerificationTick(): Promise<void> {
   if (tickCount % HEALTH_SWEEP_TICKS === 0) {
     try {
       const result = await runDomainHealthSweep();
-      logger?.info(result, "[domainVerify] health sweep complete");
+      logger.info(result, "[domainVerify] health sweep complete");
     } catch (err) {
-      logger?.warn({ err }, "[domainVerify] health sweep error (non-fatal)");
+      logger.warn({ err }, "[domainVerify] health sweep error (non-fatal)");
     }
   }
 }
@@ -148,7 +148,7 @@ export function startDomainVerificationWorker(): void {
   if ((intervalHandle as Record<string, unknown>).unref)
     (intervalHandle as Record<string, unknown>).unref();
 
-  logger?.info(
+  logger.info(
     { intervalMs: POLL_INTERVAL_MS, batchSize: BATCH_SIZE },
     "[domainVerify] worker started (multi-method DoH verification)",
   );
@@ -158,7 +158,7 @@ export function stopDomainVerificationWorker(): void {
   if (intervalHandle) {
     clearInterval(intervalHandle);
     intervalHandle = null;
-    logger?.info("[domainVerify] worker stopped");
+    logger.info("[domainVerify] worker stopped");
   }
 }
 

@@ -250,46 +250,46 @@ export class UnifiedAIController {
   // ============================================================================
 
   public async initialize(): Promise<void> {
-    if (this?.initialized) return;
+    if (this.initialized) return;
 
-    if (this?.initializationPromise) {
-      return this?.initializationPromise;
+    if (this.initializationPromise) {
+      return this.initializationPromise;
     }
 
-    this.initializationPromise = this?.performInitialization();
-    await this?.initializationPromise;
+    this.initializationPromise = this.performInitialization();
+    await this.initializationPromise;
   }
 
   private async performInitialization(): Promise<void> {
     const startTime = Date?.now();
-    logger?.info("🤖 Initializing Unified AI Controller...");
+    logger.info("🤖 Initializing Unified AI Controller...");
 
     try {
       await Promise?.all([
-        this?.modelRegistry.initialize().catch((err) => {
-          logger?.warn({ err: err }, "Model Registry initialization warning:");
+        this.modelRegistry.initialize().catch((err) => {
+          logger.warn({ err: err }, "Model Registry initialization warning:");
         }),
-        this?.adOptimizationEngine.initialize().catch((err) => {
-          logger?.warn(
+        this.adOptimizationEngine.initialize().catch((err) => {
+          logger.warn(
             { err: err },
             "Ad Optimization Engine initialization warning:",
           );
         }),
-        this?.socialAutopilotEngine.initialize().catch((err) => {
-          logger?.warn(
+        this.socialAutopilotEngine.initialize().catch((err) => {
+          logger.warn(
             { err: err },
             "Social Autopilot Engine initialization warning:",
           );
         }),
       ]);
 
-      this?.initializeTimeSeriesModels();
+      this.initializeTimeSeriesModels();
 
       this.initialized = true;
       const duration = Date?.now() - startTime;
-      logger?.info(`✅ Unified AI Controller initialized in ${duration}ms`);
+      logger.info(`✅ Unified AI Controller initialized in ${duration}ms`);
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "Failed to initialize Unified AI Controller:",
       );
@@ -309,7 +309,7 @@ export class UnifiedAIController {
     for (const metric of metrics) {
       for (const horizon of horizons) {
         const key = `${metric}_${horizon}`;
-        this?.timeSeriesModels.set(
+        this.timeSeriesModels.set(
           key,
           new AdvancedTimeSeriesModel(metric, horizon),
         );
@@ -318,8 +318,8 @@ export class UnifiedAIController {
   }
 
   private async ensureInitialized(): Promise<void> {
-    if (!this?.initialized) {
-      await this?.initialize();
+    if (!this.initialized) {
+      await this.initialize();
     }
   }
 
@@ -366,7 +366,7 @@ export class UnifiedAIController {
         result.objective = "engagement";
       }
 
-      if (!callerContentType && Array?.isArray(posting?.contentFormatPriority)) {
+      if (!callerContentType && Array.isArray(posting?.contentFormatPriority)) {
         for (const fmt of posting?.contentFormatPriority) {
           const mapped =
             typeof fmt === "string"
@@ -383,13 +383,13 @@ export class UnifiedAIController {
       if (result?.objective) applied?.push("objective");
       if (!callerContentType && result?.contentType) applied?.push("contentType");
       if (applied?.length > 0) {
-        logger?.info(
+        logger.info(
           `[UnifiedAI] Applied self-evolution posting_optimization for ${key}: ${applied?.join(", ")}`,
         );
       }
       return result;
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err },
         "[UnifiedAI] Failed to apply evolution posting_optimization",
       );
@@ -401,7 +401,7 @@ export class UnifiedAIController {
     options: ContentGenerationOptions,
   ): Promise<UnifiedAIResult<CaptionResult>> {
     const startTime = Date?.now();
-    await this?.ensureInitialized();
+    await this.ensureInitialized();
 
     try {
       const platformAliases: Record<string, string> = {
@@ -417,7 +417,7 @@ export class UnifiedAIController {
       // the live registry (keyed by the artist-facing platform, not the alias)
       // so the manual "generate a post" button honors the same guidance the
       // autopilot and scheduled paths already do. Caller-pinned values win.
-      const posting = this?.applyPostingOptimization(
+      const posting = this.applyPostingOptimization(
         options?.platform,
         options?.contentType,
       );
@@ -560,7 +560,7 @@ export class UnifiedAIController {
       // followed by supporting metadata. Never truncated — MaxCore needs the full text.
       if (combinedExtra) mcPayload.extra_context = combinedExtra;
 
-      logger?.debug(
+      logger.debug(
         `[UnifiedAI] MaxCore payload topic="${enrichedTopic.slice(0, 60)}" instruction="${(options.extraContext ?? "").slice(0, 80)}"`,
       );
 
@@ -590,7 +590,7 @@ export class UnifiedAIController {
         // spaces, or is longer than 40 chars — these are enriched topic strings
         // that MaxCore occasionally echoes back as hashtags rather than real tags.
         const mcHashtags: string[] = (
-          Array?.isArray(mc?.hashtags) ? mc?.hashtags : []
+          Array.isArray(mc?.hashtags) ? mc?.hashtags : []
         ).filter(
           (h: string) =>
             typeof h === "string" &&
@@ -639,7 +639,7 @@ export class UnifiedAIController {
         };
       }
     } catch (error) {
-      logger?.warn({ err: error }, "[UnifiedAI] generateContent error:");
+      logger.warn({ err: error }, "[UnifiedAI] generateContent error:");
       // Re-throw AIUnavailableError so the route handler can return HTTP 503
       // instead of collapsing it into a success:false / HTTP 500 response.
       if (error instanceof AIUnavailableError) throw error;
@@ -666,7 +666,7 @@ export class UnifiedAIController {
     };
   }): Promise<UnifiedAIResult<{ content: string[] }>> {
     const startTime = Date?.now();
-    await this?.ensureInitialized();
+    await this.ensureInitialized();
 
     const platform = (options?.platform || "instagram") as string;
     const topic = options?.musicData
@@ -708,7 +708,7 @@ export class UnifiedAIController {
         confidence: mc.confidence || 0.95,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "[UnifiedAI] generateSocialContent error:");
+      logger.warn({ err: error }, "[UnifiedAI] generateSocialContent error:");
       return {
         success: false,
         error:
@@ -728,7 +728,7 @@ export class UnifiedAIController {
     tone?: "professional" | "casual" | "energetic" | "promotional";
     count?: number;
   }): string[] {
-    return this?.contentGenerator.generateHashtags(options);
+    return this.contentGenerator.generateHashtags(options);
   }
 
   // ============================================================================
@@ -739,7 +739,7 @@ export class UnifiedAIController {
     options: SentimentAnalysisOptions,
   ): Promise<UnifiedAIResult<FullAnalysisResult | SentimentResult>> {
     const startTime = Date?.now();
-    await this?.ensureInitialized();
+    await this.ensureInitialized();
 
     try {
       // MaxCore is the ONLY source — no local SentimentAnalyzer fallback.
@@ -766,7 +766,7 @@ export class UnifiedAIController {
     } catch (error) {
       if (error instanceof AIUnavailableError) throw error;
       // MaxCore is the sole source; any failure means the feature is unavailable.
-      logger?.warn({ err: error }, "Sentiment analysis failed:");
+      logger.warn({ err: error }, "Sentiment analysis failed:");
       throw new AIUnavailableError("sentiment analysis");
     }
   }
@@ -803,14 +803,14 @@ export class UnifiedAIController {
     options: RecommendationOptions,
   ): Promise<UnifiedAIResult<RecommendationResult | SimilarityResult[]>> {
     const startTime = Date?.now();
-    await this?.ensureInitialized();
+    await this.ensureInitialized();
 
     try {
       let result: RecommendationResult | SimilarityResult[];
 
       switch (options?.type) {
         case "tracks":
-          result = await this?.recommendationEngine.recommendTracks(
+          result = await this.recommendationEngine.recommendTracks(
             options?.userId,
             options?.seedIds || [],
             options?.limit || 20,
@@ -818,7 +818,7 @@ export class UnifiedAIController {
           );
           break;
         case "artists":
-          result = await this?.recommendationEngine.recommendArtists(
+          result = await this.recommendationEngine.recommendArtists(
             options?.userId,
             options?.limit || 10,
           );
@@ -827,7 +827,7 @@ export class UnifiedAIController {
           if (!options?.seedIds || options?.seedIds.length === 0) {
             throw new Error("seedIds required for similar recommendations");
           }
-          result = this?.recommendationEngine.findSimilar(
+          result = this.recommendationEngine.findSimilar(
             options?.seedIds[0],
             "track",
             options?.limit || 10,
@@ -837,7 +837,7 @@ export class UnifiedAIController {
           throw new Error(`Unknown recommendation type: ${options?.type}`);
       }
 
-      const confidence = Array?.isArray(result)
+      const confidence = Array.isArray(result)
         ? result?.length > 0
           ? result[0].score
           : 0
@@ -851,7 +851,7 @@ export class UnifiedAIController {
         confidence,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Recommendation failed:");
+      logger.warn({ err: error }, "Recommendation failed:");
       return {
         success: false,
         error: error instanceof Error ? error?.message : "Recommendation failed",
@@ -862,15 +862,15 @@ export class UnifiedAIController {
   }
 
   public addTrackData(tracks: TrackData[]): void {
-    this?.recommendationEngine.addTracks(tracks);
+    this.recommendationEngine.addTracks(tracks);
   }
 
   public addArtistData(artists: ArtistData[]): void {
-    this?.recommendationEngine.addArtists(artists);
+    this.recommendationEngine.addArtists(artists);
   }
 
   public recordInteraction(interaction: UserInteraction): void {
-    this?.recommendationEngine.recordInteraction(interaction);
+    this.recommendationEngine.recordInteraction(interaction);
   }
 
   // ============================================================================
@@ -888,7 +888,7 @@ export class UnifiedAIController {
     >
   > {
     const startTime = Date?.now();
-    await this?.ensureInitialized();
+    await this.ensureInitialized();
 
     try {
       // MaxCore is the ONLY source — no local AdOptimizationEngine fallback.
@@ -928,7 +928,7 @@ export class UnifiedAIController {
       };
     } catch (error) {
       if (error instanceof AIUnavailableError) throw error;
-      logger?.warn({ err: error }, "Ad optimization failed:");
+      logger.warn({ err: error }, "Ad optimization failed:");
       throw new AIUnavailableError("ad optimization");
     }
   }
@@ -946,8 +946,8 @@ export class UnifiedAIController {
     },
     musicData: unknown,
   ) {
-    await this?.ensureInitialized();
-    return this?.aiService.generateSuperiorAdCampaign(config, musicData);
+    await this.ensureInitialized();
+    return this.aiService.generateSuperiorAdCampaign(config, musicData);
   }
 
   // ============================================================================
@@ -965,7 +965,7 @@ export class UnifiedAIController {
     >
   > {
     const startTime = Date?.now();
-    await this?.ensureInitialized();
+    await this.ensureInitialized();
 
     try {
       // MaxCore is the ONLY source — no local SocialAutopilotEngine fallback.
@@ -1004,21 +1004,21 @@ export class UnifiedAIController {
       };
     } catch (error) {
       if (error instanceof AIUnavailableError) throw error;
-      logger?.warn({ err: error }, "Engagement prediction failed:");
+      logger.warn({ err: error }, "Engagement prediction failed:");
       throw new AIUnavailableError("engagement prediction");
     }
   }
 
   public loadHistoricalPosts(posts: HistoricalPost[]): void {
-    this?.socialAutopilotEngine.loadHistoricalData(posts);
+    this.socialAutopilotEngine.loadHistoricalData(posts);
   }
 
   public loadAudienceInsights(insights: AudienceInsights[]): void {
-    this?.socialAutopilotEngine.loadAudienceInsights(insights);
+    this.socialAutopilotEngine.loadAudienceInsights(insights);
   }
 
   public detectTrends(platforms: Platform[]) {
-    return this?.socialAutopilotEngine.detectTrends(platforms);
+    return this.socialAutopilotEngine.detectTrends(platforms);
   }
 
   public adaptContent(
@@ -1026,7 +1026,7 @@ export class UnifiedAIController {
     originalPlatform: Platform,
     targetPlatform: Platform,
   ) {
-    return this?.socialAutopilotEngine.adaptContent(
+    return this.socialAutopilotEngine.adaptContent(
       content,
       originalPlatform,
       targetPlatform,
@@ -1041,15 +1041,15 @@ export class UnifiedAIController {
     options: ForecastOptions,
   ): Promise<UnifiedAIResult<ForecastResult>> {
     const startTime = Date?.now();
-    await this?.ensureInitialized();
+    await this.ensureInitialized();
 
     try {
       const modelKey = `${options?.metric}_${options?.horizon}`;
-      let model = this?.timeSeriesModels.get(modelKey);
+      let model = this.timeSeriesModels.get(modelKey);
 
       if (!model) {
         model = new AdvancedTimeSeriesModel(options?.metric, options?.horizon);
-        this?.timeSeriesModels.set(modelKey, model);
+        this.timeSeriesModels.set(modelKey, model);
       }
 
       if (!model?.isModelTrained()) {
@@ -1079,7 +1079,7 @@ export class UnifiedAIController {
         confidence: 1 - result?.accuracy.mape / 100,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Metric forecasting failed:");
+      logger.warn({ err: error }, "Metric forecasting failed:");
       return {
         success: false,
         error:
@@ -1094,27 +1094,27 @@ export class UnifiedAIController {
     metric: "streams" | "engagement" | "revenue";
     timeframe: "7d" | "30d" | "90d";
   }) {
-    await this?.ensureInitialized();
+    await this.ensureInitialized();
     return aiAnalyticsService?.predictMetric(params);
   }
 
   public async predictChurn() {
-    await this?.ensureInitialized();
+    await this.ensureInitialized();
     return aiAnalyticsService?.predictChurn();
   }
 
   public async forecastRevenue(timeframe: string = "30d") {
-    await this?.ensureInitialized();
+    await this.ensureInitialized();
     return aiAnalyticsService?.forecastRevenue(timeframe);
   }
 
   public async detectAnomalies() {
-    await this?.ensureInitialized();
+    await this.ensureInitialized();
     return aiAnalyticsService?.detectAnomalies();
   }
 
   public async generateInsights() {
-    await this?.ensureInitialized();
+    await this.ensureInitialized();
     return aiAnalyticsService?.generateInsights();
   }
 
@@ -1126,8 +1126,8 @@ export class UnifiedAIController {
     status?: string;
     type?: string;
   }) {
-    await this?.ensureInitialized();
-    return this?.modelRegistry.listModels(filter as Record<string, unknown>);
+    await this.ensureInitialized();
+    return this.modelRegistry.listModels(filter as Record<string, unknown>);
   }
 
   public async registerModel(options: {
@@ -1148,13 +1148,13 @@ export class UnifiedAIController {
     tags?: string[];
     description?: string;
   }) {
-    await this?.ensureInitialized();
-    return this?.modelRegistry.registerModel(options);
+    await this.ensureInitialized();
+    return this.modelRegistry.registerModel(options);
   }
 
   public async getModelPerformance(modelId: string) {
-    await this?.ensureInitialized();
-    return this?.modelRegistry.getModelPerformance(modelId);
+    await this.ensureInitialized();
+    return this.modelRegistry.getModelPerformance(modelId);
   }
 
   // ============================================================================
@@ -1165,18 +1165,18 @@ export class UnifiedAIController {
     const now = new Date();
 
     if (
-      this?.healthCache &&
-      now?.getTime() - this?.lastHealthCheck.getTime() < 30000
+      this.healthCache &&
+      now?.getTime() - this.lastHealthCheck.getTime() < 30000
     ) {
-      return this?.healthCache;
+      return this.healthCache;
     }
 
     const services: AIHealthStatus["services"] = {
-      modelRegistry: await this?.checkServiceHealth("modelRegistry", () =>
-        this?.modelRegistry.listModels(),
+      modelRegistry: await this.checkServiceHealth("modelRegistry", () =>
+        this.modelRegistry.listModels(),
       ),
       contentGenerator: this.checkSyncServiceHealth("contentGenerator", () => {
-        this?.contentGenerator.generateCaption({
+        this.contentGenerator.generateCaption({
           tone: "casual",
           platform: "twitter",
           maxLength: 50,
@@ -1185,20 +1185,20 @@ export class UnifiedAIController {
       sentimentAnalyzer: this.checkSyncServiceHealth(
         "sentimentAnalyzer",
         () => {
-          this?.sentimentAnalyzer.analyzeSentiment("test");
+          this.sentimentAnalyzer.analyzeSentiment("test");
         },
       ),
       recommendationEngine: this.checkSyncServiceHealth(
         "recommendationEngine",
         () => {
-          this?.recommendationEngine.findSimilar("test", "track", 1);
+          this.recommendationEngine.findSimilar("test", "track", 1);
         },
       ),
-      adOptimizationEngine: await this?.checkServiceHealth(
+      adOptimizationEngine: await this.checkServiceHealth(
         "adOptimizationEngine",
         async () => {
           return (
-            (this?.adOptimizationEngine as Record<string, unknown>).isTrained ??
+            (this.adOptimizationEngine as Record<string, unknown>).isTrained ??
             true
           );
         },
@@ -1206,19 +1206,19 @@ export class UnifiedAIController {
       socialAutopilotEngine: this.checkSyncServiceHealth(
         "socialAutopilotEngine",
         () => {
-          this?.socialAutopilotEngine.predictBestTime("twitter", "text");
+          this.socialAutopilotEngine.predictBestTime("twitter", "text");
         },
       ),
       timeSeriesModel: this.checkSyncServiceHealth("timeSeriesModel", () => {
-        return this?.timeSeriesModels.size > 0;
+        return this.timeSeriesModels.size > 0;
       }),
-      legacyAIService: await this?.checkServiceHealth(
+      legacyAIService: await this.checkServiceHealth(
         "legacyAIService",
         async () => {
           return true;
         },
       ),
-      analyticsService: await this?.checkServiceHealth(
+      analyticsService: await this.checkServiceHealth(
         "analyticsService",
         async () => {
           return true;
@@ -1226,13 +1226,13 @@ export class UnifiedAIController {
       ),
     };
 
-    const registeredModels = await this?.modelRegistry.listModels();
+    const registeredModels = await this.modelRegistry.listModels();
     const activeModels = registeredModels?.filter((m) => m?.status === "active");
 
-    const healthyCount = Object?.values(services).filter(
+    const healthyCount = Object.values(services).filter(
       (s) => s?.status === "healthy",
     ).length;
-    const totalCount = Object?.keys(services).length;
+    const totalCount = Object.keys(services).length;
 
     let overall: "healthy" | "degraded" | "unhealthy" = "healthy";
     if (healthyCount < totalCount * 0.5) {
@@ -1253,7 +1253,7 @@ export class UnifiedAIController {
     };
 
     this.lastHealthCheck = now;
-    return this?.healthCache;
+    return this.healthCache;
   }
 
   private async checkServiceHealth(
@@ -1305,7 +1305,7 @@ export class UnifiedAIController {
   // ============================================================================
 
   public isInitialized(): boolean {
-    return this?.initialized;
+    return this.initialized;
   }
 
   public getServiceStats() {
@@ -1327,7 +1327,7 @@ export class UnifiedAIController {
   }): Promise<UnifiedAIResult<unknown>> {
     const startTime = Date?.now();
     try {
-      const result = await this?.adEngine.optimizePersonalAdNetwork(
+      const result = await this.adEngine.optimizePersonalAdNetwork(
         options?.profiles,
         options?.content,
         options?.goals,
@@ -1339,7 +1339,7 @@ export class UnifiedAIController {
         source: "AdOptimizationEngine.optimizePersonalAdNetwork",
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Organic growth optimization error:");
+      logger.warn({ err: error }, "Organic growth optimization error:");
       return {
         success: false,
         error:
@@ -1357,7 +1357,7 @@ export class UnifiedAIController {
   ): Promise<UnifiedAIResult<unknown>> {
     const startTime = Date?.now();
     try {
-      const analysis = this?.adEngine.calculateOrganicROI(results);
+      const analysis = this.adEngine.calculateOrganicROI(results);
       return {
         success: true,
         data: analysis,
@@ -1365,7 +1365,7 @@ export class UnifiedAIController {
         source: "AdOptimizationEngine.calculateOrganicROI",
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Organic ROI calculation error:");
+      logger.warn({ err: error }, "Organic ROI calculation error:");
       return {
         success: false,
         error:
@@ -1385,7 +1385,7 @@ export class UnifiedAIController {
   }): Promise<UnifiedAIResult<unknown>> {
     const startTime = Date?.now();
     try {
-      const schedule = this?.adEngine.generateOrganicSchedule(
+      const schedule = this.adEngine.generateOrganicSchedule(
         options?.profiles,
         options?.contentQueue,
         options?.goals,
@@ -1397,7 +1397,7 @@ export class UnifiedAIController {
         source: "AdOptimizationEngine.generateOrganicSchedule",
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Organic schedule generation error:");
+      logger.warn({ err: error }, "Organic schedule generation error:");
       return {
         success: false,
         error:
@@ -1457,12 +1457,12 @@ export class UnifiedAIController {
             isActive: true,
           },
         ];
-        logger?.debug(
+        logger.debug(
           "No connected social accounts found, using demo profiles for analysis",
         );
       }
 
-      const result = await this?.adEngine.optimizePersonalAdNetwork(
+      const result = await this.adEngine.optimizePersonalAdNetwork(
         profiles,
         {
           id: userId || "demo",
@@ -1483,7 +1483,7 @@ export class UnifiedAIController {
         source: "AdOptimizationEngine.analyzePersonalAdNetwork",
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Personal Ad Network analysis error:");
+      logger.warn({ err: error }, "Personal Ad Network analysis error:");
       return {
         success: false,
         error:

@@ -17,11 +17,11 @@ async function getPdimArtistLearningData(artistId: string) {
       redis?.hgetall(`mb:ads:${artistId}:stats`).catch(() => null),
     ]);
     return {
-      patterns: patternRaw ? JSON?.parse(patternRaw) : null,
+      patterns: patternRaw ? JSON.parse(patternRaw) : null,
       peaks: (peaksRaw || [])
         .map((r: string) => {
           try {
-            return JSON?.parse(r);
+            return JSON.parse(r);
           } catch {
             return null;
           }
@@ -30,7 +30,7 @@ async function getPdimArtistLearningData(artistId: string) {
       runs: (runsRaw || [])
         .map((r: string) => {
           try {
-            return JSON?.parse(r);
+            return JSON.parse(r);
           } catch {
             return null;
           }
@@ -39,7 +39,7 @@ async function getPdimArtistLearningData(artistId: string) {
       stats: statsRaw || null,
     };
   } catch (e) {
-    logger?.warn(
+    logger.warn(
       `[AutopilotLearning] PDIM artist data fetch failed: ${e?.message}`,
     );
     return null;
@@ -55,23 +55,23 @@ const router = Router();
 // fires 5+ expensive aggregate DB queries per cycle per worker and piles up
 // PDIM calls N× at the same time — defeating the in-process cache entirely.
 const _isBgWorkerForHL =
-  process?.env.CLUSTER_WORKER_ID === undefined ||
-  process?.env.CLUSTER_WORKER_ID === "0";
+  process.env.CLUSTER_WORKER_ID === undefined ||
+  process.env.CLUSTER_WORKER_ID === "0";
 if (_isBgWorkerForHL) {
   setTimeout(() => {
     hyperLearningEngine?.start().catch((err) => {
-      logger?.warn({ err: err }, "HyperLearning Engine failed to auto-start:");
+      logger.warn({ err: err }, "HyperLearning Engine failed to auto-start:");
     });
   }, 90_000);
 } else {
-  logger?.info(
-    `[HyperLearning] Worker ${process?.env.CLUSTER_WORKER_ID} — engine managed by worker 0`,
+  logger.info(
+    `[HyperLearning] Worker ${process.env.CLUSTER_WORKER_ID} — engine managed by worker 0`,
   );
 }
 
 router?.get("/status", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const hyperStatus = hyperLearningEngine?.getStatus();
     const metrics = hyperLearningEngine?.getMetrics();
 
@@ -84,7 +84,7 @@ router?.get("/status", requireAuth, async (req, res) => {
         getPdimArtistLearningData(userId),
       ]);
 
-    res?.json({
+    res.json({
       success: true,
       learning: {
         isActive: hyperStatus.isRunning,
@@ -147,8 +147,8 @@ router?.get("/status", requireAuth, async (req, res) => {
       ],
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get autopilot learning status:");
-    res?.status(500).json({ error: "Failed to get autopilot learning status" });
+    logger.warn({ err: error }, "Failed to get autopilot learning status:");
+    res.status(500).json({ error: "Failed to get autopilot learning status" });
   }
 });
 
@@ -176,48 +176,48 @@ const recordPerformanceSchema = z.object({
 
 router?.get("/insights", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const insights = await autopilotLearningService?.getLearningInsights(userId);
 
-    res?.json({
+    res.json({
       success: true,
       insights,
       generatedAt: new Date().toISOString(),
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get learning insights:");
-    res?.status(500).json({ error: "Failed to get learning insights" });
+    logger.warn({ err: error }, "Failed to get learning insights:");
+    res.status(500).json({ error: "Failed to get learning insights" });
   }
 });
 
 router?.get("/recommendations", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const recommendations =
       await autopilotLearningService?.getRecommendations(userId);
 
-    res?.json({
+    res.json({
       success: true,
       recommendations,
       count: recommendations.length,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get recommendations:");
-    res?.status(500).json({ error: "Failed to get recommendations" });
+    logger.warn({ err: error }, "Failed to get recommendations:");
+    res.status(500).json({ error: "Failed to get recommendations" });
   }
 });
 
 router?.get("/performance", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { platform, limit, offset } = req?.query;
+    const userId = req.user!.id;
+    const { platform, limit, offset } = req.query;
 
-    const limitNum = Math?.min(
-      Math?.max(parseInt(limit as string, 10) || 50, 1),
+    const limitNum = Math.min(
+      Math.max(parseInt(limit as string, 10) || 50, 1),
       500,
     );
-    const offsetNum = Math?.min(
-      Math?.max(parseInt(offset as string, 10) || 0, 0),
+    const offsetNum = Math.min(
+      Math.max(parseInt(offset as string, 10) || 0, 0),
       100_000,
     );
 
@@ -230,7 +230,7 @@ router?.get("/performance", requireAuth, async (req, res) => {
       },
     );
 
-    res?.json({
+    res.json({
       success: true,
       data: result.data,
       total: result.total,
@@ -240,15 +240,15 @@ router?.get("/performance", requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get performance history:");
-    res?.status(500).json({ error: "Failed to get performance history" });
+    logger.warn({ err: error }, "Failed to get performance history:");
+    res.status(500).json({ error: "Failed to get performance history" });
   }
 });
 
 router?.post("/record", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const data = recordPerformanceSchema?.parse(req?.body);
+    const userId = req.user!.id;
+    const data = recordPerformanceSchema?.parse(req.body);
 
     const postData = {
       platform: data.platform,
@@ -268,46 +268,46 @@ router?.post("/record", requireAuth, async (req, res) => {
       data?.analytics,
     );
 
-    res?.json({
+    res.json({
       success: true,
       recordId,
       message: "Performance data recorded successfully",
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res?.status(400).json({ error: "Invalid data", details: error.issues });
+      res.status(400).json({ error: "Invalid data", details: error.issues });
       return;
     }
-    logger?.warn({ err: error }, "Failed to record performance:");
-    res?.status(500).json({ error: "Failed to record performance data" });
+    logger.warn({ err: error }, "Failed to record performance:");
+    res.status(500).json({ error: "Failed to record performance data" });
   }
 });
 
 router?.get("/optimal-times/:platform", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { platform } = req?.params;
+    const userId = req.user!.id;
+    const { platform } = req.params;
 
     const optimalTimes = await autopilotLearningService?.getOptimalPostingTimes(
       userId,
       platform,
     );
 
-    res?.json({
+    res.json({
       success: true,
       platform,
       optimalTimes,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get optimal posting times:");
-    res?.status(500).json({ error: "Failed to get optimal posting times" });
+    logger.warn({ err: error }, "Failed to get optimal posting times:");
+    res.status(500).json({ error: "Failed to get optimal posting times" });
   }
 });
 
 router?.get("/top-content", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { platform } = req?.query;
+    const userId = req.user!.id;
+    const { platform } = req.query;
 
     const topContentTypes =
       await autopilotLearningService?.getTopPerformingContentTypes(
@@ -315,12 +315,12 @@ router?.get("/top-content", requireAuth, async (req, res) => {
         platform as string | undefined,
       );
 
-    res?.json({
+    res.json({
       success: true,
       contentTypes: topContentTypes,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get top performing content types:");
+    logger.warn({ err: error }, "Failed to get top performing content types:");
     res
       .status(500)
       .json({ error: "Failed to get top performing content types" });
@@ -329,49 +329,49 @@ router?.get("/top-content", requireAuth, async (req, res) => {
 
 router?.get("/patterns", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const patterns = await autopilotLearningService?.detectPatterns(userId);
 
-    res?.json({
+    res.json({
       success: true,
       patterns,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to detect patterns:");
-    res?.status(500).json({ error: "Failed to detect patterns" });
+    logger.warn({ err: error }, "Failed to detect patterns:");
+    res.status(500).json({ error: "Failed to detect patterns" });
   }
 });
 
 router?.get("/platform-stats", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const stats = await autopilotLearningService?.getPlatformStatistics(userId);
 
-    res?.json({
+    res.json({
       success: true,
       platforms: stats,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get platform statistics:");
-    res?.status(500).json({ error: "Failed to get platform statistics" });
+    logger.warn({ err: error }, "Failed to get platform statistics:");
+    res.status(500).json({ error: "Failed to get platform statistics" });
   }
 });
 
 router?.post("/generate-insights", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     await autopilotLearningService?.generateInsights(userId);
 
     const insights = await autopilotLearningService?.getLearningInsights(userId);
 
-    res?.json({
+    res.json({
       success: true,
       message: "Insights generated successfully",
       insights,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to generate insights:");
-    res?.status(500).json({ error: "Failed to generate insights" });
+    logger.warn({ err: error }, "Failed to generate insights:");
+    res.status(500).json({ error: "Failed to generate insights" });
   }
 });
 
@@ -379,7 +379,7 @@ router?.get("/hyper/status", requireAuth, async (_req, res) => {
   try {
     const status = hyperLearningEngine?.getStatus();
 
-    res?.json({
+    res.json({
       success: true,
       hyperLearning: {
         enabled: true,
@@ -390,18 +390,18 @@ router?.get("/hyper/status", requireAuth, async (_req, res) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get hyper learning status:");
-    res?.status(500).json({ error: "Failed to get hyper learning status" });
+    logger.warn({ err: error }, "Failed to get hyper learning status:");
+    res.status(500).json({ error: "Failed to get hyper learning status" });
   }
 });
 
 router?.get("/hyper/insights", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const hyperInsights = await hyperLearningEngine?.getHyperInsights(userId);
     const metrics = hyperLearningEngine?.getMetrics();
 
-    res?.json({
+    res.json({
       success: true,
       hyperInsights,
       count: hyperInsights.length,
@@ -409,7 +409,7 @@ router?.get("/hyper/insights", requireAuth, async (req, res) => {
         learningMultiplier: metrics.learningMultiplier,
         humanEquivalentHours: metrics.humanEquivalentHours,
         actualProcessingMs: metrics.actualProcessingTimeMs,
-        efficiency: `${((metrics?.humanEquivalentHours * 3600000) / Math?.max(1, metrics?.actualProcessingTimeMs)).toFixed(1)}x faster than human`,
+        efficiency: `${((metrics?.humanEquivalentHours * 3600000) / Math.max(1, metrics?.actualProcessingTimeMs)).toFixed(1)}x faster than human`,
       },
       capabilities: {
         microPatternDetection:
@@ -422,22 +422,22 @@ router?.get("/hyper/insights", requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get hyper insights:");
-    res?.status(500).json({ error: "Failed to get hyper insights" });
+    logger.warn({ err: error }, "Failed to get hyper insights:");
+    res.status(500).json({ error: "Failed to get hyper insights" });
   }
 });
 
 router?.get("/hyper/predict/:platform", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { platform } = req?.params;
+    const userId = req.user!.id;
+    const { platform } = req.params;
 
     const prediction = await hyperLearningEngine?.predictOptimalContent(
       userId,
       platform,
     );
 
-    res?.json({
+    res.json({
       success: true,
       platform,
       prediction,
@@ -455,8 +455,8 @@ router?.get("/hyper/predict/:platform", requireAuth, async (req, res) => {
       microPatternRecommendations: prediction.microPatternRecommendations,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to predict optimal content:");
-    res?.status(500).json({ error: "Failed to predict optimal content" });
+    logger.warn({ err: error }, "Failed to predict optimal content:");
+    res.status(500).json({ error: "Failed to predict optimal content" });
   }
 });
 
@@ -464,16 +464,16 @@ router?.get("/hyper/metrics", requireAuth, async (_req, res) => {
   try {
     const metrics = hyperLearningEngine?.getMetrics();
 
-    res?.json({
+    res.json({
       success: true,
       metrics,
       analysis: {
         patternsPerHour:
           metrics?.patternsDetected /
-          Math?.max(1, metrics?.actualProcessingTimeMs / 3600000),
+          Math.max(1, metrics?.actualProcessingTimeMs / 3600000),
         dataPointsPerSecond:
           metrics?.totalDataPointsProcessed /
-          Math?.max(1, metrics?.actualProcessingTimeMs / 1000),
+          Math.max(1, metrics?.actualProcessingTimeMs / 1000),
         microPatternDepth: metrics.microPatternsFound,
         predictionAccuracy: "Improving with each learning cycle",
       },
@@ -487,7 +487,7 @@ router?.get("/hyper/metrics", requireAuth, async (_req, res) => {
         hyperLearning: {
           patternsPerHour: Math.round(
             metrics?.patternsDetected /
-              Math?.max(1, metrics?.actualProcessingTimeMs / 3600000),
+              Math.max(1, metrics?.actualProcessingTimeMs / 3600000),
           ),
           dimensionsAnalyzed: 15,
           workHoursPerDay: 24,
@@ -496,8 +496,8 @@ router?.get("/hyper/metrics", requireAuth, async (_req, res) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get hyper metrics:");
-    res?.status(500).json({ error: "Failed to get hyper metrics" });
+    logger.warn({ err: error }, "Failed to get hyper metrics:");
+    res.status(500).json({ error: "Failed to get hyper metrics" });
   }
 });
 
@@ -506,14 +506,14 @@ router?.post("/hyper/start", requireAuth, async (_req, res) => {
     await hyperLearningEngine?.start();
     const status = hyperLearningEngine?.getStatus();
 
-    res?.json({
+    res.json({
       success: true,
       message: "HyperLearning Engine started",
       status,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to start hyper learning:");
-    res?.status(500).json({ error: "Failed to start hyper learning" });
+    logger.warn({ err: error }, "Failed to start hyper learning:");
+    res.status(500).json({ error: "Failed to start hyper learning" });
   }
 });
 
@@ -521,13 +521,13 @@ router?.post("/hyper/stop", requireAuth, async (_req, res) => {
   try {
     await hyperLearningEngine?.stop();
 
-    res?.json({
+    res.json({
       success: true,
       message: "HyperLearning Engine stopped",
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to stop hyper learning:");
-    res?.status(500).json({ error: "Failed to stop hyper learning" });
+    logger.warn({ err: error }, "Failed to stop hyper learning:");
+    res.status(500).json({ error: "Failed to stop hyper learning" });
   }
 });
 

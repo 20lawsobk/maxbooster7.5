@@ -59,10 +59,10 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
       ws.onmessage = (event) => {
         try {
-          const message = JSON?.parse(event?.data);
+          const message = JSON.parse(event?.data);
           onMessage?.(message);
         } catch (error: unknown) {
-          logger?.error("Failed to parse WebSocket message:", error);
+          logger.error("Failed to parse WebSocket message:", error);
         }
       };
 
@@ -103,7 +103,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
   const sendMessage = (message: WebSocketMessage) => {
     if (wsRef?.current?.readyState === WebSocket.OPEN) {
-      wsRef?.current.send(JSON?.stringify(message));
+      wsRef?.current.send(JSON.stringify(message));
     }
   };
 

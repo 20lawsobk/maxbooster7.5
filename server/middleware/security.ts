@@ -5,7 +5,7 @@ import { logger } from "../logger.js";
 
 import { isProductionEnv } from "../lib/envHelpers.js";
 
-const APP_DOMAIN = process?.env.APP_URL || "https://max-booster.com";
+const APP_DOMAIN = process.env.APP_URL || "https://max-booster.com";
 const isDev = !isProductionEnv();
 
 const helmetMiddleware = helmet({
@@ -84,7 +84,7 @@ const globalRateLimit = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => {
-    const ip = req?.ip || "";
+    const ip = req.ip || "";
     return (
       ip === "127.0.0.1" ||
       ip === "::1" ||
@@ -94,7 +94,7 @@ const globalRateLimit = rateLimit({
     );
   },
   handler: (_req: Request, res: Response) => {
-    logger?.warn("[Security] Global rate limit exceeded");
+    logger.warn("[Security] Global rate limit exceeded");
     res
       .status(429)
       .json({ error: "Too many requests. Please try again later." });
@@ -108,10 +108,10 @@ export function securityMiddleware(
 ): void {
   helmetMiddleware(req, res, (helmetErr?: Record<string, unknown>) => {
     if (helmetErr) {
-      logger?.warn("[Security] Helmet error (non-fatal):", helmetErr?.message);
+      logger.warn("[Security] Helmet error (non-fatal):", helmetErr?.message);
     }
     // Set Permissions-Policy — not natively supported by this helmet version.
-    res?.setHeader("Permissions-Policy", PERMISSIONS_POLICY);
+    res.setHeader("Permissions-Policy", PERMISSIONS_POLICY);
     globalRateLimit(req, res, next);
   });
 }

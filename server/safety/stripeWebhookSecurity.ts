@@ -36,19 +36,19 @@ export function stripeWebhookMiddleware(
   const webhookSecret = env?.STRIPE_WEBHOOK_SECRET;
 
   if (!webhookSecret) {
-    logger?.warn("[Stripe Webhook] STRIPE_WEBHOOK_SECRET is not configured");
-    res?.status(500).json({
+    logger.warn("[Stripe Webhook] STRIPE_WEBHOOK_SECRET is not configured");
+    res.status(500).json({
       success: false,
       error: "Webhook secret not configured",
     });
     return;
   }
 
-  const signature = req?.headers["stripe-signature"] as string;
+  const signature = req.headers["stripe-signature"] as string;
 
   if (!signature) {
-    logger?.warn("[Stripe Webhook] Missing stripe-signature header");
-    res?.status(400).json({
+    logger.warn("[Stripe Webhook] Missing stripe-signature header");
+    res.status(400).json({
       success: false,
       error: "Missing stripe-signature header",
     });
@@ -87,11 +87,11 @@ export function stripeWebhookMiddleware(
       amount: (event?.data.object as Record<string, unknown>).amount,
     });
 
-    logger?.info(`[Stripe Webhook] Verified event: ${event?.type} (${event?.id})`);
+    logger.info(`[Stripe Webhook] Verified event: ${event?.type} (${event?.id})`);
 
     next();
   } catch (error) {
-    logger?.warn(
+    logger.warn(
       "[Stripe Webhook] Signature verification failed:",
       error?.message,
     );
@@ -105,7 +105,7 @@ export function stripeWebhookMiddleware(
       error: error.message,
     });
 
-    res?.status(401).json({
+    res.status(401).json({
       success: false,
       error: "Webhook signature verification failed",
     });
@@ -121,7 +121,7 @@ export function stripeRawBodyParser(
   buf: Buffer,
   _encoding: BufferEncoding,
 ): void {
-  if (req?.path === "/api/webhooks/stripe" || req?.path.includes("stripe")) {
+  if (req.path === "/api/webhooks/stripe" || req.path.includes("stripe")) {
     (req as Record<string, unknown>).rawBody = buf;
   }
 }
@@ -182,7 +182,7 @@ export async function isEventProcessed(eventId: string): Promise<boolean> {
       // timeout → fall through to memory fallback
     }
   } catch (e) {
-    logger?.warn(
+    logger.warn(
       `[Stripe Webhook] Redis check failed, using memory fallback: ${e}`,
     );
   }
@@ -215,7 +215,7 @@ export async function markEventProcessed(eventId: string): Promise<void> {
       );
     }
   } catch (e) {
-    logger?.warn(
+    logger.warn(
       `[Stripe Webhook] Redis mark failed, memory fallback already applied: ${e}`,
     );
   }
@@ -225,7 +225,7 @@ export async function markEventProcessed(eventId: string): Promise<void> {
 export async function checkIdempotency(eventId: string): Promise<boolean> {
   const already = await isEventProcessed(eventId);
   if (already) {
-    logger?.info(`[Stripe Webhook] Duplicate event ignored: ${eventId}`);
+    logger.info(`[Stripe Webhook] Duplicate event ignored: ${eventId}`);
     return true;
   }
   return false;
@@ -245,7 +245,7 @@ export function registerWebhookHandler(
   handler: WebhookHandler,
 ): void {
   webhookHandlers?.set(eventType, handler);
-  logger?.info(`[Stripe Webhook] Registered handler for: ${eventType}`);
+  logger.info(`[Stripe Webhook] Registered handler for: ${eventType}`);
 }
 
 export async function handleWebhookEvent(
@@ -254,14 +254,14 @@ export async function handleWebhookEvent(
   // SECURITY FIX: Check idempotency BEFORE processing, but only mark as processed AFTER success
   // This ensures failed events can be retried
   if (await isEventProcessed(event?.id)) {
-    logger?.info(`[Stripe Webhook] Duplicate event ignored: ${event?.id}`);
+    logger.info(`[Stripe Webhook] Duplicate event ignored: ${event?.id}`);
     return { success: true, message: "Event already processed" };
   }
 
   const handler = webhookHandlers?.get(event?.type);
 
   if (!handler) {
-    logger?.warn(`[Stripe Webhook] No handler for event type: ${event?.type}`);
+    logger.warn(`[Stripe Webhook] No handler for event type: ${event?.type}`);
     // Mark unhandled events as processed to prevent repeated logs
     await markEventProcessed(event?.id);
     return { success: true, message: "Event type not handled" };
@@ -276,7 +276,7 @@ export async function handleWebhookEvent(
       await markEventProcessed(event?.id);
     } else {
       // Log failed processing for retry tracking
-      logger?.warn(
+      logger.warn(
         `[Stripe Webhook] Handler failed for ${event?.type} (${event?.id}): ${result?.message}`,
       );
     }
@@ -284,7 +284,7 @@ export async function handleWebhookEvent(
     return result;
   } catch (error) {
     // SECURITY: Don't mark as processed on error - allow retry
-    logger?.warn(
+    logger.warn(
       { err: error },
       `[Stripe Webhook] Handler error for ${event?.type} (${event?.id}):`,
     );

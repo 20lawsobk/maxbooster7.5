@@ -100,7 +100,7 @@ class OrganicCompoundingService {
         periodEnd: now,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Error computing organic ROI:");
+      logger.warn({ err: error }, "Error computing organic ROI:");
       throw error;
     }
   }
@@ -136,13 +136,13 @@ class OrganicCompoundingService {
       const reach = channel?.estimatedMonthlyReach ?? 0;
       const audienceQuality = channel?.audienceQualityScore ?? 0.5;
 
-      const reachScore = Math?.min(reach / 100000, 1);
+      const reachScore = Math.min(reach / 100000, 1);
       const efficiencyScore =
         roi * 0.4 + reachScore * 0.3 + audienceQuality * 0.3;
 
-      return Math?.max(0, Math?.min(1, efficiencyScore));
+      return Math.max(0, Math.min(1, efficiencyScore));
     } catch (error) {
-      logger?.warn({ err: error }, "Error computing channel efficiency:");
+      logger.warn({ err: error }, "Error computing channel efficiency:");
       return 0;
     }
   }
@@ -310,7 +310,7 @@ class OrganicCompoundingService {
 
       return candidates;
     } catch (error) {
-      logger?.warn({ err: error }, "Error proposing candidate assets:");
+      logger.warn({ err: error }, "Error proposing candidate assets:");
       return [];
     }
   }
@@ -367,7 +367,7 @@ class OrganicCompoundingService {
         ltv: avgChannelLtv,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Error estimating future ROI:");
+      logger.warn({ err: error }, "Error estimating future ROI:");
       return { effectiveRoi: 0, streams: 0, ltv: 0 };
     }
   }
@@ -377,21 +377,21 @@ class OrganicCompoundingService {
     expectedRoi: { effectiveRoi: number; streams: number; ltv: number },
   ): number {
     try {
-      const roiScore = Math?.min(expectedRoi?.effectiveRoi / 2, 1);
+      const roiScore = Math.min(expectedRoi?.effectiveRoi / 2, 1);
 
       const timeEfficiency =
         candidate?.creationCostHours > 0
-          ? Math?.min(expectedRoi?.streams / candidate?.creationCostHours / 20, 1)
+          ? Math.min(expectedRoi?.streams / candidate?.creationCostHours / 20, 1)
           : 0;
 
-      const ltvScore = Math?.min(expectedRoi?.ltv / 20, 1);
+      const ltvScore = Math.min(expectedRoi?.ltv / 20, 1);
 
       const efficiencyScore =
         roiScore * 0.5 + timeEfficiency * 0.3 + ltvScore * 0.2;
 
-      return Math?.max(0, Math?.min(1, efficiencyScore));
+      return Math.max(0, Math.min(1, efficiencyScore));
     } catch (error) {
-      logger?.warn({ err: error }, "Error computing efficiency score:");
+      logger.warn({ err: error }, "Error computing efficiency score:");
       return 0;
     }
   }
@@ -401,7 +401,7 @@ class OrganicCompoundingService {
     timeBudgetHours: number,
   ): ScoredCandidate[] {
     try {
-      const numExplore = Math?.floor(candidates?.length * EXPLORE_RATIO);
+      const numExplore = Math.floor(candidates?.length * EXPLORE_RATIO);
       const numExploit = candidates?.length - numExplore;
 
       const sortedByEfficiency = [...candidates].sort(
@@ -411,7 +411,7 @@ class OrganicCompoundingService {
 
       const exploreCandidates = sortedByEfficiency
         .slice(numExploit)
-        .sort(() => Math?.random() - 0.5)
+        .sort(() => Math.random() - 0.5)
         .slice(0, numExplore);
 
       const allCandidates = [...exploitCandidates, ...exploreCandidates].sort(
@@ -430,7 +430,7 @@ class OrganicCompoundingService {
 
       return selected;
     } catch (error) {
-      logger?.warn({ err: error }, "Error selecting assets under budget:");
+      logger.warn({ err: error }, "Error selecting assets under budget:");
       return [];
     }
   }
@@ -450,7 +450,7 @@ class OrganicCompoundingService {
 
       return sortedChannels?.slice(0, 3);
     } catch (error) {
-      logger?.warn({ err: error }, "Error selecting best channels for asset:");
+      logger.warn({ err: error }, "Error selecting best channels for asset:");
       return [];
     }
   }
@@ -481,13 +481,13 @@ class OrganicCompoundingService {
       const ageInDays =
         (Date?.now() - createdAt?.getTime()) / (1000 * 60 * 60 * 24);
 
-      const decayFactor = Math?.pow(0.5, ageInDays / halfLifeDays);
+      const decayFactor = Math.pow(0.5, ageInDays / halfLifeDays);
 
       const adjustedDecay = (decayFactor * (1 + stabilityScore)) / 2;
 
-      return Math?.max(0.1, Math?.min(1, adjustedDecay));
+      return Math.max(0.1, Math.min(1, adjustedDecay));
     } catch (error) {
-      logger?.warn({ err: error }, "Error calculating decay:");
+      logger.warn({ err: error }, "Error calculating decay:");
       return 1;
     }
   }
@@ -497,31 +497,31 @@ class OrganicCompoundingService {
     weekStart: Date,
     timeBudgetHours: number,
   ): Promise<WeeklyState> {
-    logger?.info(`Starting weekly organic loop for user ${userId}`, {
+    logger.info(`Starting weekly organic loop for user ${userId}`, {
       weekStart,
       timeBudgetHours,
     });
 
     try {
-      const assets = await this?.getAssets(userId);
-      const channels = await this?.getChannels(userId);
+      const assets = await this.getAssets(userId);
+      const channels = await this.getChannels(userId);
 
-      logger?.info(
+      logger.info(
         `Loaded ${assets?.length} assets and ${channels?.length} channels`,
       );
 
       for (const asset of assets) {
-        const roi = await this?.computeOrganicRoi(asset);
-        await this?.saveRoiSnapshot(userId, asset?.id, roi);
-        await this?.updateLifetimeStats(userId, asset?.id);
+        const roi = await this.computeOrganicRoi(asset);
+        await this.saveRoiSnapshot(userId, asset?.id, roi);
+        await this.updateLifetimeStats(userId, asset?.id);
       }
 
       for (const channel of channels) {
-        const efficiency = this?.computeChannelEfficiency(channel, assets);
-        await this?.updateChannelEfficiency(channel?.id, efficiency);
+        const efficiency = this.computeChannelEfficiency(channel, assets);
+        await this.updateChannelEfficiency(channel?.id, efficiency);
       }
 
-      const candidateAssets = this?.proposeCandidateAssets(
+      const candidateAssets = this.proposeCandidateAssets(
         userId,
         assets,
         channels,
@@ -529,8 +529,8 @@ class OrganicCompoundingService {
 
       const scoredCandidates: ScoredCandidate[] = [];
       for (const cand of candidateAssets) {
-        const expectedRoi = this?.estimateFutureRoi(cand, assets, channels);
-        const efficiencyScore = this?.computeEfficiencyScore(cand, expectedRoi);
+        const expectedRoi = this.estimateFutureRoi(cand, assets, channels);
+        const efficiencyScore = this.computeEfficiencyScore(cand, expectedRoi);
 
         scoredCandidates?.push({
           assetId: cand.assetId,
@@ -545,14 +545,14 @@ class OrganicCompoundingService {
         });
       }
 
-      const selected = this?.selectAssetsUnderBudget(
+      const selected = this.selectAssetsUnderBudget(
         scoredCandidates,
         timeBudgetHours,
       );
 
       const placements: Placement[] = [];
       for (const sel of selected) {
-        const bestChannels = this?.selectBestChannelsForAsset(
+        const bestChannels = this.selectBestChannelsForAsset(
           sel?.assetId,
           channels,
         );
@@ -576,7 +576,7 @@ class OrganicCompoundingService {
         placements,
       };
 
-      logger?.info(`Weekly organic loop completed for user ${userId}`, {
+      logger.info(`Weekly organic loop completed for user ${userId}`, {
         candidatesGenerated: scoredCandidates.length,
         assetsSelected: selected.length,
         placementsCreated: placements.length,
@@ -584,7 +584,7 @@ class OrganicCompoundingService {
 
       return weeklyState;
     } catch (error) {
-      logger?.warn({ err: error }, "Error in weekly organic loop:");
+      logger.warn({ err: error }, "Error in weekly organic loop:");
       throw error;
     }
   }
@@ -602,10 +602,10 @@ class OrganicCompoundingService {
         })
         .returning();
 
-      logger?.info(`Created organic asset ${asset?.id} for user ${userId}`);
+      logger.info(`Created organic asset ${asset?.id} for user ${userId}`);
       return asset;
     } catch (error) {
-      logger?.warn({ err: error }, "Error creating organic asset:");
+      logger.warn({ err: error }, "Error creating organic asset:");
       throw error;
     }
   }
@@ -626,7 +626,7 @@ class OrganicCompoundingService {
 
       return updated || null;
     } catch (error) {
-      logger?.warn({ err: error }, "Error updating asset performance:");
+      logger.warn({ err: error }, "Error updating asset performance:");
       throw error;
     }
   }
@@ -640,7 +640,7 @@ class OrganicCompoundingService {
         .orderBy(desc(organicAssets?.createdAt))
         .limit(500);
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting assets:");
+      logger.warn({ err: error }, "Error getting assets:");
       throw error;
     }
   }
@@ -655,7 +655,7 @@ class OrganicCompoundingService {
 
       return asset || null;
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting asset by id:");
+      logger.warn({ err: error }, "Error getting asset by id:");
       throw error;
     }
   }
@@ -673,10 +673,10 @@ class OrganicCompoundingService {
         })
         .returning();
 
-      logger?.info(`Created organic channel ${channel?.id} for user ${userId}`);
+      logger.info(`Created organic channel ${channel?.id} for user ${userId}`);
       return channel;
     } catch (error) {
-      logger?.warn({ err: error }, "Error creating organic channel:");
+      logger.warn({ err: error }, "Error creating organic channel:");
       throw error;
     }
   }
@@ -697,7 +697,7 @@ class OrganicCompoundingService {
 
       return updated || null;
     } catch (error) {
-      logger?.warn({ err: error }, "Error updating channel efficiency:");
+      logger.warn({ err: error }, "Error updating channel efficiency:");
       throw error;
     }
   }
@@ -710,7 +710,7 @@ class OrganicCompoundingService {
         .where(eq(organicChannels?.userId, userId))
         .orderBy(desc(organicChannels?.efficiencyScore));
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting channels:");
+      logger.warn({ err: error }, "Error getting channels:");
       throw error;
     }
   }
@@ -737,7 +737,7 @@ class OrganicCompoundingService {
 
       return snapshot;
     } catch (error) {
-      logger?.warn({ err: error }, "Error saving ROI snapshot:");
+      logger.warn({ err: error }, "Error saving ROI snapshot:");
       throw error;
     }
   }
@@ -758,7 +758,7 @@ class OrganicCompoundingService {
         )
         .orderBy(desc(organicRoiSnapshots?.createdAt));
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting ROI history:");
+      logger.warn({ err: error }, "Error getting ROI history:");
       throw error;
     }
   }
@@ -768,10 +768,10 @@ class OrganicCompoundingService {
     assetId: string,
   ): Promise<OrganicAssetLifetimeRecord | null> {
     try {
-      const asset = await this?.getAssetById(assetId);
+      const asset = await this.getAssetById(assetId);
       if (!asset) return null;
 
-      const roiHistory = await this?.getRoiHistory(userId, assetId);
+      const roiHistory = await this.getRoiHistory(userId, assetId);
 
       const lifetimeRevenue = roiHistory?.reduce(
         (sum, r) => sum + (r?.revenueOverPeriod ?? 0),
@@ -833,7 +833,7 @@ class OrganicCompoundingService {
         return created;
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Error updating lifetime stats:");
+      logger.warn({ err: error }, "Error updating lifetime stats:");
       throw error;
     }
   }
@@ -856,7 +856,7 @@ class OrganicCompoundingService {
 
       return stats || null;
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting lifetime stats:");
+      logger.warn({ err: error }, "Error getting lifetime stats:");
       throw error;
     }
   }
@@ -866,17 +866,17 @@ class OrganicCompoundingService {
     limit: number = 10,
   ): Promise<OrganicAsset[]> {
     try {
-      const assets = await this?.getAssets(userId);
+      const assets = await this.getAssets(userId);
 
       return assets
         .sort((a, b) => {
-          const roiA = this?.calculateQuickRoi(a);
-          const roiB = this?.calculateQuickRoi(b);
+          const roiA = this.calculateQuickRoi(a);
+          const roiB = this.calculateQuickRoi(b);
           return roiB - roiA;
         })
         .slice(0, limit);
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting top performing assets:");
+      logger.warn({ err: error }, "Error getting top performing assets:");
       throw error;
     }
   }
@@ -895,14 +895,14 @@ class OrganicCompoundingService {
     paidRoiBaseline: number = 0.5,
   ): Promise<OrganicAsset[]> {
     try {
-      const assets = await this?.getAssets(userId);
+      const assets = await this.getAssets(userId);
 
       return assets?.filter((asset) => {
-        const roi = this?.calculateQuickRoi(asset);
+        const roi = this.calculateQuickRoi(asset);
         return roi > paidRoiBaseline;
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting assets exceeding paid ROI:");
+      logger.warn({ err: error }, "Error getting assets exceeding paid ROI:");
       throw error;
     }
   }
@@ -917,8 +917,8 @@ class OrganicCompoundingService {
     topChannels: { channelId: string; name: string; efficiency: number }[];
   }> {
     try {
-      const assets = await this?.getAssets(userId);
-      const channels = await this?.getChannels(userId);
+      const assets = await this.getAssets(userId);
+      const channels = await this.getChannels(userId);
 
       let totalRevenue = 0;
       let totalCost = 0;
@@ -965,7 +965,7 @@ class OrganicCompoundingService {
         topChannels,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting compounding metrics:");
+      logger.warn({ err: error }, "Error getting compounding metrics:");
       throw error;
     }
   }

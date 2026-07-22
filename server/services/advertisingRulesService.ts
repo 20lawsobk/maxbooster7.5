@@ -21,8 +21,8 @@ export class AdvertisingRulesService {
       for (const variant of variants) {
         if (variant?.status === "killed") continue; // Skip already killed variants
 
-        if (this?.shouldTrigger(rule, variant)) {
-          const execution = await this?.executeRule(rule, variant);
+        if (this.shouldTrigger(rule, variant)) {
+          const execution = await this.executeRule(rule, variant);
           executions?.push(execution);
         }
       }
@@ -40,31 +40,31 @@ export class AdvertisingRulesService {
 
     switch (condition?.metric) {
       case "engagement":
-        return this?.compareMetric(
+        return this.compareMetric(
           metrics?.engagement || 0,
           condition?.operator,
           condition?.threshold,
         );
       case "reach":
-        return this?.compareMetric(
+        return this.compareMetric(
           metrics?.reach || 0,
           condition?.operator,
           condition?.threshold,
         );
       case "shares":
-        return this?.compareMetric(
+        return this.compareMetric(
           metrics?.shares || 0,
           condition?.operator,
           condition?.threshold,
         );
       case "clicks":
-        return this?.compareMetric(
+        return this.compareMetric(
           metrics?.clicks || 0,
           condition?.operator,
           condition?.threshold,
         );
       case "saves":
-        return this?.compareMetric(
+        return this.compareMetric(
           metrics?.saves || 0,
           condition?.operator,
           condition?.threshold,
@@ -73,13 +73,13 @@ export class AdvertisingRulesService {
         const hoursSinceCreated =
           (Date?.now() - new Date(variant?.createdAt).getTime()) /
           (1000 * 60 * 60);
-        return this?.compareMetric(
+        return this.compareMetric(
           hoursSinceCreated,
           condition?.operator,
           condition?.threshold,
         );
       case "viralityScore":
-        return this?.compareMetric(
+        return this.compareMetric(
           variant?.viralityScore || 0,
           condition?.operator,
           condition?.threshold,
@@ -117,8 +117,8 @@ export class AdvertisingRulesService {
    * Execute rule action (kill, pause, pivot, alert)
    */
   private async executeRule(rule: unknown, variant: unknown): Promise<unknown> {
-    const triggerReason = this?.generateTriggerReason(rule, variant);
-    const learnings = this?.extractLearnings(rule, variant);
+    const triggerReason = this.generateTriggerReason(rule, variant);
+    const learnings = this.extractLearnings(rule, variant);
 
     // Execute action
     let actionTaken = "none";
@@ -132,7 +132,7 @@ export class AdvertisingRulesService {
         actionTaken = "paused";
         break;
       case "pivot":
-        await this?.executePivot(rule?.pivotStrategy, variant);
+        await this.executePivot(rule?.pivotStrategy, variant);
         actionTaken = "pivoted";
         break;
       case "alert":
@@ -168,8 +168,8 @@ export class AdvertisingRulesService {
     const metrics = variant?.actualMetrics || {};
     const actualValue = metrics[condition?.metric] || 0;
 
-    const duration = this?.getRunDuration(variant);
-    return `${condition?.metric.toUpperCase()} (${this?.formatMetric(actualValue, condition?.metric)}) ${condition?.operator} threshold (${this?.formatMetric(condition?.threshold, condition?.metric)}) after ${duration} hours`;
+    const duration = this.getRunDuration(variant);
+    return `${condition?.metric.toUpperCase()} (${this.formatMetric(actualValue, condition?.metric)}) ${condition?.operator} threshold (${this.formatMetric(condition?.threshold, condition?.metric)}) after ${duration} hours`;
   }
 
   /**
@@ -184,18 +184,18 @@ export class AdvertisingRulesService {
       const performanceRatio = metrics?.engagement / variant?.predictedEngagement;
       if (performanceRatio < 0.5) {
         learnings?.push(
-          `Organic engagement ${Math?.round((1 - performanceRatio) * 100)}% below prediction - content may not resonate with audience`,
+          `Organic engagement ${Math.round((1 - performanceRatio) * 100)}% below prediction - content may not resonate with audience`,
         );
       } else if (performanceRatio > 1.5) {
         learnings?.push(
-          `Organic engagement ${Math?.round((performanceRatio - 1) * 100)}% above prediction - high-performing content, allocate more reach to similar posts`,
+          `Organic engagement ${Math.round((performanceRatio - 1) * 100)}% above prediction - high-performing content, allocate more reach to similar posts`,
         );
       }
     }
 
     // Platform-specific learnings
     learnings?.push(
-      `${variant?.platform} organic performance: ${this?.formatMetricSnapshot(metrics)}`,
+      `${variant?.platform} organic performance: ${this.formatMetricSnapshot(metrics)}`,
     );
 
     // Virality learnings
@@ -215,7 +215,7 @@ export class AdvertisingRulesService {
     const organicReach = metrics?.reach || 0;
     if (organicReach > 0) {
       learnings?.push(
-        `Achieved ${organicReach} organic reach with $0 ad spend - equivalent to ~$${this?.estimateAdSpendEquivalent(organicReach, variant?.platform)} in traditional advertising`,
+        `Achieved ${organicReach} organic reach with $0 ad spend - equivalent to ~$${this.estimateAdSpendEquivalent(organicReach, variant?.platform)} in traditional advertising`,
       );
     }
 
@@ -244,7 +244,7 @@ export class AdvertisingRulesService {
         // In organic posting, "budget" means posting frequency/reach
         // Increase frequency for best performer, decrease for underperformer
         const note = `Pivot: Increasing posting frequency for high-performing ${bestVariant?.platform} content`;
-        logger?.info(note);
+        logger.info(note);
       }
     }
 
@@ -252,7 +252,7 @@ export class AdvertisingRulesService {
       // Pause underperforming variant
       await storage?.updateAdCampaignVariant(variant?.id, { status: "paused" });
       // Would create new variant with different creative
-      logger?.info(
+      logger.info(
         `Pivot: Paused underperforming ${variant?.platform} variant, recommend new creative`,
       );
     }
@@ -308,14 +308,14 @@ export class AdvertisingRulesService {
     };
 
     const platformCPM = cpm[platform] || 10.0;
-    return Math?.round((reach / 1000) * platformCPM);
+    return Math.round((reach / 1000) * platformCPM);
   }
 
   /**
    * Get variant run duration in hours
    */
   private getRunDuration(variant: unknown): number {
-    return Math?.round(
+    return Math.round(
       (Date?.now() - new Date(variant?.createdAt).getTime()) / (1000 * 60 * 60),
     );
   }

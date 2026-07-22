@@ -36,11 +36,11 @@ import {
 } from "./recursiveResolver.js";
 
 // ── Feature flags ─────────────────────────────────────────────────────────────
-const DNSSEC_ENABLED = process?.env.DNSSEC_ENABLED === "true";
+const DNSSEC_ENABLED = process.env.DNSSEC_ENABLED === "true";
 
 // ── Eager GeoDNS warm-up at module load ───────────────────────────────────────
 // Decoupled from startDNSServer so it runs even when port 53 is unavailable.
-if (process?.env.GEODNS_ENABLED === "true") {
+if (process.env.GEODNS_ENABLED === "true") {
   (async () => {
     try {
       const { lookupGeo } = await import("./geoDns.js");
@@ -60,17 +60,17 @@ if (process?.env.GEODNS_ENABLED === "true") {
 const { Packet, createServer, UDPClient } = dns2 as Record<string, unknown>;
 
 const BASE_DOMAIN = (
-  process?.env.BASE_DOMAIN || "max-booster.com"
+  process.env.BASE_DOMAIN || "max-booster.com"
 ).toLowerCase();
-const DNS_SERVER_IP = process?.env.DNS_SERVER_IP || "34.111.179.208";
-const DNS_PORT = parseInt(process?.env.DNS_PORT || "53", 10);
-const UPSTREAM_DNS = process?.env.UPSTREAM_DNS || "8.8.8.8";
+const DNS_SERVER_IP = process.env.DNS_SERVER_IP || "34.111.179.208";
+const DNS_PORT = parseInt(process.env.DNS_PORT || "53", 10);
+const UPSTREAM_DNS = process.env.UPSTREAM_DNS || "8.8.8.8";
 
 // DoH upstream used when outbound UDP port 53 is blocked (e?.g. in sandboxed envs)
 // Cloudflare DoH: https://cloudflare-dns.com/dns-query
 // Google DoH:     https://dns.google/dns-query
 const DOH_UPSTREAM =
-  process?.env.DOH_UPSTREAM || "https://cloudflare-dns.com/dns-query";
+  process.env.DOH_UPSTREAM || "https://cloudflare-dns.com/dns-query";
 
 /**
  * DNS-over-HTTPS fallback resolver.
@@ -1380,7 +1380,7 @@ export async function processQuery(
             typeof rr.ttl === "number" ? rr?.ttl : 0,
           )
           .filter((t: number) => t > 0);
-        const minTtl = positiveTtls?.length > 0 ? Math?.min(...positiveTtls) : 0;
+        const minTtl = positiveTtls?.length > 0 ? Math.min(...positiveTtls) : 0;
 
         const rcode: number = response?.header?.rcode ?? 0;
 

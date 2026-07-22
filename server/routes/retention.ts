@@ -50,7 +50,7 @@ const featureEventSchema = z.object({
 
 router?.post("/nps", requireAuth, async (req: Record<string, unknown>, res) => {
   try {
-    const parsed = npsSchema?.safeParse(req?.body);
+    const parsed = npsSchema?.safeParse(req.body);
     if (!parsed?.success) {
       return res
         .status(400)
@@ -58,7 +58,7 @@ router?.post("/nps", requireAuth, async (req: Record<string, unknown>, res) => {
     }
 
     const { score, comment, triggerContext } = parsed?.data;
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
     await db?.insert(npsResponses).values({
       userId,
@@ -71,14 +71,14 @@ router?.post("/nps", requireAuth, async (req: Record<string, unknown>, res) => {
 
     const category =
       score >= 9 ? "promoter" : score >= 7 ? "passive" : "detractor";
-    logger?.info(
+    logger.info(
       `[Retention] NPS submitted: user=${userId} score=${score} category=${category}`,
     );
 
-    return res?.json({ success: true, category });
+    return res.json({ success: true, category });
   } catch (err) {
-    logger?.warn({ err: err }, "[Retention] NPS submission failed:");
-    return res?.status(500).json({ error: "Failed to save NPS response" });
+    logger.warn({ err: err }, "[Retention] NPS submission failed:");
+    return res.status(500).json({ error: "Failed to save NPS response" });
   }
 });
 
@@ -87,7 +87,7 @@ router?.post(
   requireAuth,
   async (req: Record<string, unknown>, res) => {
     try {
-      const parsed = cancellationSchema?.safeParse(req?.body);
+      const parsed = cancellationSchema?.safeParse(req.body);
       if (!parsed?.success) {
         return res
           .status(400)
@@ -97,19 +97,19 @@ router?.post(
           });
       }
 
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       await db?.insert(cancellationFeedback).values({
         userId,
         ...parsed?.data,
       });
 
-      logger?.info(
+      logger.info(
         `[Retention] Cancellation feedback: user=${userId} reason=${parsed?.data.reason}`,
       );
-      return res?.json({ success: true });
+      return res.json({ success: true });
     } catch (err) {
-      logger?.warn({ err: err }, "[Retention] Cancellation feedback failed:");
+      logger.warn({ err: err }, "[Retention] Cancellation feedback failed:");
       return res
         .status(500)
         .json({ error: "Failed to save cancellation feedback" });
@@ -122,12 +122,12 @@ router?.post(
   requireAuth,
   async (req: Record<string, unknown>, res) => {
     try {
-      const parsed = featureEventSchema?.safeParse(req?.body);
+      const parsed = featureEventSchema?.safeParse(req.body);
       if (!parsed?.success) {
-        return res?.status(400).json({ error: "Invalid event data" });
+        return res.status(400).json({ error: "Invalid event data" });
       }
 
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       await pushFeatureEvent({
         userId,
@@ -136,10 +136,10 @@ router?.post(
         metadata: parsed.data.metadata ?? null,
       });
 
-      return res?.json({ success: true });
+      return res.json({ success: true });
     } catch (err) {
-      logger?.warn({ err: err }, "[Retention] Feature event tracking failed:");
-      return res?.status(500).json({ error: "Failed to track feature event" });
+      logger.warn({ err: err }, "[Retention] Feature event tracking failed:");
+      return res.status(500).json({ error: "Failed to track feature event" });
     }
   },
 );
@@ -149,7 +149,7 @@ router?.get(
   requireAuth,
   async (req: Record<string, unknown>, res) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       const [existing] = await db
         .select()
@@ -159,19 +159,19 @@ router?.get(
 
       if (!existing) {
         const fresh = await customerHealthScoreService?.computeAndStore(userId);
-        return res?.json(fresh);
+        return res.json(fresh);
       }
 
       const staleCutoff = new Date(Date?.now() - 24 * 60 * 60 * 1000);
       if (existing?.computedAt! < staleCutoff) {
         const fresh = await customerHealthScoreService?.computeAndStore(userId);
-        return res?.json(fresh);
+        return res.json(fresh);
       }
 
-      return res?.json(existing);
+      return res.json(existing);
     } catch (err) {
-      logger?.warn({ err: err }, "[Retention] Health score retrieval failed:");
-      return res?.status(500).json({ error: "Failed to get health score" });
+      logger.warn({ err: err }, "[Retention] Health score retrieval failed:");
+      return res.status(500).json({ error: "Failed to get health score" });
     }
   },
 );
@@ -181,8 +181,8 @@ router?.get(
   requireAuth,
   async (req: Record<string, unknown>, res) => {
     try {
-      if (req?.user?.role !== "admin")
-        return res?.status(403).json({ error: "Forbidden" });
+      if (req.user?.role !== "admin")
+        return res.status(403).json({ error: "Forbidden" });
 
       const atRisk = await db
         .select()
@@ -198,10 +198,10 @@ router?.get(
         .orderBy(desc(customerHealthScores?.computedAt))
         .limit(100);
 
-      return res?.json({ atRisk, churning });
+      return res.json({ atRisk, churning });
     } catch (err) {
-      logger?.warn({ err: err }, "[Retention] Admin at-risk query failed:");
-      return res?.status(500).json({ error: "Failed to get at-risk users" });
+      logger.warn({ err: err }, "[Retention] Admin at-risk query failed:");
+      return res.status(500).json({ error: "Failed to get at-risk users" });
     }
   },
 );

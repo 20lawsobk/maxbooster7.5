@@ -20,30 +20,30 @@ router?.use(requireAdmin);
 router?.get("/status", async (_req, res) => {
   try {
     const status = await beatMoneyLoopService?.getStatus();
-    res?.json(status);
+    res.json(status);
   } catch (err) {
-    logger?.warn({ err }, "[BeatMoneyLoop] /status failed");
-    res?.status(500).json({ error: "Failed to load status" });
+    logger.warn({ err }, "[BeatMoneyLoop] /status failed");
+    res.status(500).json({ error: "Failed to load status" });
   }
 });
 
 router?.post("/enable", async (_req, res) => {
   try {
     const status = await beatMoneyLoopService?.enable();
-    res?.json({ ok: true, status });
+    res.json({ ok: true, status });
   } catch (err) {
-    logger?.warn({ err }, "[BeatMoneyLoop] /enable failed");
-    res?.status(500).json({ error: (err as Error).message });
+    logger.warn({ err }, "[BeatMoneyLoop] /enable failed");
+    res.status(500).json({ error: (err as Error).message });
   }
 });
 
 router?.post("/disable", async (_req, res) => {
   try {
     const status = await beatMoneyLoopService?.disable();
-    res?.json({ ok: true, status });
+    res.json({ ok: true, status });
   } catch (err) {
-    logger?.warn({ err }, "[BeatMoneyLoop] /disable failed");
-    res?.status(500).json({ error: (err as Error).message });
+    logger.warn({ err }, "[BeatMoneyLoop] /disable failed");
+    res.status(500).json({ error: (err as Error).message });
   }
 });
 
@@ -56,14 +56,14 @@ router?.post("/run-now", async (_req, res) => {
     beatMoneyLoopService
       ?.runCycle("manual")
       .then((result) => {
-        logger?.info(
+        logger.info(
           `[BeatMoneyLoop] manual cycle finished: ${JSON.stringify(result)?.slice(0, 300)}`,
         );
       })
       .catch((err) => {
-        logger?.warn({ err }, "[BeatMoneyLoop] manual cycle failed");
+        logger.warn({ err }, "[BeatMoneyLoop] manual cycle failed");
       });
-    res?.status(202).json({
+    res.status(202).json({
       ok: true,
       status: "started",
       message:
@@ -71,26 +71,26 @@ router?.post("/run-now", async (_req, res) => {
     });
   } catch (err) {
     const msg = (err as Error).message ?? String(err);
-    logger?.warn({ err }, "[BeatMoneyLoop] /run-now failed");
-    res?.status(500).json({ error: msg });
+    logger.warn({ err }, "[BeatMoneyLoop] /run-now failed");
+    res.status(500).json({ error: msg });
   }
 });
 
 router?.get("/cycles", async (req, res) => {
   try {
-    const limit = Math?.min(
+    const limit = Math.min(
       200,
-      Math?.max(1, parseInt(String(req?.query.limit ?? "50"), 10) || 50),
+      Math.max(1, parseInt(String(req.query.limit ?? "50"), 10) || 50),
     );
     const cycles = await db
       .select()
       .from(beatMoneyLoopCycles)
       .orderBy(desc(beatMoneyLoopCycles?.startedAt))
       .limit(limit);
-    res?.json({ cycles });
+    res.json({ cycles });
   } catch (err) {
-    logger?.warn({ err }, "[BeatMoneyLoop] /cycles failed");
-    res?.status(500).json({ error: "Failed to load cycles" });
+    logger.warn({ err }, "[BeatMoneyLoop] /cycles failed");
+    res.status(500).json({ error: "Failed to load cycles" });
   }
 });
 

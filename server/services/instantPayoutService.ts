@@ -6,8 +6,8 @@ import { logger } from "../logger.js";
 import { withLock } from "../lib/distributedLock.js";
 
 // Initialize Stripe
-const stripe = process?.env.STRIPE_SECRET_KEY?.startsWith("sk_")
-  ? new Stripe(process?.env.STRIPE_SECRET_KEY, {
+const stripe = process.env.STRIPE_SECRET_KEY?.startsWith("sk_")
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
       apiVersion: "2025-08-27.basil",
     })
   : null;
@@ -59,9 +59,9 @@ export class InstantPayoutService {
    */
   async recordLedgerEntry(data: LedgerEntryData): Promise<string> {
     try {
-      const currentBalance = await this?.calculateAvailableBalance(data?.userId);
+      const currentBalance = await this.calculateAvailableBalance(data?.userId);
       const balanceAfterCents =
-        Math?.round(currentBalance?.availableBalance * 100) +
+        Math.round(currentBalance?.availableBalance * 100) +
         (data?.entryType === "credit" ? data?.amountCents : -data?.amountCents);
 
       const [entry] = await db
@@ -79,7 +79,7 @@ export class InstantPayoutService {
         })
         .returning();
 
-      logger?.info("Ledger entry recorded", {
+      logger.info("Ledger entry recorded", {
         entryId: entry.id,
         userId: data.userId,
         type: data.entryType,
@@ -88,7 +88,7 @@ export class InstantPayoutService {
 
       return entry?.id;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error recording ledger entry:");
+      logger.warn({ err: error }, "Error recording ledger entry:");
       throw new Error("Failed to record ledger entry");
     }
   }
@@ -111,7 +111,7 @@ export class InstantPayoutService {
         .offset(offset);
       return entries;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching ledger history:");
+      logger.warn({ err: error }, "Error fetching ledger history:");
       throw new Error("Failed to fetch ledger history");
     }
   }
@@ -189,7 +189,7 @@ export class InstantPayoutService {
       }
 
       // Check for large single payout
-      const balance = await this?.calculateAvailableBalance(userId);
+      const balance = await this.calculateAvailableBalance(userId);
       if (amount > balance?.availableBalance * 0.9) {
         flags?.push("NEAR_FULL_WITHDRAWAL");
         score += 15;
@@ -218,7 +218,7 @@ export class InstantPayoutService {
 
       if (!approved) {
         reason = `Risk score ${score} exceeds threshold. Flags: ${flags?.join(", ")}`;
-        logger?.warn("Payout risk check failed", {
+        logger.warn("Payout risk check failed", {
           userId,
           amount,
           score,
@@ -228,7 +228,7 @@ export class InstantPayoutService {
 
       return { score, flags, approved, reason };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error assessing payout risk:");
+      logger.warn({ err: error }, "Error assessing payout risk:");
       return { score: 0, flags: ["ASSESSMENT_ERROR"], approved: true };
     }
   }
@@ -312,7 +312,7 @@ export class InstantPayoutService {
   async updateAvailableBalance(userId: string, amount: number): Promise<void> {
     // Balance is calculated dynamically from orders and payouts tables
     // No need to update a column - this is intentionally a no-op
-    logger?.info("Balance update requested for user - calculated dynamically", {
+    logger.info("Balance update requested for user - calculated dynamically", {
       userId,
       amount,
     });
@@ -453,7 +453,7 @@ export class InstantPayoutService {
 
       return accountLink?.url;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error creating account link:");
+      logger.warn({ err: error }, "Error creating account link:");
       throw new Error(error?.message || "Failed to create account link");
     }
   }
@@ -552,14 +552,14 @@ export class InstantPayoutService {
           .where(eq(instantPayouts?.id, payoutRecord?.id));
 
         // Log transfer details for audit purposes
-        logger?.info("Payout transfer initiated", {
+        logger.info("Payout transfer initiated", {
           payoutId: payoutRecord.id,
           transferId: transfer.id,
           orderId,
         });
 
         // Log payout for audit (balance is calculated dynamically from orders/payouts tables)
-        logger?.info(
+        logger.info(
           "Seller payout completed - balance calculated dynamically",
           {
             userId,
@@ -1312,7 +1312,7 @@ export class InstantPayoutService {
 
       // Log failure reason for audit (not stored in DB - column doesn't exist)
       if (failureReason) {
-        logger?.warn("Transfer webhook failure", {
+        logger.warn("Transfer webhook failure", {
           payoutId: payoutRecord.id,
           transferId: transfer.id,
           failureReason,
@@ -1328,7 +1328,7 @@ export class InstantPayoutService {
         })
         .where(eq(instantPayouts?.id, payoutRecord?.id));
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error handling transfer webhook:");
+      logger.warn({ err: error }, "Error handling transfer webhook:");
       throw error;
     }
   }
@@ -1348,7 +1348,7 @@ export class InstantPayoutService {
         .limit(1);
 
       if (!user) {
-        logger?.info("User not found for account webhook:", account?.id);
+        logger.info("User not found for account webhook:", account?.id);
         return;
       }
 
@@ -1408,7 +1408,7 @@ export class InstantPayoutService {
           break;
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error handling account webhook:");
+      logger.warn({ err: error }, "Error handling account webhook:");
       throw error;
     }
   }
@@ -1428,7 +1428,7 @@ export class InstantPayoutService {
         .limit(1);
 
       if (!payoutRecord) {
-        logger?.info("Payout record not found for webhook:", payout?.id);
+        logger.info("Payout record not found for webhook:", payout?.id);
         return;
       }
 
@@ -1460,7 +1460,7 @@ export class InstantPayoutService {
           failureReason = payout?.failure_message || "Unknown error";
 
           // Log payout failure for audit (balance is calculated dynamically from orders/payouts tables)
-          logger?.info("Payout failed - balance calculated dynamically", {
+          logger.info("Payout failed - balance calculated dynamically", {
             userId: payoutRecord.userId,
             amount: payoutRecord.amountCents / 100,
             payoutId: payoutRecord.id,
@@ -1486,7 +1486,7 @@ export class InstantPayoutService {
           status = "cancelled";
 
           // Log payout cancellation for audit (balance is calculated dynamically from orders/payouts tables)
-          logger?.info("Payout canceled - balance calculated dynamically", {
+          logger.info("Payout canceled - balance calculated dynamically", {
             userId: payoutRecord.userId,
             amount: payoutRecord.amountCents / 100,
             payoutId: payoutRecord.id,
@@ -1730,7 +1730,7 @@ export class InstantPayoutService {
           totalSales > 0 ? balance?.totalEarnings / totalSales : 0,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error getting earnings summary:");
+      logger.warn({ err: error }, "Error getting earnings summary:");
       throw new Error("Failed to get earnings summary");
     }
   }

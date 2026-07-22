@@ -208,7 +208,7 @@ export async function checkPropagation(
 
   cache?.set(cacheKey, { data: result, expiresAt: Date.now() + 30_000 });
 
-  logger?.debug(
+  logger.debug(
     `[DnsPropagation] ${domain} ${upperType}: ${propagatedCount}/${RESOLVERS?.length} resolvers propagated`,
   );
 
@@ -247,9 +247,9 @@ export async function checkDomainSetupPropagation(
   const recordsDone = a?.propagatedCount >= 2 && wwwCname?.propagatedCount >= 2;
   const setupComplete = nsDone || recordsDone;
 
-  const overallPercent = Math?.max(
+  const overallPercent = Math.max(
     ns?.propagationPercent,
-    Math?.round((a?.propagationPercent + wwwCname?.propagationPercent) / 2),
+    Math.round((a?.propagationPercent + wwwCname?.propagationPercent) / 2),
   );
 
   return { ns, a, wwwCname, overallPercent, setupComplete };

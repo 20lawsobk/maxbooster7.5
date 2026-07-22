@@ -16,7 +16,7 @@ export class CapacityMonitor {
       }
     }, CapacityMonitor.CHECK_INTERVAL);
 
-    logger?.info("📊 Capacity monitoring started (checks every 5 minutes)");
+    logger.info("📊 Capacity monitoring started (checks every 5 minutes)");
   }
 
   private static async checkCapacity() {
@@ -24,7 +24,7 @@ export class CapacityMonitor {
       // Check database pool
       const poolUtilization = pool?.totalCount / 20;
       if (poolUtilization >= CapacityMonitor.ALERT_THRESHOLD) {
-        logger?.warn(
+        logger.warn(
           `⚠️ CAPACITY ALERT: Database pool at ${(poolUtilization * 100).toFixed(1)}% capacity`,
         );
       }
@@ -35,11 +35,11 @@ export class CapacityMonitor {
       );
       const totalSessions = parseInt(sessionResult?.rows[0].count as string);
       // Approximate active sessions (assume 80% active within 24h for monitoring purposes)
-      const activeSessions = Math?.floor(totalSessions * 0.8);
+      const activeSessions = Math.floor(totalSessions * 0.8);
       const sessionUtilization = activeSessions / 50000;
 
       if (sessionUtilization >= CapacityMonitor.ALERT_THRESHOLD) {
-        logger?.warn(
+        logger.warn(
           `⚠️ CAPACITY ALERT: ${activeSessions} active sessions (${(sessionUtilization * 100).toFixed(1)}% of max)`,
         );
       }
@@ -49,12 +49,12 @@ export class CapacityMonitor {
         poolUtilization < CapacityMonitor.ALERT_THRESHOLD &&
         sessionUtilization < CapacityMonitor.ALERT_THRESHOLD
       ) {
-        logger?.info(
+        logger.info(
           `✅ Capacity healthy: Pool ${(poolUtilization * 100).toFixed(1)}%, Sessions ${activeSessions}`,
         );
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Capacity monitoring error:");
+      logger.warn({ err: error }, "Capacity monitoring error:");
     }
   }
 }

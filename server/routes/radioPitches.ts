@@ -17,20 +17,20 @@ router?.get("/", requireAuth, async (req, res) => {
     const items = await db
       .select()
       .from(radioPitches)
-      .where(eq(radioPitches?.userId, req?.user!.id))
+      .where(eq(radioPitches?.userId, req.user!.id))
       .orderBy(desc(radioPitches?.createdAt))
       .limit(limit)
       .offset(offset);
-    res?.json(items);
+    res.json(items);
   } catch (error) {
-    logger?.warn({ err: error }, "[RadioPitches] Failed to list:");
-    res?.status(500).json({ error: "Failed to fetch radio pitches" });
+    logger.warn({ err: error }, "[RadioPitches] Failed to list:");
+    res.status(500).json({ error: "Failed to fetch radio pitches" });
   }
 });
 
 router?.get("/stats", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const cacheKey = createCacheKey("stats:radioPitches", userId);
 
     const stats = await queryCache?.getOrCompute(
@@ -62,10 +62,10 @@ router?.get("/stats", requireAuth, async (req, res) => {
       CACHE_TTL,
     );
 
-    res?.json(stats);
+    res.json(stats);
   } catch (error) {
-    logger?.warn({ err: error }, "[RadioPitches] Failed to fetch stats:");
-    res?.status(500).json({ error: "Failed to fetch stats" });
+    logger.warn({ err: error }, "[RadioPitches] Failed to fetch stats:");
+    res.status(500).json({ error: "Failed to fetch stats" });
   }
 });
 
@@ -76,32 +76,32 @@ router?.get("/:id", requireAuth, async (req, res) => {
       .from(radioPitches)
       .where(
         and(
-          eq(radioPitches?.id, req?.params.id),
-          eq(radioPitches?.userId, req?.user!.id),
+          eq(radioPitches?.id, req.params.id),
+          eq(radioPitches?.userId, req.user!.id),
         ),
       )
       .limit(1);
-    if (!item) return res?.status(404).json({ error: "Radio pitch not found" });
-    res?.json(item);
+    if (!item) return res.status(404).json({ error: "Radio pitch not found" });
+    res.json(item);
   } catch (error) {
-    logger?.warn({ err: error }, "[RadioPitches] Failed to fetch radio pitch:");
-    res?.status(500).json({ error: "Failed to fetch radio pitch" });
+    logger.warn({ err: error }, "[RadioPitches] Failed to fetch radio pitch:");
+    res.status(500).json({ error: "Failed to fetch radio pitch" });
   }
 });
 
 router?.post("/", requireAuth, async (req, res) => {
   try {
     const data = insertRadioPitchSchema?.parse({
-      ...req?.body,
+      ...req.body,
       userId: req.user!.id,
     });
     const [item] = await db?.insert(radioPitches).values(data).returning();
     await queryCache?.invalidate(
-      createCacheKey("stats:radioPitches", req?.user!.id),
+      createCacheKey("stats:radioPitches", req.user!.id),
     );
-    res?.status(201).json(item);
+    res.status(201).json(item);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "[RadioPitches] Failed to create:");
+    logger.warn({ err: error }, "[RadioPitches] Failed to create:");
     if (error instanceof Error && error?.name === "ZodError") {
       return res
         .status(400)
@@ -110,14 +110,14 @@ router?.post("/", requireAuth, async (req, res) => {
           details: (error as Record<string, unknown>).flatten(),
         });
     }
-    res?.status(500).json({ error: "Failed to create radio pitch" });
+    res.status(500).json({ error: "Failed to create radio pitch" });
   }
 });
 
 router?.put("/:id", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { id } = req?.params;
+    const userId = req.user!.id;
+    const { id } = req.params;
 
     const existing = await db
       .select()
@@ -126,10 +126,10 @@ router?.put("/:id", requireAuth, async (req, res) => {
       .limit(1);
 
     if (existing?.length === 0) {
-      return res?.status(404).json({ error: "Radio pitch not found" });
+      return res.status(404).json({ error: "Radio pitch not found" });
     }
 
-    const parsed = insertRadioPitchSchema?.partial().parse(req?.body);
+    const parsed = insertRadioPitchSchema?.partial().parse(req.body);
     const { status: _status, userId: _parsedUserId, ...data } = parsed;
     const [item] = await db
       .update(radioPitches)
@@ -137,9 +137,9 @@ router?.put("/:id", requireAuth, async (req, res) => {
       .where(and(eq(radioPitches?.id, id), eq(radioPitches?.userId, userId)))
       .returning();
     await queryCache?.invalidate(createCacheKey("stats:radioPitches", userId));
-    res?.json(item);
+    res.json(item);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "[RadioPitches] Failed to update:");
+    logger.warn({ err: error }, "[RadioPitches] Failed to update:");
     if (error instanceof Error && error?.name === "ZodError") {
       return res
         .status(400)
@@ -148,15 +148,15 @@ router?.put("/:id", requireAuth, async (req, res) => {
           details: (error as Record<string, unknown>).flatten(),
         });
     }
-    res?.status(500).json({ error: "Failed to update radio pitch" });
+    res.status(500).json({ error: "Failed to update radio pitch" });
   }
 });
 
 // PATCH /api/radio-pitches/:id/status — record pitch outcome (featured, aired, rejected, etc.)
 router?.patch("/:id/status", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { id } = req?.params;
+    const userId = req.user!.id;
+    const { id } = req.params;
     const statusSchema = z.object({
       status: z.enum([
         "draft",
@@ -170,7 +170,7 @@ router?.patch("/:id/status", requireAuth, async (req, res) => {
       responseNote: z.string().max(2000).optional(),
       featureUrl: z.string().url().optional(),
     });
-    const { status, responseNote, featureUrl } = statusSchema?.parse(req?.body);
+    const { status, responseNote, featureUrl } = statusSchema?.parse(req.body);
 
     const setFields: Record<string, unknown> = {
       status,
@@ -188,11 +188,11 @@ router?.patch("/:id/status", requireAuth, async (req, res) => {
       .where(and(eq(radioPitches?.id, id), eq(radioPitches?.userId, userId)))
       .returning();
 
-    if (!item) return res?.status(404).json({ error: "Radio pitch not found" });
+    if (!item) return res.status(404).json({ error: "Radio pitch not found" });
     await queryCache?.invalidate(createCacheKey("stats:radioPitches", userId));
-    res?.json(item);
+    res.json(item);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "[RadioPitches] Failed to update status:");
+    logger.warn({ err: error }, "[RadioPitches] Failed to update status:");
     if (error instanceof Error && error?.name === "ZodError") {
       return res
         .status(400)
@@ -201,14 +201,14 @@ router?.patch("/:id/status", requireAuth, async (req, res) => {
           details: (error as Record<string, unknown>).flatten(),
         });
     }
-    res?.status(500).json({ error: "Failed to update radio pitch status" });
+    res.status(500).json({ error: "Failed to update radio pitch status" });
   }
 });
 
 router?.delete("/:id", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { id } = req?.params;
+    const userId = req.user!.id;
+    const { id } = req.params;
 
     const existing = await db
       .select()
@@ -217,17 +217,17 @@ router?.delete("/:id", requireAuth, async (req, res) => {
       .limit(1);
 
     if (existing?.length === 0) {
-      return res?.status(404).json({ error: "Radio pitch not found" });
+      return res.status(404).json({ error: "Radio pitch not found" });
     }
 
     await db
       .delete(radioPitches)
       .where(and(eq(radioPitches?.id, id), eq(radioPitches?.userId, userId)));
     await queryCache?.invalidate(createCacheKey("stats:radioPitches", userId));
-    res?.json({ success: true });
+    res.json({ success: true });
   } catch (error) {
-    logger?.warn({ err: error }, "[RadioPitches] Failed to delete:");
-    res?.status(500).json({ error: "Failed to delete radio pitch" });
+    logger.warn({ err: error }, "[RadioPitches] Failed to delete:");
+    res.status(500).json({ error: "Failed to delete radio pitch" });
   }
 });
 

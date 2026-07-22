@@ -9,11 +9,11 @@ import { notificationService } from "../services/notificationService.js";
 const router = Router();
 
 const requireAdmin: RequestHandler = (req, res, next) => {
-  if (!req?.isAuthenticated()) {
-    return res?.status(401).json({ error: "Authentication required" });
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Authentication required" });
   }
-  if (req?.user?.role !== "admin") {
-    return res?.status(403).json({ error: "Admin access required" });
+  if (req.user?.role !== "admin") {
+    return res.status(403).json({ error: "Admin access required" });
   }
   next();
 };
@@ -21,9 +21,9 @@ const requireAdmin: RequestHandler = (req, res, next) => {
 // Get user's own tickets
 router?.get("/tickets", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user?.id;
+    const userId = req.user?.id;
     if (!userId) {
-      return res?.status(401).json({ error: "User not authenticated" });
+      return res.status(401).json({ error: "User not authenticated" });
     }
 
     const tickets = await db
@@ -33,17 +33,17 @@ router?.get("/tickets", requireAuth, async (req, res) => {
       .orderBy(desc(supportTickets?.createdAt))
       .limit(100);
 
-    res?.json({ tickets, total: tickets.length });
+    res.json({ tickets, total: tickets.length });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching user tickets:");
-    res?.status(500).json({ error: "Failed to fetch tickets" });
+    logger.warn({ err: error }, "Error fetching user tickets:");
+    res.status(500).json({ error: "Failed to fetch tickets" });
   }
 });
 
 // Get all tickets (admin only)
 router?.get("/tickets/all", requireAdmin, require2FA, async (req, res) => {
   try {
-    const { status, priority, search } = req?.query;
+    const { status, priority, search } = req.query;
 
     let conditions = [];
 
@@ -87,10 +87,10 @@ router?.get("/tickets/all", requireAdmin, require2FA, async (req, res) => {
       .where(whereClause)
       .orderBy(desc(supportTickets?.createdAt));
 
-    res?.json(tickets);
+    res.json(tickets);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching tickets:");
-    res?.status(500).json({ error: "Failed to fetch tickets" });
+    logger.warn({ err: error }, "Error fetching tickets:");
+    res.status(500).json({ error: "Failed to fetch tickets" });
   }
 });
 
@@ -120,20 +120,20 @@ router?.get("/stats", requireAdmin, require2FA, async (_req, res) => {
           .where(sql`${supportTickets?.satisfactionRating} IS NOT NULL`),
       ]);
 
-    res?.json({
+    res.json({
       ticketStats: ticketStatsResult,
       avgResponseTimeMinutes: parseFloat(avgResponseResult[0]?.avg || "0"),
       avgSatisfaction: parseFloat(avgSatisfactionResult[0]?.avg || "0"),
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching ticket stats:");
-    res?.status(500).json({ error: "Failed to fetch ticket stats" });
+    logger.warn({ err: error }, "Error fetching ticket stats:");
+    res.status(500).json({ error: "Failed to fetch ticket stats" });
   }
 });
 
 router?.get("/tickets/:ticketId", requireAdmin, require2FA, async (req, res) => {
   try {
-    const { ticketId } = req?.params;
+    const { ticketId } = req.params;
 
     const ticket = await db
       .select()
@@ -142,13 +142,13 @@ router?.get("/tickets/:ticketId", requireAdmin, require2FA, async (req, res) => 
       .limit(1);
 
     if (!ticket?.length) {
-      return res?.status(404).json({ error: "Ticket not found" });
+      return res.status(404).json({ error: "Ticket not found" });
     }
 
-    res?.json(ticket[0]);
+    res.json(ticket[0]);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching ticket:");
-    res?.status(500).json({ error: "Failed to fetch ticket" });
+    logger.warn({ err: error }, "Error fetching ticket:");
+    res.status(500).json({ error: "Failed to fetch ticket" });
   }
 });
 
@@ -158,7 +158,7 @@ router?.patch(
   require2FA,
   async (req, res) => {
     try {
-      const { ticketId } = req?.params;
+      const { ticketId } = req.params;
       const {
         status,
         priority,
@@ -166,7 +166,7 @@ router?.patch(
         responseTimeMinutes,
         satisfactionRating,
         resolvedAt,
-      } = req?.body;
+      } = req.body;
 
       const allowedStatuses = ["open", "in_progress", "resolved", "closed"];
       const allowedPriorities = ["low", "medium", "high", "critical"];
@@ -206,25 +206,25 @@ router?.patch(
         .set(updateData)
         .where(eq(supportTickets?.id, ticketId));
 
-      logger?.info(
-        `Admin ${req?.user?.email} updated ticket ${ticketId}:`,
+      logger.info(
+        `Admin ${req.user?.email} updated ticket ${ticketId}:`,
         updateData,
       );
 
-      res?.json({ success: true, message: "Ticket updated" });
+      res.json({ success: true, message: "Ticket updated" });
     } catch (error) {
-      logger?.warn({ err: error }, "Error updating ticket:");
-      res?.status(500).json({ error: "Failed to update ticket" });
+      logger.warn({ err: error }, "Error updating ticket:");
+      res.status(500).json({ error: "Failed to update ticket" });
     }
   },
 );
 
 router?.post("/tickets", requireAuth, async (req, res) => {
   try {
-    const { subject, description, category, priority } = req?.body;
+    const { subject, description, category, priority } = req.body;
 
     if (!subject) {
-      return res?.status(400).json({ error: "Subject is required" });
+      return res.status(400).json({ error: "Subject is required" });
     }
 
     const allowedCategories = ["general", "billing", "technical", "account"];
@@ -258,24 +258,24 @@ router?.post("/tickets", requireAuth, async (req, res) => {
       })
       .returning();
 
-    logger?.info(`User ${req?.user?.email} created ticket ${newTicket?.id}`);
+    logger.info(`User ${req.user?.email} created ticket ${newTicket?.id}`);
 
-    res?.status(201).json(newTicket);
+    res.status(201).json(newTicket);
 
     setImmediate(async () => {
       try {
         await notificationService?.sendAdminSupportTicketNotification(
-          req?.user!.email!,
+          req.user!.email!,
           subject,
           newTicket?.id,
         );
       } catch (err) {
-        logger?.warn({ err: err }, "Support ticket admin notification error:");
+        logger.warn({ err: err }, "Support ticket admin notification error:");
       }
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error creating ticket:");
-    res?.status(500).json({ error: "Failed to create ticket" });
+    logger.warn({ err: error }, "Error creating ticket:");
+    res.status(500).json({ error: "Failed to create ticket" });
   }
 });
 

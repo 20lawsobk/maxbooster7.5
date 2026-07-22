@@ -226,20 +226,20 @@ z.object({
 // GET /api/distribution/releases - List user's releases
 router?.get("/releases", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req?.user as AuthenticatedUser).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const distroRels = await storage?.getDistroReleasesByArtist(userId);
-    res?.json(distroRels);
+    res.json(distroRels);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching releases:");
-    res?.status(500).json({ error: "Failed to fetch releases" });
+    logger.warn({ err: error }, "Error fetching releases:");
+    res.status(500).json({ error: "Failed to fetch releases" });
   }
 });
 
 // POST /api/distribution/releases - Create new release draft
 router?.post("/releases", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req?.user as AuthenticatedUser).id;
-    const data = createReleaseSchema?.parse(req?.body);
+    const userId = (req.user as AuthenticatedUser).id;
+    const data = createReleaseSchema?.parse(req.body);
 
     const release = await storage?.createDistroRelease({
       artistId: userId,
@@ -263,15 +263,15 @@ router?.post("/releases", requireAuth, async (req: Request, res: Response) => {
       },
     });
 
-    res?.json(release);
+    res.json(release);
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({ error: "Validation error", details: error.issues });
     }
-    logger?.warn({ err: error }, "Error creating release:");
-    res?.status(500).json({ error: "Failed to create release" });
+    logger.warn({ err: error }, "Error creating release:");
+    res.status(500).json({ error: "Failed to create release" });
   }
 });
 
@@ -281,18 +281,18 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const { id } = req?.params;
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params;
 
       const release = await storage?.getDistroRelease(id);
       if (!release || release?.artistId !== userId) {
-        return res?.status(404).json({ error: "Release not found" });
+        return res.status(404).json({ error: "Release not found" });
       }
 
-      res?.json(release);
+      res.json(release);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching release:");
-      res?.status(500).json({ error: "Failed to fetch release" });
+      logger.warn({ err: error }, "Error fetching release:");
+      res.status(500).json({ error: "Failed to fetch release" });
     }
   },
 );
@@ -303,13 +303,13 @@ router?.patch(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const { id } = req?.params;
-      const updates = updateReleaseSchema?.parse(req?.body);
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params;
+      const updates = updateReleaseSchema?.parse(req.body);
 
       const release = await storage?.getDistroRelease(id);
       if (!release || release?.artistId !== userId) {
-        return res?.status(404).json({ error: "Release not found" });
+        return res.status(404).json({ error: "Release not found" });
       }
 
       const updatedRelease = await storage?.updateDistroRelease(id, {
@@ -323,15 +323,15 @@ router?.patch(
         },
       });
 
-      res?.json(updatedRelease);
+      res.json(updatedRelease);
     } catch (error: unknown) {
       if (error instanceof z.ZodError) {
         return res
           .status(400)
           .json({ error: "Validation error", details: error.issues });
       }
-      logger?.warn({ err: error }, "Error updating release:");
-      res?.status(500).json({ error: "Failed to update release" });
+      logger.warn({ err: error }, "Error updating release:");
+      res.status(500).json({ error: "Failed to update release" });
     }
   },
 );
@@ -342,12 +342,12 @@ router?.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const { id } = req?.params;
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params;
 
       const release = await storage?.getDistroRelease(id);
       if (!release || release?.artistId !== userId) {
-        return res?.status(404).json({ error: "Release not found" });
+        return res.status(404).json({ error: "Release not found" });
       }
 
       // If release is live on LabelGrid, initiate takedown
@@ -355,21 +355,21 @@ router?.delete(
       if (metadata?.labelGridReleaseId && release?.status !== "draft") {
         try {
           await labelGridService?.takedownRelease(metadata?.labelGridReleaseId);
-          logger?.info(
+          logger.info(
             `✅ LabelGrid takedown initiated for release ${metadata?.labelGridReleaseId}`,
           );
         } catch (error: unknown) {
-          logger?.warn({ err: error }, "Error initiating LabelGrid takedown:");
+          logger.warn({ err: error }, "Error initiating LabelGrid takedown:");
           // Continue with local deletion even if LabelGrid fails
         }
       }
 
       // Delete from local database
       await storage?.deleteDistroRelease(id);
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error deleting release:");
-      res?.status(500).json({ error: "Failed to delete release" });
+      logger.warn({ err: error }, "Error deleting release:");
+      res.status(500).json({ error: "Failed to delete release" });
     }
   },
 );
@@ -385,23 +385,23 @@ router?.post(
   upload?.single("audio"),
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const { id: releaseId } = req?.params;
-      const file = req?.file;
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id: releaseId } = req.params;
+      const file = req.file;
 
       if (!file) {
-        return res?.status(400).json({ error: "Audio file required" });
+        return res.status(400).json({ error: "Audio file required" });
       }
 
       const release = await storage?.getDistroRelease(releaseId);
       if (!release || release?.artistId !== userId) {
-        return res?.status(404).json({ error: "Release not found" });
+        return res.status(404).json({ error: "Release not found" });
       }
 
-      // SECURITY FIX: Wrap JSON?.parse in try-catch to prevent unhandled exceptions on invalid JSON
+      // SECURITY FIX: Wrap JSON.parse in try-catch to prevent unhandled exceptions on invalid JSON
       let parsedMetadata: unknown;
       try {
-        parsedMetadata = JSON?.parse(req?.body.metadata || "{}");
+        parsedMetadata = JSON.parse(req.body.metadata || "{}");
       } catch (parseError) {
         return res
           .status(400)
@@ -430,15 +430,15 @@ router?.post(
         },
       });
 
-      res?.json(track);
+      res.json(track);
     } catch (error: unknown) {
       if (error instanceof z.ZodError) {
         return res
           .status(400)
           .json({ error: "Validation error", details: error.issues });
       }
-      logger?.warn({ err: error }, "Error uploading track:");
-      res?.status(500).json({ error: "Failed to upload track" });
+      logger.warn({ err: error }, "Error uploading track:");
+      res.status(500).json({ error: "Failed to upload track" });
     }
   },
 );
@@ -449,15 +449,15 @@ router?.patch(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const { releaseId, trackId } = req?.params;
+      const userId = (req.user as AuthenticatedUser).id;
+      const { releaseId, trackId } = req.params;
 
       const release = await storage?.getDistroRelease(releaseId);
       if (!release || release?.artistId !== userId) {
-        return res?.status(404).json({ error: "Release not found" });
+        return res.status(404).json({ error: "Release not found" });
       }
 
-      const updates = createTrackSchema?.partial().parse(req?.body);
+      const updates = createTrackSchema?.partial().parse(req.body);
       const track = await storage?.updateDistroTrack(
         trackId,
         releaseId,
@@ -469,15 +469,15 @@ router?.patch(
           .json({ error: "Track not found in this release" });
       }
 
-      res?.json(track);
+      res.json(track);
     } catch (error: unknown) {
       if (error instanceof z.ZodError) {
         return res
           .status(400)
           .json({ error: "Validation error", details: error.issues });
       }
-      logger?.warn({ err: error }, "Error updating track:");
-      res?.status(500).json({ error: "Failed to update track" });
+      logger.warn({ err: error }, "Error updating track:");
+      res.status(500).json({ error: "Failed to update track" });
     }
   },
 );
@@ -488,12 +488,12 @@ router?.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const { releaseId, trackId } = req?.params;
+      const userId = (req.user as AuthenticatedUser).id;
+      const { releaseId, trackId } = req.params;
 
       const release = await storage?.getDistroRelease(releaseId);
       if (!release || release?.artistId !== userId) {
-        return res?.status(404).json({ error: "Release not found" });
+        return res.status(404).json({ error: "Release not found" });
       }
 
       const deleted = await storage?.deleteDistroTrack(trackId, releaseId);
@@ -502,10 +502,10 @@ router?.delete(
           .status(404)
           .json({ error: "Track not found in this release" });
       }
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error deleting track:");
-      res?.status(500).json({ error: "Failed to delete track" });
+      logger.warn({ err: error }, "Error deleting track:");
+      res.status(500).json({ error: "Failed to delete track" });
     }
   },
 );
@@ -517,8 +517,8 @@ router?.delete(
 // POST /api/distribution/codes/isrc - Generate ISRC code
 router?.post("/codes/isrc", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req?.user as AuthenticatedUser).id;
-    const { trackId, artist, title } = generateCodeSchema?.parse(req?.body);
+    const userId = (req.user as AuthenticatedUser).id;
+    const { trackId, artist, title } = generateCodeSchema?.parse(req.body);
 
     let isrcCode: string;
     let assignedTo: string = `${artist} - ${title}`;
@@ -530,7 +530,7 @@ router?.post("/codes/isrc", requireAuth, async (req: Request, res: Response) => 
       isrcCode = result?.code;
       assignedTo = result?.assignedTo || assignedTo;
     } catch (lgError) {
-      logger?.warn(
+      logger.warn(
         "LabelGrid ISRC generation unavailable, using internal generator:",
         lgError,
       );
@@ -548,11 +548,11 @@ router?.post("/codes/isrc", requireAuth, async (req: Request, res: Response) => 
           title,
         );
       } catch (storeErr) {
-        logger?.warn("Failed to store ISRC in database:", storeErr);
+        logger.warn("Failed to store ISRC in database:", storeErr);
       }
     }
 
-    res?.json({
+    res.json({
       isrc: isrcCode,
       assignedTo,
       isOfficiallyRegistered,
@@ -568,20 +568,20 @@ router?.post("/codes/isrc", requireAuth, async (req: Request, res: Response) => 
         .status(400)
         .json({ error: "Validation error", details: error.issues });
     }
-    logger?.warn({ err: error }, "Error generating ISRC:");
-    res?.status(500).json({ error: "Failed to generate ISRC" });
+    logger.warn({ err: error }, "Error generating ISRC:");
+    res.status(500).json({ error: "Failed to generate ISRC" });
   }
 });
 
 // POST /api/distribution/codes/upc - Generate UPC code
 router?.post("/codes/upc", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req?.user as AuthenticatedUser).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const upcSchema = z.object({
       releaseId: z.string().optional(),
       title: z.string(),
     });
-    const { releaseId, title } = upcSchema?.parse(req?.body);
+    const { releaseId, title } = upcSchema?.parse(req.body);
 
     let upcCode: string;
     let assignedTo: string = title;
@@ -593,7 +593,7 @@ router?.post("/codes/upc", requireAuth, async (req: Request, res: Response) => {
       upcCode = result?.code;
       assignedTo = result?.assignedTo || assignedTo;
     } catch (lgError) {
-      logger?.warn(
+      logger.warn(
         "LabelGrid UPC generation unavailable, using internal generator:",
         lgError,
       );
@@ -606,11 +606,11 @@ router?.post("/codes/upc", requireAuth, async (req: Request, res: Response) => {
       try {
         await codeGenerationService?.generateUPC(userId, releaseId, title);
       } catch (storeErr) {
-        logger?.warn("Failed to store UPC in database:", storeErr);
+        logger.warn("Failed to store UPC in database:", storeErr);
       }
     }
 
-    res?.json({
+    res.json({
       upc: upcCode,
       assignedTo,
       isOfficiallyRegistered,
@@ -626,8 +626,8 @@ router?.post("/codes/upc", requireAuth, async (req: Request, res: Response) => {
         .status(400)
         .json({ error: "Validation error", details: error.issues });
     }
-    logger?.warn({ err: error }, "Error generating UPC:");
-    res?.status(500).json({ error: "Failed to generate UPC" });
+    logger.warn({ err: error }, "Error generating UPC:");
+    res.status(500).json({ error: "Failed to generate UPC" });
   }
 });
 
@@ -642,7 +642,7 @@ router?.post(
           code: z.string(),
           type: z.enum(["isrc", "upc"]),
         })
-        .parse(req?.body);
+        .parse(req.body);
 
       let result;
       if (type === "isrc") {
@@ -651,15 +651,15 @@ router?.post(
         result = await codeGenerationService?.verifyUPC(code);
       }
 
-      res?.json(result);
+      res.json(result);
     } catch (error: unknown) {
       if (error instanceof z.ZodError) {
         return res
           .status(400)
           .json({ error: "Validation error", details: error.issues });
       }
-      logger?.warn({ err: error }, "Error validating code:");
-      res?.status(500).json({ error: "Failed to validate code" });
+      logger.warn({ err: error }, "Error validating code:");
+      res.status(500).json({ error: "Failed to validate code" });
     }
   },
 );
@@ -3569,7 +3569,7 @@ async function aggregateLabelGridAnalytics(userId: string) {
     { streams: number; revenue: number; listeners: number }
   > = {};
   for (const a of results) {
-    for (const [name, data] of Object?.entries(a?.platforms || {})) {
+    for (const [name, data] of Object.entries(a?.platforms || {})) {
       if (!platforms[name])
         platforms[name] = { streams: 0, revenue: 0, listeners: 0 };
       platforms[name].streams += (data as Record<string, unknown>).streams || 0;
@@ -3588,7 +3588,7 @@ async function aggregateLabelGridAnalytics(userId: string) {
       byDate[t.date].revenue += t?.revenue || 0;
     }
   }
-  const timeline = Object?.entries(byDate)
+  const timeline = Object.entries(byDate)
     .sort(([a], [b]) => a?.localeCompare(b))
     .map(([date, v]) => ({ date, ...v }));
 
@@ -3601,7 +3601,7 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
+      const userId = (req.user as AuthenticatedUser).id;
 
       if (labelGridService?.isApiConfigured()) {
         try {
@@ -3620,12 +3620,12 @@ router?.get(
               .reduce((s, t) => s + t?.streams, 0);
             const streamGrowth =
               prev30Streams > 0
-                ? Math?.round(
+                ? Math.round(
                     ((last30Streams - prev30Streams) / prev30Streams) * 100,
                   )
                 : 0;
 
-            return res?.json({
+            return res.json({
               totalStreams: agg.totalStreams,
               totalRevenue: agg.totalRevenue,
               revenue: agg.totalRevenue,
@@ -3639,7 +3639,7 @@ router?.get(
             });
           }
         } catch (lgErr) {
-          logger?.warn(
+          logger.warn(
             "[Distribution] LabelGrid analytics growth failed, falling back to DB:",
             lgErr,
           );
@@ -3648,7 +3648,7 @@ router?.get(
 
       const analyticsData = await storage?.getDistroAnalytics(userId);
       if (!analyticsData) {
-        return res?.json({
+        return res.json({
           streams: 0,
           downloads: 0,
           revenue: 0,
@@ -3658,10 +3658,10 @@ router?.get(
           source: "local",
         });
       }
-      res?.json({ ...analyticsData, source: "local" });
+      res.json({ ...analyticsData, source: "local" });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching analytics growth:");
-      res?.status(500).json({ error: "Failed to fetch analytics growth" });
+      logger.warn({ err: error }, "Error fetching analytics growth:");
+      res.status(500).json({ error: "Failed to fetch analytics growth" });
     }
   },
 );
@@ -3672,13 +3672,13 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
+      const userId = (req.user as AuthenticatedUser).id;
 
       if (labelGridService?.isApiConfigured()) {
         try {
           const agg = await aggregateLabelGridAnalytics(userId);
           if (agg && agg?.timeline.length > 0) {
-            return res?.json(
+            return res.json(
               agg?.timeline.map((t) => ({
                 date: t.date,
                 streams: t.streams,
@@ -3689,7 +3689,7 @@ router?.get(
             );
           }
         } catch (lgErr) {
-          logger?.warn(
+          logger.warn(
             "[Distribution] LabelGrid streaming trends failed, falling back to DB:",
             lgErr,
           );
@@ -3697,10 +3697,10 @@ router?.get(
       }
 
       const trends = await storage?.getStreamingTrends(userId);
-      res?.json(trends);
+      res.json(trends);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching streaming trends:");
-      res?.status(500).json({ error: "Failed to fetch streaming trends" });
+      logger.warn({ err: error }, "Error fetching streaming trends:");
+      res.status(500).json({ error: "Failed to fetch streaming trends" });
     }
   },
 );
@@ -3708,12 +3708,12 @@ router?.get(
 // GET /api/distribution/geographic - Get geographic distribution data
 router?.get("/geographic", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req?.user as AuthenticatedUser).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const data = await storage?.getGeographicData(userId);
-    res?.json(data);
+    res.json(data);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching geographic data:");
-    res?.status(500).json({ error: "Failed to fetch geographic data" });
+    logger.warn({ err: error }, "Error fetching geographic data:");
+    res.status(500).json({ error: "Failed to fetch geographic data" });
   }
 });
 
@@ -3723,7 +3723,7 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
+      const userId = (req.user as AuthenticatedUser).id;
 
       if (labelGridService?.isApiConfigured()) {
         try {
@@ -3761,7 +3761,7 @@ router?.get(
             const growth =
               lastMonth > 0 ? ((thisMonth - lastMonth) / lastMonth) * 100 : 0;
 
-            return res?.json({
+            return res.json({
               totalEarnings: agg.totalRevenue,
               thisMonth,
               lastMonth,
@@ -3770,7 +3770,7 @@ router?.get(
             });
           }
         } catch (lgErr) {
-          logger?.warn(
+          logger.warn(
             "[Distribution] LabelGrid earnings breakdown failed, falling back to DB:",
             lgErr,
           );
@@ -3806,7 +3806,7 @@ router?.get(
       const tm = Number(agg?.thisMonth);
       const growth = lm > 0 ? ((tm - lm) / lm) * 100 : 0;
 
-      res?.json({
+      res.json({
         totalEarnings: te,
         pendingEarnings: Number(agg?.pendingEarnings),
         paidOut: Number(agg?.paidOut),
@@ -3816,8 +3816,8 @@ router?.get(
         source: "local",
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching earnings breakdown:");
-      res?.status(500).json({ error: "Failed to fetch earnings breakdown" });
+      logger.warn({ err: error }, "Error fetching earnings breakdown:");
+      res.status(500).json({ error: "Failed to fetch earnings breakdown" });
     }
   },
 );
@@ -3828,14 +3828,14 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
+      const userId = (req.user as AuthenticatedUser).id;
 
       if (labelGridService?.isApiConfigured()) {
         try {
           const agg = await aggregateLabelGridAnalytics(userId);
-          if (agg && Object?.keys(agg?.platforms).length > 0) {
-            return res?.json(
-              Object?.entries(agg?.platforms)
+          if (agg && Object.keys(agg?.platforms).length > 0) {
+            return res.json(
+              Object.entries(agg?.platforms)
                 .map(([name, d]) => ({
                   platform: name,
                   totalEarnings: d.revenue,
@@ -3847,7 +3847,7 @@ router?.get(
             );
           }
         } catch (lgErr) {
-          logger?.warn(
+          logger.warn(
             "[Distribution] LabelGrid platform earnings failed, falling back to DB:",
             lgErr,
           );
@@ -3867,7 +3867,7 @@ router?.get(
         .groupBy(sql`COALESCE(${royaltyTransactions?.platform}, 'unknown')`)
         .orderBy(sql`SUM(${royaltyTransactions?.amount}) DESC`);
 
-      res?.json(
+      res.json(
         rows?.map((r) => ({
           platform: r.platform,
           totalEarnings: Number(r?.totalEarnings),
@@ -3876,8 +3876,8 @@ router?.get(
         })),
       );
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching platform earnings:");
-      res?.status(500).json({ error: "Failed to fetch platform earnings" });
+      logger.warn({ err: error }, "Error fetching platform earnings:");
+      res.status(500).json({ error: "Failed to fetch platform earnings" });
     }
   },
 );
@@ -3888,12 +3888,12 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
+      const userId = (req.user as AuthenticatedUser).id;
       const payouts = await storage?.getPayoutHistory(userId);
-      res?.json(payouts);
+      res.json(payouts);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching payout history:");
-      res?.status(500).json({ error: "Failed to fetch payout history" });
+      logger.warn({ err: error }, "Error fetching payout history:");
+      res.status(500).json({ error: "Failed to fetch payout history" });
     }
   },
 );
@@ -4169,7 +4169,7 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       // Fetch all releases for this user
       const releases = await db
@@ -4222,7 +4222,7 @@ router?.post(
 
       const rows = releases?.map((release) => {
         const meta = (release?.metadata ?? {}) as Record<string, unknown>;
-        const platforms = Array?.isArray(meta?.platforms)
+        const platforms = Array.isArray(meta?.platforms)
           ? (meta?.platforms as unknown[]).length
           : 0;
         return [
@@ -4248,15 +4248,15 @@ router?.post(
 
       const dateStr = new Date().toISOString().split("T")[0];
       res.setHeader("Content-Type", "text/csv; charset=utf-8");
-      res?.setHeader(
+      res.setHeader(
         "Content-Disposition",
         `attachment; filename="distribution-report-${dateStr}.csv"`,
       );
-      res?.setHeader("Cache-Control", "no-store");
-      res?.send(csv);
+      res.setHeader("Cache-Control", "no-store");
+      res.send(csv);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error exporting distribution report:");
-      res?.status(500).json({ error: "Failed to generate distribution report" });
+      logger.warn({ err: error }, "Error exporting distribution report:");
+      res.status(500).json({ error: "Failed to generate distribution report" });
     }
   },
 );
@@ -4264,8 +4264,8 @@ router?.post(
 // GET /api/distribution/codes/stats - Get code generation stats
 router?.get("/codes/stats", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req?.user?.id;
-    if (!userId) return res?.status(401).json({ error: "Unauthorized" });
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
     const [[isrcResult], [upcResult]] = await Promise?.all([
       db
@@ -4281,14 +4281,14 @@ router?.get("/codes/stats", requireAuth, async (req: Request, res: Response) => 
     const isrcGenerated = Number(isrcResult?.count || 0);
     const upcGenerated = Number(upcResult?.count || 0);
 
-    res?.json({
+    res.json({
       isrcGenerated,
       upcGenerated,
       remaining: Math.max(0, 1000 - isrcGenerated),
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching code stats:");
-    res?.status(500).json({ error: "Failed to fetch code stats" });
+    logger.warn({ err: error }, "Error fetching code stats:");
+    res.status(500).json({ error: "Failed to fetch code stats" });
   }
 });
 
@@ -4302,10 +4302,10 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const pageLimit = Math?.min(Number(req?.query.limit) || 100, 500);
-      const pageOffset = Math?.min(
-        Math?.max(Number(req?.query.offset) || 0, 0),
+      const userId = (req.user as AuthenticatedUser).id;
+      const pageLimit = Math.min(Number(req.query.limit) || 100, 500);
+      const pageOffset = Math.min(
+        Math.max(Number(req.query.offset) || 0, 0),
         100_000,
       );
 
@@ -4343,15 +4343,15 @@ router?.get(
           .where(eq(royaltyTransactions?.userId, userId)),
       ]);
 
-      res?.json({
+      res.json({
         entries,
         total: Number(total),
         limit: pageLimit,
         offset: pageOffset,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching earnings entries:");
-      res?.status(500).json({ error: "Failed to fetch earnings entries" });
+      logger.warn({ err: error }, "Error fetching earnings entries:");
+      res.status(500).json({ error: "Failed to fetch earnings entries" });
     }
   },
 );
@@ -4362,17 +4362,17 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
+      const userId = (req.user as AuthenticatedUser).id;
       const payouts = await db
         .select()
         .from(instantPayouts)
         .where(eq(instantPayouts?.userId, userId))
         .orderBy(desc(instantPayouts?.createdAt))
         .limit(500);
-      res?.json({ payouts, total: payouts.length });
+      res.json({ payouts, total: payouts.length });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching earnings payouts:");
-      res?.status(500).json({ error: "Failed to fetch earnings payouts" });
+      logger.warn({ err: error }, "Error fetching earnings payouts:");
+      res.status(500).json({ error: "Failed to fetch earnings payouts" });
     }
   },
 );
@@ -4383,17 +4383,17 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
+      const userId = (req.user as AuthenticatedUser).id;
       const statements = await db
         .select()
         .from(royaltyStatements)
         .where(eq(royaltyStatements?.userId, userId))
         .orderBy(desc(royaltyStatements?.createdAt))
         .limit(500);
-      res?.json({ statements });
+      res.json({ statements });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching earnings statements:");
-      res?.status(500).json({ error: "Failed to fetch earnings statements" });
+      logger.warn({ err: error }, "Error fetching earnings statements:");
+      res.status(500).json({ error: "Failed to fetch earnings statements" });
     }
   },
 );
@@ -4404,7 +4404,7 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
+      const userId = (req.user as AuthenticatedUser).id;
 
       if (labelGridService?.isApiConfigured()) {
         try {
@@ -4440,7 +4440,7 @@ router?.get(
               )
               .reduce((s, t) => s + t?.revenue, 0);
 
-            return res?.json({
+            return res.json({
               totalEarnings: agg.totalRevenue,
               thisMonth,
               lastMonth,
@@ -4448,7 +4448,7 @@ router?.get(
             });
           }
         } catch (lgErr) {
-          logger?.warn(
+          logger.warn(
             "[Distribution] LabelGrid earnings summary failed, falling back to DB:",
             lgErr,
           );
@@ -4479,7 +4479,7 @@ router?.get(
         .from(royaltyTransactions)
         .where(eq(royaltyTransactions?.userId, userId));
 
-      res?.json({
+      res.json({
         totalEarnings: Number(agg?.totalEarnings),
         pendingEarnings: Number(agg?.pendingEarnings),
         paidOut: Number(agg?.paidOut),
@@ -4487,8 +4487,8 @@ router?.get(
         lastMonth: Number(agg?.lastMonth),
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching earnings summary:");
-      res?.status(500).json({ error: "Failed to fetch earnings summary" });
+      logger.warn({ err: error }, "Error fetching earnings summary:");
+      res.status(500).json({ error: "Failed to fetch earnings summary" });
     }
   },
 );
@@ -4499,7 +4499,7 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
+      const userId = (req.user as AuthenticatedUser).id;
 
       // SQL GROUP BY on JSONB territory field — O(territories) rows instead of O(all_transactions)
       const rows = await db
@@ -4516,7 +4516,7 @@ router?.get(
         )
         .orderBy(sql`SUM(${royaltyTransactions?.amount}) DESC`);
 
-      res?.json({
+      res.json({
         territories: rows.map((r) => ({
           territory: r.territory,
           totalEarnings: Number(r?.totalEarnings),
@@ -4525,8 +4525,8 @@ router?.get(
         })),
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching earnings territories:");
-      res?.status(500).json({ error: "Failed to fetch earnings territories" });
+      logger.warn({ err: error }, "Error fetching earnings territories:");
+      res.status(500).json({ error: "Failed to fetch earnings territories" });
     }
   },
 );
@@ -4549,22 +4549,22 @@ router?.get(
 
       if (setting && setting?.value) {
         const val = setting?.value as Record<string, unknown>;
-        res?.json({
+        res.json({
           rates: val.rates || { USD: 1, EUR: 0.92, GBP: 0.79 },
           baseCurrency: val.baseCurrency || "USD",
           lastUpdated:
             setting?.updatedAt?.toISOString() || new Date().toISOString(),
         });
       } else {
-        res?.json({
+        res.json({
           rates: { USD: 1, EUR: 0.92, GBP: 0.79 },
           baseCurrency: "USD",
           lastUpdated: new Date().toISOString(),
         });
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching currency rates:");
-      res?.status(500).json({ error: "Failed to fetch currency rates" });
+      logger.warn({ err: error }, "Error fetching currency rates:");
+      res.status(500).json({ error: "Failed to fetch currency rates" });
     }
   },
 );
@@ -4575,17 +4575,17 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
+      const userId = (req.user as AuthenticatedUser).id;
       const discrepancies = await db
         .select()
         .from(royaltyDisputes)
         .where(eq(royaltyDisputes?.userId, userId))
         .orderBy(desc(royaltyDisputes?.createdAt))
         .limit(500);
-      res?.json({ discrepancies, total: discrepancies.length });
+      res.json({ discrepancies, total: discrepancies.length });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching royalty discrepancies:");
-      res?.status(500).json({ error: "Failed to fetch royalty discrepancies" });
+      logger.warn({ err: error }, "Error fetching royalty discrepancies:");
+      res.status(500).json({ error: "Failed to fetch royalty discrepancies" });
     }
   },
 );
@@ -4596,10 +4596,10 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const pageLimit = Math?.min(Number(req?.query.limit) || 100, 500);
-      const pageOffset = Math?.min(
-        Math?.max(Number(req?.query.offset) || 0, 0),
+      const userId = (req.user as AuthenticatedUser).id;
+      const pageLimit = Math.min(Number(req.query.limit) || 100, 500);
+      const pageOffset = Math.min(
+        Math.max(Number(req.query.offset) || 0, 0),
         100_000,
       );
 
@@ -4622,15 +4622,15 @@ router?.get(
           .where(paidFilter),
       ]);
 
-      res?.json({
+      res.json({
         payouts,
         total: Number(total),
         limit: pageLimit,
         offset: pageOffset,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching royalty payouts:");
-      res?.status(500).json({ error: "Failed to fetch royalty payouts" });
+      logger.warn({ err: error }, "Error fetching royalty payouts:");
+      res.status(500).json({ error: "Failed to fetch royalty payouts" });
     }
   },
 );
@@ -4641,13 +4641,13 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
+      const userId = (req.user as AuthenticatedUser).id;
 
       if (labelGridService?.isApiConfigured()) {
         try {
           const agg = await aggregateLabelGridAnalytics(userId);
-          if (agg && Object?.keys(agg?.platforms).length > 0) {
-            return res?.json({
+          if (agg && Object.keys(agg?.platforms).length > 0) {
+            return res.json({
               platforms: Object.entries(agg?.platforms)
                 .map(([name, d]) => ({
                   platform: name,
@@ -4661,7 +4661,7 @@ router?.get(
             });
           }
         } catch (lgErr) {
-          logger?.warn(
+          logger.warn(
             "[Distribution] LabelGrid royalties/platforms failed, falling back to DB:",
             lgErr,
           );
@@ -4681,7 +4681,7 @@ router?.get(
         .groupBy(sql`COALESCE(${royaltyTransactions?.platform}, 'unknown')`)
         .orderBy(sql`SUM(${royaltyTransactions?.amount}) DESC`);
 
-      res?.json({
+      res.json({
         platforms: rows.map((r) => ({
           platform: r.platform,
           totalEarnings: Number(r?.totalEarnings),
@@ -4690,8 +4690,8 @@ router?.get(
         })),
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching royalties platforms:");
-      res?.status(500).json({ error: "Failed to fetch royalties platforms" });
+      logger.warn({ err: error }, "Error fetching royalties platforms:");
+      res.status(500).json({ error: "Failed to fetch royalties platforms" });
     }
   },
 );
@@ -4702,7 +4702,7 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
+      const userId = (req.user as AuthenticatedUser).id;
       const userReleases = await db
         .select({ id: distroReleases.id })
         .from(distroReleases)
@@ -4710,7 +4710,7 @@ router?.get(
         .limit(500);
 
       if (userReleases?.length === 0) {
-        return res?.json({ splits: [] });
+        return res.json({ splits: [] });
       }
 
       const releaseIds = userReleases?.map((r) => r?.id);
@@ -4720,10 +4720,10 @@ router?.get(
         .where(inArray(royaltySplits?.releaseId, releaseIds))
         .limit(500);
 
-      res?.json({ splits });
+      res.json({ splits });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching royalty splits:");
-      res?.status(500).json({ error: "Failed to fetch royalty splits" });
+      logger.warn({ err: error }, "Error fetching royalty splits:");
+      res.status(500).json({ error: "Failed to fetch royalty splits" });
     }
   },
 );
@@ -4734,17 +4734,17 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
+      const userId = (req.user as AuthenticatedUser).id;
       const documents = await db
         .select()
         .from(taxForms)
         .where(eq(taxForms?.userId, userId))
         .orderBy(desc(taxForms?.createdAt))
         .limit(200);
-      res?.json({ documents });
+      res.json({ documents });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching tax documents:");
-      res?.status(500).json({ error: "Failed to fetch tax documents" });
+      logger.warn({ err: error }, "Error fetching tax documents:");
+      res.status(500).json({ error: "Failed to fetch tax documents" });
     }
   },
 );
@@ -4763,10 +4763,10 @@ router?.get(
     try {
       const distributors =
         distributionDataTransferService?.getSupportedDistributors();
-      res?.json({ distributors });
+      res.json({ distributors });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching supported distributors:");
-      res?.status(500).json({ error: "Failed to fetch distributors" });
+      logger.warn({ err: error }, "Error fetching supported distributors:");
+      res.status(500).json({ error: "Failed to fetch distributors" });
     }
   },
 );
@@ -4778,10 +4778,10 @@ router?.get(
   async (_req: Request, res: Response) => {
     try {
       const platforms = distributionDataTransferService?.getSupportedPlatforms();
-      res?.json({ platforms });
+      res.json({ platforms });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching supported platforms:");
-      res?.status(500).json({ error: "Failed to fetch platforms" });
+      logger.warn({ err: error }, "Error fetching supported platforms:");
+      res.status(500).json({ error: "Failed to fetch platforms" });
     }
   },
 );
@@ -4793,15 +4793,15 @@ router?.post(
   upload?.single("file"),
   async (req: Request, res: Response) => {
     try {
-      const file = req?.file;
-      const { distributor } = req?.body;
+      const file = req.file;
+      const { distributor } = req.body;
 
       if (!file) {
-        return res?.status(400).json({ error: "CSV file required" });
+        return res.status(400).json({ error: "CSV file required" });
       }
 
       if (!distributor) {
-        return res?.status(400).json({ error: "Distributor must be specified" });
+        return res.status(400).json({ error: "Distributor must be specified" });
       }
 
       const csvContent = file?.buffer.toString("utf-8");
@@ -4811,10 +4811,10 @@ router?.post(
           distributor,
         );
 
-      res?.json(validation);
+      res.json(validation);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error validating import data:");
-      res?.status(500).json({ error: "Failed to validate import data" });
+      logger.warn({ err: error }, "Error validating import data:");
+      res.status(500).json({ error: "Failed to validate import data" });
     }
   },
 );
@@ -4826,16 +4826,16 @@ router?.post(
   upload?.single("file"),
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const file = req?.file;
-      const { distributor } = req?.body;
+      const userId = (req.user as AuthenticatedUser).id;
+      const file = req.file;
+      const { distributor } = req.body;
 
       if (!file) {
-        return res?.status(400).json({ error: "CSV file required" });
+        return res.status(400).json({ error: "CSV file required" });
       }
 
       if (!distributor) {
-        return res?.status(400).json({ error: "Distributor must be specified" });
+        return res.status(400).json({ error: "Distributor must be specified" });
       }
 
       const csvContent = file?.buffer.toString("utf-8");
@@ -4845,14 +4845,14 @@ router?.post(
         csvContent,
       );
 
-      res?.json({
+      res.json({
         success: true,
         job,
         message: `Import ${job?.status}: ${job?.successItems} releases imported, ${job?.failedItems} failed`,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error importing from distributor:");
-      res?.status(500).json({ error: "Failed to import releases" });
+      logger.warn({ err: error }, "Error importing from distributor:");
+      res.status(500).json({ error: "Failed to import releases" });
     }
   },
 );
@@ -5167,13 +5167,13 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
+      const userId = (req.user as AuthenticatedUser).id;
       const report =
         await distributionDataTransferService?.generateMigrationReport(userId);
-      res?.json(report);
+      res.json(report);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error generating migration report:");
-      res?.status(500).json({ error: "Failed to generate migration report" });
+      logger.warn({ err: error }, "Error generating migration report:");
+      res.status(500).json({ error: "Failed to generate migration report" });
     }
   },
 );
@@ -5188,12 +5188,12 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const { id } = req?.params;
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params;
 
       const release = await storage?.getDistroRelease(id);
       if (!release || release?.artistId !== userId) {
-        return res?.status(404).json({ error: "Release not found" });
+        return res.status(404).json({ error: "Release not found" });
       }
 
       const dispatches = (await storage?.getDistroDispatchStatuses(
@@ -5202,7 +5202,7 @@ router?.get(
 
       const statuses = dispatches?.map(
         (dispatch: DispatchStatus, index: number) => {
-          const logs = dispatch?.logs ? JSON?.parse(dispatch?.logs) : {};
+          const logs = dispatch?.logs ? JSON.parse(dispatch?.logs) : {};
           return {
             platform: dispatch.providerId,
             platformName: dispatch.providerName || dispatch?.providerId,
@@ -5238,7 +5238,7 @@ router?.get(
       const overallProgress =
         statuses?.length > 0 ? ((live + delivered) / statuses?.length) * 100 : 0;
 
-      res?.json({
+      res.json({
         statuses,
         summary: {
           totalPlatforms: statuses.length,
@@ -5254,8 +5254,8 @@ router?.get(
         },
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching submission status:");
-      res?.status(500).json({ error: "Failed to fetch submission status" });
+      logger.warn({ err: error }, "Error fetching submission status:");
+      res.status(500).json({ error: "Failed to fetch submission status" });
     }
   },
 );
@@ -5266,13 +5266,13 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const { id } = req?.params;
-      const { platform } = req?.body;
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params;
+      const { platform } = req.body;
 
       const release = await storage?.getDistroRelease(id);
       if (!release || release?.artistId !== userId) {
-        return res?.status(404).json({ error: "Release not found" });
+        return res.status(404).json({ error: "Release not found" });
       }
 
       const dispatches = (await storage?.getDistroDispatchStatuses(
@@ -5283,10 +5283,10 @@ router?.post(
       );
 
       if (!dispatch) {
-        return res?.status(404).json({ error: "Platform dispatch not found" });
+        return res.status(404).json({ error: "Platform dispatch not found" });
       }
 
-      const logs = dispatch?.logs ? JSON?.parse(dispatch?.logs) : {};
+      const logs = dispatch?.logs ? JSON.parse(dispatch?.logs) : {};
       const retryCount = (logs?.retryCount || 0) + 1;
 
       if (retryCount > 3) {
@@ -5305,7 +5305,7 @@ router?.post(
         }),
       });
 
-      logger?.info(
+      logger.info(
         `Retrying submission for release ${id} to platform ${platform}`,
         {
           releaseId: id,
@@ -5314,14 +5314,14 @@ router?.post(
         },
       );
 
-      res?.json({
+      res.json({
         success: true,
         message: `Retry initiated for ${platform}`,
         retryCount,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error retrying submission:");
-      res?.status(500).json({ error: "Failed to retry submission" });
+      logger.warn({ err: error }, "Error retrying submission:");
+      res.status(500).json({ error: "Failed to retry submission" });
     }
   },
 );
@@ -5336,12 +5336,12 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const { id } = req?.params;
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params;
 
       const release = await storage?.getDistroRelease(id);
       if (!release || release?.artistId !== userId) {
-        return res?.status(404).json({ error: "Release not found" });
+        return res.status(404).json({ error: "Release not found" });
       }
 
       const tracks = await storage?.getDistroTracks(id);
@@ -5363,9 +5363,9 @@ router?.get(
         };
       });
 
-      res?.json(registrations);
+      res.json(registrations);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching content ID registrations:");
+      logger.warn({ err: error }, "Error fetching content ID registrations:");
       res
         .status(500)
         .json({ error: "Failed to fetch content ID registrations" });
@@ -5379,11 +5379,11 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const {  trackId } = req?.body;
+      const {  trackId } = req.body;
 
       const track = await storage?.getDistroTrack(trackId);
       if (!track) {
-        return res?.status(404).json({ error: "Track not found" });
+        return res.status(404).json({ error: "Track not found" });
       }
 
       const fingerprint = `fp_${Date?.now()}_${randomBytes(4).toString("hex")}`;
@@ -5396,14 +5396,14 @@ router?.post(
         },
       });
 
-      res?.json({
+      res.json({
         success: true,
         message: "Fingerprint generation initiated",
         fingerprint,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error generating fingerprint:");
-      res?.status(500).json({ error: "Failed to generate fingerprint" });
+      logger.warn({ err: error }, "Error generating fingerprint:");
+      res.status(500).json({ error: "Failed to generate fingerprint" });
     }
   },
 );
@@ -5414,7 +5414,7 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { releaseId } = req?.body;
+      const { releaseId } = req.body;
 
       const tracks = await storage?.getDistroTracks(releaseId);
 
@@ -5433,14 +5433,14 @@ router?.post(
 
       const count = results?.filter((r) => r?.status === "fulfilled").length;
 
-      res?.json({
+      res.json({
         success: true,
         message: `Generated fingerprints for ${count} tracks`,
         count,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error generating all fingerprints:");
-      res?.status(500).json({ error: "Failed to generate fingerprints" });
+      logger.warn({ err: error }, "Error generating all fingerprints:");
+      res.status(500).json({ error: "Failed to generate fingerprints" });
     }
   },
 );
@@ -5451,11 +5451,11 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const {  trackId } = req?.body;
+      const {  trackId } = req.body;
 
       const track = await (storage as DistroStorage)?.getDistroTrack?.(trackId);
       if (!track) {
-        return res?.status(404).json({ error: "Track not found" });
+        return res.status(404).json({ error: "Track not found" });
       }
 
       await updateDistroTrackLoose(trackId, {
@@ -5467,13 +5467,13 @@ router?.post(
         },
       });
 
-      res?.json({
+      res.json({
         success: true,
         message: "Track registered for Content ID protection",
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error registering for content ID:");
-      res?.status(500).json({ error: "Failed to register for content ID" });
+      logger.warn({ err: error }, "Error registering for content ID:");
+      res.status(500).json({ error: "Failed to register for content ID" });
     }
   },
 );
@@ -5484,12 +5484,12 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { registrationId, resolution, notes } = req?.body;
+      const { registrationId, resolution, notes } = req.body;
 
       const trackId = registrationId?.replace("cid_", "");
       const track = await storage?.getDistroTrack(trackId);
       if (!track) {
-        return res?.status(404).json({ error: "Track not found" });
+        return res.status(404).json({ error: "Track not found" });
       }
 
       await storage?.updateDistroTrack(trackId, {
@@ -5505,13 +5505,13 @@ router?.post(
         },
       });
 
-      res?.json({
+      res.json({
         success: true,
         message: "Conflict resolution submitted",
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error resolving content ID conflict:");
-      res?.status(500).json({ error: "Failed to resolve conflict" });
+      logger.warn({ err: error }, "Error resolving content ID conflict:");
+      res.status(500).json({ error: "Failed to resolve conflict" });
     }
   },
 );
@@ -5526,12 +5526,12 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const { id } = req?.params;
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params;
 
       const release = await storage?.getDistroRelease(id);
       if (!release || release?.artistId !== userId) {
-        return res?.status(404).json({ error: "Release not found" });
+        return res.status(404).json({ error: "Release not found" });
       }
 
       const metadata = release?.metadata as Record<string, unknown>;
@@ -5718,7 +5718,7 @@ router?.get(
         ...analyticsOutcomes,
       ];
 
-      res?.json({
+      res.json({
         release: releaseOutcomes,
         submission: submissionOutcomes,
         contentId: contentIdOutcomes,
@@ -5735,8 +5735,8 @@ router?.get(
         },
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching distribution outcomes:");
-      res?.status(500).json({ error: "Failed to fetch distribution outcomes" });
+      logger.warn({ err: error }, "Error fetching distribution outcomes:");
+      res.status(500).json({ error: "Failed to fetch distribution outcomes" });
     }
   },
 );
@@ -5747,24 +5747,24 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const { id } = req?.params;
-      const { type, data } = req?.body;
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params;
+      const { type, data } = req.body;
 
       const release = await storage?.getDistroRelease(id);
       if (!release || release?.artistId !== userId) {
-        return res?.status(404).json({ error: "Release not found" });
+        return res.status(404).json({ error: "Release not found" });
       }
 
-      logger?.info(`Retrying outcome ${type} for release ${id}`, { type, data });
+      logger.info(`Retrying outcome ${type} for release ${id}`, { type, data });
 
-      res?.json({
+      res.json({
         success: true,
         message: `Retry initiated for ${type}`,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error retrying outcome:");
-      res?.status(500).json({ error: "Failed to retry outcome" });
+      logger.warn({ err: error }, "Error retrying outcome:");
+      res.status(500).json({ error: "Failed to retry outcome" });
     }
   },
 );
@@ -5775,11 +5775,11 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const { artist, title, trackId } = req?.body;
+      const userId = (req.user as AuthenticatedUser).id;
+      const { artist, title, trackId } = req.body;
 
       if (!artist || !title) {
-        return res?.status(400).json({ error: "artist and title are required" });
+        return res.status(400).json({ error: "artist and title are required" });
       }
 
       let isrcCode: string;
@@ -5791,7 +5791,7 @@ router?.post(
         isrcCode = result?.code;
         assignedTo = result?.assignedTo || assignedTo;
       } catch (lgError) {
-        logger?.warn(
+        logger.warn(
           "LabelGrid ISRC generation unavailable, using internal generator:",
           lgError,
         );
@@ -5809,11 +5809,11 @@ router?.post(
             title,
           );
         } catch (storeErr) {
-          logger?.warn("Failed to store ISRC in database:", storeErr);
+          logger.warn("Failed to store ISRC in database:", storeErr);
         }
       }
 
-      res?.json({
+      res.json({
         success: true,
         isrc: isrcCode,
         assignedTo,
@@ -5825,8 +5825,8 @@ router?.post(
             }),
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error generating ISRC:");
-      res?.status(500).json({ error: "Failed to generate ISRC" });
+      logger.warn({ err: error }, "Error generating ISRC:");
+      res.status(500).json({ error: "Failed to generate ISRC" });
     }
   },
 );
@@ -5837,11 +5837,11 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const { title, releaseId } = req?.body;
+      const userId = (req.user as AuthenticatedUser).id;
+      const { title, releaseId } = req.body;
 
       if (!title) {
-        return res?.status(400).json({ error: "title is required" });
+        return res.status(400).json({ error: "title is required" });
       }
 
       let upcCode: string;
@@ -5853,7 +5853,7 @@ router?.post(
         upcCode = result?.code;
         assignedTo = result?.assignedTo || assignedTo;
       } catch (lgError) {
-        logger?.warn(
+        logger.warn(
           "LabelGrid UPC generation unavailable, using internal generator:",
           lgError,
         );
@@ -5866,11 +5866,11 @@ router?.post(
         try {
           await codeGenerationService?.generateUPC(userId, releaseId, title);
         } catch (storeErr) {
-          logger?.warn("Failed to store UPC in database:", storeErr);
+          logger.warn("Failed to store UPC in database:", storeErr);
         }
       }
 
-      res?.json({
+      res.json({
         success: true,
         upc: upcCode,
         assignedTo,
@@ -5882,8 +5882,8 @@ router?.post(
             }),
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error generating UPC:");
-      res?.status(500).json({ error: "Failed to generate UPC" });
+      logger.warn({ err: error }, "Error generating UPC:");
+      res.status(500).json({ error: "Failed to generate UPC" });
     }
   },
 );
@@ -5895,11 +5895,11 @@ router?.post(
   upload?.single("audio"),
   async (req: Request, res: Response) => {
     try {
-      const { releaseId, title, artist, isrc, artworkUrl } = req?.body;
+      const { releaseId, title, artist, isrc, artworkUrl } = req.body;
       if (!releaseId)
-        return res?.status(400).json({ error: "releaseId is required" });
+        return res.status(400).json({ error: "releaseId is required" });
 
-      const audioFile = req?.file;
+      const audioFile = req.file;
 
       // Try to extract real format metadata from the uploaded audio file.
       let audioMeta: Awaited<
@@ -5912,7 +5912,7 @@ router?.post(
             audioFile?.mimetype,
           );
         } catch (metaErr) {
-          logger?.warn(
+          logger.warn(
             { err: metaErr },
             "QC: audio metadata extraction failed — falling back to not_analyzed",
           );
@@ -6299,7 +6299,7 @@ router.post(
 
       if (!type || !["isrc", "upc"].includes(type))
         return res.status(400).json({ error: 'type must be "isrc" or "upc"' });
-      const safeCount = Math?.min(Math?.max(1, Number(count) || 1), 100);
+      const safeCount = Math.min(Math.max(1, Number(count) || 1), 100);
 
       if (type === "isrc") {
         const codes: string[] = [];
@@ -6322,10 +6322,10 @@ router.post(
           }
         }
         const code = codes[0];
-        logger?.info(
+        logger.info(
           `[Distribution] Generated ${safeCount} ISRC code(s) for user ${userId} (officiallyRegistered=${isOfficiallyRegistered})`,
         );
-        res?.json({
+        res.json({
           success: true,
           type: "isrc",
           code,
@@ -6354,10 +6354,10 @@ router.post(
           }
         }
         const code = codes[0];
-        logger?.info(
+        logger.info(
           `[Distribution] Generated ${safeCount} UPC code(s) for user ${userId} (officiallyRegistered=${isOfficiallyRegistered})`,
         );
-        res?.json({
+        res.json({
           success: true,
           type: "upc",
           code,
@@ -6372,8 +6372,8 @@ router.post(
         });
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error generating codes:");
-      res?.status(500).json({ error: "Failed to generate codes" });
+      logger.warn({ err: error }, "Error generating codes:");
+      res.status(500).json({ error: "Failed to generate codes" });
     }
   },
 );
@@ -6384,8 +6384,8 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const { amount, method } = req?.body;
+      const userId = (req.user as AuthenticatedUser).id;
+      const { amount, method } = req.body;
       if (!amount || !method)
         return res
           .status(400)
@@ -6397,10 +6397,10 @@ router?.post(
 
       // Route through LabelGrid — will throw if distributor account not configured
       const result = await labelGridService?.requestPayout(amount, method);
-      logger?.info(
+      logger.info(
         `[Distribution] Royalty payout requested by ${userId}: $${amount} via ${method} → id=${result?.id}`,
       );
-      res?.json({
+      res.json({
         success: true,
         payoutId: result.id,
         amount: result.amount,
@@ -6410,13 +6410,13 @@ router?.post(
       });
     } catch (error: unknown) {
       const message = error instanceof Error ? error?.message : String(error);
-      logger?.warn({ err: error }, "Error requesting royalties payout:");
+      logger.warn({ err: error }, "Error requesting royalties payout:");
       if (message?.includes("not configured") || message?.includes("LABELGRID")) {
         return res
           .status(503)
           .json({ error: "Payout unavailable", details: message });
       }
-      res?.status(500).json({ error: "Failed to request royalties payout" });
+      res.status(500).json({ error: "Failed to request royalties payout" });
     }
   },
 );
@@ -6427,16 +6427,16 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const { type, year } = req?.body;
+      const userId = (req.user as AuthenticatedUser).id;
+      const { type, year } = req.body;
       if (!type || !year)
-        return res?.status(400).json({ error: "type and year are required" });
+        return res.status(400).json({ error: "type and year are required" });
 
       const docId = `tax_doc_${type}_${year}_${userId?.slice(0, 8)}_${Date?.now()}`;
-      logger?.info(
+      logger.info(
         `[Distribution] Tax document ${type} ${year} generated for user ${userId}`,
       );
-      res?.json({
+      res.json({
         success: true,
         docId,
         type,
@@ -6446,8 +6446,8 @@ router?.post(
         message: `${type} for ${year} is ready for download`,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error generating tax document:");
-      res?.status(500).json({ error: "Failed to generate tax document" });
+      logger.warn({ err: error }, "Error generating tax document:");
+      res.status(500).json({ error: "Failed to generate tax document" });
     }
   },
 );
@@ -6459,10 +6459,10 @@ router?.post(
   upload?.single("artwork"),
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const file = req?.file;
+      const userId = (req.user as AuthenticatedUser).id;
+      const file = req.file;
       if (!file)
-        return res?.status(400).json({ error: "artwork file is required" });
+        return res.status(400).json({ error: "artwork file is required" });
 
       const allowedTypes = [
         "image/jpeg",
@@ -6476,7 +6476,7 @@ router?.post(
           .json({ error: "Artwork must be JPEG, PNG, or WebP" });
       }
       if (file?.size > 50 * 1024 * 1024) {
-        return res?.status(400).json({ error: "Artwork must be under 50MB" });
+        return res.status(400).json({ error: "Artwork must be under 50MB" });
       }
 
       const ext = file?.originalname.split(".").pop() || "jpg";
@@ -6484,8 +6484,8 @@ router?.post(
       await storageService?.uploadFile(file?.buffer, key, file?.mimetype);
 
       const artworkUrl = await storageService?.getDownloadUrl(key);
-      logger?.info(`[Distribution] Artwork uploaded for user ${userId}: ${key}`);
-      res?.json({
+      logger.info(`[Distribution] Artwork uploaded for user ${userId}: ${key}`);
+      res.json({
         success: true,
         artworkUrl,
         key,
@@ -6493,8 +6493,8 @@ router?.post(
         mimeType: file.mimetype,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error uploading artwork:");
-      res?.status(500).json({ error: "Failed to upload artwork" });
+      logger.warn({ err: error }, "Error uploading artwork:");
+      res.status(500).json({ error: "Failed to upload artwork" });
     }
   },
 );
@@ -6506,8 +6506,8 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const { projectId } = req?.params;
+      const userId = (req.user as AuthenticatedUser).id;
+      const { projectId } = req.params;
 
       const key = `distribution/packages/${userId}/${projectId}.json`;
       const data = await storageService?.downloadFile(key).catch(() => null);
@@ -6516,8 +6516,8 @@ router?.get(
           .status(404)
           .json({ error: "No distribution package found for this project" });
 
-      const pkg = JSON?.parse(data?.toString());
-      res?.json(pkg);
+      const pkg = JSON.parse(data?.toString());
+      res.json(pkg);
     } catch (error: unknown) {
       const err = error as { message?: string };
       if (
@@ -6528,8 +6528,8 @@ router?.get(
           .status(404)
           .json({ error: "No distribution package found for this project" });
       }
-      logger?.warn({ err: error }, "Error fetching distribution package:");
-      res?.status(500).json({ error: "Failed to fetch distribution package" });
+      logger.warn({ err: error }, "Error fetching distribution package:");
+      res.status(500).json({ error: "Failed to fetch distribution package" });
     }
   },
 );
@@ -6537,7 +6537,7 @@ router?.get(
 // POST /api/distribution/packages — Create a new distribution package
 router?.post("/packages", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req?.user as AuthenticatedUser).id;
+    const userId = (req.user as AuthenticatedUser).id;
     const {
       projectId,
       albumTitle,
@@ -6548,7 +6548,7 @@ router?.post("/packages", requireAuth, async (req: Request, res: Response) => {
       copyrightP,
       copyrightC,
       status = "draft",
-    } = req?.body;
+    } = req.body;
     if (!projectId || !albumTitle)
       return res
         .status(400)
@@ -6572,17 +6572,17 @@ router?.post("/packages", requireAuth, async (req: Request, res: Response) => {
 
     const key = `distribution/packages/${userId}/${projectId}.json`;
     await storageService?.uploadFile(
-      Buffer?.from(JSON?.stringify(pkg)),
+      Buffer?.from(JSON.stringify(pkg)),
       key,
       "application/json",
     );
-    logger?.info(
+    logger.info(
       `[Distribution] Package created for project ${projectId} by user ${userId}`,
     );
-    res?.status(201).json(pkg);
+    res.status(201).json(pkg);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error creating distribution package:");
-    res?.status(500).json({ error: "Failed to create distribution package" });
+    logger.warn({ err: error }, "Error creating distribution package:");
+    res.status(500).json({ error: "Failed to create distribution package" });
   }
 });
 
@@ -6592,8 +6592,8 @@ router?.put(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const { id } = req?.params;
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params;
       const {
         projectId,
         albumTitle,
@@ -6604,7 +6604,7 @@ router?.put(
         copyrightP,
         copyrightC,
         status,
-      } = req?.body;
+      } = req.body;
 
       if (!projectId)
         return res
@@ -6618,9 +6618,9 @@ router?.put(
           .status(404)
           .json({ error: "Distribution package not found" });
 
-      const pkg = JSON?.parse(existing?.toString());
+      const pkg = JSON.parse(existing?.toString());
       if (pkg?.id !== id)
-        return res?.status(404).json({ error: "Package ID mismatch" });
+        return res.status(404).json({ error: "Package ID mismatch" });
 
       const updated = {
         ...pkg,
@@ -6636,15 +6636,15 @@ router?.put(
       };
 
       await storageService?.uploadFile(
-        Buffer?.from(JSON?.stringify(updated)),
+        Buffer?.from(JSON.stringify(updated)),
         key,
         "application/json",
       );
-      logger?.info(`[Distribution] Package ${id} updated by user ${userId}`);
-      res?.json(updated);
+      logger.info(`[Distribution] Package ${id} updated by user ${userId}`);
+      res.json(updated);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error updating distribution package:");
-      res?.status(500).json({ error: "Failed to update distribution package" });
+      logger.warn({ err: error }, "Error updating distribution package:");
+      res.status(500).json({ error: "Failed to update distribution package" });
     }
   },
 );
@@ -6655,31 +6655,31 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const { id } = req?.params;
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params;
 
       const key = `distribution/packages/${userId}/${id}/tracks.json`;
       const data = await storageService?.downloadFile(key).catch(() => null);
 
       if (!data) {
-        return res?.json([]);
+        return res.json([]);
       }
 
       let tracks: unknown;
       try {
-        tracks = JSON?.parse(data?.toString());
+        tracks = JSON.parse(data?.toString());
       } catch (parseErr) {
-        logger?.warn(
+        logger.warn(
           { err: parseErr, packageId: id },
           "Corrupt tracks.json for distribution package",
         );
-        return res?.status(500).json({ error: "Stored tracks data is corrupt" });
+        return res.status(500).json({ error: "Stored tracks data is corrupt" });
       }
 
-      return res?.json(Array?.isArray(tracks) ? tracks : []);
+      return res.json(Array.isArray(tracks) ? tracks : []);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching package tracks:");
-      return res?.status(500).json({ error: "Failed to fetch package tracks" });
+      logger.warn({ err: error }, "Error fetching package tracks:");
+      return res.status(500).json({ error: "Failed to fetch package tracks" });
     }
   },
 );
@@ -6690,17 +6690,17 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const { id } = req?.params;
-      const { trackId, title, isrc, duration, position, audioUrl } = req?.body;
-      if (!title) return res?.status(400).json({ error: "title is required" });
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params;
+      const { trackId, title, isrc, duration, position, audioUrl } = req.body;
+      if (!title) return res.status(400).json({ error: "title is required" });
 
       const key = `distribution/packages/${userId}/${id}/tracks.json`;
       let tracks: unknown[] = [];
       const existing = await storageService?.downloadFile(key).catch(() => null);
       if (existing) {
         try {
-          tracks = JSON?.parse(existing?.toString());
+          tracks = JSON.parse(existing?.toString());
         } catch {
           tracks = [];
         }
@@ -6720,17 +6720,17 @@ router?.post(
       tracks?.push(track);
 
       await storageService?.uploadFile(
-        Buffer?.from(JSON?.stringify(tracks)),
+        Buffer?.from(JSON.stringify(tracks)),
         key,
         "application/json",
       );
-      logger?.info(
+      logger.info(
         `[Distribution] Track "${title}" added to package ${id} by user ${userId}`,
       );
-      res?.status(201).json(track);
+      res.status(201).json(track);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error adding track to package:");
-      res?.status(500).json({ error: "Failed to add track to package" });
+      logger.warn({ err: error }, "Error adding track to package:");
+      res.status(500).json({ error: "Failed to add track to package" });
     }
   },
 );
@@ -6741,14 +6741,14 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const { id } = req?.params;
+      const userId = (req.user as AuthenticatedUser).id;
+      const { id } = req.params;
 
       const tracksKey = `distribution/packages/${userId}/${id}/tracks.json`;
       const tracksData = await storageService
         .downloadFile(tracksKey)
         .catch(() => null);
-      const tracks = tracksData ? JSON?.parse(tracksData?.toString()) : [];
+      const tracks = tracksData ? JSON.parse(tracksData?.toString()) : [];
 
       const exportData = {
         packageId: id,
@@ -6757,15 +6757,15 @@ router?.get(
         format: "max-booster-distribution-v1",
       };
 
-      res?.setHeader("Content-Type", "application/json");
-      res?.setHeader(
+      res.setHeader("Content-Type", "application/json");
+      res.setHeader(
         "Content-Disposition",
         `attachment; filename="distribution_${id}_export.json"`,
       );
-      res?.json(exportData);
+      res.json(exportData);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error exporting distribution package:");
-      res?.status(500).json({ error: "Failed to export distribution package" });
+      logger.warn({ err: error }, "Error exporting distribution package:");
+      res.status(500).json({ error: "Failed to export distribution package" });
     }
   },
 );
@@ -6779,7 +6779,7 @@ async function buildLabelGridPayload(
   platforms: string | string[],
 ) {
   const metadata = (release?.metadata as Record<string, unknown>) || {};
-  const platformList = Array?.isArray(platforms) ? platforms : [platforms];
+  const platformList = Array.isArray(platforms) ? platforms : [platforms];
   return {
     title: release.title,
     artist:
@@ -6825,20 +6825,20 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const { releaseId } = req?.body;
+      const userId = (req.user as AuthenticatedUser).id;
+      const { releaseId } = req.body;
       if (!releaseId)
-        return res?.status(400).json({ error: "releaseId is required" });
+        return res.status(400).json({ error: "releaseId is required" });
 
       const release = await storage?.getDistroRelease(releaseId);
       if (!release || release?.artistId !== userId) {
-        return res?.status(404).json({ error: "Release not found" });
+        return res.status(404).json({ error: "Release not found" });
       }
 
       const tracks = await storage?.getDistroTracks(releaseId);
       const payload = await buildLabelGridPayload(release, tracks, "spotify");
 
-      logger?.info(
+      logger.info(
         `[Distribution] Submitting release ${releaseId} to Spotify via LabelGrid`,
         { userId },
       );
@@ -6853,7 +6853,7 @@ router?.post(
         },
       });
 
-      res?.json({
+      res.json({
         success: true,
         platform: "spotify",
         releaseId,
@@ -6866,8 +6866,8 @@ router?.post(
         platforms: result.platforms,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error submitting to Spotify via LabelGrid:");
-      res?.status(500).json({ error: "Failed to submit to Spotify" });
+      logger.warn({ err: error }, "Error submitting to Spotify via LabelGrid:");
+      res.status(500).json({ error: "Failed to submit to Spotify" });
     }
   },
 );
@@ -6878,14 +6878,14 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const { releaseId } = req?.body;
+      const userId = (req.user as AuthenticatedUser).id;
+      const { releaseId } = req.body;
       if (!releaseId)
-        return res?.status(400).json({ error: "releaseId is required" });
+        return res.status(400).json({ error: "releaseId is required" });
 
       const release = await storage?.getDistroRelease(releaseId);
       if (!release || release?.artistId !== userId) {
-        return res?.status(404).json({ error: "Release not found" });
+        return res.status(404).json({ error: "Release not found" });
       }
 
       const tracks = await storage?.getDistroTracks(releaseId);
@@ -6895,7 +6895,7 @@ router?.post(
         "apple_music",
       );
 
-      logger?.info(
+      logger.info(
         `[Distribution] Submitting release ${releaseId} to Apple Music via LabelGrid`,
         { userId },
       );
@@ -6910,7 +6910,7 @@ router?.post(
         },
       });
 
-      res?.json({
+      res.json({
         success: true,
         platform: "apple",
         releaseId,
@@ -6923,11 +6923,11 @@ router?.post(
         platforms: result.platforms,
       });
     } catch (error: unknown) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "Error submitting to Apple Music via LabelGrid:",
       );
-      res?.status(500).json({ error: "Failed to submit to Apple Music" });
+      res.status(500).json({ error: "Failed to submit to Apple Music" });
     }
   },
 );
@@ -6938,14 +6938,14 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req?.user as AuthenticatedUser).id;
-      const { releaseId } = req?.body;
+      const userId = (req.user as AuthenticatedUser).id;
+      const { releaseId } = req.body;
       if (!releaseId)
-        return res?.status(400).json({ error: "releaseId is required" });
+        return res.status(400).json({ error: "releaseId is required" });
 
       const release = await storage?.getDistroRelease(releaseId);
       if (!release || release?.artistId !== userId) {
-        return res?.status(404).json({ error: "Release not found" });
+        return res.status(404).json({ error: "Release not found" });
       }
 
       const tracks = await storage?.getDistroTracks(releaseId);
@@ -6955,7 +6955,7 @@ router?.post(
         "youtube_music",
       );
 
-      logger?.info(
+      logger.info(
         `[Distribution] Submitting release ${releaseId} to YouTube Music via LabelGrid`,
         { userId },
       );
@@ -6970,7 +6970,7 @@ router?.post(
         },
       });
 
-      res?.json({
+      res.json({
         success: true,
         platform: "youtube",
         releaseId,
@@ -6983,11 +6983,11 @@ router?.post(
         platforms: result.platforms,
       });
     } catch (error: unknown) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "Error submitting to YouTube Music via LabelGrid:",
       );
-      res?.status(500).json({ error: "Failed to submit to YouTube Music" });
+      res.status(500).json({ error: "Failed to submit to YouTube Music" });
     }
   },
 );
@@ -7000,19 +7000,19 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const user = req?.user as AuthenticatedUser;
-      const { artistName } = req?.body as { artistName?: string };
+      const user = req.user as AuthenticatedUser;
+      const { artistName } = req.body as { artistName?: string };
       if (!artistName || !artistName?.trim()) {
-        return res?.status(400).json({ error: "artistName is required" });
+        return res.status(400).json({ error: "artistName is required" });
       }
       const { buildMigrationPayload } = await import(
         "../services/catalogMigrationService.js"
       );
       const payload = await buildMigrationPayload(artistName?.trim(), user?.id);
-      res?.json(payload);
+      res.json(payload);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "[Distribution] Catalog export failed:");
-      res?.status(500).json({ error: "Catalog export failed" });
+      logger.warn({ err: error }, "[Distribution] Catalog export failed:");
+      res.status(500).json({ error: "Catalog export failed" });
     }
   },
 );

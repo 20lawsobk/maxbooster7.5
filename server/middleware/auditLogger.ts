@@ -25,7 +25,7 @@ class AuditLogger {
 
   constructor() {
     // Ensure log directory exists
-    const logDir = join(process?.cwd(), "logs");
+    const logDir = join(process.cwd(), "logs");
     if (!existsSync(logDir)) {
       mkdirSync(logDir, { recursive: true });
     }
@@ -41,16 +41,16 @@ class AuditLogger {
 
   public log(event: AuditEvent) {
     const logEntry =
-      JSON?.stringify({
+      JSON.stringify({
         ...event,
         timestamp: new Date().toISOString(),
       }) + "\n";
 
-    this?.logStream.write(logEntry);
+    this.logStream.write(logEntry);
 
     // Log high-risk events to security log as well
     if (event?.risk === "high" || event?.risk === "critical") {
-      this?.securityStream.write(logEntry);
+      this.securityStream.write(logEntry);
     }
 
     // Mirror to Postgres `audit_logs` table — fire-and-forget so the request
@@ -75,13 +75,13 @@ class AuditLogger {
         })
         .catch((err) => {
           // Never let an audit DB write crash the request — file sink already wrote.
-          logger?.warn(
+          logger.warn(
             { err, action: event.action },
             "[audit] postgres mirror failed",
           );
         });
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err, action: event.action },
         "[audit] postgres mirror threw synchronously",
       );
@@ -90,7 +90,7 @@ class AuditLogger {
 
   // Authentication events
   logLogin(req: Request, userId: string, userEmail: string, success: boolean) {
-    this?.log({
+    this.log({
       timestamp: new Date().toISOString(),
       userId: success ? userId : undefined,
       userEmail: success ? userEmail : undefined,
@@ -110,7 +110,7 @@ class AuditLogger {
   }
 
   logLogout(req: Request, userId: string, userEmail: string) {
-    this?.log({
+    this.log({
       timestamp: new Date().toISOString(),
       userId,
       userEmail,
@@ -131,7 +131,7 @@ class AuditLogger {
     userEmail: string,
     success: boolean,
   ) {
-    this?.log({
+    this.log({
       timestamp: new Date().toISOString(),
       userId: success ? userId : undefined,
       userEmail: success ? userEmail : undefined,
@@ -158,7 +158,7 @@ class AuditLogger {
     success: boolean,
     stripeSessionId?: string,
   ) {
-    this?.log({
+    this.log({
       timestamp: new Date().toISOString(),
       userId,
       userEmail,
@@ -188,7 +188,7 @@ class AuditLogger {
     targetUserId?: string,
     details: Record<string, any> = {},
   ) {
-    this?.log({
+    this.log({
       timestamp: new Date().toISOString(),
       userId,
       userEmail,
@@ -215,7 +215,7 @@ class AuditLogger {
     fileSize: number,
     success: boolean,
   ) {
-    this?.log({
+    this.log({
       timestamp: new Date().toISOString(),
       userId,
       userEmail,
@@ -243,7 +243,7 @@ class AuditLogger {
     platform: string,
     success: boolean,
   ) {
-    this?.log({
+    this.log({
       timestamp: new Date().toISOString(),
       userId,
       userEmail,
@@ -268,7 +268,7 @@ class AuditLogger {
     risk: "low" | "medium" | "high" | "critical",
     details: Record<string, any> = {},
   ) {
-    this?.log({
+    this.log({
       timestamp: new Date().toISOString(),
       ip: this.getClientIP(req),
       userAgent: req.get("user-agent") || "unknown",
@@ -283,7 +283,7 @@ class AuditLogger {
 
   // Rate limiting events
   logRateLimit(req: Request, limitType: string) {
-    this?.log({
+    this.log({
       timestamp: new Date().toISOString(),
       ip: this.getClientIP(req),
       userAgent: req.get("user-agent") || "unknown",
@@ -300,9 +300,9 @@ class AuditLogger {
 
   private getClientIP(req: Request): string {
     return (
-      (req?.headers["x-forwarded-for"] as string)?.split(",")[0] ||
-      req?.connection.remoteAddress ||
-      req?.socket.remoteAddress ||
+      (req.headers["x-forwarded-for"] as string)?.split(",")[0] ||
+      req.connection.remoteAddress ||
+      req.socket.remoteAddress ||
       "unknown"
     );
   }
@@ -317,11 +317,11 @@ export function auditMiddleware(
   risk: "low" | "medium" | "high" = "low",
 ) {
   return (req: Request, res: Response, next: NextFunction) => {
-    const originalSend = res?.send;
+    const originalSend = res.send;
 
     res.send = function (data) {
       const user = (req as Record<string, unknown>).user;
-      const statusCode = res?.statusCode;
+      const statusCode = res.statusCode;
 
       if (user && statusCode < 400) {
         auditLogger?.log({

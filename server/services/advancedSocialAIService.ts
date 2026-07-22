@@ -1987,7 +1987,7 @@ class AdvancedSocialAIService {
       awareness: 1.0,
     };
 
-    return Math?.min(1, effectiveness * (objectiveMultipliers[objective] || 1));
+    return Math.min(1, effectiveness * (objectiveMultipliers[objective] || 1));
   }
 
   private calculatePlatformOptimization(
@@ -2020,7 +2020,7 @@ class AdvancedSocialAIService {
       optimization += 0.1;
     }
 
-    return Math?.min(1, Math?.max(0, optimization));
+    return Math.min(1, Math.max(0, optimization));
   }
 
   private generateInsights(
@@ -2320,7 +2320,7 @@ class AdvancedSocialAIService {
       .filter((w) => w?.length > 2);
     const avgWordLen =
       contentWords?.reduce((s, w) => s + w?.length, 0) /
-      Math?.max(contentWords?.length, 1);
+      Math.max(contentWords?.length, 1);
     const ageMid = (audience?.ageRange.min + audience?.ageRange.max) / 2;
 
     // Age-appropriate vocabulary signals keyed by generation
@@ -2365,7 +2365,7 @@ class AdvancedSocialAIService {
     ).length;
     const signalScore =
       signalHits > 0
-        ? Math?.min(1, signalHits / Math?.max(targetSignals?.length * 0.15, 1))
+        ? Math.min(1, signalHits / Math.max(targetSignals?.length * 0.15, 1))
         : 0.5;
 
     // Content complexity alignment: shorter + simpler → Gen Z; longer + richer → Gen X
@@ -2383,9 +2383,9 @@ class AdvancedSocialAIService {
             : 0.72;
 
     // Composite: base 55 + vocabulary signal (0-20) + interest overlap (0-15) + complexity (0-10)
-    const demographicMatch = Math?.min(
+    const demographicMatch = Math.min(
       100,
-      Math?.max(
+      Math.max(
         55,
         55 + signalScore * 20 + interestMatch * 15 + complexityAlignment * 10,
       ),
@@ -2394,7 +2394,7 @@ class AdvancedSocialAIService {
     return {
       primarySegment: audience.name,
       secondarySegments,
-      resonanceScore: Math.min(100, Math?.max(0, resonanceScore)),
+      resonanceScore: Math.min(100, Math.max(0, resonanceScore)),
       psychographicMatch: valueMatch * 100,
       demographicMatch,
       behavioralMatch: (interestMatch + lengthMatch) * 50,
@@ -2402,15 +2402,15 @@ class AdvancedSocialAIService {
   }
 
   getAllPlatforms(): string[] {
-    return Object?.keys(PLATFORM_PROFILES);
+    return Object.keys(PLATFORM_PROFILES);
   }
 
   getAllTones(): string[] {
-    return Object?.keys(TONE_PROFILES);
+    return Object.keys(TONE_PROFILES);
   }
 
   getAllAudiences(): string[] {
-    return Object?.keys(AUDIENCE_PROFILES);
+    return Object.keys(AUDIENCE_PROFILES);
   }
 
   getViralPatterns(): typeof VIRAL_PATTERNS {
@@ -2421,7 +2421,7 @@ class AdvancedSocialAIService {
     const platformProfile = PLATFORM_PROFILES[platform?.toLowerCase()];
     if (!platformProfile) return 50;
 
-    const hookStrength = this?.calculateHookStrength(content, platformProfile);
+    const hookStrength = this.calculateHookStrength(content, platformProfile);
     const words = content?.toLowerCase().split(/\s+/);
 
     let totalEngagement = 0;
@@ -2435,9 +2435,9 @@ class AdvancedSocialAIService {
     });
 
     const avgEngagement = count > 0 ? totalEngagement / count : 0.5;
-    return Math?.min(
+    return Math.min(
       100,
-      Math?.max(0, (avgEngagement * 0.5 + hookStrength * 0.5) * 100),
+      Math.max(0, (avgEngagement * 0.5 + hookStrength * 0.5) * 100),
     );
   }
 }

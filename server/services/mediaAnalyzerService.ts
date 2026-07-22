@@ -14,8 +14,8 @@ import os from "os";
 import path from "path";
 import { advancedUrlParser, type UrlCategory } from "./advancedUrlParser.js";
 
-const PYTHON = process?.env.PYTHON_PATH || "python3";
-const SERVICE_DIR = path?.join(process?.cwd(), "server", "services");
+const PYTHON = process.env.PYTHON_PATH || "python3";
+const SERVICE_DIR = path?.join(process.cwd(), "server", "services");
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -161,7 +161,7 @@ function runPython(
 ): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const child = spawn(PYTHON, [script, arg], {
-      env: { ...process?.env, PYTHONPATH: SERVICE_DIR },
+      env: { ...process.env, PYTHONPATH: SERVICE_DIR },
       stdio: ["ignore", "pipe", "pipe"],
     });
 
@@ -191,7 +191,7 @@ function runPython(
         return;
       }
       try {
-        resolve(JSON?.parse(trimmed));
+        resolve(JSON.parse(trimmed));
       } catch {
         reject(
           new Error(`Invalid JSON from analyzer: ${trimmed?.slice(0, 200)}`),

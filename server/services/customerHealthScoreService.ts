@@ -62,8 +62,8 @@ export interface HealthScoreResult {
 
 class CustomerHealthScoreService {
   async computeAndStore(userId: string): Promise<HealthScoreResult> {
-    const result = await this?.compute(userId);
-    await this?.store(userId, result);
+    const result = await this.compute(userId);
+    await this.store(userId, result);
     return result;
   }
 
@@ -82,7 +82,7 @@ class CustomerHealthScoreService {
       .limit(1);
 
     const daysSinceLastLogin = lastSessionRow?.lastActivity
-      ? Math?.floor(
+      ? Math.floor(
           (now?.getTime() - lastSessionRow?.lastActivity.getTime()) /
             (24 * 60 * 60 * 1000),
         )
@@ -153,24 +153,24 @@ class CustomerHealthScoreService {
       subscriptionRow?.plan ?? userRow?.subscriptionTier ?? "free";
 
     // ── Compute sub-scores ─────────────────────────────────────────────────────
-    const loginFrequencyScore = this?.computeLoginScore(
+    const loginFrequencyScore = this.computeLoginScore(
       daysSinceLastLogin,
       totalSessions,
       recentSessions,
     );
-    const featureAdoptionScore = this?.computeFeatureScore(
+    const featureAdoptionScore = this.computeFeatureScore(
       featuresUsed,
       subTier,
     );
-    const engagementScore = this?.computeEngagementScore(
+    const engagementScore = this.computeEngagementScore(
       totalSessions,
       daysSinceLastLogin,
       recentSessions,
     );
-    const paymentHealthScore = this?.computePaymentScore(subStatus, subTier);
+    const paymentHealthScore = this.computePaymentScore(subStatus, subTier);
 
     // Fine-tuned weights: feature adoption slightly higher (strongest predictor for music platforms)
-    const score = Math?.round(
+    const score = Math.round(
       loginFrequencyScore * 0.28 +
         featureAdoptionScore * 0.27 +
         engagementScore * 0.25 +
@@ -186,7 +186,7 @@ class CustomerHealthScoreService {
       riskLevel === "churning"
         ? 100 - score
         : riskLevel === "at_risk"
-          ? Math?.round((67 - score) * 1.5)
+          ? Math.round((67 - score) * 1.5)
           : 0;
 
     return {
@@ -234,11 +234,11 @@ class CustomerHealthScoreService {
     else frequencyScore = 0;
 
     // Recent activity boost — 7-day sessions are 1.5x more predictive of retention
-    const recentBoost = Math?.min(15, sessionsLast7Days * 4);
+    const recentBoost = Math.min(15, sessionsLast7Days * 4);
 
-    return Math?.min(
+    return Math.min(
       100,
-      Math?.round(recencyScore * 0.6 + frequencyScore * 0.4 + recentBoost),
+      Math.round(recencyScore * 0.6 + frequencyScore * 0.4 + recentBoost),
     );
   }
 
@@ -260,7 +260,7 @@ class CustomerHealthScoreService {
 
     const tierKey = tier?.toLowerCase() || "free";
     const maxFeatures = maxFeaturesByTier[tierKey] || 15;
-    const adoptionRate = Math?.min(1, featuresUsed / maxFeatures);
+    const adoptionRate = Math.min(1, featuresUsed / maxFeatures);
 
     // Stepwise score with adoption rate
     if (adoptionRate >= 0.75) return 100;
@@ -284,7 +284,7 @@ class CustomerHealthScoreService {
   ): number {
     if (daysSinceLastLogin > 60) return 0;
     if (daysSinceLastLogin > 30)
-      return Math?.max(0, 10 - Math?.floor((daysSinceLastLogin - 30) / 5));
+      return Math.max(0, 10 - Math.floor((daysSinceLastLogin - 30) / 5));
 
     // Base score from 30-day sessions
     let baseScore: number;
@@ -297,9 +297,9 @@ class CustomerHealthScoreService {
     else baseScore = 0;
 
     // Recent week bonus — early indicator of re-engagement
-    const recentBoost = Math?.min(20, sessionsLast7Days * 5);
+    const recentBoost = Math.min(20, sessionsLast7Days * 5);
 
-    return Math?.min(100, Math?.round(baseScore + recentBoost));
+    return Math.min(100, Math.round(baseScore + recentBoost));
   }
 
   /**
@@ -365,7 +365,7 @@ class CustomerHealthScoreService {
           },
         });
     } catch (err) {
-      logger?.warn({ err: err }, "[HealthScore] Failed to store health score:");
+      logger.warn({ err: err }, "[HealthScore] Failed to store health score:");
     }
   }
 
@@ -375,7 +375,7 @@ class CustomerHealthScoreService {
       if (redis) {
         const queue = new Queue("retention-jobs", { connection: redis });
         await queue?.add("health-score-batch", { cursor: 0, batchSize: 100 });
-        logger?.info("[HealthScore] Enqueued batch compute job via BullMQ");
+        logger.info("[HealthScore] Enqueued batch compute job via BullMQ");
         return;
       }
 
@@ -390,14 +390,14 @@ class CustomerHealthScoreService {
         )
         .limit(limit);
       const results = await Promise?.allSettled(
-        allUsers?.map((u) => this?.computeAndStore(u?.id)),
+        allUsers?.map((u) => this.computeAndStore(u?.id)),
       );
       const failed = results?.filter((r) => r?.status === "rejected").length;
-      logger?.info(
+      logger.info(
         `[HealthScore] Batch complete: ${allUsers?.length - failed} updated, ${failed} failed`,
       );
     } catch (err) {
-      logger?.warn({ err: err }, "[HealthScore] Batch compute failed:");
+      logger.warn({ err: err }, "[HealthScore] Batch compute failed:");
     }
   }
 
@@ -416,11 +416,11 @@ class CustomerHealthScoreService {
       if (batch?.length === 0) return null;
 
       // Process in parallel within the batch for speed
-      await Promise?.allSettled(batch?.map((u) => this?.computeAndStore(u?.id)));
+      await Promise?.allSettled(batch?.map((u) => this.computeAndStore(u?.id)));
 
       return batch[batch?.length - 1].id;
     } catch (err) {
-      logger?.warn({ err: err }, "[HealthScore] Batch compute paged failed:");
+      logger.warn({ err: err }, "[HealthScore] Batch compute paged failed:");
       throw err;
     }
   }
@@ -452,7 +452,7 @@ class CustomerHealthScoreService {
         riskLevel: r.riskLevel as RiskLevel,
       }));
     } catch (err) {
-      logger?.warn({ err: err }, "[HealthScore] Failed to get at-risk users:");
+      logger.warn({ err: err }, "[HealthScore] Failed to get at-risk users:");
       return [];
     }
   }

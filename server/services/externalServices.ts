@@ -167,19 +167,19 @@ function setupCircuitBreakerLogging(): void {
 
   circuits?.forEach((circuit) => {
     circuit?.on("state_change", (event) => {
-      logger?.warn(
+      logger.warn(
         `🔌 Circuit ${event?.name} state changed: ${event?.previousState} → ${event?.newState}`,
       );
     });
 
     circuit?.on("failure", (event) => {
-      logger?.warn(
+      logger.warn(
         `⚠️ Circuit ${event?.name} failure: ${event?.error?.message || "Unknown error"}`,
       );
     });
 
     circuit?.on("timeout", (event) => {
-      logger?.warn(`⏱️ Circuit ${event?.name} timeout`);
+      logger.warn(`⏱️ Circuit ${event?.name} timeout`);
     });
   });
 }
@@ -193,11 +193,11 @@ async function getCachedData<T>(key: string): Promise<T | null> {
 
     const cached = await redis?.get(`${CACHE_PREFIX}${key}`);
     if (cached) {
-      return JSON?.parse(cached) as T;
+      return JSON.parse(cached) as T;
     }
     return null;
   } catch (error) {
-    logger?.debug(`Cache read error for ${key}:`, error);
+    logger.debug(`Cache read error for ${key}:`, error);
     return null;
   }
 }
@@ -211,9 +211,9 @@ async function setCachedData<T>(
     const redis = await getRedisClient();
     if (!redis) return;
 
-    await redis?.setex(`${CACHE_PREFIX}${key}`, ttl, JSON?.stringify(data));
+    await redis?.setex(`${CACHE_PREFIX}${key}`, ttl, JSON.stringify(data));
   } catch (error) {
-    logger?.debug(`Cache write error for ${key}:`, error);
+    logger.debug(`Cache write error for ${key}:`, error);
   }
 }
 
@@ -249,12 +249,12 @@ export function queueForRetry(
     createdAt: new Date(),
   });
 
-  logger?.info(`📥 Queued operation for retry: ${id}`);
+  logger.info(`📥 Queued operation for retry: ${id}`);
   return id;
 }
 
 export function getRetryQueue(): RetryQueueItem[] {
-  return Array?.from(retryQueue?.values());
+  return Array.from(retryQueue?.values());
 }
 
 export function clearRetryQueue(): void {
@@ -302,12 +302,12 @@ export async function executeWithFallback<T>(
         ? error?.message
         : (error as Error).message;
 
-    logger?.warn(`⚠️ ${circuit?.name} operation failed: ${errorMessage}`);
+    logger.warn(`⚠️ ${circuit?.name} operation failed: ${errorMessage}`);
 
     if (cacheKey) {
       const cached = await getCachedData<T>(cacheKey);
       if (cached !== null) {
-        logger?.info(`📦 Using cached data for ${circuit?.name}`);
+        logger.info(`📦 Using cached data for ${circuit?.name}`);
         return {
           data: cached,
           source: "cache",
@@ -483,4 +483,4 @@ export {
   circuitBreakerRegistry,
 };
 
-logger?.info("🔌 External service circuit breakers initialized");
+logger.info("🔌 External service circuit breakers initialized");

@@ -92,12 +92,12 @@ export class StudioCollabServer {
       if (pathname?.startsWith(path)) {
         try {
           // Global studio WS cap — reject before the expensive auth + Yjs load
-          const totalClients = Array?.from(this?.clients.values()).reduce(
+          const totalClients = Array.from(this.clients.values()).reduce(
             (sum, set) => sum + set?.size,
             0,
           );
           if (totalClients >= MAX_STUDIO_WS_CONNECTIONS) {
-            logger?.warn(
+            logger.warn(
               `[StudioCollab] Global connection limit reached (${MAX_STUDIO_WS_CONNECTIONS})`,
             );
             socket?.write(
@@ -107,7 +107,7 @@ export class StudioCollabServer {
             return;
           }
 
-          const authResult = await this?.authenticateRequest(request);
+          const authResult = await this.authenticateRequest(request);
 
           if (!authResult?.authenticated) {
             socket?.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
@@ -117,9 +117,9 @@ export class StudioCollabServer {
 
           // Per-user studio connection cap
           const userCount =
-            this?.userConnectionCount.get(authResult?.userId!) ?? 0;
+            this.userConnectionCount.get(authResult?.userId!) ?? 0;
           if (userCount >= MAX_STUDIO_WS_PER_USER) {
-            logger?.warn(
+            logger.warn(
               `[StudioCollab] Per-user connection limit reached for ${authResult?.userId}`,
             );
             socket?.write(
@@ -129,7 +129,7 @@ export class StudioCollabServer {
             return;
           }
 
-          const projectId = this?.extractProjectId(request?.url || "");
+          const projectId = this.extractProjectId(request?.url || "");
 
           if (!projectId) {
             socket?.write("HTTP/1.1 400 Bad Request\r\n\r\n");
@@ -137,7 +137,7 @@ export class StudioCollabServer {
             return;
           }
 
-          const hasAccess = await this?.checkProjectAccess(
+          const hasAccess = await this.checkProjectAccess(
             authResult?.userId!,
             projectId,
           );
@@ -148,29 +148,29 @@ export class StudioCollabServer {
             return;
           }
 
-          this?.wss!.handleUpgrade(request, socket, head, (ws) => {
-            this?.wss!.emit("connection", ws, request, {
+          this.wss!.handleUpgrade(request, socket, head, (ws) => {
+            this.wss!.emit("connection", ws, request, {
               userId: authResult.userId!,
               displayName: authResult.displayName!,
               projectId,
             });
           });
         } catch (error) {
-          logger?.warn({ err: error }, "[StudioCollab] Upgrade error:");
+          logger.warn({ err: error }, "[StudioCollab] Upgrade error:");
           socket?.write("HTTP/1.1 500 Internal Server Error\r\n\r\n");
           socket?.destroy();
         }
       }
     });
 
-    this?.wss.on(
+    this.wss.on(
       "connection",
       async (
         ws: WebSocket,
         _request: IncomingMessage,
         context: { userId: string; displayName: string; projectId: string },
       ) => {
-        await this?.handleConnection(
+        await this.handleConnection(
           ws,
           context?.userId,
           context?.displayName,
@@ -179,10 +179,10 @@ export class StudioCollabServer {
       },
     );
 
-    this?.startPingInterval();
-    this?.startAwarenessBroadcast();
+    this.startPingInterval();
+    this.startAwarenessBroadcast();
 
-    logger?.info(`[StudioCollab] WebSocket server initialized on path: ${path}`);
+    logger.info(`[StudioCollab] WebSocket server initialized on path: ${path}`);
   }
 
   private async authenticateRequest(request: IncomingMessage): Promise<{
@@ -208,7 +208,7 @@ export class StudioCollabServer {
           }
         }
       } catch (error) {
-        logger?.warn({ err: error }, "[StudioCollab] JWT verification failed:");
+        logger.warn({ err: error }, "[StudioCollab] JWT verification failed:");
       }
     }
 
@@ -230,7 +230,7 @@ export class StudioCollabServer {
             );
 
             if (sessionData) {
-              const session = JSON?.parse(sessionData);
+              const session = JSON.parse(sessionData);
               const userId = session?.passport?.user || session?.userId;
 
               if (userId) {
@@ -248,7 +248,7 @@ export class StudioCollabServer {
             }
           }
         } catch (error) {
-          logger?.warn(
+          logger.warn(
             { err: error },
             "[StudioCollab] Session verification failed:",
           );
@@ -274,7 +274,7 @@ export class StudioCollabServer {
           }
         }
       } catch (error) {
-        logger?.warn(
+        logger.warn(
           { err: error },
           "[StudioCollab] Token param verification failed:",
         );
@@ -326,7 +326,7 @@ export class StudioCollabServer {
 
       return false;
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "[StudioCollab] Project access check failed:",
       );
@@ -340,10 +340,10 @@ export class StudioCollabServer {
     displayName: string,
     projectId: string,
   ): Promise<void> {
-    let doc = this?.documents.get(projectId);
+    let doc = this.documents.get(projectId);
     if (!doc) {
       doc = await yjsService?.loadDocument(projectId);
-      this?.documents.set(projectId, doc);
+      this.documents.set(projectId, doc);
     }
 
     const presence = await presenceManager?.addCollaborator(
@@ -363,20 +363,20 @@ export class StudioCollabServer {
       lastPing: Date.now(),
     };
 
-    let projectClients = this?.clients.get(projectId);
+    let projectClients = this.clients.get(projectId);
     if (!projectClients) {
       projectClients = new Set();
-      this?.clients.set(projectId, projectClients);
+      this.clients.set(projectId, projectClients);
     }
     projectClients?.add(client);
 
     // Track per-user connection count for the upgrade-time limit check
-    this?.userConnectionCount.set(
+    this.userConnectionCount.set(
       userId,
-      (this?.userConnectionCount.get(userId) ?? 0) + 1,
+      (this.userConnectionCount.get(userId) ?? 0) + 1,
     );
 
-    this?.sendToClient(ws, {
+    this.sendToClient(ws, {
       type: "connected",
       payload: {
         connectionId: presence.connectionId,
@@ -388,7 +388,7 @@ export class StudioCollabServer {
     });
 
     const state = Y?.encodeStateAsUpdate(doc);
-    this?.sendToClient(ws, {
+    this.sendToClient(ws, {
       type: "yjs:sync",
       payload: {
         state: Buffer.from(state).toString("base64"),
@@ -396,12 +396,12 @@ export class StudioCollabServer {
     });
 
     const collaborators = await presenceManager?.getCollaborators(projectId);
-    this?.sendToClient(ws, {
+    this.sendToClient(ws, {
       type: "awareness:update",
       payload: { collaborators },
     });
 
-    this?.broadcastToProject(
+    this.broadcastToProject(
       projectId,
       {
         type: "collaborator:joined",
@@ -416,7 +416,7 @@ export class StudioCollabServer {
 
     const updateHandler = (update: Uint8Array, origin: unknown) => {
       if (origin !== client) {
-        this?.sendToClient(ws, {
+        this.sendToClient(ws, {
           type: "yjs:update",
           payload: {
             update: Buffer.from(update).toString("base64"),
@@ -429,10 +429,10 @@ export class StudioCollabServer {
 
     ws?.on("message", async (data) => {
       try {
-        const message: IncomingCollabMessage = JSON?.parse(data?.toString());
-        await this?.handleMessage(client, message, doc!);
+        const message: IncomingCollabMessage = JSON.parse(data?.toString());
+        await this.handleMessage(client, message, doc!);
       } catch (error) {
-        logger?.warn({ err: error }, "[StudioCollab] Message handling error:");
+        logger.warn({ err: error }, "[StudioCollab] Message handling error:");
       }
     });
 
@@ -443,16 +443,16 @@ export class StudioCollabServer {
 
     ws?.on("close", async () => {
       doc!.off("update", updateHandler);
-      await this?.handleDisconnect(client);
+      await this.handleDisconnect(client);
     });
 
     ws?.on("error", async (error) => {
-      logger?.warn({ err: error }, "[StudioCollab] WebSocket error:");
+      logger.warn({ err: error }, "[StudioCollab] WebSocket error:");
       doc!.off("update", updateHandler);
-      await this?.handleDisconnect(client);
+      await this.handleDisconnect(client);
     });
 
-    logger?.info(
+    logger.info(
       `[StudioCollab] Client connected: ${displayName} (${userId}) to project ${projectId}`,
     );
   }
@@ -468,7 +468,7 @@ export class StudioCollabServer {
         const update = Buffer?.from(updateMsg?.payload.update, "base64");
         Y?.applyUpdate(doc, new Uint8Array(update), client);
 
-        this?.broadcastToProject(
+        this.broadcastToProject(
           client?.projectId,
           {
             type: "yjs:update",
@@ -491,7 +491,7 @@ export class StudioCollabServer {
           cursorMsg?.payload,
         );
 
-        this?.broadcastToProject(
+        this.broadcastToProject(
           client?.projectId,
           {
             type: "cursor:update",
@@ -514,7 +514,7 @@ export class StudioCollabServer {
           selectionMsg?.payload,
         );
 
-        this?.broadcastToProject(
+        this.broadcastToProject(
           client?.projectId,
           {
             type: "selection:update",
@@ -537,7 +537,7 @@ export class StudioCollabServer {
           presenceMsg?.payload.status,
         );
 
-        this?.broadcastToProject(
+        this.broadcastToProject(
           client?.projectId,
           {
             type: "presence:update",
@@ -553,7 +553,7 @@ export class StudioCollabServer {
 
       case "sync:request": {
         const state = Y?.encodeStateAsUpdate(doc);
-        this?.sendToClient(client?.ws, {
+        this.sendToClient(client?.ws, {
           type: "yjs:sync",
           payload: {
             state: Buffer.from(state).toString("base64"),
@@ -563,14 +563,14 @@ export class StudioCollabServer {
       }
 
       case "ping": {
-        this?.sendToClient(client?.ws, { type: "pong" });
+        this.sendToClient(client?.ws, { type: "pong" });
         client.isAlive = true;
         client.lastPing = Date?.now();
         break;
       }
 
       default:
-        logger?.warn(
+        logger.warn(
           `[StudioCollab] Unknown message type: ${(message as CollabMessage).type}`,
         );
     }
@@ -578,28 +578,28 @@ export class StudioCollabServer {
 
   private async handleDisconnect(client: CollabClient): Promise<void> {
     // Decrement per-user connection counter
-    const prev = this?.userConnectionCount.get(client?.userId) ?? 1;
+    const prev = this.userConnectionCount.get(client?.userId) ?? 1;
     if (prev <= 1) {
-      this?.userConnectionCount.delete(client?.userId);
+      this.userConnectionCount.delete(client?.userId);
     } else {
-      this?.userConnectionCount.set(client?.userId, prev - 1);
+      this.userConnectionCount.set(client?.userId, prev - 1);
     }
 
-    const projectClients = this?.clients.get(client?.projectId);
+    const projectClients = this.clients.get(client?.projectId);
     if (projectClients) {
       projectClients?.delete(client);
 
       if (projectClients?.size === 0) {
-        this?.clients.delete(client?.projectId);
+        this.clients.delete(client?.projectId);
 
         setTimeout(async () => {
-          const remainingClients = this?.clients.get(client?.projectId);
+          const remainingClients = this.clients.get(client?.projectId);
           if (!remainingClients || remainingClients?.size === 0) {
-            const doc = this?.documents.get(client?.projectId);
+            const doc = this.documents.get(client?.projectId);
             if (doc) {
               await yjsService?.unloadDocument(client?.projectId, false);
-              this?.documents.delete(client?.projectId);
-              logger?.info(
+              this.documents.delete(client?.projectId);
+              logger.info(
                 `[StudioCollab] Unloaded document for project ${client?.projectId}`,
               );
             }
@@ -614,7 +614,7 @@ export class StudioCollabServer {
       client?.connectionId,
     );
 
-    this?.broadcastToProject(client?.projectId, {
+    this.broadcastToProject(client?.projectId, {
       type: "collaborator:left",
       payload: {
         userId: client.userId,
@@ -622,14 +622,14 @@ export class StudioCollabServer {
       },
     });
 
-    logger?.info(
+    logger.info(
       `[StudioCollab] Client disconnected: ${client?.displayName} (${client?.userId}) from project ${client?.projectId}`,
     );
   }
 
   private sendToClient(ws: WebSocket, message: object): void {
     if (ws?.readyState === WebSocket.OPEN) {
-      ws?.send(JSON?.stringify(message));
+      ws?.send(JSON.stringify(message));
     }
   }
 
@@ -638,10 +638,10 @@ export class StudioCollabServer {
     message: object,
     exclude?: CollabClient,
   ): void {
-    const projectClients = this?.clients.get(projectId);
+    const projectClients = this.clients.get(projectId);
     if (!projectClients) return;
 
-    const messageStr = JSON?.stringify(message);
+    const messageStr = JSON.stringify(message);
 
     for (const client of projectClients) {
       if (client !== exclude && client?.ws.readyState === WebSocket.OPEN) {
@@ -652,14 +652,14 @@ export class StudioCollabServer {
 
   private startPingInterval(): void {
     this.pingInterval = setInterval(() => {
-      for (const [projectId, projectClients] of this?.clients.entries()) {
+      for (const [projectId, projectClients] of this.clients.entries()) {
         for (const client of projectClients) {
           if (!client?.isAlive) {
-            logger?.warn(
+            logger.warn(
               `[StudioCollab] Client unresponsive, terminating: ${client?.userId}`,
             );
             client?.ws.terminate();
-            this?.handleDisconnect(client);
+            this.handleDisconnect(client);
             continue;
           }
 
@@ -674,17 +674,17 @@ export class StudioCollabServer {
 
   private startAwarenessBroadcast(): void {
     this.awarenessInterval = setInterval(async () => {
-      for (const [projectId, projectClients] of this?.clients.entries()) {
+      for (const [projectId, projectClients] of this.clients.entries()) {
         if (projectClients?.size > 0) {
           try {
             const collaborators =
               await presenceManager?.getCollaborators(projectId);
-            this?.broadcastToProject(projectId, {
+            this.broadcastToProject(projectId, {
               type: "awareness:update",
               payload: { collaborators },
             });
           } catch (error) {
-            logger?.warn(
+            logger.warn(
               { err: error },
               `[StudioCollab] Awareness broadcast failed for project ${projectId}:`,
             );
@@ -695,37 +695,37 @@ export class StudioCollabServer {
   }
 
   getConnectedClients(projectId: string): number {
-    return this?.clients.get(projectId)?.size || 0;
+    return this.clients.get(projectId)?.size || 0;
   }
 
   getAllConnectedProjects(): string[] {
-    return Array?.from(this?.clients.keys());
+    return Array.from(this.clients.keys());
   }
 
   getTotalConnections(): number {
     let total = 0;
-    for (const clients of this?.clients.values()) {
+    for (const clients of this.clients.values()) {
       total += clients?.size;
     }
     return total;
   }
 
   async shutdown(): Promise<void> {
-    logger?.info("[StudioCollab] Shutting down...");
+    logger.info("[StudioCollab] Shutting down...");
 
-    if (this?.pingInterval) {
-      clearInterval(this?.pingInterval);
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
       this.pingInterval = null;
     }
 
-    if (this?.awarenessInterval) {
-      clearInterval(this?.awarenessInterval);
+    if (this.awarenessInterval) {
+      clearInterval(this.awarenessInterval);
       this.awarenessInterval = null;
     }
 
-    for (const [projectId, projectClients] of this?.clients.entries()) {
+    for (const [projectId, projectClients] of this.clients.entries()) {
       for (const client of projectClients) {
-        this?.sendToClient(client?.ws, {
+        this.sendToClient(client?.ws, {
           type: "server:shutdown",
           payload: { message: "Server is shutting down" },
         });
@@ -733,21 +733,21 @@ export class StudioCollabServer {
       }
     }
 
-    this?.clients.clear();
+    this.clients.clear();
 
-    for (const [projectId, doc] of this?.documents.entries()) {
+    for (const [projectId, doc] of this.documents.entries()) {
       await yjsService?.unloadDocument(projectId, false);
     }
-    this?.documents.clear();
+    this.documents.clear();
 
     await presenceManager?.shutdown();
 
-    if (this?.wss) {
-      this?.wss.close();
+    if (this.wss) {
+      this.wss.close();
       this.wss = null;
     }
 
-    logger?.info("[StudioCollab] Shutdown complete");
+    logger.info("[StudioCollab] Shutdown complete");
   }
 }
 

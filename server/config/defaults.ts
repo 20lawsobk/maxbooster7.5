@@ -167,10 +167,10 @@ export const config: AppConfig = {
     poolSize: parseEnvInt(
       "DB_POOL_SIZE",
       isReplitDeployment
-        ? Math?.max(
+        ? Math.max(
             2,
-            Math?.ceil(
-              15 / (parseInt(process?.env.PDIM_CLUSTER_WORKERS || "1", 10) || 1),
+            Math.ceil(
+              15 / (parseInt(process.env.PDIM_CLUSTER_WORKERS || "1", 10) || 1),
             ),
           )
         : 8,
@@ -221,7 +221,7 @@ export const config: AppConfig = {
   },
 
   storage: {
-    provider: (process?.env.STORAGE_PROVIDER === "s3"
+    provider: (process.env.STORAGE_PROVIDER === "s3"
       ? "s3"
       : "pocket-dimension") as "pocket-dimension" | "s3",
     bucket: process.env.S3_BUCKET,
@@ -230,25 +230,25 @@ export const config: AppConfig = {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     replitBucketId:
-      process?.env.REPLIT_BUCKET_ID ||
-      process?.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID,
+      process.env.REPLIT_BUCKET_ID ||
+      process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID,
   },
 
   queue: {
     concurrency: {
       audio: parseEnvInt(
         "QUEUE_AUDIO_CONCURRENCY",
-        Math?.min(24, 6 * _vmConcMult),
+        Math.min(24, 6 * _vmConcMult),
       ),
       analytics: parseEnvInt(
         "QUEUE_ANALYTICS_CONCURRENCY",
-        Math?.min(32, 8 * _vmConcMult),
+        Math.min(32, 8 * _vmConcMult),
       ),
       email: parseEnvInt(
         "QUEUE_EMAIL_CONCURRENCY",
-        Math?.min(64, 16 * _vmConcMult),
+        Math.min(64, 16 * _vmConcMult),
       ),
-      csv: parseEnvInt("QUEUE_CSV_CONCURRENCY", Math?.min(16, 4 * _vmConcMult)),
+      csv: parseEnvInt("QUEUE_CSV_CONCURRENCY", Math.min(16, 4 * _vmConcMult)),
     },
     timeout: {
       audio: parseEnvInt("QUEUE_AUDIO_TIMEOUT", 180000), // 3 minutes
@@ -285,7 +285,7 @@ export function validateConfig(): void {
     }
     if (!config?.storage.accessKeyId || !config?.storage.secretAccessKey) {
       // AWS SDK will try to use IAM role if not provided, so this is just a warning
-      logger?.warn(
+      logger.warn(
         "⚠️  AWS credentials not found in environment. Attempting to use IAM role...",
       );
     }
@@ -299,10 +299,10 @@ export function validateConfig(): void {
   }
 
   if (isProduction && !config?.redis.url) {
-    logger?.warn(
+    logger.warn(
       "⚠️  REDIS_URL not set in production - using in-memory session store",
     );
-    logger?.warn("   Sessions will not persist across server restarts");
+    logger.warn("   Sessions will not persist across server restarts");
   }
 
   if (errors?.length > 0) {
@@ -312,25 +312,25 @@ export function validateConfig(): void {
 
 // Log configuration on startup (sanitized)
 export function logConfig(): void {
-  logger?.info("📋 Configuration loaded:");
-  logger?.info(`   Environment: ${config?.nodeEnv}`);
-  logger?.info(
+  logger.info("📋 Configuration loaded:");
+  logger.info(`   Environment: ${config?.nodeEnv}`);
+  logger.info(
     `   Replit Deployment: ${isReplitDeployment ? "YES (Published)" : "NO (Workspace)"}`,
   );
-  logger?.info(`   Production Mode: ${isProduction}`);
-  logger?.info(`   Port: ${config?.port}`);
-  logger?.info(`   Database Pool: ${config?.database.poolSize} connections`);
-  logger?.info(
+  logger.info(`   Production Mode: ${isProduction}`);
+  logger.info(`   Port: ${config?.port}`);
+  logger.info(`   Database Pool: ${config?.database.poolSize} connections`);
+  logger.info(
     `   Max Sessions: ${config?.session.maxSessions?.toLocaleString()}`,
   );
-  logger?.info(`   Rate Limit: ${config?.rateLimiting.maxRequests} req/min`);
-  logger?.info(`   Storage: ${config?.storage.provider}`);
+  logger.info(`   Rate Limit: ${config?.rateLimiting.maxRequests} req/min`);
+  logger.info(`   Storage: ${config?.storage.provider}`);
   if (config?.storage.provider === "s3") {
-    logger?.info(`   S3 Bucket: ${config?.storage.bucket}`);
+    logger.info(`   S3 Bucket: ${config?.storage.bucket}`);
   } else if (config?.storage.provider === "pocket-dimension") {
-    logger?.info(`   📦 Storage: Pocket Dimension → PDIM (zero local disk)`);
+    logger.info(`   📦 Storage: Pocket Dimension → PDIM (zero local disk)`);
   }
-  logger?.info(
+  logger.info(
     `   Max File Size: ${(config?.upload.maxFileSize / 1024 / 1024).toFixed(0)}MB`,
   );
 }

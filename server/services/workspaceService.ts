@@ -70,7 +70,7 @@ export class WorkspaceService {
     params: CreateWorkspaceParams,
   ): Promise<{ success: boolean; workspace?: Workspace; error?: string }> {
     try {
-      const slug = this?.generateSlug(params?.name);
+      const slug = this.generateSlug(params?.name);
 
       const [workspace] = await db
         .insert(workspaces)
@@ -85,11 +85,11 @@ export class WorkspaceService {
         })
         .returning();
 
-      await this?.initializeDefaultRoles(workspace?.id);
+      await this.initializeDefaultRoles(workspace?.id);
 
-      const ownerRole = await this?.getRoleByName(workspace?.id, "Owner");
+      const ownerRole = await this.getRoleByName(workspace?.id, "Owner");
       if (ownerRole) {
-        await this?.addMember({
+        await this.addMember({
           workspaceId: workspace.id,
           userId: params.ownerId,
           roleId: ownerRole.id,
@@ -97,7 +97,7 @@ export class WorkspaceService {
         });
       }
 
-      await this?.logAuditEvent({
+      await this.logAuditEvent({
         workspaceId: workspace.id,
         userId: params.ownerId,
         action: "workspace.created",
@@ -108,7 +108,7 @@ export class WorkspaceService {
 
       return { success: true, workspace };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Create workspace error:");
+      logger.warn({ err: error }, "Create workspace error:");
       return { success: false, error: "Failed to create workspace" };
     }
   }
@@ -122,7 +122,7 @@ export class WorkspaceService {
         .limit(1);
       return workspace || null;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get workspace error:");
+      logger.warn({ err: error }, "Get workspace error:");
       return null;
     }
   }
@@ -136,7 +136,7 @@ export class WorkspaceService {
         .limit(1);
       return workspace || null;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get workspace by slug error:");
+      logger.warn({ err: error }, "Get workspace by slug error:");
       return null;
     }
   }
@@ -159,7 +159,7 @@ export class WorkspaceService {
 
       return memberships?.map((m) => m?.workspace);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get user workspaces error:");
+      logger.warn({ err: error }, "Get user workspaces error:");
       return [];
     }
   }
@@ -170,7 +170,7 @@ export class WorkspaceService {
     userId: string,
   ): Promise<{ success: boolean; workspace?: Workspace; error?: string }> {
     try {
-      const existingWorkspace = await this?.getWorkspace(workspaceId);
+      const existingWorkspace = await this.getWorkspace(workspaceId);
       if (!existingWorkspace) {
         return { success: false, error: "Workspace not found" };
       }
@@ -184,7 +184,7 @@ export class WorkspaceService {
         .where(eq(workspaces?.id, workspaceId))
         .returning();
 
-      await this?.logAuditEvent({
+      await this.logAuditEvent({
         workspaceId,
         userId,
         action: "workspace.updated",
@@ -196,7 +196,7 @@ export class WorkspaceService {
 
       return { success: true, workspace };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Update workspace error:");
+      logger.warn({ err: error }, "Update workspace error:");
       return { success: false, error: "Failed to update workspace" };
     }
   }
@@ -206,7 +206,7 @@ export class WorkspaceService {
     userId: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const workspace = await this?.getWorkspace(workspaceId);
+      const workspace = await this.getWorkspace(workspaceId);
       if (!workspace) {
         return { success: false, error: "Workspace not found" };
       }
@@ -222,7 +222,7 @@ export class WorkspaceService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Delete workspace error:");
+      logger.warn({ err: error }, "Delete workspace error:");
       return { success: false, error: "Failed to delete workspace" };
     }
   }
@@ -354,7 +354,7 @@ export class WorkspaceService {
         .limit(1);
       return role || null;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get role by name error:");
+      logger.warn({ err: error }, "Get role by name error:");
       return null;
     }
   }
@@ -367,7 +367,7 @@ export class WorkspaceService {
     invitedBy?: string;
   }): Promise<{ success: boolean; member?: WorkspaceMember; error?: string }> {
     try {
-      const existingMember = await this?.getMember(
+      const existingMember = await this.getMember(
         params?.workspaceId,
         params?.userId,
       );
@@ -394,7 +394,7 @@ export class WorkspaceService {
 
       return { success: true, member };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Add member error:");
+      logger.warn({ err: error }, "Add member error:");
       return { success: false, error: "Failed to add member" };
     }
   }
@@ -416,7 +416,7 @@ export class WorkspaceService {
         .limit(1);
       return member || null;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get member error:");
+      logger.warn({ err: error }, "Get member error:");
       return null;
     }
   }
@@ -444,7 +444,7 @@ export class WorkspaceService {
 
       return members;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get members error:");
+      logger.warn({ err: error }, "Get members error:");
       return [];
     }
   }
@@ -484,7 +484,7 @@ export class WorkspaceService {
         .where(eq(workspaceMembers?.id, memberId));
 
       if (updatedBy) {
-        await this?.logAuditEvent({
+        await this.logAuditEvent({
           workspaceId,
           userId: updatedBy,
           action: "member.role_changed",
@@ -497,7 +497,7 @@ export class WorkspaceService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Update member role error:");
+      logger.warn({ err: error }, "Update member role error:");
       return { success: false, error: "Failed to update member role" };
     }
   }
@@ -531,7 +531,7 @@ export class WorkspaceService {
         .delete(workspaceMembers)
         .where(eq(workspaceMembers?.id, memberId));
 
-      await this?.logAuditEvent({
+      await this.logAuditEvent({
         workspaceId,
         userId: removedBy,
         action: "member.removed",
@@ -542,7 +542,7 @@ export class WorkspaceService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Remove member error:");
+      logger.warn({ err: error }, "Remove member error:");
       return { success: false, error: "Failed to remove member" };
     }
   }
@@ -562,7 +562,7 @@ export class WorkspaceService {
         .limit(1);
 
       if (existingUser?.length > 0) {
-        const existingMember = await this?.getMember(
+        const existingMember = await this.getMember(
           params?.workspaceId,
           existingUser[0].id,
         );
@@ -593,7 +593,7 @@ export class WorkspaceService {
         };
       }
 
-      const token = this?.generateInviteToken();
+      const token = this.generateInviteToken();
       const expiresAt = new Date();
       expiresAt?.setDate(expiresAt?.getDate() + 7);
 
@@ -611,7 +611,7 @@ export class WorkspaceService {
         })
         .returning();
 
-      await this?.logAuditEvent({
+      await this.logAuditEvent({
         workspaceId: params.workspaceId,
         userId: params.invitedBy,
         action: "invitation.sent",
@@ -622,7 +622,7 @@ export class WorkspaceService {
 
       return { success: true, invitation };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Invite member error:");
+      logger.warn({ err: error }, "Invite member error:");
       return { success: false, error: "Failed to send invitation" };
     }
   }
@@ -657,7 +657,7 @@ export class WorkspaceService {
         return { success: false, error: "Invitation has expired" };
       }
 
-      const addResult = await this?.addMember({
+      const addResult = await this.addMember({
         workspaceId: invitation.workspaceId,
         userId,
         roleId: invitation.roleId ?? undefined,
@@ -678,7 +678,7 @@ export class WorkspaceService {
         })
         .where(eq(workspaceInvitations?.id, invitation?.id));
 
-      await this?.logAuditEvent({
+      await this.logAuditEvent({
         workspaceId: invitation.workspaceId,
         userId,
         action: "invitation.accepted",
@@ -688,7 +688,7 @@ export class WorkspaceService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Accept invitation error:");
+      logger.warn({ err: error }, "Accept invitation error:");
       return { success: false, error: "Failed to accept invitation" };
     }
   }
@@ -710,7 +710,7 @@ export class WorkspaceService {
 
       return invitations;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get pending invitations error:");
+      logger.warn({ err: error }, "Get pending invitations error:");
       return [];
     }
   }
@@ -735,7 +735,7 @@ export class WorkspaceService {
         .set({ status: "cancelled" })
         .where(eq(workspaceInvitations?.id, invitationId));
 
-      await this?.logAuditEvent({
+      await this.logAuditEvent({
         workspaceId: invitation.workspaceId,
         userId: cancelledBy,
         action: "invitation.cancelled",
@@ -745,7 +745,7 @@ export class WorkspaceService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Cancel invitation error:");
+      logger.warn({ err: error }, "Cancel invitation error:");
       return { success: false, error: "Failed to cancel invitation" };
     }
   }
@@ -762,7 +762,7 @@ export class WorkspaceService {
         addedBy,
       });
 
-      await this?.logAuditEvent({
+      await this.logAuditEvent({
         workspaceId,
         userId: addedBy,
         action: "catalog.project_added",
@@ -772,7 +772,7 @@ export class WorkspaceService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Add to catalog error:");
+      logger.warn({ err: error }, "Add to catalog error:");
       return { success: false, error: "Failed to add to catalog" };
     }
   }
@@ -792,7 +792,7 @@ export class WorkspaceService {
           ),
         );
 
-      await this?.logAuditEvent({
+      await this.logAuditEvent({
         workspaceId,
         userId: removedBy,
         action: "catalog.project_removed",
@@ -802,7 +802,7 @@ export class WorkspaceService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Remove from catalog error:");
+      logger.warn({ err: error }, "Remove from catalog error:");
       return { success: false, error: "Failed to remove from catalog" };
     }
   }
@@ -817,7 +817,7 @@ export class WorkspaceService {
 
       return catalog;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get catalog error:");
+      logger.warn({ err: error }, "Get catalog error:");
       return [];
     }
   }
@@ -828,7 +828,7 @@ export class WorkspaceService {
     try {
       await db?.insert(workspaceAuditLog).values(params);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Log audit event error:");
+      logger.warn({ err: error }, "Log audit event error:");
     }
   }
 
@@ -861,7 +861,7 @@ export class WorkspaceService {
 
       return logs;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get audit log error:");
+      logger.warn({ err: error }, "Get audit log error:");
       return [];
     }
   }
@@ -879,7 +879,7 @@ export class WorkspaceService {
         );
       return result?.count || 0;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get member count error:");
+      logger.warn({ err: error }, "Get member count error:");
       return 0;
     }
   }
@@ -888,7 +888,7 @@ export class WorkspaceService {
     workspaceId: string,
     userId: string,
   ): Promise<boolean> {
-    const member = await this?.getMember(workspaceId, userId);
+    const member = await this.getMember(workspaceId, userId);
     return member !== null && member?.status === "active";
   }
 
@@ -896,7 +896,7 @@ export class WorkspaceService {
     workspaceId: string,
     userId: string,
   ): Promise<WorkspaceRoleType | null> {
-    const member = await this?.getMember(workspaceId, userId);
+    const member = await this.getMember(workspaceId, userId);
     return (member?.role as WorkspaceRoleType) || null;
   }
 
@@ -922,7 +922,7 @@ export class WorkspaceService {
         shares?.push(share);
       }
 
-      await this?.logAuditEvent({
+      await this.logAuditEvent({
         workspaceId: params.workspaceId,
         userId: params.sharedBy,
         action: "project.shared",
@@ -936,7 +936,7 @@ export class WorkspaceService {
 
       return { success: true, shares };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Share project error:");
+      logger.warn({ err: error }, "Share project error:");
       return { success: false, error: "Failed to share project" };
     }
   }
@@ -976,7 +976,7 @@ export class WorkspaceService {
   }> {
     try {
       const token = crypto?.randomBytes(16).toString("hex");
-      const baseUrl = process?.env.BASE_URL || "https://maxbooster.app";
+      const baseUrl = process.env.BASE_URL || "https://maxbooster.app";
 
       let expiresAt = null;
       if (params?.expirationDays) {
@@ -999,7 +999,7 @@ export class WorkspaceService {
         requireSignIn: params.requireSignIn ?? false,
       };
 
-      await this?.logAuditEvent({
+      await this.logAuditEvent({
         workspaceId: params.workspaceId,
         userId: params.createdBy,
         action: "share_link.created",
@@ -1010,7 +1010,7 @@ export class WorkspaceService {
 
       return { success: true, link };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Create share link error:");
+      logger.warn({ err: error }, "Create share link error:");
       return { success: false, error: "Failed to create share link" };
     }
   }
@@ -1028,7 +1028,7 @@ export class WorkspaceService {
 
   async getWorkspacePresence(workspaceId: string): Promise<any[]> {
     try {
-      const members = await this?.getMembers(workspaceId);
+      const members = await this.getMembers(workspaceId);
 
       return members?.map((member) => ({
         userId: member.userId,
@@ -1046,7 +1046,7 @@ export class WorkspaceService {
         selection: null,
       }));
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get workspace presence error:");
+      logger.warn({ err: error }, "Get workspace presence error:");
       return [];
     }
   }

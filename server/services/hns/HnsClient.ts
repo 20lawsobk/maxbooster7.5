@@ -91,8 +91,8 @@ export class HnsClient {
       network: cfg.network || "main",
       timeout: cfg.timeout || 10_000,
     };
-    this.auth = Buffer?.from(`x:${this?.cfg.apiKey}`).toString("base64");
-    this.httpLib = this?.cfg.port === 443 ? https : http;
+    this.auth = Buffer?.from(`x:${this.cfg.apiKey}`).toString("base64");
+    this.httpLib = this.cfg.port === 443 ? https : http;
   }
 
   // ── Raw request helpers ───────────────────────────────────────────────────
@@ -103,7 +103,7 @@ export class HnsClient {
     body?: Record<string, unknown>,
   ): Promise<unknown> {
     return new Promise((resolve, reject) => {
-      const bodyStr = body ? JSON?.stringify(body) : "";
+      const bodyStr = body ? JSON.stringify(body) : "";
       const opts: http.RequestOptions = {
         hostname: this.cfg.host,
         port: this.cfg.port,
@@ -111,19 +111,19 @@ export class HnsClient {
         method,
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Basic ${this?.auth}`,
+          Authorization: `Basic ${this.auth}`,
           "Content-Length": Buffer?.byteLength(bodyStr),
         },
         timeout: this.cfg.timeout,
       };
 
-      const req = (this?.httpLib as typeof http).request(opts, (res) => {
+      const req = (this.httpLib as typeof http).request(opts, (res) => {
         const chunks: Buffer[] = [];
-        res?.on("data", (c) => chunks?.push(c));
-        res?.on("end", () => {
+        res.on("data", (c) => chunks?.push(c));
+        res.on("end", () => {
           const text = Buffer?.concat(chunks).toString();
           try {
-            const json = JSON?.parse(text);
+            const json = JSON.parse(text);
             if (json?.error)
               reject(new Error(`hsd: ${json?.error.message || json?.error}`));
             else resolve(json?.result ?? json);
@@ -134,45 +134,45 @@ export class HnsClient {
         });
       });
 
-      req?.on("error", reject);
-      req?.on("timeout", () => req?.destroy(new Error("hsd request timeout")));
-      if (bodyStr) req?.write(bodyStr);
-      req?.end();
+      req.on("error", reject);
+      req.on("timeout", () => req.destroy(new Error("hsd request timeout")));
+      if (bodyStr) req.write(bodyStr);
+      req.end();
     });
   }
 
   /** hsd node JSON-RPC */
   private rpc(method: string, params: unknown[] = []): Promise<unknown> {
-    return this?.request("POST", "/", { method, params, id: Date.now() });
+    return this.request("POST", "/", { method, params, id: Date.now() });
   }
 
   /** hsd wallet REST API */
   private walletGet(path: string): Promise<unknown> {
-    return this?.request("GET", `/wallet/${this?.cfg.wallet}${path}`);
+    return this.request("GET", `/wallet/${this.cfg.wallet}${path}`);
   }
 
   private walletPost(
     path: string,
     body: Record<string, unknown>,
   ): Promise<unknown> {
-    return this?.request("POST", `/wallet/${this?.cfg.wallet}${path}`, body);
+    return this.request("POST", `/wallet/${this.cfg.wallet}${path}`, body);
   }
 
   // ── Node info ─────────────────────────────────────────────────────────────
 
   async getInfo(): Promise<unknown> {
-    if (this?._nodeInfo) return this?._nodeInfo;
-    this._nodeInfo = await this?.rpc("getinfo");
-    return this?._nodeInfo;
+    if (this._nodeInfo) return this._nodeInfo;
+    this._nodeInfo = await this.rpc("getinfo");
+    return this._nodeInfo;
   }
 
   async getBlockCount(): Promise<number> {
-    return this?.rpc("getblockcount");
+    return this.rpc("getblockcount");
   }
 
   async isReady(): Promise<boolean> {
     try {
-      const info = await this?.getInfo();
+      const info = await this.getInfo();
       return info?.version !== undefined;
     } catch {
       return false;
@@ -182,20 +182,20 @@ export class HnsClient {
   // ── Name queries ──────────────────────────────────────────────────────────
 
   async getNameInfo(name: string): Promise<HnsNameInfo> {
-    const res = await this?.rpc("getnameinfo", [name]);
-    return res?.info || res;
+    const res = await this.rpc("getnameinfo", [name]);
+    return res.info || res;
   }
 
   async getNameByHash(hash: string): Promise<string | null> {
     try {
-      return await this?.rpc("getnamebyhash", [hash]);
+      return await this.rpc("getnamebyhash", [hash]);
     } catch {
       return null;
     }
   }
 
   async getNameResource(name: string): Promise<unknown> {
-    return this?.rpc("getnameresource", [name]);
+    return this.rpc("getnameresource", [name]);
   }
 
   async checkAvailability(name: string): Promise<{
@@ -204,7 +204,7 @@ export class HnsClient {
     state: string;
     nameInfo: HnsNameInfo;
   }> {
-    const info = await this?.getNameInfo(name);
+    const info = await this.getNameInfo(name);
     const state = info?.state || "UNKNOWN";
 
     if (state === "CLOSED" && info?.registered) {
@@ -243,19 +243,19 @@ export class HnsClient {
   // ── Wallet operations ─────────────────────────────────────────────────────
 
   async getWalletInfo(): Promise<unknown> {
-    return this?.walletGet("");
+    return this.walletGet("");
   }
 
   async getWalletBalance(): Promise<{
     confirmed: number;
     unconfirmed: number;
   }> {
-    return this?.walletGet("/balance");
+    return this.walletGet("/balance");
   }
 
   async getReceiveAddress(): Promise<string> {
-    const res = await this?.walletGet("/key");
-    return res?.address || "";
+    const res = await this.walletGet("/key");
+    return res.address || "";
   }
 
   async getWalletBids(own = true): Promise<HnsBid[]> {
@@ -263,11 +263,11 @@ export class HnsClient {
   }
 
   async getWalletReveals(): Promise<any[]> {
-    return this?.walletGet("/reveal");
+    return this.walletGet("/reveal");
   }
 
   async getWalletNames(): Promise<HnsNameInfo[]> {
-    return this?.walletGet("/name");
+    return this.walletGet("/name");
   }
 
   // ── Auction lifecycle ─────────────────────────────────────────────────────
@@ -277,7 +277,7 @@ export class HnsClient {
    * Must be called in CLOSED (not yet auctioned) state.
    */
   async openAuction(name: string): Promise<HnsTx> {
-    return this?.walletPost("/open", { name });
+    return this.walletPost("/open", { name });
   }
 
   /**
@@ -289,23 +289,23 @@ export class HnsClient {
     bidHNS: number,
     lockupHNS: number,
   ): Promise<HnsTx> {
-    const bid = Math?.floor(bidHNS * 1_000_000);
-    const lockup = Math?.floor(lockupHNS * 1_000_000);
-    return this?.walletPost("/bid", { name, bid, lockup });
+    const bid = Math.floor(bidHNS * 1_000_000);
+    const lockup = Math.floor(lockupHNS * 1_000_000);
+    return this.walletPost("/bid", { name, bid, lockup });
   }
 
   /**
    * Reveal bids for a name (call during REVEAL period).
    */
   async revealBids(name: string): Promise<HnsTx> {
-    return this?.walletPost("/reveal", { name });
+    return this.walletPost("/reveal", { name });
   }
 
   /**
    * Redeem losing bid (reclaim locked HNS after reveal period).
    */
   async redeemBid(name: string): Promise<HnsTx> {
-    return this?.walletPost("/redeem", { name });
+    return this.walletPost("/redeem", { name });
   }
 
   /**
@@ -314,36 +314,36 @@ export class HnsClient {
    */
   async updateName(name: string, records: HnsResource[]): Promise<HnsTx> {
     const data = encodeHnsResource(records);
-    return this?.walletPost("/update", { name, data });
+    return this.walletPost("/update", { name, data });
   }
 
   /**
    * Renew a registered name (must be called before expiry).
    */
   async renewName(name: string): Promise<HnsTx> {
-    return this?.walletPost("/renew", { name });
+    return this.walletPost("/renew", { name });
   }
 
   /**
    * Transfer name to another address.
    */
   async transferName(name: string, toAddress: string): Promise<HnsTx> {
-    return this?.walletPost("/transfer", { name, address: toAddress });
+    return this.walletPost("/transfer", { name, address: toAddress });
   }
 
   /**
    * Finalize transfer (after transfer lockup period).
    */
   async finalizeName(name: string): Promise<HnsTx> {
-    return this?.walletPost("/finalize", { name });
+    return this.walletPost("/finalize", { name });
   }
 
   /**
    * Send HNS to an address.
    */
   async sendHNS(toAddress: string, amountHNS: number): Promise<HnsTx> {
-    const value = Math?.floor(amountHNS * 1_000_000);
-    return this?.walletPost("/send", {
+    const value = Math.floor(amountHNS * 1_000_000);
+    return this.walletPost("/send", {
       outputs: [{ address: toAddress, value }],
     });
   }

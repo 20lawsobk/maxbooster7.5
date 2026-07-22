@@ -5,11 +5,11 @@ const paidRouter = Router();
 // Middleware to require paid subscription
 function requirePaid(req: Request, res: Response, next: NextFunction) {
   if (
-    !req?.user ||
-    req?.user.subscriptionTier === "free" ||
-    req?.user.subscriptionStatus !== "active"
+    !req.user ||
+    req.user.subscriptionTier === "free" ||
+    req.user.subscriptionStatus !== "active"
   ) {
-    return res?.status(403).json({ error: "Paid subscription required" });
+    return res.status(403).json({ error: "Paid subscription required" });
   }
   next();
 }
@@ -17,13 +17,13 @@ function requirePaid(req: Request, res: Response, next: NextFunction) {
 // Example: Paid user dashboard
 paidRouter?.get("/dashboard", requirePaid, (req, res) => {
   const { password, twoFactorSecret, passwordResetToken, ...safeUser } =
-    req?.user as Record<string, unknown>;
-  res?.json({ message: "Welcome to the paid user dashboard!", user: safeUser });
+    req.user as Record<string, unknown>;
+  res.json({ message: "Welcome to the paid user dashboard!", user: safeUser });
 });
 
 // Example: Paid-only feature
 paidRouter?.get("/feature", requirePaid, (_req, res) => {
-  res?.json({ message: "This is a paid feature.", available: true });
+  res.json({ message: "This is a paid feature.", available: true });
 });
 
 export default paidRouter;

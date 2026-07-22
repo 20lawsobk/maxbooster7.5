@@ -37,10 +37,10 @@ class EmailMonitor {
       deliveryTime,
     };
 
-    this?.logs.push(log);
-    this?.updateMetrics(status);
+    this.logs.push(log);
+    this.updateMetrics(status);
 
-    logger?.info(
+    logger.info(
       `[EmailMonitor] ${status?.toUpperCase()}: ${log?.to} ${error ? `(${error})` : ""}`,
     );
   }
@@ -52,21 +52,21 @@ class EmailMonitor {
   }
 
   getDeliveryRate(): number {
-    return this?.deliveryRates.total === 0
+    return this.deliveryRates.total === 0
       ? 100
-      : (this?.deliveryRates.sent / this?.deliveryRates.total) * 100;
+      : (this.deliveryRates.sent / this.deliveryRates.total) * 100;
   }
 
   getStats() {
     return {
       deliveryRate: this.getDeliveryRate(),
-      ...this?.deliveryRates,
+      ...this.deliveryRates,
       recentLogs: this.logs.slice(-10),
     };
   }
 
   getRecentFailures() {
-    return this?.logs.filter((log) => log?.status === "failed").slice(-10);
+    return this.logs.filter((log) => log?.status === "failed").slice(-10);
   }
 }
 

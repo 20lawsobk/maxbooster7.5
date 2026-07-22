@@ -103,7 +103,7 @@ import { spawnSync, spawn } from "child_process";
 // Re-generate them here at VM startup so static serving stays fast.
 (function compressAssetsAtStartup() {
   const COMPRESSIBLE = /\.(js|css|svg|html|json|txt|xml|webmanifest)$/;
-  const assetsDir = path?.join(process?.cwd(), "dist", "public", "assets");
+  const assetsDir = path?.join(process.cwd(), "dist", "public", "assets");
   if (!fs?.existsSync(assetsDir)) return;
 
   function compressDir(dir: string) {
@@ -152,13 +152,13 @@ import { spawnSync, spawn } from "child_process";
 })();
 
 // CJS-safe: import.meta.url is undefined when bundled to CJS by esbuild.
-// Fall back to process?.argv[1] (the entry file path) for __dirname resolution.
+// Fall back to process.argv[1] (the entry file path) for __dirname resolution.
 const __metaUrl = (import.meta as Record<string, unknown>)?.url as
   | string
   | undefined;
 const __filename = __metaUrl
   ? fileURLToPath(__metaUrl)
-  : path?.resolve(process?.argv[1] ?? "");
+  : path?.resolve(process.argv[1] ?? "");
 const __dirname = path?.dirname(__filename);
 createRequire(__metaUrl ?? "file://" + __filename);
 
@@ -168,9 +168,9 @@ createRequire(__metaUrl ?? "file://" + __filename);
 // NODE_ENV=production alone does NOT trigger clustering — in the Replit IDE the build
 // runs with NODE_ENV=production but there is only one process and no health-check grace period.
 const ENABLE_CLUSTER =
-  !!process?.env.REPLIT_DEPLOYMENT || process?.env.ENABLE_CLUSTER === "true";
+  !!process.env.REPLIT_DEPLOYMENT || process.env.ENABLE_CLUSTER === "true";
 
-const DISABLE_CLUSTER = process?.env.DISABLE_CLUSTER === "true";
+const DISABLE_CLUSTER = process.env.DISABLE_CLUSTER === "true";
 
 if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   // Single-process mode: IDE dev environment, DISABLE_CLUSTER=true, or non-deployment run.
@@ -178,7 +178,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   const appEntry = path?.join(__dirname, "index.mjs");
   import(appEntry).catch((err: unknown) => {
     console?.error("[Cluster] Failed to load server entry:", err);
-    process?.exit(1);
+    process.exit(1);
   });
 } else {
   const numCPUs = os?.cpus().length;
@@ -256,14 +256,14 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   // memLimit: never fork more workers than RAM can hold at memPerWorkerGB each.
   // The real worker count is the lesser of the two — whichever resource
   // is exhausted first on the current VM is the binding constraint.
-  const cpuLimit = Math?.max(1, numCPUs - 1);
-  const memLimit = Math?.max(1, Math?.floor(freeMemGB / memPerWorkerGB));
+  const cpuLimit = Math.max(1, numCPUs - 1);
+  const memLimit = Math.max(1, Math.floor(freeMemGB / memPerWorkerGB));
 
   // CLUSTER_WORKERS is intentionally left unset in production so auto-sizing
   // fills every available CPU core and RAM slot on whatever VM Autoscale
   // provisions.  Only set it when deliberately constraining for debugging.
-  const envOverride = process?.env.CLUSTER_WORKERS
-    ? parseInt(process?.env.CLUSTER_WORKERS, 10)
+  const envOverride = process.env.CLUSTER_WORKERS
+    ? parseInt(process.env.CLUSTER_WORKERS, 10)
     : null;
 
   const workerCount =
@@ -271,12 +271,12 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
       ? (() => {
           console?.warn(
             `[Cluster] ⚠️  CLUSTER_WORKERS override active — pinned to ${envOverride} worker(s). ` +
-              `Auto-sizing would have chosen ${Math?.min(cpuLimit, memLimit)}. ` +
+              `Auto-sizing would have chosen ${Math.min(cpuLimit, memLimit)}. ` +
               `Remove CLUSTER_WORKERS to restore full VM utilisation.`,
           );
           return envOverride;
         })()
-      : Math?.min(cpuLimit, memLimit);
+      : Math.min(cpuLimit, memLimit);
 
   const workerScript = path?.join(__dirname, "index.mjs");
 
@@ -313,11 +313,11 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   // the primary always handles a fraction of incoming requests).
   const HEALTH_PATHS = new Set(["/", "/health", "/api/health", "/api/ping"]);
   const primaryHealthServer = http?.createServer((req, res) => {
-    const url = (req?.url ?? "").split("?")[0]; // strip query string
+    const url = (req.url ?? "").split("?")[0]; // strip query string
     if (HEALTH_PATHS?.has(url)) {
-      res?.writeHead(200, { "Content-Type": "application/json" });
-      res?.end(
-        JSON?.stringify({
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(
+        JSON.stringify({
           status: "ok",
           pid: process.pid,
           role: "primary",
@@ -327,12 +327,12 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
     } else {
       // Non-health requests that land on the primary during worker startup:
       // return 503 + Retry-After so the client retries once a worker is ready.
-      res?.writeHead(503, {
+      res.writeHead(503, {
         "Content-Type": "application/json",
         "Retry-After": "2",
       });
-      res?.end(
-        JSON?.stringify({
+      res.end(
+        JSON.stringify({
           status: "starting",
           message: "Workers initializing — retry in 2s",
         }),
@@ -343,7 +343,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
     { port: primaryPort, host: "0.0.0.0", reusePort: true },
     () => {
       console?.log(
-        `[Cluster] Primary health server on :${primaryPort} (pid=${process?.pid}) — workers starting`,
+        `[Cluster] Primary health server on :${primaryPort} (pid=${process.pid}) — workers starting`,
       );
     },
   );
@@ -439,17 +439,17 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   // before exiting. Hard-exits after 25 s (autoscale sends SIGKILL at ~30 s).
   function primaryShutdown(signal: string): void {
     console?.log(
-      `[Cluster] Primary received ${signal} — draining ${Object?.keys(cluster?.workers ?? {}).length} worker(s)`,
+      `[Cluster] Primary received ${signal} — draining ${Object.keys(cluster?.workers ?? {}).length} worker(s)`,
     );
 
     const hardExit = setTimeout(() => {
       console?.error("[Cluster] Primary hard timeout — forcing exit");
-      process?.exit(0);
+      process.exit(0);
     }, 25_000);
     hardExit?.unref();
 
     // Forward SIGTERM to all workers so they trigger their own graceful shutdown.
-    const workers = Object?.values(cluster?.workers ?? {}).filter(
+    const workers = Object.values(cluster?.workers ?? {}).filter(
       Boolean,
     ) as import("cluster").Worker[];
     workers?.forEach((w) => {
@@ -464,7 +464,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
     let remaining = workers?.length;
     if (remaining === 0) {
       clearTimeout(hardExit);
-      process?.exit(0);
+      process.exit(0);
       return;
     }
 
@@ -473,13 +473,13 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
       if (remaining <= 0) {
         console?.log("[Cluster] All workers exited — primary shutting down");
         clearTimeout(hardExit);
-        process?.exit(0);
+        process.exit(0);
       }
     });
   }
 
-  process?.on("SIGTERM", () => primaryShutdown("SIGTERM"));
-  process?.on("SIGINT", () => primaryShutdown("SIGINT"));
+  process.on("SIGTERM", () => primaryShutdown("SIGTERM"));
+  process.on("SIGINT", () => primaryShutdown("SIGINT"));
 
   // Rolling restart triggered by SilentDeploymentService after self-evolution files land.
   // Cycles workers one at a time: old exits → new forks and comes online → repeat.
@@ -503,7 +503,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
     );
     rollingRestartInProgress = true;
 
-    const workerList = Object?.values(cluster?.workers ?? {}).filter(
+    const workerList = Object.values(cluster?.workers ?? {}).filter(
       Boolean,
     ) as import("cluster").Worker[];
     let index = 0;

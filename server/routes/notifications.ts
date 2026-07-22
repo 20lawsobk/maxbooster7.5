@@ -107,18 +107,18 @@ const defaultPreferences: NotificationPreferences = {
 };
 
 router?.get("/", async (req: Request, res: Response) => {
-  if (!req?.user) {
-    return res?.status(401).json({ error: "Not authenticated" });
+  if (!req.user) {
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
-    const page = Math?.max(parseInt(req?.query.page as string) || 1, 1);
-    const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 100);
+    const page = Math.max(parseInt(req.query.page as string) || 1, 1);
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
     const offset = (page - 1) * limit;
-    const category = req?.query.category as string | undefined;
-    const unreadOnly = req?.query.unread === "true";
+    const category = req.query.category as string | undefined;
+    const unreadOnly = req.query.unread === "true";
 
-    const conditions: unknown[] = [eq(notifications?.userId, req?.user.id)];
+    const conditions: unknown[] = [eq(notifications?.userId, req.user.id)];
     if (unreadOnly) {
       conditions?.push(eq(notifications?.isRead, false));
     }
@@ -148,10 +148,10 @@ router?.get("/", async (req: Request, res: Response) => {
       }),
     );
 
-    return res?.json(mappedNotifications);
+    return res.json(mappedNotifications);
   } catch (error) {
-    logger?.warn({ err: error }, "Get notifications error:");
-    res?.status(500).json({ error: "Get notifications error:" });
+    logger.warn({ err: error }, "Get notifications error:");
+    res.status(500).json({ error: "Get notifications error:" });
   }
 });
 
@@ -159,24 +159,24 @@ router?.put(
   "/:id/read",
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Not authenticated" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
     }
 
     try {
-      const { id } = req?.params;
+      const { id } = req.params;
       const notification = await storage?.getNotificationById(id);
 
       if (!notification) {
-        return res?.status(404).json({ error: "Notification not found" });
+        return res.status(404).json({ error: "Notification not found" });
       }
-      if (notification?.userId !== req?.user.id) {
-        return res?.status(403).json({ error: "Not authorized" });
+      if (notification?.userId !== req.user.id) {
+        return res.status(403).json({ error: "Not authorized" });
       }
 
       await storage?.markNotificationRead(id);
 
-      return res?.json({
+      return res.json({
         success: true,
         outcome: {
           type: "marked_read",
@@ -185,7 +185,7 @@ router?.put(
         },
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Mark notification read error:");
+      logger.warn({ err: error }, "Mark notification read error:");
       return res
         .status(500)
         .json({ error: "Failed to mark notification as read" });
@@ -194,14 +194,14 @@ router?.put(
 );
 
 router?.put("/mark-all-read", async (req: Request, res: Response) => {
-  if (!req?.user) {
-    return res?.status(401).json({ error: "Not authenticated" });
+  if (!req.user) {
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
-    await storage?.markAllNotificationsRead(req?.user.id);
+    await storage?.markAllNotificationsRead(req.user.id);
 
-    return res?.json({
+    return res.json({
       success: true,
       outcome: {
         type: "marked_all_read",
@@ -210,20 +210,20 @@ router?.put("/mark-all-read", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Mark all read error:");
-    return res?.status(500).json({ error: "Failed to mark all as read" });
+    logger.warn({ err: error }, "Mark all read error:");
+    return res.status(500).json({ error: "Failed to mark all as read" });
   }
 });
 
 router?.delete("/clear-all", async (req: Request, res: Response) => {
-  if (!req?.user) {
-    return res?.status(401).json({ error: "Not authenticated" });
+  if (!req.user) {
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
-    await db?.delete(notifications).where(eq(notifications?.userId, req?.user.id));
+    await db?.delete(notifications).where(eq(notifications?.userId, req.user.id));
 
-    return res?.json({
+    return res.json({
       success: true,
       outcome: {
         type: "dismissed",
@@ -232,8 +232,8 @@ router?.delete("/clear-all", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Clear all notifications error:");
-    return res?.status(500).json({ error: "Failed to clear notifications" });
+    logger.warn({ err: error }, "Clear all notifications error:");
+    return res.status(500).json({ error: "Failed to clear notifications" });
   }
 });
 
@@ -241,24 +241,24 @@ router?.delete(
   "/:id",
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Not authenticated" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
     }
 
     try {
-      const { id } = req?.params;
+      const { id } = req.params;
       const notification = await storage?.getNotificationById(id);
 
       if (!notification) {
-        return res?.status(404).json({ error: "Notification not found" });
+        return res.status(404).json({ error: "Notification not found" });
       }
-      if (notification?.userId !== req?.user.id) {
-        return res?.status(403).json({ error: "Not authorized" });
+      if (notification?.userId !== req.user.id) {
+        return res.status(403).json({ error: "Not authorized" });
       }
 
       await storage?.deleteNotification(id);
 
-      return res?.json({
+      return res.json({
         success: true,
         outcome: {
           type: "dismissed",
@@ -267,19 +267,19 @@ router?.delete(
         },
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Delete notification error:");
-      return res?.status(500).json({ error: "Failed to delete notification" });
+      logger.warn({ err: error }, "Delete notification error:");
+      return res.status(500).json({ error: "Failed to delete notification" });
     }
   },
 );
 
 router?.get("/preferences", async (req: Request, res: Response) => {
-  if (!req?.user) {
-    return res?.status(401).json({ error: "Not authenticated" });
+  if (!req.user) {
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
-    const user = await storage?.getUser(req?.user.id);
+    const user = await storage?.getUser(req.user.id);
     const savedPrefs =
       user?.notificationSettings as NotificationPreferences | null;
 
@@ -317,22 +317,22 @@ router?.get("/preferences", async (req: Request, res: Response) => {
       inApp: { ...defaultPreferences?.inApp, ...savedPrefs?.inApp },
     };
 
-    return res?.json(mergedPrefs);
+    return res.json(mergedPrefs);
   } catch (error) {
-    logger?.warn({ err: error }, "Get notification preferences error:");
-    return res?.json(defaultPreferences);
+    logger.warn({ err: error }, "Get notification preferences error:");
+    return res.json(defaultPreferences);
   }
 });
 
 router?.put("/preferences", async (req: Request, res: Response) => {
-  if (!req?.user) {
-    return res?.status(401).json({ error: "Not authenticated" });
+  if (!req.user) {
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
-    const newPreferences = req?.body as Partial<NotificationPreferences>;
+    const newPreferences = req.body as Partial<NotificationPreferences>;
 
-    await storage?.updateUser(req?.user.id, {
+    await storage?.updateUser(req.user.id, {
       notificationSettings: newPreferences,
     });
 
@@ -354,7 +354,7 @@ router?.put("/preferences", async (req: Request, res: Response) => {
       outcomeMessage = `Email digest set to ${newPreferences?.email.frequency}`;
     }
 
-    return res?.json({
+    return res.json({
       success: true,
       outcome: {
         type: outcomeType,
@@ -363,28 +363,28 @@ router?.put("/preferences", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Update notification preferences error:");
-    return res?.status(500).json({ error: "Failed to update preferences" });
+    logger.warn({ err: error }, "Update notification preferences error:");
+    return res.status(500).json({ error: "Failed to update preferences" });
   }
 });
 
 router?.post("/push/subscribe", async (req: Request, res: Response) => {
-  if (!req?.user) {
-    return res?.status(401).json({ error: "Not authenticated" });
+  if (!req.user) {
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
-    const { endpoint, keys } = req?.body;
+    const { endpoint, keys } = req.body;
 
     if (!endpoint || !keys?.p256dh || !keys?.auth) {
-      return res?.status(400).json({ error: "Invalid push subscription data" });
+      return res.status(400).json({ error: "Invalid push subscription data" });
     }
 
-    const user = await storage?.getUser(req?.user.id);
+    const user = await storage?.getUser(req.user.id);
     const currentSettings =
       (user?.notificationSettings as Record<string, unknown>) || {};
 
-    await storage?.updateUser(req?.user.id, {
+    await storage?.updateUser(req.user.id, {
       notificationSettings: {
         ...currentSettings,
         push: {
@@ -398,7 +398,7 @@ router?.post("/push/subscribe", async (req: Request, res: Response) => {
       },
     });
 
-    return res?.json({
+    return res.json({
       success: true,
       outcome: {
         type: "push_permission_granted",
@@ -407,7 +407,7 @@ router?.post("/push/subscribe", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Push subscribe error:");
+    logger.warn({ err: error }, "Push subscribe error:");
     return res
       .status(500)
       .json({ error: "Failed to subscribe to push notifications" });
@@ -415,16 +415,16 @@ router?.post("/push/subscribe", async (req: Request, res: Response) => {
 });
 
 router?.post("/push/unsubscribe", async (req: Request, res: Response) => {
-  if (!req?.user) {
-    return res?.status(401).json({ error: "Not authenticated" });
+  if (!req.user) {
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
-    const user = await storage?.getUser(req?.user.id);
+    const user = await storage?.getUser(req.user.id);
     const currentSettings =
       (user?.notificationSettings as Record<string, unknown>) || {};
 
-    await storage?.updateUser(req?.user.id, {
+    await storage?.updateUser(req.user.id, {
       notificationSettings: {
         ...currentSettings,
         push: {
@@ -435,7 +435,7 @@ router?.post("/push/unsubscribe", async (req: Request, res: Response) => {
       },
     });
 
-    return res?.json({
+    return res.json({
       success: true,
       outcome: {
         type: "channel_toggled",
@@ -444,7 +444,7 @@ router?.post("/push/unsubscribe", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Push unsubscribe error:");
+    logger.warn({ err: error }, "Push unsubscribe error:");
     return res
       .status(500)
       .json({ error: "Failed to unsubscribe from push notifications" });
@@ -452,34 +452,34 @@ router?.post("/push/unsubscribe", async (req: Request, res: Response) => {
 });
 
 router?.post("/sms/verify", async (req: Request, res: Response) => {
-  if (!req?.user) {
-    return res?.status(401).json({ error: "Not authenticated" });
+  if (!req.user) {
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
-    const { phoneNumber } = req?.body;
+    const { phoneNumber } = req.body;
 
     if (!phoneNumber) {
-      return res?.status(400).json({ error: "Phone number is required" });
+      return res.status(400).json({ error: "Phone number is required" });
     }
 
     const cleanPhone = phoneNumber?.replace(/\D/g, "");
     if (cleanPhone?.length < 10) {
-      return res?.status(400).json({ error: "Invalid phone number format" });
+      return res.status(400).json({ error: "Invalid phone number format" });
     }
 
     const verificationCode = crypto?.randomInt(100000, 1000000).toString();
 
-    const user = await storage?.getUser(req?.user.id);
+    const user = await storage?.getUser(req.user.id);
     const currentSettings =
       (user?.notificationSettings as Record<string, unknown>) || {};
 
     // ── Attempt real SMS delivery via Twilio ──────────────────────────────────
-    const twilioSid = process?.env.TWILIO_ACCOUNT_SID;
-    const twilioToken = process?.env.TWILIO_AUTH_TOKEN;
-    const verifyServiceSid = process?.env.TWILIO_VERIFY_SERVICE_SID;
-    const twilioPhone = process?.env.TWILIO_PHONE_NUMBER;
-    const messagingServiceSid = process?.env.TWILIO_MESSAGING_SERVICE_SID;
+    const twilioSid = process.env.TWILIO_ACCOUNT_SID;
+    const twilioToken = process.env.TWILIO_AUTH_TOKEN;
+    const verifyServiceSid = process.env.TWILIO_VERIFY_SERVICE_SID;
+    const twilioPhone = process.env.TWILIO_PHONE_NUMBER;
+    const messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;
 
     // 'twilio_verify' = Twilio owns/checks the code; 'local' = we generate & check it.
     let verificationMethod: "twilio_verify" | "local" = "local";
@@ -491,7 +491,7 @@ router?.post("/sms/verify", async (req: Request, res: Response) => {
       // via verificationChecks — NOT against our locally generated code.
       const twilio = (await import("twilio")).default;
       const client = twilio(twilioSid, twilioToken);
-      const templateSid = process?.env.TWILIO_VERIFY_TEMPLATE_SID;
+      const templateSid = process.env.TWILIO_VERIFY_TEMPLATE_SID;
       const params: Record<string, string> = {
         to: phoneNumber,
         channel: "sms",
@@ -502,8 +502,8 @@ router?.post("/sms/verify", async (req: Request, res: Response) => {
         .verifications?.create(params);
       verificationMethod = "twilio_verify";
       smsDelivered = true;
-      logger?.info(
-        `[SMS] Max Booster verify code dispatched via Twilio Verify to ${phoneNumber?.slice(0, 5)}*** for user ${req?.user.id}`,
+      logger.info(
+        `[SMS] Max Booster verify code dispatched via Twilio Verify to ${phoneNumber?.slice(0, 5)}*** for user ${req.user.id}`,
       );
     } else if (
       twilioSid &&
@@ -1090,14 +1090,14 @@ router.get(
 
 // Send a real Web Push test notification to all of the user's subscribed devices
 router?.post("/push-test", async (req: Request, res: Response) => {
-  if (!req?.user) return res?.status(401).json({ error: "Not authenticated" });
+  if (!req.user) return res.status(401).json({ error: "Not authenticated" });
 
   try {
     if (!webPushService?.isReady()) {
-      return res?.status(503).json({ error: "Push service not configured" });
+      return res.status(503).json({ error: "Push service not configured" });
     }
 
-    const result = await webPushService?.sendToUser(req?.user.id, {
+    const result = await webPushService?.sendToUser(req.user.id, {
       title: "🔔 Max Booster Push Test",
       body: "Push notifications are working! You'll receive alerts for royalties, campaigns, and more.",
       url: "/notifications",
@@ -1106,7 +1106,7 @@ router?.post("/push-test", async (req: Request, res: Response) => {
       data: { category: "system" },
     });
 
-    return res?.json({
+    return res.json({
       success: true,
       sent: result.sent,
       failed: result.failed,
@@ -1116,8 +1116,8 @@ router?.post("/push-test", async (req: Request, res: Response) => {
           : "No push subscriptions registered on this account",
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Push test error:");
-    return res?.status(500).json({ error: "Failed to send push test" });
+    logger.warn({ err: error }, "Push test error:");
+    return res.status(500).json({ error: "Failed to send push test" });
   }
 });
 
@@ -1127,9 +1127,9 @@ router?.get(
   "/unread-count",
   requireAuth,
   async (req: Request, res: Response) => {
-    const userId = req?.user?.id;
+    const userId = req.user?.id;
     if (!userId) {
-      return res?.status(401).json({ error: "Not authenticated" });
+      return res.status(401).json({ error: "Not authenticated" });
     }
 
     try {
@@ -1146,10 +1146,10 @@ router?.get(
 
       const count = result[0]?.count || 0;
 
-      return res?.json({ count });
+      return res.json({ count });
     } catch (error) {
-      logger?.warn({ err: error }, "Get unread count error:");
-      return res?.json({ count: 0 });
+      logger.warn({ err: error }, "Get unread count error:");
+      return res.json({ count: 0 });
     }
   },
 );
@@ -1159,25 +1159,25 @@ router?.get(
   "/:id",
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
-    const userId = req?.user?.id;
-    if (!userId) return res?.status(401).json({ error: "Not authenticated" });
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Not authenticated" });
     try {
       const [notification] = await db
         .select()
         .from(notifications)
         .where(
           and(
-            eq(notifications?.id, req?.params.id),
+            eq(notifications?.id, req.params.id),
             eq(notifications?.userId, userId),
           ),
         )
         .limit(1);
       if (!notification)
-        return res?.status(404).json({ error: "Notification not found" });
-      res?.json(notification);
+        return res.status(404).json({ error: "Notification not found" });
+      res.json(notification);
     } catch (error) {
-      logger?.warn({ err: error }, "Get notification error:");
-      res?.status(500).json({ error: "Failed to fetch notification" });
+      logger.warn({ err: error }, "Get notification error:");
+      res.status(500).json({ error: "Failed to fetch notification" });
     }
   },
 );

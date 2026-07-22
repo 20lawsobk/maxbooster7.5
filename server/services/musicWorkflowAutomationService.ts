@@ -898,7 +898,7 @@ class MusicWorkflowAutomationService {
   private scheduledTasks = new Map<string, ReturnType<typeof cron.schedule>>();
 
   constructor() {
-    this?.startScheduledWorkflows();
+    this.startScheduledWorkflows();
   }
 
   // ── Public API ────────────────────────────────────────────────────────────
@@ -1066,16 +1066,16 @@ class MusicWorkflowAutomationService {
     );
     if (relevantTemplates?.length === 0) return;
 
-    const userAutomations = await this?.getUserAutomations(userId);
+    const userAutomations = await this.getUserAutomations(userId);
 
     for (const template of relevantTemplates) {
       const userConfig = userAutomations[template?.id];
       if (!userConfig?.enabled) continue;
 
       const config = { ...template?.defaultConfig, ...userConfig?.config };
-      this?.executeTemplate(template, userId, data, config, eventType).catch(
+      this.executeTemplate(template, userId, data, config, eventType).catch(
         (err) => {
-          logger?.warn(
+          logger.warn(
             { err: err },
             `[MusicWorkflow] Error executing ${template?.id}:`,
           );
@@ -1093,7 +1093,7 @@ class MusicWorkflowAutomationService {
     config: Record<string, any>,
     eventType: string,
   ): Promise<void> {
-    logger?.info(
+    logger.info(
       `[MusicWorkflow] Executing "${template.name}" for user ${userId}`,
     );
 
@@ -1102,7 +1102,7 @@ class MusicWorkflowAutomationService {
     let error: string | null = null;
 
     try {
-      result = await this?.dispatch(template?.id, userId, eventData, config);
+      result = await this.dispatch(template?.id, userId, eventData, config);
       await db
         .update(musicWorkflowAutomations)
         .set({
@@ -1119,7 +1119,7 @@ class MusicWorkflowAutomationService {
     } catch (err) {
       status = "failed";
       error = err instanceof Error ? err?.message : "Unknown error";
-      logger?.warn(
+      logger.warn(
         { err: err },
         `[MusicWorkflow] Failed "${template.name}" for user ${userId}:`,
       );
@@ -1146,55 +1146,55 @@ class MusicWorkflowAutomationService {
   ): Promise<Record<string, any>> {
     switch (templateId) {
       case "track-upload-analysis":
-        return this?.handleTrackUploadAnalysis(userId, eventData, config);
+        return this.handleTrackUploadAnalysis(userId, eventData, config);
       case "collaboration-alert":
-        return this?.handleCollaborationAlert(userId, eventData, config);
+        return this.handleCollaborationAlert(userId, eventData, config);
       case "mix-ready-checklist":
-        return this?.handleMixReadyChecklist(userId, eventData, config);
+        return this.handleMixReadyChecklist(userId, eventData, config);
       case "release-countdown-posts":
-        return this?.handleReleaseCountdownPosts(userId, eventData, config);
+        return this.handleReleaseCountdownPosts(userId, eventData, config);
       case "pre-save-campaign":
-        return this?.handlePreSaveCampaign(userId, eventData, config);
+        return this.handlePreSaveCampaign(userId, eventData, config);
       case "distribution-submitted-notify":
-        return this?.handleDistributionSubmittedNotify(
+        return this.handleDistributionSubmittedNotify(
           userId,
           eventData,
           config,
         );
       case "release-day-social-blast":
-        return this?.handleReleaseDaySocialBlast(userId, eventData, config);
+        return this.handleReleaseDaySocialBlast(userId, eventData, config);
       case "release-day-newsletter":
-        return this?.handleReleaseDayNewsletter(userId, eventData, config);
+        return this.handleReleaseDayNewsletter(userId, eventData, config);
       case "release-day-push-notify":
-        return this?.handleReleaseDayPushNotify(userId, eventData, config);
+        return this.handleReleaseDayPushNotify(userId, eventData, config);
       case "weekly-performance-digest":
-        return this?.handleWeeklyPerformanceDigest(userId, eventData, config);
+        return this.handleWeeklyPerformanceDigest(userId, eventData, config);
       case "streaming-milestone-celebrate":
-        return this?.handleStreamingMilestoneCelebrate(
+        return this.handleStreamingMilestoneCelebrate(
           userId,
           eventData,
           config,
         );
       case "playlist-placement-alert":
-        return this?.handlePlaylistPlacementAlert(userId, eventData, config);
+        return this.handlePlaylistPlacementAlert(userId, eventData, config);
       case "low-engagement-rescue":
-        return this?.handleLowEngagementRescue(userId, eventData, config);
+        return this.handleLowEngagementRescue(userId, eventData, config);
       case "beat-sale-thank-you":
-        return this?.handleBeatSaleThankYou(userId, eventData, config);
+        return this.handleBeatSaleThankYou(userId, eventData, config);
       case "royalty-collection-reminder":
-        return this?.handleRoyaltyCollectionReminder(userId, eventData, config);
+        return this.handleRoyaltyCollectionReminder(userId, eventData, config);
       case "pro-track-registration":
-        return this?.handleProTrackRegistration(userId, eventData, config);
+        return this.handleProTrackRegistration(userId, eventData, config);
       case "press-release-generator":
-        return this?.handlePressReleaseGenerator(userId, eventData, config);
+        return this.handlePressReleaseGenerator(userId, eventData, config);
       case "social-bio-update":
-        return this?.handleSocialBioUpdate(userId, eventData, config);
+        return this.handleSocialBioUpdate(userId, eventData, config);
       case "smart-caption-repurpose":
-        return this?.handleSmartCaptionRepurpose(userId, eventData, config);
+        return this.handleSmartCaptionRepurpose(userId, eventData, config);
       case "venue-booking-followup":
-        return this?.handleVenueBookingFollowup(userId, eventData, config);
+        return this.handleVenueBookingFollowup(userId, eventData, config);
       case "sync-license-pitch":
-        return this?.handleSyncLicensePitch(userId, eventData, config);
+        return this.handleSyncLicensePitch(userId, eventData, config);
       default:
         throw new Error(`No handler for template: ${templateId}`);
     }
@@ -1227,7 +1227,7 @@ class MusicWorkflowAutomationService {
             : "ISRC generation skipped (no track id)",
         );
       } catch (err) {
-        logger?.warn(
+        logger.warn(
           { err, trackId },
           "ISRC generation failed in workflow handler",
         );
@@ -1600,7 +1600,7 @@ class MusicWorkflowAutomationService {
       });
       actions?.push("Placement record saved to Playlist Pitches");
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err },
         "handlePlaylistPlacementAlert: failed to save pitch record",
       );
@@ -1639,7 +1639,7 @@ class MusicWorkflowAutomationService {
           );
         }
       } catch (err) {
-        logger?.warn(
+        logger.warn(
           { err },
           "handlePlaylistPlacementAlert: AI announcement generation failed",
         );
@@ -1817,7 +1817,7 @@ class MusicWorkflowAutomationService {
         );
       }
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err },
         "handleProTrackRegistration: failed to upsert publishing rights",
       );
@@ -1889,7 +1889,7 @@ class MusicWorkflowAutomationService {
         actions?.push(`AI press release drafted (${tone} tone)`);
       }
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err },
         "handlePressReleaseGenerator: AI generation failed, using template",
       );
@@ -1950,7 +1950,7 @@ class MusicWorkflowAutomationService {
         actions?.push("Press release added to existing press kit");
       }
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err },
         "handlePressReleaseGenerator: failed to save press kit",
       );
@@ -2261,7 +2261,7 @@ class MusicWorkflowAutomationService {
           });
           emailsSent++;
         } catch (err) {
-          logger?.warn(
+          logger.warn(
             { err, target: target.name },
             "handleSyncLicensePitch: email failed",
           );
@@ -2314,11 +2314,11 @@ class MusicWorkflowAutomationService {
       0,
     );
 
-    const logs = await this?.getExecutionLogs(userId, undefined, 500);
+    const logs = await this.getExecutionLogs(userId, undefined, 500);
     const successCount = logs?.filter((l) => l?.status === "success").length;
     const failedCount = logs?.filter((l) => l?.status === "failed").length;
     const successRate =
-      logs?.length > 0 ? Math?.round((successCount / logs?.length) * 100) : 100;
+      logs?.length > 0 ? Math.round((successCount / logs?.length) * 100) : 100;
 
     const lastRunAt = logs?.length > 0 ? String(logs[0].executedAt) : null;
 
@@ -2368,33 +2368,33 @@ class MusicWorkflowAutomationService {
     // Weekly digest — every Monday at 9:00 AM server time
     const weeklyTask = cron?.schedule("0 9 * * 1", async () => {
       try {
-        await this?.runScheduledWorkflow(
+        await this.runScheduledWorkflow(
           "schedule:weekly",
           "weekly-performance-digest",
         );
       } catch (err) {
-        logger?.warn({ err: err }, "[MusicWorkflow] Weekly digest cron failed:");
+        logger.warn({ err: err }, "[MusicWorkflow] Weekly digest cron failed:");
       }
     });
-    this?.scheduledTasks.set("weekly", weeklyTask);
+    this.scheduledTasks.set("weekly", weeklyTask);
 
     // Monthly royalty check — 1st of each month at 8:00 AM
     const monthlyTask = cron?.schedule("0 8 1 * *", async () => {
       try {
-        await this?.runScheduledWorkflow(
+        await this.runScheduledWorkflow(
           "schedule:monthly",
           "royalty-collection-reminder",
         );
       } catch (err) {
-        logger?.warn(
+        logger.warn(
           { err: err },
           "[MusicWorkflow] Monthly royalty cron failed:",
         );
       }
     });
-    this?.scheduledTasks.set("monthly", monthlyTask);
+    this.scheduledTasks.set("monthly", monthlyTask);
 
-    logger?.info(
+    logger.info(
       "[MusicWorkflow] Scheduled workflows started (weekly digest, monthly royalty check)",
     );
   }
@@ -2426,7 +2426,7 @@ class MusicWorkflowAutomationService {
           ...template?.defaultConfig,
           ...(row?.config as Record<string, any>),
         };
-        return this?.executeTemplate(
+        return this.executeTemplate(
           template,
           row?.userId,
           { userId: row.userId },
@@ -2438,10 +2438,10 @@ class MusicWorkflowAutomationService {
   }
 
   stop(): void {
-    for (const [, task] of this?.scheduledTasks) {
+    for (const [, task] of this.scheduledTasks) {
       task?.stop();
     }
-    this?.scheduledTasks.clear();
+    this.scheduledTasks.clear();
   }
 }
 

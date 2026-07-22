@@ -25,8 +25,8 @@ const router = Router();
 router?.get("/templates", requireAuth, async (req: Request, res: Response) => {
   try {
     const builtInTemplates = contractTemplateService?.getTemplates();
-    const { category } = req?.query;
-    const userId = req?.user?.id;
+    const { category } = req.query;
+    const userId = req.user?.id;
 
     let userCustomTemplates: Record<string, unknown>[] = [];
     if (userId) {
@@ -52,7 +52,7 @@ router?.get("/templates", requireAuth, async (req: Request, res: Response) => {
           isCustom: true,
         }));
       } catch (e) {
-        logger?.warn(
+        logger.warn(
           { err: e },
           "Failed to fetch user custom contract templates:",
         );
@@ -63,14 +63,14 @@ router?.get("/templates", requireAuth, async (req: Request, res: Response) => {
 
     if (category) {
       const filtered = allTemplates?.filter((t) => t?.category === category);
-      return res?.json({ templates: filtered });
+      return res.json({ templates: filtered });
     }
 
     const categories = [...new Set(allTemplates?.map((t) => t?.category))];
-    return res?.json({ templates: allTemplates, categories });
+    return res.json({ templates: allTemplates, categories });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching contract templates:");
-    res?.status(500).json({ error: "Failed to fetch templates" });
+    logger.warn({ err: error }, "Error fetching contract templates:");
+    res.status(500).json({ error: "Failed to fetch templates" });
   }
 });
 
@@ -79,17 +79,17 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { templateId } = req?.params;
+      const { templateId } = req.params;
       const template = contractTemplateService?.getTemplateById(templateId);
 
       if (!template) {
-        return res?.status(404).json({ error: "Template not found" });
+        return res.status(404).json({ error: "Template not found" });
       }
 
-      return res?.json(template);
+      return res.json(template);
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching template:");
-      res?.status(500).json({ error: "Failed to fetch template" });
+      logger.warn({ err: error }, "Error fetching template:");
+      res.status(500).json({ error: "Failed to fetch template" });
     }
   },
 );
@@ -99,11 +99,11 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { name, description, content, category, variables } = req?.body;
+      const userId = req.user!.id;
+      const { name, description, content, category, variables } = req.body;
 
       if (!name || !content) {
-        return res?.status(400).json({ error: "name and content are required" });
+        return res.status(400).json({ error: "name and content are required" });
       }
 
       const [created] = await db
@@ -119,10 +119,10 @@ router?.post(
         })
         .returning();
 
-      return res?.status(201).json(created);
+      return res.status(201).json(created);
     } catch (error) {
-      logger?.warn({ err: error }, "Error creating custom contract template:");
-      res?.status(500).json({ error: "Failed to create template" });
+      logger.warn({ err: error }, "Error creating custom contract template:");
+      res.status(500).json({ error: "Failed to create template" });
     }
   },
 );
@@ -132,9 +132,9 @@ router?.put(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { templateId } = req?.params;
-      const updates = req?.body;
+      const userId = req.user!.id;
+      const { templateId } = req.params;
+      const updates = req.body;
 
       const [updated] = await db
         .update(contractTemplates)
@@ -148,13 +148,13 @@ router?.put(
         .returning();
 
       if (!updated) {
-        return res?.status(404).json({ error: "Template not found" });
+        return res.status(404).json({ error: "Template not found" });
       }
 
-      return res?.json(updated);
+      return res.json(updated);
     } catch (error) {
-      logger?.warn({ err: error }, "Error updating custom contract template:");
-      res?.status(500).json({ error: "Failed to update template" });
+      logger.warn({ err: error }, "Error updating custom contract template:");
+      res.status(500).json({ error: "Failed to update template" });
     }
   },
 );
@@ -164,8 +164,8 @@ router?.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { templateId } = req?.params;
+      const userId = req.user!.id;
+      const { templateId } = req.params;
 
       const [deleted] = await db
         .delete(contractTemplates)
@@ -186,10 +186,10 @@ router?.delete(
           });
       }
 
-      return res?.json({ success: true });
+      return res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Error deleting custom contract template:");
-      res?.status(500).json({ error: "Failed to delete template" });
+      logger.warn({ err: error }, "Error deleting custom contract template:");
+      res.status(500).json({ error: "Failed to delete template" });
     }
   },
 );
@@ -197,22 +197,22 @@ router?.delete(
 router?.post("/generate", requireAuth, async (req: Request, res: Response) => {
   try {
     await contractTemplateService?.waitForInit();
-    const { templateId, variables } = req?.body;
+    const { templateId, variables } = req.body;
 
     if (!templateId) {
-      return res?.status(400).json({ error: "templateId is required" });
+      return res.status(400).json({ error: "templateId is required" });
     }
 
     const contract = contractTemplateService?.generateContract(
       templateId,
       variables as ContractVariables,
-      req?.user!.id,
+      req.user!.id,
     );
 
-    return res?.status(201).json(contract);
+    return res.status(201).json(contract);
   } catch (error) {
-    logger?.warn({ err: error }, "Error generating contract:");
-    res?.status(500).json({ error: "Failed to generate contract" });
+    logger.warn({ err: error }, "Error generating contract:");
+    res.status(500).json({ error: "Failed to generate contract" });
   }
 });
 
@@ -222,12 +222,12 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       await contractTemplateService?.waitForInit();
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const contracts = contractTemplateService?.getContractsByUser(userId);
-      return res?.json({ contracts });
+      return res.json({ contracts });
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching user contracts:");
-      res?.status(500).json({ error: "Failed to fetch contracts" });
+      logger.warn({ err: error }, "Error fetching user contracts:");
+      res.status(500).json({ error: "Failed to fetch contracts" });
     }
   },
 );
@@ -235,42 +235,42 @@ router?.get(
 router?.get("/my", requireAuth, async (req: Request, res: Response) => {
   try {
     await contractTemplateService?.waitForInit();
-    const contracts = contractTemplateService?.getContractsByUser(req?.user!.id);
-    return res?.json({ contracts });
+    const contracts = contractTemplateService?.getContractsByUser(req.user!.id);
+    return res.json({ contracts });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching user contracts:");
-    res?.status(500).json({ error: "Failed to fetch contracts" });
+    logger.warn({ err: error }, "Error fetching user contracts:");
+    res.status(500).json({ error: "Failed to fetch contracts" });
   }
 });
 
 router?.get("/tax-rates", async (req: Request, res: Response) => {
   try {
-    const { country, state } = req?.query;
+    const { country, state } = req.query;
 
     if (!country) {
-      return res?.status(400).json({ error: "country is required" });
+      return res.status(400).json({ error: "country is required" });
     }
 
     const rates = invoiceService?.getTaxRates(
       country as string,
       state as string,
     );
-    return res?.json({ rates });
+    return res.json({ rates });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching tax rates:");
-    res?.status(500).json({ error: "Failed to fetch tax rates" });
+    logger.warn({ err: error }, "Error fetching tax rates:");
+    res.status(500).json({ error: "Failed to fetch tax rates" });
   }
 });
 
 router?.get("/marketplace-disputes", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { status } = req?.query;
-    const userId = req?.user!.id;
-    const isAdmin = isAdminUser(req?.user);
+    const { status } = req.query;
+    const userId = req.user!.id;
+    const isAdmin = isAdminUser(req.user);
 
     let disputes;
     if (isAdmin) {
@@ -297,54 +297,54 @@ router?.get("/marketplace-disputes", async (req: Request, res: Response) => {
       disputes = disputes?.filter((d) => d?.status === status);
     }
 
-    return res?.json({ disputes });
+    return res.json({ disputes });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching marketplace disputes:");
-    res?.status(500).json({ error: "Failed to fetch disputes" });
+    logger.warn({ err: error }, "Error fetching marketplace disputes:");
+    res.status(500).json({ error: "Failed to fetch disputes" });
   }
 });
 
 router?.get("/:contractId", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { contractId } = req?.params;
+    const { contractId } = req.params;
     const contract = contractTemplateService?.getContract(contractId);
 
     if (!contract) {
-      return res?.status(404).json({ error: "Contract not found" });
+      return res.status(404).json({ error: "Contract not found" });
     }
 
-    return res?.json(contract);
+    return res.json(contract);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching contract:");
-    res?.status(500).json({ error: "Failed to fetch contract" });
+    logger.warn({ err: error }, "Error fetching contract:");
+    res.status(500).json({ error: "Failed to fetch contract" });
   }
 });
 
 router?.post("/:contractId/sign", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { contractId } = req?.params;
-    const { partyName, signature } = req?.body;
+    const { contractId } = req.params;
+    const { partyName, signature } = req.body;
 
     if (!partyName) {
-      return res?.status(400).json({ error: "partyName is required" });
+      return res.status(400).json({ error: "partyName is required" });
     }
 
     const signatureHash = crypto
       .createHash("sha256")
       .update(
-        `${signature || "electronic-signature"}-${Date?.now()}-${req?.user!.id}`,
+        `${signature || "electronic-signature"}-${Date?.now()}-${req.user!.id}`,
       )
       .digest("hex");
 
-    const ipAddress = req?.ip || req?.socket.remoteAddress || "unknown";
+    const ipAddress = req.ip || req.socket.remoteAddress || "unknown";
 
     const contract = await contractTemplateService?.signContract(
       contractId,
@@ -355,40 +355,40 @@ router?.post("/:contractId/sign", async (req: Request, res: Response) => {
       },
     );
 
-    return res?.json(contract);
+    return res.json(contract);
   } catch (error) {
-    logger?.warn({ err: error }, "Error signing contract:");
-    res?.status(500).json({ error: "Failed to sign contract" });
+    logger.warn({ err: error }, "Error signing contract:");
+    res.status(500).json({ error: "Failed to sign contract" });
   }
 });
 
 router?.get("/:contractId/pdf", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { contractId } = req?.params;
+    const { contractId } = req.params;
     const pdfBuffer = contractTemplateService?.generatePDF(contractId);
 
-    res?.setHeader("Content-Type", "application/pdf");
-    res?.setHeader(
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
       "Content-Disposition",
       `attachment; filename="contract-${contractId}.pdf"`,
     );
-    return res?.send(pdfBuffer);
+    return res.send(pdfBuffer);
   } catch (error) {
-    logger?.warn({ err: error }, "Error generating contract PDF:");
-    res?.status(500).json({ error: "Failed to generate PDF" });
+    logger.warn({ err: error }, "Error generating contract PDF:");
+    res.status(500).json({ error: "Failed to generate PDF" });
   }
 });
 
 router?.post("/validate", requireAuth, async (req: Request, res: Response) => {
   try {
-    const { templateId, variables } = req?.body;
+    const { templateId, variables } = req.body;
 
     if (!templateId) {
-      return res?.status(400).json({ error: "templateId is required" });
+      return res.status(400).json({ error: "templateId is required" });
     }
 
     const validation = contractTemplateService?.validateContractVariables(
@@ -396,22 +396,22 @@ router?.post("/validate", requireAuth, async (req: Request, res: Response) => {
       variables as ContractVariables,
     );
 
-    return res?.json({
+    return res.json({
       outcome: validation.valid ? "validation_passed" : "validation_errors",
       ...validation,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error validating contract:");
-    res?.status(500).json({ error: "Failed to validate contract" });
+    logger.warn({ err: error }, "Error validating contract:");
+    res.status(500).json({ error: "Failed to validate contract" });
   }
 });
 
 router?.post("/preview", requireAuth, async (req: Request, res: Response) => {
   try {
-    const { templateId, variables } = req?.body;
+    const { templateId, variables } = req.body;
 
     if (!templateId) {
-      return res?.status(400).json({ error: "templateId is required" });
+      return res.status(400).json({ error: "templateId is required" });
     }
 
     const content = contractTemplateService?.getContractPreview(
@@ -419,13 +419,13 @@ router?.post("/preview", requireAuth, async (req: Request, res: Response) => {
       variables as ContractVariables,
     );
 
-    return res?.json({
+    return res.json({
       outcome: "preview_generated",
       content,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error generating preview:");
-    res?.status(500).json({ error: "Failed to generate preview" });
+    logger.warn({ err: error }, "Error generating preview:");
+    res.status(500).json({ error: "Failed to generate preview" });
   }
 });
 
@@ -434,21 +434,21 @@ router?.patch(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { contractId } = req?.params;
-      const { variables } = req?.body;
+      const { contractId } = req.params;
+      const { variables } = req.body;
 
       const contract = contractTemplateService?.updateContractDraft(
         contractId,
         variables,
       );
 
-      return res?.json({
+      return res.json({
         outcome: "contract_customization_saved",
         contract,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error updating contract draft:");
-      res?.status(500).json({ error: "Failed to update contract draft" });
+      logger.warn({ err: error }, "Error updating contract draft:");
+      res.status(500).json({ error: "Failed to update contract draft" });
     }
   },
 );
@@ -458,18 +458,18 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { contractId } = req?.params;
+      const { contractId } = req.params;
 
       const contract = contractTemplateService?.sendForSignature(contractId);
 
-      return res?.json({
+      return res.json({
         outcome: "signature_requested",
         message: "Contract sent for signature",
         contract,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error sending for signature:");
-      res?.status(500).json({ error: "Failed to send for signature" });
+      logger.warn({ err: error }, "Error sending for signature:");
+      res.status(500).json({ error: "Failed to send for signature" });
     }
   },
 );
@@ -479,7 +479,7 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { contractId } = req?.params;
+      const { contractId } = req.params;
 
       const status = contractTemplateService?.getSignatureStatus(contractId);
 
@@ -490,13 +490,13 @@ router?.get(
         outcome = "partially_signed";
       }
 
-      return res?.json({
+      return res.json({
         outcome,
         ...status,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting signature status:");
-      res?.status(500).json({ error: "Failed to get signature status" });
+      logger.warn({ err: error }, "Error getting signature status:");
+      res.status(500).json({ error: "Failed to get signature status" });
     }
   },
 );
@@ -506,8 +506,8 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { contractId } = req?.params;
-      const { partyName, reason } = req?.body;
+      const { contractId } = req.params;
+      const { partyName, reason } = req.body;
 
       if (!partyName || !reason) {
         return res
@@ -521,14 +521,14 @@ router?.post(
         reason,
       );
 
-      return res?.json({
+      return res.json({
         outcome: "signature_declined",
         reason,
         contract,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error declining signature:");
-      res?.status(500).json({ error: "Failed to decline signature" });
+      logger.warn({ err: error }, "Error declining signature:");
+      res.status(500).json({ error: "Failed to decline signature" });
     }
   },
 );
@@ -538,21 +538,21 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { contractId } = req?.params;
-      const { reason } = req?.body;
+      const { contractId } = req.params;
+      const { reason } = req.body;
 
       const contract = contractTemplateService?.voidContract(
         contractId,
         reason || "No reason provided",
       );
 
-      return res?.json({
+      return res.json({
         outcome: "contract_terminated",
         contract,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error voiding contract:");
-      res?.status(500).json({ error: "Failed to void contract" });
+      logger.warn({ err: error }, "Error voiding contract:");
+      res.status(500).json({ error: "Failed to void contract" });
     }
   },
 );
@@ -562,17 +562,17 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { contractId } = req?.params;
+      const { contractId } = req.params;
 
       const timeline = contractTemplateService?.getContractTimeline(contractId);
 
-      return res?.json({
+      return res.json({
         outcome: "timeline_loaded",
         timeline,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting contract timeline:");
-      res?.status(500).json({ error: "Failed to get timeline" });
+      logger.warn({ err: error }, "Error getting contract timeline:");
+      res.status(500).json({ error: "Failed to get timeline" });
     }
   },
 );
@@ -582,39 +582,39 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const stats = contractTemplateService?.getContractStats(req?.user!.id);
+      const stats = contractTemplateService?.getContractStats(req.user!.id);
 
-      return res?.json({
+      return res.json({
         outcome: "stats_loaded",
         stats,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting contract stats:");
-      res?.status(500).json({ error: "Failed to get contract stats" });
+      logger.warn({ err: error }, "Error getting contract stats:");
+      res.status(500).json({ error: "Failed to get contract stats" });
     }
   },
 );
 
 router?.get("/invoices/list", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const invoices = invoiceService?.getInvoicesByUser(req?.user!.id);
-    const summary = invoiceService?.getInvoiceSummary(req?.user!.id);
+    const invoices = invoiceService?.getInvoicesByUser(req.user!.id);
+    const summary = invoiceService?.getInvoiceSummary(req.user!.id);
 
-    return res?.json({ invoices, summary });
+    return res.json({ invoices, summary });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching invoices:");
-    res?.status(500).json({ error: "Failed to fetch invoices" });
+    logger.warn({ err: error }, "Error fetching invoices:");
+    res.status(500).json({ error: "Failed to fetch invoices" });
   }
 });
 
 router?.post("/invoices/create", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     const {
@@ -628,7 +628,7 @@ router?.post("/invoices/create", async (req: Request, res: Response) => {
       discount,
       discountType,
       applyTax,
-    } = req?.body;
+    } = req.body;
 
     if (!from || !to || !lineItems || lineItems?.length === 0) {
       return res
@@ -651,34 +651,34 @@ router?.post("/invoices/create", async (req: Request, res: Response) => {
       applyTax,
     });
 
-    return res?.status(201).json(invoice);
+    return res.status(201).json(invoice);
   } catch (error) {
-    logger?.warn({ err: error }, "Error creating invoice:");
-    res?.status(500).json({ error: "Failed to create invoice" });
+    logger.warn({ err: error }, "Error creating invoice:");
+    res.status(500).json({ error: "Failed to create invoice" });
   }
 });
 
 router?.get("/invoices/:invoiceId", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { invoiceId } = req?.params;
+    const { invoiceId } = req.params;
     const invoice = invoiceService?.getInvoice(invoiceId);
 
     if (!invoice) {
-      return res?.status(404).json({ error: "Invoice not found" });
+      return res.status(404).json({ error: "Invoice not found" });
     }
 
-    if (invoice?.userId !== req?.user!.id) {
-      return res?.status(404).json({ error: "Invoice not found" });
+    if (invoice?.userId !== req.user!.id) {
+      return res.status(404).json({ error: "Invoice not found" });
     }
 
-    return res?.json(invoice);
+    return res.json(invoice);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching invoice:");
-    res?.status(500).json({ error: "Failed to fetch invoice" });
+    logger.warn({ err: error }, "Error fetching invoice:");
+    res.status(500).json({ error: "Failed to fetch invoice" });
   }
 });
 
@@ -686,20 +686,20 @@ router?.patch(
   "/invoices/:invoiceId/status",
   async (req: Request, res: Response) => {
     try {
-      if (!req?.isAuthenticated()) {
-        return res?.status(401).json({ error: "Unauthorized" });
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { invoiceId } = req?.params;
-      const { status, paymentMethod } = req?.body;
+      const { invoiceId } = req.params;
+      const { status, paymentMethod } = req.body;
 
       if (!status) {
-        return res?.status(400).json({ error: "status is required" });
+        return res.status(400).json({ error: "status is required" });
       }
 
       const existing = invoiceService?.getInvoice(invoiceId);
-      if (!existing || existing?.userId !== req?.user!.id) {
-        return res?.status(404).json({ error: "Invoice not found" });
+      if (!existing || existing?.userId !== req.user!.id) {
+        return res.status(404).json({ error: "Invoice not found" });
       }
 
       const invoice = invoiceService?.updateInvoiceStatus(invoiceId, status, {
@@ -707,96 +707,96 @@ router?.patch(
         paymentMethod,
       });
 
-      return res?.json(invoice);
+      return res.json(invoice);
     } catch (error) {
-      logger?.warn({ err: error }, "Error updating invoice status:");
-      res?.status(500).json({ error: "Failed to update invoice status" });
+      logger.warn({ err: error }, "Error updating invoice status:");
+      res.status(500).json({ error: "Failed to update invoice status" });
     }
   },
 );
 
 router?.get("/invoices/:invoiceId/pdf", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { invoiceId } = req?.params;
+    const { invoiceId } = req.params;
     const invoiceCheck = invoiceService?.getInvoice(invoiceId);
-    if (!invoiceCheck || invoiceCheck?.userId !== req?.user!.id) {
-      return res?.status(404).json({ error: "Invoice not found" });
+    if (!invoiceCheck || invoiceCheck?.userId !== req.user!.id) {
+      return res.status(404).json({ error: "Invoice not found" });
     }
     const pdfBuffer = invoiceService?.generatePDF(invoiceId);
 
-    res?.setHeader("Content-Type", "application/pdf");
-    res?.setHeader(
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
       "Content-Disposition",
       `attachment; filename="invoice-${invoiceId}.pdf"`,
     );
-    return res?.send(pdfBuffer);
+    return res.send(pdfBuffer);
   } catch (error) {
-    logger?.warn({ err: error }, "Error generating invoice PDF:");
-    res?.status(500).json({ error: "Failed to generate PDF" });
+    logger.warn({ err: error }, "Error generating invoice PDF:");
+    res.status(500).json({ error: "Failed to generate PDF" });
   }
 });
 
 router?.get("/invoices/overdue/list", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const overdueInvoices = invoiceService?.getOverdueInvoices(req?.user!.id);
-    return res?.json({ invoices: overdueInvoices });
+    const overdueInvoices = invoiceService?.getOverdueInvoices(req.user!.id);
+    return res.json({ invoices: overdueInvoices });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching overdue invoices:");
-    res?.status(500).json({ error: "Failed to fetch overdue invoices" });
+    logger.warn({ err: error }, "Error fetching overdue invoices:");
+    res.status(500).json({ error: "Failed to fetch overdue invoices" });
   }
 });
 
 router?.get("/tax-forms/available", async (_req: Request, res: Response) => {
   try {
     const availableForms = taxFormService?.getAvailableForms();
-    return res?.json({ forms: availableForms });
+    return res.json({ forms: availableForms });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching available tax forms:");
-    res?.status(500).json({ error: "Failed to fetch available forms" });
+    logger.warn({ err: error }, "Error fetching available tax forms:");
+    res.status(500).json({ error: "Failed to fetch available forms" });
   }
 });
 
 router?.get("/tax-forms/list", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { taxYear } = req?.query;
+    const { taxYear } = req.query;
     let forms;
 
     if (taxYear) {
       forms = taxFormService?.getTaxFormsByYear(
-        req?.user!.id,
+        req.user!.id,
         parseInt(taxYear as string),
       );
     } else {
-      forms = taxFormService?.getTaxFormsByUser(req?.user!.id);
+      forms = taxFormService?.getTaxFormsByUser(req.user!.id);
     }
 
-    return res?.json({ forms });
+    return res.json({ forms });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching tax forms:");
-    res?.status(500).json({ error: "Failed to fetch tax forms" });
+    logger.warn({ err: error }, "Error fetching tax forms:");
+    res.status(500).json({ error: "Failed to fetch tax forms" });
   }
 });
 
 router?.post("/tax-forms/generate", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     const { formType, taxpayerInfo, recipientInfo, taxYear, amounts } =
-      req?.body;
+      req.body;
 
     if (!formType || !taxpayerInfo) {
       return res
@@ -809,13 +809,13 @@ router?.post("/tax-forms/generate", async (req: Request, res: Response) => {
     switch (formType) {
       case "W-9":
         form = taxFormService?.generateW9(
-          req?.user!.id,
+          req.user!.id,
           taxpayerInfo as TaxpayerInfo,
         );
         break;
       case "W-8BEN":
         form = taxFormService?.generateW8BEN(
-          req?.user!.id,
+          req.user!.id,
           taxpayerInfo as TaxpayerInfo,
         );
         break;
@@ -828,7 +828,7 @@ router?.post("/tax-forms/generate", async (req: Request, res: Response) => {
             });
         }
         form = taxFormService?.generate1099NEC(
-          req?.user!.id,
+          req.user!.id,
           taxpayerInfo,
           recipientInfo,
           taxYear || new Date().getFullYear(),
@@ -844,7 +844,7 @@ router?.post("/tax-forms/generate", async (req: Request, res: Response) => {
             });
         }
         form = taxFormService?.generate1099MISC(
-          req?.user!.id,
+          req.user!.id,
           taxpayerInfo,
           recipientInfo,
           taxYear || new Date().getFullYear(),
@@ -860,7 +860,7 @@ router?.post("/tax-forms/generate", async (req: Request, res: Response) => {
             });
         }
         form = taxFormService?.generate1099K(
-          req?.user!.id,
+          req.user!.id,
           taxpayerInfo,
           recipientInfo,
           taxYear || new Date().getFullYear(),
@@ -873,68 +873,68 @@ router?.post("/tax-forms/generate", async (req: Request, res: Response) => {
           .json({ error: `Unsupported form type: ${formType}` });
     }
 
-    return res?.status(201).json(form);
+    return res.status(201).json(form);
   } catch (error) {
-    logger?.warn({ err: error }, "Error generating tax form:");
-    res?.status(500).json({ error: "Failed to generate tax form" });
+    logger.warn({ err: error }, "Error generating tax form:");
+    res.status(500).json({ error: "Failed to generate tax form" });
   }
 });
 
 router?.get("/tax-forms/:formId", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { formId } = req?.params;
+    const { formId } = req.params;
     const form = taxFormService?.getTaxForm(formId);
 
     if (!form) {
-      return res?.status(404).json({ error: "Tax form not found" });
+      return res.status(404).json({ error: "Tax form not found" });
     }
 
-    return res?.json(form);
+    return res.json(form);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching tax form:");
-    res?.status(500).json({ error: "Failed to fetch tax form" });
+    logger.warn({ err: error }, "Error fetching tax form:");
+    res.status(500).json({ error: "Failed to fetch tax form" });
   }
 });
 
 router?.post("/tax-forms/:formId/sign", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { formId } = req?.params;
-    const { signature } = req?.body;
+    const { formId } = req.params;
+    const { signature } = req.body;
 
     const signatureHash = crypto
       .createHash("sha256")
       .update(
-        `${signature || "electronic-signature"}-${Date?.now()}-${req?.user!.id}`,
+        `${signature || "electronic-signature"}-${Date?.now()}-${req.user!.id}`,
       )
       .digest("hex");
 
     const form = taxFormService?.signTaxForm(formId, signatureHash);
-    return res?.json(form);
+    return res.json(form);
   } catch (error) {
-    logger?.warn({ err: error }, "Error signing tax form:");
-    res?.status(500).json({ error: "Failed to sign tax form" });
+    logger.warn({ err: error }, "Error signing tax form:");
+    res.status(500).json({ error: "Failed to sign tax form" });
   }
 });
 
 router?.get("/tax-forms/:formId/pdf", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { formId } = req?.params;
+    const { formId } = req.params;
     const form = taxFormService?.getTaxForm(formId);
 
     if (!form) {
-      return res?.status(404).json({ error: "Tax form not found" });
+      return res.status(404).json({ error: "Tax form not found" });
     }
 
     let pdfBuffer: Buffer;
@@ -957,15 +957,15 @@ router?.get("/tax-forms/:formId/pdf", async (req: Request, res: Response) => {
           .json({ error: "PDF generation not supported for this form type" });
     }
 
-    res?.setHeader("Content-Type", "application/pdf");
-    res?.setHeader(
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
       "Content-Disposition",
       `attachment; filename="${form.formType}-${formId}.pdf"`,
     );
-    return res?.send(pdfBuffer);
+    return res.send(pdfBuffer);
   } catch (error) {
-    logger?.warn({ err: error }, "Error generating tax form PDF:");
-    res?.status(500).json({ error: "Failed to generate PDF" });
+    logger.warn({ err: error }, "Error generating tax form PDF:");
+    res.status(500).json({ error: "Failed to generate PDF" });
   }
 });
 
@@ -981,10 +981,10 @@ router?.post(
         hasTreatyBenefits,
         hasValidW9,
         hasBackupWithholding,
-      } = req?.body;
+      } = req.body;
 
       if (grossAmount === undefined) {
-        return res?.status(400).json({ error: "grossAmount is required" });
+        return res.status(400).json({ error: "grossAmount is required" });
       }
 
       const calculation = taxFormService?.calculateWithholding(
@@ -996,10 +996,10 @@ router?.post(
         hasBackupWithholding,
       );
 
-      return res?.json(calculation);
+      return res.json(calculation);
     } catch (error) {
-      logger?.warn({ err: error }, "Error calculating withholding:");
-      res?.status(500).json({ error: "Failed to calculate withholding" });
+      logger.warn({ err: error }, "Error calculating withholding:");
+      res.status(500).json({ error: "Failed to calculate withholding" });
     }
   },
 );
@@ -1008,12 +1008,12 @@ router?.get(
   "/tax-forms/summary/:taxYear",
   async (req: Request, res: Response) => {
     try {
-      if (!req?.isAuthenticated()) {
-        return res?.status(401).json({ error: "Unauthorized" });
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { taxYear } = req?.params;
-      const { earnings } = req?.query;
+      const { taxYear } = req.params;
+      const { earnings } = req.query;
 
       let earningsData: Array<{
         source: string;
@@ -1025,7 +1025,7 @@ router?.get(
 
       if (earnings) {
         try {
-          earningsData = JSON?.parse(earnings as string);
+          earningsData = JSON.parse(earnings as string);
         } catch {
           return res
             .status(400)
@@ -1034,14 +1034,14 @@ router?.get(
       }
 
       const summary = taxFormService?.generateTaxSummary(
-        req?.user!.id,
+        req.user!.id,
         parseInt(taxYear),
         earningsData,
       );
-      return res?.json(summary);
+      return res.json(summary);
     } catch (error) {
-      logger?.warn({ err: error }, "Error generating tax summary:");
-      res?.status(500).json({ error: "Failed to generate tax summary" });
+      logger.warn({ err: error }, "Error generating tax summary:");
+      res.status(500).json({ error: "Failed to generate tax summary" });
     }
   },
 );
@@ -1050,65 +1050,65 @@ router?.get(
   "/tax-forms/summary/:taxYear/pdf",
   async (req: Request, res: Response) => {
     try {
-      if (!req?.isAuthenticated()) {
-        return res?.status(401).json({ error: "Unauthorized" });
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { taxYear } = req?.params;
+      const { taxYear } = req.params;
 
       const summary = taxFormService?.generateTaxSummary(
-        req?.user!.id,
+        req.user!.id,
         parseInt(taxYear),
         [],
       );
       const pdfBuffer = taxFormService?.generateTaxSummaryPDF(summary);
 
-      res?.setHeader("Content-Type", "application/pdf");
-      res?.setHeader(
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
         "Content-Disposition",
         `attachment; filename="tax-summary-${taxYear}.pdf"`,
       );
-      return res?.send(pdfBuffer);
+      return res.send(pdfBuffer);
     } catch (error) {
-      logger?.warn({ err: error }, "Error generating tax summary PDF:");
-      res?.status(500).json({ error: "Failed to generate PDF" });
+      logger.warn({ err: error }, "Error generating tax summary PDF:");
+      res.status(500).json({ error: "Failed to generate PDF" });
     }
   },
 );
 
 router?.get("/split-sheets/list", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const rows = await db
       .select()
       .from(splitSheets)
       .where(
         or(
           eq(splitSheets?.creatorId, userId),
-          sql`${splitSheets?.participants} @> ${JSON?.stringify([{ userId }])}::jsonb`,
+          sql`${splitSheets?.participants} @> ${JSON.stringify([{ userId }])}::jsonb`,
         ),
       )
       .orderBy(desc(splitSheets?.createdAt))
       .limit(100);
 
-    return res?.json({ splitSheets: rows });
+    return res.json({ splitSheets: rows });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching split sheets:");
-    res?.status(500).json({ error: "Failed to fetch split sheets" });
+    logger.warn({ err: error }, "Error fetching split sheets:");
+    res.status(500).json({ error: "Failed to fetch split sheets" });
   }
 });
 
 router?.post("/split-sheets/create", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { releaseId, contractName, participants, effectiveDate } = req?.body;
+    const { releaseId, contractName, participants, effectiveDate } = req.body;
 
     if (
       !releaseId ||
@@ -1127,7 +1127,7 @@ router?.post("/split-sheets/create", async (req: Request, res: Response) => {
       (sum: number, p: SplitParticipant) => sum + p?.splitPercentage,
       0,
     );
-    if (Math?.abs(totalSplit - 100) > 0.01) {
+    if (Math.abs(totalSplit - 100) > 0.01) {
       return res
         .status(400)
         .json({ error: "Split percentages must total 100%" });
@@ -1150,20 +1150,20 @@ router?.post("/split-sheets/create", async (req: Request, res: Response) => {
       })
       .returning();
 
-    return res?.status(201).json(inserted);
+    return res.status(201).json(inserted);
   } catch (error) {
-    logger?.warn({ err: error }, "Error creating split sheet:");
-    res?.status(500).json({ error: "Failed to create split sheet" });
+    logger.warn({ err: error }, "Error creating split sheet:");
+    res.status(500).json({ error: "Failed to create split sheet" });
   }
 });
 
 router?.get("/split-sheets/:contractId", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { contractId } = req?.params;
+    const { contractId } = req.params;
     const [contract] = await db
       .select()
       .from(splitSheets)
@@ -1171,13 +1171,13 @@ router?.get("/split-sheets/:contractId", async (req: Request, res: Response) => 
       .limit(1);
 
     if (!contract) {
-      return res?.status(404).json({ error: "Split sheet not found" });
+      return res.status(404).json({ error: "Split sheet not found" });
     }
 
-    return res?.json(contract);
+    return res.json(contract);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching split sheet:");
-    res?.status(500).json({ error: "Failed to fetch split sheet" });
+    logger.warn({ err: error }, "Error fetching split sheet:");
+    res.status(500).json({ error: "Failed to fetch split sheet" });
   }
 });
 
@@ -1185,13 +1185,13 @@ router?.post(
   "/split-sheets/:contractId/sign",
   async (req: Request, res: Response) => {
     try {
-      if (!req?.isAuthenticated()) {
-        return res?.status(401).json({ error: "Unauthorized" });
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { contractId } = req?.params;
-      const { signature } = req?.body;
-      const userId = req?.user!.id;
+      const { contractId } = req.params;
+      const { signature } = req.body;
+      const userId = req.user!.id;
 
       const [contract] = await db
         .select()
@@ -1200,7 +1200,7 @@ router?.post(
         .limit(1);
 
       if (!contract) {
-        return res?.status(404).json({ error: "Split sheet not found" });
+        return res.status(404).json({ error: "Split sheet not found" });
       }
 
       const signatures = contract?.signatures as Array<{
@@ -1242,10 +1242,10 @@ router?.post(
         .where(eq(splitSheets?.id, contractId))
         .returning();
 
-      return res?.json(updated);
+      return res.json(updated);
     } catch (error) {
-      logger?.warn({ err: error }, "Error signing split sheet:");
-      res?.status(500).json({ error: "Failed to sign split sheet" });
+      logger.warn({ err: error }, "Error signing split sheet:");
+      res.status(500).json({ error: "Failed to sign split sheet" });
     }
   },
 );
@@ -1254,12 +1254,12 @@ router?.post(
   "/split-sheets/:contractId/add-participant",
   async (req: Request, res: Response) => {
     try {
-      if (!req?.isAuthenticated()) {
-        return res?.status(401).json({ error: "Unauthorized" });
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { contractId } = req?.params;
-      const { userId, name, email, role, splitPercentage } = req?.body;
+      const { contractId } = req.params;
+      const { userId, name, email, role, splitPercentage } = req.body;
 
       if (
         !userId ||
@@ -1277,7 +1277,7 @@ router?.post(
       }
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex?.test(email)) {
-        return res?.status(400).json({ error: "Invalid email address format" });
+        return res.status(400).json({ error: "Invalid email address format" });
       }
 
       const [contract] = await db
@@ -1287,10 +1287,10 @@ router?.post(
         .limit(1);
 
       if (!contract) {
-        return res?.status(404).json({ error: "Split sheet not found" });
+        return res.status(404).json({ error: "Split sheet not found" });
       }
 
-      if (contract?.creatorId !== req?.user!.id) {
+      if (contract?.creatorId !== req.user!.id) {
         return res
           .status(403)
           .json({ error: "Only the creator can add participants" });
@@ -1313,10 +1313,10 @@ router?.post(
         .where(eq(splitSheets?.id, contractId))
         .returning();
 
-      return res?.json(updated);
+      return res.json(updated);
     } catch (error) {
-      logger?.warn({ err: error }, "Error adding participant:");
-      res?.status(500).json({ error: "Failed to add participant" });
+      logger.warn({ err: error }, "Error adding participant:");
+      res.status(500).json({ error: "Failed to add participant" });
     }
   },
 );
@@ -1326,9 +1326,9 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { participants } = req?.body;
+      const { participants } = req.body;
 
-      if (!participants || !Array?.isArray(participants)) {
+      if (!participants || !Array.isArray(participants)) {
         return res
           .status(400)
           .json({ error: "participants array is required" });
@@ -1339,9 +1339,9 @@ router?.post(
           sum + (p?.splitPercentage || 0),
         0,
       );
-      const isValid = Math?.abs(totalSplit - 100) <= 0.01;
+      const isValid = Math.abs(totalSplit - 100) <= 0.01;
 
-      return res?.json({
+      return res.json({
         valid: isValid,
         totalPercentage: totalSplit,
         message: isValid
@@ -1349,8 +1349,8 @@ router?.post(
           : "Splits must total exactly 100%",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error validating splits:");
-      res?.status(500).json({ error: "Failed to validate splits" });
+      logger.warn({ err: error }, "Error validating splits:");
+      res.status(500).json({ error: "Failed to validate splits" });
     }
   },
 );
@@ -1402,12 +1402,12 @@ const canAccessDispute = (
 
 router?.post("/marketplace-disputes", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     const { orderId, sellerId, disputeType, subject, description, evidence } =
-      req?.body;
+      req.body;
 
     if (!orderId || !disputeType || !subject || !description) {
       return res
@@ -1491,18 +1491,18 @@ router?.post("/marketplace-disputes", async (req: Request, res: Response) => {
       })
       .returning();
 
-    logger?.info(
-      `Marketplace dispute ${dispute?.id} created for order ${orderId} by user ${req?.user!.id}`,
+    logger.info(
+      `Marketplace dispute ${dispute?.id} created for order ${orderId} by user ${req.user!.id}`,
     );
 
-    return res?.status(201).json({
+    return res.status(201).json({
       dispute,
       message:
         "Dispute created successfully. We will review your case shortly.",
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error creating marketplace dispute:");
-    res?.status(500).json({ error: "Failed to create dispute" });
+    logger.warn({ err: error }, "Error creating marketplace dispute:");
+    res.status(500).json({ error: "Failed to create dispute" });
   }
 });
 
@@ -1510,11 +1510,11 @@ router?.get(
   "/marketplace-disputes/:disputeId",
   async (req: Request, res: Response) => {
     try {
-      if (!req?.isAuthenticated()) {
-        return res?.status(401).json({ error: "Unauthorized" });
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { disputeId } = req?.params;
+      const { disputeId } = req.params;
       const [dispute] = await db
         .select()
         .from(marketplaceDisputes)
@@ -1522,19 +1522,19 @@ router?.get(
         .limit(1);
 
       if (!dispute) {
-        return res?.status(404).json({ error: "Dispute not found" });
+        return res.status(404).json({ error: "Dispute not found" });
       }
 
-      if (!canAccessDispute(dispute, req?.user!.id, req?.user!.role)) {
+      if (!canAccessDispute(dispute, req.user!.id, req.user!.role)) {
         return res
           .status(403)
           .json({ error: "Not authorized to view this dispute" });
       }
 
-      return res?.json({ dispute });
+      return res.json({ dispute });
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching dispute:");
-      res?.status(500).json({ error: "Failed to fetch dispute" });
+      logger.warn({ err: error }, "Error fetching dispute:");
+      res.status(500).json({ error: "Failed to fetch dispute" });
     }
   },
 );
@@ -1543,15 +1543,15 @@ router?.post(
   "/marketplace-disputes/:disputeId/message",
   async (req: Request, res: Response) => {
     try {
-      if (!req?.isAuthenticated()) {
-        return res?.status(401).json({ error: "Unauthorized" });
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { disputeId } = req?.params;
-      const { message } = req?.body;
+      const { disputeId } = req.params;
+      const { message } = req.body;
 
       if (!message || message?.trim().length === 0) {
-        return res?.status(400).json({ error: "Message is required" });
+        return res.status(400).json({ error: "Message is required" });
       }
 
       if (message?.length > 2000) {
@@ -1567,10 +1567,10 @@ router?.post(
         .limit(1);
 
       if (!dispute) {
-        return res?.status(404).json({ error: "Dispute not found" });
+        return res.status(404).json({ error: "Dispute not found" });
       }
 
-      if (!canAccessDispute(dispute, req?.user!.id, req?.user!.role)) {
+      if (!canAccessDispute(dispute, req.user!.id, req.user!.role)) {
         return res
           .status(403)
           .json({ error: "Not authorized to message on this dispute" });
@@ -1584,7 +1584,7 @@ router?.post(
           });
       }
 
-      const isAdmin = isAdminUser(req?.user);
+      const isAdmin = isAdminUser(req.user);
       const newMessage = {
         from: req.user!.id,
         message: message.trim(),
@@ -1597,7 +1597,7 @@ router?.post(
 
       if (
         dispute?.status === "pending_seller_response" &&
-        dispute?.sellerId === req?.user!.id
+        dispute?.sellerId === req.user!.id
       ) {
         newStatus = "under_review";
         updatedMessages?.push({
@@ -1608,7 +1608,7 @@ router?.post(
         });
       } else if (
         dispute?.status === "pending_buyer_response" &&
-        dispute?.buyerId === req?.user!.id
+        dispute?.buyerId === req.user!.id
       ) {
         newStatus = "under_review";
         updatedMessages?.push({
@@ -1629,17 +1629,17 @@ router?.post(
         .where(eq(marketplaceDisputes?.id, disputeId))
         .returning();
 
-      logger?.info(
-        `Message added to dispute ${disputeId} by user ${req?.user!.id}`,
+      logger.info(
+        `Message added to dispute ${disputeId} by user ${req.user!.id}`,
       );
 
-      return res?.json({
+      return res.json({
         dispute: updatedDispute,
         message: "Message added successfully",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error adding message to dispute:");
-      res?.status(500).json({ error: "Failed to add message" });
+      logger.warn({ err: error }, "Error adding message to dispute:");
+      res.status(500).json({ error: "Failed to add message" });
     }
   },
 );
@@ -1648,15 +1648,15 @@ router?.post(
   "/marketplace-disputes/:disputeId/evidence",
   async (req: Request, res: Response) => {
     try {
-      if (!req?.isAuthenticated()) {
-        return res?.status(401).json({ error: "Unauthorized" });
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { disputeId } = req?.params;
-      const { type, url } = req?.body;
+      const { disputeId } = req.params;
+      const { type, url } = req.body;
 
       if (!url) {
-        return res?.status(400).json({ error: "Evidence URL is required" });
+        return res.status(400).json({ error: "Evidence URL is required" });
       }
 
       const [dispute] = await db
@@ -1666,10 +1666,10 @@ router?.post(
         .limit(1);
 
       if (!dispute) {
-        return res?.status(404).json({ error: "Dispute not found" });
+        return res.status(404).json({ error: "Dispute not found" });
       }
 
-      if (!canAccessDispute(dispute, req?.user!.id, req?.user!.role)) {
+      if (!canAccessDispute(dispute, req.user!.id, req.user!.role)) {
         return res
           .status(403)
           .json({ error: "Not authorized to add evidence to this dispute" });
@@ -1690,10 +1690,10 @@ router?.post(
         uploadedBy: req.user!.id,
       };
 
-      const isAdmin = isAdminUser(req?.user);
+      const isAdmin = isAdminUser(req.user);
       let uploaderLabel = "admin";
       if (!isAdmin) {
-        uploaderLabel = dispute?.buyerId === req?.user!.id ? "buyer" : "seller";
+        uploaderLabel = dispute?.buyerId === req.user!.id ? "buyer" : "seller";
       }
 
       const updatedEvidence = [...(dispute?.evidence || []), newEvidence];
@@ -1717,17 +1717,17 @@ router?.post(
         .where(eq(marketplaceDisputes?.id, disputeId))
         .returning();
 
-      logger?.info(
-        `Evidence added to dispute ${disputeId} by user ${req?.user!.id}`,
+      logger.info(
+        `Evidence added to dispute ${disputeId} by user ${req.user!.id}`,
       );
 
-      return res?.json({
+      return res.json({
         dispute: updatedDispute,
         message: "Evidence added successfully",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error adding evidence:");
-      res?.status(500).json({ error: "Failed to add evidence" });
+      logger.warn({ err: error }, "Error adding evidence:");
+      res.status(500).json({ error: "Failed to add evidence" });
     }
   },
 );
@@ -1736,12 +1736,12 @@ router?.post(
   "/marketplace-disputes/:disputeId/escalate",
   async (req: Request, res: Response) => {
     try {
-      if (!req?.isAuthenticated()) {
-        return res?.status(401).json({ error: "Unauthorized" });
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { disputeId } = req?.params;
-      const { reason } = req?.body;
+      const { disputeId } = req.params;
+      const { reason } = req.body;
 
       const [dispute] = await db
         .select()
@@ -1750,10 +1750,10 @@ router?.post(
         .limit(1);
 
       if (!dispute) {
-        return res?.status(404).json({ error: "Dispute not found" });
+        return res.status(404).json({ error: "Dispute not found" });
       }
 
-      if (dispute?.buyerId !== req?.user!.id) {
+      if (dispute?.buyerId !== req.user!.id) {
         return res
           .status(403)
           .json({ error: "Only the buyer can escalate a dispute" });
@@ -1791,15 +1791,15 @@ router?.post(
         .where(eq(marketplaceDisputes?.id, disputeId))
         .returning();
 
-      logger?.info(`Dispute ${disputeId} escalated by user ${req?.user!.id}`);
+      logger.info(`Dispute ${disputeId} escalated by user ${req.user!.id}`);
 
-      return res?.json({
+      return res.json({
         dispute: updatedDispute,
         message: "Dispute escalated successfully",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error escalating dispute:");
-      res?.status(500).json({ error: "Failed to escalate dispute" });
+      logger.warn({ err: error }, "Error escalating dispute:");
+      res.status(500).json({ error: "Failed to escalate dispute" });
     }
   },
 );
@@ -1808,12 +1808,12 @@ router?.post(
   "/marketplace-disputes/:disputeId/resolve",
   async (req: Request, res: Response) => {
     try {
-      if (!req?.isAuthenticated()) {
-        return res?.status(401).json({ error: "Unauthorized" });
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { disputeId } = req?.params;
-      const { outcome, refundAmount, explanation } = req?.body;
+      const { disputeId } = req.params;
+      const { outcome, refundAmount, explanation } = req.body;
 
       if (!outcome || !explanation) {
         return res
@@ -1852,14 +1852,14 @@ router?.post(
         .limit(1);
 
       if (!dispute) {
-        return res?.status(404).json({ error: "Dispute not found" });
+        return res.status(404).json({ error: "Dispute not found" });
       }
 
-      const isAdmin = isAdminUser(req?.user);
+      const isAdmin = isAdminUser(req.user);
       if (outcome !== "mutual_agreement" && !isAdmin) {
         if (
-          dispute?.buyerId !== req?.user!.id &&
-          dispute?.sellerId !== req?.user!.id
+          dispute?.buyerId !== req.user!.id &&
+          dispute?.sellerId !== req.user!.id
         ) {
           return res
             .status(403)
@@ -1908,17 +1908,17 @@ router?.post(
         .where(eq(marketplaceDisputes?.id, disputeId))
         .returning();
 
-      logger?.info(
-        `Dispute ${disputeId} resolved with outcome ${outcome} by user ${req?.user!.id}`,
+      logger.info(
+        `Dispute ${disputeId} resolved with outcome ${outcome} by user ${req.user!.id}`,
       );
 
-      return res?.json({
+      return res.json({
         dispute: updatedDispute,
         message: "Dispute resolved successfully",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error resolving dispute:");
-      res?.status(500).json({ error: "Failed to resolve dispute" });
+      logger.warn({ err: error }, "Error resolving dispute:");
+      res.status(500).json({ error: "Failed to resolve dispute" });
     }
   },
 );
@@ -1927,11 +1927,11 @@ router?.post(
   "/marketplace-disputes/:disputeId/withdraw",
   async (req: Request, res: Response) => {
     try {
-      if (!req?.isAuthenticated()) {
-        return res?.status(401).json({ error: "Unauthorized" });
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { disputeId } = req?.params;
+      const { disputeId } = req.params;
 
       const [dispute] = await db
         .select()
@@ -1940,10 +1940,10 @@ router?.post(
         .limit(1);
 
       if (!dispute) {
-        return res?.status(404).json({ error: "Dispute not found" });
+        return res.status(404).json({ error: "Dispute not found" });
       }
 
-      if (dispute?.buyerId !== req?.user!.id) {
+      if (dispute?.buyerId !== req.user!.id) {
         return res
           .status(403)
           .json({ error: "Only the buyer can withdraw a dispute" });
@@ -1976,15 +1976,15 @@ router?.post(
         .where(eq(marketplaceDisputes?.id, disputeId))
         .returning();
 
-      logger?.info(`Dispute ${disputeId} withdrawn by user ${req?.user!.id}`);
+      logger.info(`Dispute ${disputeId} withdrawn by user ${req.user!.id}`);
 
-      return res?.json({
+      return res.json({
         dispute: updatedDispute,
         message: "Dispute withdrawn successfully",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error withdrawing dispute:");
-      res?.status(500).json({ error: "Failed to withdraw dispute" });
+      logger.warn({ err: error }, "Error withdrawing dispute:");
+      res.status(500).json({ error: "Failed to withdraw dispute" });
     }
   },
 );
@@ -1993,12 +1993,12 @@ router?.get(
   "/marketplace-disputes/stats",
   async (req: Request, res: Response) => {
     try {
-      if (!req?.isAuthenticated()) {
-        return res?.status(401).json({ error: "Unauthorized" });
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const userId = req?.user!.id;
-      const isAdmin = isAdminUser(req?.user);
+      const userId = req.user!.id;
+      const isAdmin = isAdminUser(req.user);
 
       let userDisputes;
       if (isAdmin) {
@@ -2032,10 +2032,10 @@ router?.get(
         asSeller: userDisputes.filter((d) => d?.sellerId === userId).length,
       };
 
-      return res?.json({ stats });
+      return res.json({ stats });
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching dispute stats:");
-      res?.status(500).json({ error: "Failed to fetch dispute stats" });
+      logger.warn({ err: error }, "Error fetching dispute stats:");
+      res.status(500).json({ error: "Failed to fetch dispute stats" });
     }
   },
 );

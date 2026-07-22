@@ -84,17 +84,17 @@ export function useActionHistory(
 
   const modules = useMemo(() => {
     const uniqueModules = new Set(entries?.map((e) => e?.module));
-    return Array?.from(uniqueModules).sort();
+    return Array.from(uniqueModules).sort();
   }, [entries]);
 
   const categories = useMemo(() => {
     const uniqueCategories = new Set(entries?.map((e) => e?.category));
-    return Array?.from(uniqueCategories).sort() as ActionCategory[];
+    return Array.from(uniqueCategories).sort() as ActionCategory[];
   }, [entries]);
 
   const types = useMemo(() => {
     const uniqueTypes = new Set(entries?.map((e) => e?.type));
-    return Array?.from(uniqueTypes).sort() as ActionType[];
+    return Array.from(uniqueTypes).sort() as ActionType[];
   }, [entries]);
 
   const filter = useCallback(

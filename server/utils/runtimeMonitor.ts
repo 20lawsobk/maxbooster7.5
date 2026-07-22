@@ -38,14 +38,14 @@ class RuntimeMonitor {
     expectedRange?: { min: number; max: number }
   ): void {
     if (!isFinite(value)) {
-      if (Number?.isNaN(value)) {
-        this?.recordAlert("NaN", service, operation, value);
-      } else if (!Number?.isFinite(value)) {
-        this?.recordAlert("Infinity", service, operation, value);
+      if (Number.isNaN(value)) {
+        this.recordAlert("NaN", service, operation, value);
+      } else if (!Number.isFinite(value)) {
+        this.recordAlert("Infinity", service, operation, value);
       }
     } else if (expectedRange) {
       if (value < expectedRange?.min || value > expectedRange?.max) {
-        this?.recordAlert("OutOfRange", service, operation, value, {
+        this.recordAlert("OutOfRange", service, operation, value, {
           expectedRange,
         });
       }
@@ -62,7 +62,7 @@ class RuntimeMonitor {
     expectedRange?: { min: number; max: number }
   ): void {
     arr?.forEach((value, index) => {
-      this?.monitorValue(value, service, `${operation}[${index}]`, expectedRange);
+      this.monitorValue(value, service, `${operation}[${index}]`, expectedRange);
     });
   }
 
@@ -85,15 +85,15 @@ class RuntimeMonitor {
       context,
     };
 
-    this?.alerts.push(alert);
+    this.alerts.push(alert);
     this.alertCounts[type]++;
 
     // Log immediately
     console?.warn(`[MONITORING_ALERT] ${type} detected in ${service}.${operation}:`, alert);
 
     // Check if threshold exceeded
-    if (this.alertCounts[type] >= this?.alertThresholds[type]) {
-      this?.escalateAlert(type, service);
+    if (this.alertCounts[type] >= this.alertThresholds[type]) {
+      this.escalateAlert(type, service);
     }
   }
 
@@ -114,7 +114,7 @@ class RuntimeMonitor {
    * Get recent alerts
    */
   public getRecentAlerts(limit: number = 100): MonitoringAlert[] {
-    return this?.alerts.slice(-limit);
+    return this.alerts.slice(-limit);
   }
 
   /**
@@ -140,7 +140,7 @@ class RuntimeMonitor {
    * Export alerts for analysis
    */
   public exportAlerts(): string {
-    return JSON?.stringify(
+    return JSON.stringify(
       {
         exportedAt: new Date().toISOString(),
         summary: this.getAlertSummary(),
@@ -178,7 +178,7 @@ export function MonitorNumericOutput(
           propertyKey,
           expectedRange
         );
-      } else if (Array?.isArray(result) && result?.every((v) => typeof v === "number")) {
+      } else if (Array.isArray(result) && result?.every((v) => typeof v === "number")) {
         runtimeMonitor?.monitorArray(
           result,
           target?.constructor.name,
@@ -217,7 +217,7 @@ export function MonitorAsyncNumericOutput(
           propertyKey,
           expectedRange
         );
-      } else if (Array?.isArray(result) && result?.every((v) => typeof v === "number")) {
+      } else if (Array.isArray(result) && result?.every((v) => typeof v === "number")) {
         runtimeMonitor?.monitorArray(
           result,
           target?.constructor.name,
@@ -237,14 +237,14 @@ export function MonitorAsyncNumericOutput(
  * Express middleware to expose monitoring data
  */
 export function monitoringMiddleware(req: any, res: any, next: any) {
-  if (req?.path === "/_monitoring/alerts") {
-    return res?.json({
+  if (req.path === "/_monitoring/alerts") {
+    return res.json({
       summary: runtimeMonitor.getAlertSummary(),
       recentAlerts: runtimeMonitor.getRecentAlerts(50),
     });
   }
-  if (req?.path === "/_monitoring/export") {
-    return res?.type("text/plain").send(runtimeMonitor?.exportAlerts());
+  if (req.path === "/_monitoring/export") {
+    return res.type("text/plain").send(runtimeMonitor?.exportAlerts());
   }
   next();
 }

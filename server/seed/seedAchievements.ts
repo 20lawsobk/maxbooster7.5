@@ -167,7 +167,7 @@ const defaultAchievements = [
 ];
 
 export async function seedAchievements() {
-  logger?.info("Seeding achievements...");
+  logger.info("Seeding achievements...");
 
   try {
     const names = defaultAchievements?.map((a) => a?.name);
@@ -177,8 +177,8 @@ export async function seedAchievements() {
       .where(inArray(achievements?.name, names));
 
     if (Number(total) >= names?.length) {
-      logger?.info("Achievements already seeded, skipping...");
-      logger?.info("Achievement seeding complete!");
+      logger.info("Achievements already seeded, skipping...");
+      logger.info("Achievement seeding complete!");
       return;
     }
 
@@ -194,24 +194,24 @@ export async function seedAchievements() {
 
     if (toInsert?.length > 0) {
       await db?.insert(achievements).values(toInsert);
-      logger?.info(`Created ${toInsert?.length} achievement(s)`);
+      logger.info(`Created ${toInsert?.length} achievement(s)`);
     }
 
-    logger?.info("Achievement seeding complete!");
+    logger.info("Achievement seeding complete!");
   } catch (error) {
-    logger?.warn("Error seeding achievements:", error);
+    logger.warn("Error seeding achievements:", error);
     throw error;
   }
 }
 
 
 const isMainModule =
-  process?.argv[1] &&
-  (process?.argv[1].endsWith("seedAchievements.ts") ||
-    process?.argv[1].includes("seedAchievements"));
+  process.argv[1] &&
+  (process.argv[1].endsWith("seedAchievements.ts") ||
+    process.argv[1].includes("seedAchievements"));
 
 if (isMainModule) {
   seedAchievements()
-    .then(() => process?.exit(0))
-    .catch(() => process?.exit(1));
+    .then(() => process.exit(0))
+    .catch(() => process.exit(1));
 }

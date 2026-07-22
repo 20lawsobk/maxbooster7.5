@@ -49,7 +49,7 @@ export interface CompilationMetadata {
 }
 
 function generateId(prefix: string = "layer"): string {
-  return `${prefix}_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+  return `${prefix}_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
 function getDefaultTransform(): TransformConfig {
@@ -560,7 +560,7 @@ export function scaleProjectToAspectRatio(
   const target = ASPECT_RATIOS[targetAspectRatio];
   const scaleX = target?.width / project?.width;
   const scaleY = target?.height / project?.height;
-  const scale = Math?.min(scaleX, scaleY);
+  const scale = Math.min(scaleX, scaleY);
 
   const scaledLayers = project?.layers.map((layer) => ({
     ...layer,
@@ -607,7 +607,7 @@ function scaleLayerConfig(
 
   if ("fontSize" in cfg && typeof cfg?.fontSize === "number") {
     (cfg as Record<string, unknown>).fontSize =
-      cfg?.fontSize * Math?.min(scaleX, scaleY);
+      cfg?.fontSize * Math.min(scaleX, scaleY);
   }
   if ("width" in cfg && typeof cfg?.width === "number") {
     (cfg as Record<string, unknown>).width = cfg?.width * scaleX;
@@ -617,14 +617,14 @@ function scaleLayerConfig(
   }
   if ("radius" in cfg && typeof cfg?.radius === "number") {
     (cfg as Record<string, unknown>).radius =
-      cfg?.radius * Math?.min(scaleX, scaleY);
+      cfg?.radius * Math.min(scaleX, scaleY);
   }
   if ("barWidth" in cfg && typeof cfg?.barWidth === "number") {
     (cfg as Record<string, unknown>).barWidth = cfg?.barWidth * scaleX;
   }
   if ("lineWidth" in cfg && typeof cfg?.lineWidth === "number") {
     (cfg as Record<string, unknown>).lineWidth =
-      cfg?.lineWidth * Math?.min(scaleX, scaleY);
+      cfg?.lineWidth * Math.min(scaleX, scaleY);
   }
 
   return config;

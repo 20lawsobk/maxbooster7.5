@@ -421,7 +421,7 @@ class ContentQualityPipeline {
           (preferencesResult?.preferredHashtags as string[]) || [],
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Error building content context:");
+      logger.warn({ err: error }, "Error building content context:");
       return {
         userId,
         artistName: baseContext.artistName || "Artist",
@@ -437,7 +437,7 @@ class ContentQualityPipeline {
     count: number = 3,
   ): Promise<ContentVariant[]> {
     const variants: ContentVariant[] = [];
-    const strategies = this?.getGenerationStrategies(context?.objective);
+    const strategies = this.getGenerationStrategies(context?.objective);
 
     // Accumulate per-variant Advanced AI failures silently during the loop.
     // A single summary warn is logged after all variants are generated — this
@@ -450,7 +450,7 @@ class ContentQualityPipeline {
 
     for (let i = 0; i < count; i++) {
       const strategy = strategies[i % strategies?.length];
-      const variant = await this?.generateSingleVariant(
+      const variant = await this.generateSingleVariant(
         context,
         strategy,
         i,
@@ -473,18 +473,18 @@ class ContentQualityPipeline {
         /* non-fatal */
       }
       if (inRegistration) {
-        logger?.debug(
+        logger.debug(
           `[ContentQuality] Advanced AI deferred for ${_failAcc?.count}/${count} variants ` +
             `(registration in progress) — using local fallback`,
         );
       } else {
-        logger?.info(
+        logger.info(
           `[ContentQuality] Advanced AI used local fallback for ${_failAcc?.count}/${count} variants` +
             (_failAcc?.reason ? ` (${_failAcc?.reason})` : ""),
         );
       }
       if (_failAcc?.localCount > 0) {
-        logger?.info(
+        logger.info(
           `[ContentQuality] ${_failAcc?.localCount}/${count} variants generated via ` +
             `local pattern fallback (Tier 2)`,
         );
@@ -550,7 +550,7 @@ class ContentQualityPipeline {
     // Falls through to Tier 2 (local pattern fallback) only on transient failure.
     {
       try {
-        const contentType = this?.strategyToContentType(strategy);
+        const contentType = this.strategyToContentType(strategy);
         const advancedRequest: AdvancedContentRequest = {
           userId: context.userId,
           topic: context.topic,
@@ -575,7 +575,7 @@ class ContentQualityPipeline {
         body = advancedResult?.primary.body;
         cta = advancedResult?.primary.callToAction;
         hashtags = advancedResult?.primary.hashtags;
-        logger?.info(
+        logger.info(
           `[ContentQuality] Variant ${index} generated via Advanced AI (${contentType})`,
         );
       } catch (err) {
@@ -593,7 +593,7 @@ class ContentQualityPipeline {
     // algorithmic lever (saves, reply velocity, watch completion, dwell time…).
     // Only applied when content scores below the alignment threshold — avoids
     // over-engineering content that already triggers the right signals.
-    const optimised = this?.applyAlgorithmSignalOptimization(
+    const optimised = this.applyAlgorithmSignalOptimization(
       headline!,
       body!,
       cta!,
@@ -604,12 +604,12 @@ class ContentQualityPipeline {
     cta = optimised?.cta;
 
     const fullContent = `${headline}\n\n${body}`;
-    const platformOpt = this?.validatePlatformConstraints(
+    const platformOpt = this.validatePlatformConstraints(
       fullContent,
       hashtags!,
       context?.platform,
     );
-    const scores = this?.scoreContent(
+    const scores = this.scoreContent(
       fullContent,
       headline,
       cta,
@@ -772,15 +772,15 @@ class ContentQualityPipeline {
     context: ContentContext,
     platformOpt: PlatformOptimization,
   ): ContentScores {
-    const hookStrength = this?.scoreHook(headline);
-    const callToActionEffectiveness = this?.scoreCTA(cta);
-    const clarity = this?.scoreClarity(content);
-    const sentiment = this?.scoreSentiment(content, context?.objective);
-    const brandAlignment = this?.scoreBrandAlignment(content, context);
-    const engagement = this?.predictEngagement(content, headline, context);
-    const specificity = this?.scoreSpecificity(content, headline);
-    const emotionalArc = this?.scoreEmotionalArc(content, headline);
-    const narrativeAuthenticity = this?.scoreNarrativeAuthenticity(
+    const hookStrength = this.scoreHook(headline);
+    const callToActionEffectiveness = this.scoreCTA(cta);
+    const clarity = this.scoreClarity(content);
+    const sentiment = this.scoreSentiment(content, context?.objective);
+    const brandAlignment = this.scoreBrandAlignment(content, context);
+    const engagement = this.predictEngagement(content, headline, context);
+    const specificity = this.scoreSpecificity(content, headline);
+    const emotionalArc = this.scoreEmotionalArc(content, headline);
+    const narrativeAuthenticity = this.scoreNarrativeAuthenticity(
       content,
       headline,
     );
@@ -794,15 +794,15 @@ class ContentQualityPipeline {
 
     const platformPenalty = platformOpt?.isValid
       ? 0
-      : Math?.min(10, platformOpt?.issues.length * 3);
+      : Math.min(10, platformOpt?.issues.length * 3);
 
     // Use MaxCore-calibrated weights when available, fall back to defaults
     const w = getCalibratedWeights();
-    const overall = Math?.max(
+    const overall = Math.max(
       0,
-      Math?.min(
+      Math.min(
         100,
-        Math?.round(
+        Math.round(
           engagement * w?.engagement +
             hookStrength * w?.hookStrength +
             callToActionEffectiveness * w?.callToActionEffectiveness +
@@ -1340,7 +1340,7 @@ class ContentQualityPipeline {
     ).length;
     score -= genericMatches * 4;
 
-    return Math?.max(0, Math?.min(100, score));
+    return Math.max(0, Math.min(100, score));
   }
 
   private scoreEmotionalArc(content: string, headline: string): number {
@@ -1455,7 +1455,7 @@ class ContentQualityPipeline {
     const industryMatches = industryNative?.filter((w) =>
       full?.includes(w),
     ).length;
-    score += Math?.min(20, industryMatches * 6);
+    score += Math.min(20, industryMatches * 6);
 
     // ── Corporate PR fluff penalty (no real artist talks like this) ───────────
     const fluffPhrases = [
@@ -1515,7 +1515,7 @@ class ContentQualityPipeline {
       score += 3; // acceptable
     else if (avgLen >= 140) score -= 6; // too padded
 
-    return Math?.max(0, Math?.min(100, score));
+    return Math.max(0, Math.min(100, score));
   }
 
   async selectBestVariant(
@@ -1527,7 +1527,7 @@ class ContentQualityPipeline {
     // benefit from the relief.  Absolute floor is VEO_PRESSURE_FLOOR (65).
     const effectiveMin = pressureAdjustedMinScore(minScore);
     if (effectiveMin !== minScore && _currentPressure > 0) {
-      logger?.info(
+      logger.info(
         `☕ [CaffeineMode] Veo gate: ${minScore} → ${effectiveMin}` +
           ` (pressure: ${_currentPressure?.toFixed(2)}, floor: ${VEO_PRESSURE_FLOOR})`,
       );
@@ -1544,20 +1544,20 @@ class ContentQualityPipeline {
       )[0];
       // Fallback floor: VEO_PRESSURE_FLOOR — never publish below 87% of Veo gate
       if (best && best?.scores.overall >= VEO_PRESSURE_FLOOR) {
-        logger?.info(
+        logger.info(
           `[VeoGate] Fallback: best available ${best?.scores.overall?.toFixed(1)} passes ` +
             `VEO_PRESSURE_FLOOR (${VEO_PRESSURE_FLOOR}). Issues: ${best?.platformOptimizations.issues?.join(", ") || "none"}`,
         );
         return best;
       }
-      logger?.info(
+      logger.info(
         `[VeoGate] All ${variants?.length} variant(s) below ${VEO_PRESSURE_FLOOR} — content rejected. ` +
           `Best score: ${best?.scores?.overall.toFixed(1) ?? "N/A"}`,
       );
       return null;
     }
 
-    logger?.info(
+    logger.info(
       `[VeoGate] ✅ Passed — score: ${validVariants[0].scores?.overall.toFixed(1)} / gate: ${effectiveMin}`,
     );
     return validVariants[0];
@@ -1573,17 +1573,17 @@ class ContentQualityPipeline {
     variants: ContentVariant[];
     context: ContentContext;
   }> {
-    const context = await this?.buildContext(userId, baseContext);
+    const context = await this.buildContext(userId, baseContext);
     // Caffeine Mode: add proportional extra variants under deadline pressure.
     // With a 30-variant base, extras are 20% / 33% / 50% more to meaningfully
     // increase the quality hit probability without doubling compute.
     const pressureExtra =
       _currentPressure > 1.5
-        ? Math?.ceil(variantCount * 0.5) // critical: +50 % (e?.g. 30 → 45)
+        ? Math.ceil(variantCount * 0.5) // critical: +50 % (e?.g. 30 → 45)
         : _currentPressure > 0.5
-          ? Math?.ceil(variantCount * 0.33) // moderate: +33 % (e?.g. 30 → 40)
+          ? Math.ceil(variantCount * 0.33) // moderate: +33 % (e?.g. 30 → 40)
           : 0;
-    const variants = await this?.generateVariants(
+    const variants = await this.generateVariants(
       context,
       variantCount + pressureExtra,
     );
@@ -1775,7 +1775,7 @@ class ContentQualityPipeline {
       const errMsg = (error as Error).message ?? String(error);
       // MaxCore is always running — a failure here means it was temporarily
       // busy; the caller's local fallback handles it.  Log at INFO.
-      logger?.info(
+      logger.info(
         `[AdvancedAI] Content pipeline used local fallback: ${errMsg}`,
       );
       throw error;

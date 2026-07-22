@@ -22,7 +22,7 @@ interface BackupEntry {
 async function loadIndex(): Promise<BackupEntry[]> {
   try {
     const buf = await storageService?.downloadFile(BACKUP_INDEX_KEY);
-    return JSON?.parse(buf?.toString("utf-8")) as BackupEntry[];
+    return JSON.parse(buf?.toString("utf-8")) as BackupEntry[];
   } catch {
     return [];
   }
@@ -30,7 +30,7 @@ async function loadIndex(): Promise<BackupEntry[]> {
 
 async function saveIndex(entries: BackupEntry[]): Promise<void> {
   await storageService?.uploadFile(
-    Buffer?.from(JSON?.stringify(entries, null, 2), "utf-8"),
+    Buffer?.from(JSON.stringify(entries, null, 2), "utf-8"),
     BACKUP_INDEX_KEY,
     "application/json",
   );
@@ -42,45 +42,45 @@ export class DatabaseBackupService {
 
   async initialize() {
     if (!env?.DATABASE_URL) {
-      logger?.warn("⚠️  DATABASE_URL not configured - backup service disabled");
+      logger.warn("⚠️  DATABASE_URL not configured - backup service disabled");
       return;
     }
 
     if (
-      process?.env.NODE_ENV !== "production" &&
-      !process?.env.REPLIT_DEPLOYMENT &&
-      process?.env.ENABLE_BACKUPS !== "true"
+      process.env.NODE_ENV !== "production" &&
+      !process.env.REPLIT_DEPLOYMENT &&
+      process.env.ENABLE_BACKUPS !== "true"
     ) {
-      logger?.info("ℹ️  Database backups disabled (not in production)");
+      logger.info("ℹ️  Database backups disabled (not in production)");
       logger.info("   Set ENABLE_BACKUPS=true to enable in development");
       return;
     }
 
-    this?.scheduleBackups();
+    this.scheduleBackups();
     this.isInitialized = true;
 
-    logger?.info(
+    logger.info(
       "✅ Database Backup Service initialized (Pocket Dimension storage)",
     );
-    logger?.info(`   RPO Target: ${RPO_TARGET} hours`);
-    logger?.info(`   RTO Target: ${RTO_TARGET} minutes`);
-    logger?.info(`   Backup Schedule: Daily at 2 AM UTC`);
-    logger?.info(`   Retention: ${MAX_BACKUPS} days`);
+    logger.info(`   RPO Target: ${RPO_TARGET} hours`);
+    logger.info(`   RTO Target: ${RTO_TARGET} minutes`);
+    logger.info(`   Backup Schedule: Daily at 2 AM UTC`);
+    logger.info(`   Retention: ${MAX_BACKUPS} days`);
   }
 
   private scheduleBackups() {
     this.backupSchedule = cron?.schedule("0 2 * * *", async () => {
-      logger?.info("🔄 Starting scheduled database backup...");
+      logger.info("🔄 Starting scheduled database backup...");
       try {
-        await this?.createBackup();
-        await this?.cleanOldBackups();
-        logger?.info("✅ Scheduled backup completed successfully");
+        await this.createBackup();
+        await this.cleanOldBackups();
+        logger.info("✅ Scheduled backup completed successfully");
       } catch (error: unknown) {
-        logger?.warn({ err: error }, "❌ Scheduled backup failed:");
+        logger.warn({ err: error }, "❌ Scheduled backup failed:");
       }
     });
 
-    logger?.info("📅 Database backups scheduled (daily at 2 AM UTC)");
+    logger.info("📅 Database backups scheduled (daily at 2 AM UTC)");
   }
 
   async createBackup(): Promise<string> {
@@ -172,7 +172,7 @@ export class DatabaseBackupService {
 
     // Heap headroom warning at 256 MB so ops have lead time.
     if (sizeBytes > 256 * 1024 * 1024) {
-      logger?.warn(
+      logger.warn(
         `⚠️  Backup ${name} is ${sizeMB} MB — approaching memory limit. ` +
           `Plan for streaming upload before the next doubling.`,
       );
@@ -183,7 +183,7 @@ export class DatabaseBackupService {
 
     await storageService?.uploadFile(sqlBuffer, key, "application/sql");
 
-    logger?.info(`✅ Backup stored in Pocket Dimension: ${name} (${sizeMB} MB)`);
+    logger.info(`✅ Backup stored in Pocket Dimension: ${name} (${sizeMB} MB)`);
 
     const index = await loadIndex();
     index?.push({ name, key, date: new Date().toISOString(), size: sizeBytes });
@@ -204,16 +204,16 @@ export class DatabaseBackupService {
         for (const entry of toDelete) {
           try {
             await storageService?.deleteFile(entry?.key);
-            logger?.info(`🗑️  Deleted old backup: ${entry?.name}`);
+            logger.info(`🗑️  Deleted old backup: ${entry?.name}`);
           } catch {
-            logger?.warn(`Could not delete backup ${entry?.name} from storage`);
+            logger.warn(`Could not delete backup ${entry?.name} from storage`);
           }
         }
         await saveIndex(sorted?.slice(0, MAX_BACKUPS));
-        logger?.info(`✅ Cleaned ${toDelete?.length} old backup(s)`);
+        logger.info(`✅ Cleaned ${toDelete?.length} old backup(s)`);
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error cleaning old backups:");
+      logger.warn({ err: error }, "Error cleaning old backups:");
     }
   }
 
@@ -233,7 +233,7 @@ export class DatabaseBackupService {
         });
         psql?.on("close", (code) => {
           if (code === 0) {
-            logger?.info("✅ Database restored successfully");
+            logger.info("✅ Database restored successfully");
             resolve();
           } else {
             reject(new Error(`Restore failed (code ${code}): ${errorOutput}`));
@@ -264,7 +264,7 @@ export class DatabaseBackupService {
           key: e.key,
         }));
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error listing backups:");
+      logger.warn({ err: error }, "Error listing backups:");
       return [];
     }
   }
@@ -280,9 +280,9 @@ export class DatabaseBackupService {
   }
 
   stop() {
-    if (this?.backupSchedule) {
-      this?.backupSchedule.stop();
-      logger?.info("🛑 Database backup schedule stopped");
+    if (this.backupSchedule) {
+      this.backupSchedule.stop();
+      logger.info("🛑 Database backup schedule stopped");
     }
   }
 }

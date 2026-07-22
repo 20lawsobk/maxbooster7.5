@@ -79,15 +79,15 @@ class RevenueForecastService {
     userId: string,
     months: number,
   ): Promise<ForecastResult> {
-    logger?.info(`Generating ${months}-month forecast for user ${userId}`);
+    logger.info(`Generating ${months}-month forecast for user ${userId}`);
 
-    const historicalData = await this?.getHistoricalData(userId);
-    const streamToRevenueRate = await this?.calculateStreamToRevenueRate(userId);
-    const growthRate = this?.calculateGrowthRate(historicalData);
-    const dataConsistency = this?.calculateDataConsistency(historicalData);
+    const historicalData = await this.getHistoricalData(userId);
+    const streamToRevenueRate = await this.calculateStreamToRevenueRate(userId);
+    const growthRate = this.calculateGrowthRate(historicalData);
+    const dataConsistency = this.calculateDataConsistency(historicalData);
 
     const baseMonthlyStreams =
-      this?.calculateAverageMonthlyStreams(historicalData);
+      this.calculateAverageMonthlyStreams(historicalData);
 
     let totalStreams = 0;
     let totalRevenue = 0;
@@ -100,7 +100,7 @@ class RevenueForecastService {
         1,
       );
       const seasonalFactor = SEASONALITY_FACTORS[futureMonth?.getMonth()];
-      const growthFactor = Math?.pow(1 + growthRate, i / 12);
+      const growthFactor = Math.pow(1 + growthRate, i / 12);
 
       const monthStreams = baseMonthlyStreams * seasonalFactor * growthFactor;
       const monthRevenue = monthStreams * streamToRevenueRate;
@@ -109,13 +109,13 @@ class RevenueForecastService {
       totalRevenue += monthRevenue;
     }
 
-    const projectedRoyalties = totalRevenue * this?.ROYALTY_PERCENTAGE;
-    const confidence = this?.calculateConfidence(
+    const projectedRoyalties = totalRevenue * this.ROYALTY_PERCENTAGE;
+    const confidence = this.calculateConfidence(
       months,
       dataConsistency,
       historicalData?.length,
     );
-    const volatility = this?.calculateVolatility(historicalData);
+    const volatility = this.calculateVolatility(historicalData);
 
     const confidenceRange = totalRevenue * volatility * (1 - confidence);
 
@@ -128,14 +128,14 @@ class RevenueForecastService {
       confidence: Math.round(confidence * 100) / 100,
       confidenceLow: Math.max(
         0,
-        Math?.round((totalRevenue - confidenceRange) * 100) / 100,
+        Math.round((totalRevenue - confidenceRange) * 100) / 100,
       ),
       confidenceHigh: Math.round((totalRevenue + confidenceRange) * 100) / 100,
       growthRate: Math.round(growthRate * 10000) / 100,
       seasonalityFactor: this.getAverageSeasonalityFactor(months),
     };
 
-    await this?.storeForecast(userId, result);
+    await this.storeForecast(userId, result);
 
     return result;
   }
@@ -160,23 +160,23 @@ class RevenueForecastService {
     };
 
     if (Number(totalStreams) === 0) {
-      return this?.AVERAGE_STREAM_RATE;
+      return this.AVERAGE_STREAM_RATE;
     }
 
     const rate = Number(totalRevenue) / Number(totalStreams);
-    return Math?.max(0.001, Math?.min(0.01, rate || this?.AVERAGE_STREAM_RATE));
+    return Math.max(0.001, Math.min(0.01, rate || this.AVERAGE_STREAM_RATE));
   }
 
   async getRevenueProjections(userId: string): Promise<RevenueProjections> {
     const [threeMonth, sixMonth, twelveMonth] = await Promise?.all([
-      this?.generateForecast(userId, 3),
-      this?.generateForecast(userId, 6),
-      this?.generateForecast(userId, 12),
+      this.generateForecast(userId, 3),
+      this.generateForecast(userId, 6),
+      this.generateForecast(userId, 12),
     ]);
 
-    const monthlyBreakdown = await this?.generateMonthlyBreakdown(userId, 12);
-    const currentRate = await this?.calculateStreamToRevenueRate(userId);
-    const currentMonthly = await this?.getCurrentMonthlyRevenue(userId);
+    const monthlyBreakdown = await this.generateMonthlyBreakdown(userId, 12);
+    const currentRate = await this.calculateStreamToRevenueRate(userId);
+    const currentMonthly = await this.getCurrentMonthlyRevenue(userId);
 
     const goalAmount = 1000;
     const projectedMonthly = twelveMonth?.projectedRevenue / 12;
@@ -184,12 +184,12 @@ class RevenueForecastService {
 
     if (projectedMonthly > currentMonthly && projectedMonthly >= goalAmount) {
       const monthsToGoal =
-        Math?.log(goalAmount / currentMonthly) /
-        Math?.log(projectedMonthly / currentMonthly);
-      daysToGoal = Math?.ceil(monthsToGoal * 30);
+        Math.log(goalAmount / currentMonthly) /
+        Math.log(projectedMonthly / currentMonthly);
+      daysToGoal = Math.ceil(monthsToGoal * 30);
     }
 
-    const tips = this?.generateTips(
+    const tips = this.generateTips(
       currentMonthly,
       projectedMonthly,
       threeMonth?.growthRate,
@@ -246,8 +246,8 @@ class RevenueForecastService {
       const actual = Number(f?.actualRevenue || 0);
 
       if (actual > 0) {
-        const error = Math?.abs(predicted - actual) / actual;
-        const accuracy = Math?.max(0, (1 - error) * 100);
+        const error = Math.abs(predicted - actual) / actual;
+        const accuracy = Math.max(0, (1 - error) * 100);
         totalError += error;
 
         recentForecasts?.push({
@@ -263,7 +263,7 @@ class RevenueForecastService {
       recentForecasts?.length > 0
         ? (totalError / recentForecasts?.length) * 100
         : 15;
-    const overallAccuracy = Math?.max(0, 100 - mape);
+    const overallAccuracy = Math.max(0, 100 - mape);
 
     const recentAccuracies = recentForecasts?.slice(0, 6).map((f) => f?.accuracy);
     const olderAccuracies = recentForecasts?.slice(6).map((f) => f?.accuracy);
@@ -326,8 +326,8 @@ class RevenueForecastService {
   ) {
     if (data?.length < 2) return 0.05;
 
-    const firstHalf = data?.slice(0, Math?.floor(data?.length / 2));
-    const secondHalf = data?.slice(Math?.floor(data?.length / 2));
+    const firstHalf = data?.slice(0, Math.floor(data?.length / 2));
+    const secondHalf = data?.slice(Math.floor(data?.length / 2));
 
     const firstAvg =
       firstHalf?.reduce((s, d) => s + d?.revenue, 0) / firstHalf?.length || 1;
@@ -335,13 +335,13 @@ class RevenueForecastService {
       secondHalf?.reduce((s, d) => s + d?.revenue, 0) / secondHalf?.length || 1;
 
     const growthRate = (secondAvg - firstAvg) / firstAvg;
-    return Math?.max(-0.5, Math?.min(1, growthRate));
+    return Math.max(-0.5, Math.min(1, growthRate));
   }
 
   private calculateAverageMonthlyStreams(data: { streams: number }[]) {
     if (data?.length === 0) return 1000;
     const total = data?.reduce((s, d) => s + d?.streams, 0);
-    const monthsOfData = Math?.max(1, data?.length / 30);
+    const monthsOfData = Math.max(1, data?.length / 30);
     return total / monthsOfData;
   }
 
@@ -351,11 +351,11 @@ class RevenueForecastService {
     const values = data?.map((d) => d?.revenue);
     const mean = values?.reduce((a, b) => a + b, 0) / values?.length;
     const variance =
-      values?.reduce((sum, v) => sum + Math?.pow(v - mean, 2), 0) / values?.length;
-    const stdDev = Math?.sqrt(variance);
+      values?.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / values?.length;
+    const stdDev = Math.sqrt(variance);
     const cv = mean > 0 ? stdDev / mean : 1;
 
-    return Math?.max(0.3, 1 - cv);
+    return Math.max(0.3, 1 - cv);
   }
 
   private calculateVolatility(data: { revenue: number }[]) {
@@ -364,10 +364,10 @@ class RevenueForecastService {
     const values = data?.map((d) => d?.revenue);
     const mean = values?.reduce((a, b) => a + b, 0) / values?.length;
     const variance =
-      values?.reduce((sum, v) => sum + Math?.pow(v - mean, 2), 0) / values?.length;
-    const stdDev = Math?.sqrt(variance);
+      values?.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / values?.length;
+    const stdDev = Math.sqrt(variance);
 
-    return mean > 0 ? Math?.min(0.5, stdDev / mean) : 0.3;
+    return mean > 0 ? Math.min(0.5, stdDev / mean) : 0.3;
   }
 
   private calculateConfidence(
@@ -375,14 +375,14 @@ class RevenueForecastService {
     consistency: number,
     dataPoints: number,
   ) {
-    const baseConfidence = this?.BASE_CONFIDENCE;
-    const dataBonus = Math?.min(0.15, dataPoints / 1000);
+    const baseConfidence = this.BASE_CONFIDENCE;
+    const dataBonus = Math.min(0.15, dataPoints / 1000);
     const consistencyBonus = consistency * 0.1;
-    const timeDecay = Math?.pow(0.98, months);
+    const timeDecay = Math.pow(0.98, months);
 
-    return Math?.max(
+    return Math.max(
       0.4,
-      Math?.min(
+      Math.min(
         0.95,
         (baseConfidence + dataBonus + consistencyBonus) * timeDecay,
       ),
@@ -402,32 +402,32 @@ class RevenueForecastService {
       total += SEASONALITY_FACTORS[futureMonth?.getMonth()];
     }
 
-    return Math?.round((total / months) * 100) / 100;
+    return Math.round((total / months) * 100) / 100;
   }
 
   private async generateMonthlyBreakdown(
     userId: string,
     months: number,
   ): Promise<MonthlyProjection[]> {
-    const historicalData = await this?.getHistoricalData(userId);
-    const streamToRevenueRate = await this?.calculateStreamToRevenueRate(userId);
-    const growthRate = this?.calculateGrowthRate(historicalData);
-    const dataConsistency = this?.calculateDataConsistency(historicalData);
-    const volatility = this?.calculateVolatility(historicalData);
+    const historicalData = await this.getHistoricalData(userId);
+    const streamToRevenueRate = await this.calculateStreamToRevenueRate(userId);
+    const growthRate = this.calculateGrowthRate(historicalData);
+    const dataConsistency = this.calculateDataConsistency(historicalData);
+    const volatility = this.calculateVolatility(historicalData);
 
     const baseMonthlyStreams =
-      this?.calculateAverageMonthlyStreams(historicalData);
+      this.calculateAverageMonthlyStreams(historicalData);
     const today = new Date();
     const result: MonthlyProjection[] = [];
 
-    const monthlyHistorical = this?.aggregateByMonth(historicalData);
-    for (const [monthKey, data] of Object?.entries(monthlyHistorical)) {
+    const monthlyHistorical = this.aggregateByMonth(historicalData);
+    for (const [monthKey, data] of Object.entries(monthlyHistorical)) {
       result?.push({
         month: monthKey,
         date: new Date(monthKey + "-01"),
         projectedStreams: data.streams,
         projectedRevenue: data.revenue,
-        projectedRoyalties: data.revenue * this?.ROYALTY_PERCENTAGE,
+        projectedRoyalties: data.revenue * this.ROYALTY_PERCENTAGE,
         confidence: 1,
         confidenceLow: data.revenue,
         confidenceHigh: data.revenue,
@@ -442,14 +442,14 @@ class RevenueForecastService {
       if (result?.some((r) => r?.month === monthKey)) continue;
 
       const seasonalFactor = SEASONALITY_FACTORS[futureDate?.getMonth()];
-      const growthFactor = Math?.pow(1 + growthRate, i / 12);
-      const confidence = this?.calculateConfidence(
+      const growthFactor = Math.pow(1 + growthRate, i / 12);
+      const confidence = this.calculateConfidence(
         i,
         dataConsistency,
         historicalData?.length,
       );
 
-      const monthStreams = Math?.round(
+      const monthStreams = Math.round(
         baseMonthlyStreams * seasonalFactor * growthFactor,
       );
       const monthRevenue = monthStreams * streamToRevenueRate;
@@ -461,14 +461,14 @@ class RevenueForecastService {
         projectedStreams: monthStreams,
         projectedRevenue: Math.round(monthRevenue * 100) / 100,
         projectedRoyalties:
-          Math?.round(monthRevenue * this?.ROYALTY_PERCENTAGE * 100) / 100,
+          Math.round(monthRevenue * this.ROYALTY_PERCENTAGE * 100) / 100,
         confidence: Math.round(confidence * 100) / 100,
         confidenceLow: Math.max(
           0,
-          Math?.round((monthRevenue - confidenceRange) * 100) / 100,
+          Math.round((monthRevenue - confidenceRange) * 100) / 100,
         ),
         confidenceHigh:
-          Math?.round((monthRevenue + confidenceRange) * 100) / 100,
+          Math.round((monthRevenue + confidenceRange) * 100) / 100,
         isHistorical: false,
       });
     }

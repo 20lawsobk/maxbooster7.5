@@ -82,8 +82,8 @@ class ErrorService {
   private lastErrorResetTime = Date?.now();
 
   private constructor() {
-    this?.setupGlobalHandlers();
-    this?.setupPeriodicReporting();
+    this.setupGlobalHandlers();
+    this.setupPeriodicReporting();
   }
 
   static getInstance(): ErrorService {
@@ -100,7 +100,7 @@ class ErrorService {
       if (message?.includes("ResizeObserver loop")) {
         return;
       }
-      this?.handleError(event?.error || new Error(event?.message), {
+      this.handleError(event?.error || new Error(event?.message), {
         component: "window",
         action: "unhandled-error",
         metadata: {
@@ -114,7 +114,7 @@ class ErrorService {
 
     // Handle unhandled promise rejections
     window?.addEventListener("unhandledrejection", (event) => {
-      this?.handleError(event?.reason, {
+      this.handleError(event?.reason, {
         component: "promise",
         action: "unhandled-rejection",
         metadata: {
@@ -128,29 +128,29 @@ class ErrorService {
     const originalConsoleError = console?.error;
     console.error = (...args) => {
       originalConsoleError?.apply(console, args);
-      this?.addBreadcrumb("console.error", { args });
+      this.addBreadcrumb("console.error", { args });
     };
   }
 
   private setupPeriodicReporting() {
     // Report errors to backend every 5 seconds if there are any queued
     setInterval(() => {
-      if (this?.errorQueue.length > 0 && !this?.isReporting) {
-        this?.reportErrorsBatch();
+      if (this.errorQueue.length > 0 && !this.isReporting) {
+        this.reportErrorsBatch();
       }
     }, 5000);
   }
 
   addBreadcrumb(action: string, data?: unknown) {
-    this?.breadcrumbs.push({
+    this.breadcrumbs.push({
       timestamp: new Date(),
       action,
       data,
     });
 
     // Keep only the last N breadcrumbs
-    if (this?.breadcrumbs.length > this?.maxBreadcrumbs) {
-      this.breadcrumbs = this?.breadcrumbs.slice(-this?.maxBreadcrumbs);
+    if (this.breadcrumbs.length > this.maxBreadcrumbs) {
+      this.breadcrumbs = this.breadcrumbs.slice(-this.maxBreadcrumbs);
     }
   }
 
@@ -380,7 +380,7 @@ class ErrorService {
     actions?.push({
       label: "Report Issue",
       type: "secondary",
-      action: () => this?.showReportDialog(),
+      action: () => this.showReportDialog(),
     });
 
     return actions;
@@ -388,13 +388,13 @@ class ErrorService {
 
   private checkRateLimit(): boolean {
     const now = Date?.now();
-    if (now - this?.lastErrorResetTime > this?.errorRateLimit.windowMs) {
+    if (now - this.lastErrorResetTime > this.errorRateLimit.windowMs) {
       this.errorCount = 0;
       this.lastErrorResetTime = now;
     }
 
     this.errorCount++;
-    return this?.errorCount <= this?.errorRateLimit.max;
+    return this.errorCount <= this.errorRateLimit.max;
   }
 
   async handleError(
@@ -409,27 +409,27 @@ class ErrorService {
     },
   ): Promise<void> {
     // Check rate limit
-    if (!this?.checkRateLimit()) {
-      logger?.warn("Error rate limit exceeded, suppressing error reporting");
+    if (!this.checkRateLimit()) {
+      logger.warn("Error rate limit exceeded, suppressing error reporting");
       return;
     }
 
-    const category = this?.categorizeError(error);
+    const category = this.categorizeError(error);
     const severity =
-      options?.severity || this?.determineSeverity(error, category);
-    const isTransient = this?.isTransientError(category);
+      options?.severity || this.determineSeverity(error, category);
+    const isTransient = this.isTransientError(category);
 
     const context: ErrorContext = {
       route: window.location.pathname,
       timestamp: new Date(),
       userAgent: navigator.userAgent,
-      breadcrumbs: [...this?.breadcrumbs],
+      breadcrumbs: [...this.breadcrumbs],
       stackTrace: error instanceof Error ? error?.stack : undefined,
       ...contextOverrides,
     };
 
     const errorReport: ErrorReport = {
-      id: `error-${Date?.now()}-${Math?.random().toString(36).substr(2, 9)}`,
+      id: `error-${Date?.now()}-${Math.random().toString(36).substr(2, 9)}`,
       severity,
       category,
       message: error instanceof Error ? error?.message : String(error),
@@ -443,14 +443,14 @@ class ErrorService {
     };
 
     // Log to console for debugging
-    logger?.error("[ErrorService]", errorReport);
+    logger.error("[ErrorService]", errorReport);
 
     // Add to error queue for batch reporting
-    this?.errorQueue.push(errorReport);
+    this.errorQueue.push(errorReport);
 
     // Show user feedback if not silent
     if (!options?.silent && options?.showToast !== false) {
-      this?.showUserFeedback(errorReport);
+      this.showUserFeedback(errorReport);
     }
 
     // Handle transient errors with retry
@@ -459,19 +459,19 @@ class ErrorService {
       options?.retryable !== false &&
       errorReport?.maxRetries > 0
     ) {
-      this?.scheduleRetry(errorReport);
+      this.scheduleRetry(errorReport);
     }
 
     // Trigger immediate reporting for critical errors
     if (severity === "critical") {
-      this?.reportErrorsBatch();
+      this.reportErrorsBatch();
     }
   }
 
   private async scheduleRetry(errorReport: ErrorReport) {
     const retryCount = errorReport?.retryCount || 0;
     const delay =
-      this?.retryDelays[Math?.min(retryCount, this?.retryDelays.length - 1)];
+      this.retryDelays[Math.min(retryCount, this.retryDelays.length - 1)];
 
     setTimeout(() => {
       if (errorReport?.recoveryActions && errorReport?.recoveryActions[0]) {
@@ -508,10 +508,10 @@ class ErrorService {
   }
 
   private async reportErrorsBatch() {
-    if (this?.isReporting || this?.errorQueue.length === 0) return;
+    if (this.isReporting || this.errorQueue.length === 0) return;
 
     this.isReporting = true;
-    const errors = [...this?.errorQueue];
+    const errors = [...this.errorQueue];
     this.errorQueue = [];
 
     try {
@@ -543,13 +543,13 @@ class ErrorService {
       if (!response?.ok) {
         const retriable = errors?.filter((e) => (e?.retryCount || 0) < 3);
         retriable?.forEach((e) => (e.retryCount = (e?.retryCount || 0) + 1));
-        this?.errorQueue.push(...retriable);
+        this.errorQueue.push(...retriable);
       }
     } catch (error: unknown) {
       const retriable = errors?.filter((e) => (e?.retryCount || 0) < 3);
       retriable?.forEach((e) => (e.retryCount = (e?.retryCount || 0) + 1));
-      this?.errorQueue.push(...retriable);
-      logger?.error("Failed to report errors to backend:", error);
+      this.errorQueue.push(...retriable);
+      logger.error("Failed to report errors to backend:", error);
     } finally {
       this.isReporting = false;
     }
@@ -594,7 +594,7 @@ Please describe what you were doing when the error occurred:
 
   // Utility method for manual error capture
   captureException(error: Error | unknown, context?: Partial<ErrorContext>) {
-    this?.handleError(error, context, { showToast: true });
+    this.handleError(error, context, { showToast: true });
   }
 
   // Utility method for capturing messages
@@ -604,7 +604,7 @@ Please describe what you were doing when the error occurred:
     context?: Partial<ErrorContext>,
   ) {
     const error = new Error(message);
-    this?.handleError(error, context, { severity, showToast: true });
+    this.handleError(error, context, { severity, showToast: true });
   }
 
   // Method to clear error history

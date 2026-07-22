@@ -9,7 +9,7 @@ const GEAR_TABLE = (() => {
   const t = new Uint32Array(256);
   let v = 0x9e3779b9;
   for (let i = 0; i < 256; i++) {
-    v = (Math?.imul(v, 0x6c62272e) + 0x000016fe) >>> 0;
+    v = (Math.imul(v, 0x6c62272e) + 0x000016fe) >>> 0;
     t[i] = v;
   }
   return t;

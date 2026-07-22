@@ -82,9 +82,9 @@ export function useAudioRecorder() {
             for (let i = 0; i < dataArray?.length; i++) {
               sum += dataArray[i] * dataArray[i];
             }
-            const rms = Math?.sqrt(sum / dataArray?.length);
-            const db = 20 * Math?.log10(Math?.max(rms, 1e-10));
-            const normalizedLevel = Math?.max(0, Math?.min(1, (db + 60) / 60));
+            const rms = Math.sqrt(sum / dataArray?.length);
+            const db = 20 * Math.log10(Math.max(rms, 1e-10));
+            const normalizedLevel = Math.max(0, Math.min(1, (db + 60) / 60));
             setState((prev) => ({ ...prev, inputLevel: normalizedLevel }));
             animationFrameRef.current = requestAnimationFrame(updateLevel);
           }
@@ -93,7 +93,7 @@ export function useAudioRecorder() {
 
         return stream;
       } catch (error) {
-        logger?.error("Error starting monitoring:", error);
+        logger.error("Error starting monitoring:", error);
         throw error;
       }
     },
@@ -185,7 +185,7 @@ export function useAudioRecorder() {
           }
         }, 100);
       } catch (error) {
-        logger?.error("Error starting recording:", error);
+        logger.error("Error starting recording:", error);
         throw error;
       }
     },
@@ -285,7 +285,7 @@ export function useAudioRecorder() {
       startTime: number = 0,
     ): Promise<{ clipId: string } | null> => {
       if (!state?.recordedBlob) {
-        logger?.warn("No recording to upload");
+        logger.warn("No recording to upload");
         return null;
       }
 
@@ -318,7 +318,7 @@ export function useAudioRecorder() {
         clearRecording();
         return result;
       } catch (error) {
-        logger?.error("Error uploading recording:", error);
+        logger.error("Error uploading recording:", error);
         throw error;
       }
     },

@@ -108,11 +108,11 @@ export class RoyaltyExportsService {
 
     switch (options?.format) {
       case "csv":
-        return this?.exportToCSV(statement, options);
+        return this.exportToCSV(statement, options);
       case "pdf":
-        return this?.exportToPDF(statement, options);
+        return this.exportToPDF(statement, options);
       case "json":
-        return this?.exportToJSON(statement, options);
+        return this.exportToJSON(statement, options);
       default:
         throw new Error(`Unsupported export format: ${options?.format}`);
     }
@@ -136,11 +136,11 @@ export class RoyaltyExportsService {
 
     switch (options?.format) {
       case "csv":
-        return this?.exportMultipleToCSV(statements, options);
+        return this.exportMultipleToCSV(statements, options);
       case "pdf":
-        return this?.exportMultipleToPDF(statements, options);
+        return this.exportMultipleToPDF(statements, options);
       case "json":
-        return this?.exportMultipleToJSON(statements, options);
+        return this.exportMultipleToJSON(statements, options);
       default:
         throw new Error(`Unsupported export format: ${options?.format}`);
     }
@@ -194,7 +194,7 @@ export class RoyaltyExportsService {
       })),
     };
 
-    const filename = `audit_log_${options?.userId}_${this?.formatDateForFilename(options?.startDate)}_${this?.formatDateForFilename(options?.endDate)}.json`;
+    const filename = `audit_log_${options?.userId}_${this.formatDateForFilename(options?.startDate)}_${this.formatDateForFilename(options?.endDate)}.json`;
 
     return {
       data: JSON.stringify(auditData, null, 2),
@@ -234,7 +234,7 @@ export class RoyaltyExportsService {
           eligible: true,
         };
       case "pdf":
-        const pdfBuffer = await this?.generate1099PDF(taxDoc);
+        const pdfBuffer = await this.generate1099PDF(taxDoc);
         return {
           data: pdfBuffer,
           filename: `1099-MISC_${options?.taxYear}_${options?.userId}.pdf`,
@@ -242,7 +242,7 @@ export class RoyaltyExportsService {
           eligible: true,
         };
       case "irs_1099":
-        const irsFormat = this?.formatFor1099Submission(taxDoc);
+        const irsFormat = this.formatFor1099Submission(taxDoc);
         return {
           data: irsFormat,
           filename: `1099-MISC_IRS_${options?.taxYear}_${options?.userId}.txt`,
@@ -613,7 +613,7 @@ export class RoyaltyExportsService {
 
     return {
       data: csv,
-      filename: `royalty_statements_export_${this?.formatDateForFilename(new Date())}.csv`,
+      filename: `royalty_statements_export_${this.formatDateForFilename(new Date())}.csv`,
       mimeType: "text/csv",
     };
   }
@@ -672,7 +672,7 @@ export class RoyaltyExportsService {
 
     return {
       data: Buffer.from(doc?.output("arraybuffer")),
-      filename: `royalty_statements_summary_${this?.formatDateForFilename(new Date())}.pdf`,
+      filename: `royalty_statements_summary_${this.formatDateForFilename(new Date())}.pdf`,
       mimeType: "application/pdf",
     };
   }
@@ -730,7 +730,7 @@ export class RoyaltyExportsService {
 
     return {
       data: JSON.stringify(exportData, null, 2),
-      filename: `royalty_statements_export_${this?.formatDateForFilename(new Date())}.json`,
+      filename: `royalty_statements_export_${this.formatDateForFilename(new Date())}.json`,
       mimeType: "application/json",
     };
   }
@@ -972,11 +972,11 @@ export class RoyaltyExportsService {
       }
     }
 
-    const xlsxContent = this?.generateXLSXFormat(worksheets);
+    const xlsxContent = this.generateXLSXFormat(worksheets);
 
     return {
       data: xlsxContent,
-      filename: `royalty_statements_${this?.formatDateForFilename(new Date())}.xlsx`,
+      filename: `royalty_statements_${this.formatDateForFilename(new Date())}.xlsx`,
       mimeType:
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     };
@@ -984,7 +984,7 @@ export class RoyaltyExportsService {
 
   private generateXLSXFormat(worksheets: Record<string, string[][]>): string {
     let csvOutput = "";
-    for (const [sheetName, rows] of Object?.entries(worksheets)) {
+    for (const [sheetName, rows] of Object.entries(worksheets)) {
       csvOutput += `=== ${sheetName} ===\n`;
       for (const row of rows) {
         csvOutput +=

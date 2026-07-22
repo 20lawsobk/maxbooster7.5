@@ -29,10 +29,10 @@ const timedFetch = (
 ): Promise<Response> =>
   fetch(url, { signal: AbortSignal.timeout(10_000), ...init });
 
-const AI_SERVER_URL = process?.env.AI_SERVER_URL || "";
-const AI_SERVER_KEY = process?.env.AI_SERVER_KEY || "";
-const PEER_NODE = process?.env.PEER_TRAINING_NODE || "";
-const MBS_KEY = process?.env.MBS_AI_TRAINING_KEY || "";
+const AI_SERVER_URL = process.env.AI_SERVER_URL || "";
+const AI_SERVER_KEY = process.env.AI_SERVER_KEY || "";
+const PEER_NODE = process.env.PEER_TRAINING_NODE || "";
+const MBS_KEY = process.env.MBS_AI_TRAINING_KEY || "";
 
 // Sync every 10 minutes — aligned with the continuous training session cycle.
 // Each training session takes ~10 real minutes and produces 10 simulated years
@@ -67,23 +67,23 @@ async function fetchMaxCore<T = any>(
       },
       signal: AbortSignal.timeout(opts?.timeout ?? INFER_TIMEOUT),
     };
-    if (opts?.body !== undefined) init.body = JSON?.stringify(opts?.body);
+    if (opts?.body !== undefined) init.body = JSON.stringify(opts?.body);
     const r = await timedFetch(`${url}${endpoint}`, init);
     if (!r?.ok) return { ok: false, data: null, status: r.status };
     const text = await r?.text().catch(() => null);
     if (!text) return { ok: false, data: null, status: r.status };
     // Guard against sleeping-Replit HTML pages that return HTTP 200 with HTML
     if (text?.trimStart().startsWith("<")) {
-      logger?.debug(
+      logger.debug(
         `[MaxCoreSync] ${endpoint} returned HTML — server waking up`,
       );
       return { ok: false, data: null, status: r.status };
     }
     try {
-      const data = JSON?.parse(text) as T;
+      const data = JSON.parse(text) as T;
       return { ok: true, data, status: r.status };
     } catch {
-      logger?.debug(
+      logger.debug(
         `[MaxCoreSync] ${endpoint} JSON parse failed — body: ${text?.slice(0, 120)}`,
       );
       return { ok: false, data: null, status: r.status };
@@ -102,11 +102,11 @@ async function pdimRpush(
     const client = getPdimClient();
     await (client as Record<string, unknown>).rpush(
       key,
-      JSON?.stringify({ ...payload, ts: Date.now() }),
+      JSON.stringify({ ...payload, ts: Date.now() }),
     );
     return true;
   } catch (err) {
-    logger?.warn(
+    logger.warn(
       `[MaxCoreSync] PDIM rpush to ${key} failed:`,
       err instanceof Error ? err?.message : String(err),
     );
@@ -124,17 +124,17 @@ async function probeConnectivity(): Promise<void> {
     try {
       const client = getPdimClient();
       await (client as Record<string, unknown>).ping();
-      logger?.info(
+      logger.info(
         "[MaxCoreSync] PDIM ✅ reachable — Redis-compatible layer active",
       );
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         "[MaxCoreSync] PDIM ⚠️ ping failed:",
         err instanceof Error ? err?.message : String(err),
       );
     }
   } else {
-    logger?.warn(
+    logger.warn(
       "[MaxCoreSync] PDIM not configured — PDIM_HTTP_EXEC_URL / PDIM_BEARER_TOKEN missing",
     );
   }
@@ -145,16 +145,16 @@ async function probeConnectivity(): Promise<void> {
       timeout: HEALTH_TIMEOUT,
     });
     if (ok) {
-      logger?.info(
+      logger.info(
         `[MaxCoreSync] MaxCore inference ✅ reachable — ${AI_SERVER_URL}`,
       );
     } else {
-      logger?.warn(
+      logger.warn(
         `[MaxCoreSync] MaxCore inference ⚠️ unreachable — ${AI_SERVER_URL} (will retry on first inference request)`,
       );
     }
   } else {
-    logger?.warn(
+    logger.warn(
       "[MaxCoreSync] MaxCore inference not configured — AI_SERVER_URL / AI_SERVER_KEY missing",
     );
   }
@@ -168,19 +168,19 @@ async function probeConnectivity(): Promise<void> {
         timeout: HEALTH_TIMEOUT,
       });
       if (ok) {
-        logger?.info(`[MaxCoreSync] Training peer ✅ reachable — ${PEER_NODE}`);
+        logger.info(`[MaxCoreSync] Training peer ✅ reachable — ${PEER_NODE}`);
       } else {
-        logger?.warn(
+        logger.warn(
           `[MaxCoreSync] Training peer ⚠️ unreachable — ${PEER_NODE}`,
         );
       }
     } else {
-      logger?.info(
+      logger.info(
         `[MaxCoreSync] Training peer — PDIM-bus mode (pdim://…) — no HTTP health check needed`,
       );
     }
   } else {
-    logger?.warn(
+    logger.warn(
       "[MaxCoreSync] Training peer not configured — PEER_TRAINING_NODE / MBS_AI_TRAINING_KEY missing",
     );
   }
@@ -199,11 +199,11 @@ const MODEL_ENDPOINTS: Array<{ name: string; endpoint: string }> = [
 
 async function syncWeightsFromMaxCore(): Promise<void> {
   if (!AI_SERVER_URL || !AI_SERVER_KEY) {
-    logger?.debug("[MaxCoreSync] Weight sync skipped — MaxCore not configured");
+    logger.debug("[MaxCoreSync] Weight sync skipped — MaxCore not configured");
     return;
   }
 
-  logger?.info("[MaxCoreSync] Starting weight sync from MaxCore…");
+  logger.info("[MaxCoreSync] Starting weight sync from MaxCore…");
   let updated = 0;
   let skipped = 0;
 
@@ -221,7 +221,7 @@ async function syncWeightsFromMaxCore(): Promise<void> {
       });
       if (result?.ok && result?.data) break;
       if (attempt < 3) {
-        logger?.debug(
+        logger.debug(
           `[MaxCoreSync] ${name} attempt ${attempt} failed (status: ${result?.status ?? "no-response"}) — retrying in 15s`,
         );
         await new Promise((r) => setTimeout(r, 15_000));
@@ -231,7 +231,7 @@ async function syncWeightsFromMaxCore(): Promise<void> {
     const { ok, data } = result;
     if (!ok || !data) {
       skipped++;
-      logger?.debug(
+      logger.debug(
         `[MaxCoreSync] ${name}: no state after 3 attempts (status: ${result?.status ?? "no-response"}) — server sleeping or endpoint unavailable`,
       );
       continue;
@@ -244,11 +244,11 @@ async function syncWeightsFromMaxCore(): Promise<void> {
         syncedAt: new Date().toISOString(),
       });
       updated++;
-      logger?.info(
-        `[MaxCoreSync] ${name} ✅ synced from MaxCore (${Object?.keys(data).length} keys)`,
+      logger.info(
+        `[MaxCoreSync] ${name} ✅ synced from MaxCore (${Object.keys(data).length} keys)`,
       );
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         `[MaxCoreSync] ${name} save failed:`,
         err instanceof Error ? err?.message : String(err),
       );
@@ -256,7 +256,7 @@ async function syncWeightsFromMaxCore(): Promise<void> {
     }
   }
 
-  logger?.info(
+  logger.info(
     `[MaxCoreSync] Weight sync complete — updated: ${updated}, skipped/unavailable: ${skipped}`,
   );
 
@@ -269,7 +269,7 @@ async function syncWeightsFromMaxCore(): Promise<void> {
   if (updated > 0) {
     invalidateCalibrationCache();
     runCalibration().catch(() => {});
-    logger?.info(
+    logger.info(
       `[MaxCoreSync] ${updated} model(s) updated — calibration cache invalidated, ` +
         `re-calibrating quality gate thresholds now (loop closes within this 10-min cycle)`,
     );
@@ -316,17 +316,17 @@ export async function pushTrainingFeedback(
         signal: AbortSignal.timeout(5_000),
       });
       if (r?.ok) {
-        logger?.info(
+        logger.info(
           `[MaxCoreSync] Training feedback sent — ${payload?.platform} ` +
             `${payload?.content_type} at ${payload?.engagement_rate.toFixed(2)}% engagement`,
         );
       } else {
-        logger?.warn(
+        logger.warn(
           `[MaxCoreSync] Training peer returned ${r?.status} — queuing to PDIM`,
         );
       }
     } catch {
-      logger?.warn("[MaxCoreSync] Training peer unreachable — queuing to PDIM");
+      logger.warn("[MaxCoreSync] Training peer unreachable — queuing to PDIM");
     }
   }
 
@@ -366,7 +366,7 @@ export async function syncWeightsNow(): Promise<number> {
         syncedFromMaxCore: true,
         syncedAt: new Date().toISOString(),
       });
-      logger?.info(`[MaxCoreSync] ${name} ✅ eagerly synced from MaxCore`);
+      logger.info(`[MaxCoreSync] ${name} ✅ eagerly synced from MaxCore`);
       updated++;
     } catch {
       /* non-critical */
@@ -384,7 +384,7 @@ let _syncTimer: NodeJS.Timeout | null = null;
 export async function initMaxCoreSync(): Promise<void> {
   // 1. Health probe (non-blocking — don't hold up server startup)
   probeConnectivity().catch((err) =>
-    logger?.warn(
+    logger.warn(
       "[MaxCoreSync] Connectivity probe error:",
       err instanceof Error ? err?.message : String(err),
     ),
@@ -395,7 +395,7 @@ export async function initMaxCoreSync(): Promise<void> {
   //    syncing weights (sleeping Replit apps take 30-90s to wake up).
   setTimeout(() => {
     syncWeightsFromMaxCore().catch((err) =>
-      logger?.warn(
+      logger.warn(
         "[MaxCoreSync] Initial weight sync error:",
         err instanceof Error ? err?.message : String(err),
       ),
@@ -405,14 +405,14 @@ export async function initMaxCoreSync(): Promise<void> {
   // 3. Periodic weight sync every 10 min (aligned with each training session)
   _syncTimer = setInterval(() => {
     syncWeightsFromMaxCore().catch((err) =>
-      logger?.warn(
+      logger.warn(
         "[MaxCoreSync] Periodic weight sync error:",
         err instanceof Error ? err?.message : String(err),
       ),
     );
   }, SYNC_INTERVAL_MS);
 
-  logger?.info(
+  logger.info(
     "[MaxCoreSync] Initialized — health probe running, weight sync scheduled every 10 min (aligned with 10-min training sessions)",
   );
 }

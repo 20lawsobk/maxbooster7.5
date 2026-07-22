@@ -108,7 +108,7 @@ export function useDashboardPersonalization() {
 
   const mostUsedWidgets = useMemo(() => {
     if (!usagePatterns) return [];
-    return Object?.entries(usagePatterns as Record<string, WidgetUsageData>)
+    return Object.entries(usagePatterns as Record<string, WidgetUsageData>)
       .sort(([, a], [, b]) => b?.viewCount - a?.viewCount)
       .slice(0, 5)
       .map(([id]) => id);
@@ -232,7 +232,7 @@ export function useDashboardPersonalization() {
       const widgets = layout?.widgets.map((w) => ({
         ...w,
         position: positions[w?.id]
-          ? Object?.values(positions).findIndex((p) => p === positions[w?.id])
+          ? Object.values(positions).findIndex((p) => p === positions[w?.id])
           : w?.position,
       }));
 
@@ -243,7 +243,7 @@ export function useDashboardPersonalization() {
 
   useEffect(() => {
     return () => {
-      Object?.keys(widgetViewTimers?.current).forEach((widgetId) => {
+      Object.keys(widgetViewTimers?.current).forEach((widgetId) => {
         endWidgetView(widgetId);
       });
     };

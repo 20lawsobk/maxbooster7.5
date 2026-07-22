@@ -23,7 +23,7 @@ export function useShortcut(
   deps: React.DependencyList = [],
 ) {
   const { registerShortcut, unregisterShortcut } = useShortcuts();
-  const idRef = useRef(`shortcut-${Math?.random().toString(36).substr(2, 9)}`);
+  const idRef = useRef(`shortcut-${Math.random().toString(36).substr(2, 9)}`);
   const handlerRef = useRef(handler);
 
   handlerRef.current = handler;
@@ -74,7 +74,7 @@ export function useShortcuts_Multiple(
     shortcuts?.forEach((shortcutConfig, index) => {
       if (shortcutConfig?.enabled === false) return;
 
-      const id = `shortcuts-${index}-${Math?.random().toString(36).substr(2, 9)}`;
+      const id = `shortcuts-${index}-${Math.random().toString(36).substr(2, 9)}`;
       newIds?.push(id);
 
       const shortcut: ShortcutDefinition = {

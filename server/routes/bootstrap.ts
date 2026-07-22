@@ -32,7 +32,7 @@ router?.get(
   "/",
   requireAuthOnly,
   async (req: AuthenticatedRequest, res: Response) => {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
     try {
       // All bootstrap queries are read-only — route to the read replica for speed
@@ -111,11 +111,11 @@ router?.get(
       const releaseList =
         releasesResult?.status === "fulfilled" ? releasesResult?.value : [];
 
-      res?.set(
+      res.set(
         "Cache-Control",
         "private, max-age=30, stale-while-revalidate=60",
       );
-      res?.json({
+      res.json({
         user,
         projects: projectList,
         notifications: notifList,
@@ -123,8 +123,8 @@ router?.get(
         _ts: Date.now(),
       });
     } catch (err) {
-      logger?.warn({ err: err }, "[Bootstrap] Failed to load initial data:");
-      res?.status(500).json({ error: "bootstrap_failed" });
+      logger.warn({ err: err }, "[Bootstrap] Failed to load initial data:");
+      res.status(500).json({ error: "bootstrap_failed" });
     }
   },
 );

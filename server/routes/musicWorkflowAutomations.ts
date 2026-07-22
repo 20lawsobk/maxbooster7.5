@@ -13,10 +13,10 @@ const router = Router();
 // Returns all available workflow templates (static, no auth needed)
 router?.get("/templates", async (_req: Request, res: Response) => {
   try {
-    res?.json({ templates: WORKFLOW_TEMPLATES });
+    res.json({ templates: WORKFLOW_TEMPLATES });
   } catch (err) {
-    logger?.warn({ err: err }, "[MusicWorkflow] Error fetching templates:");
-    res?.status(500).json({ error: "Failed to fetch templates" });
+    logger.warn({ err: err }, "[MusicWorkflow] Error fetching templates:");
+    res.status(500).json({ error: "Failed to fetch templates" });
   }
 });
 
@@ -24,7 +24,7 @@ router?.get("/templates", async (_req: Request, res: Response) => {
 // Returns the current user's enabled/config state for all templates
 router?.get("/", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const userAutomations =
       await musicWorkflowAutomationService?.getUserAutomations(userId);
 
@@ -37,13 +37,13 @@ router?.get("/", requireAuth, async (req: Request, res: Response) => {
       };
     });
 
-    res?.json({ automations: combined });
+    res.json({ automations: combined });
   } catch (err) {
-    logger?.warn(
+    logger.warn(
       { err: err },
       "[MusicWorkflow] Error fetching user automations:",
     );
-    res?.status(500).json({ error: "Failed to fetch automations" });
+    res.status(500).json({ error: "Failed to fetch automations" });
   }
 });
 
@@ -53,13 +53,13 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { templateId } = req?.params;
-      const { config } = req?.body;
+      const userId = req.user!.id;
+      const { templateId } = req.params;
+      const { config } = req.body;
 
       const template = WORKFLOW_TEMPLATES?.find((t) => t?.id === templateId);
       if (!template) {
-        return res?.status(404).json({ error: "Template not found" });
+        return res.status(404).json({ error: "Template not found" });
       }
 
       await musicWorkflowAutomationService?.enableAutomation(
@@ -67,10 +67,10 @@ router?.post(
         templateId,
         config,
       );
-      res?.json({ success: true, templateId, enabled: true });
+      res.json({ success: true, templateId, enabled: true });
     } catch (err) {
-      logger?.warn({ err: err }, "[MusicWorkflow] Error enabling automation:");
-      res?.status(500).json({ error: "Failed to enable automation" });
+      logger.warn({ err: err }, "[MusicWorkflow] Error enabling automation:");
+      res.status(500).json({ error: "Failed to enable automation" });
     }
   },
 );
@@ -81,22 +81,22 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { templateId } = req?.params;
+      const userId = req.user!.id;
+      const { templateId } = req.params;
 
       const template = WORKFLOW_TEMPLATES?.find((t) => t?.id === templateId);
       if (!template) {
-        return res?.status(404).json({ error: "Template not found" });
+        return res.status(404).json({ error: "Template not found" });
       }
 
       await musicWorkflowAutomationService?.disableAutomation(
         userId,
         templateId,
       );
-      res?.json({ success: true, templateId, enabled: false });
+      res.json({ success: true, templateId, enabled: false });
     } catch (err) {
-      logger?.warn({ err: err }, "[MusicWorkflow] Error disabling automation:");
-      res?.status(500).json({ error: "Failed to disable automation" });
+      logger.warn({ err: err }, "[MusicWorkflow] Error disabling automation:");
+      res.status(500).json({ error: "Failed to disable automation" });
     }
   },
 );
@@ -107,17 +107,17 @@ router?.put(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { templateId } = req?.params;
-      const { config } = req?.body;
+      const userId = req.user!.id;
+      const { templateId } = req.params;
+      const { config } = req.body;
 
       if (!config || typeof config !== "object") {
-        return res?.status(400).json({ error: "config object required" });
+        return res.status(400).json({ error: "config object required" });
       }
 
       const template = WORKFLOW_TEMPLATES?.find((t) => t?.id === templateId);
       if (!template) {
-        return res?.status(404).json({ error: "Template not found" });
+        return res.status(404).json({ error: "Template not found" });
       }
 
       await musicWorkflowAutomationService?.updateConfig(
@@ -125,10 +125,10 @@ router?.put(
         templateId,
         config,
       );
-      res?.json({ success: true, templateId, config });
+      res.json({ success: true, templateId, config });
     } catch (err) {
-      logger?.warn({ err: err }, "[MusicWorkflow] Error updating config:");
-      res?.status(500).json({ error: "Failed to update config" });
+      logger.warn({ err: err }, "[MusicWorkflow] Error updating config:");
+      res.status(500).json({ error: "Failed to update config" });
     }
   },
 );
@@ -137,14 +137,14 @@ router?.put(
 // Manually fire an event (for testing automations from the UI)
 router?.post("/trigger", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const schema = z.object({
       eventType: z.string().min(1),
       data: z.record(z.string(), z.any()).optional(),
     });
-    const parsed = schema?.safeParse(req?.body);
+    const parsed = schema?.safeParse(req.body);
     if (!parsed?.success) {
-      return res?.status(400).json({ error: parsed.error.issues[0].message });
+      return res.status(400).json({ error: parsed.error.issues[0].message });
     }
 
     const { eventType, data = {} } = parsed?.data;
@@ -152,45 +152,45 @@ router?.post("/trigger", requireAuth, async (req: Request, res: Response) => {
       userId,
       ...data,
     });
-    res?.json({
+    res.json({
       success: true,
       eventType,
       message: "Event triggered. Check your logs for execution status.",
     });
   } catch (err) {
-    logger?.warn({ err: err }, "[MusicWorkflow] Error triggering event:");
-    res?.status(500).json({ error: "Failed to trigger event" });
+    logger.warn({ err: err }, "[MusicWorkflow] Error triggering event:");
+    res.status(500).json({ error: "Failed to trigger event" });
   }
 });
 
 // GET /api/music-workflow-automations/stats
 router?.get("/stats", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const stats = await musicWorkflowAutomationService?.getStats(userId);
-    res?.json(stats);
+    res.json(stats);
   } catch (err) {
-    logger?.warn({ err: err }, "[MusicWorkflow] Error fetching stats:");
-    res?.status(500).json({ error: "Failed to fetch stats" });
+    logger.warn({ err: err }, "[MusicWorkflow] Error fetching stats:");
+    res.status(500).json({ error: "Failed to fetch stats" });
   }
 });
 
 // GET /api/music-workflow-automations/logs
 router?.get("/logs", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
-    const templateId = req?.query.templateId as string | undefined;
-    const limit = Math?.min(Number(req?.query.limit ?? 50), 200);
+    const userId = req.user!.id;
+    const templateId = req.query.templateId as string | undefined;
+    const limit = Math.min(Number(req.query.limit ?? 50), 200);
 
     const logs = await musicWorkflowAutomationService?.getExecutionLogs(
       userId,
       templateId,
       limit,
     );
-    res?.json({ logs });
+    res.json({ logs });
   } catch (err) {
-    logger?.warn({ err: err }, "[MusicWorkflow] Error fetching logs:");
-    res?.status(500).json({ error: "Failed to fetch logs" });
+    logger.warn({ err: err }, "[MusicWorkflow] Error fetching logs:");
+    res.status(500).json({ error: "Failed to fetch logs" });
   }
 });
 

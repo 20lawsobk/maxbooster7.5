@@ -19,7 +19,7 @@ export class PlacementStrategy {
     sizeBytes: number,
     policy: PocketPolicy,
   ): Promise<PlacementDecision> {
-    let candidates = await this?.nodeRegistry.listHealthyNodes();
+    let candidates = await this.nodeRegistry.listHealthyNodes();
 
     if (candidates?.length === 0) {
       throw new Error("No healthy storage nodes available in the fabric");
@@ -60,7 +60,7 @@ export class PlacementStrategy {
   async findRebalanceCandidates(
     highWatermark = 0.8,
   ): Promise<{ hot: FabricStorageNode[]; cold: FabricStorageNode[] }> {
-    const nodes = await this?.nodeRegistry.listHealthyNodes();
+    const nodes = await this.nodeRegistry.listHealthyNodes();
     const hot = nodes?.filter(
       (n) => n?.usedBytes / n?.capacityBytes > highWatermark,
     );

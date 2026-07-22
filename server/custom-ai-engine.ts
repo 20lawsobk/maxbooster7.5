@@ -1386,7 +1386,7 @@ class CustomAIEngine {
 
   private getHashtagCount(platform: string): number {
     const limits = PLATFORM_LIMITS[platform as keyof typeof PLATFORM_LIMITS];
-    return limits ? Math?.min(limits?.hashtagCount, 10) : 5;
+    return limits ? Math.min(limits?.hashtagCount, 10) : 5;
   }
 
   private selectCallToAction(
@@ -1482,15 +1482,15 @@ class CustomAIEngine {
   }
 
   private trackTemplateUsage(templateId: string, _platform: string): void {
-    this?.recentlyUsedTemplates.push(templateId);
-    if (this?.recentlyUsedTemplates.length > 10) {
-      this?.recentlyUsedTemplates.shift();
+    this.recentlyUsedTemplates.push(templateId);
+    if (this.recentlyUsedTemplates.length > 10) {
+      this.recentlyUsedTemplates.shift();
     }
   }
 
   private updateLearningWeights(templateId: string, engagement: number): void {
-    const currentWeight = this?.learningWeights.get(templateId) || 1.0;
-    const history = this?.performanceHistory.get("content_generation") || [];
+    const currentWeight = this.learningWeights.get(templateId) || 1.0;
+    const history = this.performanceHistory.get("content_generation") || [];
 
     const avgEngagement =
       history?.length > 0
@@ -1509,12 +1509,12 @@ class CustomAIEngine {
       adjustment = -0.05;
     }
 
-    const newWeight = Math?.max(0.1, Math?.min(3.0, currentWeight + adjustment));
-    this?.learningWeights.set(templateId, newWeight);
+    const newWeight = Math.max(0.1, Math.min(3.0, currentWeight + adjustment));
+    this.learningWeights.set(templateId, newWeight);
   }
 
   private getHighPerformingHashtags(platform: string, count: number): string[] {
-    const history = this?.performanceHistory.get("content_generation") || [];
+    const history = this.performanceHistory.get("content_generation") || [];
     const hashtagPerformance: Map<string, { total: number; count: number }> =
       new Map();
 
@@ -1530,7 +1530,7 @@ class CustomAIEngine {
       }
     });
 
-    const sorted = Array?.from(hashtagPerformance?.entries())
+    const sorted = Array.from(hashtagPerformance?.entries())
       .map(([tag, data]) => ({ tag, avgEngagement: data.total / data?.count }))
       .sort((a, b) => b?.avgEngagement - a?.avgEngagement);
 
@@ -1546,7 +1546,7 @@ class CustomAIEngine {
   }
 
   getHookTypes(): HookType[] {
-    return Object?.keys(HOOK_TEMPLATES) as HookType[];
+    return Object.keys(HOOK_TEMPLATES) as HookType[];
   }
 
   getPlatformLimits(
@@ -1560,12 +1560,12 @@ class CustomAIEngine {
     totalPerformanceRecords: number;
     topWeightedTemplates: Array<{ id: string; weight: number }>;
   } {
-    const totalRecords = Array?.from(this?.performanceHistory.values()).reduce(
+    const totalRecords = Array.from(this.performanceHistory.values()).reduce(
       (sum, arr) => sum + arr?.length,
       0,
     );
 
-    const topWeighted = Array?.from(this?.learningWeights.entries())
+    const topWeighted = Array.from(this.learningWeights.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([id, weight]) => ({ id, weight }));

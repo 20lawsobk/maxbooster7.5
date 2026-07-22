@@ -43,7 +43,7 @@ export class ObjectIndex {
       .select()
       .from(fabricObjects)
       .where(eq(fabricObjects?.id, id));
-    return rows[0] ? this?.rowToObject(rows[0]) : null;
+    return rows[0] ? this.rowToObject(rows[0]) : null;
   }
 
   async listObjects(volumeId: VolumeId): Promise<FabricObject[]> {
@@ -51,7 +51,7 @@ export class ObjectIndex {
       .select()
       .from(fabricObjects)
       .where(eq(fabricObjects?.volumeId, volumeId));
-    return rows?.map(this?.rowToObject);
+    return rows?.map(this.rowToObject);
   }
 
   async deleteObject(id: ObjectId): Promise<void> {

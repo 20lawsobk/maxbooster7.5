@@ -69,7 +69,7 @@ function validateInput(body: unknown): {
   }
 
   const validPlatforms = new Set(ALL_PLATFORMS);
-  const requestedPlatforms = Array?.isArray(b?.platforms)
+  const requestedPlatforms = Array.isArray(b?.platforms)
     ? (b?.platforms as string[])
     : undefined;
   if (requestedPlatforms) {
@@ -135,19 +135,19 @@ function validateInput(body: unknown): {
 // ─── POST /api/content/generate-unified ──────────────────────────────────────
 
 router?.post("/", requireAuth, async (req: Request, res: Response) => {
-  const { valid, error, input } = validateInput(req?.body);
+  const { valid, error, input } = validateInput(req.body);
   if (!valid || !input) {
-    res?.status(400).json({ error });
+    res.status(400).json({ error });
     return;
   }
 
   try {
-    logger?.info(
+    logger.info(
       `[UnifiedContent] Full pipeline triggered by user=${req.user.id ?? "unknown"} artist="${input.artistName}"`,
     );
     const pkg = await unifiedContentOrchestrator?.generate(input);
 
-    res?.json({
+    res.json({
       success: true,
       runId: pkg.runId,
       generatedAt: pkg.generatedAt,
@@ -159,7 +159,7 @@ router?.post("/", requireAuth, async (req: Request, res: Response) => {
       bulkSchedulePayload: pkg.bulkSchedulePayload,
     });
   } catch (err) {
-    logger?.warn(`[UnifiedContent] Pipeline error: ${(err as Error).message}`, {
+    logger.warn(`[UnifiedContent] Pipeline error: ${(err as Error).message}`, {
       stack: (err as Error).stack,
     });
     res
@@ -177,22 +177,22 @@ router?.post(
   "/artist-only",
   requireAuth,
   async (req: Request, res: Response) => {
-    const { valid, error, input } = validateInput(req?.body);
+    const { valid, error, input } = validateInput(req.body);
     if (!valid || !input) {
-      res?.status(400).json({ error });
+      res.status(400).json({ error });
       return;
     }
 
     try {
       const content =
         await unifiedContentOrchestrator?.generateArtistContentOnly(input);
-      res?.json({
+      res.json({
         success: true,
         count: content.length,
         artistContent: content,
       });
     } catch (err) {
-      logger?.warn(`[UnifiedContent/artist-only] ${(err as Error).message}`);
+      logger.warn(`[UnifiedContent/artist-only] ${(err as Error).message}`);
       res
         .status(500)
         .json({
@@ -209,22 +209,22 @@ router?.post(
   "/maxbooster-only",
   requireAuth,
   async (req: Request, res: Response) => {
-    const { valid, error, input } = validateInput(req?.body);
+    const { valid, error, input } = validateInput(req.body);
     if (!valid || !input) {
-      res?.status(400).json({ error });
+      res.status(400).json({ error });
       return;
     }
 
     try {
       const content =
         await unifiedContentOrchestrator?.generateMaxBoosterContentOnly(input);
-      res?.json({
+      res.json({
         success: true,
         count: content.length,
         maxBoosterContent: content,
       });
     } catch (err) {
-      logger?.warn(`[UnifiedContent/maxbooster-only] ${(err as Error).message}`);
+      logger.warn(`[UnifiedContent/maxbooster-only] ${(err as Error).message}`);
       res
         .status(500)
         .json({
@@ -241,19 +241,19 @@ router?.post(
   "/platform/:platform",
   requireAuth,
   async (req: Request, res: Response) => {
-    const platform = req?.params.platform as SupportedPlatform;
+    const platform = req.params.platform as SupportedPlatform;
 
     if (!ALL_PLATFORMS?.includes(platform)) {
-      res?.status(400).json({
+      res.status(400).json({
         error: `Unknown platform: ${platform}`,
         supported: ALL_PLATFORMS,
       });
       return;
     }
 
-    const { valid, error, input } = validateInput(req?.body);
+    const { valid, error, input } = validateInput(req.body);
     if (!valid || !input) {
-      res?.status(400).json({ error });
+      res.status(400).json({ error });
       return;
     }
 
@@ -262,9 +262,9 @@ router?.post(
         input,
         platform,
       );
-      res?.json({ success: true, platform, bundle });
+      res.json({ success: true, platform, bundle });
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         `[UnifiedContent/platform/${platform}] ${(err as Error).message}`,
       );
       res
@@ -280,7 +280,7 @@ router?.post(
 // ─── GET /api/content/generate-unified/platforms ─────────────────────────────
 
 router?.get("/platforms", (_req: Request, res: Response) => {
-  res?.json({
+  res.json({
     platforms: ALL_PLATFORMS.map((p) => ({
       id: p,
       ...PLATFORM_SPECS[p],
@@ -291,7 +291,7 @@ router?.get("/platforms", (_req: Request, res: Response) => {
 // ─── GET /api/content/generate-unified/features ──────────────────────────────
 
 router?.get("/features", (_req: Request, res: Response) => {
-  res?.json({
+  res.json({
     features: MAX_BOOSTER_FEATURES.map((f) => ({
       id: f.id,
       displayName: f.displayName,

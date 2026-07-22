@@ -10,26 +10,26 @@ export const requirePremium = async (
   res: Response,
   next: NextFunction,
 ) => {
-  if (!req?.user) {
-    return res?.status(401).json({
+  if (!req.user) {
+    return res.status(401).json({
       error: "Authentication required",
       message: "Please log in to access this feature",
     });
   }
 
-  const userId = req?.user.id;
+  const userId = req.user.id;
 
   try {
     const isBypassed = await paymentBypassService?.isPaymentBypassed();
     if (isBypassed) {
-      res?.setHeader("X-Payment-Bypass", "active");
+      res.setHeader("X-Payment-Bypass", "active");
       return next();
     }
 
     const user = await storage?.getUser(userId);
 
     if (!user) {
-      return res?.status(401).json({
+      return res.status(401).json({
         error: "User not found",
         message: "Your account could not be verified",
       });
@@ -66,10 +66,10 @@ export const requirePremium = async (
 
       const inGracePeriod = now <= gracePeriodEnd;
       if (inGracePeriod) {
-        const daysRemaining = Math?.ceil(
+        const daysRemaining = Math.ceil(
           (gracePeriodEnd?.getTime() - now?.getTime()) / (1000 * 60 * 60 * 24),
         );
-        res?.setHeader(
+        res.setHeader(
           "X-Grace-Period-Days-Remaining",
           daysRemaining?.toString(),
         );
@@ -77,7 +77,7 @@ export const requirePremium = async (
       }
     }
 
-    return res?.status(403).json({
+    return res.status(403).json({
       error: "Premium subscription required",
       message: "This feature requires an active premium subscription",
       upgradeUrl: "/pricing",
@@ -85,8 +85,8 @@ export const requirePremium = async (
       trialExpired: trialEndDate ? trialEndDate < now : false,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Premium check error:");
-    return res?.status(500).json({
+    logger.warn({ err: error }, "Premium check error:");
+    return res.status(500).json({
       error: "Subscription verification failed",
       message: "Unable to verify your subscription status",
     });

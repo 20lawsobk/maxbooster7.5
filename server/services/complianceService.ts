@@ -67,7 +67,7 @@ export class ComplianceService {
     startDate: Date;
     endDate: Date;
   }): Promise<ComplianceReport> {
-    logger?.info("📋 Generating SOC2 Type II compliance report...");
+    logger.info("📋 Generating SOC2 Type II compliance report...");
 
     const reportId = `SOC2-${crypto?.randomBytes(8).toString("hex")}`;
     const controls = await storage?.getControlsByStandard("SOC2");
@@ -78,24 +78,24 @@ export class ComplianceService {
     const partialControls = controls?.filter((c) => c?.status === "partial");
     const plannedControls = controls?.filter((c) => c?.status === "planned");
 
-    const overallScore = this?.calculateComplianceScore(controls);
+    const overallScore = this.calculateComplianceScore(controls);
 
-    const findings = await this?.assessSOC2Controls(controls);
-    const gapAnalysis = await this?.generateGapAnalysis("SOC2");
-    const evidenceSummary = await this?.getEvidenceSummary(controls);
+    const findings = await this.assessSOC2Controls(controls);
+    const gapAnalysis = await this.generateGapAnalysis("SOC2");
+    const evidenceSummary = await this.getEvidenceSummary(controls);
 
     const executiveSummary = `Max Booster has achieved ${overallScore}% compliance with SOC2 Trust Service Criteria. 
 Of ${controls?.length} controls assessed, ${implementedControls?.length} are fully implemented, ${partialControls?.length} are partially implemented, 
 and ${plannedControls?.length} are planned. The platform demonstrates strong security foundations with comprehensive access controls, 
 encryption, monitoring, and incident response capabilities.`;
 
-    const recommendations = this?.generateSOC2Recommendations(
+    const recommendations = this.generateSOC2Recommendations(
       findings,
       gapAnalysis,
     );
     const certificationReadiness =
-      this?.assessCertificationReadiness(overallScore);
-    const nextSteps = this?.generateNextSteps("SOC2", overallScore);
+      this.assessCertificationReadiness(overallScore);
+    const nextSteps = this.generateNextSteps("SOC2", overallScore);
 
     const report: ComplianceReport = {
       standard: "SOC2",
@@ -115,7 +115,7 @@ encryption, monitoring, and incident response capabilities.`;
       nextSteps,
     };
 
-    await this?.saveComplianceAudit({
+    await this.saveComplianceAudit({
       auditId: reportId,
       standard: "SOC2",
       auditType: "self-assessment",
@@ -138,7 +138,7 @@ encryption, monitoring, and incident response capabilities.`;
       reportPath: `/compliance/reports/${reportId}.json`,
     });
 
-    logger?.info(
+    logger.info(
       `✅ SOC2 report generated: ${reportId} (Score: ${overallScore}%)`,
     );
 
@@ -146,7 +146,7 @@ encryption, monitoring, and incident response capabilities.`;
   }
 
   async generateISO27001Report(): Promise<ComplianceReport> {
-    logger?.info("📋 Generating ISO 27001 compliance report...");
+    logger.info("📋 Generating ISO 27001 compliance report...");
 
     const reportId = `ISO27001-${crypto?.randomBytes(8).toString("hex")}`;
     const controls = await storage?.getControlsByStandard("ISO27001");
@@ -157,24 +157,24 @@ encryption, monitoring, and incident response capabilities.`;
     const partialControls = controls?.filter((c) => c?.status === "partial");
     controls?.filter((c) => c?.status === "planned");
 
-    const overallScore = this?.calculateComplianceScore(controls);
+    const overallScore = this.calculateComplianceScore(controls);
 
-    const findings = await this?.assessISO27001Controls(controls);
-    const gapAnalysis = await this?.generateGapAnalysis("ISO27001");
-    const evidenceSummary = await this?.getEvidenceSummary(controls);
+    const findings = await this.assessISO27001Controls(controls);
+    const gapAnalysis = await this.generateGapAnalysis("ISO27001");
+    const evidenceSummary = await this.getEvidenceSummary(controls);
 
     const executiveSummary = `Max Booster has achieved ${overallScore}% compliance with ISO 27001:2022 standards. 
 The Information Security Management System (ISMS) demonstrates robust controls across organizational security, 
 asset management, access control, cryptography, operations security, and communications security. 
 ${implementedControls?.length} of ${controls?.length} required controls are fully implemented.`;
 
-    const recommendations = this?.generateISO27001Recommendations(
+    const recommendations = this.generateISO27001Recommendations(
       findings,
       gapAnalysis,
     );
     const certificationReadiness =
-      this?.assessCertificationReadiness(overallScore);
-    const nextSteps = this?.generateNextSteps("ISO27001", overallScore);
+      this.assessCertificationReadiness(overallScore);
+    const nextSteps = this.generateNextSteps("ISO27001", overallScore);
 
     const report: ComplianceReport = {
       standard: "ISO27001",
@@ -194,7 +194,7 @@ ${implementedControls?.length} of ${controls?.length} required controls are full
       nextSteps,
     };
 
-    await this?.saveComplianceAudit({
+    await this.saveComplianceAudit({
       auditId: reportId,
       standard: "ISO27001",
       auditType: "self-assessment",
@@ -217,7 +217,7 @@ ${implementedControls?.length} of ${controls?.length} required controls are full
       reportPath: `/compliance/reports/${reportId}.json`,
     });
 
-    logger?.info(
+    logger.info(
       `✅ ISO 27001 report generated: ${reportId} (Score: ${overallScore}%)`,
     );
 
@@ -225,7 +225,7 @@ ${implementedControls?.length} of ${controls?.length} required controls are full
   }
 
   async generateGDPRReport(): Promise<ComplianceReport> {
-    logger?.info("📋 Generating GDPR compliance report...");
+    logger.info("📋 Generating GDPR compliance report...");
 
     const reportId = `GDPR-${crypto?.randomBytes(8).toString("hex")}`;
     const controls = await storage?.getControlsByStandard("GDPR");
@@ -236,24 +236,24 @@ ${implementedControls?.length} of ${controls?.length} required controls are full
     const partialControls = controls?.filter((c) => c?.status === "partial");
     controls?.filter((c) => c?.status === "planned");
 
-    const overallScore = this?.calculateComplianceScore(controls);
+    const overallScore = this.calculateComplianceScore(controls);
 
-    const findings = await this?.assessGDPRControls(controls);
-    const gapAnalysis = await this?.generateGapAnalysis("GDPR");
-    const evidenceSummary = await this?.getEvidenceSummary(controls);
+    const findings = await this.assessGDPRControls(controls);
+    const gapAnalysis = await this.generateGapAnalysis("GDPR");
+    const evidenceSummary = await this.getEvidenceSummary(controls);
 
     const executiveSummary = `Max Booster has achieved ${overallScore}% compliance with GDPR (General Data Protection Regulation). 
 The platform implements key data protection principles including lawfulness, fairness, transparency, purpose limitation, 
 data minimization, accuracy, storage limitation, integrity, and confidentiality. Data subject rights (access, rectification, 
 erasure, portability) are supported with ${implementedControls?.length} of ${controls?.length} controls fully implemented.`;
 
-    const recommendations = this?.generateGDPRRecommendations(
+    const recommendations = this.generateGDPRRecommendations(
       findings,
       gapAnalysis,
     );
     const certificationReadiness =
-      this?.assessCertificationReadiness(overallScore);
-    const nextSteps = this?.generateNextSteps("GDPR", overallScore);
+      this.assessCertificationReadiness(overallScore);
+    const nextSteps = this.generateNextSteps("GDPR", overallScore);
 
     const report: ComplianceReport = {
       standard: "GDPR",
@@ -273,7 +273,7 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
       nextSteps,
     };
 
-    await this?.saveComplianceAudit({
+    await this.saveComplianceAudit({
       auditId: reportId,
       standard: "GDPR",
       auditType: "self-assessment",
@@ -296,7 +296,7 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
       reportPath: `/compliance/reports/${reportId}.json`,
     });
 
-    logger?.info(
+    logger.info(
       `✅ GDPR report generated: ${reportId} (Score: ${overallScore}%)`,
     );
 
@@ -304,18 +304,18 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
   }
 
   async collectEvidenceAutomatically(): Promise<number> {
-    logger?.info("🔍 Starting automated evidence collection...");
+    logger.info("🔍 Starting automated evidence collection...");
 
     let evidenceCollected = 0;
 
-    evidenceCollected += await this?.collectAuditLogEvidence();
-    evidenceCollected += await this?.collectSecurityEventEvidence();
-    evidenceCollected += await this?.collectBackupEvidence();
-    evidenceCollected += await this?.collectAccessControlEvidence();
-    evidenceCollected += await this?.collectEncryptionEvidence();
-    evidenceCollected += await this?.collectPenTestEvidence();
+    evidenceCollected += await this.collectAuditLogEvidence();
+    evidenceCollected += await this.collectSecurityEventEvidence();
+    evidenceCollected += await this.collectBackupEvidence();
+    evidenceCollected += await this.collectAccessControlEvidence();
+    evidenceCollected += await this.collectEncryptionEvidence();
+    evidenceCollected += await this.collectPenTestEvidence();
 
-    logger?.info(
+    logger.info(
       `✅ Automated evidence collection complete: ${evidenceCollected} items collected`,
     );
 
@@ -337,7 +337,7 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
     const partial = controls?.filter((c) => c?.status === "partial").length;
     const planned = controls?.filter((c) => c?.status === "planned").length;
     const total = controls?.length;
-    const percentage = total > 0 ? Math?.round((implemented / total) * 100) : 0;
+    const percentage = total > 0 ? Math.round((implemented / total) * 100) : 0;
 
     return { implemented, partial, planned, total, percentage };
   }
@@ -689,7 +689,7 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
       return sum + (weights[control?.status as keyof typeof weights] || 0);
     }, 0);
 
-    return Math?.round((totalWeight / controls?.length) * 100);
+    return Math.round((totalWeight / controls?.length) * 100);
   }
 
   private mapStatusToSeverity(status: string): string {
@@ -901,9 +901,9 @@ erasure, portability) are supported with ${implementedControls?.length} of ${con
   ): Promise<void> {
     try {
       await storage?.createComplianceAudit(audit);
-      logger?.info(`✅ Compliance audit saved: ${audit?.auditId}`);
+      logger.info(`✅ Compliance audit saved: ${audit?.auditId}`);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "❌ Failed to save compliance audit:");
+      logger.warn({ err: error }, "❌ Failed to save compliance audit:");
     }
   }
 

@@ -57,7 +57,7 @@ export function useRovingFocus(
     (index: number) => {
       if (!enabled) return;
 
-      const clampedIndex = Math?.max(0, Math?.min(index, itemCount - 1));
+      const clampedIndex = Math.max(0, Math.min(index, itemCount - 1));
 
       if (clampedIndex !== activeIndex) {
         setActiveIndexState(clampedIndex);
@@ -98,7 +98,7 @@ export function useRovingFocus(
           nextIndex = 0;
         }
       } else {
-        nextIndex = Math?.max(0, Math?.min(nextIndex, itemCount - 1));
+        nextIndex = Math.max(0, Math.min(nextIndex, itemCount - 1));
       }
 
       return nextIndex;
@@ -237,7 +237,7 @@ export function useRovingFocusGroup<T extends HTMLElement = HTMLDivElement>() {
 
     const updateItems = () => {
       if (groupRef?.current) {
-        const focusableItems = Array?.from(
+        const focusableItems = Array.from(
           groupRef?.current.querySelectorAll<HTMLElement>(
             'button:not([disabled]), [role="tab"], [role="menuitem"], [role="option"], [role="treeitem"]',
           ),

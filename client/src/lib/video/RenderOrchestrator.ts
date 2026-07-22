@@ -107,35 +107,35 @@ export class RenderOrchestrator {
     this.events = options?.events ?? {};
 
     if (options?.useOffscreen && typeof OffscreenCanvas !== "undefined") {
-      this.canvas = new OffscreenCanvas(this?.width, this?.height);
+      this.canvas = new OffscreenCanvas(this.width, this.height);
     } else {
       this.canvas = document?.createElement("canvas");
-      this.canvas.width = this?.width;
-      this.canvas.height = this?.height;
+      this.canvas.width = this.width;
+      this.canvas.height = this.height;
     }
 
-    const ctx = this?.canvas.getContext("2d", { alpha: true });
+    const ctx = this.canvas.getContext("2d", { alpha: true });
     if (!ctx) {
       throw new Error("Failed to create 2D rendering context");
     }
     this.ctx = ctx;
 
     this.textAnimator = new TextAnimator(
-      this?.ctx as CanvasRenderingContext2D,
-      this?.width,
-      this?.height,
+      this.ctx as CanvasRenderingContext2D,
+      this.width,
+      this.height,
     );
   }
 
   async initialize(): Promise<void> {
     this.capabilities = await getBrowserCapabilities();
 
-    if (this?.enableAudioAnalysis) {
+    if (this.enableAudioAnalysis) {
       this.audioAnalyzer = new AudioAnalyzer();
-      await this?.audioAnalyzer.initialize();
+      await this.audioAnalyzer.initialize();
 
-      if (this?.audioElement) {
-        this?.audioAnalyzer.connectAudioElement(this?.audioElement);
+      if (this.audioElement) {
+        this.audioAnalyzer.connectAudioElement(this.audioElement);
       }
     }
   }
@@ -144,14 +144,14 @@ export class RenderOrchestrator {
     project: VideoProject,
     audioReactiveBindings: AudioReactiveBinding[] = [],
   ): Promise<void> {
-    this?.setState("loading");
+    this.setState("loading");
 
     try {
       this.project = project;
       this.audioReactiveBindings = audioReactiveBindings;
 
-      if (project?.width !== this?.width || project?.height !== this?.height) {
-        this?.resize(project?.width, project?.height);
+      if (project?.width !== this.width || project?.height !== this.height) {
+        this.resize(project?.width, project?.height);
       }
 
       this.fps = project?.fps;
@@ -171,11 +171,11 @@ export class RenderOrchestrator {
 
       for (const layerConfig of project?.layers) {
         const layer = new Layer(layerConfig);
-        this?.scene.addLayer(layer);
+        this.scene.addLayer(layer);
       }
 
       for (const keyframe of project?.keyframes) {
-        const layer = this?.scene.getLayer(keyframe?.layerId);
+        const layer = this.scene.getLayer(keyframe?.layerId);
         if (layer) {
           layer?.addKeyframe(
             keyframe?.property,
@@ -186,34 +186,34 @@ export class RenderOrchestrator {
         }
       }
 
-      await this?.initializeRenderers(project?.layers);
+      await this.initializeRenderers(project?.layers);
 
-      if (project?.audioUrl && this?.enableAudioAnalysis) {
-        await this?.loadAudio(project?.audioUrl);
+      if (project?.audioUrl && this.enableAudioAnalysis) {
+        await this.loadAudio(project?.audioUrl);
       }
 
-      this?.setState("ready");
-      this?.events.onLoadComplete?.();
+      this.setState("ready");
+      this.events.onLoadComplete?.();
     } catch (error) {
-      this?.setState("error");
-      this?.events.onError?.(error as Error);
+      this.setState("error");
+      this.events.onError?.(error as Error);
       throw error;
     }
   }
 
   private async initializeRenderers(layers: LayerConfig[]): Promise<void> {
-    this?.visualizers.clear();
-    this?.imageCache.clear();
+    this.visualizers.clear();
+    this.imageCache.clear();
 
     const loadPromises: Promise<void>[] = [];
 
     for (const layer of layers) {
       if (layer?.type === "visualizer") {
-        this?.createVisualizer(layer);
+        this.createVisualizer(layer);
       } else if (layer?.type === "image") {
         const imageConfig = layer?.config as ImageConfig;
         if (imageConfig?.src) {
-          loadPromises?.push(this?.loadImage(layer?.id, imageConfig?.src));
+          loadPromises?.push(this.loadImage(layer?.id, imageConfig?.src));
         }
       }
     }
@@ -284,7 +284,7 @@ export class RenderOrchestrator {
         return;
     }
 
-    this?.visualizers.set(layer?.id, { type, instance, layerId: layer.id });
+    this.visualizers.set(layer?.id, { type, instance, layerId: layer.id });
   }
 
   private async loadImage(layerId: string, src: string): Promise<void> {
@@ -293,12 +293,12 @@ export class RenderOrchestrator {
       img.crossOrigin = "anonymous";
 
       img.onload = () => {
-        this?.imageCache.set(layerId, { image: img, loaded: true });
+        this.imageCache.set(layerId, { image: img, loaded: true });
         resolve();
       };
 
       img.onerror = () => {
-        this?.imageCache.set(layerId, { image: img, loaded: false });
+        this.imageCache.set(layerId, { image: img, loaded: false });
         resolve();
       };
 
@@ -307,87 +307,87 @@ export class RenderOrchestrator {
   }
 
   private async loadAudio(url: string): Promise<void> {
-    if (!this?.audioAnalyzer) return;
+    if (!this.audioAnalyzer) return;
 
     try {
-      await this?.audioAnalyzer.loadAudio(url);
+      await this.audioAnalyzer.loadAudio(url);
     } catch (error) {
-      logger?.warn("Failed to load audio for analysis:", error);
+      logger.warn("Failed to load audio for analysis:", error);
     }
   }
 
   play(): void {
-    if (this?.state !== "ready" && this?.state !== "paused") return;
+    if (this.state !== "ready" && this.state !== "paused") return;
 
     this.isPlaying = true;
-    this?.setState("playing");
+    this.setState("playing");
     this.lastFrameTime = performance?.now();
-    this?.startRenderLoop();
+    this.startRenderLoop();
 
-    if (this?.audioElement) {
-      this.audioElement.currentTime = this?.currentTime;
-      this?.audioElement.play();
+    if (this.audioElement) {
+      this.audioElement.currentTime = this.currentTime;
+      this.audioElement.play();
     }
   }
 
   pause(): void {
-    if (this?.state !== "playing") return;
+    if (this.state !== "playing") return;
 
     this.isPlaying = false;
-    this?.setState("paused");
-    this?.stopRenderLoop();
+    this.setState("paused");
+    this.stopRenderLoop();
 
-    if (this?.audioElement) {
-      this?.audioElement.pause();
+    if (this.audioElement) {
+      this.audioElement.pause();
     }
   }
 
   stop(): void {
-    this?.pause();
-    this?.seek(0);
+    this.pause();
+    this.seek(0);
   }
 
   seek(time: number): void {
-    this.currentTime = Math?.max(0, Math?.min(time, this?.duration));
+    this.currentTime = Math.max(0, Math.min(time, this.duration));
 
-    if (this?.scene) {
-      this?.scene.setTime(this?.currentTime);
+    if (this.scene) {
+      this.scene.setTime(this.currentTime);
     }
 
-    if (this?.audioElement) {
-      this.audioElement.currentTime = this?.currentTime;
+    if (this.audioElement) {
+      this.audioElement.currentTime = this.currentTime;
     }
 
-    this?.events.onTimeUpdate?.(this?.currentTime);
+    this.events.onTimeUpdate?.(this.currentTime);
 
-    if (!this?.isPlaying) {
-      this?.renderFrame(this?.currentTime);
+    if (!this.isPlaying) {
+      this.renderFrame(this.currentTime);
     }
   }
 
   private startRenderLoop(): void {
-    const frameInterval = 1000 / this?.fps;
+    const frameInterval = 1000 / this.fps;
 
     const loop = () => {
-      if (!this?.isPlaying) return;
+      if (!this.isPlaying) return;
 
       const now = performance?.now();
-      const elapsed = now - this?.lastFrameTime;
+      const elapsed = now - this.lastFrameTime;
 
       if (elapsed >= frameInterval) {
         this.currentTime += elapsed / 1000;
 
-        if (this?.currentTime >= this?.duration) {
+        if (this.currentTime >= this.duration) {
           this.currentTime = 0;
-          if (this?.audioElement) {
+          if (this.audioElement) {
             this.audioElement.currentTime = 0;
           }
         }
 
-        this?.renderFrame(this?.currentTime);
+        this.renderFrame(this.currentTime);
         this.lastFrameTime = now - (elapsed % frameInterval);
 
-        this?.events.onTimeUpdate?.(this?.currentTime);
+        this.events.onTimeUpdate?.(this.currentTime);
       }
 
       this.animationFrameId = requestAnimationFrame(loop);
@@ -397,54 +397,54 @@ export class RenderOrchestrator {
   }
 
   private stopRenderLoop(): void {
-    if (this?.animationFrameId !== null) {
-      cancelAnimationFrame(this?.animationFrameId);
+    if (this.animationFrameId !== null) {
+      cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
     }
   }
 
   renderFrame(time: number): void {
-    if (!this?.project || !this?.scene) return;
+    if (!this.project || !this.scene) return;
 
-    this?.ctx.save();
-    this?.ctx.clearRect(0, 0, this?.width, this?.height);
+    this.ctx.save();
+    this.ctx.clearRect(0, 0, this.width, this.height);
 
-    this.ctx.fillStyle = this?.project.backgroundColor;
-    this?.ctx.fillRect(0, 0, this?.width, this?.height);
+    this.ctx.fillStyle = this.project.backgroundColor;
+    this.ctx.fillRect(0, 0, this.width, this.height);
 
-    this?.scene.setTime(time);
+    this.scene.setTime(time);
 
-    const audioData = this?.getAudioData(time);
+    const audioData = this.getAudioData(time);
 
-    const activeLayers = this?.scene
+    const activeLayers = this.scene
       .getActiveLayersAtTime(time)
       .sort((a, b) => a?.zIndex - b?.zIndex);
 
     for (const layer of activeLayers) {
-      this?.renderLayer(layer, time, audioData);
+      this.renderLayer(layer, time, audioData);
     }
 
-    this?.ctx.restore();
+    this.ctx.restore();
 
-    const frameNumber = Math?.floor(time * this?.fps);
-    this?.events.onFrameRendered?.(frameNumber, time);
+    const frameNumber = Math.floor(time * this.fps);
+    this.events.onFrameRendered?.(frameNumber, time);
 
-    if (this?.exportFrameCallback) {
-      this?.exportFrameCallback(time);
+    if (this.exportFrameCallback) {
+      this.exportFrameCallback(time);
     }
   }
 
   private getAudioData(time: number): AudioAnalysisData {
-    if (this?.mockAudio) {
+    if (this.mockAudio) {
       return generateMockAudioData(time, 120);
     }
-    if (!this?.audioAnalyzer) {
+    if (!this.audioAnalyzer) {
       console?.warn(
         "[RenderOrchestrator] No audio analyzer attached — falling back to synthetic audio data. Pass an audioElement or set mockAudio:true to suppress this warning.",
       );
       return generateMockAudioData(time, 120);
     }
-    return this?.audioAnalyzer.getAnalysisData();
+    return this.audioAnalyzer.getAnalysisData();
   }
 
   private renderLayer(
@@ -458,51 +458,51 @@ export class RenderOrchestrator {
 
     if (opacity <= 0) return;
 
-    this?.ctx.save();
+    this.ctx.save();
     this.ctx.globalAlpha = opacity;
 
-    this?.applyTransform(transform);
-    this?.applyAudioReactivity(layer?.id, audioData);
+    this.applyTransform(transform);
+    this.applyAudioReactivity(layer?.id, audioData);
 
     switch (config?.type) {
       case "background":
-        this?.renderBackground(config?.config as BackgroundConfig);
+        this.renderBackground(config?.config as BackgroundConfig);
         break;
       case "text":
-        this?.renderText(config, time);
+        this.renderText(config, time);
         break;
       case "image":
-        this?.renderImage(config);
+        this.renderImage(config);
         break;
       case "shape":
-        this?.renderShape(config?.config as ShapeConfig, transform);
+        this.renderShape(config?.config as ShapeConfig, transform);
         break;
       case "visualizer":
-        this?.renderVisualizer(layer?.id, audioData, time);
+        this.renderVisualizer(layer?.id, audioData, time);
         break;
       case "particle":
-        this?.renderParticles(config?.config as ParticleConfig, time, audioData);
+        this.renderParticles(config?.config as ParticleConfig, time, audioData);
         break;
     }
 
-    this?.ctx.restore();
+    this.ctx.restore();
   }
 
   private applyTransform(transform: TransformConfig): void {
-    const anchorX = this?.width * transform?.anchorX;
-    const anchorY = this?.height * transform?.anchorY;
+    const anchorX = this.width * transform?.anchorX;
+    const anchorY = this.height * transform?.anchorY;
 
-    this?.ctx.translate(transform?.x + anchorX, transform?.y + anchorY);
-    this?.ctx.rotate(transform?.rotation);
-    this?.ctx.scale(transform?.scaleX, transform?.scaleY);
-    this?.ctx.translate(-anchorX, -anchorY);
+    this.ctx.translate(transform?.x + anchorX, transform?.y + anchorY);
+    this.ctx.rotate(transform?.rotation);
+    this.ctx.scale(transform?.scaleX, transform?.scaleY);
+    this.ctx.translate(-anchorX, -anchorY);
   }
 
   private applyAudioReactivity(
     layerId: string,
     audioData: AudioAnalysisData,
   ): void {
-    const bindings = this?.audioReactiveBindings.filter(
+    const bindings = this.audioReactiveBindings.filter(
       (b) => b?.layerId === layerId,
     );
 
@@ -527,13 +527,13 @@ export class RenderOrchestrator {
 
       switch (binding?.property) {
         case "scale":
-          this?.ctx.scale(1 + effect * 0.1, 1 + effect * 0.1);
+          this.ctx.scale(1 + effect * 0.1, 1 + effect * 0.1);
           break;
         case "opacity":
           this.ctx.globalAlpha *= 1 - effect * 0.3;
           break;
         case "rotation":
-          this?.ctx.rotate(effect * 0.1);
+          this.ctx.rotate(effect * 0.1);
           break;
       }
     }
@@ -543,29 +543,29 @@ export class RenderOrchestrator {
     switch (config?.type) {
       case "solid":
         this.ctx.fillStyle = config?.color || "#000000";
-        this?.ctx.fillRect(0, 0, this?.width, this?.height);
+        this.ctx.fillRect(0, 0, this.width, this.height);
         break;
 
       case "gradient":
-        const gradient = this?.createLinearGradient(
+        const gradient = this.createLinearGradient(
           config?.colors || [],
           config?.angle || 0,
         );
         this.ctx.fillStyle = gradient;
-        this?.ctx.fillRect(0, 0, this?.width, this?.height);
+        this.ctx.fillRect(0, 0, this.width, this.height);
         break;
 
       case "radialGradient":
-        const radialGradient = this?.createRadialGradient(config?.colors || []);
+        const radialGradient = this.createRadialGradient(config?.colors || []);
         this.ctx.fillStyle = radialGradient;
-        this?.ctx.fillRect(0, 0, this?.width, this?.height);
+        this.ctx.fillRect(0, 0, this.width, this.height);
         break;
 
       case "image":
         if (config?.imageUrl) {
-          const cached = this?.imageCache.get(config?.imageUrl);
+          const cached = this.imageCache.get(config?.imageUrl);
           if (cached?.loaded) {
-            this?.ctx.drawImage(cached?.image, 0, 0, this?.width, this?.height);
+            this.ctx.drawImage(cached?.image, 0, 0, this.width, this.height);
           }
         }
         break;
@@ -577,26 +577,26 @@ export class RenderOrchestrator {
     angle: number,
   ): CanvasGradient {
     const angleRad = (angle * Math.PI) / 180;
-    const x1 = this?.width / 2 - (Math?.cos(angleRad) * this?.width) / 2;
-    const y1 = this?.height / 2 - (Math?.sin(angleRad) * this?.height) / 2;
-    const x2 = this?.width / 2 + (Math?.cos(angleRad) * this?.width) / 2;
-    const y2 = this?.height / 2 + (Math?.sin(angleRad) * this?.height) / 2;
+    const x1 = this.width / 2 - (Math.cos(angleRad) * this.width) / 2;
+    const y1 = this.height / 2 - (Math.sin(angleRad) * this.height) / 2;
+    const x2 = this.width / 2 + (Math.cos(angleRad) * this.width) / 2;
+    const y2 = this.height / 2 + (Math.sin(angleRad) * this.height) / 2;
 
-    const gradient = this?.ctx.createLinearGradient(x1, y1, x2, y2);
+    const gradient = this.ctx.createLinearGradient(x1, y1, x2, y2);
     colors?.forEach((color, i) => {
-      gradient?.addColorStop(i / Math?.max(1, colors?.length - 1), color);
+      gradient?.addColorStop(i / Math.max(1, colors?.length - 1), color);
     });
     return gradient;
   }
 
   private createRadialGradient(colors: string[]): CanvasGradient {
-    const cx = this?.width / 2;
-    const cy = this?.height / 2;
-    const radius = Math?.max(this?.width, this?.height) / 2;
+    const cx = this.width / 2;
+    const cy = this.height / 2;
+    const radius = Math.max(this.width, this.height) / 2;
 
-    const gradient = this?.ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+    const gradient = this.ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
     colors?.forEach((color, i) => {
-      gradient?.addColorStop(i / Math?.max(1, colors?.length - 1), color);
+      gradient?.addColorStop(i / Math.max(1, colors?.length - 1), color);
     });
     return gradient;
   }
@@ -621,8 +621,8 @@ export class RenderOrchestrator {
       style.shadowOffsetY = textConfig?.shadow.offsetY;
     }
 
-    if (this?.textAnimator) {
-      this?.textAnimator.renderText(
+    if (this.textAnimator) {
+      this.textAnimator.renderText(
         textConfig?.text,
         transform?.x,
         transform?.y,
@@ -635,7 +635,7 @@ export class RenderOrchestrator {
     const imageConfig = config?.config as ImageConfig;
     const transform = config?.transform || DEFAULT_TRANSFORM;
 
-    const cached = this?.imageCache.get(config?.id);
+    const cached = this.imageCache.get(config?.id);
     if (!cached?.loaded) return;
 
     const img = cached?.image;
@@ -643,11 +643,11 @@ export class RenderOrchestrator {
     let drawHeight = imageConfig?.height || img?.height;
 
     if (imageConfig?.fit === "contain") {
-      const scale = Math?.min(drawWidth / img?.width, drawHeight / img?.height);
+      const scale = Math.min(drawWidth / img?.width, drawHeight / img?.height);
       drawWidth = img?.width * scale;
       drawHeight = img?.height * scale;
     } else if (imageConfig?.fit === "cover") {
-      const scale = Math?.max(drawWidth / img?.width, drawHeight / img?.height);
+      const scale = Math.max(drawWidth / img?.width, drawHeight / img?.height);
       drawWidth = img?.width * scale;
       drawHeight = img?.height * scale;
     }
@@ -656,15 +656,15 @@ export class RenderOrchestrator {
     const y = transform?.y - drawHeight / 2;
 
     if (imageConfig?.borderRadius) {
-      this?.ctx.save();
-      this?.roundRect(x, y, drawWidth, drawHeight, imageConfig?.borderRadius);
-      this?.ctx.clip();
+      this.ctx.save();
+      this.roundRect(x, y, drawWidth, drawHeight, imageConfig?.borderRadius);
+      this.ctx.clip();
     }
 
-    this?.ctx.drawImage(img, x, y, drawWidth, drawHeight);
+    this.ctx.drawImage(img, x, y, drawWidth, drawHeight);
 
     if (imageConfig?.borderRadius) {
-      this?.ctx.restore();
+      this.ctx.restore();
     }
   }
 
@@ -675,46 +675,46 @@ export class RenderOrchestrator {
     h: number,
     r: number,
   ): void {
-    this?.ctx.beginPath();
-    this?.ctx.moveTo(x + r, y);
-    this?.ctx.lineTo(x + w - r, y);
-    this?.ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-    this?.ctx.lineTo(x + w, y + h - r);
-    this?.ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-    this?.ctx.lineTo(x + r, y + h);
-    this?.ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-    this?.ctx.lineTo(x, y + r);
-    this?.ctx.quadraticCurveTo(x, y, x + r, y);
-    this?.ctx.closePath();
+    this.ctx.beginPath();
+    this.ctx.moveTo(x + r, y);
+    this.ctx.lineTo(x + w - r, y);
+    this.ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    this.ctx.lineTo(x + w, y + h - r);
+    this.ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    this.ctx.lineTo(x + r, y + h);
+    this.ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    this.ctx.lineTo(x, y + r);
+    this.ctx.quadraticCurveTo(x, y, x + r, y);
+    this.ctx.closePath();
   }
 
   private renderShape(config: ShapeConfig, transform: TransformConfig): void {
     const x = transform?.x;
     const y = transform?.y;
 
-    this?.ctx.beginPath();
+    this.ctx.beginPath();
 
     switch (config?.type) {
       case "rectangle":
         const w = config?.width || 100;
         const h = config?.height || 100;
         if (config?.cornerRadius) {
-          this?.roundRect(x - w / 2, y - h / 2, w, h, config?.cornerRadius);
+          this.roundRect(x - w / 2, y - h / 2, w, h, config?.cornerRadius);
         } else {
-          this?.ctx.rect(x - w / 2, y - h / 2, w, h);
+          this.ctx.rect(x - w / 2, y - h / 2, w, h);
         }
         break;
 
       case "circle":
-        this?.ctx.arc(x, y, config?.radius || 50, 0, Math.PI * 2);
+        this.ctx.arc(x, y, config?.radius || 50, 0, Math.PI * 2);
         break;
 
       case "triangle":
         const size = config?.radius || 50;
-        this?.ctx.moveTo(x, y - size);
-        this?.ctx.lineTo(x + size * 0.866, y + size * 0.5);
-        this?.ctx.lineTo(x - size * 0.866, y + size * 0.5);
-        this?.ctx.closePath();
+        this.ctx.moveTo(x, y - size);
+        this.ctx.lineTo(x + size * 0.866, y + size * 0.5);
+        this.ctx.lineTo(x - size * 0.866, y + size * 0.5);
+        this.ctx.closePath();
         break;
 
       case "polygon":
@@ -722,33 +722,33 @@ export class RenderOrchestrator {
         const radius = config?.radius || 50;
         for (let i = 0; i < points; i++) {
           const angle = (i / points) * Math.PI * 2 - Math.PI / 2;
-          const px = x + Math?.cos(angle) * radius;
-          const py = y + Math?.sin(angle) * radius;
+          const px = x + Math.cos(angle) * radius;
+          const py = y + Math.sin(angle) * radius;
           if (i === 0) {
-            this?.ctx.moveTo(px, py);
+            this.ctx.moveTo(px, py);
           } else {
-            this?.ctx.lineTo(px, py);
+            this.ctx.lineTo(px, py);
           }
         }
-        this?.ctx.closePath();
+        this.ctx.closePath();
         break;
 
       case "line":
         const lineWidth = config?.width || 100;
-        this?.ctx.moveTo(x - lineWidth / 2, y);
-        this?.ctx.lineTo(x + lineWidth / 2, y);
+        this.ctx.moveTo(x - lineWidth / 2, y);
+        this.ctx.lineTo(x + lineWidth / 2, y);
         break;
     }
 
     if (config?.fill) {
       this.ctx.fillStyle = config?.fill;
-      this?.ctx.fill();
+      this.ctx.fill();
     }
 
     if (config?.stroke) {
       this.ctx.strokeStyle = config?.stroke;
       this.ctx.lineWidth = config?.strokeWidth || 1;
-      this?.ctx.stroke();
+      this.ctx.stroke();
     }
   }
 
@@ -757,14 +757,14 @@ export class RenderOrchestrator {
     audioData: AudioAnalysisData,
     time: number,
   ): void {
-    const visualizer = this?.visualizers.get(layerId);
+    const visualizer = this.visualizers.get(layerId);
     if (!visualizer) return;
 
     visualizer?.instance.render(
-      this?.ctx as CanvasRenderingContext2D,
+      this.ctx as CanvasRenderingContext2D,
       audioData,
-      this?.width,
-      this?.height,
+      this.width,
+      this.height,
       time,
     );
   }
@@ -786,47 +786,47 @@ export class RenderOrchestrator {
     });
 
     particleVisualizer?.render(
-      this?.ctx as CanvasRenderingContext2D,
+      this.ctx as CanvasRenderingContext2D,
       audioData,
-      this?.width,
-      this?.height,
+      this.width,
+      this.height,
       time,
     );
   }
 
   getCanvas(): HTMLCanvasElement | OffscreenCanvas {
-    return this?.canvas;
+    return this.canvas;
   }
 
   getContext(): CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D {
-    return this?.ctx;
+    return this.ctx;
   }
 
   getCurrentTime(): number {
-    return this?.currentTime;
+    return this.currentTime;
   }
 
   getDuration(): number {
-    return this?.duration;
+    return this.duration;
   }
 
   getState(): OrchestratorState {
-    return this?.state;
+    return this.state;
   }
 
   getProject(): VideoProject | null {
-    return this?.project;
+    return this.project;
   }
 
   getCapabilities(): BrowserCapabilities | null {
-    return this?.capabilities;
+    return this.capabilities;
   }
 
   resize(width: number, height: number): void {
     this.width = width;
     this.height = height;
 
-    if (this?.canvas instanceof HTMLCanvasElement) {
+    if (this.canvas instanceof HTMLCanvasElement) {
       this.canvas.width = width;
       this.canvas.height = height;
     } else {
@@ -834,20 +834,20 @@ export class RenderOrchestrator {
       (this.canvas as OffscreenCanvas).height = height;
     }
 
-    if (this?.textAnimator) {
-      this?.textAnimator.updateDimensions(width, height);
+    if (this.textAnimator) {
+      this.textAnimator.updateDimensions(width, height);
     }
 
-    if (this?.lyricEngine) {
-      this?.lyricEngine.updateDimensions(width, height);
+    if (this.lyricEngine) {
+      this.lyricEngine.updateDimensions(width, height);
     }
   }
 
   setAudioElement(audioElement: HTMLAudioElement): void {
     this.audioElement = audioElement;
 
-    if (this?.audioAnalyzer && this?.enableAudioAnalysis) {
-      this?.audioAnalyzer.connectAudioElement(audioElement);
+    if (this.audioAnalyzer && this.enableAudioAnalysis) {
+      this.audioAnalyzer.connectAudioElement(audioElement);
     }
   }
 
@@ -859,15 +859,15 @@ export class RenderOrchestrator {
     this.exportFrameCallback = frameCallback || null;
 
     if (enabled) {
-      this?.setState("exporting");
-    } else if (this?.state === "exporting") {
-      this?.setState("ready");
+      this.setState("exporting");
+    } else if (this.state === "exporting") {
+      this.setState("ready");
     }
   }
 
   async exportFrame(frameNumber: number): Promise<void> {
-    const timestamp = frameNumber / this?.fps;
-    this?.renderFrame(timestamp);
+    const timestamp = frameNumber / this.fps;
+    this.renderFrame(timestamp);
   }
 
   getFrameRenderer(): (
@@ -876,40 +876,40 @@ export class RenderOrchestrator {
     timestamp: number,
   ) => void {
     return (canvas, frameNumber, timestamp) => {
-      this?.renderFrame(timestamp);
+      this.renderFrame(timestamp);
 
       const targetCtx = canvas?.getContext("2d");
       if (targetCtx) {
-        targetCtx?.drawImage(this?.canvas as CanvasImageSource, 0, 0);
+        targetCtx?.drawImage(this.canvas as CanvasImageSource, 0, 0);
       }
     };
   }
 
   private setState(state: OrchestratorState): void {
     this.state = state;
-    this?.events.onStateChange?.(state);
+    this.events.onStateChange?.(state);
   }
 
   dispose(): void {
-    this?.stopRenderLoop();
+    this.stopRenderLoop();
 
-    if (this?.audioAnalyzer) {
-      this?.audioAnalyzer.dispose();
+    if (this.audioAnalyzer) {
+      this.audioAnalyzer.dispose();
       this.audioAnalyzer = null;
     }
 
-    for (const visualizer of this?.visualizers.values()) {
+    for (const visualizer of this.visualizers.values()) {
       visualizer?.instance.dispose();
     }
-    this?.visualizers.clear();
+    this.visualizers.clear();
 
-    this?.imageCache.clear();
+    this.imageCache.clear();
     this.scene = null;
     this.project = null;
     this.textAnimator = null;
     this.lyricEngine = null;
 
-    this?.setState("idle");
+    this.setState("idle");
   }
 }
 

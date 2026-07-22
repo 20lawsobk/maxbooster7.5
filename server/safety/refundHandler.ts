@@ -75,7 +75,7 @@ export async function processRefund(params: {
   const stripe = getStripe();
 
   try {
-    logger?.info(`[Refund] Processing refund for charge ${params?.chargeId}`);
+    logger.info(`[Refund] Processing refund for charge ${params?.chargeId}`);
 
     const refund = await stripe?.refunds.create({
       charge: params.chargeId,
@@ -104,7 +104,7 @@ export async function processRefund(params: {
     refundRecords?.set(refund?.id, record);
     await persistRefundRecord(record);
 
-    logger?.info(
+    logger.info(
       `[Refund] Refund ${refund?.id} created - Status: ${refund?.status}`,
     );
 
@@ -226,7 +226,7 @@ async function handlePostRefundActions(
       WHERE id = ${userId}
     `);
   } catch (error) {
-    logger?.warn({ err: error }, "[Refund] Failed to update user record:");
+    logger.warn({ err: error }, "[Refund] Failed to update user record:");
   }
 }
 
@@ -235,7 +235,7 @@ async function handlePostRefundActions(
  */
 async function sendChargebackAlert(record: ChargebackRecord): Promise<void> {
   // In production, send email/Slack/PagerDuty alert
-  logger?.warn(
+  logger.warn(
     `[ALERT] Chargeback alert - Dispute ${record?.stripeDisputeId}, Amount: $${(record?.amount / 100).toFixed(2)}`,
   );
 }
@@ -253,7 +253,7 @@ async function persistRefundRecord(record: RefundRecord): Promise<void> {
         ${record?.id}, ${record?.stripeChargeId}, ${record?.stripeRefundId}, 
         ${record?.userId}, ${record?.amount}, ${record?.reason}, 
         ${record?.status}, ${record?.type}, ${record?.createdAt}, 
-        ${record?.processedAt}, ${JSON?.stringify(record?.metadata)}
+        ${record?.processedAt}, ${JSON.stringify(record?.metadata)}
       )
       ON CONFLICT (id) DO UPDATE SET
         status = EXCLUDED.status,
@@ -287,7 +287,7 @@ async function persistChargebackRecord(
     `);
   } catch (error) {
     // Table might not exist yet, log but don't fail
-    logger?.debug("[Chargeback] Could not persist chargeback record:", error);
+    logger.debug("[Chargeback] Could not persist chargeback record:", error);
   }
 }
 
@@ -298,13 +298,13 @@ export function registerRefundWebhookHandlers(): void {
   // Handle refund events
   registerWebhookHandler("charge.refunded", async (event) => {
     const charge = event?.data.object as Stripe.Charge;
-    logger?.info(`[Webhook] Charge refunded: ${charge?.id}`);
+    logger.info(`[Webhook] Charge refunded: ${charge?.id}`);
     return { success: true, message: "Refund recorded" };
   });
 
   registerWebhookHandler("refund.created", async (event) => {
     const refund = event?.data.object as Stripe.Refund;
-    logger?.info(`[Webhook] Refund created: ${refund?.id}`);
+    logger.info(`[Webhook] Refund created: ${refund?.id}`);
     return { success: true, message: "Refund created" };
   });
 
@@ -352,14 +352,14 @@ export function registerRefundWebhookHandlers(): void {
       existing.updatedAt = new Date();
       await persistChargebackRecord(existing);
 
-      logger?.info(
+      logger.info(
         `[Dispute] Dispute ${dispute?.id} closed with status: ${dispute?.status}`,
       );
     }
     return { success: true, message: "Dispute closed" };
   });
 
-  logger?.info("[RefundHandler] Webhook handlers registered");
+  logger.info("[RefundHandler] Webhook handlers registered");
 }
 
 /**

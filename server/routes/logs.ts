@@ -8,11 +8,11 @@ import { logger } from "../logger.js";
 const router = Router();
 
 const requireAdmin: RequestHandler = (req, res, next) => {
-  if (!req?.isAuthenticated()) {
-    return res?.status(401).json({ error: "Authentication required" });
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Authentication required" });
   }
-  if (req?.user?.role !== "admin") {
-    return res?.status(403).json({ error: "Admin access required" });
+  if (req.user?.role !== "admin") {
+    return res.status(403).json({ error: "Admin access required" });
   }
   next();
 };
@@ -27,11 +27,11 @@ router?.get("/query", async (req, res) => {
       service = "all",
       limit = "100",
       offset = "0",
-    } = req?.query;
+    } = req.query;
 
-    const limitNum = Math?.min(parseInt(limit as string) || 100, 1000);
-    const offsetNum = Math?.min(
-      Math?.max(parseInt(offset as string) || 0, 0),
+    const limitNum = Math.min(parseInt(limit as string) || 100, 1000);
+    const offsetNum = Math.min(
+      Math.max(parseInt(offset as string) || 0, 0),
       100_000,
     );
 
@@ -58,7 +58,7 @@ router?.get("/query", async (req, res) => {
       db?.select({ count: count() }).from(systemLogs).where(whereClause),
     ]);
 
-    res?.json({
+    res.json({
       logs,
       total: totalResult[0]?.count || 0,
       query: { level, service, limit: limitNum, offset: offsetNum },
@@ -69,14 +69,14 @@ router?.get("/query", async (req, res) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error querying logs:");
-    res?.status(500).json({ error: "Failed to query logs" });
+    logger.warn({ err: error }, "Error querying logs:");
+    res.status(500).json({ error: "Failed to query logs" });
   }
 });
 
 router?.post("/write", async (req, res) => {
   try {
-    const validatedData = insertSystemLogSchema?.parse(req?.body);
+    const validatedData = insertSystemLogSchema?.parse(req.body);
 
     const validLevels = ["debug", "info", "warn", "error", "fatal"];
     const validServices = [
@@ -91,13 +91,13 @@ router?.post("/write", async (req, res) => {
     ];
 
     if (!validLevels?.includes(validatedData?.level)) {
-      return res?.status(400).json({
+      return res.status(400).json({
         error: `Invalid level. Must be one of: ${validLevels?.join(", ")}`,
       });
     }
 
     if (!validServices?.includes(validatedData?.service)) {
-      return res?.status(400).json({
+      return res.status(400).json({
         error: `Invalid service. Must be one of: ${validServices?.join(", ")}`,
       });
     }
@@ -107,24 +107,24 @@ router?.post("/write", async (req, res) => {
       .values(validatedData)
       .returning();
 
-    res?.status(201).json({
+    res.status(201).json({
       success: true,
       log: inserted,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error writing log:");
+    logger.warn({ err: error }, "Error writing log:");
     if (error instanceof Error && error?.name === "ZodError") {
       return res
         .status(400)
         .json({ error: "Invalid log data", details: error });
     }
-    res?.status(500).json({ error: "Failed to write log" });
+    res.status(500).json({ error: "Failed to write log" });
   }
 });
 
 router?.get("/services", async (_req, res) => {
   try {
-    res?.json({
+    res.json({
       services: [
         "api",
         "auth",
@@ -137,19 +137,19 @@ router?.get("/services", async (_req, res) => {
       ],
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching services:");
-    res?.status(500).json({ error: "Failed to fetch services" });
+    logger.warn({ err: error }, "Error fetching services:");
+    res.status(500).json({ error: "Failed to fetch services" });
   }
 });
 
 router?.get("/levels", async (_req, res) => {
   try {
-    res?.json({
+    res.json({
       levels: ["debug", "info", "warn", "error", "fatal"],
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching levels:");
-    res?.status(500).json({ error: "Failed to fetch levels" });
+    logger.warn({ err: error }, "Error fetching levels:");
+    res.status(500).json({ error: "Failed to fetch levels" });
   }
 });
 

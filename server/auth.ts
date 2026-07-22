@@ -65,16 +65,16 @@ export const verifyJWT = async (
   res: Response,
   next: NextFunction,
 ) => {
-  const authHeader = req?.headers.authorization;
+  const authHeader = req.headers.authorization;
 
   if (!authHeader?.startsWith("Bearer ")) {
-    return res?.status(401).json({ message: "No JWT token provided" });
+    return res.status(401).json({ message: "No JWT token provided" });
   }
 
   const token = authHeader?.substring(7);
 
   // Block brute-force only — gate by accumulated failures, not total traffic.
-  const ip = (req?.ip || req?.socket?.remoteAddress || "unknown").toString();
+  const ip = (req.ip || req.socket?.remoteAddress || "unknown").toString();
   const tokenPrefix = token?.slice(0, 16);
   const rlKey = `${ip}:${tokenPrefix}`;
   if (await isJwtBlocked(rlKey)) {
@@ -90,14 +90,14 @@ export const verifyJWT = async (
 
     if (!decoded) {
       await recordJwtFailure(rlKey);
-      return res?.status(401).json({ message: "Invalid or revoked token" });
+      return res.status(401).json({ message: "Invalid or revoked token" });
     }
 
     const user = await storage?.getUser(decoded?.userId);
 
     if (!user) {
       await recordJwtFailure(rlKey);
-      return res?.status(401).json({ message: "User not found" });
+      return res.status(401).json({ message: "User not found" });
     }
 
     req.user = {
@@ -115,8 +115,8 @@ export const verifyJWT = async (
     next();
   } catch (error: unknown) {
     await recordJwtFailure(rlKey);
-    logger?.warn({ err: error }, "JWT verification error:");
-    return res?.status(401).json({ message: "Token verification failed" });
+    logger.warn({ err: error }, "JWT verification error:");
+    return res.status(401).json({ message: "Token verification failed" });
   }
 };
 
@@ -125,15 +125,15 @@ export const requireAuthDual = async (
   res: Response,
   next: NextFunction,
 ) => {
-  // First check for passport?.js session authentication (req?.isAuthenticated checks req?.user)
-  if (req?.isAuthenticated && req?.isAuthenticated() && req?.user) {
+  // First check for passport?.js session authentication (req.isAuthenticated checks req.user)
+  if (req.isAuthenticated && req.isAuthenticated() && req.user) {
     return next();
   }
 
   // Fallback: check for custom session userId
-  if (req?.session?.userId) {
+  if (req.session?.userId) {
     try {
-      const user = await storage?.getUser(req?.session.userId);
+      const user = await storage?.getUser(req.session.userId);
 
       if (user) {
         req.user = {
@@ -161,7 +161,7 @@ export const requireAuthDual = async (
         return next();
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Session auth error:");
+      logger.warn({ err: error }, "Session auth error:");
     }
   }
 
@@ -174,14 +174,14 @@ export const requireAdmin = async (
   res: Response,
   next: NextFunction,
 ) => {
-  if (!req?.user) {
-    return res?.status(401).json({ message: "Authentication required" });
+  if (!req.user) {
+    return res.status(401).json({ message: "Authentication required" });
   }
 
-  const user = await storage?.getUser(req?.user.id);
+  const user = await storage?.getUser(req.user.id);
 
   if (!user || user?.role !== "admin") {
-    return res?.status(403).json({ message: "Admin access required" });
+    return res.status(403).json({ message: "Admin access required" });
   }
 
   next();
@@ -191,8 +191,8 @@ export const requireAdmin = async (
 export const requireAuth = requireAuthDual;
 
 // Block write operations for demo users (read-only mode)
-// NOTE: This middleware is mounted at '/api', so req?.path strips the '/api' prefix.
-// Use req?.originalUrl for full-path matching or paths without the /api prefix.
+// NOTE: This middleware is mounted at '/api', so req.path strips the '/api' prefix.
+// Use req.originalUrl for full-path matching or paths without the /api prefix.
 export const blockDemoWrite = async (
   req: Request,
   res: Response,
@@ -203,8 +203,8 @@ export const blockDemoWrite = async (
   }
 
   const writeMethods = ["POST", "PUT", "PATCH", "DELETE"];
-  if (writeMethods?.includes(req?.method)) {
-    const fullPath = req?.originalUrl.split("?")[0];
+  if (writeMethods?.includes(req.method)) {
+    const fullPath = req.originalUrl.split("?")[0];
     const allowedDemoPaths = [
       "/api/auth/logout",
       "/api/auth/demo",
@@ -217,10 +217,10 @@ export const blockDemoWrite = async (
       return next();
     }
 
-    logger?.info(
-      `Demo user blocked from write operation: ${req?.method} ${fullPath}`,
+    logger.info(
+      `Demo user blocked from write operation: ${req.method} ${fullPath}`,
     );
-    return res?.status(403).json({
+    return res.status(403).json({
       message: "Demo mode is read-only. Subscribe to unlock full access.",
       isDemo: true,
       upgradeUrl: "/pricing",

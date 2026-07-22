@@ -54,17 +54,17 @@ class AutoPostingService {
   private paused: boolean = false;
 
   constructor() {
-    this?.startQueueProcessor();
+    this.startQueueProcessor();
   }
 
   pause(): void {
     this.paused = true;
-    logger?.info("[AutoPostingService V1] Paused by kill switch");
+    logger.info("[AutoPostingService V1] Paused by kill switch");
   }
 
   resume(): void {
     this.paused = false;
-    logger?.info("[AutoPostingService V1] Resumed");
+    logger.info("[AutoPostingService V1] Resumed");
   }
 
   /**
@@ -95,12 +95,12 @@ class AutoPostingService {
     };
 
     // Store in queue
-    this?.postQueue.set(postId, scheduledPost);
+    this.postQueue.set(postId, scheduledPost);
 
     // Save to database
     await storage?.createScheduledPost(scheduledPost);
 
-    logger?.info(
+    logger.info(
       `Scheduled post ${postId} for user ${userId} at ${scheduledTime?.toISOString()}`,
     );
 
@@ -119,7 +119,7 @@ class AutoPostingService {
       | "advertising_autopilot"
       | "manual" = "manual",
   ): Promise<PostResult[]> {
-    logger?.info(
+    logger.info(
       `Posting immediately to ${platforms?.join(", ")} for user ${userId}`,
     );
 
@@ -543,7 +543,7 @@ class AutoPostingService {
         postedAt: new Date(),
       };
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         "LinkedIn posting error:",
         error?.response?.data || error?.message,
       );
@@ -584,7 +584,7 @@ class AutoPostingService {
         postedAt: new Date(),
       };
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         "Threads posting error:",
         error?.response?.data || error?.message,
       );
@@ -635,7 +635,7 @@ class AutoPostingService {
         postedAt: new Date(),
       };
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         "Google Business posting error:",
         error?.response?.data || error?.message,
       );
@@ -724,14 +724,14 @@ class AutoPostingService {
       // Token expired, refresh it
       if (tokens?.refreshToken) {
         try {
-          const refreshed = await this?.refreshToken(
+          const refreshed = await this.refreshToken(
             userId,
             platform,
             tokens?.refreshToken,
           );
           return refreshed?.accessToken;
         } catch (error) {
-          logger?.warn(
+          logger.warn(
             { err: error },
             `Failed to refresh token for ${platform}:`,
           );
@@ -754,13 +754,13 @@ class AutoPostingService {
   ): Promise<{ accessToken: string; expiresIn?: number }> {
     try {
       const result = await socialOAuth?.refreshAccessToken(userId, platform);
-      logger?.info(`Token refreshed for user ${userId} on platform ${platform}`);
+      logger.info(`Token refreshed for user ${userId} on platform ${platform}`);
       return {
         accessToken: result.accessToken,
         expiresIn: result.expiresIn,
       };
     } catch (error) {
-      logger?.warn({ err: error }, `Token refresh failed for ${platform}:`);
+      logger.warn({ err: error }, `Token refresh failed for ${platform}:`);
       throw new Error(
         `Failed to refresh ${platform} access token: ${error?.message}`,
       );
@@ -772,7 +772,7 @@ class AutoPostingService {
    */
   private startQueueProcessor() {
     setInterval(async () => {
-      if (this?.paused || this?.isProcessing) return;
+      if (this.paused || this.isProcessing) return;
 
       this.isProcessing = true;
 
@@ -780,12 +780,12 @@ class AutoPostingService {
         const now = new Date();
 
         // Find posts that need to be posted
-        for (const [postId, scheduledPost] of this?.postQueue.entries()) {
+        for (const [postId, scheduledPost] of this.postQueue.entries()) {
           if (
             scheduledPost?.status === "pending" &&
             scheduledPost?.scheduledTime <= now
           ) {
-            logger?.info(`Processing scheduled post ${postId}`);
+            logger.info(`Processing scheduled post ${postId}`);
 
             // Update status
             scheduledPost.status = "posting";
@@ -793,7 +793,7 @@ class AutoPostingService {
 
             try {
               // Post to platforms
-              const results = await this?.postNow(
+              const results = await this.postNow(
                 scheduledPost?.userId,
                 scheduledPost?.platforms,
                 scheduledPost?.content,
@@ -809,7 +809,7 @@ class AutoPostingService {
                 results,
               );
 
-              logger?.info(`Completed scheduled post ${postId}`);
+              logger.info(`Completed scheduled post ${postId}`);
 
               // Feed results into the autopilot learning engine (fire-and-forget)
               for (const result of results) {
@@ -846,7 +846,7 @@ class AutoPostingService {
                       },
                     )
                     .catch((err) =>
-                      logger?.warn(
+                      logger.warn(
                         "Learning record failed (non-fatal):",
                         err?.message,
                       ),
@@ -854,23 +854,23 @@ class AutoPostingService {
                 }
               }
             } catch (error) {
-              logger?.warn({ err: error }, `Failed scheduled post ${postId}:`);
+              logger.warn({ err: error }, `Failed scheduled post ${postId}:`);
               scheduledPost.status = "failed";
               await storage?.updateScheduledPostStatus(postId, "failed");
             }
 
             // Remove from queue
-            this?.postQueue.delete(postId);
+            this.postQueue.delete(postId);
           }
         }
       } catch (error) {
-        logger?.warn({ err: error }, "Queue processor error:");
+        logger.warn({ err: error }, "Queue processor error:");
       } finally {
         this.isProcessing = false;
       }
     }, 60000); // Check every minute
 
-    logger?.info("Auto-posting queue processor started");
+    logger.info("Auto-posting queue processor started");
   }
 
   /**
@@ -884,11 +884,11 @@ class AutoPostingService {
    * Cancel scheduled post
    */
   async cancelScheduledPost(postId: string, userId: string): Promise<void> {
-    const post = this?.postQueue.get(postId);
+    const post = this.postQueue.get(postId);
     if (post && post?.userId === userId) {
-      this?.postQueue.delete(postId);
+      this.postQueue.delete(postId);
       await storage?.updateScheduledPostStatus(postId, "failed");
-      logger?.info(`Cancelled scheduled post ${postId}`);
+      logger.info(`Cancelled scheduled post ${postId}`);
     }
   }
 }

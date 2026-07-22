@@ -107,7 +107,7 @@ export function useBatchAction(
       setProgress((prev) => {
         const next = { ...prev, ...update };
         next.percentage =
-          next?.total > 0 ? Math?.round((next?.current / next?.total) * 100) : 0;
+          next?.total > 0 ? Math.round((next?.current / next?.total) * 100) : 0;
         onProgress?.(next);
         return next;
       });
@@ -120,11 +120,11 @@ export function useBatchAction(
       if (!simulateProgress) return;
 
       let current = 0;
-      const increment = Math?.max(1, Math?.floor(total / 20));
+      const increment = Math.max(1, Math.floor(total / 20));
       const intervalMs = 200;
 
       progressIntervalRef.current = setInterval(() => {
-        current = Math?.min(current + increment, total - 1);
+        current = Math.min(current + increment, total - 1);
         updateProgress({ current, total });
       }, intervalMs);
     },

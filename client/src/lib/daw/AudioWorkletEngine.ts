@@ -114,7 +114,7 @@ export class AudioWorkletEngine {
 
   async initialize(config?: Partial<AudioEngineConfig>): Promise<void> {
     if (config) {
-      this.config = { ...this?.config, ...config };
+      this.config = { ...this.config, ...config };
     }
 
     // Already initialized — just resume if suspended and re-emit state
@@ -122,7 +122,7 @@ export class AudioWorkletEngine {
       if (this.audioContext.state === "suspended") {
         await this.audioContext.resume().catch(() => {});
       }
-      this?.emit({ type: "state-change", data: { initialized: true } });
+      this.emit({ type: "state-change", data: { initialized: true } });
       return;
     }
 
@@ -132,16 +132,16 @@ export class AudioWorkletEngine {
         latencyHint: this.config.latencyHint,
       });
 
-      if (this?.audioContext.state === "suspended") {
-        await this?.audioContext.resume();
+      if (this.audioContext.state === "suspended") {
+        await this.audioContext.resume();
       }
 
-      this.config.sampleRate = this?.audioContext.sampleRate;
+      this.config.sampleRate = this.audioContext.sampleRate;
 
       try {
-        await this?.audioContext.audioWorklet?.addModule("/audio-processor.js");
+        await this.audioContext.audioWorklet?.addModule("/audio-processor.js");
         this.workletNode = new AudioWorkletNode(
-          this?.audioContext,
+          this.audioContext,
           "daw-audio-processor",
         );
         this.workletReady = true;
@@ -153,13 +153,13 @@ export class AudioWorkletEngine {
             this.state.currentTime = data?.time;
 
             const peakLeftDb =
-              data?.peakLeft > 0 ? 20 * Math?.log10(data?.peakLeft) : -Infinity;
+              data?.peakLeft > 0 ? 20 * Math.log10(data?.peakLeft) : -Infinity;
             const peakRightDb =
-              data?.peakRight > 0 ? 20 * Math?.log10(data?.peakRight) : -Infinity;
+              data?.peakRight > 0 ? 20 * Math.log10(data?.peakRight) : -Infinity;
             const rmsLeftDb =
-              data?.rmsLeft > 0 ? 20 * Math?.log10(data?.rmsLeft) : -Infinity;
+              data?.rmsLeft > 0 ? 20 * Math.log10(data?.rmsLeft) : -Infinity;
             const rmsRightDb =
-              data?.rmsRight > 0 ? 20 * Math?.log10(data?.rmsRight) : -Infinity;
+              data?.rmsRight > 0 ? 20 * Math.log10(data?.rmsRight) : -Infinity;
 
             const masterMeteringData: MeteringData = {
               trackId: "master",
@@ -171,79 +171,79 @@ export class AudioWorkletEngine {
               rmsRight: rmsRightDb,
             };
 
-            this?.meteringData.set("master", masterMeteringData);
+            this.meteringData.set("master", masterMeteringData);
 
-            this?.emit({
+            this.emit({
               type: "metering-update",
               data: [masterMeteringData],
             });
 
-            this?.emit({
+            this.emit({
               type: "position-update",
               data: { time: data.time, sample: data.position },
             });
           }
         };
 
-        logger?.info("[AudioWorkletEngine] AudioWorklet processor loaded");
+        logger.info("[AudioWorkletEngine] AudioWorklet processor loaded");
       } catch (workletError) {
-        logger?.warn(
+        logger.warn(
           "[AudioWorkletEngine] AudioWorklet not supported, falling back to analyzer-based metering",
         );
         this.workletReady = false;
       }
 
-      this.masterGain = this?.audioContext.createGain();
-      this.masterAnalyzer = this?.audioContext.createAnalyser();
+      this.masterGain = this.audioContext.createGain();
+      this.masterAnalyzer = this.audioContext.createAnalyser();
       this.masterAnalyzer.fftSize = 2048;
       this.masterAnalyzer.smoothingTimeConstant = 0.8;
 
-      this?.masterGain.connect(this?.masterAnalyzer);
+      this.masterGain.connect(this.masterAnalyzer);
 
-      if (this?.workletNode && this?.workletReady) {
-        this?.masterAnalyzer.connect(this?.workletNode);
-        this?.workletNode.connect(this?.audioContext.destination);
+      if (this.workletNode && this.workletReady) {
+        this.masterAnalyzer.connect(this.workletNode);
+        this.workletNode.connect(this.audioContext.destination);
       } else {
-        this?.masterAnalyzer.connect(this?.audioContext.destination);
-        this?.startMeteringLoop();
+        this.masterAnalyzer.connect(this.audioContext.destination);
+        this.startMeteringLoop();
       }
 
-      this?.emit({ type: "state-change", data: { initialized: true } });
+      this.emit({ type: "state-change", data: { initialized: true } });
     } catch (error) {
-      logger?.error("[AudioWorkletEngine] Failed to initialize:", error);
+      logger.error("[AudioWorkletEngine] Failed to initialize:", error);
       throw error;
     }
   }
 
   private startMeteringLoop(): void {
-    if (this?.meteringInterval) return;
+    if (this.meteringInterval) return;
 
     const updateMeters = () => {
-      if (!this?.audioContext || !this?.state.isPlaying) {
+      if (!this.audioContext || !this.state.isPlaying) {
         this.animationFrameId = requestAnimationFrame(updateMeters);
         return;
       }
 
       const allMeteringData: MeteringData[] = [];
 
-      this?.trackNodes.forEach((nodes, trackId) => {
-        const data = this?.getTrackMeteringData(trackId, nodes?.analyzer);
+      this.trackNodes.forEach((nodes, trackId) => {
+        const data = this.getTrackMeteringData(trackId, nodes?.analyzer);
         if (data) {
-          this?.meteringData.set(trackId, data);
+          this.meteringData.set(trackId, data);
           allMeteringData?.push(data);
         }
       });
 
-      if (this?.masterAnalyzer) {
-        const masterData = this?.getMasterMeteringData();
+      if (this.masterAnalyzer) {
+        const masterData = this.getMasterMeteringData();
         if (masterData) {
-          this?.meteringData.set("master", masterData);
+          this.meteringData.set("master", masterData);
           allMeteringData?.push(masterData);
         }
       }
 
       if (allMeteringData?.length > 0) {
-        this?.emit({ type: "metering-update", data: allMeteringData });
+        this.emit({ type: "metering-update", data: allMeteringData });
       }
 
       this.animationFrameId = requestAnimationFrame(updateMeters);
@@ -264,14 +264,14 @@ export class AudioWorkletEngine {
     let peak = 0;
 
     for (let i = 0; i < bufferLength; i++) {
-      const value = Math?.abs(dataArray[i]);
+      const value = Math.abs(dataArray[i]);
       sumSquares += dataArray[i] * dataArray[i];
       if (value > peak) peak = value;
     }
 
-    const rms = Math?.sqrt(sumSquares / bufferLength);
-    const dbPeak = peak > 0 ? 20 * Math?.log10(peak) : -Infinity;
-    const dbRms = rms > 0 ? 20 * Math?.log10(rms) : -Infinity;
+    const rms = Math.sqrt(sumSquares / bufferLength);
+    const dbPeak = peak > 0 ? 20 * Math.log10(peak) : -Infinity;
+    const dbRms = rms > 0 ? 20 * Math.log10(rms) : -Infinity;
 
     return {
       trackId,
@@ -285,29 +285,29 @@ export class AudioWorkletEngine {
   }
 
   private getMasterMeteringData(): MeteringData | null {
-    if (!this?.masterAnalyzer) return null;
-    return this?.getTrackMeteringData("master", this?.masterAnalyzer);
+    if (!this.masterAnalyzer) return null;
+    return this.getTrackMeteringData("master", this.masterAnalyzer);
   }
 
   createTrack(trackId: string): void {
-    if (!this?.audioContext || !this?.masterGain) {
-      logger?.warn("[AudioWorkletEngine] Not initialized");
+    if (!this.audioContext || !this.masterGain) {
+      logger.warn("[AudioWorkletEngine] Not initialized");
       return;
     }
 
-    if (this?.trackNodes.has(trackId)) return;
+    if (this.trackNodes.has(trackId)) return;
 
-    const gain = this?.audioContext.createGain();
-    const panner = this?.audioContext.createStereoPanner();
-    const analyzer = this?.audioContext.createAnalyser();
+    const gain = this.audioContext.createGain();
+    const panner = this.audioContext.createStereoPanner();
+    const analyzer = this.audioContext.createAnalyser();
     analyzer.fftSize = 1024;
     analyzer.smoothingTimeConstant = 0.85;
 
     gain?.connect(panner);
     panner?.connect(analyzer);
-    analyzer?.connect(this?.masterGain);
+    analyzer?.connect(this.masterGain);
 
-    this?.trackNodes.set(trackId, {
+    this.trackNodes.set(trackId, {
       gain,
       panner,
       analyzer,
@@ -318,67 +318,67 @@ export class AudioWorkletEngine {
   }
 
   removeTrack(trackId: string): void {
-    const nodes = this?.trackNodes.get(trackId);
+    const nodes = this.trackNodes.get(trackId);
     if (!nodes) return;
 
-    this?.stopTrackSources(trackId);
+    this.stopTrackSources(trackId);
 
     nodes?.analyzer.disconnect();
     nodes?.panner.disconnect();
     nodes?.gain.disconnect();
 
-    this?.trackNodes.delete(trackId);
-    this?.meteringData.delete(trackId);
+    this.trackNodes.delete(trackId);
+    this.meteringData.delete(trackId);
   }
 
   setTrackVolume(trackId: string, volume: number): void {
-    const nodes = this?.trackNodes.get(trackId);
-    if (!nodes || !this?.audioContext) return;
+    const nodes = this.trackNodes.get(trackId);
+    if (!nodes || !this.audioContext) return;
 
     // volume is linear 0.0–1.0 from the store (fader position)
-    const clampedVolume = Math?.max(0, Math?.min(1, volume));
+    const clampedVolume = Math.max(0, Math.min(1, volume));
     nodes.volume = clampedVolume;
 
-    const hasSolo = Array?.from(this?.trackNodes.values()).some((n) => n?.solo);
+    const hasSolo = Array.from(this.trackNodes.values()).some((n) => n?.solo);
     const shouldMute = nodes?.muted || (hasSolo && !nodes?.solo);
     if (!shouldMute) {
       nodes?.gain.gain?.setTargetAtTime(
         clampedVolume,
-        this?.audioContext.currentTime,
+        this.audioContext.currentTime,
         0.01,
       );
     }
   }
 
   setTrackPan(trackId: string, pan: number): void {
-    const nodes = this?.trackNodes.get(trackId);
-    if (!nodes || !this?.audioContext) return;
+    const nodes = this.trackNodes.get(trackId);
+    if (!nodes || !this.audioContext) return;
 
-    nodes?.panner.pan?.setTargetAtTime(pan, this?.audioContext.currentTime, 0.01);
+    nodes?.panner.pan?.setTargetAtTime(pan, this.audioContext.currentTime, 0.01);
   }
 
   setTrackMute(trackId: string, muted: boolean): void {
-    const nodes = this?.trackNodes.get(trackId);
-    if (!nodes || !this?.audioContext) return;
+    const nodes = this.trackNodes.get(trackId);
+    if (!nodes || !this.audioContext) return;
 
     nodes.muted = muted;
-    this?.updateTrackSoloMute();
+    this.updateTrackSoloMute();
   }
 
   setTrackSolo(trackId: string, solo: boolean): void {
-    const nodes = this?.trackNodes.get(trackId);
+    const nodes = this.trackNodes.get(trackId);
     if (!nodes) return;
 
     nodes.solo = solo;
-    this?.updateTrackSoloMute();
+    this.updateTrackSoloMute();
   }
 
   private updateTrackSoloMute(): void {
-    if (!this?.audioContext) return;
+    if (!this.audioContext) return;
 
-    const hasSolo = Array?.from(this?.trackNodes.values()).some((n) => n?.solo);
+    const hasSolo = Array.from(this.trackNodes.values()).some((n) => n?.solo);
 
-    this?.trackNodes.forEach((nodes, _trackId) => {
+    this.trackNodes.forEach((nodes, _trackId) => {
       let shouldMute = nodes?.muted;
 
       if (hasSolo && !nodes?.solo) {
@@ -388,101 +388,101 @@ export class AudioWorkletEngine {
       const targetGain = shouldMute ? 0 : nodes?.volume;
       nodes?.gain.gain?.setTargetAtTime(
         targetGain,
-        this?.audioContext!.currentTime,
+        this.audioContext!.currentTime,
         0.01,
       );
     });
   }
 
   setMasterVolume(volume: number): void {
-    if (!this?.masterGain || !this?.audioContext) return;
+    if (!this.masterGain || !this.audioContext) return;
 
     // volume is linear 0.0–1.0 from the store
-    const clampedVolume = Math?.max(0, Math?.min(1, volume));
-    this?.masterGain.gain?.setTargetAtTime(
+    const clampedVolume = Math.max(0, Math.min(1, volume));
+    this.masterGain.gain?.setTargetAtTime(
       clampedVolume,
-      this?.audioContext.currentTime,
+      this.audioContext.currentTime,
       0.01,
     );
   }
 
   scheduleClip(clip: ScheduledClip): void {
-    this?.clips.set(clip?.id, clip);
+    this.clips.set(clip?.id, clip);
 
-    if (this?.state.isPlaying) {
-      this?.scheduleClipPlayback(clip);
+    if (this.state.isPlaying) {
+      this.scheduleClipPlayback(clip);
     }
   }
 
   removeClip(clipId: string): void {
-    this?.clips.delete(clipId);
-    this?.stopClipSources(clipId);
+    this.clips.delete(clipId);
+    this.stopClipSources(clipId);
   }
 
   private scheduleClipPlayback(clip: ScheduledClip): void {
-    if (!this?.audioContext) return;
+    if (!this.audioContext) return;
 
-    const nodes = this?.trackNodes.get(clip?.trackId);
+    const nodes = this.trackNodes.get(clip?.trackId);
     if (!nodes) return;
 
     // Guard: skip clips with no audio data
     if (!clip?.durationSamples || clip?.durationSamples <= 0) return;
 
-    const currentSample = this?.state.currentSample;
+    const currentSample = this.state.currentSample;
     const clipEndSample = clip?.startSample + clip?.durationSamples;
 
     if (currentSample >= clipEndSample) return;
     if (
-      currentSample + this?.config.sampleRate * this?.scheduleAheadTime <
+      currentSample + this.config.sampleRate * this.scheduleAheadTime <
       clip?.startSample
     )
       return;
 
-    const startTimeOffset = Math?.max(
+    const startTimeOffset = Math.max(
       0,
-      (clip?.startSample - currentSample) / this?.config.sampleRate,
+      (clip?.startSample - currentSample) / this.config.sampleRate,
     );
     const bufferOffset =
       currentSample > clip?.startSample
         ? (currentSample - clip?.startSample + clip?.offsetSamples) /
-          this?.config.sampleRate
-        : clip?.offsetSamples / this?.config.sampleRate;
+          this.config.sampleRate
+        : clip?.offsetSamples / this.config.sampleRate;
 
     const remainingDuration =
-      (clipEndSample - Math?.max(currentSample, clip?.startSample)) /
-      this?.config.sampleRate;
+      (clipEndSample - Math.max(currentSample, clip?.startSample)) /
+      this.config.sampleRate;
 
     if (remainingDuration <= 0) return;
 
-    const source = this?.audioContext.createBufferSource();
+    const source = this.audioContext.createBufferSource();
     source.buffer = clip?.buffer;
 
-    const clipGain = this?.audioContext.createGain();
+    const clipGain = this.audioContext.createGain();
     clipGain.gain.value = clip?.gain;
 
     if (clip?.fadeInSamples > 0 && startTimeOffset === 0) {
-      const fadeInDuration = clip?.fadeInSamples / this?.config.sampleRate;
+      const fadeInDuration = clip?.fadeInSamples / this.config.sampleRate;
       clipGain?.gain.setValueAtTime(
         0,
-        this?.audioContext.currentTime + startTimeOffset,
+        this.audioContext.currentTime + startTimeOffset,
       );
       clipGain?.gain.linearRampToValueAtTime(
         clip?.gain,
-        this?.audioContext.currentTime + startTimeOffset + fadeInDuration,
+        this.audioContext.currentTime + startTimeOffset + fadeInDuration,
       );
     }
 
     if (clip?.fadeOutSamples > 0) {
       const fadeOutStart =
-        remainingDuration - clip?.fadeOutSamples / this?.config.sampleRate;
+        remainingDuration - clip?.fadeOutSamples / this.config.sampleRate;
       if (fadeOutStart > 0) {
         clipGain?.gain.setValueAtTime(
           clip?.gain,
-          this?.audioContext.currentTime + startTimeOffset + fadeOutStart,
+          this.audioContext.currentTime + startTimeOffset + fadeOutStart,
         );
         clipGain?.gain.linearRampToValueAtTime(
           0,
-          this?.audioContext.currentTime + startTimeOffset + remainingDuration,
+          this.audioContext.currentTime + startTimeOffset + remainingDuration,
         );
       }
     }
@@ -491,17 +491,17 @@ export class AudioWorkletEngine {
     clipGain?.connect(nodes?.gain);
 
     source?.start(
-      this?.audioContext.currentTime + startTimeOffset,
+      this.audioContext.currentTime + startTimeOffset,
       bufferOffset,
       remainingDuration,
     );
 
-    const sources = this?.scheduledSources.get(clip?.id) || [];
+    const sources = this.scheduledSources.get(clip?.id) || [];
     sources?.push(source);
-    this?.scheduledSources.set(clip?.id, sources);
+    this.scheduledSources.set(clip?.id, sources);
 
     source.onended = () => {
-      const currentSources = this?.scheduledSources.get(clip?.id);
+      const currentSources = this.scheduledSources.get(clip?.id);
       if (currentSources) {
         const index = currentSources?.indexOf(source);
         if (index > -1) {
@@ -512,7 +512,7 @@ export class AudioWorkletEngine {
   }
 
   private stopClipSources(clipId: string): void {
-    const sources = this?.scheduledSources.get(clipId);
+    const sources = this.scheduledSources.get(clipId);
     if (!sources) return;
 
     sources?.forEach((source) => {
@@ -522,19 +522,19 @@ export class AudioWorkletEngine {
       } catch (e) {}
     });
 
-    this?.scheduledSources.delete(clipId);
+    this.scheduledSources.delete(clipId);
   }
 
   private stopTrackSources(trackId: string): void {
-    this?.clips.forEach((clip, clipId) => {
+    this.clips.forEach((clip, clipId) => {
       if (clip?.trackId === trackId) {
-        this?.stopClipSources(clipId);
+        this.stopClipSources(clipId);
       }
     });
   }
 
   private stopAllSources(): void {
-    this?.scheduledSources.forEach((sources, _clipId) => {
+    this.scheduledSources.forEach((sources, _clipId) => {
       sources?.forEach((source) => {
         try {
           source?.stop();
@@ -542,30 +542,30 @@ export class AudioWorkletEngine {
         } catch (e) {}
       });
     });
-    this?.scheduledSources.clear();
+    this.scheduledSources.clear();
   }
 
   play(): void {
-    if (!this?.audioContext) {
-      logger?.warn("[AudioWorkletEngine] Not initialized");
+    if (!this.audioContext) {
+      logger.warn("[AudioWorkletEngine] Not initialized");
       return;
     }
 
     const doPlay = () => {
       this.state.isPlaying = true;
-      this.lastScheduleTime = this?.audioContext!.currentTime;
+      this.lastScheduleTime = this.audioContext!.currentTime;
 
-      if (this?.workletNode && this?.workletReady) {
-        this?.workletNode.port?.postMessage({ type: "play" });
+      if (this.workletNode && this.workletReady) {
+        this.workletNode.port?.postMessage({ type: "play" });
       }
 
-      this?.scheduleAllClips();
-      this?.startSchedulerLoop();
-      this?.emit({ type: "state-change", data: { isPlaying: true } });
+      this.scheduleAllClips();
+      this.startSchedulerLoop();
+      this.emit({ type: "state-change", data: { isPlaying: true } });
     };
 
-    if (this?.audioContext.state === "suspended") {
-      this?.audioContext
+    if (this.audioContext.state === "suspended") {
+      this.audioContext
         .resume()
         .then(doPlay)
         .catch(() => doPlay());
@@ -576,50 +576,50 @@ export class AudioWorkletEngine {
 
   pause(): void {
     this.state.isPlaying = false;
-    this?.stopSchedulerLoop();
-    this?.stopAllSources();
+    this.stopSchedulerLoop();
+    this.stopAllSources();
 
-    if (this?.workletNode && this?.workletReady) {
-      this?.workletNode.port?.postMessage({ type: "pause" });
+    if (this.workletNode && this.workletReady) {
+      this.workletNode.port?.postMessage({ type: "pause" });
     }
 
-    this?.emit({ type: "state-change", data: { isPlaying: false } });
+    this.emit({ type: "state-change", data: { isPlaying: false } });
   }
 
   stop(): void {
-    this?.pause();
+    this.pause();
     this.state.currentSample = 0;
     this.state.currentTime = 0;
 
-    if (this?.workletNode && this?.workletReady) {
-      this?.workletNode.port?.postMessage({ type: "stop" });
+    if (this.workletNode && this.workletReady) {
+      this.workletNode.port?.postMessage({ type: "stop" });
     }
 
-    this?.emit({ type: "position-update", data: { sample: 0, time: 0 } });
+    this.emit({ type: "position-update", data: { sample: 0, time: 0 } });
   }
 
   setPosition(sample: number): void {
-    const wasPlaying = this?.state.isPlaying;
+    const wasPlaying = this.state.isPlaying;
 
     if (wasPlaying) {
-      this?.stopAllSources();
+      this.stopAllSources();
     }
 
-    this.state.currentSample = Math?.max(0, sample);
-    this.state.currentTime = this?.state.currentSample / this?.config.sampleRate;
+    this.state.currentSample = Math.max(0, sample);
+    this.state.currentTime = this.state.currentSample / this.config.sampleRate;
 
-    if (this?.workletNode && this?.workletReady) {
-      this?.workletNode.port?.postMessage({
+    if (this.workletNode && this.workletReady) {
+      this.workletNode.port?.postMessage({
         type: "seek",
         data: { sample: this.state.currentSample },
       });
     }
 
     if (wasPlaying) {
-      this?.scheduleAllClips();
+      this.scheduleAllClips();
     }
 
-    this?.emit({
+    this.emit({
       type: "position-update",
       data: {
         sample: this.state.currentSample,
@@ -633,8 +633,8 @@ export class AudioWorkletEngine {
     if (startSample !== undefined) this.state.loopStart = startSample;
     if (endSample !== undefined) this.state.loopEnd = endSample;
 
-    if (this?.workletNode && this?.workletReady) {
-      this?.workletNode.port?.postMessage({
+    if (this.workletNode && this.workletReady) {
+      this.workletNode.port?.postMessage({
         type: "setLoop",
         data: {
           enabled,
@@ -647,27 +647,27 @@ export class AudioWorkletEngine {
 
   private startSchedulerLoop(): void {
     const scheduler = () => {
-      if (!this?.state.isPlaying || !this?.audioContext) return;
+      if (!this.state.isPlaying || !this.audioContext) return;
 
-      if (!this?.workletReady) {
-        const now = this?.audioContext.currentTime;
-        const elapsed = now - this?.lastScheduleTime;
+      if (!this.workletReady) {
+        const now = this.audioContext.currentTime;
+        const elapsed = now - this.lastScheduleTime;
         this.lastScheduleTime = now;
 
-        const samplesElapsed = Math?.round(elapsed * this?.config.sampleRate);
+        const samplesElapsed = Math.round(elapsed * this.config.sampleRate);
         this.state.currentSample += samplesElapsed;
         this.state.currentTime =
-          this?.state.currentSample / this?.config.sampleRate;
+          this.state.currentSample / this.config.sampleRate;
 
         if (
-          this?.state.isLooping &&
-          this?.state.currentSample >= this?.state.loopEnd
+          this.state.isLooping &&
+          this.state.currentSample >= this.state.loopEnd
         ) {
-          this?.setPosition(this?.state.loopStart);
+          this.setPosition(this.state.loopStart);
           return;
         }
 
-        this?.emit({
+        this.emit({
           type: "position-update",
           data: {
             sample: this.state.currentSample,
@@ -676,23 +676,23 @@ export class AudioWorkletEngine {
         });
       }
 
-      this?.clips.forEach((clip) => {
+      this.clips.forEach((clip) => {
         const clipStart = clip?.startSample;
         const lookAheadSamples =
-          this?.config.sampleRate * this?.scheduleAheadTime;
+          this.config.sampleRate * this.scheduleAheadTime;
 
         if (
-          clipStart >= this?.state.currentSample &&
-          clipStart < this?.state.currentSample + lookAheadSamples
+          clipStart >= this.state.currentSample &&
+          clipStart < this.state.currentSample + lookAheadSamples
         ) {
           if (
-            !this?.scheduledSources.has(clip?.id) ||
-            this?.scheduledSources.get(clip?.id)!.length === 0
+            !this.scheduledSources.has(clip?.id) ||
+            this.scheduledSources.get(clip?.id)!.length === 0
           ) {
             try {
-              this?.scheduleClipPlayback(clip);
+              this.scheduleClipPlayback(clip);
             } catch (e) {
-              logger?.warn(
+              logger.warn(
                 `[AudioWorkletEngine] Scheduler failed for clip ${clip?.id}:`,
                 e,
               );
@@ -701,25 +701,25 @@ export class AudioWorkletEngine {
         }
       });
 
-      this.schedulerTimeoutId = setTimeout(scheduler, this?.lookAhead);
+      this.schedulerTimeoutId = setTimeout(scheduler, this.lookAhead);
     };
 
     scheduler();
   }
 
   private stopSchedulerLoop(): void {
-    if (this?.schedulerTimeoutId) {
-      clearTimeout(this?.schedulerTimeoutId);
+    if (this.schedulerTimeoutId) {
+      clearTimeout(this.schedulerTimeoutId);
       this.schedulerTimeoutId = null;
     }
   }
 
   private scheduleAllClips(): void {
-    this?.clips.forEach((clip) => {
+    this.clips.forEach((clip) => {
       try {
-        this?.scheduleClipPlayback(clip);
+        this.scheduleClipPlayback(clip);
       } catch (e) {
-        logger?.warn(
+        logger.warn(
           `[AudioWorkletEngine] Failed to schedule clip ${clip?.id}:`,
           e,
         );
@@ -728,30 +728,30 @@ export class AudioWorkletEngine {
   }
 
   getState(): PlaybackState {
-    return { ...this?.state };
+    return { ...this.state };
   }
 
   getSampleRate(): number {
-    return this?.config.sampleRate;
+    return this.config.sampleRate;
   }
 
   getLatency(): number {
-    if (!this?.audioContext) return 0;
+    if (!this.audioContext) return 0;
     return (
-      this?.audioContext.baseLatency + (this?.audioContext.outputLatency || 0)
+      this.audioContext.baseLatency + (this.audioContext.outputLatency || 0)
     );
   }
 
   getMeteringData(trackId: string): MeteringData | undefined {
-    return this?.meteringData.get(trackId);
+    return this.meteringData.get(trackId);
   }
 
   getAllMeteringData(): Map<string, MeteringData> {
-    return new Map(this?.meteringData);
+    return new Map(this.meteringData);
   }
 
   async loadAudioFile(url: string): Promise<AudioBuffer> {
-    if (!this?.audioContext) {
+    if (!this.audioContext) {
       throw new Error("AudioContext not initialized");
     }
 
@@ -770,16 +770,16 @@ export class AudioWorkletEngine {
       );
     }
     const arrayBuffer = await response?.arrayBuffer();
-    return await this?.audioContext.decodeAudioData(arrayBuffer);
+    return await this.audioContext.decodeAudioData(arrayBuffer);
   }
 
   async loadAudioBlob(blob: Blob): Promise<AudioBuffer> {
-    if (!this?.audioContext) {
+    if (!this.audioContext) {
       throw new Error("AudioContext not initialized");
     }
 
     const arrayBuffer = await blob?.arrayBuffer();
-    return await this?.audioContext.decodeAudioData(arrayBuffer);
+    return await this.audioContext.decodeAudioData(arrayBuffer);
   }
 
   /**
@@ -799,12 +799,12 @@ export class AudioWorkletEngine {
 
     const levels: WaveformPeakLevel[] = AudioWorkletEngine.PEAK_RESOLUTIONS.map(
       (spp) => {
-        const count = Math?.ceil(totalSamples / spp);
+        const count = Math.ceil(totalSamples / spp);
         const peaks = new Float32Array(count * 2);
 
         for (let i = 0; i < count; i++) {
           const start = i * spp;
-          const end = Math?.min(start + spp, totalSamples);
+          const end = Math.min(start + spp, totalSamples);
           let minVal = 0;
           let maxVal = 0;
 
@@ -831,14 +831,14 @@ export class AudioWorkletEngine {
     samplesPerPeak: number = 256,
   ): Float32Array {
     const channelData = buffer?.getChannelData(0);
-    const peaks = Math?.ceil(channelData?.length / samplesPerPeak);
+    const peaks = Math.ceil(channelData?.length / samplesPerPeak);
     const peakData = new Float32Array(peaks);
     for (let i = 0; i < peaks; i++) {
       const start = i * samplesPerPeak;
-      const end = Math?.min(start + samplesPerPeak, channelData?.length);
+      const end = Math.min(start + samplesPerPeak, channelData?.length);
       let peak = 0;
       for (let j = start; j < end; j++) {
-        const abs = Math?.abs(channelData[j]);
+        const abs = Math.abs(channelData[j]);
         if (abs > peak) peak = abs;
       }
       peakData[i] = peak;
@@ -847,43 +847,43 @@ export class AudioWorkletEngine {
   }
 
   on(listener: (event: AudioEngineEvent) => void): () => void {
-    this?.listeners.add(listener);
-    return () => this?.listeners.delete(listener);
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
   }
 
   private emit(event: AudioEngineEvent): void {
-    this?.listeners.forEach((listener) => listener(event));
+    this.listeners.forEach((listener) => listener(event));
   }
 
   dispose(): void {
-    this?.stopAllSources();
+    this.stopAllSources();
 
-    if (this?.animationFrameId) {
-      cancelAnimationFrame(this?.animationFrameId);
+    if (this.animationFrameId) {
+      cancelAnimationFrame(this.animationFrameId);
     }
 
-    this?.trackNodes.forEach((nodes, _trackId) => {
+    this.trackNodes.forEach((nodes, _trackId) => {
       nodes?.analyzer.disconnect();
       nodes?.panner.disconnect();
       nodes?.gain.disconnect();
     });
-    this?.trackNodes.clear();
+    this.trackNodes.clear();
 
-    if (this?.masterAnalyzer) {
-      this?.masterAnalyzer.disconnect();
+    if (this.masterAnalyzer) {
+      this.masterAnalyzer.disconnect();
     }
-    if (this?.masterGain) {
-      this?.masterGain.disconnect();
-    }
-
-    if (this?.audioContext) {
-      this?.audioContext.close();
+    if (this.masterGain) {
+      this.masterGain.disconnect();
     }
 
-    this?.clips.clear();
-    this?.scheduledSources.clear();
-    this?.meteringData.clear();
-    this?.listeners.clear();
+    if (this.audioContext) {
+      this.audioContext.close();
+    }
+
+    this.clips.clear();
+    this.scheduledSources.clear();
+    this.meteringData.clear();
+    this.listeners.clear();
   }
 }
 

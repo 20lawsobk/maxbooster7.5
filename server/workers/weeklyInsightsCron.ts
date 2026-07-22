@@ -11,7 +11,7 @@ export function initializeWeeklyInsightsCron(): void {
   weeklyInsightsTask = cron?.schedule(
     "0 9 * * 1",
     async () => {
-      logger?.info("📊 Starting weekly insights email job (Monday 9 AM)");
+      logger.info("📊 Starting weekly insights email job (Monday 9 AM)");
 
       try {
         const { weeklyInsightsService } = await import(
@@ -19,11 +19,11 @@ export function initializeWeeklyInsightsCron(): void {
         );
         const result = await weeklyInsightsService?.sendWeeklyInsights();
 
-        logger?.info(
+        logger.info(
           `📧 Weekly insights complete: ${result?.sent} sent, ${result?.failed} failed`,
         );
       } catch (error) {
-        logger?.warn({ err: error }, "❌ Weekly insights cron job failed:");
+        logger.warn({ err: error }, "❌ Weekly insights cron job failed:");
       }
     },
     {
@@ -31,7 +31,7 @@ export function initializeWeeklyInsightsCron(): void {
     },
   );
 
-  logger?.info(
+  logger.info(
     "✅ Weekly insights cron job scheduled (Every Monday at 9 AM EST)",
   );
 }
@@ -40,7 +40,7 @@ export function stopWeeklyInsightsCron(): void {
   if (weeklyInsightsTask) {
     weeklyInsightsTask?.stop();
     weeklyInsightsTask = null;
-    logger?.info("⏹️ Weekly insights cron job stopped");
+    logger.info("⏹️ Weekly insights cron job stopped");
   }
 }
 

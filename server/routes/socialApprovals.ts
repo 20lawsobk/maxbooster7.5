@@ -22,50 +22,50 @@ interface AuthenticatedRequest extends Express.Request {
 
 router?.get("/pending", async (req: AuthenticatedRequest, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     const hasPermission = await approvalService?.checkPermission(
-      req?.user.id,
+      req.user.id,
       "approve",
     );
     if (!hasPermission) {
-      return res?.status(403).json({
+      return res.status(403).json({
         error: "Forbidden",
         message: "You do not have permission to view pending approvals",
       });
     }
 
-    const pendingPosts = await approvalService?.getPendingApprovals(req?.user.id);
+    const pendingPosts = await approvalService?.getPendingApprovals(req.user.id);
 
-    return res?.json({
+    return res.json({
       success: true,
       total: pendingPosts.length,
       posts: pendingPosts,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Get pending approvals error:");
-    return res?.status(500).json({ error: "Internal server error" });
+    logger.warn({ err: error }, "Get pending approvals error:");
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
 router?.post("/:postId/submit", async (req: AuthenticatedRequest, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { postId } = req?.params;
+    const { postId } = req.params;
 
     const validatedData = submitForReviewSchema?.parse({ postId });
 
     const hasPermission = await approvalService?.checkPermission(
-      req?.user.id,
+      req.user.id,
       "submit",
     );
     if (!hasPermission) {
-      return res?.status(403).json({
+      return res.status(403).json({
         error: "Forbidden",
         message: "You do not have permission to submit posts for review",
       });
@@ -73,50 +73,50 @@ router?.post("/:postId/submit", async (req: AuthenticatedRequest, res) => {
 
     const result = await approvalService?.submitForReview(
       validatedData?.postId,
-      req?.user.id,
+      req.user.id,
     );
 
     if (!result?.success) {
-      return res?.status(400).json({
+      return res.status(400).json({
         error: result.error || "Failed to submit for review",
       });
     }
 
-    return res?.json({
+    return res.json({
       success: true,
       message: "Post submitted for review successfully",
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Submit for review error:");
+    logger.warn({ err: error }, "Submit for review error:");
 
     if (error instanceof z.ZodError) {
-      return res?.status(400).json({
+      return res.status(400).json({
         error: "Validation failed",
         details: error.issues,
       });
     }
 
-    return res?.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
 router?.post("/:postId/approve", async (req: AuthenticatedRequest, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { postId } = req?.params;
-    const { comment } = req?.body;
+    const { postId } = req.params;
+    const { comment } = req.body;
 
     const validatedData = approvePostSchema?.parse({ postId, comment });
 
     const hasPermission = await approvalService?.checkPermission(
-      req?.user.id,
+      req.user.id,
       "approve",
     );
     if (!hasPermission) {
-      return res?.status(403).json({
+      return res.status(403).json({
         error: "Forbidden",
         message: "You do not have permission to approve posts",
       });
@@ -124,51 +124,51 @@ router?.post("/:postId/approve", async (req: AuthenticatedRequest, res) => {
 
     const result = await approvalService?.approvePost(
       validatedData?.postId,
-      req?.user.id,
+      req.user.id,
       validatedData?.comment,
     );
 
     if (!result?.success) {
-      return res?.status(400).json({
+      return res.status(400).json({
         error: result.error || "Failed to approve post",
       });
     }
 
-    return res?.json({
+    return res.json({
       success: true,
       message: "Post approved successfully",
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Approve post error:");
+    logger.warn({ err: error }, "Approve post error:");
 
     if (error instanceof z.ZodError) {
-      return res?.status(400).json({
+      return res.status(400).json({
         error: "Validation failed",
         details: error.issues,
       });
     }
 
-    return res?.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
 router?.post("/:postId/reject", async (req: AuthenticatedRequest, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { postId } = req?.params;
-    const { reason, comment } = req?.body;
+    const { postId } = req.params;
+    const { reason, comment } = req.body;
 
     const validatedData = rejectPostSchema?.parse({ postId, reason, comment });
 
     const hasPermission = await approvalService?.checkPermission(
-      req?.user.id,
+      req.user.id,
       "reject",
     );
     if (!hasPermission) {
-      return res?.status(403).json({
+      return res.status(403).json({
         error: "Forbidden",
         message: "You do not have permission to reject posts",
       });
@@ -176,57 +176,57 @@ router?.post("/:postId/reject", async (req: AuthenticatedRequest, res) => {
 
     const result = await approvalService?.rejectPost(
       validatedData?.postId,
-      req?.user.id,
+      req.user.id,
       validatedData?.reason,
       validatedData?.comment,
     );
 
     if (!result?.success) {
-      return res?.status(400).json({
+      return res.status(400).json({
         error: result.error || "Failed to reject post",
       });
     }
 
-    return res?.json({
+    return res.json({
       success: true,
       message: "Post rejected successfully",
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Reject post error:");
+    logger.warn({ err: error }, "Reject post error:");
 
     if (error instanceof z.ZodError) {
-      return res?.status(400).json({
+      return res.status(400).json({
         error: "Validation failed",
         details: error.issues,
       });
     }
 
-    return res?.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
 router?.post("/:postId/schedule", async (req: AuthenticatedRequest, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { postId } = req?.params;
-    const { scheduledAt, comment } = req?.body;
+    const { postId } = req.params;
+    const { scheduledAt, comment } = req.body;
 
     if (!scheduledAt) {
-      return res?.status(400).json({
+      return res.status(400).json({
         error: "Validation failed",
         message: "scheduledAt is required",
       });
     }
 
     const hasPermission = await approvalService?.checkPermission(
-      req?.user.id,
+      req.user.id,
       "schedule",
     );
     if (!hasPermission) {
-      return res?.status(403).json({
+      return res.status(403).json({
         error: "Forbidden",
         message: "You do not have permission to schedule posts",
       });
@@ -234,42 +234,42 @@ router?.post("/:postId/schedule", async (req: AuthenticatedRequest, res) => {
 
     const result = await approvalService?.schedulePost(
       postId,
-      req?.user.id,
+      req.user.id,
       new Date(scheduledAt),
       comment,
     );
 
     if (!result?.success) {
-      return res?.status(400).json({
+      return res.status(400).json({
         error: result.error || "Failed to schedule post",
       });
     }
 
-    return res?.json({
+    return res.json({
       success: true,
       message: "Post scheduled successfully",
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Schedule post error:");
-    return res?.status(500).json({ error: "Internal server error" });
+    logger.warn({ err: error }, "Schedule post error:");
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
 router?.post("/:postId/publish", async (req: AuthenticatedRequest, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { postId } = req?.params;
-    const { comment } = req?.body;
+    const { postId } = req.params;
+    const { comment } = req.body;
 
     const hasPermission = await approvalService?.checkPermission(
-      req?.user.id,
+      req.user.id,
       "publish",
     );
     if (!hasPermission) {
-      return res?.status(403).json({
+      return res.status(403).json({
         error: "Forbidden",
         message: "You do not have permission to publish posts",
       });
@@ -277,78 +277,78 @@ router?.post("/:postId/publish", async (req: AuthenticatedRequest, res) => {
 
     const result = await approvalService?.publishPost(
       postId,
-      req?.user.id,
+      req.user.id,
       comment,
     );
 
     if (!result?.success) {
-      return res?.status(400).json({
+      return res.status(400).json({
         error: result.error || "Failed to publish post",
       });
     }
 
-    return res?.json({
+    return res.json({
       success: true,
       message: "Post published successfully",
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Publish post error:");
-    return res?.status(500).json({ error: "Internal server error" });
+    logger.warn({ err: error }, "Publish post error:");
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
 router?.get("/history/:postId", async (req: AuthenticatedRequest, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { postId } = req?.params;
+    const { postId } = req.params;
 
     const history = await approvalService?.getApprovalHistory(postId);
 
-    return res?.json({
+    return res.json({
       success: true,
       postId,
       history,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Get approval history error:");
-    return res?.status(500).json({ error: "Internal server error" });
+    logger.warn({ err: error }, "Get approval history error:");
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
 router?.get("/my-posts", async (req: AuthenticatedRequest, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { status } = req?.query;
+    const { status } = req.query;
     const posts = await approvalService?.getUserPosts(
-      req?.user.id,
+      req.user.id,
       status as Record<string, unknown>,
     );
 
-    return res?.json({
+    return res.json({
       success: true,
       total: posts.length,
       posts,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Get my posts error:");
-    return res?.status(500).json({ error: "Internal server error" });
+    logger.warn({ err: error }, "Get my posts error:");
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
 router?.get("/stats", async (req: AuthenticatedRequest, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const allPosts = await approvalService?.getUserPosts(req?.user.id);
-    const userRole = await approvalService?.getUserRole(req?.user.id);
+    const allPosts = await approvalService?.getUserPosts(req.user.id);
+    const userRole = await approvalService?.getUserRole(req.user.id);
 
     const stats = {
       total: allPosts.length,
@@ -365,31 +365,31 @@ router?.get("/stats", async (req: AuthenticatedRequest, res) => {
 
     if (["reviewer", "manager", "admin"].includes(userRole)) {
       const pendingApprovals = await approvalService?.getPendingApprovals(
-        req?.user.id,
+        req.user.id,
       );
       stats["pending_approvals"] = pendingApprovals?.length;
     }
 
-    return res?.json({
+    return res.json({
       success: true,
       stats,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Get stats error:");
-    return res?.status(500).json({ error: "Internal server error" });
+    logger.warn({ err: error }, "Get stats error:");
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
 // Get approval history
 router?.get("/history", async (req: AuthenticatedRequest, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
-    const userId = req?.user.id;
-    const limit = Math?.min(parseInt(String(req?.query.limit ?? "50"), 10), 200);
-    const offset = Math?.min(
-      Math?.max(parseInt(String(req?.query.offset ?? "0"), 10), 0),
+    const userId = req.user.id;
+    const limit = Math.min(parseInt(String(req.query.limit ?? "50"), 10), 200);
+    const offset = Math.min(
+      Math.max(parseInt(String(req.query.offset ?? "0"), 10), 0),
       100_000,
     );
 
@@ -407,10 +407,10 @@ router?.get("/history", async (req: AuthenticatedRequest, res) => {
       .from(approvalHistory)
       .where(eq(approvalHistory?.userId, userId));
 
-    return res?.json({ history: items, total: Number(total) });
+    return res.json({ history: items, total: Number(total) });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Get approval history error:");
-    return res?.status(500).json({ error: "Internal server error" });
+    logger.warn({ err: error }, "Get approval history error:");
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 

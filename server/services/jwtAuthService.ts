@@ -24,7 +24,7 @@ if (!JWT_SECRET) {
   // Local-dev only: generate a random per-process secret. Tokens issued by
   // one `npm run dev` instance will not validate after restart — by design.
   JWT_SECRET = crypto?.randomBytes(64).toString("hex");
-  logger?.warn(
+  logger.warn(
     "⚠️  SESSION_SECRET not set — generated ephemeral per-process secret for local dev only. " +
       "Tokens will not survive server restarts. Set SESSION_SECRET to persist sessions.",
   );
@@ -65,7 +65,7 @@ export class JWTAuthService {
   }
 
   async incrementUserTokenVersion(userId: string): Promise<number> {
-    const currentVersion = await this?.getUserTokenVersion(userId);
+    const currentVersion = await this.getUserTokenVersion(userId);
     const newVersion = currentVersion + 1;
     await storage?.updateUser(userId, { tokenVersion: newVersion } as Record<
       string,
@@ -78,7 +78,7 @@ export class JWTAuthService {
     const accessTokenId = crypto?.randomUUID();
     crypto?.randomUUID();
     const refreshTokenValue = crypto?.randomBytes(32).toString("hex");
-    const tokenVersion = await this?.getUserTokenVersion(userId);
+    const tokenVersion = await this.getUserTokenVersion(userId);
 
     const accessTokenExpiresAt = new Date(Date?.now() + ACCESS_TOKEN_EXPIRY_MS);
     const refreshTokenExpiresAt = new Date(
@@ -149,9 +149,9 @@ export class JWTAuthService {
       }
 
       if (decoded?.ver !== undefined) {
-        const currentVersion = await this?.getUserTokenVersion(decoded?.sub);
+        const currentVersion = await this.getUserTokenVersion(decoded?.sub);
         if (decoded?.ver < currentVersion) {
-          logger?.info(
+          logger.info(
             `Token rejected: version ${decoded?.ver} < current ${currentVersion} for user ${decoded?.sub}`,
           );
           return null;
@@ -190,7 +190,7 @@ export class JWTAuthService {
 
     await storage?.revokeRefreshToken(refreshToken?.id, "Token rotation");
 
-    const tokenVersion = await this?.getUserTokenVersion(user?.id);
+    const tokenVersion = await this.getUserTokenVersion(user?.id);
     const accessTokenId = crypto?.randomUUID();
     crypto?.randomUUID();
     const newRefreshTokenValue = crypto?.randomBytes(32).toString("hex");
@@ -257,20 +257,20 @@ export class JWTAuthService {
     userId: string,
     reason: string = "Forced logout",
   ): Promise<void> {
-    await this?.incrementUserTokenVersion(userId);
-    await this?.revokeAllUserTokens(userId, reason);
-    logger?.info(`Forced logout for user ${userId}: ${reason}`);
+    await this.incrementUserTokenVersion(userId);
+    await this.revokeAllUserTokens(userId, reason);
+    logger.info(`Forced logout for user ${userId}: ${reason}`);
   }
 
   async forceLogoutAllSessions(
     userId: string,
     reason: string = "Security: all sessions revoked",
   ): Promise<void> {
-    await this?.forceLogoutUser(userId, reason);
+    await this.forceLogoutUser(userId, reason);
     try {
       await sessionTracking?.revokeAllUserSessions(userId);
     } catch (error) {
-      logger?.warn("Session tracking not available for full session revocation");
+      logger.warn("Session tracking not available for full session revocation");
     }
   }
 }

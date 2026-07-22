@@ -35,11 +35,11 @@ export class SessionTrackingService {
     try {
       const redis = await getRedisClient();
       if (!redis) {
-        logger?.warn("⚠️ Redis unavailable - session tracking skipped");
+        logger.warn("⚠️ Redis unavailable - session tracking skipped");
         return;
       }
 
-      const key = `${this?.USER_SESSIONS_PREFIX}${userId}`;
+      const key = `${this.USER_SESSIONS_PREFIX}${userId}`;
 
       // Add sessionId to user's session set (node-redis v4 uses camelCase)
       await redis.sAdd(key, sessionId);
@@ -69,14 +69,14 @@ export class SessionTrackingService {
       const redis = await getRedisClient();
       if (!redis) return;
 
-      const key = `${this?.USER_SESSIONS_PREFIX}${userId}`;
+      const key = `${this.USER_SESSIONS_PREFIX}${userId}`;
       await redis?.sRem(key, sessionId);
 
-      logger?.debug(
+      logger.debug(
         `🗑️ Session untracked: user=${userId}, session=${sessionId}`,
       );
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error untracking session:");
+      logger.warn({ err: error }, "Error untracking session:");
     }
   }
 
@@ -91,12 +91,12 @@ export class SessionTrackingService {
       const redis = await getRedisClient();
       if (!redis) return [];
 
-      const key = `${this?.USER_SESSIONS_PREFIX}${userId}`;
+      const key = `${this.USER_SESSIONS_PREFIX}${userId}`;
       const sessionIds = await redis?.sMembers(key);
 
       return sessionIds;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error getting user sessions:");
+      logger.warn({ err: error }, "Error getting user sessions:");
       return [];
     }
   }
@@ -119,14 +119,14 @@ export class SessionTrackingService {
       }
 
       // O(1) lookup of user's sessions
-      const sessionIds = await this?.getUserSessions(userId);
+      const sessionIds = await this.getUserSessions(userId);
 
       if (sessionIds?.length === 0) {
-        logger?.info(`No sessions found for user ${userId}`);
+        logger.info(`No sessions found for user ${userId}`);
         return 0;
       }
 
-      logger?.info(
+      logger.info(
         `🔐 Revoking ${sessionIds?.length} sessions for user ${userId}`,
       );
 
@@ -136,17 +136,17 @@ export class SessionTrackingService {
       await Promise?.all(deletePromises);
 
       // Clean up the tracking index
-      const trackingKey = `${this?.USER_SESSIONS_PREFIX}${userId}`;
+      const trackingKey = `${this.USER_SESSIONS_PREFIX}${userId}`;
       await redis?.del(trackingKey);
 
-      logger?.info(
+      logger.info(
         `✅ Revoked ${sessionIds?.length} sessions for user ${userId} (O(1) lookup)`,
       );
       return sessionIds?.length;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error revoking user sessions:");
+      logger.warn({ err: error }, "Error revoking user sessions:");
       // Fallback to slow method if tracking fails
-      return await this?.fallbackRevokeAllSessions(userId);
+      return await this.fallbackRevokeAllSessions(userId);
     }
   }
 
@@ -164,7 +164,7 @@ export class SessionTrackingService {
       const redis = await getRedisClient();
       if (!redis) return 0;
 
-      logger?.warn(
+      logger.warn(
         `⚠️ Using O(N) fallback session revocation for user ${userId}`,
       );
 
@@ -184,13 +184,13 @@ export class SessionTrackingService {
       }
 
       await Promise?.all(deletionPromises);
-      logger?.info(
+      logger.info(
         `✅ Revoked ${deletionPromises?.length} sessions for user ${userId} (O(N) fallback)`,
       );
 
       return deletionPromises?.length;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error in fallback session revocation:");
+      logger.warn({ err: error }, "Error in fallback session revocation:");
       return 0;
     }
   }
@@ -204,9 +204,9 @@ export class SessionTrackingService {
       const redis = await getRedisClient();
       if (!redis) return;
 
-      logger?.info("🧹 Starting session tracking cleanup...");
+      logger.info("🧹 Starting session tracking cleanup...");
 
-      const trackingKeys = await redis?.keys(`${this?.USER_SESSIONS_PREFIX}*`);
+      const trackingKeys = await redis?.keys(`${this.USER_SESSIONS_PREFIX}*`);
       let cleaned = 0;
 
       for (const key of trackingKeys) {
@@ -230,16 +230,16 @@ export class SessionTrackingService {
           await redis?.del(key);
           if (validSessions?.length > 0) {
             await redis?.sAdd(key, ...validSessions);
-            await redis?.expire(key, this?.SESSION_TTL);
+            await redis?.expire(key, this.SESSION_TTL);
           }
         }
       }
 
-      logger?.info(
+      logger.info(
         `✅ Session tracking cleanup complete - cleaned ${cleaned} stale entries`,
       );
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error cleaning up session tracking:");
+      logger.warn({ err: error }, "Error cleaning up session tracking:");
     }
   }
 
@@ -257,7 +257,7 @@ export class SessionTrackingService {
       if (!redis)
         return { totalUsers: 0, totalSessions: 0, avgSessionsPerUser: 0 };
 
-      const trackingKeys = await redis?.keys(`${this?.USER_SESSIONS_PREFIX}*`);
+      const trackingKeys = await redis?.keys(`${this.USER_SESSIONS_PREFIX}*`);
       let totalSessions = 0;
 
       for (const key of trackingKeys) {
@@ -272,7 +272,7 @@ export class SessionTrackingService {
           trackingKeys?.length > 0 ? totalSessions / trackingKeys?.length : 0,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error getting session stats:");
+      logger.warn({ err: error }, "Error getting session stats:");
       return { totalUsers: 0, totalSessions: 0, avgSessionsPerUser: 0 };
     }
   }

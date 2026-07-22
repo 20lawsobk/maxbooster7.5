@@ -3,7 +3,7 @@
 // Works in all environments to prevent Redis localhost errors from cluttering logs
 
 // Suppress noisy Node?.js process warnings that are informational-only
-const _origEmit = process?.emit.bind(process);
+const _origEmit = process.emit.bind(process);
 // @ts-ignore — override to filter 'warning' events
 process.emit = function (event: string, ...args: unknown[]): boolean {
   if (event === "warning") {
@@ -20,7 +20,7 @@ process.emit = function (event: string, ...args: unknown[]): boolean {
 // ── stderr stream interceptor ─────────────────────────────────────────────────
 //
 // Node.js's worker-thread message-passing machinery writes bare "Error: Error:"
-// stack traces directly to process?.stderr when a rejected Promise propagates
+// stack traces directly to process.stderr when a rejected Promise propagates
 // through the MessagePort callback before BullMQ's async .catch() attaches.
 // These always originate from PDIM 500/502 responses during cold-start and are
 // already absorbed by the circuit-breaker slow-lane — they carry no actionable
@@ -85,7 +85,7 @@ console.error = (...args: unknown[]) => {
   const argsStr = args
     .map((a) => {
       if (a instanceof Error) return a?.message + " " + a?.stack;
-      if (typeof a === "object") return JSON?.stringify(a);
+      if (typeof a === "object") return JSON.stringify(a);
       return String(a);
     })
     .join(" ");
@@ -111,6 +111,6 @@ console.error = (...args: unknown[]) => {
   }
 };
 
-if (process?.env.NODE_ENV === "development") {
+if (process.env.NODE_ENV === "development") {
   console?.log("✅ Localhost Redis error filter installed");
 }

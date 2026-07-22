@@ -11,7 +11,7 @@ import { isProductionEnv } from "../lib/envHelpers.js";
 // SECURITY: Must use isProductionEnv() (not bare NODE_ENV check) because
 // Reserved VM deployments have REPLIT_DEPLOYMENT=1 but NODE_ENV=undefined.
 const WEBHOOK_SECRET =
-  process?.env.WEBHOOK_SECRET ||
+  process.env.WEBHOOK_SECRET ||
   env?.STRIPE_WEBHOOK_SECRET ||
   (isProductionEnv()
     ? (() => {
@@ -32,7 +32,7 @@ interface WebhookDispatchResult {
 
 export class WebhookReliabilityService {
   private generateSignature(payload: unknown): string {
-    const payloadString = JSON?.stringify(payload);
+    const payloadString = JSON.stringify(payload);
     return crypto
       .createHmac("sha256", WEBHOOK_SECRET)
       .update(payloadString)
@@ -46,7 +46,7 @@ export class WebhookReliabilityService {
 
     const baseDelay =
       RETRY_DELAYS[attemptNumber] || RETRY_DELAYS[RETRY_DELAYS?.length - 1];
-    const jitter = Math?.random() * 1000;
+    const jitter = Math.random() * 1000;
     const delay = baseDelay + jitter;
 
     return new Date(Date?.now() + delay);
@@ -58,7 +58,7 @@ export class WebhookReliabilityService {
     payload: unknown,
     attemptNumber: number = 1,
   ): Promise<WebhookDispatchResult> {
-    const signature = this?.generateSignature(payload);
+    const signature = this.generateSignature(payload);
 
     try {
       const response = await axios?.post(url, payload, {
@@ -89,7 +89,7 @@ export class WebhookReliabilityService {
         nextRetryAt:
           response?.status >= 200 && response?.status < 300
             ? null
-            : this?.calculateNextRetry(attemptNumber),
+            : this.calculateNextRetry(attemptNumber),
       };
 
       const attempt = await storage?.createWebhookAttempt(attemptData);
@@ -103,7 +103,7 @@ export class WebhookReliabilityService {
       }
 
       if (attemptNumber >= MAX_RETRIES) {
-        await this?.moveToDeadLetterQueue(
+        await this.moveToDeadLetterQueue(
           eventId,
           attemptNumber,
           `Max retries exceeded. Last status: ${response?.status}`,
@@ -135,7 +135,7 @@ export class WebhookReliabilityService {
       const attempt = await storage?.createWebhookAttempt(attemptData);
 
       if (attemptNumber >= MAX_RETRIES) {
-        await this?.moveToDeadLetterQueue(
+        await this.moveToDeadLetterQueue(
           eventId,
           attemptNumber,
           errorMessage,
@@ -159,7 +159,7 @@ export class WebhookReliabilityService {
 
     const nextAttemptNumber = attempt?.attempt + 1;
 
-    return this?.dispatchWebhook(
+    return this.dispatchWebhook(
       attempt?.webhookEventId,
       attempt?.url,
       attempt?.payload,
@@ -203,7 +203,7 @@ export class WebhookReliabilityService {
       throw new Error("Webhook URL not found in event data");
     }
 
-    await this?.dispatchWebhook(item?.webhookEventId, url, item?.payload, 1);
+    await this.dispatchWebhook(item?.webhookEventId, url, item?.payload, 1);
   }
 
   async scheduleRetries(): Promise<void> {

@@ -115,15 +115,15 @@ function audioBufferToWav(
       let sample = channelData[channel][i];
 
       // Clamp to [-1, 1]
-      sample = Math?.max(-1, Math?.min(1, sample));
+      sample = Math.max(-1, Math.min(1, sample));
 
       if (bitDepth === 16) {
-        const int16 = Math?.max(-32768, Math?.min(32767, sample * 32768)) | 0;
+        const int16 = Math.max(-32768, Math.min(32767, sample * 32768)) | 0;
         view?.setInt16(offset, int16, true);
         offset += 2;
       } else if (bitDepth === 24) {
         const int24 =
-          Math?.max(-8388608, Math?.min(8388607, sample * 8388608)) | 0;
+          Math.max(-8388608, Math.min(8388607, sample * 8388608)) | 0;
         view?.setUint8(offset, int24 & 0xff);
         view?.setUint8(offset + 1, (int24 >> 8) & 0xff);
         view?.setUint8(offset + 2, (int24 >> 16) & 0xff);
@@ -151,7 +151,7 @@ function normalizeAudioBuffer(
   for (let channel = 0; channel < audioBuffer?.numberOfChannels; channel++) {
     const channelData = audioBuffer?.getChannelData(channel);
     for (let i = 0; i < channelData?.length; i++) {
-      maxPeak = Math?.max(maxPeak, Math?.abs(channelData[i]));
+      maxPeak = Math.max(maxPeak, Math.abs(channelData[i]));
     }
   }
 
@@ -175,17 +175,17 @@ function normalizeAudioBuffer(
 function createSoftClipperCurve(thresholdDb: number = -0.3): Float32Array {
   const samples = 4096;
   const curve = new Float32Array(samples);
-  const threshold = Math?.pow(10, thresholdDb / 20);
+  const threshold = Math.pow(10, thresholdDb / 20);
 
   for (let i = 0; i < samples; i++) {
     const x = (i * 2) / samples - 1;
 
-    if (Math?.abs(x) < threshold) {
+    if (Math.abs(x) < threshold) {
       curve[i] = x;
     } else {
       const sign = x > 0 ? 1 : -1;
-      const excess = Math?.abs(x) - threshold;
-      curve[i] = sign * (threshold + Math?.tanh(excess * 2) * (1 - threshold));
+      const excess = Math.abs(x) - threshold;
+      curve[i] = sign * (threshold + Math.tanh(excess * 2) * (1 - threshold));
     }
   }
 
@@ -355,7 +355,7 @@ async function exportMixdown(
       const buffer = await loadAudioBuffer(track?.audioUrl, tempContext);
       loadedTracks?.push({ track, buffer });
     } catch (error: unknown) {
-      logger?.error(`Failed to load track ${track?.name}:`, error);
+      logger.error(`Failed to load track ${track?.name}:`, error);
     }
   }
 
@@ -369,7 +369,7 @@ async function exportMixdown(
       const bufferDuration = buffer?.duration;
       return startTime + bufferDuration;
     });
-    renderDuration = Math?.max(...clipEndTimes);
+    renderDuration = Math.max(...clipEndTimes);
   } else {
     renderDuration = 60; // Fallback if no tracks loaded
   }
@@ -515,7 +515,7 @@ async function exportStems(
         trackId: track.id,
       });
     } catch (error: unknown) {
-      logger?.error(`Failed to export stem for ${track?.name}:`, error);
+      logger.error(`Failed to export stem for ${track?.name}:`, error);
     }
   }
 

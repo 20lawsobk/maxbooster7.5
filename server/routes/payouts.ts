@@ -30,27 +30,27 @@ router?.use(payoutsRateLimiter);
  */
 router?.get("/", async (req, res) => {
   try {
-    if (!req?.user) return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) return res.status(401).json({ error: "Unauthorized" });
     const [balance, history] = await Promise?.all([
       instantPayoutService
-        .calculateAvailableBalance(req?.user.id)
+        .calculateAvailableBalance(req.user.id)
         .catch(() => 0),
       db
         .select()
         .from(royaltyStatements)
-        .where(eq(royaltyStatements?.userId, req?.user.id))
+        .where(eq(royaltyStatements?.userId, req.user.id))
         .orderBy(desc(royaltyStatements?.createdAt))
         .limit(5)
         .catch(() => []),
     ]);
-    return res?.json({
+    return res.json({
       balance,
       recentStatements: history,
       currency: "USD",
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching payout summary:");
-    return res?.json({ balance: 0, recentStatements: [], currency: "USD" });
+    logger.warn({ err: error }, "Error fetching payout summary:");
+    return res.json({ balance: 0, recentStatements: [], currency: "USD" });
   }
 });
 
@@ -137,23 +137,23 @@ router.post("/instant", async (req, res) => {
  */
 router?.get("/history", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 500);
-    const offset = Math?.min(
-      Math?.max(parseInt(req?.query.offset as string) || 0, 0),
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
+    const offset = Math.min(
+      Math.max(parseInt(req.query.offset as string) || 0, 0),
       100_000,
     );
 
     const payouts = await instantPayoutService?.getPayoutHistory(
-      req?.user.id,
+      req.user.id,
       limit,
       offset,
     );
 
-    res?.json({
+    res.json({
       payouts,
       pagination: {
         limit,
@@ -162,10 +162,10 @@ router?.get("/history", async (req, res) => {
       },
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching payout history:");
+    logger.warn({ err: error }, "Error fetching payout history:");
     const message =
       error instanceof Error ? error?.message : "Failed to fetch payout history";
-    res?.status(500).json({ error: message });
+    res.status(500).json({ error: message });
   }
 });
 
@@ -175,30 +175,30 @@ router?.get("/history", async (req, res) => {
  */
 router?.get("/status/:payoutId", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { payoutId } = req?.params;
+    const { payoutId } = req.params;
 
     const payout = await instantPayoutService?.getPayoutStatus(payoutId);
 
     // Verify the payout belongs to the requesting user
-    if (payout?.userId !== req?.user.id) {
-      return res?.status(403).json({ error: "Forbidden" });
+    if (payout?.userId !== req.user.id) {
+      return res.status(403).json({ error: "Forbidden" });
     }
 
-    res?.json(payout);
+    res.json(payout);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching payout status:");
+    logger.warn({ err: error }, "Error fetching payout status:");
     const message =
       error instanceof Error ? error?.message : "Failed to fetch payout status";
 
     if (message === "Payout not found") {
-      return res?.status(404).json({ error: "Payout not found" });
+      return res.status(404).json({ error: "Payout not found" });
     }
 
-    res?.status(500).json({ error: message });
+    res.status(500).json({ error: message });
   }
 });
 
@@ -208,8 +208,8 @@ router?.get("/status/:payoutId", async (req, res) => {
  */
 router?.post("/setup", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     const baseUrl = getBaseUrl();
@@ -219,17 +219,17 @@ router?.post("/setup", async (req, res) => {
 
     // Create Stripe account link
     const accountLinkUrl = await instantPayoutService?.createAccountLink(
-      req?.user.id,
+      req.user.id,
       refreshUrl,
       returnUrl,
     );
 
-    res?.json({ url: accountLinkUrl });
+    res.json({ url: accountLinkUrl });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error setting up payout account:");
+    logger.warn({ err: error }, "Error setting up payout account:");
     const message =
       error instanceof Error ? error?.message : "Failed to setup payout account";
-    res?.status(500).json({ error: message });
+    res.status(500).json({ error: message });
   }
 });
 
@@ -239,11 +239,11 @@ router?.post("/setup", async (req, res) => {
  */
 router?.get("/verify", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const user = req?.user as Record<string, unknown>;
+    const user = req.user as Record<string, unknown>;
     const prefs =
       ((user?.preferences as Record<string, unknown> | undefined)?.payout as
         | Record<string, unknown>
@@ -253,17 +253,17 @@ router?.get("/verify", async (req, res) => {
     if (prefs?.paypalEmail) methods?.push("paypal");
     if (
       prefs?.bankDetails &&
-      Object?.keys(prefs?.bankDetails as Record<string, unknown>).length > 0
+      Object.keys(prefs?.bankDetails as Record<string, unknown>).length > 0
     )
       methods?.push("bank_transfer");
 
     const stripeVerification = await instantPayoutService?.verifyStripeAccount(
-      req?.user.id,
+      req.user.id,
     );
     if (stripeVerification?.verified) methods?.push("stripe");
 
     if (methods?.length > 0) {
-      return res?.json({
+      return res.json({
         verified: true,
         requiresOnboarding: false,
         methods,
@@ -272,12 +272,12 @@ router?.get("/verify", async (req, res) => {
       });
     }
 
-    res?.json(stripeVerification);
+    res.json(stripeVerification);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error verifying payout account:");
+    logger.warn({ err: error }, "Error verifying payout account:");
     const message =
       error instanceof Error ? error?.message : "Failed to verify account";
-    res?.status(500).json({ error: message });
+    res.status(500).json({ error: message });
   }
 });
 
@@ -287,16 +287,16 @@ router?.get("/verify", async (req, res) => {
  */
 router?.get("/preferences", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const user = req?.user as Record<string, unknown>;
+    const user = req.user as Record<string, unknown>;
     const prefs =
       ((user?.preferences as Record<string, unknown> | undefined)?.payout as
         | Record<string, unknown>
         | undefined) ?? {};
-    res?.json({
+    res.json({
       paypalEmail: prefs.paypalEmail ?? null,
       bankDetails: prefs.bankDetails ?? null,
       stripeConnected: !!user?.stripeConnectedAccountId,
@@ -307,8 +307,8 @@ router?.get("/preferences", async (req, res) => {
           : "stripe",
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching preferences:");
-    res?.status(500).json({ error: "Failed to fetch preferences" });
+    logger.warn({ err: error }, "Error fetching preferences:");
+    res.status(500).json({ error: "Failed to fetch preferences" });
   }
 });
 
@@ -318,16 +318,16 @@ router?.get("/preferences", async (req, res) => {
  */
 router?.post("/preferences/paypal", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { email } = req?.body;
+    const { email } = req.body;
     if (!email || !email?.includes("@")) {
-      return res?.status(400).json({ error: "Valid PayPal email required" });
+      return res.status(400).json({ error: "Valid PayPal email required" });
     }
 
-    const user = req?.user as Record<string, unknown>;
+    const user = req.user as Record<string, unknown>;
     const currentPrefs =
       (user?.preferences as Record<string, unknown> | undefined) ?? {};
     const updatedPrefs = {
@@ -341,13 +341,13 @@ router?.post("/preferences/paypal", async (req, res) => {
     await db
       .update(users)
       .set({ preferences: updatedPrefs })
-      .where(eq(users?.id, req?.user.id));
+      .where(eq(users?.id, req.user.id));
 
-    logger?.info(`PayPal configured for user ${req?.user.id}`);
-    res?.json({ success: true, method: "paypal", email });
+    logger.info(`PayPal configured for user ${req.user.id}`);
+    res.json({ success: true, method: "paypal", email });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error configuring PayPal:");
-    res?.status(500).json({ error: "Failed to configure PayPal" });
+    logger.warn({ err: error }, "Error configuring PayPal:");
+    res.status(500).json({ error: "Failed to configure PayPal" });
   }
 });
 
@@ -357,8 +357,8 @@ router?.post("/preferences/paypal", async (req, res) => {
  */
 router?.post("/preferences/bank", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     const {
@@ -368,10 +368,10 @@ router?.post("/preferences/bank", async (req, res) => {
       routingNumber,
       accountType,
       country,
-    } = req?.body;
+    } = req.body;
 
     if (!accountHolderName || !bankName || !accountNumber || !routingNumber) {
-      return res?.status(400).json({ error: "All bank details required" });
+      return res.status(400).json({ error: "All bank details required" });
     }
 
     const bankDetailsData = {
@@ -388,7 +388,7 @@ router?.post("/preferences/bank", async (req, res) => {
       addedAt: new Date().toISOString(),
     };
 
-    const user = req?.user as Record<string, unknown>;
+    const user = req.user as Record<string, unknown>;
     const currentPrefs =
       (user?.preferences as Record<string, unknown> | undefined) ?? {};
     const updatedPrefs = {
@@ -402,18 +402,18 @@ router?.post("/preferences/bank", async (req, res) => {
     await db
       .update(users)
       .set({ preferences: updatedPrefs })
-      .where(eq(users?.id, req?.user.id));
+      .where(eq(users?.id, req.user.id));
 
-    logger?.info(`Bank account configured for user ${req?.user.id}`);
-    res?.json({
+    logger.info(`Bank account configured for user ${req.user.id}`);
+    res.json({
       success: true,
       method: "bank_transfer",
       bankName,
       accountNumber: bankDetailsData.accountNumber,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error configuring bank:");
-    res?.status(500).json({ error: "Failed to configure bank account" });
+    logger.warn({ err: error }, "Error configuring bank:");
+    res.status(500).json({ error: "Failed to configure bank account" });
   }
 });
 
@@ -423,24 +423,24 @@ router?.post("/preferences/bank", async (req, res) => {
  */
 router?.get("/dashboard", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     const result = await instantPayoutService?.getExpressDashboardLink(
-      req?.user.id,
+      req.user.id,
     );
 
     if (result?.error) {
-      return res?.status(400).json({ error: result.error });
+      return res.status(400).json({ error: result.error });
     }
 
-    res?.json({ url: result.url });
+    res.json({ url: result.url });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error getting dashboard link:");
+    logger.warn({ err: error }, "Error getting dashboard link:");
     const message =
       error instanceof Error ? error?.message : "Failed to get dashboard link";
-    res?.status(500).json({ error: message });
+    res.status(500).json({ error: message });
   }
 });
 
@@ -450,17 +450,17 @@ router?.get("/dashboard", async (req, res) => {
  */
 router?.get("/earnings", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const earnings = await instantPayoutService?.getEarningsSummary(req?.user.id);
-    res?.json(earnings);
+    const earnings = await instantPayoutService?.getEarningsSummary(req.user.id);
+    res.json(earnings);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error getting earnings summary:");
+    logger.warn({ err: error }, "Error getting earnings summary:");
     const message =
       error instanceof Error ? error?.message : "Failed to get earnings summary";
-    res?.status(500).json({ error: message });
+    res.status(500).json({ error: message });
   }
 });
 
@@ -470,13 +470,13 @@ router?.get("/earnings", async (req, res) => {
  */
 router?.post("/split", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { orderId, totalAmount, splits, platformFeePercentage } = req?.body;
+    const { orderId, totalAmount, splits, platformFeePercentage } = req.body;
 
-    if (!orderId || !totalAmount || !splits || !Array?.isArray(splits)) {
+    if (!orderId || !totalAmount || !splits || !Array.isArray(splits)) {
       return res
         .status(400)
         .json({ error: "orderId, totalAmount, and splits array required" });
@@ -495,13 +495,13 @@ router?.post("/split", async (req, res) => {
         .json({ error: "Split payment failed", errors: result.errors });
     }
 
-    res?.json({
+    res.json({
       success: true,
       transfers: result.transfers,
       errors: result.errors,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error creating split payment:");
+    logger.warn({ err: error }, "Error creating split payment:");
     res
       .status(500)
       .json({
@@ -516,13 +516,13 @@ router?.post("/split", async (req, res) => {
  */
 router?.post("/split-enhanced", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { orderId, totalAmount, splits, platformFeePercentage } = req?.body;
+    const { orderId, totalAmount, splits, platformFeePercentage } = req.body;
 
-    if (!orderId || !totalAmount || !splits || !Array?.isArray(splits)) {
+    if (!orderId || !totalAmount || !splits || !Array.isArray(splits)) {
       return res
         .status(400)
         .json({ error: "orderId, totalAmount, and splits array required" });
@@ -541,14 +541,14 @@ router?.post("/split-enhanced", async (req, res) => {
         .json({ error: "Split payment failed", errors: result.errors });
     }
 
-    res?.json({
+    res.json({
       success: true,
       splitPaymentIds: result.splitPaymentIds,
       transfers: result.transfers,
       errors: result.errors,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error creating enhanced split payment:");
+    logger.warn({ err: error }, "Error creating enhanced split payment:");
     res
       .status(500)
       .json({
@@ -563,8 +563,8 @@ router?.post("/split-enhanced", async (req, res) => {
  */
 router?.get("/report", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     const parseDate = (raw: unknown, fallback: Date): Date => {
@@ -573,23 +573,23 @@ router?.get("/report", async (req, res) => {
       return isNaN(d?.getTime()) ? fallback : d;
     };
     const startDate = parseDate(
-      req?.query.startDate,
+      req.query.startDate,
       new Date(Date?.now() - 365 * 24 * 60 * 60 * 1000),
     );
-    const endDate = parseDate(req?.query.endDate, new Date());
+    const endDate = parseDate(req.query.endDate, new Date());
     if (endDate < startDate) {
-      return res?.status(400).json({ error: "endDate must be after startDate" });
+      return res.status(400).json({ error: "endDate must be after startDate" });
     }
 
     const report = await instantPayoutService?.generatePayoutReport(
-      req?.user.id,
+      req.user.id,
       startDate,
       endDate,
     );
 
-    res?.json(report);
+    res.json(report);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error generating payout report:");
+    logger.warn({ err: error }, "Error generating payout report:");
     res
       .status(500)
       .json({ error: (error as Error).message || "Failed to generate report" });
@@ -602,11 +602,11 @@ router?.get("/report", async (req, res) => {
  */
 router?.get("/risk-assessment", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const amount = parseFloat(req?.query.amount as string);
+    const amount = parseFloat(req.query.amount as string);
     if (isNaN(amount) || amount <= 0) {
       return res
         .status(400)
@@ -614,13 +614,13 @@ router?.get("/risk-assessment", async (req, res) => {
     }
 
     const assessment = await instantPayoutService?.assessPayoutRisk(
-      req?.user.id,
+      req.user.id,
       amount,
     );
 
-    res?.json(assessment);
+    res.json(assessment);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error assessing payout risk:");
+    logger.warn({ err: error }, "Error assessing payout risk:");
     res
       .status(500)
       .json({ error: (error as Error).message || "Failed to assess risk" });
@@ -633,28 +633,28 @@ router?.get("/risk-assessment", async (req, res) => {
  */
 router?.get("/ledger", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 500);
-    const offset = Math?.min(
-      Math?.max(parseInt(req?.query.offset as string) || 0, 0),
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
+    const offset = Math.min(
+      Math.max(parseInt(req.query.offset as string) || 0, 0),
       100_000,
     );
 
     const entries = await instantPayoutService?.getLedgerHistory(
-      req?.user.id,
+      req.user.id,
       limit,
       offset,
     );
 
-    res?.json({
+    res.json({
       entries,
       pagination: { limit, offset, total: entries.length },
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching ledger history:");
+    logger.warn({ err: error }, "Error fetching ledger history:");
     res
       .status(500)
       .json({
@@ -669,25 +669,25 @@ router?.get("/ledger", async (req, res) => {
  */
 router?.get("/tax-form/:year", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const taxYear = parseInt(req?.params.year);
+    const taxYear = parseInt(req.params.year);
     const currentYear = new Date().getFullYear();
 
     if (isNaN(taxYear) || taxYear < 2020 || taxYear > currentYear) {
-      return res?.status(400).json({ error: "Invalid tax year" });
+      return res.status(400).json({ error: "Invalid tax year" });
     }
 
     const formData = await stripeService?.generateTaxFormData(
-      req?.user.id,
+      req.user.id,
       taxYear,
     );
 
-    res?.json(formData);
+    res.json(formData);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error generating tax form:");
+    logger.warn({ err: error }, "Error generating tax form:");
     res
       .status(500)
       .json({
@@ -702,20 +702,20 @@ router?.get("/tax-form/:year", async (req, res) => {
  */
 router?.get("/tax-forms", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     const forms = await db
       .select()
       .from(taxForms)
-      .where(eq(taxForms?.userId, req?.user.id))
+      .where(eq(taxForms?.userId, req.user.id))
       .orderBy(desc(taxForms?.taxYear))
       .limit(20);
 
-    res?.json({ forms });
+    res.json({ forms });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching tax forms:");
+    logger.warn({ err: error }, "Error fetching tax forms:");
     res
       .status(500)
       .json({ error: (error as Error).message || "Failed to fetch tax forms" });
@@ -728,8 +728,8 @@ router?.get("/tax-forms", async (req, res) => {
  */
 router?.post("/tax-form/submit", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     const {
@@ -745,10 +745,10 @@ router?.post("/tax-form/submit", async (req, res) => {
       treatyCountry,
       certify,
       signature,
-    } = req?.body;
+    } = req.body;
 
     if (!formType || !name || !address || !tin || !certify || !signature) {
-      return res?.status(400).json({ error: "Missing required fields" });
+      return res.status(400).json({ error: "Missing required fields" });
     }
 
     const now = new Date();
@@ -777,7 +777,7 @@ router?.post("/tax-form/submit", async (req, res) => {
       })
       .returning();
 
-    res?.json({
+    res.json({
       success: true,
       formId: inserted.id,
       status: "pending_review",
@@ -785,7 +785,7 @@ router?.post("/tax-form/submit", async (req, res) => {
         "Tax form submitted for review. You will be notified once it is approved.",
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error submitting tax form:");
+    logger.warn({ err: error }, "Error submitting tax form:");
     res
       .status(500)
       .json({ error: (error as Error).message || "Failed to submit tax form" });
@@ -798,18 +798,18 @@ router?.post("/tax-form/submit", async (req, res) => {
  */
 router?.get("/statements", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     const statements = await db
       .select()
       .from(royaltyStatements)
-      .where(eq(royaltyStatements?.userId, req?.user.id))
+      .where(eq(royaltyStatements?.userId, req.user.id))
       .orderBy(desc(royaltyStatements?.periodEnd))
       .limit(100);
 
-    res?.json({
+    res.json({
       statements: statements.map((s) => ({
         id: s.id,
         label:
@@ -823,7 +823,7 @@ router?.get("/statements", async (req, res) => {
       })),
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching statements:");
+    logger.warn({ err: error }, "Error fetching statements:");
     res
       .status(500)
       .json({
@@ -838,14 +838,14 @@ router?.get("/statements", async (req, res) => {
  */
 router?.post("/statements/generate", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { startDate, endDate } = req?.body;
+    const { startDate, endDate } = req.body;
 
     if (!startDate || !endDate) {
-      return res?.status(400).json({ error: "startDate and endDate required" });
+      return res.status(400).json({ error: "startDate and endDate required" });
     }
 
     const start = new Date(startDate);
@@ -862,7 +862,7 @@ router?.post("/statements/generate", async (req, res) => {
       .from(royaltyTransactions)
       .where(
         and(
-          eq(royaltyTransactions?.userId, req?.user.id),
+          eq(royaltyTransactions?.userId, req.user.id),
           gte(royaltyTransactions?.createdAt, start),
           lte(royaltyTransactions?.createdAt, end),
         ),
@@ -885,7 +885,7 @@ router?.post("/statements/generate", async (req, res) => {
       })
       .returning();
 
-    res?.json({
+    res.json({
       success: true,
       statement: {
         id: stmt.id,
@@ -897,7 +897,7 @@ router?.post("/statements/generate", async (req, res) => {
       },
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error generating statement:");
+    logger.warn({ err: error }, "Error generating statement:");
     res
       .status(500)
       .json({
@@ -912,11 +912,11 @@ router?.post("/statements/generate", async (req, res) => {
  */
 router?.get("/statements/:id/download", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { id } = req?.params;
+    const { id } = req.params;
 
     const [statement] = await db
       .select()
@@ -924,22 +924,22 @@ router?.get("/statements/:id/download", async (req, res) => {
       .where(
         and(
           eq(royaltyStatements?.id, id),
-          eq(royaltyStatements?.userId, req?.user.id),
+          eq(royaltyStatements?.userId, req.user.id),
         ),
       )
       .limit(1);
 
     if (!statement) {
-      return res?.status(404).json({ error: "Statement not found" });
+      return res.status(404).json({ error: "Statement not found" });
     }
 
-    res?.json({
+    res.json({
       success: true,
       downloadUrl: statement.downloadUrl || `/api/payouts/statements/${id}/pdf`,
       filename: `statement-${statement?.label?.replace(/\s+/g, "-").toLowerCase()}.pdf`,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error downloading statement:");
+    logger.warn({ err: error }, "Error downloading statement:");
     res
       .status(500)
       .json({
@@ -954,14 +954,14 @@ router?.get("/statements/:id/download", async (req, res) => {
  */
 router?.get("/disputes", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     const disputes = await db
       .select()
       .from(royaltyDisputes)
-      .where(eq(royaltyDisputes?.userId, req?.user.id))
+      .where(eq(royaltyDisputes?.userId, req.user.id))
       .orderBy(desc(royaltyDisputes?.createdAt))
       .limit(50);
 
@@ -1008,9 +1008,9 @@ router?.get("/disputes", async (req, res) => {
       };
     });
 
-    res?.json({ disputes: disputesWithMessages });
+    res.json({ disputes: disputesWithMessages });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching disputes:");
+    logger.warn({ err: error }, "Error fetching disputes:");
     res
       .status(500)
       .json({ error: (error as Error).message || "Failed to fetch disputes" });
@@ -1023,11 +1023,11 @@ router?.get("/disputes", async (req, res) => {
  */
 router?.post("/disputes", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { type, subject, description, amount, period } = req?.body;
+    const { type, subject, description, amount, period } = req.body;
 
     if (!type || !subject || !description) {
       return res
@@ -1053,7 +1053,7 @@ router?.post("/disputes", async (req, res) => {
       })
       .returning();
 
-    res?.json({
+    res.json({
       success: true,
       disputeId: newDispute.id,
       status: "open",
@@ -1061,7 +1061,7 @@ router?.post("/disputes", async (req, res) => {
         "Dispute filed successfully. We will review within 5 business days.",
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error filing dispute:");
+    logger.warn({ err: error }, "Error filing dispute:");
     res
       .status(500)
       .json({ error: (error as Error).message || "Failed to file dispute" });
@@ -1074,15 +1074,15 @@ router?.post("/disputes", async (req, res) => {
  */
 router?.post("/disputes/:id/evidence", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { id } = req?.params;
-    const { description, files } = req?.body;
+    const { id } = req.params;
+    const { description, files } = req.body;
 
     if (!description) {
-      return res?.status(400).json({ error: "description is required" });
+      return res.status(400).json({ error: "description is required" });
     }
 
     const [dispute] = await db
@@ -1091,13 +1091,13 @@ router?.post("/disputes/:id/evidence", async (req, res) => {
       .where(
         and(
           eq(royaltyDisputes?.id, id),
-          eq(royaltyDisputes?.userId, req?.user.id),
+          eq(royaltyDisputes?.userId, req.user.id),
         ),
       )
       .limit(1);
 
     if (!dispute) {
-      return res?.status(404).json({ error: "Dispute not found" });
+      return res.status(404).json({ error: "Dispute not found" });
     }
 
     const now = new Date();
@@ -1118,12 +1118,12 @@ router?.post("/disputes/:id/evidence", async (req, res) => {
       })
       .where(eq(royaltyDisputes?.id, id));
 
-    res?.json({
+    res.json({
       success: true,
       message: "Evidence submitted successfully.",
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error submitting evidence:");
+    logger.warn({ err: error }, "Error submitting evidence:");
     res
       .status(500)
       .json({ error: (error as Error).message || "Failed to submit evidence" });
@@ -1136,15 +1136,15 @@ router?.post("/disputes/:id/evidence", async (req, res) => {
  */
 router?.post("/disputes/:id/message", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { id } = req?.params;
-    const { message } = req?.body;
+    const { id } = req.params;
+    const { message } = req.body;
 
     if (!message) {
-      return res?.status(400).json({ error: "message is required" });
+      return res.status(400).json({ error: "message is required" });
     }
 
     const [dispute] = await db
@@ -1153,13 +1153,13 @@ router?.post("/disputes/:id/message", async (req, res) => {
       .where(
         and(
           eq(royaltyDisputes?.id, id),
-          eq(royaltyDisputes?.userId, req?.user.id),
+          eq(royaltyDisputes?.userId, req.user.id),
         ),
       )
       .limit(1);
 
     if (!dispute) {
-      return res?.status(404).json({ error: "Dispute not found" });
+      return res.status(404).json({ error: "Dispute not found" });
     }
 
     const now = new Date();
@@ -1176,12 +1176,12 @@ router?.post("/disputes/:id/message", async (req, res) => {
       .set({ updatedAt: now })
       .where(eq(royaltyDisputes?.id, id));
 
-    res?.json({
+    res.json({
       success: true,
       messageId: crypto.randomUUID(),
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error sending message:");
+    logger.warn({ err: error }, "Error sending message:");
     res
       .status(500)
       .json({ error: (error as Error).message || "Failed to send message" });
@@ -1194,28 +1194,28 @@ router?.post("/disputes/:id/message", async (req, res) => {
  */
 router?.post("/retry/:payoutId", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { payoutId } = req?.params;
+    const { payoutId } = req.params;
 
     const result = await instantPayoutService?.retryFailedPayout(
-      req?.user.id,
+      req.user.id,
       payoutId,
     );
 
     if (!result?.success) {
-      return res?.status(400).json({ error: result.error });
+      return res.status(400).json({ error: result.error });
     }
 
-    res?.json({
+    res.json({
       success: true,
       newPayoutId: result.payoutId,
       message: "Payout retry initiated successfully.",
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error retrying payout:");
+    logger.warn({ err: error }, "Error retrying payout:");
     res
       .status(500)
       .json({ error: (error as Error).message || "Failed to retry payout" });
@@ -1228,11 +1228,11 @@ router?.post("/retry/:payoutId", async (req, res) => {
  */
 router?.get("/instant-fee", async (req, res) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const amount = parseFloat(req?.query.amount as string);
+    const amount = parseFloat(req.query.amount as string);
     if (isNaN(amount) || amount <= 0) {
       return res
         .status(400)
@@ -1243,14 +1243,14 @@ router?.get("/instant-fee", async (req, res) => {
     const fee = amount * (feePercentage / 100);
     const netAmount = amount - fee;
 
-    res?.json({
+    res.json({
       amount,
       feePercentage,
       fee: parseFloat(fee?.toFixed(2)),
       netAmount: parseFloat(netAmount?.toFixed(2)),
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error calculating instant fee:");
+    logger.warn({ err: error }, "Error calculating instant fee:");
     res
       .status(500)
       .json({ error: (error as Error).message || "Failed to calculate fee" });
@@ -1364,12 +1364,12 @@ router?.get("/currencies", async (_req, res) => {
       },
     ];
 
-    res?.json({
+    res.json({
       currencies,
       defaultCurrency: "USD",
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching currencies:");
+    logger.warn({ err: error }, "Error fetching currencies:");
     res
       .status(500)
       .json({

@@ -59,9 +59,9 @@ export async function pushFeatureEvent(
   }
 
   try {
-    await redis?.rpush(BUFFER_KEY, JSON?.stringify(payload));
+    await redis?.rpush(BUFFER_KEY, JSON.stringify(payload));
   } catch (err) {
-    logger?.warn(
+    logger.warn(
       { err: err },
       "[FeatureEventBuffer] Redis push failed, writing directly:",
     );
@@ -114,7 +114,7 @@ export async function flushFeatureEvents(): Promise<number> {
       String(PROCESSING_TTL_SECONDS),
     )) as string[];
   } catch (err) {
-    logger?.warn({ err: err }, "[FeatureEventBuffer] Fetch Lua script failed:");
+    logger.warn({ err: err }, "[FeatureEventBuffer] Fetch Lua script failed:");
     return 0;
   }
 
@@ -123,9 +123,9 @@ export async function flushFeatureEvents(): Promise<number> {
   const payloads: FeatureEventPayload[] = [];
   for (const item of raw) {
     try {
-      payloads?.push(JSON?.parse(item) as FeatureEventPayload);
+      payloads?.push(JSON.parse(item) as FeatureEventPayload);
     } catch {
-      logger?.warn("[FeatureEventBuffer] Skipping malformed event payload");
+      logger.warn("[FeatureEventBuffer] Skipping malformed event payload");
     }
   }
 
@@ -138,17 +138,17 @@ export async function flushFeatureEvents(): Promise<number> {
     await insertDirect(payloads);
     // Confirm delivery: remove the processing key
     await redis?.del(processingKey).catch((err) => {
-      logger?.warn(
+      logger.warn(
         { err: err },
         "[FeatureEventBuffer] Failed to delete processing key (harmless — TTL will clean up):",
       );
     });
-    logger?.info(
+    logger.info(
       `[FeatureEventBuffer] Flushed ${payloads?.length} events (batch ${batchId})`,
     );
     return payloads?.length;
   } catch (insertErr) {
-    logger?.warn(
+    logger.warn(
       `[FeatureEventBuffer] Insert failed for batch ${batchId}, restoring to buffer:`,
       insertErr,
     );
@@ -156,17 +156,17 @@ export async function flushFeatureEvents(): Promise<number> {
     let restored = 0;
     for (let i = payloads?.length - 1; i >= 0; i--) {
       try {
-        await redis?.lpush(BUFFER_KEY, JSON?.stringify(payloads[i]));
+        await redis?.lpush(BUFFER_KEY, JSON.stringify(payloads[i]));
         restored++;
       } catch (restoreErr) {
-        logger?.warn(
+        logger.warn(
           `[FeatureEventBuffer] Lost event during restore (index ${i}):`,
           restoreErr,
         );
       }
     }
     await redis?.del(processingKey).catch(() => {});
-    logger?.info(
+    logger.info(
       `[FeatureEventBuffer] Restored ${restored}/${payloads?.length} events after insert failure`,
     );
     throw insertErr;
@@ -214,7 +214,7 @@ export async function recoverStaleProcessingBatches(): Promise<void> {
             pipeline?.del(key);
             await pipeline?.exec();
             recovered += items?.length;
-            logger?.info(
+            logger.info(
               `[FeatureEventBuffer] Recovered ${items?.length} events from stale batch ${key}`,
             );
           } else {
@@ -222,7 +222,7 @@ export async function recoverStaleProcessingBatches(): Promise<void> {
           }
         } catch (err) {
           const msg = err instanceof Error ? err?.message : String(err);
-          logger?.warn(
+          logger.warn(
             `[FeatureEventBuffer] Failed to recover stale batch ${key}: ${msg}`,
           );
         }
@@ -230,7 +230,7 @@ export async function recoverStaleProcessingBatches(): Promise<void> {
     } while (cursor !== "0");
 
     if (recovered > 0) {
-      logger?.warn(
+      logger.warn(
         `[FeatureEventBuffer] Crash recovery: restored ${recovered} events to buffer`,
       );
     }
@@ -238,7 +238,7 @@ export async function recoverStaleProcessingBatches(): Promise<void> {
     // PDIM outages cause scan failures at startup — expected and self-healing.
     // Log at WARN (not ERROR) so it doesn't pollute error dashboards.
     const msg = err instanceof Error ? err?.message : String(err);
-    logger?.info(
+    logger.info(
       `[FeatureEventBuffer] Crash recovery scan skipped (PDIM unavailable): ${msg}`,
     );
   }

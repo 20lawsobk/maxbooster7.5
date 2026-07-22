@@ -17,11 +17,11 @@ router?.use(requireAuth);
  */
 router?.post("/ai/predict-metric", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user?.id;
-    const { metric, timeframe = "30d" } = req?.body;
+    const userId = req.user?.id;
+    const { metric, timeframe = "30d" } = req.body;
 
     if (!userId) {
-      return res?.status(401).json({ error: "Unauthorized" });
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     // Validate metric to prevent injection and unexpected queries
@@ -97,17 +97,17 @@ router?.post("/ai/predict-metric", async (req: Request, res: Response) => {
             ? (values[values?.length - 1] - values[0]) / values?.length
             : 0;
 
-        const predicted = Math?.max(0, current + trend * 7);
-        const confidence = Math?.min(
+        const predicted = Math.max(0, current + trend * 7);
+        const confidence = Math.min(
           95,
-          Math?.max(50, 75 - (Math?.abs(trend) / (avg_value || 1)) * 100),
+          Math.max(50, 75 - (Math.abs(trend) / (avg_value || 1)) * 100),
         );
 
         const forecast = [];
         for (let i = 1; i <= 7; i++) {
           const futureDate = new Date();
           futureDate?.setDate(futureDate?.getDate() + i);
-          const predictedValue = Math?.max(0, current + trend * i);
+          const predictedValue = Math.max(0, current + trend * i);
           forecast?.push({
             date: futureDate.toISOString().split("T")[0],
             value: Math.round(predictedValue),
@@ -128,10 +128,10 @@ router?.post("/ai/predict-metric", async (req: Request, res: Response) => {
       60,
     );
 
-    return res?.json(result);
+    return res.json(result);
   } catch (error) {
-    logger?.warn({ err: error }, "Error predicting metric:");
-    return res?.status(500).json({ error: "Failed to predict metric" });
+    logger.warn({ err: error }, "Error predicting metric:");
+    return res.status(500).json({ error: "Failed to predict metric" });
   }
 });
 
@@ -464,10 +464,10 @@ router.get("/ai/insights", async (req: Request, res: Response) => {
       });
     }
 
-    return res?.json({ insights });
+    return res.json({ insights });
   } catch (error) {
-    logger?.warn({ err: error }, "Error generating insights:");
-    return res?.status(500).json({ error: "Failed to generate insights" });
+    logger.warn({ err: error }, "Error generating insights:");
+    return res.status(500).json({ error: "Failed to generate insights" });
   }
 });
 
@@ -477,11 +477,11 @@ router.get("/ai/insights", async (req: Request, res: Response) => {
  */
 router?.post("/music/career-growth", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user?.id;
-    const { metric = "streams", timeline = "30d" } = req?.body;
+    const userId = req.user?.id;
+    const { metric = "streams", timeline = "30d" } = req.body;
 
     if (!userId) {
-      return res?.status(401).json({ error: "Unauthorized" });
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     const ALLOWED_METRICS = [
@@ -542,11 +542,11 @@ router?.post("/music/career-growth", async (req: Request, res: Response) => {
       derivedGrowthRate = 8;
       const periods =
         timeline === "3months" ? 1 : timeline === "6months" ? 2 : 4;
-      predictedValue = Math?.round(currentValue * Math?.pow(1.08, periods));
+      predictedValue = Math.round(currentValue * Math.pow(1.08, periods));
       confidence = 0.55;
     }
 
-    return res?.json({
+    return res.json({
       metric,
       currentValue: currentValue || null,
       predictedValue,
@@ -562,8 +562,8 @@ router?.post("/music/career-growth", async (req: Request, res: Response) => {
       confidence,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error predicting career growth:");
-    return res?.status(500).json({ error: "Failed to predict career growth" });
+    logger.warn({ err: error }, "Error predicting career growth:");
+    return res.status(500).json({ error: "Failed to predict career growth" });
   }
 });
 
@@ -573,10 +573,10 @@ router?.post("/music/career-growth", async (req: Request, res: Response) => {
  */
 router?.get("/music/milestones", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user?.id;
+    const userId = req.user?.id;
 
     if (!userId) {
-      return res?.status(401).json({ error: "Unauthorized" });
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     // Get current stats
@@ -655,10 +655,10 @@ router?.get("/music/milestones", async (req: Request, res: Response) => {
       ],
     });
 
-    return res?.json(milestones);
+    return res.json(milestones);
   } catch (error) {
-    logger?.warn({ err: error }, "Error getting career milestones:");
-    return res?.status(500).json({ error: "Failed to get career milestones" });
+    logger.warn({ err: error }, "Error getting career milestones:");
+    return res.status(500).json({ error: "Failed to get career milestones" });
   }
 });
 
@@ -668,10 +668,10 @@ router?.get("/music/milestones", async (req: Request, res: Response) => {
  */
 router?.get("/music/fanbase", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user?.id;
+    const userId = req.user?.id;
 
     if (!userId) {
-      return res?.status(401).json({ error: "Unauthorized" });
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     // Get fanbase data
@@ -714,7 +714,7 @@ router?.get("/music/fanbase", async (req: Request, res: Response) => {
 
     const engagementRate =
       totalRecentListeners > 0 && totalRecentStreams > 0
-        ? Math?.round((totalRecentStreams / totalRecentListeners) * 10) / 10
+        ? Math.round((totalRecentStreams / totalRecentListeners) * 10) / 10
         : null;
 
     const activeListeners =
@@ -738,7 +738,7 @@ router?.get("/music/fanbase", async (req: Request, res: Response) => {
           ]
         : ["Release your first track to start building a fanbase"];
 
-    return res?.json({
+    return res.json({
       totalFans: totalFans || null,
       activeListeners,
       engagementRate,
@@ -750,8 +750,8 @@ router?.get("/music/fanbase", async (req: Request, res: Response) => {
       growthOpportunities,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error getting fanbase insights:");
-    return res?.status(500).json({ error: "Failed to get fanbase insights" });
+    logger.warn({ err: error }, "Error getting fanbase insights:");
+    return res.status(500).json({ error: "Failed to get fanbase insights" });
   }
 });
 
@@ -761,10 +761,10 @@ router?.get("/music/fanbase", async (req: Request, res: Response) => {
  */
 router?.get("/music/insights", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user?.id;
+    const userId = req.user?.id;
 
     if (!userId) {
-      return res?.status(401).json({ error: "Unauthorized" });
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     const DAY_NAMES = [
@@ -802,7 +802,7 @@ router?.get("/music/insights", async (req: Request, res: Response) => {
       : 0;
     const bestDayBoost =
       bestDayStreams > 0 && fridayStreams > 0 && bestDow !== 5
-        ? Math?.round(((bestDayStreams - fridayStreams) / fridayStreams) * 100)
+        ? Math.round(((bestDayStreams - fridayStreams) / fridayStreams) * 100)
         : 0;
     const releaseInsightDescription =
       bestDow === 5
@@ -839,7 +839,7 @@ router?.get("/music/insights", async (req: Request, res: Response) => {
     const prevStreams = Number(prevStats?.streams ?? 0);
     const growthRate =
       prevStreams > 0
-        ? Math?.round(((recentStreams - prevStreams) / prevStreams) * 100)
+        ? Math.round(((recentStreams - prevStreams) / prevStreams) * 100)
         : 0;
     const recentRevenue = Number(recentStats?.revenue ?? 0);
     const recentListeners = Number(recentStats?.listeners ?? 0);
@@ -881,7 +881,7 @@ router?.get("/music/insights", async (req: Request, res: Response) => {
               : "Growth Opportunity",
         description:
           growthRate !== 0
-            ? `Your streams ${growthRate >= 0 ? "grew" : "dropped"} ${Math?.abs(growthRate)}% over the last 30 days (${recentStreams?.toLocaleString()} vs ${prevStreams?.toLocaleString()} prior period).`
+            ? `Your streams ${growthRate >= 0 ? "grew" : "dropped"} ${Math.abs(growthRate)}% over the last 30 days (${recentStreams?.toLocaleString()} vs ${prevStreams?.toLocaleString()} prior period).`
             : `You have ${recentStreams?.toLocaleString()} streams in the last 30 days. Consistent releases and social engagement drive growth.`,
         impact: growthRate >= 20 ? ("high" as const) : ("medium" as const),
         actionable:
@@ -919,10 +919,10 @@ router?.get("/music/insights", async (req: Request, res: Response) => {
       },
     ];
 
-    return res?.json(insights);
+    return res.json(insights);
   } catch (error) {
-    logger?.warn({ err: error }, "Error getting music insights:");
-    return res?.status(500).json({ error: "Failed to get music insights" });
+    logger.warn({ err: error }, "Error getting music insights:");
+    return res.status(500).json({ error: "Failed to get music insights" });
   }
 });
 
@@ -932,10 +932,10 @@ router?.get("/music/insights", async (req: Request, res: Response) => {
  */
 router?.get("/music/release-strategy", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user?.id;
+    const userId = req.user?.id;
 
     if (!userId) {
-      return res?.status(401).json({ error: "Unauthorized" });
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     const DAY_NAMES_RS = [
@@ -966,7 +966,7 @@ router?.get("/music/release-strategy", async (req: Request, res: Response) => {
       .where(eq(releases?.userId, userId));
     const releaseCount = Number(releaseCountRow[0]?.count ?? 0);
 
-    return res?.json({
+    return res.json({
       bestReleaseDay: bestDayRS,
       bestReleaseTime: "12:00 AM (Midnight)",
       optimalFrequency:
@@ -994,8 +994,8 @@ router?.get("/music/release-strategy", async (req: Request, res: Response) => {
       ],
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error getting release strategy:");
-    return res?.status(500).json({ error: "Failed to get release strategy" });
+    logger.warn({ err: error }, "Error getting release strategy:");
+    return res.status(500).json({ error: "Failed to get release strategy" });
   }
 });
 
@@ -1005,9 +1005,9 @@ router?.get("/music/release-strategy", async (req: Request, res: Response) => {
  */
 router?.get("/historical/yearly", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user?.id;
+    const userId = req.user?.id;
     if (!userId) {
-      return res?.status(401).json({ error: "Unauthorized" });
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     const currentYear = new Date().getFullYear();
@@ -1064,7 +1064,7 @@ router?.get("/historical/yearly", async (req: Request, res: Response) => {
               releases: releaseCount[0]?.count || 0,
               playlistAdds: Math.max(
                 0,
-                Math?.floor(Number(yearStats[0]?.streams || 0) * 0.002),
+                Math.floor(Number(yearStats[0]?.streams || 0) * 0.002),
               ),
             };
           }),
@@ -1075,10 +1075,10 @@ router?.get("/historical/yearly", async (req: Request, res: Response) => {
       300,
     );
 
-    return res?.json({ success: true, data });
+    return res.json({ success: true, data });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching yearly historical data:");
-    return res?.status(500).json({ error: "Failed to fetch historical data" });
+    logger.warn({ err: error }, "Error fetching yearly historical data:");
+    return res.status(500).json({ error: "Failed to fetch historical data" });
   }
 });
 
@@ -2027,23 +2027,23 @@ router.get("/ar-discovery", async (req: Request, res: Response) => {
       const prev = Number(row?.prev_streams ?? 0);
       const growth =
         prev > 0
-          ? Math?.round(((recent - prev) / prev) * 100)
+          ? Math.round(((recent - prev) / prev) * 100)
           : recent > 0
             ? 100
             : 0;
       const monthlyListeners = Number(row?.monthly_listeners ?? 0);
       const recentReleases = Number(row?.recent_releases ?? 0);
-      const growthScore = Math?.min(
+      const growthScore = Math.min(
         100,
-        Math?.floor(Math?.log10(recent + 1) * 12 + growth * 0.3),
+        Math.floor(Math.log10(recent + 1) * 12 + growth * 0.3),
       );
       const signingPotential =
         growthScore >= 80 ? "high" : growthScore >= 50 ? "medium" : "low";
       const trajectory = [
-        Math?.max(0, growthScore - 20),
-        Math?.max(0, growthScore - 14),
-        Math?.max(0, growthScore - 8),
-        Math?.max(0, growthScore - 3),
+        Math.max(0, growthScore - 20),
+        Math.max(0, growthScore - 14),
+        Math.max(0, growthScore - 8),
+        Math.max(0, growthScore - 3),
         growthScore,
       ];
       return {
@@ -2075,7 +2075,7 @@ router.get("/ar-discovery", async (req: Request, res: Response) => {
       );
     }
 
-    return res?.json({
+    return res.json({
       success: true,
       data: artists.slice(0, 10),
       filters: {
@@ -2084,7 +2084,7 @@ router.get("/ar-discovery", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching A&R discovery data:");
+    logger.warn({ err: error }, "Error fetching A&R discovery data:");
     return res
       .status(500)
       .json({ error: "Failed to fetch A&R discovery data" });
@@ -2100,26 +2100,26 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req?.user?.id;
-      if (!userId) return res?.status(401).json({ error: "Unauthorized" });
+      const userId = req.user?.id;
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-      const { email, frequency, format } = req?.body;
+      const { email, frequency, format } = req.body;
       if (!email || !String(email).includes("@")) {
-        return res?.status(400).json({ error: "Valid email required" });
+        return res.status(400).json({ error: "Valid email required" });
       }
 
-      logger?.info(
+      logger.info(
         `Scheduled ${frequency} analytics export for user ${userId} → ${email}`,
       );
 
-      return res?.json({
+      return res.json({
         success: true,
         message: `${frequency === "weekly" ? "Weekly" : "Monthly"} ${(format || "csv").toUpperCase()} report will be sent to ${email}`,
         scheduledAt: new Date().toISOString(),
       });
     } catch (error) {
-      logger?.warn("Error scheduling export:", error?.message);
-      return res?.status(500).json({ error: "Failed to schedule export" });
+      logger.warn("Error scheduling export:", error?.message);
+      return res.status(500).json({ error: "Failed to schedule export" });
     }
   },
 );

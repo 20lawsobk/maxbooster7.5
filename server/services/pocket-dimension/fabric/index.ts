@@ -54,7 +54,7 @@ function onNodeSpawned(
 ): void {
   nodePocketMap?.set(nodeId, pocketName);
   chunkStoreCache?.set(nodeId, store);
-  logger?.info(
+  logger.info(
     `[PocketFabric] Auto-spawned node wired into fabric: ${pocketName} (id=${nodeId})`,
   );
 }
@@ -117,7 +117,7 @@ export async function initializeFabric(): Promise<void> {
           );
         }
       }
-      logger?.info(
+      logger.info(
         `[PocketFabric] Fabric initialized — ${pdNodes?.length} node(s) active`,
       );
     } else {
@@ -132,7 +132,7 @@ export async function initializeFabric(): Promise<void> {
         let nodeId: NodeId;
         if (alreadyRegistered) {
           nodeId = alreadyRegistered?.id;
-          logger?.info(
+          logger.info(
             `[PocketFabric] Node ${i} already registered: ${pocketName}`,
           );
         } else {
@@ -146,7 +146,7 @@ export async function initializeFabric(): Promise<void> {
             healthy: true,
           });
           nodeId = node?.id;
-          logger?.info(
+          logger.info(
             `[PocketFabric] Registered cluster node ${i}: ${pocketName} (${SEED_REGIONS[i]})`,
           );
         }
@@ -158,14 +158,14 @@ export async function initializeFabric(): Promise<void> {
       const total = (await nodeRegistry?.listAllNodes()).filter(
         (n) => n?.backendType === "pocket-dimension",
       ).length;
-      logger?.info(
+      logger.info(
         `[PocketFabric] Cluster ready — ${total} Pocket Dimension node(s) active`,
       );
     }
 
     autoClusterManager?.start();
-    logger?.info("[PocketFabric] Auto-cluster manager started");
+    logger.info("[PocketFabric] Auto-cluster manager started");
   } catch (err) {
-    logger?.error({ err: err }, "[PocketFabric] Failed to initialize fabric:");
+    logger.error({ err: err }, "[PocketFabric] Failed to initialize fabric:");
   }
 }

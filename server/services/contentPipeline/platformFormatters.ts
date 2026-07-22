@@ -457,11 +457,11 @@ export function getVisualSpec(
  * Returns all platforms that support a given content slot.
  */
 export function platformsForSlot(slot: ContentSlot): SupportedPlatform[] {
-  return (Object?.keys(PLATFORM_SPECS) as SupportedPlatform[]).filter((p) =>
+  return (Object.keys(PLATFORM_SPECS) as SupportedPlatform[]).filter((p) =>
     PLATFORM_SPECS[p].supportedSlots?.includes(slot),
   );
 }
 
-export const ALL_PLATFORMS: SupportedPlatform[] = Object?.keys(
+export const ALL_PLATFORMS: SupportedPlatform[] = Object.keys(
   PLATFORM_SPECS,
 ) as SupportedPlatform[];

@@ -50,7 +50,7 @@ class PocketDimensionStorageProvider implements StorageProvider {
   private initPromise: Promise<void>;
 
   constructor() {
-    this.initPromise = this?.init();
+    this.initPromise = this.init();
   }
 
   private async init(): Promise<void> {
@@ -65,11 +65,11 @@ class PocketDimensionStorageProvider implements StorageProvider {
         enableVersioning: false,
         chunkSize: 32 * 1024 * 1024,
       });
-      logger?.info(
+      logger.info(
         "📦 [Storage] Pocket Dimension provider ready (PDIM-backed, level-9 gzip, dedup, 32 MB chunks)",
       );
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err: err },
         "[Storage] Failed to initialize Pocket Dimension provider:",
       );
@@ -77,8 +77,8 @@ class PocketDimensionStorageProvider implements StorageProvider {
   }
 
   private async ensure(): Promise<void> {
-    await this?.initPromise;
-    if (!this?.pocket)
+    await this.initPromise;
+    if (!this.pocket)
       throw new Error("Pocket Dimension storage provider not initialized");
   }
 
@@ -93,7 +93,7 @@ class PocketDimensionStorageProvider implements StorageProvider {
       await ensureLocalDir(localPath);
       await fsPromises?.writeFile(localPath, file);
     } catch (fsErr) {
-      logger?.warn(
+      logger.warn(
         `[Storage] Local filesystem write failed for key=${key}:`,
         fsErr,
       );
@@ -101,17 +101,17 @@ class PocketDimensionStorageProvider implements StorageProvider {
 
     // Also write to PDIM (with timeout so a congested queue never blocks the response)
     try {
-      await this?.ensure();
+      await this.ensure();
       await Promise?.race([
         (
-          this?.pocket as Record<string, (...a: unknown[]) => Promise<unknown>>
+          this.pocket as Record<string, (...a: unknown[]) => Promise<unknown>>
         ).write(`files/${key}`, file),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error("PDIM write timeout")), 6000),
         ),
       ]);
     } catch (pdimErr) {
-      logger?.warn(
+      logger.warn(
         `[Storage] PDIM write failed for key=${key}, file is on disk only:`,
         pdimErr,
       );
@@ -123,8 +123,8 @@ class PocketDimensionStorageProvider implements StorageProvider {
   async downloadFile(key: string): Promise<Buffer> {
     // Try PDIM first
     try {
-      await this?.ensure();
-      return await this?.pocket.read(`files/${key}`);
+      await this.ensure();
+      return await this.pocket.read(`files/${key}`);
     } catch {
       // Fall through to local filesystem
     }
@@ -146,7 +146,7 @@ class PocketDimensionStorageProvider implements StorageProvider {
       await fsPromises?.unlink(localFilePath(key));
     } catch (fsErr: Record<string, unknown>) {
       if (fsErr?.code !== "ENOENT") {
-        logger?.warn(
+        logger.warn(
           `[StorageService] local deleteFile failed for key=${key}:`,
           fsErr,
         );
@@ -155,10 +155,10 @@ class PocketDimensionStorageProvider implements StorageProvider {
 
     // Delete from PDIM
     try {
-      await this?.ensure();
-      await this?.pocket.delete(`files/${key}`);
+      await this.ensure();
+      await this.pocket.delete(`files/${key}`);
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         `[StorageService] deleteFile failed for key=${key}: ${err?.message}`,
       );
     }
@@ -183,8 +183,8 @@ class PocketDimensionStorageProvider implements StorageProvider {
 
     // Check PDIM
     try {
-      await this?.ensure();
-      return this?.pocket.exists(`files/${key}`);
+      await this.ensure();
+      return this.pocket.exists(`files/${key}`);
     } catch {
       return false;
     }
@@ -198,7 +198,7 @@ class StorageService {
   private provider: StorageProvider;
 
   constructor() {
-    logger?.info(
+    logger.info(
       "📦 [Storage] Using Pocket Dimension (PDIM) as the sole storage backend",
     );
     this.provider = new PocketDimensionStorageProvider();
@@ -211,16 +211,16 @@ class StorageService {
     contentType?: string,
   ): Promise<string> {
     const key = `${category}/${randomUUID()}/${filename}`;
-    await this?.provider.uploadFile(file, key, contentType);
+    await this.provider.uploadFile(file, key, contentType);
     return key;
   }
 
   async downloadFile(key: string): Promise<Buffer> {
-    return await this?.provider.downloadFile(key);
+    return await this.provider.downloadFile(key);
   }
 
   async deleteFile(key: string): Promise<void> {
-    await this?.provider.deleteFile(key);
+    await this.provider.deleteFile(key);
   }
 
   async getUploadUrl(
@@ -230,25 +230,25 @@ class StorageService {
     expiresIn: number = 3600,
   ): Promise<{ url: string | null; key: string }> {
     const key = `${category}/${randomUUID()}/${filename}`;
-    const url = await this?.provider.getUploadUrl(key, contentType, expiresIn);
+    const url = await this.provider.getUploadUrl(key, contentType, expiresIn);
     return { url, key };
   }
 
   async getDownloadUrl(key: string, expiresIn: number = 3600): Promise<string> {
-    return await this?.provider.getDownloadUrl(key, expiresIn);
+    return await this.provider.getDownloadUrl(key, expiresIn);
   }
 
   async fileExists(key: string): Promise<boolean> {
-    return await this?.provider.fileExists(key);
+    return await this.provider.fileExists(key);
   }
 
   async deleteWithTTL(key: string, ttlMs: number): Promise<void> {
     setTimeout(async () => {
       try {
-        await this?.deleteFile(key);
-        logger?.info(`🗑️  Deleted temp file: ${key}`);
+        await this.deleteFile(key);
+        logger.info(`🗑️  Deleted temp file: ${key}`);
       } catch (error: unknown) {
-        logger?.warn({ err: error }, `Failed to delete temp file ${key}:`);
+        logger.warn({ err: error }, `Failed to delete temp file ${key}:`);
       }
     }, ttlMs);
   }

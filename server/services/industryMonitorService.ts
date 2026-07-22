@@ -153,28 +153,28 @@ class IndustryMonitorService {
   });
 
   async fetchLiveChanges(): Promise<LiveIndustryChange[]> {
-    if (this?.cache && Date?.now() - this?.cache.fetchedAt < CACHE_TTL_MS) {
-      const fresh = this?.cache.changes?.filter((c) => !this?.seenIds.has(c?.id));
-      for (const c of fresh) this?.seenIds.add(c?.id);
+    if (this.cache && Date?.now() - this.cache.fetchedAt < CACHE_TTL_MS) {
+      const fresh = this.cache.changes?.filter((c) => !this.seenIds.has(c?.id));
+      for (const c of fresh) this.seenIds.add(c?.id);
       return fresh;
     }
 
-    logger?.info("[IndustryMonitor] Fetching live music industry data...");
+    logger.info("[IndustryMonitor] Fetching live music industry data...");
 
     const [rssChanges, searchChanges] = await Promise?.all([
-      this?.fetchAllRssFeeds(),
-      this?.fetchSearchIntelligence(),
+      this.fetchAllRssFeeds(),
+      this.fetchSearchIntelligence(),
     ]);
 
     const all: LiveIndustryChange[] = [...rssChanges, ...searchChanges];
 
-    const unique = this?.deduplicateByHash(all);
+    const unique = this.deduplicateByHash(all);
     this.cache = { changes: unique, fetchedAt: Date.now() };
 
-    const fresh = unique?.filter((c) => !this?.seenIds.has(c?.id));
-    for (const c of fresh) this?.seenIds.add(c?.id);
+    const fresh = unique?.filter((c) => !this.seenIds.has(c?.id));
+    for (const c of fresh) this.seenIds.add(c?.id);
 
-    logger?.info(
+    logger.info(
       `[IndustryMonitor] Fetched ${unique?.length} total, ${fresh?.length} new changes`,
     );
     return fresh;
@@ -182,7 +182,7 @@ class IndustryMonitorService {
 
   private async fetchAllRssFeeds(): Promise<LiveIndustryChange[]> {
     const results = await Promise?.allSettled(
-      RSS_FEEDS?.map((feed) => this?.fetchRssFeed(feed?.url, feed?.name)),
+      RSS_FEEDS?.map((feed) => this.fetchRssFeed(feed?.url, feed?.name)),
     );
 
     const all: LiveIndustryChange[] = [];
@@ -192,7 +192,7 @@ class IndustryMonitorService {
         all?.push(...result?.value);
       } else {
         failCount++;
-        logger?.warn(
+        logger.warn(
           "[IndustryMonitor] RSS feed failed:",
           result?.reason?.message ?? result?.reason,
         );
@@ -222,9 +222,9 @@ class IndustryMonitorService {
         redirect: "follow",
       });
 
-      if (!res?.ok) throw new Error(`HTTP ${res?.status}`);
-      const xml = await res?.text();
-      return this?.parseRss(xml, feedName, url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const xml = await res.text();
+      return this.parseRss(xml, feedName, url);
     } finally {
       clearTimeout(timeout);
     }
@@ -238,19 +238,19 @@ class IndustryMonitorService {
     const changes: LiveIndustryChange[] = [];
 
     try {
-      const parsed = this?.parser.parse(xml);
+      const parsed = this.parser.parse(xml);
       const channel = parsed?.rss?.channel;
       if (!channel) return changes;
 
-      const items: RssItem[] = Array?.isArray(channel?.item)
+      const items: RssItem[] = Array.isArray(channel?.item)
         ? channel?.item
         : channel?.item
           ? [channel?.item]
           : [];
 
       for (const item of items?.slice(0, 20)) {
-        const title = this?.stripHtml(String(item?.title || "")).trim();
-        const description = this?.stripHtml(String(item?.description || ""))
+        const title = this.stripHtml(String(item?.title || "")).trim();
+        const description = this.stripHtml(String(item?.description || ""))
           .trim()
           .slice(0, 500);
         const link = String(item?.link || "");
@@ -260,7 +260,7 @@ class IndustryMonitorService {
 
         if (!title || title?.length < 5) continue;
 
-        const classification = this?.classifyArticle(title, description);
+        const classification = this.classifyArticle(title, description);
         if (!classification) continue;
 
         const rawId =
@@ -286,7 +286,7 @@ class IndustryMonitorService {
         });
       }
     } catch (e) {
-      logger?.warn(
+      logger.warn(
         `[IndustryMonitor] Failed to parse RSS from ${feedName}:`,
         (e as Error).message,
       );
@@ -296,8 +296,8 @@ class IndustryMonitorService {
   }
 
   private async fetchSearchIntelligence(): Promise<LiveIndustryChange[]> {
-    const tavilyKey = process?.env.TAVILY_API_KEY;
-    const exaKey = process?.env.EXA_API_KEY;
+    const tavilyKey = process.env.TAVILY_API_KEY;
+    const exaKey = process.env.EXA_API_KEY;
 
     if (!tavilyKey && !exaKey) return [];
 
@@ -306,12 +306,12 @@ class IndustryMonitorService {
     const [tavilyResults, exaResults] = await Promise?.all([
       tavilyKey
         ? Promise?.allSettled(
-            MUSIC_INDUSTRY_QUERIES?.map((q) => this?.tavilySearch(q, tavilyKey)),
+            MUSIC_INDUSTRY_QUERIES?.map((q) => this.tavilySearch(q, tavilyKey)),
           )
         : Promise?.resolve([]),
       exaKey
         ? Promise?.allSettled(
-            MUSIC_INDUSTRY_QUERIES?.map((q) => this?.exaSearch(q, exaKey)),
+            MUSIC_INDUSTRY_QUERIES?.map((q) => this.exaSearch(q, exaKey)),
           )
         : Promise?.resolve([]),
     ]);
@@ -319,7 +319,7 @@ class IndustryMonitorService {
     for (const r of tavilyResults) {
       if (r?.status === "fulfilled") changes?.push(...r?.value);
       else
-        logger?.warn(
+        logger.warn(
           "[IndustryMonitor] Tavily query failed:",
           r?.reason?.message ?? r?.reason,
         );
@@ -328,7 +328,7 @@ class IndustryMonitorService {
     for (const r of exaResults) {
       if (r?.status === "fulfilled") changes?.push(...r?.value);
       else
-        logger?.warn(
+        logger.warn(
           "[IndustryMonitor] Exa query failed:",
           r?.reason?.message ?? r?.reason,
         );
@@ -360,14 +360,14 @@ class IndustryMonitorService {
         }),
       });
 
-      if (!res?.ok) throw new Error(`Tavily HTTP ${res?.status}`);
-      const data = (await res?.json()) as {
+      if (!res.ok) throw new Error(`Tavily HTTP ${res.status}`);
+      const data = (await res.json()) as {
         results?: Array<{ title: string; content: string; url: string }>;
       };
 
       return (data?.results || [])
         .map((r) => {
-          const classification = this?.classifyArticle(r?.title, r?.content);
+          const classification = this.classifyArticle(r?.title, r?.content);
           if (!classification) return null;
           const id = `tavily_${crypto?.createHash("sha256").update(r?.url).digest("hex").slice(0, 16)}`;
           return {
@@ -412,15 +412,15 @@ class IndustryMonitorService {
         }),
       });
 
-      if (!res?.ok) throw new Error(`Exa HTTP ${res?.status}`);
-      const data = (await res?.json()) as {
+      if (!res.ok) throw new Error(`Exa HTTP ${res.status}`);
+      const data = (await res.json()) as {
         results?: Array<{ title: string; text?: string; url: string }>;
       };
 
       return (data?.results || [])
         .map((r) => {
           const text = r?.text || "";
-          const classification = this?.classifyArticle(r?.title, text);
+          const classification = this.classifyArticle(r?.title, text);
           if (!classification) return null;
           const id = `exa_${crypto?.createHash("sha256").update(r?.url).digest("hex").slice(0, 16)}`;
           return {
@@ -966,8 +966,8 @@ class IndustryMonitorService {
       topCompetitorThreat: competitive[0]?.title ?? null,
       seenIds: this.seenIds.size,
       feeds: RSS_FEEDS.length,
-      tavilyEnabled: !!process?.env.TAVILY_API_KEY,
-      exaEnabled: !!process?.env.EXA_API_KEY,
+      tavilyEnabled: !!process.env.TAVILY_API_KEY,
+      exaEnabled: !!process.env.EXA_API_KEY,
     };
   }
 }

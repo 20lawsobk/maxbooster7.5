@@ -55,18 +55,18 @@ export class CompressionProfileRouter {
     opts: StoreOptions = {},
   ): Promise<CompressionResult> {
     const contentClass = classifyContentType(contentType, originalName);
-    const profile = this?.chooseProfile(contentClass, {
+    const profile = this.chooseProfile(contentClass, {
       ...opts,
       sizeHintBytes: data.length,
     });
 
     switch (profile) {
       case "media-lossy":
-        return this?.processMediaLossy(data, contentClass, originalName, opts);
+        return this.processMediaLossy(data, contentClass, originalName, opts);
       case "semantic-archive":
-        return this?.processSemanticArchive(data, contentClass, opts);
+        return this.processSemanticArchive(data, contentClass, opts);
       default:
-        return this?.processLosslessMaxDedup(
+        return this.processLosslessMaxDedup(
           data,
           contentClass,
           originalName,
@@ -88,7 +88,7 @@ export class CompressionProfileRouter {
     let codec = "cdc+zstd";
 
     if (opts?.versionOf) {
-      const base = this?.versionBases.get(opts?.versionOf);
+      const base = this.versionBases.get(opts?.versionOf);
       if (base) {
         try {
           const delta = deltaEngine?.encode(base, data);
@@ -111,10 +111,10 @@ export class CompressionProfileRouter {
     );
 
     if (opts?.versionOf && !isDelta) {
-      this?.versionBases.set(opts?.versionOf, data);
+      this.versionBases.set(opts?.versionOf, data);
     }
 
-    const objectId = this?.hashContent(data);
+    const objectId = this.hashContent(data);
 
     return {
       data: compressed,

@@ -221,7 +221,7 @@ class DSPAnalyticsService {
     _endDate: Date,
   ): Promise<SpotifyArtistAnalytics | null> {
     try {
-      logger?.info(
+      logger.info(
         `Fetching Spotify analytics for user ${userId} via LabelGrid`,
       );
 
@@ -1452,7 +1452,7 @@ class DSPAnalyticsService {
     }[];
     topCities: { name: string; country: string; listeners: number }[];
   }> {
-    const analytics = await this?.getAnalytics(userId, {
+    const analytics = await this.getAnalytics(userId, {
       startDate: new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000),
     });
 
@@ -1494,7 +1494,7 @@ class DSPAnalyticsService {
     });
 
     const totalGender = gender?.male + gender?.female + gender?.other || 1;
-    const countries = Object?.entries(countryMap).map(([code, data]) => ({
+    const countries = Object.entries(countryMap).map(([code, data]) => ({
       code,
       name: data.name,
       listeners: data.listeners,
@@ -1561,7 +1561,7 @@ class DSPAnalyticsService {
 
     await Promise?.all(
       platforms?.map(async (platform) => {
-        const result = await this?.syncPlatformData(
+        const result = await this.syncPlatformData(
           userId,
           platform,
           startDate,

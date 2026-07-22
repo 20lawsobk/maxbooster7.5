@@ -150,7 +150,7 @@ export function useAudioDevices() {
 
         return stream;
       } catch (error: unknown) {
-        logger?.error("Failed to get input stream:", error);
+        logger.error("Failed to get input stream:", error);
         return null;
       }
     },
@@ -175,7 +175,7 @@ export function useAudioDevices() {
 
         return capabilities;
       } catch (error: unknown) {
-        logger?.error("Failed to get device capabilities:", error);
+        logger.error("Failed to get device capabilities:", error);
         return null;
       }
     },
@@ -186,7 +186,7 @@ export function useAudioDevices() {
    * Handle device changes (hot-plugging)
    */
   const handleDeviceChange = useCallback(() => {
-    logger?.info("Audio device configuration changed, re-enumerating...");
+    logger.info("Audio device configuration changed, re-enumerating...");
     enumerateDevices();
   }, [enumerateDevices]);
 

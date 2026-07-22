@@ -26,9 +26,9 @@ const aiAssistSchema = z.object({
 router?.get("/", requireAuth, async (req, res) => {
   try {
     const { limit, offset } = parsePaginationParams(req);
-    const { search, genre, mood, status } = req?.query;
+    const { search, genre, mood, status } = req.query;
 
-    const conditions = [eq(songwritingSessions?.userId, req?.user!.id)];
+    const conditions = [eq(songwritingSessions?.userId, req.user!.id)];
     if (search && typeof search === "string" && search?.trim()) {
       // Clamp search to 200 chars — an unbounded ilike pattern causes the DB
       // to do a full-table regex scan against potentially very long strings.
@@ -57,16 +57,16 @@ router?.get("/", requireAuth, async (req, res) => {
       .orderBy(desc(songwritingSessions?.updatedAt))
       .limit(limit)
       .offset(offset);
-    res?.json(sessions);
+    res.json(sessions);
   } catch (error) {
-    logger?.warn({ err: error }, "[Songwriting] Failed to list sessions:");
-    res?.status(500).json({ error: "Failed to fetch songwriting sessions" });
+    logger.warn({ err: error }, "[Songwriting] Failed to list sessions:");
+    res.status(500).json({ error: "Failed to fetch songwriting sessions" });
   }
 });
 
 router?.get("/stats", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const cacheKey = createCacheKey("stats:songwriting", userId);
 
     const stats = await queryCache?.getOrCompute(
@@ -115,10 +115,10 @@ router?.get("/stats", requireAuth, async (req, res) => {
       CACHE_TTL,
     );
 
-    res?.json(stats);
+    res.json(stats);
   } catch (error) {
-    logger?.warn({ err: error }, "[Songwriting] Failed to fetch stats:");
-    res?.status(500).json({ error: "Failed to fetch songwriting stats" });
+    logger.warn({ err: error }, "[Songwriting] Failed to fetch stats:");
+    res.status(500).json({ error: "Failed to fetch songwriting stats" });
   }
 });
 
@@ -129,23 +129,23 @@ router?.get("/:id", requireAuth, async (req, res) => {
       .from(songwritingSessions)
       .where(
         and(
-          eq(songwritingSessions?.id, req?.params.id),
-          eq(songwritingSessions?.userId, req?.user!.id),
+          eq(songwritingSessions?.id, req.params.id),
+          eq(songwritingSessions?.userId, req.user!.id),
         ),
       )
       .limit(1);
-    if (!item) return res?.status(404).json({ error: "Session not found" });
-    res?.json(item);
+    if (!item) return res.status(404).json({ error: "Session not found" });
+    res.json(item);
   } catch (error) {
-    logger?.warn({ err: error }, "[Songwriting] Failed to fetch session:");
-    res?.status(500).json({ error: "Failed to fetch songwriting session" });
+    logger.warn({ err: error }, "[Songwriting] Failed to fetch session:");
+    res.status(500).json({ error: "Failed to fetch songwriting session" });
   }
 });
 
 router?.post("/", requireAuth, async (req, res) => {
   try {
     const data = insertSongwritingSessionSchema?.parse({
-      ...req?.body,
+      ...req.body,
       userId: req.user!.id,
     });
     const [session] = await db
@@ -153,11 +153,11 @@ router?.post("/", requireAuth, async (req, res) => {
       .values(data)
       .returning();
     await queryCache?.invalidate(
-      createCacheKey("stats:songwriting", req?.user!.id),
+      createCacheKey("stats:songwriting", req.user!.id),
     );
-    res?.status(201).json(session);
+    res.status(201).json(session);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "[Songwriting] Failed to create session:");
+    logger.warn({ err: error }, "[Songwriting] Failed to create session:");
     if (error instanceof Error && error?.name === "ZodError") {
       return res
         .status(400)
@@ -166,14 +166,14 @@ router?.post("/", requireAuth, async (req, res) => {
           details: (error as Record<string, unknown>).flatten(),
         });
     }
-    res?.status(500).json({ error: "Failed to create songwriting session" });
+    res.status(500).json({ error: "Failed to create songwriting session" });
   }
 });
 
 router?.put("/:id", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { id } = req?.params;
+    const userId = req.user!.id;
+    const { id } = req.params;
 
     const existing = await db
       .select()
@@ -187,10 +187,10 @@ router?.put("/:id", requireAuth, async (req, res) => {
       .limit(1);
 
     if (existing?.length === 0) {
-      return res?.status(404).json({ error: "Session not found" });
+      return res.status(404).json({ error: "Session not found" });
     }
 
-    const data = insertSongwritingSessionSchema?.partial().parse(req?.body);
+    const data = insertSongwritingSessionSchema?.partial().parse(req.body);
     const [session] = await db
       .update(songwritingSessions)
       .set({ ...data, updatedAt: new Date() })
@@ -202,9 +202,9 @@ router?.put("/:id", requireAuth, async (req, res) => {
       )
       .returning();
     await queryCache?.invalidate(createCacheKey("stats:songwriting", userId));
-    res?.json(session);
+    res.json(session);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "[Songwriting] Failed to update session:");
+    logger.warn({ err: error }, "[Songwriting] Failed to update session:");
     if (error instanceof Error && error?.name === "ZodError") {
       return res
         .status(400)
@@ -213,14 +213,14 @@ router?.put("/:id", requireAuth, async (req, res) => {
           details: (error as Record<string, unknown>).flatten(),
         });
     }
-    res?.status(500).json({ error: "Failed to update songwriting session" });
+    res.status(500).json({ error: "Failed to update songwriting session" });
   }
 });
 
 router?.delete("/:id", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { id } = req?.params;
+    const userId = req.user!.id;
+    const { id } = req.params;
 
     const existing = await db
       .select()
@@ -234,7 +234,7 @@ router?.delete("/:id", requireAuth, async (req, res) => {
       .limit(1);
 
     if (existing?.length === 0) {
-      return res?.status(404).json({ error: "Session not found" });
+      return res.status(404).json({ error: "Session not found" });
     }
 
     await db
@@ -246,16 +246,16 @@ router?.delete("/:id", requireAuth, async (req, res) => {
         ),
       );
     await queryCache?.invalidate(createCacheKey("stats:songwriting", userId));
-    res?.json({ success: true });
+    res.json({ success: true });
   } catch (error) {
-    logger?.warn({ err: error }, "[Songwriting] Failed to delete session:");
-    res?.status(500).json({ error: "Failed to delete songwriting session" });
+    logger.warn({ err: error }, "[Songwriting] Failed to delete session:");
+    res.status(500).json({ error: "Failed to delete songwriting session" });
   }
 });
 
 router?.get("/rhyme/:word", requireAuth, async (req, res) => {
   try {
-    const word = req?.params.word
+    const word = req.params.word
       .toLowerCase()
       .trim()
       .replace(/[^a-z'-]/g, "");
@@ -361,15 +361,15 @@ router.post("/ai-assist", requireAuth, async (req, res) => {
       suggestions = getDefaultSuggestions(prompt, genreNorm, moodNorm);
     }
 
-    res?.json({
+    res.json({
       suggestions,
       rhymes,
       chordProgression: getChordSuggestion(genreNorm, moodNorm),
       structures: getSongStructures(),
     });
   } catch (error) {
-    logger?.warn({ err: error }, "[Songwriting] AI assist error:");
-    res?.status(500).json({ error: "Failed to generate suggestions" });
+    logger.warn({ err: error }, "[Songwriting] AI assist error:");
+    res.status(500).json({ error: "Failed to generate suggestions" });
   }
 });
 
@@ -1018,7 +1018,7 @@ function seededIndex(seed: string, length: number): number {
   let h = 2166136261;
   for (let i = 0; i < seed?.length; i++) {
     h ^= seed?.charCodeAt(i);
-    h = Math?.imul(h, 16777619);
+    h = Math.imul(h, 16777619);
     h >>>= 0;
   }
   return h % length;

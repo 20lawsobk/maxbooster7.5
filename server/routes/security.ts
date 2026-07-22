@@ -8,11 +8,11 @@ import { logger } from "../logger.js";
 const router = Router();
 
 const requireAdmin: RequestHandler = (req, res, next) => {
-  if (!req?.isAuthenticated()) {
-    return res?.status(401).json({ error: "Authentication required" });
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Authentication required" });
   }
-  if (req?.user?.role !== "admin") {
-    return res?.status(403).json({ error: "Admin access required" });
+  if (req.user?.role !== "admin") {
+    return res.status(403).json({ error: "Admin access required" });
   }
   next();
 };
@@ -97,16 +97,16 @@ router?.get("/metrics", async (_req: Request, res: Response) => {
       );
 
     const failedLoginCount = failedLogins[0]?.count || 0;
-    const totalLogins = Math?.max(totalUsers, activeSessions + failedLoginCount);
+    const totalLogins = Math.max(totalUsers, activeSessions + failedLoginCount);
     const successRate =
       totalLogins > 0
         ? ((totalLogins - failedLoginCount) / totalLogins) * 100
         : 100;
 
-    const uptimeSeconds = Math?.floor((Date?.now() - processStartTime) / 1000);
+    const uptimeSeconds = Math.floor((Date?.now() - processStartTime) / 1000);
     const errorRate =
-      totalThreats > 0 ? (totalThreats / Math?.max(1, totalLogins)) * 100 : 0;
-    const requestsPerMinute = Math?.floor(activeSessions * 2.5);
+      totalThreats > 0 ? (totalThreats / Math.max(1, totalLogins)) * 100 : 0;
+    const requestsPerMinute = Math.floor(activeSessions * 2.5);
 
     let systemStatus: "healthy" | "degraded" | "critical" = "healthy";
     if (errorRate > 10 || blockedAttempts > 100) {
@@ -135,10 +135,10 @@ router?.get("/metrics", async (_req: Request, res: Response) => {
       },
     };
 
-    res?.json(metrics);
+    res.json(metrics);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching security metrics:");
-    res?.status(500).json({ error: "Failed to fetch security metrics" });
+    logger.warn({ err: error }, "Error fetching security metrics:");
+    res.status(500).json({ error: "Failed to fetch security metrics" });
   }
 });
 
@@ -218,10 +218,10 @@ router?.get("/behavioral-alerts", async (_req: Request, res: Response) => {
       };
     });
 
-    res?.json({ alerts });
+    res.json({ alerts });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching behavioral alerts:");
-    res?.status(500).json({ error: "Failed to fetch behavioral alerts" });
+    logger.warn({ err: error }, "Error fetching behavioral alerts:");
+    res.status(500).json({ error: "Failed to fetch behavioral alerts" });
   }
 });
 
@@ -277,7 +277,7 @@ router?.get("/anomaly-detection", async (_req: Request, res: Response) => {
         expectedValue: Math.round(avgHourlyThreats * 100) / 100,
         actualValue: recentThreatCount,
         severity: recentThreatCount > avgHourlyThreats * 5 ? "high" : "medium",
-        description: `Threat activity ${Math?.round(recentThreatCount / Math?.max(1, avgHourlyThreats))}x above average`,
+        description: `Threat activity ${Math.round(recentThreatCount / Math.max(1, avgHourlyThreats))}x above average`,
       });
     }
 
@@ -290,7 +290,7 @@ router?.get("/anomaly-detection", async (_req: Request, res: Response) => {
         actualValue: recentSessionCount,
         severity:
           recentSessionCount > avgHourlySessions * 5 ? "high" : "medium",
-        description: `Session creation ${Math?.round(recentSessionCount / Math?.max(1, avgHourlySessions))}x above average`,
+        description: `Session creation ${Math.round(recentSessionCount / Math.max(1, avgHourlySessions))}x above average`,
       });
     }
 
@@ -317,10 +317,10 @@ router?.get("/anomaly-detection", async (_req: Request, res: Response) => {
       });
     }
 
-    res?.json({ anomalies });
+    res.json({ anomalies });
   } catch (error) {
-    logger?.warn({ err: error }, "Error detecting anomalies:");
-    res?.status(500).json({ error: "Failed to detect anomalies" });
+    logger.warn({ err: error }, "Error detecting anomalies:");
+    res.status(500).json({ error: "Failed to detect anomalies" });
   }
 });
 
@@ -419,16 +419,16 @@ router?.get("/pentest-results", async (_req: Request, res: Response) => {
       recommendations,
     };
 
-    res?.json(response);
+    res.json(response);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching pentest results:");
-    res?.status(500).json({ error: "Failed to fetch pentest results" });
+    logger.warn({ err: error }, "Error fetching pentest results:");
+    res.status(500).json({ error: "Failed to fetch pentest results" });
   }
 });
 
 router?.get("/threats", async (req: Request, res: Response) => {
   try {
-    const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 100);
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
     const sevenDaysAgo = new Date(Date?.now() - 7 * 24 * 60 * 60 * 1000);
 
     const threats = await db
@@ -438,10 +438,10 @@ router?.get("/threats", async (req: Request, res: Response) => {
       .orderBy(desc(securityThreats?.detectedAt))
       .limit(limit);
 
-    res?.json({ threats });
+    res.json({ threats });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching threats:");
-    res?.status(500).json({ error: "Failed to fetch threats" });
+    logger.warn({ err: error }, "Error fetching threats:");
+    res.status(500).json({ error: "Failed to fetch threats" });
   }
 });
 
@@ -449,11 +449,11 @@ const userAlertsRouter = Router();
 
 userAlertsRouter?.get("/alerts", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Authentication required" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Authentication required" });
     }
 
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const sevenDaysAgo = new Date(Date?.now() - 7 * 24 * 60 * 60 * 1000);
 
     const userThreats = await db
@@ -591,7 +591,7 @@ userAlertsRouter?.get("/alerts", async (req: Request, res: Response) => {
       (a) => a?.severity === "critical" && !a?.resolved,
     ).length;
 
-    res?.json({
+    res.json({
       alerts,
       summary: {
         total: alerts.length,
@@ -601,8 +601,8 @@ userAlertsRouter?.get("/alerts", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching user security alerts:");
-    res?.status(500).json({ error: "Failed to fetch security alerts" });
+    logger.warn({ err: error }, "Error fetching user security alerts:");
+    res.status(500).json({ error: "Failed to fetch security alerts" });
   }
 });
 
@@ -610,12 +610,12 @@ userAlertsRouter?.post(
   "/alerts/:alertId/dismiss",
   async (req: Request, res: Response) => {
     try {
-      if (!req?.isAuthenticated()) {
-        return res?.status(401).json({ error: "Authentication required" });
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Authentication required" });
       }
 
-      const userId = req?.user!.id;
-      const { alertId } = req?.params;
+      const userId = req.user!.id;
+      const { alertId } = req.params;
 
       await db
         .update(securityThreats)
@@ -627,10 +627,10 @@ userAlertsRouter?.post(
           ),
         );
 
-      res?.json({ success: true, message: "Alert dismissed" });
+      res.json({ success: true, message: "Alert dismissed" });
     } catch (error) {
-      logger?.warn({ err: error }, "Error dismissing alert:");
-      res?.status(500).json({ error: "Failed to dismiss alert" });
+      logger.warn({ err: error }, "Error dismissing alert:");
+      res.status(500).json({ error: "Failed to dismiss alert" });
     }
   },
 );

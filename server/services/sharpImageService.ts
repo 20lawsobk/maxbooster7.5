@@ -66,7 +66,7 @@ class SharpImageService {
 
   constructor() {
     this.outputDir = path?.join(
-      process?.cwd(),
+      process.cwd(),
       "public",
       "generated-content",
       "images",
@@ -161,10 +161,10 @@ class SharpImageService {
     // Calculate font size based on dimensions and text length
     const maxCharsPerLine =
       platform === "instagram" || platform === "tiktok" ? 20 : 35;
-    const lines = this?.wrapText(text, maxCharsPerLine);
-    const fontSize = Math?.min(
-      Math?.floor(width / 15),
-      Math?.floor(height / (lines?.length * 2 + 2)),
+    const lines = this.wrapText(text, maxCharsPerLine);
+    const fontSize = Math.min(
+      Math.floor(width / 15),
+      Math.floor(height / (lines?.length * 2 + 2)),
     );
     const lineHeight = fontSize * 1.4;
     const totalTextHeight = lines?.length * lineHeight;
@@ -181,7 +181,7 @@ class SharpImageService {
               font-size="${fontSize}px" 
               font-weight="bold" 
               fill="${BRAND_COLORS.white}">
-          <tspan filter="drop-shadow(2px 2px 4px rgba(0,0,0,0.5))">${this?.escapeXml(line)}</tspan>
+          <tspan filter="drop-shadow(2px 2px 4px rgba(0,0,0,0.5))">${this.escapeXml(line)}</tspan>
         </text>
       `;
       })
@@ -204,7 +204,7 @@ class SharpImageService {
     height: number,
   ): Promise<Buffer> {
     const brandText = "B-Lawz Music";
-    const fontSize = Math?.floor(width / 30);
+    const fontSize = Math.floor(width / 30);
     const padding = fontSize;
 
     const svg = `

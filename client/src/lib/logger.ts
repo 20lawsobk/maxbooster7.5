@@ -40,7 +40,7 @@ class Logger {
   }
 
   private shouldLog(level: LogLevel): boolean {
-    if (this?.isDevelopment) {
+    if (this.isDevelopment) {
       return true;
     }
     return level === "error" || level === "warn";
@@ -52,15 +52,15 @@ class Logger {
     data?: unknown,
     context?: string,
   ): void {
-    if (!this?.shouldLog(level)) {
+    if (!this.shouldLog(level)) {
       return;
     }
 
-    const logEntry = this?.formatLog(level, message, data, context);
+    const logEntry = this.formatLog(level, message, data, context);
 
-    if (this?.isDevelopment) {
+    if (this.isDevelopment) {
       const prefix = `[${level?.toUpperCase()}]${context ? ` [${context}]` : ""}`;
-      const style = this?.getConsoleStyle(level);
+      const style = this.getConsoleStyle(level);
 
       if (data !== undefined) {
         console?.log(`%c${prefix} ${message}`, style, data);
@@ -87,19 +87,19 @@ class Logger {
   }
 
   info(message: string, data?: unknown, context?: string): void {
-    this?.log("info", message, data, context);
+    this.log("info", message, data, context);
   }
 
   warn(message: string, data?: unknown, context?: string): void {
-    this?.log("warn", message, data, context);
+    this.log("warn", message, data, context);
   }
 
   error(message: string, data?: unknown, context?: string): void {
-    this?.log("error", message, data, context);
+    this.log("error", message, data, context);
   }
 
   debug(message: string, data?: unknown, context?: string): void {
-    this?.log("debug", message, data, context);
+    this.log("debug", message, data, context);
   }
 }
 

@@ -375,28 +375,28 @@ class PersonalizationService {
     setInterval(
       () => {
         const cutoff = Date?.now() - PersonalizationService.STALE_USER_TTL_MS;
-        for (const [uid, events] of this?.userInteractions.entries()) {
+        for (const [uid, events] of this.userInteractions.entries()) {
           const lastTs =
             events?.length > 0
               ? new Date(events[events?.length - 1].timestamp).getTime()
               : 0;
           if (lastTs < cutoff) {
-            this?.userInteractions.delete(uid);
-            this?.userPatterns.delete(uid);
-            this?.userInsights.delete(uid);
-            this?.userLearningState.delete(uid);
+            this.userInteractions.delete(uid);
+            this.userPatterns.delete(uid);
+            this.userInsights.delete(uid);
+            this.userLearningState.delete(uid);
           }
         }
         // Hard-cap safety net
         const overage =
-          this?.userInteractions.size - PersonalizationService.MAX_USERS;
+          this.userInteractions.size - PersonalizationService.MAX_USERS;
         if (overage > 0) {
           let n = overage;
-          for (const uid of this?.userInteractions.keys()) {
-            this?.userInteractions.delete(uid);
-            this?.userPatterns.delete(uid);
-            this?.userInsights.delete(uid);
-            this?.userLearningState.delete(uid);
+          for (const uid of this.userInteractions.keys()) {
+            this.userInteractions.delete(uid);
+            this.userPatterns.delete(uid);
+            this.userInsights.delete(uid);
+            this.userLearningState.delete(uid);
             if (--n <= 0) break;
           }
         }
@@ -425,13 +425,13 @@ class PersonalizationService {
       goals,
       dashboardWidgets:
         storedPrefs?.dashboardWidgets ||
-        this?.getDefaultWidgetsForType(artistType),
+        this.getDefaultWidgetsForType(artistType),
       timeBasedLayouts:
-        storedPrefs?.timeBasedLayouts || this?.getDefaultTimeLayouts(artistType),
+        storedPrefs?.timeBasedLayouts || this.getDefaultTimeLayouts(artistType),
       featurePreferences: storedPrefs.featurePreferences || {},
       notificationPriorities:
         storedPrefs?.notificationPriorities ||
-        this?.getDefaultNotificationPriorities(),
+        this.getDefaultNotificationPriorities(),
       quickActions: storedPrefs.quickActions || [
         "upload-track",
         "schedule-post",
@@ -463,22 +463,22 @@ class PersonalizationService {
     userId: string,
     event: InteractionEvent,
   ): Promise<void> {
-    const interactions = this?.userInteractions.get(userId) || [];
+    const interactions = this.userInteractions.get(userId) || [];
     interactions?.push(event);
 
     if (interactions?.length > 1000) {
       interactions?.splice(0, interactions?.length - 1000);
     }
 
-    this?.userInteractions.set(userId, interactions);
+    this.userInteractions.set(userId, interactions);
 
     const state =
-      this?.userLearningState.get(userId) || this?.getDefaultLearningState();
+      this.userLearningState.get(userId) || this.getDefaultLearningState();
     state.interactionCount++;
-    this?.userLearningState.set(userId, state);
+    this.userLearningState.set(userId, state);
 
     if (interactions?.length % 50 === 0) {
-      await this?.analyzePatterns(userId);
+      await this.analyzePatterns(userId);
     }
   }
 
@@ -487,7 +487,7 @@ class PersonalizationService {
     events: InteractionEvent[],
   ): Promise<void> {
     for (const event of events) {
-      await this?.trackInteraction(userId, event);
+      await this.trackInteraction(userId, event);
     }
   }
 
@@ -496,7 +496,7 @@ class PersonalizationService {
     widgetId: string,
     duration: number,
   ): Promise<void> {
-    const prefs = await this?.getPreferences(userId);
+    const prefs = await this.getPreferences(userId);
     const widgets = prefs?.dashboardWidgets;
 
     const widgetIndex = widgets?.findIndex((w) => w?.id === widgetId);
@@ -509,12 +509,12 @@ class PersonalizationService {
       widgets[widgetIndex].avgViewDuration =
         (currentAvg * (count - 1) + duration) / count;
 
-      await this?.updatePreferences(userId, { dashboardWidgets: widgets });
+      await this.updatePreferences(userId, { dashboardWidgets: widgets });
     }
   }
 
   async analyzePatterns(userId: string): Promise<InteractionPattern[]> {
-    const interactions = this?.userInteractions.get(userId) || [];
+    const interactions = this.userInteractions.get(userId) || [];
     if (interactions?.length < 10) return [];
 
     const patterns: InteractionPattern[] = [];
@@ -532,7 +532,7 @@ class PersonalizationService {
       hourCounts[hour] = (hourCounts[hour] || 0) + 1;
     }
 
-    const topTargets = Object?.entries(targetCounts)
+    const topTargets = Object.entries(targetCounts)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5);
 
@@ -549,7 +549,7 @@ class PersonalizationService {
       }
     }
 
-    const topPaths = Object?.entries(pathCounts)
+    const topPaths = Object.entries(pathCounts)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3);
 
@@ -566,7 +566,7 @@ class PersonalizationService {
       }
     }
 
-    const peakHour = Object?.entries(hourCounts).sort((a, b) => b[1] - a[1])[0];
+    const peakHour = Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0];
     if (peakHour) {
       const hourNum = parseInt(peakHour[0]);
       const timeLabel =
@@ -587,18 +587,18 @@ class PersonalizationService {
       });
     }
 
-    this?.userPatterns.set(userId, patterns);
+    this.userPatterns.set(userId, patterns);
 
     const state =
-      this?.userLearningState.get(userId) || this?.getDefaultLearningState();
+      this.userLearningState.get(userId) || this.getDefaultLearningState();
     state.patternCount = patterns?.length;
     state.lastAnalysis = new Date();
     state.confidenceLevel =
       patterns?.reduce((acc, p) => acc + p?.confidence, 0) /
-      Math?.max(patterns?.length, 1);
-    this?.userLearningState.set(userId, state);
+      Math.max(patterns?.length, 1);
+    this.userLearningState.set(userId, state);
 
-    await this?.generateInsights(userId, patterns);
+    await this.generateInsights(userId, patterns);
 
     return patterns;
   }
@@ -657,63 +657,63 @@ class PersonalizationService {
       }
     }
 
-    const existingInsights = this?.userInsights.get(userId) || [];
+    const existingInsights = this.userInsights.get(userId) || [];
     const newInsights = [...existingInsights, ...insights].slice(-20);
-    this?.userInsights.set(userId, newInsights);
+    this.userInsights.set(userId, newInsights);
   }
 
   async getLearningState(userId: string): Promise<LearningState> {
-    return this?.userLearningState.get(userId) || this?.getDefaultLearningState();
+    return this.userLearningState.get(userId) || this.getDefaultLearningState();
   }
 
   async getLearningInsights(userId: string): Promise<LearningInsight[]> {
-    return this?.userInsights.get(userId) || [];
+    return this.userInsights.get(userId) || [];
   }
 
   async getInteractionPatterns(userId: string): Promise<InteractionPattern[]> {
-    return this?.userPatterns.get(userId) || [];
+    return this.userPatterns.get(userId) || [];
   }
 
   async applyInsight(userId: string, insightId: string): Promise<void> {
-    const insights = this?.userInsights.get(userId) || [];
+    const insights = this.userInsights.get(userId) || [];
     const insight = insights?.find((i) => i?.id === insightId);
 
     if (insight) {
       insight.applied = true;
-      this?.userInsights.set(userId, insights);
+      this.userInsights.set(userId, insights);
 
       const state =
-        this?.userLearningState.get(userId) || this?.getDefaultLearningState();
+        this.userLearningState.get(userId) || this.getDefaultLearningState();
       state.suggestionsApplied++;
-      this?.userLearningState.set(userId, state);
+      this.userLearningState.set(userId, state);
     }
   }
 
   async dismissInsight(userId: string, insightId: string): Promise<void> {
-    const insights = this?.userInsights.get(userId) || [];
+    const insights = this.userInsights.get(userId) || [];
     const insightIndex = insights?.findIndex((i) => i?.id === insightId);
 
     if (insightIndex !== -1) {
       insights[insightIndex].dismissed = true;
-      this?.userInsights.set(userId, insights);
+      this.userInsights.set(userId, insights);
 
       const state =
-        this?.userLearningState.get(userId) || this?.getDefaultLearningState();
+        this.userLearningState.get(userId) || this.getDefaultLearningState();
       state.suggestionsDeclined++;
-      this?.userLearningState.set(userId, state);
+      this.userLearningState.set(userId, state);
     }
   }
 
   async resetLearning(userId: string): Promise<void> {
-    this?.userInteractions.delete(userId);
-    this?.userPatterns.delete(userId);
-    this?.userInsights.delete(userId);
-    this?.userLearningState.set(userId, this?.getDefaultLearningState());
+    this.userInteractions.delete(userId);
+    this.userPatterns.delete(userId);
+    this.userInsights.delete(userId);
+    this.userLearningState.set(userId, this.getDefaultLearningState());
   }
 
   async getFeatureUsage(userId: string): Promise<FeatureUsageData[]> {
-    const prefs = await this?.getPreferences(userId);
-    const interactions = this?.userInteractions.get(userId) || [];
+    const prefs = await this.getPreferences(userId);
+    const interactions = this.userInteractions.get(userId) || [];
 
     return featureDefinitions?.map((feature) => {
       const featureInteractions = interactions?.filter(
@@ -753,7 +753,7 @@ class PersonalizationService {
         usageCount,
         lastUsed,
         avgSessionTime: 0,
-        completionRate: usageCount > 0 ? Math?.min(usageCount / 10, 1) : 0,
+        completionRate: usageCount > 0 ? Math.min(usageCount / 10, 1) : 0,
         trendDirection,
         isVisible: !prefs?.hiddenFeatures.includes(feature?.featureId),
       };
@@ -765,7 +765,7 @@ class PersonalizationService {
     featureId: string,
     updates: { isVisible?: boolean; priority?: number },
   ): Promise<void> {
-    const prefs = await this?.getPreferences(userId);
+    const prefs = await this.getPreferences(userId);
 
     if (updates?.isVisible !== undefined) {
       if (updates?.isVisible) {
@@ -777,7 +777,7 @@ class PersonalizationService {
       }
     }
 
-    await this?.updatePreferences(userId, {
+    await this.updatePreferences(userId, {
       hiddenFeatures: prefs.hiddenFeatures,
       featurePreferences: {
         ...prefs?.featurePreferences,
@@ -787,8 +787,8 @@ class PersonalizationService {
   }
 
   async getRecommendations(userId: string): Promise<Recommendation[]> {
-    const prefs = await this?.getPreferences(userId);
-    this?.userPatterns.get(userId) || [];
+    const prefs = await this.getPreferences(userId);
+    this.userPatterns.get(userId) || [];
 
     const recommendations: Recommendation[] = [];
 
@@ -895,15 +895,15 @@ class PersonalizationService {
     userId: string,
     artistType: ArtistType,
   ): Promise<void> {
-    const widgets = this?.getDefaultWidgetsForType(artistType);
-    await this?.updatePreferences(userId, {
+    const widgets = this.getDefaultWidgetsForType(artistType);
+    await this.updatePreferences(userId, {
       artistType,
       dashboardWidgets: widgets,
     });
   }
 
   async applyGenreDefaults(userId: string, genre: string): Promise<void> {
-    await this?.updatePreferences(userId, {
+    await this.updatePreferences(userId, {
       primaryGenres: [genre],
     });
   }
@@ -919,7 +919,7 @@ class PersonalizationService {
       },
     });
 
-    await this?.resetLearning(userId);
+    await this.resetLearning(userId);
   }
 
   async updateWidget(
@@ -927,13 +927,13 @@ class PersonalizationService {
     widgetId: string,
     updates: Partial<DashboardWidget>,
   ): Promise<void> {
-    const prefs = await this?.getPreferences(userId);
+    const prefs = await this.getPreferences(userId);
     const widgets = prefs?.dashboardWidgets;
 
     const widgetIndex = widgets?.findIndex((w) => w?.id === widgetId);
     if (widgetIndex !== -1) {
       widgets[widgetIndex] = { ...widgets[widgetIndex], ...updates };
-      await this?.updatePreferences(userId, { dashboardWidgets: widgets });
+      await this.updatePreferences(userId, { dashboardWidgets: widgets });
     }
   }
 
@@ -944,7 +944,7 @@ class PersonalizationService {
     genres: string[];
     enabledFeatures: string[];
   }> {
-    const prefs = await this?.getPreferences(userId);
+    const prefs = await this.getPreferences(userId);
     return {
       artistType: prefs.artistType,
       careerStage: prefs.careerStage,
@@ -971,7 +971,7 @@ class PersonalizationService {
       featurePrefs[f] = true;
     });
 
-    await this?.updatePreferences(userId, {
+    await this.updatePreferences(userId, {
       artistType: defaults.artistType,
       careerStage: defaults.careerStage,
       goals: defaults.primaryGoals,
@@ -984,7 +984,7 @@ class PersonalizationService {
     userId: string,
     layout: { name: string; widgets: DashboardWidget[] },
   ): Promise<void> {
-    await this?.updatePreferences(userId, {
+    await this.updatePreferences(userId, {
       dashboardWidgets: layout.widgets,
     });
   }
@@ -992,7 +992,7 @@ class PersonalizationService {
   async getLayoutPresets(
     userId: string,
   ): Promise<{ id: string; name: string; widgetIds: string[] }[]> {
-    const userData = this?.userPreferencesCache.get(userId);
+    const userData = this.userPreferencesCache.get(userId);
     const presets = (userData as Record<string, unknown>)?.layoutPresets || [];
     return presets;
   }
@@ -1007,11 +1007,11 @@ class PersonalizationService {
       widgetIds: preset.widgetIds,
     };
 
-    const userData = this?.userPreferencesCache.get(userId) || {};
+    const userData = this.userPreferencesCache.get(userId) || {};
     const presets = (userData as Record<string, unknown>).layoutPresets || [];
     presets?.push(newPreset);
     (userData as Record<string, unknown>).layoutPresets = presets;
-    this?.userPreferencesCache.set(
+    this.userPreferencesCache.set(
       userId,
       userData as PersonalizationPreferences,
     );
@@ -1024,8 +1024,8 @@ class PersonalizationService {
     suggestionId: string,
     platform?: string,
   ): Promise<void> {
-    await this?.getPreferences(userId);
-    await this?.trackInteraction(userId, {
+    await this.getPreferences(userId);
+    await this.trackInteraction(userId, {
       type: "complete",
       target: "schedule-suggestion",
       context: { suggestionId, platform },
@@ -1034,7 +1034,7 @@ class PersonalizationService {
   }
 
   async getNextAction(userId: string): Promise<Recommendation | null> {
-    const recommendations = await this?.getRecommendations(userId);
+    const recommendations = await this.getRecommendations(userId);
     return recommendations?.length > 0 ? recommendations[0] : null;
   }
 
@@ -1053,7 +1053,7 @@ class PersonalizationService {
   }
 
   private getDefaultTimeLayouts(artistType: ArtistType): TimeOfDayLayout {
-    const baseWidgets = this?.getDefaultWidgetsForType(artistType);
+    const baseWidgets = this.getDefaultWidgetsForType(artistType);
 
     return {
       morning: baseWidgets.slice(0, 6),

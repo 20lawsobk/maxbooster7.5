@@ -17,7 +17,7 @@ export class EmailTrackingService {
     try {
       await db?.insert(emailMessages).values(data).onConflictDoNothing();
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Failed to record sent email:");
+      logger.warn({ err: error }, "Failed to record sent email:");
     }
   }
 
@@ -28,7 +28,7 @@ export class EmailTrackingService {
     try {
       await db?.insert(emailEvents).values(data).onConflictDoNothing();
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Failed to record email event:");
+      logger.warn({ err: error }, "Failed to record email event:");
     }
   }
 
@@ -89,7 +89,7 @@ export class EmailTrackingService {
 
       return stats;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Failed to get email stats:");
+      logger.warn({ err: error }, "Failed to get email stats:");
       return {
         sent: 0,
         delivered: 0,
@@ -128,7 +128,7 @@ export class EmailTrackingService {
 
       return bounces;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Failed to get recent bounces:");
+      logger.warn({ err: error }, "Failed to get recent bounces:");
       return [];
     }
   }
@@ -142,9 +142,9 @@ export class EmailTrackingService {
     signature: string,
     timestamp: string,
   ): boolean {
-    const publicKey = process?.env.SENDGRID_WEBHOOK_PUBLIC_KEY;
+    const publicKey = process.env.SENDGRID_WEBHOOK_PUBLIC_KEY;
     if (!publicKey) {
-      logger?.warn("SendGrid webhook public key not configured");
+      logger.warn("SendGrid webhook public key not configured");
       return false;
     }
 
@@ -165,7 +165,7 @@ export class EmailTrackingService {
 
       return isValid;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Ed25519 signature verification failed:");
+      logger.warn({ err: error }, "Ed25519 signature verification failed:");
       return false;
     }
   }

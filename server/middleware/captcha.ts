@@ -13,11 +13,11 @@ interface CaptchaStatus {
 }
 
 function getClientIP(req: Request): string {
-  const forwarded = req?.headers["x-forwarded-for"];
+  const forwarded = req.headers["x-forwarded-for"];
   if (typeof forwarded === "string") {
     return forwarded?.split(",")[0].trim();
   }
-  return req?.ip || req?.socket.remoteAddress || "unknown";
+  return req.ip || req.socket.remoteAddress || "unknown";
 }
 
 export async function getFailedAttempts(ip: string): Promise<number> {
@@ -29,7 +29,7 @@ export async function getFailedAttempts(ip: string): Promise<number> {
     const count = await redis?.get(key);
     return count ? parseInt(count, 10) : 0;
   } catch (error) {
-    logger?.warn({ err: error }, "Error getting failed attempts:");
+    logger.warn({ err: error }, "Error getting failed attempts:");
     return 0;
   }
 }
@@ -44,12 +44,12 @@ export async function incrementFailedAttempts(ip: string): Promise<number> {
 
     const ttl = await redis?.ttl(key);
     if (ttl < 0) {
-      await redis?.expire(key, Math?.ceil(CAPTCHA_WINDOW_MS / 1000));
+      await redis?.expire(key, Math.ceil(CAPTCHA_WINDOW_MS / 1000));
     }
 
     return newCount;
   } catch (error) {
-    logger?.warn({ err: error }, "Error incrementing failed attempts:");
+    logger.warn({ err: error }, "Error incrementing failed attempts:");
     return 0;
   }
 }
@@ -63,7 +63,7 @@ export async function resetFailedAttempts(ip: string): Promise<boolean> {
     await redis?.del(key);
     return true;
   } catch (error) {
-    logger?.warn({ err: error }, "Error resetting failed attempts:");
+    logger.warn({ err: error }, "Error resetting failed attempts:");
     return false;
   }
 }
@@ -84,7 +84,7 @@ async function verifyCaptchaToken(
   secret: string,
 ): Promise<boolean> {
   if (!secret || !token) {
-    logger?.warn("Captcha verification skipped - no secret configured");
+    logger.warn("Captcha verification skipped - no secret configured");
     return true;
   }
 
@@ -113,13 +113,13 @@ async function verifyCaptchaToken(
       return true;
     }
 
-    logger?.warn("Captcha verification failed:", {
+    logger.warn("Captcha verification failed:", {
       success: data.success,
       score: data.score,
     });
     return false;
   } catch (error) {
-    logger?.warn({ err: error }, "Captcha verification error:");
+    logger.warn({ err: error }, "Captcha verification error:");
     return false;
   }
 }
@@ -129,7 +129,7 @@ async function verifyHCaptchaToken(
   secret: string,
 ): Promise<boolean> {
   if (!secret || !token) {
-    logger?.warn("hCaptcha verification skipped - no secret configured");
+    logger.warn("hCaptcha verification skipped - no secret configured");
     return true;
   }
 
@@ -149,7 +149,7 @@ async function verifyHCaptchaToken(
     const data = (await response?.json()) as { success: boolean };
     return data?.success;
   } catch (error) {
-    logger?.warn({ err: error }, "hCaptcha verification error:");
+    logger.warn({ err: error }, "hCaptcha verification error:");
     return false;
   }
 }
@@ -167,10 +167,10 @@ export const captchaMiddleware: RequestHandler = async (
     return;
   }
 
-  const captchaToken = req?.body?.captchaToken || req?.headers["x-captcha-token"];
+  const captchaToken = req.body?.captchaToken || req.headers["x-captcha-token"];
 
   if (!captchaToken) {
-    res?.status(403).json({
+    res.status(403).json({
       error: "Captcha Required",
       message:
         "Too many failed attempts. Please complete the captcha verification.",
@@ -181,8 +181,8 @@ export const captchaMiddleware: RequestHandler = async (
     return;
   }
 
-  const recaptchaSecret = process?.env.RECAPTCHA_SECRET_KEY;
-  const hcaptchaSecret = process?.env.HCAPTCHA_SECRET_KEY;
+  const recaptchaSecret = process.env.RECAPTCHA_SECRET_KEY;
+  const hcaptchaSecret = process.env.HCAPTCHA_SECRET_KEY;
 
   let isValid = false;
 
@@ -191,12 +191,12 @@ export const captchaMiddleware: RequestHandler = async (
   } else if (hcaptchaSecret) {
     isValid = await verifyHCaptchaToken(captchaToken as string, hcaptchaSecret);
   } else {
-    logger?.warn("No captcha secret configured - allowing request");
+    logger.warn("No captcha secret configured - allowing request");
     isValid = true;
   }
 
   if (!isValid) {
-    res?.status(403).json({
+    res.status(403).json({
       error: "Captcha Verification Failed",
       message: "The captcha verification failed. Please try again.",
       captchaRequired: true,

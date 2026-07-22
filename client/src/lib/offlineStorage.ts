@@ -249,7 +249,7 @@ export async function fetchWithCache<T = unknown>(
           });
         })
         .catch((err: unknown) =>
-          logger?.error("Offline cache fetch failed:", err),
+          logger.error("Offline cache fetch failed:", err),
         );
     }
     return cached;

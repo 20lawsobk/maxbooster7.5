@@ -33,7 +33,7 @@ import { validateDomain } from "../modules/domains/dnsValidators.js";
 import { env } from "../config/env.js";
 
 const dnsPromises = dns?.promises;
-const PLATFORM_IP = process?.env.DNS_SERVER_IP || "34.111.179.208";
+const PLATFORM_IP = process.env.DNS_SERVER_IP || "34.111.179.208";
 
 const upload = createHardenedUpload({
   maxFileSize: 200 * 1024 * 1024, // 200MB
@@ -57,9 +57,9 @@ function getErrorMessage(error: unknown): string {
 router?.get("/templates", async (_req, res) => {
   try {
     const templates = await storefrontService?.getTemplates();
-    res?.json(templates);
+    res.json(templates);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching templates:");
+    logger.warn({ err: error }, "Error fetching templates:");
     res
       .status(500)
       .json({ error: getErrorMessage(error) || "Failed to fetch templates" });
@@ -133,15 +133,15 @@ router.get("/suggest-url", async (req, res) => {
     const suggestedDomain = `${slug}.${baseDomain}`;
     const publicUrl = `https://${suggestedDomain}`;
 
-    res?.json({
+    res.json({
       slug,
       suggestedDomain,
       publicUrl,
       domainAvailable: true,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error suggesting URL:");
-    res?.status(500).json({ error: "Failed to suggest URL" });
+    logger.warn({ err: error }, "Error suggesting URL:");
+    res.status(500).json({ error: "Failed to suggest URL" });
   }
 });
 
@@ -151,9 +151,9 @@ router.get("/suggest-url", async (req, res) => {
  */
 router?.get("/check-domain", async (req, res) => {
   try {
-    const raw = ((req?.query.domain as string) || "").toLowerCase().trim();
+    const raw = ((req.query.domain as string) || "").toLowerCase().trim();
     if (!raw) {
-      return res?.status(400).json({ error: "domain query param required" });
+      return res.status(400).json({ error: "domain query param required" });
     }
 
     const result = validateDomain(raw);
@@ -169,14 +169,14 @@ router?.get("/check-domain", async (req, res) => {
       .where(eq(storefrontDomains?.domain, result?.normalized))
       .limit(1);
 
-    res?.json({
+    res.json({
       available: existing.length === 0,
       valid: true,
       domain: result.normalized,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error checking custom domain:");
-    res?.status(500).json({ error: "Failed to check domain" });
+    logger.warn({ err: error }, "Error checking custom domain:");
+    res.status(500).json({ error: "Failed to check domain" });
   }
 });
 
@@ -187,21 +187,21 @@ router?.get("/check-domain", async (req, res) => {
  */
 router?.get("/preview/:slug", async (req, res) => {
   try {
-    if (!req?.isAuthenticated() || !req?.user) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated() || !req.user) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
-    const { slug } = req?.params;
+    const { slug } = req.params;
     const storefront = await storefrontService?.getStorefrontBySlug(slug);
-    if (storefront?.userId !== req?.user.id) {
-      return res?.status(403).json({ error: "Forbidden" });
+    if (storefront?.userId !== req.user.id) {
+      return res.status(403).json({ error: "Forbidden" });
     }
-    res?.json(storefront);
+    res.json(storefront);
   } catch (error: unknown) {
     const errMsg = getErrorMessage(error);
     if (errMsg === "Storefront not found") {
-      return res?.status(404).json({ error: errMsg });
+      return res.status(404).json({ error: errMsg });
     }
-    logger?.warn({ err: error }, "Error fetching storefront preview:");
+    logger.warn({ err: error }, "Error fetching storefront preview:");
     res
       .status(500)
       .json({ error: errMsg || "Failed to fetch storefront preview" });
@@ -215,23 +215,23 @@ router?.get("/preview/:slug", async (req, res) => {
  */
 router?.get("/generate-slug", async (req, res) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const name = typeof req?.query.name === "string" ? req?.query.name : "";
+    const name = typeof req.query.name === "string" ? req.query.name : "";
 
     if (!name?.trim()) {
-      return res?.status(400).json({ error: "Name is required" });
+      return res.status(400).json({ error: "Name is required" });
     }
 
     const slug = await storefrontService?.generateSlug(name);
-    res?.json({ slug });
+    res.json({ slug });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error generating slug:");
+    logger.warn({ err: error }, "Error generating slug:");
     const errorMessage =
       error instanceof Error ? error?.message : "Failed to generate slug";
-    res?.status(500).json({ error: errorMessage });
+    res.status(500).json({ error: errorMessage });
   }
 });
 
@@ -241,19 +241,19 @@ router?.get("/generate-slug", async (req, res) => {
  */
 router?.get("/:slug", async (req, res) => {
   try {
-    const { slug } = req?.params;
+    const { slug } = req.params;
 
     const storefront = await storefrontService?.getStorefrontBySlug(slug);
-    res?.json(storefront);
+    res.json(storefront);
   } catch (error: unknown) {
     const errMsg = getErrorMessage(error);
 
     if (errMsg === "Storefront not found") {
-      return res?.status(404).json({ error: errMsg });
+      return res.status(404).json({ error: errMsg });
     }
 
-    logger?.warn({ err: error }, "Error fetching storefront:");
-    res?.status(500).json({ error: errMsg || "Failed to fetch storefront" });
+    logger.warn({ err: error }, "Error fetching storefront:");
+    res.status(500).json({ error: errMsg || "Failed to fetch storefront" });
   }
 });
 
@@ -263,17 +263,17 @@ router?.get("/:slug", async (req, res) => {
  */
 router?.post("/create", async (req, res) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     const validatedData = insertStorefrontSchema?.parse({
-      ...req?.body,
+      ...req.body,
       userId: req.user!.id,
     });
 
     if (!storefrontService?.validateSlug(validatedData?.slug)) {
-      return res?.status(400).json({
+      return res.status(400).json({
         error:
           "Invalid slug format. Use lowercase letters, numbers, and hyphens only (3-50 characters)",
       });
@@ -287,17 +287,17 @@ router?.post("/create", async (req, res) => {
       customization: validatedData.customization || {},
     });
 
-    res?.status(201).json(storefront);
+    res.status(201).json(storefront);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error creating storefront:");
+    logger.warn({ err: error }, "Error creating storefront:");
     const errMsg = getErrorMessage(error);
 
     if (errMsg?.includes("Slug already taken")) {
-      return res?.status(409).json({ error: errMsg });
+      return res.status(409).json({ error: errMsg });
     }
 
     if (errMsg?.includes("Maximum of 5 storefronts")) {
-      return res?.status(400).json({ error: errMsg });
+      return res.status(400).json({ error: errMsg });
     }
 
     if (error instanceof z.ZodError) {
@@ -306,7 +306,7 @@ router?.post("/create", async (req, res) => {
         .json({ error: "Validation error", details: error.issues });
     }
 
-    res?.status(500).json({ error: errMsg || "Failed to create storefront" });
+    res.status(500).json({ error: errMsg || "Failed to create storefront" });
   }
 });
 
@@ -316,18 +316,18 @@ router?.post("/create", async (req, res) => {
  */
 router?.put("/:id/customize", async (req, res) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { id } = req?.params;
-    const validatedData = updateStorefrontSchema?.parse(req?.body);
+    const { id } = req.params;
+    const validatedData = updateStorefrontSchema?.parse(req.body);
 
     if (
       validatedData?.slug &&
       !storefrontService?.validateSlug(validatedData?.slug)
     ) {
-      return res?.status(400).json({
+      return res.status(400).json({
         error:
           "Invalid slug format. Use lowercase letters, numbers, and hyphens only (3-50 characters)",
       });
@@ -335,24 +335,24 @@ router?.put("/:id/customize", async (req, res) => {
 
     const updatedStorefront = await storefrontService?.updateStorefront(
       id,
-      req?.user!.id,
+      req.user!.id,
       validatedData,
     );
 
-    res?.json(updatedStorefront);
+    res.json(updatedStorefront);
   } catch (error: unknown) {
     const errMsg = getErrorMessage(error);
 
     if (errMsg === "Storefront not found") {
-      return res?.status(404).json({ error: errMsg });
+      return res.status(404).json({ error: errMsg });
     }
 
     if (errMsg === "Unauthorized") {
-      return res?.status(403).json({ error: errMsg });
+      return res.status(403).json({ error: errMsg });
     }
 
     if (errMsg?.includes("Slug already taken")) {
-      return res?.status(409).json({ error: errMsg });
+      return res.status(409).json({ error: errMsg });
     }
 
     if (error instanceof z.ZodError) {
@@ -361,8 +361,8 @@ router?.put("/:id/customize", async (req, res) => {
         .json({ error: "Validation error", details: error.issues });
     }
 
-    logger?.warn({ err: error }, "Error updating storefront:");
-    res?.status(500).json({ error: errMsg || "Failed to update storefront" });
+    logger.warn({ err: error }, "Error updating storefront:");
+    res.status(500).json({ error: errMsg || "Failed to update storefront" });
   }
 });
 
@@ -372,15 +372,15 @@ router?.put("/:id/customize", async (req, res) => {
  */
 router?.patch("/:id/publish", async (req, res) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { id } = req?.params;
-    const { isPublished } = req?.body;
+    const { id } = req.params;
+    const { isPublished } = req.body;
 
     if (typeof isPublished !== "boolean") {
-      return res?.status(400).json({ error: "isPublished must be a boolean" });
+      return res.status(400).json({ error: "isPublished must be a boolean" });
     }
 
     const storefront = await db?.query.storefronts?.findFirst({
@@ -388,11 +388,11 @@ router?.patch("/:id/publish", async (req, res) => {
     });
 
     if (!storefront) {
-      return res?.status(404).json({ error: "Storefront not found" });
+      return res.status(404).json({ error: "Storefront not found" });
     }
 
-    if (storefront?.userId !== req?.user!.id) {
-      return res?.status(403).json({ error: "Unauthorized" });
+    if (storefront?.userId !== req.user!.id) {
+      return res.status(403).json({ error: "Unauthorized" });
     }
 
     const [updated] = await db
@@ -404,13 +404,13 @@ router?.patch("/:id/publish", async (req, res) => {
       .where(eq(storefronts?.id, id))
       .returning();
 
-    logger?.info(
-      `Storefront ${id} ${isPublished ? "published" : "unpublished"} by user ${req?.user!.id}`,
+    logger.info(
+      `Storefront ${id} ${isPublished ? "published" : "unpublished"} by user ${req.user!.id}`,
     );
 
-    res?.json(updated);
+    res.json(updated);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error toggling storefront publish status:");
+    logger.warn({ err: error }, "Error toggling storefront publish status:");
     res
       .status(500)
       .json({
@@ -425,28 +425,28 @@ router?.patch("/:id/publish", async (req, res) => {
  */
 router?.delete("/:id", async (req, res) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { id } = req?.params;
+    const { id } = req.params;
 
-    await storefrontService?.deleteStorefront(id, req?.user!.id);
+    await storefrontService?.deleteStorefront(id, req.user!.id);
 
-    res?.json({ success: true, message: "Storefront deleted successfully" });
+    res.json({ success: true, message: "Storefront deleted successfully" });
   } catch (error: unknown) {
     const errMsg = getErrorMessage(error);
 
     if (errMsg === "Storefront not found") {
-      return res?.status(404).json({ error: errMsg });
+      return res.status(404).json({ error: errMsg });
     }
 
     if (errMsg === "Unauthorized") {
-      return res?.status(403).json({ error: errMsg });
+      return res.status(403).json({ error: errMsg });
     }
 
-    logger?.warn({ err: error }, "Error deleting storefront:");
-    res?.status(500).json({ error: errMsg || "Failed to delete storefront" });
+    logger.warn({ err: error }, "Error deleting storefront:");
+    res.status(500).json({ error: errMsg || "Failed to delete storefront" });
   }
 });
 
@@ -456,20 +456,20 @@ router?.delete("/:id", async (req, res) => {
  */
 router?.get("/:storefrontId/membership-tiers", async (req, res) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { storefrontId } = req?.params;
+    const { storefrontId } = req.params;
     const tiers = await storefrontService?.getMembershipTiers(storefrontId);
-    res?.json(tiers);
+    res.json(tiers);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching membership tiers:");
+    logger.warn({ err: error }, "Error fetching membership tiers:");
     const errorMessage =
       error instanceof Error
         ? error?.message
         : "Failed to fetch membership tiers";
-    res?.status(500).json({ error: errorMessage });
+    res.status(500).json({ error: errorMessage });
   }
 });
 
@@ -479,14 +479,14 @@ router?.get("/:storefrontId/membership-tiers", async (req, res) => {
  */
 router?.post("/:storefrontId/membership-tiers", async (req, res) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { storefrontId } = req?.params;
+    const { storefrontId } = req.params;
 
     const validatedData = insertMembershipTierSchema?.parse({
-      ...req?.body,
+      ...req.body,
       storefrontId,
     });
 
@@ -501,12 +501,12 @@ router?.post("/:storefrontId/membership-tiers", async (req, res) => {
       maxSubscribers: validatedData.maxSubscribers || undefined,
     });
 
-    res?.status(201).json(tier);
+    res.status(201).json(tier);
   } catch (error: unknown) {
     const errMsg = getErrorMessage(error);
 
     if (errMsg === "Storefront not found") {
-      return res?.status(404).json({ error: errMsg });
+      return res.status(404).json({ error: errMsg });
     }
 
     if (error instanceof z.ZodError) {
@@ -515,7 +515,7 @@ router?.post("/:storefrontId/membership-tiers", async (req, res) => {
         .json({ error: "Validation error", details: error.issues });
     }
 
-    logger?.warn({ err: error }, "Error creating membership tier:");
+    logger.warn({ err: error }, "Error creating membership tier:");
     res
       .status(500)
       .json({ error: errMsg || "Failed to create membership tier" });
@@ -528,29 +528,29 @@ router?.post("/:storefrontId/membership-tiers", async (req, res) => {
  */
 router?.put("/membership-tiers/:tierId", async (req, res) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { tierId } = req?.params;
-    const validatedData = updateMembershipTierSchema?.parse(req?.body);
+    const { tierId } = req.params;
+    const validatedData = updateMembershipTierSchema?.parse(req.body);
 
     const tier = await storefrontService?.updateMembershipTier(
       tierId,
-      req?.user!.id,
+      req.user!.id,
       validatedData,
     );
 
-    res?.json(tier);
+    res.json(tier);
   } catch (error: unknown) {
     const errMsg = getErrorMessage(error);
 
     if (errMsg === "Membership tier not found") {
-      return res?.status(404).json({ error: errMsg });
+      return res.status(404).json({ error: errMsg });
     }
 
     if (errMsg === "Unauthorized") {
-      return res?.status(403).json({ error: errMsg });
+      return res.status(403).json({ error: errMsg });
     }
 
     if (error instanceof z.ZodError) {
@@ -559,7 +559,7 @@ router?.put("/membership-tiers/:tierId", async (req, res) => {
         .json({ error: "Validation error", details: error.issues });
     }
 
-    logger?.warn({ err: error }, "Error updating membership tier:");
+    logger.warn({ err: error }, "Error updating membership tier:");
     res
       .status(500)
       .json({ error: errMsg || "Failed to update membership tier" });
@@ -572,15 +572,15 @@ router?.put("/membership-tiers/:tierId", async (req, res) => {
  */
 router?.delete("/membership-tiers/:tierId", async (req, res) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { tierId } = req?.params;
+    const { tierId } = req.params;
 
-    await storefrontService?.deleteMembershipTier(tierId, req?.user!.id);
+    await storefrontService?.deleteMembershipTier(tierId, req.user!.id);
 
-    res?.json({
+    res.json({
       success: true,
       message: "Membership tier deleted successfully",
     });
@@ -588,18 +588,18 @@ router?.delete("/membership-tiers/:tierId", async (req, res) => {
     const errMsg = getErrorMessage(error);
 
     if (errMsg === "Membership tier not found") {
-      return res?.status(404).json({ error: errMsg });
+      return res.status(404).json({ error: errMsg });
     }
 
     if (errMsg === "Unauthorized") {
-      return res?.status(403).json({ error: errMsg });
+      return res.status(403).json({ error: errMsg });
     }
 
     if (errMsg?.includes("Cannot delete tier with active subscriptions")) {
-      return res?.status(400).json({ error: errMsg });
+      return res.status(400).json({ error: errMsg });
     }
 
-    logger?.warn({ err: error }, "Error deleting membership tier:");
+    logger.warn({ err: error }, "Error deleting membership tier:");
     res
       .status(500)
       .json({ error: errMsg || "Failed to delete membership tier" });
@@ -612,12 +612,12 @@ router?.delete("/membership-tiers/:tierId", async (req, res) => {
  */
 router?.post("/subscribe/:tierId", async (req, res) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { tierId } = req?.params;
-    const user = req?.user!;
+    const { tierId } = req.params;
+    const user = req.user!;
 
     const tierResults = await db
       .select({ tier: membershipTiers, storefront: storefronts })
@@ -630,7 +630,7 @@ router?.post("/subscribe/:tierId", async (req, res) => {
     const storefront = tierResults[0]?.storefront;
 
     if (!tier) {
-      return res?.status(404).json({ error: "Membership tier not found" });
+      return res.status(404).json({ error: "Membership tier not found" });
     }
 
     if (!tier?.isActive) {
@@ -725,9 +725,9 @@ router?.post("/subscribe/:tierId", async (req, res) => {
       },
     });
 
-    res?.json({ checkoutUrl: session.url });
+    res.json({ checkoutUrl: session.url });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error creating membership checkout session:");
+    logger.warn({ err: error }, "Error creating membership checkout session:");
     const errMsg = getErrorMessage(error);
     res
       .status(500)
@@ -741,28 +741,28 @@ router?.post("/subscribe/:tierId", async (req, res) => {
  */
 router?.post("/memberships/:membershipId/cancel", async (req, res) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { membershipId } = req?.params;
+    const { membershipId } = req.params;
 
     const membership = await storefrontService?.cancelMembership(
       membershipId,
-      req?.user!.id,
+      req.user!.id,
     );
 
-    res?.json(membership);
+    res.json(membership);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error canceling membership:");
+    logger.warn({ err: error }, "Error canceling membership:");
     const errMsg = getErrorMessage(error);
 
     if (errMsg === "Membership not found") {
-      return res?.status(404).json({ error: errMsg });
+      return res.status(404).json({ error: errMsg });
     }
 
     if (errMsg === "Unauthorized") {
-      return res?.status(403).json({ error: errMsg });
+      return res.status(403).json({ error: errMsg });
     }
 
     if (errMsg?.includes("Stripe")) {
@@ -773,7 +773,7 @@ router?.post("/memberships/:membershipId/cancel", async (req, res) => {
         });
     }
 
-    res?.status(500).json({ error: errMsg || "Failed to cancel membership" });
+    res.status(500).json({ error: errMsg || "Failed to cancel membership" });
   }
 });
 
@@ -783,19 +783,19 @@ router?.post("/memberships/:membershipId/cancel", async (req, res) => {
  */
 router?.get("/memberships/my", async (req, res) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     const memberships = await storefrontService?.getCustomerMemberships(
-      req?.user!.id,
+      req.user!.id,
     );
-    res?.json(memberships);
+    res.json(memberships);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching customer memberships:");
+    logger.warn({ err: error }, "Error fetching customer memberships:");
     const errorMessage =
       error instanceof Error ? error?.message : "Failed to fetch memberships";
-    res?.status(500).json({ error: errorMessage });
+    res.status(500).json({ error: errorMessage });
   }
 });
 
@@ -805,19 +805,19 @@ router?.get("/memberships/my", async (req, res) => {
  */
 router?.get("/:storefrontId/membership-tiers/public", async (req, res) => {
   try {
-    const { storefrontId } = req?.params;
+    const { storefrontId } = req.params;
 
     const tiers = await storefrontService?.getMembershipTiers(storefrontId);
     const publicTiers = tiers?.filter((tier) => tier?.isActive);
 
-    res?.json(publicTiers);
+    res.json(publicTiers);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching public membership tiers:");
+    logger.warn({ err: error }, "Error fetching public membership tiers:");
     const errorMessage =
       error instanceof Error
         ? error?.message
         : "Failed to fetch membership tiers";
-    res?.status(500).json({ error: errorMessage });
+    res.status(500).json({ error: errorMessage });
   }
 });
 
@@ -827,17 +827,17 @@ router?.get("/:storefrontId/membership-tiers/public", async (req, res) => {
  */
 router?.get("/:storefrontId/listings", async (req, res) => {
   try {
-    const { storefrontId } = req?.params;
+    const { storefrontId } = req.params;
 
     const listings =
       await storefrontService?.getStorefrontListings(storefrontId);
 
-    res?.json(listings);
+    res.json(listings);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching storefront listings:");
+    logger.warn({ err: error }, "Error fetching storefront listings:");
     const errorMessage =
       error instanceof Error ? error?.message : "Failed to fetch listings";
-    res?.status(500).json({ error: errorMessage });
+    res.status(500).json({ error: errorMessage });
   }
 });
 
@@ -847,23 +847,23 @@ router?.get("/:storefrontId/listings", async (req, res) => {
  */
 router?.post("/generate-subdomain", async (req, res) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { name } = req?.body;
+    const { name } = req.body;
 
     if (!name || typeof name !== "string") {
-      return res?.status(400).json({ error: "Name is required" });
+      return res.status(400).json({ error: "Name is required" });
     }
 
     const subdomain = await storefrontService?.generateSubdomain(name);
-    res?.json({ subdomain });
+    res.json({ subdomain });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error generating subdomain:");
+    logger.warn({ err: error }, "Error generating subdomain:");
     const errorMessage =
       error instanceof Error ? error?.message : "Failed to generate subdomain";
-    res?.status(500).json({ error: errorMessage });
+    res.status(500).json({ error: errorMessage });
   }
 });
 
@@ -873,16 +873,16 @@ router?.post("/generate-subdomain", async (req, res) => {
  */
 router?.get("/check-subdomain/:subdomain", async (req, res) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { subdomain } = req?.params;
-    const { excludeStorefrontId } = req?.query;
+    const { subdomain } = req.params;
+    const { excludeStorefrontId } = req.query;
 
     const isValid = storefrontService?.validateSubdomain(subdomain);
     if (!isValid) {
-      return res?.json({
+      return res.json({
         available: false,
         reason:
           "Invalid subdomain format. Use 3-30 lowercase letters, numbers, and hyphens.",
@@ -894,15 +894,15 @@ router?.get("/check-subdomain/:subdomain", async (req, res) => {
       excludeStorefrontId as string | undefined,
     );
 
-    res?.json({
+    res.json({
       available: isAvailable,
       reason: isAvailable ? null : "Subdomain is already taken",
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error checking subdomain:");
+    logger.warn({ err: error }, "Error checking subdomain:");
     const errorMessage =
       error instanceof Error ? error?.message : "Failed to check subdomain";
-    res?.status(500).json({ error: errorMessage });
+    res.status(500).json({ error: errorMessage });
   }
 });
 
@@ -912,23 +912,23 @@ router?.get("/check-subdomain/:subdomain", async (req, res) => {
  */
 router?.get("/subdomain/:subdomain", async (req, res) => {
   try {
-    const { subdomain } = req?.params;
+    const { subdomain } = req.params;
 
     const storefront =
       await storefrontService?.getStorefrontBySubdomain(subdomain);
 
     if (!storefront) {
-      return res?.status(404).json({ error: "Storefront not found" });
+      return res.status(404).json({ error: "Storefront not found" });
     }
 
     await storefrontService?.incrementViews(storefront?.id);
 
-    res?.json(storefront);
+    res.json(storefront);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching storefront by subdomain:");
+    logger.warn({ err: error }, "Error fetching storefront by subdomain:");
     const errorMessage =
       error instanceof Error ? error?.message : "Failed to fetch storefront";
-    res?.status(500).json({ error: errorMessage });
+    res.status(500).json({ error: errorMessage });
   }
 });
 
@@ -938,15 +938,15 @@ router?.get("/subdomain/:subdomain", async (req, res) => {
  */
 router?.put("/:storefrontId/subdomain", async (req, res) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { storefrontId } = req?.params;
-    const { subdomain, isSubdomainActive } = req?.body;
+    const { storefrontId } = req.params;
+    const { subdomain, isSubdomainActive } = req.body;
 
     if (subdomain && !storefrontService?.validateSubdomain(subdomain)) {
-      return res?.status(400).json({
+      return res.status(400).json({
         error:
           "Invalid subdomain format. Use 3-30 lowercase letters, numbers, and hyphens.",
       });
@@ -958,25 +958,25 @@ router?.put("/:storefrontId/subdomain", async (req, res) => {
         storefrontId,
       );
       if (!isAvailable) {
-        return res?.status(400).json({ error: "Subdomain is already taken" });
+        return res.status(400).json({ error: "Subdomain is already taken" });
       }
     }
 
     const updatedStorefront = await storefrontService?.updateStorefront(
       storefrontId,
-      req?.user!.id,
+      req.user!.id,
       { subdomain, isSubdomainActive },
     );
 
-    res?.json(updatedStorefront);
+    res.json(updatedStorefront);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error updating subdomain:");
+    logger.warn({ err: error }, "Error updating subdomain:");
     const errorMessage =
       error instanceof Error ? error?.message : "Failed to update subdomain";
     if (errorMessage === "Unauthorized") {
-      return res?.status(403).json({ error: errorMessage });
+      return res.status(403).json({ error: errorMessage });
     }
-    res?.status(500).json({ error: errorMessage });
+    res.status(500).json({ error: errorMessage });
   }
 });
 
@@ -986,17 +986,17 @@ router?.put("/:storefrontId/subdomain", async (req, res) => {
  */
 router?.put("/:storefrontId/custom-domain", async (req, res) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { storefrontId } = req?.params;
-    const { customDomain, isCustomDomainActive } = req?.body;
+    const { storefrontId } = req.params;
+    const { customDomain, isCustomDomainActive } = req.body;
 
     if (customDomain) {
       const domResult = validateDomain(customDomain);
       if (!domResult?.ok) {
-        return res?.status(400).json({ error: domResult.error });
+        return res.status(400).json({ error: domResult.error });
       }
       const normalized = domResult?.normalized;
       const existingDomain = await db
@@ -1020,32 +1020,32 @@ router?.put("/:storefrontId/custom-domain", async (req, res) => {
 
       const updatedStorefront = await storefrontService?.updateStorefront(
         storefrontId,
-        req?.user!.id,
+        req.user!.id,
         {
           customDomain: normalized,
           isCustomDomainActive: isCustomDomainActive ?? false,
         },
       );
-      return res?.json(updatedStorefront);
+      return res.json(updatedStorefront);
     }
 
     const updatedStorefront = await storefrontService?.updateStorefront(
       storefrontId,
-      req?.user!.id,
+      req.user!.id,
       {
         customDomain: null,
         isCustomDomainActive: false,
       },
     );
-    res?.json(updatedStorefront);
+    res.json(updatedStorefront);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error updating custom domain:");
+    logger.warn({ err: error }, "Error updating custom domain:");
     const errorMessage =
       error instanceof Error ? error?.message : "Failed to update custom domain";
     if (errorMessage === "Unauthorized") {
-      return res?.status(403).json({ error: errorMessage });
+      return res.status(403).json({ error: errorMessage });
     }
-    res?.status(500).json({ error: errorMessage });
+    res.status(500).json({ error: errorMessage });
   }
 });
 
@@ -1056,11 +1056,11 @@ router?.put("/:storefrontId/custom-domain", async (req, res) => {
  */
 router?.post("/:storefrontId/verify-domain", async (req, res) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { storefrontId } = req?.params;
+    const { storefrontId } = req.params;
 
     const [storefront] = await db
       .select({
@@ -1073,13 +1073,13 @@ router?.post("/:storefrontId/verify-domain", async (req, res) => {
       .limit(1);
 
     if (!storefront) {
-      return res?.status(404).json({ error: "Storefront not found" });
+      return res.status(404).json({ error: "Storefront not found" });
     }
-    if (storefront?.userId !== req?.user!.id) {
-      return res?.status(403).json({ error: "Unauthorized" });
+    if (storefront?.userId !== req.user!.id) {
+      return res.status(403).json({ error: "Unauthorized" });
     }
     if (!storefront?.customDomain) {
-      return res?.status(400).json({ error: "No custom domain configured" });
+      return res.status(400).json({ error: "No custom domain configured" });
     }
 
     const domain = storefront?.customDomain;
@@ -1123,15 +1123,15 @@ router?.post("/:storefrontId/verify-domain", async (req, res) => {
     }
 
     if (result?.verified) {
-      await storefrontService?.updateStorefront(storefrontId, req?.user!.id, {
+      await storefrontService?.updateStorefront(storefrontId, req.user!.id, {
         isCustomDomainActive: true,
       });
     }
 
-    res?.json(result);
+    res.json(result);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error verifying custom domain:");
-    res?.status(500).json({ error: "Failed to verify domain" });
+    logger.warn({ err: error }, "Error verifying custom domain:");
+    res.status(500).json({ error: "Failed to verify domain" });
   }
 });
 
@@ -1141,15 +1141,15 @@ router?.post("/:storefrontId/verify-domain", async (req, res) => {
  */
 router?.post("/upload-asset", upload?.single("file"), async (req, res) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    if (!req?.file) {
-      return res?.status(400).json({ error: "No file uploaded" });
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
     }
 
-    const { assetType } = req?.body;
+    const { assetType } = req.body;
     if (!["logo", "banner", "avatar"].includes(assetType)) {
       return res
         .status(400)
@@ -1157,22 +1157,22 @@ router?.post("/upload-asset", upload?.single("file"), async (req, res) => {
     }
 
     const category = assetType === "avatar" ? "avatar" : "artwork";
-    const result = await storeUploadedFile(req?.file, req?.user!.id, category);
+    const result = await storeUploadedFile(req.file, req.user!.id, category);
 
-    logger?.info(
-      `Uploaded storefront ${assetType} via storeUploadedFile for user ${req?.user!.id}: ${result?.key} (processed: ${result?.processed})`,
+    logger.info(
+      `Uploaded storefront ${assetType} via storeUploadedFile for user ${req.user!.id}: ${result?.key} (processed: ${result?.processed})`,
     );
 
-    res?.json({
+    res.json({
       url: result.url,
       key: result.key,
       assetType,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error uploading storefront asset:");
+    logger.warn({ err: error }, "Error uploading storefront asset:");
     const errorMessage =
       error instanceof Error ? error?.message : "Failed to upload asset";
-    res?.status(500).json({ error: errorMessage });
+    res.status(500).json({ error: errorMessage });
   }
 });
 
@@ -1182,8 +1182,8 @@ router?.post("/upload-asset", upload?.single("file"), async (req, res) => {
 
 router?.get("/:id/social", async (req, res) => {
   try {
-    const storefrontId = req?.params.id;
-    const userId = req?.isAuthenticated() ? req?.user!.id : null;
+    const storefrontId = req.params.id;
+    const userId = req.isAuthenticated() ? req.user!.id : null;
 
     const [likesResult] = await db
       .select({ count: count() })
@@ -1241,7 +1241,7 @@ router?.get("/:id/social", async (req, res) => {
       userRating = ratingRow?.rating ?? null;
     }
 
-    res?.json({
+    res.json({
       likes: likesResult.count || 0,
       follows: followsResult.count || 0,
       ratingsCount: ratingsResult.count || 0,
@@ -1251,17 +1251,17 @@ router?.get("/:id/social", async (req, res) => {
       userRating,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching social data:");
-    res?.status(500).json({ error: "Failed to fetch social data" });
+    logger.warn({ err: error }, "Error fetching social data:");
+    res.status(500).json({ error: "Failed to fetch social data" });
   }
 });
 
 router?.post("/:id/like", async (req, res) => {
   try {
-    if (!req?.isAuthenticated())
-      return res?.status(401).json({ error: "Login required" });
-    const storefrontId = req?.params.id;
-    const userId = req?.user!.id;
+    if (!req.isAuthenticated())
+      return res.status(401).json({ error: "Login required" });
+    const storefrontId = req.params.id;
+    const userId = req.user!.id;
 
     const [existing] = await db
       .select()
@@ -1277,23 +1277,23 @@ router?.post("/:id/like", async (req, res) => {
       await db
         .delete(storefrontLikes)
         .where(eq(storefrontLikes?.id, existing?.id));
-      res?.json({ liked: false });
+      res.json({ liked: false });
     } else {
       await db?.insert(storefrontLikes).values({ userId, storefrontId });
-      res?.json({ liked: true });
+      res.json({ liked: true });
     }
   } catch (error) {
-    logger?.warn({ err: error }, "Error toggling like:");
-    res?.status(500).json({ error: "Failed to toggle like" });
+    logger.warn({ err: error }, "Error toggling like:");
+    res.status(500).json({ error: "Failed to toggle like" });
   }
 });
 
 router?.post("/:id/follow", async (req, res) => {
   try {
-    if (!req?.isAuthenticated())
-      return res?.status(401).json({ error: "Login required" });
-    const storefrontId = req?.params.id;
-    const userId = req?.user!.id;
+    if (!req.isAuthenticated())
+      return res.status(401).json({ error: "Login required" });
+    const storefrontId = req.params.id;
+    const userId = req.user!.id;
 
     const [existing] = await db
       .select()
@@ -1309,27 +1309,27 @@ router?.post("/:id/follow", async (req, res) => {
       await db
         .delete(storefrontFollows)
         .where(eq(storefrontFollows?.id, existing?.id));
-      res?.json({ following: false });
+      res.json({ following: false });
     } else {
       await db?.insert(storefrontFollows).values({ userId, storefrontId });
-      res?.json({ following: true });
+      res.json({ following: true });
     }
   } catch (error) {
-    logger?.warn({ err: error }, "Error toggling follow:");
-    res?.status(500).json({ error: "Failed to toggle follow" });
+    logger.warn({ err: error }, "Error toggling follow:");
+    res.status(500).json({ error: "Failed to toggle follow" });
   }
 });
 
 router?.post("/:id/rate", async (req, res) => {
   try {
-    if (!req?.isAuthenticated())
-      return res?.status(401).json({ error: "Login required" });
-    const storefrontId = req?.params.id;
-    const userId = req?.user!.id;
-    const { rating, review } = req?.body;
+    if (!req.isAuthenticated())
+      return res.status(401).json({ error: "Login required" });
+    const storefrontId = req.params.id;
+    const userId = req.user!.id;
+    const { rating, review } = req.body;
 
     if (!rating || rating < 1 || rating > 5)
-      return res?.status(400).json({ error: "Rating must be 1-5" });
+      return res.status(400).json({ error: "Rating must be 1-5" });
 
     const [existing] = await db
       .select()
@@ -1358,14 +1358,14 @@ router?.post("/:id/rate", async (req, res) => {
       .where(eq(storefrontRatings?.storefrontId, storefrontId))
       .limit(1);
 
-    res?.json({
+    res.json({
       userRating: rating,
       ratingsCount: ratingsResult.count || 0,
       avgRating: ratingsResult.avg ? parseFloat(String(ratingsResult?.avg)) : 0,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error submitting rating:");
-    res?.status(500).json({ error: "Failed to submit rating" });
+    logger.warn({ err: error }, "Error submitting rating:");
+    res.status(500).json({ error: "Failed to submit rating" });
   }
 });
 
@@ -1375,25 +1375,25 @@ router?.post("/:id/rate", async (req, res) => {
 
 router?.post("/:id/checkout", async (req, res) => {
   try {
-    if (!req?.isAuthenticated())
-      return res?.status(401).json({ error: "Login required to purchase" });
+    if (!req.isAuthenticated())
+      return res.status(401).json({ error: "Login required to purchase" });
 
-    const storefrontId = req?.params.id;
-    const { listingIds, licenseType = "basic" } = req?.body;
+    const storefrontId = req.params.id;
+    const { listingIds, licenseType = "basic" } = req.body;
 
-    if (!listingIds || !Array?.isArray(listingIds) || listingIds?.length === 0) {
+    if (!listingIds || !Array.isArray(listingIds) || listingIds?.length === 0) {
       return res
         .status(400)
         .json({ error: "At least one listing is required" });
     }
 
     if (listingIds?.length > 20) {
-      return res?.status(400).json({ error: "Maximum 20 items per checkout" });
+      return res.status(400).json({ error: "Maximum 20 items per checkout" });
     }
 
     const stripeKey = env?.STRIPE_SECRET_KEY;
     if (!stripeKey) {
-      logger?.warn("Stripe secret key is not configured");
+      logger.warn("Stripe secret key is not configured");
       return res
         .status(503)
         .json({
@@ -1408,9 +1408,9 @@ router?.post("/:id/checkout", async (req, res) => {
       .where(eq(storefronts?.id, storefrontId))
       .limit(1);
     if (!storefront)
-      return res?.status(404).json({ error: "Storefront not found" });
+      return res.status(404).json({ error: "Storefront not found" });
 
-    if (storefront?.userId === req?.user!.id) {
+    if (storefront?.userId === req.user!.id) {
       return res
         .status(400)
         .json({ error: "Cannot purchase from your own storefront" });
@@ -1428,7 +1428,7 @@ router?.post("/:id/checkout", async (req, res) => {
       )
       .limit(50);
     if (validListings?.length === 0) {
-      return res?.status(400).json({ error: "No valid listings found" });
+      return res.status(400).json({ error: "No valid listings found" });
     }
 
     const cartItems = validListings?.map((listing) => {
@@ -1456,7 +1456,7 @@ router?.post("/:id/checkout", async (req, res) => {
       .limit(50);
 
     const customerRedemptions = new Map<string, number>();
-    if (req?.user?.id && activePromos?.length > 0) {
+    if (req.user?.id && activePromos?.length > 0) {
       const pastOrders = await db
         .select({
           promoId: storefrontOrders.appliedPromotionId,
@@ -1464,7 +1464,7 @@ router?.post("/:id/checkout", async (req, res) => {
         .from(storefrontOrders)
         .where(
           and(
-            eq(storefrontOrders?.buyerId, req?.user.id),
+            eq(storefrontOrders?.buyerId, req.user.id),
             eq(storefrontOrders?.storefrontId, storefrontId),
             eq(storefrontOrders?.status, "completed"),
           ),
@@ -1506,7 +1506,7 @@ router?.post("/:id/checkout", async (req, res) => {
             (d) => d?.index === index,
           );
           if (discountInfo) {
-            unitAmount = Math?.round(
+            unitAmount = Math.round(
               (item?.priceCents * (100 - discountInfo?.discountPercent)) / 100,
             );
             desc += ` (${discountInfo?.discountPercent}% off - BOGO Deal)`;
@@ -1558,7 +1558,7 @@ router?.post("/:id/checkout", async (req, res) => {
         discountCents = item?.priceCents;
         finalAmount = 0;
       } else if (discountInfo) {
-        discountCents = Math?.round(
+        discountCents = Math.round(
           (item?.priceCents * discountInfo?.discountPercent) / 100,
         );
         finalAmount = item?.priceCents - discountCents;
@@ -1583,38 +1583,38 @@ router?.post("/:id/checkout", async (req, res) => {
       });
     }
 
-    res?.json({ checkoutUrl: session.url });
+    res.json({ checkoutUrl: session.url });
   } catch (error) {
-    logger?.warn({ err: error }, "Error creating storefront checkout:");
-    res?.status(500).json({ error: "Failed to create checkout session" });
+    logger.warn({ err: error }, "Error creating storefront checkout:");
+    res.status(500).json({ error: "Failed to create checkout session" });
   }
 });
 
 router?.get("/:id/orders", async (req, res) => {
   try {
-    if (!req?.isAuthenticated())
-      return res?.status(401).json({ error: "Unauthorized" });
-    const storefrontId = req?.params.id;
+    if (!req.isAuthenticated())
+      return res.status(401).json({ error: "Unauthorized" });
+    const storefrontId = req.params.id;
 
-    const page = Math?.max(1, parseInt(req?.query.page as string) || 1);
-    const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 200);
-    const offset = Math?.min((page - 1) * limit, 100_000);
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+    const offset = Math.min((page - 1) * limit, 100_000);
     const orders = await db
       .select()
       .from(storefrontOrders)
       .where(
         and(
           eq(storefrontOrders?.storefrontId, storefrontId),
-          eq(storefrontOrders?.buyerId, req?.user!.id),
+          eq(storefrontOrders?.buyerId, req.user!.id),
         ),
       )
       .limit(limit)
       .offset(offset);
 
-    res?.json(orders);
+    res.json(orders);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching storefront orders:");
-    res?.status(500).json({ error: "Failed to fetch orders" });
+    logger.warn({ err: error }, "Error fetching storefront orders:");
+    res.status(500).json({ error: "Failed to fetch orders" });
   }
 });
 
@@ -1624,22 +1624,22 @@ router?.get("/:id/orders", async (req, res) => {
 
 router?.put("/:storefrontId/listings/:listingId/discount", async (req, res) => {
   try {
-    if (!req?.isAuthenticated())
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated())
+      return res.status(401).json({ error: "Unauthorized" });
 
-    const {  listingId } = req?.params;
-    const { discountPercent, discountExpiresAt } = req?.body;
+    const {  listingId } = req.params;
+    const { discountPercent, discountExpiresAt } = req.body;
 
     const [listing] = await db
       .select()
       .from(listings)
-      .where(and(eq(listings?.id, listingId), eq(listings?.userId, req?.user!.id)))
+      .where(and(eq(listings?.id, listingId), eq(listings?.userId, req.user!.id)))
       .limit(1);
-    if (!listing) return res?.status(404).json({ error: "Listing not found" });
+    if (!listing) return res.status(404).json({ error: "Listing not found" });
 
     let discountPriceCents: number | null = null;
     if (discountPercent && discountPercent > 0 && discountPercent <= 100) {
-      discountPriceCents = Math?.round(
+      discountPriceCents = Math.round(
         listing?.priceCents * (1 - discountPercent / 100),
       );
     }
@@ -1657,10 +1657,10 @@ router?.put("/:storefrontId/listings/:listingId/discount", async (req, res) => {
       .where(eq(listings?.id, listingId))
       .returning();
 
-    res?.json(updated);
+    res.json(updated);
   } catch (error) {
-    logger?.warn({ err: error }, "Error setting discount:");
-    res?.status(500).json({ error: "Failed to set discount" });
+    logger.warn({ err: error }, "Error setting discount:");
+    res.status(500).json({ error: "Failed to set discount" });
   }
 });
 
@@ -1668,19 +1668,19 @@ router?.delete(
   "/:storefrontId/listings/:listingId/discount",
   async (req, res) => {
     try {
-      if (!req?.isAuthenticated())
-        return res?.status(401).json({ error: "Unauthorized" });
+      if (!req.isAuthenticated())
+        return res.status(401).json({ error: "Unauthorized" });
 
-      const { listingId } = req?.params;
+      const { listingId } = req.params;
 
       const [listing] = await db
         .select()
         .from(listings)
         .where(
-          and(eq(listings?.id, listingId), eq(listings?.userId, req?.user!.id)),
+          and(eq(listings?.id, listingId), eq(listings?.userId, req.user!.id)),
         )
         .limit(1);
-      if (!listing) return res?.status(404).json({ error: "Listing not found" });
+      if (!listing) return res.status(404).json({ error: "Listing not found" });
 
       const [updated] = await db
         .update(listings)
@@ -1693,10 +1693,10 @@ router?.delete(
         .where(eq(listings?.id, listingId))
         .returning();
 
-      res?.json(updated);
+      res.json(updated);
     } catch (error) {
-      logger?.warn({ err: error }, "Error removing discount:");
-      res?.status(500).json({ error: "Failed to remove discount" });
+      logger.warn({ err: error }, "Error removing discount:");
+      res.status(500).json({ error: "Failed to remove discount" });
     }
   },
 );
@@ -1707,26 +1707,26 @@ router?.delete(
 
 router?.get("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
   try {
-    const { listingId } = req?.params;
+    const { listingId } = req.params;
     const tiers = await db
       .select()
       .from(listingLicenseTiers)
       .where(eq(listingLicenseTiers?.listingId, listingId))
       .orderBy(listingLicenseTiers?.sortOrder)
       .limit(20);
-    res?.json(tiers);
+    res.json(tiers);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching license tiers:");
-    res?.status(500).json({ error: "Failed to fetch license tiers" });
+    logger.warn({ err: error }, "Error fetching license tiers:");
+    res.status(500).json({ error: "Failed to fetch license tiers" });
   }
 });
 
 router?.put("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
   try {
-    if (!req?.isAuthenticated())
-      return res?.status(401).json({ error: "Unauthorized" });
-    const { listingId } = req?.params;
-    const { tiers } = req?.body as {
+    if (!req.isAuthenticated())
+      return res.status(401).json({ error: "Unauthorized" });
+    const { listingId } = req.params;
+    const { tiers } = req.body as {
       tiers: Array<{
         id?: string;
         licenseType: string;
@@ -1748,9 +1748,9 @@ router?.put("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
     const [listing] = await db
       .select()
       .from(listings)
-      .where(and(eq(listings?.id, listingId), eq(listings?.userId, req?.user!.id)))
+      .where(and(eq(listings?.id, listingId), eq(listings?.userId, req.user!.id)))
       .limit(1);
-    if (!listing) return res?.status(404).json({ error: "Listing not found" });
+    if (!listing) return res.status(404).json({ error: "Listing not found" });
 
     await db
       .delete(listingLicenseTiers)
@@ -1766,7 +1766,7 @@ router?.put("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
         tier?.discountPercent > 0 &&
         tier?.discountPercent <= 100
       ) {
-        discountPriceCents = Math?.round(
+        discountPriceCents = Math.round(
           tier?.priceCents * (1 - tier?.discountPercent / 100),
         );
       }
@@ -1811,25 +1811,25 @@ router?.put("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
       })
       .where(eq(listings?.id, listingId));
 
-    res?.json(insertedTiers);
+    res.json(insertedTiers);
   } catch (error) {
-    logger?.warn({ err: error }, "Error saving license tiers:");
-    res?.status(500).json({ error: "Failed to save license tiers" });
+    logger.warn({ err: error }, "Error saving license tiers:");
+    res.status(500).json({ error: "Failed to save license tiers" });
   }
 });
 
 router?.delete("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
   try {
-    if (!req?.isAuthenticated())
-      return res?.status(401).json({ error: "Unauthorized" });
-    const { listingId } = req?.params;
+    if (!req.isAuthenticated())
+      return res.status(401).json({ error: "Unauthorized" });
+    const { listingId } = req.params;
 
     const [listing] = await db
       .select()
       .from(listings)
-      .where(and(eq(listings?.id, listingId), eq(listings?.userId, req?.user!.id)))
+      .where(and(eq(listings?.id, listingId), eq(listings?.userId, req.user!.id)))
       .limit(1);
-    if (!listing) return res?.status(404).json({ error: "Listing not found" });
+    if (!listing) return res.status(404).json({ error: "Listing not found" });
 
     await db
       .delete(listingLicenseTiers)
@@ -1844,10 +1844,10 @@ router?.delete("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
       })
       .where(eq(listings?.id, listingId));
 
-    res?.json({ success: true });
+    res.json({ success: true });
   } catch (error) {
-    logger?.warn({ err: error }, "Error removing license tiers:");
-    res?.status(500).json({ error: "Failed to remove license tiers" });
+    logger.warn({ err: error }, "Error removing license tiers:");
+    res.status(500).json({ error: "Failed to remove license tiers" });
   }
 });
 
@@ -1874,58 +1874,58 @@ router?.post(
   tierAudioUpload?.single("audioFile"),
   async (req, res) => {
     try {
-      if (!req?.isAuthenticated())
-        return res?.status(401).json({ error: "Unauthorized" });
-      const { listingId } = req?.params;
-      const { format } = req?.body;
+      if (!req.isAuthenticated())
+        return res.status(401).json({ error: "Unauthorized" });
+      const { listingId } = req.params;
+      const { format } = req.body;
 
       const [listing] = await db
         .select()
         .from(listings)
         .where(
-          and(eq(listings?.id, listingId), eq(listings?.userId, req?.user!.id)),
+          and(eq(listings?.id, listingId), eq(listings?.userId, req.user!.id)),
         )
         .limit(1);
-      if (!listing) return res?.status(404).json({ error: "Listing not found" });
+      if (!listing) return res.status(404).json({ error: "Listing not found" });
 
-      if (!req?.file)
-        return res?.status(400).json({ error: "No audio file provided" });
+      if (!req.file)
+        return res.status(400).json({ error: "No audio file provided" });
 
-      const ext = path?.extname(req?.file.originalname) || ".mp3";
+      const ext = path?.extname(req.file.originalname) || ".mp3";
       const filename = `${Date?.now()}-${crypto?.randomBytes(8).toString("hex")}${ext}`;
 
       const audioResult = await hybridStorageService?.upload(
-        req?.user!.id,
+        req.user!.id,
         filename,
-        req?.file.buffer,
-        req?.file.mimetype,
+        req.file.buffer,
+        req.file.mimetype,
         { folder: "tier-audio", forceLocation: "pocket-dimension" as const },
       );
       const audioUrl = `/api/marketplace/audio/${audioResult?.key}`;
 
-      res?.json({
+      res.json({
         url: audioUrl,
         format: format || ext?.replace(".", ""),
         filename: req.file.originalname,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error uploading tier audio:");
-      res?.status(500).json({ error: "Failed to upload tier audio file" });
+      logger.warn({ err: error }, "Error uploading tier audio:");
+      res.status(500).json({ error: "Failed to upload tier audio file" });
     }
   },
 );
 
 router?.put("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { listingId } = req?.params;
-    const { tiers } = req?.body;
+    const { listingId } = req.params;
+    const { tiers } = req.body;
 
-    if (!Array?.isArray(tiers)) {
-      return res?.status(400).json({ error: "tiers must be an array" });
+    if (!Array.isArray(tiers)) {
+      return res.status(400).json({ error: "tiers must be an array" });
     }
 
     const [listing] = await db
@@ -1934,9 +1934,9 @@ router?.put("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
       .where(eq(listings?.id, listingId))
       .limit(1);
     if (!listing) {
-      return res?.status(404).json({ error: "Listing not found" });
+      return res.status(404).json({ error: "Listing not found" });
     }
-    if (listing?.userId !== req?.user!.id) {
+    if (listing?.userId !== req.user!.id) {
       return res
         .status(403)
         .json({ error: "You can only edit your own listings" });
@@ -1960,7 +1960,7 @@ router?.put("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
           discountPercent: t.discountPercent || 0,
           discountPriceCents:
             t?.discountType === "percent" && t?.discountPercent
-              ? Math?.round(t?.priceCents * (1 - t?.discountPercent / 100))
+              ? Math.round(t?.priceCents * (1 - t?.discountPercent / 100))
               : null,
           discountExpiresAt: t.discountExpiresAt
             ? new Date(t?.discountExpiresAt)
@@ -1985,20 +1985,20 @@ router?.put("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
       })
       .where(eq(listings?.id, listingId));
 
-    res?.json({ success: true, tiers: savedTiers });
+    res.json({ success: true, tiers: savedTiers });
   } catch (error) {
-    logger?.warn({ err: error }, "Error saving license tiers:");
-    res?.status(500).json({ error: "Failed to save license tiers" });
+    logger.warn({ err: error }, "Error saving license tiers:");
+    res.status(500).json({ error: "Failed to save license tiers" });
   }
 });
 
 router?.delete("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { listingId } = req?.params;
+    const { listingId } = req.params;
 
     const [listing] = await db
       .select()
@@ -2006,9 +2006,9 @@ router?.delete("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
       .where(eq(listings?.id, listingId))
       .limit(1);
     if (!listing) {
-      return res?.status(404).json({ error: "Listing not found" });
+      return res.status(404).json({ error: "Listing not found" });
     }
-    if (listing?.userId !== req?.user!.id) {
+    if (listing?.userId !== req.user!.id) {
       return res
         .status(403)
         .json({ error: "You can only edit your own listings" });
@@ -2026,26 +2026,26 @@ router?.delete("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
       })
       .where(eq(listings?.id, listingId));
 
-    res?.json({ success: true });
+    res.json({ success: true });
   } catch (error) {
-    logger?.warn({ err: error }, "Error deleting license tiers:");
-    res?.status(500).json({ error: "Failed to delete license tiers" });
+    logger.warn({ err: error }, "Error deleting license tiers:");
+    res.status(500).json({ error: "Failed to delete license tiers" });
   }
 });
 
 router?.get("/:storefrontId/listings/:listingId/tiers", async (req, res) => {
   try {
-    const { listingId } = req?.params;
+    const { listingId } = req.params;
     const tiers = await db
       .select()
       .from(listingLicenseTiers)
       .where(eq(listingLicenseTiers?.listingId, listingId))
       .orderBy(listingLicenseTiers?.sortOrder)
       .limit(20);
-    res?.json(tiers);
+    res.json(tiers);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching license tiers:");
-    res?.status(500).json({ error: "Failed to fetch license tiers" });
+    logger.warn({ err: error }, "Error fetching license tiers:");
+    res.status(500).json({ error: "Failed to fetch license tiers" });
   }
 });
 
@@ -2158,7 +2158,7 @@ function applyBogoToCart(
       (a, b) => a?.priceCents - b?.priceCents,
     );
 
-    const setsApplicable = Math?.floor(sorted?.length / totalNeeded);
+    const setsApplicable = Math.floor(sorted?.length / totalNeeded);
     const freeIndices: number[] = [];
     const discountedItems: { index: number; discountPercent: number }[] = [];
     let savings = 0;
@@ -2177,7 +2177,7 @@ function applyBogoToCart(
           savings += item?.priceCents;
         } else {
           discountedItems?.push({ index: item.index, discountPercent });
-          savings += Math?.round((item?.priceCents * discountPercent) / 100);
+          savings += Math.round((item?.priceCents * discountPercent) / 100);
         }
       }
     }
@@ -2216,32 +2216,32 @@ function applyBogoToCart(
 
 router?.get("/:storefrontId/bogo-promotions", async (req, res) => {
   try {
-    const { storefrontId } = req?.params;
+    const { storefrontId } = req.params;
     const promos = await db
       .select()
       .from(bogoPromotions)
       .where(getActivePromotionsFilter(storefrontId))
       .orderBy(bogoPromotions?.priority)
       .limit(100);
-    res?.json(promos);
+    res.json(promos);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching BOGO promotions:");
-    res?.status(500).json({ error: "Failed to fetch promotions" });
+    logger.warn({ err: error }, "Error fetching BOGO promotions:");
+    res.status(500).json({ error: "Failed to fetch promotions" });
   }
 });
 
 router?.get("/:storefrontId/bogo-promotions/all", async (req, res) => {
   try {
-    if (!req?.isAuthenticated())
-      return res?.status(401).json({ error: "Unauthorized" });
-    const { storefrontId } = req?.params;
+    if (!req.isAuthenticated())
+      return res.status(401).json({ error: "Unauthorized" });
+    const { storefrontId } = req.params;
     const [storefront] = await db
       .select()
       .from(storefronts)
       .where(eq(storefronts?.id, storefrontId))
       .limit(1);
-    if (!storefront || storefront?.userId !== req?.user!.id) {
-      return res?.status(403).json({ error: "Not your storefront" });
+    if (!storefront || storefront?.userId !== req.user!.id) {
+      return res.status(403).json({ error: "Not your storefront" });
     }
     const promos = await db
       .select()
@@ -2249,25 +2249,25 @@ router?.get("/:storefrontId/bogo-promotions/all", async (req, res) => {
       .where(eq(bogoPromotions?.storefrontId, storefrontId))
       .orderBy(bogoPromotions?.createdAt)
       .limit(100);
-    res?.json(promos);
+    res.json(promos);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching all BOGO promotions:");
-    res?.status(500).json({ error: "Failed to fetch promotions" });
+    logger.warn({ err: error }, "Error fetching all BOGO promotions:");
+    res.status(500).json({ error: "Failed to fetch promotions" });
   }
 });
 
 router?.post("/:storefrontId/bogo-promotions", async (req, res) => {
   try {
-    if (!req?.isAuthenticated())
-      return res?.status(401).json({ error: "Unauthorized" });
-    const { storefrontId } = req?.params;
+    if (!req.isAuthenticated())
+      return res.status(401).json({ error: "Unauthorized" });
+    const { storefrontId } = req.params;
     const [storefront] = await db
       .select()
       .from(storefronts)
       .where(eq(storefronts?.id, storefrontId))
       .limit(1);
-    if (!storefront || storefront?.userId !== req?.user!.id) {
-      return res?.status(403).json({ error: "Not your storefront" });
+    if (!storefront || storefront?.userId !== req.user!.id) {
+      return res.status(403).json({ error: "Not your storefront" });
     }
 
     const {
@@ -2289,7 +2289,7 @@ router?.post("/:storefrontId/bogo-promotions", async (req, res) => {
       status,
       startAt,
       endAt,
-    } = req?.body;
+    } = req.body;
 
     if (!name || !buyQuantity || !getQuantity) {
       return res
@@ -2297,7 +2297,7 @@ router?.post("/:storefrontId/bogo-promotions", async (req, res) => {
         .json({ error: "Name, buy quantity, and get quantity are required" });
     }
     if (buyQuantity < 1 || getQuantity < 1) {
-      return res?.status(400).json({ error: "Quantities must be at least 1" });
+      return res.status(400).json({ error: "Quantities must be at least 1" });
     }
     if (
       getDiscountPercent != null &&
@@ -2334,25 +2334,25 @@ router?.post("/:storefrontId/bogo-promotions", async (req, res) => {
       })
       .returning();
 
-    res?.json(promo);
+    res.json(promo);
   } catch (error) {
-    logger?.warn({ err: error }, "Error creating BOGO promotion:");
-    res?.status(500).json({ error: "Failed to create promotion" });
+    logger.warn({ err: error }, "Error creating BOGO promotion:");
+    res.status(500).json({ error: "Failed to create promotion" });
   }
 });
 
 router?.put("/:storefrontId/bogo-promotions/:promoId", async (req, res) => {
   try {
-    if (!req?.isAuthenticated())
-      return res?.status(401).json({ error: "Unauthorized" });
-    const { storefrontId, promoId } = req?.params;
+    if (!req.isAuthenticated())
+      return res.status(401).json({ error: "Unauthorized" });
+    const { storefrontId, promoId } = req.params;
     const [storefront] = await db
       .select()
       .from(storefronts)
       .where(eq(storefronts?.id, storefrontId))
       .limit(1);
-    if (!storefront || storefront?.userId !== req?.user!.id) {
-      return res?.status(403).json({ error: "Not your storefront" });
+    if (!storefront || storefront?.userId !== req.user!.id) {
+      return res.status(403).json({ error: "Not your storefront" });
     }
 
     const {
@@ -2374,7 +2374,7 @@ router?.put("/:storefrontId/bogo-promotions/:promoId", async (req, res) => {
       status,
       startAt,
       endAt,
-    } = req?.body;
+    } = req.body;
 
     const updateData: Record<string, unknown> = { updatedAt: new Date() };
     if (name !== undefined) updateData.name = name;
@@ -2415,26 +2415,26 @@ router?.put("/:storefrontId/bogo-promotions/:promoId", async (req, res) => {
       )
       .returning();
 
-    if (!promo) return res?.status(404).json({ error: "Promotion not found" });
-    res?.json(promo);
+    if (!promo) return res.status(404).json({ error: "Promotion not found" });
+    res.json(promo);
   } catch (error) {
-    logger?.warn({ err: error }, "Error updating BOGO promotion:");
-    res?.status(500).json({ error: "Failed to update promotion" });
+    logger.warn({ err: error }, "Error updating BOGO promotion:");
+    res.status(500).json({ error: "Failed to update promotion" });
   }
 });
 
 router?.delete("/:storefrontId/bogo-promotions/:promoId", async (req, res) => {
   try {
-    if (!req?.isAuthenticated())
-      return res?.status(401).json({ error: "Unauthorized" });
-    const { storefrontId, promoId } = req?.params;
+    if (!req.isAuthenticated())
+      return res.status(401).json({ error: "Unauthorized" });
+    const { storefrontId, promoId } = req.params;
     const [storefront] = await db
       .select()
       .from(storefronts)
       .where(eq(storefronts?.id, storefrontId))
       .limit(1);
-    if (!storefront || storefront?.userId !== req?.user!.id) {
-      return res?.status(403).json({ error: "Not your storefront" });
+    if (!storefront || storefront?.userId !== req.user!.id) {
+      return res.status(403).json({ error: "Not your storefront" });
     }
 
     await db
@@ -2445,21 +2445,21 @@ router?.delete("/:storefrontId/bogo-promotions/:promoId", async (req, res) => {
           eq(bogoPromotions?.storefrontId, storefrontId),
         ),
       );
-    res?.json({ success: true });
+    res.json({ success: true });
   } catch (error) {
-    logger?.warn({ err: error }, "Error deleting BOGO promotion:");
-    res?.status(500).json({ error: "Failed to delete promotion" });
+    logger.warn({ err: error }, "Error deleting BOGO promotion:");
+    res.status(500).json({ error: "Failed to delete promotion" });
   }
 });
 
 router?.post("/:id/checkout/preview", async (req, res) => {
   try {
-    if (!req?.isAuthenticated())
-      return res?.status(401).json({ error: "Login required" });
-    const storefrontId = req?.params.id;
-    const { listingIds, licenseType = "basic" } = req?.body;
+    if (!req.isAuthenticated())
+      return res.status(401).json({ error: "Login required" });
+    const storefrontId = req.params.id;
+    const { listingIds, licenseType = "basic" } = req.body;
 
-    if (!listingIds || !Array?.isArray(listingIds) || listingIds?.length === 0) {
+    if (!listingIds || !Array.isArray(listingIds) || listingIds?.length === 0) {
       return res
         .status(400)
         .json({ error: "At least one listing is required" });
@@ -2471,7 +2471,7 @@ router?.post("/:id/checkout/preview", async (req, res) => {
       .where(eq(storefronts?.id, storefrontId))
       .limit(1);
     if (!storefront)
-      return res?.status(404).json({ error: "Storefront not found" });
+      return res.status(404).json({ error: "Storefront not found" });
 
     const validListings = await db
       .select()
@@ -2505,7 +2505,7 @@ router?.post("/:id/checkout/preview", async (req, res) => {
       .limit(50);
 
     const customerRedemptions = new Map<string, number>();
-    if (req?.user?.id && activePromos?.length > 0) {
+    if (req.user?.id && activePromos?.length > 0) {
       const pastOrders = await db
         .select({
           promoId: storefrontOrders.appliedPromotionId,
@@ -2513,7 +2513,7 @@ router?.post("/:id/checkout/preview", async (req, res) => {
         .from(storefrontOrders)
         .where(
           and(
-            eq(storefrontOrders?.buyerId, req?.user.id),
+            eq(storefrontOrders?.buyerId, req.user.id),
             eq(storefrontOrders?.storefrontId, storefrontId),
             eq(storefrontOrders?.status, "completed"),
           ),
@@ -2537,7 +2537,7 @@ router?.post("/:id/checkout/preview", async (req, res) => {
 
     const subtotalCents = cartItems?.reduce((s, item) => s + item?.priceCents, 0);
 
-    res?.json({
+    res.json({
       items: cartItems.map((item, i) => ({
         ...item,
         isFree: bogoResult.freeItemIndices.includes(i),
@@ -2557,8 +2557,8 @@ router?.post("/:id/checkout/preview", async (req, res) => {
         : null,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error previewing checkout:");
-    res?.status(500).json({ error: "Failed to preview checkout" });
+    logger.warn({ err: error }, "Error previewing checkout:");
+    res.status(500).json({ error: "Failed to preview checkout" });
   }
 });
 

@@ -294,17 +294,17 @@ export class SocialAmplificationService {
     try {
       const organicPosts: OrganicPerformance[] = [];
 
-      const organicContent = await this?.generateOrganicOptimizedContent(
+      const organicContent = await this.generateOrganicOptimizedContent(
         campaign?.musicData,
         campaign?.targetAudience,
         campaign?.campaignObjective,
       );
 
-      for (const [platform, accountId] of Object?.entries(
+      for (const [platform, accountId] of Object.entries(
         campaign?.connectedPlatforms,
       )) {
         if (accountId) {
-          const performance = await this?.postOrganicContent(
+          const performance = await this.postOrganicContent(
             platform,
             accountId,
             organicContent[platform],
@@ -317,7 +317,7 @@ export class SocialAmplificationService {
         }
       }
 
-      await this?.setPerformanceCache(campaign?.adCampaignId, organicPosts);
+      await this.setPerformanceCache(campaign?.adCampaignId, organicPosts);
 
       try {
         await storageExt?.saveOrganicMetrics(
@@ -325,13 +325,13 @@ export class SocialAmplificationService {
           organicPosts,
         );
       } catch (error: unknown) {
-        logger?.warn(
+        logger.warn(
           { err: error },
           "Failed to save organic metrics to database:",
         );
       }
 
-      const projectedMetrics = await this?.calculateProjectedBoost(
+      const projectedMetrics = await this.calculateProjectedBoost(
         organicPosts,
         campaign?.targetAudience,
       );
@@ -343,7 +343,7 @@ export class SocialAmplificationService {
         costSavings: `$${projectedMetrics?.costSavings.toFixed(2)} saved vs paid advertising`,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Organic amplification failed:");
+      logger.warn({ err: error }, "Organic amplification failed:");
       return {
         success: false,
         organicPosts: [],
@@ -358,7 +358,7 @@ export class SocialAmplificationService {
     targetAudience: Record<string, unknown>,
     _objective: string,
   ): Promise<Record<string, OrganicContent>> {
-    await this?.aiEngine.bypassNativeAdPlatforms(
+    await this.aiEngine.bypassNativeAdPlatforms(
       musicData,
       targetAudience,
     );
@@ -366,7 +366,7 @@ export class SocialAmplificationService {
     const content: Record<string, OrganicContent> = {};
 
     content.instagram = {
-      caption: await this?.generateOrganicCaption(musicData, "instagram"),
+      caption: await this.generateOrganicCaption(musicData, "instagram"),
       hashtags: this.generateViralHashtags(musicData, "instagram"),
       contentType: "organic_post",
       optimizations: {
@@ -377,7 +377,7 @@ export class SocialAmplificationService {
     };
 
     content.tiktok = {
-      caption: await this?.generateOrganicCaption(musicData, "tiktok"),
+      caption: await this.generateOrganicCaption(musicData, "tiktok"),
       hashtags: this.generateViralHashtags(musicData, "tiktok"),
       contentType: "short_form_video",
       optimizations: {
@@ -388,7 +388,7 @@ export class SocialAmplificationService {
     };
 
     content.twitter = {
-      caption: await this?.generateOrganicCaption(musicData, "twitter"),
+      caption: await this.generateOrganicCaption(musicData, "twitter"),
       hashtags: this.generateViralHashtags(musicData, "twitter"),
       contentType: "thread",
       optimizations: {
@@ -399,7 +399,7 @@ export class SocialAmplificationService {
     };
 
     content.facebook = {
-      caption: await this?.generateOrganicCaption(musicData, "facebook"),
+      caption: await this.generateOrganicCaption(musicData, "facebook"),
       hashtags: this.generateViralHashtags(musicData, "facebook"),
       contentType: "community_post",
       optimizations: {
@@ -410,7 +410,7 @@ export class SocialAmplificationService {
     };
 
     content.youtube = {
-      caption: await this?.generateOrganicCaption(musicData, "youtube"),
+      caption: await this.generateOrganicCaption(musicData, "youtube"),
       hashtags: this.generateViralHashtags(musicData, "youtube"),
       contentType: "community_post",
       optimizations: {
@@ -421,7 +421,7 @@ export class SocialAmplificationService {
     };
 
     content.linkedin = {
-      caption: await this?.generateOrganicCaption(musicData, "linkedin"),
+      caption: await this.generateOrganicCaption(musicData, "linkedin"),
       hashtags: this.generateViralHashtags(musicData, "linkedin"),
       contentType: "thought_leadership",
       optimizations: {
@@ -479,7 +479,7 @@ export class SocialAmplificationService {
 
     const platformTemplates = templates[platform] || templates?.instagram;
     return platformTemplates[
-      Math?.floor(Math?.random() * platformTemplates?.length)
+      Math.floor(Math.random() * platformTemplates?.length)
     ];
   }
 
@@ -522,7 +522,7 @@ export class SocialAmplificationService {
   ): Promise<OrganicPerformance | null> {
     try {
       const autonomousContent =
-        await this?.autopilot.autonomousContentGeneration({
+        await this.autopilot.autonomousContentGeneration({
           platform,
           topic: musicData.title || "new music release",
           brandPersonality: "friendly",
@@ -531,18 +531,18 @@ export class SocialAmplificationService {
           objectives: ["engagement", "brand-awareness"],
         });
 
-      const platformMetrics = this?.calculateRealisticPlatformMetrics(
+      const platformMetrics = this.calculateRealisticPlatformMetrics(
         platform,
         musicData,
       );
 
-      const timeBasedVariation = this?.applyTimeBasedGrowth(platformMetrics);
+      const timeBasedVariation = this.applyTimeBasedGrowth(platformMetrics);
 
-      const organicBoost = this?.calculateOrganicBoost(
+      const organicBoost = this.calculateOrganicBoost(
         timeBasedVariation?.engagementRate,
       );
 
-      const costSavings = this?.calculateCostSavings(
+      const costSavings = this.calculateCostSavings(
         timeBasedVariation?.reach,
         platform,
       );
@@ -557,22 +557,22 @@ export class SocialAmplificationService {
         timestamp: new Date(),
       };
 
-      logger?.info(`[ORGANIC POST - ${platform?.toUpperCase()}] 🚀`);
-      logger?.info(
+      logger.info(`[ORGANIC POST - ${platform?.toUpperCase()}] 🚀`);
+      logger.info(
         `  Caption: "${content.caption.substring(0, 60) || autonomousContent.text.substring(0, 60)}..."`,
       );
-      logger?.info(
+      logger.info(
         `  Projected Reach: ${postResult?.metrics.reach?.toLocaleString()}`,
       );
-      logger?.info(
+      logger.info(
         `  Engagement Rate: ${(postResult?.metrics.engagementRate * 100).toFixed(2)}%`,
       );
-      logger?.info(`  Cost Savings: $${postResult?.costSavings.toFixed(2)}`);
-      logger?.info(`  Organic Boost: +${postResult?.organicBoost}% vs paid ads`);
+      logger.info(`  Cost Savings: $${postResult?.costSavings.toFixed(2)}`);
+      logger.info(`  Organic Boost: +${postResult?.organicBoost}% vs paid ads`);
 
       return postResult;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, `Failed to post organically to ${platform}:`);
+      logger.warn({ err: error }, `Failed to post organically to ${platform}:`);
       return null;
     }
   }
@@ -597,17 +597,17 @@ export class SocialAmplificationService {
     const baseline =
       platformBaselines[platform?.toLowerCase()] || platformBaselines?.instagram;
 
-    const varianceMultiplier = 0.8 + Math?.random() * 0.4;
+    const varianceMultiplier = 0.8 + Math.random() * 0.4;
 
-    const reach = Math?.round(baseline?.baseReach * varianceMultiplier);
+    const reach = Math.round(baseline?.baseReach * varianceMultiplier);
     const engagementRate = baseline?.engagementRate * varianceMultiplier;
-    const engagements = Math?.round(reach * engagementRate);
-    const shares = Math?.round(reach * baseline?.shareRate * varianceMultiplier);
-    const clickRate = 0.015 + Math?.random() * 0.01;
-    const clicks = Math?.round(reach * clickRate);
+    const engagements = Math.round(reach * engagementRate);
+    const shares = Math.round(reach * baseline?.shareRate * varianceMultiplier);
+    const clickRate = 0.015 + Math.random() * 0.01;
+    const clicks = Math.round(reach * clickRate);
 
-    const impressionMultiplier = 1.5 + Math?.random() * 1.0;
-    const impressions = Math?.round(reach * impressionMultiplier);
+    const impressionMultiplier = 1.5 + Math.random() * 1.0;
+    const impressions = Math.round(reach * impressionMultiplier);
 
     return {
       impressions,
@@ -632,8 +632,8 @@ export class SocialAmplificationService {
 
     const currentPhase =
       growthPhases[
-        Math?.min(
-          Math?.floor(Math?.random() * growthPhases?.length),
+        Math.min(
+          Math.floor(Math.random() * growthPhases?.length),
           growthPhases?.length - 1,
         )
       ];
@@ -654,11 +654,11 @@ export class SocialAmplificationService {
 
   private calculateOrganicBoost(organicEngagementRate: number): number {
     const paidAdEngagementRate = 0.0009;
-    const boost = Math?.round(
+    const boost = Math.round(
       ((organicEngagementRate - paidAdEngagementRate) / paidAdEngagementRate) *
         100,
     );
-    return Math?.max(boost, 200);
+    return Math.max(boost, 200);
   }
 
   private calculateCostSavings(reach: number, platform: string): number {
@@ -702,7 +702,7 @@ export class SocialAmplificationService {
     const equivalentPaidCost =
       (estimatedOrganicReach / 1000) * paidAdBenchmarks?.avgCPM;
 
-    const boostPercentage = Math?.round(
+    const boostPercentage = Math.round(
       ((estimatedOrganicReach - estimatedPaidReach) / estimatedPaidReach) * 100,
     );
 
@@ -715,17 +715,17 @@ export class SocialAmplificationService {
   async getPerformanceComparison(
     campaignId: string,
   ): Promise<ComparisonMetrics> {
-    let organicPosts = await this?.getPerformanceCache(campaignId);
+    let organicPosts = await this.getPerformanceCache(campaignId);
 
     if (!organicPosts || organicPosts?.length === 0) {
       try {
         const stored = await storageExt?.getOrganicMetrics(parseInt(campaignId));
         if (stored?.posts) {
           organicPosts = stored?.posts as OrganicPerformance[];
-          await this?.setPerformanceCache(campaignId, organicPosts);
+          await this.setPerformanceCache(campaignId, organicPosts);
         }
       } catch (error: unknown) {
-        logger?.warn(
+        logger.warn(
           { err: error },
           "Failed to load organic metrics from database:",
         );
@@ -777,7 +777,7 @@ export class SocialAmplificationService {
     const paidEngagementRate = 0.0009;
     const performanceBoost =
       organicAvgEngagement > 0
-        ? Math?.round(
+        ? Math.round(
             ((organicAvgEngagement - paidEngagementRate) / paidEngagementRate) *
               100,
           )
@@ -807,17 +807,17 @@ export class SocialAmplificationService {
     campaignId: string,
     platform: string,
   ): Promise<OrganicPerformance | null> {
-    let posts = await this?.getPerformanceCache(campaignId);
+    let posts = await this.getPerformanceCache(campaignId);
 
     if (!posts || posts?.length === 0) {
       try {
         const stored = await storageExt?.getOrganicMetrics(parseInt(campaignId));
         if (stored?.posts) {
           posts = stored?.posts as OrganicPerformance[];
-          await this?.setPerformanceCache(campaignId, posts);
+          await this.setPerformanceCache(campaignId, posts);
         }
       } catch (error: unknown) {
-        logger?.warn(
+        logger.warn(
           { err: error },
           "Failed to load organic metrics from database:",
         );
@@ -833,11 +833,11 @@ export class SocialAmplificationService {
   ): Promise<OrganicPerformance[] | null> {
     try {
       const val = await redisClient?.get(
-        `${this?.PERFORMANCE_CACHE_PREFIX}${campaignId}`,
+        `${this.PERFORMANCE_CACHE_PREFIX}${campaignId}`,
       );
-      return val ? JSON?.parse(val) : null;
+      return val ? JSON.parse(val) : null;
     } catch (error: unknown) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `Failed to get performance cache for campaign ${campaignId}:`,
       );
@@ -851,12 +851,12 @@ export class SocialAmplificationService {
   ): Promise<void> {
     try {
       await redisClient?.setex(
-        `${this?.PERFORMANCE_CACHE_PREFIX}${campaignId}`,
-        this?.PERFORMANCE_CACHE_TTL,
-        JSON?.stringify(posts),
+        `${this.PERFORMANCE_CACHE_PREFIX}${campaignId}`,
+        this.PERFORMANCE_CACHE_TTL,
+        JSON.stringify(posts),
       );
     } catch (error: unknown) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `Failed to set performance cache for campaign ${campaignId}:`,
       );
@@ -880,7 +880,7 @@ export class SocialAmplificationService {
     collaborationSuggestions: string[];
   }> {
     try {
-      await this?.ensureAIModel(
+      await this.ensureAIModel(
         "influencer_scorer_v1",
         "social_amplification",
         "Influencer scoring with fake follower detection",
@@ -891,25 +891,25 @@ export class SocialAmplificationService {
         throw new Error(`No ${platform} account connected`);
       }
 
-      const platformMetrics = await this?.fetchPlatformMetrics(userId, platform);
+      const platformMetrics = await this.fetchPlatformMetrics(userId, platform);
 
-      const followerScore = this?.calculateFollowerScore(
+      const followerScore = this.calculateFollowerScore(
         platformMetrics?.followerCount,
       );
 
       const engagementRate =
         platformMetrics?.totalEngagement /
-        Math?.max(platformMetrics?.totalReach, 1);
-      const engagementScore = Math?.min(engagementRate * 2000, 100);
+        Math.max(platformMetrics?.totalReach, 1);
+      const engagementScore = Math.min(engagementRate * 2000, 100);
 
-      const contentQualityScore = this?.analyzeContentQuality(platformMetrics);
+      const contentQualityScore = this.analyzeContentQuality(platformMetrics);
 
-      const nicheAuthorityScore = this?.calculateNicheAuthority(platformMetrics);
+      const nicheAuthorityScore = this.calculateNicheAuthority(platformMetrics);
 
       const { authenticityScore, fakeFollowerPercentage, anomalyPatterns } =
-        this?.detectFakeFollowers(platformMetrics);
+        this.detectFakeFollowers(platformMetrics);
 
-      const influencerScore = Math?.round(
+      const influencerScore = Math.round(
         followerScore * 0.2 +
           engagementScore * 0.3 +
           contentQualityScore * 0.2 +
@@ -917,7 +917,7 @@ export class SocialAmplificationService {
           authenticityScore * 0.15,
       );
 
-      const collaborationSuggestions = this?.generateCollaborationSuggestions(
+      const collaborationSuggestions = this.generateCollaborationSuggestions(
         influencerScore,
         engagementScore,
         nicheAuthorityScore,
@@ -964,7 +964,7 @@ export class SocialAmplificationService {
         await storageExt?.createInfluencerScore(scoreData);
       }
 
-      await this?.logInference(
+      await this.logInference(
         "influencer_scorer_v1",
         {
           userId,
@@ -991,7 +991,7 @@ export class SocialAmplificationService {
         collaborationSuggestions,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Influencer scoring failed:");
+      logger.warn({ err: error }, "Influencer scoring failed:");
       throw error;
     }
   }
@@ -1004,7 +1004,7 @@ export class SocialAmplificationService {
     currentPhase: string;
   }> {
     try {
-      await this?.ensureAIModel(
+      await this.ensureAIModel(
         "viral_tracker_v1",
         "social_amplification",
         "Viral coefficient and cascade tracking",
@@ -1012,25 +1012,25 @@ export class SocialAmplificationService {
 
       const tracking = await storageExt?.getViralTracking(postId);
 
-      const currentMetrics = await this?.fetchPostMetrics(postId);
+      const currentMetrics = await this.fetchPostMetrics(postId);
 
       const sharesPerImpression =
-        currentMetrics?.shares / Math?.max(currentMetrics?.impressions, 1);
+        currentMetrics?.shares / Math.max(currentMetrics?.impressions, 1);
       const conversionRate =
-        currentMetrics?.clicks / Math?.max(currentMetrics?.impressions, 1);
+        currentMetrics?.clicks / Math.max(currentMetrics?.impressions, 1);
       const viralCoefficient = sharesPerImpression * conversionRate;
 
-      const cascadeLevels = this?.analyzeCascadeLevels(currentMetrics);
+      const cascadeLevels = this.analyzeCascadeLevels(currentMetrics);
       const cascadeDepth = cascadeLevels?.length;
 
-      const superSpreaders = this?.identifySuperSpreaders(currentMetrics);
+      const superSpreaders = this.identifySuperSpreaders(currentMetrics);
 
-      const currentPhase = this?.determineViralityPhase(
+      const currentPhase = this.determineViralityPhase(
         currentMetrics,
         tracking,
       );
 
-      const projectedFinalReach = this?.projectFinalReach(
+      const projectedFinalReach = this.projectFinalReach(
         currentMetrics,
         viralCoefficient,
       );
@@ -1071,7 +1071,7 @@ export class SocialAmplificationService {
         currentPhase,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Viral coefficient calculation failed:");
+      logger.warn({ err: error }, "Viral coefficient calculation failed:");
       throw error;
     }
   }
@@ -1096,28 +1096,28 @@ export class SocialAmplificationService {
     visualizationData: Record<string, unknown>;
   }> {
     try {
-      await this?.ensureAIModel(
+      await this.ensureAIModel(
         "cascade_predictor_v1",
         "social_amplification",
         "Cascade prediction with confidence scoring",
       );
 
-      const contentQuality = await this?.analyzeContentForVirality(content);
+      const contentQuality = await this.analyzeContentForVirality(content);
 
-      const networkStructure = await this?.analyzeNetworkStructure(
+      const networkStructure = await this.analyzeNetworkStructure(
         content?.userId || "",
       );
 
-      const timingScore = this?.analyzePostTiming(
+      const timingScore = this.analyzePostTiming(
         content?.scheduledTime || new Date(),
       );
 
-      const platformScore = this?.calculatePlatformAffinityScore(
+      const platformScore = this.calculatePlatformAffinityScore(
         content?.platform || "instagram",
         content?.type || "image",
       );
 
-      const basePrediction = this?.calculateBasePrediction(
+      const basePrediction = this.calculateBasePrediction(
         initialAudience,
         contentQuality,
         networkStructure,
@@ -1136,9 +1136,9 @@ export class SocialAmplificationService {
       };
 
       const visualizationData =
-        this?.generateCascadeVisualization(basePrediction);
+        this.generateCascadeVisualization(basePrediction);
 
-      await this?.logInference(
+      await this.logInference(
         "cascade_predictor_v1",
         {
           content,
@@ -1162,7 +1162,7 @@ export class SocialAmplificationService {
         visualizationData,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Cascade prediction failed:");
+      logger.warn({ err: error }, "Cascade prediction failed:");
       throw error;
     }
   }
@@ -1188,13 +1188,13 @@ export class SocialAmplificationService {
     };
   }> {
     try {
-      await this?.ensureAIModel(
+      await this.ensureAIModel(
         "network_modeler_v1",
         "social_amplification",
         "Network effect modeling with centrality analysis",
       );
 
-      const networkData = await this?.fetchNetworkData(userId);
+      const networkData = await this.fetchNetworkData(userId);
 
       const valueModel =
         connections < 500
@@ -1203,25 +1203,25 @@ export class SocialAmplificationService {
             ? "reeds_law"
             : "reeds_law";
 
-      const networkValue = this?.calculateNetworkValue(connections, valueModel);
+      const networkValue = this.calculateNetworkValue(connections, valueModel);
 
-      const keyNodes = this?.identifyKeyNodes(networkData);
+      const keyNodes = this.identifyKeyNodes(networkData);
 
       const clusteringCoefficient =
-        this?.calculateClusteringCoefficient(networkData);
-      const betweennessCentrality = this?.calculateBetweennessCentrality(
+        this.calculateClusteringCoefficient(networkData);
+      const betweennessCentrality = this.calculateBetweennessCentrality(
         userId,
         networkData,
       );
-      const reachMultiplier = this?.calculateReachMultiplier(networkData);
+      const reachMultiplier = this.calculateReachMultiplier(networkData);
 
-      const optimalStrategies = this?.generateConnectionStrategies(
+      const optimalStrategies = this.generateConnectionStrategies(
         connections,
         networkData,
         keyNodes,
       );
 
-      const currentGrowthRate = await this?.calculateGrowthRate(userId);
+      const currentGrowthRate = await this.calculateGrowthRate(userId);
       const growthImpact = {
         current: networkValue,
         projected30: this.projectNetworkValue(
@@ -1296,7 +1296,7 @@ export class SocialAmplificationService {
         },
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Network effect modeling failed:");
+      logger.warn({ err: error }, "Network effect modeling failed:");
       throw error;
     }
   }
@@ -1314,17 +1314,17 @@ export class SocialAmplificationService {
     };
   }> {
     try {
-      const userProfile = await this?.fetchUserProfile(userId);
-      const userNetwork = await this?.fetchNetworkData(userId);
+      const userProfile = await this.fetchUserProfile(userId);
+      const userNetwork = await this.fetchNetworkData(userId);
 
-      const prospects = await this?.findCollaborationProspects(
+      const prospects = await this.findCollaborationProspects(
         userId,
         userProfile,
         userNetwork,
         goal,
       );
 
-      const templates = this?.generateOutreachTemplates(goal, userProfile);
+      const templates = this.generateOutreachTemplates(goal, userProfile);
 
       const successMetrics = {
         averageResponseRate: 0.28,
@@ -1338,7 +1338,7 @@ export class SocialAmplificationService {
         successMetrics,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Outreach suggestion failed:");
+      logger.warn({ err: error }, "Outreach suggestion failed:");
       throw error;
     }
   }
@@ -1361,7 +1361,7 @@ export class SocialAmplificationService {
         });
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, `Failed to ensure AI model ${modelName}:`);
+      logger.warn({ err: error }, `Failed to ensure AI model ${modelName}:`);
     }
   }
 
@@ -1386,7 +1386,7 @@ export class SocialAmplificationService {
         success: true,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Failed to log inference:");
+      logger.warn({ err: error }, "Failed to log inference:");
     }
   }
 
@@ -1394,18 +1394,18 @@ export class SocialAmplificationService {
     userId: string,
     platform: string,
   ): Promise<PlatformMetrics> {
-    const baseFollowers = 5000 + Math?.random() * 45000;
+    const baseFollowers = 5000 + Math.random() * 45000;
     return {
       followerCount: Math.round(baseFollowers),
-      totalReach: Math.round(baseFollowers * (1.2 + Math?.random() * 0.8)),
+      totalReach: Math.round(baseFollowers * (1.2 + Math.random() * 0.8)),
       totalEngagement: Math.round(
-        baseFollowers * (0.03 + Math?.random() * 0.07),
+        baseFollowers * (0.03 + Math.random() * 0.07),
       ),
-      posts: Math.round(50 + Math?.random() * 200),
-      engagementByPost: Array.from({ length: 30 }, () => Math?.random() * 1000),
+      posts: Math.round(50 + Math.random() * 200),
+      engagementByPost: Array.from({ length: 30 }, () => Math.random() * 1000),
       followerGrowth: Array.from(
         { length: 30 },
-        () => -50 + Math?.random() * 150,
+        () => -50 + Math.random() * 150,
       ),
       platform,
       userId,
@@ -1413,8 +1413,8 @@ export class SocialAmplificationService {
   }
 
   private calculateFollowerScore(followerCount: number): number {
-    return Math?.min(
-      (Math?.log10(followerCount) / Math?.log10(1000000)) * 100,
+    return Math.min(
+      (Math.log10(followerCount) / Math.log10(1000000)) * 100,
       100,
     );
   }
@@ -1425,14 +1425,14 @@ export class SocialAmplificationService {
       metrics?.engagementByPost.length;
     const consistency =
       1 -
-      (Math?.max(...metrics?.engagementByPost) -
-        Math?.min(...metrics?.engagementByPost)) /
+      (Math.max(...metrics?.engagementByPost) -
+        Math.min(...metrics?.engagementByPost)) /
         (avgEngagement || 1);
-    return Math?.min(consistency * 100 + 20, 100);
+    return Math.min(consistency * 100 + 20, 100);
   }
 
   private calculateNicheAuthority(_metrics: PlatformMetrics): number {
-    return 60 + Math?.random() * 35;
+    return 60 + Math.random() * 35;
   }
 
   private detectFakeFollowers(metrics: PlatformMetrics): {
@@ -1443,7 +1443,7 @@ export class SocialAmplificationService {
     const anomalyPatterns: string[] = [];
     let suspicionScore = 0;
 
-    const maxGrowth = Math?.max(...metrics?.followerGrowth);
+    const maxGrowth = Math.max(...metrics?.followerGrowth);
     const avgGrowth =
       metrics?.followerGrowth.reduce((a: number, b: number) => a + b, 0) /
       metrics?.followerGrowth.length;
@@ -1458,8 +1458,8 @@ export class SocialAmplificationService {
       suspicionScore += 30;
     }
 
-    const fakeFollowerPercentage = Math?.min(suspicionScore / 100, 0.3);
-    const authenticityScore = Math?.max((1 - fakeFollowerPercentage) * 100, 50);
+    const fakeFollowerPercentage = Math.min(suspicionScore / 100, 0.3);
+    const authenticityScore = Math.max((1 - fakeFollowerPercentage) * 100, 50);
 
     return {
       authenticityScore,
@@ -1502,28 +1502,28 @@ export class SocialAmplificationService {
       userId: "user_" + randomBytes(5).toString("hex"),
       platform: "instagram",
       campaignId: null,
-      impressions: Math.round(10000 + Math?.random() * 90000),
-      shares: Math.round(100 + Math?.random() * 900),
-      clicks: Math.round(500 + Math?.random() * 2500),
+      impressions: Math.round(10000 + Math.random() * 90000),
+      shares: Math.round(100 + Math.random() * 900),
+      clicks: Math.round(500 + Math.random() * 2500),
       timestamp: new Date(),
     };
   }
 
   private analyzeCascadeLevels(metrics: PostMetrics): CascadeLevel[] {
-    const depth = Math?.floor(1 + Math?.random() * 5);
-    return Array?.from({ length: depth }, (_, i) => ({
+    const depth = Math.floor(1 + Math.random() * 5);
+    return Array.from({ length: depth }, (_, i) => ({
       level: i + 1,
-      shares: Math.round(metrics?.shares / Math?.pow(2, i)),
-      reach: Math.round(metrics?.impressions / Math?.pow(2, i)),
+      shares: Math.round(metrics?.shares / Math.pow(2, i)),
+      reach: Math.round(metrics?.impressions / Math.pow(2, i)),
     }));
   }
 
   private identifySuperSpreaders(
     _metrics: PostMetrics,
   ): Array<{ userId: string; amplification: number }> {
-    return Array?.from({ length: 5 }, (_, _i) => ({
+    return Array.from({ length: 5 }, (_, _i) => ({
       userId: "super_" + randomBytes(5).toString("hex"),
-      amplification: Math.round(100 + Math?.random() * 900),
+      amplification: Math.round(100 + Math.random() * 900),
     }));
   }
 
@@ -1533,7 +1533,7 @@ export class SocialAmplificationService {
   ): string {
     const growthRate = tracking
       ? (currentMetrics?.shares - (tracking?.totalShares || 0)) /
-        Math?.max(tracking?.totalShares || 1, 1)
+        Math.max(tracking?.totalShares || 1, 1)
       : 0;
 
     if (growthRate > 0.5) return "viral";
@@ -1547,7 +1547,7 @@ export class SocialAmplificationService {
     metrics: PostMetrics,
     viralCoefficient: number,
   ): number {
-    return Math?.round(metrics?.impressions * (1 + viralCoefficient * 10));
+    return Math.round(metrics?.impressions * (1 + viralCoefficient * 10));
   }
 
   private calculateViralityTrend(
@@ -1580,17 +1580,17 @@ export class SocialAmplificationService {
   }
 
   private async analyzeNetworkStructure(_userId: string): Promise<number> {
-    return 0.6 + Math?.random() * 0.35;
+    return 0.6 + Math.random() * 0.35;
   }
 
   private analyzePostTiming(scheduledTime: Date): number {
     const hour = scheduledTime?.getHours();
-    if (hour >= 18 && hour <= 21) return 0.9 + Math?.random() * 0.1;
+    if (hour >= 18 && hour <= 21) return 0.9 + Math.random() * 0.1;
     if ((hour >= 12 && hour <= 14) || (hour >= 17 && hour <= 18))
-      return 0.7 + Math?.random() * 0.15;
+      return 0.7 + Math.random() * 0.15;
     if ((hour >= 9 && hour <= 11) || (hour >= 14 && hour <= 17))
-      return 0.5 + Math?.random() * 0.15;
-    return 0.3 + Math?.random() * 0.15;
+      return 0.5 + Math.random() * 0.15;
+    return 0.3 + Math.random() * 0.15;
   }
 
   private calculatePlatformAffinityScore(
@@ -1616,7 +1616,7 @@ export class SocialAmplificationService {
   ): BasePrediction {
     const multiplier =
       (contentQuality?.score / 100) * networkStructure * timing * platform;
-    const totalReach = Math?.round(initialAudience * (1 + multiplier * 5));
+    const totalReach = Math.round(initialAudience * (1 + multiplier * 5));
 
     return {
       totalReach,
@@ -1630,7 +1630,7 @@ export class SocialAmplificationService {
     contentQuality: ContentQualityResult,
     networkStructure: number,
   ): number {
-    return Math?.min(
+    return Math.min(
       (contentQuality?.score / 100) * 0.6 + networkStructure * 0.4,
       0.95,
     );
@@ -1652,7 +1652,7 @@ export class SocialAmplificationService {
       } else {
         const declineProgress = progress - 1;
         reach =
-          prediction?.totalReach * Math?.max(0.5, 1 - declineProgress * 0.1);
+          prediction?.totalReach * Math.max(0.5, 1 - declineProgress * 0.1);
       }
 
       dataPoints?.push({
@@ -1668,11 +1668,11 @@ export class SocialAmplificationService {
   private async fetchNetworkData(userId: string): Promise<NetworkData> {
     return {
       userId,
-      connections: Math.round(500 + Math?.random() * 4500),
+      connections: Math.round(500 + Math.random() * 4500),
       primaryPlatform: "instagram",
       nodes: Array.from({ length: 50 }, (_, i) => ({
         id: `node_${i}`,
-        connections: Math.round(10 + Math?.random() * 90),
+        connections: Math.round(10 + Math.random() * 90),
       })),
     };
   }
@@ -1681,8 +1681,8 @@ export class SocialAmplificationService {
     if (model === "metcalfe") {
       return connections * connections;
     } else {
-      return Math?.min(
-        Math?.pow(2, Math?.log2(connections + 1)),
+      return Math.min(
+        Math.pow(2, Math.log2(connections + 1)),
         connections * connections * 10,
       );
     }
@@ -1698,22 +1698,22 @@ export class SocialAmplificationService {
   }
 
   private calculateClusteringCoefficient(networkData: NetworkData): number {
-    return 0.3 + Math?.random() * 0.4;
+    return 0.3 + Math.random() * 0.4;
   }
 
   private calculateBetweennessCentrality(
     _userId: string,
     networkData: NetworkData,
   ): number {
-    return 0.2 + Math?.random() * 0.6;
+    return 0.2 + Math.random() * 0.6;
   }
 
   private calculateReachMultiplier(networkData: NetworkData): number {
-    return 1.5 + Math?.random() * 2.5;
+    return 1.5 + Math.random() * 2.5;
   }
 
   private calculateEigenvectorCentrality(networkData: NetworkData): number {
-    return 0.4 + Math?.random() * 0.5;
+    return 0.4 + Math.random() * 0.5;
   }
 
   private generateConnectionStrategies(
@@ -1742,7 +1742,7 @@ export class SocialAmplificationService {
 
     strategies?.push("Connect with users who bridge different communities");
     strategies?.push(
-      `Target ${keyNodes?.length > 5 ? "top " + Math?.min(keyNodes?.length, 20) : "all"} high-centrality nodes for maximum reach`,
+      `Target ${keyNodes?.length > 5 ? "top " + Math.min(keyNodes?.length, 20) : "all"} high-centrality nodes for maximum reach`,
     );
 
     return strategies;
@@ -1766,11 +1766,11 @@ export class SocialAmplificationService {
     clustering: number,
     reachMultiplier: number,
   ): number {
-    return Math?.min(clustering * 40 + (reachMultiplier / 4) * 60, 100);
+    return Math.min(clustering * 40 + (reachMultiplier / 4) * 60, 100);
   }
 
   private async calculateGrowthRate(_userId: string): Promise<number> {
-    return 0.05 + Math?.random() * 0.15;
+    return 0.05 + Math.random() * 0.15;
   }
 
   private projectNetworkValue(
@@ -1780,10 +1780,10 @@ export class SocialAmplificationService {
     model: string,
   ): number {
     const months = days / 30;
-    const futureConnections = Math?.round(
-      currentConnections * Math?.pow(1 + growthRate, months),
+    const futureConnections = Math.round(
+      currentConnections * Math.pow(1 + growthRate, months),
     );
-    return this?.calculateNetworkValue(futureConnections, model);
+    return this.calculateNetworkValue(futureConnections, model);
   }
 
   private async fetchUserProfile(userId: string): Promise<UserProfile> {
@@ -1792,8 +1792,8 @@ export class SocialAmplificationService {
       userId,
       username: user.username || "user",
       niche: "music",
-      followerCount: 5000 + Math?.random() * 45000,
-      engagementRate: 0.03 + Math?.random() * 0.05,
+      followerCount: 5000 + Math.random() * 45000,
+      engagementRate: 0.03 + Math.random() * 0.05,
     };
   }
 
@@ -1803,14 +1803,14 @@ export class SocialAmplificationService {
     userNetwork: NetworkData,
     _goal: string,
   ): Promise<CollaborationProspect[]> {
-    const numProspects = Math?.floor(10 + Math?.random() * 30);
+    const numProspects = Math.floor(10 + Math.random() * 30);
 
-    return Array?.from({ length: numProspects }, (_, i) => {
-      const audienceOverlap = Math?.random();
-      const engagementCompatibility = 0.7 + Math?.random() * 0.3;
-      const nicheAlignment = 0.6 + Math?.random() * 0.4;
+    return Array.from({ length: numProspects }, (_, i) => {
+      const audienceOverlap = Math.random();
+      const engagementCompatibility = 0.7 + Math.random() * 0.3;
+      const nicheAlignment = 0.6 + Math.random() * 0.4;
 
-      const matchScore = Math?.round(
+      const matchScore = Math.round(
         (audienceOverlap * 0.4 +
           engagementCompatibility * 0.3 +
           nicheAlignment * 0.3) *
@@ -1851,7 +1851,7 @@ export class SocialAmplificationService {
 
     if (goal?.includes("cross-promotion")) {
       templates?.push({
-        template: `Hi {name}! Your content on {topic} really resonates with my audience. I think we could create something amazing together through cross-promotion. I have about ${Math?.round(userProfile?.followerCount / 1000)}K engaged followers who would love your content. Interested in exploring this?`,
+        template: `Hi {name}! Your content on {topic} really resonates with my audience. I think we could create something amazing together through cross-promotion. I have about ${Math.round(userProfile?.followerCount / 1000)}K engaged followers who would love your content. Interested in exploring this?`,
         personalization: ["name", "topic", "specific_post_reference"],
         expectedResponseRate: 0.28,
       });

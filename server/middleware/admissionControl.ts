@@ -73,7 +73,7 @@ export async function admissionControl(
       ADMISSION_CONGESTION_THROTTLE_MS
     ) {
       _lastAdmissionCongestionWarnAt = now;
-      logger?.warn(
+      logger.warn(
         "[AdmissionControl] PDIM unavailable — using in-process fallback counter:",
         (err as Error).message,
       );
@@ -84,16 +84,16 @@ export async function admissionControl(
 
   if (current > MAX_CONCURRENT_REQUESTS) {
     if (usingLocalFallback) {
-      _localInflight = Math?.max(0, _localInflight - 1);
+      _localInflight = Math.max(0, _localInflight - 1);
     } else {
       await decrement().catch(() => {});
     }
-    logger?.warn(
+    logger.warn(
       `[AdmissionControl] Shedding request — inflight: ${current}/${MAX_CONCURRENT_REQUESTS} ` +
-        `(${usingLocalFallback ? "local-fallback" : "global"}) path: ${req?.path}`,
+        `(${usingLocalFallback ? "local-fallback" : "global"}) path: ${req.path}`,
     );
-    res?.setHeader("Retry-After", String(RETRY_AFTER_SECONDS));
-    res?.status(503).json({
+    res.setHeader("Retry-After", String(RETRY_AFTER_SECONDS));
+    res.status(503).json({
       error: "Server is under high load. Please retry in a few seconds.",
       retryAfter: RETRY_AFTER_SECONDS,
     });
@@ -105,14 +105,14 @@ export async function admissionControl(
     if (decremented) return;
     decremented = true;
     if (usingLocalFallback) {
-      _localInflight = Math?.max(0, _localInflight - 1);
+      _localInflight = Math.max(0, _localInflight - 1);
     } else {
       decrement().catch(() => {});
     }
   };
 
-  res?.on("finish", safeDecrement);
-  res?.on("close", safeDecrement);
+  res.on("finish", safeDecrement);
+  res.on("close", safeDecrement);
 
   next();
 }

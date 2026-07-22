@@ -1,7 +1,7 @@
 /**
  * Central typed environment configuration with Zod validation.
  * Import `env` from this module throughout the server instead of
- * reading process?.env directly — provides compile-time types, runtime
+ * reading process.env directly — provides compile-time types, runtime
  * validation, and prevents undefined crashes caused by typos.
  *
  * Usage:
@@ -82,7 +82,7 @@ const envSchema = z.object({
 // Parse eagerly at startup so any misconfiguration surfaces immediately.
 // Missing required vars will throw with a descriptive error.
 function parseEnv() {
-  const result = envSchema?.safeParse(process?.env);
+  const result = envSchema?.safeParse(process.env);
   if (!result?.success) {
     const issues = result?.error.issues
       .map((i) => `  ${i?.path.join(".")}: ${i?.message}`)
@@ -100,10 +100,10 @@ function parseEnv() {
     // Warn for non-critical issues
     console?.warn(`[env] Optional env vars have issues:\n${issues}`);
   }
-  // Return the parsed data if successful, otherwise the raw process?.env with defaults applied
+  // Return the parsed data if successful, otherwise the raw process.env with defaults applied
   return result?.success
     ? result?.data
-    : (envSchema?.partial().parse(process?.env) as z.infer<typeof envSchema>);
+    : (envSchema?.partial().parse(process.env) as z.infer<typeof envSchema>);
 }
 
 export const env = parseEnv();

@@ -226,10 +226,10 @@ class InvoiceService {
   private static readonly MAX_INVOICES = 50_000;
 
   private evictIfOverCap(): void {
-    while (this?.invoices.size >= InvoiceService.MAX_INVOICES) {
-      const oldestKey = this?.invoices.keys().next().value;
+    while (this.invoices.size >= InvoiceService.MAX_INVOICES) {
+      const oldestKey = this.invoices.keys().next().value;
       if (oldestKey !== undefined) {
-        this?.invoices.delete(oldestKey);
+        this.invoices.delete(oldestKey);
       } else {
         break;
       }
@@ -262,7 +262,7 @@ class InvoiceService {
     country: string,
     state?: string,
   ): TaxBreakdown[] {
-    const rates = this?.getTaxRates(country, state);
+    const rates = this.getTaxRates(country, state);
     const taxes: TaxBreakdown[] = [];
     let taxableAmount = amount;
 
@@ -288,7 +288,7 @@ class InvoiceService {
   }
 
   formatCurrency(amount: number, currency: string): string {
-    const symbol = this?.getCurrencySymbol(currency);
+    const symbol = this.getCurrencySymbol(currency);
     return `${symbol}${amount?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 
@@ -308,7 +308,7 @@ class InvoiceService {
     metadata?: Record<string, any>;
   }): Invoice {
     const currency = data?.currency || "USD";
-    const invoiceNumber = this?.generateInvoiceNumber();
+    const invoiceNumber = this.generateInvoiceNumber();
 
     const lineItems: InvoiceLineItem[] = data?.lineItems.map((item) => {
       const subtotal = item?.quantity * item?.unitPrice;
@@ -341,7 +341,7 @@ class InvoiceService {
 
     let taxes: TaxBreakdown[] = [];
     if (data?.applyTax !== false) {
-      taxes = this?.calculateTax(subtotal, data?.to.country, data?.to.state);
+      taxes = this.calculateTax(subtotal, data?.to.country, data?.to.state);
     }
 
     const totalTax = taxes?.reduce((sum, t) => sum + t?.taxAmount, 0);
@@ -370,7 +370,7 @@ class InvoiceService {
       taxes,
       totalTax: Math.round(totalTax * 100) / 100,
       discount:
-        discountAmount > 0 ? Math?.round(discountAmount * 100) / 100 : undefined,
+        discountAmount > 0 ? Math.round(discountAmount * 100) / 100 : undefined,
       discountType: data.discountType,
       total: Math.round(total * 100) / 100,
       currency,
@@ -381,20 +381,20 @@ class InvoiceService {
       metadata: data.metadata,
     };
 
-    this?.evictIfOverCap();
-    this?.invoices.set(invoice?.id, invoice);
-    logger?.info(
+    this.evictIfOverCap();
+    this.invoices.set(invoice?.id, invoice);
+    logger.info(
       `Created invoice ${invoice?.invoiceNumber} for user ${data?.userId}`,
     );
     return invoice;
   }
 
   getInvoice(invoiceId: string): Invoice | undefined {
-    return this?.invoices.get(invoiceId);
+    return this.invoices.get(invoiceId);
   }
 
   getInvoicesByUser(userId: string): Invoice[] {
-    return Array?.from(this?.invoices.values()).filter(
+    return Array.from(this.invoices.values()).filter(
       (inv) => inv?.userId === userId,
     );
   }
@@ -407,7 +407,7 @@ class InvoiceService {
       paymentMethod?: string;
     },
   ): Invoice {
-    const invoice = this?.invoices.get(invoiceId);
+    const invoice = this.invoices.get(invoiceId);
     if (!invoice) {
       throw new Error("Invoice not found");
     }
@@ -418,14 +418,14 @@ class InvoiceService {
       invoice.paymentMethod = paymentDetails?.paymentMethod;
     }
 
-    this?.evictIfOverCap();
-    this?.invoices.set(invoiceId, invoice);
-    logger?.info(`Updated invoice ${invoice?.invoiceNumber} status to ${status}`);
+    this.evictIfOverCap();
+    this.invoices.set(invoiceId, invoice);
+    logger.info(`Updated invoice ${invoice?.invoiceNumber} status to ${status}`);
     return invoice;
   }
 
   generatePDF(invoiceId: string): Buffer {
-    const invoice = this?.invoices.get(invoiceId);
+    const invoice = this.invoices.get(invoiceId);
     if (!invoice) {
       throw new Error("Invoice not found");
     }
@@ -531,14 +531,14 @@ class InvoiceService {
     doc?.setFont("helvetica", "normal");
     doc?.text(invoice?.status.toUpperCase(), detailsX + 35, detailsY);
 
-    y = Math?.max(y, detailsY) + 20;
+    y = Math.max(y, detailsY) + 20;
 
     const tableData = invoice?.lineItems.map((item) => [
       item?.description,
       item?.quantity.toString(),
-      this?.formatCurrency(item?.unitPrice, invoice?.currency),
+      this.formatCurrency(item?.unitPrice, invoice?.currency),
       item?.taxRate ? `${item?.taxRate}%` : "-",
-      this?.formatCurrency(item?.total, invoice?.currency),
+      this.formatCurrency(item?.total, invoice?.currency),
     ]);
 
     (doc as Record<string, unknown>).autoTable({
@@ -571,7 +571,7 @@ class InvoiceService {
     doc?.setFont("helvetica", "normal");
     doc?.text("Subtotal:", totalsX, y);
     doc?.text(
-      this?.formatCurrency(invoice?.subtotal, invoice?.currency),
+      this.formatCurrency(invoice?.subtotal, invoice?.currency),
       pageWidth - margin,
       y,
       { align: "right" },
@@ -581,7 +581,7 @@ class InvoiceService {
     for (const tax of invoice?.taxes) {
       doc?.text(`${tax?.taxType.toUpperCase()} (${tax?.taxRate}%):`, totalsX, y);
       doc?.text(
-        this?.formatCurrency(tax?.taxAmount, invoice?.currency),
+        this.formatCurrency(tax?.taxAmount, invoice?.currency),
         pageWidth - margin,
         y,
         { align: "right" },
@@ -592,7 +592,7 @@ class InvoiceService {
     if (invoice?.discount) {
       doc?.text("Discount:", totalsX, y);
       doc?.text(
-        `-${this?.formatCurrency(invoice?.discount, invoice?.currency)}`,
+        `-${this.formatCurrency(invoice?.discount, invoice?.currency)}`,
         pageWidth - margin,
         y,
         { align: "right" },
@@ -609,7 +609,7 @@ class InvoiceService {
     doc?.setFont("helvetica", "bold");
     doc?.text("Total:", totalsX, y);
     doc?.text(
-      this?.formatCurrency(invoice?.total, invoice?.currency),
+      this.formatCurrency(invoice?.total, invoice?.currency),
       pageWidth - margin,
       y,
       { align: "right" },
@@ -662,7 +662,7 @@ class InvoiceService {
 
   getOverdueInvoices(userId?: string): Invoice[] {
     const now = new Date();
-    return Array?.from(this?.invoices.values()).filter((inv) => {
+    return Array.from(this.invoices.values()).filter((inv) => {
       if (userId && inv?.userId !== userId) return false;
       if (
         inv?.status === "paid" ||
@@ -682,7 +682,7 @@ class InvoiceService {
     invoiceCount: number;
     byStatus: Record<string, number>;
   } {
-    const userInvoices = this?.getInvoicesByUser(userId);
+    const userInvoices = this.getInvoicesByUser(userId);
     const now = new Date();
 
     const summary = {

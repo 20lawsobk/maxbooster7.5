@@ -43,7 +43,7 @@ const advertisingAutopilotConfigSchema = z.object({
 // Get advertising autopilot status
 router?.get("/status", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const now = new Date();
 
     const config = await storage
@@ -64,7 +64,7 @@ router?.get("/status", requireAuth, async (req, res) => {
       viralSuccessRate = advertisingModel?.getViralSuccessRate();
       organicReachMultiplier = advertisingModel?.getAvgOrganicReachMultiplier();
     } catch (e) {
-      logger?.warn(
+      logger.warn(
         { err: e },
         "getAdvertisingAutopilot unavailable, using defaults:",
       );
@@ -134,7 +134,7 @@ router?.get("/status", requireAuth, async (req, res) => {
       time: c.startDate || c?.createdAt,
     }));
 
-    res?.json({
+    res.json({
       isRunning: config.enabled || false,
       config: config || {
         enabled: false,
@@ -176,7 +176,7 @@ router?.get("/status", requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get advertising autopilot status:");
+    logger.warn({ err: error }, "Failed to get advertising autopilot status:");
     res
       .status(500)
       .json({ error: "Failed to get advertising autopilot status" });
@@ -186,7 +186,7 @@ router?.get("/status", requireAuth, async (req, res) => {
 // Start advertising autopilot
 router?.post("/start", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
     // Get or create config
     let config = await storage?.getAdvertisingAutopilotConfig(userId);
@@ -221,23 +221,23 @@ router?.post("/start", requireAuth, async (req, res) => {
 
     await storage?.saveAdvertisingAutopilotConfig(userId, config);
 
-    logger?.info(`✅ Advertising Autopilot started for user ${userId}`);
+    logger.info(`✅ Advertising Autopilot started for user ${userId}`);
 
-    res?.json({
+    res.json({
       success: true,
       message: "Advertising Autopilot activated",
       config,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to start advertising autopilot:");
-    res?.status(500).json({ error: "Failed to start advertising autopilot" });
+    logger.warn({ err: error }, "Failed to start advertising autopilot:");
+    res.status(500).json({ error: "Failed to start advertising autopilot" });
   }
 });
 
 // Stop advertising autopilot
 router?.post("/stop", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
     const config = await storage?.getAdvertisingAutopilotConfig(userId);
     if (config) {
@@ -245,29 +245,29 @@ router?.post("/stop", requireAuth, async (req, res) => {
       await storage?.saveAdvertisingAutopilotConfig(userId, config);
     }
 
-    logger?.info(`⏸️ Advertising Autopilot stopped for user ${userId}`);
+    logger.info(`⏸️ Advertising Autopilot stopped for user ${userId}`);
 
-    res?.json({
+    res.json({
       success: true,
       message: "Advertising Autopilot paused",
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to stop advertising autopilot:");
-    res?.status(500).json({ error: "Failed to stop advertising autopilot" });
+    logger.warn({ err: error }, "Failed to stop advertising autopilot:");
+    res.status(500).json({ error: "Failed to stop advertising autopilot" });
   }
 });
 
 // Configure advertising autopilot
 router?.post("/configure", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const config = advertisingAutopilotConfigSchema?.parse(req?.body);
+    const userId = req.user!.id;
+    const config = advertisingAutopilotConfigSchema?.parse(req.body);
 
     await storage?.saveAdvertisingAutopilotConfig(userId, config);
 
-    logger?.info(`⚙️ Advertising Autopilot configured for user ${userId}`);
+    logger.info(`⚙️ Advertising Autopilot configured for user ${userId}`);
 
-    res?.json({
+    res.json({
       success: true,
       message: "Configuration updated",
       config,
@@ -279,16 +279,16 @@ router?.post("/configure", requireAuth, async (req, res) => {
         .json({ error: "Invalid configuration", details: error.issues });
       return;
     }
-    logger?.warn({ err: error }, "Failed to configure advertising autopilot:");
-    res?.status(500).json({ error: "Failed to update configuration" });
+    logger.warn({ err: error }, "Failed to configure advertising autopilot:");
+    res.status(500).json({ error: "Failed to update configuration" });
   }
 });
 
 // Generate campaign recommendations
 router?.post("/recommend", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { objective, includeMultimodal } = req?.body;
+    const userId = req.user!.id;
+    const { objective, includeMultimodal } = req.body;
 
     // Get AI model
     const advertisingModel =
@@ -313,13 +313,13 @@ router?.post("/recommend", requireAuth, async (req, res) => {
         multimodalFeatures,
       );
 
-    res?.json({
+    res.json({
       success: true,
       recommendations,
       usedMultimodal: !!multimodalFeatures,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to generate campaign recommendations:");
+    logger.warn({ err: error }, "Failed to generate campaign recommendations:");
     res
       .status(500)
       .json({ error: "Failed to generate campaign recommendations" });
@@ -329,7 +329,7 @@ router?.post("/recommend", requireAuth, async (req, res) => {
 // Get AI performance metrics
 router?.get("/performance", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
     const advertisingModel =
       await aiModelManager?.getAdvertisingAutopilot(userId);
@@ -351,17 +351,17 @@ router?.get("/performance", requireAuth, async (req, res) => {
 
     // Baseline: if artist had 0 campaigns, show neutral
     const multiplier = organicReachMultiplier || 1.0;
-    const pctBetter = Math?.round((multiplier - 1) * 100);
+    const pctBetter = Math.round((multiplier - 1) * 100);
     // Each campaign is estimated to generate ~50k impressions/month organically
     const estimatedMonthlyImpressions = numCampaigns * 50000;
     // What those impressions would cost as paid ads at $10 CPM
     const equivalentPaidSpend = (estimatedMonthlyImpressions / 1000) * 10;
-    const annualSavings = Math?.round(equivalentPaidSpend * 12);
+    const annualSavings = Math.round(equivalentPaidSpend * 12);
     // Revenue uplift: each campaign that outperforms paid avg generates ~10% more conversions
     const conversionUplift =
-      numCampaigns > 0 ? Math?.round(numCampaigns * multiplier * 500) : 0;
+      numCampaigns > 0 ? Math.round(numCampaigns * multiplier * 500) : 0;
 
-    res?.json({
+    res.json({
       success: true,
       organicReachMultiplier: multiplier,
       viralSuccessRate: advertisingModel.getViralSuccessRate() || 0,
@@ -386,274 +386,274 @@ router?.get("/performance", requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Performance metrics error:");
-    res?.status(500).json({ error: "Internal server error" });
+    logger.warn({ err: error }, "Performance metrics error:");
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
 // Get campaigns - returns empty array when no real data exists
 router?.get("/campaigns", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const campaigns = (await storage?.getAdvertisingCampaigns?.(userId)) || [];
-    res?.json(campaigns);
+    res.json(campaigns);
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get campaigns:");
-    res?.status(500).json({ error: "Failed to get campaigns:" });
+    logger.warn({ err: error }, "Failed to get campaigns:");
+    res.status(500).json({ error: "Failed to get campaigns:" });
   }
 });
 
 // Get AI insights - returns empty state when no real data exists
 router?.get("/ai-insights", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const insights = (await storage?.getAdvertisingInsights?.(userId)) || null;
-    res?.json(
+    res.json(
       insights ?? { campaigns: [], totalSpend: 0, totalRevenue: 0, roas: 0 },
     );
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get AI insights:");
-    res?.status(500).json({ error: "Failed to get AI insights" });
+    logger.warn({ err: error }, "Failed to get AI insights:");
+    res.status(500).json({ error: "Failed to get AI insights" });
   }
 });
 
 // Get audience segments - returns empty array when no real data exists
 router?.get("/audience-segments", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const segments = (await storage?.getAudienceSegments?.(userId)) || [];
-    res?.json(segments);
+    res.json(segments);
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get audience segments:");
-    res?.status(500).json({ error: "Failed to get audience segments:" });
+    logger.warn({ err: error }, "Failed to get audience segments:");
+    res.status(500).json({ error: "Failed to get audience segments:" });
   }
 });
 
 // Get creative fatigue data - returns empty array when no real data exists
 router?.get("/creative-fatigue", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const fatigue = (await storage?.getCreativeFatigue?.(userId)) || [];
-    res?.json(fatigue);
+    res.json(fatigue);
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get creative fatigue:");
-    res?.status(500).json({ error: "Failed to get creative fatigue:" });
+    logger.warn({ err: error }, "Failed to get creative fatigue:");
+    res.status(500).json({ error: "Failed to get creative fatigue:" });
   }
 });
 
 // Get bidding strategies - returns empty array when no real data exists
 router?.get("/bidding-strategies", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const strategies = (await storage?.getBiddingStrategies?.(userId)) || [];
-    res?.json(strategies);
+    res.json(strategies);
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get bidding strategies:");
-    res?.status(500).json({ error: "Failed to get bidding strategies:" });
+    logger.warn({ err: error }, "Failed to get bidding strategies:");
+    res.status(500).json({ error: "Failed to get bidding strategies:" });
   }
 });
 
 // Get lookalike audiences - returns empty array when no real data exists
 router?.get("/lookalike-audiences", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const audiences = (await storage?.getLookalikeAudiences?.(userId)) || [];
-    res?.json(audiences);
+    res.json(audiences);
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get lookalike audiences:");
-    res?.status(500).json({ error: "Failed to get lookalike audiences:" });
+    logger.warn({ err: error }, "Failed to get lookalike audiences:");
+    res.status(500).json({ error: "Failed to get lookalike audiences:" });
   }
 });
 
 // Get forecasts - returns null when no real data exists
 router?.get("/forecasts", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const forecasts = (await storage?.getAdvertisingForecasts?.(userId)) || null;
-    res?.json(forecasts ?? []);
+    res.json(forecasts ?? []);
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get forecasts:");
-    res?.status(500).json({ error: "Failed to get forecasts" });
+    logger.warn({ err: error }, "Failed to get forecasts:");
+    res.status(500).json({ error: "Failed to get forecasts" });
   }
 });
 
 // Get competitor insights - returns empty array when no real data exists
 router?.get("/competitor-insights", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const insights = (await storage?.getCompetitorInsights?.(userId)) || [];
-    res?.json(insights);
+    res.json(insights);
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get competitor insights:");
-    res?.status(500).json({ error: "Failed to get competitor insights:" });
+    logger.warn({ err: error }, "Failed to get competitor insights:");
+    res.status(500).json({ error: "Failed to get competitor insights:" });
   }
 });
 
 // Get A/B tests - returns empty array when no real data exists
 router?.get("/ab-tests", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const tests = (await storage?.getABTests?.(userId)) || [];
-    res?.json(tests);
+    res.json(tests);
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get A/B tests:");
-    res?.status(500).json({ error: "Failed to get A/B tests:" });
+    logger.warn({ err: error }, "Failed to get A/B tests:");
+    res.status(500).json({ error: "Failed to get A/B tests:" });
   }
 });
 
 // Get creative variants - returns empty array when no real data exists
 router?.get("/creative-variants", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const variants = (await storage?.getCreativeVariants?.(userId)) || [];
-    res?.json(variants);
+    res.json(variants);
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get creative variants:");
-    res?.status(500).json({ error: "Failed to get creative variants:" });
+    logger.warn({ err: error }, "Failed to get creative variants:");
+    res.status(500).json({ error: "Failed to get creative variants:" });
   }
 });
 
 // Get ROAS campaigns - returns empty array when no real data exists
 router?.get("/roas/campaigns", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const campaigns = (await storage?.getRoasCampaigns?.(userId)) || [];
-    res?.json(campaigns);
+    res.json(campaigns);
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get ROAS campaigns:");
-    res?.status(500).json({ error: "Failed to get ROAS campaigns:" });
+    logger.warn({ err: error }, "Failed to get ROAS campaigns:");
+    res.status(500).json({ error: "Failed to get ROAS campaigns:" });
   }
 });
 
 // Get ROAS audience segments - returns empty array when no real data exists
 router?.get("/roas/audience-segments", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const segments = (await storage?.getRoasAudienceSegments?.(userId)) || [];
-    res?.json(segments);
+    res.json(segments);
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get ROAS audience segments:");
-    res?.status(500).json({ error: "Failed to get ROAS audience segments:" });
+    logger.warn({ err: error }, "Failed to get ROAS audience segments:");
+    res.status(500).json({ error: "Failed to get ROAS audience segments:" });
   }
 });
 
 // Get ROAS forecast data - returns empty array when no real data exists
 router?.get("/roas/forecast", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const forecast = (await storage?.getRoasForecast?.(userId)) || [];
-    res?.json(forecast);
+    res.json(forecast);
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get ROAS forecast:");
-    res?.status(500).json({ error: "Failed to get ROAS forecast:" });
+    logger.warn({ err: error }, "Failed to get ROAS forecast:");
+    res.status(500).json({ error: "Failed to get ROAS forecast:" });
   }
 });
 
 // Get budget optimization data - returns empty array when no real data exists
 router?.get("/roas/budget-optimization", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const data = (await storage?.getBudgetOptimization?.(userId)) || [];
-    res?.json(data);
+    res.json(data);
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get budget optimization:");
-    res?.status(500).json({ error: "Failed to get budget optimization:" });
+    logger.warn({ err: error }, "Failed to get budget optimization:");
+    res.status(500).json({ error: "Failed to get budget optimization:" });
   }
 });
 
 // Get creative fatigue analysis - returns empty array when no real data exists
 router?.get("/roas/creative-fatigue-analysis", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const data = (await storage?.getCreativeFatigueAnalysis?.(userId)) || [];
-    res?.json(data);
+    res.json(data);
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get creative fatigue analysis:");
-    res?.status(500).json({ error: "Failed to get creative fatigue analysis:" });
+    logger.warn({ err: error }, "Failed to get creative fatigue analysis:");
+    res.status(500).json({ error: "Failed to get creative fatigue analysis:" });
   }
 });
 
 // Get budget pacing campaigns - returns empty array when no real data exists
 router?.get("/budget-pacing/campaigns", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const campaigns = (await storage?.getBudgetPacingCampaigns?.(userId)) || [];
-    res?.json(campaigns);
+    res.json(campaigns);
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get budget pacing campaigns:");
-    res?.status(500).json({ error: "Failed to get budget pacing campaigns:" });
+    logger.warn({ err: error }, "Failed to get budget pacing campaigns:");
+    res.status(500).json({ error: "Failed to get budget pacing campaigns:" });
   }
 });
 
 // Get budget pacing history - returns empty array when no real data exists
 router?.get("/budget-pacing/history", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const history = (await storage?.getBudgetPacingHistory?.(userId)) || [];
-    res?.json(history);
+    res.json(history);
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get budget pacing history:");
-    res?.status(500).json({ error: "Failed to get budget pacing history:" });
+    logger.warn({ err: error }, "Failed to get budget pacing history:");
+    res.status(500).json({ error: "Failed to get budget pacing history:" });
   }
 });
 
 // Get attribution data - returns empty array when no real data exists
 router?.get("/attribution", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const data = (await storage?.getAttributionData?.(userId)) || [];
-    res?.json(data);
+    res.json(data);
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get attribution data:");
-    res?.status(500).json({ error: "Failed to get attribution data:" });
+    logger.warn({ err: error }, "Failed to get attribution data:");
+    res.status(500).json({ error: "Failed to get attribution data:" });
   }
 });
 
 // Get cross-channel attribution - returns empty array when no real data exists
 router?.get("/cross-channel-attribution", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const data = (await storage?.getCrossChannelAttribution?.(userId)) || [];
-    res?.json(data);
+    res.json(data);
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get cross-channel attribution:");
-    res?.status(500).json({ error: "Failed to get cross-channel attribution:" });
+    logger.warn({ err: error }, "Failed to get cross-channel attribution:");
+    res.status(500).json({ error: "Failed to get cross-channel attribution:" });
   }
 });
 
 // Get social listening keywords - returns empty array when no real data exists
 router?.get("/social-listening/keywords", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const keywords = (await storage?.getSocialListeningKeywords?.(userId)) || [];
-    res?.json({ keywords });
+    res.json({ keywords });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get social listening keywords:");
-    res?.status(500).json({ error: "Failed to get social listening keywords" });
+    logger.warn({ err: error }, "Failed to get social listening keywords:");
+    res.status(500).json({ error: "Failed to get social listening keywords" });
   }
 });
 
 // Get social listening trending - returns empty array when no real data exists
 router?.get("/social-listening/trending", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const trending = (await storage?.getSocialListeningTrending?.(userId)) || [];
-    res?.json({ trending });
+    res.json({ trending });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get social listening trending:");
-    res?.status(500).json({ error: "Failed to get social listening trending" });
+    logger.warn({ err: error }, "Failed to get social listening trending:");
+    res.status(500).json({ error: "Failed to get social listening trending" });
   }
 });
 
 // Get social listening influencers - returns empty array when no real data exists
 router?.get("/social-listening/influencers", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const influencers =
       (await storage?.getSocialListeningInfluencers?.(userId)) || [];
-    res?.json({ influencers });
+    res.json({ influencers });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get social listening influencers:");
+    logger.warn({ err: error }, "Failed to get social listening influencers:");
     res
       .status(500)
       .json({ error: "Failed to get social listening influencers" });
@@ -663,31 +663,31 @@ router?.get("/social-listening/influencers", requireAuth, async (req, res) => {
 // Get social listening alerts - returns empty array when no real data exists
 router?.get("/social-listening/alerts", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const alerts = (await storage?.getSocialListeningAlerts?.(userId)) || [];
-    res?.json({ alerts });
+    res.json({ alerts });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get social listening alerts:");
-    res?.status(500).json({ error: "Failed to get social listening alerts" });
+    logger.warn({ err: error }, "Failed to get social listening alerts:");
+    res.status(500).json({ error: "Failed to get social listening alerts" });
   }
 });
 
 // Get competitors - returns empty array when no real data exists
 router?.get("/competitors", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const competitors = (await storage?.getCompetitors?.(userId)) || [];
-    res?.json({ competitors });
+    res.json({ competitors });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get competitors:");
-    res?.status(500).json({ error: "Failed to get competitors" });
+    logger.warn({ err: error }, "Failed to get competitors:");
+    res.status(500).json({ error: "Failed to get competitors" });
   }
 });
 
 // Get your social stats - returns empty stats when no real data exists
 router?.get("/your-stats", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const stats = (await storage?.getUserSocialStats?.(userId)) || {
       totalFollowers: 0,
       avgEngagement: 0,
@@ -695,10 +695,10 @@ router?.get("/your-stats", requireAuth, async (req, res) => {
       followersChange: 0,
       engagementChange: 0,
     };
-    res?.json(stats);
+    res.json(stats);
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get your social stats:");
-    res?.status(500).json({ error: "Failed to get social stats" });
+    logger.warn({ err: error }, "Failed to get your social stats:");
+    res.status(500).json({ error: "Failed to get social stats" });
   }
 });
 

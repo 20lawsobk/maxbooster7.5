@@ -46,15 +46,15 @@ export class PocketStorageService {
       costTier: "standard",
       ...policy,
     };
-    return this?.pocketRegistry.createPocket(ownerId, name, fullPolicy);
+    return this.pocketRegistry.createPocket(ownerId, name, fullPolicy);
   }
 
   async getPocket(pocketId: PocketId): Promise<FabricPocket | null> {
-    return this?.pocketRegistry.getPocket(pocketId);
+    return this.pocketRegistry.getPocket(pocketId);
   }
 
   async listPockets(ownerId: string): Promise<FabricPocket[]> {
-    return this?.pocketRegistry.listPockets(ownerId);
+    return this.pocketRegistry.listPockets(ownerId);
   }
 
   async createVolume(
@@ -62,13 +62,13 @@ export class PocketStorageService {
     name: string,
     type: VolumeType = "objects",
   ): Promise<FabricVolume> {
-    const pocket = await this?.pocketRegistry.getPocket(pocketId);
+    const pocket = await this.pocketRegistry.getPocket(pocketId);
     if (!pocket) throw new Error(`Pocket ${pocketId} not found`);
-    return this?.volumeRegistry.createVolume(pocketId, name, type);
+    return this.volumeRegistry.createVolume(pocketId, name, type);
   }
 
   async listVolumes(pocketId: PocketId): Promise<FabricVolume[]> {
-    return this?.volumeRegistry.listVolumes(pocketId);
+    return this.volumeRegistry.listVolumes(pocketId);
   }
 
   async putObject(
@@ -79,21 +79,21 @@ export class PocketStorageService {
     contentType = "application/octet-stream",
     storeOpts: StoreOptions = {},
   ): Promise<ObjectId> {
-    const pocket = await this?.pocketRegistry.getPocket(pocketId);
+    const pocket = await this.pocketRegistry.getPocket(pocketId);
     if (!pocket) throw new Error(`Pocket ${pocketId} not found`);
 
-    const volume = await this?.volumeRegistry.getVolume(volumeId);
+    const volume = await this.volumeRegistry.getVolume(volumeId);
     if (!volume || volume?.pocketId !== pocketId)
       throw new Error(`Volume ${volumeId} not found in pocket ${pocketId}`);
 
     const contentHash = createHash("sha256").update(data).digest("hex");
 
-    const existingObjects = await this?.objectIndex.listObjects(volumeId);
+    const existingObjects = await this.objectIndex.listObjects(volumeId);
     const duplicate = existingObjects?.find(
       (o) => o?.contentHash === contentHash,
     );
     if (duplicate) {
-      logger?.info(
+      logger.info(
         `[PocketFabric] Dedup hit: object ${duplicate?.id} already stores hash ${contentHash?.substring(0, 12)}… — skipping store`,
       );
       return duplicate?.id;
@@ -109,7 +109,7 @@ export class PocketStorageService {
       },
     );
 
-    logger?.info(
+    logger.info(
       `[PocketFabric] Compressed ${originalName}: ${data?.length} → ${compressionResult?.compressedBytes} bytes ` +
         `(${compressionResult.ratio.toFixed(2)}×) profile=${compressionResult.profile} codec=${compressionResult?.codec}`,
     );
@@ -132,9 +132,9 @@ export class PocketStorageService {
       const chunkId = cdcChunk?.hash as ChunkId;
       const chunkChecksum = cdcChunk?.hash;
 
-      const existingLoc = await this?.chunkIndex.getChunkLocation(chunkId);
+      const existingLoc = await this.chunkIndex.getChunkLocation(chunkId);
       if (existingLoc) {
-        logger?.debug(
+        logger.debug(
           `[PocketFabric] Chunk dedup: ${chunkId?.substring(0, 12)}… already stored`,
         );
         chunkMetas?.push({
@@ -147,7 +147,7 @@ export class PocketStorageService {
         continue;
       }
 
-      const decision = await this?.placement.placeChunk(
+      const decision = await this.placement.placeChunk(
         chunkId,
         cdcChunk?.length,
         pocket?.policy,
@@ -155,16 +155,16 @@ export class PocketStorageService {
 
       await Promise?.all(
         decision?.nodeIds.map(async (nodeId) => {
-          const store = this?.chunkStoreFactory(nodeId);
+          const store = this.chunkStoreFactory(nodeId);
           await store?.putChunk(chunkId, cdcChunk?.data);
         }),
       );
 
       await Promise?.all(
         decision?.nodeIds.map(async (nodeId) => {
-          const node = await this?.nodeRegistry.getNode(nodeId);
+          const node = await this.nodeRegistry.getNode(nodeId);
           if (node)
-            await this?.nodeRegistry.updateNode(nodeId, {
+            await this.nodeRegistry.updateNode(nodeId, {
               usedBytes: node.usedBytes + cdcChunk?.data.length,
             });
         }),
@@ -181,7 +181,7 @@ export class PocketStorageService {
 
     const chunkIds = chunkMetas?.map((c) => c?.id);
 
-    const obj = await this?.objectIndex.putObject(
+    const obj = await this.objectIndex.putObject(
       volumeId,
       originalName,
       contentType,
@@ -195,7 +195,7 @@ export class PocketStorageService {
       chunkMetas
         .filter((c) => !c?.isDedup)
         .map((meta) =>
-          this?.chunkIndex.putChunkLocation({
+          this.chunkIndex.putChunkLocation({
             id: meta.id,
             objectId: obj.id,
             nodeIds: meta.nodeIds,
@@ -208,7 +208,7 @@ export class PocketStorageService {
     const dedupCount = chunkMetas?.filter((c) => c?.isDedup).length;
     const newCount = chunkMetas?.filter((c) => !c?.isDedup).length;
 
-    logger?.info(
+    logger.info(
       `[PocketFabric] Stored ${obj?.id} — ${data?.length} bytes raw → ${compressedData?.length} compressed ` +
         `(${compressionResult?.ratio.toFixed(2)}×) — ${cdcChunks?.length} CDC chunks ` +
         `(${newCount} new, ${dedupCount} deduped) in pocket=${pocketId}`,
@@ -220,10 +220,10 @@ export class PocketStorageService {
   async getObject(
     objectId: ObjectId,
   ): Promise<{ data: Buffer; object: FabricObject } | null> {
-    const obj = await this?.objectIndex.getObject(objectId);
+    const obj = await this.objectIndex.getObject(objectId);
     if (!obj) return null;
 
-    const chunkLocations = await this?.chunkIndex.getManyChunkLocations(
+    const chunkLocations = await this.chunkIndex.getManyChunkLocations(
       obj?.chunkIds,
     );
 
@@ -239,7 +239,7 @@ export class PocketStorageService {
       let retrieved = false;
       for (const nodeId of loc?.nodeIds) {
         try {
-          const store = this?.chunkStoreFactory(nodeId);
+          const store = this.chunkStoreFactory(nodeId);
           const chunk = await store?.getChunk(chunkId);
           buffers?.push(chunk);
           retrieved = true;
@@ -257,10 +257,10 @@ export class PocketStorageService {
   }
 
   async deleteObject(objectId: ObjectId): Promise<void> {
-    const obj = await this?.objectIndex.getObject(objectId);
+    const obj = await this.objectIndex.getObject(objectId);
     if (!obj) return;
 
-    const chunkLocations = await this?.chunkIndex.getManyChunkLocations(
+    const chunkLocations = await this.chunkIndex.getManyChunkLocations(
       obj?.chunkIds,
     );
 
@@ -271,11 +271,11 @@ export class PocketStorageService {
           await Promise?.all(
             loc?.nodeIds.map(async (nodeId) => {
               try {
-                const store = this?.chunkStoreFactory(nodeId);
+                const store = this.chunkStoreFactory(nodeId);
                 await store?.deleteChunk(chunkId);
-                const node = await this?.nodeRegistry.getNode(nodeId);
+                const node = await this.nodeRegistry.getNode(nodeId);
                 if (node)
-                  await this?.nodeRegistry.updateNode(nodeId, {
+                  await this.nodeRegistry.updateNode(nodeId, {
                     usedBytes: Math.max(0, node?.usedBytes - loc?.sizeBytes),
                   });
               } catch {
@@ -283,21 +283,21 @@ export class PocketStorageService {
               }
             }),
           );
-          await this?.chunkIndex.deleteChunkLocation(chunkId);
+          await this.chunkIndex.deleteChunkLocation(chunkId);
         }
       }),
     );
 
-    await this?.objectIndex.deleteObject(objectId);
-    logger?.info(`[PocketFabric] Deleted object ${objectId}`);
+    await this.objectIndex.deleteObject(objectId);
+    logger.info(`[PocketFabric] Deleted object ${objectId}`);
   }
 
   async listObjects(volumeId: VolumeId): Promise<FabricObject[]> {
-    return this?.objectIndex.listObjects(volumeId);
+    return this.objectIndex.listObjects(volumeId);
   }
 
   async getStats(): Promise<FabricStats> {
-    const nodes = await this?.nodeRegistry.listAllNodes();
+    const nodes = await this.nodeRegistry.listAllNodes();
     const healthyNodes = nodes?.filter((n) => n?.healthy);
     const totalCapacity = nodes?.reduce((s, n) => s + n?.capacityBytes, 0);
     const totalUsed = nodes?.reduce((s, n) => s + n?.usedBytes, 0);

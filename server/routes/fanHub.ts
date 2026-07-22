@@ -49,10 +49,10 @@ const importSubscriberSchema = z.object({
 
 router?.get("/subscribers", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
-    const page = Math?.max(parseInt(req?.query.page as string) || 1, 1);
-    const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 200);
-    const search = (req?.query.search as string)?.slice(0, 200) || "";
+    const userId = req.user!.id;
+    const page = Math.max(parseInt(req.query.page as string) || 1, 1);
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+    const search = (req.query.search as string)?.slice(0, 200) || "";
     const offset = (page - 1) * limit;
 
     const searchCondition = search
@@ -75,7 +75,7 @@ router?.get("/subscribers", async (req: Request, res: Response) => {
       .from(fanSubscribers)
       .where(and(eq(fanSubscribers?.userId, userId), searchCondition));
 
-    return res?.json({
+    return res.json({
       subscribers,
       pagination: {
         page,
@@ -85,14 +85,14 @@ router?.get("/subscribers", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger?.warn("Error fetching fan subscribers:", error);
-    return res?.status(500).json({ error: "Failed to fetch fan subscribers" });
+    logger.warn("Error fetching fan subscribers:", error);
+    return res.status(500).json({ error: "Failed to fetch fan subscribers" });
   }
 });
 
 router?.post("/subscribers", async (req: Request, res: Response) => {
   try {
-    const parsed = createSubscriberSchema?.safeParse(req?.body);
+    const parsed = createSubscriberSchema?.safeParse(req.body);
     if (!parsed?.success) {
       return res
         .status(400)
@@ -107,19 +107,19 @@ router?.post("/subscribers", async (req: Request, res: Response) => {
       })
       .returning();
 
-    return res?.status(201).json(subscriber);
+    return res.status(201).json(subscriber);
   } catch (error) {
-    logger?.warn("Error creating fan subscriber:", error);
-    return res?.status(500).json({ error: "Failed to create fan subscriber" });
+    logger.warn("Error creating fan subscriber:", error);
+    return res.status(500).json({ error: "Failed to create fan subscriber" });
   }
 });
 
 router?.put("/subscribers/:id", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
-    const { id } = req?.params;
+    const userId = req.user!.id;
+    const { id } = req.params;
 
-    const parsed = updateSubscriberSchema?.safeParse(req?.body);
+    const parsed = updateSubscriberSchema?.safeParse(req.body);
     if (!parsed?.success) {
       return res
         .status(400)
@@ -133,20 +133,20 @@ router?.put("/subscribers/:id", async (req: Request, res: Response) => {
       .returning();
 
     if (!updated) {
-      return res?.status(404).json({ error: "Subscriber not found" });
+      return res.status(404).json({ error: "Subscriber not found" });
     }
 
-    return res?.json(updated);
+    return res.json(updated);
   } catch (error) {
-    logger?.warn("Error updating fan subscriber:", error);
-    return res?.status(500).json({ error: "Failed to update fan subscriber" });
+    logger.warn("Error updating fan subscriber:", error);
+    return res.status(500).json({ error: "Failed to update fan subscriber" });
   }
 });
 
 router?.delete("/subscribers/:id", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
-    const { id } = req?.params;
+    const userId = req.user!.id;
+    const { id } = req.params;
 
     const [deleted] = await db
       .delete(fanSubscribers)
@@ -154,22 +154,22 @@ router?.delete("/subscribers/:id", async (req: Request, res: Response) => {
       .returning();
 
     if (!deleted) {
-      return res?.status(404).json({ error: "Subscriber not found" });
+      return res.status(404).json({ error: "Subscriber not found" });
     }
 
-    return res?.json({ success: true });
+    return res.json({ success: true });
   } catch (error) {
-    logger?.warn("Error deleting fan subscriber:", error);
-    return res?.status(500).json({ error: "Failed to delete fan subscriber" });
+    logger.warn("Error deleting fan subscriber:", error);
+    return res.status(500).json({ error: "Failed to delete fan subscriber" });
   }
 });
 
 router?.post("/subscribers/import", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
-    const { subscribers: importData } = req?.body;
+    const userId = req.user!.id;
+    const { subscribers: importData } = req.body;
 
-    if (!Array?.isArray(importData)) {
+    if (!Array.isArray(importData)) {
       return res
         .status(400)
         .json({ error: "Invalid import data: must be an array" });
@@ -200,16 +200,16 @@ router?.post("/subscribers/import", async (req: Request, res: Response) => {
     }));
 
     const imported = await db?.insert(fanSubscribers).values(values).returning();
-    return res?.json({ count: imported.length });
+    return res.json({ count: imported.length });
   } catch (error) {
-    logger?.warn("Error importing fan subscribers:", error);
-    return res?.status(500).json({ error: "Failed to import fan subscribers" });
+    logger.warn("Error importing fan subscribers:", error);
+    return res.status(500).json({ error: "Failed to import fan subscribers" });
   }
 });
 
 router?.get("/stats", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
     const [stats] = await db
       .select({
@@ -220,7 +220,7 @@ router?.get("/stats", async (req: Request, res: Response) => {
       .from(fanSubscribers)
       .where(eq(fanSubscribers?.userId, userId));
 
-    return res?.json({
+    return res.json({
       totalFans: Number(stats?.totalFans || 0),
       vipCount: Number(stats?.vipCount || 0),
       totalSpent: Number(stats?.totalSpent || 0),
@@ -232,16 +232,16 @@ router?.get("/stats", async (req: Request, res: Response) => {
       emailOpenRate: 24.8,
     });
   } catch (error) {
-    logger?.warn("Error fetching fan hub stats:", error);
-    return res?.status(500).json({ error: "Failed to fetch stats" });
+    logger.warn("Error fetching fan hub stats:", error);
+    return res.status(500).json({ error: "Failed to fetch stats" });
   }
 });
 
 router?.post("/message", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
-    const parsed = sendMessageSchema?.safeParse(req?.body);
+    const parsed = sendMessageSchema?.safeParse(req.body);
     if (!parsed?.success) {
       return res
         .status(400)
@@ -312,7 +312,7 @@ router?.post("/message", async (req: Request, res: Response) => {
                   html: emailHtml,
                 })
                 .catch((err) =>
-                  logger?.warn(
+                  logger.warn(
                     `Fan broadcast email failed to ${sub?.email}:`,
                     err,
                   ),
@@ -320,46 +320,46 @@ router?.post("/message", async (req: Request, res: Response) => {
             ),
           );
         }
-        logger?.info(
+        logger.info(
           `Fan broadcast sent: ${toSend?.length} emails for message ${message?.id}`,
         );
-      })().catch((err) => logger?.warn("Fan broadcast error:", err));
+      })().catch((err) => logger.warn("Fan broadcast error:", err));
     }
 
-    return res?.json({ ...message, recipientCount });
+    return res.json({ ...message, recipientCount });
   } catch (error) {
-    logger?.warn("Error sending bulk message:", error);
-    return res?.status(500).json({ error: "Failed to send message" });
+    logger.warn("Error sending bulk message:", error);
+    return res.status(500).json({ error: "Failed to send message" });
   }
 });
 
 router?.get("/messages", async (req: Request, res: Response) => {
   try {
-    const page = Math?.max(1, parseInt(req?.query.page as string) || 1);
-    const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 200);
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
     const offset = (page - 1) * limit;
     const messages = await db
       .select()
       .from(fanMessages)
-      .where(eq(fanMessages?.userId, req?.user!.id))
+      .where(eq(fanMessages?.userId, req.user!.id))
       .orderBy(desc(fanMessages?.sentAt))
       .limit(limit)
       .offset(offset);
 
-    return res?.json(messages);
+    return res.json(messages);
   } catch (error) {
-    logger?.warn("Error fetching fan messages:", error);
-    return res?.status(500).json({ error: "Failed to fetch messages" });
+    logger.warn("Error fetching fan messages:", error);
+    return res.status(500).json({ error: "Failed to fetch messages" });
   }
 });
 
 router?.put("/subscribers/:id/tag", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user!.id;
-    const { id } = req?.params;
+    const userId = req.user!.id;
+    const { id } = req.params;
     const parsed = z
       .object({ tags: z.array(z.string().max(100)).max(50) })
-      .safeParse(req?.body);
+      .safeParse(req.body);
 
     if (!parsed?.success) {
       return res
@@ -374,13 +374,13 @@ router?.put("/subscribers/:id/tag", async (req: Request, res: Response) => {
       .returning();
 
     if (!updated) {
-      return res?.status(404).json({ error: "Subscriber not found" });
+      return res.status(404).json({ error: "Subscriber not found" });
     }
 
-    return res?.json(updated);
+    return res.json(updated);
   } catch (error) {
-    logger?.warn("Error updating tags:", error);
-    return res?.status(500).json({ error: "Failed to update tags" });
+    logger.warn("Error updating tags:", error);
+    return res.status(500).json({ error: "Failed to update tags" });
   }
 });
 

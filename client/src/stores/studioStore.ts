@@ -318,7 +318,7 @@ interface StudioState {
 }
 
 const generateId = () =>
-  `${Date?.now()}-${Math?.random().toString(36).substr(2, 9)}`;
+  `${Date?.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
 const createDefaultTrack = (
   type: TrackType,
@@ -524,7 +524,7 @@ export const useStudioStore = create<StudioState>()(
             set((state) => ({
               transport: {
                 ...state?.transport,
-                tempo: Math.max(20, Math?.min(999, tempo)),
+                tempo: Math.max(20, Math.min(999, tempo)),
               },
             })),
 
@@ -1284,7 +1284,7 @@ export const useStudioStore = create<StudioState>()(
 
           setZoom: (zoom) =>
             set((state) => ({
-              view: { ...state?.view, zoom: Math.max(0.1, Math?.min(10, zoom)) },
+              view: { ...state?.view, zoom: Math.max(0.1, Math.min(10, zoom)) },
             })),
 
           setScroll: (x, y) =>

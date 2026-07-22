@@ -28,43 +28,43 @@ export class CommandHistory {
   execute(command: Command): void {
     command?.execute();
 
-    if (this?.isBatching) {
-      this?.batchCommands.push(command);
+    if (this.isBatching) {
+      this.batchCommands.push(command);
       return;
     }
 
-    const lastCommand = this?.past[this?.past.length - 1];
+    const lastCommand = this.past[this.past.length - 1];
     if (lastCommand?.canMerge?.(command)) {
       const merged = lastCommand?.merge!(command);
       this.past[this.past.length - 1] = merged;
     } else {
-      this?.past.push(command);
-      if (this?.past.length > this?.maxHistory) {
-        this?.past.shift();
+      this.past.push(command);
+      if (this.past.length > this.maxHistory) {
+        this.past.shift();
       }
     }
 
     this.future = [];
-    this?.notify();
+    this.notify();
   }
 
   undo(): boolean {
-    const command = this?.past.pop();
+    const command = this.past.pop();
     if (!command) return false;
 
     command?.undo();
-    this?.future.push(command);
-    this?.notify();
+    this.future.push(command);
+    this.notify();
     return true;
   }
 
   redo(): boolean {
-    const command = this?.future.pop();
+    const command = this.future.pop();
     if (!command) return false;
 
     command?.redo();
-    this?.past.push(command);
-    this?.notify();
+    this.past.push(command);
+    this.notify();
     return true;
   }
 
@@ -74,53 +74,53 @@ export class CommandHistory {
   }
 
   endBatch(batchId: string): void {
-    if (!this?.isBatching || this?.batchCommands.length === 0) {
+    if (!this.isBatching || this.batchCommands.length === 0) {
       this.isBatching = false;
       return;
     }
 
-    const batchCommand = new BatchCommand(batchId, [...this?.batchCommands]);
-    this?.past.push(batchCommand);
-    if (this?.past.length > this?.maxHistory) {
-      this?.past.shift();
+    const batchCommand = new BatchCommand(batchId, [...this.batchCommands]);
+    this.past.push(batchCommand);
+    if (this.past.length > this.maxHistory) {
+      this.past.shift();
     }
 
     this.future = [];
     this.isBatching = false;
     this.batchCommands = [];
-    this?.notify();
+    this.notify();
   }
 
   cancelBatch(): void {
-    for (let i = this?.batchCommands.length - 1; i >= 0; i--) {
-      this?.batchCommands[i].undo();
+    for (let i = this.batchCommands.length - 1; i >= 0; i--) {
+      this.batchCommands[i].undo();
     }
     this.isBatching = false;
     this.batchCommands = [];
-    this?.notify();
+    this.notify();
   }
 
   canUndo(): boolean {
-    return this?.past.length > 0;
+    return this.past.length > 0;
   }
 
   canRedo(): boolean {
-    return this?.future.length > 0;
+    return this.future.length > 0;
   }
 
   clear(): void {
     this.past = [];
     this.future = [];
-    this?.notify();
+    this.notify();
   }
 
   subscribe(listener: () => void): () => void {
-    this?.listeners.add(listener);
-    return () => this?.listeners.delete(listener);
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
   }
 
   private notify(): void {
-    this?.listeners.forEach((l) => l());
+    this.listeners.forEach((l) => l());
   }
 
   getState(): { canUndo: boolean; canRedo: boolean; historyLength: number } {
@@ -145,17 +145,17 @@ export class BatchCommand implements Command {
   }
 
   execute(): void {
-    this?.commands.forEach((c) => c?.execute());
+    this.commands.forEach((c) => c?.execute());
   }
 
   undo(): void {
-    for (let i = this?.commands.length - 1; i >= 0; i--) {
-      this?.commands[i].undo();
+    for (let i = this.commands.length - 1; i >= 0; i--) {
+      this.commands[i].undo();
     }
   }
 
   redo(): void {
-    this?.commands.forEach((c) => c?.redo());
+    this.commands.forEach((c) => c?.redo());
   }
 }
 
@@ -168,7 +168,7 @@ export function createCommand<T>(
   const after = structuredClone(state?.after);
 
   return {
-    id: `${type}_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`,
+    id: `${type}_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`,
     type,
     timestamp: Date.now(),
     execute: () => apply(after),

@@ -20,10 +20,10 @@ class BowModel {
   }
 
   process(stringVelocity: number): number {
-    const relativeVelocity = this?.velocity - stringVelocity;
-    const frictionCurve = 0.3 * Math?.exp(-3 * Math?.abs(relativeVelocity)) + 0.1;
-    this.friction = frictionCurve * this?.pressure * Math?.sign(relativeVelocity);
-    return this?.friction;
+    const relativeVelocity = this.velocity - stringVelocity;
+    const frictionCurve = 0.3 * Math.exp(-3 * Math.abs(relativeVelocity)) + 0.1;
+    this.friction = frictionCurve * this.pressure * Math.sign(relativeVelocity);
+    return this.friction;
   }
 }
 
@@ -45,7 +45,7 @@ class StringModel {
     sampleRate: number,
     damping: number = 0.3,
   ): void {
-    this?.lpFilter.setLowpass(frequency * 3, sampleRate);
+    this.lpFilter.setLowpass(frequency * 3, sampleRate);
     this.feedback = 0.998 - damping * 0.01;
   }
 
@@ -54,19 +54,19 @@ class StringModel {
   }
 
   process(input: number, frequency: number, sampleRate: number): number {
-    const period = Math?.floor(sampleRate / frequency);
-    const sample = this?.delayLine.read(period);
-    const filtered = this?.lpFilter.process(sample);
-    const output = this?.allpass.process(filtered);
-    this?.delayLine.write(input + this?.excitation + output * this?.feedback);
+    const period = Math.floor(sampleRate / frequency);
+    const sample = this.delayLine.read(period);
+    const filtered = this.lpFilter.process(sample);
+    const output = this.allpass.process(filtered);
+    this.delayLine.write(input + this.excitation + output * this.feedback);
     this.excitation *= 0.95;
     return output;
   }
 
   clear(): void {
-    this?.delayLine.clear();
-    this?.lpFilter.clear();
-    this?.allpass.clear();
+    this.delayLine.clear();
+    this.lpFilter.clear();
+    this.allpass.clear();
     this.excitation = 0;
   }
 }
@@ -100,7 +100,7 @@ export class OrchestralStringsSynth implements SynthesizerEngine {
       for (let i = 0; i < config?.count; i++) {
         oscillators?.push(new Oscillator());
       }
-      this?.sections.push({
+      this.sections.push({
         oscillators,
         envelope: new ADSR(0.15, 0.3, 0.85, 0.4, 44100),
         pan: config.pan,
@@ -120,23 +120,23 @@ export class OrchestralStringsSynth implements SynthesizerEngine {
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
-    this?.vibratoLFO.setFrequency(5.5, context?.sampleRate);
-    this?.expressionLFO.setFrequency(0.3, context?.sampleRate);
+    this.vibratoLFO.setFrequency(5.5, context?.sampleRate);
+    this.expressionLFO.setFrequency(0.3, context?.sampleRate);
 
-    this?.lpFilter.setLowpass(
-      3000 + this?.velocity * 4000,
+    this.lpFilter.setLowpass(
+      3000 + this.velocity * 4000,
       0.7,
       context?.sampleRate,
     );
-    this?.hpFilter.setHighpass(80, 0.7, context?.sampleRate);
-    this?.bodyFilter.setPeaking(800, 1.5, 3, context?.sampleRate);
-    this?.airFilter.setHighShelf(6000, 2, context?.sampleRate);
+    this.hpFilter.setHighpass(80, 0.7, context?.sampleRate);
+    this.bodyFilter.setPeaking(800, 1.5, 3, context?.sampleRate);
+    this.airFilter.setHighShelf(6000, 2, context?.sampleRate);
 
     const octaveOffsets = [0, 0, 0, -1];
-    this?.sections.forEach((section, sIdx) => {
-      const baseFreq = frequency * Math?.pow(2, octaveOffsets[sIdx]);
+    this.sections.forEach((section, sIdx) => {
+      const baseFreq = frequency * Math.pow(2, octaveOffsets[sIdx]);
       section?.oscillators.forEach((osc, _i) => {
-        const detune = 1 + (Math?.random() - 0.5) * 0.004;
+        const detune = 1 + (Math.random() - 0.5) * 0.004;
         osc?.setFrequency(baseFreq * detune, context?.sampleRate);
       });
       section.envelope = new ADSR(
@@ -151,28 +151,28 @@ export class OrchestralStringsSynth implements SynthesizerEngine {
   }
 
   noteOff(_context: DSPContext): void {
-    this?.sections.forEach((section) => section?.envelope.release());
+    this.sections.forEach((section) => section?.envelope.release());
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
     const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const vibrato = this?.vibratoLFO.sine() * 0.003;
-      const expression = 0.9 + this?.expressionLFO.sine() * 0.1;
+      const vibrato = this.vibratoLFO.sine() * 0.003;
+      const expression = 0.9 + this.expressionLFO.sine() * 0.1;
 
       let sampleL = 0;
       let sampleR = 0;
 
-      for (const section of this?.sections) {
+      for (const section of this.sections) {
         const envValue = section?.envelope.process();
         let sectionSample = 0;
 
         for (const osc of section?.oscillators) {
-          const currentFreq = this?.frequency * (1 + vibrato);
+          const currentFreq = this.frequency * (1 + vibrato);
           osc?.setFrequency(
-            currentFreq * (1 + (Math?.random() - 0.5) * 0.001),
-            this?.sampleRate,
+            currentFreq * (1 + (Math.random() - 0.5) * 0.001),
+            this.sampleRate,
           );
           sectionSample += osc?.sawBandLimited(12) * 0.3 + osc?.sine() * 0.2;
         }
@@ -180,24 +180,24 @@ export class OrchestralStringsSynth implements SynthesizerEngine {
         sectionSample /= section?.oscillators.length;
         sectionSample *= envValue;
 
-        const panL = Math?.cos((section?.pan + 1) * Math.PI * 0.25);
-        const panR = Math?.sin((section?.pan + 1) * Math.PI * 0.25);
+        const panL = Math.cos((section?.pan + 1) * Math.PI * 0.25);
+        const panR = Math.sin((section?.pan + 1) * Math.PI * 0.25);
 
         sampleL += sectionSample * panL;
         sampleR += sectionSample * panR;
       }
 
-      sampleL = this?.hpFilter.process(sampleL);
-      sampleR = this?.hpFilter.process(sampleR);
-      sampleL = this?.lpFilter.process(sampleL);
-      sampleR = this?.lpFilter.process(sampleR);
-      sampleL = this?.bodyFilter.process(sampleL);
-      sampleR = this?.bodyFilter.process(sampleR);
-      sampleL = this?.airFilter.process(sampleL);
-      sampleR = this?.airFilter.process(sampleR);
+      sampleL = this.hpFilter.process(sampleL);
+      sampleR = this.hpFilter.process(sampleR);
+      sampleL = this.lpFilter.process(sampleL);
+      sampleR = this.lpFilter.process(sampleR);
+      sampleL = this.bodyFilter.process(sampleL);
+      sampleR = this.bodyFilter.process(sampleR);
+      sampleL = this.airFilter.process(sampleL);
+      sampleR = this.airFilter.process(sampleR);
 
-      sampleL *= expression * this?.velocity;
-      sampleR *= expression * this?.velocity;
+      sampleL *= expression * this.velocity;
+      sampleR *= expression * this.velocity;
 
       output.samples[0][i] = softClip(sampleL, 0.9);
       output.samples[1][i] = softClip(sampleR, 0.9);
@@ -207,19 +207,19 @@ export class OrchestralStringsSynth implements SynthesizerEngine {
   }
 
   isActive(): boolean {
-    return this?.sections.some((s) => s?.envelope.isActive());
+    return this.sections.some((s) => s?.envelope.isActive());
   }
 
   reset(): void {
-    this?.sections.forEach((section) => {
+    this.sections.forEach((section) => {
       section?.oscillators.forEach((o) => o?.reset());
     });
-    this?.vibratoLFO.reset();
-    this?.expressionLFO.reset();
-    this?.lpFilter.clear();
-    this?.hpFilter.clear();
-    this?.bodyFilter.clear();
-    this?.airFilter.clear();
+    this.vibratoLFO.reset();
+    this.expressionLFO.reset();
+    this.lpFilter.clear();
+    this.hpFilter.clear();
+    this.bodyFilter.clear();
+    this.airFilter.clear();
   }
 }
 
@@ -239,7 +239,7 @@ export class ViolinSynth implements SynthesizerEngine {
 
   constructor() {
     for (let i = 0; i < 8; i++) {
-      this?.oscillators.push(new Oscillator());
+      this.oscillators.push(new Oscillator());
     }
     this.bowModel = new BowModel();
     this.envelope = new ADSR(0.08, 0.2, 0.9, 0.25, 44100);
@@ -257,59 +257,59 @@ export class ViolinSynth implements SynthesizerEngine {
     this.sampleRate = context?.sampleRate;
 
     for (let i = 0; i < 8; i++) {
-      this?.oscillators[i].setFrequency(frequency * (i + 1), context?.sampleRate);
+      this.oscillators[i].setFrequency(frequency * (i + 1), context?.sampleRate);
     }
 
-    this?.bowModel.setBowParameters(0.5 + this?.velocity * 0.3, 0.7);
-    this?.vibratoLFO.setFrequency(5.8, context?.sampleRate);
-    this?.bowLFO.setFrequency(0.8, context?.sampleRate);
+    this.bowModel.setBowParameters(0.5 + this.velocity * 0.3, 0.7);
+    this.vibratoLFO.setFrequency(5.8, context?.sampleRate);
+    this.bowLFO.setFrequency(0.8, context?.sampleRate);
 
-    this?.lpFilter.setLowpass(
-      4000 + this?.velocity * 4000,
+    this.lpFilter.setLowpass(
+      4000 + this.velocity * 4000,
       0.7,
       context?.sampleRate,
     );
-    this?.hpFilter.setHighpass(200, 0.7, context?.sampleRate);
-    this?.bodyFilter.setPeaking(450, 2, 4, context?.sampleRate);
-    this?.bridgeFilter.setPeaking(2800, 3, 5, context?.sampleRate);
+    this.hpFilter.setHighpass(200, 0.7, context?.sampleRate);
+    this.bodyFilter.setPeaking(450, 2, 4, context?.sampleRate);
+    this.bridgeFilter.setPeaking(2800, 3, 5, context?.sampleRate);
 
     this.envelope = new ADSR(0.06, 0.15, 0.88, 0.2, context?.sampleRate);
-    this?.envelope.trigger();
+    this.envelope.trigger();
   }
 
   noteOff(_context: DSPContext): void {
-    this?.envelope.release();
+    this.envelope.release();
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
     const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const envValue = this?.envelope.process();
-      const vibrato = this?.vibratoLFO.sine() * 0.004 * envValue;
-      const bowPressure = 0.85 + this?.bowLFO.sine() * 0.1;
+      const envValue = this.envelope.process();
+      const vibrato = this.vibratoLFO.sine() * 0.004 * envValue;
+      const bowPressure = 0.85 + this.bowLFO.sine() * 0.1;
 
       let sample = 0;
-      const currentFreq = this?.frequency * (1 + vibrato);
+      const currentFreq = this.frequency * (1 + vibrato);
 
       for (let h = 0; h < 8; h++) {
-        this?.oscillators[h].setFrequency(
+        this.oscillators[h].setFrequency(
           currentFreq * (h + 1),
-          this?.sampleRate,
+          this.sampleRate,
         );
-        const amplitude = (1 / (h + 1)) * Math?.pow(0.85, h);
-        sample += this?.oscillators[h].sawBandLimited(16) * amplitude;
+        const amplitude = (1 / (h + 1)) * Math.pow(0.85, h);
+        sample += this.oscillators[h].sawBandLimited(16) * amplitude;
       }
 
-      const bowEffect = this?.bowModel.process(sample * 0.1);
+      const bowEffect = this.bowModel.process(sample * 0.1);
       sample = sample * 0.7 + bowEffect * sample * 0.3;
 
-      sample = this?.hpFilter.process(sample);
-      sample = this?.lpFilter.process(sample);
-      sample = this?.bodyFilter.process(sample);
-      sample = this?.bridgeFilter.process(sample);
+      sample = this.hpFilter.process(sample);
+      sample = this.lpFilter.process(sample);
+      sample = this.bodyFilter.process(sample);
+      sample = this.bridgeFilter.process(sample);
 
-      sample *= envValue * this?.velocity * bowPressure;
+      sample *= envValue * this.velocity * bowPressure;
       sample = softClip(sample, 0.88);
 
       output.samples[0][i] = sample * 0.95;
@@ -320,17 +320,17 @@ export class ViolinSynth implements SynthesizerEngine {
   }
 
   isActive(): boolean {
-    return this?.envelope.isActive();
+    return this.envelope.isActive();
   }
 
   reset(): void {
-    this?.oscillators.forEach((o) => o?.reset());
-    this?.vibratoLFO.reset();
-    this?.bowLFO.reset();
-    this?.lpFilter.clear();
-    this?.hpFilter.clear();
-    this?.bodyFilter.clear();
-    this?.bridgeFilter.clear();
+    this.oscillators.forEach((o) => o?.reset());
+    this.vibratoLFO.reset();
+    this.bowLFO.reset();
+    this.lpFilter.clear();
+    this.hpFilter.clear();
+    this.bodyFilter.clear();
+    this.bridgeFilter.clear();
   }
 }
 
@@ -349,7 +349,7 @@ export class CelloSynth implements SynthesizerEngine {
 
   constructor() {
     for (let i = 0; i < 10; i++) {
-      this?.oscillators.push(new Oscillator());
+      this.oscillators.push(new Oscillator());
     }
     this.envelope = new ADSR(0.1, 0.3, 0.88, 0.35, 44100);
     this.vibratoLFO = new LFO();
@@ -366,56 +366,56 @@ export class CelloSynth implements SynthesizerEngine {
     this.sampleRate = context?.sampleRate;
 
     for (let i = 0; i < 10; i++) {
-      this?.oscillators[i].setFrequency(frequency * (i + 1), context?.sampleRate);
+      this.oscillators[i].setFrequency(frequency * (i + 1), context?.sampleRate);
     }
 
-    this?.vibratoLFO.setFrequency(5.2, context?.sampleRate);
-    this?.expressionLFO.setFrequency(0.25, context?.sampleRate);
+    this.vibratoLFO.setFrequency(5.2, context?.sampleRate);
+    this.expressionLFO.setFrequency(0.25, context?.sampleRate);
 
-    this?.lpFilter.setLowpass(
-      2500 + this?.velocity * 3000,
+    this.lpFilter.setLowpass(
+      2500 + this.velocity * 3000,
       0.7,
       context?.sampleRate,
     );
-    this?.hpFilter.setHighpass(60, 0.7, context?.sampleRate);
-    this?.bodyFilter.setPeaking(220, 2, 5, context?.sampleRate);
-    this?.warmthFilter.setLowShelf(400, 4, context?.sampleRate);
+    this.hpFilter.setHighpass(60, 0.7, context?.sampleRate);
+    this.bodyFilter.setPeaking(220, 2, 5, context?.sampleRate);
+    this.warmthFilter.setLowShelf(400, 4, context?.sampleRate);
 
     this.envelope = new ADSR(0.08, 0.25, 0.85, 0.3, context?.sampleRate);
-    this?.envelope.trigger();
+    this.envelope.trigger();
   }
 
   noteOff(_context: DSPContext): void {
-    this?.envelope.release();
+    this.envelope.release();
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
     const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const envValue = this?.envelope.process();
-      const vibrato = this?.vibratoLFO.sine() * 0.003 * envValue;
-      const expression = 0.92 + this?.expressionLFO.sine() * 0.08;
+      const envValue = this.envelope.process();
+      const vibrato = this.vibratoLFO.sine() * 0.003 * envValue;
+      const expression = 0.92 + this.expressionLFO.sine() * 0.08;
 
       let sample = 0;
-      const currentFreq = this?.frequency * (1 + vibrato);
+      const currentFreq = this.frequency * (1 + vibrato);
 
       for (let h = 0; h < 10; h++) {
-        this?.oscillators[h].setFrequency(
+        this.oscillators[h].setFrequency(
           currentFreq * (h + 1),
-          this?.sampleRate,
+          this.sampleRate,
         );
-        const amplitude = Math?.pow(0.75, h) / (h + 1);
-        sample += this?.oscillators[h].sawBandLimited(14) * amplitude * 0.7;
-        sample += this?.oscillators[h].sine() * amplitude * 0.3;
+        const amplitude = Math.pow(0.75, h) / (h + 1);
+        sample += this.oscillators[h].sawBandLimited(14) * amplitude * 0.7;
+        sample += this.oscillators[h].sine() * amplitude * 0.3;
       }
 
-      sample = this?.hpFilter.process(sample);
-      sample = this?.lpFilter.process(sample);
-      sample = this?.bodyFilter.process(sample);
-      sample = this?.warmthFilter.process(sample);
+      sample = this.hpFilter.process(sample);
+      sample = this.lpFilter.process(sample);
+      sample = this.bodyFilter.process(sample);
+      sample = this.warmthFilter.process(sample);
 
-      sample *= envValue * this?.velocity * expression;
+      sample *= envValue * this.velocity * expression;
       sample = softClip(sample, 0.9);
 
       output.samples[0][i] = sample * 0.98;
@@ -426,17 +426,17 @@ export class CelloSynth implements SynthesizerEngine {
   }
 
   isActive(): boolean {
-    return this?.envelope.isActive();
+    return this.envelope.isActive();
   }
 
   reset(): void {
-    this?.oscillators.forEach((o) => o?.reset());
-    this?.vibratoLFO.reset();
-    this?.expressionLFO.reset();
-    this?.lpFilter.clear();
-    this?.hpFilter.clear();
-    this?.bodyFilter.clear();
-    this?.warmthFilter.clear();
+    this.oscillators.forEach((o) => o?.reset());
+    this.vibratoLFO.reset();
+    this.expressionLFO.reset();
+    this.lpFilter.clear();
+    this.hpFilter.clear();
+    this.bodyFilter.clear();
+    this.warmthFilter.clear();
   }
 }
 
@@ -455,7 +455,7 @@ export class ContrabassSynth implements SynthesizerEngine {
 
   constructor() {
     for (let i = 0; i < 8; i++) {
-      this?.oscillators.push(new Oscillator());
+      this.oscillators.push(new Oscillator());
     }
     this.subOsc = new Oscillator();
     this.envelope = new ADSR(0.12, 0.35, 0.85, 0.4, 44100);
@@ -472,57 +472,57 @@ export class ContrabassSynth implements SynthesizerEngine {
     this.sampleRate = context?.sampleRate;
 
     for (let i = 0; i < 8; i++) {
-      this?.oscillators[i].setFrequency(frequency * (i + 1), context?.sampleRate);
+      this.oscillators[i].setFrequency(frequency * (i + 1), context?.sampleRate);
     }
-    this?.subOsc.setFrequency(frequency * 0.5, context?.sampleRate);
+    this.subOsc.setFrequency(frequency * 0.5, context?.sampleRate);
 
-    this?.vibratoLFO.setFrequency(4.5, context?.sampleRate);
+    this.vibratoLFO.setFrequency(4.5, context?.sampleRate);
 
-    this?.lpFilter.setLowpass(
-      1500 + this?.velocity * 2000,
+    this.lpFilter.setLowpass(
+      1500 + this.velocity * 2000,
       0.7,
       context?.sampleRate,
     );
-    this?.hpFilter.setHighpass(35, 0.7, context?.sampleRate);
-    this?.bodyFilter.setPeaking(120, 2, 6, context?.sampleRate);
-    this?.subFilter.setLowpass(200, context?.sampleRate);
+    this.hpFilter.setHighpass(35, 0.7, context?.sampleRate);
+    this.bodyFilter.setPeaking(120, 2, 6, context?.sampleRate);
+    this.subFilter.setLowpass(200, context?.sampleRate);
 
     this.envelope = new ADSR(0.1, 0.3, 0.82, 0.35, context?.sampleRate);
-    this?.envelope.trigger();
+    this.envelope.trigger();
   }
 
   noteOff(_context: DSPContext): void {
-    this?.envelope.release();
+    this.envelope.release();
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
     const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const envValue = this?.envelope.process();
-      const vibrato = this?.vibratoLFO.sine() * 0.002 * envValue;
+      const envValue = this.envelope.process();
+      const vibrato = this.vibratoLFO.sine() * 0.002 * envValue;
 
       let sample = 0;
-      const currentFreq = this?.frequency * (1 + vibrato);
+      const currentFreq = this.frequency * (1 + vibrato);
 
       for (let h = 0; h < 8; h++) {
-        this?.oscillators[h].setFrequency(
+        this.oscillators[h].setFrequency(
           currentFreq * (h + 1),
-          this?.sampleRate,
+          this.sampleRate,
         );
-        const amplitude = Math?.pow(0.7, h) / (h + 1);
-        sample += this?.oscillators[h].sawBandLimited(10) * amplitude;
+        const amplitude = Math.pow(0.7, h) / (h + 1);
+        sample += this.oscillators[h].sawBandLimited(10) * amplitude;
       }
 
-      this?.subOsc.setFrequency(currentFreq * 0.5, this?.sampleRate);
-      const subSample = this?.subOsc.sine() * 0.3;
-      sample += this?.subFilter.process(subSample);
+      this.subOsc.setFrequency(currentFreq * 0.5, this.sampleRate);
+      const subSample = this.subOsc.sine() * 0.3;
+      sample += this.subFilter.process(subSample);
 
-      sample = this?.hpFilter.process(sample);
-      sample = this?.lpFilter.process(sample);
-      sample = this?.bodyFilter.process(sample);
+      sample = this.hpFilter.process(sample);
+      sample = this.lpFilter.process(sample);
+      sample = this.bodyFilter.process(sample);
 
-      sample *= envValue * this?.velocity;
+      sample *= envValue * this.velocity;
       sample = softClip(sample, 0.88);
 
       output.samples[0][i] = sample;
@@ -533,17 +533,17 @@ export class ContrabassSynth implements SynthesizerEngine {
   }
 
   isActive(): boolean {
-    return this?.envelope.isActive();
+    return this.envelope.isActive();
   }
 
   reset(): void {
-    this?.oscillators.forEach((o) => o?.reset());
-    this?.subOsc.reset();
-    this?.vibratoLFO.reset();
-    this?.lpFilter.clear();
-    this?.hpFilter.clear();
-    this?.bodyFilter.clear();
-    this?.subFilter.clear();
+    this.oscillators.forEach((o) => o?.reset());
+    this.subOsc.reset();
+    this.vibratoLFO.reset();
+    this.lpFilter.clear();
+    this.hpFilter.clear();
+    this.bodyFilter.clear();
+    this.subFilter.clear();
   }
 }
 
@@ -561,7 +561,7 @@ export class ViolaSynth implements SynthesizerEngine {
 
   constructor() {
     for (let i = 0; i < 9; i++) {
-      this?.oscillators.push(new Oscillator());
+      this.oscillators.push(new Oscillator());
     }
     this.envelope = new ADSR(0.09, 0.25, 0.87, 0.3, 44100);
     this.vibratoLFO = new LFO();
@@ -577,54 +577,54 @@ export class ViolaSynth implements SynthesizerEngine {
     this.sampleRate = context?.sampleRate;
 
     for (let i = 0; i < 9; i++) {
-      this?.oscillators[i].setFrequency(frequency * (i + 1), context?.sampleRate);
+      this.oscillators[i].setFrequency(frequency * (i + 1), context?.sampleRate);
     }
 
-    this?.vibratoLFO.setFrequency(5.5, context?.sampleRate);
+    this.vibratoLFO.setFrequency(5.5, context?.sampleRate);
 
-    this?.lpFilter.setLowpass(
-      3000 + this?.velocity * 3500,
+    this.lpFilter.setLowpass(
+      3000 + this.velocity * 3500,
       0.7,
       context?.sampleRate,
     );
-    this?.hpFilter.setHighpass(120, 0.7, context?.sampleRate);
-    this?.bodyFilter.setPeaking(350, 2, 4, context?.sampleRate);
-    this?.nasalFilter.setPeaking(1200, 2.5, 3, context?.sampleRate);
+    this.hpFilter.setHighpass(120, 0.7, context?.sampleRate);
+    this.bodyFilter.setPeaking(350, 2, 4, context?.sampleRate);
+    this.nasalFilter.setPeaking(1200, 2.5, 3, context?.sampleRate);
 
     this.envelope = new ADSR(0.07, 0.2, 0.85, 0.25, context?.sampleRate);
-    this?.envelope.trigger();
+    this.envelope.trigger();
   }
 
   noteOff(_context: DSPContext): void {
-    this?.envelope.release();
+    this.envelope.release();
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
     const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const envValue = this?.envelope.process();
-      const vibrato = this?.vibratoLFO.sine() * 0.0035 * envValue;
+      const envValue = this.envelope.process();
+      const vibrato = this.vibratoLFO.sine() * 0.0035 * envValue;
 
       let sample = 0;
-      const currentFreq = this?.frequency * (1 + vibrato);
+      const currentFreq = this.frequency * (1 + vibrato);
 
       for (let h = 0; h < 9; h++) {
-        this?.oscillators[h].setFrequency(
+        this.oscillators[h].setFrequency(
           currentFreq * (h + 1),
-          this?.sampleRate,
+          this.sampleRate,
         );
-        const amplitude = Math?.pow(0.78, h) / (h + 1);
-        sample += this?.oscillators[h].sawBandLimited(14) * amplitude * 0.75;
-        sample += this?.oscillators[h].sine() * amplitude * 0.25;
+        const amplitude = Math.pow(0.78, h) / (h + 1);
+        sample += this.oscillators[h].sawBandLimited(14) * amplitude * 0.75;
+        sample += this.oscillators[h].sine() * amplitude * 0.25;
       }
 
-      sample = this?.hpFilter.process(sample);
-      sample = this?.lpFilter.process(sample);
-      sample = this?.bodyFilter.process(sample);
-      sample = this?.nasalFilter.process(sample);
+      sample = this.hpFilter.process(sample);
+      sample = this.lpFilter.process(sample);
+      sample = this.bodyFilter.process(sample);
+      sample = this.nasalFilter.process(sample);
 
-      sample *= envValue * this?.velocity;
+      sample *= envValue * this.velocity;
       sample = softClip(sample, 0.88);
 
       output.samples[0][i] = sample * 0.97;
@@ -635,16 +635,16 @@ export class ViolaSynth implements SynthesizerEngine {
   }
 
   isActive(): boolean {
-    return this?.envelope.isActive();
+    return this.envelope.isActive();
   }
 
   reset(): void {
-    this?.oscillators.forEach((o) => o?.reset());
-    this?.vibratoLFO.reset();
-    this?.lpFilter.clear();
-    this?.hpFilter.clear();
-    this?.bodyFilter.clear();
-    this?.nasalFilter.clear();
+    this.oscillators.forEach((o) => o?.reset());
+    this.vibratoLFO.reset();
+    this.lpFilter.clear();
+    this.hpFilter.clear();
+    this.bodyFilter.clear();
+    this.nasalFilter.clear();
   }
 }
 
@@ -676,7 +676,7 @@ export class StringQuartetSynth implements SynthesizerEngine {
       for (let i = 0; i < 6; i++) {
         oscillators?.push(new Oscillator());
       }
-      this?.instruments.push({
+      this.instruments.push({
         oscillators,
         envelope: new ADSR(0.08, 0.2, 0.88, 0.25, 44100),
         vibratoLFO: new LFO(),
@@ -695,17 +695,17 @@ export class StringQuartetSynth implements SynthesizerEngine {
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
-    this?.lpFilter.setLowpass(
-      4000 + this?.velocity * 4000,
+    this.lpFilter.setLowpass(
+      4000 + this.velocity * 4000,
       0.7,
       context?.sampleRate,
     );
-    this?.hpFilter.setHighpass(100, 0.7, context?.sampleRate);
-    this?.roomFilter.setPeaking(1500, 1, 2, context?.sampleRate);
+    this.hpFilter.setHighpass(100, 0.7, context?.sampleRate);
+    this.roomFilter.setPeaking(1500, 1, 2, context?.sampleRate);
 
     const vibratoRates = [5.8, 5.6, 5.4, 5.0];
-    this?.instruments.forEach((inst, idx) => {
-      const baseFreq = frequency * Math?.pow(2, inst?.octave);
+    this.instruments.forEach((inst, idx) => {
+      const baseFreq = frequency * Math.pow(2, inst?.octave);
       const detune = 1 + (idx - 1.5) * 0.002;
       inst?.oscillators.forEach((osc, i) => {
         osc?.setFrequency(baseFreq * detune * (i + 1), context?.sampleRate);
@@ -723,7 +723,7 @@ export class StringQuartetSynth implements SynthesizerEngine {
   }
 
   noteOff(_context: DSPContext): void {
-    this?.instruments.forEach((inst) => inst?.envelope.release());
+    this.instruments.forEach((inst) => inst?.envelope.release());
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
@@ -733,41 +733,41 @@ export class StringQuartetSynth implements SynthesizerEngine {
       let sampleL = 0;
       let sampleR = 0;
 
-      for (const inst of this?.instruments) {
+      for (const inst of this.instruments) {
         const envValue = inst?.envelope.process();
         const vibrato = inst?.vibratoLFO.sine() * 0.003 * envValue;
 
         let instSample = 0;
         const currentFreq =
-          this?.frequency * Math?.pow(2, inst?.octave) * (1 + vibrato);
+          this.frequency * Math.pow(2, inst?.octave) * (1 + vibrato);
 
         for (let h = 0; h < 6; h++) {
           inst?.oscillators[h].setFrequency(
             currentFreq * (h + 1),
-            this?.sampleRate,
+            this.sampleRate,
           );
-          const amplitude = Math?.pow(0.75, h) / (h + 1);
+          const amplitude = Math.pow(0.75, h) / (h + 1);
           instSample += inst?.oscillators[h].sawBandLimited(12) * amplitude;
         }
 
         instSample *= envValue;
 
-        const panL = Math?.cos((inst?.pan + 1) * Math.PI * 0.25);
-        const panR = Math?.sin((inst?.pan + 1) * Math.PI * 0.25);
+        const panL = Math.cos((inst?.pan + 1) * Math.PI * 0.25);
+        const panR = Math.sin((inst?.pan + 1) * Math.PI * 0.25);
 
         sampleL += instSample * panL;
         sampleR += instSample * panR;
       }
 
-      sampleL = this?.hpFilter.process(sampleL);
-      sampleR = this?.hpFilter.process(sampleR);
-      sampleL = this?.lpFilter.process(sampleL);
-      sampleR = this?.lpFilter.process(sampleR);
-      sampleL = this?.roomFilter.process(sampleL);
-      sampleR = this?.roomFilter.process(sampleR);
+      sampleL = this.hpFilter.process(sampleL);
+      sampleR = this.hpFilter.process(sampleR);
+      sampleL = this.lpFilter.process(sampleL);
+      sampleR = this.lpFilter.process(sampleR);
+      sampleL = this.roomFilter.process(sampleL);
+      sampleR = this.roomFilter.process(sampleR);
 
-      sampleL *= this?.velocity * 0.7;
-      sampleR *= this?.velocity * 0.7;
+      sampleL *= this.velocity * 0.7;
+      sampleR *= this.velocity * 0.7;
 
       output.samples[0][i] = softClip(sampleL, 0.88);
       output.samples[1][i] = softClip(sampleR, 0.88);
@@ -777,17 +777,17 @@ export class StringQuartetSynth implements SynthesizerEngine {
   }
 
   isActive(): boolean {
-    return this?.instruments.some((inst) => inst?.envelope.isActive());
+    return this.instruments.some((inst) => inst?.envelope.isActive());
   }
 
   reset(): void {
-    this?.instruments.forEach((inst) => {
+    this.instruments.forEach((inst) => {
       inst?.oscillators.forEach((o) => o?.reset());
       inst?.vibratoLFO.reset();
     });
-    this?.lpFilter.clear();
-    this?.hpFilter.clear();
-    this?.roomFilter.clear();
+    this.lpFilter.clear();
+    this.hpFilter.clear();
+    this.roomFilter.clear();
   }
 }
 
@@ -811,7 +811,7 @@ export class CinematicStringsSynth implements SynthesizerEngine {
       for (let i = 0; i < 4; i++) {
         oscillators?.push(new Oscillator());
       }
-      this?.layers.push({
+      this.layers.push({
         oscillators,
         envelope: new ADSR(0.3, 0.5, 0.9, 0.8, 44100),
         pan: (layer / 5 - 0.5) * 1.2,
@@ -832,23 +832,23 @@ export class CinematicStringsSynth implements SynthesizerEngine {
     this.velocity = velocity / 127;
     this.sampleRate = context?.sampleRate;
 
-    this?.vibratoLFO.setFrequency(5.0, context?.sampleRate);
-    this?.swellLFO.setFrequency(0.15, context?.sampleRate);
+    this.vibratoLFO.setFrequency(5.0, context?.sampleRate);
+    this.swellLFO.setFrequency(0.15, context?.sampleRate);
 
-    this?.lpFilter.setLowpass(
-      2500 + this?.velocity * 5000,
+    this.lpFilter.setLowpass(
+      2500 + this.velocity * 5000,
       0.6,
       context?.sampleRate,
     );
-    this?.hpFilter.setHighpass(50, 0.7, context?.sampleRate);
-    this?.bodyFilter.setPeaking(600, 1.2, 4, context?.sampleRate);
-    this?.airFilter.setHighShelf(8000, 3, context?.sampleRate);
+    this.hpFilter.setHighpass(50, 0.7, context?.sampleRate);
+    this.bodyFilter.setPeaking(600, 1.2, 4, context?.sampleRate);
+    this.airFilter.setHighShelf(8000, 3, context?.sampleRate);
 
     const octaves = [0, 0, 0, -1, -1, -2];
-    this?.layers.forEach((layer, idx) => {
-      const baseFreq = frequency * Math?.pow(2, octaves[idx]);
+    this.layers.forEach((layer, idx) => {
+      const baseFreq = frequency * Math.pow(2, octaves[idx]);
       layer?.oscillators.forEach((osc, i) => {
-        const detune = 1 + (Math?.random() - 0.5) * 0.006;
+        const detune = 1 + (Math.random() - 0.5) * 0.006;
         osc?.setFrequency(baseFreq * detune * (i + 1), context?.sampleRate);
       });
       layer.envelope = new ADSR(
@@ -863,55 +863,55 @@ export class CinematicStringsSynth implements SynthesizerEngine {
   }
 
   noteOff(_context: DSPContext): void {
-    this?.layers.forEach((layer) => layer?.envelope.release());
+    this.layers.forEach((layer) => layer?.envelope.release());
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
     const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const vibrato = this?.vibratoLFO.sine() * 0.002;
-      const swell = 0.85 + this?.swellLFO.sine() * 0.15;
+      const vibrato = this.vibratoLFO.sine() * 0.002;
+      const swell = 0.85 + this.swellLFO.sine() * 0.15;
 
       let sampleL = 0;
       let sampleR = 0;
 
-      for (const layer of this?.layers) {
+      for (const layer of this.layers) {
         const envValue = layer?.envelope.process();
         let layerSample = 0;
 
         for (const osc of layer?.oscillators) {
           const currentFreq =
-            this?.frequency * (1 + vibrato + (Math?.random() - 0.5) * 0.001);
-          osc?.setFrequency(currentFreq, this?.sampleRate);
+            this.frequency * (1 + vibrato + (Math.random() - 0.5) * 0.001);
+          osc?.setFrequency(currentFreq, this.sampleRate);
           layerSample += osc?.sawBandLimited(10) * 0.25;
         }
 
         layerSample *= envValue;
 
-        const panL = Math?.cos((layer?.pan + 1) * Math.PI * 0.25);
-        const panR = Math?.sin((layer?.pan + 1) * Math.PI * 0.25);
+        const panL = Math.cos((layer?.pan + 1) * Math.PI * 0.25);
+        const panR = Math.sin((layer?.pan + 1) * Math.PI * 0.25);
 
         sampleL += layerSample * panL;
         sampleR += layerSample * panR;
       }
 
-      sampleL = this?.hpFilter.process(sampleL);
-      sampleR = this?.hpFilter.process(sampleR);
-      sampleL = this?.lpFilter.process(sampleL);
-      sampleR = this?.lpFilter.process(sampleR);
-      sampleL = this?.bodyFilter.process(sampleL);
-      sampleR = this?.bodyFilter.process(sampleR);
-      sampleL = this?.airFilter.process(sampleL);
-      sampleR = this?.airFilter.process(sampleR);
+      sampleL = this.hpFilter.process(sampleL);
+      sampleR = this.hpFilter.process(sampleR);
+      sampleL = this.lpFilter.process(sampleL);
+      sampleR = this.lpFilter.process(sampleR);
+      sampleL = this.bodyFilter.process(sampleL);
+      sampleR = this.bodyFilter.process(sampleR);
+      sampleL = this.airFilter.process(sampleL);
+      sampleR = this.airFilter.process(sampleR);
 
-      this?.reverbDelay.write((sampleL + sampleR) * 0.3);
-      const reverbSample = this?.reverbDelay.readInterpolated(
-        msToSamples(80, this?.sampleRate),
+      this.reverbDelay.write((sampleL + sampleR) * 0.3);
+      const reverbSample = this.reverbDelay.readInterpolated(
+        msToSamples(80, this.sampleRate),
       );
 
-      sampleL = (sampleL + reverbSample * 0.2) * swell * this?.velocity;
-      sampleR = (sampleR + reverbSample * 0.2) * swell * this?.velocity;
+      sampleL = (sampleL + reverbSample * 0.2) * swell * this.velocity;
+      sampleR = (sampleR + reverbSample * 0.2) * swell * this.velocity;
 
       output.samples[0][i] = softClip(sampleL, 0.92);
       output.samples[1][i] = softClip(sampleR, 0.92);
@@ -921,20 +921,20 @@ export class CinematicStringsSynth implements SynthesizerEngine {
   }
 
   isActive(): boolean {
-    return this?.layers.some((layer) => layer?.envelope.isActive());
+    return this.layers.some((layer) => layer?.envelope.isActive());
   }
 
   reset(): void {
-    this?.layers.forEach((layer) => {
+    this.layers.forEach((layer) => {
       layer?.oscillators.forEach((o) => o?.reset());
     });
-    this?.vibratoLFO.reset();
-    this?.swellLFO.reset();
-    this?.lpFilter.clear();
-    this?.hpFilter.clear();
-    this?.bodyFilter.clear();
-    this?.airFilter.clear();
-    this?.reverbDelay.clear();
+    this.vibratoLFO.reset();
+    this.swellLFO.reset();
+    this.lpFilter.clear();
+    this.hpFilter.clear();
+    this.bodyFilter.clear();
+    this.airFilter.clear();
+    this.reverbDelay.clear();
   }
 }
 
@@ -953,7 +953,7 @@ export class PizzicatoStringsSynth implements SynthesizerEngine {
 
   constructor() {
     for (let i = 0; i < 6; i++) {
-      this?.oscillators.push(new Oscillator());
+      this.oscillators.push(new Oscillator());
     }
     this.pluckEnvelope = new ADSR(0.001, 0.05, 0.1, 0.08, 44100);
     this.bodyEnvelope = new ADSR(0.002, 0.15, 0.3, 0.2, 44100);
@@ -970,64 +970,64 @@ export class PizzicatoStringsSynth implements SynthesizerEngine {
     this.sampleRate = context?.sampleRate;
 
     for (let i = 0; i < 6; i++) {
-      this?.oscillators[i].setFrequency(frequency * (i + 1), context?.sampleRate);
+      this.oscillators[i].setFrequency(frequency * (i + 1), context?.sampleRate);
     }
 
-    this?.stringModel.setFrequency(frequency, context?.sampleRate, 0.4);
-    this?.stringModel.excite(this?.velocity * 0.5);
+    this.stringModel.setFrequency(frequency, context?.sampleRate, 0.4);
+    this.stringModel.excite(this.velocity * 0.5);
 
-    this?.lpFilter.setLowpass(
-      2000 + this?.velocity * 4000,
+    this.lpFilter.setLowpass(
+      2000 + this.velocity * 4000,
       0.8,
       context?.sampleRate,
     );
-    this?.hpFilter.setHighpass(80, 0.7, context?.sampleRate);
-    this?.bodyFilter.setPeaking(400, 2, 4, context?.sampleRate);
-    this?.pluckFilter.setPeaking(1500, 4, 6, context?.sampleRate);
+    this.hpFilter.setHighpass(80, 0.7, context?.sampleRate);
+    this.bodyFilter.setPeaking(400, 2, 4, context?.sampleRate);
+    this.pluckFilter.setPeaking(1500, 4, 6, context?.sampleRate);
 
     this.pluckEnvelope = new ADSR(0.001, 0.04, 0.08, 0.06, context?.sampleRate);
     this.bodyEnvelope = new ADSR(0.002, 0.12, 0.25, 0.15, context?.sampleRate);
-    this?.pluckEnvelope.trigger();
-    this?.bodyEnvelope.trigger();
+    this.pluckEnvelope.trigger();
+    this.bodyEnvelope.trigger();
   }
 
   noteOff(_context: DSPContext): void {
-    this?.pluckEnvelope.release();
-    this?.bodyEnvelope.release();
+    this.pluckEnvelope.release();
+    this.bodyEnvelope.release();
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
     const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const pluckEnvValue = this?.pluckEnvelope.process();
-      const bodyEnvValue = this?.bodyEnvelope.process();
+      const pluckEnvValue = this.pluckEnvelope.process();
+      const bodyEnvValue = this.bodyEnvelope.process();
 
       let sample = 0;
 
       for (let h = 0; h < 6; h++) {
-        const amplitude = Math?.pow(0.6, h) / (h + 1);
-        sample += this?.oscillators[h].sine() * amplitude;
+        const amplitude = Math.pow(0.6, h) / (h + 1);
+        sample += this.oscillators[h].sine() * amplitude;
       }
 
-      const pluckNoise = (Math?.random() * 2 - 1) * pluckEnvValue * 0.4;
+      const pluckNoise = (Math.random() * 2 - 1) * pluckEnvValue * 0.4;
       sample += pluckNoise;
 
-      const stringSample = this?.stringModel.process(
+      const stringSample = this.stringModel.process(
         pluckNoise * 0.3,
-        this?.frequency,
-        this?.sampleRate,
+        this.frequency,
+        this.sampleRate,
       );
       sample = sample * 0.4 + stringSample * 0.6;
 
-      sample = this?.hpFilter.process(sample);
-      sample = this?.lpFilter.process(sample);
-      sample = this?.bodyFilter.process(sample);
-      sample = this?.pluckFilter.process(
+      sample = this.hpFilter.process(sample);
+      sample = this.lpFilter.process(sample);
+      sample = this.bodyFilter.process(sample);
+      sample = this.pluckFilter.process(
         sample * pluckEnvValue + sample * (1 - pluckEnvValue) * 0.5,
       );
 
-      sample *= bodyEnvValue * this?.velocity;
+      sample *= bodyEnvValue * this.velocity;
       sample = softClip(sample, 0.85);
 
       output.samples[0][i] = sample * 0.95;
@@ -1038,16 +1038,16 @@ export class PizzicatoStringsSynth implements SynthesizerEngine {
   }
 
   isActive(): boolean {
-    return this?.bodyEnvelope.isActive();
+    return this.bodyEnvelope.isActive();
   }
 
   reset(): void {
-    this?.oscillators.forEach((o) => o?.reset());
-    this?.stringModel.clear();
-    this?.lpFilter.clear();
-    this?.hpFilter.clear();
-    this?.bodyFilter.clear();
-    this?.pluckFilter.clear();
+    this.oscillators.forEach((o) => o?.reset());
+    this.stringModel.clear();
+    this.lpFilter.clear();
+    this.hpFilter.clear();
+    this.bodyFilter.clear();
+    this.pluckFilter.clear();
   }
 }
 
@@ -1065,7 +1065,7 @@ export class TremoloStringsSynth implements SynthesizerEngine {
 
   constructor() {
     for (let i = 0; i < 8; i++) {
-      this?.oscillators.push(new Oscillator());
+      this.oscillators.push(new Oscillator());
     }
     this.envelope = new ADSR(0.05, 0.2, 0.9, 0.3, 44100);
     this.tremoloLFO = new LFO();
@@ -1081,56 +1081,56 @@ export class TremoloStringsSynth implements SynthesizerEngine {
     this.sampleRate = context?.sampleRate;
 
     for (let i = 0; i < 8; i++) {
-      this?.oscillators[i].setFrequency(frequency * (i + 1), context?.sampleRate);
+      this.oscillators[i].setFrequency(frequency * (i + 1), context?.sampleRate);
     }
 
-    this?.tremoloLFO.setFrequency(12, context?.sampleRate);
-    this?.vibratoLFO.setFrequency(5.5, context?.sampleRate);
+    this.tremoloLFO.setFrequency(12, context?.sampleRate);
+    this.vibratoLFO.setFrequency(5.5, context?.sampleRate);
 
-    this?.lpFilter.setLowpass(
-      4000 + this?.velocity * 4000,
+    this.lpFilter.setLowpass(
+      4000 + this.velocity * 4000,
       0.7,
       context?.sampleRate,
     );
-    this?.hpFilter.setHighpass(100, 0.7, context?.sampleRate);
-    this?.bodyFilter.setPeaking(600, 1.5, 3, context?.sampleRate);
+    this.hpFilter.setHighpass(100, 0.7, context?.sampleRate);
+    this.bodyFilter.setPeaking(600, 1.5, 3, context?.sampleRate);
 
     this.envelope = new ADSR(0.04, 0.15, 0.88, 0.25, context?.sampleRate);
-    this?.envelope.trigger();
+    this.envelope.trigger();
   }
 
   noteOff(_context: DSPContext): void {
-    this?.envelope.release();
+    this.envelope.release();
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
     const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const envValue = this?.envelope.process();
-      const tremolo = 0.6 + this?.tremoloLFO.sine() * 0.4;
-      const vibrato = this?.vibratoLFO.sine() * 0.003 * envValue;
+      const envValue = this.envelope.process();
+      const tremolo = 0.6 + this.tremoloLFO.sine() * 0.4;
+      const vibrato = this.vibratoLFO.sine() * 0.003 * envValue;
 
       let sample = 0;
-      const currentFreq = this?.frequency * (1 + vibrato);
+      const currentFreq = this.frequency * (1 + vibrato);
 
       for (let h = 0; h < 8; h++) {
-        this?.oscillators[h].setFrequency(
+        this.oscillators[h].setFrequency(
           currentFreq * (h + 1),
-          this?.sampleRate,
+          this.sampleRate,
         );
-        const amplitude = Math?.pow(0.75, h) / (h + 1);
-        sample += this?.oscillators[h].sawBandLimited(14) * amplitude;
+        const amplitude = Math.pow(0.75, h) / (h + 1);
+        sample += this.oscillators[h].sawBandLimited(14) * amplitude;
       }
 
-      sample = this?.hpFilter.process(sample);
-      sample = this?.lpFilter.process(sample);
-      sample = this?.bodyFilter.process(sample);
+      sample = this.hpFilter.process(sample);
+      sample = this.lpFilter.process(sample);
+      sample = this.bodyFilter.process(sample);
 
-      sample *= envValue * tremolo * this?.velocity;
+      sample *= envValue * tremolo * this.velocity;
       sample = softClip(sample, 0.88);
 
-      const stereoTremolo = this?.tremoloLFO.triangle() * 0.15;
+      const stereoTremolo = this.tremoloLFO.triangle() * 0.15;
       output.samples[0][i] = sample * (1 - stereoTremolo);
       output.samples[1][i] = sample * (1 + stereoTremolo);
     }
@@ -1139,16 +1139,16 @@ export class TremoloStringsSynth implements SynthesizerEngine {
   }
 
   isActive(): boolean {
-    return this?.envelope.isActive();
+    return this.envelope.isActive();
   }
 
   reset(): void {
-    this?.oscillators.forEach((o) => o?.reset());
-    this?.tremoloLFO.reset();
-    this?.vibratoLFO.reset();
-    this?.lpFilter.clear();
-    this?.hpFilter.clear();
-    this?.bodyFilter.clear();
+    this.oscillators.forEach((o) => o?.reset());
+    this.tremoloLFO.reset();
+    this.vibratoLFO.reset();
+    this.lpFilter.clear();
+    this.hpFilter.clear();
+    this.bodyFilter.clear();
   }
 }
 
@@ -1168,7 +1168,7 @@ export class SynthStringsSynth implements SynthesizerEngine {
 
   constructor() {
     for (let i = 0; i < 4; i++) {
-      this?.oscillators.push(new Oscillator());
+      this.oscillators.push(new Oscillator());
     }
     this.subOsc = new Oscillator();
     this.envelope = new ADSR(0.2, 0.4, 0.85, 0.5, 44100);
@@ -1187,64 +1187,64 @@ export class SynthStringsSynth implements SynthesizerEngine {
 
     const detuneAmounts = [-0.02, -0.01, 0.01, 0.02];
     for (let i = 0; i < 4; i++) {
-      this?.oscillators[i].setFrequency(
+      this.oscillators[i].setFrequency(
         frequency * (1 + detuneAmounts[i] * 0.1),
         context?.sampleRate,
       );
     }
-    this?.subOsc.setFrequency(frequency * 0.5, context?.sampleRate);
+    this.subOsc.setFrequency(frequency * 0.5, context?.sampleRate);
 
-    this?.chorusLFO.setFrequency(0.5, context?.sampleRate);
+    this.chorusLFO.setFrequency(0.5, context?.sampleRate);
 
-    this?.hpFilter.setHighpass(60, 0.7, context?.sampleRate);
-    this?.resonanceFilter.setPeaking(800, 3, 4, context?.sampleRate);
+    this.hpFilter.setHighpass(60, 0.7, context?.sampleRate);
+    this.resonanceFilter.setPeaking(800, 3, 4, context?.sampleRate);
 
     this.envelope = new ADSR(0.18, 0.35, 0.82, 0.45, context?.sampleRate);
     this.filterEnvelope = new ADSR(0.12, 0.25, 0.55, 0.35, context?.sampleRate);
-    this?.envelope.trigger();
-    this?.filterEnvelope.trigger();
+    this.envelope.trigger();
+    this.filterEnvelope.trigger();
   }
 
   noteOff(_context: DSPContext): void {
-    this?.envelope.release();
-    this?.filterEnvelope.release();
+    this.envelope.release();
+    this.filterEnvelope.release();
   }
 
   render(numSamples: number, context: DSPContext): AudioBuffer {
     const output = createBuffer(numSamples, 2, context?.sampleRate);
 
     for (let i = 0; i < numSamples; i++) {
-      const envValue = this?.envelope.process();
-      const filterEnvValue = this?.filterEnvelope.process();
+      const envValue = this.envelope.process();
+      const filterEnvValue = this.filterEnvelope.process();
 
       let sample = 0;
       for (let o = 0; o < 4; o++) {
-        sample += this?.oscillators[o].sawBandLimited(16) * 0.2;
-        sample += this?.oscillators[o].pulse(0.5) * 0.05;
+        sample += this.oscillators[o].sawBandLimited(16) * 0.2;
+        sample += this.oscillators[o].pulse(0.5) * 0.05;
       }
 
-      sample += this?.subOsc.sine() * 0.15;
+      sample += this.subOsc.sine() * 0.15;
 
-      const filterFreq = 800 + filterEnvValue * 3000 + this?.velocity * 2000;
-      this?.lpFilter.setLowpass(
+      const filterFreq = 800 + filterEnvValue * 3000 + this.velocity * 2000;
+      this.lpFilter.setLowpass(
         filterFreq,
         2 + filterEnvValue * 3,
-        this?.sampleRate,
+        this.sampleRate,
       );
 
-      sample = this?.hpFilter.process(sample);
-      sample = this?.lpFilter.process(sample);
-      sample = this?.resonanceFilter.process(sample);
+      sample = this.hpFilter.process(sample);
+      sample = this.lpFilter.process(sample);
+      sample = this.resonanceFilter.process(sample);
 
-      this?.chorusDelay.write(sample);
-      const chorusMod = this?.chorusLFO.sine() * 30 + 40;
-      const chorusSample = this?.chorusDelay.readInterpolated(chorusMod);
+      this.chorusDelay.write(sample);
+      const chorusMod = this.chorusLFO.sine() * 30 + 40;
+      const chorusSample = this.chorusDelay.readInterpolated(chorusMod);
 
       sample = sample * 0.7 + chorusSample * 0.3;
-      sample *= envValue * this?.velocity;
+      sample *= envValue * this.velocity;
       sample = softClip(sample, 0.9);
 
-      const stereoWidth = this?.chorusLFO.triangle() * 0.1;
+      const stereoWidth = this.chorusLFO.triangle() * 0.1;
       output.samples[0][i] = sample * (1 - stereoWidth);
       output.samples[1][i] = sample * (1 + stereoWidth);
     }
@@ -1253,17 +1253,17 @@ export class SynthStringsSynth implements SynthesizerEngine {
   }
 
   isActive(): boolean {
-    return this?.envelope.isActive();
+    return this.envelope.isActive();
   }
 
   reset(): void {
-    this?.oscillators.forEach((o) => o?.reset());
-    this?.subOsc.reset();
-    this?.chorusLFO.reset();
-    this?.lpFilter.clear();
-    this?.hpFilter.clear();
-    this?.resonanceFilter.clear();
-    this?.chorusDelay.clear();
+    this.oscillators.forEach((o) => o?.reset());
+    this.subOsc.reset();
+    this.chorusLFO.reset();
+    this.lpFilter.clear();
+    this.hpFilter.clear();
+    this.resonanceFilter.clear();
+    this.chorusDelay.clear();
   }
 }
 

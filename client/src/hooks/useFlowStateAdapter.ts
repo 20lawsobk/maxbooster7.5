@@ -185,10 +185,10 @@ export function useFlowStateAdapter(
       queryClient?.invalidateQueries({
         queryKey: ["/api/studio/projects", projectId, "tracks"],
       });
-      logger?.info("[FlowStateAdapter] Track created successfully");
+      logger.info("[FlowStateAdapter] Track created successfully");
     },
     onError: (error) => {
-      logger?.error("[FlowStateAdapter] Failed to create track:", error);
+      logger.error("[FlowStateAdapter] Failed to create track:", error);
     },
   });
 
@@ -200,10 +200,10 @@ export function useFlowStateAdapter(
       queryClient?.invalidateQueries({
         queryKey: ["/api/studio/projects", projectId, "tracks"],
       });
-      logger?.info("[FlowStateAdapter] Track deleted successfully");
+      logger.info("[FlowStateAdapter] Track deleted successfully");
     },
     onError: (error) => {
-      logger?.error("[FlowStateAdapter] Failed to delete track:", error);
+      logger.error("[FlowStateAdapter] Failed to delete track:", error);
     },
   });
 
@@ -225,10 +225,10 @@ export function useFlowStateAdapter(
       queryClient?.invalidateQueries({
         queryKey: ["/api/studio/projects", projectId, "tracks"],
       });
-      logger?.info("[FlowStateAdapter] Track duplicated successfully");
+      logger.info("[FlowStateAdapter] Track duplicated successfully");
     },
     onError: (error) => {
-      logger?.error("[FlowStateAdapter] Failed to duplicate track:", error);
+      logger.error("[FlowStateAdapter] Failed to duplicate track:", error);
     },
   });
 
@@ -291,7 +291,7 @@ export function useFlowStateAdapter(
         description:
           "AI detected uneven levels across tracks. Auto-balance for better mix coherence.",
         confidence: 0.87,
-        action: () => logger?.info("Auto-balancing levels..."),
+        action: () => logger.info("Auto-balancing levels..."),
       });
 
       newSuggestions?.push({
@@ -301,7 +301,7 @@ export function useFlowStateAdapter(
         description:
           "Consider adding subtle compression to the mix bus for cohesion.",
         confidence: 0.72,
-        action: () => logger?.info("Adding bus compression..."),
+        action: () => logger.info("Adding bus compression..."),
       });
     }
 
@@ -313,7 +313,7 @@ export function useFlowStateAdapter(
         description:
           "Based on your progression, Am7 would create smooth voice leading.",
         confidence: 0.91,
-        action: () => logger?.info("Inserting Am7 chord..."),
+        action: () => logger.info("Inserting Am7 chord..."),
       });
 
       newSuggestions?.push({
@@ -322,7 +322,7 @@ export function useFlowStateAdapter(
         title: "Add Drum Fill",
         description: "Bar 8 would benefit from a transitional drum fill.",
         confidence: 0.78,
-        action: () => logger?.info("Generating drum fill..."),
+        action: () => logger.info("Generating drum fill..."),
       });
     }
 
@@ -334,7 +334,7 @@ export function useFlowStateAdapter(
         description:
           "Adjust limiting to hit -14 LUFS for optimal streaming loudness.",
         confidence: 0.95,
-        action: () => logger?.info("Optimizing loudness..."),
+        action: () => logger.info("Optimizing loudness..."),
       });
     }
 
@@ -342,7 +342,7 @@ export function useFlowStateAdapter(
   }, [context?.mode, context?.selectedTrackIds]);
 
   const tracks = useMemo<FlowStateTrack[]>(() => {
-    if (!storeTracks || !Array?.isArray(storeTracks)) {
+    if (!storeTracks || !Array.isArray(storeTracks)) {
       return [];
     }
     return storeTracks?.map((track, index) => ({
@@ -539,7 +539,7 @@ export function useFlowStateAdapter(
   const setZoom = useCallback((level: number) => {
     setContext((prev) => ({
       ...prev,
-      zoomLevel: Math.max(0.1, Math?.min(10, level)),
+      zoomLevel: Math.max(0.1, Math.min(10, level)),
     }));
   }, []);
 
@@ -578,7 +578,7 @@ export function useFlowStateAdapter(
   const addTrack = useCallback(
     (type: string, name: string) => {
       if (!projectId) {
-        logger?.warn(
+        logger.warn(
           "[FlowStateAdapter] Cannot add track - no project selected",
         );
         return;
@@ -593,7 +593,7 @@ export function useFlowStateAdapter(
   const duplicateTrack = useCallback(
     (trackId: string) => {
       if (!projectId) {
-        logger?.warn(
+        logger.warn(
           "[FlowStateAdapter] Cannot duplicate track - no project selected",
         );
         return;

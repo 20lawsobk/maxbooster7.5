@@ -32,8 +32,8 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 
 async function setupAdmin() {
-  const adminEmail = process?.env.ADMIN_EMAIL;
-  const adminPassword = process?.env.ADMIN_PASSWORD;
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
 
   if (!adminEmail || !adminPassword) {
     console?.error(
@@ -42,7 +42,7 @@ async function setupAdmin() {
     console?.error(
       "   Example: ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD=yourSecurePassword npx tsx server/scripts/setupAdmin.ts",
     );
-    process?.exit(1);
+    process.exit(1);
   }
 
   console?.log(
@@ -395,7 +395,7 @@ async function setupAdmin() {
         date?.setDate(date?.getDate() - i);
 
         // Generate realistic varying data
-        const baseStreams = 1500 + Math?.floor(Math?.random() * 500);
+        const baseStreams = 1500 + Math.floor(Math.random() * 500);
         const weekendBoost =
           date?.getDay() === 0 || date?.getDay() === 6 ? 1.3 : 1;
 
@@ -701,11 +701,11 @@ async function setupAdmin() {
       "═══════════════════════════════════════════════════════════════════════",
     );
 
-    process?.exit(0);
+    process.exit(0);
   } catch (error) {
     console?.error("❌ Failed to setup admin account:", error?.message);
     console?.error(error?.stack);
-    process?.exit(1);
+    process.exit(1);
   }
 }
 

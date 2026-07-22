@@ -24,12 +24,12 @@ async function initializeFfmpeg() {
         ffmpeg?.setFfmpegPath(ffmpegStatic?.default);
       }
     } catch {
-      logger?.warn("ffmpeg-static not available, using system ffmpeg");
+      logger.warn("ffmpeg-static not available, using system ffmpeg");
     }
     ffmpegAvailable = true;
     return true;
   } catch (error) {
-    logger?.warn(
+    logger.warn(
       { err: error },
       "FFmpeg not available - audio processing features will be limited:",
     );
@@ -242,7 +242,7 @@ export class AIMusicService {
 
   constructor() {
     initializeFfmpeg().catch(() => {
-      logger?.warn(
+      logger.warn(
         "FFmpeg initialization deferred - will initialize on first use",
       );
     });
@@ -279,37 +279,37 @@ export class AIMusicService {
       const sampleRate = decoded?.sampleRate;
       const channelData = decoded?.channelData[0];
 
-      const spectralData = await this?.performFFT(channelData, sampleRate);
+      const spectralData = await this.performFFT(channelData, sampleRate);
 
-      const vocals = await this?.extractStemWithFFT(
+      const vocals = await this.extractStemWithFFT(
         channelData,
         spectralData,
         sampleRate,
         "vocals",
         inferenceId,
       );
-      const drums = await this?.extractStemWithFFT(
+      const drums = await this.extractStemWithFFT(
         channelData,
         spectralData,
         sampleRate,
         "drums",
         inferenceId,
       );
-      const bass = await this?.extractStemWithFFT(
+      const bass = await this.extractStemWithFFT(
         channelData,
         spectralData,
         sampleRate,
         "bass",
         inferenceId,
       );
-      const melody = await this?.extractStemWithFFT(
+      const melody = await this.extractStemWithFFT(
         channelData,
         spectralData,
         sampleRate,
         "melody",
         inferenceId,
       );
-      const harmony = await this?.extractStemWithFFT(
+      const harmony = await this.extractStemWithFFT(
         channelData,
         spectralData,
         sampleRate,
@@ -336,8 +336,8 @@ export class AIMusicService {
         overallConfidence,
       };
 
-      await this?.logInference(
-        this?.AI_MODELS.STEM_SEPARATOR,
+      await this.logInference(
+        this.AI_MODELS.STEM_SEPARATOR,
         "stem_separation",
         {
           bufferSize: audioBuffer.length,
@@ -349,20 +349,20 @@ export class AIMusicService {
 
       return result;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Stem separation error:");
+      logger.warn({ err: error }, "Stem separation error:");
       throw new Error("Failed to separate stems");
     }
   }
 
   async getGenrePreset(genre: string): Promise<GenrePreset> {
     const genreLower = genre?.toLowerCase().replace(/[\s-]/g, "_");
-    const presets = this?.getAllGenrePresets();
+    const presets = this.getAllGenrePresets();
 
     const preset =
       presets?.find((p) => p?.genre.toLowerCase() === genreLower) || presets[0];
 
-    await this?.logInference(
-      this?.AI_MODELS.GENRE_PRESET_ENGINE,
+    await this.logInference(
+      this.AI_MODELS.GENRE_PRESET_ENGINE,
       "preset_retrieval",
       { genre },
       preset,
@@ -387,23 +387,23 @@ export class AIMusicService {
     let outputFilePath: string | undefined;
 
     try {
-      const preset = await this?.getGenrePreset(genre);
-      const normalizedIntensity = Math?.max(0, Math?.min(100, intensity)) / 100;
+      const preset = await this.getGenrePreset(genre);
+      const normalizedIntensity = Math.max(0, Math.min(100, intensity)) / 100;
 
-      const appliedSettings = this?.blendPresetWithIntensity(
+      const appliedSettings = this.blendPresetWithIntensity(
         preset?.mixSettings,
         normalizedIntensity,
       );
       appliedSettings.genrePreset = preset?.displayName;
       appliedSettings.presetIntensity = intensity;
 
-      const suggestions = await this?.generateMixSuggestions({
+      const suggestions = await this.generateMixSuggestions({
         genre,
         intensity: normalizedIntensity,
         preset: preset.displayName,
       });
 
-      const track = await this?.getTrackByIdSafe(trackId);
+      const track = await this.getTrackByIdSafe(trackId);
       if (track) {
         await storage?.updateStudioTrackEffects(
           track?.id,
@@ -415,20 +415,20 @@ export class AIMusicService {
       const clips = await storage?.getTrackAudioClips(trackId);
       if (clips?.length > 0) {
         const primaryClip = clips[0];
-        const inputPath = path?.join(process?.cwd(), primaryClip?.filePath);
+        const inputPath = path?.join(process.cwd(), primaryClip?.filePath);
 
         const inputAccessible = await fsPromises
           .access(inputPath)
           .then(() => true)
           .catch(() => false);
         if (inputAccessible && track) {
-          const processedDir = path?.join(process?.cwd(), "uploads", "processed");
+          const processedDir = path?.join(process.cwd(), "uploads", "processed");
           await fsPromises?.mkdir(processedDir, { recursive: true });
 
           const processedFilename = `${genre}_${randomBytes(8).toString("hex")}.wav`;
           const outputPath = path?.join(processedDir, processedFilename);
 
-          await this?.applyAudioProcessing(
+          await this.applyAudioProcessing(
             inputPath,
             outputPath,
             appliedSettings,
@@ -451,7 +451,7 @@ export class AIMusicService {
             },
           );
 
-          logger?.info(
+          logger.info(
             `Processed audio with ${genre} preset saved to: ${outputPath} (path: ${outputFilePath})`,
           );
         }
@@ -459,8 +459,8 @@ export class AIMusicService {
 
       const processingTime = Date?.now() - startTime;
 
-      await this?.logInference(
-        this?.AI_MODELS.GENRE_PRESET_ENGINE,
+      await this.logInference(
+        this.AI_MODELS.GENRE_PRESET_ENGINE,
         "preset_application",
         {
           trackId,
@@ -474,7 +474,7 @@ export class AIMusicService {
 
       return { success: true, appliedSettings, suggestions, outputFilePath };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Genre preset application error:");
+      logger.warn({ err: error }, "Genre preset application error:");
       throw error;
     }
   }
@@ -528,15 +528,15 @@ export class AIMusicService {
 
     filters?.push(...eqBands);
 
-    const ratio = Math?.max(1.5, Math?.min(20, settings?.compression.ratio));
-    const threshold = Math?.max(
+    const ratio = Math.max(1.5, Math.min(20, settings?.compression.ratio));
+    const threshold = Math.max(
       -60,
-      Math?.min(0, settings?.compression.threshold),
+      Math.min(0, settings?.compression.threshold),
     );
-    const attack = Math?.max(0.01, Math?.min(2000, settings?.compression.attack));
-    const release = Math?.max(
+    const attack = Math.max(0.01, Math.min(2000, settings?.compression.attack));
+    const release = Math.max(
       0.01,
-      Math?.min(9000, settings?.compression.release),
+      Math.min(9000, settings?.compression.release),
     );
 
     filters?.push(
@@ -544,7 +544,7 @@ export class AIMusicService {
     );
 
     if (settings?.stereoImaging.width !== 1.0) {
-      const width = Math?.max(0, Math?.min(2, settings?.stereoImaging.width));
+      const width = Math.max(0, Math.min(2, settings?.stereoImaging.width));
       filters.push(`stereotools=mlev=${width}:mwid=1.0`);
     }
 
@@ -553,7 +553,7 @@ export class AIMusicService {
         .audioFilters(filters?.length > 0 ? filters : ["anull"])
         .toFormat("wav")
         .on("error", (err) => {
-          logger?.warn({ err: err }, "FFmpeg processing error:");
+          logger.warn({ err: err }, "FFmpeg processing error:");
           reject(err);
         })
         .on("end", () => {
@@ -566,8 +566,8 @@ export class AIMusicService {
   async analyzeReferenceTrack(audioBuffer: Buffer): Promise<ReferenceAnalysis> {
     const startTime = Date?.now();
 
-    const spectralProfile = this?.analyzeSpectrum(audioBuffer);
-    const loudnessMetrics = await this?.measureLoudness(audioBuffer);
+    const spectralProfile = this.analyzeSpectrum(audioBuffer);
+    const loudnessMetrics = await this.measureLoudness(audioBuffer);
 
     const analysis: ReferenceAnalysis = {
       spectralProfile: this.calculateSpectralProfile(spectralProfile),
@@ -578,8 +578,8 @@ export class AIMusicService {
     };
 
     const processingTime = Date?.now() - startTime;
-    await this?.logInference(
-      this?.AI_MODELS.REFERENCE_MATCHER,
+    await this.logInference(
+      this.AI_MODELS.REFERENCE_MATCHER,
       "reference_analysis",
       {
         bufferSize: audioBuffer.length,
@@ -605,16 +605,16 @@ export class AIMusicService {
     const suggestions: AISuggestion[] = [];
     const adjustments: Record<string, any> = {};
 
-    const track = await this?.getTrackByIdSafe(targetTrackId);
+    const track = await this.getTrackByIdSafe(targetTrackId);
     const currentEffects =
-      (track?.effects as MixSettings) || this?.getDefaultMixSettings();
+      (track?.effects as MixSettings) || this.getDefaultMixSettings();
 
     if (referenceProfile?.loudnessMetrics.integrated > -14) {
       suggestions?.push({
         id: randomBytes(8).toString("hex"),
         category: "loudness",
         suggestion: `Increase master loudness to ${referenceProfile?.loudnessMetrics.integrated?.toFixed(1)} LUFS`,
-        reasoning: `Reference track has higher integrated loudness. Increase by ${Math?.abs(referenceProfile?.loudnessMetrics.integrated + 14).toFixed(1)}dB to match`,
+        reasoning: `Reference track has higher integrated loudness. Increase by ${Math.abs(referenceProfile?.loudnessMetrics.integrated + 14).toFixed(1)}dB to match`,
         confidence: 0.88,
         parameters: { targetLUFS: referenceProfile.loudnessMetrics.integrated },
         priority: "high",
@@ -686,8 +686,8 @@ export class AIMusicService {
       suggestions?.reduce((sum, s) => sum + s?.confidence, 0) /
         suggestions?.length || 0.8;
 
-    await this?.logInference(
-      this?.AI_MODELS.REFERENCE_MATCHER,
+    await this.logInference(
+      this.AI_MODELS.REFERENCE_MATCHER,
       "reference_matching",
       {
         trackId: targetTrackId,
@@ -723,12 +723,12 @@ export class AIMusicService {
 
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
-      logger?.warn("FFmpeg not available - using fallback loudness measurement");
-      return this?.measureLoudnessFallback(audioBuffer);
+      logger.warn("FFmpeg not available - using fallback loudness measurement");
+      return this.measureLoudnessFallback(audioBuffer);
     }
 
     try {
-      const tempDir = path?.join(process?.cwd(), "uploads", "temp");
+      const tempDir = path?.join(process.cwd(), "uploads", "temp");
       await fsPromises?.mkdir(tempDir, { recursive: true });
 
       const tempInputPath = path?.join(
@@ -748,7 +748,7 @@ export class AIMusicService {
             stderrOutput += line + "\n";
           })
           .on("error", (err) => {
-            logger?.warn({ err: err }, "FFmpeg loudness measurement error:");
+            logger.warn({ err: err }, "FFmpeg loudness measurement error:");
             reject(err);
           })
           .on("end", () => {
@@ -758,15 +758,15 @@ export class AIMusicService {
                 throw new Error("No JSON output from loudnorm filter");
               }
 
-              const data = JSON?.parse(jsonMatch[0]);
+              const data = JSON.parse(jsonMatch[0]);
 
               const integrated = parseFloat(data?.input_i) || -23.0;
               const truePeak = parseFloat(data?.input_tp) || -3.0;
               const loudnessRange = parseFloat(data?.input_lra) || 7.0;
               parseFloat(data?.input_thresh) || -33.0;
 
-              const audioData = this?.bufferToFloat32Array(audioBuffer);
-              const dynamicRange = this?.calculateDynamicRange(audioData);
+              const audioData = this.bufferToFloat32Array(audioBuffer);
+              const dynamicRange = this.calculateDynamicRange(audioData);
 
               const shortTerm = integrated + loudnessRange / 3;
               const momentary = integrated + loudnessRange / 2;
@@ -780,7 +780,7 @@ export class AIMusicService {
                 loudnessRange,
               });
             } catch (parseError: unknown) {
-              logger?.warn("Error parsing loudness JSON:", parseError);
+              logger.warn("Error parsing loudness JSON:", parseError);
               reject(parseError);
             }
           })
@@ -790,8 +790,8 @@ export class AIMusicService {
       await fsPromises?.unlink(tempInputPath).catch(() => {});
 
       const processingTime = Date?.now() - startTime;
-      await this?.logInference(
-        this?.AI_MODELS.LUFS_METER,
+      await this.logInference(
+        this.AI_MODELS.LUFS_METER,
         "loudness_measurement",
         {
           bufferSize: audioBuffer.length,
@@ -803,12 +803,12 @@ export class AIMusicService {
 
       return metrics;
     } catch (error: unknown) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "Loudness measurement error, falling back to simplified calculation:",
       );
 
-      const audioData = this?.bufferToFloat32Array(audioBuffer);
+      const audioData = this.bufferToFloat32Array(audioBuffer);
       const sampleRate = 48000;
 
       const fallbackMetrics: LoudnessMetrics = {
@@ -838,8 +838,8 @@ export class AIMusicService {
     let outputFilePath: string | undefined;
 
     try {
-      const audioBuffer = await this?.loadTrackAudio(trackId);
-      const loudnessMetrics = await this?.measureLoudness(audioBuffer);
+      const audioBuffer = await this.loadTrackAudio(trackId);
+      const loudnessMetrics = await this.measureLoudness(audioBuffer);
       const currentLoudness = loudnessMetrics?.integrated;
       const requiredGain = targetLUFS - currentLoudness;
 
@@ -856,23 +856,23 @@ export class AIMusicService {
         },
       ];
 
-      if (Math?.abs(requiredGain) > 6) {
+      if (Math.abs(requiredGain) > 6) {
         suggestions?.push({
           id: randomBytes(8).toString("hex"),
           category: "compression",
           suggestion: `Consider compression before gain adjustment`,
-          reasoning: `Large gain adjustment (${Math?.abs(requiredGain).toFixed(1)}dB) may cause clipping. Apply compression first.`,
+          reasoning: `Large gain adjustment (${Math.abs(requiredGain).toFixed(1)}dB) may cause clipping. Apply compression first.`,
           confidence: 0.88,
           priority: "high",
           estimatedImpact: 8.0,
         });
       }
 
-      const track = await this?.getTrackByIdSafe(trackId);
+      const track = await this.getTrackByIdSafe(trackId);
       const clips = await storage?.getTrackAudioClips(trackId);
       if (clips?.length > 0) {
         const primaryClip = clips[0];
-        const inputPath = path?.join(process?.cwd(), primaryClip?.filePath);
+        const inputPath = path?.join(process.cwd(), primaryClip?.filePath);
 
         const inputAccessible = await fsPromises
           .access(inputPath)
@@ -880,7 +880,7 @@ export class AIMusicService {
           .catch(() => false);
         if (inputAccessible && track) {
           const normalizedDir = path?.join(
-            process?.cwd(),
+            process.cwd(),
             "uploads",
             "normalized",
           );
@@ -889,7 +889,7 @@ export class AIMusicService {
           const normalizedFilename = `normalized_${randomBytes(8).toString("hex")}.wav`;
           const outputPath = path?.join(normalizedDir, normalizedFilename);
 
-          await this?.applyLoudnessNormalization(
+          await this.applyLoudnessNormalization(
             inputPath,
             outputPath,
             targetLUFS,
@@ -913,15 +913,15 @@ export class AIMusicService {
             },
           );
 
-          logger?.info(
+          logger.info(
             `Normalized audio saved to: ${outputPath} (path: ${outputFilePath})`,
           );
         }
       }
 
       const processingTime = Date?.now() - startTime;
-      await this?.logInference(
-        this?.AI_MODELS.LUFS_METER,
+      await this.logInference(
+        this.AI_MODELS.LUFS_METER,
         "loudness_normalization",
         {
           trackId,
@@ -944,7 +944,7 @@ export class AIMusicService {
         outputFilePath,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Normalization error:");
+      logger.warn({ err: error }, "Normalization error:");
       throw error;
     }
   }
@@ -968,7 +968,7 @@ export class AIMusicService {
         ])
         .toFormat("wav")
         .on("error", (err) => {
-          logger?.warn({ err: err }, "FFmpeg normalization error:");
+          logger.warn({ err: err }, "FFmpeg normalization error:");
           reject(err);
         })
         .on("end", () => {
@@ -1873,10 +1873,10 @@ export class AIMusicService {
   }
 
   private analyzeSpectrum(audioBuffer: Buffer): Float32Array {
-    const size = Math?.min(audioBuffer?.length / 4, 8192);
+    const size = Math.min(audioBuffer?.length / 4, 8192);
     return new Float32Array(size).map((_, i) => {
       const normalized = i / size;
-      return Math?.sin(normalized * Math.PI) * Math?.random() * 0.5 + 0.5;
+      return Math.sin(normalized * Math.PI) * Math.random() * 0.5 + 0.5;
     });
   }
 
@@ -1888,7 +1888,7 @@ export class AIMusicService {
     stemType: string,
     originalSize: number,
   ): number {
-    const rms = Math?.sqrt(
+    const rms = Math.sqrt(
       filteredAudio?.reduce((sum, val) => sum + val * val, 0) /
         filteredAudio?.length,
     );
@@ -1901,10 +1901,10 @@ export class AIMusicService {
       harmony: 0.76,
     };
 
-    const sizeBonus = Math?.min(0.1, originalSize / 10000000);
-    const energyBonus = Math?.min(0.05, rms * 10);
+    const sizeBonus = Math.min(0.1, originalSize / 10000000);
+    const energyBonus = Math.min(0.05, rms * 10);
 
-    return Math?.min(
+    return Math.min(
       0.95,
       (baseConfidence[stemType] || 0.8) + sizeBonus + energyBonus,
     );
@@ -1943,7 +1943,7 @@ export class AIMusicService {
     const spectralRolloff = spectralData?.length * 0.85;
     const spectralFlux = spectralData?.reduce(
       (sum, val, idx) =>
-        idx > 0 ? sum + Math?.abs(val - spectralData[idx - 1]) : sum,
+        idx > 0 ? sum + Math.abs(val - spectralData[idx - 1]) : sum,
       0,
     );
 
@@ -1970,14 +1970,14 @@ export class AIMusicService {
 
   private measureLoudnessFallback(audioBuffer: Buffer): LoudnessMetrics {
     const sampleRate = 44100;
-    const audioData = this?.bufferToFloat32Array(audioBuffer);
+    const audioData = this.bufferToFloat32Array(audioBuffer);
 
-    const integrated = this?.calculateIntegratedLoudness(audioData, sampleRate);
-    const shortTerm = this?.calculateShortTermLoudness(audioData, sampleRate);
-    const momentary = this?.calculateMomentaryLoudness(audioData, sampleRate);
-    const truePeak = this?.calculateTruePeak(audioData);
-    const dynamicRange = this?.calculateDynamicRange(audioData);
-    const loudnessRange = this?.calculateLoudnessRange(audioData, sampleRate);
+    const integrated = this.calculateIntegratedLoudness(audioData, sampleRate);
+    const shortTerm = this.calculateShortTermLoudness(audioData, sampleRate);
+    const momentary = this.calculateMomentaryLoudness(audioData, sampleRate);
+    const truePeak = this.calculateTruePeak(audioData);
+    const dynamicRange = this.calculateDynamicRange(audioData);
+    const loudnessRange = this.calculateLoudnessRange(audioData, sampleRate);
 
     return {
       integrated,
@@ -1993,16 +1993,16 @@ export class AIMusicService {
     audioData: Float32Array,
     sampleRate: number,
   ): number {
-    const blockSize = Math?.floor(sampleRate * 0.4);
+    const blockSize = Math.floor(sampleRate * 0.4);
     let totalLoudness = 0;
     let blockCount = 0;
 
     for (let i = 0; i < audioData.length - blockSize; i += blockSize / 2) {
       const block = audioData?.slice(i, i + blockSize);
-      const rms = Math?.sqrt(
+      const rms = Math.sqrt(
         block?.reduce((sum, val) => sum + val * val, 0) / block?.length,
       );
-      const loudness = -0.691 + 10 * Math?.log10(rms + 1e-10);
+      const loudness = -0.691 + 10 * Math.log10(rms + 1e-10);
 
       if (loudness > -70) {
         totalLoudness += loudness;
@@ -2017,58 +2017,58 @@ export class AIMusicService {
     audioData: Float32Array,
     sampleRate: number,
   ): number {
-    const blockSize = Math?.floor(sampleRate * 3);
-    const block = audioData?.slice(0, Math?.min(blockSize, audioData?.length));
-    const rms = Math?.sqrt(
+    const blockSize = Math.floor(sampleRate * 3);
+    const block = audioData?.slice(0, Math.min(blockSize, audioData?.length));
+    const rms = Math.sqrt(
       block?.reduce((sum, val) => sum + val * val, 0) / block?.length,
     );
-    return -0.691 + 10 * Math?.log10(rms + 1e-10);
+    return -0.691 + 10 * Math.log10(rms + 1e-10);
   }
 
   private calculateMomentaryLoudness(
     audioData: Float32Array,
     sampleRate: number,
   ): number {
-    const blockSize = Math?.floor(sampleRate * 0.4);
-    const block = audioData?.slice(0, Math?.min(blockSize, audioData?.length));
-    const rms = Math?.sqrt(
+    const blockSize = Math.floor(sampleRate * 0.4);
+    const block = audioData?.slice(0, Math.min(blockSize, audioData?.length));
+    const rms = Math.sqrt(
       block?.reduce((sum, val) => sum + val * val, 0) / block?.length,
     );
-    return -0.691 + 10 * Math?.log10(rms + 1e-10);
+    return -0.691 + 10 * Math.log10(rms + 1e-10);
   }
 
   private calculateTruePeak(audioData: Float32Array): number {
     const peak = audioData?.reduce(
-      (max, val) => Math?.max(max, Math?.abs(val)),
+      (max, val) => Math.max(max, Math.abs(val)),
       0,
     );
-    return 20 * Math?.log10(peak + 1e-10);
+    return 20 * Math.log10(peak + 1e-10);
   }
 
   private calculateDynamicRange(audioData: Float32Array): number {
-    const rms = Math?.sqrt(
+    const rms = Math.sqrt(
       audioData?.reduce((sum, val) => sum + val * val, 0) / audioData?.length,
     );
     const peak = audioData?.reduce(
-      (max, val) => Math?.max(max, Math?.abs(val)),
+      (max, val) => Math.max(max, Math.abs(val)),
       0,
     );
-    return 20 * Math?.log10(peak / rms + 1e-10);
+    return 20 * Math.log10(peak / rms + 1e-10);
   }
 
   private calculateLoudnessRange(
     audioData: Float32Array,
     sampleRate: number,
   ): number {
-    const blockSize = Math?.floor(sampleRate * 3);
+    const blockSize = Math.floor(sampleRate * 3);
     const loudnessValues: number[] = [];
 
     for (let i = 0; i < audioData.length - blockSize; i += blockSize / 2) {
       const block = audioData?.slice(i, i + blockSize);
-      const rms = Math?.sqrt(
+      const rms = Math.sqrt(
         block?.reduce((sum, val) => sum + val * val, 0) / block?.length,
       );
-      const loudness = -0.691 + 10 * Math?.log10(rms + 1e-10);
+      const loudness = -0.691 + 10 * Math.log10(rms + 1e-10);
       if (loudness > -70) loudnessValues?.push(loudness);
     }
 
@@ -2076,9 +2076,9 @@ export class AIMusicService {
 
     loudnessValues?.sort((a, b) => a - b);
     const lowPercentile =
-      loudnessValues[Math?.floor(loudnessValues?.length * 0.1)];
+      loudnessValues[Math.floor(loudnessValues?.length * 0.1)];
     const highPercentile =
-      loudnessValues[Math?.floor(loudnessValues?.length * 0.95)];
+      loudnessValues[Math.floor(loudnessValues?.length * 0.95)];
 
     return highPercentile - lowPercentile;
   }
@@ -2088,16 +2088,16 @@ export class AIMusicService {
     if (!audioBuffer || audioBuffer?.length < 4) return 1.0;
     let leftSum = 0,
       rightSum = 0;
-    const samples = Math?.min(audioBuffer?.length >> 1, 8000); // 16-bit stereo pairs
+    const samples = Math.min(audioBuffer?.length >> 1, 8000); // 16-bit stereo pairs
     for (let i = 0; i < samples; i += 4) {
       const l = audioBuffer?.readInt16LE(i);
       const r = audioBuffer?.readInt16LE(i + 2);
-      leftSum += Math?.abs(l);
-      rightSum += Math?.abs(r);
+      leftSum += Math.abs(l);
+      rightSum += Math.abs(r);
     }
     if (leftSum + rightSum === 0) return 1.0;
-    const diff = Math?.abs(leftSum - rightSum) / (leftSum + rightSum);
-    return Math?.round((1.0 + diff * 0.5) * 100) / 100; // 1.00–1.50 stereo width ratio
+    const diff = Math.abs(leftSum - rightSum) / (leftSum + rightSum);
+    return Math.round((1.0 + diff * 0.5) * 100) / 100; // 1.00–1.50 stereo width ratio
   }
 
   private analyzeFrequencyBalance(spectralData: Float32Array): {
@@ -2194,17 +2194,17 @@ export class AIMusicService {
       }
 
       const primaryClip = clips[0];
-      const audioPath = path?.join(process?.cwd(), primaryClip?.filePath);
+      const audioPath = path?.join(process.cwd(), primaryClip?.filePath);
 
       const audioAccessible = await fsPromises
         .access(audioPath)
         .then(() => true)
         .catch(() => false);
       if (!audioAccessible) {
-        logger?.warn(
+        logger.warn(
           `Audio file not found at ${audioPath}, generating simulated audio buffer`,
         );
-        return this?.generateSimulatedAudioBuffer(
+        return this.generateSimulatedAudioBuffer(
           primaryClip?.duration || 30,
           primaryClip?.channels || 2,
         );
@@ -2217,24 +2217,24 @@ export class AIMusicService {
         const format = metadata?.format;
 
         if (format?.container !== "WAVE") {
-          logger?.info(
+          logger.info(
             `Converting ${format?.container} to WAV for processing...`,
           );
-          const convertedBuffer = await this?.convertToWav(audioPath);
+          const convertedBuffer = await this.convertToWav(audioPath);
           return convertedBuffer;
         }
 
         return audioBuffer;
       } catch (metadataError: unknown) {
-        logger?.warn(
+        logger.warn(
           "Could not parse audio metadata, assuming WAV format:",
           metadataError,
         );
         return audioBuffer;
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, `Error loading track audio for ${trackId}:`);
-      return this?.generateSimulatedAudioBuffer(30, 2);
+      logger.warn({ err: error }, `Error loading track audio for ${trackId}:`);
+      return this.generateSimulatedAudioBuffer(30, 2);
     }
   }
 
@@ -2245,7 +2245,7 @@ export class AIMusicService {
         "FFmpeg is not available. Audio format conversion is disabled in this deployment.",
       );
     }
-    const tempDir = path?.join(process?.cwd(), "uploads", "temp");
+    const tempDir = path?.join(process.cwd(), "uploads", "temp");
     await fsPromises?.mkdir(tempDir, { recursive: true });
 
     const tempOutputPath = path?.join(
@@ -2259,7 +2259,7 @@ export class AIMusicService {
         .audioChannels(2)
         .audioFrequency(48000)
         .on("error", (err) => {
-          logger?.warn({ err: err }, "FFmpeg conversion error:");
+          logger.warn({ err: err }, "FFmpeg conversion error:");
           reject(err);
         })
         .on("end", async () => {
@@ -2286,7 +2286,7 @@ export class AIMusicService {
     const magnitudes: number[] = [];
 
     for (let i = 0; i < audioData.length - fftSize; i += fftSize / 2) {
-      const chunk = Array?.from(audioData?.slice(i, i + fftSize));
+      const chunk = Array.from(audioData?.slice(i, i + fftSize));
 
       while (chunk?.length < fftSize) {
         chunk?.push(0);
@@ -2297,7 +2297,7 @@ export class AIMusicService {
       for (let j = 0; j < fftSize / 2; j++) {
         const real = complexOutput[j * 2];
         const imag = complexOutput[j * 2 + 1];
-        const magnitude = Math?.sqrt(real * real + imag * imag);
+        const magnitude = Math.sqrt(real * real + imag * imag);
         magnitudes?.push(magnitude);
       }
     }
@@ -2316,13 +2316,13 @@ export class AIMusicService {
     confidence: number;
     spectralProfile: SpectralProfile;
   }> {
-    const filteredAudio = this?.applyFrequencyBandFilter(
+    const filteredAudio = this.applyFrequencyBandFilter(
       audioData,
       stemType,
       sampleRate,
     );
 
-    const stemsDir = path?.join(process?.cwd(), "uploads", "stems");
+    const stemsDir = path?.join(process.cwd(), "uploads", "stems");
     await fsPromises?.mkdir(stemsDir, { recursive: true });
 
     const stemId = randomBytes(8).toString("hex");
@@ -2336,12 +2336,12 @@ export class AIMusicService {
     });
     await fsPromises?.writeFile(stemPath, Buffer?.from(wavBuffer));
 
-    const confidenceScore = this?.calculateStemConfidence(
+    const confidenceScore = this.calculateStemConfidence(
       filteredAudio,
       stemType,
       audioData?.length,
     );
-    const spectralProfile = this?.calculateSpectralProfile(spectralData);
+    const spectralProfile = this.calculateSpectralProfile(spectralData);
 
     return {
       audioPath: `/uploads/stems/${stemFilename}`,
@@ -2373,7 +2373,7 @@ export class AIMusicService {
     // Pre-compute Hann window for analysis and synthesis
     const hannWindow = new Float32Array(fftSize);
     for (let n = 0; n < fftSize; n++) {
-      hannWindow[n] = 0.5 * (1 - Math?.cos((2 * Math.PI * n) / (fftSize - 1)));
+      hannWindow[n] = 0.5 * (1 - Math.cos((2 * Math.PI * n) / (fftSize - 1)));
     }
 
     for (let i = 0; i <= audioData.length - fftSize; i += hopSize) {
@@ -2389,7 +2389,7 @@ export class AIMusicService {
       // Apply frequency-domain attenuation
       for (let j = 0; j < fftSize / 2; j++) {
         const freq = (j * sampleRate) / fftSize;
-        const gain = this?.getFrequencyAttenuation(freq, stemType);
+        const gain = this.getFrequencyAttenuation(freq, stemType);
         complexArray[j * 2] *= gain;
         complexArray[j * 2 + 1] *= gain;
         // Mirror for conjugate symmetry
@@ -2523,13 +2523,13 @@ export class AIMusicService {
   ): Buffer {
     const sampleRate = 48000;
     const bytesPerSample = 2;
-    const totalSamples = Math?.floor(sampleRate * durationSeconds * channels);
+    const totalSamples = Math.floor(sampleRate * durationSeconds * channels);
     const bufferSize = totalSamples * bytesPerSample;
 
     const buffer = Buffer?.alloc(bufferSize);
 
     for (let i = 0; i < totalSamples; i++) {
-      const value = Math?.floor((Math?.random() * 2 - 1) * 16000);
+      const value = Math.floor((Math.random() * 2 - 1) * 16000);
       buffer?.writeInt16LE(value, i * bytesPerSample);
     }
 
@@ -2558,7 +2558,7 @@ export class AIMusicService {
 
       return null;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, `Error getting track ${trackId}:`);
+      logger.warn({ err: error }, `Error getting track ${trackId}:`);
       return null;
     }
   }
@@ -2605,7 +2605,7 @@ export class AIMusicService {
     try {
       const aiModel = await storage?.getAIModelByName(modelName);
       if (!aiModel) {
-        logger?.warn(`AI model ${modelName} not found in registry`);
+        logger.warn(`AI model ${modelName} not found in registry`);
         return;
       }
 
@@ -2621,7 +2621,7 @@ export class AIMusicService {
         requestId: randomBytes(8).toString("hex"),
       });
 
-      const humanReadable = this?.generateExplanation(
+      const humanReadable = this.generateExplanation(
         inferenceType,
         inputData,
         outputData,
@@ -2645,7 +2645,7 @@ export class AIMusicService {
         visualizationData: { type: inferenceType, data: outputData },
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Failed to log inference:");
+      logger.warn({ err: error }, "Failed to log inference:");
     }
   }
 
@@ -2656,7 +2656,7 @@ export class AIMusicService {
     confidence: number,
   ): string {
     const explanations: Record<string, string> = {
-      stem_separation: `Separated audio into ${Object?.keys(output).length} stems with ${(confidence * 100).toFixed(1)}% overall confidence using frequency-based analysis`,
+      stem_separation: `Separated audio into ${Object.keys(output).length} stems with ${(confidence * 100).toFixed(1)}% overall confidence using frequency-based analysis`,
       preset_retrieval: `Retrieved ${output?.displayName} preset optimized for ${input?.genre} with professional mixing parameters`,
       preset_application: `Applied ${input?.genre} preset at ${input?.intensity}% intensity with ${output?.suggestions?.length || 0} AI-generated suggestions`,
       reference_analysis: `Analyzed reference track: ${output?.loudnessMetrics.integrated?.toFixed(1)} LUFS integrated loudness, ${output?.dynamicRange.toFixed(1)}dB dynamic range`,
@@ -2724,7 +2724,7 @@ export class AIMusicService {
     icon: string;
     description: string;
   }[] {
-    const presets = this?.getAllGenrePresets();
+    const presets = this.getAllGenrePresets();
     return presets?.map((p) => ({
       id: p.genre,
       name: p.displayName,
@@ -2782,12 +2782,12 @@ export class AIMusicService {
     const difference = targetLUFS - currentLUFS;
     let recommendation: string;
 
-    if (Math?.abs(difference) < 1) {
+    if (Math.abs(difference) < 1) {
       recommendation = `Your track is already close to the target loudness of ${targetLUFS} LUFS. Minor adjustment of ${difference?.toFixed(1)} dB needed.`;
     } else if (difference > 0) {
-      recommendation = `Your track is ${Math?.abs(difference).toFixed(1)} dB quieter than the target. Consider increasing overall volume or applying subtle limiting.`;
+      recommendation = `Your track is ${Math.abs(difference).toFixed(1)} dB quieter than the target. Consider increasing overall volume or applying subtle limiting.`;
     } else {
-      recommendation = `Your track is ${Math?.abs(difference).toFixed(1)} dB louder than the target. Consider reducing overall volume to preserve dynamics.`;
+      recommendation = `Your track is ${Math.abs(difference).toFixed(1)} dB louder than the target. Consider reducing overall volume to preserve dynamics.`;
     }
 
     return {

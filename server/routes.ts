@@ -47,7 +47,7 @@ import { notificationService } from "./services/notificationService.js";
 import { jwtAuthService } from "./services/jwtAuthService.js";
 import { artistProfileService } from "./services/artistProfileService.js";
 
-const log = (msg: string) => logger?.info(msg);
+const log = (msg: string) => logger.info(msg);
 
 // Helper to safely load route modules.
 // `module?.default` may be either an Express Router (has a `stack` array) or a
@@ -111,14 +111,14 @@ async function safeLoadRoute(
     ];
     if (criticalRoutes?.includes(name)) {
       log(`ERROR: Critical route '${name}' failed to load - ${message}`);
-      logger?.warn(
+      logger.warn(
         { err: error },
         `[routes] CRITICAL route loading failure for '${name}'`,
       );
     } else {
       log(`Warning: Could not load ${name} - ${message}`);
     }
-    logger?.error({ err: error }, `[routes] LOAD FAILURE '${name}'`);
+    logger.error({ err: error }, `[routes] LOAD FAILURE '${name}'`);
     return null;
   }
 }
@@ -173,41 +173,41 @@ export function userCacheInvalidate(userId: string): void {
 // Middleware to attach user to request
 async function attachUser(req: Request, _res: Response, next: NextFunction) {
   const isProduction = isProductionEnv();
-  const isApiRoute = req?.path.startsWith("/api/");
+  const isApiRoute = req.path.startsWith("/api/");
 
-  if (req?.session?.userId) {
+  if (req.session?.userId) {
     try {
       // L1 process cache: avoids a Neon round-trip on every request for the
       // same user — critical when background tasks hold DB connections.
-      const cached = _userCacheGet(req?.session.userId);
+      const cached = _userCacheGet(req.session.userId);
       if (cached) {
         req.user = cached;
       } else {
-        const user = await storage?.getUser(req?.session.userId);
+        const user = await storage?.getUser(req.session.userId);
         if (user) {
           req.user = user;
           _userCacheSet(user);
         } else if (isProduction && isApiRoute) {
-          logger?.info(
-            `[Session] User not found for userId: ${req?.session.userId}, path: ${req?.path}`,
+          logger.info(
+            `[Session] User not found for userId: ${req.session.userId}, path: ${req.path}`,
           );
         }
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching user for request");
+      logger.warn({ err: error }, "Error fetching user for request");
     }
   } else if (
     isProduction &&
     isApiRoute &&
-    req?.path !== "/api/auth/me" &&
-    req?.path !== "/api/csrf-token" &&
-    req?.path !== "/api/health" &&
-    req?.path !== "/api/version"
+    req.path !== "/api/auth/me" &&
+    req.path !== "/api/csrf-token" &&
+    req.path !== "/api/health" &&
+    req.path !== "/api/version"
   ) {
     const sessionCookie =
-      req?.cookies?.sessionId || req?.headers.cookie?.includes("sessionId");
-    logger?.info(
-      `[Session] No userId in session for ${req?.path}, cookie present: ${!!sessionCookie}, session exists: ${!!req?.session}`,
+      req.cookies?.sessionId || req.headers.cookie?.includes("sessionId");
+    logger.info(
+      `[Session] No userId in session for ${req.path}, cookie present: ${!!sessionCookie}, session exists: ${!!req.session}`,
     );
   }
 
@@ -215,7 +215,7 @@ async function attachUser(req: Request, _res: Response, next: NextFunction) {
   req.isAuthenticated = function (): this is Request & {
     user: import("../shared/schema.js").User;
   } {
-    return !!this?.user;
+    return !!this.user;
   };
 
   next();
@@ -228,7 +228,7 @@ async function attachUser(req: Request, _res: Response, next: NextFunction) {
 function sessionRegenerate(req: Request): Promise<void> {
   return new Promise((resolve, reject) => {
     const attempt = (remaining: number) => {
-      req?.session.regenerate((err) => {
+      req.session.regenerate((err) => {
         if (!err) return resolve();
         if (remaining <= 0) return reject(err);
         setTimeout(() => attempt(remaining - 1), 400);
@@ -241,7 +241,7 @@ function sessionRegenerate(req: Request): Promise<void> {
 function sessionSave(req: Request): Promise<void> {
   return new Promise((resolve, reject) => {
     const attempt = (remaining: number) => {
-      req?.session.save((err) => {
+      req.session.save((err) => {
         if (!err) return resolve();
         if (remaining <= 0) return reject(err);
         setTimeout(() => attempt(remaining - 1), 400);
@@ -431,7 +431,7 @@ export async function registerRoutes(
             email,
           })
           .catch((err: unknown) =>
-            logger?.info({ err: err }, "Welcome email failed (non-blocking)"),
+            logger.info({ err: err }, "Welcome email failed (non-blocking)"),
           );
 
         Promise?.race([
@@ -440,7 +440,7 @@ export async function registerRoutes(
             setTimeout(() => rej(new Error("bg-timeout")), 3000),
           ),
         ]).catch((err: unknown) =>
-          logger?.info(
+          logger.info(
             { err: err },
             "Admin new-user notification failed (non-blocking)",
           ),
@@ -459,28 +459,28 @@ export async function registerRoutes(
               isNewArtist: true,
             })
             .then((profile) => {
-              logger?.info(
+              logger.info(
                 `[Register] Artist profile created for new user ${user.id}: "${trimmedName}" (id=${profile?.id})`,
               );
               return artistProfileService?.autoDiscover(profile?.id, user?.id);
             })
             .then((discoverResult) => {
-              logger?.info(
+              logger.info(
                 `[Register] Auto-discover complete for new user ${user.id}: saved=${discoverResult.saved} platforms=[${discoverResult?.savedFields.join(",")}]`,
               );
             })
             .catch((err: unknown) => {
-              logger?.info(
+              logger.info(
                 { err: err },
                 "[Register] Artist profile auto-discover failed (non-blocking)",
               );
             });
         }
 
-        return res?.json(safeUser);
+        return res.json(safeUser);
       } catch (error) {
-        logger?.warn({ err: error }, "Registration error");
-        return res?.status(500).json({ message: "Registration failed" });
+        logger.warn({ err: error }, "Registration error");
+        return res.status(500).json({ message: "Registration failed" });
       }
     },
   );
@@ -492,7 +492,7 @@ export async function registerRoutes(
     loginRateLimiter,
     async (req: Request, res: Response) => {
       try {
-        const { email, username, password, twoFactorCode } = req?.body;
+        const { email, username, password, twoFactorCode } = req.body;
         const identifier = email || username;
 
         if (!identifier || !password) {
@@ -522,13 +522,13 @@ export async function registerRoutes(
         }
 
         if (!user || !isValid) {
-          return res?.status(401).json({ message: "Invalid email or password" });
+          return res.status(401).json({ message: "Invalid email or password" });
         }
 
         // Check if 2FA is enabled
         if (user?.twoFactorEnabled && user?.twoFactorSecret) {
           if (!twoFactorCode) {
-            return res?.status(200).json({
+            return res.status(200).json({
               requiresTwoFactor: true,
               message: "Two-factor authentication required",
             });
@@ -543,7 +543,7 @@ export async function registerRoutes(
           });
 
           if (!isCodeValid) {
-            return res?.status(401).json({ message: "Invalid 2FA code" });
+            return res.status(401).json({ message: "Invalid 2FA code" });
           }
         }
 
@@ -554,12 +554,12 @@ export async function registerRoutes(
           // session as 2FA-verified so require2FA gates on privileged routes pass.
           if (user?.twoFactorEnabled) {
             (
-              req?.session as unknown as Record<string, unknown>
+              req.session as unknown as Record<string, unknown>
             ).twoFactorVerified = true;
           }
           await sessionSave(req);
 
-          logger?.info({ userId: user.id }, "[Login] SUCCESS for userId");
+          logger.info({ userId: user.id }, "[Login] SUCCESS for userId");
 
           // Pre-warm the per-process user cache so subsequent requests (profile,
           // sessions, login-history) need zero DB round-trips even while background

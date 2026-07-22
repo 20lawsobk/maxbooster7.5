@@ -154,11 +154,11 @@ export class RoyaltyDisputeService {
       .values(insertData)
       .returning();
 
-    logger?.info(
+    logger.info(
       `Created dispute ${dispute?.id} for user ${input?.userId}, type: ${input?.disputeType}`,
     );
 
-    await this?.notifyAdminOfNewDispute(dispute);
+    await this.notifyAdminOfNewDispute(dispute);
 
     return dispute;
   }
@@ -231,7 +231,7 @@ export class RoyaltyDisputeService {
     input: UpdateDisputeInput,
     updatedBy: string,
   ): Promise<RoyaltyDispute> {
-    const dispute = await this?.getDisputeById(disputeId);
+    const dispute = await this.getDisputeById(disputeId);
     if (!dispute) {
       throw new Error(`Dispute ${disputeId} not found`);
     }
@@ -293,13 +293,13 @@ export class RoyaltyDisputeService {
       .where(eq(royaltyDisputes?.id, disputeId))
       .returning();
 
-    await this?.addSystemMessage(
+    await this.addSystemMessage(
       disputeId,
       `Dispute updated by ${updatedBy}`,
       updatedBy,
     );
 
-    logger?.info(`Updated dispute ${disputeId}, status: ${updated?.status}`);
+    logger.info(`Updated dispute ${disputeId}, status: ${updated?.status}`);
 
     return updated;
   }
@@ -308,7 +308,7 @@ export class RoyaltyDisputeService {
     disputeId: string,
     message: DisputeMessage,
   ): Promise<RoyaltyDispute> {
-    const dispute = await this?.getDisputeById(disputeId);
+    const dispute = await this.getDisputeById(disputeId);
     if (!dispute) {
       throw new Error(`Dispute ${disputeId} not found`);
     }
@@ -335,7 +335,7 @@ export class RoyaltyDisputeService {
       .where(eq(royaltyDisputes?.id, disputeId))
       .returning();
 
-    logger?.info(`Added message to dispute ${disputeId} from ${message?.from}`);
+    logger.info(`Added message to dispute ${disputeId} from ${message?.from}`);
 
     return updated;
   }
@@ -344,7 +344,7 @@ export class RoyaltyDisputeService {
     disputeId: string,
     evidence: { name: string; url: string; type: string },
   ): Promise<RoyaltyDispute> {
-    const dispute = await this?.getDisputeById(disputeId);
+    const dispute = await this.getDisputeById(disputeId);
     if (!dispute) {
       throw new Error(`Dispute ${disputeId} not found`);
     }
@@ -373,7 +373,7 @@ export class RoyaltyDisputeService {
       .where(eq(royaltyDisputes?.id, disputeId))
       .returning();
 
-    logger?.info(`Added evidence to dispute ${disputeId}: ${evidence?.name}`);
+    logger.info(`Added evidence to dispute ${disputeId}: ${evidence?.name}`);
 
     return updated;
   }
@@ -384,7 +384,7 @@ export class RoyaltyDisputeService {
     reason: string,
     escalatedBy: string,
   ): Promise<RoyaltyDispute> {
-    const dispute = await this?.getDisputeById(disputeId);
+    const dispute = await this.getDisputeById(disputeId);
     if (!dispute) {
       throw new Error(`Dispute ${disputeId} not found`);
     }
@@ -416,7 +416,7 @@ export class RoyaltyDisputeService {
       .where(eq(royaltyDisputes?.id, disputeId))
       .returning();
 
-    logger?.info(`Escalated dispute ${disputeId} to ${escalatedTo}`);
+    logger.info(`Escalated dispute ${disputeId} to ${escalatedTo}`);
 
     return updated;
   }
@@ -430,7 +430,7 @@ export class RoyaltyDisputeService {
       resolvedBy: string;
     },
   ): Promise<RoyaltyDispute> {
-    const dispute = await this?.getDisputeById(disputeId);
+    const dispute = await this.getDisputeById(disputeId);
     if (!dispute) {
       throw new Error(`Dispute ${disputeId} not found`);
     }
@@ -455,15 +455,15 @@ export class RoyaltyDisputeService {
       .returning();
 
     if (resolution?.adjustedAmount && dispute?.statementId) {
-      await this?.applyStatementAdjustment(
+      await this.applyStatementAdjustment(
         dispute?.statementId,
         resolution?.adjustedAmount,
       );
     }
 
-    await this?.notifyUserOfResolution(updated);
+    await this.notifyUserOfResolution(updated);
 
-    logger?.info(
+    logger.info(
       `Resolved dispute ${disputeId} with outcome: ${resolution?.outcome}`,
     );
 
@@ -474,7 +474,7 @@ export class RoyaltyDisputeService {
     disputeId: string,
     userId: string,
   ): Promise<RoyaltyDispute> {
-    const dispute = await this?.getDisputeById(disputeId);
+    const dispute = await this.getDisputeById(disputeId);
     if (!dispute) {
       throw new Error(`Dispute ${disputeId} not found`);
     }
@@ -487,7 +487,7 @@ export class RoyaltyDisputeService {
       throw new Error("Cannot withdraw a resolved or rejected dispute");
     }
 
-    return await this?.resolveDispute(disputeId, {
+    return await this.resolveDispute(disputeId, {
       outcome: "withdrawn",
       explanation: "Withdrawn by user",
       resolvedBy: userId,
@@ -570,7 +570,7 @@ export class RoyaltyDisputeService {
     message: string,
     _triggeredBy: string,
   ): Promise<void> {
-    await this?.addMessage(disputeId, {
+    await this.addMessage(disputeId, {
       message,
       from: "system",
       to: "all",
@@ -589,7 +589,7 @@ export class RoyaltyDisputeService {
       .limit(1);
 
     if (!statement) {
-      logger?.warn(`Statement ${statementId} not found for adjustment`);
+      logger.warn(`Statement ${statementId} not found for adjustment`);
       return;
     }
 
@@ -619,7 +619,7 @@ export class RoyaltyDisputeService {
       })
       .where(eq(royaltyStatements?.id, statementId));
 
-    logger?.info(
+    logger.info(
       `Applied adjustment of ${adjustmentAmount} to statement ${statementId}`,
     );
   }
@@ -628,11 +628,11 @@ export class RoyaltyDisputeService {
     dispute: RoyaltyDispute,
   ): Promise<void> {
     try {
-      logger?.info(
+      logger.info(
         `New dispute notification would be sent for dispute ${dispute?.id}`,
       );
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "Failed to send admin notification for new dispute:",
       );
@@ -660,7 +660,7 @@ export class RoyaltyDisputeService {
         });
       }
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "Failed to send user notification for resolved dispute:",
       );
@@ -684,13 +684,13 @@ export class RoyaltyDisputeService {
     setInterval(
       () => {
         const cutoff = Date?.now() - RoyaltyDisputeService.SETTLED_HOLD_TTL_MS;
-        for (const [id, hold] of this?.fundHolds) {
+        for (const [id, hold] of this.fundHolds) {
           if (
             hold?.status !== "held" &&
             hold?.releasedAt &&
             hold?.releasedAt.getTime() < cutoff
           ) {
-            this?.fundHolds.delete(id);
+            this.fundHolds.delete(id);
           }
         }
       },
@@ -703,7 +703,7 @@ export class RoyaltyDisputeService {
     amount: number,
     currency: string = "USD",
   ): Promise<DisputeFundHoldResult> {
-    const dispute = await this?.getDisputeById(disputeId);
+    const dispute = await this.getDisputeById(disputeId);
     if (!dispute) {
       return {
         holdId: "",
@@ -715,7 +715,7 @@ export class RoyaltyDisputeService {
       };
     }
 
-    const existingHold = Array?.from(this?.fundHolds.values()).find(
+    const existingHold = Array.from(this.fundHolds.values()).find(
       (h) => h?.disputeId === disputeId && h?.status === "held",
     );
 
@@ -742,13 +742,13 @@ export class RoyaltyDisputeService {
       status: "held",
     };
 
-    if (!this?._holdCleanupStarted) {
+    if (!this._holdCleanupStarted) {
       this._holdCleanupStarted = true;
-      this?.startFundHoldCleanup();
+      this.startFundHoldCleanup();
     }
-    if (this?.fundHolds.size >= RoyaltyDisputeService.MAX_ACTIVE_FUND_HOLDS) {
-      logger?.error(
-        `[RoyaltyDispute] fundHolds at capacity (${this?.fundHolds.size}) — cannot create new hold for dispute ${disputeId}`,
+    if (this.fundHolds.size >= RoyaltyDisputeService.MAX_ACTIVE_FUND_HOLDS) {
+      logger.error(
+        `[RoyaltyDispute] fundHolds at capacity (${this.fundHolds.size}) — cannot create new hold for dispute ${disputeId}`,
       );
       return {
         holdId: "",
@@ -759,14 +759,14 @@ export class RoyaltyDisputeService {
         message: "Fund hold capacity reached",
       };
     }
-    this?.fundHolds.set(holdId, hold);
+    this.fundHolds.set(holdId, hold);
 
-    await this?.addSystemMessage(
+    await this.addSystemMessage(
       disputeId,
       `Funds held: $${amount?.toFixed(2)} ${currency}`,
       "system",
     );
-    logger?.info(
+    logger.info(
       `Created fund hold ${holdId} for dispute ${disputeId}, amount: ${amount}`,
     );
 
@@ -784,22 +784,22 @@ export class RoyaltyDisputeService {
     holdId: string,
     reason: string = "Dispute resolved",
   ): Promise<FundHold | null> {
-    const hold = this?.fundHolds.get(holdId);
+    const hold = this.fundHolds.get(holdId);
     if (!hold) {
-      logger?.warn(`Fund hold ${holdId} not found`);
+      logger.warn(`Fund hold ${holdId} not found`);
       return null;
     }
 
     hold.status = "released";
     hold.releasedAt = new Date();
-    this?.fundHolds.set(holdId, hold);
+    this.fundHolds.set(holdId, hold);
 
-    await this?.addSystemMessage(
+    await this.addSystemMessage(
       hold?.disputeId,
       `Funds released: $${hold?.amount.toFixed(2)} ${hold?.currency} - ${reason}`,
       "system",
     );
-    logger?.info(`Released fund hold ${holdId}, reason: ${reason}`);
+    logger.info(`Released fund hold ${holdId}, reason: ${reason}`);
 
     return hold;
   }
@@ -808,34 +808,34 @@ export class RoyaltyDisputeService {
     holdId: string,
     reason: string,
   ): Promise<FundHold | null> {
-    const hold = this?.fundHolds.get(holdId);
+    const hold = this.fundHolds.get(holdId);
     if (!hold) {
-      logger?.warn(`Fund hold ${holdId} not found`);
+      logger.warn(`Fund hold ${holdId} not found`);
       return null;
     }
 
     hold.status = "forfeited";
     hold.releasedAt = new Date();
-    this?.fundHolds.set(holdId, hold);
+    this.fundHolds.set(holdId, hold);
 
-    await this?.addSystemMessage(
+    await this.addSystemMessage(
       hold?.disputeId,
       `Funds forfeited: $${hold?.amount.toFixed(2)} ${hold?.currency} - ${reason}`,
       "system",
     );
-    logger?.info(`Forfeited fund hold ${holdId}, reason: ${reason}`);
+    logger.info(`Forfeited fund hold ${holdId}, reason: ${reason}`);
 
     return hold;
   }
 
   async getFundHoldsForDispute(disputeId: string): Promise<FundHold[]> {
-    return Array?.from(this?.fundHolds.values()).filter(
+    return Array.from(this.fundHolds.values()).filter(
       (h) => h?.disputeId === disputeId,
     );
   }
 
   async getFundHoldsForUser(userId: string): Promise<FundHold[]> {
-    return Array?.from(this?.fundHolds.values()).filter(
+    return Array.from(this.fundHolds.values()).filter(
       (h) => h?.userId === userId,
     );
   }
@@ -843,7 +843,7 @@ export class RoyaltyDisputeService {
   async getTotalHeldAmount(
     userId: string,
   ): Promise<{ total: number; currency: string; holds: FundHold[] }> {
-    const holds = await this?.getFundHoldsForUser(userId);
+    const holds = await this.getFundHoldsForUser(userId);
     const activeHolds = holds?.filter((h) => h?.status === "held");
     const total = activeHolds?.reduce((sum, h) => sum + h?.amount, 0);
 
@@ -857,7 +857,7 @@ export class RoyaltyDisputeService {
   async autoHoldDisputedFunds(
     disputeId: string,
   ): Promise<DisputeFundHoldResult | null> {
-    const dispute = await this?.getDisputeById(disputeId);
+    const dispute = await this.getDisputeById(disputeId);
     if (!dispute || !dispute?.disputedAmount) {
       return null;
     }
@@ -867,16 +867,16 @@ export class RoyaltyDisputeService {
       return null;
     }
 
-    return await this?.createFundHold(disputeId, amount, "USD");
+    return await this.createFundHold(disputeId, amount, "USD");
   }
 
   async releaseHoldsOnResolution(disputeId: string): Promise<FundHold[]> {
-    const holds = await this?.getFundHoldsForDispute(disputeId);
+    const holds = await this.getFundHoldsForDispute(disputeId);
     const releasedHolds: FundHold[] = [];
 
     for (const hold of holds) {
       if (hold?.status === "held") {
-        const released = await this?.releaseFundHold(
+        const released = await this.releaseFundHold(
           hold?.id,
           "Dispute resolved",
         );

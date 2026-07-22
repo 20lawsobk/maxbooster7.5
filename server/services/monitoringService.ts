@@ -27,10 +27,10 @@ export class MonitoringService {
 
   constructor() {
     // Set default thresholds
-    this?.thresholds.set("cpu_usage", { value: 80, severity: "high" });
-    this?.thresholds.set("memory_usage", { value: 85, severity: "high" });
-    this?.thresholds.set("error_rate", { value: 5, severity: "medium" });
-    this?.thresholds.set("response_time", { value: 1000, severity: "medium" });
+    this.thresholds.set("cpu_usage", { value: 80, severity: "high" });
+    this.thresholds.set("memory_usage", { value: 85, severity: "high" });
+    this.thresholds.set("error_rate", { value: 5, severity: "medium" });
+    this.thresholds.set("response_time", { value: 1000, severity: "medium" });
   }
 
   /**
@@ -60,7 +60,7 @@ export class MonitoringService {
         services: healthChecks,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error running health checks:");
+      logger.warn({ err: error }, "Error running health checks:");
       throw new Error("Failed to run health checks");
     }
   }
@@ -72,7 +72,7 @@ export class MonitoringService {
     try {
       return await securityService?.checkHealth(service);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, `Error checking ${service} health:`);
+      logger.warn({ err: error }, `Error checking ${service} health:`);
       throw new Error(`Failed to check ${service} health`);
     }
   }
@@ -95,11 +95,11 @@ export class MonitoringService {
         tags,
       };
 
-      if (!this?.metrics.has(name)) {
-        this?.metrics.set(name, []);
+      if (!this.metrics.has(name)) {
+        this.metrics.set(name, []);
       }
 
-      const metricList = this?.metrics.get(name)!;
+      const metricList = this.metrics.get(name)!;
       metricList?.push(metric);
 
       // Keep only last 1000 metrics per type
@@ -108,9 +108,9 @@ export class MonitoringService {
       }
 
       // Check threshold
-      await this?.checkThreshold(name, value);
+      await this.checkThreshold(name, value);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error tracking metric:");
+      logger.warn({ err: error }, "Error tracking metric:");
     }
   }
 
@@ -122,7 +122,7 @@ export class MonitoringService {
     timeRange?: { start: Date; end: Date },
   ): Promise<SystemMetric[]> {
     try {
-      let metrics = this?.metrics.get(name) || [];
+      let metrics = this.metrics.get(name) || [];
 
       if (timeRange) {
         metrics = metrics?.filter(
@@ -132,7 +132,7 @@ export class MonitoringService {
 
       return metrics;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching metrics:");
+      logger.warn({ err: error }, "Error fetching metrics:");
       throw new Error("Failed to fetch metrics");
     }
   }
@@ -141,7 +141,7 @@ export class MonitoringService {
    * Check if metric exceeds threshold
    */
   private async checkThreshold(metric: string, value: number): Promise<void> {
-    const threshold = this?.thresholds.get(metric);
+    const threshold = this.thresholds.get(metric);
     if (!threshold) return;
 
     if (value >= threshold?.value) {
@@ -155,7 +155,7 @@ export class MonitoringService {
         createdAt: new Date(),
       };
 
-      this?.alerts.push(alert);
+      this.alerts.push(alert);
 
       // Create security incident for high severity
       if (threshold?.severity === "high") {
@@ -167,7 +167,7 @@ export class MonitoringService {
       }
 
       // In production, send notifications
-      logger?.warn(`ALERT: ${alert?.message}`);
+      logger.warn(`ALERT: ${alert?.message}`);
     }
   }
 
@@ -179,7 +179,7 @@ export class MonitoringService {
     value: number,
     severity: "low" | "medium" | "high",
   ): Promise<void> {
-    this?.thresholds.set(metric, { value, severity });
+    this.thresholds.set(metric, { value, severity });
   }
 
   /**
@@ -190,7 +190,7 @@ export class MonitoringService {
     metric?: string;
     limit?: number;
   }): Promise<Alert[]> {
-    let alerts = [...this?.alerts];
+    let alerts = [...this.alerts];
 
     if (filters?.severity) {
       alerts = alerts?.filter((a) => a?.severity === filters?.severity);
@@ -223,8 +223,8 @@ export class MonitoringService {
       const systemMetrics = await securityService?.getSystemMetrics();
 
       // Calculate request metrics
-      const requestMetrics = await this?.getMetrics("requests");
-      const errorMetrics = await this?.getMetrics("errors");
+      const requestMetrics = await this.getMetrics("requests");
+      const errorMetrics = await this.getMetrics("errors");
 
       const totalRequests = requestMetrics?.reduce((sum, m) => sum + m?.value, 0);
       const totalErrors = errorMetrics?.reduce((sum, m) => sum + m?.value, 0);
@@ -234,7 +234,7 @@ export class MonitoringService {
           : 100;
 
       // Calculate average response time
-      const responseTimeMetrics = await this?.getMetrics("response_time");
+      const responseTimeMetrics = await this.getMetrics("response_time");
       const avgResponseTime =
         responseTimeMetrics?.length > 0
           ? responseTimeMetrics?.reduce((sum, m) => sum + m?.value, 0) /
@@ -259,7 +259,7 @@ export class MonitoringService {
         },
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching performance summary:");
+      logger.warn({ err: error }, "Error fetching performance summary:");
       throw new Error("Failed to fetch performance summary");
     }
   }
@@ -288,21 +288,21 @@ export class MonitoringService {
       try {
         // Collect system metrics
         const systemMetrics = await securityService?.getSystemMetrics();
-        await this?.trackMetric(
+        await this.trackMetric(
           "memory_usage",
           systemMetrics?.memory.percentage,
           "%",
         );
-        await this?.trackMetric("uptime", systemMetrics?.uptime, "s");
+        await this.trackMetric("uptime", systemMetrics?.uptime, "s");
 
         // Run health checks
-        const health = await this?.runHealthChecks();
-        await this?.trackMetric(
+        const health = await this.runHealthChecks();
+        await this.trackMetric(
           "health_status",
           health?.overall === "healthy" ? 1 : 0,
         );
       } catch (error: unknown) {
-        logger?.warn({ err: error }, "Error in monitoring loop:");
+        logger.warn({ err: error }, "Error in monitoring loop:");
       }
     }, intervalMs);
   }

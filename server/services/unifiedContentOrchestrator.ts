@@ -404,7 +404,7 @@ function unwrapSettled<T>(
   fallback: T,
 ): T {
   if (result?.status === "fulfilled") return result?.value;
-  logger?.warn(
+  logger.warn(
     `[UCO] ${name} rejected for ${platform}:`,
     (result as PromiseRejectedResult).reason,
   );
@@ -540,10 +540,10 @@ class UnifiedContentOrchestrator {
    * @returns UnifiedContentPackage — a complete, production-ready content package
    */
   async generate(input: UnifiedContentInput): Promise<UnifiedContentPackage> {
-    const runId = `ucr_${Date?.now()}_${Math?.random().toString(36).slice(2, 8)}`;
+    const runId = `ucr_${Date?.now()}_${Math.random().toString(36).slice(2, 8)}`;
     const startTime = Date?.now();
 
-    logger?.info(
+    logger.info(
       `[UnifiedContentOrchestrator] Starting run ${runId} — type=${input.type} artist="${input.artistName}" platforms=${(input?.platforms ?? ["tiktok", "instagram", "youtube", "twitter"]).join(",")}`,
     );
 
@@ -557,13 +557,13 @@ class UnifiedContentOrchestrator {
     } = normalizeInput(input);
 
     // ── Step 1: Artist content generation ──────────────────────────────────
-    logger?.info(
+    logger.info(
       `[UCO:${runId}] Step 1: Generating artist content across ${platforms?.length} platforms`,
     );
     const artistContent = generateAllArtistContent(artistCtx, platforms);
 
     // ── Step 2: Max Booster feature content generation ─────────────────────
-    logger?.info(
+    logger.info(
       `[UCO:${runId}] Step 2: Generating Max Booster feature content`,
     );
     const maxBoosterContent = generateAllMaxBoosterContent(
@@ -573,7 +573,7 @@ class UnifiedContentOrchestrator {
 
     // ── Step 3: Per-platform content bundles (concurrent) ─────────────────
     // Use allSettled — one platform failing should never abort the others.
-    logger?.info(
+    logger.info(
       `[UCO:${runId}] Step 3: Building platform bundles for [${platforms?.join(", ")}]`,
     );
     const bundleResults = await Promise?.allSettled(
@@ -582,7 +582,7 @@ class UnifiedContentOrchestrator {
     const platformBundles: PlatformContentBundle[] = bundleResults
       .map((result, i) => {
         if (result?.status === "fulfilled") return result?.value;
-        logger?.warn(
+        logger.warn(
           `[UCO:${runId}] Platform bundle failed for ${platforms[i]}: ${(result as PromiseRejectedResult).reason}`,
         );
         return null;
@@ -590,7 +590,7 @@ class UnifiedContentOrchestrator {
       .filter((b): b is PlatformContentBundle => b !== null);
 
     // ── Step 4: Collect all slot combinations for scheduling ───────────────
-    logger?.info(`[UCO:${runId}] Step 4: Building schedule manifest`);
+    logger.info(`[UCO:${runId}] Step 4: Building schedule manifest`);
     const slots: Array<{ platform: SupportedPlatform; slot: ContentSlot }> =
       platformBundles?.flatMap((bundle) =>
         bundle?.formattedPosts.map((post) => ({
@@ -607,7 +607,7 @@ class UnifiedContentOrchestrator {
     });
 
     // ── Step 5: Build bulk-schedule payload ────────────────────────────────
-    logger?.info(`[UCO:${runId}] Step 5: Assembling bulk-schedule payload`);
+    logger.info(`[UCO:${runId}] Step 5: Assembling bulk-schedule payload`);
     const contentMap = new Map<
       string,
       { content: string; platform: SupportedPlatform }
@@ -626,14 +626,14 @@ class UnifiedContentOrchestrator {
     );
 
     // ── Step 6: Push async jobs to PDIM for background processing ─────────
-    logger?.info(`[UCO:${runId}] Step 6: Enqueuing PDIM background jobs`);
-    await this?.enqueuePdimJobs(
+    logger.info(`[UCO:${runId}] Step 6: Enqueuing PDIM background jobs`);
+    await this.enqueuePdimJobs(
       runId,
       input,
       platformBundles,
       scheduleManifest,
     ).catch((err) => {
-      logger?.warn(
+      logger.warn(
         `[UCO:${runId}] PDIM enqueue soft-failed (non-blocking): ${err?.message}`,
       );
     });
@@ -662,7 +662,7 @@ class UnifiedContentOrchestrator {
       },
     };
 
-    logger?.info(
+    logger.info(
       `[UCO:${runId}] ✅ Complete — ${pkg?.stats.totalPieces} pieces, ${pkg?.stats.scheduledPosts} scheduled, ${generationTimeMs}ms`,
     );
 
@@ -724,14 +724,14 @@ class UnifiedContentOrchestrator {
       const redis = await getRedisClient();
       for (const job of jobs) {
         await redis
-          .lpush(job?.queue, JSON?.stringify(job?.payload))
+          .lpush(job?.queue, JSON.stringify(job?.payload))
           .catch(() => null);
       }
-      logger?.info(
+      logger.info(
         `[UCO:${runId}] Enqueued ${jobs?.length} PDIM background jobs`,
       );
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         `[UCO:${runId}] Could not enqueue PDIM jobs: ${(err as Error)?.message}`,
       );
     }

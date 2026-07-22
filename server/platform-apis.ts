@@ -43,7 +43,7 @@ export const platformAPI = {
   ): Promise<PublishResult[]> {
     // Backward compatibility: If no userId provided, simulate
     if (!userId) {
-      logger?.warn(
+      logger.warn(
         "platformAPI.publishContent called without userId - using simulation mode",
       );
       return platforms?.map((p) => ({
@@ -234,28 +234,28 @@ export const platformAPI = {
       // Call platform-specific analytics API
       switch (normalizedPlatform) {
         case "twitter":
-          return await this?.getTwitterEngagement(postId, token);
+          return await this.getTwitterEngagement(postId, token);
 
         case "facebook":
-          return await this?.getFacebookEngagement(postId, token);
+          return await this.getFacebookEngagement(postId, token);
 
         case "instagram":
-          return await this?.getInstagramEngagement(postId, token);
+          return await this.getInstagramEngagement(postId, token);
 
         case "linkedin":
-          return await this?.getLinkedInEngagement(postId, token);
+          return await this.getLinkedInEngagement(postId, token);
 
         case "threads":
-          return await this?.getThreadsEngagement(postId, token);
+          return await this.getThreadsEngagement(postId, token);
 
         case "tiktok":
-          return await this?.getTikTokEngagement(postId, token);
+          return await this.getTikTokEngagement(postId, token);
 
         case "youtube":
-          return await this?.getYouTubeEngagement(postId, token);
+          return await this.getYouTubeEngagement(postId, token);
 
         default:
-          logger?.warn(`Analytics not available for platform: ${platform}`);
+          logger.warn(`Analytics not available for platform: ${platform}`);
           return {
             likes: 0,
             shares: 0,
@@ -268,7 +268,7 @@ export const platformAPI = {
           };
       }
     } catch (error: unknown) {
-      logger?.warn(
+      logger.warn(
         `Failed to collect engagement data for ${platform}:`,
         error?.message,
       );
@@ -309,7 +309,7 @@ export const platformAPI = {
               media: { media_ids: [mediaId] },
             });
           } catch (mediaError: unknown) {
-            logger?.warn(
+            logger.warn(
               "Twitter media upload failed, posting text only:",
               mediaError,
             );
@@ -328,7 +328,7 @@ export const platformAPI = {
     );
 
     if (result?.warning) {
-      logger?.warn(`⚠️ Twitter post warning: ${result?.warning}`);
+      logger.warn(`⚠️ Twitter post warning: ${result?.warning}`);
     }
 
     return result?.data;
@@ -359,7 +359,7 @@ export const platformAPI = {
     );
 
     if (result?.warning) {
-      logger?.warn(`⚠️ Facebook post warning: ${result?.warning}`);
+      logger.warn(`⚠️ Facebook post warning: ${result?.warning}`);
     }
 
     return result?.data;
@@ -428,7 +428,7 @@ export const platformAPI = {
     );
 
     if (result?.warning) {
-      logger?.warn(`⚠️ Instagram post warning: ${result?.warning}`);
+      logger.warn(`⚠️ Instagram post warning: ${result?.warning}`);
     }
 
     return result?.data;
@@ -503,7 +503,7 @@ export const platformAPI = {
     );
 
     if (result?.warning) {
-      logger?.warn(`⚠️ LinkedIn post warning: ${result?.warning}`);
+      logger.warn(`⚠️ LinkedIn post warning: ${result?.warning}`);
     }
 
     return result?.data;
@@ -544,7 +544,7 @@ export const platformAPI = {
     );
 
     if (result?.warning) {
-      logger?.warn(`⚠️ TikTok post warning: ${result?.warning}`);
+      logger.warn(`⚠️ TikTok post warning: ${result?.warning}`);
     }
 
     return result?.data;
@@ -810,7 +810,7 @@ export const platformAPI = {
       const video = response?.data?.data?.videos?.[0];
 
       if (!video) {
-        logger?.warn(`TikTok video not found: ${videoId}`);
+        logger.warn(`TikTok video not found: ${videoId}`);
         return {
           likes: 0,
           shares: 0,
@@ -862,7 +862,7 @@ export const platformAPI = {
       const video = response?.data?.items?.[0];
 
       if (!video) {
-        logger?.warn(`YouTube video not found: ${videoId}`);
+        logger.warn(`YouTube video not found: ${videoId}`);
         return {
           likes: 0,
           shares: 0,

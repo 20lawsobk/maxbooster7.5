@@ -802,7 +802,7 @@ class ArtistProfileService {
    * Does NOT strip stage-name prefixes here (reserved for relaxed form).
    */
   private _normalizeName(name: string): string {
-    let s = this?._stripDiacritics(name).toLowerCase();
+    let s = this._stripDiacritics(name).toLowerCase();
     // Symbol expansions: "Jay-Z & Friends" → recognise & as "and"
     s = s?.replace(/&/g, " and ").replace(/\+/g, " and ").replace(/@/g, " at ");
     // Strip feat/ft/featuring and everything after — track-style artist strings
@@ -819,7 +819,7 @@ class ArtistProfileService {
    * Also strips common stage-name prefixes/articles that vary across platforms.
    */
   private _normalizeRelaxed(name: string): string {
-    let s = this?._normalizeName(name);
+    let s = this._normalizeName(name);
     // Strip leading articles
     s = s?.replace(/^(?:the|a|an)\s+/, "").replace(/\bthe\b/g, "");
     // Strip stage name honorifics/prefixes
@@ -833,7 +833,7 @@ class ArtistProfileService {
    * Best for hyphenation and spacing variants.
    */
   private _collapseForm(name: string): string {
-    return this?._stripDiacritics(name)
+    return this._stripDiacritics(name)
       .toLowerCase()
       .replace(/[^a-z0-9]/g, "");
   }
@@ -843,7 +843,7 @@ class ArtistProfileService {
    * "DJ B-Lawz" → "blawz", "DJ BLawz" → "blawz"
    */
   private _collapseRelaxed(name: string): string {
-    return this?._normalizeRelaxed(name).replace(/[^a-z0-9]/g, "");
+    return this._normalizeRelaxed(name).replace(/[^a-z0-9]/g, "");
   }
 
   /** Sort tokens alphabetically and rejoin — handles word-order permutations. */
@@ -869,7 +869,7 @@ class ArtistProfileService {
     const ba = bigrams(a),
       bb = bigrams(b);
     let hits = 0;
-    for (const [bg, cnt] of ba) hits += Math?.min(cnt, bb?.get(bg) ?? 0);
+    for (const [bg, cnt] of ba) hits += Math.min(cnt, bb?.get(bg) ?? 0);
     const total = a?.length - 1 + (b?.length - 1);
     return total === 0 ? 0 : (2 * hits) / total;
   }
@@ -880,15 +880,15 @@ class ArtistProfileService {
       n = b?.length;
     if (m === 0) return n;
     if (n === 0) return m;
-    const dp: number[][] = Array?.from({ length: m + 1 }, (_, i) =>
-      Array?.from({ length: n + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0)),
+    const dp: number[][] = Array.from({ length: m + 1 }, (_, i) =>
+      Array.from({ length: n + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0)),
     );
     for (let i = 1; i <= m; i++) {
       for (let j = 1; j <= n; j++) {
         dp[i][j] =
           a[i - 1] === b[j - 1]
             ? dp[i - 1][j - 1]
-            : 1 + Math?.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+            : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
       }
     }
     return dp[m][n];
@@ -911,29 +911,29 @@ class ArtistProfileService {
    */
   private _nameSimilarity(a: string, b: string): number {
     // ── Stage 1: Exact normalised ──
-    const na = this?._normalizeName(a);
-    const nb = this?._normalizeName(b);
+    const na = this._normalizeName(a);
+    const nb = this._normalizeName(b);
     if (!na || !nb) return 0;
     if (na === nb) return 100;
 
     // ── Stage 2: Exact relaxed (prefix/article stripped) ──
-    const ra = this?._normalizeRelaxed(a);
-    const rb = this?._normalizeRelaxed(b);
+    const ra = this._normalizeRelaxed(a);
+    const rb = this._normalizeRelaxed(b);
     if (ra === rb && ra?.length > 0) return 97;
 
     // ── Stage 3: Collapsed form (hyphen/spacing blind) ──
-    const ca = this?._collapseForm(a);
-    const cb = this?._collapseForm(b);
+    const ca = this._collapseForm(a);
+    const cb = this._collapseForm(b);
     if (ca === cb && ca?.length > 0) return 99;
 
     // ── Stage 4: Collapsed-relaxed ──
-    const cra = this?._collapseRelaxed(a);
-    const crb = this?._collapseRelaxed(b);
+    const cra = this._collapseRelaxed(a);
+    const crb = this._collapseRelaxed(b);
     if (cra === crb && cra?.length > 0) return 96;
 
     // ── Stage 5: Token-sorted normalised ──
-    if (this?._tokenSorted(na) === this?._tokenSorted(nb)) return 95;
-    if (this?._tokenSorted(ra) === this?._tokenSorted(rb) && ra?.length > 0)
+    if (this._tokenSorted(na) === this._tokenSorted(nb)) return 95;
+    if (this._tokenSorted(ra) === this._tokenSorted(rb) && ra?.length > 0)
       return 93;
 
     // ── Stage 6: Substring containment (length-weighted) ──
@@ -942,9 +942,9 @@ class ArtistProfileService {
     const [longC, shortC] = ca?.length >= cb?.length ? [ca, cb] : [cb, ca];
     const [longN, shortN] = na?.length >= nb?.length ? [na, nb] : [nb, na];
     if (shortC?.length >= 3 && longC?.includes(shortC)) {
-      substringScore = Math?.round(70 + (shortC?.length / longC?.length) * 22);
+      substringScore = Math.round(70 + (shortC?.length / longC?.length) * 22);
     } else if (shortN?.length >= 3 && longN?.includes(shortN)) {
-      substringScore = Math?.round(68 + (shortN?.length / longN?.length) * 20);
+      substringScore = Math.round(68 + (shortN?.length / longN?.length) * 20);
     }
 
     // ── Stage 7: Bigram Dice on collapsed forms ──
@@ -1486,7 +1486,7 @@ class ArtistProfileService {
   // Generate URL-template-based discoveries for all 97 DSPs that don't have public search APIs.
   // Returns search/profile URLs the user can visit to verify their presence on each platform.
   generateUrlDiscoveries(artistName: string): PlatformUrlDiscovery[] {
-    const slug = this?._nameToSlug(artistName);
+    const slug = this._nameToSlug(artistName);
     return ALL_DSP_URL_TEMPLATES?.filter(
       (p) => !API_SEARCHED_PLATFORMS?.has(p?.id),
     ).map((p) => ({
@@ -1634,7 +1634,7 @@ class ArtistProfileService {
       .returning();
 
     if (updated) {
-      logger?.info(
+      logger.info(
         `[ArtistProfile] Fixer request submitted: profile=${id}, target=${targetSpotifyUri}`,
       );
     }
@@ -1674,7 +1674,7 @@ class ArtistProfileService {
       .where(eq(artistProfiles?.id, id))
       .returning();
 
-    logger?.info(
+    logger.info(
       `[ArtistProfile] Fixer request ${approved ? "approved" : "rejected"}: profile=${id}`,
     );
     return updated ?? null;
@@ -1703,15 +1703,15 @@ class ArtistProfileService {
     if (nameSim >= 95) return exactWeight; // Exact / near-exact
     if (nameSim >= 80) return highWeight; // Very close (one-char diff, collapsed equal)
     if (nameSim >= 65) return medWeight; // Probable match (bigram / Levenshtein strong)
-    if (nameSim >= 45) return Math?.round(medWeight * 0.6); // Possible — below threshold alone
-    if (nameSim >= 25) return Math?.round(medWeight * 0.3); // Weak — will need other signals
+    if (nameSim >= 45) return Math.round(medWeight * 0.6); // Possible — below threshold alone
+    if (nameSim >= 25) return Math.round(medWeight * 0.3); // Weak — will need other signals
     return 0; // No meaningful name overlap
   }
 
   private _scoreSpotify(result: SpotifyArtistResult, query: string): number {
-    const nameSim = this?._nameSimilarity(result?.name, query);
+    const nameSim = this._nameSimilarity(result?.name, query);
     // Base: exact name → 58 (just over threshold), slides down to 0 at nameSim < 25
-    let score = this?._nameBase(nameSim, 58, 44, 28);
+    let score = this._nameBase(nameSim, 58, 44, 28);
     if (score === 0) return 0;
 
     // Image presence — genuine artists virtually always have one
@@ -1775,15 +1775,15 @@ class ArtistProfileService {
     // Artwork URL presence
     if (result.artworkUrl) score += 5;
 
-    return Math?.min(score, 100);
+    return Math.min(score, 100);
   }
 
   private _scoreMusicBrainz(
     result: MusicBrainzArtistResult,
     query: string,
   ): number {
-    const nameSim = this?._nameSimilarity(result?.name, query);
-    let score = this?._nameBase(nameSim, 42, 30, 18);
+    const nameSim = this._nameSimilarity(result?.name, query);
+    let score = this._nameBase(nameSim, 42, 30, 18);
     if (score === 0) return 0;
 
     // MusicBrainz returns its own relevance score (0–100) — trust it heavily
@@ -1803,7 +1803,7 @@ class ArtistProfileService {
     // Disambiguation field means MB knows this is a specific artist (not an alias)
     if (result.disambiguation) score += 3;
 
-    return Math?.min(score, 90); // Cap — MusicBrainz alone can't reach full confidence
+    return Math.min(score, 90); // Cap — MusicBrainz alone can't reach full confidence
   }
 
   private _scoreAudiomack(
@@ -1940,7 +1940,7 @@ class ArtistProfileService {
       topDeezer,
       topAudiomack,
     ].filter((r) => r !== null && r?.confidence >= CONFIDENCE_THRESHOLD).length;
-    const bonus = this?._crossValidationBonus(prelimConfirmed);
+    const bonus = this._crossValidationBonus(prelimConfirmed);
 
     // Apply cross-validation bonus — if multiple platforms agree, boost each match
     const apply = <T>(r: { result: T; confidence: number } | null) =>
@@ -2039,7 +2039,7 @@ class ArtistProfileService {
           .getArtistPlatformPresence(lgArtist?.id)
           .catch(() => []);
       }
-      logger?.info(
+      logger.info(
         `[ArtistProfile] LabelGrid: artist=${lgArtist.name} platforms=${labelgridPlatforms?.length}`,
       );
     }
@@ -2048,13 +2048,13 @@ class ArtistProfileService {
 
     // Generate URL-template discoveries for all 97 DSPs.
     // These are generated once using the verified artist name — NOT fetched per platform.
-    const urlDiscoveries = this?.generateUrlDiscoveries(query);
+    const urlDiscoveries = this.generateUrlDiscoveries(query);
 
     const saved =
       savedFields?.filter((f) => !f?.endsWith("_confirmed")).length > 0;
     if (saved) {
-      await this?.updateProfile(profileId, userId, updates);
-      logger?.info(
+      await this.updateProfile(profileId, userId, updates);
+      logger.info(
         `[ArtistProfile] Auto-discover saved: profile=${profileId} platforms=[${savedFields?.join(",")}]`,
       );
 
@@ -2076,7 +2076,7 @@ class ArtistProfileService {
         const platformKey = platformMap[field];
         if (platformKey) {
           try {
-            await this?.updateClaimState(
+            await this.updateClaimState(
               profileId,
               userId,
               platformKey,
@@ -3900,7 +3900,7 @@ class ArtistProfileService {
           }
         }
       } catch {
-        logger?.warn(
+        logger.warn(
           `[ArtistProfile] Watch: Spotify check failed for profile=${profileId}`,
         );
       }

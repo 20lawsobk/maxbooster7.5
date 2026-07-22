@@ -75,7 +75,7 @@ class PluginHostService {
   }
 
   getPluginById(pluginId: string): PluginDefinition | undefined {
-    return this?.getAllPlugins().find(
+    return this.getAllPlugins().find(
       (p) => p?.id === pluginId || p?.slug === pluginId,
     );
   }
@@ -85,7 +85,7 @@ class PluginHostService {
       const { storage } = await import("../storage");
       await storage?.seedPluginCatalog();
     } catch (error) {
-      logger?.warn({ err: error }, "Error seeding plugin catalog:");
+      logger.warn({ err: error }, "Error seeding plugin catalog:");
     }
   }
 
@@ -96,7 +96,7 @@ class PluginHostService {
     chainPosition: number,
     initialParams?: Record<string, number | boolean | string>,
   ): Promise<PluginInstance> {
-    const plugin = this?.getPluginById(pluginId);
+    const plugin = this.getPluginById(pluginId);
     if (!plugin) {
       throw new Error(`Plugin not found: ${pluginId}`);
     }
@@ -108,7 +108,7 @@ class PluginHostService {
     });
 
     if (!catalogEntry) {
-      await this?.ensurePluginCatalogSeeded();
+      await this.ensurePluginCatalogSeeded();
     }
 
     const [instance] = await db
@@ -135,15 +135,15 @@ class PluginHostService {
       updatedAt: instance.createdAt || new Date(),
     };
 
-    this?.instanceCache.set(instance?.id, pluginInstance);
-    this?.initializeSandbox(instance?.id);
+    this.instanceCache.set(instance?.id, pluginInstance);
+    this.initializeSandbox(instance?.id);
 
     return pluginInstance;
   }
 
   async getInstance(instanceId: string): Promise<PluginInstance | undefined> {
-    if (this?.instanceCache.has(instanceId)) {
-      return this?.instanceCache.get(instanceId);
+    if (this.instanceCache.has(instanceId)) {
+      return this.instanceCache.get(instanceId);
     }
 
     const instance = await db?.query.pluginInstances?.findFirst({
@@ -168,7 +168,7 @@ class PluginHostService {
       updatedAt: instance.createdAt || new Date(),
     };
 
-    this?.instanceCache.set(instanceId, pluginInstance);
+    this.instanceCache.set(instanceId, pluginInstance);
     return pluginInstance;
   }
 
@@ -176,7 +176,7 @@ class PluginHostService {
     instanceId: string,
     parameters: Partial<Record<string, number | boolean | string>>,
   ): Promise<PluginInstance> {
-    const instance = await this?.getInstance(instanceId);
+    const instance = await this.getInstance(instanceId);
     if (!instance) {
       throw new Error(`Plugin instance not found: ${instanceId}`);
     }
@@ -192,7 +192,7 @@ class PluginHostService {
 
     instance.parameters = updatedParams;
     instance.updatedAt = new Date();
-    this?.instanceCache.set(instanceId, instance);
+    this.instanceCache.set(instanceId, instance);
 
     return instance;
   }
@@ -206,7 +206,7 @@ class PluginHostService {
       .set({ isBypassed: bypassed })
       .where(eq(pluginInstances?.id, instanceId));
 
-    const cached = this?.instanceCache.get(instanceId);
+    const cached = this.instanceCache.get(instanceId);
     if (cached) {
       cached.bypassed = bypassed;
     }
@@ -215,8 +215,8 @@ class PluginHostService {
   async deleteInstance(instanceId: string): Promise<void> {
     await db?.delete(pluginInstances).where(eq(pluginInstances?.id, instanceId));
 
-    this?.instanceCache.delete(instanceId);
-    this?.sandboxContexts.delete(instanceId);
+    this.instanceCache.delete(instanceId);
+    this.sandboxContexts.delete(instanceId);
   }
 
   async getProjectInstances(projectId: string): Promise<PluginInstance[]> {
@@ -268,7 +268,7 @@ class PluginHostService {
       currentTime: 0,
       tempo: 120,
     };
-    this?.sandboxContexts.set(instanceId, context);
+    this.sandboxContexts.set(instanceId, context);
   }
 
   async renderInstrument(
@@ -282,22 +282,22 @@ class PluginHostService {
     durationSec: number,
     sampleRate: number = 48000,
   ): Promise<{ samples: number[][]; sampleRate: number }> {
-    const instance = await this?.getInstance(instanceId);
+    const instance = await this.getInstance(instanceId);
     if (!instance) {
       throw new Error(`Plugin instance not found: ${instanceId}`);
     }
 
-    const plugin = this?.getPluginById(instance?.pluginId);
+    const plugin = this.getPluginById(instance?.pluginId);
     if (!plugin || plugin?.category !== "instrument") {
       throw new Error("Invalid instrument plugin");
     }
 
-    const numSamples = Math?.ceil(durationSec * sampleRate);
+    const numSamples = Math.ceil(durationSec * sampleRate);
     const leftChannel = new Float32Array(numSamples);
     const rightChannel = new Float32Array(numSamples);
 
     for (const note of notes) {
-      this?.synthesizeNote(
+      this.synthesizeNote(
         leftChannel,
         rightChannel,
         note,
@@ -314,7 +314,7 @@ class PluginHostService {
     }
 
     return {
-      samples: [Array?.from(leftChannel), Array?.from(rightChannel)],
+      samples: [Array.from(leftChannel), Array.from(rightChannel)],
       sampleRate,
     };
   }
@@ -332,8 +332,8 @@ class PluginHostService {
     params: Record<string, number | boolean | string>,
     sampleRate: number,
   ): void {
-    const frequency = 440 * Math?.pow(2, (note?.note - 69) / 12);
-    const startSample = Math?.floor(note?.startTime * sampleRate);
+    const frequency = 440 * Math.pow(2, (note?.note - 69) / 12);
+    const startSample = Math.floor(note?.startTime * sampleRate);
     const envelope = plugin?.envelope || {
       attack: 0.01,
       decay: 0.1,
@@ -341,14 +341,14 @@ class PluginHostService {
       release: 0.3,
     };
 
-    const attackSamples = Math?.floor(
+    const attackSamples = Math.floor(
       ((params?.attack as number) || envelope?.attack) * sampleRate,
     );
-    const decaySamples = Math?.floor(envelope?.decay * sampleRate);
-    const releaseSamples = Math?.floor(
+    const decaySamples = Math.floor(envelope?.decay * sampleRate);
+    const releaseSamples = Math.floor(
       ((params?.release as number) || envelope?.release) * sampleRate,
     );
-    const noteDurationSamples = Math?.floor(note?.duration * sampleRate);
+    const noteDurationSamples = Math.floor(note?.duration * sampleRate);
     const totalSamples = noteDurationSamples + releaseSamples;
 
     const velocityGain = note?.velocity / 127;
@@ -373,26 +373,26 @@ class PluginHostService {
       ];
 
       for (const osc of oscillators) {
-        const detunedFreq = frequency * Math?.pow(2, osc?.detune / 1200);
+        const detunedFreq = frequency * Math.pow(2, osc?.detune / 1200);
         const phase =
           (2 * Math.PI * detunedFreq * (startSample + i)) / sampleRate;
 
         let oscSample = 0;
         switch (osc?.type) {
           case "sine":
-            oscSample = Math?.sin(phase);
+            oscSample = Math.sin(phase);
             break;
           case "square":
-            oscSample = Math?.sign(Math?.sin(phase));
+            oscSample = Math.sign(Math.sin(phase));
             break;
           case "sawtooth":
             oscSample = 2 * ((phase / (2 * Math.PI)) % 1) - 1;
             break;
           case "triangle":
-            oscSample = 2 * Math?.abs(2 * ((phase / (2 * Math.PI)) % 1) - 1) - 1;
+            oscSample = 2 * Math.abs(2 * ((phase / (2 * Math.PI)) % 1) - 1) - 1;
             break;
           case "noise":
-            oscSample = Math?.random() * 2 - 1;
+            oscSample = Math.random() * 2 - 1;
             break;
         }
         sample += oscSample * osc?.gain;
@@ -441,9 +441,9 @@ class PluginHostService {
       (sum, channel) => sum + channel?.length * 4,
       0,
     );
-    if (totalSize > this?.MAX_AUDIO_BUFFER_SIZE) {
+    if (totalSize > this.MAX_AUDIO_BUFFER_SIZE) {
       throw new Error(
-        `Audio buffer exceeds maximum allowed size (${this?.MAX_AUDIO_BUFFER_SIZE} bytes)`,
+        `Audio buffer exceeds maximum allowed size (${this.MAX_AUDIO_BUFFER_SIZE} bytes)`,
       );
     }
   }
@@ -452,7 +452,7 @@ class PluginHostService {
     instanceId: string,
     inputBuffer: { samples: number[][]; sampleRate: number },
   ): Promise<{ samples: number[][]; sampleRate: number }> {
-    const instance = await this?.getInstance(instanceId);
+    const instance = await this.getInstance(instanceId);
     if (!instance) {
       throw new Error(`Plugin instance not found: ${instanceId}`);
     }
@@ -461,12 +461,12 @@ class PluginHostService {
       return inputBuffer;
     }
 
-    const plugin = this?.getPluginById(instance?.pluginId);
+    const plugin = this.getPluginById(instance?.pluginId);
     if (!plugin || plugin?.category !== "effect") {
       throw new Error("Invalid effect plugin");
     }
 
-    this?.validateBufferSize(inputBuffer?.samples);
+    this.validateBufferSize(inputBuffer?.samples);
 
     const processInternal = async (): Promise<{
       samples: number[][];
@@ -492,8 +492,8 @@ class PluginHostService {
           );
           return {
             samples: [
-              Array?.from(result?.samples[0]),
-              Array?.from(result?.samples[1]),
+              Array.from(result?.samples[0]),
+              Array.from(result?.samples[1]),
             ],
             sampleRate: result.sampleRate,
           };
@@ -501,43 +501,43 @@ class PluginHostService {
 
         switch (plugin?.type) {
           case "reverb":
-            this?.applyReverb(left, right, params, inputBuffer?.sampleRate);
+            this.applyReverb(left, right, params, inputBuffer?.sampleRate);
             break;
           case "delay":
-            this?.applyDelay(left, right, params, inputBuffer?.sampleRate);
+            this.applyDelay(left, right, params, inputBuffer?.sampleRate);
             break;
           case "chorus":
-            this?.applyChorus(left, right, params, inputBuffer?.sampleRate);
+            this.applyChorus(left, right, params, inputBuffer?.sampleRate);
             break;
           case "compressor":
-            this?.applyCompressor(left, right, params, inputBuffer?.sampleRate);
+            this.applyCompressor(left, right, params, inputBuffer?.sampleRate);
             break;
           case "eq":
-            this?.applyEQ(left, right, params, inputBuffer?.sampleRate);
+            this.applyEQ(left, right, params, inputBuffer?.sampleRate);
             break;
           case "limiter":
-            this?.applyLimiter(left, right, params, inputBuffer?.sampleRate);
+            this.applyLimiter(left, right, params, inputBuffer?.sampleRate);
             break;
           case "gate":
-            this?.applyGate(left, right, params, inputBuffer?.sampleRate);
+            this.applyGate(left, right, params, inputBuffer?.sampleRate);
             break;
           case "distortion":
-            this?.applyDistortion(left, right, params, inputBuffer?.sampleRate);
+            this.applyDistortion(left, right, params, inputBuffer?.sampleRate);
             break;
           case "phaser":
-            this?.applyPhaser(left, right, params, inputBuffer?.sampleRate);
+            this.applyPhaser(left, right, params, inputBuffer?.sampleRate);
             break;
           case "flanger":
-            this?.applyFlanger(left, right, params, inputBuffer?.sampleRate);
+            this.applyFlanger(left, right, params, inputBuffer?.sampleRate);
             break;
         }
 
         return {
-          samples: [Array?.from(left), Array?.from(right)],
+          samples: [Array.from(left), Array.from(right)],
           sampleRate: inputBuffer.sampleRate,
         };
       } catch (error: unknown) {
-        logger?.warn(
+        logger.warn(
           { err: error },
           `Plugin ${instance?.pluginId} processing error:`,
         );
@@ -545,9 +545,9 @@ class PluginHostService {
       }
     };
 
-    return this?.withPluginTimeout(
+    return this.withPluginTimeout(
       processInternal(),
-      this?.PLUGIN_PROCESSING_TIMEOUT_MS,
+      this.PLUGIN_PROCESSING_TIMEOUT_MS,
       instance?.pluginId,
     );
   }
@@ -590,8 +590,8 @@ class PluginHostService {
     }
 
     const totalDuration =
-      notes?.reduce((max, n) => Math?.max(max, n?.durationMs), 0) + 1000;
-    const numSamples = Math?.ceil((totalDuration / 1000) * context?.sampleRate);
+      notes?.reduce((max, n) => Math.max(max, n?.durationMs), 0) + 1000;
+    const numSamples = Math.ceil((totalDuration / 1000) * context?.sampleRate);
     const output: Float32Array[] = [
       new Float32Array(numSamples),
       new Float32Array(numSamples),
@@ -599,7 +599,7 @@ class PluginHostService {
 
     for (const note of notes) {
       synth?.noteOn(note?.frequency, note?.velocity, context);
-      const noteSamples = Math?.ceil(
+      const noteSamples = Math.ceil(
         (note?.durationMs / 1000) * context?.sampleRate,
       );
       const rendered = synth?.render(noteSamples, context);
@@ -635,7 +635,7 @@ class PluginHostService {
     const roomSize = (params?.roomSize as number) || 0.5;
     const damping = (params?.damping as number) || 0.5;
 
-    const delayLength = Math?.floor(roomSize * 0.1 * sampleRate);
+    const delayLength = Math.floor(roomSize * 0.1 * sampleRate);
     const delayBuffer = new Float32Array(delayLength);
     let delayIndex = 0;
 
@@ -665,8 +665,8 @@ class PluginHostService {
     const timeLeft = ((params?.timeLeft as number) || 250) / 1000;
     const timeRight = ((params?.timeRight as number) || 375) / 1000;
 
-    const delaySamplesL = Math?.floor(timeLeft * sampleRate);
-    const delaySamplesR = Math?.floor(timeRight * sampleRate);
+    const delaySamplesL = Math.floor(timeLeft * sampleRate);
+    const delaySamplesR = Math.floor(timeRight * sampleRate);
 
     const delayBufferL = new Float32Array(delaySamplesL || 1);
     const delayBufferR = new Float32Array(delaySamplesR || 1);
@@ -702,15 +702,15 @@ class PluginHostService {
     const depth = (params?.depth as number) || 0.5;
     const baseDelay = ((params?.delay as number) || 7) / 1000;
 
-    const maxDelaySamples = Math?.floor((baseDelay + 0.01) * sampleRate);
+    const maxDelaySamples = Math.floor((baseDelay + 0.01) * sampleRate);
     const delayBufferL = new Float32Array(maxDelaySamples);
     const delayBufferR = new Float32Array(maxDelaySamples);
     let writeIndex = 0;
 
     for (let i = 0; i < left?.length; i++) {
       const lfo =
-        Math?.sin((2 * Math.PI * rate * i) / sampleRate) * depth * 0.5 + 0.5;
-      const delaySamples = Math?.floor((baseDelay * lfo + 0.001) * sampleRate);
+        Math.sin((2 * Math.PI * rate * i) / sampleRate) * depth * 0.5 + 0.5;
+      const delaySamples = Math.floor((baseDelay * lfo + 0.001) * sampleRate);
       const readIndex =
         (writeIndex - delaySamples + maxDelaySamples) % maxDelaySamples;
 
@@ -742,24 +742,24 @@ class PluginHostService {
     const makeupGain = (params?.makeupGain as number) || 0;
     const mix = (params?.mix as number) || 1.0;
 
-    const attackCoeff = Math?.exp(-1 / ((attackMs / 1000) * sampleRate));
-    const releaseCoeff = Math?.exp(-1 / ((releaseMs / 1000) * sampleRate));
+    const attackCoeff = Math.exp(-1 / ((attackMs / 1000) * sampleRate));
+    const releaseCoeff = Math.exp(-1 / ((releaseMs / 1000) * sampleRate));
 
     let envelope = 0;
-    const thresholdLin = Math?.pow(10, threshold / 20);
-    const makeupLin = Math?.pow(10, makeupGain / 20);
+    const thresholdLin = Math.pow(10, threshold / 20);
+    const makeupLin = Math.pow(10, makeupGain / 20);
 
     for (let i = 0; i < left?.length; i++) {
-      const inputLevel = Math?.max(Math?.abs(left[i]), Math?.abs(right[i]));
+      const inputLevel = Math.max(Math.abs(left[i]), Math.abs(right[i]));
 
       const coeff = inputLevel > envelope ? attackCoeff : releaseCoeff;
       envelope = envelope * coeff + inputLevel * (1 - coeff);
 
       let gain = 1;
       if (envelope > thresholdLin) {
-        const overDb = 20 * Math?.log10(envelope / thresholdLin);
+        const overDb = 20 * Math.log10(envelope / thresholdLin);
         const reducedDb = overDb * (1 - 1 / ratio);
-        gain = Math?.pow(10, -reducedDb / 20);
+        gain = Math.pow(10, -reducedDb / 20);
       }
 
       const processedL = left[i] * gain * makeupLin;
@@ -776,7 +776,7 @@ class PluginHostService {
     params: Record<string, number | boolean | string>,
     _sampleRate: number,
   ): void {
-    const outputGain = Math?.pow(10, ((params?.outputGain as number) || 0) / 20);
+    const outputGain = Math.pow(10, ((params?.outputGain as number) || 0) / 20);
 
     for (let i = 0; i < left?.length; i++) {
       left[i] *= outputGain;
@@ -790,11 +790,11 @@ class PluginHostService {
     params: Record<string, number | boolean | string>,
     _sampleRate: number,
   ): void {
-    const ceiling = Math?.pow(10, ((params?.ceiling as number) || -0.3) / 20);
-    const threshold = Math?.pow(10, ((params?.threshold as number) || -6) / 20);
+    const ceiling = Math.pow(10, ((params?.ceiling as number) || -0.3) / 20);
+    const threshold = Math.pow(10, ((params?.threshold as number) || -6) / 20);
 
     for (let i = 0; i < left?.length; i++) {
-      const maxLevel = Math?.max(Math?.abs(left[i]), Math?.abs(right[i]));
+      const maxLevel = Math.max(Math.abs(left[i]), Math.abs(right[i]));
 
       if (maxLevel > threshold) {
         const gain = ceiling / maxLevel;
@@ -802,8 +802,8 @@ class PluginHostService {
         right[i] *= gain;
       }
 
-      left[i] = Math?.max(-ceiling, Math?.min(ceiling, left[i]));
-      right[i] = Math?.max(-ceiling, Math?.min(ceiling, right[i]));
+      left[i] = Math.max(-ceiling, Math.min(ceiling, left[i]));
+      right[i] = Math.max(-ceiling, Math.min(ceiling, right[i]));
     }
   }
 
@@ -813,15 +813,15 @@ class PluginHostService {
     params: Record<string, number | boolean | string>,
     sampleRate: number,
   ): void {
-    const threshold = Math?.pow(10, ((params?.threshold as number) || -40) / 20);
-    const range = Math?.pow(10, ((params?.range as number) || -80) / 20);
+    const threshold = Math.pow(10, ((params?.threshold as number) || -40) / 20);
+    const range = Math.pow(10, ((params?.range as number) || -80) / 20);
     const attackMs = (params?.attack as number) || 1;
     const holdMs = (params?.hold as number) || 50;
     const releaseMs = (params?.release as number) || 100;
 
-    const attackSamples = Math?.floor((attackMs / 1000) * sampleRate);
-    const holdSamples = Math?.floor((holdMs / 1000) * sampleRate);
-    const releaseSamples = Math?.floor((releaseMs / 1000) * sampleRate);
+    const attackSamples = Math.floor((attackMs / 1000) * sampleRate);
+    const holdSamples = Math.floor((holdMs / 1000) * sampleRate);
+    const releaseSamples = Math.floor((releaseMs / 1000) * sampleRate);
 
     let gateGain = 0;
     let holdCounter = 0;
@@ -829,7 +829,7 @@ class PluginHostService {
     let stateCounter = 0;
 
     for (let i = 0; i < left?.length; i++) {
-      const level = Math?.max(Math?.abs(left[i]), Math?.abs(right[i]));
+      const level = Math.max(Math.abs(left[i]), Math.abs(right[i]));
 
       if (level > threshold) {
         if (state === "closed" || state === "release") {
@@ -860,7 +860,7 @@ class PluginHostService {
       switch (state) {
         case "attack":
           stateCounter++;
-          gateGain = Math?.min(1, stateCounter / attackSamples);
+          gateGain = Math.min(1, stateCounter / attackSamples);
           if (stateCounter >= attackSamples) {
             state = "open";
             holdCounter = holdSamples;
@@ -872,7 +872,7 @@ class PluginHostService {
           break;
         case "release":
           stateCounter++;
-          gateGain = Math?.max(range, 1 - stateCounter / releaseSamples);
+          gateGain = Math.max(range, 1 - stateCounter / releaseSamples);
           if (stateCounter >= releaseSamples) {
             state = "closed";
             gateGain = range;
@@ -897,7 +897,7 @@ class PluginHostService {
     const mode = (params?.mode as string) || "tube";
     const drive = (params?.drive as number) || 0.5;
     const tone = (params?.tone as number) || 0.5;
-    const outputGain = Math?.pow(10, ((params?.output as number) || 0) / 20);
+    const outputGain = Math.pow(10, ((params?.output as number) || 0) / 20);
     const mix = (params?.mix as number) || 1.0;
     const bias = (params?.bias as number) || 0;
 
@@ -912,31 +912,31 @@ class PluginHostService {
 
       switch (mode) {
         case "tube":
-          wetL = Math?.tanh(wetL);
-          wetR = Math?.tanh(wetR);
+          wetL = Math.tanh(wetL);
+          wetR = Math.tanh(wetR);
           break;
         case "tape":
-          wetL = (wetL / (1 + Math?.abs(wetL))) * 1.2;
-          wetR = (wetR / (1 + Math?.abs(wetR))) * 1.2;
+          wetL = (wetL / (1 + Math.abs(wetL))) * 1.2;
+          wetR = (wetR / (1 + Math.abs(wetR))) * 1.2;
           break;
         case "transistor":
-          wetL = Math?.sign(wetL) * Math?.pow(Math?.abs(wetL), 0.7);
-          wetR = Math?.sign(wetR) * Math?.pow(Math?.abs(wetR), 0.7);
+          wetL = Math.sign(wetL) * Math.pow(Math.abs(wetL), 0.7);
+          wetR = Math.sign(wetR) * Math.pow(Math.abs(wetR), 0.7);
           break;
         case "fuzz":
-          wetL = Math?.sign(wetL) * (1 - Math?.exp(-Math?.abs(wetL * 3)));
-          wetR = Math?.sign(wetR) * (1 - Math?.exp(-Math?.abs(wetR * 3)));
+          wetL = Math.sign(wetL) * (1 - Math.exp(-Math.abs(wetL * 3)));
+          wetR = Math.sign(wetR) * (1 - Math.exp(-Math.abs(wetR * 3)));
           break;
         case "bitcrush":
-          const bits = Math?.floor(4 + (1 - drive) * 12);
-          const levels = Math?.pow(2, bits);
-          wetL = Math?.round(wetL * levels) / levels;
-          wetR = Math?.round(wetR * levels) / levels;
+          const bits = Math.floor(4 + (1 - drive) * 12);
+          const levels = Math.pow(2, bits);
+          wetL = Math.round(wetL * levels) / levels;
+          wetR = Math.round(wetR * levels) / levels;
           break;
       }
 
       if (tone !== 0.5) {
-        const toneAlpha = 1 - Math?.abs(tone - 0.5) * 0.3;
+        const toneAlpha = 1 - Math.abs(tone - 0.5) * 0.3;
         wetL =
           wetL * toneAlpha + wetL * (1 - toneAlpha) * (tone > 0.5 ? 1.2 : 0.8);
         wetR =
@@ -978,8 +978,8 @@ class PluginHostService {
       const lfoPhaseL = (2 * Math.PI * rate * i) / sampleRate;
       const lfoPhaseR = lfoPhaseL + spread * Math.PI;
 
-      const lfoL = (Math?.sin(lfoPhaseL) + 1) * 0.5;
-      const lfoR = (Math?.sin(lfoPhaseR) + 1) * 0.5;
+      const lfoL = (Math.sin(lfoPhaseL) + 1) * 0.5;
+      const lfoR = (Math.sin(lfoPhaseR) + 1) * 0.5;
 
       const minFreq = centerFreq * 0.5;
       const maxFreq = centerFreq * 2;
@@ -1029,7 +1029,7 @@ class PluginHostService {
     const manualMode = (params?.manualMode as boolean) || false;
     const manualDelay = ((params?.manualDelay as number) || 5) / 1000;
 
-    const maxDelaySamples = Math?.floor(0.025 * sampleRate);
+    const maxDelaySamples = Math.floor(0.025 * sampleRate);
     const delayBufferL = new Float32Array(maxDelaySamples);
     const delayBufferR = new Float32Array(maxDelaySamples);
     let writeIndex = 0;
@@ -1044,8 +1044,8 @@ class PluginHostService {
         const lfoPhaseL = (2 * Math.PI * rate * i) / sampleRate;
         const lfoPhaseR = lfoPhaseL + stereoPhase * 2 * Math.PI;
 
-        const lfoL = (Math?.sin(lfoPhaseL) + 1) * 0.5;
-        const lfoR = (Math?.sin(lfoPhaseR) + 1) * 0.5;
+        const lfoL = (Math.sin(lfoPhaseL) + 1) * 0.5;
+        const lfoR = (Math.sin(lfoPhaseR) + 1) * 0.5;
 
         const minDelay = baseDelay * 0.1;
         const maxDelay = baseDelay;
@@ -1053,20 +1053,20 @@ class PluginHostService {
         delayTimeR = minDelay + (maxDelay - minDelay) * lfoR * depth;
       }
 
-      const delaySamplesL = Math?.min(
+      const delaySamplesL = Math.min(
         delayTimeL * sampleRate,
         maxDelaySamples - 1,
       );
-      const delaySamplesR = Math?.min(
+      const delaySamplesR = Math.min(
         delayTimeR * sampleRate,
         maxDelaySamples - 1,
       );
 
       const readIndexL =
-        (writeIndex - Math?.floor(delaySamplesL) + maxDelaySamples) %
+        (writeIndex - Math.floor(delaySamplesL) + maxDelaySamples) %
         maxDelaySamples;
       const readIndexR =
-        (writeIndex - Math?.floor(delaySamplesR) + maxDelaySamples) %
+        (writeIndex - Math.floor(delaySamplesR) + maxDelaySamples) %
         maxDelaySamples;
 
       const delayedL = delayBufferL[readIndexL];
@@ -1092,7 +1092,7 @@ class PluginHostService {
     parameters: Record<string, number | boolean | string>,
     options: { category?: string; isPublic?: boolean } = {},
   ): Promise<PluginPreset> {
-    const plugin = this?.getPluginById(pluginId);
+    const plugin = this.getPluginById(pluginId);
     if (!plugin) {
       throw new Error(`Plugin not found: ${pluginId}`);
     }
@@ -1133,7 +1133,7 @@ class PluginHostService {
     userId: string,
     _options: { includePublic?: boolean; category?: string } = {},
   ): Promise<PluginPreset[]> {
-    const plugin = this?.getPluginById(pluginId);
+    const plugin = this.getPluginById(pluginId);
     if (!plugin) {
       throw new Error(`Plugin not found: ${pluginId}`);
     }
@@ -1197,12 +1197,12 @@ class PluginHostService {
     instanceId: string,
     presetId: string,
   ): Promise<PluginInstance> {
-    const preset = await this?.loadPreset(presetId);
+    const preset = await this.loadPreset(presetId);
     if (!preset) {
       throw new Error(`Preset not found: ${presetId}`);
     }
 
-    return this?.updateInstanceParameters(instanceId, preset?.parameters);
+    return this.updateInstanceParameters(instanceId, preset?.parameters);
   }
 
   getFactoryPresets(
@@ -1211,7 +1211,7 @@ class PluginHostService {
     name: string;
     parameters: Record<string, number | boolean | string>;
   }> {
-    const plugin = this?.getPluginById(pluginId);
+    const plugin = this.getPluginById(pluginId);
     if (!plugin) {
       return [];
     }

@@ -18,7 +18,7 @@ const memoryStorage = multer?.memoryStorage();
 
 // ── General-purpose disk storage (replaces memoryStorage for the large `upload`
 // instance — prevents OOM crashes on files up to 500 MB) ──────────────────────
-const GENERAL_UPLOAD_DIR = path?.join(process?.cwd(), "uploads", "general_temp");
+const GENERAL_UPLOAD_DIR = path?.join(process.cwd(), "uploads", "general_temp");
 if (!existsSync(GENERAL_UPLOAD_DIR))
   mkdirSync(GENERAL_UPLOAD_DIR, { recursive: true });
 
@@ -178,7 +178,7 @@ export const audioUpload = multer({
 });
 
 // ── Disk-based upload for music video / voice synthesis (needs file paths for FFmpeg) ──
-const MEDIA_UPLOAD_DIR = path?.join(process?.cwd(), "uploads", "media_temp");
+const MEDIA_UPLOAD_DIR = path?.join(process.cwd(), "uploads", "media_temp");
 if (!existsSync(MEDIA_UPLOAD_DIR))
   mkdirSync(MEDIA_UPLOAD_DIR, { recursive: true });
 
@@ -437,28 +437,28 @@ export const handleUploadError = (
   if (error instanceof multer.MulterError) {
     switch (error?.code) {
       case "LIMIT_FILE_SIZE":
-        return res?.status(413).json({
+        return res.status(413).json({
           message: "File too large. Maximum size is 200MB.",
           code: "FILE_TOO_LARGE",
         });
       case "LIMIT_FILE_COUNT":
-        return res?.status(413).json({
+        return res.status(413).json({
           message: "Too many files. Maximum is 10 files per request.",
           code: "TOO_MANY_FILES",
         });
       case "LIMIT_UNEXPECTED_FILE":
-        return res?.status(400).json({
+        return res.status(400).json({
           message: "Unexpected field name for file upload.",
           code: "UNEXPECTED_FIELD",
         });
       default:
-        return res?.status(400).json({
+        return res.status(400).json({
           message: error.message,
           code: "UPLOAD_ERROR",
         });
     }
   } else if (error) {
-    return res?.status(400).json({
+    return res.status(400).json({
       message: error instanceof Error ? error?.message : "Upload failed",
       code: "UPLOAD_ERROR",
     });
@@ -489,7 +489,7 @@ export async function storeUploadedFile(
       );
 
       if (!validation?.valid) {
-        logger?.warn("Upload security validation failed", {
+        logger.warn("Upload security validation failed", {
           filename: file.originalname,
           category: uploadCategory,
           error: validation.error,
@@ -500,7 +500,7 @@ export async function storeUploadedFile(
     }
 
     if (!verifyMagicBytes(file?.buffer, file?.mimetype)) {
-      logger?.warn("Magic bytes verification failed during storage", {
+      logger.warn("Magic bytes verification failed during storage", {
         filename: file.originalname,
         mimetype: file.mimetype,
         userId,
@@ -528,7 +528,7 @@ export async function storeUploadedFile(
         finalMimetype = processed?.mimeType;
         wasProcessed = true;
 
-        logger?.info("Image processed for upload", {
+        logger.info("Image processed for upload", {
           originalSize: file.buffer.length,
           processedSize: processed.processedSize,
           format: processed.format,
@@ -538,7 +538,7 @@ export async function storeUploadedFile(
           category: uploadCategory,
         });
       } catch (processingError) {
-        logger?.warn("Image processing failed, using original", {
+        logger.warn("Image processing failed, using original", {
           error: processingError,
           filename: file.originalname,
           userId,
@@ -565,7 +565,7 @@ export async function storeUploadedFile(
 
     return { key, url, processed: wasProcessed };
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error storing uploaded file:");
+    logger.warn({ err: error }, "Error storing uploaded file:");
     throw error instanceof Error
       ? error
       : new Error("Failed to store uploaded file");
@@ -681,7 +681,7 @@ export async function generateUploadUrl(
 
     return { uploadUrl, key };
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error generating upload URL:");
+    logger.warn({ err: error }, "Error generating upload URL:");
     throw error instanceof Error
       ? error
       : new Error("Failed to generate upload URL");

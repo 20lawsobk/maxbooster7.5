@@ -23,11 +23,11 @@ const adminEmailLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 7_200_000_000,
   keyGenerator: (req) =>
-    `admin-email:${(req?.user as Record<string, unknown>)?.id ?? "anon"}`,
+    `admin-email:${(req.user as Record<string, unknown>)?.id ?? "anon"}`,
   message: { error: "Too many email requests, please try again later" },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => !(req?.user as Record<string, unknown>)?.id,
+  skip: (req) => !(req.user as Record<string, unknown>)?.id,
 });
 
 const errorCounter = { last24h: 0, last7d: 0 };
@@ -42,15 +42,15 @@ function getRealCpuUsage(): number {
     const used = user + nice + sys + irq;
     totalUsage += (used / total) * 100;
   }
-  return Math?.round(totalUsage / cpus?.length);
+  return Math.round(totalUsage / cpus?.length);
 }
 
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  if (!req?.isAuthenticated()) {
-    return res?.status(401).json({ error: "Authentication required" });
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Authentication required" });
   }
-  if (!req?.user || req?.user.role !== "admin") {
-    return res?.status(403).json({ error: "Admin access required" });
+  if (!req.user || req.user.role !== "admin") {
+    return res.status(403).json({ error: "Admin access required" });
   }
   next();
 }
@@ -60,16 +60,16 @@ adminRouter?.use(require2FA);
 
 adminRouter?.get("/dashboard", (req, res) => {
   const { password, twoFactorSecret, passwordResetToken, ...safeUser } =
-    req?.user as Record<string, unknown>;
-  res?.json({ message: "Welcome to the admin dashboard!", user: safeUser });
+    req.user as Record<string, unknown>;
+  res.json({ message: "Welcome to the admin dashboard!", user: safeUser });
 });
 
 adminRouter?.get("/users", async (req, res) => {
   try {
-    const { page = "1", limit = "20", search = "", status, plan } = req?.query;
-    const pageNum = Math?.max(1, parseInt(page as string) || 1);
-    const limitNum = Math?.min(
-      Math?.max(1, parseInt(limit as string) || 20),
+    const { page = "1", limit = "20", search = "", status, plan } = req.query;
+    const pageNum = Math.max(1, parseInt(page as string) || 1);
+    const limitNum = Math.min(
+      Math.max(1, parseInt(limit as string) || 20),
       200,
     );
     const offset = (pageNum - 1) * limitNum;
@@ -120,7 +120,7 @@ adminRouter?.get("/users", async (req, res) => {
 
     const total = totalResult[0]?.count || 0;
 
-    res?.json({
+    res.json({
       users: usersList,
       pagination: {
         total,
@@ -130,16 +130,16 @@ adminRouter?.get("/users", async (req, res) => {
       },
     });
   } catch (error) {
-    logger?.warn("Error fetching users:", error);
-    res?.status(500).json({ error: "Failed to fetch users" });
+    logger.warn("Error fetching users:", error);
+    res.status(500).json({ error: "Failed to fetch users" });
   }
 });
 
 adminRouter?.get("/users/export", async (req, res) => {
   try {
-    const pageSize = Math?.min(parseInt(req?.query.limit as string) || 100, 500);
-    const offset = Math?.min(
-      Math?.max(parseInt(req?.query.offset as string) || 0, 0),
+    const pageSize = Math.min(parseInt(req.query.limit as string) || 100, 500);
+    const offset = Math.min(
+      Math.max(parseInt(req.query.offset as string) || 0, 0),
       100_000,
     );
 
@@ -165,7 +165,7 @@ adminRouter?.get("/users/export", async (req, res) => {
 
     const total = Number(totalResult[0]?.count ?? 0);
 
-    res?.json({
+    res.json({
       users: exportedUsers,
       exportedAt: new Date().toISOString(),
       pagination: {
@@ -176,14 +176,14 @@ adminRouter?.get("/users/export", async (req, res) => {
       },
     });
   } catch (error) {
-    logger?.warn("Error exporting users:", error);
-    res?.status(500).json({ error: "Failed to export users" });
+    logger.warn("Error exporting users:", error);
+    res.status(500).json({ error: "Failed to export users" });
   }
 });
 
 adminRouter?.get("/users/:userId", async (req, res) => {
   try {
-    const { userId } = req?.params;
+    const { userId } = req.params;
     const user = await db
       .select({
         id: users.id,
@@ -202,20 +202,20 @@ adminRouter?.get("/users/:userId", async (req, res) => {
       .limit(1);
 
     if (!user?.length) {
-      return res?.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: "User not found" });
     }
 
-    res?.json(user[0]);
+    res.json(user[0]);
   } catch (error) {
-    logger?.warn("Error fetching user:", error);
-    res?.status(500).json({ error: "Failed to fetch user" });
+    logger.warn("Error fetching user:", error);
+    res.status(500).json({ error: "Failed to fetch user" });
   }
 });
 
 adminRouter?.put("/users/:userId", async (req, res) => {
   try {
-    const { userId } = req?.params;
-    const { role, subscriptionTier, subscriptionStatus } = req?.body;
+    const { userId } = req.params;
+    const { role, subscriptionTier, subscriptionStatus } = req.body;
 
     const allowedRoles = ["user", "admin"];
     const allowedTiers = ["free", "monthly", "yearly", "lifetime", null];
@@ -234,10 +234,10 @@ adminRouter?.put("/users/:userId", async (req, res) => {
         .json({ error: `Invalid role. Allowed: ${allowedRoles?.join(", ")}` });
     }
     if (subscriptionTier && !allowedTiers?.includes(subscriptionTier)) {
-      return res?.status(400).json({ error: `Invalid subscription tier` });
+      return res.status(400).json({ error: `Invalid subscription tier` });
     }
     if (subscriptionStatus && !allowedStatuses?.includes(subscriptionStatus)) {
-      return res?.status(400).json({ error: `Invalid subscription status` });
+      return res.status(400).json({ error: `Invalid subscription status` });
     }
 
     const updateData: Record<string, any> = {};
@@ -247,15 +247,15 @@ adminRouter?.put("/users/:userId", async (req, res) => {
     if (subscriptionStatus !== undefined)
       updateData.subscriptionStatus = subscriptionStatus;
 
-    if (Object?.keys(updateData).length === 0) {
-      return res?.status(400).json({ error: "No valid fields to update" });
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: "No valid fields to update" });
     }
 
     await db?.update(users).set(updateData).where(eq(users?.id, userId));
 
-    logger?.info(`Admin ${req?.user?.email} updated user ${userId}:`, updateData);
+    logger.info(`Admin ${req.user?.email} updated user ${userId}:`, updateData);
 
-    res?.json({ success: true, message: "User updated" });
+    res.json({ success: true, message: "User updated" });
 
     // SECURITY: Revoke all active sessions when role or subscription status changes.
     // This forces re-login so the new role/status takes effect immediately across all pods.
@@ -270,7 +270,7 @@ adminRouter?.put("/users/:userId", async (req, res) => {
           );
           await revokeUserSessions(String(userId));
         } catch (revokeErr: unknown) {
-          logger?.warn(
+          logger.warn(
             { err: revokeErr },
             `[Security] Session revocation failed after admin update of user ${userId}`,
           );
@@ -278,18 +278,18 @@ adminRouter?.put("/users/:userId", async (req, res) => {
       });
     }
   } catch (error) {
-    logger?.warn("Error updating user:", error);
-    res?.status(500).json({ error: "Failed to update user" });
+    logger.warn("Error updating user:", error);
+    res.status(500).json({ error: "Failed to update user" });
   }
 });
 
 adminRouter?.post("/users/:userId/suspend", async (req, res) => {
   try {
-    const { userId } = req?.params;
-    const { reason } = req?.body;
+    const { userId } = req.params;
+    const { reason } = req.body;
 
-    if (userId === req?.user?.id) {
-      return res?.status(400).json({ error: "Cannot suspend your own account" });
+    if (userId === req.user?.id) {
+      return res.status(400).json({ error: "Cannot suspend your own account" });
     }
 
     await db
@@ -299,11 +299,11 @@ adminRouter?.post("/users/:userId/suspend", async (req, res) => {
       })
       .where(eq(users?.id, userId));
 
-    logger?.info(
-      `Admin ${req?.user?.email} suspended user ${userId}. Reason: ${reason || "Not specified"}`,
+    logger.info(
+      `Admin ${req.user?.email} suspended user ${userId}. Reason: ${reason || "Not specified"}`,
     );
 
-    res?.json({ success: true, message: "User suspended" });
+    res.json({ success: true, message: "User suspended" });
 
     // SECURITY: Revoke all active sessions immediately after suspension.
     setImmediate(async () => {
@@ -313,21 +313,21 @@ adminRouter?.post("/users/:userId/suspend", async (req, res) => {
         );
         await revokeUserSessions(String(userId));
       } catch (revokeErr: unknown) {
-        logger?.warn(
+        logger.warn(
           { err: revokeErr },
           `[Security] Session revocation failed after admin suspension of user ${userId}`,
         );
       }
     });
   } catch (error) {
-    logger?.warn("Error suspending user:", error);
-    res?.status(500).json({ error: "Failed to suspend user" });
+    logger.warn("Error suspending user:", error);
+    res.status(500).json({ error: "Failed to suspend user" });
   }
 });
 
 adminRouter?.post("/users/:userId/reactivate", async (req, res) => {
   try {
-    const { userId } = req?.params;
+    const { userId } = req.params;
 
     await db
       .update(users)
@@ -336,37 +336,37 @@ adminRouter?.post("/users/:userId/reactivate", async (req, res) => {
       })
       .where(eq(users?.id, userId));
 
-    logger?.info(`Admin ${req?.user?.email} reactivated user ${userId}`);
+    logger.info(`Admin ${req.user?.email} reactivated user ${userId}`);
 
-    res?.json({ success: true, message: "User reactivated" });
+    res.json({ success: true, message: "User reactivated" });
   } catch (error) {
-    logger?.warn("Error reactivating user:", error);
-    res?.status(500).json({ error: "Failed to reactivate user" });
+    logger.warn("Error reactivating user:", error);
+    res.status(500).json({ error: "Failed to reactivate user" });
   }
 });
 
 adminRouter?.delete("/users/:userId", async (req, res) => {
   try {
-    const { userId } = req?.params;
+    const { userId } = req.params;
 
-    if (userId === req?.user?.id) {
-      return res?.status(400).json({ error: "Cannot delete your own account" });
+    if (userId === req.user?.id) {
+      return res.status(400).json({ error: "Cannot delete your own account" });
     }
 
     await db?.delete(users).where(eq(users?.id, userId));
-    logger?.info(`Admin ${req?.user?.email} permanently deleted user ${userId}`);
-    res?.json({ success: true, message: "User deleted" });
+    logger.info(`Admin ${req.user?.email} permanently deleted user ${userId}`);
+    res.json({ success: true, message: "User deleted" });
   } catch (error) {
-    logger?.warn("Error deleting user:", error);
-    res?.status(500).json({ error: "Failed to delete user" });
+    logger.warn("Error deleting user:", error);
+    res.status(500).json({ error: "Failed to delete user" });
   }
 });
 
 adminRouter?.post("/subscriptions/lifetime", async (req, res) => {
   try {
-    const { userId } = req?.body;
+    const { userId } = req.body;
     if (!userId) {
-      return res?.status(400).json({ error: "userId is required" });
+      return res.status(400).json({ error: "userId is required" });
     }
 
     await db
@@ -377,21 +377,21 @@ adminRouter?.post("/subscriptions/lifetime", async (req, res) => {
       })
       .where(eq(users?.id, userId));
 
-    logger?.info(
-      `Admin ${req?.user?.email} granted lifetime subscription to user ${userId}`,
+    logger.info(
+      `Admin ${req.user?.email} granted lifetime subscription to user ${userId}`,
     );
 
-    res?.json({ message: "Lifetime subscription granted." });
+    res.json({ message: "Lifetime subscription granted." });
   } catch (error) {
-    logger?.warn("Error granting lifetime subscription:", error);
-    res?.status(500).json({ error: "Failed to grant lifetime subscription" });
+    logger.warn("Error granting lifetime subscription:", error);
+    res.status(500).json({ error: "Failed to grant lifetime subscription" });
   }
 });
 
 adminRouter?.get("/system-health", async (_req, res) => {
   try {
-    const memUsage = process?.memoryUsage();
-    const uptime = process?.uptime();
+    const memUsage = process.memoryUsage();
+    const uptime = process.uptime();
 
     let dbStatus = "connected";
     let dbLatency: number | null = null;
@@ -426,23 +426,23 @@ adminRouter?.get("/system-health", async (_req, res) => {
       env?.STRIPE_SECRET_KEY
         ? pingApi("https://api.stripe.com/v1")
         : Promise?.resolve({ status: "unknown" as const, latency: null }),
-      process?.env.LABELGRID_API_TOKEN
+      process.env.LABELGRID_API_TOKEN
         ? pingApi("https://api.labelgrid.com")
         : Promise?.resolve({ status: "unknown" as const, latency: null }),
-      process?.env.SPOTIFY_CLIENT_ID
+      process.env.SPOTIFY_CLIENT_ID
         ? pingApi("https://api.spotify.com/v1")
         : Promise?.resolve({ status: "unknown" as const, latency: null }),
       pingApi("https://api.music.apple.com"),
-      process?.env.YOUTUBE_CLIENT_ID
+      process.env.YOUTUBE_CLIENT_ID
         ? pingApi("https://www.googleapis.com/youtube/v3")
         : Promise?.resolve({ status: "unknown" as const, latency: null }),
-      process?.env.TWITTER_API_KEY
+      process.env.TWITTER_API_KEY
         ? pingApi("https://api.twitter.com/2")
         : Promise?.resolve({ status: "unknown" as const, latency: null }),
-      process?.env.INSTAGRAM_APP_ID
+      process.env.INSTAGRAM_APP_ID
         ? pingApi("https://graph.instagram.com")
         : Promise?.resolve({ status: "unknown" as const, latency: null }),
-      process?.env.TIKTOK_CLIENT_KEY
+      process.env.TIKTOK_CLIENT_KEY
         ? pingApi("https://open.tiktokapis.com")
         : Promise?.resolve({ status: "unknown" as const, latency: null }),
     ]);
@@ -468,7 +468,7 @@ adminRouter?.get("/system-health", async (_req, res) => {
     const killSwitchState = killSwitch?.getState();
     const cpuUsage = getRealCpuUsage();
 
-    res?.json({
+    res.json({
       server: {
         uptime: Math.floor(uptime),
         uptimeFormatted: formatUptime(uptime),
@@ -488,7 +488,7 @@ adminRouter?.get("/system-health", async (_req, res) => {
             if (stat) {
               const total = stat?.bsize * stat?.blocks;
               const free = stat?.bsize * stat?.bfree;
-              return total > 0 ? Math?.round(((total - free) / total) * 100) : 0;
+              return total > 0 ? Math.round(((total - free) / total) * 100) : 0;
             }
           } catch {
             /* intentional: statfsSync unavailable on this platform → returns 0 */
@@ -524,21 +524,21 @@ adminRouter?.get("/system-health", async (_req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger?.warn("Error fetching system health:", error);
-    res?.status(500).json({ error: "Failed to fetch system health" });
+    logger.warn("Error fetching system health:", error);
+    res.status(500).json({ error: "Failed to fetch system health" });
   }
 });
 
 adminRouter?.get("/moderation/reports", async (req, res) => {
   try {
-    const { page = "1", limit = "20" } = req?.query;
-    const pageNum = Math?.max(1, parseInt(page as string) || 1);
-    const limitNum = Math?.min(
-      Math?.max(1, parseInt(limit as string) || 20),
+    const { page = "1", limit = "20" } = req.query;
+    const pageNum = Math.max(1, parseInt(page as string) || 1);
+    const limitNum = Math.min(
+      Math.max(1, parseInt(limit as string) || 20),
       200,
     );
 
-    res?.json({
+    res.json({
       reports: [],
       pagination: {
         total: 0,
@@ -553,15 +553,15 @@ adminRouter?.get("/moderation/reports", async (req, res) => {
       },
     });
   } catch (error) {
-    logger?.warn("Error fetching moderation reports:", error);
-    res?.status(500).json({ error: "Failed to fetch moderation reports" });
+    logger.warn("Error fetching moderation reports:", error);
+    res.status(500).json({ error: "Failed to fetch moderation reports" });
   }
 });
 
 adminRouter?.post("/moderation/reports/:reportId/review", async (req, res) => {
   try {
-    const { reportId } = req?.params;
-    const { action, notes } = req?.body;
+    const { reportId } = req.params;
+    const { action, notes } = req.body;
 
     const validActions = [
       "approve",
@@ -576,11 +576,11 @@ adminRouter?.post("/moderation/reports/:reportId/review", async (req, res) => {
         .json({ error: `Invalid action. Allowed: ${validActions?.join(", ")}` });
     }
 
-    logger?.info(
-      `Admin ${req?.user?.email} reviewed report ${reportId} with action: ${action}. Notes: ${notes || "None"}`,
+    logger.info(
+      `Admin ${req.user?.email} reviewed report ${reportId} with action: ${action}. Notes: ${notes || "None"}`,
     );
 
-    res?.json({
+    res.json({
       success: true,
       message: `Report reviewed with action: ${action}`,
       report: {
@@ -593,21 +593,21 @@ adminRouter?.post("/moderation/reports/:reportId/review", async (req, res) => {
       },
     });
   } catch (error) {
-    logger?.warn("Error reviewing moderation report:", error);
-    res?.status(500).json({ error: "Failed to review moderation report" });
+    logger.warn("Error reviewing moderation report:", error);
+    res.status(500).json({ error: "Failed to review moderation report" });
   }
 });
 
 adminRouter?.post("/moderation/content/:contentId/remove", async (req, res) => {
   try {
-    const { contentId } = req?.params;
-    const { reason, notifyUser = true } = req?.body;
+    const { contentId } = req.params;
+    const { reason, notifyUser = true } = req.body;
 
-    logger?.info(
-      `Admin ${req?.user?.email} removed content ${contentId}. Reason: ${reason}`,
+    logger.info(
+      `Admin ${req.user?.email} removed content ${contentId}. Reason: ${reason}`,
     );
 
-    res?.json({
+    res.json({
       success: true,
       message: "Content removed successfully",
       contentId,
@@ -615,21 +615,21 @@ adminRouter?.post("/moderation/content/:contentId/remove", async (req, res) => {
       notifiedUser: notifyUser,
     });
   } catch (error) {
-    logger?.warn("Error removing content:", error);
-    res?.status(500).json({ error: "Failed to remove content" });
+    logger.warn("Error removing content:", error);
+    res.status(500).json({ error: "Failed to remove content" });
   }
 });
 
 adminRouter?.post("/moderation/users/:userId/warn", async (req, res) => {
   try {
-    const { userId } = req?.params;
-    const { reason, severity = "minor" } = req?.body;
+    const { userId } = req.params;
+    const { reason, severity = "minor" } = req.body;
 
-    logger?.info(
-      `Admin ${req?.user?.email} warned user ${userId}. Severity: ${severity}. Reason: ${reason}`,
+    logger.info(
+      `Admin ${req.user?.email} warned user ${userId}. Severity: ${severity}. Reason: ${reason}`,
     );
 
-    res?.json({
+    res.json({
       success: true,
       message: "User warned successfully",
       userId,
@@ -638,18 +638,18 @@ adminRouter?.post("/moderation/users/:userId/warn", async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger?.warn("Error warning user:", error);
-    res?.status(500).json({ error: "Failed to warn user" });
+    logger.warn("Error warning user:", error);
+    res.status(500).json({ error: "Failed to warn user" });
   }
 });
 
 adminRouter?.post("/moderation/users/:userId/ban", async (req, res) => {
   try {
-    const { userId } = req?.params;
-    const { reason, duration } = req?.body;
+    const { userId } = req.params;
+    const { reason, duration } = req.body;
 
-    if (userId === req?.user?.id) {
-      return res?.status(400).json({ error: "Cannot ban your own account" });
+    if (userId === req.user?.id) {
+      return res.status(400).json({ error: "Cannot ban your own account" });
     }
 
     await db
@@ -659,11 +659,11 @@ adminRouter?.post("/moderation/users/:userId/ban", async (req, res) => {
       })
       .where(eq(users?.id, userId));
 
-    logger?.info(
-      `Admin ${req?.user?.email} banned user ${userId}. Duration: ${duration || "permanent"}. Reason: ${reason}`,
+    logger.info(
+      `Admin ${req.user?.email} banned user ${userId}. Duration: ${duration || "permanent"}. Reason: ${reason}`,
     );
 
-    res?.json({
+    res.json({
       success: true,
       message: "User banned successfully",
       userId,
@@ -672,8 +672,8 @@ adminRouter?.post("/moderation/users/:userId/ban", async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger?.warn("Error banning user:", error);
-    res?.status(500).json({ error: "Failed to ban user" });
+    logger.warn("Error banning user:", error);
+    res.status(500).json({ error: "Failed to ban user" });
   }
 });
 
@@ -822,7 +822,7 @@ adminRouter?.get("/analytics", async (_req, res) => {
       });
     }
 
-    res?.json({
+    res.json({
       totalUsers,
       newUsers,
       recentSignups: newUsers,
@@ -840,15 +840,15 @@ adminRouter?.get("/analytics", async (_req, res) => {
       topCountries: [],
     });
   } catch (error) {
-    logger?.warn("Error fetching analytics:", error);
-    res?.status(500).json({ error: "Failed to fetch analytics" });
+    logger.warn("Error fetching analytics:", error);
+    res.status(500).json({ error: "Failed to fetch analytics" });
   }
 });
 
 adminRouter?.get("/metrics", async (_req, res) => {
   try {
-    const memUsage = process?.memoryUsage();
-    process?.uptime();
+    const memUsage = process.memoryUsage();
+    process.uptime();
 
     const [activeUsersResult] = await db
       .select({ count: count() })
@@ -863,25 +863,25 @@ adminRouter?.get("/metrics", async (_req, res) => {
         const total = stat?.bsize * stat?.blocks;
         const free = stat?.bsize * stat?.bfree;
         diskUsagePercent =
-          total > 0 ? Math?.round(((total - free) / total) * 100) : 0;
+          total > 0 ? Math.round(((total - free) / total) * 100) : 0;
       }
     } catch {
       // statfsSync not available on all Node versions/platforms — disk metric returns 0
     }
 
-    res?.json({
+    res.json({
       cpu: getRealCpuUsage(),
       memory: Math.floor((memUsage?.heapUsed / memUsage?.heapTotal) * 100),
       disk: diskUsagePercent,
       network: 0,
-      uptime: Math.floor(process?.uptime()),
+      uptime: Math.floor(process.uptime()),
       activeUsers: activeUsersResult[0]?.count || 0,
       requestsPerMinute: 0,
       avgResponseTime: 0,
     });
   } catch (error) {
-    logger?.warn("Error fetching metrics:", error);
-    res?.status(500).json({ error: "Failed to fetch metrics" });
+    logger.warn("Error fetching metrics:", error);
+    res.status(500).json({ error: "Failed to fetch metrics" });
   }
 });
 
@@ -904,22 +904,22 @@ adminRouter?.get("/settings", async (_req, res) => {
     settings?.forEach((s) => {
       const key = s?.key.replace("platform.", "");
       try {
-        settingsMap[key] = JSON?.parse(s?.value);
+        settingsMap[key] = JSON.parse(s?.value);
       } catch {
         settingsMap[key] = s?.value;
       }
     });
 
-    res?.json(settingsMap);
+    res.json(settingsMap);
   } catch (error) {
-    logger?.warn("Error fetching settings:", error);
-    res?.status(500).json({ error: "Failed to fetch settings" });
+    logger.warn("Error fetching settings:", error);
+    res.status(500).json({ error: "Failed to fetch settings" });
   }
 });
 
 async function updateSetting(key: string, value: Record<string, unknown>) {
   const fullKey = `platform.${key}`;
-  const stringValue = JSON?.stringify(value);
+  const stringValue = JSON.stringify(value);
 
   const existing = await db
     .select()
@@ -941,34 +941,34 @@ async function updateSetting(key: string, value: Record<string, unknown>) {
 
 adminRouter?.post("/settings/notifications", async (req, res) => {
   try {
-    const { enabled } = req?.body;
+    const { enabled } = req.body;
     await updateSetting("emailNotifications", enabled);
-    res?.json({ success: true, enabled });
+    res.json({ success: true, enabled });
   } catch (error) {
-    logger?.warn("Error updating notifications setting:", error);
-    res?.status(500).json({ error: "Failed to update setting" });
+    logger.warn("Error updating notifications setting:", error);
+    res.status(500).json({ error: "Failed to update setting" });
   }
 });
 
 adminRouter?.post("/settings/maintenance", async (req, res) => {
   try {
-    const { enabled } = req?.body;
+    const { enabled } = req.body;
     await updateSetting("maintenanceMode", enabled);
-    res?.json({ success: true, enabled });
+    res.json({ success: true, enabled });
   } catch (error) {
-    logger?.warn("Error updating maintenance setting:", error);
-    res?.status(500).json({ error: "Failed to update setting" });
+    logger.warn("Error updating maintenance setting:", error);
+    res.status(500).json({ error: "Failed to update setting" });
   }
 });
 
 adminRouter?.post("/settings/registration", async (req, res) => {
   try {
-    const { enabled } = req?.body;
+    const { enabled } = req.body;
     await updateSetting("userRegistrationEnabled", enabled);
-    res?.json({ success: true, enabled });
+    res.json({ success: true, enabled });
   } catch (error) {
-    logger?.warn("Error updating registration setting:", error);
-    res?.status(500).json({ error: "Failed to update setting" });
+    logger.warn("Error updating registration setting:", error);
+    res.status(500).json({ error: "Failed to update setting" });
   }
 });
 
@@ -991,10 +991,10 @@ adminRouter?.get("/activity", async (_req, res) => {
       time: formatTimeAgo(u?.createdAt),
     }));
 
-    res?.json(activities);
+    res.json(activities);
   } catch (error) {
-    logger?.warn("Error fetching activity:", error);
-    res?.status(500).json({ error: "Failed to fetch activity" });
+    logger.warn("Error fetching activity:", error);
+    res.status(500).json({ error: "Failed to fetch activity" });
   }
 });
 
@@ -1003,8 +1003,8 @@ adminRouter?.post(
   adminEmailLimiter,
   async (req, res) => {
     try {
-      const { userId } = req?.params;
-      const { subject, message } = req?.body;
+      const { userId } = req.params;
+      const { subject, message } = req.body;
 
       if (!subject || !message) {
         return res
@@ -1019,22 +1019,22 @@ adminRouter?.post(
         .limit(1);
 
       if (!targetUser?.length) {
-        return res?.status(404).json({ error: "User not found" });
+        return res.status(404).json({ error: "User not found" });
       }
 
-      logger?.info(
-        `Admin ${req?.user?.email} initiated email to ${targetUser[0].email}: ${subject}`,
+      logger.info(
+        `Admin ${req.user?.email} initiated email to ${targetUser[0].email}: ${subject}`,
       );
 
-      res?.json({
+      res.json({
         success: true,
         message:
           "Email request logged. Note: Email delivery requires SendGrid configuration.",
         recipient: targetUser[0].email,
       });
     } catch (error) {
-      logger?.warn("Error processing email request:", error);
-      res?.status(500).json({ error: "Failed to process email request" });
+      logger.warn("Error processing email request:", error);
+      res.status(500).json({ error: "Failed to process email request" });
     }
   },
 );
@@ -1043,9 +1043,9 @@ function formatTimeAgo(date: Date | null): string {
   if (!date) return "Unknown";
   const now = new Date();
   const diff = now?.getTime() - new Date(date).getTime();
-  const minutes = Math?.floor(diff / 60000);
-  const hours = Math?.floor(diff / 3600000);
-  const days = Math?.floor(diff / 86400000);
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
 
   if (minutes < 60) return `${minutes}m ago`;
   if (hours < 24) return `${hours}h ago`;
@@ -1053,9 +1053,9 @@ function formatTimeAgo(date: Date | null): string {
 }
 
 function formatUptime(seconds: number): string {
-  const days = Math?.floor(seconds / 86400);
-  const hours = Math?.floor((seconds % 86400) / 3600);
-  const mins = Math?.floor((seconds % 3600) / 60);
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
   if (days > 0) return `${days}d ${hours}h ${mins}m`;
   if (hours > 0) return `${hours}h ${mins}m`;
   return `${mins}m`;
@@ -1073,20 +1073,20 @@ adminRouter?.get("/financial-config/royalty-rates", async (_req, res) => {
       .from(platformRoyaltyRates)
       .orderBy(platformRoyaltyRates?.displayName)
       .limit(100);
-    res?.json({ success: true, rates });
+    res.json({ success: true, rates });
   } catch (err) {
-    logger?.warn({ err: err }, "Error fetching royalty rates:");
-    res?.status(500).json({ error: "Failed to fetch royalty rates" });
+    logger.warn({ err: err }, "Error fetching royalty rates:");
+    res.status(500).json({ error: "Failed to fetch royalty rates" });
   }
 });
 
 // PATCH /api/admin/financial-config/royalty-rates/:id
 adminRouter?.patch("/financial-config/royalty-rates/:id", async (req, res) => {
   try {
-    const id = parseInt(req?.params.id, 10);
+    const id = parseInt(req.params.id, 10);
     if (isNaN(id) || id <= 0)
-      return res?.status(400).json({ error: "Invalid rate ID" });
-    const { baseRatePerStream, premiumMultiplier, notes } = req?.body;
+      return res.status(400).json({ error: "Invalid rate ID" });
+    const { baseRatePerStream, premiumMultiplier, notes } = req.body;
     const updates: Record<string, unknown> = { updatedAt: new Date() };
     if (baseRatePerStream !== undefined)
       updates.baseRatePerStream = parseFloat(baseRatePerStream);
@@ -1100,11 +1100,11 @@ adminRouter?.patch("/financial-config/royalty-rates/:id", async (req, res) => {
       .where(eq(platformRoyaltyRates?.id, id))
       .returning();
 
-    if (!updated) return res?.status(404).json({ error: "Rate not found" });
-    res?.json({ success: true, rate: updated });
+    if (!updated) return res.status(404).json({ error: "Rate not found" });
+    res.json({ success: true, rate: updated });
   } catch (err) {
-    logger?.warn({ err: err }, "Error updating royalty rate:");
-    res?.status(500).json({ error: "Failed to update royalty rate" });
+    logger.warn({ err: err }, "Error updating royalty rate:");
+    res.status(500).json({ error: "Failed to update royalty rate" });
   }
 });
 
@@ -1116,20 +1116,20 @@ adminRouter?.get("/financial-config/tax-treaties", async (_req, res) => {
       .from(taxTreatyRates)
       .orderBy(taxTreatyRates?.countryName)
       .limit(200);
-    res?.json({ success: true, treaties });
+    res.json({ success: true, treaties });
   } catch (err) {
-    logger?.warn({ err: err }, "Error fetching tax treaty rates:");
-    res?.status(500).json({ error: "Failed to fetch tax treaty rates" });
+    logger.warn({ err: err }, "Error fetching tax treaty rates:");
+    res.status(500).json({ error: "Failed to fetch tax treaty rates" });
   }
 });
 
 // PATCH /api/admin/financial-config/tax-treaties/:id
 adminRouter?.patch("/financial-config/tax-treaties/:id", async (req, res) => {
   try {
-    const id = parseInt(req?.params.id, 10);
+    const id = parseInt(req.params.id, 10);
     if (isNaN(id) || id <= 0)
-      return res?.status(400).json({ error: "Invalid treaty ID" });
-    const { withholdingRate, treatyRate, hasTreaty, notes } = req?.body;
+      return res.status(400).json({ error: "Invalid treaty ID" });
+    const { withholdingRate, treatyRate, hasTreaty, notes } = req.body;
     const updates: Record<string, unknown> = { updatedAt: new Date() };
     if (withholdingRate !== undefined)
       updates.withholdingRate = parseFloat(withholdingRate);
@@ -1143,11 +1143,11 @@ adminRouter?.patch("/financial-config/tax-treaties/:id", async (req, res) => {
       .where(eq(taxTreatyRates?.id, id))
       .returning();
 
-    if (!updated) return res?.status(404).json({ error: "Treaty not found" });
-    res?.json({ success: true, treaty: updated });
+    if (!updated) return res.status(404).json({ error: "Treaty not found" });
+    res.json({ success: true, treaty: updated });
   } catch (err) {
-    logger?.warn({ err: err }, "Error updating tax treaty rate:");
-    res?.status(500).json({ error: "Failed to update tax treaty rate" });
+    logger.warn({ err: err }, "Error updating tax treaty rate:");
+    res.status(500).json({ error: "Failed to update tax treaty rate" });
   }
 });
 
@@ -1159,19 +1159,19 @@ adminRouter?.get("/financial-config/label-settings", async (_req, res) => {
       .from(labelSettings)
       .orderBy(labelSettings?.key)
       .limit(200);
-    res?.json({ success: true, settings });
+    res.json({ success: true, settings });
   } catch (err) {
-    logger?.warn({ err: err }, "Error fetching label settings:");
-    res?.status(500).json({ error: "Failed to fetch label settings" });
+    logger.warn({ err: err }, "Error fetching label settings:");
+    res.status(500).json({ error: "Failed to fetch label settings" });
   }
 });
 
 // PATCH /api/admin/financial-config/label-settings/:key
 adminRouter?.patch("/financial-config/label-settings/:key", async (req, res) => {
   try {
-    const { key } = req?.params;
-    const { value } = req?.body;
-    if (!value) return res?.status(400).json({ error: "value is required" });
+    const { key } = req.params;
+    const { value } = req.body;
+    if (!value) return res.status(400).json({ error: "value is required" });
 
     const [updated] = await db
       .update(labelSettings)
@@ -1415,7 +1415,7 @@ adminRouter.post("/intelligence/analyze", (req, res) => {
       ? (understandings?.find((u) => u?.errorClass === hintedClass) ??
         understandings[0])
       : understandings[0];
-    res?.json({
+    res.json({
       inputText: text.slice(0, 200) + (text?.length > 200 ? "…" : ""),
       mostLikelyUnderstanding: hintedUnderstanding ?? null,
       allActiveUnderstandings: understandings,
@@ -1423,8 +1423,8 @@ adminRouter.post("/intelligence/analyze", (req, res) => {
       analyzedAt: Date.now(),
     });
   } catch (err) {
-    logger?.warn({ err }, "[IntelligenceRoute] /analyze error");
-    res?.status(500).json({ error: "Intelligence layer unavailable" });
+    logger.warn({ err }, "[IntelligenceRoute] /analyze error");
+    res.status(500).json({ error: "Intelligence layer unavailable" });
   }
 });
 

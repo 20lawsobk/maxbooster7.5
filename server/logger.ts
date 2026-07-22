@@ -41,7 +41,7 @@ const REDACT_PATHS = [
 ];
 
 const transport =
-  process?.env.NODE_ENV !== "production" && !process?.env.REPLIT_DEPLOYMENT
+  process.env.NODE_ENV !== "production" && !process.env.REPLIT_DEPLOYMENT
     ? { target: "pino-pretty", options: { colorize: true } }
     : undefined;
 

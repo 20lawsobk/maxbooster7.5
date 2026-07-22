@@ -80,7 +80,7 @@ class AutopilotCoordinatorService extends EventEmitter {
   private static readonly SYNC_STALE_MS = 4 * 60 * 60 * 1000; // 4 hours
 
   private async loadUserStateFromPdim(userId: string): Promise<void> {
-    if (this?.loadedFromPdim.has(userId)) return;
+    if (this.loadedFromPdim.has(userId)) return;
     // Mark loaded only AFTER a successful read — otherwise a transient PDIM
     // failure on the first connect would permanently suppress reload until
     // stale/cap eviction clears the flag.
@@ -92,7 +92,7 @@ class AutopilotCoordinatorService extends EventEmitter {
         redis?.get(pdimKeyInsights(userId)).catch(() => null),
       ]);
       if (postsRaw) {
-        const arr = JSON?.parse(postsRaw) as ScheduledPost[];
+        const arr = JSON.parse(postsRaw) as ScheduledPost[];
         // Revive Date fields
         const revived = arr?.map((p) => ({
           ...p,
@@ -105,31 +105,31 @@ class AutopilotCoordinatorService extends EventEmitter {
         // this async load was in flight. Dedupe by post id and prefer the
         // in-memory copy (it represents newer state than what was persisted
         // before the restart).
-        const current = this?.scheduleQueue.get(userId) ?? [];
+        const current = this.scheduleQueue.get(userId) ?? [];
         const currentIds = new Set(current?.map((p) => p?.id));
         const merged = [
           ...revived?.filter((p) => !currentIds?.has(p?.id)),
           ...current,
         ];
-        this?.scheduleQueue.set(userId, merged);
+        this.scheduleQueue.set(userId, merged);
       }
       if (insightsRaw) {
-        const arr = JSON?.parse(insightsRaw) as SharedInsight[];
+        const arr = JSON.parse(insightsRaw) as SharedInsight[];
         const revived = arr?.map((i) => ({
           ...i,
           createdAt: new Date(i?.createdAt),
         }));
-        const current = this?.sharedInsights.get(userId) ?? [];
+        const current = this.sharedInsights.get(userId) ?? [];
         const currentIds = new Set(current?.map((i) => i?.id));
         const merged = [
           ...revived?.filter((i) => !currentIds?.has(i?.id)),
           ...current,
         ];
-        this?.sharedInsights.set(userId, merged);
+        this.sharedInsights.set(userId, merged);
       }
-      this?.loadedFromPdim.add(userId);
+      this.loadedFromPdim.add(userId);
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err },
         `[AutopilotCoordinator] Failed to load PDIM state for ${userId}`,
       );
@@ -142,14 +142,14 @@ class AutopilotCoordinatorService extends EventEmitter {
    * mutations. Best-effort: PDIM errors do not throw.
    */
   async flushPendingPersists(): Promise<void> {
-    const userIds = Array?.from(this?.pendingPersist.keys());
+    const userIds = Array.from(this.pendingPersist.keys());
     for (const uid of userIds) {
-      const t = this?.pendingPersist.get(uid);
+      const t = this.pendingPersist.get(uid);
       if (t) clearTimeout(t);
-      this?.pendingPersist.delete(uid);
+      this.pendingPersist.delete(uid);
     }
     await Promise?.all(
-      userIds?.map((uid) => this?.persistUserStateToPdim(uid).catch(() => {})),
+      userIds?.map((uid) => this.persistUserStateToPdim(uid).catch(() => {})),
     );
   }
 
@@ -160,36 +160,36 @@ class AutopilotCoordinatorService extends EventEmitter {
    * `loadedFromPdim` guard. Also flushes any debounced persist timer.
    */
   private resetUserPdimTracking(userId: string): void {
-    this?.loadedFromPdim.delete(userId);
-    const t = this?.pendingPersist.get(userId);
+    this.loadedFromPdim.delete(userId);
+    const t = this.pendingPersist.get(userId);
     if (t) {
       clearTimeout(t);
-      this?.pendingPersist.delete(userId);
+      this.pendingPersist.delete(userId);
     }
   }
 
   private schedulePersist(userId: string): void {
-    const existing = this?.pendingPersist.get(userId);
+    const existing = this.pendingPersist.get(userId);
     if (existing) clearTimeout(existing);
     const t = setTimeout(() => {
-      this?.pendingPersist.delete(userId);
-      this?.persistUserStateToPdim(userId).catch(() => {});
+      this.pendingPersist.delete(userId);
+      this.persistUserStateToPdim(userId).catch(() => {});
     }, PDIM_PERSIST_DEBOUNCE_MS);
     t?.unref();
-    this?.pendingPersist.set(userId, t);
+    this.pendingPersist.set(userId, t);
   }
 
   private async persistUserStateToPdim(userId: string): Promise<void> {
     try {
       const redis = (await getRedisClient()) as RedisClientType;
       if (!redis) return;
-      const posts = this?.scheduleQueue.get(userId) || [];
-      const insights = this?.sharedInsights.get(userId) || [];
+      const posts = this.scheduleQueue.get(userId) || [];
+      const insights = this.sharedInsights.get(userId) || [];
       await Promise?.all([
         redis
           .set(
             pdimKeyPosts(userId),
-            JSON?.stringify(posts),
+            JSON.stringify(posts),
             "EX",
             PDIM_TTL_SECONDS,
           )
@@ -197,7 +197,7 @@ class AutopilotCoordinatorService extends EventEmitter {
         redis
           .set(
             pdimKeyInsights(userId),
-            JSON?.stringify(insights),
+            JSON.stringify(insights),
             "EX",
             PDIM_TTL_SECONDS,
           )
@@ -207,7 +207,7 @@ class AutopilotCoordinatorService extends EventEmitter {
       // Persistence is best-effort — never bubble up. PDIM outages are
       // already handled by the AIMD/coalesce layer; the in-memory state
       // remains the source of truth until PDIM recovers.
-      logger?.warn(
+      logger.warn(
         { err },
         `[AutopilotCoordinator] Failed to persist PDIM state for ${userId}`,
       );
@@ -220,70 +220,70 @@ class AutopilotCoordinatorService extends EventEmitter {
     setInterval(
       () => {
         const cutoff = Date?.now() - AutopilotCoordinatorService.SYNC_STALE_MS;
-        for (const [uid, lastSync] of this?.lastSyncTimes.entries()) {
+        for (const [uid, lastSync] of this.lastSyncTimes.entries()) {
           if (lastSync?.getTime() < cutoff) {
-            this?.scheduleQueue.delete(uid);
-            this?.sharedInsights.delete(uid);
-            this?.connectedAutopilots.delete(uid);
-            this?.lastSyncTimes.delete(uid);
-            this?.resetUserPdimTracking(uid);
+            this.scheduleQueue.delete(uid);
+            this.sharedInsights.delete(uid);
+            this.connectedAutopilots.delete(uid);
+            this.lastSyncTimes.delete(uid);
+            this.resetUserPdimTracking(uid);
           }
         }
         // Hard cap — drop oldest
         while (
-          this?.connectedAutopilots.size >
+          this.connectedAutopilots.size >
           AutopilotCoordinatorService.MAX_CONNECTED_USERS
         ) {
-          const k = this?.connectedAutopilots.keys().next().value;
+          const k = this.connectedAutopilots.keys().next().value;
           if (k === undefined) break;
-          this?.scheduleQueue.delete(k);
-          this?.sharedInsights.delete(k);
-          this?.connectedAutopilots.delete(k);
-          this?.lastSyncTimes.delete(k);
-          this?.resetUserPdimTracking(k);
+          this.scheduleQueue.delete(k);
+          this.sharedInsights.delete(k);
+          this.connectedAutopilots.delete(k);
+          this.lastSyncTimes.delete(k);
+          this.resetUserPdimTracking(k);
         }
       },
       30 * 60 * 1000,
     ).unref();
-    logger?.info("AutopilotCoordinatorService initialized");
+    logger.info("AutopilotCoordinatorService initialized");
   }
 
   connectAutopilot(userId: string, autopilotType: AutopilotType): void {
-    if (!this?.connectedAutopilots.has(userId)) {
-      this?.connectedAutopilots.set(userId, new Set());
+    if (!this.connectedAutopilots.has(userId)) {
+      this.connectedAutopilots.set(userId, new Set());
     }
-    this?.connectedAutopilots.get(userId)!.add(autopilotType);
+    this.connectedAutopilots.get(userId)!.add(autopilotType);
 
     // Load any previously-persisted schedule queue + insights from PDIM so
     // a process restart doesn't drop in-flight posts on the floor. Runs
     // fire-and-forget — first read after connect will see whatever is loaded;
     // before that the user simply sees an empty queue (same as today).
-    this?.loadUserStateFromPdim(userId).catch(() => {});
+    this.loadUserStateFromPdim(userId).catch(() => {});
 
-    if (!this?.scheduleQueue.has(userId)) {
-      this?.scheduleQueue.set(userId, []);
+    if (!this.scheduleQueue.has(userId)) {
+      this.scheduleQueue.set(userId, []);
     }
-    if (!this?.sharedInsights.has(userId)) {
-      this?.sharedInsights.set(userId, []);
+    if (!this.sharedInsights.has(userId)) {
+      this.sharedInsights.set(userId, []);
     }
 
-    this?.emit("autopilotConnected", { userId, autopilotType });
-    logger?.info(`Autopilot connected: ${autopilotType} for user ${userId}`);
+    this.emit("autopilotConnected", { userId, autopilotType });
+    logger.info(`Autopilot connected: ${autopilotType} for user ${userId}`);
   }
 
   disconnectAutopilot(userId: string, autopilotType: AutopilotType): void {
-    const userAutopilots = this?.connectedAutopilots.get(userId);
+    const userAutopilots = this.connectedAutopilots.get(userId);
     if (userAutopilots) {
       userAutopilots?.delete(autopilotType);
-      this?.emit("autopilotDisconnected", { userId, autopilotType });
-      logger?.info(
+      this.emit("autopilotDisconnected", { userId, autopilotType });
+      logger.info(
         `Autopilot disconnected: ${autopilotType} for user ${userId}`,
       );
     }
   }
 
   isAutopilotConnected(userId: string, autopilotType: AutopilotType): boolean {
-    return this?.connectedAutopilots.get(userId)?.has(autopilotType) ?? false;
+    return this.connectedAutopilots.get(userId)?.has(autopilotType) ?? false;
   }
 
   getNextAvailableSlot(
@@ -292,7 +292,7 @@ class AutopilotCoordinatorService extends EventEmitter {
     _platform: string,
     preferredTime?: Date,
   ): AvailableSlot {
-    const schedule = this?.scheduleQueue.get(userId) || [];
+    const schedule = this.scheduleQueue.get(userId) || [];
     const now = new Date();
     const searchStart =
       preferredTime && preferredTime > now ? preferredTime : now;
@@ -325,8 +325,8 @@ class AutopilotCoordinatorService extends EventEmitter {
       const gapAfter = postTime?.getTime() - candidateTime?.getTime();
 
       if (
-        Math?.abs(gapBefore) < MINIMUM_GAP_MS ||
-        Math?.abs(gapAfter) < MINIMUM_GAP_MS
+        Math.abs(gapBefore) < MINIMUM_GAP_MS ||
+        Math.abs(gapAfter) < MINIMUM_GAP_MS
       ) {
         candidateTime = new Date(postTime?.getTime() + MINIMUM_GAP_MS);
       }
@@ -335,7 +335,7 @@ class AutopilotCoordinatorService extends EventEmitter {
     for (const post of activePosts) {
       const postTime = new Date(post?.scheduledTime);
       if (
-        Math?.abs(candidateTime?.getTime() - postTime?.getTime()) < MINIMUM_GAP_MS
+        Math.abs(candidateTime?.getTime() - postTime?.getTime()) < MINIMUM_GAP_MS
       ) {
         candidateTime = new Date(postTime?.getTime() + MINIMUM_GAP_MS);
       }
@@ -355,8 +355,8 @@ class AutopilotCoordinatorService extends EventEmitter {
     scheduledTime: Date,
     content?: string,
   ): ScheduledPost | null {
-    if (!this?.validateSlot(userId, scheduledTime)) {
-      logger?.warn(
+    if (!this.validateSlot(userId, scheduledTime)) {
+      logger.warn(
         `Cannot register post: time slot conflict for user ${userId} at ${scheduledTime?.toISOString()}`,
       );
       return null;
@@ -373,14 +373,14 @@ class AutopilotCoordinatorService extends EventEmitter {
       createdAt: new Date(),
     };
 
-    if (!this?.scheduleQueue.has(userId)) {
-      this?.scheduleQueue.set(userId, []);
+    if (!this.scheduleQueue.has(userId)) {
+      this.scheduleQueue.set(userId, []);
     }
-    this?.scheduleQueue.get(userId)!.push(post);
+    this.scheduleQueue.get(userId)!.push(post);
 
-    this?.schedulePersist(userId);
-    this?.emit("postRegistered", post);
-    logger?.info(
+    this.schedulePersist(userId);
+    this.emit("postRegistered", post);
+    logger.info(
       `Post registered: ${post?.id} for ${autopilotType} on ${platform} at ${scheduledTime?.toISOString()}`,
     );
 
@@ -388,14 +388,14 @@ class AutopilotCoordinatorService extends EventEmitter {
   }
 
   private validateSlot(userId: string, scheduledTime: Date): boolean {
-    const schedule = this?.scheduleQueue.get(userId) || [];
+    const schedule = this.scheduleQueue.get(userId) || [];
     const targetTime = scheduledTime?.getTime();
 
     for (const post of schedule) {
       if (post?.status !== "scheduled") continue;
 
       const postTime = new Date(post?.scheduledTime).getTime();
-      const gap = Math?.abs(targetTime - postTime);
+      const gap = Math.abs(targetTime - postTime);
 
       if (gap < MINIMUM_GAP_MS) {
         return false;
@@ -412,7 +412,7 @@ class AutopilotCoordinatorService extends EventEmitter {
     postIdExternal?: string,
     performance?: PostPerformance,
   ): ScheduledPost | null {
-    const schedule = this?.scheduleQueue.get(userId);
+    const schedule = this.scheduleQueue.get(userId);
     if (!schedule) return null;
 
     const post = schedule?.find((p) => p?.id === postId);
@@ -427,8 +427,8 @@ class AutopilotCoordinatorService extends EventEmitter {
       post.performance = performance;
     }
 
-    this?.schedulePersist(userId);
-    this?.emit("postUpdated", post);
+    this.schedulePersist(userId);
+    this.emit("postUpdated", post);
     return post;
   }
 
@@ -442,7 +442,7 @@ class AutopilotCoordinatorService extends EventEmitter {
       endDate?: Date;
     },
   ): ScheduledPost[] {
-    let schedule = this?.scheduleQueue.get(userId) || [];
+    let schedule = this.scheduleQueue.get(userId) || [];
 
     if (options?.autopilotType) {
       schedule = schedule?.filter(
@@ -489,14 +489,14 @@ class AutopilotCoordinatorService extends EventEmitter {
       appliedBy: [sourceAutopilot],
     };
 
-    if (!this?.sharedInsights.has(userId)) {
-      this?.sharedInsights.set(userId, []);
+    if (!this.sharedInsights.has(userId)) {
+      this.sharedInsights.set(userId, []);
     }
-    this?.sharedInsights.get(userId)!.push(insight);
+    this.sharedInsights.get(userId)!.push(insight);
 
-    this?.schedulePersist(userId);
-    this?.emit("insightShared", insight);
-    logger?.info(
+    this.schedulePersist(userId);
+    this.emit("insightShared", insight);
+    logger.info(
       `Insight shared: ${insight?.id} from ${sourceAutopilot} (${insightType})`,
     );
 
@@ -511,7 +511,7 @@ class AutopilotCoordinatorService extends EventEmitter {
       limit?: number;
     },
   ): SharedInsight[] {
-    let insights = this?.sharedInsights.get(userId) || [];
+    let insights = this.sharedInsights.get(userId) || [];
 
     if (options?.sourceAutopilot) {
       insights = insights?.filter(
@@ -539,7 +539,7 @@ class AutopilotCoordinatorService extends EventEmitter {
     insightId: string,
     autopilotType: AutopilotType,
   ): boolean {
-    const insights = this?.sharedInsights.get(userId);
+    const insights = this.sharedInsights.get(userId);
     if (!insights) return false;
 
     const insight = insights?.find((i) => i?.id === insightId);
@@ -547,9 +547,9 @@ class AutopilotCoordinatorService extends EventEmitter {
 
     if (!insight?.appliedBy.includes(autopilotType)) {
       insight?.appliedBy.push(autopilotType);
-      this?.schedulePersist(userId);
-      this?.emit("insightApplied", { insight, appliedBy: autopilotType });
-      logger?.info(`Insight ${insightId} applied by ${autopilotType}`);
+      this.schedulePersist(userId);
+      this.emit("insightApplied", { insight, appliedBy: autopilotType });
+      logger.info(`Insight ${insightId} applied by ${autopilotType}`);
       return true;
     }
 
@@ -560,7 +560,7 @@ class AutopilotCoordinatorService extends EventEmitter {
     socialToAdvertising: SharedInsight[];
     advertisingToSocial: SharedInsight[];
   } {
-    const insights = this?.sharedInsights.get(userId) || [];
+    const insights = this.sharedInsights.get(userId) || [];
 
     const socialInsights = insights?.filter(
       (i) =>
@@ -572,20 +572,20 @@ class AutopilotCoordinatorService extends EventEmitter {
     );
 
     for (const insight of socialInsights) {
-      this?.applyInsight(userId, insight?.id, "advertising");
+      this.applyInsight(userId, insight?.id, "advertising");
     }
     for (const insight of advertisingInsights) {
-      this?.applyInsight(userId, insight?.id, "social");
+      this.applyInsight(userId, insight?.id, "social");
     }
 
-    this?.lastSyncTimes.set(userId, new Date());
-    this?.emit("insightsSynced", {
+    this.lastSyncTimes.set(userId, new Date());
+    this.emit("insightsSynced", {
       userId,
       socialToAdvertising: socialInsights,
       advertisingToSocial: advertisingInsights,
     });
 
-    logger?.info(
+    logger.info(
       `Insights synced for user ${userId}: ${socialInsights?.length} social->ad, ${advertisingInsights?.length} ad->social`,
     );
 
@@ -604,7 +604,7 @@ class AutopilotCoordinatorService extends EventEmitter {
           },
         })
         .catch((err) =>
-          logger?.warn(
+          logger.warn(
             { err: err },
             "Failed to send autopilot synergy notification:",
           ),
@@ -618,9 +618,9 @@ class AutopilotCoordinatorService extends EventEmitter {
   }
 
   getStatus(userId: string): CoordinatorStatus {
-    const schedule = this?.scheduleQueue.get(userId) || [];
-    const insights = this?.sharedInsights.get(userId) || [];
-    const autopilots = this?.connectedAutopilots.get(userId) || new Set();
+    const schedule = this.scheduleQueue.get(userId) || [];
+    const insights = this.sharedInsights.get(userId) || [];
+    const autopilots = this.connectedAutopilots.get(userId) || new Set();
 
     const now = new Date();
     const upcomingPosts = schedule
@@ -650,7 +650,7 @@ class AutopilotCoordinatorService extends EventEmitter {
     userId: string,
     platform: string,
   ): { hour: number; engagementScore: number }[] {
-    const insights = this?.sharedInsights.get(userId) || [];
+    const insights = this.sharedInsights.get(userId) || [];
     const timingInsights = insights?.filter((i) => i?.insightType === "timing");
 
     const hourlyScores = new Map<number, { total: number; count: number }>();
@@ -670,7 +670,7 @@ class AutopilotCoordinatorService extends EventEmitter {
       }
     }
 
-    const optimalTimes = Array?.from(hourlyScores?.entries())
+    const optimalTimes = Array.from(hourlyScores?.entries())
       .map(([hour, data]) => ({
         hour,
         engagementScore: data.count > 0 ? data?.total / data?.count : 0,
@@ -695,7 +695,7 @@ class AutopilotCoordinatorService extends EventEmitter {
     startDate: Date,
     endDate: Date,
   ): { time: Date; posts: ScheduledPost[] }[] {
-    const schedule = this?.scheduleQueue.get(userId) || [];
+    const schedule = this.scheduleQueue.get(userId) || [];
     const conflicts: { time: Date; posts: ScheduledPost[] }[] = [];
 
     const relevantPosts = schedule?.filter(
@@ -709,11 +709,11 @@ class AutopilotCoordinatorService extends EventEmitter {
       for (let j = i + 1; j < relevantPosts?.length; j++) {
         const timeA = new Date(relevantPosts[i].scheduledTime).getTime();
         const timeB = new Date(relevantPosts[j].scheduledTime).getTime();
-        const gap = Math?.abs(timeA - timeB);
+        const gap = Math.abs(timeA - timeB);
 
         if (gap < MINIMUM_GAP_MS) {
           conflicts?.push({
-            time: new Date(Math?.min(timeA, timeB)),
+            time: new Date(Math.min(timeA, timeB)),
             posts: [relevantPosts[i], relevantPosts[j]],
           });
         }
@@ -724,22 +724,22 @@ class AutopilotCoordinatorService extends EventEmitter {
   }
 
   cancelPost(userId: string, postId: string): boolean {
-    const schedule = this?.scheduleQueue.get(userId);
+    const schedule = this.scheduleQueue.get(userId);
     if (!schedule) return false;
 
     const post = schedule?.find((p) => p?.id === postId);
     if (!post || post?.status !== "scheduled") return false;
 
     post.status = "cancelled";
-    this?.schedulePersist(userId);
-    this?.emit("postCancelled", post);
-    logger?.info(`Post cancelled: ${postId}`);
+    this.schedulePersist(userId);
+    this.emit("postCancelled", post);
+    logger.info(`Post cancelled: ${postId}`);
 
     return true;
   }
 
   clearOldPosts(userId: string, olderThan: Date): number {
-    const schedule = this?.scheduleQueue.get(userId);
+    const schedule = this.scheduleQueue.get(userId);
     if (!schedule) return 0;
 
     const initialCount = schedule?.length;
@@ -747,12 +747,12 @@ class AutopilotCoordinatorService extends EventEmitter {
       (p) => new Date(p?.scheduledTime) >= olderThan || p?.status === "scheduled",
     );
 
-    this?.scheduleQueue.set(userId, filtered);
+    this.scheduleQueue.set(userId, filtered);
     const removed = initialCount - filtered?.length;
 
     if (removed > 0) {
-      this?.schedulePersist(userId);
-      logger?.info(`Cleared ${removed} old posts for user ${userId}`);
+      this.schedulePersist(userId);
+      logger.info(`Cleared ${removed} old posts for user ${userId}`);
     }
 
     return removed;
@@ -763,7 +763,7 @@ class AutopilotCoordinatorService extends EventEmitter {
     advertising: { totalPosts: number; avgEngagement: number };
     combined: { totalPosts: number; avgEngagement: number };
   } {
-    const schedule = this?.scheduleQueue.get(userId) || [];
+    const schedule = this.scheduleQueue.get(userId) || [];
     const postedItems = schedule?.filter(
       (p) => p?.status === "posted" && p?.performance,
     );

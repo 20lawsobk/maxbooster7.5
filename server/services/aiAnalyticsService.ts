@@ -81,9 +81,9 @@ function calculateStandardDeviation(values: number[]): number {
   if (values?.length === 0) return 0;
   const mean = values?.reduce((sum, val) => sum + val, 0) / values?.length;
   const variance =
-    values?.reduce((sum, val) => sum + Math?.pow(val - mean, 2), 0) /
+    values?.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) /
     values?.length;
-  return Math?.sqrt(variance);
+  return Math.sqrt(variance);
 }
 
 
@@ -164,7 +164,7 @@ export async function predictMetric(
 
   const { slope, intercept } = linearRegression(dataPoints);
 
-  const forecastDays = Math?.min(days, 30);
+  const forecastDays = Math.min(days, 30);
   const predictions: Array<{
     date: string;
     value: number;
@@ -173,7 +173,7 @@ export async function predictMetric(
 
   for (let i = 1; i <= forecastDays; i++) {
     const x = dataPoints?.length + i;
-    const predictedValue = Math?.max(0, slope * x + intercept);
+    const predictedValue = Math.max(0, slope * x + intercept);
     const futureDate = new Date();
     futureDate?.setDate(futureDate?.getDate() + i);
 
@@ -181,7 +181,7 @@ export async function predictMetric(
     const stdDev = calculateStandardDeviation(values);
     const mean = values?.reduce((sum, val) => sum + val, 0) / values?.length;
     const confidence =
-      stdDev === 0 ? 1 : Math?.max(0, Math?.min(1, 1 - stdDev / mean));
+      stdDev === 0 ? 1 : Math.max(0, Math.min(1, 1 - stdDev / mean));
 
     predictions?.push({
       date: futureDate.toISOString().split("T")[0],
@@ -191,7 +191,7 @@ export async function predictMetric(
   }
 
   let trend: "up" | "down" | "stable" = "stable";
-  if (Math?.abs(slope) > 0.1) {
+  if (Math.abs(slope) > 0.1) {
     trend = slope > 0 ? "up" : "down";
   }
 
@@ -199,7 +199,7 @@ export async function predictMetric(
   const stdDev = calculateStandardDeviation(values);
   const mean = values?.reduce((sum, val) => sum + val, 0) / values?.length;
   const accuracy =
-    stdDev === 0 ? 1 : Math?.max(0, Math?.min(1, 1 - stdDev / (mean || 1)));
+    stdDev === 0 ? 1 : Math.max(0, Math.min(1, 1 - stdDev / (mean || 1)));
 
   return {
     predictions,
@@ -353,7 +353,7 @@ export async function forecastRevenue(
 
   for (let i = 1; i <= 6; i++) {
     projectedSubs = projectedSubs * (1 + monthlyGrowthRate);
-    const projectedRevenue = Math?.round(projectedSubs * avgSubscriptionValue);
+    const projectedRevenue = Math.round(projectedSubs * avgSubscriptionValue);
 
     const futureMonth = new Date(now);
     futureMonth?.setMonth(futureMonth?.getMonth() + i);
@@ -362,7 +362,7 @@ export async function forecastRevenue(
       month: "short",
     });
 
-    const confidence = Math?.max(0.5, 1 - i * 0.08);
+    const confidence = Math.max(0.5, 1 - i * 0.08);
 
     forecast?.push({
       month: monthName,
@@ -420,7 +420,7 @@ export async function detectAnomalies(): Promise<AnomaliesResponse> {
 
     metric?.values.forEach((value, index) => {
       if (stdDev > 0) {
-        const zScore = Math?.abs((value - mean) / stdDev);
+        const zScore = Math.abs((value - mean) / stdDev);
 
         if (zScore > 2) {
           let severity: "low" | "medium" | "high" = "low";
@@ -436,7 +436,7 @@ export async function detectAnomalies(): Promise<AnomaliesResponse> {
             expectedValue: Number(mean?.toFixed(2)),
             actualValue: value,
             severity,
-            description: `Unusual ${direction} in ${metric?.name}: ${Math?.abs(percentageDiff).toFixed(1)}% ${direction === "spike" ? "above" : "below"} expected value`,
+            description: `Unusual ${direction} in ${metric?.name}: ${Math.abs(percentageDiff).toFixed(1)}% ${direction === "spike" ? "above" : "below"} expected value`,
           });
         }
       }
@@ -492,7 +492,7 @@ export async function generateInsights(): Promise<InsightsResponse> {
       insights?.push({
         type: "warning",
         title: "Declining User Signups",
-        description: `User signups decreased ${Math?.abs(signupGrowth).toFixed(1)}% this week - consider marketing initiatives`,
+        description: `User signups decreased ${Math.abs(signupGrowth).toFixed(1)}% this week - consider marketing initiatives`,
         metric: "user_growth",
         impact: "high",
         actionable: true,
@@ -536,7 +536,7 @@ export async function generateInsights(): Promise<InsightsResponse> {
       insights?.push({
         type: "warning",
         title: "Content Creation Declining",
-        description: `Project uploads decreased ${Math?.abs(projectGrowth).toFixed(1)}% - consider engagement features`,
+        description: `Project uploads decreased ${Math.abs(projectGrowth).toFixed(1)}% - consider engagement features`,
         metric: "content_uploads",
         impact: "medium",
         actionable: true,
@@ -716,7 +716,7 @@ export async function predictCareerGrowth(
       : 0;
 
   const futureDays = timeline === "30d" ? 30 : timeline === "90d" ? 60 : 90;
-  const predictedValue = Math?.max(
+  const predictedValue = Math.max(
     0,
     slope * (dataPoints?.length + futureDays) + intercept,
   );
@@ -729,9 +729,9 @@ export async function predictCareerGrowth(
   const values = historicalData?.map((d) => d?.value);
   const stdDev = calculateStandardDeviation(values);
   const mean = values?.reduce((sum, v) => sum + v, 0) / (values?.length || 1);
-  const confidence = Math?.min(
+  const confidence = Math.min(
     95,
-    Math?.max(50, 100 - (stdDev / (mean || 1)) * 100),
+    Math.max(50, 100 - (stdDev / (mean || 1)) * 100),
   );
 
   const recommendations: string[] = [];
@@ -807,14 +807,14 @@ export async function getCareerMilestones(
   const streamProgress = (streams / nextStreamMilestone) * 100;
   const daysToStreamMilestone =
     streams > 0
-      ? Math?.ceil((nextStreamMilestone - streams) / (streams / 30))
+      ? Math.ceil((nextStreamMilestone - streams) / (streams / 30))
       : 365;
 
   milestones?.push({
     type: "streams",
     current: streams,
     nextMilestone: nextStreamMilestone,
-    progress: Math.min(99, Math?.round(streamProgress)),
+    progress: Math.min(99, Math.round(streamProgress)),
     estimatedDate: new Date(
       Date?.now() + daysToStreamMilestone * 24 * 60 * 60 * 1000,
     ).toLocaleDateString(),
@@ -827,14 +827,14 @@ export async function getCareerMilestones(
   const followerProgress = (followers / nextFollowerMilestone) * 100;
   const daysToFollowerMilestone =
     followers > 0
-      ? Math?.ceil((nextFollowerMilestone - followers) / (followers / 30))
+      ? Math.ceil((nextFollowerMilestone - followers) / (followers / 30))
       : 365;
 
   milestones?.push({
     type: "followers",
     current: followers,
     nextMilestone: nextFollowerMilestone,
-    progress: Math.min(99, Math?.round(followerProgress)),
+    progress: Math.min(99, Math.round(followerProgress)),
     estimatedDate: new Date(
       Date?.now() + daysToFollowerMilestone * 24 * 60 * 60 * 1000,
     ).toLocaleDateString(),
@@ -875,7 +875,7 @@ export async function getFanbaseInsights(userId: string): Promise<FanbaseData> {
   const engagementRate = Number(analyticsData[0]?.engagementRate || 0);
 
   // Calculate active listeners (estimate: 20% of total streams are unique listeners)
-  const activeListeners = Math?.round(totalStreams * 0.2);
+  const activeListeners = Math.round(totalStreams * 0.2);
 
   // Platform distribution — real data from analytics table grouped by platform
   const platformRows = await db

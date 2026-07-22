@@ -34,7 +34,7 @@ router?.get(
         overallStatus: {
           status: systemStatus,
           health: queueHealth.healthy ? "Healthy" : "Needs Attention",
-          uptime: `${(process?.uptime() / 3600).toFixed(1)} hours`,
+          uptime: `${(process.uptime() / 3600).toFixed(1)} hours`,
           lastChecked: new Date(),
         },
 
@@ -126,13 +126,13 @@ router?.get(
         nextActions: getRecommendedActions(dashboard, queueHealth),
       };
 
-      res?.json({
+      res.json({
         success: true,
         dashboard: executiveDashboard,
       });
     } catch (error) {
-      logger?.warn("Error fetching executive dashboard:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error fetching executive dashboard:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -148,7 +148,7 @@ router?.get(
     try {
       const queueHealth = await queueMonitor?.getHealthStatus();
 
-      res?.json({
+      res.json({
         success: true,
         status: queueHealth.healthy ? "HEALTHY" : "DEGRADED",
         message: queueHealth.healthy
@@ -157,8 +157,8 @@ router?.get(
         timestamp: new Date(),
       });
     } catch (error) {
-      logger?.warn("Error fetching health summary:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error fetching health summary:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );

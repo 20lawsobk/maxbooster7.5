@@ -68,7 +68,7 @@ export function useSyncStatus(): UseSyncStatusReturn {
         hasConflicts: stats.conflict > 0,
       }));
     } catch (error) {
-      logger?.error("[useSyncStatus] Failed to load stats:", error);
+      logger.error("[useSyncStatus] Failed to load stats:", error);
     }
   }, []);
 

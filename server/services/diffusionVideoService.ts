@@ -18,7 +18,7 @@ const __metaUrl = (import.meta as Record<string, unknown>)?.url as
   | undefined;
 const __filename = __metaUrl
   ? fileURLToPath(__metaUrl)
-  : path?.resolve(process?.argv[1] ?? "");
+  : path?.resolve(process.argv[1] ?? "");
 const __dirname = path?.dirname(__filename);
 
 const SYNTH_SCRIPT = path?.join(__dirname, "diffusion", "synthesizer.py");
@@ -68,7 +68,7 @@ export function getDiffusionTrainingStatus(): TrainingStatus {
     value = { trained: false };
   } else {
     try {
-      const meta = JSON?.parse(fs?.readFileSync(META_PATH, "utf8"));
+      const meta = JSON.parse(fs?.readFileSync(META_PATH, "utf8"));
       const stat = fs?.statSync(WEIGHTS_PATH);
       value = {
         trained: true,
@@ -201,7 +201,7 @@ export function generateDiffusionFrames(
       try {
         const lines = stdout?.trim().split("\n");
         const jsonLine = lines?.reverse().find((l) => l?.startsWith("{"));
-        if (jsonLine) modelMeta = JSON?.parse(jsonLine);
+        if (jsonLine) modelMeta = JSON.parse(jsonLine);
       } catch {
         /* ignore */
       }
@@ -271,7 +271,7 @@ export interface DigitalGPUStatus {
 }
 
 const PYTORCH_API_BASE =
-  process?.env.VIDEO_DIFFUSION_URL ?? "http://127.0.0.1:8008";
+  process.env.VIDEO_DIFFUSION_URL ?? "http://127.0.0.1:8008";
 
 /** Query DigitalGPU backend capabilities from the diffusion API server. */
 export async function getDigitalGPUStatus(): Promise<DigitalGPUStatus | null> {
@@ -279,8 +279,8 @@ export async function getDigitalGPUStatus(): Promise<DigitalGPUStatus | null> {
     const res = await fetch(`${PYTORCH_API_BASE}/gpu/status`, {
       signal: AbortSignal.timeout(3000),
     });
-    if (!res?.ok) return null;
-    return res?.json() as Promise<DigitalGPUStatus>;
+    if (!res.ok) return null;
+    return res.json() as Promise<DigitalGPUStatus>;
   } catch {
     return null;
   }
@@ -292,8 +292,8 @@ export async function isPyTorchDiffusionReady(): Promise<boolean> {
     const res = await fetch(`${PYTORCH_API_BASE}/ready`, {
       signal: AbortSignal.timeout(2000),
     });
-    if (!res?.ok) return false;
-    const body = (await res?.json()) as { ready?: boolean };
+    if (!res.ok) return false;
+    const body = (await res.json()) as { ready?: boolean };
     return body?.ready === true;
   } catch {
     return false;
@@ -333,12 +333,12 @@ export async function generatePyTorchDiffusionVideo(
     signal: AbortSignal.timeout(120_000), // 2-min budget for inference
   });
 
-  if (!res?.ok) {
-    const msg = await res?.text().catch(() => res?.statusText);
-    throw new Error(`PyTorch diffusion API error ${res?.status}: ${msg}`);
+  if (!res.ok) {
+    const msg = await res.text().catch(() => res.statusText);
+    throw new Error(`PyTorch diffusion API error ${res.status}: ${msg}`);
   }
 
-  return res?.json() as Promise<PyTorchDiffusionResult>;
+  return res.json() as Promise<PyTorchDiffusionResult>;
 }
 
 /**
@@ -380,11 +380,11 @@ export async function* streamPyTorchDiffusion(
     signal: AbortSignal.timeout(180_000),
   });
 
-  if (!res?.ok || !res?.body) {
-    throw new Error(`PyTorch stream error ${res?.status}: ${res?.statusText}`);
+  if (!res.ok || !res.body) {
+    throw new Error(`PyTorch stream error ${res.status}: ${res.statusText}`);
   }
 
-  const reader = res?.body.getReader();
+  const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
 
@@ -399,7 +399,7 @@ export async function* streamPyTorchDiffusion(
     for (const line of lines) {
       if (!line?.startsWith("data: ")) continue;
       try {
-        const evt = JSON?.parse(line?.slice(6));
+        const evt = JSON.parse(line?.slice(6));
         yield evt;
         if (evt?.done) return;
       } catch {
@@ -429,12 +429,12 @@ export async function generatePyTorchKeyframe(
     signal: AbortSignal.timeout(60_000),
   });
 
-  if (!res?.ok) {
-    const msg = await res?.text().catch(() => res?.statusText);
-    throw new Error(`PyTorch keyframe API error ${res?.status}: ${msg}`);
+  if (!res.ok) {
+    const msg = await res.text().catch(() => res.statusText);
+    throw new Error(`PyTorch keyframe API error ${res.status}: ${msg}`);
   }
 
-  return res?.json();
+  return res.json();
 }
 
 // ── Quick sanity test ──────────────────────────────────────────────────────

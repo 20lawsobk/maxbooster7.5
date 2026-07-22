@@ -23,10 +23,10 @@ import { PLATFORM_RULES, getRules, enforceTextLength, type PlatformRules } from 
 // Strip any trailing /api so the base is always the root, then append /api.
 // This means AI_SERVER_URL can be set to either the root or the /api form and both work.
 const _MAXCORE_BASE = (
-  process?.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app"
+  process.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app"
 ).replace(/\/api\/?$/, "");
 const MAXCORE_URL = `${_MAXCORE_BASE}/api`;
-const MAXCORE_KEY = process?.env.AI_SERVER_KEY || "";
+const MAXCORE_KEY = process.env.AI_SERVER_KEY || "";
 
 // ── Port 8008 gateway (MaxCore Diffusion + training time simulator) ──────────
 // This is the primary gateway for ALL content generation on the platform.
@@ -45,17 +45,17 @@ async function dit24GatewayPost(
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(DIT24_PROXY_TIMEOUT_MS),
   });
-  if (!res?.ok) {
-    const text = await res?.text().catch(() => "");
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
     throw new Error(
-      `Port-8008 gateway ${proxyPath} → HTTP ${res?.status}: ${text?.slice(0, 200)}`,
+      `Port-8008 gateway ${proxyPath} → HTTP ${res.status}: ${text?.slice(0, 200)}`,
     );
   }
-  const ct = res?.headers.get("content-type") ?? "";
+  const ct = res.headers.get("content-type") ?? "";
   if (!ct?.includes("application/json")) {
     throw new Error(`Port-8008 gateway ${proxyPath} returned non-JSON`);
   }
-  return res?.json();
+  return res.json();
 }
 
 // Paths proxied through port 8008 → /proxy<path> on the gateway
@@ -95,20 +95,20 @@ async function maxcorePost(
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(timeoutMs),
   });
-  if (!res?.ok) {
-    const text = await res?.text().catch(() => "");
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
     throw new Error(
-      `MaxCore ${path} → HTTP ${res?.status}: ${text?.slice(0, 200)}`,
+      `MaxCore ${path} → HTTP ${res.status}: ${text?.slice(0, 200)}`,
     );
   }
-  const ct = res?.headers.get("content-type") ?? "";
+  const ct = res.headers.get("content-type") ?? "";
   if (!ct?.includes("application/json")) {
-    const text = await res?.text().catch(() => "");
+    const text = await res.text().catch(() => "");
     throw new Error(
       `MaxCore ${path} returned non-JSON (${ct || "no content-type"}): ${text?.slice(0, 200)}`,
     );
   }
-  return res?.json();
+  return res.json();
 }
 
 // ---------------------------------------------------------------------------
@@ -296,7 +296,7 @@ async function fetchUserContext(userId: string): Promise<UserContext> {
     });
     return data;
   } catch (err) {
-    logger?.warn(
+    logger.warn(
       "[MultimodalGen] fetchUserContext DB error (non-fatal):",
       (err as Error)?.message ?? String(err),
     );
@@ -3325,18 +3325,18 @@ export async function handleGeneration(
       independentSteps?.map(async (step) => {
         const worker = workers[step?.worker];
         if (!worker) {
-          logger?.warn(`[MultimodalGen] Unknown worker: ${step?.worker}`);
+          logger.warn(`[MultimodalGen] Unknown worker: ${step?.worker}`);
           stepOutputs?.set(step?.id, []);
           return;
         }
         try {
           const assets = await worker?.run(step, { normalized }, req);
           stepOutputs?.set(step?.id, assets);
-          logger?.info(
+          logger.info(
             `[MultimodalGen] Step ${step?.id} (${step?.worker}) → ${assets?.length} asset(s) [parallel]`,
           );
         } catch (err) {
-          logger?.warn(
+          logger.warn(
             `[MultimodalGen] Step ${step?.id} (${step?.worker}) failed — returning empty assets:`,
             err instanceof Error ? err?.message : String(err),
           );
@@ -3350,12 +3350,12 @@ export async function handleGeneration(
   for (const step of dependentSteps) {
     const worker = workers[step?.worker];
     if (!worker) {
-      logger?.warn(`[MultimodalGen] Unknown worker: ${step?.worker}`);
+      logger.warn(`[MultimodalGen] Unknown worker: ${step?.worker}`);
       continue;
     }
     const inputs = {
       normalized,
-      stepAssets: (Array?.isArray(step?.inputFrom)
+      stepAssets: (Array.isArray(step?.inputFrom)
         ? step?.inputFrom
         : [step?.inputFrom]
       ).flatMap((id: string) => stepOutputs?.get(id) ?? []),
@@ -3363,11 +3363,11 @@ export async function handleGeneration(
     try {
       const assets = await worker?.run(step, inputs, req);
       stepOutputs?.set(step?.id, assets);
-      logger?.info(
+      logger.info(
         `[MultimodalGen] Step ${step?.id} (${step?.worker}) → ${assets?.length} asset(s) [sequential]`,
       );
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         `[MultimodalGen] Step ${step?.id} (${step?.worker}) failed — returning empty assets:`,
         err instanceof Error ? err?.message : String(err),
       );
@@ -3375,9 +3375,9 @@ export async function handleGeneration(
     }
   }
 
-  const allAssets = Array?.from(stepOutputs?.values()).flat();
+  const allAssets = Array.from(stepOutputs?.values()).flat();
 
-  logger?.info(
+  logger.info(
     `[MultimodalGen] Done: id=${req.id}, total_assets=${allAssets?.length}`,
   );
 

@@ -57,8 +57,8 @@ class AutopilotPublisher {
   private static readonly ATTEMPT_TTL_MS = 8 * 24 * 60 * 60 * 1000;
 
   constructor() {
-    this?.startScheduler();
-    this?.startAttemptMapCleanup();
+    this.startScheduler();
+    this.startAttemptMapCleanup();
   }
 
   private startAttemptMapCleanup(): void {
@@ -66,9 +66,9 @@ class AutopilotPublisher {
     setInterval(
       () => {
         const cutoff = Date?.now() - AutopilotPublisher.ATTEMPT_TTL_MS;
-        for (const [userId, lastAttempt] of this?.lastPublishAttempt) {
+        for (const [userId, lastAttempt] of this.lastPublishAttempt) {
           if (lastAttempt?.getTime() < cutoff) {
-            this?.lastPublishAttempt.delete(userId);
+            this.lastPublishAttempt.delete(userId);
           }
         }
         // Safety valve: if the map is still over cap after TTL eviction (e?.g. a
@@ -406,13 +406,13 @@ class AutopilotPublisher {
           ? `Active promotions: ${promoLines?.join("; ")}.`
           : "";
 
-      logger?.info(
+      logger.info(
         `[Autopilot] Storefront context for ${userId}: url=${storefrontUrl} beats=${beatLines.length} promos=${promoLines?.length}`,
       );
 
       return { storefrontUrl, beatContext, promotionContext };
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err },
         `[Autopilot] Failed to fetch storefront context for ${userId} — using defaults`,
       );
@@ -436,10 +436,10 @@ class AutopilotPublisher {
 
       // Fetch live storefront + beat data in parallel with platform selection
       const [targetPlatform, sfContext] = await Promise?.all([
-        this?.pickNextPlatform(userId, platforms),
-        this?.fetchStorefrontContext(userId),
+        this.pickNextPlatform(userId, platforms),
+        this.fetchStorefrontContext(userId),
       ]);
-      logger?.info(
+      logger.info(
         `[Autopilot] User ${userId}: targeting platform "${targetPlatform}" this cycle`,
       );
 
@@ -749,7 +749,7 @@ class AutopilotPublisher {
       const advertisingAI =
         await aiModelManager?.getAdvertisingAutopilot(userId);
       const isTrained = advertisingAI?.getIsTrained();
-      logger?.info(
+      logger.info(
         `[Autopilot] User ${userId}: Advertising AI model ${isTrained ? "trained" : "using base predictions (no campaigns yet)"}`,
       );
 
@@ -800,7 +800,7 @@ class AutopilotPublisher {
       const minThreshold = config?.minConfidenceThreshold || 0.7;
 
       if (confidence < minThreshold) {
-        logger?.info(
+        logger.info(
           `User ${userId}: Campaign confidence ${confidence?.toFixed(2)} below threshold ${minThreshold}, not creating`,
         );
         return {
@@ -826,14 +826,14 @@ class AutopilotPublisher {
           );
         }
         mediaUrl = generatedAsset?.url;
-        logger?.info(
+        logger.info(
           `✅ Generated ${bestCampaign?.mediaType} ad asset for user ${userId}: ${mediaUrl}`,
         );
       }
 
       // Calculate next optimal posting time for advertising
       const primaryPlatform = bestCampaign?.platforms?.[0] || "facebook";
-      const nextOptimalTime = await this?.calculateNextOptimalPostingTime(
+      const nextOptimalTime = await this.calculateNextOptimalPostingTime(
         primaryPlatform,
         config?.postingFrequency || "daily",
         userId,
@@ -880,13 +880,13 @@ class AutopilotPublisher {
         },
       });
 
-      logger?.info(
+      logger.info(
         `✅ User ${userId}: Created ${mediaUrl ? bestCampaign?.mediaType : "text"} ad campaign ${campaign?.id} for ${primaryPlatform} at ${nextOptimalTime?.toISOString()} (confidence: ${confidence?.toFixed(2)}, ROI: ${bestCampaign?.predictedROI.toFixed(2)}x)${mediaUrl ? ` with asset: ${mediaUrl}` : ""}`,
       );
 
       return { campaigns: 1 };
     } catch (error) {
-      logger?.warn({ err: error }, "Error in publishAdvertisingCampaigns:");
+      logger.warn({ err: error }, "Error in publishAdvertisingCampaigns:");
       return { campaigns: 0, error: error.message };
     }
   }

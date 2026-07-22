@@ -65,20 +65,20 @@ export class ApprovalService {
     status: ApprovalStatus,
     hook: (event: StateTransitionEvent) => Promise<void>,
   ) {
-    const hooks = this?.stateTransitionHooks.get(status) || [];
+    const hooks = this.stateTransitionHooks.get(status) || [];
     hooks?.push(hook);
-    this?.stateTransitionHooks.set(status, hooks);
+    this.stateTransitionHooks.set(status, hooks);
   }
 
   private async triggerTransitionHooks(
     event: StateTransitionEvent,
   ): Promise<void> {
-    const hooks = this?.stateTransitionHooks.get(event?.toStatus) || [];
+    const hooks = this.stateTransitionHooks.get(event?.toStatus) || [];
     for (const hook of hooks) {
       try {
         await hook(event);
       } catch (error) {
-        logger?.warn({ err: error }, "State transition hook error:");
+        logger.warn({ err: error }, "State transition hook error:");
       }
     }
   }
@@ -94,7 +94,7 @@ export class ApprovalService {
       }
       return "content_creator";
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "getUserRole error, defaulting to content_creator:",
       );
@@ -103,8 +103,8 @@ export class ApprovalService {
   }
 
   async checkPermission(userId: string, action: string): Promise<boolean> {
-    const userRole = await this?.getUserRole(userId);
-    const permissions = this?.rolePermissions[userRole] || [];
+    const userRole = await this.getUserRole(userId);
+    const permissions = this.rolePermissions[userRole] || [];
     return permissions?.includes(action);
   }
 
@@ -114,16 +114,16 @@ export class ApprovalService {
       res: Response,
       next: NextFunction,
     ) => {
-      if (!req?.user) {
-        return res?.status(401).json({ error: "Unauthorized" });
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const hasPermission = await this?.checkPermission(
-        req?.user.id,
+      const hasPermission = await this.checkPermission(
+        req.user.id,
         requiredAction,
       );
       if (!hasPermission) {
-        return res?.status(403).json({
+        return res.status(403).json({
           error: "Forbidden",
           message: "You do not have permission to perform this action",
         });
@@ -137,7 +137,7 @@ export class ApprovalService {
     currentStatus: ApprovalStatus,
     newStatus: ApprovalStatus,
   ): Promise<boolean> {
-    const allowedTransitions = this?.stateTransitions[currentStatus] || [];
+    const allowedTransitions = this.stateTransitions[currentStatus] || [];
     return allowedTransitions?.includes(newStatus);
   }
 
@@ -157,7 +157,7 @@ export class ApprovalService {
     }
 
     const currentStatus = post?.approvalStatus as ApprovalStatus;
-    const canTransition = await this?.canTransition(currentStatus, newStatus);
+    const canTransition = await this.canTransition(currentStatus, newStatus);
 
     if (!canTransition) {
       return {
@@ -174,7 +174,7 @@ export class ApprovalService {
     userId: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const validation = await this?.validateStateTransition(
+      const validation = await this.validateStateTransition(
         postId,
         "pending_review",
         userId,
@@ -197,7 +197,7 @@ export class ApprovalService {
         })
         .where(eq(posts?.id, postId));
 
-      await this?.logApprovalAction({
+      await this.logApprovalAction({
         postId,
         userId,
         action: "submit_for_review",
@@ -205,11 +205,11 @@ export class ApprovalService {
         toStatus: "pending_review",
       });
 
-      await this?.notifyReviewers(postId, userId);
+      await this.notifyReviewers(postId, userId);
 
       return { success: true };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Submit for review error:");
+      logger.warn({ err: error }, "Submit for review error:");
       return { success: false, error: "Failed to submit for review" };
     }
   }
@@ -220,7 +220,7 @@ export class ApprovalService {
     comment?: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const validation = await this?.validateStateTransition(
+      const validation = await this.validateStateTransition(
         postId,
         "approved",
         userId,
@@ -245,7 +245,7 @@ export class ApprovalService {
         })
         .where(eq(posts?.id, postId));
 
-      await this?.logApprovalAction({
+      await this.logApprovalAction({
         postId,
         userId,
         action: "approve",
@@ -254,11 +254,11 @@ export class ApprovalService {
         comment,
       });
 
-      await this?.notifyPostCreator(postId, userId, "approved", comment);
+      await this.notifyPostCreator(postId, userId, "approved", comment);
 
       return { success: true };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Approve post error:");
+      logger.warn({ err: error }, "Approve post error:");
       return { success: false, error: "Failed to approve post" };
     }
   }
@@ -270,7 +270,7 @@ export class ApprovalService {
     comment?: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const validation = await this?.validateStateTransition(
+      const validation = await this.validateStateTransition(
         postId,
         "rejected",
         userId,
@@ -295,7 +295,7 @@ export class ApprovalService {
         })
         .where(eq(posts?.id, postId));
 
-      await this?.logApprovalAction({
+      await this.logApprovalAction({
         postId,
         userId,
         action: "reject",
@@ -304,11 +304,11 @@ export class ApprovalService {
         comment: `${reason}${comment ? ` - ${comment}` : ""}`,
       });
 
-      await this?.notifyPostCreator(postId, userId, "rejected", reason);
+      await this.notifyPostCreator(postId, userId, "rejected", reason);
 
       return { success: true };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Reject post error:");
+      logger.warn({ err: error }, "Reject post error:");
       return { success: false, error: "Failed to reject post" };
     }
   }
@@ -320,7 +320,7 @@ export class ApprovalService {
     comment?: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const validation = await this?.validateStateTransition(
+      const validation = await this.validateStateTransition(
         postId,
         "scheduled",
         userId,
@@ -352,7 +352,7 @@ export class ApprovalService {
         })
         .where(eq(posts?.id, postId));
 
-      await this?.logApprovalAction({
+      await this.logApprovalAction({
         postId,
         userId,
         action: "schedule",
@@ -362,7 +362,7 @@ export class ApprovalService {
         metadata: { scheduledAt: scheduledAt.toISOString() },
       });
 
-      await this?.triggerTransitionHooks({
+      await this.triggerTransitionHooks({
         postId,
         fromStatus: post.approvalStatus as ApprovalStatus,
         toStatus: "scheduled",
@@ -371,7 +371,7 @@ export class ApprovalService {
         metadata: { scheduledAt: scheduledAt.toISOString() },
       });
 
-      await this?.notifyPostCreator(
+      await this.notifyPostCreator(
         postId,
         userId,
         "approved",
@@ -380,7 +380,7 @@ export class ApprovalService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Schedule post error:");
+      logger.warn({ err: error }, "Schedule post error:");
       return { success: false, error: "Failed to schedule post" };
     }
   }
@@ -391,7 +391,7 @@ export class ApprovalService {
     comment?: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const validation = await this?.validateStateTransition(
+      const validation = await this.validateStateTransition(
         postId,
         "published",
         userId,
@@ -415,7 +415,7 @@ export class ApprovalService {
         })
         .where(eq(posts?.id, postId));
 
-      await this?.logApprovalAction({
+      await this.logApprovalAction({
         postId,
         userId,
         action: "publish",
@@ -424,7 +424,7 @@ export class ApprovalService {
         comment,
       });
 
-      await this?.triggerTransitionHooks({
+      await this.triggerTransitionHooks({
         postId,
         fromStatus: post.approvalStatus as ApprovalStatus,
         toStatus: "published",
@@ -434,7 +434,7 @@ export class ApprovalService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Publish post error:");
+      logger.warn({ err: error }, "Publish post error:");
       return { success: false, error: "Failed to publish post" };
     }
   }
@@ -459,7 +459,7 @@ export class ApprovalService {
         metadata: params.metadata || {},
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Log approval action error:");
+      logger.warn({ err: error }, "Log approval action error:");
     }
   }
 
@@ -485,14 +485,14 @@ export class ApprovalService {
 
       return history;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get approval history error:");
+      logger.warn({ err: error }, "Get approval history error:");
       return [];
     }
   }
 
   async getPendingApprovals(userId: string): Promise<any[]> {
     try {
-      const userRole = await this?.getUserRole(userId);
+      const userRole = await this.getUserRole(userId);
 
       if (!["reviewer", "manager", "admin"].includes(userRole)) {
         return [];
@@ -558,7 +558,7 @@ export class ApprovalService {
 
       return enrichedPosts;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get pending approvals error:");
+      logger.warn({ err: error }, "Get pending approvals error:");
       return [];
     }
   }
@@ -598,7 +598,7 @@ export class ApprovalService {
         }
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Notify reviewers error:");
+      logger.warn({ err: error }, "Notify reviewers error:");
     }
   }
 
@@ -632,13 +632,13 @@ export class ApprovalService {
         metadata: { postId, status, reviewerId },
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Notify post creator error:");
+      logger.warn({ err: error }, "Notify post creator error:");
     }
   }
 
   async getUserPosts(userId: string, status?: ApprovalStatus): Promise<any[]> {
     try {
-      const userRole = await this?.getUserRole(userId);
+      const userRole = await this.getUserRole(userId);
       let query = db
         .select({
           id: posts.id,
@@ -675,7 +675,7 @@ export class ApprovalService {
         .limit(500);
       return results;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get user posts error:");
+      logger.warn({ err: error }, "Get user posts error:");
       return [];
     }
   }

@@ -63,27 +63,27 @@ class PromotionalToolsService {
   }
 
   getAutopilotForUser(userId: string): AutopilotEngine {
-    if (!this?.autopilotEngines.has(userId)) {
-      if (this?.autopilotEngines.size >= PromotionalToolsService.MAX_ENGINES) {
-        this?.evictOldestEngine(this?.autopilotEngines);
+    if (!this.autopilotEngines.has(userId)) {
+      if (this.autopilotEngines.size >= PromotionalToolsService.MAX_ENGINES) {
+        this.evictOldestEngine(this.autopilotEngines);
       }
       const engine = AutopilotEngine?.createForSocialAndAds(userId);
-      this?.autopilotEngines.set(userId, engine);
+      this.autopilotEngines.set(userId, engine);
     }
-    return this?.autopilotEngines.get(userId)!;
+    return this.autopilotEngines.get(userId)!;
   }
 
   getAutonomousAutopilotForUser(userId: string): AutonomousAutopilot {
-    if (!this?.autonomousAutopilots.has(userId)) {
+    if (!this.autonomousAutopilots.has(userId)) {
       if (
-        this?.autonomousAutopilots.size >= PromotionalToolsService.MAX_ENGINES
+        this.autonomousAutopilots.size >= PromotionalToolsService.MAX_ENGINES
       ) {
-        this?.evictOldestEngine(this?.autonomousAutopilots);
+        this.evictOldestEngine(this.autonomousAutopilots);
       }
       const autopilot = AutonomousAutopilot?.createForSocialAndAds(userId);
-      this?.autonomousAutopilots.set(userId, autopilot);
+      this.autonomousAutopilots.set(userId, autopilot);
     }
-    return this?.autonomousAutopilots.get(userId)!;
+    return this.autonomousAutopilots.get(userId)!;
   }
 
   async createPreSavePage(
@@ -99,7 +99,7 @@ class PromotionalToolsService {
       throw new Error("Release not found");
     }
 
-    const slug = config?.slug || this?.generateSlug(release?.title);
+    const slug = config?.slug || this.generateSlug(release?.title);
 
     const [page] = await db
       .insert(preSavePages)
@@ -129,10 +129,10 @@ class PromotionalToolsService {
       })
       .returning();
 
-    const autopilot = this?.getAutopilotForUser(userId);
+    const autopilot = this.getAutopilotForUser(userId);
     autopilot?.emit("preSavePageCreated", { pageId: page.id, releaseId });
 
-    logger?.info("Pre-save page created:", { pageId: page.id, slug: page.slug });
+    logger.info("Pre-save page created:", { pageId: page.id, slug: page.slug });
     return page;
   }
 
@@ -177,7 +177,7 @@ class PromotionalToolsService {
     event: "view" | "presave" | "email" | "click",
     platform?: string,
   ): Promise<void> {
-    const page = await this?.getPreSavePage(pageId);
+    const page = await this.getPreSavePage(pageId);
     if (!page) return;
 
     const updates: Partial<PreSavePage> = {};
@@ -208,7 +208,7 @@ class PromotionalToolsService {
   }
 
   async captureEmail(pageId: string, email: string): Promise<boolean> {
-    const page = await this?.getPreSavePage(pageId);
+    const page = await this.getPreSavePage(pageId);
     if (!page || !page?.emailCapture) return false;
 
     const emailList = (page?.emailList as string[]) || [];
@@ -300,7 +300,7 @@ class PromotionalToolsService {
         coverArtUrl: release.artworkUrl,
       });
 
-      const result = await this?.pocketService.storeFile(
+      const result = await this.pocketService.storeFile(
         userId,
         `promo-card-${cardId}.png`,
         imageBuffer,
@@ -313,7 +313,7 @@ class PromotionalToolsService {
       );
       generatedImageUrl = `/api/storage/file/${result?.fileKey}`;
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to generate promo card image:");
+      logger.warn({ err: error }, "Failed to generate promo card image:");
     }
 
     const [card] = await db
@@ -340,7 +340,7 @@ class PromotionalToolsService {
       })
       .returning();
 
-    logger?.info("Promo card created:", { cardId: card.id, type: config.type });
+    logger.info("Promo card created:", { cardId: card.id, type: config.type });
     return card;
   }
 
@@ -414,7 +414,7 @@ class PromotionalToolsService {
       })
       .returning();
 
-    logger?.info("Mini video created:", {
+    logger.info("Mini video created:", {
       videoId: video.id,
       type: config.type,
     });
@@ -472,7 +472,7 @@ class PromotionalToolsService {
       })
       .returning();
 
-    logger?.info("Spotify Canvas created:", { canvasId: canvas.id, trackId });
+    logger.info("Spotify Canvas created:", { canvasId: canvas.id, trackId });
     return canvas;
   }
 
@@ -513,7 +513,7 @@ class PromotionalToolsService {
       .where(eq(spotifyCanvases?.id, canvasId))
       .returning();
 
-    logger?.info("Spotify Canvas submitted:", { canvasId });
+    logger.info("Spotify Canvas submitted:", { canvasId });
     return updated;
   }
 
@@ -552,7 +552,7 @@ class PromotionalToolsService {
   ): Promise<LyricsSync> {
     let lyrics: unknown[] = [];
     if (config?.syncMethod === "auto" || config?.syncMethod === "ai") {
-      lyrics = this?.autoSyncLyrics(config?.plainText);
+      lyrics = this.autoSyncLyrics(config?.plainText);
     }
 
     const [sync] = await db
@@ -569,7 +569,7 @@ class PromotionalToolsService {
       })
       .returning();
 
-    logger?.info("Lyrics sync created:", { syncId: sync.id, trackId });
+    logger.info("Lyrics sync created:", { syncId: sync.id, trackId });
     return sync;
   }
 
@@ -617,7 +617,7 @@ class PromotionalToolsService {
       .where(eq(lyricsSyncs?.id, syncId))
       .returning();
 
-    logger?.info("Lyrics submitted to platforms:", {
+    logger.info("Lyrics submitted to platforms:", {
       syncId,
       platforms: sync.platforms,
     });
@@ -651,7 +651,7 @@ class PromotionalToolsService {
     const lyricsArray = (sync?.lyrics as unknown[]) || [];
     let lrc = "";
     for (const line of lyricsArray) {
-      const minutes = Math?.floor(line?.startTime / 60);
+      const minutes = Math.floor(line?.startTime / 60);
       const seconds = (line?.startTime % 60).toFixed(2);
       lrc += `[${minutes?.toString().padStart(2, "0")}:${seconds?.padStart(5, "0")}]${line?.text}\n`;
     }
@@ -662,18 +662,18 @@ class PromotionalToolsService {
     const lyricsArray = (sync?.lyrics as unknown[]) || [];
     let srt = "";
     lyricsArray?.forEach((line, index) => {
-      const startTime = this?.formatSRTTime(line?.startTime);
-      const endTime = this?.formatSRTTime(line?.endTime);
+      const startTime = this.formatSRTTime(line?.startTime);
+      const endTime = this.formatSRTTime(line?.endTime);
       srt += `${index + 1}\n${startTime} --> ${endTime}\n${line?.text}\n\n`;
     });
     return srt;
   }
 
   private formatSRTTime(seconds: number): string {
-    const hours = Math?.floor(seconds / 3600);
-    const mins = Math?.floor((seconds % 3600) / 60);
-    const secs = Math?.floor(seconds % 60);
-    const ms = Math?.floor((seconds % 1) * 1000);
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    const ms = Math.floor((seconds % 1) * 1000);
     return `${hours?.toString().padStart(2, "0")}:${mins?.toString().padStart(2, "0")}:${secs?.toString().padStart(2, "0")},${ms?.toString().padStart(3, "0")}`;
   }
 
@@ -689,12 +689,12 @@ class PromotionalToolsService {
   }
 
   async calculateArtistScore(userId: string): Promise<ArtistScore> {
-    this?.getAutonomousAutopilotForUser(userId);
+    this.getAutonomousAutopilotForUser(userId);
 
-    const streamingScore = Math?.random() * 100;
-    const socialScore = Math?.random() * 100;
-    const playlistScore = Math?.random() * 100;
-    const radioScore = Math?.random() * 100;
+    const streamingScore = Math.random() * 100;
+    const socialScore = Math.random() * 100;
+    const playlistScore = Math.random() * 100;
+    const radioScore = Math.random() * 100;
 
     const artistScore =
       streamingScore * 0.4 +
@@ -738,7 +738,7 @@ class PromotionalToolsService {
       })
       .returning();
 
-    logger?.info("Artist score calculated:", {
+    logger.info("Artist score calculated:", {
       userId,
       artistScore,
       careerStage,
@@ -783,13 +783,13 @@ class PromotionalToolsService {
       })
       .returning();
 
-    const autopilot = this?.getAutopilotForUser(userId);
+    const autopilot = this.getAutopilotForUser(userId);
     autopilot?.emit("beatPromotionCreated", {
       promotionId: promo.id,
       listingId,
     });
 
-    logger?.info("Beat promotion created:", { promoId: promo.id, listingId });
+    logger.info("Beat promotion created:", { promoId: promo.id, listingId });
     return promo;
   }
 
@@ -840,7 +840,7 @@ class PromotionalToolsService {
       .values(recommendations)
       .returning();
 
-    logger?.info("Personalized recommendations generated:", {
+    logger.info("Personalized recommendations generated:", {
       userId,
       count: inserted.length,
     });
@@ -851,7 +851,7 @@ class PromotionalToolsService {
     userId: string,
     releaseId: string,
   ): Promise<void> {
-    const autopilot = this?.getAutonomousAutopilotForUser(userId);
+    const autopilot = this.getAutonomousAutopilotForUser(userId);
 
     await autopilot?.startAutonomousMode({
       enabled: true,
@@ -860,7 +860,7 @@ class PromotionalToolsService {
       crossPlatformSyncing: true,
     });
 
-    logger?.info("Autonomous promotion started:", { userId, releaseId });
+    logger.info("Autonomous promotion started:", { userId, releaseId });
   }
 }
 

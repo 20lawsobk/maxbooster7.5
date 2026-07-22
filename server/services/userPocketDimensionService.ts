@@ -35,14 +35,14 @@ export class UserPocketDimensionService {
   private acquireWriteLock(userId: string): Promise<() => void> {
     let release!: () => void;
     const pending: Promise<void> = (
-      this?.writeLocks.get(userId) ?? Promise?.resolve()
+      this.writeLocks.get(userId) ?? Promise?.resolve()
     ).then(
       () =>
         new Promise<void>((res) => {
           release = res;
         }),
     );
-    this?.writeLocks.set(
+    this.writeLocks.set(
       userId,
       pending?.then(
         () => {},
@@ -67,8 +67,8 @@ export class UserPocketDimensionService {
     userId: string,
     email: string,
   ): Promise<UserStorage> {
-    const storagePrefix = this?.generateStoragePrefix(userId);
-    const encryptionKey = this?.generateEncryptionKey(userId, email);
+    const storagePrefix = this.generateStoragePrefix(userId);
+    const encryptionKey = this.generateEncryptionKey(userId, email);
 
     try {
       const pocket = await pocketManager?.openPocket(`user-${userId}`, {
@@ -81,7 +81,7 @@ export class UserPocketDimensionService {
 
       await pocket?.write(
         ".pocket-init",
-        JSON?.stringify({
+        JSON.stringify({
           createdAt: new Date().toISOString(),
           userId,
           version: "1.0.0",
@@ -114,13 +114,13 @@ export class UserPocketDimensionService {
         })
         .returning();
 
-      this?.activePockets.set(userId, pocket);
+      this.activePockets.set(userId, pocket);
 
-      logger?.info(`[PocketDimension] Created storage space for user ${userId}`);
+      logger.info(`[PocketDimension] Created storage space for user ${userId}`);
 
       return storage;
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `[PocketDimension] Failed to create storage for user ${userId}:`,
       );
@@ -179,7 +179,7 @@ export class UserPocketDimensionService {
       metadata?: Record<string, any>;
     },
   ): Promise<{ fileKey: string; sizeBytes: number; compressedSize: number }> {
-    const pocket = await this?.getUserPocket(userId);
+    const pocket = await this.getUserPocket(userId);
     if (!pocket) {
       throw new Error(`Storage not initialized for user ${userId}`);
     }
@@ -218,7 +218,7 @@ export class UserPocketDimensionService {
         .where(eq(userStorage?.id, storage?.id));
     }
 
-    logger?.info(`[PocketDimension] Stored file ${fileKey} for user ${userId}`);
+    logger.info(`[PocketDimension] Stored file ${fileKey} for user ${userId}`);
 
     return {
       fileKey,
@@ -243,7 +243,7 @@ export class UserPocketDimensionService {
    * Delete a file from user's pocket dimension
    */
   async deleteFile(userId: string, fileKey: string): Promise<boolean> {
-    const pocket = await this?.getUserPocket(userId);
+    const pocket = await this.getUserPocket(userId);
     if (!pocket) {
       return false;
     }
@@ -340,7 +340,7 @@ export class UserPocketDimensionService {
     userId: string,
     dimensionName: string,
   ): Promise<PocketDimension> {
-    const pocket = await this?.getUserPocket(userId);
+    const pocket = await this.getUserPocket(userId);
     if (!pocket) {
       throw new Error(`Storage not initialized for user ${userId}`);
     }
@@ -406,11 +406,11 @@ export class UserPocketDimensionService {
    * Stored in ai-journey/profile?.json — accumulates taste signals over time.
    */
   async getAiProfile(userId: string): Promise<Record<string, any>> {
-    const pocket = await this?.getUserPocket(userId);
+    const pocket = await this.getUserPocket(userId);
     if (!pocket) return {};
     try {
       const raw = await pocket?.read("ai-journey/profile.json");
-      return JSON?.parse(raw?.toString());
+      return JSON.parse(raw?.toString());
     } catch {
       return {};
     }
@@ -420,18 +420,18 @@ export class UserPocketDimensionService {
     userId: string,
     updates: Record<string, any>,
   ): Promise<void> {
-    const pocket = await this?.getUserPocket(userId);
+    const pocket = await this.getUserPocket(userId);
     if (!pocket) return;
     // Serialise concurrent updates to prevent last-write-wins overwrite.
-    const release = await this?.acquireWriteLock(userId);
+    const release = await this.acquireWriteLock(userId);
     try {
-      const current = await this?.getAiProfile(userId);
+      const current = await this.getAiProfile(userId);
       const merged = {
         ...current,
         ...updates,
         updatedAt: new Date().toISOString(),
       };
-      await pocket?.write("ai-journey/profile.json", JSON?.stringify(merged));
+      await pocket?.write("ai-journey/profile.json", JSON.stringify(merged));
     } finally {
       release();
     }
@@ -480,10 +480,10 @@ export class UserPocketDimensionService {
    * Close a user's pocket dimension (free memory)
    */
   async closeUserPocket(userId: string): Promise<void> {
-    const pocket = this?.activePockets.get(userId);
+    const pocket = this.activePockets.get(userId);
     if (pocket) {
       await pocketManager?.closePocket(`user-${userId}`);
-      this?.activePockets.delete(userId);
+      this.activePockets.delete(userId);
     }
   }
 

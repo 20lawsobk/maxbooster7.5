@@ -118,7 +118,7 @@ class DunningService {
         .limit(1);
 
       if (existing?.length > 0) {
-        logger?.info(
+        logger.info(
           `[Dunning] Sequence already started for invoice ${invoiceId}`,
         );
         return;
@@ -133,9 +133,9 @@ class DunningService {
         nextEmailAt,
       });
 
-      await this?.sendStep(userId, invoiceId, 0);
+      await this.sendStep(userId, invoiceId, 0);
     } catch (err) {
-      logger?.warn({ err: err }, "[Dunning] Failed to start sequence:");
+      logger.warn({ err: err }, "[Dunning] Failed to start sequence:");
     }
   }
 
@@ -149,20 +149,20 @@ class DunningService {
         .set({ resolvedAt: new Date(), resolvedReason: reason })
         .where(eq(dunningState?.stripeInvoiceId, invoiceId));
 
-      logger?.info(
+      logger.info(
         `[Dunning] Resolved sequence for invoice ${invoiceId} (${reason})`,
       );
     } catch (err) {
-      logger?.warn({ err: err }, "[Dunning] Failed to resolve sequence:");
+      logger.warn({ err: err }, "[Dunning] Failed to resolve sequence:");
     }
   }
 
   async processPendingSteps(): Promise<void> {
     try {
       // Keep existing entry point, call paged version
-      await this?.processPendingStepsPaged(50);
+      await this.processPendingStepsPaged(50);
     } catch (err) {
-      logger?.warn({ err: err }, "[Dunning] Failed to process pending steps:");
+      logger.warn({ err: err }, "[Dunning] Failed to process pending steps:");
     }
   }
 
@@ -196,7 +196,7 @@ class DunningService {
           continue;
         }
 
-        await this?.sendStep(
+        await this.sendStep(
           record?.userId,
           record?.stripeInvoiceId,
           record?.currentStep,
@@ -216,7 +216,7 @@ class DunningService {
       }
       return processed;
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err: err },
         "[Dunning] Failed to process pending steps paged:",
       );
@@ -252,7 +252,7 @@ class DunningService {
 
     await emailService?.sendTransactional(email, stepConfig?.subject, html);
 
-    logger?.info(
+    logger.info(
       `[Dunning] Step ${step} email sent to ${email} for invoice ${invoiceId}`,
     );
   }

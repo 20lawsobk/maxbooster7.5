@@ -53,7 +53,7 @@ class MidiTransformService {
   transpose(notes: MidiNote[], semitones: number): MidiNote[] {
     return notes?.map((note) => ({
       ...note,
-      note: Math.max(0, Math?.min(127, note?.note + semitones)),
+      note: Math.max(0, Math.min(127, note?.note + semitones)),
     }));
   }
 
@@ -65,7 +65,7 @@ class MidiTransformService {
 
     return notes?.map((note) => ({
       ...note,
-      note: Math.max(0, Math?.min(127, Math?.round(2 * pivot - note?.note))),
+      note: Math.max(0, Math.min(127, Math.round(2 * pivot - note?.note))),
     }));
   }
 
@@ -85,7 +85,7 @@ class MidiTransformService {
   }
 
   retrogradeInversion(notes: MidiNote[], pivotNote?: number): MidiNote[] {
-    return this?.retrograde(this?.invert(notes, pivotNote));
+    return this.retrograde(this.invert(notes, pivotNote));
   }
 
   augment(notes: MidiNote[], factor: number): MidiNote[] {
@@ -97,7 +97,7 @@ class MidiTransformService {
   }
 
   diminish(notes: MidiNote[], factor: number): MidiNote[] {
-    return this?.augment(notes, 1 / factor);
+    return this.augment(notes, 1 / factor);
   }
 
   addOrnament(notes: MidiNote[], config: OrnamentConfig): MidiNote[] {
@@ -106,22 +106,22 @@ class MidiTransformService {
     for (const note of notes) {
       switch (config?.type) {
         case "trill":
-          result?.push(...this?.createTrill(note, config));
+          result?.push(...this.createTrill(note, config));
           break;
         case "mordent":
-          result?.push(...this?.createMordent(note, config));
+          result?.push(...this.createMordent(note, config));
           break;
         case "turn":
-          result?.push(...this?.createTurn(note, config));
+          result?.push(...this.createTurn(note, config));
           break;
         case "graceNote":
-          result?.push(...this?.createGraceNote(note, config));
+          result?.push(...this.createGraceNote(note, config));
           break;
         case "tremolo":
-          result?.push(...this?.createTremolo(note, config));
+          result?.push(...this.createTremolo(note, config));
           break;
         case "glissando":
-          result?.push(...this?.createGlissando(note, config));
+          result?.push(...this.createGlissando(note, config));
           break;
         default:
           result?.push(note);
@@ -223,7 +223,7 @@ class MidiTransformService {
         ...note,
         startTime: note.startTime + i * noteDuration,
         duration: noteDuration * 0.9,
-        velocity: Math.round(note?.velocity * (0.7 + Math?.random() * 0.3)),
+        velocity: Math.round(note?.velocity * (0.7 + Math.random() * 0.3)),
       });
     }
 
@@ -232,7 +232,7 @@ class MidiTransformService {
 
   private createGlissando(note: MidiNote, config: OrnamentConfig): MidiNote[] {
     const interval = config?.interval || 12;
-    const count = Math?.abs(interval);
+    const count = Math.abs(interval);
     const noteDuration = note?.duration / count;
     const direction = interval > 0 ? 1 : -1;
     const result: MidiNote[] = [];
@@ -259,7 +259,7 @@ class MidiTransformService {
     let chordGroups: Map<number, MidiNote[]> = new Map();
 
     for (const note of sorted) {
-      const key = Math?.round(note?.startTime * 1000);
+      const key = Math.round(note?.startTime * 1000);
       if (!chordGroups?.has(key)) {
         chordGroups?.set(key, []);
       }
@@ -273,18 +273,18 @@ class MidiTransformService {
         let velocityMultiplier = 1;
         switch (config?.velocityCurve) {
           case "exponential":
-            velocityMultiplier = Math?.pow(index / orderedChord?.length, 0.5);
+            velocityMultiplier = Math.pow(index / orderedChord?.length, 0.5);
             break;
           case "logarithmic":
             velocityMultiplier =
-              Math?.log(index + 2) / Math?.log(orderedChord?.length + 2);
+              Math.log(index + 2) / Math.log(orderedChord?.length + 2);
             break;
           default:
             velocityMultiplier = 1 - (index / orderedChord?.length) * 0.2;
         }
 
         const humanizeOffset = config?.humanize
-          ? (Math?.random() - 0.5) * strumDelay * 0.2
+          ? (Math.random() - 0.5) * strumDelay * 0.2
           : 0;
 
         result?.push({
@@ -317,16 +317,16 @@ class MidiTransformService {
         case "exponential":
           timeFactor =
             config?.type === "accelerando"
-              ? Math?.pow(position, config?.factor)
-              : Math?.pow(position, 1 / config?.factor);
+              ? Math.pow(position, config?.factor)
+              : Math.pow(position, 1 / config?.factor);
           break;
         case "sine":
           timeFactor =
             config?.type === "accelerando"
               ? position -
-                Math?.sin(position * Math.PI * 2) * (config?.factor - 1) * 0.1
+                Math.sin(position * Math.PI * 2) * (config?.factor - 1) * 0.1
               : position +
-                Math?.sin(position * Math.PI * 2) * (config?.factor - 1) * 0.1;
+                Math.sin(position * Math.PI * 2) * (config?.factor - 1) * 0.1;
           break;
         default:
           const adjustment = (config?.factor - 1) * position;
@@ -361,9 +361,9 @@ class MidiTransformService {
       let minDistance = Infinity;
 
       for (const scaleNote of scaleNotes) {
-        const distance = Math?.min(
-          Math?.abs(noteClass - scaleNote),
-          12 - Math?.abs(noteClass - scaleNote),
+        const distance = Math.min(
+          Math.abs(noteClass - scaleNote),
+          12 - Math.abs(noteClass - scaleNote),
         );
 
         if (distance < minDistance) {
@@ -375,7 +375,7 @@ class MidiTransformService {
 
       return {
         ...note,
-        note: Math.max(0, Math?.min(127, closestNote)),
+        note: Math.max(0, Math.min(127, closestNote)),
       };
     });
   }
@@ -386,7 +386,7 @@ class MidiTransformService {
     strength: number = 1,
   ): MidiNote[] {
     return notes?.map((note) => {
-      const quantizedStart = Math?.round(note?.startTime / gridSize) * gridSize;
+      const quantizedStart = Math.round(note?.startTime / gridSize) * gridSize;
       const newStart =
         note?.startTime + (quantizedStart - note?.startTime) * strength;
 
@@ -444,7 +444,7 @@ class MidiTransformService {
           break;
         case "swell":
           velocityMultiplier =
-            0.5 + Math?.sin(position * Math.PI) * 0.5 * intensity;
+            0.5 + Math.sin(position * Math.PI) * 0.5 * intensity;
           break;
         case "accent":
           velocityMultiplier = position < 0.1 ? 1 + 0.3 * intensity : 1;
@@ -457,7 +457,7 @@ class MidiTransformService {
         ...note,
         velocity: Math.max(
           1,
-          Math?.min(127, Math?.round(note?.velocity * velocityMultiplier)),
+          Math.min(127, Math.round(note?.velocity * velocityMultiplier)),
         ),
       };
     });
@@ -476,30 +476,30 @@ class MidiTransformService {
       ...note,
       note: Math.max(
         0,
-        Math?.min(
+        Math.min(
           127,
           note?.note +
-            Math?.round((Math?.random() - 0.5) * 2 * (options?.pitchRange || 0)),
+            Math.round((Math.random() - 0.5) * 2 * (options?.pitchRange || 0)),
         ),
       ),
       velocity: Math.max(
         1,
-        Math?.min(
+        Math.min(
           127,
           note?.velocity +
-            Math?.round(
-              (Math?.random() - 0.5) * 2 * (options?.velocityRange || 0),
+            Math.round(
+              (Math.random() - 0.5) * 2 * (options?.velocityRange || 0),
             ),
         ),
       ),
       startTime: Math.max(
         0,
-        note?.startTime + (Math?.random() - 0.5) * 2 * (options?.timingRange || 0),
+        note?.startTime + (Math.random() - 0.5) * 2 * (options?.timingRange || 0),
       ),
       duration: Math.max(
         0.01,
         note?.duration *
-          (1 + (Math?.random() - 0.5) * 2 * (options?.durationRange || 0)),
+          (1 + (Math.random() - 0.5) * 2 * (options?.durationRange || 0)),
       ),
     }));
   }

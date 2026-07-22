@@ -71,7 +71,7 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
       '[data-navigable="true"]',
     ].join(",");
 
-    return Array?.from(
+    return Array.from(
       containerRef?.current.querySelectorAll<HTMLElement>(selector),
     ).filter((el) => {
       const style = window?.getComputedStyle(el);
@@ -82,7 +82,7 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
   const setFocusedIndex = useCallback(
     (index: number) => {
       const items = getNavigableItems();
-      const clampedIndex = Math?.max(-1, Math?.min(index, items?.length - 1));
+      const clampedIndex = Math.max(-1, Math.min(index, items?.length - 1));
 
       setFocusedIndexState(clampedIndex);
 
@@ -152,9 +152,9 @@ export function useKeyboardNavigation<T extends HTMLElement = HTMLDivElement>(
 
     if (prevIndex < 0) {
       if (loop) {
-        const lastRowStart = Math?.floor((items?.length - 1) / columns) * columns;
+        const lastRowStart = Math.floor((items?.length - 1) / columns) * columns;
         const colOffset = focusedIndex % columns;
-        setFocusedIndex(Math?.min(lastRowStart + colOffset, items?.length - 1));
+        setFocusedIndex(Math.min(lastRowStart + colOffset, items?.length - 1));
       }
     } else {
       setFocusedIndex(prevIndex);

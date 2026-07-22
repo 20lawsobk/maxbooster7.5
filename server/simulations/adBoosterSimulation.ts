@@ -185,7 +185,7 @@ function calculateViralCoefficient(
   crossPlatformBoost: number,
 ): number {
   const qualityBonus = (contentQuality / 100) * 0.5;
-  const networkBonus = Math?.log10(audienceSize) * 0.2;
+  const networkBonus = Math.log10(audienceSize) * 0.2;
   const crossPlatformBonus = crossPlatformBoost * 0.3;
 
   return baseCoefficient + qualityBonus + networkBonus + crossPlatformBonus;
@@ -237,7 +237,7 @@ function simulateAIBoosterOrganic(
   const qualityMultiplier = getContentQualityMultiplier(
     campaign?.contentQuality,
   );
-  Math?.sqrt(campaign?.duration); // Compounding effects over time
+  Math.sqrt(campaign?.duration); // Compounding effects over time
 
   // Cross-platform synergy: posting on multiple platforms creates amplification
   const crossPlatformBoost = 1 + (campaign?.platforms.length - 1) * 0.15;
@@ -273,7 +273,7 @@ function simulateAIBoosterOrganic(
     // Viral reach compounds over time
     const viralReach =
       optimizedReach *
-      Math?.pow(viralCoefficient, Math?.log2(campaign?.duration + 1));
+      Math.pow(viralCoefficient, Math.log2(campaign?.duration + 1));
 
     const totalPlatformReach = optimizedReach + viralReach;
     const engagement = totalPlatformReach * organic?.engagement_rate;
@@ -487,8 +487,8 @@ export async function runComprehensiveSimulation(): Promise<{
   const amplifications = scenarios?.map((s) => s?.amplificationFactor);
   const averageAmplification =
     amplifications?.reduce((a, b) => a + b, 0) / amplifications?.length;
-  const minAmplification = Math?.min(...amplifications);
-  const maxAmplification = Math?.max(...amplifications);
+  const minAmplification = Math.min(...amplifications);
+  const maxAmplification = Math.max(...amplifications);
   const allScenariosPass = amplifications?.every((amp) => amp >= 2.0);
 
   const totalCostSavings = scenarios?.reduce((sum, s) => {

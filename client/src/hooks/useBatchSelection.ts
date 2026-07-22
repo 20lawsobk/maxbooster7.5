@@ -56,7 +56,7 @@ export function useBatchSelection<T = string>(
       try {
         const stored = localStorage?.getItem(`batch_selection_${persistKey}`);
         if (stored) {
-          const parsed = JSON?.parse(stored);
+          const parsed = JSON.parse(stored);
           return new Set(parsed);
         }
       } catch {}
@@ -74,7 +74,7 @@ export function useBatchSelection<T = string>(
       try {
         localStorage?.setItem(
           `batch_selection_${persistKey}`,
-          JSON?.stringify(Array?.from(selectedIds)),
+          JSON.stringify(Array.from(selectedIds)),
         );
       } catch {}
     }
@@ -83,9 +83,9 @@ export function useBatchSelection<T = string>(
   const updateSelection = useCallback(
     (newSelection: Set<T>, newOrder?: T[]) => {
       setSelectedIds(newSelection);
-      const order = newOrder || Array?.from(newSelection);
+      const order = newOrder || Array.from(newSelection);
       setSelectionOrder(order);
-      onSelectionChange?.(Array?.from(newSelection), order);
+      onSelectionChange?.(Array.from(newSelection), order);
     },
     [onSelectionChange],
   );
@@ -244,7 +244,7 @@ export function useBatchSelection<T = string>(
     (allIds: T[], count: number) => {
       const idsToSelect = allIds?.slice(
         0,
-        Math?.min(count, maxSelection || Infinity),
+        Math.min(count, maxSelection || Infinity),
       );
       updateSelection(new Set(idsToSelect), idsToSelect);
     },
@@ -253,10 +253,10 @@ export function useBatchSelection<T = string>(
 
   const selectLast = useCallback(
     (allIds: T[], count: number) => {
-      const start = Math?.max(0, allIds?.length - count);
+      const start = Math.max(0, allIds?.length - count);
       const idsToSelect = allIds?.slice(
         start,
-        Math?.min(allIds?.length, start + (maxSelection || Infinity)),
+        Math.min(allIds?.length, start + (maxSelection || Infinity)),
       );
       updateSelection(new Set(idsToSelect), idsToSelect);
     },
@@ -271,7 +271,7 @@ export function useBatchSelection<T = string>(
         total,
         selected,
         unselected: total - selected,
-        percentage: total > 0 ? Math?.round((selected / total) * 100) : 0,
+        percentage: total > 0 ? Math.round((selected / total) * 100) : 0,
       };
     },
     [selectedIds],

@@ -61,7 +61,7 @@ export function useUniversalUpload() {
   useToast();
 
   const generateId = () =>
-    `upload_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    `upload_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
   const validateFile = useCallback(
     (file: File, options: UploadOptions): string | null => {
@@ -128,7 +128,7 @@ export function useUniversalUpload() {
         formData?.append(fieldName, file, file?.name);
 
         if (options?.additionalData) {
-          Object?.entries(options?.additionalData).forEach(([key, value]) => {
+          Object.entries(options?.additionalData).forEach(([key, value]) => {
             if (value !== undefined && value !== null) {
               formData?.append(key, value);
             }
@@ -137,7 +137,7 @@ export function useUniversalUpload() {
 
         xhr?.upload.addEventListener("progress", (e) => {
           if (e?.lengthComputable) {
-            const progress = Math?.round((e?.loaded / e?.total) * 100);
+            const progress = Math.round((e?.loaded / e?.total) * 100);
             const updated: UploadProgress = {
               id: uploadId,
               fileName: file.name,
@@ -155,7 +155,7 @@ export function useUniversalUpload() {
           if (xhr?.status >= 200 && xhr?.status < 300) {
             let response: Record<string, unknown>;
             try {
-              response = JSON?.parse(xhr?.responseText);
+              response = JSON.parse(xhr?.responseText);
             } catch {
               response = { success: true };
             }
@@ -182,7 +182,7 @@ export function useUniversalUpload() {
           } else {
             let errorMessage = "Upload failed";
             try {
-              const response = JSON?.parse(xhr?.responseText);
+              const response = JSON.parse(xhr?.responseText);
               errorMessage =
                 response?.message ||
                 response?.error ||

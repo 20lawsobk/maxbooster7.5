@@ -75,7 +75,7 @@ export function useUndoableAction<T, Args extends unknown[]>(
             isDestructive: metadata.isDestructive,
           });
         } catch (error) {
-          logger?.warn("Failed to sync action to backend:", error);
+          logger.warn("Failed to sync action to backend:", error);
         }
       }
 
@@ -170,7 +170,7 @@ export function useUndoableCreate<T extends { id: string }>(
             entityType,
           });
         } catch (error) {
-          logger?.warn("Failed to sync action to backend:", error);
+          logger.warn("Failed to sync action to backend:", error);
         }
       }
 
@@ -232,7 +232,7 @@ export function useUndoableUpdate<T>(
             newState: newData,
           });
         } catch (error) {
-          logger?.warn("Failed to sync action to backend:", error);
+          logger.warn("Failed to sync action to backend:", error);
         }
       }
 
@@ -290,7 +290,7 @@ export function useUndoableSettingsChange<T extends Record<string, unknown>>(
             newState: newSettings,
           });
         } catch (error) {
-          logger?.warn("Failed to sync action to backend:", error);
+          logger.warn("Failed to sync action to backend:", error);
         }
       }
 

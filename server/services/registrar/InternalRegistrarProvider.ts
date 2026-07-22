@@ -112,9 +112,9 @@ export class InternalRegistrarProvider implements RegistrarProvider {
 
     // Auto-create DNS zone — always active/verified for Max Booster-registered domains.
     // Subscription payment is the authorization; no TXT ownership proof is required.
-    await this?._ensureDnsZone(domainLower, userId, true);
+    await this._ensureDnsZone(domainLower, userId, true);
 
-    logger?.info(
+    logger.info(
       { fqdn: domainLower, provider: this.name },
       "[InternalRegistrar] domain registered",
     );
@@ -150,7 +150,7 @@ export class InternalRegistrarProvider implements RegistrarProvider {
       .set({ expiresAt, status: "active", updatedAt: new Date() })
       .where(eq(claimedDomains?.id, row?.id));
 
-    logger?.info(
+    logger.info(
       { fqdn, years, expiresAt, provider: this.name },
       "[InternalRegistrar] domain renewed",
     );
@@ -164,7 +164,7 @@ export class InternalRegistrarProvider implements RegistrarProvider {
       .update(claimedDomains)
       .set({ nameserver1: ns1, nameserver2: ns2, updatedAt: new Date() })
       .where(eq(claimedDomains?.domain, fqdn?.toLowerCase()));
-    logger?.info(
+    logger.info(
       { fqdn, ns1, ns2, provider: this.name },
       "[InternalRegistrar] nameservers updated",
     );
@@ -203,12 +203,12 @@ export class InternalRegistrarProvider implements RegistrarProvider {
         fqdn?.toLowerCase(),
       ]);
     } catch (e) {
-      logger?.warn(
+      logger.warn(
         { fqdn, err: e.message },
         "[InternalRegistrar] DNS zone removal on release failed (non-fatal)",
       );
     }
-    logger?.info(
+    logger.info(
       { fqdn, provider: this.name },
       "[InternalRegistrar] domain released (soft)",
     );
@@ -288,9 +288,9 @@ export class InternalRegistrarProvider implements RegistrarProvider {
           `${NS1} hostmaster.${PLATFORM_DOMAIN} 1 3600 900 604800 300`,
         ],
       );
-      logger?.info({ fqdn, zoneId }, "[InternalRegistrar] DNS zone ensured");
+      logger.info({ fqdn, zoneId }, "[InternalRegistrar] DNS zone ensured");
     } catch (e) {
-      logger?.warn(
+      logger.warn(
         { fqdn, err: e.message },
         "[InternalRegistrar] _ensureDnsZone failed (non-fatal)",
       );

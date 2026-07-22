@@ -44,7 +44,7 @@ router?.use(billingRateLimiter);
 
 const stripeSecretKey = env?.STRIPE_SECRET_KEY;
 if (!stripeSecretKey) {
-  logger?.warn(
+  logger.warn(
     "[Billing] STRIPE_SECRET_KEY not configured. Billing endpoints will return errors.",
   );
 }
@@ -61,7 +61,7 @@ const requireStripe = (
   next: Record<string, unknown>,
 ) => {
   if (!stripe) {
-    return res?.status(503).json({
+    return res.status(503).json({
       message: "Billing service not configured",
       code: "STRIPE_NOT_CONFIGURED",
       retryable: false,
@@ -194,21 +194,21 @@ async function getOrCreateStripeCustomer(
         saved = true;
         break;
       } catch (dbErr: unknown) {
-        logger?.warn(
+        logger.warn(
           `[Billing] Failed to save stripeCustomerId (attempt ${attempt}/3): ${dbErr instanceof Error ? dbErr?.message : String(dbErr)}`,
         );
         if (attempt < 3) await new Promise((r) => setTimeout(r, attempt * 500));
       }
     }
     if (!saved) {
-      logger?.warn(
+      logger.warn(
         `[Billing] Could not persist stripeCustomerId ${customer?.id} for user ${user?.id} after 3 attempts`,
       );
     }
 
     return customer?.id;
   } catch (error) {
-    logger?.warn({ err: error }, "[Billing] Failed to create Stripe customer");
+    logger.warn({ err: error }, "[Billing] Failed to create Stripe customer");
     throw new Error("Failed to create billing account. Please try again.");
   }
 }
@@ -285,7 +285,7 @@ const PLAN_BENEFITS = {
 
 router?.get("/plans", async (_req: Request, res: Response) => {
   try {
-    res?.json({
+    res.json({
       plans: [
         {
           id: "monthly",
@@ -327,8 +327,8 @@ router?.get("/plans", async (_req: Request, res: Response) => {
       ],
     });
   } catch (error) {
-    logger?.warn({ err: error }, "[Billing] Failed to fetch plans:");
-    res?.status(500).json({
+    logger.warn({ err: error }, "[Billing] Failed to fetch plans:");
+    res.status(500).json({
       message: "Failed to fetch plans",
       code: "PLANS_FETCH_ERROR",
       retryable: true,
@@ -342,7 +342,7 @@ router?.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       if (!stripe) {
-        return res?.status(503).json({
+        return res.status(503).json({
           message: "Billing service not configured",
           code: "STRIPE_NOT_CONFIGURED",
           retryable: false,
@@ -350,7 +350,7 @@ router?.post(
         });
       }
 
-      const { planId } = req?.body;
+      const { planId } = req.body;
       if (!planId || !["monthly", "yearly", "lifetime"].includes(planId)) {
         return res
           .status(400)
@@ -360,10 +360,10 @@ router?.post(
           });
       }
 
-      const userId = req?.user!.id;
-      const customerId = await getOrCreateStripeCustomer(req?.user);
+      const userId = req.user!.id;
+      const customerId = await getOrCreateStripeCustomer(req.user);
       const appUrl =
-        process?.env.APP_URL || process?.env.DOMAIN || "https://max-booster.com";
+        process.env.APP_URL || process.env.DOMAIN || "https://max-booster.com";
 
       const priceMap: Record<
         string,
@@ -408,9 +408,9 @@ router?.post(
       };
 
       const session = await stripe?.checkout.sessions?.create(sessionParams);
-      res?.json({ url: session.url, sessionId: session.id });
+      res.json({ url: session.url, sessionId: session.id });
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "[Billing] Failed to create checkout session:",
       );
@@ -429,7 +429,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       const [user] = await db
         .select()
@@ -438,7 +438,7 @@ router?.get(
         .limit(1);
 
       if (!user) {
-        return res?.status(404).json({
+        return res.status(404).json({
           message: "User not found",
           code: "USER_NOT_FOUND",
         });
@@ -471,7 +471,7 @@ router?.get(
             pastDueSubscription ||
             null;
         } catch (err) {
-          logger?.warn(
+          logger.warn(
             { err: err },
             "[Billing] Failed to fetch Stripe subscription:",
           );
@@ -508,9 +508,9 @@ router?.get(
         ) {
           isTrialing = true;
           trialEndsAt = new Date(stripeSubscription?.trial_end * 1000);
-          trialDaysRemaining = Math?.max(
+          trialDaysRemaining = Math.max(
             0,
-            Math?.ceil(
+            Math.ceil(
               (trialEndsAt?.getTime() - now?.getTime()) / (1000 * 60 * 60 * 24),
             ),
           );
@@ -546,7 +546,7 @@ router?.get(
         subscriptionEndsAt < now &&
         user?.subscriptionTier !== "lifetime";
       const daysUntilRenewal = subscriptionEndsAt
-        ? Math?.ceil(
+        ? Math.ceil(
             (subscriptionEndsAt?.getTime() - now?.getTime()) /
               (1000 * 60 * 60 * 24),
           )
@@ -573,7 +573,7 @@ router?.get(
       }
       // Lifetime has no upgrades or downgrades
 
-      res?.json({
+      res.json({
         tier: currentTier,
         status: computedStatus,
         statusBadge,
@@ -627,7 +627,7 @@ router?.get(
               days,
             );
           } catch (err) {
-            logger?.warn(
+            logger.warn(
               { err: err },
               "Subscription expiring notification error:",
             );
@@ -635,8 +635,8 @@ router?.get(
         });
       }
     } catch (error) {
-      logger?.warn({ err: error }, "[Billing] Failed to get subscription:");
-      res?.status(500).json({
+      logger.warn({ err: error }, "[Billing] Failed to get subscription:");
+      res.status(500).json({
         message: "Failed to get subscription details",
         code: "SUBSCRIPTION_FETCH_ERROR",
         retryable: true,
@@ -650,7 +650,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       const [user] = await db
         .select()
@@ -659,11 +659,11 @@ router?.get(
         .limit(1);
 
       if (!user?.stripeCustomerId) {
-        return res?.json({ last4: null, expiry: null, brand: null });
+        return res.json({ last4: null, expiry: null, brand: null });
       }
 
       if (!stripe) {
-        return res?.json({ last4: null, expiry: null, brand: null });
+        return res.json({ last4: null, expiry: null, brand: null });
       }
 
       try {
@@ -675,20 +675,20 @@ router?.get(
 
         if (paymentMethods?.data.length > 0) {
           const pm = paymentMethods?.data[0];
-          return res?.json({
+          return res.json({
             last4: pm.card?.last4,
             expiry: `${pm?.card?.exp_month}/${pm?.card?.exp_year}`,
             brand: pm.card?.brand,
           });
         }
       } catch (err) {
-        logger?.warn({ err: err }, "[Billing] Failed to fetch payment methods:");
+        logger.warn({ err: err }, "[Billing] Failed to fetch payment methods:");
       }
 
-      res?.json({ last4: null, expiry: null, brand: null });
+      res.json({ last4: null, expiry: null, brand: null });
     } catch (error) {
-      logger?.warn({ err: error }, "[Billing] Failed to get payment method:");
-      res?.status(500).json({ error: "Failed to get payment method" });
+      logger.warn({ err: error }, "[Billing] Failed to get payment method:");
+      res.status(500).json({ error: "Failed to get payment method" });
     }
   },
 );
@@ -698,7 +698,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       const [user] = await db
         .select()
@@ -708,7 +708,7 @@ router?.get(
 
       // No Stripe customer yet — user has no billing history
       if (!user?.stripeCustomerId || !stripe) {
-        return res?.json([]);
+        return res.json([]);
       }
 
       try {
@@ -728,14 +728,14 @@ router?.get(
           pdfUrl: invoice.invoice_pdf,
         }));
 
-        return res?.json(history);
+        return res.json(history);
       } catch (err) {
-        logger?.warn({ err: err }, "[Billing] Failed to fetch invoices:");
-        return res?.json([]);
+        logger.warn({ err: err }, "[Billing] Failed to fetch invoices:");
+        return res.json([]);
       }
     } catch (error) {
-      logger?.warn({ err: error }, "[Billing] Failed to get billing history:");
-      res?.status(500).json({ error: "Failed to get billing history" });
+      logger.warn({ err: error }, "[Billing] Failed to get billing history:");
+      res.status(500).json({ error: "Failed to get billing history" });
     }
   },
 );
@@ -746,15 +746,15 @@ router?.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       if (!stripe) {
-        return res?.status(503).json({
+        return res.status(503).json({
           message: "Billing service not configured",
           code: "STRIPE_NOT_CONFIGURED",
           retryable: false,
         });
       }
 
-      const userId = req?.user!.id;
-      const { immediately = false, reason } = req?.body;
+      const userId = req.user!.id;
+      const { immediately = false, reason } = req.body;
 
       const [user] = await db
         .select()
@@ -763,7 +763,7 @@ router?.post(
         .limit(1);
 
       if (user?.subscriptionTier === "lifetime") {
-        return res?.status(400).json({
+        return res.status(400).json({
           message: "Lifetime subscriptions cannot be cancelled",
           code: "LIFETIME_CANNOT_CANCEL",
           retryable: false,
@@ -771,7 +771,7 @@ router?.post(
       }
 
       if (!user?.stripeCustomerId) {
-        return res?.status(404).json({
+        return res.status(404).json({
           message: "No subscription found",
           code: "SUBSCRIPTION_NOT_FOUND",
           retryable: false,
@@ -784,7 +784,7 @@ router?.post(
       });
 
       if (subscriptions?.data.length === 0) {
-        return res?.status(404).json({
+        return res.status(404).json({
           message: "No subscription found",
           code: "SUBSCRIPTION_NOT_FOUND",
           retryable: false,
@@ -794,7 +794,7 @@ router?.post(
       const subscription = subscriptions?.data[0];
 
       if (subscription?.status === "canceled") {
-        return res?.status(400).json({
+        return res.status(400).json({
           message: "Subscription is already cancelled",
           code: "SUBSCRIPTION_ALREADY_CANCELLED",
           retryable: false,
@@ -802,7 +802,7 @@ router?.post(
       }
 
       if (subscription?.cancel_at_period_end) {
-        return res?.status(400).json({
+        return res.status(400).json({
           message: "Subscription is already set to cancel",
           code: "SUBSCRIPTION_ALREADY_CANCELLING",
           retryable: false,
@@ -827,11 +827,11 @@ router?.post(
           .where(eq(users?.id, userId))
           .limit(1);
 
-        logger?.info(
+        logger.info(
           `[Billing] Subscription ${subscription?.id} cancelled immediately for user ${userId}`,
         );
 
-        res?.json({
+        res.json({
           success: true,
           message: "Subscription has been cancelled immediately",
           code: "SUBSCRIPTION_CANCELLED_IMMEDIATELY",
@@ -843,11 +843,11 @@ router?.post(
           metadata,
         });
 
-        logger?.info(
+        logger.info(
           `[Billing] Subscription ${subscription?.id} set to cancel at period end for user ${userId}`,
         );
 
-        res?.json({
+        res.json({
           success: true,
           message:
             "Subscription will be canceled at the end of the billing period",
@@ -862,9 +862,9 @@ router?.post(
         });
       }
     } catch (error) {
-      logger?.warn({ err: error }, "[Billing] Failed to cancel subscription:");
+      logger.warn({ err: error }, "[Billing] Failed to cancel subscription:");
       const mappedError = mapStripeError(error);
-      res?.status(mappedError?.status).json({
+      res.status(mappedError?.status).json({
         message: mappedError.message,
         code: mappedError.code,
         retryable: mappedError.retryable,
@@ -879,14 +879,14 @@ router?.post(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       if (!stripe) {
-        return res?.status(503).json({
+        return res.status(503).json({
           message: "Billing service not configured",
           code: "STRIPE_NOT_CONFIGURED",
           retryable: false,
         });
       }
 
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       const [user] = await db
         .select()
@@ -895,7 +895,7 @@ router?.post(
         .limit(1);
 
       if (!user?.stripeCustomerId) {
-        return res?.status(404).json({
+        return res.status(404).json({
           message: "No subscription found",
           code: "SUBSCRIPTION_NOT_FOUND",
           retryable: false,
@@ -908,7 +908,7 @@ router?.post(
       });
 
       if (subscriptions?.data.length === 0) {
-        return res?.status(404).json({
+        return res.status(404).json({
           message: "No subscription found",
           code: "SUBSCRIPTION_NOT_FOUND",
           retryable: false,
@@ -918,7 +918,7 @@ router?.post(
       const subscription = subscriptions?.data[0];
 
       if (subscription?.status === "canceled") {
-        return res?.status(400).json({
+        return res.status(400).json({
           message:
             "Subscription has been fully cancelled. Please create a new subscription.",
           code: "SUBSCRIPTION_FULLY_CANCELLED",
@@ -928,7 +928,7 @@ router?.post(
       }
 
       if (!subscription?.cancel_at_period_end) {
-        return res?.status(400).json({
+        return res.status(400).json({
           message: "Subscription is already active",
           code: "SUBSCRIPTION_ALREADY_ACTIVE",
           retryable: false,
@@ -942,7 +942,7 @@ router?.post(
       });
 
       if (paymentMethods?.data.length === 0) {
-        return res?.status(402).json({
+        return res.status(402).json({
           message:
             "No payment method on file. Please add a payment method first.",
           code: "PAYMENT_METHOD_REQUIRED",
@@ -961,11 +961,11 @@ router?.post(
         .where(eq(users?.id, userId))
         .limit(1);
 
-      logger?.info(
+      logger.info(
         `[Billing] Subscription ${subscription?.id} reactivated for user ${userId}`,
       );
 
-      res?.json({
+      res.json({
         success: true,
         message: "Subscription has been reactivated",
         code: "SUBSCRIPTION_REACTIVATED",
@@ -974,12 +974,12 @@ router?.post(
         ).toISOString(),
       });
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "[Billing] Failed to reactivate subscription:",
       );
       const mappedError = mapStripeError(error);
-      res?.status(mappedError?.status).json({
+      res.status(mappedError?.status).json({
         message: mappedError.message,
         code: mappedError.code,
         retryable: mappedError.retryable,
@@ -994,15 +994,15 @@ router?.get(
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       if (!stripe) {
-        return res?.status(503).json({
+        return res.status(503).json({
           message: "Billing service not configured",
           code: "STRIPE_NOT_CONFIGURED",
           retryable: false,
         });
       }
 
-      const userId = req?.user!.id;
-      const { invoiceId } = req?.params;
+      const userId = req.user!.id;
+      const { invoiceId } = req.params;
 
       const [user] = await db
         .select()
@@ -1011,7 +1011,7 @@ router?.get(
         .limit(1);
 
       if (!user?.stripeCustomerId) {
-        return res?.status(400).json({
+        return res.status(400).json({
           message: "No billing account found",
           code: "NO_BILLING_ACCOUNT",
           retryable: false,
@@ -1027,7 +1027,7 @@ router?.get(
           "code" in stripeError &&
           stripeError?.code === "resource_missing"
         ) {
-          return res?.status(404).json({
+          return res.status(404).json({
             message: "Invoice not found",
             code: "INVOICE_NOT_FOUND",
             retryable: false,
@@ -1037,10 +1037,10 @@ router?.get(
       }
 
       if (invoice?.customer !== user?.stripeCustomerId) {
-        logger?.warn(
+        logger.warn(
           `[Billing] User ${userId} attempted to access invoice ${invoiceId} belonging to another customer`,
         );
-        return res?.status(403).json({
+        return res.status(403).json({
           message: "You do not have permission to access this invoice",
           code: "INVOICE_ACCESS_DENIED",
           retryable: false,
@@ -1048,11 +1048,11 @@ router?.get(
       }
 
       if (invoice?.invoice_pdf) {
-        return res?.redirect(invoice?.invoice_pdf);
+        return res.redirect(invoice?.invoice_pdf);
       }
 
       if (invoice?.status === "draft") {
-        return res?.status(400).json({
+        return res.status(400).json({
           message:
             "Invoice is still in draft status and PDF is not yet available",
           code: "INVOICE_DRAFT",
@@ -1060,15 +1060,15 @@ router?.get(
         });
       }
 
-      res?.status(404).json({
+      res.status(404).json({
         message: "Invoice PDF not available",
         code: "INVOICE_PDF_NOT_AVAILABLE",
         retryable: false,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "[Billing] Failed to download invoice:");
+      logger.warn({ err: error }, "[Billing] Failed to download invoice:");
       const mappedError = mapStripeError(error);
-      res?.status(mappedError?.status).json({
+      res.status(mappedError?.status).json({
         message: mappedError.message,
         code: mappedError.code,
         retryable: mappedError.retryable,
@@ -1088,8 +1088,8 @@ router?.post(
           .json({ error: "Billing service not configured" });
       }
 
-      const userId = req?.user!.id;
-      const customerId = await getOrCreateStripeCustomer(req?.user);
+      const userId = req.user!.id;
+      const customerId = await getOrCreateStripeCustomer(req.user);
 
       const session = await stripe?.checkout.sessions?.create({
         customer: customerId,
@@ -1100,10 +1100,10 @@ router?.post(
         metadata: { userId },
       });
 
-      res?.json({ url: session.url });
+      res.json({ url: session.url });
     } catch (error) {
-      logger?.warn({ err: error }, "[Billing] Failed to create setup session:");
-      res?.status(500).json({ error: "Failed to update payment method" });
+      logger.warn({ err: error }, "[Billing] Failed to create setup session:");
+      res.status(500).json({ error: "Failed to update payment method" });
     }
   },
 );
@@ -1119,7 +1119,7 @@ router?.post(
           .json({ error: "Billing service not configured" });
       }
 
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       const [user] = await db
         .select()
@@ -1128,18 +1128,18 @@ router?.post(
         .limit(1);
 
       if (!user?.stripeCustomerId) {
-        return res?.status(400).json({ error: "No billing account found" });
+        return res.status(400).json({ error: "No billing account found" });
       }
 
       const portalSession = await stripe?.billingPortal.sessions?.create({
         customer: user.stripeCustomerId,
-        return_url: `${process?.env.APP_URL || "https://max-booster.com"}/settings`,
+        return_url: `${process.env.APP_URL || "https://max-booster.com"}/settings`,
       });
 
-      res?.json({ url: portalSession.url });
+      res.json({ url: portalSession.url });
     } catch (error) {
-      logger?.warn({ err: error }, "[Billing] Failed to create portal session:");
-      res?.status(500).json({ error: "Failed to access billing portal" });
+      logger.warn({ err: error }, "[Billing] Failed to create portal session:");
+      res.status(500).json({ error: "Failed to access billing portal" });
     }
   },
 );
@@ -1149,18 +1149,18 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { orderId, amountCents, reason } = req?.body;
+      const userId = req.user!.id;
+      const { orderId, amountCents, reason } = req.body;
 
       if (!orderId) {
-        return res?.status(400).json({ error: "Order ID is required" });
+        return res.status(400).json({ error: "Order ID is required" });
       }
 
       // SECURITY FIX: Validate amountCents is a positive number
       if (amountCents !== undefined) {
         if (
           typeof amountCents !== "number" ||
-          !Number?.isInteger(amountCents) ||
+          !Number.isInteger(amountCents) ||
           amountCents <= 0
         ) {
           return res
@@ -1184,17 +1184,17 @@ router?.post(
       });
 
       if (!result?.success) {
-        return res?.status(400).json({ error: result.error });
+        return res.status(400).json({ error: result.error });
       }
 
-      res?.json({
+      res.json({
         success: true,
         refundId: result.refundId,
         message: "Refund initiated successfully",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "[Billing] Failed to create refund:");
-      res?.status(500).json({ error: "Failed to process refund" });
+      logger.warn({ err: error }, "[Billing] Failed to create refund:");
+      res.status(500).json({ error: "Failed to process refund" });
     }
   },
 );
@@ -1204,21 +1204,21 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { refundId } = req?.params;
+      const { refundId } = req.params;
 
       const refund = await stripeService?.getRefundStatus(refundId);
 
-      if (refund?.userId !== req?.user!.id) {
-        return res?.status(403).json({ error: "Forbidden" });
+      if (refund?.userId !== req.user!.id) {
+        return res.status(403).json({ error: "Forbidden" });
       }
 
-      res?.json(refund);
+      res.json(refund);
     } catch (error) {
       if (error instanceof Error && error?.message === "Refund not found") {
-        return res?.status(404).json({ error: "Refund not found" });
+        return res.status(404).json({ error: "Refund not found" });
       }
-      logger?.warn({ err: error }, "[Billing] Failed to get refund status:");
-      res?.status(500).json({ error: "Failed to get refund status" });
+      logger.warn({ err: error }, "[Billing] Failed to get refund status:");
+      res.status(500).json({ error: "Failed to get refund status" });
     }
   },
 );
@@ -1228,14 +1228,14 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { orderId } = req?.params;
+      const { orderId } = req.params;
 
       const refunds = await stripeService?.getOrderRefunds(orderId);
 
-      res?.json({ refunds });
+      res.json({ refunds });
     } catch (error) {
-      logger?.warn({ err: error }, "[Billing] Failed to get order refunds:");
-      res?.status(500).json({ error: "Failed to get order refunds" });
+      logger.warn({ err: error }, "[Billing] Failed to get order refunds:");
+      res.status(500).json({ error: "Failed to get order refunds" });
     }
   },
 );
@@ -1245,10 +1245,10 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 500);
-      const offset = Math?.min(
-        Math?.max(parseInt(req?.query.offset as string) || 0, 0),
+      const userId = req.user!.id;
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
+      const offset = Math.min(
+        Math.max(parseInt(req.query.offset as string) || 0, 0),
         100_000,
       );
 
@@ -1258,10 +1258,10 @@ router?.get(
         offset,
       );
 
-      res?.json({ entries, pagination: { limit, offset } });
+      res.json({ entries, pagination: { limit, offset } });
     } catch (error) {
-      logger?.warn({ err: error }, "[Billing] Failed to get ledger history:");
-      res?.status(500).json({ error: "Failed to get ledger history" });
+      logger.warn({ err: error }, "[Billing] Failed to get ledger history:");
+      res.status(500).json({ error: "Failed to get ledger history" });
     }
   },
 );
@@ -1272,7 +1272,7 @@ router?.post(
   requireStripe,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       const [user] = await db
         .select()
@@ -1281,7 +1281,7 @@ router?.post(
         .limit(1);
 
       if (!user?.stripeCustomerId) {
-        return res?.status(404).json({
+        return res.status(404).json({
           message: "No billing account found",
           code: "NO_BILLING_ACCOUNT",
           retryable: false,
@@ -1304,7 +1304,7 @@ router?.post(
         });
 
         if (unpaidSubs?.data.length === 0) {
-          return res?.status(400).json({
+          return res.status(400).json({
             message: "No past due payments found",
             code: "NO_PAST_DUE_PAYMENT",
             retryable: false,
@@ -1318,7 +1318,7 @@ router?.post(
       );
 
       if (latestInvoice?.status === "paid") {
-        return res?.json({
+        return res.json({
           success: true,
           message: "Payment has already been processed",
           code: "ALREADY_PAID",
@@ -1341,9 +1341,9 @@ router?.post(
             .where(eq(users?.id, userId))
             .limit(1);
 
-          logger?.info(`[Billing] Payment retry successful for user ${userId}`);
+          logger.info(`[Billing] Payment retry successful for user ${userId}`);
 
-          return res?.json({
+          return res.json({
             success: true,
             message: "Payment successful! Your subscription is now active.",
             code: "PAYMENT_SUCCESS",
@@ -1358,7 +1358,7 @@ router?.post(
             latestInvoice?.payment_intent as string,
           );
 
-          return res?.status(402).json({
+          return res.status(402).json({
             message: "Additional authentication required",
             code: "REQUIRES_3D_SECURE",
             requires_action: true,
@@ -1367,7 +1367,7 @@ router?.post(
           });
         }
 
-        return res?.status(mappedError?.status).json({
+        return res.status(mappedError?.status).json({
           message: mappedError.message,
           code: mappedError.code,
           retryable: mappedError.retryable,
@@ -1378,15 +1378,15 @@ router?.post(
         });
       }
 
-      res?.status(500).json({
+      res.status(500).json({
         message: "Payment retry failed",
         code: "RETRY_FAILED",
         retryable: true,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "[Billing] Failed to retry payment:");
+      logger.warn({ err: error }, "[Billing] Failed to retry payment:");
       const mappedError = mapStripeError(error);
-      res?.status(mappedError?.status).json({
+      res.status(mappedError?.status).json({
         message: mappedError.message,
         code: mappedError.code,
         retryable: mappedError.retryable,
@@ -1401,7 +1401,7 @@ router?.delete(
   requireStripe,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       const [user] = await db
         .select()
@@ -1410,7 +1410,7 @@ router?.delete(
         .limit(1);
 
       if (!user?.stripeCustomerId) {
-        return res?.status(404).json({
+        return res.status(404).json({
           message: "No billing account found",
           code: "NO_BILLING_ACCOUNT",
         });
@@ -1426,7 +1426,7 @@ router?.delete(
         subscriptions?.data.length > 0 &&
         !user?.subscriptionTier?.includes("lifetime")
       ) {
-        return res?.status(400).json({
+        return res.status(400).json({
           message:
             "Cannot remove payment method with an active subscription. Please cancel your subscription first or add a new payment method before removing this one.",
           code: "ACTIVE_SUBSCRIPTION_EXISTS",
@@ -1442,7 +1442,7 @@ router?.delete(
       });
 
       if (paymentMethods?.data.length === 0) {
-        return res?.status(404).json({
+        return res.status(404).json({
           message: "No payment method found",
           code: "NO_PAYMENT_METHOD",
         });
@@ -1452,17 +1452,17 @@ router?.delete(
         await stripe!.paymentMethods?.detach(pm?.id);
       }
 
-      logger?.info(`[Billing] Payment method removed for user ${userId}`);
+      logger.info(`[Billing] Payment method removed for user ${userId}`);
 
-      res?.json({
+      res.json({
         success: true,
         message: "Payment method removed successfully",
         code: "PAYMENT_METHOD_REMOVED",
       });
     } catch (error) {
-      logger?.warn({ err: error }, "[Billing] Failed to remove payment method:");
+      logger.warn({ err: error }, "[Billing] Failed to remove payment method:");
       const mappedError = mapStripeError(error);
-      res?.status(mappedError?.status).json({
+      res.status(mappedError?.status).json({
         message: mappedError.message,
         code: mappedError.code,
       });
@@ -1476,11 +1476,11 @@ router?.post(
   requireStripe,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { paymentIntentId, paymentMethodId } = req?.body;
+      const userId = req.user!.id;
+      const { paymentIntentId, paymentMethodId } = req.body;
 
       if (!paymentIntentId) {
-        return res?.status(400).json({
+        return res.status(400).json({
           message: "Payment intent ID is required",
           code: "MISSING_PAYMENT_INTENT",
           retryable: false,
@@ -1505,9 +1505,9 @@ router?.post(
             .limit(1);
         }
 
-        logger?.info(`[Billing] 3DS confirmation successful for user ${userId}`);
+        logger.info(`[Billing] 3DS confirmation successful for user ${userId}`);
 
-        return res?.json({
+        return res.json({
           success: true,
           message: "3D Secure authentication completed successfully",
           code: "3DS_SUCCESS",
@@ -1534,7 +1534,7 @@ router?.post(
               .where(eq(users?.id, userId))
               .limit(1);
 
-            return res?.json({
+            return res.json({
               success: true,
               message: "Payment confirmed successfully",
               code: "3DS_SUCCESS",
@@ -1543,7 +1543,7 @@ router?.post(
           }
 
           if (confirmedIntent?.status === "requires_action") {
-            return res?.status(402).json({
+            return res.status(402).json({
               message: "Additional authentication required",
               code: "REQUIRES_3D_SECURE",
               clientSecret: confirmedIntent.client_secret,
@@ -1553,7 +1553,7 @@ router?.post(
           }
         }
 
-        return res?.status(402).json({
+        return res.status(402).json({
           message: "Payment requires additional authentication",
           code: "REQUIRES_ACTION",
           clientSecret: paymentIntent.client_secret,
@@ -1563,7 +1563,7 @@ router?.post(
       }
 
       if (paymentIntent?.status === "canceled") {
-        return res?.status(400).json({
+        return res.status(400).json({
           message: "3D Secure authentication was cancelled",
           code: "3DS_CANCELLED",
           status: "canceled",
@@ -1573,7 +1573,7 @@ router?.post(
 
       if (paymentIntent?.status === "requires_payment_method") {
         const lastError = paymentIntent?.last_payment_error;
-        return res?.status(402).json({
+        return res.status(402).json({
           message:
             lastError?.message ||
             "3D Secure authentication failed. Please try a different card.",
@@ -1584,7 +1584,7 @@ router?.post(
         });
       }
 
-      res?.json({
+      res.json({
         success: false,
         message: "Payment is still processing",
         code: "PROCESSING",
@@ -1592,9 +1592,9 @@ router?.post(
         retryable: true,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "[Billing] 3DS confirmation failed:");
+      logger.warn({ err: error }, "[Billing] 3DS confirmation failed:");
       const mappedError = mapStripeError(error);
-      res?.status(mappedError?.status).json({
+      res.status(mappedError?.status).json({
         message: mappedError.message,
         code: mappedError.code,
         retryable: mappedError.retryable,
@@ -1608,11 +1608,11 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { invoiceId, chargeId, reason, amount, description } = req?.body;
+      const userId = req.user!.id;
+      const { invoiceId, chargeId, reason, amount, description } = req.body;
 
       if (!invoiceId && !chargeId) {
-        return res?.status(400).json({
+        return res.status(400).json({
           message: "Invoice ID or Charge ID is required",
           code: "MISSING_IDENTIFIER",
           retryable: false,
@@ -1620,7 +1620,7 @@ router?.post(
       }
 
       if (!reason) {
-        return res?.status(400).json({
+        return res.status(400).json({
           message: "Please provide a reason for the refund request",
           code: "MISSING_REASON",
           retryable: true,
@@ -1635,7 +1635,7 @@ router?.post(
         "other",
       ];
       if (!validReasons?.includes(reason)) {
-        return res?.status(400).json({
+        return res.status(400).json({
           message: "Invalid refund reason",
           code: "INVALID_REASON",
           retryable: true,
@@ -1650,7 +1650,7 @@ router?.post(
         .limit(1);
 
       if (!user?.stripeCustomerId) {
-        return res?.status(400).json({
+        return res.status(400).json({
           message: "No billing account found",
           code: "NO_BILLING_ACCOUNT",
           retryable: false,
@@ -1658,7 +1658,7 @@ router?.post(
       }
 
       if (!stripe) {
-        return res?.status(503).json({
+        return res.status(503).json({
           message: "Billing service not configured",
           code: "STRIPE_NOT_CONFIGURED",
           retryable: false,
@@ -1672,7 +1672,7 @@ router?.post(
         const invoice = await stripe?.invoices.retrieve(invoiceId);
 
         if (invoice?.customer !== user?.stripeCustomerId) {
-          return res?.status(403).json({
+          return res.status(403).json({
             message: "You do not have permission to refund this invoice",
             code: "REFUND_ACCESS_DENIED",
             retryable: false,
@@ -1680,7 +1680,7 @@ router?.post(
         }
 
         if (invoice?.status !== "paid") {
-          return res?.status(400).json({
+          return res.status(400).json({
             message: "Only paid invoices can be refunded",
             code: "INVOICE_NOT_PAID",
             retryable: false,
@@ -1693,7 +1693,7 @@ router?.post(
         const charge = await stripe?.charges.retrieve(chargeId);
 
         if (charge?.customer !== user?.stripeCustomerId) {
-          return res?.status(403).json({
+          return res.status(403).json({
             message: "You do not have permission to refund this charge",
             code: "REFUND_ACCESS_DENIED",
             retryable: false,
@@ -1701,7 +1701,7 @@ router?.post(
         }
 
         if (!charge?.paid || charge?.refunded) {
-          return res?.status(400).json({
+          return res.status(400).json({
             message: charge.refunded
               ? "This charge has already been fully refunded"
               : "Only paid charges can be refunded",
@@ -1714,7 +1714,7 @@ router?.post(
       }
 
       if (!chargeToRefund) {
-        return res?.status(400).json({
+        return res.status(400).json({
           message: "No refundable charge found",
           code: "NO_REFUNDABLE_CHARGE",
           retryable: false,
@@ -1722,11 +1722,11 @@ router?.post(
       }
 
       const refundAmount = amount
-        ? Math?.min(amount, refundableAmount)
+        ? Math.min(amount, refundableAmount)
         : refundableAmount;
       const isPartialRefund = refundAmount < refundableAmount;
 
-      const refundRequestId = `refund_req_${Date?.now()}_${Math?.random().toString(36).slice(2, 8)}`;
+      const refundRequestId = `refund_req_${Date?.now()}_${Math.random().toString(36).slice(2, 8)}`;
       const refundRequestPayload = {
         id: refundRequestId,
         chargeId: chargeToRefund,
@@ -1751,17 +1751,17 @@ router?.post(
           details: refundRequestPayload,
         });
       } catch (persistErr) {
-        logger?.warn(
+        logger.warn(
           { err: persistErr },
           "[Billing] Failed to persist refund request to audit log",
         );
       }
 
-      logger?.info(
+      logger.info(
         `[Billing] Refund request ${refundRequestId} persisted for user ${userId}: ${invoiceId || chargeId}, reason: ${reason}, amount: ${refundAmount / 100}`,
       );
 
-      res?.json({
+      res.json({
         success: true,
         message:
           "Refund request submitted successfully. Our team will review and process it within 5-7 business days.",
@@ -1769,14 +1769,14 @@ router?.post(
         refundRequest: refundRequestPayload,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "[Billing] Failed to create refund request:");
+      logger.warn({ err: error }, "[Billing] Failed to create refund request:");
 
       if (
         error instanceof Error &&
         "code" in error &&
         error?.code === "resource_missing"
       ) {
-        return res?.status(404).json({
+        return res.status(404).json({
           message: "Invoice or charge not found",
           code: "NOT_FOUND",
           retryable: false,
@@ -1784,7 +1784,7 @@ router?.post(
       }
 
       const mappedError = mapStripeError(error);
-      res?.status(mappedError?.status).json({
+      res.status(mappedError?.status).json({
         message: mappedError.message,
         code: mappedError.code,
         retryable: mappedError.retryable,
@@ -1798,11 +1798,11 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { disputeId, evidence } = req?.body;
+      const userId = req.user!.id;
+      const { disputeId, evidence } = req.body;
 
       if (!disputeId) {
-        return res?.status(400).json({
+        return res.status(400).json({
           message: "Dispute ID is required",
           code: "MISSING_DISPUTE_ID",
           retryable: false,
@@ -1810,7 +1810,7 @@ router?.post(
       }
 
       if (!evidence || typeof evidence !== "object") {
-        return res?.status(400).json({
+        return res.status(400).json({
           message: "Evidence data is required",
           code: "MISSING_EVIDENCE",
           retryable: true,
@@ -1824,7 +1824,7 @@ router?.post(
         .limit(1);
 
       if (!user?.stripeCustomerId) {
-        return res?.status(400).json({
+        return res.status(400).json({
           message: "No billing account found",
           code: "NO_BILLING_ACCOUNT",
           retryable: false,
@@ -1832,7 +1832,7 @@ router?.post(
       }
 
       if (!stripe) {
-        return res?.status(503).json({
+        return res.status(503).json({
           message: "Billing service not configured",
           code: "STRIPE_NOT_CONFIGURED",
           retryable: false,
@@ -1844,7 +1844,7 @@ router?.post(
 
         const charge = await stripe?.charges.retrieve(dispute?.charge as string);
         if (charge?.customer !== user?.stripeCustomerId) {
-          return res?.status(403).json({
+          return res.status(403).json({
             message: "You do not have permission to access this dispute",
             code: "DISPUTE_ACCESS_DENIED",
             retryable: false,
@@ -1852,7 +1852,7 @@ router?.post(
         }
 
         if (dispute?.status === "won" || dispute?.status === "lost") {
-          return res?.status(400).json({
+          return res.status(400).json({
             message: `This dispute has already been ${dispute?.status}`,
             code: "DISPUTE_CLOSED",
             status: dispute.status,
@@ -1877,11 +1877,11 @@ router?.post(
           submit: evidence.submit === true,
         });
 
-        logger?.info(
+        logger.info(
           `[Billing] Dispute evidence submitted for user ${userId}, dispute ${disputeId}`,
         );
 
-        res?.json({
+        res.json({
           success: true,
           message: evidence.submit
             ? "Evidence submitted successfully. Stripe will review within 60-90 days."
@@ -1896,7 +1896,7 @@ router?.post(
           "code" in stripeError &&
           stripeError?.code === "resource_missing"
         ) {
-          return res?.status(404).json({
+          return res.status(404).json({
             message: "Dispute not found",
             code: "DISPUTE_NOT_FOUND",
             retryable: false,
@@ -1905,12 +1905,12 @@ router?.post(
         throw stripeError;
       }
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "[Billing] Failed to submit dispute evidence:",
       );
       const mappedError = mapStripeError(error);
-      res?.status(mappedError?.status).json({
+      res.status(mappedError?.status).json({
         message: mappedError.message,
         code: mappedError.code,
         retryable: mappedError.retryable,
@@ -1924,7 +1924,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       const [user] = await db
         .select()
@@ -1933,14 +1933,14 @@ router?.get(
         .limit(1);
 
       if (!user) {
-        return res?.status(404).json({
+        return res.status(404).json({
           message: "User not found",
           code: "USER_NOT_FOUND",
         });
       }
 
       if (user?.subscriptionTier === "lifetime") {
-        return res?.json({
+        return res.json({
           inGracePeriod: false,
           gracePeriodActive: false,
           subscriptionStatus: "active",
@@ -1966,7 +1966,7 @@ router?.get(
               stripeSubscription?.latest_invoice as Stripe.Invoice | null;
           }
         } catch (err) {
-          logger?.warn(
+          logger.warn(
             { err: err },
             "[Billing] Failed to fetch subscription for grace period check:",
           );
@@ -1994,9 +1994,9 @@ router?.get(
         gracePeriodEndsAt = new Date(
           currentPeriodEnd?.getTime() + gracePeriodDays * 24 * 60 * 60 * 1000,
         );
-        gracePeriodDaysRemaining = Math?.max(
+        gracePeriodDaysRemaining = Math.max(
           0,
-          Math?.ceil(
+          Math.ceil(
             (gracePeriodEndsAt?.getTime() - now?.getTime()) /
               (1000 * 60 * 60 * 24),
           ),
@@ -2014,7 +2014,7 @@ router?.get(
       const isGracePeriodExpired =
         gracePeriodActive && gracePeriodEndsAt && gracePeriodEndsAt < now;
 
-      res?.json({
+      res.json({
         inGracePeriod: gracePeriodActive && !isGracePeriodExpired,
         gracePeriodActive,
         gracePeriodEndsAt: gracePeriodEndsAt.toISOString() || null,
@@ -2047,11 +2047,11 @@ router?.get(
           : null,
       });
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "[Billing] Failed to get grace period status:",
       );
-      res?.status(500).json({
+      res.status(500).json({
         message: "Failed to get grace period status",
         code: "GRACE_PERIOD_CHECK_ERROR",
         retryable: true,
@@ -2065,7 +2065,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       const [user] = await db
         .select()
@@ -2074,7 +2074,7 @@ router?.get(
         .limit(1);
 
       if (!user?.stripeCustomerId || !stripe) {
-        return res?.json({ disputes: [], hasMore: false });
+        return res.json({ disputes: [], hasMore: false });
       }
 
       try {
@@ -2138,18 +2138,18 @@ router?.get(
             new Date(b?.created).getTime() - new Date(a?.created).getTime(),
         );
 
-        return res?.json({
+        return res.json({
           disputes: disputes.slice(0, 20),
           hasMore: disputes.length > 20,
         });
       } catch (err) {
-        logger?.warn({ err: err }, "[Billing] Failed to fetch disputes:");
+        logger.warn({ err: err }, "[Billing] Failed to fetch disputes:");
       }
 
-      res?.json({ disputes: [], hasMore: false });
+      res.json({ disputes: [], hasMore: false });
     } catch (error) {
-      logger?.warn({ err: error }, "[Billing] Failed to get disputes:");
-      res?.status(500).json({ error: "Failed to get disputes" });
+      logger.warn({ err: error }, "[Billing] Failed to get disputes:");
+      res.status(500).json({ error: "Failed to get disputes" });
     }
   },
 );
@@ -2159,8 +2159,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { status, limit = 20 } = req?.query;
+      const userId = req.user!.id;
+      const { status, limit = 20 } = req.query;
 
       const [user] = await db
         .select()
@@ -2169,7 +2169,7 @@ router?.get(
         .limit(1);
 
       if (!user?.stripeCustomerId || !stripe) {
-        return res?.json({ invoices: [], hasMore: false });
+        return res.json({ invoices: [], hasMore: false });
       }
 
       try {
@@ -2245,18 +2245,18 @@ router?.get(
           };
         });
 
-        return res?.json({
+        return res.json({
           invoices: invoiceList,
           hasMore: invoices.has_more,
         });
       } catch (err) {
-        logger?.warn({ err: err }, "[Billing] Failed to fetch invoices:");
+        logger.warn({ err: err }, "[Billing] Failed to fetch invoices:");
       }
 
-      res?.json({ invoices: [], hasMore: false });
+      res.json({ invoices: [], hasMore: false });
     } catch (error) {
-      logger?.warn({ err: error }, "[Billing] Failed to get invoices:");
-      res?.status(500).json({ error: "Failed to get invoices" });
+      logger.warn({ err: error }, "[Billing] Failed to get invoices:");
+      res.status(500).json({ error: "Failed to get invoices" });
     }
   },
 );
@@ -2266,7 +2266,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       const [user] = await db
         .select()
@@ -2275,7 +2275,7 @@ router?.get(
         .limit(1);
 
       if (!user?.stripeCustomerId || !stripe) {
-        return res?.json({ refunds: [], hasMore: false });
+        return res.json({ refunds: [], hasMore: false });
       }
 
       try {
@@ -2323,18 +2323,18 @@ router?.get(
             new Date(b?.created).getTime() - new Date(a?.created).getTime(),
         );
 
-        return res?.json({
+        return res.json({
           refunds: refunds.slice(0, 20),
           hasMore: refunds.length > 20,
         });
       } catch (err) {
-        logger?.warn({ err: err }, "[Billing] Failed to fetch refunds:");
+        logger.warn({ err: err }, "[Billing] Failed to fetch refunds:");
       }
 
-      res?.json({ refunds: [], hasMore: false });
+      res.json({ refunds: [], hasMore: false });
     } catch (error) {
-      logger?.warn({ err: error }, "[Billing] Failed to get refunds:");
-      res?.status(500).json({ error: "Failed to get refunds" });
+      logger.warn({ err: error }, "[Billing] Failed to get refunds:");
+      res.status(500).json({ error: "Failed to get refunds" });
     }
   },
 );
@@ -2344,7 +2344,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       const [user] = await db
         .select()
@@ -2395,10 +2395,10 @@ router?.get(
         },
       };
 
-      res?.json(usageStats);
+      res.json(usageStats);
     } catch (error) {
-      logger?.warn({ err: error }, "[Billing] Failed to get usage stats:");
-      res?.status(500).json({ error: "Failed to get usage stats" });
+      logger.warn({ err: error }, "[Billing] Failed to get usage stats:");
+      res.status(500).json({ error: "Failed to get usage stats" });
     }
   },
 );

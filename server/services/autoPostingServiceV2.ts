@@ -12,7 +12,7 @@ import { notificationService } from "./notificationService.js";
 // Max posts to dequeue and process concurrently per 2-second tick.
 // Override with AUTO_POST_BATCH_SIZE env var.
 const AUTO_POST_BATCH_SIZE = parseInt(
-  process?.env.AUTO_POST_BATCH_SIZE ?? "5",
+  process.env.AUTO_POST_BATCH_SIZE ?? "5",
   10,
 );
 
@@ -66,13 +66,13 @@ class AutoPostingServiceV2 {
   }
 
   async initialize() {
-    if (this?.isInitialized) return;
+    if (this.isInitialized) return;
 
-    this?.startWorker();
-    await this?.reloadPendingJobs();
+    this.startWorker();
+    await this.reloadPendingJobs();
 
     this.isInitialized = true;
-    logger?.info("✅ Auto-posting service initialized (boosterstate-backed)");
+    logger.info("✅ Auto-posting service initialized (boosterstate-backed)");
   }
 
   private async reloadPendingJobs() {
@@ -87,7 +87,7 @@ class AutoPostingServiceV2 {
       const results = await Promise?.allSettled(
         pendingPosts?.map((post) => {
           const delay = new Date(post?.scheduledTime).getTime() - Date?.now();
-          return this?.postQueue.add("auto-post", post, {
+          return this.postQueue.add("auto-post", post, {
             jobId: post.id,
             delay: delay > 0 ? delay : 0,
           });
@@ -99,23 +99,23 @@ class AutoPostingServiceV2 {
       ).length;
       const failedCount = results?.length - reloadedCount;
       if (failedCount > 0) {
-        logger?.warn(
+        logger.warn(
           `[AutoPost] reloadPendingJobs: ${failedCount} enqueue(s) failed`,
         );
       }
-      logger?.info(`✅ Reloaded ${reloadedCount} pending posts`);
+      logger.info(`✅ Reloaded ${reloadedCount} pending posts`);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to reload pending jobs:");
+      logger.warn({ err: error }, "Failed to reload pending jobs:");
     }
   }
 
   private async processSinglePost(post: ScheduledPost): Promise<void> {
-    logger?.info(
+    logger.info(
       `🚀 Processing auto-post job ${post?.id} for user ${post?.userId}`,
     );
     try {
       await storage?.updateScheduledPost(post?.id, { status: "posting" });
-      const results = await this?.executePost(post);
+      const results = await this.executePost(post);
 
       await storage?.updateScheduledPost(post?.id, {
         status: results.every((r) => r?.success) ? "completed" : "failed",
@@ -155,7 +155,7 @@ class AutoPostingServiceV2 {
               },
             )
             .catch((err) =>
-              logger?.warn("Learning record failed (non-fatal):", err?.message),
+              logger.warn("Learning record failed (non-fatal):", err?.message),
             );
         }
       }
@@ -185,14 +185,14 @@ class AutoPostingServiceV2 {
             (post?.content.text || "").slice(0, 100),
           )
           .catch((err) =>
-            logger?.warn(
+            logger.warn(
               "[AutoPost] notification error (non-fatal):",
               err?.message,
             ),
           );
       }
     } catch (error) {
-      logger?.warn({ err: error }, `Failed to process auto-post ${post?.id}:`);
+      logger.warn({ err: error }, `Failed to process auto-post ${post?.id}:`);
       await storage?.updateScheduledPost(post?.id, { status: "failed" });
     }
   }
@@ -206,7 +206,7 @@ class AutoPostingServiceV2 {
         // concurrently. Each post targets different social platforms for a
         // different user, so parallel execution is fully safe.
         const pops = await Promise?.allSettled(
-          Array?.from({ length: AUTO_POST_BATCH_SIZE }, () =>
+          Array.from({ length: AUTO_POST_BATCH_SIZE }, () =>
             client?.queuePop("scheduled-posts"),
           ),
         );
@@ -226,20 +226,20 @@ class AutoPostingServiceV2 {
 
         await Promise?.allSettled(
           items?.map((item) => {
-            const parsed = JSON?.parse(item?.data as unknown as string);
+            const parsed = JSON.parse(item?.data as unknown as string);
             const post: ScheduledPost = parsed?.data || parsed;
-            return this?.processSinglePost(post);
+            return this.processSinglePost(post);
           }),
         );
       } catch (error) {
-        logger?.warn(
+        logger.warn(
           "⚠️  Auto-posting worker poll error:",
           (error as Error)?.message || error,
         );
       }
     }, 2000);
 
-    logger?.info(
+    logger.info(
       `✅ Auto-posting worker started (poll interval: 2s, batch: ${AUTO_POST_BATCH_SIZE})`,
     );
   }
@@ -263,7 +263,7 @@ class AutoPostingServiceV2 {
     if (idempotencyKey) {
       const existingPost = await storage?.getScheduledPostById(postId);
       if (existingPost) {
-        logger?.info(
+        logger.info(
           `📋 Returning existing post ${postId} (idempotency key: ${idempotencyKey})`,
         );
         return existingPost as ScheduledPost;
@@ -284,12 +284,12 @@ class AutoPostingServiceV2 {
     await storage?.createScheduledPost(scheduledPost);
 
     const delay = scheduledTime?.getTime() - Date?.now();
-    await this?.postQueue.add("auto-post", scheduledPost, {
+    await this.postQueue.add("auto-post", scheduledPost, {
       jobId: postId,
       delay: delay > 0 ? delay : 0,
     });
 
-    logger?.info(
+    logger.info(
       `📅 Scheduled post ${postId} for ${scheduledTime?.toISOString()} (${delay}ms delay)`,
     );
 
@@ -305,7 +305,7 @@ class AutoPostingServiceV2 {
       | "advertising_autopilot"
       | "manual" = "manual",
   ): Promise<PostResult[]> {
-    logger?.info(
+    logger.info(
       `🚀 Posting immediately to ${platforms?.join(", ")} for user ${userId}`,
     );
 
@@ -319,7 +319,7 @@ class AutoPostingServiceV2 {
       createdBy,
     };
 
-    return await this?.executePost(tempPost);
+    return await this.executePost(tempPost);
   }
 
   private async executePost(post: ScheduledPost): Promise<PostResult[]> {
@@ -332,10 +332,10 @@ class AutoPostingServiceV2 {
 
     const postPromises = post?.platforms.map(async (platform) => {
       try {
-        const result = await this?.postToPlatform(user, platform, post?.content);
+        const result = await this.postToPlatform(user, platform, post?.content);
         results?.push(result);
       } catch (error) {
-        logger?.warn({ err: error }, `Failed to post to ${platform}:`);
+        logger.warn({ err: error }, `Failed to post to ${platform}:`);
         results?.push({
           platform,
           success: false,
@@ -347,7 +347,7 @@ class AutoPostingServiceV2 {
 
     await Promise?.all(postPromises);
 
-    logger?.info(
+    logger.info(
       `✅ Posted to ${results?.filter((r) => r?.success).length}/${results?.length} platforms`,
     );
 
@@ -363,21 +363,21 @@ class AutoPostingServiceV2 {
 
     switch (platform) {
       case "instagram":
-        return await this?.postToInstagram(user, tokens?.instagram, content);
+        return await this.postToInstagram(user, tokens?.instagram, content);
       case "facebook":
-        return await this?.postToFacebook(user, tokens?.facebook, content);
+        return await this.postToFacebook(user, tokens?.facebook, content);
       case "twitter":
-        return await this?.postToTwitter(user, tokens?.twitter, content);
+        return await this.postToTwitter(user, tokens?.twitter, content);
       case "tiktok":
-        return await this?.postToTikTok(user, tokens?.tiktok, content);
+        return await this.postToTikTok(user, tokens?.tiktok, content);
       case "youtube":
-        return await this?.postToYouTube(user, tokens?.youtube, content);
+        return await this.postToYouTube(user, tokens?.youtube, content);
       case "linkedin":
-        return await this?.postToLinkedIn(user, tokens?.linkedin, content);
+        return await this.postToLinkedIn(user, tokens?.linkedin, content);
       case "threads":
-        return await this?.postToThreads(user, tokens?.threads, content);
+        return await this.postToThreads(user, tokens?.threads, content);
       case "google_business":
-        return await this?.postToGoogleBusiness(
+        return await this.postToGoogleBusiness(
           user,
           tokens?.google_business,
           content,
@@ -961,34 +961,34 @@ class AutoPostingServiceV2 {
 
   async cancelScheduledPost(postId: string): Promise<void> {
     await storage?.deleteScheduledPost(postId);
-    logger?.info(`❌ Cancelled scheduled post ${postId}`);
+    logger.info(`❌ Cancelled scheduled post ${postId}`);
   }
 
   pause(): void {
-    if (this?.workerInterval) {
-      clearInterval(this?.workerInterval);
+    if (this.workerInterval) {
+      clearInterval(this.workerInterval);
       this.workerInterval = null;
     }
-    logger?.info("[AutoPostingService V2] Paused by kill switch");
+    logger.info("[AutoPostingService V2] Paused by kill switch");
   }
 
   resume(): void {
-    if (!this?.workerInterval) {
-      this?.startWorker();
+    if (!this.workerInterval) {
+      this.startWorker();
     }
-    logger?.info("[AutoPostingService V2] Resumed");
+    logger.info("[AutoPostingService V2] Resumed");
   }
 
   async shutdown() {
-    logger?.info("Shutting down auto-posting service...");
+    logger.info("Shutting down auto-posting service...");
 
-    if (this?.workerInterval) {
-      clearInterval(this?.workerInterval);
+    if (this.workerInterval) {
+      clearInterval(this.workerInterval);
       this.workerInterval = null;
     }
-    await this?.postQueue.close();
+    await this.postQueue.close();
 
-    logger?.info("✅ Auto-posting service shut down gracefully");
+    logger.info("✅ Auto-posting service shut down gracefully");
   }
 }
 

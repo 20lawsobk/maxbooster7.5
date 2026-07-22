@@ -60,7 +60,7 @@ const savePresetSchema = z.object({
 
 router?.get("/", async (req, res) => {
   try {
-    const category = req?.query.category as PluginCategory | undefined;
+    const category = req.query.category as PluginCategory | undefined;
 
     let plugins;
     if (category && (category === "instrument" || category === "effect")) {
@@ -79,18 +79,18 @@ router?.get("/", async (req, res) => {
       groupedByType[pluginType].push(plugin);
     }
 
-    res?.json(groupedByType);
+    res.json(groupedByType);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching plugins:");
-    res?.status(500).json({ error: "Failed to fetch plugins" });
+    logger.warn({ err: error }, "Error fetching plugins:");
+    res.status(500).json({ error: "Failed to fetch plugins" });
   }
 });
 
 router?.post("/instantiate/:id", requireAuth, async (req, res) => {
   try {
-    const { id: pluginId } = req?.params;
-    const { projectId } = req?.query;
-    const userId = req?.user!.id;
+    const { id: pluginId } = req.params;
+    const { projectId } = req.query;
+    const userId = req.user!.id;
 
     if (!projectId || typeof projectId !== "string") {
       return res
@@ -103,15 +103,15 @@ router?.post("/instantiate/:id", requireAuth, async (req, res) => {
     });
 
     if (!project) {
-      return res?.status(404).json({ error: "Project not found" });
+      return res.status(404).json({ error: "Project not found" });
     }
 
     const plugin = pluginHostService?.getPluginById(pluginId);
     if (!plugin) {
-      return res?.status(404).json({ error: "Plugin not found" });
+      return res.status(404).json({ error: "Plugin not found" });
     }
 
-    const data = instantiatePluginSchema?.parse(req?.body);
+    const data = instantiatePluginSchema?.parse(req.body);
 
     const instance = await pluginHostService?.createInstance(
       pluginId,
@@ -121,7 +121,7 @@ router?.post("/instantiate/:id", requireAuth, async (req, res) => {
       data?.parameters,
     );
 
-    res?.status(201).json({
+    res.status(201).json({
       success: true,
       instance,
       plugin: {
@@ -132,20 +132,20 @@ router?.post("/instantiate/:id", requireAuth, async (req, res) => {
       },
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error instantiating plugin:");
+    logger.warn({ err: error }, "Error instantiating plugin:");
     if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({ error: "Invalid request data", details: error.issues });
     }
-    res?.status(500).json({ error: "Failed to instantiate plugin" });
+    res.status(500).json({ error: "Failed to instantiate plugin" });
   }
 });
 
 router?.get("/instances", requireAuth, async (req, res) => {
   try {
-    const { projectId, trackId } = req?.query;
-    const userId = req?.user!.id;
+    const { projectId, trackId } = req.query;
+    const userId = req.user!.id;
 
     if (!projectId || typeof projectId !== "string") {
       return res
@@ -158,7 +158,7 @@ router?.get("/instances", requireAuth, async (req, res) => {
     });
 
     if (!project) {
-      return res?.status(404).json({ error: "Project not found" });
+      return res.status(404).json({ error: "Project not found" });
     }
 
     let instances;
@@ -183,24 +183,24 @@ router?.get("/instances", requireAuth, async (req, res) => {
       };
     });
 
-    res?.json({
+    res.json({
       success: true,
       instances: enriched,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching plugin instances:");
-    res?.status(500).json({ error: "Failed to fetch plugin instances" });
+    logger.warn({ err: error }, "Error fetching plugin instances:");
+    res.status(500).json({ error: "Failed to fetch plugin instances" });
   }
 });
 
 router?.get("/instances/:instanceId", requireAuth, async (req, res) => {
   try {
-    const { instanceId } = req?.params;
-    const userId = req?.user!.id;
+    const { instanceId } = req.params;
+    const userId = req.user!.id;
 
     const instance = await pluginHostService?.getInstance(instanceId);
     if (!instance) {
-      return res?.status(404).json({ error: "Plugin instance not found" });
+      return res.status(404).json({ error: "Plugin instance not found" });
     }
 
     const project = await db?.query.projects?.findFirst({
@@ -211,12 +211,12 @@ router?.get("/instances/:instanceId", requireAuth, async (req, res) => {
     });
 
     if (!project) {
-      return res?.status(403).json({ error: "Unauthorized" });
+      return res.status(403).json({ error: "Unauthorized" });
     }
 
     const plugin = pluginHostService?.getPluginById(instance?.pluginId);
 
-    res?.json({
+    res.json({
       success: true,
       instance,
       plugin: plugin
@@ -230,19 +230,19 @@ router?.get("/instances/:instanceId", requireAuth, async (req, res) => {
         : null,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching plugin instance:");
-    res?.status(500).json({ error: "Failed to fetch plugin instance" });
+    logger.warn({ err: error }, "Error fetching plugin instance:");
+    res.status(500).json({ error: "Failed to fetch plugin instance" });
   }
 });
 
 router?.put("/instances/:instanceId", requireAuth, async (req, res) => {
   try {
-    const { instanceId } = req?.params;
-    const userId = req?.user!.id;
+    const { instanceId } = req.params;
+    const userId = req.user!.id;
 
     const instance = await pluginHostService?.getInstance(instanceId);
     if (!instance) {
-      return res?.status(404).json({ error: "Plugin instance not found" });
+      return res.status(404).json({ error: "Plugin instance not found" });
     }
 
     const project = await db?.query.projects?.findFirst({
@@ -253,10 +253,10 @@ router?.put("/instances/:instanceId", requireAuth, async (req, res) => {
     });
 
     if (!project) {
-      return res?.status(403).json({ error: "Unauthorized" });
+      return res.status(403).json({ error: "Unauthorized" });
     }
 
-    const data = updateParametersSchema?.parse(req?.body);
+    const data = updateParametersSchema?.parse(req.body);
 
     const updatedInstance = await pluginHostService?.updateInstanceParameters(
       instanceId,
@@ -268,29 +268,29 @@ router?.put("/instances/:instanceId", requireAuth, async (req, res) => {
       updatedInstance.bypassed = data?.bypassed;
     }
 
-    res?.json({
+    res.json({
       success: true,
       instance: updatedInstance,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error updating plugin instance:");
+    logger.warn({ err: error }, "Error updating plugin instance:");
     if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({ error: "Invalid request data", details: error.issues });
     }
-    res?.status(500).json({ error: "Failed to update plugin instance" });
+    res.status(500).json({ error: "Failed to update plugin instance" });
   }
 });
 
 router?.delete("/instances/:instanceId", requireAuth, async (req, res) => {
   try {
-    const { instanceId } = req?.params;
-    const userId = req?.user!.id;
+    const { instanceId } = req.params;
+    const userId = req.user!.id;
 
     const instance = await pluginHostService?.getInstance(instanceId);
     if (!instance) {
-      return res?.status(404).json({ error: "Plugin instance not found" });
+      return res.status(404).json({ error: "Plugin instance not found" });
     }
 
     const project = await db?.query.projects?.findFirst({
@@ -301,26 +301,26 @@ router?.delete("/instances/:instanceId", requireAuth, async (req, res) => {
     });
 
     if (!project) {
-      return res?.status(403).json({ error: "Unauthorized" });
+      return res.status(403).json({ error: "Unauthorized" });
     }
 
     await pluginHostService?.deleteInstance(instanceId);
 
-    res?.status(204).send();
+    res.status(204).send();
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error deleting plugin instance:");
-    res?.status(500).json({ error: "Failed to delete plugin instance" });
+    logger.warn({ err: error }, "Error deleting plugin instance:");
+    res.status(500).json({ error: "Failed to delete plugin instance" });
   }
 });
 
 router?.post("/instances/:instanceId/render", requireAuth, async (req, res) => {
   try {
-    const { instanceId } = req?.params;
-    const userId = req?.user!.id;
+    const { instanceId } = req.params;
+    const userId = req.user!.id;
 
     const instance = await pluginHostService?.getInstance(instanceId);
     if (!instance) {
-      return res?.status(404).json({ error: "Plugin instance not found" });
+      return res.status(404).json({ error: "Plugin instance not found" });
     }
 
     const project = await db?.query.projects?.findFirst({
@@ -331,18 +331,18 @@ router?.post("/instances/:instanceId/render", requireAuth, async (req, res) => {
     });
 
     if (!project) {
-      return res?.status(403).json({ error: "Unauthorized" });
+      return res.status(403).json({ error: "Unauthorized" });
     }
 
     const plugin = pluginHostService?.getPluginById(instance?.pluginId);
     if (!plugin) {
-      return res?.status(404).json({ error: "Plugin not found" });
+      return res.status(404).json({ error: "Plugin not found" });
     }
 
     let result;
 
     if (plugin?.category === "instrument") {
-      const data = renderInstrumentSchema?.parse(req?.body);
+      const data = renderInstrumentSchema?.parse(req.body);
       result = await pluginHostService?.renderInstrument(
         instanceId,
         data?.notes,
@@ -350,26 +350,26 @@ router?.post("/instances/:instanceId/render", requireAuth, async (req, res) => {
         data?.sampleRate,
       );
     } else {
-      const data = renderEffectSchema?.parse(req?.body);
+      const data = renderEffectSchema?.parse(req.body);
       result = await pluginHostService?.processEffect(instanceId, {
         samples: data.samples,
         sampleRate: data.sampleRate,
       });
     }
 
-    res?.json({
+    res.json({
       success: true,
       audio: result,
       pluginType: plugin.category,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error rendering audio through plugin:");
+    logger.warn({ err: error }, "Error rendering audio through plugin:");
     if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({ error: "Invalid request data", details: error.issues });
     }
-    res?.status(500).json({ error: "Failed to render audio" });
+    res.status(500).json({ error: "Failed to render audio" });
   }
 });
 
@@ -378,17 +378,17 @@ router?.post(
   requireAuth,
   async (req, res) => {
     try {
-      const { instanceId } = req?.params;
-      const { presetId } = req?.body;
-      const userId = req?.user!.id;
+      const { instanceId } = req.params;
+      const { presetId } = req.body;
+      const userId = req.user!.id;
 
       if (!presetId || typeof presetId !== "string") {
-        return res?.status(400).json({ error: "presetId is required" });
+        return res.status(400).json({ error: "presetId is required" });
       }
 
       const instance = await pluginHostService?.getInstance(instanceId);
       if (!instance) {
-        return res?.status(404).json({ error: "Plugin instance not found" });
+        return res.status(404).json({ error: "Plugin instance not found" });
       }
 
       const project = await db?.query.projects?.findFirst({
@@ -399,7 +399,7 @@ router?.post(
       });
 
       if (!project) {
-        return res?.status(403).json({ error: "Unauthorized" });
+        return res.status(403).json({ error: "Unauthorized" });
       }
 
       const updatedInstance = await pluginHostService?.applyPresetToInstance(
@@ -407,21 +407,21 @@ router?.post(
         presetId,
       );
 
-      res?.json({
+      res.json({
         success: true,
         instance: updatedInstance,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error applying preset:");
-      res?.status(500).json({ error: "Failed to apply preset" });
+      logger.warn({ err: error }, "Error applying preset:");
+      res.status(500).json({ error: "Failed to apply preset" });
     }
   },
 );
 
 router?.get("/presets", requireAuth, async (req, res) => {
   try {
-    const { pluginId, category, includePublic } = req?.query;
-    const userId = req?.user!.id;
+    const { pluginId, category, includePublic } = req.query;
+    const userId = req.user!.id;
 
     if (!pluginId || typeof pluginId !== "string") {
       return res
@@ -431,7 +431,7 @@ router?.get("/presets", requireAuth, async (req, res) => {
 
     const plugin = pluginHostService?.getPluginById(pluginId);
     if (!plugin) {
-      return res?.status(404).json({ error: "Plugin not found" });
+      return res.status(404).json({ error: "Plugin not found" });
     }
 
     const userPresets = await pluginHostService?.getPresets(pluginId, userId, {
@@ -441,7 +441,7 @@ router?.get("/presets", requireAuth, async (req, res) => {
 
     const factoryPresets = pluginHostService?.getFactoryPresets(pluginId);
 
-    res?.json({
+    res.json({
       success: true,
       userPresets,
       factoryPresets,
@@ -452,15 +452,15 @@ router?.get("/presets", requireAuth, async (req, res) => {
       },
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching presets:");
-    res?.status(500).json({ error: "Failed to fetch presets" });
+    logger.warn({ err: error }, "Error fetching presets:");
+    res.status(500).json({ error: "Failed to fetch presets" });
   }
 });
 
 router?.post("/presets", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const data = savePresetSchema?.parse(req?.body);
+    const userId = req.user!.id;
+    const data = savePresetSchema?.parse(req.body);
 
     const preset = await pluginHostService?.savePreset(
       userId,
@@ -473,66 +473,66 @@ router?.post("/presets", requireAuth, async (req, res) => {
       },
     );
 
-    res?.status(201).json({
+    res.status(201).json({
       success: true,
       preset,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error saving preset:");
+    logger.warn({ err: error }, "Error saving preset:");
     if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({ error: "Invalid request data", details: error.issues });
     }
-    res?.status(500).json({ error: "Failed to save preset" });
+    res.status(500).json({ error: "Failed to save preset" });
   }
 });
 
 router?.get("/presets/:presetId", requireAuth, async (req, res) => {
   try {
-    const { presetId } = req?.params;
+    const { presetId } = req.params;
 
     const preset = await pluginHostService?.loadPreset(presetId);
     if (!preset) {
-      return res?.status(404).json({ error: "Preset not found" });
+      return res.status(404).json({ error: "Preset not found" });
     }
 
-    res?.json({
+    res.json({
       success: true,
       preset,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error loading preset:");
-    res?.status(500).json({ error: "Failed to load preset" });
+    logger.warn({ err: error }, "Error loading preset:");
+    res.status(500).json({ error: "Failed to load preset" });
   }
 });
 
 router?.delete("/presets/:presetId", requireAuth, async (req, res) => {
   try {
-    const { presetId } = req?.params;
-    const userId = req?.user!.id;
+    const { presetId } = req.params;
+    const userId = req.user!.id;
 
     await pluginHostService?.deletePreset(presetId, userId);
 
-    res?.status(204).send();
+    res.status(204).send();
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error deleting preset:");
-    res?.status(500).json({ error: "Failed to delete preset" });
+    logger.warn({ err: error }, "Error deleting preset:");
+    res.status(500).json({ error: "Failed to delete preset" });
   }
 });
 
 router?.get("/factory-presets/:id", requireAuth, async (req, res) => {
   try {
-    const { id } = req?.params;
+    const { id } = req.params;
     const plugin = pluginHostService?.getPluginById(id);
 
     if (!plugin) {
-      return res?.status(404).json({ error: "Plugin not found" });
+      return res.status(404).json({ error: "Plugin not found" });
     }
 
     const factoryPresets = pluginHostService?.getFactoryPresets(id);
 
-    res?.json({
+    res.json({
       success: true,
       factoryPresets,
       plugin: {
@@ -542,8 +542,8 @@ router?.get("/factory-presets/:id", requireAuth, async (req, res) => {
       },
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching factory presets:");
-    res?.status(500).json({ error: "Failed to fetch factory presets" });
+    logger.warn({ err: error }, "Error fetching factory presets:");
+    res.status(500).json({ error: "Failed to fetch factory presets" });
   }
 });
 
@@ -613,12 +613,12 @@ function capMap<K, V>(m: Map<K, V>, max: number) {
 
 router?.get("/device/ab-compare/:instanceId", requireAuth, async (req, res) => {
   try {
-    const { instanceId } = req?.params;
-    const userId = req?.user!.id;
+    const { instanceId } = req.params;
+    const userId = req.user!.id;
 
     const instance = await pluginHostService?.getInstance(instanceId);
     if (!instance) {
-      return res?.status(404).json({ error: "Plugin instance not found" });
+      return res.status(404).json({ error: "Plugin instance not found" });
     }
 
     const project = await db?.query.projects?.findFirst({
@@ -629,7 +629,7 @@ router?.get("/device/ab-compare/:instanceId", requireAuth, async (req, res) => {
     });
 
     if (!project) {
-      return res?.status(403).json({ error: "Unauthorized" });
+      return res.status(403).json({ error: "Unauthorized" });
     }
 
     const state = abCompareStates?.get(instanceId) || {
@@ -638,7 +638,7 @@ router?.get("/device/ab-compare/:instanceId", requireAuth, async (req, res) => {
       activeSlot: "A" as const,
     };
 
-    res?.json({
+    res.json({
       success: true,
       instanceId,
       slotA: state.slotA,
@@ -646,19 +646,19 @@ router?.get("/device/ab-compare/:instanceId", requireAuth, async (req, res) => {
       activeSlot: state.activeSlot,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error getting A/B compare state:");
-    res?.status(500).json({ error: "Failed to get A/B compare state" });
+    logger.warn({ err: error }, "Error getting A/B compare state:");
+    res.status(500).json({ error: "Failed to get A/B compare state" });
   }
 });
 
 router?.post("/device/ab-compare", requireAuth, async (req, res) => {
   try {
-    const data = abCompareSchema?.parse(req?.body);
-    const userId = req?.user!.id;
+    const data = abCompareSchema?.parse(req.body);
+    const userId = req.user!.id;
 
     const instance = await pluginHostService?.getInstance(data?.instanceId);
     if (!instance) {
-      return res?.status(404).json({ error: "Plugin instance not found" });
+      return res.status(404).json({ error: "Plugin instance not found" });
     }
 
     const project = await db?.query.projects?.findFirst({
@@ -669,7 +669,7 @@ router?.post("/device/ab-compare", requireAuth, async (req, res) => {
     });
 
     if (!project) {
-      return res?.status(403).json({ error: "Unauthorized" });
+      return res.status(403).json({ error: "Unauthorized" });
     }
 
     abCompareStates?.set(data?.instanceId, {
@@ -679,19 +679,19 @@ router?.post("/device/ab-compare", requireAuth, async (req, res) => {
     });
     capMap(abCompareStates, AB_COMPARE_MAX);
 
-    res?.json({
+    res.json({
       success: true,
       instanceId: data.instanceId,
       message: "A/B compare slots configured",
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error setting A/B compare:");
+    logger.warn({ err: error }, "Error setting A/B compare:");
     if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({ error: "Invalid request data", details: error.issues });
     }
-    res?.status(500).json({ error: "Failed to set A/B compare" });
+    res.status(500).json({ error: "Failed to set A/B compare" });
   }
 });
 
@@ -700,13 +700,13 @@ router?.post(
   requireAuth,
   async (req, res) => {
     try {
-      const { instanceId } = req?.params;
-      const { slot } = req?.body;
-      const userId = req?.user!.id;
+      const { instanceId } = req.params;
+      const { slot } = req.body;
+      const userId = req.user!.id;
 
       const instance = await pluginHostService?.getInstance(instanceId);
       if (!instance) {
-        return res?.status(404).json({ error: "Plugin instance not found" });
+        return res.status(404).json({ error: "Plugin instance not found" });
       }
 
       const project = await db?.query.projects?.findFirst({
@@ -717,7 +717,7 @@ router?.post(
       });
 
       if (!project) {
-        return res?.status(403).json({ error: "Unauthorized" });
+        return res.status(403).json({ error: "Unauthorized" });
       }
 
       const state = abCompareStates?.get(instanceId);
@@ -735,14 +735,14 @@ router?.post(
       abCompareStates?.set(instanceId, state);
       capMap(abCompareStates, AB_COMPARE_MAX);
 
-      res?.json({
+      res.json({
         success: true,
         activeSlot: targetSlot,
         parameters: newParams,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error switching A/B slot:");
-      res?.status(500).json({ error: "Failed to switch A/B slot" });
+      logger.warn({ err: error }, "Error switching A/B slot:");
+      res.status(500).json({ error: "Failed to switch A/B slot" });
     }
   },
 );
@@ -752,17 +752,17 @@ router?.post(
   requireAuth,
   async (req, res) => {
     try {
-      const { instanceId } = req?.params;
-      const { from, to } = req?.body;
-      const userId = req?.user!.id;
+      const { instanceId } = req.params;
+      const { from, to } = req.body;
+      const userId = req.user!.id;
 
       if (!["A", "B"].includes(from) || !["A", "B"].includes(to)) {
-        return res?.status(400).json({ error: "Invalid slot specification" });
+        return res.status(400).json({ error: "Invalid slot specification" });
       }
 
       const instance = await pluginHostService?.getInstance(instanceId);
       if (!instance) {
-        return res?.status(404).json({ error: "Plugin instance not found" });
+        return res.status(404).json({ error: "Plugin instance not found" });
       }
 
       const project = await db?.query.projects?.findFirst({
@@ -773,12 +773,12 @@ router?.post(
       });
 
       if (!project) {
-        return res?.status(403).json({ error: "Unauthorized" });
+        return res.status(403).json({ error: "Unauthorized" });
       }
 
       const state = abCompareStates?.get(instanceId);
       if (!state) {
-        return res?.status(404).json({ error: "A/B compare not configured" });
+        return res.status(404).json({ error: "A/B compare not configured" });
       }
 
       if (to === "A") {
@@ -789,28 +789,28 @@ router?.post(
       abCompareStates?.set(instanceId, state);
       capMap(abCompareStates, AB_COMPARE_MAX);
 
-      res?.json({
+      res.json({
         success: true,
         message: `Copied slot ${from} to slot ${to}`,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error copying A/B slot:");
-      res?.status(500).json({ error: "Failed to copy A/B slot" });
+      logger.warn({ err: error }, "Error copying A/B slot:");
+      res.status(500).json({ error: "Failed to copy A/B slot" });
     }
   },
 );
 
 router?.post("/bounce", requireAuth, async (req, res) => {
   try {
-    const data = bounceSchema?.parse(req?.body);
-    const userId = req?.user!.id;
+    const data = bounceSchema?.parse(req.body);
+    const userId = req.user!.id;
 
     const project = await db?.query.projects?.findFirst({
       where: and(eq(projects?.id, data?.projectId), eq(projects?.userId, userId)),
     });
 
     if (!project) {
-      return res?.status(404).json({ error: "Project not found" });
+      return res.status(404).json({ error: "Project not found" });
     }
 
     const bounceId = `bounce_${Date?.now()}_${randomBytes(4).toString("hex")}`;
@@ -834,64 +834,64 @@ router?.post("/bounce", requireAuth, async (req, res) => {
       status: "completed",
     };
 
-    logger?.info(`Bounce created: ${bounceId} for project ${data?.projectId}`);
+    logger.info(`Bounce created: ${bounceId} for project ${data?.projectId}`);
 
-    res?.status(201).json({
+    res.status(201).json({
       success: true,
       bounce: bouncedTrack,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error bouncing track:");
+    logger.warn({ err: error }, "Error bouncing track:");
     if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({ error: "Invalid request data", details: error.issues });
     }
-    res?.status(500).json({ error: "Failed to bounce track" });
+    res.status(500).json({ error: "Failed to bounce track" });
   }
 });
 
 router?.get("/bounce/:projectId", requireAuth, async (req, res) => {
   try {
-    const { projectId } = req?.params;
-    const userId = req?.user!.id;
+    const { projectId } = req.params;
+    const userId = req.user!.id;
 
     const project = await db?.query.projects?.findFirst({
       where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
     });
 
     if (!project) {
-      return res?.status(404).json({ error: "Project not found" });
+      return res.status(404).json({ error: "Project not found" });
     }
 
-    res?.json({
+    res.json({
       success: true,
       bounces: [],
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching bounces:");
-    res?.status(500).json({ error: "Failed to fetch bounces" });
+    logger.warn({ err: error }, "Error fetching bounces:");
+    res.status(500).json({ error: "Failed to fetch bounces" });
   }
 });
 
 router?.get("/modulation-matrix/:projectId", requireAuth, async (req, res) => {
   try {
-    const { projectId } = req?.params;
-    const { trackId } = req?.query;
-    const userId = req?.user!.id;
+    const { projectId } = req.params;
+    const { trackId } = req.query;
+    const userId = req.user!.id;
 
     const project = await db?.query.projects?.findFirst({
       where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
     });
 
     if (!project) {
-      return res?.status(404).json({ error: "Project not found" });
+      return res.status(404).json({ error: "Project not found" });
     }
 
     const key = trackId ? `${projectId}:${trackId}` : projectId;
     const config = modulationConfigs?.get(key);
 
-    res?.json({
+    res.json({
       success: true,
       projectId,
       trackId: trackId || null,
@@ -949,22 +949,22 @@ router?.get("/modulation-matrix/:projectId", requireAuth, async (req, res) => {
       },
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching modulation matrix:");
-    res?.status(500).json({ error: "Failed to fetch modulation matrix" });
+    logger.warn({ err: error }, "Error fetching modulation matrix:");
+    res.status(500).json({ error: "Failed to fetch modulation matrix" });
   }
 });
 
 router?.post("/modulation-matrix", requireAuth, async (req, res) => {
   try {
-    const data = modulationMatrixSchema?.parse(req?.body);
-    const userId = req?.user!.id;
+    const data = modulationMatrixSchema?.parse(req.body);
+    const userId = req.user!.id;
 
     const project = await db?.query.projects?.findFirst({
       where: and(eq(projects?.id, data?.projectId), eq(projects?.userId, userId)),
     });
 
     if (!project) {
-      return res?.status(404).json({ error: "Project not found" });
+      return res.status(404).json({ error: "Project not found" });
     }
 
     const routingsWithIds = data?.routings.map((routing) => ({
@@ -983,22 +983,22 @@ router?.post("/modulation-matrix", requireAuth, async (req, res) => {
     });
     capMap(modulationConfigs, MODULATION_MAX);
 
-    logger?.info(
+    logger.info(
       `Modulation matrix updated for ${key}: ${routingsWithIds?.length} routings`,
     );
 
-    res?.json({
+    res.json({
       success: true,
       routings: routingsWithIds,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error updating modulation matrix:");
+    logger.warn({ err: error }, "Error updating modulation matrix:");
     if (error instanceof z.ZodError) {
       return res
         .status(400)
         .json({ error: "Invalid request data", details: error.issues });
     }
-    res?.status(500).json({ error: "Failed to update modulation matrix" });
+    res.status(500).json({ error: "Failed to update modulation matrix" });
   }
 });
 
@@ -1007,16 +1007,16 @@ router?.delete(
   requireAuth,
   async (req, res) => {
     try {
-      const { projectId, routingId } = req?.params;
-      const { trackId } = req?.query;
-      const userId = req?.user!.id;
+      const { projectId, routingId } = req.params;
+      const { trackId } = req.query;
+      const userId = req.user!.id;
 
       const project = await db?.query.projects?.findFirst({
         where: and(eq(projects?.id, projectId), eq(projects?.userId, userId)),
       });
 
       if (!project) {
-        return res?.status(404).json({ error: "Project not found" });
+        return res.status(404).json({ error: "Project not found" });
       }
 
       const key = trackId ? `${projectId}:${trackId}` : projectId;
@@ -1030,33 +1030,33 @@ router?.delete(
         capMap(modulationConfigs, MODULATION_MAX);
       }
 
-      res?.status(204).send();
+      res.status(204).send();
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error deleting modulation routing:");
-      res?.status(500).json({ error: "Failed to delete modulation routing" });
+      logger.warn({ err: error }, "Error deleting modulation routing:");
+      res.status(500).json({ error: "Failed to delete modulation routing" });
     }
   },
 );
 
 router?.get("/:id", requireAuth, async (req, res) => {
   try {
-    const { id } = req?.params;
+    const { id } = req.params;
     const plugin = pluginHostService?.getPluginById(id);
 
     if (!plugin) {
-      return res?.status(404).json({ error: "Plugin not found" });
+      return res.status(404).json({ error: "Plugin not found" });
     }
 
     const factoryPresets = pluginHostService?.getFactoryPresets(id);
 
-    res?.json({
+    res.json({
       success: true,
       plugin,
       factoryPresets,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching plugin details:");
-    res?.status(500).json({ error: "Failed to fetch plugin details" });
+    logger.warn({ err: error }, "Error fetching plugin details:");
+    res.status(500).json({ error: "Failed to fetch plugin details" });
   }
 });
 

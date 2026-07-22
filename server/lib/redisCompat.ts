@@ -60,7 +60,7 @@ export function applyIoredisCompatShim(
     sendCommand: "sendCommand",
   };
 
-  for (const [camel, lower] of Object?.entries(aliases)) {
+  for (const [camel, lower] of Object.entries(aliases)) {
     if (
       typeof client[lower] === "function" &&
       typeof client[camel] !== "function"
@@ -71,7 +71,7 @@ export function applyIoredisCompatShim(
 
   // Special-case: hGetAll on ioredis returns null for missing keys,
   // but node-redis v4 returns {}.  Normalise to {} so callers don't crash
-  // doing Object?.entries(result).
+  // doing Object.entries(result).
   if (typeof client?.hgetall === "function") {
     const origHgetall = client?.hgetall.bind(client);
     client.hGetAll = async (...args: unknown[]) => {

@@ -4,9 +4,9 @@ import { storage } from "../storage.js";
 import { logger } from "../logger.js";
 
 async function resolveJwtUser(req: Request): Promise<void> {
-  if (req?.isAuthenticated && req?.isAuthenticated()) return;
+  if (req.isAuthenticated && req.isAuthenticated()) return;
 
-  const authHeader = req?.headers.authorization;
+  const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) return;
 
   const token = authHeader?.substring(7);
@@ -20,7 +20,7 @@ async function resolveJwtUser(req: Request): Promise<void> {
       }
     }
   } catch (err) {
-    logger?.warn({ err }, "[Auth] JWT verification error:");
+    logger.warn({ err }, "[Auth] JWT verification error:");
   }
 }
 
@@ -31,12 +31,12 @@ export const requireAuth = async (
 ): Promise<void> => {
   await resolveJwtUser(req);
 
-  if (!req?.isAuthenticated || !req?.isAuthenticated()) {
-    res?.status(401).json({ error: "Authentication required" });
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
     return;
   }
 
-  const user = req?.user!;
+  const user = req.user!;
 
   if (user?.email === "demo@maxbooster.ai") {
     next();
@@ -52,7 +52,7 @@ export const requireAuth = async (
 
   if (user?.trialEndsAt) {
     if (now > user?.trialEndsAt) {
-      res?.status(403).json({
+      res.status(403).json({
         error:
           "Your 30-day trial has expired. Please contact support to continue using Max Booster.",
         trialExpired: true,
@@ -65,7 +65,7 @@ export const requireAuth = async (
     if (now > user?.subscriptionEndsAt) {
       const planName =
         user?.subscriptionTier === "monthly" ? "monthly" : "yearly";
-      res?.status(403).json({
+      res.status(403).json({
         error: `Your ${planName} subscription has expired. Please renew your subscription to continue using Max Booster.`,
         subscriptionExpired: true,
         plan: user.subscriptionTier,
@@ -120,14 +120,14 @@ export const requireAdmin = (
  * should NOT use this middleware.
  */
 export const require2FA = (req: Request, res: Response, next: NextFunction) => {
-  const user = req?.user;
+  const user = req.user;
   if (!user) {
-    return res?.status(401).json({ error: "Authentication required" });
+    return res.status(401).json({ error: "Authentication required" });
   }
   if (user?.twoFactorEnabled) {
-    const sess = req?.session as unknown as Record<string, unknown>;
+    const sess = req.session as unknown as Record<string, unknown>;
     if (!sess?.twoFactorVerified) {
-      return res?.status(403).json({
+      return res.status(403).json({
         error: "Two-factor authentication required for this action",
         requiresTwoFactor: true,
       });

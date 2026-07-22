@@ -81,15 +81,15 @@ export class AutomationEngine {
       selectedLaneIds: [],
     };
 
-    this?.transport.on("*", (event) => {
+    this.transport.on("*", (event) => {
       if (event?.type === "stop") {
-        this?.commitAllWriteBuffers();
+        this.commitAllWriteBuffers();
       }
     });
   }
 
   getState(): Readonly<AutomationEngineState> {
-    return { ...this?.state };
+    return { ...this.state };
   }
 
   createLane(
@@ -98,7 +98,7 @@ export class AutomationEngine {
       "id" | "points" | "visible" | "armed" | "mode" | "color"
     >,
   ): string {
-    const id = `auto_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    const id = `auto_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const lane: AutomationLane = {
       ...params,
       id,
@@ -109,42 +109,42 @@ export class AutomationEngine {
       color: this.generateLaneColor(),
     };
 
-    this?.state.lanes?.push(lane);
-    this?.notify();
+    this.state.lanes?.push(lane);
+    this.notify();
     return id;
   }
 
   removeLane(laneId: string): void {
-    const index = this?.state.lanes?.findIndex((l) => l?.id === laneId);
+    const index = this.state.lanes?.findIndex((l) => l?.id === laneId);
     if (index !== -1) {
-      this?.state.lanes?.splice(index, 1);
-      this.state.clips = this?.state.clips?.filter((c) => c?.laneId !== laneId);
-      this?.writeBuffer.delete(laneId);
-      this?.notify();
+      this.state.lanes?.splice(index, 1);
+      this.state.clips = this.state.clips?.filter((c) => c?.laneId !== laneId);
+      this.writeBuffer.delete(laneId);
+      this.notify();
     }
   }
 
   setLaneMode(laneId: string, mode: AutomationMode): void {
-    const lane = this?.state.lanes?.find((l) => l?.id === laneId);
+    const lane = this.state.lanes?.find((l) => l?.id === laneId);
     if (lane) {
       lane.mode = mode;
-      this?.notify();
+      this.notify();
     }
   }
 
   setGlobalMode(mode: AutomationMode): void {
     this.state.globalMode = mode;
-    for (const lane of this?.state.lanes) {
+    for (const lane of this.state.lanes) {
       lane.mode = mode;
     }
-    this?.notify();
+    this.notify();
   }
 
   armLane(laneId: string, armed: boolean): void {
-    const lane = this?.state.lanes?.find((l) => l?.id === laneId);
+    const lane = this.state.lanes?.find((l) => l?.id === laneId);
     if (lane) {
       lane.armed = armed;
-      this?.notify();
+      this.notify();
     }
   }
 
@@ -154,19 +154,19 @@ export class AutomationEngine {
     value: number,
     curve: CurveType = "linear",
   ): string {
-    const lane = this?.state.lanes?.find((l) => l?.id === laneId);
+    const lane = this.state.lanes?.find((l) => l?.id === laneId);
     if (!lane) return "";
 
-    const clampedValue = Math?.max(
+    const clampedValue = Math.max(
       lane?.minValue,
-      Math?.min(lane?.maxValue, value),
+      Math.min(lane?.maxValue, value),
     );
-    const id = `pt_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    const id = `pt_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     const point: AutomationPoint = { id, time, value: clampedValue, curve };
 
     const existingIndex = lane?.points.findIndex(
-      (p) => Math?.abs(p?.time - time) < 0.001,
+      (p) => Math.abs(p?.time - time) < 0.001,
     );
     if (existingIndex !== -1) {
       lane.points[existingIndex] = point;
@@ -175,18 +175,18 @@ export class AutomationEngine {
       lane?.points.sort((a, b) => a?.time - b?.time);
     }
 
-    this?.notify();
+    this.notify();
     return id;
   }
 
   removePoint(laneId: string, pointId: string): void {
-    const lane = this?.state.lanes?.find((l) => l?.id === laneId);
+    const lane = this.state.lanes?.find((l) => l?.id === laneId);
     if (!lane) return;
 
     const index = lane?.points.findIndex((p) => p?.id === pointId);
     if (index !== -1) {
       lane?.points.splice(index, 1);
-      this?.notify();
+      this.notify();
     }
   }
 
@@ -196,15 +196,15 @@ export class AutomationEngine {
     newTime: number,
     newValue: number,
   ): void {
-    const lane = this?.state.lanes?.find((l) => l?.id === laneId);
+    const lane = this.state.lanes?.find((l) => l?.id === laneId);
     if (!lane) return;
 
     const point = lane?.points.find((p) => p?.id === pointId);
     if (point) {
-      point.time = Math?.max(0, newTime);
-      point.value = Math?.max(lane?.minValue, Math?.min(lane?.maxValue, newValue));
+      point.time = Math.max(0, newTime);
+      point.value = Math.max(lane?.minValue, Math.min(lane?.maxValue, newValue));
       lane?.points.sort((a, b) => a?.time - b?.time);
-      this?.notify();
+      this.notify();
     }
   }
 
@@ -214,19 +214,19 @@ export class AutomationEngine {
     curve: CurveType,
     tension?: number,
   ): void {
-    const lane = this?.state.lanes?.find((l) => l?.id === laneId);
+    const lane = this.state.lanes?.find((l) => l?.id === laneId);
     if (!lane) return;
 
     const point = lane?.points.find((p) => p?.id === pointId);
     if (point) {
       point.curve = curve;
       if (tension !== undefined) point.tension = tension;
-      this?.notify();
+      this.notify();
     }
   }
 
   getValueAtTime(laneId: string, time: number): number {
-    const lane = this?.state.lanes?.find((l) => l?.id === laneId);
+    const lane = this.state.lanes?.find((l) => l?.id === laneId);
     if (!lane || lane?.points.length === 0) {
       return lane?.defaultValue ?? 0;
     }
@@ -248,7 +248,7 @@ export class AutomationEngine {
       const p2 = lane?.points[i + 1];
 
       if (time >= p1?.time && time <= p2?.time) {
-        return this?.interpolate(p1, p2, time);
+        return this.interpolate(p1, p2, time);
       }
     }
 
@@ -271,13 +271,13 @@ export class AutomationEngine {
         return p1?.value + range * t;
 
       case "exponential":
-        return p1?.value + range * Math?.pow(t, 2);
+        return p1?.value + range * Math.pow(t, 2);
 
       case "logarithmic":
-        return p1?.value + range * (1 - Math?.pow(1 - t, 2));
+        return p1?.value + range * (1 - Math.pow(1 - t, 2));
 
       case "s-curve": {
-        const s = t < 0.5 ? 2 * t * t : 1 - Math?.pow(-2 * t + 2, 2) / 2;
+        const s = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
         return p1?.value + range * s;
       }
 
@@ -296,49 +296,49 @@ export class AutomationEngine {
   }
 
   writeValue(laneId: string, value: number): void {
-    const lane = this?.state.lanes?.find((l) => l?.id === laneId);
+    const lane = this.state.lanes?.find((l) => l?.id === laneId);
     if (!lane) return;
 
     const mode = lane?.mode;
     if (mode === "off" || mode === "read") return;
 
-    const time = this?.transport.getCurrentPosition().seconds;
-    const clampedValue = Math?.max(
+    const time = this.transport.getCurrentPosition().seconds;
+    const clampedValue = Math.max(
       lane?.minValue,
-      Math?.min(lane?.maxValue, value),
+      Math.min(lane?.maxValue, value),
     );
 
     if (mode === "touch") {
-      const lastValue = this?.lastWriteValues.get(laneId);
+      const lastValue = this.lastWriteValues.get(laneId);
       if (
         lastValue !== undefined &&
-        Math?.abs(clampedValue - lastValue) < this?.state.touchThreshold
+        Math.abs(clampedValue - lastValue) < this.state.touchThreshold
       ) {
         return;
       }
 
-      if (this?.touchTimeouts.has(laneId)) {
-        clearTimeout(this?.touchTimeouts.get(laneId));
+      if (this.touchTimeouts.has(laneId)) {
+        clearTimeout(this.touchTimeouts.get(laneId));
       }
 
-      this?.touchTimeouts.set(
+      this.touchTimeouts.set(
         laneId,
         window?.setTimeout(() => {
-          this?.commitWriteBuffer(laneId);
-          this?.touchTimeouts.delete(laneId);
-        }, this?.state.touchReleaseTime),
+          this.commitWriteBuffer(laneId);
+          this.touchTimeouts.delete(laneId);
+        }, this.state.touchReleaseTime),
       );
     }
 
-    this?.lastWriteValues.set(laneId, clampedValue);
+    this.lastWriteValues.set(laneId, clampedValue);
 
-    if (!this?.writeBuffer.has(laneId)) {
-      this?.writeBuffer.set(laneId, []);
+    if (!this.writeBuffer.has(laneId)) {
+      this.writeBuffer.set(laneId, []);
     }
 
-    const buffer = this?.writeBuffer.get(laneId)!;
+    const buffer = this.writeBuffer.get(laneId)!;
     const point: AutomationPoint = {
-      id: `pt_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`,
+      id: `pt_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`,
       time,
       value: clampedValue,
       curve: "linear",
@@ -347,26 +347,26 @@ export class AutomationEngine {
     const lastPoint = buffer[buffer?.length - 1];
     if (
       !lastPoint ||
-      (time - lastPoint?.time) * 1000 >= this?.state.writeResolution
+      (time - lastPoint?.time) * 1000 >= this.state.writeResolution
     ) {
       buffer?.push(point);
     }
 
-    this?.emitChange(laneId, clampedValue, time);
+    this.emitChange(laneId, clampedValue, time);
   }
 
   private commitWriteBuffer(laneId: string): void {
-    const buffer = this?.writeBuffer.get(laneId);
+    const buffer = this.writeBuffer.get(laneId);
     if (!buffer || buffer?.length === 0) return;
 
-    const lane = this?.state.lanes?.find((l) => l?.id === laneId);
+    const lane = this.state.lanes?.find((l) => l?.id === laneId);
     if (!lane) return;
 
-    const reduced = this?.reducePoints(buffer);
+    const reduced = this.reducePoints(buffer);
 
     for (const point of reduced) {
       const existingIndex = lane?.points.findIndex(
-        (p) => Math?.abs(p?.time - point?.time) < 0.001,
+        (p) => Math.abs(p?.time - point?.time) < 0.001,
       );
       if (existingIndex !== -1) {
         lane.points[existingIndex] = point;
@@ -376,19 +376,19 @@ export class AutomationEngine {
     }
 
     lane?.points.sort((a, b) => a?.time - b?.time);
-    this?.writeBuffer.delete(laneId);
-    this?.notify();
+    this.writeBuffer.delete(laneId);
+    this.notify();
   }
 
   private commitAllWriteBuffers(): void {
-    for (const laneId of this?.writeBuffer.keys()) {
-      this?.commitWriteBuffer(laneId);
+    for (const laneId of this.writeBuffer.keys()) {
+      this.commitWriteBuffer(laneId);
     }
-    this?.lastWriteValues.clear();
-    for (const timeout of this?.touchTimeouts.values()) {
+    this.lastWriteValues.clear();
+    for (const timeout of this.touchTimeouts.values()) {
       clearTimeout(timeout);
     }
-    this?.touchTimeouts.clear();
+    this.touchTimeouts.clear();
   }
 
   private reducePoints(
@@ -410,8 +410,8 @@ export class AutomationEngine {
           ((curr?.time - prev?.time) / (next?.time - prev?.time));
 
       if (
-        Math?.abs(curr?.value - expectedValue) >
-        tolerance * Math?.abs(next?.value - prev?.value)
+        Math.abs(curr?.value - expectedValue) >
+        tolerance * Math.abs(next?.value - prev?.value)
       ) {
         result?.push(curr);
       }
@@ -422,11 +422,11 @@ export class AutomationEngine {
   }
 
   getLanesForTrack(trackId: string): AutomationLane[] {
-    return this?.state.lanes?.filter((l) => l?.trackId === trackId);
+    return this.state.lanes?.filter((l) => l?.trackId === trackId);
   }
 
   getLanesForPlugin(trackId: string, pluginId: string): AutomationLane[] {
-    return this?.state.lanes?.filter(
+    return this.state.lanes?.filter(
       (l) =>
         l?.trackId === trackId &&
         l?.targetType === "plugin-param" &&
@@ -436,7 +436,7 @@ export class AutomationEngine {
 
   selectLanes(laneIds: string[]): void {
     this.state.selectedLaneIds = laneIds;
-    this?.notify();
+    this.notify();
   }
 
   copyPoints(
@@ -444,7 +444,7 @@ export class AutomationEngine {
     startTime: number,
     endTime: number,
   ): AutomationPoint[] {
-    const lane = this?.state.lanes?.find((l) => l?.id === laneId);
+    const lane = this.state.lanes?.find((l) => l?.id === laneId);
     if (!lane) return [];
 
     return lane?.points
@@ -457,37 +457,37 @@ export class AutomationEngine {
     points: AutomationPoint[],
     pasteTime: number,
   ): void {
-    const lane = this?.state.lanes?.find((l) => l?.id === laneId);
+    const lane = this.state.lanes?.find((l) => l?.id === laneId);
     if (!lane) return;
 
     for (const point of points) {
-      this?.addPoint(laneId, point?.time + pasteTime, point?.value, point?.curve);
+      this.addPoint(laneId, point?.time + pasteTime, point?.value, point?.curve);
     }
   }
 
   clearRange(laneId: string, startTime: number, endTime: number): void {
-    const lane = this?.state.lanes?.find((l) => l?.id === laneId);
+    const lane = this.state.lanes?.find((l) => l?.id === laneId);
     if (!lane) return;
 
     lane.points = lane?.points.filter(
       (p) => p?.time < startTime || p?.time > endTime,
     );
-    this?.notify();
+    this.notify();
   }
 
   onValueChange(
     laneId: string,
     listener: AutomationChangeListener,
   ): () => void {
-    if (!this?.changeListeners.has(laneId)) {
-      this?.changeListeners.set(laneId, new Set());
+    if (!this.changeListeners.has(laneId)) {
+      this.changeListeners.set(laneId, new Set());
     }
-    this?.changeListeners.get(laneId)!.add(listener);
-    return () => this?.changeListeners.get(laneId)?.delete(listener);
+    this.changeListeners.get(laneId)!.add(listener);
+    return () => this.changeListeners.get(laneId)?.delete(listener);
   }
 
   private emitChange(laneId: string, value: number, time: number): void {
-    this?.changeListeners.get(laneId)?.forEach((l) => l(laneId, value, time));
+    this.changeListeners.get(laneId)?.forEach((l) => l(laneId, value, time));
   }
 
   private generateLaneColor(): string {
@@ -501,25 +501,25 @@ export class AutomationEngine {
       "#06b6d4",
       "#84cc16",
     ];
-    return colors[this?.state.lanes?.length % colors?.length];
+    return colors[this.state.lanes?.length % colors?.length];
   }
 
   subscribe(listener: () => void): () => void {
-    this?.listeners.add(listener);
-    return () => this?.listeners.delete(listener);
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
   }
 
   private notify(): void {
-    this?.listeners.forEach((l) => l());
+    this.listeners.forEach((l) => l());
   }
 
   serialize(): AutomationEngineState {
-    return structuredClone(this?.state);
+    return structuredClone(this.state);
   }
 
   deserialize(state: AutomationEngineState): void {
     this.state = structuredClone(state);
-    this?.notify();
+    this.notify();
   }
 }
 

@@ -143,7 +143,7 @@ export async function storeVoiceFile(
   },
 ): Promise<StoredVoiceFile | null> {
   if (!existsSync(filePath)) {
-    logger?.warn(`[PDIM Media] storeVoiceFile: path not found: ${filePath}`);
+    logger.warn(`[PDIM Media] storeVoiceFile: path not found: ${filePath}`);
     return null;
   }
 
@@ -187,18 +187,18 @@ export async function storeVoiceFile(
     // Write metadata to PDIM Redis cache
     await pdimSet(
       `voice:${userId}:${result?.key}`,
-      JSON?.stringify(voiceMeta),
+      JSON.stringify(voiceMeta),
       VOICE_META_TTL,
     );
 
-    logger?.info(
+    logger.info(
       `[PDIM Media] Voice file stored → PDIM key=${result.key} tier=${result?.tier} ` +
         `size=${(result.sizeBytes / 1024).toFixed(1)}KB → compressed=${(result?.compressedSize / 1024).toFixed(1)}KB`,
     );
 
     return voiceMeta;
   } catch (e) {
-    logger?.warn("[PDIM Media] storeVoiceFile failed:", e?.message);
+    logger.warn("[PDIM Media] storeVoiceFile failed:", e?.message);
     return null;
   }
 }
@@ -230,7 +230,7 @@ export async function storeMusicVideo(
   renderResult: Record<string, any>,
 ): Promise<StoredMusicVideo | null> {
   if (!existsSync(filePath)) {
-    logger?.warn(`[PDIM Media] storeMusicVideo: path not found: ${filePath}`);
+    logger.warn(`[PDIM Media] storeMusicVideo: path not found: ${filePath}`);
     return null;
   }
 
@@ -281,24 +281,24 @@ export async function storeMusicVideo(
     // Write metadata to PDIM Redis cache indexed by userId + key
     await pdimSet(
       `video:${userId}:${result?.key}`,
-      JSON?.stringify(videoMeta),
+      JSON.stringify(videoMeta),
       VIDEO_META_TTL,
     );
     // Also index by filename for quick lookup by public URL
     await pdimSet(
       `video_file:${filename}`,
-      JSON?.stringify({ userId, pdimKey: result.key }),
+      JSON.stringify({ userId, pdimKey: result.key }),
       VIDEO_META_TTL,
     );
 
-    logger?.info(
+    logger.info(
       `[PDIM Media] Music video stored → PDIM key=${result.key} tier=${result?.tier} ` +
         `size=${(result.sizeBytes / 1024 / 1024).toFixed(2)}MB → compressed=${(result?.compressedSize / 1024 / 1024).toFixed(2)}MB`,
     );
 
     return videoMeta;
   } catch (e) {
-    logger?.warn("[PDIM Media] storeMusicVideo failed:", e?.message);
+    logger.warn("[PDIM Media] storeMusicVideo failed:", e?.message);
     return null;
   }
 }
@@ -329,7 +329,7 @@ export async function getUserMediaLibrary(userId: string): Promise<{
       totalCompressedBytes: analytics.totalCompressedBytes,
     };
   } catch (e) {
-    logger?.warn("[PDIM Media] getUserMediaLibrary failed:", e?.message);
+    logger.warn("[PDIM Media] getUserMediaLibrary failed:", e?.message);
     return {
       voices: [],
       videos: [],

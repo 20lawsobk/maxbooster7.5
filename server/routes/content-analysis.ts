@@ -108,16 +108,16 @@ const requirePremium = async (
   next: Record<string, unknown>,
 ) => {
   try {
-    if (!req?.user) {
-      return res?.status(401).json({ error: "Authentication required" });
+    if (!req.user) {
+      return res.status(401).json({ error: "Authentication required" });
     }
 
     const user = await db?.query.users?.findFirst({
-      where: eq(users?.id, req?.user.id),
+      where: eq(users?.id, req.user.id),
     });
 
     if (!user) {
-      return res?.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: "User not found" });
     }
 
     // Only paid subscribers (monthly/yearly/lifetime) and admins can access
@@ -130,15 +130,15 @@ const requirePremium = async (
       return next();
     }
 
-    return res?.status(403).json({
+    return res.status(403).json({
       error: "Paid subscription required",
       message:
         "Content analysis features require a paid subscription. Upgrade to access multimodal AI analysis.",
       upgradeUrl: "/pricing",
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Premium check error:");
-    res?.status(500).json({ error: "Failed to verify subscription" });
+    logger.warn({ err: error }, "Premium check error:");
+    res.status(500).json({ error: "Failed to verify subscription" });
   }
 };
 
@@ -154,29 +154,29 @@ router?.use(requirePremium);
  */
 router?.post("/image", async (req, res) => {
   try {
-    const { imageUrl } = req?.body;
+    const { imageUrl } = req.body;
 
     if (!imageUrl) {
-      return res?.status(400).json({ error: "imageUrl is required" });
+      return res.status(400).json({ error: "imageUrl is required" });
     }
 
     let safeImageUrl: string;
     try {
       safeImageUrl = await validateExternalUrl(imageUrl);
     } catch {
-      return res?.status(400).json({ error: "Invalid or unsafe URL" });
+      return res.status(400).json({ error: "Invalid or unsafe URL" });
     }
 
     const analysis = await contentAnalysisService?.analyzeImage(safeImageUrl);
 
-    res?.json({
+    res.json({
       success: true,
       analysis,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Image analysis error:");
-    res?.status(500).json({
+    logger.warn({ err: error }, "Image analysis error:");
+    res.status(500).json({
       success: false,
       error: "Failed to analyze image",
       message: error instanceof Error ? error?.message : "Unknown error",
@@ -191,17 +191,17 @@ router?.post("/image", async (req, res) => {
  */
 router?.post("/video", async (req, res) => {
   try {
-    const { videoUrl, duration } = req?.body;
+    const { videoUrl, duration } = req.body;
 
     if (!videoUrl) {
-      return res?.status(400).json({ error: "videoUrl is required" });
+      return res.status(400).json({ error: "videoUrl is required" });
     }
 
     let safeVideoUrl: string;
     try {
       safeVideoUrl = await validateExternalUrl(videoUrl);
     } catch {
-      return res?.status(400).json({ error: "Invalid or unsafe URL" });
+      return res.status(400).json({ error: "Invalid or unsafe URL" });
     }
 
     const analysis = await contentAnalysisService?.analyzeVideo(
@@ -209,14 +209,14 @@ router?.post("/video", async (req, res) => {
       duration || 30,
     );
 
-    res?.json({
+    res.json({
       success: true,
       analysis,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Video analysis error:");
-    res?.status(500).json({
+    logger.warn({ err: error }, "Video analysis error:");
+    res.status(500).json({
       success: false,
       error: "Failed to analyze video",
       message: error instanceof Error ? error?.message : "Unknown error",
@@ -231,17 +231,17 @@ router?.post("/video", async (req, res) => {
  */
 router?.post("/audio", async (req, res) => {
   try {
-    const { audioUrl, metadata } = req?.body;
+    const { audioUrl, metadata } = req.body;
 
     if (!audioUrl) {
-      return res?.status(400).json({ error: "audioUrl is required" });
+      return res.status(400).json({ error: "audioUrl is required" });
     }
 
     let safeAudioUrl: string;
     try {
       safeAudioUrl = await validateExternalUrl(audioUrl);
     } catch {
-      return res?.status(400).json({ error: "Invalid or unsafe URL" });
+      return res.status(400).json({ error: "Invalid or unsafe URL" });
     }
 
     const analysis = await contentAnalysisService?.analyzeAudio(
@@ -249,14 +249,14 @@ router?.post("/audio", async (req, res) => {
       metadata,
     );
 
-    res?.json({
+    res.json({
       success: true,
       analysis,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Audio analysis error:");
-    res?.status(500).json({
+    logger.warn({ err: error }, "Audio analysis error:");
+    res.status(500).json({
       success: false,
       error: "Failed to analyze audio",
       message: error instanceof Error ? error?.message : "Unknown error",
@@ -271,22 +271,22 @@ router?.post("/audio", async (req, res) => {
  */
 router?.post("/text", async (req, res) => {
   try {
-    const { text } = req?.body;
+    const { text } = req.body;
 
     if (!text) {
-      return res?.status(400).json({ error: "text is required" });
+      return res.status(400).json({ error: "text is required" });
     }
 
     const analysis = await contentAnalysisService?.analyzeText(text);
 
-    res?.json({
+    res.json({
       success: true,
       analysis,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Text analysis error:");
-    res?.status(500).json({
+    logger.warn({ err: error }, "Text analysis error:");
+    res.status(500).json({
       success: false,
       error: "Failed to analyze text",
       message: error instanceof Error ? error?.message : "Unknown error",
@@ -301,46 +301,46 @@ router?.post("/text", async (req, res) => {
  */
 router?.post("/website", async (req, res) => {
   try {
-    const { url } = req?.body;
+    const { url } = req.body;
 
-    logger?.info(
+    logger.info(
       {
         receivedUrl: url,
-        bodyKeys: Object.keys(req?.body || {}),
+        bodyKeys: Object.keys(req.body || {}),
         contentType: req.headers["content-type"],
       },
       "[ContentAnalysis] /website request received",
     );
 
     if (!url) {
-      logger?.warn(
+      logger.warn(
         { body: req.body },
         "[ContentAnalysis] /website rejected — url missing",
       );
-      return res?.status(400).json({ error: "url is required" });
+      return res.status(400).json({ error: "url is required" });
     }
 
     let safeUrl: string;
     try {
       safeUrl = await validateExternalUrl(url);
     } catch (validationError) {
-      logger?.warn(
+      logger.warn(
         { url, err: validationError },
         "[ContentAnalysis] /website rejected — URL validation failed",
       );
-      return res?.status(400).json({ error: "Invalid or unsafe URL" });
+      return res.status(400).json({ error: "Invalid or unsafe URL" });
     }
 
     const analysis = await contentAnalysisService?.analyzeWebsite(safeUrl);
 
-    res?.json({
+    res.json({
       success: true,
       analysis,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Website analysis error:");
-    res?.status(500).json({
+    logger.warn({ err: error }, "Website analysis error:");
+    res.status(500).json({
       success: false,
       error: "Failed to analyze website",
       message: error instanceof Error ? error?.message : "Unknown error",
@@ -362,7 +362,7 @@ router?.post("/website", async (req, res) => {
 router?.post("/batch", async (req, res) => {
   try {
     const { mediaType, mediaUrl, text, landingPageUrl, videoDuration } =
-      req?.body;
+      req.body;
 
     const results: Record<string, unknown> = {};
 
@@ -371,7 +371,7 @@ router?.post("/batch", async (req, res) => {
       try {
         safeMediaUrl = await validateExternalUrl(mediaUrl);
       } catch {
-        return res?.status(400).json({ error: "Invalid or unsafe mediaUrl" });
+        return res.status(400).json({ error: "Invalid or unsafe mediaUrl" });
       }
       results.image = await contentAnalysisService?.analyzeImage(safeMediaUrl);
     }
@@ -381,7 +381,7 @@ router?.post("/batch", async (req, res) => {
       try {
         safeMediaUrl = await validateExternalUrl(mediaUrl);
       } catch {
-        return res?.status(400).json({ error: "Invalid or unsafe mediaUrl" });
+        return res.status(400).json({ error: "Invalid or unsafe mediaUrl" });
       }
       results.video = await contentAnalysisService?.analyzeVideo(
         safeMediaUrl,
@@ -406,14 +406,14 @@ router?.post("/batch", async (req, res) => {
         await contentAnalysisService?.analyzeWebsite(safeLandingPageUrl);
     }
 
-    res?.json({
+    res.json({
       success: true,
       contentAnalysis: results,
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Batch analysis error:");
-    res?.status(500).json({
+    logger.warn({ err: error }, "Batch analysis error:");
+    res.status(500).json({
       success: false,
       error: "Failed to perform batch analysis",
       message: error instanceof Error ? error?.message : "Unknown error",
@@ -429,10 +429,10 @@ router?.post("/batch", async (req, res) => {
  */
 router?.get("/:type/:id", requireAuth, async (req, res) => {
   try {
-    const { type, id } = req?.params;
+    const { type, id } = req.params;
 
     if (type !== "post" && type !== "campaign") {
-      return res?.status(400).json({
+      return res.status(400).json({
         error: 'Invalid type. Must be "post" or "campaign"',
       });
     }
@@ -450,7 +450,7 @@ router?.get("/:type/:id", requireAuth, async (req, res) => {
           .json({ success: false, error: "Post not found" });
       }
 
-      return res?.json({
+      return res.json({
         success: true,
         type: "post",
         id: post.id,
@@ -478,7 +478,7 @@ router?.get("/:type/:id", requireAuth, async (req, res) => {
           .json({ success: false, error: "Campaign not found" });
       }
 
-      return res?.json({
+      return res.json({
         success: true,
         type: "campaign",
         id: campaign.id,
@@ -493,8 +493,8 @@ router?.get("/:type/:id", requireAuth, async (req, res) => {
       });
     }
   } catch (error) {
-    logger?.warn({ err: error }, "Content analysis retrieval error:");
-    res?.status(500).json({
+    logger.warn({ err: error }, "Content analysis retrieval error:");
+    res.status(500).json({
       success: false,
       error: "Failed to retrieve content analysis",
       message: error instanceof Error ? error?.message : "Unknown error",

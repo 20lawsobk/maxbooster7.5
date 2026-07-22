@@ -352,7 +352,7 @@ async function fetchMaxCoreContentSignals(): Promise<Partial<ScoreWeights> | nul
       "/api/generate/content",
       { topic, platform, tone },
     );
-    if (res?.caption || res?.hook) results?.push(res);
+    if (res.caption || res.hook) results?.push(res);
     // Brief pause — lets MaxCore flush its response before the next request.
     await new Promise<void>((r) => setTimeout(r, SEQUENTIAL_GAP_MS));
   }
@@ -377,7 +377,7 @@ async function fetchMaxCoreContentSignals(): Promise<Partial<ScoreWeights> | nul
   const requestedPlatforms = [
     ...new Set(_CALIBRATION_TOPICS?.map((t) => t?.platform)),
   ];
-  logger?.info(
+  logger.info(
     `[ScoreCalibrator] MaxCore generate signals — ` +
       `${results?.length}/${_CALIBRATION_TOPICS?.length} topics responded | ` +
       `hookDiversity=${hookDiversity.toFixed(2)} ctaRichness=${ctaRichness?.toFixed(2)} ` +
@@ -677,7 +677,7 @@ export function initScoreCalibrator(): void {
     runCalibration().catch(() => {});
   }, CALIBRATION_TTL_MS);
 
-  logger?.info(
+  logger.info(
     "[ScoreCalibrator] Initialized — will calibrate scoring weights against MaxCore 8TB corpus",
   );
 }

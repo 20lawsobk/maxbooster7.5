@@ -154,7 +154,7 @@ const collaborationSchema = z.object({
 
 router?.get("/beats", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user?.id;
+    const userId = req.user?.id;
     const {
       search,
       genre,
@@ -169,7 +169,7 @@ router?.get("/beats", async (req: Request, res: Response) => {
       priceMin,
       priceMax,
       tags,
-    } = req?.query;
+    } = req.query;
 
     // If filtering by producer, get their beats directly (short TTL since producer pages update often)
     if (producerId) {
@@ -179,7 +179,7 @@ router?.get("/beats", async (req: Request, res: Response) => {
         () => marketplaceService?.getListingsByProducer(producerId as string),
         30,
       );
-      return res?.json(producerBeats);
+      return res.json(producerBeats);
     }
 
     const filters = {
@@ -192,8 +192,8 @@ router?.get("/beats", async (req: Request, res: Response) => {
       priceMin: priceMin ? parseFloat(priceMin as string) : undefined,
       priceMax: priceMax ? parseFloat(priceMax as string) : undefined,
       tags: tags ? (tags as string).split(",") : undefined,
-      limit: Math.min(Math?.max(1, parseInt(limit as string) || 20), 200),
-      offset: Math.min(Math?.max(0, parseInt(offset as string) || 0), 100_000),
+      limit: Math.min(Math.max(1, parseInt(limit as string) || 20), 200),
+      offset: Math.min(Math.max(0, parseInt(offset as string) || 0), 100_000),
     };
 
     // Personalized feeds are cached per-user (30s) to still feel fresh
@@ -205,7 +205,7 @@ router?.get("/beats", async (req: Request, res: Response) => {
         () => discoveryAlgorithmService?.getPersonalizedFeed(userId, filters),
         30,
       );
-      return res?.json(personalizedBeats);
+      return res.json(personalizedBeats);
     }
 
     // Anonymous browse — longer TTL since it's not personalized
@@ -1501,10 +1501,10 @@ router.get("/collaborations", async (req: Request, res: Response) => {
       };
     });
 
-    res?.json(collaborations);
+    res.json(collaborations);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching collaborations:");
-    res?.status(500).json({ error: "Failed to fetch collaborations" });
+    logger.warn({ err: error }, "Error fetching collaborations:");
+    res.status(500).json({ error: "Failed to fetch collaborations" });
   }
 });
 
@@ -1516,8 +1516,8 @@ router?.post(
   ]),
   async (req: Request, res: Response) => {
     try {
-      if (!req?.isAuthenticated()) {
-        return res?.status(401).json({ error: "Unauthorized" });
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
       const {
@@ -1530,11 +1530,11 @@ router?.post(
         licenseType,
         description,
         tags,
-      } = req?.body;
-      const files = req?.files as { [fieldname: string]: Express.Multer.File[] };
+      } = req.body;
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
       if (!title || !genre) {
-        return res?.status(400).json({ error: "Title and genre are required" });
+        return res.status(400).json({ error: "Title and genre are required" });
       }
 
       let audioUrl = "";
@@ -1552,26 +1552,26 @@ router?.post(
           audioFile?.mimetype,
         );
         audioUrl = `/api/marketplace/audio/${uploadedAudioKey}`;
-        logger?.info(`Audio file saved: ${uploadedAudioKey}`);
+        logger.info(`Audio file saved: ${uploadedAudioKey}`);
       }
 
       if (files?.coverArt?.[0]) {
         const coverFile = files?.coverArt[0];
         const result = await storeUploadedFile(
           coverFile,
-          req?.user!.id,
+          req.user!.id,
           "artwork",
         );
         artworkUrl = result?.url;
-        logger?.info(
+        logger.info(
           `Cover art saved via storeUploadedFile: ${result?.key} (processed: ${result?.processed})`,
         );
       } else if (
-        req?.body.artworkUrl &&
-        typeof req?.body.artworkUrl === "string"
+        req.body.artworkUrl &&
+        typeof req.body.artworkUrl === "string"
       ) {
         // Cover art pre-uploaded separately — use the URL directly
-        artworkUrl = req?.body.artworkUrl;
+        artworkUrl = req.body.artworkUrl;
       }
 
       const listing = await marketplaceService?.createListing({
@@ -1614,22 +1614,22 @@ router?.post(
               if (analysis?.success && analysis?.data) {
                 const updateData: Record<string, unknown> = {};
                 if (!tempo && analysis?.data.bpm)
-                  updateData.bpm = Math?.round(analysis?.data.bpm);
+                  updateData.bpm = Math.round(analysis?.data.bpm);
                 if (!key && analysis?.data.key)
                   updateData.key = analysis?.data.key;
-                if (Object?.keys(updateData).length > 0) {
+                if (Object.keys(updateData).length > 0) {
                   await db
                     .update(listings)
                     .set(updateData)
                     .where(eq(listings?.id, listing?.id));
-                  logger?.info(
+                  logger.info(
                     `[AutoTag] Beat ${listing.id} tagged: BPM=${updateData.bpm ?? "kept"} key=${updateData?.key ?? "kept"}`,
                   );
                 }
               }
             }
           } catch (tagErr) {
-            logger?.warn("[AutoTag] Failed to auto-tag beat:", tagErr);
+            logger.warn("[AutoTag] Failed to auto-tag beat:", tagErr);
           } finally {
             fsPromises?.unlink(tmpPath).catch(() => {
               /* intentional: temp-file cleanup */
@@ -1644,10 +1644,10 @@ router?.post(
           await notificationService?.sendAdminMarketplaceReviewNotification(
             title,
             listing?.id,
-            (req?.user as Record<string, unknown>)?.email || "unknown",
+            (req.user as Record<string, unknown>)?.email || "unknown",
           );
         } catch (err) {
-          logger?.warn(
+          logger.warn(
             { err: err },
             "Marketplace review admin notification error:",
           );
@@ -1657,16 +1657,16 @@ router?.post(
       // Notify followers about the new beat upload (async, non-blocking)
       (async () => {
         try {
-          const producerId = req?.user!.id;
+          const producerId = req.user!.id;
           const producerName =
-            (req?.user as Record<string, unknown>)?.firstName ||
-            (req?.user as Record<string, unknown>)?.username ||
+            (req.user as Record<string, unknown>)?.firstName ||
+            (req.user as Record<string, unknown>)?.username ||
             "A producer you follow";
           const followers =
             await discoveryAlgorithmService?.getProducerFollowers(producerId);
 
           if (followers?.length > 0) {
-            logger?.info(
+            logger.info(
               `Notifying ${followers?.length} followers about new beat: ${title}`,
             );
 
@@ -1691,7 +1691,7 @@ router?.post(
                       },
                     })
                     .catch((err) =>
-                      logger?.warn(
+                      logger.warn(
                         { err: err },
                         `Failed to notify follower ${followerId}:`,
                       ),
@@ -1700,16 +1700,16 @@ router?.post(
               );
             }
 
-            logger?.info(
+            logger.info(
               `Successfully notified ${followers?.length} followers about new beat`,
             );
           }
         } catch (notifyError) {
-          logger?.warn("Error notifying followers about new beat:", notifyError);
+          logger.warn("Error notifying followers about new beat:", notifyError);
         }
       })();
 
-      res?.status(201).json(listing);
+      res.status(201).json(listing);
 
       // Async audio separation: generate MP3 (all tiers) + stems (unlimited/exclusive)
       if (uploadedAudioKey) {
@@ -1717,16 +1717,16 @@ router?.post(
           try {
             const sepResult = await processUploadedBeat(
               listing?.id,
-              req?.user!.id,
+              req.user!.id,
               uploadedAudioKey,
               licenseType,
             );
-            logger?.info(
+            logger.info(
               `[AudioSeparator] Beat ${listing?.id} processed — ` +
                 `mp3=${!!sepResult.mp3Url} stems=${sepResult?.stemsAvailable}`,
             );
           } catch (sepErr) {
-            logger?.warn("[AudioSeparator] Processing failed:", sepErr);
+            logger.warn("[AudioSeparator] Processing failed:", sepErr);
           }
         });
       }
@@ -1734,32 +1734,32 @@ router?.post(
       setImmediate(async () => {
         try {
           await notificationService?.sendBeatListingLiveNotification(
-            req?.user!.id,
+            req.user!.id,
             title,
             parseFloat(price) || 50,
           );
         } catch (err) {
-          logger?.warn(
+          logger.warn(
             { err: err },
             "[Marketplace] beat listing notification error:",
           );
         }
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error uploading beat:");
-      res?.status(500).json({ error: "Failed to upload beat" });
+      logger.warn({ err: error }, "Error uploading beat:");
+      res.status(500).json({ error: "Failed to upload beat" });
     }
   },
 );
 
 router?.get("/audio/*path", async (req: Request, res: Response) => {
   try {
-    let fileKey = Array?.isArray(req?.params.path)
-      ? req?.params.path?.join("/")
-      : req?.params.path;
+    let fileKey = Array.isArray(req.params.path)
+      ? req.params.path?.join("/")
+      : req.params.path;
 
     if (typeof fileKey !== "string") {
-      return res?.status(400).json({ error: "Invalid audio path" });
+      return res.status(400).json({ error: "Invalid audio path" });
     }
 
     if (
@@ -1767,7 +1767,7 @@ router?.get("/audio/*path", async (req: Request, res: Response) => {
       fileKey?.includes("\0") ||
       fileKey?.startsWith("/")
     ) {
-      return res?.status(400).json({ error: "Invalid audio path" });
+      return res.status(400).json({ error: "Invalid audio path" });
     }
 
     if (fileKey?.startsWith("uploads/")) {
@@ -1787,16 +1787,16 @@ router?.get("/audio/*path", async (req: Request, res: Response) => {
     const contentType = mimeTypes[ext] || "audio/mpeg";
 
     // CORS headers for audio playback
-    res?.setHeader("Access-Control-Allow-Origin", "*");
-    res?.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
-    res?.setHeader("Access-Control-Allow-Headers", "Range, Content-Type");
-    res?.setHeader(
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Range, Content-Type");
+    res.setHeader(
       "Access-Control-Expose-Headers",
       "Content-Length, Content-Range, Accept-Ranges",
     );
-    res?.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-    res?.setHeader("Cross-Origin-Opener-Policy", "unsafe-none");
-    res?.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    res.setHeader("Cross-Origin-Opener-Policy", "unsafe-none");
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
 
     // Fast path: stream directly from local disk (avoids PDIM round-trip for large files)
     const LOCAL_STORAGE_DIR = path?.resolve("./uploads/files");
@@ -1808,10 +1808,10 @@ router?.get("/audio/*path", async (req: Request, res: Response) => {
     try {
       const stat = await fsPromises?.stat(localPath);
       const fileSize = stat?.size;
-      const range = req?.headers.range;
+      const range = req.headers.range;
 
-      res?.setHeader("Content-Type", contentType);
-      res?.setHeader("Accept-Ranges", "bytes");
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Accept-Ranges", "bytes");
 
       if (range) {
         const parts = range.replace(/bytes=/, "").split("-");
@@ -1819,12 +1819,12 @@ router?.get("/audio/*path", async (req: Request, res: Response) => {
         const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
         const chunkSize = end - start + 1;
 
-        res?.status(206);
-        res?.setHeader("Content-Range", `bytes ${start}-${end}/${fileSize}`);
-        res?.setHeader("Content-Length", chunkSize);
+        res.status(206);
+        res.setHeader("Content-Range", `bytes ${start}-${end}/${fileSize}`);
+        res.setHeader("Content-Length", chunkSize);
         fs?.createReadStream(localPath, { start, end }).pipe(res);
       } else {
-        res?.setHeader("Content-Length", fileSize);
+        res.setHeader("Content-Length", fileSize);
         fs?.createReadStream(localPath).pipe(res);
       }
       return;
@@ -1835,16 +1835,16 @@ router?.get("/audio/*path", async (req: Request, res: Response) => {
     // Fallback: load from PDIM into buffer (for files not yet written to disk)
     const exists = await storageService?.fileExists(fileKey);
     if (!exists) {
-      logger?.warn(`Audio file not found: ${fileKey}`);
-      return res?.status(404).json({ error: "Audio file not found" });
+      logger.warn(`Audio file not found: ${fileKey}`);
+      return res.status(404).json({ error: "Audio file not found" });
     }
 
     const fileBuffer = await storageService?.downloadFile(fileKey);
     const fileSize = fileBuffer?.length;
-    const range = req?.headers.range;
+    const range = req.headers.range;
 
-    res?.setHeader("Content-Type", contentType);
-    res?.setHeader("Accept-Ranges", "bytes");
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Accept-Ranges", "bytes");
 
     if (range) {
       const parts = range.replace(/bytes=/, "").split("-");
@@ -1852,28 +1852,28 @@ router?.get("/audio/*path", async (req: Request, res: Response) => {
       const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
       const chunkSize = end - start + 1;
 
-      res?.status(206);
-      res?.setHeader("Content-Range", `bytes ${start}-${end}/${fileSize}`);
-      res?.setHeader("Content-Length", chunkSize);
-      res?.send(fileBuffer?.subarray(start, end + 1));
+      res.status(206);
+      res.setHeader("Content-Range", `bytes ${start}-${end}/${fileSize}`);
+      res.setHeader("Content-Length", chunkSize);
+      res.send(fileBuffer?.subarray(start, end + 1));
     } else {
-      res?.setHeader("Content-Length", fileSize);
-      res?.send(fileBuffer);
+      res.setHeader("Content-Length", fileSize);
+      res.send(fileBuffer);
     }
   } catch (error) {
-    logger?.warn({ err: error }, "Error serving audio file:");
-    res?.status(500).json({ error: "Failed to load audio file" });
+    logger.warn({ err: error }, "Error serving audio file:");
+    res.status(500).json({ error: "Failed to load audio file" });
   }
 });
 
 router?.get("/cover/*path", async (req: Request, res: Response) => {
   try {
-    const fileKey = Array?.isArray(req?.params.path)
-      ? req?.params.path?.join("/")
-      : req?.params.path;
+    const fileKey = Array.isArray(req.params.path)
+      ? req.params.path?.join("/")
+      : req.params.path;
 
     if (typeof fileKey !== "string") {
-      return res?.status(400).json({ error: "Invalid cover path" });
+      return res.status(400).json({ error: "Invalid cover path" });
     }
 
     if (
@@ -1881,13 +1881,13 @@ router?.get("/cover/*path", async (req: Request, res: Response) => {
       fileKey?.includes("\0") ||
       fileKey?.startsWith("/")
     ) {
-      return res?.status(400).json({ error: "Invalid cover path" });
+      return res.status(400).json({ error: "Invalid cover path" });
     }
 
     const exists = await storageService?.fileExists(fileKey);
     if (!exists) {
-      logger?.warn(`Cover image not found: ${fileKey}`);
-      return res?.status(404).json({ error: "Cover image not found" });
+      logger.warn(`Cover image not found: ${fileKey}`);
+      return res.status(404).json({ error: "Cover image not found" });
     }
 
     const ext = path?.extname(fileKey).toLowerCase();
@@ -1902,17 +1902,17 @@ router?.get("/cover/*path", async (req: Request, res: Response) => {
     const fileBuffer = await storageService?.downloadFile(fileKey);
 
     // CORS headers for image loading - override Helmet restrictions
-    res?.setHeader("Access-Control-Allow-Origin", "*");
-    res?.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
-    res?.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-    res?.setHeader("Cross-Origin-Opener-Policy", "unsafe-none");
-    res?.setHeader("Content-Type", mimeTypes[ext] || "image/jpeg");
-    res?.setHeader("Content-Length", fileBuffer?.length);
-    res?.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    res?.send(fileBuffer);
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    res.setHeader("Cross-Origin-Opener-Policy", "unsafe-none");
+    res.setHeader("Content-Type", mimeTypes[ext] || "image/jpeg");
+    res.setHeader("Content-Length", fileBuffer?.length);
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.send(fileBuffer);
   } catch (error) {
-    logger?.warn({ err: error }, "Error serving cover image:");
-    res?.status(500).json({ error: "Failed to load cover image" });
+    logger.warn({ err: error }, "Error serving cover image:");
+    res.status(500).json({ error: "Failed to load cover image" });
   }
 });
 
@@ -1924,11 +1924,11 @@ router?.put(
   ]),
   async (req: Request, res: Response) => {
     try {
-      if (!req?.isAuthenticated()) {
-        return res?.status(401).json({ error: "Unauthorized" });
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { id } = req?.params;
+      const { id } = req.params;
       const {
         title,
         description,
@@ -1939,8 +1939,8 @@ router?.put(
         price,
         tags,
         licenseType,
-      } = req?.body;
-      const files = req?.files as { [fieldname: string]: Express.Multer.File[] };
+      } = req.body;
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
       const updateData: Record<string, unknown> = {};
       if (title) updateData.title = title;
@@ -1970,66 +1970,66 @@ router?.put(
         const artworkFile = files?.artwork[0];
         const result = await storeUploadedFile(
           artworkFile,
-          req?.user!.id,
+          req.user!.id,
           "artwork",
         );
         updateData.artworkUrl = result?.url;
-        logger?.info(
+        logger.info(
           `Artwork updated via storeUploadedFile: ${result?.key} (processed: ${result?.processed})`,
         );
       } else if (
-        req?.body.artworkUrl &&
-        typeof req?.body.artworkUrl === "string"
+        req.body.artworkUrl &&
+        typeof req.body.artworkUrl === "string"
       ) {
         // Cover art pre-uploaded separately — use the URL directly
-        updateData.artworkUrl = req?.body.artworkUrl;
+        updateData.artworkUrl = req.body.artworkUrl;
       }
 
       const updatedListing = await marketplaceService?.updateListing(
         id,
-        req?.user!.id,
+        req.user!.id,
         updateData,
       );
       if (!updatedListing) {
-        return res?.status(404).json({ error: "Listing not found" });
+        return res.status(404).json({ error: "Listing not found" });
       }
 
-      res?.json(updatedListing);
+      res.json(updatedListing);
     } catch (error) {
-      logger?.warn({ err: error }, "Error updating listing:");
+      logger.warn({ err: error }, "Error updating listing:");
       if (error?.message === "Not authorized to update this listing") {
-        return res?.status(403).json({ error: error.message });
+        return res.status(403).json({ error: error.message });
       }
-      res?.status(500).json({ error: "Failed to update beat" });
+      res.status(500).json({ error: "Failed to update beat" });
     }
   },
 );
 
 router?.delete("/listings/:id", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { id } = req?.params;
-    await marketplaceService?.deleteListing(id, req?.user!.id);
-    res?.json({ success: true, message: "Beat deleted successfully" });
+    const { id } = req.params;
+    await marketplaceService?.deleteListing(id, req.user!.id);
+    res.json({ success: true, message: "Beat deleted successfully" });
   } catch (error) {
-    logger?.warn({ err: error }, "Error deleting listing:");
+    logger.warn({ err: error }, "Error deleting listing:");
     if (error?.message === "Not authorized to delete this listing") {
-      return res?.status(403).json({ error: error.message });
+      return res.status(403).json({ error: error.message });
     }
     if (error?.message === "Listing not found") {
-      return res?.status(404).json({ error: error.message });
+      return res.status(404).json({ error: error.message });
     }
-    res?.status(500).json({ error: "Failed to delete beat" });
+    res.status(500).json({ error: "Failed to delete beat" });
   }
 });
 
 router?.post("/connect-stripe", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     const baseUrl = getBaseUrl();
@@ -2038,37 +2038,37 @@ router?.post("/connect-stripe", async (req: Request, res: Response) => {
     const refreshUrl = `${baseUrl}/marketplace?tab=payouts&setup=refresh`;
 
     const result = await marketplaceService?.setupStripeConnect(
-      req?.user!.id,
+      req.user!.id,
       returnUrl,
       refreshUrl,
     );
 
-    res?.json(result);
+    res.json(result);
   } catch (error) {
-    logger?.warn({ err: error }, "Error connecting Stripe:");
-    res?.status(500).json({ error: "Failed to connect Stripe account" });
+    logger.warn({ err: error }, "Error connecting Stripe:");
+    res.status(500).json({ error: "Failed to connect Stripe account" });
   }
 });
 
 router?.post("/follow/:producerId", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { producerId } = req?.params;
+    const { producerId } = req.params;
     if (!producerId) {
-      return res?.status(400).json({ error: "producerId is required" });
+      return res.status(400).json({ error: "producerId is required" });
     }
 
     const result = await discoveryAlgorithmService?.followProducer(
-      req?.user!.id,
+      req.user!.id,
       producerId,
     );
-    res?.json(result);
+    res.json(result);
   } catch (error) {
-    logger?.warn({ err: error }, "Error following producer:");
-    res?.status(500).json({ error: "Failed to follow producer" });
+    logger.warn({ err: error }, "Error following producer:");
+    res.status(500).json({ error: "Failed to follow producer" });
   }
 });
 
@@ -2076,36 +2076,36 @@ router?.post(
   "/escrow/:transactionId/release",
   async (req: Request, res: Response) => {
     try {
-      if (!req?.isAuthenticated()) {
-        return res?.status(401).json({ error: "Unauthorized" });
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { transactionId } = req?.params;
-      res?.json({
+      const { transactionId } = req.params;
+      res.json({
         success: true,
         message: "Escrow released successfully",
         transactionId,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error releasing escrow:");
-      res?.status(500).json({ error: "Failed to release escrow" });
+      logger.warn({ err: error }, "Error releasing escrow:");
+      res.status(500).json({ error: "Failed to release escrow" });
     }
   },
 );
 
 router?.post("/affiliates", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const parsed = affiliateSchema?.safeParse(req?.body);
+    const parsed = affiliateSchema?.safeParse(req.body);
     if (!parsed?.success) {
-      return res?.status(400).json({ error: parsed.error.issues[0].message });
+      return res.status(400).json({ error: parsed.error.issues[0].message });
     }
     const { name, email, commissionRate } = parsed?.data;
 
-    const userId = (req?.user as Record<string, unknown>).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const settingKey = `affiliates:${userId}`;
     const [existing] = await db
       .select()
@@ -2142,23 +2142,23 @@ router?.post("/affiliates", async (req: Request, res: Response) => {
         .values({ key: settingKey, value: updatedList });
     }
 
-    res?.status(201).json(affiliate);
+    res.status(201).json(affiliate);
   } catch (error) {
-    logger?.warn({ err: error }, "Error creating affiliate:");
-    res?.status(500).json({ error: "Failed to create affiliate" });
+    logger.warn({ err: error }, "Error creating affiliate:");
+    res.status(500).json({ error: "Failed to create affiliate" });
   }
 });
 
 router?.post("/contracts", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const userId = (req?.user as Record<string, unknown>).id;
-    const parsed = contractSchema?.safeParse(req?.body);
+    const userId = (req.user as Record<string, unknown>).id;
+    const parsed = contractSchema?.safeParse(req.body);
     if (!parsed?.success) {
-      return res?.status(400).json({ error: parsed.error.issues[0].message });
+      return res.status(400).json({ error: parsed.error.issues[0].message });
     }
     const { name, description, content, category, variables } = parsed?.data;
 
@@ -2171,30 +2171,30 @@ router?.post("/contracts", async (req: Request, res: Response) => {
       variables: variables || [],
     });
 
-    res?.status(201).json(contract);
+    res.status(201).json(contract);
   } catch (error) {
-    logger?.warn({ err: error }, "Error creating contract:");
-    res?.status(500).json({ error: "Failed to create contract" });
+    logger.warn({ err: error }, "Error creating contract:");
+    res.status(500).json({ error: "Failed to create contract" });
   }
 });
 
 router?.post("/collaborations", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const parsed = collaborationSchema?.safeParse(req?.body);
+    const parsed = collaborationSchema?.safeParse(req.body);
     if (!parsed?.success) {
-      return res?.status(400).json({ error: parsed.error.issues[0].message });
+      return res.status(400).json({ error: parsed.error.issues[0].message });
     }
     const { toUserId, beatId, type, terms, splitPercentage, budget, message } =
       parsed?.data;
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
     const fromUser = {
       id: userId,
-      name: (req?.user as Record<string, unknown>)?.username || "User",
+      name: (req.user as Record<string, unknown>)?.username || "User",
       avatar: "",
     };
     const messages = message
@@ -2247,20 +2247,20 @@ router?.post("/collaborations", async (req: Request, res: Response) => {
       createdAt: project.createdAt?.toISOString() || new Date().toISOString(),
     };
 
-    res?.status(201).json(collaboration);
+    res.status(201).json(collaboration);
   } catch (error) {
-    logger?.warn({ err: error }, "Error creating collaboration:");
-    res?.status(500).json({ error: "Failed to create collaboration" });
+    logger.warn({ err: error }, "Error creating collaboration:");
+    res.status(500).json({ error: "Failed to create collaboration" });
   }
 });
 
 // Producer by ID endpoint
 router?.get("/producers/:producerId", async (req: Request, res: Response) => {
   try {
-    const { producerId } = req?.params as { producerId: string };
+    const { producerId } = req.params as { producerId: string };
     const producer = await storage?.getUser(producerId);
     if (!producer) {
-      return res?.status(404).json({ error: "Producer not found" });
+      return res.status(404).json({ error: "Producer not found" });
     }
 
     const producerBeats =
@@ -2293,7 +2293,7 @@ router?.get("/producers/:producerId", async (req: Request, res: Response) => {
         .from(storefrontRatings)
         .where(eq(storefrontRatings?.storefrontId, storefrontId))
         .limit(1);
-      avgRating = Math?.round((Number(ratingResult?.avg) || 0) * 10) / 10;
+      avgRating = Math.round((Number(ratingResult?.avg) || 0) * 10) / 10;
     }
 
     if (avgRating === 0 && producerBeats?.length > 0) {
@@ -2302,7 +2302,7 @@ router?.get("/producers/:producerId", async (req: Request, res: Response) => {
         .map((b: Record<string, unknown>) => Number(b?.avgRating || 0));
       if (beatRatings?.length > 0) {
         avgRating =
-          Math?.round(
+          Math.round(
             (beatRatings?.reduce((s: number, r: number) => s + r, 0) /
               beatRatings?.length) *
               10,
@@ -2339,7 +2339,7 @@ router?.get("/producers/:producerId", async (req: Request, res: Response) => {
       producer?.username ||
       "Producer";
 
-    res?.json({
+    res.json({
       id: producer.id,
       username: producer.username,
       displayName,
@@ -2358,8 +2358,8 @@ router?.get("/producers/:producerId", async (req: Request, res: Response) => {
       featuredBeats,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching producer:");
-    res?.status(500).json({ error: "Failed to fetch producer" });
+    logger.warn({ err: error }, "Error fetching producer:");
+    res.status(500).json({ error: "Failed to fetch producer" });
   }
 });
 
@@ -2368,19 +2368,19 @@ router?.get(
   "/producers/:producerId/follow-status",
   async (req: Request, res: Response) => {
     try {
-      if (!req?.isAuthenticated()) {
-        return res?.status(401).json({ error: "Unauthorized" });
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
-      const { producerId } = req?.params as { producerId: string };
+      const { producerId } = req.params as { producerId: string };
       const profile = await discoveryAlgorithmService?.getOrCreateTasteProfile(
-        req?.user!.id,
+        req.user!.id,
       );
       const followedProducers = profile?.followedProducers || [];
       const isFollowing = followedProducers?.includes(producerId);
-      res?.json({ isFollowing });
+      res.json({ isFollowing });
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching follow status:");
-      res?.status(500).json({ error: "Failed to fetch follow status" });
+      logger.warn({ err: error }, "Error fetching follow status:");
+      res.status(500).json({ error: "Failed to fetch follow status" });
     }
   },
 );
@@ -2388,28 +2388,28 @@ router?.get(
 // Toggle unfollow producer
 router?.post("/unfollow/:producerId", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
-    const { producerId } = req?.params as { producerId: string };
+    const { producerId } = req.params as { producerId: string };
     const result = await discoveryAlgorithmService?.unfollowProducer(
-      req?.user!.id,
+      req.user!.id,
       producerId,
     );
-    res?.json(result);
+    res.json(result);
   } catch (error) {
-    logger?.warn({ err: error }, "Error unfollowing producer:");
-    res?.status(500).json({ error: "Failed to unfollow producer" });
+    logger.warn({ err: error }, "Error unfollowing producer:");
+    res.status(500).json({ error: "Failed to unfollow producer" });
   }
 });
 
 // Like a beat (toggle)
 router?.post("/beats/:beatId/like", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
-    const { beatId } = req?.params as { beatId: string };
+    const { beatId } = req.params as { beatId: string };
 
     // Check if already liked
     const existingLike = await db
@@ -2417,7 +2417,7 @@ router?.post("/beats/:beatId/like", async (req: Request, res: Response) => {
       .from(beatInteractions)
       .where(
         and(
-          eq(beatInteractions?.userId, req?.user!.id),
+          eq(beatInteractions?.userId, req.user!.id),
           eq(beatInteractions?.beatId, beatId),
           eq(beatInteractions?.interactionType, "like"),
         ),
@@ -2430,7 +2430,7 @@ router?.post("/beats/:beatId/like", async (req: Request, res: Response) => {
         .delete(beatInteractions)
         .where(
           and(
-            eq(beatInteractions?.userId, req?.user!.id),
+            eq(beatInteractions?.userId, req.user!.id),
             eq(beatInteractions?.beatId, beatId),
             eq(beatInteractions?.interactionType, "like"),
           ),
@@ -2446,14 +2446,14 @@ router?.post("/beats/:beatId/like", async (req: Request, res: Response) => {
       if (listing) {
         const currentMetadata =
           (listing?.metadata as Record<string, unknown>) || {};
-        newLikes = Math?.max(0, Number(currentMetadata?.likes || 0) - 1);
+        newLikes = Math.max(0, Number(currentMetadata?.likes || 0) - 1);
         await db
           .update(listings)
           .set({ metadata: { ...currentMetadata, likes: newLikes } })
           .where(eq(listings?.id, beatId));
       }
 
-      res?.json({ success: true, liked: false, likes: newLikes });
+      res.json({ success: true, liked: false, likes: newLikes });
     } else {
       // Like - record the interaction
       await discoveryAlgorithmService?.recordInteraction({
@@ -2477,14 +2477,14 @@ router?.post("/beats/:beatId/like", async (req: Request, res: Response) => {
           .update(listings)
           .set({ metadata: { ...currentMetadata, likes: newLikes } })
           .where(eq(listings?.id, beatId));
-        res?.json({ success: true, liked: true, likes: newLikes });
+        res.json({ success: true, liked: true, likes: newLikes });
       } else {
-        res?.json({ success: true, liked: true });
+        res.json({ success: true, liked: true });
       }
     }
   } catch (error) {
-    logger?.warn({ err: error }, "Error liking beat:");
-    res?.status(500).json({ error: "Failed to like beat" });
+    logger.warn({ err: error }, "Error liking beat:");
+    res.status(500).json({ error: "Failed to like beat" });
   }
 });
 
@@ -2493,10 +2493,10 @@ router?.get(
   "/beats/:beatId/like-status",
   async (req: Request, res: Response) => {
     try {
-      if (!req?.isAuthenticated()) {
-        return res?.status(401).json({ error: "Unauthorized" });
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
-      const { beatId } = req?.params as { beatId: string };
+      const { beatId } = req.params as { beatId: string };
 
       // Check if user has liked this beat by checking interactions
       const likes = await db
@@ -2504,17 +2504,17 @@ router?.get(
         .from(beatInteractions)
         .where(
           and(
-            eq(beatInteractions?.userId, req?.user!.id),
+            eq(beatInteractions?.userId, req.user!.id),
             eq(beatInteractions?.beatId, beatId),
             eq(beatInteractions?.interactionType, "like"),
           ),
         )
         .limit(1);
 
-      res?.json({ isLiked: likes.length > 0 });
+      res.json({ isLiked: likes.length > 0 });
     } catch (error) {
-      logger?.warn({ err: error }, "Error checking like status:");
-      res?.status(500).json({ error: "Failed to check like status" });
+      logger.warn({ err: error }, "Error checking like status:");
+      res.status(500).json({ error: "Failed to check like status" });
     }
   },
 );
@@ -2522,14 +2522,14 @@ router?.get(
 // Rate a beat
 router?.post("/beats/:beatId/rate", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
-    const { beatId } = req?.params as { beatId: string };
-    const { rating } = req?.body;
+    const { beatId } = req.params as { beatId: string };
+    const { rating } = req.body;
 
     if (typeof rating !== "number" || rating < 1 || rating > 5) {
-      return res?.status(400).json({ error: "Rating must be between 1 and 5" });
+      return res.status(400).json({ error: "Rating must be between 1 and 5" });
     }
 
     // Store rating in beat interactions with custom data
@@ -2556,7 +2556,7 @@ router?.post("/beats/:beatId/rate", async (req: Request, res: Response) => {
         createdAt?: string;
       }>) || [];
       const userRatingIndex = currentRatings?.findIndex(
-        (r) => r?.userId === req?.user!.id,
+        (r) => r?.userId === req.user!.id,
       );
 
       if (userRatingIndex >= 0) {
@@ -2585,47 +2585,47 @@ router?.post("/beats/:beatId/rate", async (req: Request, res: Response) => {
         })
         .where(eq(listings?.id, beatId));
 
-      res?.json({
+      res.json({
         success: true,
         rating,
         avgRating: Math.round(avgRating * 10) / 10,
       });
     } else {
-      res?.status(404).json({ error: "Beat not found" });
+      res.status(404).json({ error: "Beat not found" });
     }
   } catch (error) {
-    logger?.warn({ err: error }, "Error rating beat:");
-    res?.status(500).json({ error: "Failed to rate beat" });
+    logger.warn({ err: error }, "Error rating beat:");
+    res.status(500).json({ error: "Failed to rate beat" });
   }
 });
 
 // Get beat rating info
 router?.get("/beats/:beatId/rating", async (req: Request, res: Response) => {
   try {
-    const { beatId } = req?.params;
+    const { beatId } = req.params;
     const [listing] = await db
       .select()
       .from(listings)
       .where(eq(listings?.id, beatId))
       .limit(1);
     if (!listing) {
-      return res?.status(404).json({ error: "Beat not found" });
+      return res.status(404).json({ error: "Beat not found" });
     }
 
     const metadata = (listing?.metadata as Record<string, unknown>) || {};
-    const userRating = req?.isAuthenticated()
+    const userRating = req.isAuthenticated()
       ? ((metadata?.ratings as Array<{ userId: string; rating: number }>) || [])
-          .find((r) => r?.userId === req?.user!.id)?.rating || 0
+          .find((r) => r?.userId === req.user!.id)?.rating || 0
       : 0;
 
-    res?.json({
+    res.json({
       avgRating: metadata.avgRating || 0,
       ratingCount: metadata.ratingCount || 0,
       userRating,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching beat rating:");
-    res?.status(500).json({ error: "Failed to fetch rating" });
+    logger.warn({ err: error }, "Error fetching beat rating:");
+    res.status(500).json({ error: "Failed to fetch rating" });
   }
 });
 
@@ -2635,8 +2635,8 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const { stemId } = req?.params;
-      res?.json({
+      const { stemId } = req.params;
+      res.json({
         id: stemId,
         name: "Stem",
         type: "wav",
@@ -2645,19 +2645,19 @@ router?.get(
         downloadUrl: null,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching stem:");
-      res?.status(500).json({ error: "Failed to fetch stem" });
+      logger.warn({ err: error }, "Error fetching stem:");
+      res.status(500).json({ error: "Failed to fetch stem" });
     }
   },
 );
 
 router?.post("/stems/:stemId/purchase", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
-    const { stemId } = req?.params as { stemId: string };
-    res?.json({
+    const { stemId } = req.params as { stemId: string };
+    res.json({
       success: true,
       purchaseId: `purchase_${Date?.now()}`,
       stemId,
@@ -2667,19 +2667,19 @@ router?.post("/stems/:stemId/purchase", async (req: Request, res: Response) => {
     setImmediate(async () => {
       try {
         await notificationService?.sendStemsPurchasedNotification(
-          req?.user!.id,
+          req.user!.id,
           stemId,
         );
       } catch (err) {
-        logger?.warn(
+        logger.warn(
           { err: err },
           "[Marketplace] stems purchase notification error:",
         );
       }
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error purchasing stem:");
-    res?.status(500).json({ error: "Failed to purchase stem" });
+    logger.warn({ err: error }, "Error purchasing stem:");
+    res.status(500).json({ error: "Failed to purchase stem" });
   }
 });
 
@@ -2687,38 +2687,38 @@ router?.get(
   "/stems/:stemId/download/:trackId",
   async (req: Request, res: Response) => {
     try {
-      if (!req?.isAuthenticated()) {
-        return res?.status(401).json({ error: "Unauthorized" });
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
-      const { stemId, trackId } = req?.params;
-      res?.json({
+      const { stemId, trackId } = req.params;
+      res.json({
         success: true,
         downloadUrl: `/uploads/stems/${stemId}_${trackId}.wav`,
         expiresAt: new Date(Date?.now() + 3600000).toISOString(),
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error generating stem download:");
-      res?.status(500).json({ error: "Failed to generate download link" });
+      logger.warn({ err: error }, "Error generating stem download:");
+      res.status(500).json({ error: "Failed to generate download link" });
     }
   },
 );
 
 router?.get("/my-stems", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const stems = await db
       .select()
       .from(listingStems)
       .where(eq(listingStems?.userId, userId))
       .orderBy(desc(listingStems?.createdAt))
       .limit(100);
-    res?.json(stems);
+    res.json(stems);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching user stems:");
-    res?.status(500).json({ error: "Failed to fetch your stems" });
+    logger.warn({ err: error }, "Error fetching user stems:");
+    res.status(500).json({ error: "Failed to fetch your stems" });
   }
 });
 
@@ -2726,17 +2726,17 @@ router?.get(
   "/listings/:listingId/stems",
   async (req: Request, res: Response) => {
     try {
-      const { listingId } = req?.params as { listingId: string };
+      const { listingId } = req.params as { listingId: string };
       const stems = await db
         .select()
         .from(listingStems)
         .where(eq(listingStems?.listingId, listingId))
         .orderBy(asc(listingStems?.createdAt))
         .limit(50);
-      res?.json(stems);
+      res.json(stems);
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching listing stems:");
-      res?.status(500).json({ error: "Failed to fetch listing stems" });
+      logger.warn({ err: error }, "Error fetching listing stems:");
+      res.status(500).json({ error: "Failed to fetch listing stems" });
     }
   },
 );
@@ -2746,8 +2746,8 @@ router?.post(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { listingId } = req?.params as { listingId: string };
+      const userId = req.user!.id;
+      const { listingId } = req.params as { listingId: string };
       const {
         stemName,
         stemType,
@@ -2757,7 +2757,7 @@ router?.post(
         sampleRate,
         bitDepth,
         price,
-      } = req?.body;
+      } = req.body;
 
       if (!stemName || !fileUrl) {
         return res
@@ -2781,10 +2781,10 @@ router?.post(
         })
         .returning();
 
-      res?.status(201).json(stem);
+      res.status(201).json(stem);
     } catch (error) {
-      logger?.warn({ err: error }, "Error creating stem:");
-      res?.status(500).json({ error: "Failed to create stem" });
+      logger.warn({ err: error }, "Error creating stem:");
+      res.status(500).json({ error: "Failed to create stem" });
     }
   },
 );
@@ -2794,8 +2794,8 @@ router?.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { stemId } = req?.params as { stemId: string };
+      const userId = req.user!.id;
+      const { stemId } = req.params as { stemId: string };
 
       const [deleted] = await db
         .delete(listingStems)
@@ -2810,10 +2810,10 @@ router?.delete(
           .json({ error: "Stem not found or not authorized" });
       }
 
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (error) {
-      logger?.warn({ err: error }, "Error deleting stem:");
-      res?.status(500).json({ error: "Failed to delete stem" });
+      logger.warn({ err: error }, "Error deleting stem:");
+      res.status(500).json({ error: "Failed to delete stem" });
     }
   },
 );

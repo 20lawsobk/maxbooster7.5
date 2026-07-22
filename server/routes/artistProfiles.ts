@@ -38,17 +38,17 @@ router?.use(requireAuth);
 
 router?.get("/", async (req: Request, res: Response) => {
   try {
-    const profiles = await artistProfileService?.getUserProfiles(req?.user!.id);
-    res?.json({ profiles });
+    const profiles = await artistProfileService?.getUserProfiles(req.user!.id);
+    res.json({ profiles });
   } catch (err) {
-    logger?.warn({ err: err }, "[ArtistProfiles] GET / error:");
-    res?.status(500).json({ error: "Failed to fetch artist profiles" });
+    logger.warn({ err: err }, "[ArtistProfiles] GET / error:");
+    res.status(500).json({ error: "Failed to fetch artist profiles" });
   }
 });
 
 router?.post("/", async (req: Request, res: Response) => {
   try {
-    const parsed = createProfileSchema?.safeParse(req?.body);
+    const parsed = createProfileSchema?.safeParse(req.body);
     if (!parsed?.success) {
       return res
         .status(400)
@@ -75,12 +75,12 @@ router?.post("/", async (req: Request, res: Response) => {
       spotifyArtistUri: resolvedSpotifyUri,
     });
 
-    res?.status(201).json({ profile });
+    res.status(201).json({ profile });
   } catch (err) {
     const cause = err?.cause;
     const causeMsg: string =
       cause?.message ?? (typeof cause === "string" ? cause : "") ?? "";
-    logger?.warn(
+    logger.warn(
       "[ArtistProfiles] POST / error:",
       err,
       cause ? { cause: causeMsg } : {},
@@ -91,7 +91,7 @@ router?.post("/", async (req: Request, res: Response) => {
       causeMsg?.includes("storage limit") ||
       causeMsg?.includes("could not extend file")
     ) {
-      return res?.status(507).json({
+      return res.status(507).json({
         error: "Database storage limit reached",
         message:
           "Your Neon database has reached its 512 MB free-tier limit and cannot accept new records. Please visit console.neon.tech to upgrade your plan or free up storage before creating artist profiles.",
@@ -99,23 +99,23 @@ router?.post("/", async (req: Request, res: Response) => {
       });
     }
 
-    res?.status(500).json({ error: "Failed to create artist profile" });
+    res.status(500).json({ error: "Failed to create artist profile" });
   }
 });
 
 router?.get("/search", async (req: Request, res: Response) => {
   try {
-    const query = String(req?.query.q || "").trim();
+    const query = String(req.query.q || "").trim();
     if (!query || query?.length < 2) {
       return res
         .status(400)
         .json({ error: "Search query must be at least 2 characters" });
     }
     if (query?.length > 100) {
-      return res?.status(400).json({ error: "Search query too long" });
+      return res.status(400).json({ error: "Search query too long" });
     }
 
-    const platform = String(req?.query.platform || "all");
+    const platform = String(req.query.platform || "all");
     const validPlatforms = ["all", "spotify", "apple", "deezer"];
     if (!validPlatforms?.includes(platform)) {
       return res
@@ -148,21 +148,21 @@ router?.get("/search", async (req: Request, res: Response) => {
       results = await artistProfileService?.searchAllPlatforms(query);
     }
 
-    res?.json({ query, platform, results });
+    res.json({ query, platform, results });
   } catch (err) {
-    logger?.warn({ err: err }, "[ArtistProfiles] GET /search error:");
-    res?.status(500).json({ error: "Artist search failed" });
+    logger.warn({ err: err }, "[ArtistProfiles] GET /search error:");
+    res.status(500).json({ error: "Artist search failed" });
   }
 });
 
 router?.get("/by-release/:releaseId", async (req: Request, res: Response) => {
   try {
-    const { releaseId } = req?.params;
+    const { releaseId } = req.params;
     const profiles = await artistProfileService?.getProfilesByRelease(releaseId);
-    res?.json({ profiles });
+    res.json({ profiles });
   } catch (err) {
-    logger?.warn({ err: err }, "[ArtistProfiles] GET /by-release error:");
-    res?.status(500).json({ error: "Failed to fetch profiles for release" });
+    logger.warn({ err: err }, "[ArtistProfiles] GET /by-release error:");
+    res.status(500).json({ error: "Failed to fetch profiles for release" });
   }
 });
 
@@ -172,15 +172,15 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const profile = await artistProfileService?.getProfile(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
       );
       if (!profile)
-        return res?.status(404).json({ error: "Artist profile not found" });
-      res?.json({ profile });
+        return res.status(404).json({ error: "Artist profile not found" });
+      res.json({ profile });
     } catch (err) {
-      logger?.warn({ err: err }, "[ArtistProfiles] GET /:id error:");
-      res?.status(500).json({ error: "Failed to fetch artist profile" });
+      logger.warn({ err: err }, "[ArtistProfiles] GET /:id error:");
+      res.status(500).json({ error: "Failed to fetch artist profile" });
     }
   },
 );
@@ -190,7 +190,7 @@ router?.patch(
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
-      const parsed = createProfileSchema?.partial().safeParse(req?.body);
+      const parsed = createProfileSchema?.partial().safeParse(req.body);
       if (!parsed?.success) {
         return res
           .status(400)
@@ -201,16 +201,16 @@ router?.patch(
       }
 
       const profile = await artistProfileService?.updateProfile(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
         parsed?.data,
       );
       if (!profile)
-        return res?.status(404).json({ error: "Artist profile not found" });
-      res?.json({ profile });
+        return res.status(404).json({ error: "Artist profile not found" });
+      res.json({ profile });
     } catch (err) {
-      logger?.warn({ err: err }, "[ArtistProfiles] PATCH /:id error:");
-      res?.status(500).json({ error: "Failed to update artist profile" });
+      logger.warn({ err: err }, "[ArtistProfiles] PATCH /:id error:");
+      res.status(500).json({ error: "Failed to update artist profile" });
     }
   },
 );
@@ -221,15 +221,15 @@ router?.delete(
   async (req: Request, res: Response) => {
     try {
       const deleted = await artistProfileService?.deleteProfile(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
       );
       if (!deleted)
-        return res?.status(404).json({ error: "Artist profile not found" });
-      res?.json({ success: true });
+        return res.status(404).json({ error: "Artist profile not found" });
+      res.json({ success: true });
     } catch (err) {
-      logger?.warn({ err: err }, "[ArtistProfiles] DELETE /:id error:");
-      res?.status(500).json({ error: "Failed to delete artist profile" });
+      logger.warn({ err: err }, "[ArtistProfiles] DELETE /:id error:");
+      res.status(500).json({ error: "Failed to delete artist profile" });
     }
   },
 );
@@ -239,7 +239,7 @@ router?.post(
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
-      const parsed = fixerSchema?.safeParse(req?.body);
+      const parsed = fixerSchema?.safeParse(req.body);
       if (!parsed?.success) {
         return res
           .status(400)
@@ -250,25 +250,25 @@ router?.post(
       }
 
       const profile = await artistProfileService?.submitFixerRequest(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
         parsed?.data.targetSpotifyUri,
         parsed?.data.notes,
       );
 
       if (!profile)
-        return res?.status(404).json({ error: "Artist profile not found" });
-      res?.json({
+        return res.status(404).json({ error: "Artist profile not found" });
+      res.json({
         profile,
         message:
           "Fixer request submitted. Re-mapping will be applied to future releases.",
       });
     } catch (err) {
-      logger?.warn({ err: err }, "[ArtistProfiles] POST /:id/fixer error:");
+      logger.warn({ err: err }, "[ArtistProfiles] POST /:id/fixer error:");
       if (err?.message?.includes("Invalid Spotify artist URI")) {
-        return res?.status(400).json({ error: err.message });
+        return res.status(400).json({ error: err.message });
       }
-      res?.status(500).json({ error: "Failed to submit fixer request" });
+      res.status(500).json({ error: "Failed to submit fixer request" });
     }
   },
 );
@@ -280,15 +280,15 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const result = await artistProfileService?.profileHub(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
       );
-      res?.json(result);
+      res.json(result);
     } catch (err) {
-      logger?.warn({ err: err }, "[ArtistProfiles] GET /:id/profile-hub error:");
+      logger.warn({ err: err }, "[ArtistProfiles] GET /:id/profile-hub error:");
       if (err?.message === "Artist profile not found")
-        return res?.status(404).json({ error: err.message });
-      res?.status(500).json({ error: "Profile hub failed" });
+        return res.status(404).json({ error: err.message });
+      res.status(500).json({ error: "Profile hub failed" });
     }
   },
 );
@@ -301,23 +301,23 @@ router?.post(
     try {
       // Optional UPC from DistroKid / distributor — bypasses name-search for exact platform IDs
       const upc =
-        typeof req?.body?.upc === "string"
-          ? req?.body.upc?.replace(/[^0-9]/g, "")
+        typeof req.body?.upc === "string"
+          ? req.body.upc?.replace(/[^0-9]/g, "")
           : undefined;
       const result = await artistProfileService?.autoDiscover(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
         upc || undefined,
       );
-      res?.json(result);
+      res.json(result);
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err: err },
         "[ArtistProfiles] POST /:id/auto-discover error:",
       );
       if (err?.message === "Artist profile not found")
-        return res?.status(404).json({ error: err.message });
-      res?.status(500).json({ error: "Auto-discover failed" });
+        return res.status(404).json({ error: err.message });
+      res.status(500).json({ error: "Auto-discover failed" });
     }
   },
 );
@@ -329,15 +329,15 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const result = await artistProfileService?.autoSync(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
       );
-      res?.json(result);
+      res.json(result);
     } catch (err) {
-      logger?.warn({ err: err }, "[ArtistProfiles] POST /:id/auto-sync error:");
+      logger.warn({ err: err }, "[ArtistProfiles] POST /:id/auto-sync error:");
       if (err?.message === "Artist profile not found")
-        return res?.status(404).json({ error: err.message });
-      res?.status(500).json({ error: "Auto-sync failed" });
+        return res.status(404).json({ error: err.message });
+      res.status(500).json({ error: "Auto-sync failed" });
     }
   },
 );
@@ -349,19 +349,19 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const profile = await artistProfileService?.getProfile(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
       );
       if (!profile)
-        return res?.status(404).json({ error: "Artist profile not found" });
+        return res.status(404).json({ error: "Artist profile not found" });
 
       await artistProfileService?.linkProfileToRelease(
-        req?.params.id,
-        req?.params.releaseId,
+        req.params.id,
+        req.params.releaseId,
       );
-      res?.json({ success: true });
+      res.json({ success: true });
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err: err },
         "[ArtistProfiles] POST /:id/link-release error:",
       );
@@ -378,11 +378,11 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const profile = await artistProfileService?.getProfile(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
       );
       if (!profile)
-        return res?.status(404).json({ error: "Artist profile not found" });
+        return res.status(404).json({ error: "Artist profile not found" });
       if (!profile?.spotifyArtistId) {
         return res
           .status(400)
@@ -402,8 +402,8 @@ router?.post(
       }
 
       const verified = await artistProfileService?.updateProfile(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
         {
           isVerified: true,
           verifiedAt: new Date(),
@@ -417,10 +417,10 @@ router?.post(
         },
       );
 
-      res?.json({ profile: verified, spotifyData });
+      res.json({ profile: verified, spotifyData });
     } catch (err) {
-      logger?.warn({ err: err }, "[ArtistProfiles] POST /:id/verify error:");
-      res?.status(500).json({ error: "Verification failed" });
+      logger.warn({ err: err }, "[ArtistProfiles] POST /:id/verify error:");
+      res.status(500).json({ error: "Verification failed" });
     }
   },
 );
@@ -433,18 +433,18 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const result = await artistProfileService?.isrcChainDiscover(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
       );
-      res?.json(result);
+      res.json(result);
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err: err },
         "[ArtistProfiles] POST /:id/isrc-discover error:",
       );
       if (err?.message === "Artist profile not found")
-        return res?.status(404).json({ error: err.message });
-      res?.status(500).json({ error: "ISRC chain discovery failed" });
+        return res.status(404).json({ error: err.message });
+      res.status(500).json({ error: "ISRC chain discovery failed" });
     }
   },
 );
@@ -457,18 +457,18 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const result = await artistProfileService?.scanForSplitProfiles(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
       );
-      res?.json(result);
+      res.json(result);
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err: err },
         "[ArtistProfiles] POST /:id/scan-splits error:",
       );
       if (err?.message === "Artist profile not found")
-        return res?.status(404).json({ error: err.message });
-      res?.status(500).json({ error: "Split profile scan failed" });
+        return res.status(404).json({ error: err.message });
+      res.status(500).json({ error: "Split profile scan failed" });
     }
   },
 );
@@ -481,18 +481,18 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const result = await artistProfileService?.getClaimPipeline(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
       );
-      res?.json(result);
+      res.json(result);
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err: err },
         "[ArtistProfiles] GET /:id/claim-pipeline error:",
       );
       if (err?.message === "Artist profile not found")
-        return res?.status(404).json({ error: err.message });
-      res?.status(500).json({ error: "Failed to get claim pipeline" });
+        return res.status(404).json({ error: err.message });
+      res.status(500).json({ error: "Failed to get claim pipeline" });
     }
   },
 );
@@ -511,7 +511,7 @@ router?.patch(
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
-      const parsed = claimStateSchema?.safeParse(req?.body);
+      const parsed = claimStateSchema?.safeParse(req.body);
       if (!parsed?.success) {
         return res
           .status(400)
@@ -522,22 +522,22 @@ router?.patch(
       }
       const { platform, state, notes, triggeredBy } = parsed?.data;
       const result = await artistProfileService?.updateClaimState(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
         platform,
         state as ClaimState,
         triggeredBy as "user" | "system",
         notes,
       );
-      res?.json({ pipelineRow: result });
+      res.json({ pipelineRow: result });
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err: err },
         "[ArtistProfiles] PATCH /:id/claim-state error:",
       );
       if (err?.message === "Artist profile not found")
-        return res?.status(404).json({ error: err.message });
-      res?.status(500).json({ error: "Failed to update claim state" });
+        return res.status(404).json({ error: err.message });
+      res.status(500).json({ error: "Failed to update claim state" });
     }
   },
 );
@@ -550,15 +550,15 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const result = await artistProfileService?.calculateHealthScore(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
       );
-      res?.json(result);
+      res.json(result);
     } catch (err) {
-      logger?.warn({ err: err }, "[ArtistProfiles] GET /:id/health error:");
+      logger.warn({ err: err }, "[ArtistProfiles] GET /:id/health error:");
       if (err?.message === "Artist profile not found")
-        return res?.status(404).json({ error: err.message });
-      res?.status(500).json({ error: "Health score calculation failed" });
+        return res.status(404).json({ error: err.message });
+      res.status(500).json({ error: "Health score calculation failed" });
     }
   },
 );
@@ -571,18 +571,18 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const result = await artistProfileService?.getIdentityGraph(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
       );
-      res?.json(result);
+      res.json(result);
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err: err },
         "[ArtistProfiles] GET /:id/identity-graph error:",
       );
       if (err?.message === "Artist profile not found")
-        return res?.status(404).json({ error: err.message });
-      res?.status(500).json({ error: "Failed to get identity graph" });
+        return res.status(404).json({ error: err.message });
+      res.status(500).json({ error: "Failed to get identity graph" });
     }
   },
 );
@@ -594,23 +594,23 @@ router?.post(
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
-      const { releaseId, upc, isrcs } = req?.body ?? {};
+      const { releaseId, upc, isrcs } = req.body ?? {};
       const snapshot = await artistProfileService?.snapshotArtistDNA(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
         releaseId,
         upc,
-        Array?.isArray(isrcs) ? isrcs : undefined,
+        Array.isArray(isrcs) ? isrcs : undefined,
       );
-      res?.json({ snapshot });
+      res.json({ snapshot });
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err: err },
         "[ArtistProfiles] POST /:id/dna-snapshot error:",
       );
       if (err?.message === "Artist profile not found")
-        return res?.status(404).json({ error: err.message });
-      res?.status(500).json({ error: "DNA snapshot failed" });
+        return res.status(404).json({ error: err.message });
+      res.status(500).json({ error: "DNA snapshot failed" });
     }
   },
 );
@@ -622,18 +622,18 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const snapshots = await artistProfileService?.getDnaSnapshots(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
       );
-      res?.json({ snapshots });
+      res.json({ snapshots });
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err: err },
         "[ArtistProfiles] GET /:id/dna-snapshots error:",
       );
       if (err?.message === "Artist profile not found")
-        return res?.status(404).json({ error: err.message });
-      res?.status(500).json({ error: "Failed to fetch DNA snapshots" });
+        return res.status(404).json({ error: err.message });
+      res.status(500).json({ error: "Failed to fetch DNA snapshots" });
     }
   },
 );
@@ -642,7 +642,7 @@ router?.get(
 const multiFixerSchema = z.object({
   targetPlatformIds: z
     .record(z.string(), z.string())
-    .refine((obj) => Object?.keys(obj).length > 0, {
+    .refine((obj) => Object.keys(obj).length > 0, {
       message: "At least one platform target required",
     }),
   notes: z.string().max(1000).optional(),
@@ -654,7 +654,7 @@ router?.post(
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
-      const parsed = multiFixerSchema?.safeParse(req?.body);
+      const parsed = multiFixerSchema?.safeParse(req.body);
       if (!parsed?.success) {
         return res
           .status(400)
@@ -664,28 +664,28 @@ router?.post(
           });
       }
       const profile = await artistProfileService?.submitMultiPlatformFixer(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
         parsed?.data.targetPlatformIds,
         parsed?.data.notes,
       );
       if (!profile)
-        return res?.status(404).json({ error: "Artist profile not found" });
-      res?.json({
+        return res.status(404).json({ error: "Artist profile not found" });
+      res.json({
         profile,
         message:
           "Multi-platform fixer submitted. Re-mapping will apply to future releases.",
       });
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err: err },
         "[ArtistProfiles] POST /:id/fixer-multi error:",
       );
       if (err?.message === "Artist profile not found")
-        return res?.status(404).json({ error: err.message });
+        return res.status(404).json({ error: err.message });
       if (err?.message?.includes("Invalid Spotify"))
-        return res?.status(400).json({ error: err.message });
-      res?.status(500).json({ error: "Multi-platform fixer failed" });
+        return res.status(400).json({ error: err.message });
+      res.status(500).json({ error: "Multi-platform fixer failed" });
     }
   },
 );
@@ -703,7 +703,7 @@ router?.post(
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
-      const parsed = importHistorySchema?.safeParse(req?.body);
+      const parsed = importHistorySchema?.safeParse(req.body);
       if (!parsed?.success) {
         return res
           .status(400)
@@ -713,21 +713,21 @@ router?.post(
           });
       }
       const result = await artistProfileService?.importDistributorHistory(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
         parsed?.data.sourceDistributor,
         parsed?.data.isrcList,
         parsed?.data.upcList,
       );
-      res?.json(result);
+      res.json(result);
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err: err },
         "[ArtistProfiles] POST /:id/import-history error:",
       );
       if (err?.message === "Artist profile not found")
-        return res?.status(404).json({ error: err.message });
-      res?.status(500).json({ error: "History import failed" });
+        return res.status(404).json({ error: err.message });
+      res.status(500).json({ error: "History import failed" });
     }
   },
 );
@@ -740,18 +740,18 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const report = await artistProfileService?.exportPortabilityReport(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
       );
-      res?.json(report);
+      res.json(report);
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err: err },
         "[ArtistProfiles] GET /:id/portability-report error:",
       );
       if (err?.message === "Artist profile not found")
-        return res?.status(404).json({ error: err.message });
-      res?.status(500).json({ error: "Portability report generation failed" });
+        return res.status(404).json({ error: err.message });
+      res.status(500).json({ error: "Portability report generation failed" });
     }
   },
 );
@@ -775,7 +775,7 @@ router?.post(
   requireUUIDParam("id"),
   async (req: Request, res: Response) => {
     try {
-      const parsed = resolveHandleSchema?.safeParse(req?.body);
+      const parsed = resolveHandleSchema?.safeParse(req.body);
       if (!parsed?.success) {
         return res
           .status(400)
@@ -785,20 +785,20 @@ router?.post(
           });
       }
       const result = await artistProfileService?.resolveHandleToDSP(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
         parsed?.data.platform,
         parsed?.data.handle,
       );
-      res?.json(result);
+      res.json(result);
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err: err },
         "[ArtistProfiles] POST /:id/resolve-handle error:",
       );
       if (err?.message === "Artist profile not found")
-        return res?.status(404).json({ error: err.message });
-      res?.status(500).json({ error: "Handle resolution failed" });
+        return res.status(404).json({ error: err.message });
+      res.status(500).json({ error: "Handle resolution failed" });
     }
   },
 );
@@ -812,15 +812,15 @@ router?.post(
     try {
       const result =
         await artistProfileService?.watchProfileForUnauthorizedReleases(
-          req?.params.id,
-          req?.user!.id,
+          req.params.id,
+          req.user!.id,
         );
-      res?.json(result);
+      res.json(result);
     } catch (err) {
-      logger?.warn({ err: err }, "[ArtistProfiles] POST /:id/watch error:");
+      logger.warn({ err: err }, "[ArtistProfiles] POST /:id/watch error:");
       if (err?.message === "Artist profile not found")
-        return res?.status(404).json({ error: err.message });
-      res?.status(500).json({ error: "Profile watch failed" });
+        return res.status(404).json({ error: err.message });
+      res.status(500).json({ error: "Profile watch failed" });
     }
   },
 );
@@ -895,10 +895,10 @@ router.get(
             localTitles?.has((r?.title ?? "").toLowerCase().trim()),
         }));
 
-      res?.json({ releases: annotated, total: annotated.length });
+      res.json({ releases: annotated, total: annotated.length });
     } catch (err) {
-      logger?.warn({ err }, "[ArtistProfiles] GET /:id/catalog error:");
-      res?.status(500).json({ error: "Catalog fetch failed" });
+      logger.warn({ err }, "[ArtistProfiles] GET /:id/catalog error:");
+      res.status(500).json({ error: "Catalog fetch failed" });
     }
   },
 );
@@ -933,13 +933,13 @@ router?.post(
   async (req: Request, res: Response) => {
     try {
       const profile = await artistProfileService?.getProfile(
-        req?.params.id,
-        req?.user!.id,
+        req.params.id,
+        req.user!.id,
       );
       if (!profile)
-        return res?.status(404).json({ error: "Artist profile not found" });
+        return res.status(404).json({ error: "Artist profile not found" });
 
-      const data = distributeCatalogReleaseSchema?.parse(req?.body);
+      const data = distributeCatalogReleaseSchema?.parse(req.body);
 
       const release = await storage?.createDistroRelease({
         artistId: req.user!.id,
@@ -967,10 +967,10 @@ router?.post(
         })),
       });
 
-      logger?.info(
+      logger.info(
         `[ArtistProfiles] Catalog release imported: profile=${req.params.id} release=${release.id} title="${data.title}"`,
       );
-      res?.json({
+      res.json({
         releaseId: release.id,
         title: release.title,
         status: "draft",
@@ -980,11 +980,11 @@ router?.post(
         return res
           .status(400)
           .json({ error: "Invalid release data", details: err.issues });
-      logger?.warn(
+      logger.warn(
         { err },
         "[ArtistProfiles] POST /:id/distribute-release error:",
       );
-      res?.status(500).json({ error: "Failed to create distribution draft" });
+      res.status(500).json({ error: "Failed to create distribution draft" });
     }
   },
 );

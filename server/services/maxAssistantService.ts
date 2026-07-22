@@ -6,7 +6,7 @@ function seededIndex(seed: string, length: number): number {
   let h = 2166136261;
   for (let i = 0; i < seed?.length; i++) {
     h ^= seed?.charCodeAt(i);
-    h = Math?.imul(h, 16777619);
+    h = Math.imul(h, 16777619);
     h >>>= 0;
   }
   return h % length;
@@ -3740,6 +3740,6 @@ What would you like to explore?`;
   };
 }
 
-logger?.info(
+logger.info(
   "[MaxAssistantService] In-house Max AI assistant knowledge engine initialized — comprehensive edition with proactive prediction",
 );

@@ -10,11 +10,11 @@ import { HnsAuctionManager } from "./HnsAuction.js";
 
 const cfg: HnsConfig = {
   host: process.env.HNS_HOST || "127.0.0.1",
-  port: parseInt(process?.env.HNS_PORT || "12037", 10),
+  port: parseInt(process.env.HNS_PORT || "12037", 10),
   apiKey: process.env.HNS_API_KEY || "",
   wallet: process.env.HNS_WALLET || "primary",
-  network: (process?.env.HNS_NETWORK || "main") as HnsConfig["network"],
-  timeout: parseInt(process?.env.HNS_TIMEOUT || "10000", 10),
+  network: (process.env.HNS_NETWORK || "main") as HnsConfig["network"],
+  timeout: parseInt(process.env.HNS_TIMEOUT || "10000", 10),
 };
 
 export const hnsClient = new HnsClient(cfg);

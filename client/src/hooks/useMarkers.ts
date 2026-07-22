@@ -35,7 +35,7 @@ export function useMarkers(projectId: string | null) {
             const currentMarker = markers?.find((m) => m?.id === marker?.id);
             if (
               currentMarker &&
-              JSON?.stringify(currentMarker) !== JSON?.stringify(marker)
+              JSON.stringify(currentMarker) !== JSON.stringify(marker)
             ) {
               updateMarker(marker?.id, marker);
             }

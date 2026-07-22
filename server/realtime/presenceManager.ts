@@ -103,14 +103,14 @@ export class PresenceManager {
       connectionId,
     };
 
-    await this?.savePresence(projectId, presence);
-    this?.startHeartbeat(projectId, userId, connectionId);
+    await this.savePresence(projectId, presence);
+    this.startHeartbeat(projectId, userId, connectionId);
 
-    if (!this?.cleanupIntervals.has(projectId)) {
-      this?.startStaleCleanup(projectId);
+    if (!this.cleanupIntervals.has(projectId)) {
+      this.startStaleCleanup(projectId);
     }
 
-    logger?.info(
+    logger.info(
       `[Presence] User ${displayName} (${userId}) joined project ${projectId}`,
     );
     return presence;
@@ -122,15 +122,15 @@ export class PresenceManager {
     connectionId?: string,
   ): Promise<void> {
     const key = `${userId}:${connectionId || "*"}`;
-    this?.stopHeartbeat(key);
+    this.stopHeartbeat(key);
 
     try {
       const redis = await getRedisClient();
       if (redis) {
-        const redisKey = this?.getRedisKey(projectId);
+        const redisKey = this.getRedisKey(projectId);
         const allPresence = await redis?.hGetAll(redisKey);
 
-        for (const [fieldKey, _value] of Object?.entries(allPresence)) {
+        for (const [fieldKey, _value] of Object.entries(allPresence)) {
           if (fieldKey?.startsWith(userId)) {
             if (!connectionId || fieldKey === `${userId}:${connectionId}`) {
               await redis?.hDel(redisKey, fieldKey);
@@ -139,13 +139,13 @@ export class PresenceManager {
         }
       }
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `[Presence] Failed to remove collaborator from Redis:`,
       );
     }
 
-    const projectPresence = this?.localPresence.get(projectId);
+    const projectPresence = this.localPresence.get(projectId);
     if (projectPresence) {
       for (const [key, presence] of projectPresence?.entries()) {
         if (presence?.userId === userId) {
@@ -155,12 +155,12 @@ export class PresenceManager {
         }
       }
       if (projectPresence?.size === 0) {
-        this?.localPresence.delete(projectId);
-        this?.stopStaleCleanup(projectId);
+        this.localPresence.delete(projectId);
+        this.stopStaleCleanup(projectId);
       }
     }
 
-    logger?.info(`[Presence] User ${userId} left project ${projectId}`);
+    logger.info(`[Presence] User ${userId} left project ${projectId}`);
   }
 
   async updateCursor(
@@ -169,12 +169,12 @@ export class PresenceManager {
     connectionId: string,
     cursor: CursorPosition,
   ): Promise<void> {
-    const presence = await this?.getPresence(projectId, userId, connectionId);
+    const presence = await this.getPresence(projectId, userId, connectionId);
     if (presence) {
       presence.cursor = cursor;
       presence.lastActivity = Date?.now();
       presence.status = "editing";
-      await this?.savePresence(projectId, presence);
+      await this.savePresence(projectId, presence);
     }
   }
 
@@ -184,12 +184,12 @@ export class PresenceManager {
     connectionId: string,
     selection: SelectionState | null,
   ): Promise<void> {
-    const presence = await this?.getPresence(projectId, userId, connectionId);
+    const presence = await this.getPresence(projectId, userId, connectionId);
     if (presence) {
       presence.selection = selection;
       presence.lastActivity = Date?.now();
       presence.status = "editing";
-      await this?.savePresence(projectId, presence);
+      await this.savePresence(projectId, presence);
     }
   }
 
@@ -199,11 +199,11 @@ export class PresenceManager {
     connectionId: string,
     status: PresenceStatus,
   ): Promise<void> {
-    const presence = await this?.getPresence(projectId, userId, connectionId);
+    const presence = await this.getPresence(projectId, userId, connectionId);
     if (presence) {
       presence.status = status;
       presence.lastActivity = Date?.now();
-      await this?.savePresence(projectId, presence);
+      await this.savePresence(projectId, presence);
     }
   }
 
@@ -212,7 +212,7 @@ export class PresenceManager {
     userId: string,
     connectionId: string,
   ): Promise<void> {
-    const presence = await this?.getPresence(projectId, userId, connectionId);
+    const presence = await this.getPresence(projectId, userId, connectionId);
     if (presence) {
       const now = Date?.now();
       const timeSinceActivity = now - presence?.lastActivity;
@@ -224,7 +224,7 @@ export class PresenceManager {
         presence.status = "online";
       }
       presence.lastActivity = now;
-      await this?.savePresence(projectId, presence);
+      await this.savePresence(projectId, presence);
     }
   }
 
@@ -235,12 +235,12 @@ export class PresenceManager {
     try {
       const redis = await getRedisClient();
       if (redis) {
-        const redisKey = this?.getRedisKey(projectId);
+        const redisKey = this.getRedisKey(projectId);
         const allPresence = await redis?.hGetAll(redisKey);
 
-        for (const value of Object?.values(allPresence)) {
+        for (const value of Object.values(allPresence)) {
           try {
-            const presence: PresenceState = JSON?.parse(value);
+            const presence: PresenceState = JSON.parse(value);
             if (!seen?.has(presence?.userId)) {
               seen?.add(presence?.userId);
               collaborators?.push({
@@ -253,7 +253,7 @@ export class PresenceManager {
               });
             }
           } catch (e) {
-            logger?.warn(
+            logger.warn(
               { err: e },
               "[Presence] Failed to parse presence data:",
             );
@@ -261,14 +261,14 @@ export class PresenceManager {
         }
       }
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "[Presence] Failed to get collaborators from Redis:",
       );
     }
 
     if (collaborators?.length === 0) {
-      const projectPresence = this?.localPresence.get(projectId);
+      const projectPresence = this.localPresence.get(projectId);
       if (projectPresence) {
         for (const presence of projectPresence?.values()) {
           if (!seen?.has(presence?.userId)) {
@@ -290,7 +290,7 @@ export class PresenceManager {
   }
 
   async getCollaboratorCount(projectId: string): Promise<number> {
-    const collaborators = await this?.getCollaborators(projectId);
+    const collaborators = await this.getCollaborators(projectId);
     return collaborators?.length;
   }
 
@@ -300,22 +300,22 @@ export class PresenceManager {
   ): Promise<void> {
     const fieldKey = `${presence?.userId}:${presence?.connectionId}`;
 
-    let projectPresence = this?.localPresence.get(projectId);
+    let projectPresence = this.localPresence.get(projectId);
     if (!projectPresence) {
       projectPresence = new Map();
-      this?.localPresence.set(projectId, projectPresence);
+      this.localPresence.set(projectId, projectPresence);
     }
     projectPresence?.set(fieldKey, presence);
 
     try {
       const redis = await getRedisClient();
       if (redis) {
-        const redisKey = this?.getRedisKey(projectId);
-        await redis?.hSet(redisKey, fieldKey, JSON?.stringify(presence));
+        const redisKey = this.getRedisKey(projectId);
+        await redis?.hSet(redisKey, fieldKey, JSON.stringify(presence));
         await redis?.expire(redisKey, 3600);
       }
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "[Presence] Failed to save presence to Redis:",
       );
@@ -329,7 +329,7 @@ export class PresenceManager {
   ): Promise<PresenceState | null> {
     const fieldKey = `${userId}:${connectionId}`;
 
-    const projectPresence = this?.localPresence.get(projectId);
+    const projectPresence = this.localPresence.get(projectId);
     if (projectPresence?.has(fieldKey)) {
       return projectPresence?.get(fieldKey)!;
     }
@@ -337,14 +337,14 @@ export class PresenceManager {
     try {
       const redis = await getRedisClient();
       if (redis) {
-        const redisKey = this?.getRedisKey(projectId);
+        const redisKey = this.getRedisKey(projectId);
         const data = await redis?.hGet(redisKey, fieldKey);
         if (data) {
-          return JSON?.parse(data);
+          return JSON.parse(data);
         }
       }
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "[Presence] Failed to get presence from Redis:",
       );
@@ -360,39 +360,39 @@ export class PresenceManager {
   ): void {
     const key = `${userId}:${connectionId}`;
     const interval = setInterval(() => {
-      this?.heartbeat(projectId, userId, connectionId).catch((err) => {
-        logger?.warn({ err: err }, "[Presence] Heartbeat failed:");
+      this.heartbeat(projectId, userId, connectionId).catch((err) => {
+        logger.warn({ err: err }, "[Presence] Heartbeat failed:");
       });
     }, HEARTBEAT_INTERVAL_MS);
 
-    this?.heartbeatIntervals.set(key, interval);
+    this.heartbeatIntervals.set(key, interval);
   }
 
   private stopHeartbeat(key: string): void {
-    const interval = this?.heartbeatIntervals.get(key);
+    const interval = this.heartbeatIntervals.get(key);
     if (interval) {
       clearInterval(interval);
-      this?.heartbeatIntervals.delete(key);
+      this.heartbeatIntervals.delete(key);
     }
   }
 
   private startStaleCleanup(projectId: string): void {
     const interval = setInterval(async () => {
       try {
-        await this?.cleanupStalePresence(projectId);
+        await this.cleanupStalePresence(projectId);
       } catch {
         /* non-fatal */
       }
     }, STALE_TIMEOUT_MS);
 
-    this?.cleanupIntervals.set(projectId, interval);
+    this.cleanupIntervals.set(projectId, interval);
   }
 
   private stopStaleCleanup(projectId: string): void {
-    const interval = this?.cleanupIntervals.get(projectId);
+    const interval = this.cleanupIntervals.get(projectId);
     if (interval) {
       clearInterval(interval);
-      this?.cleanupIntervals.delete(projectId);
+      this.cleanupIntervals.delete(projectId);
     }
   }
 
@@ -403,16 +403,16 @@ export class PresenceManager {
     try {
       const redis = await getRedisClient();
       if (redis) {
-        const redisKey = this?.getRedisKey(projectId);
+        const redisKey = this.getRedisKey(projectId);
         const allPresence = await redis?.hGetAll(redisKey);
 
-        for (const [fieldKey, value] of Object?.entries(allPresence)) {
+        for (const [fieldKey, value] of Object.entries(allPresence)) {
           try {
-            const presence: PresenceState = JSON?.parse(value);
+            const presence: PresenceState = JSON.parse(value);
             if (now - presence?.lastActivity > STALE_TIMEOUT_MS) {
               await redis?.hDel(redisKey, fieldKey);
               staleUsers?.push(presence?.userId);
-              logger?.info(
+              logger.info(
                 `[Presence] Cleaned up stale presence for user ${presence?.userId}`,
               );
             }
@@ -422,13 +422,13 @@ export class PresenceManager {
         }
       }
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "[Presence] Failed to cleanup stale presence:",
       );
     }
 
-    const projectPresence = this?.localPresence.get(projectId);
+    const projectPresence = this.localPresence.get(projectId);
     if (projectPresence) {
       for (const [key, presence] of projectPresence?.entries()) {
         if (now - presence?.lastActivity > STALE_TIMEOUT_MS) {
@@ -444,19 +444,19 @@ export class PresenceManager {
   }
 
   async shutdown(): Promise<void> {
-    for (const interval of this?.heartbeatIntervals.values()) {
+    for (const interval of this.heartbeatIntervals.values()) {
       clearInterval(interval);
     }
-    this?.heartbeatIntervals.clear();
+    this.heartbeatIntervals.clear();
 
-    for (const interval of this?.cleanupIntervals.values()) {
+    for (const interval of this.cleanupIntervals.values()) {
       clearInterval(interval);
     }
-    this?.cleanupIntervals.clear();
+    this.cleanupIntervals.clear();
 
-    this?.localPresence.clear();
+    this.localPresence.clear();
 
-    logger?.info("[Presence] PresenceManager shutdown complete");
+    logger.info("[Presence] PresenceManager shutdown complete");
   }
 }
 

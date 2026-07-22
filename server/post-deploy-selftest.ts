@@ -46,7 +46,7 @@ class PostDeploySelfTest {
   private runGC(): void {
     if (typeof (global as Record<string, unknown>).gc === "function") {
       (global as Record<string, unknown>).gc();
-      logger?.info("🧹 Garbage collection triggered");
+      logger.info("🧹 Garbage collection triggered");
     }
   }
 
@@ -157,7 +157,7 @@ class PostDeploySelfTest {
   async testMemory(): Promise<SelfTestResult> {
     const startTime = Date?.now();
     try {
-      const memUsage = process?.memoryUsage();
+      const memUsage = process.memoryUsage();
       const heapUsedMB = memUsage?.heapUsed / (1024 * 1024);
       const heapTotalMB = memUsage?.heapTotal / (1024 * 1024);
       const rssMB = memUsage?.rss / (1024 * 1024);
@@ -220,30 +220,30 @@ class PostDeploySelfTest {
 
   // Run all self-tests
   async runAllTests(): Promise<SelfTestReport> {
-    if (this?.isRunning) {
-      logger?.warn("Self-test already running, skipping");
-      return this?.lastReport!;
+    if (this.isRunning) {
+      logger.warn("Self-test already running, skipping");
+      return this.lastReport!;
     }
 
     this.isRunning = true;
     const runStartTime = Date?.now();
 
-    logger?.info("🔬 Starting post-deploy self-test...");
+    logger.info("🔬 Starting post-deploy self-test...");
 
     // Run GC before tests
-    this?.runGC();
+    this.runGC();
 
     // Run all tests in parallel
     const results = await Promise?.all([
-      this?.testDatabase(),
-      this?.testRedis(),
-      this?.testTensorFlow(),
-      this?.testMemory(),
-      this?.testFilePaths(),
+      this.testDatabase(),
+      this.testRedis(),
+      this.testTensorFlow(),
+      this.testMemory(),
+      this.testFilePaths(),
     ]);
 
     // Run GC after tests
-    this?.runGC();
+    this.runGC();
 
     const passed = results?.filter((r) => r?.status === "pass").length;
     const failed = results?.filter((r) => r?.status === "fail").length;
@@ -272,37 +272,37 @@ class PostDeploySelfTest {
     };
 
     // Log results
-    logger?.info(
+    logger.info(
       `🔬 Self-test complete: ${passed} passed, ${failed} failed, ${skipped} skipped`,
     );
-    logger?.info(`   Recommendation: ${recommendation}`);
+    logger.info(`   Recommendation: ${recommendation}`);
 
     if (recommendation === "rollback") {
-      logger?.warn("❌ CRITICAL: Self-test recommends rollback!");
+      logger.warn("❌ CRITICAL: Self-test recommends rollback!");
     }
 
     this.isRunning = false;
-    return this?.lastReport;
+    return this.lastReport;
   }
 
   // Get last report
   getLastReport(): SelfTestReport | null {
-    return this?.lastReport;
+    return this.lastReport;
   }
 
   // Schedule periodic self-tests (every 30 minutes)
   startPeriodicTests(intervalMs = 30 * 60 * 1000): NodeJS.Timeout {
     // Run initial test after 60 seconds
     setTimeout(() => {
-      this?.runAllTests().catch((err) => {
-        logger?.warn({ err: err }, "Self-test error:");
+      this.runAllTests().catch((err) => {
+        logger.warn({ err: err }, "Self-test error:");
       });
     }, 60000);
 
     // Schedule periodic tests
     return setInterval(() => {
-      this?.runAllTests().catch((err) => {
-        logger?.warn({ err: err }, "Periodic self-test error:");
+      this.runAllTests().catch((err) => {
+        logger.warn({ err: err }, "Periodic self-test error:");
       });
     }, intervalMs);
   }
@@ -314,24 +314,24 @@ export const postDeploySelfTest = new PostDeploySelfTest();
 // GC Enforcement utilities
 export function setupGCEnforcement(): void {
   if (typeof (global as Record<string, unknown>).gc !== "function") {
-    logger?.warn(
+    logger.warn(
       "⚠️ GC not available - start with --expose-gc for better memory management",
     );
     return;
   }
 
-  logger?.info("✅ GC enforcement enabled");
+  logger.info("✅ GC enforcement enabled");
 
   // Periodic GC every 5 minutes
   setInterval(
     () => {
-      const before = process?.memoryUsage().heapUsed;
+      const before = process.memoryUsage().heapUsed;
       (global as Record<string, unknown>).gc();
-      const after = process?.memoryUsage().heapUsed;
+      const after = process.memoryUsage().heapUsed;
       const freedMB = (before - after) / (1024 * 1024);
 
       if (freedMB > 10) {
-        logger?.info(`🧹 GC freed ${freedMB?.toFixed(2)} MB`);
+        logger.info(`🧹 GC freed ${freedMB?.toFixed(2)} MB`);
       }
     },
     5 * 60 * 1000,
@@ -339,11 +339,11 @@ export function setupGCEnforcement(): void {
 
   // Emergency GC when memory pressure is detected
   setInterval(() => {
-    const memUsage = process?.memoryUsage();
+    const memUsage = process.memoryUsage();
     const heapPercent = (memUsage?.heapUsed / memUsage?.heapTotal) * 100;
 
     if (heapPercent > 85) {
-      logger?.warn(
+      logger.warn(
         `⚠️ High memory pressure (${heapPercent?.toFixed(1)}%), triggering emergency GC`,
       );
       (global as Record<string, unknown>).gc();
@@ -357,9 +357,9 @@ export function setupSelfTestEndpoint(app: import("express").Express): void {
     try {
       const report = await postDeploySelfTest?.runAllTests();
       const statusCode = report?.recommendation === "rollback" ? 503 : 200;
-      res?.status(statusCode).json(report);
+      res.status(statusCode).json(report);
     } catch (error) {
-      res?.status(500).json({
+      res.status(500).json({
         error: error instanceof Error ? error?.message : String(error),
       });
     }
@@ -368,9 +368,9 @@ export function setupSelfTestEndpoint(app: import("express").Express): void {
   app?.get("/api/health/selftest/last", (_req, res) => {
     const report = postDeploySelfTest?.getLastReport();
     if (report) {
-      res?.json(report);
+      res.json(report);
     } else {
-      res?.status(404).json({ message: "No self-test has been run yet" });
+      res.status(404).json({ message: "No self-test has been run yet" });
     }
   });
 }

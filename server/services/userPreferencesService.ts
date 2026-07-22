@@ -256,9 +256,9 @@ class UserPreferencesService {
     try {
       const redis = await getRedisClient();
       if (redis) {
-        const cached = await redis?.get(`${this?.CACHE_PREFIX}${userId}`);
+        const cached = await redis?.get(`${this.CACHE_PREFIX}${userId}`);
         if (cached) {
-          return JSON?.parse(cached);
+          return JSON.parse(cached);
         }
       }
 
@@ -271,20 +271,20 @@ class UserPreferencesService {
 
       const preferences =
         (user?.preferences as UserPreferences) ||
-        this?.getDefaultPreferences("solo", "emerging");
+        this.getDefaultPreferences("solo", "emerging");
 
       if (redis) {
         await redis?.setEx(
-          `${this?.CACHE_PREFIX}${userId}`,
-          this?.CACHE_TTL,
-          JSON?.stringify(preferences),
+          `${this.CACHE_PREFIX}${userId}`,
+          this.CACHE_TTL,
+          JSON.stringify(preferences),
         );
       }
 
       return preferences;
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting user preferences:");
-      return this?.getDefaultPreferences("solo", "emerging");
+      logger.warn({ err: error }, "Error getting user preferences:");
+      return this.getDefaultPreferences("solo", "emerging");
     }
   }
 
@@ -294,9 +294,9 @@ class UserPreferencesService {
   ): Promise<UserPreferences> {
     try {
       const current =
-        (await this?.getUserPreferences(userId)) ||
-        this?.getDefaultPreferences("solo", "emerging");
-      const updated = this?.deepMerge(current, updates);
+        (await this.getUserPreferences(userId)) ||
+        this.getDefaultPreferences("solo", "emerging");
+      const updated = this.deepMerge(current, updates);
 
       await db
         .update(users)
@@ -306,15 +306,15 @@ class UserPreferencesService {
       const redis = await getRedisClient();
       if (redis) {
         await redis?.setEx(
-          `${this?.CACHE_PREFIX}${userId}`,
-          this?.CACHE_TTL,
-          JSON?.stringify(updated),
+          `${this.CACHE_PREFIX}${userId}`,
+          this.CACHE_TTL,
+          JSON.stringify(updated),
         );
       }
 
       return updated;
     } catch (error) {
-      logger?.warn({ err: error }, "Error updating user preferences:");
+      logger.warn({ err: error }, "Error updating user preferences:");
       throw error;
     }
   }
@@ -361,8 +361,8 @@ class UserPreferencesService {
     const artistDefaults = ARTIST_TYPE_DEFAULTS[artistType] || {};
     const stageModifiers = CAREER_STAGE_MODIFIERS[careerStage] || {};
 
-    return this?.deepMerge(
-      this?.deepMerge(baseDefaults, artistDefaults),
+    return this.deepMerge(
+      this.deepMerge(baseDefaults, artistDefaults),
       stageModifiers,
     );
   }
@@ -375,14 +375,14 @@ class UserPreferencesService {
       const redis = await getRedisClient();
       if (!redis) return;
 
-      const key = `${this?.BEHAVIOR_PREFIX}${userId}:${event?.eventType}`;
-      const eventData = JSON?.stringify({ ...event, timestamp: new Date() });
+      const key = `${this.BEHAVIOR_PREFIX}${userId}:${event?.eventType}`;
+      const eventData = JSON.stringify({ ...event, timestamp: new Date() });
 
       await redis?.lPush(key, eventData);
       await redis?.lTrim(key, 0, 99);
       await redis?.expire(key, 86400 * 30);
     } catch (error) {
-      logger?.warn({ err: error }, "Error recording behavior event:");
+      logger.warn({ err: error }, "Error recording behavior event:");
     }
   }
 
@@ -392,12 +392,12 @@ class UserPreferencesService {
       if (!redis) return [];
 
       const recommendations: PreferenceRecommendation[] = [];
-      const preferences = await this?.getUserPreferences(userId);
+      const preferences = await this.getUserPreferences(userId);
       if (!preferences) return [];
 
-      const featureUsage = await this?.analyzeFeatureUsage(userId, redis);
-      const timePatterns = await this?.analyzeTimePatterns(userId, redis);
-      const contentPatterns = await this?.analyzeContentPatterns(userId, redis);
+      const featureUsage = await this.analyzeFeatureUsage(userId, redis);
+      const timePatterns = await this.analyzeTimePatterns(userId, redis);
+      const contentPatterns = await this.analyzeContentPatterns(userId, redis);
 
       if (
         featureUsage?.studioUsage > 0.7 &&
@@ -475,7 +475,7 @@ class UserPreferencesService {
 
       return recommendations;
     } catch (error) {
-      logger?.warn({ err: error }, "Error learning from behavior:");
+      logger.warn({ err: error }, "Error learning from behavior:");
       return [];
     }
   }
@@ -483,8 +483,8 @@ class UserPreferencesService {
   async getPreferenceRecommendations(
     userId: string,
   ): Promise<PreferenceRecommendation[]> {
-    const behaviorRecommendations = await this?.learnFromBehavior(userId);
-    const preferences = await this?.getUserPreferences(userId);
+    const behaviorRecommendations = await this.learnFromBehavior(userId);
+    const preferences = await this.getUserPreferences(userId);
     if (!preferences) return behaviorRecommendations;
 
     const generalRecommendations: PreferenceRecommendation[] = [];
@@ -528,11 +528,11 @@ class UserPreferencesService {
     userId: string,
     layout: DashboardLayout,
   ): Promise<void> {
-    await this?.updateUserPreferences(userId, { dashboardLayout: layout });
+    await this.updateUserPreferences(userId, { dashboardLayout: layout });
   }
 
   async getDashboardLayout(userId: string): Promise<DashboardLayout> {
-    const preferences = await this?.getUserPreferences(userId);
+    const preferences = await this.getUserPreferences(userId);
     return (
       preferences?.dashboardLayout || {
         preset: "standard",
@@ -546,11 +546,11 @@ class UserPreferencesService {
     redis: Record<string, unknown>,
   ): Promise<{ studioUsage: number; aiUsage: number; socialUsage: number }> {
     const studioEvents =
-      (await redis?.lLen(`${this?.BEHAVIOR_PREFIX}${userId}:studio_action`)) || 0;
+      (await redis?.lLen(`${this.BEHAVIOR_PREFIX}${userId}:studio_action`)) || 0;
     const aiEvents =
-      (await redis?.lLen(`${this?.BEHAVIOR_PREFIX}${userId}:ai_action`)) || 0;
+      (await redis?.lLen(`${this.BEHAVIOR_PREFIX}${userId}:ai_action`)) || 0;
     const socialEvents =
-      (await redis?.lLen(`${this?.BEHAVIOR_PREFIX}${userId}:social_action`)) || 0;
+      (await redis?.lLen(`${this.BEHAVIOR_PREFIX}${userId}:social_action`)) || 0;
     const total = studioEvents + aiEvents + socialEvents || 1;
 
     return {
@@ -565,7 +565,7 @@ class UserPreferencesService {
     redis: Record<string, unknown>,
   ): Promise<{ peakHour: number | null }> {
     const events = await redis?.lRange(
-      `${this?.BEHAVIOR_PREFIX}${userId}:login`,
+      `${this.BEHAVIOR_PREFIX}${userId}:login`,
       0,
       -1,
     );
@@ -574,7 +574,7 @@ class UserPreferencesService {
     const hourCounts: Record<number, number> = {};
     for (const eventStr of events) {
       try {
-        const event = JSON?.parse(eventStr);
+        const event = JSON.parse(eventStr);
         const hour = new Date(event?.timestamp).getHours();
         hourCounts[hour] = (hourCounts[hour] || 0) + 1;
       } catch {
@@ -582,7 +582,7 @@ class UserPreferencesService {
       }
     }
 
-    const peakHour = Object?.entries(hourCounts).sort((a, b) => b[1] - a[1])[0];
+    const peakHour = Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0];
     return { peakHour: peakHour ? parseInt(peakHour[0]) : null };
   }
 
@@ -591,7 +591,7 @@ class UserPreferencesService {
     redis: Record<string, unknown>,
   ): Promise<{ topContentType: string | null }> {
     const events = await redis?.lRange(
-      `${this?.BEHAVIOR_PREFIX}${userId}:content_create`,
+      `${this.BEHAVIOR_PREFIX}${userId}:content_create`,
       0,
       -1,
     );
@@ -600,7 +600,7 @@ class UserPreferencesService {
     const typeCounts: Record<string, number> = {};
     for (const eventStr of events) {
       try {
-        const event = JSON?.parse(eventStr);
+        const event = JSON.parse(eventStr);
         if (event?.context?.contentType) {
           typeCounts[event.context.contentType] =
             (typeCounts[event?.context.contentType] || 0) + 1;
@@ -610,7 +610,7 @@ class UserPreferencesService {
       }
     }
 
-    const topType = Object?.entries(typeCounts).sort((a, b) => b[1] - a[1])[0];
+    const topType = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0];
     return { topContentType: topType ? topType[0] : null };
   }
 
@@ -623,9 +623,9 @@ class UserPreferencesService {
       if (
         source[key] &&
         typeof source[key] === "object" &&
-        !Array?.isArray(source[key])
+        !Array.isArray(source[key])
       ) {
-        output[key] = this?.deepMerge(
+        output[key] = this.deepMerge(
           target[key] || {},
           source[key] as Record<string, unknown>,
         );

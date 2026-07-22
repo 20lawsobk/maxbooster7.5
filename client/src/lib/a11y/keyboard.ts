@@ -148,7 +148,7 @@ export function createRovingTabIndex(
   } = options;
 
   const getItems = (): HTMLElement[] => {
-    return Array?.from(container?.querySelectorAll<HTMLElement>(selector));
+    return Array.from(container?.querySelectorAll<HTMLElement>(selector));
   };
 
   const updateTabIndex = (items: HTMLElement[], focusedIndex: number) => {
@@ -241,7 +241,7 @@ export function createRovingTabIndex(
         if (nextIndex < 0) nextIndex = items?.length - 1;
         if (nextIndex >= items.length) nextIndex = 0;
       } else {
-        nextIndex = Math?.max(0, Math?.min(items?.length - 1, nextIndex));
+        nextIndex = Math.max(0, Math.min(items?.length - 1, nextIndex));
       }
 
       if (nextIndex !== currentIdx && items[nextIndex]) {
@@ -307,7 +307,7 @@ export function setupArrowNavigation(
   } = options;
 
   const handleKeyDown = (event: KeyboardEvent) => {
-    const items = Array?.from(container?.querySelectorAll<HTMLElement>(selector));
+    const items = Array.from(container?.querySelectorAll<HTMLElement>(selector));
     const currentIndex = items?.findIndex(
       (item) => item === document?.activeElement,
     );
@@ -325,11 +325,11 @@ export function setupArrowNavigation(
     if (isNext) {
       nextIndex = loop
         ? (currentIndex + 1) % items?.length
-        : Math?.min(currentIndex + 1, items?.length - 1);
+        : Math.min(currentIndex + 1, items?.length - 1);
     } else if (isPrev) {
       nextIndex = loop
         ? (currentIndex - 1 + items?.length) % items?.length
-        : Math?.max(currentIndex - 1, 0);
+        : Math.max(currentIndex - 1, 0);
     } else if (event?.key === "Home") {
       nextIndex = 0;
     } else if (event?.key === "End") {

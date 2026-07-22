@@ -62,16 +62,16 @@ router?.get(
   "/",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const userId = req?.user!.id;
-    const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 200);
+    const userId = req.user!.id;
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
     // Cap offset — unbounded offset causes Postgres to scan N rows before returning
     // any data, a silent DoS at scale.
-    const rawOffset = parseInt(req?.query.offset as string) || 0;
-    const offset = Math?.min(
-      Number?.isFinite(rawOffset) && rawOffset >= 0 ? rawOffset : 0,
+    const rawOffset = parseInt(req.query.offset as string) || 0;
+    const offset = Math.min(
+      Number.isFinite(rawOffset) && rawOffset >= 0 ? rawOffset : 0,
       100_000,
     );
-    const filter = req?.query.filter as string | undefined;
+    const filter = req.query.filter as string | undefined;
 
     const now = new Date();
     const conditions = [eq(shows?.userId, userId)];
@@ -90,7 +90,7 @@ router?.get(
       .limit(limit)
       .offset(offset);
 
-    res?.json(userShows);
+    res.json(userShows);
   }),
 );
 
@@ -99,15 +99,15 @@ router?.post(
   "/",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const userId = req?.user!.id;
-    const data = createShowSchema?.parse(req?.body);
+    const userId = req.user!.id;
+    const data = createShowSchema?.parse(req.body);
 
     const [newShow] = await db
       .insert(shows)
       .values({ ...data, userId })
       .returning();
 
-    res?.status(201).json(newShow);
+    res.status(201).json(newShow);
   }),
 );
 
@@ -117,9 +117,9 @@ router?.put(
   requireAuth,
   requireUUIDParam("id"),
   asyncHandler(async (req, res) => {
-    const userId = req?.user!.id;
-    const showId = req?.params.id;
-    const data = createShowSchema?.partial().parse(req?.body);
+    const userId = req.user!.id;
+    const showId = req.params.id;
+    const data = createShowSchema?.partial().parse(req.body);
 
     const [updatedShow] = await db
       .update(shows)
@@ -128,10 +128,10 @@ router?.put(
       .returning();
 
     if (!updatedShow) {
-      return res?.status(404).json({ error: "Show not found" });
+      return res.status(404).json({ error: "Show not found" });
     }
 
-    res?.json(updatedShow);
+    res.json(updatedShow);
   }),
 );
 
@@ -141,9 +141,9 @@ router?.patch(
   requireAuth,
   requireUUIDParam("id"),
   asyncHandler(async (req, res) => {
-    const userId = req?.user!.id;
-    const showId = req?.params.id;
-    const data = createShowSchema?.partial().parse(req?.body);
+    const userId = req.user!.id;
+    const showId = req.params.id;
+    const data = createShowSchema?.partial().parse(req.body);
 
     const [updatedShow] = await db
       .update(shows)
@@ -152,10 +152,10 @@ router?.patch(
       .returning();
 
     if (!updatedShow) {
-      return res?.status(404).json({ error: "Show not found" });
+      return res.status(404).json({ error: "Show not found" });
     }
 
-    res?.json(updatedShow);
+    res.json(updatedShow);
   }),
 );
 
@@ -165,8 +165,8 @@ router?.delete(
   requireAuth,
   requireUUIDParam("id"),
   asyncHandler(async (req, res) => {
-    const userId = req?.user!.id;
-    const showId = req?.params.id;
+    const userId = req.user!.id;
+    const showId = req.params.id;
 
     const [deletedShow] = await db
       .delete(shows)
@@ -174,10 +174,10 @@ router?.delete(
       .returning();
 
     if (!deletedShow) {
-      return res?.status(404).json({ error: "Show not found" });
+      return res.status(404).json({ error: "Show not found" });
     }
 
-    res?.json({ success: true, message: "Show deleted successfully" });
+    res.json({ success: true, message: "Show deleted successfully" });
   }),
 );
 
@@ -186,8 +186,8 @@ router?.patch(
   "/:id/attendance",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const userId = req?.user!.id;
-    const showId = req?.params.id;
+    const userId = req.user!.id;
+    const showId = req.params.id;
 
     const parsed = z
       .object({
@@ -195,7 +195,7 @@ router?.patch(
         revenue: z.number().min(0),
         status: z.enum(["upcoming", "completed", "cancelled"]).optional(),
       })
-      .safeParse(req?.body);
+      .safeParse(req.body);
 
     if (!parsed?.success) {
       return res
@@ -217,10 +217,10 @@ router?.patch(
       .returning();
 
     if (!updated) {
-      return res?.status(404).json({ error: "Show not found" });
+      return res.status(404).json({ error: "Show not found" });
     }
 
-    res?.json(updated);
+    res.json(updated);
   }),
 );
 
@@ -229,14 +229,14 @@ router?.patch(
   "/:id/status",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const userId = req?.user!.id;
-    const showId = req?.params.id;
+    const userId = req.user!.id;
+    const showId = req.params.id;
 
     const parsed = z
       .object({
         status: z.enum(["upcoming", "completed", "cancelled"]),
       })
-      .safeParse(req?.body);
+      .safeParse(req.body);
 
     if (!parsed?.success) {
       return res
@@ -251,10 +251,10 @@ router?.patch(
       .returning();
 
     if (!updated) {
-      return res?.status(404).json({ error: "Show not found" });
+      return res.status(404).json({ error: "Show not found" });
     }
 
-    res?.json(updated);
+    res.json(updated);
   }),
 );
 
@@ -263,7 +263,7 @@ router?.get(
   "/stats",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
     const [stats] = await db
       .select({
@@ -278,7 +278,7 @@ router?.get(
       .from(shows)
       .where(eq(shows?.userId, userId));
 
-    res?.json({
+    res.json({
       totalShows: Number(stats?.totalShows ?? 0),
       totalRevenue: Number(stats?.totalRevenue ?? 0),
       avgTicketsSold: Number(stats?.avgTicketsSold ?? 0),
@@ -295,13 +295,13 @@ router?.get(
   "/setlists",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const userSetlists = await db
       .select()
       .from(setlists)
       .where(eq(setlists?.userId, userId))
       .orderBy(desc(setlists?.updatedAt));
-    res?.json(userSetlists);
+    res.json(userSetlists);
   }),
 );
 
@@ -311,8 +311,8 @@ router?.get(
   requireAuth,
   requireUUIDParam("id"),
   asyncHandler(async (req, res) => {
-    const userId = req?.user!.id;
-    const showId = req?.params.id;
+    const userId = req.user!.id;
+    const showId = req.params.id;
 
     const [show] = await db
       .select()
@@ -321,10 +321,10 @@ router?.get(
       .limit(1);
 
     if (!show) {
-      return res?.status(404).json({ error: "Show not found" });
+      return res.status(404).json({ error: "Show not found" });
     }
 
-    res?.json(show);
+    res.json(show);
   }),
 );
 
@@ -333,8 +333,8 @@ router?.get(
   "/:id/setlist",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const userId = req?.user!.id;
-    const showId = req?.params.id;
+    const userId = req.user!.id;
+    const showId = req.params.id;
 
     const [showSetlist] = await db
       .select()
@@ -342,7 +342,7 @@ router?.get(
       .where(and(eq(setlists?.showId, showId), eq(setlists?.userId, userId)))
       .limit(1);
 
-    res?.json(showSetlist || null);
+    res.json(showSetlist || null);
   }),
 );
 
@@ -351,15 +351,15 @@ router?.post(
   "/setlists",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const userId = req?.user!.id;
-    const data = createSetlistSchema?.parse(req?.body);
+    const userId = req.user!.id;
+    const data = createSetlistSchema?.parse(req.body);
 
     const [newSetlist] = await db
       .insert(setlists)
       .values({ ...data, userId })
       .returning();
 
-    res?.status(201).json(newSetlist);
+    res.status(201).json(newSetlist);
   }),
 );
 
@@ -368,9 +368,9 @@ router?.put(
   "/setlists/:id",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const userId = req?.user!.id;
-    const setlistId = req?.params.id;
-    const data = createSetlistSchema?.partial().parse(req?.body);
+    const userId = req.user!.id;
+    const setlistId = req.params.id;
+    const data = createSetlistSchema?.partial().parse(req.body);
 
     const [updatedSetlist] = await db
       .update(setlists)
@@ -379,10 +379,10 @@ router?.put(
       .returning();
 
     if (!updatedSetlist) {
-      return res?.status(404).json({ error: "Setlist not found" });
+      return res.status(404).json({ error: "Setlist not found" });
     }
 
-    res?.json(updatedSetlist);
+    res.json(updatedSetlist);
   }),
 );
 
@@ -391,8 +391,8 @@ router?.delete(
   "/setlists/:id",
   requireAuth,
   asyncHandler(async (req, res) => {
-    const userId = req?.user!.id;
-    const setlistId = req?.params.id;
+    const userId = req.user!.id;
+    const setlistId = req.params.id;
 
     const [deletedSetlist] = await db
       .delete(setlists)
@@ -400,10 +400,10 @@ router?.delete(
       .returning();
 
     if (!deletedSetlist) {
-      return res?.status(404).json({ error: "Setlist not found" });
+      return res.status(404).json({ error: "Setlist not found" });
     }
 
-    res?.json({ success: true, message: "Setlist deleted successfully" });
+    res.json({ success: true, message: "Setlist deleted successfully" });
   }),
 );
 

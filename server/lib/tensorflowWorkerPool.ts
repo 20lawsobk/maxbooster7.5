@@ -7,11 +7,11 @@ import { logger } from "../logger.js";
 
 // Resolve worker path for both dev (tsx/source) and prod (esbuild/dist) environments
 function resolveWorkerPath(): string {
-  const cwd = process?.cwd();
+  const cwd = process.cwd();
   const candidates = [
-    path?.join(cwd, "server/workers/tfWorkerThread.cjs"),
-    path?.join(cwd, "dist/workers/tfWorkerThread.cjs"),
-    path?.join(cwd, "dist/workers/tfWorkerThread.js"),
+    path.join(cwd, "server/workers/tfWorkerThread.cjs"),
+    path.join(cwd, "dist/workers/tfWorkerThread.cjs"),
+    path.join(cwd, "dist/workers/tfWorkerThread.js"),
   ];
   for (const p of candidates) {
     if (existsSync(p)) return p;
@@ -73,7 +73,7 @@ class TensorFlowWorkerPool {
     // remaining N-1 rejections become UnhandledPromiseRejections that crash the
     // cluster worker process (Node?.js 18+, exit code 1).
     if (!existsSync(workerPath)) {
-      logger?.warn(
+      logger.warn(
         `[TFWorkerPool] Worker file not found (checked: server/workers, dist/workers) — falling back to in-process inference`,
       );
       return;
@@ -92,8 +92,8 @@ class TensorFlowWorkerPool {
         worker?.once("message", (msg: Record<string, unknown>) => {
           if (msg?.ready) {
             clearTimeout(timeout);
-            logger?.info(
-              `[TFWorkerPool] Worker ${index + 1}/${this?.poolSize} ready`,
+            logger.info(
+              `[TFWorkerPool] Worker ${index + 1}/${this.poolSize} ready`,
             );
             resolve(state);
           }
@@ -101,33 +101,33 @@ class TensorFlowWorkerPool {
 
         worker?.on("message", (msg: Record<string, unknown>) => {
           if (msg?.ready) return;
-          const req = this?.pendingRequests.get(msg?.id);
+          const req = this.pendingRequests.get(msg?.id);
           if (!req) return;
-          this?.pendingRequests.delete(msg?.id);
+          this.pendingRequests.delete(msg?.id);
           state.busy = false;
 
           if (msg?.error) {
-            req?.reject(new Error(msg?.error));
+            req.reject(new Error(msg?.error));
           } else {
-            req?.resolve(msg?.result as number[]);
+            req.resolve(msg?.result as number[]);
           }
 
-          this?.dispatch();
+          this.dispatch();
         });
 
         worker?.on("error", (err) => {
-          logger?.warn(`[TFWorkerPool] Worker ${index} error: ${err?.message}`);
+          logger.warn(`[TFWorkerPool] Worker ${index} error: ${err?.message}`);
           clearTimeout(timeout);
           reject(err);
-          for (const [id, req] of this?.pendingRequests) {
-            req?.reject(err);
-            this?.pendingRequests.delete(id);
+          for (const [id, req] of this.pendingRequests) {
+            req.reject(err);
+            this.pendingRequests.delete(id);
           }
         });
 
         worker?.on("exit", (code) => {
           if (code !== 0) {
-            logger?.warn(
+            logger.warn(
               `[TFWorkerPool] Worker ${index} exited with code ${code}`,
             );
           }
@@ -136,14 +136,14 @@ class TensorFlowWorkerPool {
 
     try {
       this.workers = await Promise?.all(
-        Array?.from({ length: this.poolSize }, (_, i) => startWorker(i)),
+        Array.from({ length: this.poolSize }, (_, i) => startWorker(i)),
       );
       this.initialized = true;
-      logger?.info(
-        `✅ [TFWorkerPool] ${this?.poolSize} TensorFlow inference worker(s) ready — event loop isolated`,
+      logger.info(
+        `✅ [TFWorkerPool] ${this.poolSize} TensorFlow inference worker(s) ready — event loop isolated`,
       );
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         `[TFWorkerPool] Could not initialize worker pool: ${err?.message} — falling back to in-process inference`,
       );
     }
@@ -154,7 +154,7 @@ class TensorFlowWorkerPool {
    * deserializes the weights from disk so inference runs fully in-thread.
    */
   loadModel(modelId: string, modelPath: string): Promise<void> {
-    if (!this?.initialized || this?.workers.length === 0) {
+    if (!this.initialized || this.workers.length === 0) {
       return Promise?.reject(
         new Error("[TFWorkerPool] Pool not initialized — cannot load model"),
       );
@@ -164,7 +164,7 @@ class TensorFlowWorkerPool {
       const id = `load-${Date?.now()}-${randomBytes(4).toString("hex")}`;
       let settled = 0;
       let failed = 0;
-      const total = this?.workers.length;
+      const total = this.workers.length;
 
       const onResponse = (msg: Record<string, unknown>) => {
         if (msg?.type !== "load" || msg?.modelId !== modelId || msg?.id !== id)
@@ -172,16 +172,16 @@ class TensorFlowWorkerPool {
 
         if (msg?.error) {
           failed++;
-          logger?.warn(
+          logger.warn(
             `[TFWorkerPool] Worker failed to load model ${modelId}: ${msg?.error}`,
           );
         } else {
-          logger?.info(`[TFWorkerPool] Worker loaded model ${modelId}`);
+          logger.info(`[TFWorkerPool] Worker loaded model ${modelId}`);
         }
 
         settled++;
         if (settled === total) {
-          this?.workers.forEach((ws) => ws?.worker.off("message", onResponse));
+          this.workers.forEach((ws) => ws?.worker.off("message", onResponse));
           if (failed === total) {
             reject(new Error(`All workers failed to load model ${modelId}`));
           } else {
@@ -190,7 +190,7 @@ class TensorFlowWorkerPool {
         }
       };
 
-      this?.workers.forEach((ws) => {
+      this.workers.forEach((ws) => {
         ws?.worker.on("message", onResponse);
         ws?.worker.postMessage({ id, type: "load", modelId, modelPath });
       });
@@ -210,7 +210,7 @@ class TensorFlowWorkerPool {
     try {
       models = await registry?.listModels();
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         `[TFWorkerPool] Could not list models from registry: ${err?.message}`,
       );
       return;
@@ -218,22 +218,22 @@ class TensorFlowWorkerPool {
 
     const withPath = models?.filter((m) => m?.filePath);
     if (withPath?.length === 0) {
-      logger?.info(
+      logger.info(
         "[TFWorkerPool] No persisted models found in registry — workers idle until models are trained",
       );
       return;
     }
 
-    logger?.info(
+    logger.info(
       `[TFWorkerPool] Loading ${withPath?.length} model(s) into worker pool…`,
     );
     const results = await Promise?.allSettled(
-      withPath?.map((m) => this?.loadModel(m?.id, `${m?.filePath}/model.json`)),
+      withPath?.map((m) => this.loadModel(m?.id, `${m?.filePath}/model.json`)),
     );
 
     const loaded = results?.filter((r) => r?.status === "fulfilled").length;
     const failed = results?.filter((r) => r?.status === "rejected").length;
-    logger?.info(
+    logger.info(
       `✅ [TFWorkerPool] Models loaded into workers — success: ${loaded}, failed: ${failed}`,
     );
   }
@@ -243,10 +243,10 @@ class TensorFlowWorkerPool {
     inputData: number[],
     inputShape: number[],
   ): Promise<number[]> {
-    if (this?.queue.length >= MAX_QUEUE_DEPTH) {
+    if (this.queue.length >= MAX_QUEUE_DEPTH) {
       return Promise?.reject(
         new Error(
-          `TF inference queue full (depth=${this?.queue.length}/${MAX_QUEUE_DEPTH}). ` +
+          `TF inference queue full (depth=${this.queue.length}/${MAX_QUEUE_DEPTH}). ` +
             `Server is under heavy AI load — retry after a brief pause.`,
         ),
       );
@@ -261,19 +261,19 @@ class TensorFlowWorkerPool {
         resolve,
         reject,
       };
-      this?.queue.push(req);
-      this?.dispatch();
+      this.queue.push(req);
+      this.dispatch();
     });
   }
 
   private dispatch(): void {
-    if (this?.queue.length === 0) return;
-    const idle = this?.workers.find((w) => !w?.busy);
+    if (this.queue.length === 0) return;
+    const idle = this.workers.find((w) => !w?.busy);
     if (!idle) return;
 
-    const req = this?.queue.shift()!;
+    const req = this.queue.shift()!;
     idle.busy = true;
-    this?.pendingRequests.set(req?.id, req);
+    this.pendingRequests.set(req.id, req);
 
     idle?.worker.postMessage({
       id: req.id,
@@ -285,11 +285,11 @@ class TensorFlowWorkerPool {
   }
 
   isReady(): boolean {
-    return this?.initialized && this?.workers.length > 0;
+    return this.initialized && this.workers.length > 0;
   }
 
   async shutdown(): Promise<void> {
-    await Promise?.all(this?.workers.map((w) => w?.worker.terminate()));
+    await Promise?.all(this.workers.map((w) => w?.worker.terminate()));
     this.workers = [];
     this.initialized = false;
   }

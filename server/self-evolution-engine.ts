@@ -1430,49 +1430,49 @@ export class SelfEvolutionEngine extends EventEmitter {
 
   constructor() {
     super();
-    this?.initializeIndustryKnowledge();
-    this?.seedSeenIdsFromDisk().catch(() => {});
-    logger?.info("🧬 Self-Evolution Engine initialized");
+    this.initializeIndustryKnowledge();
+    this.seedSeenIdsFromDisk().catch(() => {});
+    logger.info("🧬 Self-Evolution Engine initialized");
   }
 
   private async seedSeenIdsFromDisk(): Promise<void> {
     try {
-      const buf = await storageService?.downloadFile(this?.STATE_KEY);
-      const state = JSON?.parse(buf?.toString("utf-8")) as {
+      const buf = await storageService?.downloadFile(this.STATE_KEY);
+      const state = JSON.parse(buf?.toString("utf-8")) as {
         seenChangeIds?: string[];
       };
-      if (Array?.isArray(state?.seenChangeIds)) {
-        for (const id of state?.seenChangeIds) this?.seenChangeIds.add(id);
-        logger?.info(
-          `🧬 Restored ${this?.seenChangeIds.size} seen change IDs from Pocket Dimension`,
+      if (Array.isArray(state?.seenChangeIds)) {
+        for (const id of state?.seenChangeIds) this.seenChangeIds.add(id);
+        logger.info(
+          `🧬 Restored ${this.seenChangeIds.size} seen change IDs from Pocket Dimension`,
         );
       }
     } catch {
-      logger?.info("🧬 No prior evolution state found — starting fresh");
+      logger.info("🧬 No prior evolution state found — starting fresh");
     }
   }
 
   private async saveStateToDisk(): Promise<void> {
     try {
-      const ids = Array?.from(this?.seenChangeIds);
+      const ids = Array.from(this.seenChangeIds);
       const state = { seenChangeIds: ids, savedAt: new Date().toISOString() };
       await storageService?.uploadFile(
-        Buffer?.from(JSON?.stringify(state, null, 2), "utf-8"),
-        this?.STATE_KEY,
+        Buffer?.from(JSON.stringify(state, null, 2), "utf-8"),
+        this.STATE_KEY,
         "application/json",
       );
     } catch (e) {
-      logger?.warn({ err: e }, "Failed to persist evolution state:");
+      logger.warn({ err: e }, "Failed to persist evolution state:");
     }
   }
 
   private pruneSeenIds(): void {
-    if (this?.seenChangeIds.size > this?.MAX_SEEN_IDS) {
-      const arr = Array?.from(this?.seenChangeIds);
-      const keep = arr?.slice(arr?.length - (this?.MAX_SEEN_IDS - 500));
+    if (this.seenChangeIds.size > this.MAX_SEEN_IDS) {
+      const arr = Array.from(this.seenChangeIds);
+      const keep = arr?.slice(arr?.length - (this.MAX_SEEN_IDS - 500));
       this.seenChangeIds = new Set(keep);
-      logger?.info(
-        `🧬 Pruned seenChangeIds to ${this?.seenChangeIds.size} entries`,
+      logger.info(
+        `🧬 Pruned seenChangeIds to ${this.seenChangeIds.size} entries`,
       );
     }
   }
@@ -1489,7 +1489,7 @@ export class SelfEvolutionEngine extends EventEmitter {
    */
   isProductionSafetyEnabled(): boolean {
     const isProd = isProductionEnv();
-    const explicitlyEnabled = process?.env.ENABLE_SELF_EVOLUTION === "true";
+    const explicitlyEnabled = process.env.ENABLE_SELF_EVOLUTION === "true";
 
     // In development, auto-evolution is allowed
     if (!isProd) {
@@ -1504,7 +1504,7 @@ export class SelfEvolutionEngine extends EventEmitter {
    * Check if engine can auto-start (respects production safety gate)
    */
   canAutoStart(): boolean {
-    return this?.isProductionSafetyEnabled();
+    return this.isProductionSafetyEnabled();
   }
 
   /**
@@ -1517,8 +1517,8 @@ export class SelfEvolutionEngine extends EventEmitter {
     reason: string;
   } {
     const isProduction = isProductionEnv();
-    const explicitOptIn = process?.env.ENABLE_SELF_EVOLUTION === "true";
-    const autoEvolutionEnabled = this?.isProductionSafetyEnabled();
+    const explicitOptIn = process.env.ENABLE_SELF_EVOLUTION === "true";
+    const autoEvolutionEnabled = this.isProductionSafetyEnabled();
 
     let reason: string;
     if (!isProduction) {
@@ -1550,14 +1550,14 @@ export class SelfEvolutionEngine extends EventEmitter {
     upgradesDeployed: number;
   }> {
     const cycleId = `manual_evolution_${Date?.now()}`;
-    logger?.info(
+    logger.info(
       `🔧 MANUAL EVOLUTION TRIGGER: Starting controlled upgrade cycle ${cycleId}`,
     );
 
     try {
-      await this?.runEvolutionCycle();
+      await this.runEvolutionCycle();
 
-      const status = this?.getStatus();
+      const status = this.getStatus();
       return {
         success: true,
         cycleId,
@@ -1565,7 +1565,7 @@ export class SelfEvolutionEngine extends EventEmitter {
         upgradesDeployed: status.upgradesDeployed,
       };
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `❌ Manual evolution cycle ${cycleId} failed:`,
       );
@@ -1642,10 +1642,10 @@ export class SelfEvolutionEngine extends EventEmitter {
   }
 
   async start(): Promise<void> {
-    if (this?.isRunning) return;
+    if (this.isRunning) return;
 
-    if (!this?.isProductionSafetyEnabled()) {
-      logger?.warn(
+    if (!this.isProductionSafetyEnabled()) {
+      logger.warn(
         "🛡️ Self-Evolution Engine: auto-start blocked by production safety gate. Set ENABLE_SELF_EVOLUTION=true to allow.",
       );
       return;
@@ -1653,119 +1653,119 @@ export class SelfEvolutionEngine extends EventEmitter {
 
     this.isRunning = true;
 
-    logger?.info("🚀 Self-Evolution Engine ACTIVATED");
-    logger?.info(
+    logger.info("🚀 Self-Evolution Engine ACTIVATED");
+    logger.info(
       "   Max Booster will now autonomously upgrade itself to stay ahead of competition",
     );
 
-    this?.runEvolutionCycle().catch((e) =>
-      logger?.warn({ err: e }, "Initial evolution cycle error:"),
+    this.runEvolutionCycle().catch((e) =>
+      logger.warn({ err: e }, "Initial evolution cycle error:"),
     );
 
     this.monitoringInterval = setInterval(() => {
-      this?.runEvolutionCycle().catch((e) =>
-        logger?.warn({ err: e }, "Scheduled evolution cycle error:"),
+      this.runEvolutionCycle().catch((e) =>
+        logger.warn({ err: e }, "Scheduled evolution cycle error:"),
       );
-    }, this?.MONITORING_INTERVAL_MS);
+    }, this.MONITORING_INTERVAL_MS);
 
-    this?.emit("started");
+    this.emit("started");
   }
 
   async stop(): Promise<void> {
-    if (!this?.isRunning) return;
+    if (!this.isRunning) return;
     this.isRunning = false;
 
-    if (this?.monitoringInterval) {
-      clearInterval(this?.monitoringInterval);
+    if (this.monitoringInterval) {
+      clearInterval(this.monitoringInterval);
       this.monitoringInterval = null;
     }
 
-    logger?.info("🛑 Self-Evolution Engine stopped");
-    this?.emit("stopped");
+    logger.info("🛑 Self-Evolution Engine stopped");
+    this.emit("stopped");
   }
 
   private async runEvolutionCycle(): Promise<void> {
-    if (this?.isCycleRunning) {
-      logger?.info("🔒 Evolution cycle already in progress — skipping overlap");
+    if (this.isCycleRunning) {
+      logger.info("🔒 Evolution cycle already in progress — skipping overlap");
       return;
     }
 
     this.isCycleRunning = true;
     const cycleId = `evolution_${Date?.now()}`;
-    logger?.info(`🧬 Starting evolution cycle: ${cycleId}`);
+    logger.info(`🧬 Starting evolution cycle: ${cycleId}`);
 
     try {
       // Phase 0: Competitive leadership check — runs FIRST every cycle
-      const leadershipGaps = await this?.assessCompetitiveLeadership();
-      logger?.info(
-        `   🏆 Competitive leadership: ${leadershipGaps?.length} gaps vs competitors (score: ${this?.competitivePositionScore}/100)`,
+      const leadershipGaps = await this.assessCompetitiveLeadership();
+      logger.info(
+        `   🏆 Competitive leadership: ${leadershipGaps?.length} gaps vs competitors (score: ${this.competitivePositionScore}/100)`,
       );
 
       // Phase 1: Monitor the industry landscape
-      const changes = await this?.monitorIndustryLandscape();
+      const changes = await this.monitorIndustryLandscape();
       // Merge leadership gaps in as high-priority industry changes
       for (const gap of leadershipGaps) {
-        if (!this?.seenChangeIds.has(gap?.id)) {
-          this?.seenChangeIds.add(gap?.id);
+        if (!this.seenChangeIds.has(gap?.id)) {
+          this.seenChangeIds.add(gap?.id);
           changes?.push(gap);
-          this?.industryChanges.push(gap);
+          this.industryChanges.push(gap);
         }
       }
-      logger?.info(
+      logger.info(
         `   📡 Detected ${changes?.length} industry changes (${leadershipGaps?.length} from competitive scan)`,
       );
 
       // Phase 2: Analyze competitive position
-      const competitiveGaps = await this?.analyzeCompetitivePosition(changes);
-      logger?.info(
+      const competitiveGaps = await this.analyzeCompetitivePosition(changes);
+      logger.info(
         `   🎯 Identified ${competitiveGaps?.length} competitive gaps to address`,
       );
 
       // Phase 3: Generate code upgrades for high-priority changes
-      const upgrades = await this?.generateCodeUpgrades(competitiveGaps);
-      logger?.info(`   💻 Generated ${upgrades?.length} code upgrades`);
-      this?.upgradeQueue.push(...upgrades);
-      if (this?.upgradeQueue.length > this?.MAX_UPGRADES_IN_MEMORY) {
-        this.upgradeQueue = this?.upgradeQueue.slice(
-          -this?.MAX_UPGRADES_IN_MEMORY,
+      const upgrades = await this.generateCodeUpgrades(competitiveGaps);
+      logger.info(`   💻 Generated ${upgrades?.length} code upgrades`);
+      this.upgradeQueue.push(...upgrades);
+      if (this.upgradeQueue.length > this.MAX_UPGRADES_IN_MEMORY) {
+        this.upgradeQueue = this.upgradeQueue.slice(
+          -this.MAX_UPGRADES_IN_MEMORY,
         );
       }
 
       // Phase 4: Test and validate generated code
-      const validatedUpgrades = await this?.testUpgrades(upgrades);
-      logger?.info(
+      const validatedUpgrades = await this.testUpgrades(upgrades);
+      logger.info(
         `   ✅ Validated ${validatedUpgrades?.length} upgrades for deployment`,
       );
 
       // Phase 5: Deploy upgrades with canary pattern
-      const deployedCount = await this?.deployUpgrades(validatedUpgrades);
-      logger?.info(`   🚀 Deployed ${deployedCount} upgrades`);
+      const deployedCount = await this.deployUpgrades(validatedUpgrades);
+      logger.info(`   🚀 Deployed ${deployedCount} upgrades`);
 
       // Phase 6: Monitor post-deployment metrics
-      await this?.monitorDeploymentHealth();
+      await this.monitorDeploymentHealth();
 
       // Phase 7: Learn from results and improve
-      await this?.learnFromCycle(cycleId);
+      await this.learnFromCycle(cycleId);
 
       this.lastCycleError = null;
-      logger?.info(
-        `✅ Evolution cycle ${cycleId} completed successfully (total: ${this?.totalCyclesRun + 1})`,
+      logger.info(
+        `✅ Evolution cycle ${cycleId} completed successfully (total: ${this.totalCyclesRun + 1})`,
       );
-      this?.emit("cycleCompleted", {
+      this.emit("cycleCompleted", {
         cycleId,
         changes: changes.length,
         upgrades: deployedCount,
       });
     } catch (error) {
       this.lastCycleError = (error as Error).message || String(error);
-      logger?.warn({ err: error }, `❌ Evolution cycle ${cycleId} failed:`);
-      this?.emit("cycleFailed", { cycleId, error });
+      logger.warn({ err: error }, `❌ Evolution cycle ${cycleId} failed:`);
+      this.emit("cycleFailed", { cycleId, error });
     } finally {
       this.lastCycleAt = new Date();
       this.totalCyclesRun++;
-      this?.pruneSeenIds();
-      this?.saveStateToDisk().catch((e) =>
-        logger?.warn({ err: e }, "Could not save state:"),
+      this.pruneSeenIds();
+      this.saveStateToDisk().catch((e) =>
+        logger.warn({ err: e }, "Could not save state:"),
       );
       this.isCycleRunning = false;
     }
@@ -2267,7 +2267,7 @@ export class SelfEvolutionEngine extends EventEmitter {
           continue;
         }
 
-        const change = this?.industryChanges.find(
+        const change = this.industryChanges.find(
           (c) => c?.id === upgrade?.changeId,
         );
         const result = await evolutionRegistry?.apply({
@@ -2286,10 +2286,10 @@ export class SelfEvolutionEngine extends EventEmitter {
           upgrade.deployedAt = new Date();
           upgrade.applied = false;
           upgrade.notAppliedReason = `category "${upgrade.enhancementCategory}" has no wired runtime consumer yet`;
-          logger?.info(
+          logger.info(
             `   📋 Recorded (advisory, not applied): ${upgrade?.id} (${upgrade?.enhancementCategory})`,
           );
-          await this?.recordDeployment(upgrade);
+          await this.recordDeployment(upgrade);
           continue;
         }
 
@@ -2297,7 +2297,7 @@ export class SelfEvolutionEngine extends EventEmitter {
           upgrade.status = "failed";
           upgrade.notAppliedReason =
             result?.reason || "registry rejected payload";
-          logger?.warn(
+          logger.warn(
             `   ❌ Apply rejected for ${upgrade?.id}: ${upgrade?.notAppliedReason}`,
           );
           continue;
@@ -2307,23 +2307,23 @@ export class SelfEvolutionEngine extends EventEmitter {
         upgrade.deployedAt = new Date();
         upgrade.applied = true;
         appliedCount++;
-        logger?.info(
+        logger.info(
           `   ✅ Applied (live): ${upgrade?.id} → registry[${upgrade?.enhancementCategory}]`,
         );
 
-        await this?.recordDeployment(upgrade);
+        await this.recordDeployment(upgrade);
 
         // NOTE: we intentionally do NOT emit 'filesDeployed' anymore — the
         // registry takes effect in-process immediately (and persists for other
         // workers), so a disruptive full-process restart is no longer needed.
-        this?.emit("enhancementsApplied", {
+        this.emit("enhancementsApplied", {
           upgradeId: upgrade.id,
           category: upgrade.enhancementCategory,
         });
       } catch (error) {
         upgrade.status = "failed";
         upgrade.notAppliedReason = (error as Error).message;
-        logger?.warn({ err: error }, `   ❌ Failed to apply ${upgrade?.id}:`);
+        logger.warn({ err: error }, `   ❌ Failed to apply ${upgrade?.id}:`);
       }
     }
 
@@ -2331,7 +2331,7 @@ export class SelfEvolutionEngine extends EventEmitter {
   }
 
   async triggerRollback(): Promise<void> {
-    await this?.performRollback();
+    await this.performRollback();
   }
 
   private async recordDeployment(upgrade: CodeUpgrade): Promise<void> {
@@ -2355,7 +2355,7 @@ export class SelfEvolutionEngine extends EventEmitter {
         completedAt: new Date(),
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to record deployment:");
+      logger.warn({ err: error }, "Failed to record deployment:");
     }
   }
 
@@ -2365,36 +2365,36 @@ export class SelfEvolutionEngine extends EventEmitter {
 
   private async monitorDeploymentHealth(): Promise<void> {
     try {
-      const port = process?.env.PORT || "5000";
+      const port = process.env.PORT || "5000";
       const start = Date?.now();
 
       const responseTime = await new Promise<number>((resolve, reject) => {
         const req = http?.get(`http://127.0.0.1:${port}/api/health`, (res) => {
-          res?.resume();
-          res?.on("end", () => resolve(Date?.now() - start));
+          res.resume();
+          res.on("end", () => resolve(Date?.now() - start));
         });
-        req?.setTimeout(5000, () => {
-          req?.destroy();
+        req.setTimeout(5000, () => {
+          req.destroy();
           reject(new Error("Health check timeout"));
         });
-        req?.on("error", reject);
+        req.on("error", reject);
       });
 
       const metrics = { errorRate: 0, responseTime };
 
       if (responseTime > 3000) {
-        logger?.warn(
+        logger.warn(
           `⚠️ Post-deployment health check slow: ${responseTime}ms — analyzing rollback need`,
         );
-        await this?.analyzeRollbackNeed({ ...metrics, errorRate: 0.02 });
+        await this.analyzeRollbackNeed({ ...metrics, errorRate: 0.02 });
       } else {
-        logger?.info(`   💚 Health check passed: ${responseTime}ms`);
+        logger.info(`   💚 Health check passed: ${responseTime}ms`);
       }
     } catch (e) {
-      logger?.warn(
+      logger.warn(
         `⚠️ Health check failed (${(e as Error).message}) — analyzing rollback need`,
       );
-      await this?.analyzeRollbackNeed({ errorRate: 0.1, responseTime: 9999 });
+      await this.analyzeRollbackNeed({ errorRate: 0.1, responseTime: 9999 });
     }
   }
 
@@ -2405,15 +2405,15 @@ export class SelfEvolutionEngine extends EventEmitter {
       metrics?.errorRate > 0.05 || metrics?.responseTime > 3000;
 
     if (needsRollback) {
-      logger?.warn(
+      logger.warn(
         `🔙 CRITICAL: Initiating automatic rollback (errorRate=${metrics.errorRate.toFixed(3)}, responseTime=${metrics?.responseTime}ms)`,
       );
-      await this?.performRollback();
+      await this.performRollback();
     }
   }
 
   private async performRollback(): Promise<void> {
-    logger?.info(
+    logger.info(
       "🔙 Performing automatic rollback — deactivating all active registry enhancements...",
     );
 
@@ -2423,21 +2423,21 @@ export class SelfEvolutionEngine extends EventEmitter {
     try {
       revertedCount = await evolutionRegistry?.deactivateAll();
     } catch (e) {
-      logger?.warn(
+      logger.warn(
         { err: e },
         "   ❌ Failed to deactivate registry enhancements:",
       );
     }
 
     if (revertedCount > 0) {
-      logger?.info(
+      logger.info(
         `🔙 Rollback complete — deactivated ${revertedCount} enhancement(s)`,
       );
     } else {
-      logger?.info("🔙 Rollback: no active enhancements — nothing to revert");
+      logger.info("🔙 Rollback: no active enhancements — nothing to revert");
     }
 
-    this?.emit("rollbackCompleted", { revertedCount });
+    this.emit("rollbackCompleted", { revertedCount });
   }
 
   // ============================================
@@ -2445,14 +2445,14 @@ export class SelfEvolutionEngine extends EventEmitter {
   // ============================================
 
   private async learnFromCycle(cycleId: string): Promise<void> {
-    logger?.info(`   🧠 Learning from cycle ${cycleId}...`);
+    logger.info(`   🧠 Learning from cycle ${cycleId}...`);
 
     // Honest accounting: success = upgrades whose enhancement was genuinely
     // APPLIED to a live-consumed registry category, not merely "deployed".
-    const appliedCount = this?.upgradeQueue.filter(
+    const appliedCount = this.upgradeQueue.filter(
       (u) => u?.applied === true,
     ).length;
-    const failedCount = this?.upgradeQueue.filter(
+    const failedCount = this.upgradeQueue.filter(
       (u) => u?.status === "failed",
     ).length;
     const total = appliedCount + failedCount;
@@ -2460,30 +2460,30 @@ export class SelfEvolutionEngine extends EventEmitter {
     const deployedCount = appliedCount;
 
     // Count how many of this cycle's applied upgrades addressed competitive gaps
-    const competitorGapsClosedThisCycle = this?.upgradeQueue
+    const competitorGapsClosedThisCycle = this.upgradeQueue
       .filter((u) => u?.applied === true)
       .filter((u) => {
-        const change = this?.industryChanges.find((c) => c?.id === u?.changeId);
+        const change = this.industryChanges.find((c) => c?.id === u?.changeId);
         return change?.source === "competitor";
       }).length;
 
     if (competitorGapsClosedThisCycle > 0) {
       this.competitiveGapsAddressed += competitorGapsClosedThisCycle;
       // Each closed gap nudges the score up (capped at 100)
-      this.competitivePositionScore = Math?.min(
+      this.competitivePositionScore = Math.min(
         100,
-        this?.competitivePositionScore + competitorGapsClosedThisCycle,
+        this.competitivePositionScore + competitorGapsClosedThisCycle,
       );
-      logger?.info(
-        `   🏆 Competitive position improved: +${competitorGapsClosedThisCycle} gaps closed → score now ${this?.competitivePositionScore}/100`,
+      logger.info(
+        `   🏆 Competitive position improved: +${competitorGapsClosedThisCycle} gaps closed → score now ${this.competitivePositionScore}/100`,
       );
     }
 
     // Log competitive leadership summary
-    const competitorChanges = this?.industryChanges.filter(
+    const competitorChanges = this.industryChanges.filter(
       (c) => c?.source === "competitor",
     ).length;
-    logger?.info(
+    logger.info(
       `   📊 Competitive leadership summary: score=${this.competitivePositionScore}/100 | gaps_detected=${this.competitiveGapsDetected} | gaps_addressed=${this.competitiveGapsAddressed} | competitor_signals=${competitorChanges}`,
     );
 
@@ -2499,8 +2499,8 @@ export class SelfEvolutionEngine extends EventEmitter {
       });
     }
 
-    this?.pruneSeenIds();
-    await this?.saveStateToDisk();
+    this.pruneSeenIds();
+    await this.saveStateToDisk();
   }
 
   // ============================================
@@ -2596,13 +2596,13 @@ export class SelfEvolutionEngine extends EventEmitter {
     memoryUsage: { changes: number; upgrades: number; seenIds: number };
   } {
     const now = Date?.now();
-    const expectedIntervalMs = this?.MONITORING_INTERVAL_MS * 1.5;
+    const expectedIntervalMs = this.MONITORING_INTERVAL_MS * 1.5;
     const intervalHealthy =
-      !this?.isRunning || !this?.lastCycleAt
+      !this.isRunning || !this.lastCycleAt
         ? true
-        : now - this?.lastCycleAt.getTime() < expectedIntervalMs;
+        : now - this.lastCycleAt.getTime() < expectedIntervalMs;
 
-    const competitorChanges = this?.industryChanges.filter(
+    const competitorChanges = this.industryChanges.filter(
       (c) => c?.source === "competitor",
     );
     return {
@@ -2621,8 +2621,8 @@ export class SelfEvolutionEngine extends EventEmitter {
         .length,
       appliedEnhancements: evolutionRegistry.getStats().consumedActive,
       lastCycle:
-        this?.industryChanges.length > 0
-          ? this?.industryChanges[this?.industryChanges.length - 1].detectedAt
+        this.industryChanges.length > 0
+          ? this.industryChanges[this.industryChanges.length - 1].detectedAt
           : null,
       lastCycleAt: this.lastCycleAt,
       lastCycleError: this.lastCycleError,
@@ -2657,7 +2657,7 @@ export class SelfEvolutionEngine extends EventEmitter {
   }
 
   getIndustryChanges(limit: number = 50): IndustryChange[] {
-    return this?.industryChanges.slice(-limit);
+    return this.industryChanges.slice(-limit);
   }
 
   getUpgradeHistory(
@@ -2667,15 +2667,15 @@ export class SelfEvolutionEngine extends EventEmitter {
       generatedCode: Record<string, string>;
     }
   > {
-    return this?.upgradeQueue.slice(-limit).map((upgrade) => ({
+    return this.upgradeQueue.slice(-limit).map((upgrade) => ({
       ...upgrade,
       generatedCode: Object.fromEntries(upgrade?.generatedCode),
     }));
   }
 
   async forceEvolutionCycle(): Promise<void> {
-    logger?.info("⚡ Force-triggering evolution cycle...");
-    await this?.runEvolutionCycle();
+    logger.info("⚡ Force-triggering evolution cycle...");
+    await this.runEvolutionCycle();
   }
 }
 

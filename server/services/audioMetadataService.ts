@@ -122,7 +122,7 @@ class AudioMetadataService {
         coverArt,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Error extracting audio metadata:");
+      logger.warn({ err: error }, "Error extracting audio metadata:");
       throw new Error("Failed to extract audio metadata");
     }
   }
@@ -164,7 +164,7 @@ class AudioMetadataService {
         hasCoverArt: !!(common?.picture && common?.picture.length > 0),
       };
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "Error extracting audio metadata from stream:",
       );
@@ -233,7 +233,7 @@ class AudioMetadataService {
 
     if (!metadata?.lossless && metadata?.bitrate && metadata?.bitrate < 128000) {
       issues?.push(
-        `Bitrate ${Math?.round(metadata?.bitrate / 1000)}kbps is below recommended minimum (128kbps)`,
+        `Bitrate ${Math.round(metadata?.bitrate / 1000)}kbps is below recommended minimum (128kbps)`,
       );
     }
 
@@ -275,25 +275,25 @@ class AudioMetadataService {
       return { valid: true, issues: [] };
     }
 
-    if (metadata?.sampleRate < req?.minSampleRate) {
+    if (metadata?.sampleRate < req.minSampleRate) {
       issues?.push(
-        `Sample rate ${metadata?.sampleRate}Hz is below ${platform} minimum (${req?.minSampleRate}Hz)`,
+        `Sample rate ${metadata?.sampleRate}Hz is below ${platform} minimum (${req.minSampleRate}Hz)`,
       );
     }
 
     if (
       !metadata?.lossless &&
       metadata?.bitrate &&
-      metadata?.bitrate < req?.minBitrate
+      metadata?.bitrate < req.minBitrate
     ) {
       issues?.push(
-        `Bitrate ${Math?.round(metadata?.bitrate / 1000)}kbps is below ${platform} minimum (${req?.minBitrate / 1000}kbps)`,
+        `Bitrate ${Math.round(metadata?.bitrate / 1000)}kbps is below ${platform} minimum (${req.minBitrate / 1000}kbps)`,
       );
     }
 
-    if (req?.maxDuration && metadata?.duration > req?.maxDuration) {
+    if (req.maxDuration && metadata?.duration > req.maxDuration) {
       issues?.push(
-        `Duration ${Math?.round(metadata?.duration)}s exceeds ${platform} maximum (${req?.maxDuration}s)`,
+        `Duration ${Math.round(metadata?.duration)}s exceeds ${platform} maximum (${req.maxDuration}s)`,
       );
     }
 

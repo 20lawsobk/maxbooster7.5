@@ -15,7 +15,7 @@ interface AuthenticatedRequest extends Request {
 }
 
 const getUserId = (req: AuthenticatedRequest): string | null => {
-  return req?.user?.id ?? null;
+  return req.user?.id ?? null;
 };
 
 router?.get(
@@ -29,7 +29,7 @@ router?.get(
           .json({ error: "Unauthorized", message: "User ID required" });
       }
 
-      const { platform, startDate, endDate, groupBy } = req?.query;
+      const { platform, startDate, endDate, groupBy } = req.query;
 
       const start = startDate
         ? new Date(startDate as string)
@@ -46,13 +46,13 @@ router?.get(
         },
       );
 
-      return res?.json({
+      return res.json({
         success: true,
         data: analytics,
         period: { start, end },
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching streams:");
+      logger.warn({ err: error }, "Error fetching streams:");
       return res
         .status(500)
         .json({
@@ -74,8 +74,8 @@ router?.get(
           .json({ error: "Unauthorized", message: "User ID required" });
       }
 
-      const trackId = req?.params.trackId;
-      const { platform, playlistType, activeOnly } = req?.query;
+      const trackId = req.params.trackId;
+      const { platform, playlistType, activeOnly } = req.query;
 
       const attributions =
         await playlistAttributionService?.getPlaylistAttributions(userId, {
@@ -88,7 +88,7 @@ router?.get(
       const summary =
         await playlistAttributionService?.getPlaylistPerformanceSummary(userId);
 
-      return res?.json({
+      return res.json({
         success: true,
         data: {
           attributions,
@@ -96,7 +96,7 @@ router?.get(
         },
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching playlist attributions:");
+      logger.warn({ err: error }, "Error fetching playlist attributions:");
       return res
         .status(500)
         .json({
@@ -118,7 +118,7 @@ router?.get(
           .json({ error: "Unauthorized", message: "User ID required" });
       }
 
-      const { startDate, endDate } = req?.query;
+      const { startDate, endDate } = req.query;
       const start = startDate ? new Date(startDate as string) : undefined;
       const end = endDate ? new Date(endDate as string) : undefined;
 
@@ -131,12 +131,12 @@ router?.get(
           },
         );
 
-      return res?.json({
+      return res.json({
         success: true,
         data: revenueAttribution,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching playlist revenue:");
+      logger.warn({ err: error }, "Error fetching playlist revenue:");
       return res
         .status(500)
         .json({
@@ -161,12 +161,12 @@ router?.get(
       const metrics =
         await playlistAttributionService?.getEditorialPlaylistMetrics(artistId);
 
-      return res?.json({
+      return res.json({
         success: true,
         data: metrics,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching editorial metrics:");
+      logger.warn({ err: error }, "Error fetching editorial metrics:");
       return res
         .status(500)
         .json({
@@ -188,7 +188,7 @@ router?.get(
           .json({ error: "Unauthorized", message: "User ID required" });
       }
 
-      const { platform, startDate, endDate } = req?.query;
+      const { platform, startDate, endDate } = req.query;
       const start = startDate ? new Date(startDate as string) : undefined;
       const end = endDate ? new Date(endDate as string) : undefined;
 
@@ -200,7 +200,7 @@ router?.get(
           endDate: end,
         });
       } catch (serviceError) {
-        logger?.warn(
+        logger.warn(
           "Cohort analytics service error, returning empty data:",
           serviceError,
         );
@@ -218,12 +218,12 @@ router?.get(
         };
       }
 
-      return res?.json({
+      return res.json({
         success: true,
         data: report,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching cohorts:");
+      logger.warn({ err: error }, "Error fetching cohorts:");
       return res
         .status(500)
         .json({
@@ -245,19 +245,19 @@ router?.get(
           .json({ error: "Unauthorized", message: "User ID required" });
       }
 
-      const { platform, numCohorts } = req?.query;
+      const { platform, numCohorts } = req.query;
 
       const curves = await cohortAnalyticsService?.getRetentionCurves(artistId, {
         platform: platform as DSPPlatform | undefined,
         numCohorts: numCohorts ? parseInt(numCohorts as string) : 12,
       });
 
-      return res?.json({
+      return res.json({
         success: true,
         data: curves,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching retention curves:");
+      logger.warn({ err: error }, "Error fetching retention curves:");
       return res
         .status(500)
         .json({
@@ -281,12 +281,12 @@ router?.get(
 
       const churnData = await cohortAnalyticsService?.predictChurn(artistId);
 
-      return res?.json({
+      return res.json({
         success: true,
         data: churnData,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error predicting churn:");
+      logger.warn({ err: error }, "Error predicting churn:");
       return res
         .status(500)
         .json({
@@ -308,7 +308,7 @@ router?.get(
           .json({ error: "Unauthorized", message: "User ID required" });
       }
 
-      const { platform } = req?.query;
+      const { platform } = req.query;
 
       const loyaltyTiers = await cohortAnalyticsService?.getFanLoyaltyTiers(
         artistId,
@@ -317,12 +317,12 @@ router?.get(
         },
       );
 
-      return res?.json({
+      return res.json({
         success: true,
         data: loyaltyTiers,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching loyalty tiers:");
+      logger.warn({ err: error }, "Error fetching loyalty tiers:");
       return res
         .status(500)
         .json({
@@ -344,7 +344,7 @@ router?.get(
           .json({ error: "Unauthorized", message: "User ID required" });
       }
 
-      const { platform, horizonDays, granularity } = req?.query;
+      const { platform, horizonDays, granularity } = req.query;
 
       const forecast = await revenueForecaster?.generateForecast(artistId, {
         platform: platform as DSPPlatform | undefined,
@@ -357,7 +357,7 @@ router?.get(
         platform: platform as DSPPlatform | undefined,
       });
 
-      return res?.json({
+      return res.json({
         success: true,
         data: {
           forecast,
@@ -365,7 +365,7 @@ router?.get(
         },
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error generating forecast:");
+      logger.warn({ err: error }, "Error generating forecast:");
       return res
         .status(500)
         .json({
@@ -387,7 +387,7 @@ router?.get(
           .json({ error: "Unauthorized", message: "User ID required" });
       }
 
-      const { startDate, endDate } = req?.query;
+      const { startDate, endDate } = req.query;
       const start = startDate ? new Date(startDate as string) : undefined;
       const end = endDate ? new Date(endDate as string) : undefined;
 
@@ -396,12 +396,12 @@ router?.get(
         endDate: end,
       });
 
-      return res?.json({
+      return res.json({
         success: true,
         data: breakdown,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching revenue breakdown:");
+      logger.warn({ err: error }, "Error fetching revenue breakdown:");
       return res
         .status(500)
         .json({
@@ -426,12 +426,12 @@ router?.get(
       const seasonality =
         await revenueForecaster?.getSeasonalityAnalysis(artistId);
 
-      return res?.json({
+      return res.json({
         success: true,
         data: seasonality,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching seasonality:");
+      logger.warn({ err: error }, "Error fetching seasonality:");
       return res
         .status(500)
         .json({
@@ -460,7 +460,7 @@ router?.post(
         hasPreSaves,
         marketingBudget,
         previousReleasePerformance,
-      } = req?.body;
+      } = req.body;
 
       if (!releaseDate || !trackName) {
         return res
@@ -480,12 +480,12 @@ router?.post(
         previousReleasePerformance,
       });
 
-      return res?.json({
+      return res.json({
         success: true,
         data: projection,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error projecting release impact:");
+      logger.warn({ err: error }, "Error projecting release impact:");
       return res
         .status(500)
         .json({
@@ -509,12 +509,12 @@ router?.get(
 
       const demographics = await dspAnalyticsService?.getDemographics(artistId);
 
-      return res?.json({
+      return res.json({
         success: true,
         data: demographics,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching demographics:");
+      logger.warn({ err: error }, "Error fetching demographics:");
       return res
         .status(500)
         .json({
@@ -536,8 +536,8 @@ router?.post(
           .json({ error: "Unauthorized", message: "User ID required" });
       }
 
-      const platform = req?.params.platform as DSPPlatform;
-      const { startDate, endDate } = req?.body;
+      const platform = req.params.platform as DSPPlatform;
+      const { startDate, endDate } = req.body;
 
       const validPlatforms: DSPPlatform[] = [
         "spotify",
@@ -577,7 +577,7 @@ router?.post(
         await cohortAnalyticsService?.syncCohortData(userId, platform);
       }
 
-      return res?.json({
+      return res.json({
         success: true,
         data: result,
         message: result
@@ -585,7 +585,7 @@ router?.post(
           : `Failed to sync ${platform} data`,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error syncing platform:");
+      logger.warn({ err: error }, "Error syncing platform:");
       return res
         .status(500)
         .json({
@@ -605,7 +605,7 @@ router?.post("/sync-all", async (req: AuthenticatedRequest, res: Response) => {
         .json({ error: "Unauthorized", message: "User ID required" });
     }
 
-    const { startDate, endDate } = req?.body;
+    const { startDate, endDate } = req.body;
     const start = startDate
       ? new Date(startDate)
       : new Date(Date?.now() - 30 * 24 * 60 * 60 * 1000);
@@ -632,13 +632,13 @@ router?.post("/sync-all", async (req: AuthenticatedRequest, res: Response) => {
       }),
     );
 
-    return res?.json({
+    return res.json({
       success: true,
       data: result,
       message: `Synced ${result?.success.length} platforms, ${result?.failed.length} failed`,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error syncing all platforms:");
+    logger.warn({ err: error }, "Error syncing all platforms:");
     return res
       .status(500)
       .json({
@@ -657,18 +657,18 @@ router?.get("/sync-status", async (req: AuthenticatedRequest, res: Response) => 
         .json({ error: "Unauthorized", message: "User ID required" });
     }
 
-    const { platform } = req?.query;
+    const { platform } = req.query;
     const status = await dspAnalyticsService?.getSyncStatus(
       userId,
       platform as DSPPlatform | undefined,
     );
 
-    return res?.json({
+    return res.json({
       success: true,
       data: status,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching sync status:");
+    logger.warn({ err: error }, "Error fetching sync status:");
     return res
       .status(500)
       .json({
@@ -707,7 +707,7 @@ router?.get(
           dspAnalyticsService?.getDemographics(artistId),
         ]);
 
-      return res?.json({
+      return res.json({
         success: true,
         data: {
           streams,
@@ -719,7 +719,7 @@ router?.get(
         },
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching overview:");
+      logger.warn({ err: error }, "Error fetching overview:");
       return res
         .status(500)
         .json({

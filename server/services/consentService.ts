@@ -36,11 +36,11 @@ export class ConsentService {
         metadata: input.metadata,
       });
 
-      logger?.info(
+      logger.info(
         `Consent logged: ${input?.userId} - ${input?.consentType} - ${input?.action}`,
       );
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error logging consent:");
+      logger.warn({ err: error }, "Error logging consent:");
       throw new Error("Failed to log consent");
     }
   }
@@ -54,7 +54,7 @@ export class ConsentService {
     const now = new Date();
 
     // Validate age (COPPA compliance - must be 13+)
-    const age = this?.calculateAge(input?.birthdate);
+    const age = this.calculateAge(input?.birthdate);
     if (age < 13) {
       throw new Error(
         "Users must be at least 13 years old to register (COPPA compliance)",
@@ -84,7 +84,7 @@ export class ConsentService {
       .where(eq(users?.id, userId));
 
     // Log TOS consent
-    await this?.logConsent({
+    await this.logConsent({
       userId,
       consentType: "tos",
       action: "accepted",
@@ -94,7 +94,7 @@ export class ConsentService {
     });
 
     // Log Privacy consent
-    await this?.logConsent({
+    await this.logConsent({
       userId,
       consentType: "privacy",
       action: "accepted",
@@ -105,7 +105,7 @@ export class ConsentService {
 
     // Log marketing consent if provided
     if (input?.marketingConsent !== undefined) {
-      await this?.logConsent({
+      await this.logConsent({
         userId,
         consentType: "marketing",
         action: input.marketingConsent ? "accepted" : "rejected",
@@ -114,7 +114,7 @@ export class ConsentService {
       });
     }
 
-    logger?.info(
+    logger.info(
       `Registration consents recorded for user ${userId}, age: ${age}`,
     );
   }
@@ -140,7 +140,7 @@ export class ConsentService {
     userAgent?: string,
   ): Promise<void> {
     // Log withdrawal
-    await this?.logConsent({
+    await this.logConsent({
       userId,
       consentType,
       action: "withdrawn",
@@ -159,7 +159,7 @@ export class ConsentService {
         .where(eq(users?.id, userId));
     }
 
-    logger?.info(`Consent withdrawn: ${userId} - ${consentType}`);
+    logger.info(`Consent withdrawn: ${userId} - ${consentType}`);
   }
 
   async getUserConsents(userId: string) {

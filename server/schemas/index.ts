@@ -414,7 +414,7 @@ export const createRoyaltySplitSchema = z
         (sum, split) => sum + split?.percentage,
         0,
       );
-      return Math?.abs(totalPercentage - 100) < 0.01;
+      return Math.abs(totalPercentage - 100) < 0.01;
     },
     {
       message: "Split percentages must total 100%",

@@ -92,8 +92,8 @@ class BrowserCapabilitiesDetector {
   private testCanvas: HTMLCanvasElement | null = null;
 
   async detect(): Promise<BrowserCapabilities> {
-    if (this?.cachedCapabilities) {
-      return this?.cachedCapabilities;
+    if (this.cachedCapabilities) {
+      return this.cachedCapabilities;
     }
 
     this.testCanvas = document?.createElement("canvas");
@@ -101,23 +101,23 @@ class BrowserCapabilitiesDetector {
     this.testCanvas.height = 1;
 
     const [webgl, canvas, media, audio, device] = await Promise?.all([
-      this?.detectWebGL(),
-      this?.detectCanvas(),
-      this?.detectMedia(),
-      this?.detectAudio(),
-      this?.detectDevice(),
+      this.detectWebGL(),
+      this.detectCanvas(),
+      this.detectMedia(),
+      this.detectAudio(),
+      this.detectDevice(),
     ]);
 
-    const overall = this?.calculateOverall(webgl, canvas, media, audio, device);
+    const overall = this.calculateOverall(webgl, canvas, media, audio, device);
 
     this.cachedCapabilities = { webgl, canvas, media, audio, device, overall };
     this.testCanvas = null;
 
-    return this?.cachedCapabilities;
+    return this.cachedCapabilities;
   }
 
   private detectWebGL(): WebGLCapabilities {
-    const canvas = this?.testCanvas!;
+    const canvas = this.testCanvas!;
 
     let webgl2 = false;
     let webgl1 = false;
@@ -180,10 +180,10 @@ class BrowserCapabilitiesDetector {
     let canvas2d = false;
     let willReadFrequently = false;
     try {
-      const ctx = this?.testCanvas!.getContext("2d");
+      const ctx = this.testCanvas!.getContext("2d");
       canvas2d = ctx !== null;
       if (ctx) {
-        const testCtx = this?.testCanvas!.getContext("2d", {
+        const testCtx = this.testCanvas!.getContext("2d", {
           willReadFrequently: true,
         });
         willReadFrequently = testCtx !== null;
@@ -192,12 +192,12 @@ class BrowserCapabilitiesDetector {
 
     let captureStream = false;
     try {
-      captureStream = typeof this?.testCanvas!.captureStream === "function";
+      captureStream = typeof this.testCanvas!.captureStream === "function";
     } catch {}
 
     let imageEncoding = false;
     try {
-      imageEncoding = typeof this?.testCanvas!.toBlob === "function";
+      imageEncoding = typeof this.testCanvas!.toBlob === "function";
     } catch {}
 
     return {
@@ -222,7 +222,7 @@ class BrowserCapabilitiesDetector {
     const mimeTypes: string[] = [];
 
     if (mediaRecorder) {
-      for (const [codec, types] of Object?.entries(CODEC_MIME_TYPES)) {
+      for (const [codec, types] of Object.entries(CODEC_MIME_TYPES)) {
         for (const mimeType of types) {
           if (MediaRecorder?.isTypeSupported(mimeType)) {
             codecs[codec as keyof typeof codecs] = true;
@@ -233,7 +233,7 @@ class BrowserCapabilitiesDetector {
       }
     }
 
-    const maxBitrate = this?.estimateMaxBitrate();
+    const maxBitrate = this.estimateMaxBitrate();
 
     return {
       mediaRecorder,
@@ -369,7 +369,7 @@ class BrowserCapabilitiesDetector {
     }
 
     if (device?.isLowPower) {
-      maxSafeResolution = Math?.min(maxSafeResolution, 720);
+      maxSafeResolution = Math.min(maxSafeResolution, 720);
       if (tier === "high") tier = "medium";
     }
 
@@ -527,7 +527,7 @@ export function getOptimalExportSettings(capabilities: BrowserCapabilities): {
     "4k": 35_000_000,
   };
 
-  const bitrate = Math?.min(
+  const bitrate = Math.min(
     baseBitrate[resolution] * (frameRate / 30),
     media?.maxBitrate,
   );
@@ -622,7 +622,7 @@ export function estimateRenderPerformance(
 
   if (device.isLowPower) baseFps *= 0.6;
 
-  const estimatedFps = Math?.round(Math?.min(60, Math?.max(10, baseFps)));
+  const estimatedFps = Math.round(Math.min(60, Math.max(10, baseFps)));
   const canRealtime = estimatedFps >= 24;
 
   let recommendedQuality: "low" | "medium" | "high" = "high";

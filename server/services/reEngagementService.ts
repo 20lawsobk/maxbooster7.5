@@ -73,8 +73,8 @@ class ReEngagementService {
 
   async runDailyCheck(): Promise<void> {
     await withLock("reengagement-daily", 23 * 60 * 60, async () => {
-      if (this?.isRunning) {
-        logger?.warn("[ReEngagement] Daily check already running, skipping");
+      if (this.isRunning) {
+        logger.warn("[ReEngagement] Daily check already running, skipping");
         return;
       }
 
@@ -109,7 +109,7 @@ class ReEngagementService {
           )
           .limit(200);
 
-        logger?.info(
+        logger.info(
           `[ReEngagement] Found ${eligibleUsers?.length} eligible users for re-engagement`,
         );
 
@@ -132,7 +132,7 @@ class ReEngagementService {
             if (settings?.emailMarketing === false) continue;
 
             const displayName = firstName ?? email?.split("@")[0];
-            const appUrl = process?.env.APP_URL ?? "https://maxbooster.app";
+            const appUrl = process.env.APP_URL ?? "https://maxbooster.app";
             const html = buildReEngagementHtml(
               displayName,
               daysSinceLastLogin ?? 10,
@@ -152,14 +152,14 @@ class ReEngagementService {
 
             sent++;
           } catch (err) {
-            logger?.warn(
+            logger.warn(
               { err: err },
               `[ReEngagement] Failed to send to user ${user?.userId}:`,
             );
           }
         }
 
-        logger?.info(`[ReEngagement] Daily check complete: ${sent} emails sent`);
+        logger.info(`[ReEngagement] Daily check complete: ${sent} emails sent`);
       } finally {
         this.isRunning = false;
       }
@@ -180,12 +180,12 @@ class ReEngagementService {
 
     const scheduleNext = () => {
       const delay = runAtNoon();
-      logger?.info(
-        `[ReEngagement] Next run in ${Math?.round(delay / MS_PER_HOUR)} hours`,
+      logger.info(
+        `[ReEngagement] Next run in ${Math.round(delay / MS_PER_HOUR)} hours`,
       );
       setTimeout(async () => {
-        await this?.runDailyCheck();
-        setInterval(() => this?.runDailyCheck(), MS_PER_DAY);
+        await this.runDailyCheck();
+        setInterval(() => this.runDailyCheck(), MS_PER_DAY);
       }, delay);
     };
 

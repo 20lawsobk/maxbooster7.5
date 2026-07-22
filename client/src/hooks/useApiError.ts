@@ -264,7 +264,7 @@ export function useApiError(options: ApiErrorOptions = {}): UseApiErrorResult {
         onError?.(err, category);
 
         if (isRetryable && currentRetry < maxRetries) {
-          const delay = retryDelay * Math?.pow(2, currentRetry);
+          const delay = retryDelay * Math.pow(2, currentRetry);
 
           setState((prev) => ({ ...prev, isRetrying: true }));
           onRetry?.(currentRetry + 1);

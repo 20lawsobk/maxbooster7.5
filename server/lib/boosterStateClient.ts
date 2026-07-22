@@ -13,7 +13,7 @@ import { logger } from "../logger.js";
 const BASE_URL = `http://127.0.0.1:${process.env.PORT || 5000}/api/boosterstate`;
 
 function authHeaders(): Record<string, string> {
-  const secret = process?.env.BOOSTERSTATE_SECRET;
+  const secret = process.env.BOOSTERSTATE_SECRET;
   if (secret) {
     return { Authorization: `Bearer ${secret}` };
   }
@@ -30,11 +30,11 @@ async function post(
     headers: { "Content-Type": "application/json", ...authHeaders() },
     body: JSON.stringify(body),
   });
-  if (!res?.ok) {
-    throw new Error(`BoosterState ${path} returned ${res?.status}`);
+  if (!res.ok) {
+    throw new Error(`BoosterState ${path} returned ${res.status}`);
   }
-  const text = await res?.text();
-  return text ? JSON?.parse(text) : {};
+  const text = await res.text();
+  return text ? JSON.parse(text) : {};
 }
 
 export class BoosterStateClient {
@@ -47,10 +47,10 @@ export class BoosterStateClient {
       signal: AbortSignal.timeout(5_000),
       headers: authHeaders(),
     });
-    if (!res?.ok) {
-      throw new Error(`BoosterState ping returned ${res?.status}`);
+    if (!res.ok) {
+      throw new Error(`BoosterState ping returned ${res.status}`);
     }
-    logger?.info("✅ BoosterState client connected");
+    logger.info("✅ BoosterState client connected");
   }
 
   async ping(): Promise<string> {
@@ -58,7 +58,7 @@ export class BoosterStateClient {
       signal: AbortSignal.timeout(5_000),
       headers: authHeaders(),
     });
-    return await res?.text();
+    return await res.text();
   }
 
   async get(key: string): Promise<string | null> {
@@ -75,13 +75,13 @@ export class BoosterStateClient {
   }
 
   async setEx(key: string, ttl: number, value: string): Promise<void> {
-    return this?.setex(key, ttl, value);
+    return this.setex(key, ttl, value);
   }
 
   async del(...keys: (string | string[])[]): Promise<number> {
     const flatKeys: string[] = [];
     for (const k of keys) {
-      if (Array?.isArray(k)) {
+      if (Array.isArray(k)) {
         flatKeys?.push(...k);
       } else {
         flatKeys?.push(k);
@@ -203,8 +203,8 @@ export async function isBoosterStateHealthy(): Promise<boolean> {
       signal: AbortSignal.timeout(5_000),
       headers: authHeaders(),
     });
-    if (!res?.ok) return false;
-    const data = await res?.json();
+    if (!res.ok) return false;
+    const data = await res.json();
     return data?.status === "ok";
   } catch {
     return false;
@@ -213,5 +213,5 @@ export async function isBoosterStateHealthy(): Promise<boolean> {
 
 export async function shutdownBoosterState(): Promise<void> {
   singleton = null;
-  logger?.info("✅ BoosterState client shut down");
+  logger.info("✅ BoosterState client shut down");
 }

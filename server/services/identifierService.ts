@@ -161,7 +161,7 @@ class IdentifierService {
     }
 
     const providedCheckDigit = cleanUPC[11];
-    const calculatedCheckDigit = this?.calculateUPCCheckDigit(
+    const calculatedCheckDigit = this.calculateUPCCheckDigit(
       cleanUPC?.slice(0, 11),
     );
 
@@ -181,8 +181,8 @@ class IdentifierService {
 
   async generateUPC(options: IdentifierGenerationOptions): Promise<string> {
     try {
-      const prefix = "619" + this?.generateRandomDigits(8);
-      const checkDigit = this?.calculateUPCCheckDigit(prefix);
+      const prefix = "619" + this.generateRandomDigits(8);
+      const checkDigit = this.calculateUPCCheckDigit(prefix);
       const upcCode = prefix + checkDigit;
 
       const existing = await db
@@ -192,7 +192,7 @@ class IdentifierService {
         .limit(1);
 
       if (existing?.length > 0) {
-        return this?.generateUPC(options);
+        return this.generateUPC(options);
       }
 
       await db?.insert(upcRegistry).values({
@@ -202,10 +202,10 @@ class IdentifierService {
         title: options.metadata?.title || "Generated UPC",
       });
 
-      logger?.info(`Generated UPC: ${upcCode} for user ${options?.userId}`);
+      logger.info(`Generated UPC: ${upcCode} for user ${options?.userId}`);
       return upcCode;
     } catch (error) {
-      logger?.warn({ err: error }, "Error generating UPC:");
+      logger.warn({ err: error }, "Error generating UPC:");
       throw new Error("Failed to generate UPC");
     }
   }
@@ -272,8 +272,8 @@ class IdentifierService {
   }
 
   async generateISRC(
-    countryCode: string = this?.defaultCountryCode,
-    registrantCode: string = this?.defaultRegistrantCode,
+    countryCode: string = this.defaultCountryCode,
+    registrantCode: string = this.defaultRegistrantCode,
     year?: number,
     options?: IdentifierGenerationOptions,
   ): Promise<string> {
@@ -312,12 +312,12 @@ class IdentifierService {
         title: options.metadata?.title || "Generated ISRC",
       });
 
-      logger?.info(
-        `Generated ISRC: ${this?.formatISRC(isrcCode)} for user ${options?.userId || "system"}`,
+      logger.info(
+        `Generated ISRC: ${this.formatISRC(isrcCode)} for user ${options?.userId || "system"}`,
       );
       return isrcCode;
     } catch (error) {
-      logger?.warn({ err: error }, "Error generating ISRC:");
+      logger.warn({ err: error }, "Error generating ISRC:");
       throw new Error("Failed to generate ISRC");
     }
   }
@@ -336,8 +336,8 @@ class IdentifierService {
 
   async reserveISRCBatch(
     count: number,
-    countryCode: string = this?.defaultCountryCode,
-    registrantCode: string = this?.defaultRegistrantCode,
+    countryCode: string = this.defaultCountryCode,
+    registrantCode: string = this.defaultRegistrantCode,
     options?: IdentifierGenerationOptions,
   ): Promise<string[]> {
     if (count < 1 || count > 100) {
@@ -348,7 +348,7 @@ class IdentifierService {
     const year = new Date().getFullYear();
 
     for (let i = 0; i < count; i++) {
-      const isrc = await this?.generateISRC(
+      const isrc = await this.generateISRC(
         countryCode,
         registrantCode,
         year,
@@ -357,7 +357,7 @@ class IdentifierService {
       isrcs?.push(isrc);
     }
 
-    logger?.info(
+    logger.info(
       `Reserved batch of ${count} ISRCs for user ${options?.userId || "system"}`,
     );
     return isrcs;
@@ -374,11 +374,11 @@ class IdentifierService {
     const upcs: string[] = [];
 
     for (let i = 0; i < count; i++) {
-      const upc = await this?.generateUPC(options);
+      const upc = await this.generateUPC(options);
       upcs?.push(upc);
     }
 
-    logger?.info(`Reserved batch of ${count} UPCs for user ${options?.userId}`);
+    logger.info(`Reserved batch of ${count} UPCs for user ${options?.userId}`);
     return upcs;
   }
 

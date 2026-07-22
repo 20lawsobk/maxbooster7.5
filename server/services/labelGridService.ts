@@ -68,26 +68,26 @@ export class LabelGridService {
 
   constructor() {
     // Support both JWT token (preferred) and API key/secret authentication
-    const apiToken = process?.env.LABELGRID_API_TOKEN;
+    const apiToken = process.env.LABELGRID_API_TOKEN;
 
     this.config = {
       apiKey: process.env.LABELGRID_API_KEY || "",
       apiSecret: process.env.LABELGRID_API_SECRET || "",
       webhookUrl: process.env.LABELGRID_WEBHOOK_URL,
       environment:
-        (process?.env.LABELGRID_ENV as "sandbox" | "production") || "production",
+        (process.env.LABELGRID_ENV as "sandbox" | "production") || "production",
     };
 
     // If JWT token is provided, use it directly (no authentication needed)
     if (apiToken) {
       this.authToken = apiToken;
-      logger?.info(
+      logger.info(
         "[LABELGRID] Using pre-configured JWT token for authentication",
       );
     }
 
     this.apiBaseUrl =
-      this?.config.environment === "production"
+      this.config.environment === "production"
         ? "https://api.labelgrid.com/v1"
         : "https://sandbox-api.labelgrid.com/v1";
   }
@@ -409,7 +409,7 @@ export class LabelGridService {
    *   NNNNN = Unique designation code
    */
   private async generateISRC(_trackId: string): Promise<string> {
-    const registrant = await this?.getLabelSetting(
+    const registrant = await this.getLabelSetting(
       "isrc_registrant_code",
       "MXB",
     );
@@ -492,24 +492,24 @@ export class LabelGridService {
 
     switch (event) {
       case "release.delivered":
-        logger?.info(
+        logger.info(
           `[LABELGRID] Release ${releaseId} delivered to ${data?.platform}`,
         );
-        await this?.updateReleaseStatus(releaseId, data?.platform, "delivered");
+        await this.updateReleaseStatus(releaseId, data?.platform, "delivered");
         break;
 
       case "release.live":
-        logger?.info(
+        logger.info(
           `[LABELGRID] Release ${releaseId} is now live on ${data?.platform}`,
         );
-        await this?.updateReleaseStatus(releaseId, data?.platform, "live");
+        await this.updateReleaseStatus(releaseId, data?.platform, "live");
         break;
 
       case "release.failed":
-        logger?.warn(
+        logger.warn(
           `[LABELGRID] Release ${releaseId} failed on ${data?.platform}: ${data?.error}`,
         );
-        await this?.updateReleaseStatus(
+        await this.updateReleaseStatus(
           releaseId,
           data?.platform,
           "failed",
@@ -518,14 +518,14 @@ export class LabelGridService {
         break;
 
       case "earnings.reported":
-        logger?.info(
+        logger.info(
           `[LABELGRID] New earnings reported for release ${releaseId}`,
         );
-        await this?.processEarnings(data);
+        await this.processEarnings(data);
         break;
 
       default:
-        logger?.info(`[LABELGRID] Unhandled webhook event: ${event}`);
+        logger.info(`[LABELGRID] Unhandled webhook event: ${event}`);
     }
   }
 
@@ -609,7 +609,7 @@ export class LabelGridService {
           reportedAt: new Date(),
         });
       } catch (err) {
-        logger?.warn(
+        logger.warn(
           { err, releaseId, platform },
           "[LABELGRID] createEarningsRecord failed; continuing with dsp_analytics mirror",
         );
@@ -639,13 +639,13 @@ export class LabelGridService {
         },
       });
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         { err, releaseId, platform },
         "[LABELGRID] Failed to mirror earnings into dsp_analytics",
       );
     }
 
-    logger?.info(
+    logger.info(
       `[LABELGRID] Processed earnings: ${amount} from ${platform} (${streams} streams)`,
     );
   }

@@ -57,7 +57,7 @@ export class EppParser {
       throw new Error(`[EPP] No <response> element: ${xml?.slice(0, 200)}`);
 
     // result may be an array (multi-result responses are rare but valid)
-    const resultArr: unknown[] = Array?.isArray(resp?.result)
+    const resultArr: unknown[] = Array.isArray(resp?.result)
       ? resp?.result
       : [resp?.result];
     const firstResult = resultArr[0] ?? {};
@@ -86,11 +86,11 @@ export class EppParser {
   static parseDomainCheck(
     xml: string,
   ): Array<{ fqdn: string; available: boolean; reason?: string }> {
-    const base = this?.parseResponse(xml);
+    const base = this.parseResponse(xml);
     const chkData = base?.resData?.chkData;
     if (!chkData) return [];
 
-    const cds: unknown[] = Array?.isArray(chkData?.cd)
+    const cds: unknown[] = Array.isArray(chkData?.cd)
       ? chkData?.cd
       : [chkData?.cd];
 
@@ -118,7 +118,7 @@ export class EppParser {
     createdAt: Date;
     expiresAt: Date;
   } {
-    const base = this?.parseResponse(xml);
+    const base = this.parseResponse(xml);
     const creData = base?.resData?.creData;
     if (!creData) throw new Error("[EPP] No creData in domain:create response");
 
@@ -144,11 +144,11 @@ export class EppParser {
     expiresAt?: Date;
     updatedAt?: Date;
   } {
-    const base = this?.parseResponse(xml);
+    const base = this.parseResponse(xml);
     const infData = base?.resData?.infData;
     if (!infData) throw new Error("[EPP] No infData in domain:info response");
 
-    const rawStatuses: unknown[] = Array?.isArray(infData?.status)
+    const rawStatuses: unknown[] = Array.isArray(infData?.status)
       ? infData?.status
       : [infData?.status];
     const statuses = rawStatuses
@@ -158,7 +158,7 @@ export class EppParser {
       .filter(Boolean);
 
     const rawNs: unknown[] = (infData?.ns?.hostObj ?? []) as unknown[];
-    const nameservers: string[] = Array?.isArray(rawNs)
+    const nameservers: string[] = Array.isArray(rawNs)
       ? rawNs?.map(String)
       : rawNs
         ? [String(rawNs)]
@@ -182,7 +182,7 @@ export class EppParser {
    * Parse <contact:creData> from a contact:create response.
    */
   static parseContactCreate(xml: string): { id: string; createdAt: Date } {
-    const base = this?.parseResponse(xml);
+    const base = this.parseResponse(xml);
     const creData = base?.resData?.creData;
     if (!creData)
       throw new Error("[EPP] No creData in contact:create response");
@@ -205,7 +205,7 @@ export class EppParser {
     acID: string;
     expiresAt?: Date;
   } {
-    const base = this?.parseResponse(xml);
+    const base = this.parseResponse(xml);
     const trnData = base?.resData?.trnData;
     if (!trnData)
       throw new Error("[EPP] No trnData in domain:transfer response");
@@ -222,7 +222,7 @@ export class EppParser {
   // ── Domain renew ────────────────────────────────────────────────────────────
 
   static parseDomainRenew(xml: string): { fqdn: string; expiresAt: Date } {
-    const base = this?.parseResponse(xml);
+    const base = this.parseResponse(xml);
     const renData = base?.resData?.renData;
     if (!renData) throw new Error("[EPP] No renData in domain:renew response");
     return {

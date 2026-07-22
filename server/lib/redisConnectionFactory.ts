@@ -45,7 +45,7 @@ export async function isRedisHealthy(): Promise<boolean> {
 }
 
 export async function shutdownRedis(): Promise<void> {
-  logger?.info(
+  logger.info(
     "[Redis] PDIM manages its own lifecycle — no shutdown action needed",
   );
 }

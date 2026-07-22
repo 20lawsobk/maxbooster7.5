@@ -27,19 +27,19 @@ function isValidPlatform(p: string): p is PlatformType {
 
 router?.get("/devices", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const devices = listDevices(userId);
-    res?.json({ devices });
+    res.json({ devices });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to list devices");
-    res?.status(500).json({ error: "Failed to list devices" });
+    logger.warn({ err: error }, "Failed to list devices");
+    res.status(500).json({ error: "Failed to list devices" });
   }
 });
 
 router?.post("/devices/register", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { deviceId, platform, appVersion, osInfo, deviceName } = req?.body;
+    const userId = req.user!.id;
+    const { deviceId, platform, appVersion, osInfo, deviceName } = req.body;
 
     if (!deviceId || !platform || !appVersion) {
       return res
@@ -63,55 +63,55 @@ router?.post("/devices/register", requireAuth, async (req, res) => {
       deviceName: deviceName || `${platform} device`,
     });
 
-    res?.json({ success: true, device });
+    res.json({ success: true, device });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to register device");
-    res?.status(500).json({ error: "Failed to register device" });
+    logger.warn({ err: error }, "Failed to register device");
+    res.status(500).json({ error: "Failed to register device" });
   }
 });
 
 router?.post("/devices/heartbeat", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { deviceId } = req?.body;
+    const userId = req.user!.id;
+    const { deviceId } = req.body;
 
     if (!deviceId) {
-      return res?.status(400).json({ error: "deviceId is required" });
+      return res.status(400).json({ error: "deviceId is required" });
     }
 
     const device = heartbeat(userId, deviceId);
     if (!device) {
-      return res?.status(404).json({ error: "Device not found" });
+      return res.status(404).json({ error: "Device not found" });
     }
 
-    res?.json({ success: true, device });
+    res.json({ success: true, device });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to process heartbeat");
-    res?.status(500).json({ error: "Failed to process heartbeat" });
+    logger.warn({ err: error }, "Failed to process heartbeat");
+    res.status(500).json({ error: "Failed to process heartbeat" });
   }
 });
 
 router?.delete("/devices/:deviceId", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { deviceId } = req?.params;
+    const userId = req.user!.id;
+    const { deviceId } = req.params;
 
     const removed = unregisterDevice(userId, deviceId);
     if (!removed) {
-      return res?.status(404).json({ error: "Device not found" });
+      return res.status(404).json({ error: "Device not found" });
     }
 
-    res?.json({ success: true, message: "Device unregistered" });
+    res.json({ success: true, message: "Device unregistered" });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to unregister device");
-    res?.status(500).json({ error: "Failed to unregister device" });
+    logger.warn({ err: error }, "Failed to unregister device");
+    res.status(500).json({ error: "Failed to unregister device" });
   }
 });
 
 router?.get("/version/check", requireAuth, async (req, res) => {
   try {
-    const platform = req?.query.platform as string;
-    const currentVersion = req?.query.currentVersion as string;
+    const platform = req.query.platform as string;
+    const currentVersion = req.query.currentVersion as string;
 
     if (!platform || !currentVersion) {
       return res
@@ -130,30 +130,30 @@ router?.get("/version/check", requireAuth, async (req, res) => {
     }
 
     const versionInfo = checkForUpdate(platform, currentVersion);
-    res?.json(versionInfo);
+    res.json(versionInfo);
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to check version");
-    res?.status(500).json({ error: "Failed to check version" });
+    logger.warn({ err: error }, "Failed to check version");
+    res.status(500).json({ error: "Failed to check version" });
   }
 });
 
 router?.get("/version/latest", requireAuth, async (_req, res) => {
   try {
     const versions = getLatestVersions();
-    res?.json({ versions });
+    res.json({ versions });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get latest versions");
-    res?.status(500).json({ error: "Failed to get latest versions" });
+    logger.warn({ err: error }, "Failed to get latest versions");
+    res.status(500).json({ error: "Failed to get latest versions" });
   }
 });
 
 router?.post("/version/notify", requireAuth, async (req, res) => {
   try {
-    if (req?.user!.role !== "admin") {
-      return res?.status(403).json({ error: "Admin access required" });
+    if (req.user!.role !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
     }
 
-    const { platform, version, changelog, isForced } = req?.body;
+    const { platform, version, changelog, isForced } = req.body;
 
     if (!platform || !version) {
       return res
@@ -176,17 +176,17 @@ router?.post("/version/notify", requireAuth, async (req, res) => {
       isForced || false,
     );
 
-    res?.json({ success: true, notification });
+    res.json({ success: true, notification });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to push update notification");
-    res?.status(500).json({ error: "Failed to push update notification" });
+    logger.warn({ err: error }, "Failed to push update notification");
+    res.status(500).json({ error: "Failed to push update notification" });
   }
 });
 
 router?.get("/sync/pull", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const deviceId = req?.query.deviceId as string;
+    const userId = req.user!.id;
+    const deviceId = req.query.deviceId as string;
 
     if (!deviceId) {
       return res
@@ -195,17 +195,17 @@ router?.get("/sync/pull", requireAuth, async (req, res) => {
     }
 
     const result = pullSyncState(userId, deviceId);
-    res?.json(result);
+    res.json(result);
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to pull sync state");
-    res?.status(500).json({ error: "Failed to pull sync state" });
+    logger.warn({ err: error }, "Failed to pull sync state");
+    res.status(500).json({ error: "Failed to pull sync state" });
   }
 });
 
 router?.post("/sync/push", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { deviceId, changes } = req?.body;
+    const userId = req.user!.id;
+    const { deviceId, changes } = req.body;
 
     if (!deviceId || !changes) {
       return res
@@ -214,31 +214,31 @@ router?.post("/sync/push", requireAuth, async (req, res) => {
     }
 
     const state = pushSyncState(userId, deviceId, changes);
-    res?.json({ success: true, state });
+    res.json({ success: true, state });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to push sync state");
-    res?.status(500).json({ error: "Failed to push sync state" });
+    logger.warn({ err: error }, "Failed to push sync state");
+    res.status(500).json({ error: "Failed to push sync state" });
   }
 });
 
 router?.get("/sync/status", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const statuses = getSyncStatus(userId);
-    res?.json({ statuses });
+    res.json({ statuses });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get sync status");
-    res?.status(500).json({ error: "Failed to get sync status" });
+    logger.warn({ err: error }, "Failed to get sync status");
+    res.status(500).json({ error: "Failed to get sync status" });
   }
 });
 
 router?.post("/remote-update/trigger", requireAuth, async (req, res) => {
   try {
-    if (req?.user!.role !== "admin") {
-      return res?.status(403).json({ error: "Admin access required" });
+    if (req.user!.role !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
     }
 
-    const { platform, targetVersion, isForced, changelog } = req?.body;
+    const { platform, targetVersion, isForced, changelog } = req.body;
 
     if (!platform || !targetVersion) {
       return res
@@ -259,10 +259,10 @@ router?.post("/remote-update/trigger", requireAuth, async (req, res) => {
       targetVersion,
       isForced || false,
       changelog || "",
-      req?.user!.id,
+      req.user!.id,
     );
 
-    res?.json({
+    res.json({
       success: true,
       rollout: {
         id: rollout.id,
@@ -274,22 +274,22 @@ router?.post("/remote-update/trigger", requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to trigger remote update");
-    res?.status(500).json({ error: "Failed to trigger remote update" });
+    logger.warn({ err: error }, "Failed to trigger remote update");
+    res.status(500).json({ error: "Failed to trigger remote update" });
   }
 });
 
 router?.get("/remote-update/status", requireAuth, async (req, res) => {
   try {
-    if (req?.user!.role !== "admin") {
-      return res?.status(403).json({ error: "Admin access required" });
+    if (req.user!.role !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
     }
 
     const rollouts = getUpdateRolloutStatus();
-    res?.json({ rollouts });
+    res.json({ rollouts });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get update rollout status");
-    res?.status(500).json({ error: "Failed to get update rollout status" });
+    logger.warn({ err: error }, "Failed to get update rollout status");
+    res.status(500).json({ error: "Failed to get update rollout status" });
   }
 });
 

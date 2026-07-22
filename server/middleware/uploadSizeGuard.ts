@@ -19,13 +19,13 @@ export function requirePresignedForLargeUploads(
   res: Response,
   next: NextFunction,
 ): void {
-  const transferEncoding = req?.headers["transfer-encoding"];
-  const contentLengthHeader = req?.headers["content-length"];
+  const transferEncoding = req.headers["transfer-encoding"];
+  const contentLengthHeader = req.headers["content-length"];
 
   // Chunked transfer: no Content-Length, so we cannot enforce the limit
   // after the fact without buffering the entire body.  Reject early.
   if (transferEncoding && transferEncoding?.toLowerCase().includes("chunked")) {
-    res?.status(413).json({
+    res.status(413).json({
       error: "Payload Too Large",
       message: `Chunked upload detected. Files must be uploaded via the presigned URL flow to avoid buffering.`,
       presignedUrlEndpoint: "/api/uploads/request-url",
@@ -41,7 +41,7 @@ export function requirePresignedForLargeUploads(
       !isNaN(contentLength) &&
       contentLength > PRESIGNED_URL_THRESHOLD_BYTES
     ) {
-      res?.status(413).json({
+      res.status(413).json({
         error: "Payload Too Large",
         message: `Files larger than ${PRESIGNED_URL_THRESHOLD_BYTES / 1024 / 1024}MB must be uploaded via the presigned URL flow.`,
         presignedUrlEndpoint: "/api/uploads/request-url",

@@ -120,7 +120,7 @@ export class BoosterQueue<TData = any, TResult = any> {
       jobId?: string;
     },
   ): Promise<{ id: string; name: string; data: TData }> {
-    const job = await this?.queue.add(jobName, data, {
+    const job = await this.queue.add(jobName, data, {
       priority: opts.priority,
       delay: opts.delay,
       jobId: opts.jobId,
@@ -129,7 +129,7 @@ export class BoosterQueue<TData = any, TResult = any> {
   }
 
   async close(): Promise<void> {
-    await this?.queue.close();
+    await this.queue.close();
   }
 }
 
@@ -148,7 +148,7 @@ class QueueService {
     this.csvQueue = new Queue("csv", opts);
     this.analyticsQueue = new Queue("analytics", opts);
     this.emailQueue = new Queue("email", opts);
-    logger?.info(
+    logger.info(
       "📋 BullMQ job queues initialized (Redis-backed, ack + DLQ + retry)",
     );
   }
@@ -158,14 +158,14 @@ class QueueService {
     data: AudioConvertJobData | AudioMixJobData,
     priority?: number,
   ) {
-    return this?.audioQueue.add(type, data as Record<string, unknown>, {
+    return this.audioQueue.add(type, data as Record<string, unknown>, {
       priority,
       jobId: `audio_${type}_${Date?.now()}`,
     });
   }
 
   async addCSVImportJob(data: CSVImportJobData) {
-    return this?.csvQueue.add("import", data);
+    return this.csvQueue.add("import", data);
   }
 
   async addAnalyticsJob(
@@ -173,15 +173,15 @@ class QueueService {
     data: AnalyticsJobData,
     priority?: number,
   ) {
-    return this?.analyticsQueue.add(type, data, { priority });
+    return this.analyticsQueue.add(type, data, { priority });
   }
 
   async addEmailJob(data: EmailJobData, priority?: number) {
-    return this?.emailQueue.add("send", data, { priority });
+    return this.emailQueue.add("send", data, { priority });
   }
 
   async getJobStatus(queueName: string, jobId: string) {
-    const queue = this?.getQueue(queueName);
+    const queue = this.getQueue(queueName);
     const job = await queue?.getJob(jobId);
     if (!job) return { state: "unknown", progress: 0 };
     const state = await job?.getState();
@@ -194,7 +194,7 @@ class QueueService {
   }
 
   async getQueueStats(queueName: string) {
-    const queue = this?.getQueue(queueName);
+    const queue = this.getQueue(queueName);
     const [waiting, active, completed, failed] = await Promise?.all([
       queue?.getWaitingCount(),
       queue?.getActiveCount(),
@@ -206,22 +206,22 @@ class QueueService {
 
   async getAllQueueStats() {
     const [audio, csv, analytics, email] = await Promise?.all([
-      this?.getQueueStats("audio"),
-      this?.getQueueStats("csv"),
-      this?.getQueueStats("analytics"),
-      this?.getQueueStats("email"),
+      this.getQueueStats("audio"),
+      this.getQueueStats("csv"),
+      this.getQueueStats("analytics"),
+      this.getQueueStats("email"),
     ]);
     return { audio, csv, analytics, email };
   }
 
   async pauseQueue(queueName: string) {
-    await this?.getQueue(queueName).pause();
-    logger?.info(`⏸️  Queue ${queueName} paused`);
+    await this.getQueue(queueName).pause();
+    logger.info(`⏸️  Queue ${queueName} paused`);
   }
 
   async resumeQueue(queueName: string) {
-    await this?.getQueue(queueName).resume();
-    logger?.info(`▶️  Queue ${queueName} resumed`);
+    await this.getQueue(queueName).resume();
+    logger.info(`▶️  Queue ${queueName} resumed`);
   }
 
   async cleanQueue(
@@ -229,21 +229,21 @@ class QueueService {
     grace = 3600000,
     status: "completed" | "failed" = "completed",
   ) {
-    const queue = this?.getQueue(queueName);
+    const queue = this.getQueue(queueName);
     await queue?.clean(grace, 100, status);
-    logger?.info(`🧹 Cleaned ${status} jobs from ${queueName} queue`);
+    logger.info(`🧹 Cleaned ${status} jobs from ${queueName} queue`);
   }
 
   private getQueue(queueName: string): Queue {
     switch (queueName) {
       case "audio":
-        return this?.audioQueue;
+        return this.audioQueue;
       case "csv":
-        return this?.csvQueue;
+        return this.csvQueue;
       case "analytics":
-        return this?.analyticsQueue;
+        return this.analyticsQueue;
       case "email":
-        return this?.emailQueue;
+        return this.emailQueue;
       default:
         throw new Error(`Unknown queue: ${queueName}`);
     }
@@ -251,12 +251,12 @@ class QueueService {
 
   async close() {
     await Promise?.all([
-      this?.audioQueue.close(),
-      this?.csvQueue.close(),
-      this?.analyticsQueue.close(),
-      this?.emailQueue.close(),
+      this.audioQueue.close(),
+      this.csvQueue.close(),
+      this.analyticsQueue.close(),
+      this.emailQueue.close(),
     ]);
-    logger?.info("📋 All BullMQ queues closed");
+    logger.info("📋 All BullMQ queues closed");
   }
 }
 

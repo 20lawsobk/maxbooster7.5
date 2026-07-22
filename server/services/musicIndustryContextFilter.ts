@@ -276,14 +276,14 @@ class MusicIndustryContextFilterService {
    */
   async getContextForMode(mode: GenerationMode): Promise<MusicIndustryContext> {
     try {
-      const base = await this?.getOrBuild();
-      return this?.applyMode(base, mode);
+      const base = await this.getOrBuild();
+      return this.applyMode(base, mode);
     } catch (err) {
-      logger?.warn(
+      logger.warn(
         "[IndustryFilter] Context unavailable — returning empty context:",
         (err as Error).message,
       );
-      return this?.empty();
+      return this.empty();
     }
   }
 
@@ -291,32 +291,32 @@ class MusicIndustryContextFilterService {
 
   /** Returns the top trending genre from the last cached fetch, or undefined. */
   getSuggestedGenreSync(): string | undefined {
-    return this?.cache?.ctx?.generationHints.suggestedGenre;
+    return this.cache?.ctx?.generationHints.suggestedGenre;
   }
 
   /** Returns the top trending mood from the last cached fetch, or undefined. */
   getSuggestedMoodSync(): string | undefined {
-    return this?.cache?.ctx?.generationHints.suggestedMood;
+    return this.cache?.ctx?.generationHints.suggestedMood;
   }
 
   /** Returns tempo bias from the last cached fetch ('neutral' when cold). */
   getTempoBiasSync(): "up" | "down" | "neutral" {
-    return this?.cache?.ctx?.generationHints.tempoBias ?? "neutral";
+    return this.cache?.ctx?.generationHints.tempoBias ?? "neutral";
   }
 
   /** Returns top production style keywords from the last cached fetch. */
   getProductionKeywordsSync(): string[] {
-    return this?.cache?.ctx?.generationHints.productionKeywords ?? [];
+    return this.cache?.ctx?.generationHints.productionKeywords ?? [];
   }
 
   /** Returns all platform trend signals from the last cached fetch. */
   getPlatformSignalsSync(): PlatformTrendSignal[] {
-    return this?.cache?.ctx?.platformSignals ?? [];
+    return this.cache?.ctx?.platformSignals ?? [];
   }
 
   /** Returns current confidence level (0 when cold). */
   getConfidenceSync(): number {
-    return this?.cache?.ctx?.confidence ?? 0;
+    return this.cache?.ctx?.confidence ?? 0;
   }
 
   clearCache(): void {
@@ -326,13 +326,13 @@ class MusicIndustryContextFilterService {
   // ── Internal ───────────────────────────────────────────────────────────────
 
   private async getOrBuild(): Promise<MusicIndustryContext> {
-    if (this?.cache && Date?.now() - this?.cache.builtAt < CACHE_TTL_MS) {
-      return this?.cache.ctx;
+    if (this.cache && Date?.now() - this.cache.builtAt < CACHE_TTL_MS) {
+      return this.cache.ctx;
     }
     const signals = await industryMonitor?.fetchLiveChanges();
-    const ctx = this?.build(signals);
+    const ctx = this.build(signals);
     this.cache = { ctx, builtAt: Date.now() };
-    logger?.info(
+    logger.info(
       `[IndustryFilter] Built context from ${signals?.length} signals — ` +
         `confidence=${ctx?.confidence.toFixed(2)} ` +
         `genres=[${ctx?.trendingGenres.slice(0, 3).join(",")}] ` +
@@ -351,7 +351,7 @@ class MusicIndustryContextFilterService {
 
     for (const sig of signals) {
       const text = `${sig?.title} ${sig?.description}`;
-      const age = this?.recencyFactor(sig?.detectedAt);
+      const age = this.recencyFactor(sig?.detectedAt);
       const boost =
         sig?.urgency === "critical"
           ? 1.4
@@ -402,9 +402,9 @@ class MusicIndustryContextFilterService {
       }
     }
 
-    const trendingGenres = this?.topN(genreScores, MAX_ITEMS);
-    const trendingMoods = this?.topN(moodScores, MAX_ITEMS);
-    const productionStyles = this?.topN(prodScores, MAX_ITEMS);
+    const trendingGenres = this.topN(genreScores, MAX_ITEMS);
+    const trendingMoods = this.topN(moodScores, MAX_ITEMS);
+    const productionStyles = this.topN(prodScores, MAX_ITEMS);
     const viralHookPatterns = [...hookSet].slice(0, 4);
     const lyricThemes = [...themeSet].slice(0, 4);
 
@@ -422,8 +422,8 @@ class MusicIndustryContextFilterService {
       }
     }
 
-    const confidence = Math?.min(1, signals?.length / 40);
-    const hints = this?.buildHints(
+    const confidence = Math.min(1, signals?.length / 40);
+    const hints = this.buildHints(
       trendingGenres,
       trendingMoods,
       productionStyles,

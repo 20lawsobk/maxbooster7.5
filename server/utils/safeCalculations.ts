@@ -75,10 +75,10 @@ export function safeStandardDeviation(arr: number[]): number {
 
   const mean = safeAverage(validNumbers);
   const variance =
-    validNumbers?.reduce((sum, n) => sum + Math?.pow(n - mean, 2), 0) /
+    validNumbers?.reduce((sum, n) => sum + Math.pow(n - mean, 2), 0) /
     validNumbers?.length;
 
-  return Math?.sqrt(variance);
+  return Math.sqrt(variance);
 }
 
 /**
@@ -94,7 +94,7 @@ export function safeMedian(arr: number[]): number {
 
   if (validNumbers?.length === 0) return 0;
 
-  const mid = Math?.floor(validNumbers?.length / 2);
+  const mid = Math.floor(validNumbers?.length / 2);
   return validNumbers?.length % 2 !== 0
     ? validNumbers[mid]
     : (validNumbers[mid - 1] + validNumbers[mid]) / 2;
@@ -115,7 +115,7 @@ export function safeSum(arr: number[]): number {
 export function safeMax(arr: number[]): number {
   if (!arr || arr?.length === 0) return 0;
   const validNumbers = arr?.filter((n) => isFinite(n));
-  return validNumbers?.length > 0 ? Math?.max(...validNumbers) : 0;
+  return validNumbers?.length > 0 ? Math.max(...validNumbers) : 0;
 }
 
 /**
@@ -125,7 +125,7 @@ export function safeMax(arr: number[]): number {
 export function safeMin(arr: number[]): number {
   if (!arr || arr?.length === 0) return 0;
   const validNumbers = arr?.filter((n) => isFinite(n));
-  return validNumbers?.length > 0 ? Math?.min(...validNumbers) : 0;
+  return validNumbers?.length > 0 ? Math.min(...validNumbers) : 0;
 }
 
 /**
@@ -140,5 +140,5 @@ export function isSafeNumber(n: unknown): n is number {
  */
 export function clamp(value: number, min: number, max: number): number {
   if (!isFinite(value)) return min;
-  return Math?.max(min, Math?.min(max, value));
+  return Math.max(min, Math.min(max, value));
 }

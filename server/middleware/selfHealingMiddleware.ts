@@ -40,9 +40,9 @@ export function selfHealingSecurityMiddleware(
   const startTime = Date?.now();
 
   const ip =
-    req?.ip ||
-    req?.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() ||
-    req?.socket.remoteAddress ||
+    req.ip ||
+    req.headers["x-forwarded-for"]?.toString().split(",")[0]?.trim() ||
+    req.socket.remoteAddress ||
     "unknown";
 
   const isWhitelisted =
@@ -51,7 +51,7 @@ export function selfHealingSecurityMiddleware(
     (isDev && ip !== "unknown");
 
   if (!isWhitelisted && selfHealingEngine?.isIpBlocked(ip)) {
-    res?.status(403).json({
+    res.status(403).json({
       error: "Access denied",
       code: "IP_BLOCKED",
       message:
@@ -62,7 +62,7 @@ export function selfHealingSecurityMiddleware(
 
   selfHealingEngine?.processSecurityEvent({
     type: "request",
-    category: getRequestCategory(req?.path),
+    category: getRequestCategory(req.path),
     severity: "low",
     source: {
       ip,
@@ -73,20 +73,20 @@ export function selfHealingSecurityMiddleware(
     payload: {
       path: req.path,
       method: req.method,
-      body: sanitizeBody(req?.body),
-      headers: sanitizeHeaders(req?.headers),
+      body: sanitizeBody(req.body),
+      headers: sanitizeHeaders(req.headers),
     },
     metrics: {
       latency: 0,
     },
   });
 
-  res?.on("finish", () => {
+  res.on("finish", () => {
     const latency = Date?.now() - startTime;
 
     const isNormalAuthResponse =
-      res?.statusCode === 401 || res?.statusCode === 403;
-    if (res?.statusCode >= 400 && !isNormalAuthResponse) {
+      res.statusCode === 401 || res.statusCode === 403;
+    if (res.statusCode >= 400 && !isNormalAuthResponse) {
       selfHealingEngine?.processSecurityEvent({
         type: "request",
         category: "error_response",
@@ -159,7 +159,7 @@ function sanitizeHeaders(headers: Record<string, any>): Record<string, string> {
   ];
   const sanitized: Record<string, string> = {};
 
-  for (const [key, value] of Object?.entries(headers)) {
+  for (const [key, value] of Object.entries(headers)) {
     if (sensitiveHeaders?.includes(key?.toLowerCase())) {
       sanitized[key] = "[REDACTED]";
     } else if (typeof value === "string") {

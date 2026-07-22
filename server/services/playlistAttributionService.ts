@@ -112,7 +112,7 @@ class PlaylistAttributionService {
       .values({ ...playlistData, userId })
       .returning();
 
-    logger?.info(
+    logger.info(
       `Tracked new playlist add: ${playlistData?.playlistName} for user ${userId}`,
     );
     return newAttribution;
@@ -138,7 +138,7 @@ class PlaylistAttributionService {
         ),
       );
 
-    logger?.info(`Tracked playlist removal: ${playlistId} for user ${userId}`);
+    logger.info(`Tracked playlist removal: ${playlistId} for user ${userId}`);
   }
 
   async updatePlaylistMetrics(
@@ -192,7 +192,7 @@ class PlaylistAttributionService {
         ),
       );
 
-    logger?.info(
+    logger.info(
       `Tracked pitch for playlist ${playlistId}: ${pitchData?.status}`,
     );
   }
@@ -390,9 +390,9 @@ class PlaylistAttributionService {
       const date = new Date(baseDate);
       date?.setDate(date?.getDate() - i);
 
-      const dailyStreams = Math?.floor(Math?.random() * 500) + 50;
-      const dailyListeners = Math?.floor(dailyStreams * 0.6);
-      const dailySaves = Math?.floor(dailyStreams * 0.05);
+      const dailyStreams = Math.floor(Math.random() * 500) + 50;
+      const dailyListeners = Math.floor(dailyStreams * 0.6);
+      const dailySaves = Math.floor(dailyStreams * 0.05);
 
       cumulativeStreams += dailyStreams;
       cumulativeListeners += dailyListeners;
@@ -574,7 +574,7 @@ class PlaylistAttributionService {
         .where(and(...conditions));
 
       if (existingPlaylists?.length > 0) {
-        logger?.info(
+        logger.info(
           `Found ${existingPlaylists?.length} existing playlists for ${platform}`,
         );
 
@@ -626,12 +626,12 @@ class PlaylistAttributionService {
 
       // No existing playlists found - return empty array
       // User needs to add playlist attributions via trackPlaylistAdd or connect DSP for automatic tracking
-      logger?.info(
+      logger.info(
         `No playlist data found for ${platform} user ${userId}. Add playlists via trackPlaylistAdd.`,
       );
       return [];
     } catch (error: unknown) {
-      logger?.warn({ err: error }, `Error syncing playlists from ${platform}:`);
+      logger.warn({ err: error }, `Error syncing playlists from ${platform}:`);
       throw new Error(`Failed to sync playlists from ${platform}`);
     }
   }

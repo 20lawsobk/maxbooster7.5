@@ -24,7 +24,7 @@ const VALID_PLATFORMS = new Set<Platform>([
   "twitter",
 ]);
 
-const VALID_PACKS = new Set<PackId>(Object?.keys(PACK_DEFINITIONS) as PackId[]);
+const VALID_PACKS = new Set<PackId>(Object.keys(PACK_DEFINITIONS) as PackId[]);
 
 // POST /api/multimodal/generate
 // Full multimodal content generation: normalise → plan → workers → package
@@ -33,13 +33,13 @@ router?.post(
   requireAuthOnly,
   async (req: Request, res: Response) => {
     try {
-      const body = req?.body as Partial<GenerationRequest> & { userId?: string };
-      const userId: string = req?.user?.id || body?.userId || "";
+      const body = req.body as Partial<GenerationRequest> & { userId?: string };
+      const userId: string = req.user?.id || body?.userId || "";
 
       if (!body?.input?.payload) {
-        return res?.status(400).json({ error: "input.payload is required" });
+        return res.status(400).json({ error: "input.payload is required" });
       }
-      if (!Array?.isArray(body?.platforms) || body?.platforms.length === 0) {
+      if (!Array.isArray(body?.platforms) || body?.platforms.length === 0) {
         return res
           .status(400)
           .json({ error: "platforms array is required and must not be empty" });
@@ -49,7 +49,7 @@ router?.post(
         VALID_PLATFORMS?.has(p as Platform),
       ) as Platform[];
       if (platforms?.length === 0) {
-        return res?.status(400).json({
+        return res.status(400).json({
           error: `No valid platforms. Accepted: ${[...VALID_PLATFORMS].join(", ")}`,
         });
       }
@@ -75,9 +75,9 @@ router?.post(
       };
 
       const pkg = await handleGeneration(genRequest);
-      return res?.json(pkg);
+      return res.json(pkg);
     } catch (err) {
-      logger?.warn({ err: err }, "[POST /multimodal/generate]");
+      logger.warn({ err: err }, "[POST /multimodal/generate]");
       return res
         .status(500)
         .json({ error: err.message || "Generation failed" });
@@ -90,7 +90,7 @@ router?.get(
   "/platform-rules",
   requireAuthOnly,
   (_req: Request, res: Response) => {
-    return res?.json({ platformRules: PLATFORM_RULES });
+    return res.json({ platformRules: PLATFORM_RULES });
   },
 );
 
@@ -99,18 +99,18 @@ router?.get(
   "/platform-rules/:platform",
   requireAuthOnly,
   (req: Request, res: Response) => {
-    const platform = req?.params.platform as Platform;
+    const platform = req.params.platform as Platform;
     const rules = PLATFORM_RULES[platform];
     if (!rules) {
-      return res?.status(404).json({ error: `Unknown platform: ${platform}` });
+      return res.status(404).json({ error: `Unknown platform: ${platform}` });
     }
-    return res?.json({ platform, rules });
+    return res.json({ platform, rules });
   },
 );
 
 // GET /api/multimodal/packs  — list available pack definitions
 router?.get("/packs", requireAuthOnly, (_req: Request, res: Response) => {
-  const packs = Object?.entries(PACK_DEFINITIONS).map(([id, slots]) => ({
+  const packs = Object.entries(PACK_DEFINITIONS).map(([id, slots]) => ({
     id,
     slotCount: slots.length,
     platforms: [...new Set(slots?.map((s) => s?.platform))],
@@ -122,7 +122,7 @@ router?.get("/packs", requireAuthOnly, (_req: Request, res: Response) => {
       purpose: s.purpose,
     })),
   }));
-  return res?.json({ packs });
+  return res.json({ packs });
 });
 
 export default router;

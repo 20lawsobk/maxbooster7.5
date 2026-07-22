@@ -37,39 +37,39 @@ export class TapeDelayProcessor implements DSPProcessor {
     const lowCut = (params?.lowCut as number) ?? 80;
     const stereoSpread = (params?.spread as number) ?? 0.1;
 
-    const delaySamples = msToSamples(time, this?.sampleRate);
-    const delaySpread = msToSamples(time * stereoSpread, this?.sampleRate);
+    const delaySamples = msToSamples(time, this.sampleRate);
+    const delaySpread = msToSamples(time * stereoSpread, this.sampleRate);
 
-    this?.lpFilterL.setLowpass(highCut, this?.sampleRate);
-    this?.lpFilterR.setLowpass(highCut, this?.sampleRate);
-    this?.hpFilterL.setHighpass(lowCut, 0.707, this?.sampleRate);
-    this?.hpFilterR.setHighpass(lowCut, 0.707, this?.sampleRate);
+    this.lpFilterL.setLowpass(highCut, this.sampleRate);
+    this.lpFilterR.setLowpass(highCut, this.sampleRate);
+    this.hpFilterL.setHighpass(lowCut, 0.707, this.sampleRate);
+    this.hpFilterR.setHighpass(lowCut, 0.707, this.sampleRate);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       this.wowFlutter += 0.0001;
-      const wowMod = Math?.sin(this?.wowFlutter * 0.4) * wow * 20;
-      const flutterMod = Math?.sin(this?.wowFlutter * 7) * flutter * 5;
+      const wowMod = Math.sin(this.wowFlutter * 0.4) * wow * 20;
+      const flutterMod = Math.sin(this.wowFlutter * 7) * flutter * 5;
       const modulation = wowMod + flutterMod;
 
-      const delayedL = this?.delayL.readInterpolated(delaySamples + modulation);
-      const delayedR = this?.delayR.readInterpolated(
+      const delayedL = this.delayL.readInterpolated(delaySamples + modulation);
+      const delayedR = this.delayR.readInterpolated(
         delaySamples + delaySpread - modulation,
       );
 
-      let filteredL = this?.lpFilterL.process(delayedL);
-      let filteredR = this?.lpFilterR.process(delayedR);
-      filteredL = this?.hpFilterL.process(filteredL);
-      filteredR = this?.hpFilterR.process(filteredR);
+      let filteredL = this.lpFilterL.process(delayedL);
+      let filteredR = this.lpFilterR.process(delayedR);
+      filteredL = this.hpFilterL.process(filteredL);
+      filteredR = this.hpFilterR.process(filteredR);
 
       const saturatedL =
-        Math?.tanh(filteredL * (1 + saturationAmount * 2)) *
+        Math.tanh(filteredL * (1 + saturationAmount * 2)) *
         (1 / (1 + saturationAmount));
       const saturatedR =
-        Math?.tanh(filteredR * (1 + saturationAmount * 2)) *
+        Math.tanh(filteredR * (1 + saturationAmount * 2)) *
         (1 / (1 + saturationAmount));
 
-      this?.delayL.write(input?.samples[0][i] + saturatedL * feedback);
-      this?.delayR.write(input?.samples[1][i] + saturatedR * feedback);
+      this.delayL.write(input?.samples[0][i] + saturatedL * feedback);
+      this.delayR.write(input?.samples[1][i] + saturatedR * feedback);
 
       output.samples[0][i] = input?.samples[0][i] * (1 - mix) + saturatedL * mix;
       output.samples[1][i] = input?.samples[1][i] * (1 - mix) + saturatedR * mix;
@@ -79,12 +79,12 @@ export class TapeDelayProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this?.delayL.clear();
-    this?.delayR.clear();
-    this?.lpFilterL.clear();
-    this?.lpFilterR.clear();
-    this?.hpFilterL.clear();
-    this?.hpFilterR.clear();
+    this.delayL.clear();
+    this.delayR.clear();
+    this.lpFilterL.clear();
+    this.lpFilterR.clear();
+    this.hpFilterL.clear();
+    this.hpFilterR.clear();
     this.wowFlutter = 0;
   }
 }
@@ -118,25 +118,25 @@ export class DigitalDelayProcessor implements DSPProcessor {
     const highCut = (params?.highCut as number) ?? 12000;
     const pingPong = (params?.pingPong as boolean) ?? false;
 
-    const delaySamplesL = msToSamples(timeL, this?.sampleRate);
-    const delaySamplesR = msToSamples(timeR, this?.sampleRate);
+    const delaySamplesL = msToSamples(timeL, this.sampleRate);
+    const delaySamplesR = msToSamples(timeR, this.sampleRate);
 
-    this?.lpFilterL.setLowpass(highCut, 0.707, this?.sampleRate);
-    this?.lpFilterR.setLowpass(highCut, 0.707, this?.sampleRate);
+    this.lpFilterL.setLowpass(highCut, 0.707, this.sampleRate);
+    this.lpFilterR.setLowpass(highCut, 0.707, this.sampleRate);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
-      const delayedL = this?.delayL.read(delaySamplesL);
-      const delayedR = this?.delayR.read(delaySamplesR);
+      const delayedL = this.delayL.read(delaySamplesL);
+      const delayedR = this.delayR.read(delaySamplesR);
 
-      const filteredL = this?.lpFilterL.process(delayedL);
-      const filteredR = this?.lpFilterR.process(delayedR);
+      const filteredL = this.lpFilterL.process(delayedL);
+      const filteredR = this.lpFilterR.process(delayedR);
 
       if (pingPong) {
-        this?.delayL.write(input?.samples[0][i] + filteredR * feedback);
-        this?.delayR.write(input?.samples[1][i] + filteredL * feedback);
+        this.delayL.write(input?.samples[0][i] + filteredR * feedback);
+        this.delayR.write(input?.samples[1][i] + filteredL * feedback);
       } else {
-        this?.delayL.write(input?.samples[0][i] + filteredL * feedback);
-        this?.delayR.write(input?.samples[1][i] + filteredR * feedback);
+        this.delayL.write(input?.samples[0][i] + filteredL * feedback);
+        this.delayR.write(input?.samples[1][i] + filteredR * feedback);
       }
 
       output.samples[0][i] = input?.samples[0][i] * (1 - mix) + filteredL * mix;
@@ -147,10 +147,10 @@ export class DigitalDelayProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this?.delayL.clear();
-    this?.delayR.clear();
-    this?.lpFilterL.clear();
-    this?.lpFilterR.clear();
+    this.delayL.clear();
+    this.delayR.clear();
+    this.lpFilterL.clear();
+    this.lpFilterR.clear();
   }
 }
 
@@ -188,26 +188,26 @@ export class PingPongDelayProcessor implements DSPProcessor {
     const lowCut = (params?.lowCut as number) ?? 100;
     const width = (params?.width as number) ?? 1.0;
 
-    const delaySamples = msToSamples(time, this?.sampleRate);
+    const delaySamples = msToSamples(time, this.sampleRate);
 
-    this?.lpFilterL.setLowpass(highCut, this?.sampleRate);
-    this?.lpFilterR.setLowpass(highCut, this?.sampleRate);
-    this?.hpFilterL.setHighpass(lowCut, 0.707, this?.sampleRate);
-    this?.hpFilterR.setHighpass(lowCut, 0.707, this?.sampleRate);
+    this.lpFilterL.setLowpass(highCut, this.sampleRate);
+    this.lpFilterR.setLowpass(highCut, this.sampleRate);
+    this.hpFilterL.setHighpass(lowCut, 0.707, this.sampleRate);
+    this.hpFilterR.setHighpass(lowCut, 0.707, this.sampleRate);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       const mono = (input?.samples[0][i] + input?.samples[1][i]) * 0.5;
 
-      const delayedL = this?.delayL.read(delaySamples);
-      const delayedR = this?.delayR.read(delaySamples);
+      const delayedL = this.delayL.read(delaySamples);
+      const delayedR = this.delayR.read(delaySamples);
 
-      let filteredL = this?.lpFilterL.process(delayedL);
-      let filteredR = this?.lpFilterR.process(delayedR);
-      filteredL = this?.hpFilterL.process(filteredL);
-      filteredR = this?.hpFilterR.process(filteredR);
+      let filteredL = this.lpFilterL.process(delayedL);
+      let filteredR = this.lpFilterR.process(delayedR);
+      filteredL = this.hpFilterL.process(filteredL);
+      filteredR = this.hpFilterR.process(filteredR);
 
-      this?.delayL.write(mono + filteredR * feedback * spread);
-      this?.delayR.write(filteredL * feedback);
+      this.delayL.write(mono + filteredR * feedback * spread);
+      this.delayR.write(filteredL * feedback);
 
       const wetL = filteredL * width;
       const wetR = filteredR * width;
@@ -220,12 +220,12 @@ export class PingPongDelayProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this?.delayL.clear();
-    this?.delayR.clear();
-    this?.lpFilterL.clear();
-    this?.lpFilterR.clear();
-    this?.hpFilterL.clear();
-    this?.hpFilterR.clear();
+    this.delayL.clear();
+    this.delayR.clear();
+    this.lpFilterL.clear();
+    this.lpFilterR.clear();
+    this.hpFilterL.clear();
+    this.hpFilterR.clear();
   }
 }
 
@@ -253,16 +253,16 @@ export class SlapbackDelayProcessor implements DSPProcessor {
     const tone = (params?.tone as number) ?? 0.6;
     const doubleTrack = (params?.doubleTrack as boolean) ?? false;
 
-    const delaySamples = msToSamples(time, this?.sampleRate);
-    this?.lpFilter.setLowpass(2000 + tone * 8000, this?.sampleRate);
+    const delaySamples = msToSamples(time, this.sampleRate);
+    this.lpFilter.setLowpass(2000 + tone * 8000, this.sampleRate);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       const mono = (input?.samples[0][i] + input?.samples[1][i]) * 0.5;
 
-      const delayed = this?.delay.read(delaySamples);
-      const filtered = this?.lpFilter.process(delayed);
+      const delayed = this.delay.read(delaySamples);
+      const filtered = this.lpFilter.process(delayed);
 
-      this?.delay.write(mono + filtered * feedback);
+      this.delay.write(mono + filtered * feedback);
 
       let wetL = filtered;
       let wetR = filtered;
@@ -280,8 +280,8 @@ export class SlapbackDelayProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this?.delay.clear();
-    this?.lpFilter.clear();
+    this.delay.clear();
+    this.lpFilter.clear();
   }
 }
 
@@ -319,26 +319,26 @@ export class ModDelayProcessor implements DSPProcessor {
     const highCut = (params?.highCut as number) ?? 6000;
     const stereoPhase = (params?.stereoPhase as number) ?? 0.5;
 
-    const baseDelaySamples = msToSamples(time, this?.sampleRate);
-    const maxModSamples = msToSamples(time * 0.2, this?.sampleRate);
+    const baseDelaySamples = msToSamples(time, this.sampleRate);
+    const maxModSamples = msToSamples(time * 0.2, this.sampleRate);
 
-    this?.lfoL.setFrequency(modRate, this?.sampleRate);
-    this?.lfoR.setFrequency(modRate * (1 + stereoPhase * 0.1), this?.sampleRate);
-    this?.lpFilterL.setLowpass(highCut, this?.sampleRate);
-    this?.lpFilterR.setLowpass(highCut, this?.sampleRate);
+    this.lfoL.setFrequency(modRate, this.sampleRate);
+    this.lfoR.setFrequency(modRate * (1 + stereoPhase * 0.1), this.sampleRate);
+    this.lpFilterL.setLowpass(highCut, this.sampleRate);
+    this.lpFilterR.setLowpass(highCut, this.sampleRate);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
-      const modL = this?.lfoL.triangle() * modDepth * maxModSamples;
-      const modR = this?.lfoR.triangle() * modDepth * maxModSamples;
+      const modL = this.lfoL.triangle() * modDepth * maxModSamples;
+      const modR = this.lfoR.triangle() * modDepth * maxModSamples;
 
-      const delayedL = this?.delayL.readInterpolated(baseDelaySamples + modL);
-      const delayedR = this?.delayR.readInterpolated(baseDelaySamples + modR);
+      const delayedL = this.delayL.readInterpolated(baseDelaySamples + modL);
+      const delayedR = this.delayR.readInterpolated(baseDelaySamples + modR);
 
-      const filteredL = this?.lpFilterL.process(delayedL);
-      const filteredR = this?.lpFilterR.process(delayedR);
+      const filteredL = this.lpFilterL.process(delayedL);
+      const filteredR = this.lpFilterR.process(delayedR);
 
-      this?.delayL.write(input?.samples[0][i] + filteredL * feedback);
-      this?.delayR.write(input?.samples[1][i] + filteredR * feedback);
+      this.delayL.write(input?.samples[0][i] + filteredL * feedback);
+      this.delayR.write(input?.samples[1][i] + filteredR * feedback);
 
       output.samples[0][i] = input?.samples[0][i] * (1 - mix) + filteredL * mix;
       output.samples[1][i] = input?.samples[1][i] * (1 - mix) + filteredR * mix;
@@ -348,12 +348,12 @@ export class ModDelayProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this?.delayL.clear();
-    this?.delayR.clear();
-    this?.lfoL.reset();
-    this?.lfoR.reset();
-    this?.lpFilterL.clear();
-    this?.lpFilterR.clear();
+    this.delayL.clear();
+    this.delayR.clear();
+    this.lfoL.reset();
+    this.lfoR.reset();
+    this.lpFilterL.clear();
+    this.lpFilterR.clear();
   }
 }
 
@@ -391,30 +391,30 @@ export class DuckingDelayProcessor implements DSPProcessor {
     const releaseMs = (params?.release as number) ?? 300;
     const highCut = (params?.highCut as number) ?? 8000;
 
-    const delaySamples = msToSamples(time, this?.sampleRate);
+    const delaySamples = msToSamples(time, this.sampleRate);
 
-    this?.envelope.setAttack(attackMs, this?.sampleRate);
-    this?.envelope.setRelease(releaseMs, this?.sampleRate);
-    this?.lpFilterL.setLowpass(highCut, this?.sampleRate);
-    this?.lpFilterR.setLowpass(highCut, this?.sampleRate);
+    this.envelope.setAttack(attackMs, this.sampleRate);
+    this.envelope.setRelease(releaseMs, this.sampleRate);
+    this.lpFilterL.setLowpass(highCut, this.sampleRate);
+    this.lpFilterR.setLowpass(highCut, this.sampleRate);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       const mono = (input?.samples[0][i] + input?.samples[1][i]) * 0.5;
-      const inputLevel = this?.envelope.process(mono);
+      const inputLevel = this.envelope.process(mono);
 
       const duckGain =
         inputLevel > threshold
-          ? 1 - duckDepth * Math?.min(1, (inputLevel - threshold) / threshold)
+          ? 1 - duckDepth * Math.min(1, (inputLevel - threshold) / threshold)
           : 1;
 
-      const delayedL = this?.delayL.read(delaySamples);
-      const delayedR = this?.delayR.read(delaySamples);
+      const delayedL = this.delayL.read(delaySamples);
+      const delayedR = this.delayR.read(delaySamples);
 
-      const filteredL = this?.lpFilterL.process(delayedL);
-      const filteredR = this?.lpFilterR.process(delayedR);
+      const filteredL = this.lpFilterL.process(delayedL);
+      const filteredR = this.lpFilterR.process(delayedR);
 
-      this?.delayL.write(input?.samples[0][i] + filteredL * feedback);
-      this?.delayR.write(input?.samples[1][i] + filteredR * feedback);
+      this.delayL.write(input?.samples[0][i] + filteredL * feedback);
+      this.delayR.write(input?.samples[1][i] + filteredR * feedback);
 
       const wetL = filteredL * duckGain;
       const wetR = filteredR * duckGain;
@@ -427,11 +427,11 @@ export class DuckingDelayProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this?.delayL.clear();
-    this?.delayR.clear();
-    this?.envelope.clear();
-    this?.lpFilterL.clear();
-    this?.lpFilterR.clear();
+    this.delayL.clear();
+    this.delayR.clear();
+    this.envelope.clear();
+    this.lpFilterL.clear();
+    this.lpFilterR.clear();
     this.duckAmount = 0;
   }
 }
@@ -443,8 +443,8 @@ export class MultiTapDelayProcessor implements DSPProcessor {
 
   constructor() {
     for (let i = 0; i < 8; i++) {
-      this?.taps.push(new DelayLine(220500));
-      this?.lpFilters.push(new OnePoleFilter());
+      this.taps.push(new DelayLine(220500));
+      this.lpFilters.push(new OnePoleFilter());
     }
   }
 
@@ -462,16 +462,16 @@ export class MultiTapDelayProcessor implements DSPProcessor {
     const spread = (params?.spread as number) ?? 1.0;
     const decay = (params?.decay as number) ?? 0.8;
     const highCut = (params?.highCut as number) ?? 6000;
-    const numTaps = Math?.floor((params?.taps as number) ?? 4);
+    const numTaps = Math.floor((params?.taps as number) ?? 4);
     const pattern = (params?.pattern as string) ?? "linear";
 
-    const tapTimes = this?.calculateTapTimes(baseTime, numTaps, spread, pattern);
-    const tapGains = this?.calculateTapGains(numTaps, decay);
+    const tapTimes = this.calculateTapTimes(baseTime, numTaps, spread, pattern);
+    const tapGains = this.calculateTapGains(numTaps, decay);
 
     for (let i = 0; i < numTaps; i++) {
-      this?.lpFilters[i].setLowpass(
-        highCut * Math?.pow(decay, i),
-        this?.sampleRate,
+      this.lpFilters[i].setLowpass(
+        highCut * Math.pow(decay, i),
+        this.sampleRate,
       );
     }
 
@@ -483,18 +483,18 @@ export class MultiTapDelayProcessor implements DSPProcessor {
       let feedbackSum = 0;
 
       for (let t = 0; t < numTaps; t++) {
-        const delaySamples = msToSamples(tapTimes[t], this?.sampleRate);
-        const delayed = this?.taps[t].read(delaySamples);
-        const filtered = this?.lpFilters[t].process(delayed) * tapGains[t];
+        const delaySamples = msToSamples(tapTimes[t], this.sampleRate);
+        const delayed = this.taps[t].read(delaySamples);
+        const filtered = this.lpFilters[t].process(delayed) * tapGains[t];
 
         const pan = (t / (numTaps - 1)) * Math.PI;
-        wetL += filtered * Math?.cos(pan);
-        wetR += filtered * Math?.sin(pan);
+        wetL += filtered * Math.cos(pan);
+        wetR += filtered * Math.sin(pan);
         feedbackSum += filtered;
       }
 
       for (let t = 0; t < numTaps; t++) {
-        this?.taps[t].write(mono + (feedbackSum * feedback) / numTaps);
+        this.taps[t].write(mono + (feedbackSum * feedback) / numTaps);
       }
 
       output.samples[0][i] = input?.samples[0][i] * (1 - mix) + wetL * mix;
@@ -518,13 +518,13 @@ export class MultiTapDelayProcessor implements DSPProcessor {
           time = baseTime * (i + 1) * spread;
           break;
         case "golden":
-          time = baseTime * Math?.pow(1.618, i) * spread;
+          time = baseTime * Math.pow(1.618, i) * spread;
           break;
         case "fibonacci":
-          time = (baseTime * this?.fibonacci(i + 2) * spread) / 10;
+          time = (baseTime * this.fibonacci(i + 2) * spread) / 10;
           break;
         case "random":
-          time = baseTime * (0.5 + Math?.random()) * (i + 1) * spread;
+          time = baseTime * (0.5 + Math.random()) * (i + 1) * spread;
           break;
         default:
           time = baseTime * (i + 1) * spread;
@@ -535,7 +535,7 @@ export class MultiTapDelayProcessor implements DSPProcessor {
   }
 
   private calculateTapGains(numTaps: number, decay: number): number[] {
-    return Array?.from({ length: numTaps }, (_, i) => Math?.pow(decay, i));
+    return Array.from({ length: numTaps }, (_, i) => Math.pow(decay, i));
   }
 
   private fibonacci(n: number): number {
@@ -551,8 +551,8 @@ export class MultiTapDelayProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this?.taps.forEach((t) => t?.clear());
-    this?.lpFilters.forEach((f) => f?.clear());
+    this.taps.forEach((t) => t?.clear());
+    this.lpFilters.forEach((f) => f?.clear());
   }
 }
 
@@ -589,36 +589,36 @@ export class FilterDelayProcessor implements DSPProcessor {
     const modRate = (params?.modRate as number) ?? 0.3;
     const modDepth = (params?.modDepth as number) ?? 0.5;
 
-    const delaySamples = msToSamples(time, this?.sampleRate);
-    this?.lfo.setFrequency(modRate, this?.sampleRate);
+    const delaySamples = msToSamples(time, this.sampleRate);
+    this.lfo.setFrequency(modRate, this.sampleRate);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
-      const mod = this?.lfo.sine() * modDepth;
-      const modulatedFreq = filterFreq * Math?.pow(2, mod);
+      const mod = this.lfo.sine() * modDepth;
+      const modulatedFreq = filterFreq * Math.pow(2, mod);
 
       switch (filterType) {
         case "lowpass":
-          this?.filterL.setLowpass(modulatedFreq, filterQ, this?.sampleRate);
-          this?.filterR.setLowpass(modulatedFreq, filterQ, this?.sampleRate);
+          this.filterL.setLowpass(modulatedFreq, filterQ, this.sampleRate);
+          this.filterR.setLowpass(modulatedFreq, filterQ, this.sampleRate);
           break;
         case "highpass":
-          this?.filterL.setHighpass(modulatedFreq, filterQ, this?.sampleRate);
-          this?.filterR.setHighpass(modulatedFreq, filterQ, this?.sampleRate);
+          this.filterL.setHighpass(modulatedFreq, filterQ, this.sampleRate);
+          this.filterR.setHighpass(modulatedFreq, filterQ, this.sampleRate);
           break;
         case "bandpass":
-          this?.filterL.setBandpass(modulatedFreq, filterQ, this?.sampleRate);
-          this?.filterR.setBandpass(modulatedFreq, filterQ, this?.sampleRate);
+          this.filterL.setBandpass(modulatedFreq, filterQ, this.sampleRate);
+          this.filterR.setBandpass(modulatedFreq, filterQ, this.sampleRate);
           break;
       }
 
-      const delayedL = this?.delayL.read(delaySamples);
-      const delayedR = this?.delayR.read(delaySamples);
+      const delayedL = this.delayL.read(delaySamples);
+      const delayedR = this.delayR.read(delaySamples);
 
-      const filteredL = this?.filterL.process(delayedL);
-      const filteredR = this?.filterR.process(delayedR);
+      const filteredL = this.filterL.process(delayedL);
+      const filteredR = this.filterR.process(delayedR);
 
-      this?.delayL.write(input?.samples[0][i] + filteredL * feedback);
-      this?.delayR.write(input?.samples[1][i] + filteredR * feedback);
+      this.delayL.write(input?.samples[0][i] + filteredL * feedback);
+      this.delayR.write(input?.samples[1][i] + filteredR * feedback);
 
       output.samples[0][i] = input?.samples[0][i] * (1 - mix) + filteredL * mix;
       output.samples[1][i] = input?.samples[1][i] * (1 - mix) + filteredR * mix;
@@ -628,11 +628,11 @@ export class FilterDelayProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this?.delayL.clear();
-    this?.delayR.clear();
-    this?.filterL.clear();
-    this?.filterR.clear();
-    this?.lfo.reset();
+    this.delayL.clear();
+    this.delayR.clear();
+    this.filterL.clear();
+    this.filterR.clear();
+    this.lfo.reset();
   }
 }
 
@@ -666,40 +666,40 @@ export class ReverseDelayProcessor implements DSPProcessor {
     const crossfade = (params?.crossfade as number) ?? 0.1;
     const highCut = (params?.highCut as number) ?? 8000;
 
-    this.grainSize = msToSamples(time, this?.sampleRate);
-    this?.lpFilterL.setLowpass(highCut, this?.sampleRate);
-    this?.lpFilterR.setLowpass(highCut, this?.sampleRate);
+    this.grainSize = msToSamples(time, this.sampleRate);
+    this.lpFilterL.setLowpass(highCut, this.sampleRate);
+    this.lpFilterR.setLowpass(highCut, this.sampleRate);
 
-    const fadeLength = Math?.floor(this?.grainSize * crossfade);
+    const fadeLength = Math.floor(this.grainSize * crossfade);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       this.bufferL[this.writeIndex] = input?.samples[0][i];
       this.bufferR[this.writeIndex] = input?.samples[1][i];
 
       const reverseIndex =
-        (this?.writeIndex - this?.grainPosition + this?.bufferL.length) %
-        this?.bufferL.length;
+        (this.writeIndex - this.grainPosition + this.bufferL.length) %
+        this.bufferL.length;
 
-      let reversedL = this?.bufferL[reverseIndex];
-      let reversedR = this?.bufferR[reverseIndex];
+      let reversedL = this.bufferL[reverseIndex];
+      let reversedR = this.bufferR[reverseIndex];
 
       let fadeEnv = 1;
-      if (this?.grainPosition < fadeLength) {
-        fadeEnv = this?.grainPosition / fadeLength;
-      } else if (this?.grainPosition > this?.grainSize - fadeLength) {
-        fadeEnv = (this?.grainSize - this?.grainPosition) / fadeLength;
+      if (this.grainPosition < fadeLength) {
+        fadeEnv = this.grainPosition / fadeLength;
+      } else if (this.grainPosition > this.grainSize - fadeLength) {
+        fadeEnv = (this.grainSize - this.grainPosition) / fadeLength;
       }
 
       reversedL *= fadeEnv;
       reversedR *= fadeEnv;
 
-      const filteredL = this?.lpFilterL.process(reversedL);
-      const filteredR = this?.lpFilterR.process(reversedR);
+      const filteredL = this.lpFilterL.process(reversedL);
+      const filteredR = this.lpFilterR.process(reversedR);
 
-      this.writeIndex = (this?.writeIndex + 1) % this?.bufferL.length;
+      this.writeIndex = (this.writeIndex + 1) % this.bufferL.length;
       this.grainPosition++;
 
-      if (this?.grainPosition >= this?.grainSize) {
+      if (this.grainPosition >= this.grainSize) {
         this.grainPosition = 0;
       }
 
@@ -711,12 +711,12 @@ export class ReverseDelayProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this?.bufferL.fill(0);
-    this?.bufferR.fill(0);
+    this.bufferL.fill(0);
+    this.bufferR.fill(0);
     this.writeIndex = 0;
     this.grainPosition = 0;
-    this?.lpFilterL.clear();
-    this?.lpFilterR.clear();
+    this.lpFilterL.clear();
+    this.lpFilterR.clear();
   }
 }
 
@@ -758,29 +758,29 @@ export class GranularDelayProcessor implements DSPProcessor {
     const stereoSpread = (params?.spread as number) ?? 0.8;
     const reverse = (params?.reverse as number) ?? 0.3;
 
-    const grainSamples = msToSamples(grainSize, this?.sampleRate);
-    const spawnRate = Math?.floor(this?.sampleRate / (grainDensity * 10));
-    const basePitch = Math?.pow(2, pitch / 12);
+    const grainSamples = msToSamples(grainSize, this.sampleRate);
+    const spawnRate = Math.floor(this.sampleRate / (grainDensity * 10));
+    const basePitch = Math.pow(2, pitch / 12);
 
-    this?.lpFilterL.setLowpass(8000, this?.sampleRate);
-    this?.lpFilterR.setLowpass(8000, this?.sampleRate);
+    this.lpFilterL.setLowpass(8000, this.sampleRate);
+    this.lpFilterR.setLowpass(8000, this.sampleRate);
 
     for (let i = 0; i < input?.samples[0].length; i++) {
       const mono = (input?.samples[0][i] + input?.samples[1][i]) * 0.5;
       this.buffer[this.writeIndex] = mono;
 
-      if (i % spawnRate === 0 && this?.grains.length < 32) {
+      if (i % spawnRate === 0 && this.grains.length < 32) {
         const pitchVar =
-          basePitch * (1 + (Math?.random() - 0.5) * pitchRandom * 2);
-        const shouldReverse = Math?.random() < reverse;
-        this?.grains.push({
+          basePitch * (1 + (Math.random() - 0.5) * pitchRandom * 2);
+        const shouldReverse = Math.random() < reverse;
+        this.grains.push({
           position:
-            (this?.writeIndex -
-              Math?.floor(scatter * grainSamples * Math?.random()) +
-              this?.buffer.length) %
-            this?.buffer.length,
+            (this.writeIndex -
+              Math.floor(scatter * grainSamples * Math.random()) +
+              this.buffer.length) %
+            this.buffer.length,
           speed: shouldReverse ? -pitchVar : pitchVar,
-          pan: (Math?.random() - 0.5) * stereoSpread,
+          pan: (Math.random() - 0.5) * stereoSpread,
           age: 0,
           maxAge: grainSamples,
         });
@@ -789,32 +789,32 @@ export class GranularDelayProcessor implements DSPProcessor {
       let wetL = 0,
         wetR = 0;
 
-      for (let g = this?.grains.length - 1; g >= 0; g--) {
-        const grain = this?.grains[g];
+      for (let g = this.grains.length - 1; g >= 0; g--) {
+        const grain = this.grains[g];
 
-        const envelope = Math?.sin((Math.PI * grain?.age) / grain?.maxAge);
+        const envelope = Math.sin((Math.PI * grain?.age) / grain?.maxAge);
         const sample =
-          this?.buffer[Math?.floor(grain?.position) % this?.buffer.length];
+          this.buffer[Math.floor(grain?.position) % this.buffer.length];
         const grainOutput =
-          (sample * envelope) / Math?.max(1, this?.grains.length * 0.5);
+          (sample * envelope) / Math.max(1, this.grains.length * 0.5);
 
         wetL += grainOutput * (0.5 - grain?.pan);
         wetR += grainOutput * (0.5 + grain?.pan);
 
         grain.position += grain?.speed;
-        if (grain.position < 0) grain.position += this?.buffer.length;
+        if (grain.position < 0) grain.position += this.buffer.length;
         grain.age++;
 
         if (grain?.age >= grain?.maxAge) {
-          this?.grains.splice(g, 1);
+          this.grains.splice(g, 1);
         }
       }
 
-      wetL = this?.lpFilterL.process(wetL);
-      wetR = this?.lpFilterR.process(wetR);
+      wetL = this.lpFilterL.process(wetL);
+      wetR = this.lpFilterR.process(wetR);
 
       this.buffer[this.writeIndex] += (wetL + wetR) * 0.5 * feedback;
-      this.writeIndex = (this?.writeIndex + 1) % this?.buffer.length;
+      this.writeIndex = (this.writeIndex + 1) % this.buffer.length;
 
       output.samples[0][i] = input?.samples[0][i] * (1 - mix) + wetL * mix;
       output.samples[1][i] = input?.samples[1][i] * (1 - mix) + wetR * mix;
@@ -824,11 +824,11 @@ export class GranularDelayProcessor implements DSPProcessor {
   }
 
   reset(): void {
-    this?.buffer.fill(0);
+    this.buffer.fill(0);
     this.writeIndex = 0;
     this.grains = [];
-    this?.lpFilterL.clear();
-    this?.lpFilterR.clear();
+    this.lpFilterL.clear();
+    this.lpFilterR.clear();
   }
 }
 

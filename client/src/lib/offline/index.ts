@@ -38,5 +38,5 @@ export async function initOfflineSystem(): Promise<void> {
 
   await initSyncManager();
 
-  logger?.info("[Offline] System initialized");
+  logger.info("[Offline] System initialized");
 }

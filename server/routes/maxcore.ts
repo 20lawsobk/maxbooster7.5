@@ -8,9 +8,9 @@ import crypto from "crypto";
 const router = Router();
 
 const RAW_PEER =
-  process?.env.PEER_TRAINING_NODE || process?.env.MBS_AI_TRAINING_URL || "";
+  process.env.PEER_TRAINING_NODE || process.env.MBS_AI_TRAINING_URL || "";
 const TIMEOUT_MS = 12_000;
-const MBS_KEY = process?.env.MBS_AI_TRAINING_KEY || "";
+const MBS_KEY = process.env.MBS_AI_TRAINING_KEY || "";
 
 // ── PDIM peer detection ───────────────────────────────────────────────────────
 // Accepts pdim://TOKEN@host/path  →  uses PDIM exec endpoint as command bus.
@@ -45,7 +45,7 @@ function parsePeer(raw: string): PeerCfg {
 
 const PEER_CFG: PeerCfg = parsePeer(RAW_PEER);
 
-logger?.info(
+logger.info(
   `[MaxCore] Peer mode: ${PEER_CFG?.type} — ${PEER_CFG?.type === "pdim" ? PEER_CFG?.execUrl : (PEER_CFG as HttpPeer).baseUrl}`,
 );
 
@@ -65,8 +65,8 @@ async function pdimExec(
     body: JSON.stringify({ cmd, args }),
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
-  if (!res?.ok) throw new Error(`PDIM exec HTTP ${res?.status}`);
-  const json = (await res?.json()) as Record<string, unknown>;
+  if (!res.ok) throw new Error(`PDIM exec HTTP ${res.status}`);
+  const json = (await res.json()) as Record<string, unknown>;
   return json?.result ?? json;
 }
 
@@ -82,7 +82,7 @@ async function pdimRpc(
 ): Promise<{ ok: boolean; status: number; data: unknown }> {
   const reqId = crypto?.randomUUID();
   const ts = Date?.now();
-  const job = JSON?.stringify({ action, reqId, ts, ...payload });
+  const job = JSON.stringify({ action, reqId, ts, ...payload });
   try {
     await pdimExec(cfg, "LPUSH", ["maxcore:rpc:in", job]);
     // Wait for MaxCore to write its response
@@ -97,7 +97,7 @@ async function pdimRpc(
         } catch {
           /* intentional: PDIM key cleanup is best-effort */
         }
-        const parsed = JSON?.parse(raw) as Record<string, unknown>;
+        const parsed = JSON.parse(raw) as Record<string, unknown>;
         return {
           ok: parsed.ok !== false,
           status: parsed.status ?? 200,
@@ -118,7 +118,7 @@ async function pdimRpc(
       },
     };
   } catch (err) {
-    logger?.warn(`[MaxCore] PDIM RPC error for ${action}: ${err?.message}`);
+    logger.warn(`[MaxCore] PDIM RPC error for ${action}: ${err?.message}`);
     return { ok: false, status: 503, data: { error: String(err?.message) } };
   }
 }
@@ -140,9 +140,9 @@ async function httpPeer(
     };
     if (MBS_KEY) headers["Authorization"] = `Bearer ${MBS_KEY}`;
     const opts: RequestInit = { method, signal: controller.signal, headers };
-    if (body !== undefined) opts.body = JSON?.stringify(body);
+    if (body !== undefined) opts.body = JSON.stringify(body);
     const res = await fetch(`${cfg?.baseUrl}${p}`, opts);
-    const data = await res?.json().catch(() => null);
+    const data = await res.json().catch(() => null);
     return { ok: res.ok, status: res.status, data };
   } catch (err) {
     const offline = err?.name === "AbortError" || err?.code === "ECONNREFUSED";
@@ -180,17 +180,17 @@ function send(
   res: Response,
   result: { ok: boolean; status: number; data: unknown },
 ) {
-  res?.status(result?.ok ? 200 : result?.status).json(result?.data);
+  res.status(result?.ok ? 200 : result?.status).json(result?.data);
 }
 
 // ── Auth guard ────────────────────────────────────────────────────────────────
 
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  if (!req?.isAuthenticated()) {
-    return res?.status(401).json({ error: "Authentication required" });
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Authentication required" });
   }
-  if (!req?.user || (req?.user as Record<string, unknown>).role !== "admin") {
-    return res?.status(403).json({ error: "Admin access required" });
+  if (!req.user || (req.user as Record<string, unknown>).role !== "admin") {
+    return res.status(403).json({ error: "Admin access required" });
   }
   next();
 }
@@ -212,16 +212,16 @@ router?.get("/health", async (_req, res) => {
   if (PEER_CFG?.type === "pdim") {
     try {
       const pong = await pdimExec(PEER_CFG, "PING", []);
-      return res?.json({ ok: true, mode: "pdim", ping: pong });
+      return res.json({ ok: true, mode: "pdim", ping: pong });
     } catch (err) {
-      return res?.status(503).json({ ok: false, error: String(err?.message) });
+      return res.status(503).json({ ok: false, error: String(err?.message) });
     }
   }
   send(res, await peer("GET", "/health"));
 });
 
 router?.get("/logs", async (req, res) => {
-  const n = Math?.min(Number(req?.query.n) || 300, 1000);
+  const n = Math.min(Number(req.query.n) || 300, 1000);
   send(res, await peer("GET", `/control/logs?n=${n}`));
 });
 
@@ -236,17 +236,17 @@ router?.get("/train/status", async (_req, res) => {
 });
 
 router?.post("/train/start", async (_req, res) => {
-  logger?.info("[MaxCore] Remote train/start triggered");
+  logger.info("[MaxCore] Remote train/start triggered");
   send(res, await peer("POST", "/train/start"));
 });
 
 router?.post("/train/stop", async (_req, res) => {
-  logger?.info("[MaxCore] Remote train/stop triggered");
+  logger.info("[MaxCore] Remote train/stop triggered");
   send(res, await peer("POST", "/train/stop"));
 });
 
 router?.post("/train/trigger-session", async (_req, res) => {
-  logger?.info("[MaxCore] Remote trigger-session triggered");
+  logger.info("[MaxCore] Remote trigger-session triggered");
   const ts = Date?.now();
   const job = {
     id: `sess-${ts}`,
@@ -259,24 +259,24 @@ router?.post("/train/trigger-session", async (_req, res) => {
   try {
     await mainPdimPush("mbs:training:session", job);
     await mainPdimPush("mbs:downloads", job);
-    logger?.info("[MaxCore] trigger-session pushed directly to main PDIM");
-    return res?.json({
+    logger.info("[MaxCore] trigger-session pushed directly to main PDIM");
+    return res.json({
       ok: true,
       detail: "Session pushed directly to PDIM",
       keys: ["mbs:training:session", "mbs:downloads"],
     });
   } catch (err) {
-    logger?.warn(`[MaxCore] trigger-session PDIM push failed: ${err?.message}`);
-    return res?.status(500).json({ ok: false, error: err.message });
+    logger.warn(`[MaxCore] trigger-session PDIM push failed: ${err?.message}`);
+    return res.status(500).json({ ok: false, error: err.message });
   }
 });
 
 router?.post("/train/set-phase", async (req, res) => {
-  const phase = Number(req?.body?.phase);
+  const phase = Number(req.body?.phase);
   if (!phase || phase < 1 || phase > 4) {
-    return res?.status(400).json({ error: "phase must be 1–4" });
+    return res.status(400).json({ error: "phase must be 1–4" });
   }
-  logger?.info(`[MaxCore] Remote set-phase to ${phase}`);
+  logger.info(`[MaxCore] Remote set-phase to ${phase}`);
   send(res, await peer("POST", "/control/set-phase", { phase }));
 });
 
@@ -313,18 +313,18 @@ router?.get("/sessions", async (_req, res) => {
 // ── Machine lifecycle ─────────────────────────────────────────────────────────
 
 router?.post("/restart", async (_req, res) => {
-  logger?.warn("[MaxCore] Remote RESTART triggered by admin");
+  logger.warn("[MaxCore] Remote RESTART triggered by admin");
   send(res, await peer("POST", "/control/restart", undefined, 5_000));
 });
 
 router?.post("/shutdown", async (req, res) => {
-  const { confirm } = req?.body || {};
+  const { confirm } = req.body || {};
   if (confirm !== "SHUTDOWN") {
     return res
       .status(400)
       .json({ error: 'Send { "confirm": "SHUTDOWN" } to confirm this action' });
   }
-  logger?.warn("[MaxCore] Remote SHUTDOWN triggered by admin");
+  logger.warn("[MaxCore] Remote SHUTDOWN triggered by admin");
   send(res, await peer("POST", "/control/shutdown", undefined, 5_000));
 });
 
@@ -333,9 +333,9 @@ router?.post("/shutdown", async (req, res) => {
 // the MaxCore training server can pull them on its own schedule.
 
 const MAIN_PDIM_EXEC =
-  process?.env.PDIM_EXEC_URL || process?.env.PDIM_HTTP_EXEC_URL || "";
+  process.env.PDIM_EXEC_URL || process.env.PDIM_HTTP_EXEC_URL || "";
 const MAIN_PDIM_TOKEN =
-  process?.env.PDIM_EXEC_TOKEN || process?.env.PDIM_BEARER_TOKEN || "";
+  process.env.PDIM_EXEC_TOKEN || process.env.PDIM_BEARER_TOKEN || "";
 
 async function mainPdimPush(
   key: string,
@@ -352,16 +352,16 @@ async function mainPdimPush(
     },
     body: JSON.stringify({
       cmd: "RPUSH",
-      args: [key, JSON?.stringify(payload)],
+      args: [key, JSON.stringify(payload)],
     }),
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
-  if (!res?.ok) throw new Error(`Main PDIM push HTTP ${res?.status}`);
+  if (!res.ok) throw new Error(`Main PDIM push HTTP ${res.status}`);
 }
 
 // ── Downloader supervisor control ─────────────────────────────────────────────
 
-const ROOT_DIR = path?.resolve(process?.cwd());
+const ROOT_DIR = path?.resolve(process.cwd());
 const CTRL_DIR = path?.join(ROOT_DIR, "control");
 const DL_STOP_FLAG = path?.join(CTRL_DIR, "downloader.stop");
 const MC_STOP_FLAG = path?.join(CTRL_DIR, "maxcore.stop");
@@ -377,11 +377,11 @@ function ensureCtrl() {
 router?.get("/downloader/status", (_req, res) => {
   ensureCtrl();
   const stopped = fs?.existsSync(DL_STOP_FLAG);
-  res?.json({ stopped, flag: DL_STOP_FLAG, peerMode: PEER_CFG.type });
+  res.json({ stopped, flag: DL_STOP_FLAG, peerMode: PEER_CFG.type });
 });
 
 router?.post("/downloader/stop", async (req, res) => {
-  const { confirm } = req?.body || {};
+  const { confirm } = req.body || {};
   if (confirm !== "STOP") {
     return res
       .status(400)
@@ -389,8 +389,8 @@ router?.post("/downloader/stop", async (req, res) => {
   }
   ensureCtrl();
   await fsWriteFile(DL_STOP_FLAG, new Date().toISOString());
-  logger?.warn("[MaxCore] Dataset Downloader STOP flag written by admin");
-  res?.json({
+  logger.warn("[MaxCore] Dataset Downloader STOP flag written by admin");
+  res.json({
     ok: true,
     detail: "Downloader will stop after current dataset completes",
   });
@@ -403,7 +403,7 @@ router?.post("/downloader/start", async (_req, res) => {
   } catch {
     /* intentional: flag may not exist yet */
   }
-  logger?.info("[MaxCore] Dataset Downloader stop flag cleared");
+  logger.info("[MaxCore] Dataset Downloader stop flag cleared");
 
   const ts = Date?.now();
   const job = {
@@ -421,22 +421,22 @@ router?.post("/downloader/start", async (_req, res) => {
       ...job,
       action: "start-7tb-download",
     });
-    logger?.info(
+    logger.info(
       "[MaxCore] downloader:start pushed directly to main PDIM (mbs:downloads, mbs:training:session)",
     );
-    res?.json({
+    res.json({
       ok: true,
       detail: "Download job pushed directly to PDIM",
       keys: ["mbs:downloads", "mbs:training:session"],
     });
   } catch (err) {
-    logger?.warn(`[MaxCore] Failed to push to main PDIM: ${err?.message}`);
-    res?.status(500).json({ ok: false, error: err.message });
+    logger.warn(`[MaxCore] Failed to push to main PDIM: ${err?.message}`);
+    res.status(500).json({ ok: false, error: err.message });
   }
 });
 
 router?.post("/maxcore/stop", async (req, res) => {
-  const { confirm } = req?.body || {};
+  const { confirm } = req.body || {};
   if (confirm !== "STOP") {
     return res
       .status(400)
@@ -444,8 +444,8 @@ router?.post("/maxcore/stop", async (req, res) => {
   }
   ensureCtrl();
   await fsWriteFile(MC_STOP_FLAG, new Date().toISOString());
-  logger?.warn("[MaxCore] MaxCore Server STOP flag written by admin");
-  res?.json({
+  logger.warn("[MaxCore] MaxCore Server STOP flag written by admin");
+  res.json({
     ok: true,
     detail: "MaxCore supervisor will stop after current child exits",
   });
@@ -458,10 +458,10 @@ router?.post("/maxcore/start", (_req, res) => {
   } catch {
     /* intentional: flag may not exist yet */
   }
-  logger?.info(
+  logger.info(
     "[MaxCore] MaxCore stop flag cleared — supervisor will restart server",
   );
-  res?.json({
+  res.json({
     ok: true,
     detail:
       "Stop flag removed. Supervisor will restart MaxCore on its next loop",
@@ -711,14 +711,14 @@ router?.post("/ai-jobs/push-all", async (_req, res) => {
     } catch (err) {
       results?.push({ key: k, ok: false, error: err.message });
       failed++;
-      logger?.warn(`[MaxCore] ai-jobs/push-all failed for ${k}: ${err?.message}`);
+      logger.warn(`[MaxCore] ai-jobs/push-all failed for ${k}: ${err?.message}`);
     }
   }
 
-  logger?.info(
+  logger.info(
     `[MaxCore] ai-jobs/push-all complete — pushed: ${pushed}, failed: ${failed}`,
   );
-  res?.json({
+  res.json({
     ok: failed === 0,
     summary: { total: jobs.length, pushed, failed },
     results,

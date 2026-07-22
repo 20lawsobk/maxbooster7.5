@@ -44,14 +44,14 @@ function parseAcceptToFileTypes(accept: string): FilePickerAcceptType[] {
     }
   }
 
-  if (audioExtensions?.length > 0 || Object?.keys(mimeTypes).length > 0) {
+  if (audioExtensions?.length > 0 || Object.keys(mimeTypes).length > 0) {
     const acceptObj: Record<string, string[]> = {};
 
     if (audioExtensions?.length > 0) {
       acceptObj["audio/*"] = audioExtensions;
     }
 
-    for (const [mime, exts] of Object?.entries(mimeTypes)) {
+    for (const [mime, exts] of Object.entries(mimeTypes)) {
       if (exts?.length > 0) {
         acceptObj[mime] = exts;
       } else {
@@ -59,7 +59,7 @@ function parseAcceptToFileTypes(accept: string): FilePickerAcceptType[] {
       }
     }
 
-    if (Object?.keys(acceptObj).length > 0) {
+    if (Object.keys(acceptObj).length > 0) {
       types?.push({
         description: "Audio Files",
         accept: acceptObj,
@@ -93,7 +93,7 @@ export function useFullscreenFileUpload(
 
     const handleChange = () => {
       if (input?.files && input?.files.length > 0) {
-        onFilesSelected?.(Array?.from(input?.files));
+        onFilesSelected?.(Array.from(input?.files));
       }
 
       if (wasFullscreenRef?.current && fullscreenElementRef?.current) {
@@ -101,7 +101,7 @@ export function useFullscreenFileUpload(
           try {
             fullscreenElementRef?.current?.requestFullscreen?.();
           } catch (e) {
-            logger?.warn("Could not re-enter fullscreen:", e);
+            logger.warn("Could not re-enter fullscreen:", e);
           }
           wasFullscreenRef.current = false;
           fullscreenElementRef.current = null;
@@ -144,7 +144,7 @@ export function useFullscreenFileUpload(
         if (e instanceof Error && e?.name === "AbortError") {
           return;
         }
-        logger?.warn("File System Access API failed, falling back:", e);
+        logger.warn("File System Access API failed, falling back:", e);
       }
     }
 
@@ -165,7 +165,7 @@ export function useFullscreenFileUpload(
           await document?.msExitFullscreen();
         }
       } catch (e) {
-        logger?.warn("Could not exit fullscreen:", e);
+        logger.warn("Could not exit fullscreen:", e);
       }
 
       setTimeout(() => {
@@ -223,7 +223,7 @@ export async function exitFullscreenForUpload(): Promise<Element | null> {
       await document?.msExitFullscreen();
     }
   } catch (e) {
-    logger?.warn("Could not exit fullscreen:", e);
+    logger.warn("Could not exit fullscreen:", e);
   }
 
   return fullscreenElement;
@@ -245,7 +245,7 @@ export async function reenterFullscreen(
       await element?.msRequestFullscreen();
     }
   } catch (e) {
-    logger?.warn("Could not re-enter fullscreen:", e);
+    logger.warn("Could not re-enter fullscreen:", e);
   }
 }
 

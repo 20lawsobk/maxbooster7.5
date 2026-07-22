@@ -18,19 +18,19 @@ class HealthRegistry {
   private readonly cacheTtlMs = 5_000;
 
   register(name: string, probe: Probe): void {
-    this?.probes.set(name, probe);
+    this.probes.set(name, probe);
   }
 
   unregister(name: string): void {
-    this?.probes.delete(name);
-    this?.cache.delete(name);
+    this.probes.delete(name);
+    this.cache.delete(name);
   }
 
   async check(name: string): Promise<SubsystemHealth> {
-    const cached = this?.cache.get(name);
-    if (cached && Date?.now() - cached?.lastChecked < this?.cacheTtlMs)
+    const cached = this.cache.get(name);
+    if (cached && Date?.now() - cached?.lastChecked < this.cacheTtlMs)
       return cached;
-    const probe = this?.probes.get(name);
+    const probe = this.probes.get(name);
     if (!probe) {
       return {
         name,
@@ -53,7 +53,7 @@ class HealthRegistry {
         lastChecked: Date.now(),
         latencyMs: Date.now() - start,
       };
-      this?.cache.set(name, result);
+      this.cache.set(name, result);
       return result;
     } catch (err) {
       // Distinguish a connectivity timeout from a hard probe failure.
@@ -69,7 +69,7 @@ class HealthRegistry {
         lastChecked: Date.now(),
         latencyMs: Date.now() - start,
       };
-      this?.cache.set(name, result);
+      this.cache.set(name, result);
       return result;
     }
   }
@@ -78,8 +78,8 @@ class HealthRegistry {
     status: HealthStatus;
     subsystems: SubsystemHealth[];
   }> {
-    const names = Array?.from(this?.probes.keys());
-    const results = await Promise?.all(names?.map((n) => this?.check(n)));
+    const names = Array.from(this.probes.keys());
+    const results = await Promise?.all(names?.map((n) => this.check(n)));
     let status: HealthStatus = "ok";
     for (const r of results) {
       if (r?.status === "down") {
@@ -155,7 +155,7 @@ export function registerCoreProbes(): void {
     }
   });
 
-  logger?.info(
+  logger.info(
     "[Health] Core probes registered: database, redis, audit, automation",
   );
 }

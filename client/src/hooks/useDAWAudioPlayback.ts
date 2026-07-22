@@ -51,7 +51,7 @@ export function useDAWAudioPlayback({
         buffersRef?.current.set(sourceUrl, audioBuffer);
         return audioBuffer;
       } catch (err) {
-        logger?.warn("[DAWPlayback] Failed to decode audio:", sourceUrl, err);
+        logger.warn("[DAWPlayback] Failed to decode audio:", sourceUrl, err);
         return null;
       }
     },
@@ -121,7 +121,7 @@ export function useDAWAudioPlayback({
           sourceNode.buffer = buffer;
 
           const gainNode = ctx?.createGain();
-          gainNode.gain.value = Math?.max(0, Math?.min(1, track?.volume ?? 0.8));
+          gainNode.gain.value = Math.max(0, Math.min(1, track?.volume ?? 0.8));
           sourceNode?.connect(gainNode);
           gainNode?.connect(ctx?.destination);
 
@@ -155,7 +155,7 @@ export function useDAWAudioPlayback({
               activeSourcesRef?.current.delete(clip?.id);
             };
           } catch (err) {
-            logger?.warn(
+            logger.warn(
               "[DAWPlayback] Failed to start source for clip:",
               clip?.id,
               err,

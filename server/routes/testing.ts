@@ -16,13 +16,13 @@ const router = Router();
  * full billing-webhook tier-update flow without a live Stripe connection.
  */
 router?.post("/setup-stripe-customer", async (req, res) => {
-  if (process?.env.NODE_ENV === "production") {
-    return res?.status(404).json({ error: "Not found" });
+  if (process.env.NODE_ENV === "production") {
+    return res.status(404).json({ error: "Not found" });
   }
-  if (!req?.isAuthenticated?.() || !req?.user?.id) {
-    return res?.status(401).json({ error: "Authentication required" });
+  if (!req.isAuthenticated?.() || !req.user?.id) {
+    return res.status(401).json({ error: "Authentication required" });
   }
-  const { stripeCustomerId } = req?.body as Record<string, unknown>;
+  const { stripeCustomerId } = req.body as Record<string, unknown>;
   if (typeof stripeCustomerId !== "string" || !stripeCustomerId) {
     return res
       .status(400)
@@ -31,8 +31,8 @@ router?.post("/setup-stripe-customer", async (req, res) => {
   await db
     .update(users)
     .set({ stripeCustomerId })
-    .where(eq(users?.id, req?.user.id));
-  return res?.json({ success: true });
+    .where(eq(users?.id, req.user.id));
+  return res.json({ success: true });
 });
 
 /**
@@ -43,26 +43,26 @@ router?.post("/setup-stripe-customer", async (req, res) => {
  * tier updates without interference from the Stripe subscription-sync logic.
  */
 router?.get("/user-tier", async (req, res) => {
-  if (process?.env.NODE_ENV === "production") {
-    return res?.status(404).json({ error: "Not found" });
+  if (process.env.NODE_ENV === "production") {
+    return res.status(404).json({ error: "Not found" });
   }
-  if (!req?.isAuthenticated?.() || !req?.user?.id) {
-    return res?.status(401).json({ error: "Authentication required" });
+  if (!req.isAuthenticated?.() || !req.user?.id) {
+    return res.status(401).json({ error: "Authentication required" });
   }
   const [row] = await db
     .select({ subscriptionTier: users.subscriptionTier })
     .from(users)
-    .where(eq(users?.id, req?.user.id))
+    .where(eq(users?.id, req.user.id))
     .limit(1);
-  return res?.json({ tier: row.subscriptionTier ?? "free" });
+  return res.json({ tier: row.subscriptionTier ?? "free" });
 });
 
 const requireAdmin: RequestHandler = (req, res, next) => {
-  if (!req?.isAuthenticated || !req?.isAuthenticated()) {
-    return res?.status(401).json({ error: "Authentication required" });
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    return res.status(401).json({ error: "Authentication required" });
   }
-  if (req?.user?.role !== "admin") {
-    return res?.status(403).json({ error: "Admin access required" });
+  if (req.user?.role !== "admin") {
+    return res.status(403).json({ error: "Admin access required" });
   }
   next();
 };
@@ -90,16 +90,16 @@ interface TestRunArtifact {
   };
 }
 
-const RESULTS_PATH = path?.resolve(process?.cwd(), "logs", "test-results.json");
+const RESULTS_PATH = path?.resolve(process.cwd(), "logs", "test-results.json");
 
 async function loadStoredRun(): Promise<TestRunArtifact | null> {
   try {
     const raw = await fs?.readFile(RESULTS_PATH, "utf-8");
-    const parsed = JSON?.parse(raw) as TestRunArtifact;
+    const parsed = JSON.parse(raw) as TestRunArtifact;
     if (
       !parsed ||
       typeof parsed !== "object" ||
-      !Array?.isArray(parsed?.suites)
+      !Array.isArray(parsed?.suites)
     ) {
       return null;
     }
@@ -124,7 +124,7 @@ router?.get("/results", async (_req, res) => {
         .select({ value: count() })
         .from(releases);
 
-      return res?.json({
+      return res.json({
         overallScore: null,
         lastRunDate: null,
         summary: {
@@ -152,9 +152,9 @@ router?.get("/results", async (_req, res) => {
     const totalTests = totalPassed + totalFailed + totalSkipped;
     const totalDuration = stored?.suites.reduce((sum, s) => sum + s?.duration, 0);
     const overallScore =
-      totalTests > 0 ? Math?.round((totalPassed / totalTests) * 100) : 0;
+      totalTests > 0 ? Math.round((totalPassed / totalTests) * 100) : 0;
 
-    return res?.json({
+    return res.json({
       overallScore,
       lastRunDate: stored.ranAt,
       summary: {
@@ -168,23 +168,23 @@ router?.get("/results", async (_req, res) => {
       coverage: stored.coverage ?? null,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching test results");
-    return res?.status(500).json({ error: "Failed to fetch test results" });
+    logger.warn({ err: error }, "Error fetching test results");
+    return res.status(500).json({ error: "Failed to fetch test results" });
   }
 });
 
 router?.post("/run", async (req, res) => {
   try {
-    const { suite } = req?.body ?? {};
+    const { suite } = req.body ?? {};
     const requested =
       typeof suite === "string" && suite?.length > 0 ? suite : "all";
 
-    logger?.info(
+    logger.info(
       { requested, requestedBy: req.user?.id },
       "Test run requested via admin API",
     );
 
-    return res?.status(202).json({
+    return res.status(202).json({
       accepted: true,
       suite: requested,
       message:
@@ -192,8 +192,8 @@ router?.post("/run", async (req, res) => {
       docsUrl: "/docs/testing",
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error handling test run request");
-    return res?.status(500).json({ error: "Failed to handle test run request" });
+    logger.warn({ err: error }, "Error handling test run request");
+    return res.status(500).json({ error: "Failed to handle test run request" });
   }
 });
 

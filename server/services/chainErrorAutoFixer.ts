@@ -6,8 +6,8 @@
  * Architecture:
  *  1. Hooks into the structured logger as a transport — intercepts every
  *     error/warn message the moment it is emitted, before it hits disk.
- *  2. Also installs a pre-handler on process?.uncaughtException and
- *     process?.unhandledRejection so it can absorb well-known non-fatal
+ *  2. Also installs a pre-handler on process.uncaughtException and
+ *     process.unhandledRejection so it can absorb well-known non-fatal
  *     errors before the default graceful-shutdown handler fires.
  *  3. Runs a periodic health check (every 15 s) to catch silent degradation
  *     (stuck LuaExecutor semaphore, memory pressure, etc.).
@@ -352,24 +352,24 @@ class ChainErrorAutoFixer extends EventEmitter {
           );
           if (typeof setPdimAdaptiveGap === "function") {
             const current = getPdimAdaptiveGapMs?.() ?? 600;
-            const target = Math?.max(3000, current * 1.5); // at least 3s between requests
+            const target = Math.max(3000, current * 1.5); // at least 3s between requests
             setPdimAdaptiveGap(target);
-            logger?.info(
+            logger.info(
               `[ChainFixer] PDIM circuit OPEN — adaptive gap set to ${target}ms; PostgreSQL fallback active; circuit will auto-probe for recovery`,
             );
           } else {
-            logger?.info(
+            logger.info(
               "[ChainFixer] PDIM circuit OPEN — PostgreSQL fallback active; circuit will auto-probe for recovery",
             );
           }
         } catch {
-          logger?.info(
+          logger.info(
             "[ChainFixer] PDIM circuit OPEN — PostgreSQL fallback active; circuit will auto-probe for recovery",
           );
         }
       },
       escalate: async (attempts) => {
-        logger?.warn(
+        logger.warn(
           `[ChainFixer] pdim_circuit_open: ${attempts} occurrences — PDIM is repeatedly unreachable; check PDIM_HTTP_EXEC_URL and container network`,
         );
       },
@@ -384,7 +384,7 @@ class ChainErrorAutoFixer extends EventEmitter {
     // FLUSHDB command to PDIM at the exact same moment HyperLearning cycle ends and
     // BullMQ pollers resume — triggering the synchronized 429 burst this fixer exists
     // to prevent.  Logging only is the correct response once the keepalive is running.
-    this?.addPattern({
+    this.addPattern({
       id: "sustained_slow_queries",
       name: "Sustained slow database queries",
       description:
@@ -397,7 +397,7 @@ class ChainErrorAutoFixer extends EventEmitter {
       maxAttempts: 100,
       autoFix: async () => {
         // Intentionally no PDIM/cache interaction — see comment above.
-        logger?.info(
+        logger.info(
           "[ChainFixer] Slow query acknowledged — Neon cold-connection latency (DB keepalive running; will not recur after first 30s cycle)",
         );
       },
@@ -409,7 +409,7 @@ class ChainErrorAutoFixer extends EventEmitter {
     // ChainFixer-level acknowledgement, resets the LuaExecutor semaphore
     // (often stuck when 429s cascade through Lua script redis?.call()s), and
     // suppresses subsequent ChainFixer triggers until the next cooldown window.
-    this?.addPattern({
+    this.addPattern({
       id: "pdim_rate_limit_429",
       name: "PDIM HTTP 429 rate-limit burst",
       description:
@@ -432,16 +432,16 @@ class ChainErrorAutoFixer extends EventEmitter {
           // spawn Workers simultaneously → more 429s → feedback loop).
           if (stats?.active > stats?.max) {
             const released = resetLuaExecutorSemaphore();
-            logger?.info(
+            logger.info(
               `[ChainFixer] 429 — leaked slots freed: active=${stats.active} queued=${stats.queued} released=${released}`,
             );
           } else {
-            logger?.info(
+            logger.info(
               `[ChainFixer] 429 — PDIM circuit breaker handling backoff; semaphore healthy (active=${stats.active}, queued=${stats?.queued})`,
             );
           }
         } catch {
-          logger?.info(
+          logger.info(
             "[ChainFixer] 429 detected — global rate-limit backoff will resolve automatically",
           );
         }
@@ -845,12 +845,12 @@ class ChainErrorAutoFixer extends EventEmitter {
         } catch {
           /* non-critical */
         }
-        logger?.warn(
+        logger.warn(
           "[ChainFixer] OOM detected — emergency GC + cache flush executed. Process may be unstable until it is recycled by the cluster.",
         );
       },
       escalate: async () => {
-        logger?.warn(
+        logger.warn(
           "[ChainFixer] CRITICAL: OOM escalated — cluster will recycle this worker on the next health check",
         );
       },
@@ -861,7 +861,7 @@ class ChainErrorAutoFixer extends EventEmitter {
     // SendGrid, etc.) is dropped mid-flight. Usually transient — every client has its
     // own retry logic. This pattern provides a single acknowledged log entry per
     // burst and forces a GC to release any pending stream buffers from dropped sockets.
-    this?.addPattern({
+    this.addPattern({
       id: "network_connectivity",
       name: "Network connectivity error (ECONNRESET/ETIMEDOUT/ECONNREFUSED)",
       description:
@@ -886,12 +886,12 @@ class ChainErrorAutoFixer extends EventEmitter {
             /* ignore */
           }
         }
-        logger?.info(
+        logger.info(
           "[ChainFixer] Network connectivity error — GC released stream buffers; retry logic active",
         );
       },
       escalate: async (attempts) => {
-        logger?.warn(
+        logger.warn(
           `[ChainFixer] network_connectivity: ${attempts} errors — persistent network instability; check upstream connectivity`,
         );
       },
@@ -904,7 +904,7 @@ class ChainErrorAutoFixer extends EventEmitter {
     // moves them to 'failed' automatically — but they flood the log at startup
     // and after a worker crash.  This pattern provides a single acknowledged
     // entry and suppresses the flood.
-    this?.addPattern({
+    this.addPattern({
       id: "stale_job_warning",
       name: "BullMQ stale/unnamed job cleanup",
       description:
@@ -1100,7 +1100,7 @@ class ChainErrorAutoFixer extends EventEmitter {
   // If a pattern fires > 5 times within 1 hour → double its effective cooldown.
   // If it hasn't fired in 24 hours → reset adaptive multiplier (back to base).
   private _adaptiveCooldownMs(pattern: ErrorPattern): number {
-    const state = this?.adaptiveCooldown.get(pattern?.id)!;
+    const state = this.adaptiveCooldown.get(pattern?.id)!;
     const now = Date?.now();
     const oneHour = 60 * 60_000;
     const oneDay = 24 * oneHour;
@@ -1110,19 +1110,19 @@ class ChainErrorAutoFixer extends EventEmitter {
 
     // If fired 5+ times in the last hour, back off (double cooldown, max 4×)
     const firesInHour = state?.recentFires.length;
-    if (firesInHour >= 5) return Math?.min(pattern?.cooldownMs * 4, 10 * 60_000);
-    if (firesInHour >= 3) return Math?.min(pattern?.cooldownMs * 2, 5 * 60_000);
+    if (firesInHour >= 5) return Math.min(pattern?.cooldownMs * 4, 10 * 60_000);
+    if (firesInHour >= 3) return Math.min(pattern?.cooldownMs * 2, 5 * 60_000);
 
     // If no fires in 24 h, halve cooldown to restore sensitivity
     const lastFire = state?.recentFires[state?.recentFires.length - 1] ?? 0;
     if (lastFire && now - lastFire > oneDay)
-      return Math?.max(pattern?.cooldownMs / 2, 5_000);
+      return Math.max(pattern?.cooldownMs / 2, 5_000);
 
     return pattern?.cooldownMs;
   }
 
   private _recordFire(id: string): void {
-    const state = this?.adaptiveCooldown.get(id)!;
+    const state = this.adaptiveCooldown.get(id)!;
     if (state) state?.recentFires.push(Date?.now());
   }
 
@@ -1140,18 +1140,18 @@ class ChainErrorAutoFixer extends EventEmitter {
       entry?.message + (entry?.error?.message ? " " + entry?.error.message : "");
     let matched = false;
 
-    for (const pattern of this?.patterns) {
+    for (const pattern of this.patterns) {
       if (!pattern?.levels.includes(entry?.level as Record<string, unknown>))
         continue;
       if (!pattern?.matchers.some((r) => r?.test(msg))) continue;
       matched = true;
-      await this?.triggerFix(pattern, msg);
+      await this.triggerFix(pattern, msg);
     }
 
     // Unknown error detection — log novel errors that no pattern covers.
     // Only track error-level messages to avoid noise from warn/info.
     if (!matched && entry?.level === "error") {
-      this?._trackUnknownError(msg);
+      this._trackUnknownError(msg);
     }
   }
 
@@ -1166,13 +1166,13 @@ class ChainErrorAutoFixer extends EventEmitter {
       this._unknownErrors.shift();
 
     // Log it so it's visible in the audit trail
-    logger?.warn(
+    logger.warn(
       `[ChainFixer] Novel error (no pattern match) — may need a new recovery rule: ${msg?.slice(0, 120)}`,
     );
 
     // ── OFFENSIVE: weaponize this unknown error speculatively ─────────────────
     // Don't await — fire-and-forget so it doesn't block the log transport
-    this?._weaponizeUnknownError(msg).catch(() => {
+    this._weaponizeUnknownError(msg).catch(() => {
       /* non-fatal */
     });
   }
@@ -1180,26 +1180,26 @@ class ChainErrorAutoFixer extends EventEmitter {
   // ─── Process-Level Pre-Handler ─────────────────────────────────────────────
 
   private installProcessHooks(): void {
-    process?.prependListener("uncaughtException", (err: Error) => {
+    process.prependListener("uncaughtException", (err: Error) => {
       const msg = err?.message || "";
-      for (const pattern of this?.patterns) {
+      for (const pattern of this.patterns) {
         if (pattern?.matchers.some((r) => r?.test(msg))) {
-          this?.triggerFix(pattern, msg).catch(() => {
+          this.triggerFix(pattern, msg).catch(() => {
             /* best-effort */
           });
           // Non-fatal known errors — swallow them so the default handler never fires
           if (pattern?.severity === "low" || pattern?.severity === "medium") {
-            process?.emit("_chainFixerAbsorbed" as Record<string, unknown>, err);
+            process.emit("_chainFixerAbsorbed" as Record<string, unknown>, err);
           }
         }
       }
     });
 
-    process?.on("unhandledRejection", (reason: unknown) => {
+    process.on("unhandledRejection", (reason: unknown) => {
       const msg = reason instanceof Error ? reason?.message : String(reason);
-      for (const pattern of this?.patterns) {
+      for (const pattern of this.patterns) {
         if (pattern?.matchers.some((r) => r?.test(msg))) {
-          this?.triggerFix(pattern, msg).catch(() => {
+          this.triggerFix(pattern, msg).catch(() => {
             /* best-effort */
           });
         }
@@ -1212,17 +1212,17 @@ class ChainErrorAutoFixer extends EventEmitter {
   private startHealthCheck(): void {
     this.healthCheckTimer = setInterval(async () => {
       try {
-        await this?.runHealthCheck();
+        await this.runHealthCheck();
       } catch {
         /* non-fatal */
       }
     }, 15_000);
-    this?.healthCheckTimer.unref();
+    this.healthCheckTimer.unref();
   }
 
   private async runHealthCheck(): Promise<void> {
     // ── Offensive pre-condition scan runs every health-check cycle ────────────
-    this?._runOffensivePreConditionScan().catch(() => {
+    this._runOffensivePreConditionScan().catch(() => {
       /* non-fatal */
     });
 
@@ -1244,7 +1244,7 @@ class ChainErrorAutoFixer extends EventEmitter {
       // settling burst drives transient LuaExecutor back-pressure that looks
       // like a deadlock but resolves on its own) and during repeatable-job
       // registration (each upsertJobScheduler call legitimately holds the slot).
-      const inBootGrace120 = Date?.now() - this?._bootTs < 120_000;
+      const inBootGrace120 = Date?.now() - this._bootTs < 120_000;
       if (isLuaRegistrationMode() || inBootGrace120) {
         // Known-slow window — reset congestion counter so the clock restarts
         // fresh once the window closes.
@@ -1252,18 +1252,18 @@ class ChainErrorAutoFixer extends EventEmitter {
       } else if (stats?.active >= stats?.max && stats?.queued > 3) {
         this._consecutiveCongestedChecks++;
         if (
-          this?._consecutiveCongestedChecks >=
+          this._consecutiveCongestedChecks >=
           ChainErrorAutoFixer?._CONGESTION_DEADLOCK_THRESHOLD
         ) {
-          logger?.warn(
-            `[ChainFixer] LuaExecutor deadlock confirmed (${this?._consecutiveCongestedChecks} consecutive congested checks, ` +
+          logger.warn(
+            `[ChainFixer] LuaExecutor deadlock confirmed (${this._consecutiveCongestedChecks} consecutive congested checks, ` +
               `active=${stats.active}, queued=${stats?.queued}) — resetting semaphore`,
           );
           resetLuaExecutorSemaphore();
           this._consecutiveCongestedChecks = 0;
         } else {
-          logger?.warn(
-            `[ChainFixer] LuaExecutor semaphore congested — check ${this?._consecutiveCongestedChecks}/${ChainErrorAutoFixer?._CONGESTION_DEADLOCK_THRESHOLD} ` +
+          logger.warn(
+            `[ChainFixer] LuaExecutor semaphore congested — check ${this._consecutiveCongestedChecks}/${ChainErrorAutoFixer?._CONGESTION_DEADLOCK_THRESHOLD} ` +
               `(active=${stats.active}, queued=${stats?.queued}) — monitoring before reset`,
           );
         }
@@ -1279,7 +1279,7 @@ class ChainErrorAutoFixer extends EventEmitter {
     // heapTotal (the JIT-grown current size) so the percentage is accurate
     // against the true limit.  At boot, heapTotal might be 900 MB while
     // heap_size_limit is 4096 MB — using heapTotal gives false "98%" alarms.
-    const mem = process?.memoryUsage();
+    const mem = process.memoryUsage();
     const { getHeapStatistics } = await import("v8");
     const v8stats = getHeapStatistics();
     const limitBytes =
@@ -1288,21 +1288,21 @@ class ChainErrorAutoFixer extends EventEmitter {
     if (heapPct > 0.85) {
       if (typeof global?.gc === "function") global?.gc();
       const now = Date?.now();
-      if (now - this?._lastHeapWarnMs >= this?._HEAP_WARN_COOLDOWN_MS) {
+      if (now - this._lastHeapWarnMs >= this._HEAP_WARN_COOLDOWN_MS) {
         this._lastHeapWarnMs = now;
         // Re-sample after GC to reflect current state
-        const memAfter = process?.memoryUsage();
+        const memAfter = process.memoryUsage();
         const pctAfter = memAfter?.heapUsed / limitBytes;
-        const rssMB = Math?.round(memAfter?.rss / 1024 / 1024);
-        const limitMB = Math?.round(limitBytes / 1024 / 1024);
+        const rssMB = Math.round(memAfter?.rss / 1024 / 1024);
+        const limitMB = Math.round(limitBytes / 1024 / 1024);
         if (pctAfter > 0.9) {
-          logger?.warn(
-            `[ChainFixer] Heap sustained at ${Math?.round(pctAfter * 100)}% of ${limitMB} MB limit after GC ` +
-              `(was ${Math?.round(heapPct * 100)}%, RSS ${rssMB} MB) — process under memory pressure`,
+          logger.warn(
+            `[ChainFixer] Heap sustained at ${Math.round(pctAfter * 100)}% of ${limitMB} MB limit after GC ` +
+              `(was ${Math.round(heapPct * 100)}%, RSS ${rssMB} MB) — process under memory pressure`,
           );
         } else {
-          logger?.info(
-            `[ChainFixer] GC effective: heap ${Math?.round(heapPct * 100)}% → ${Math?.round(pctAfter * 100)}% ` +
+          logger.info(
+            `[ChainFixer] GC effective: heap ${Math.round(heapPct * 100)}% → ${Math.round(pctAfter * 100)}% ` +
               `of ${limitMB} MB limit (RSS ${rssMB} MB)`,
           );
         }
@@ -1321,7 +1321,7 @@ class ChainErrorAutoFixer extends EventEmitter {
         // Suppress during the first 60 s after boot (initial weight-sync burst)
         // and while BullMQ repeatable-job registration is in progress — both are
         // expected high-PDIM-load windows, not real congestion incidents.
-        const inBootGrace = now - this?._bootTs < 120_000;
+        const inBootGrace = now - this._bootTs < 120_000;
         let inRegistration = false;
         try {
           const { isLuaRegistrationMode } = await import(
@@ -1333,13 +1333,13 @@ class ChainErrorAutoFixer extends EventEmitter {
         }
         if (
           depth > 15 &&
-          now - this?._lastPdimCongestionWarnMs >
-            this?._PDIM_CONGESTION_WARN_COOLDOWN_MS &&
+          now - this._lastPdimCongestionWarnMs >
+            this._PDIM_CONGESTION_WARN_COOLDOWN_MS &&
           !inBootGrace &&
           !inRegistration
         ) {
           this._lastPdimCongestionWarnMs = now;
-          logger?.warn(
+          logger.warn(
             `[ChainFixer] PDIM chain congested — ${depth} callers queued (gap ${gap}ms). ` +
               `If this persists, a 429 cascade or exec timeout may follow.`,
           );
@@ -1356,16 +1356,16 @@ class ChainErrorAutoFixer extends EventEmitter {
     pattern: ErrorPattern,
     triggeredBy: string,
   ): Promise<void> {
-    const st = this?.state.get(pattern?.id)!;
+    const st = this.state.get(pattern?.id)!;
 
     if (st?.suppressed) return;
 
     const now = Date?.now();
     // Use adaptive cooldown (may be longer or shorter than the base cooldown).
-    const effectiveCooldown = this?._adaptiveCooldownMs(pattern);
+    const effectiveCooldown = this._adaptiveCooldownMs(pattern);
     if (now - st?.lastFix < effectiveCooldown) return;
 
-    this?._recordFire(pattern?.id);
+    this._recordFire(pattern?.id);
     st.lastFix = now;
     st.attempts++;
     st.lastMessage = triggeredBy?.slice(0, 200);
@@ -1384,13 +1384,13 @@ class ChainErrorAutoFixer extends EventEmitter {
       st.suppressed = true;
       st.lastFixResult = "suppressed";
       entry.result = "suppressed";
-      this?.pushHistory({ ...entry, result: "suppressed" });
+      this.pushHistory({ ...entry, result: "suppressed" });
       if (pattern?.escalate) {
         await pattern?.escalate(st?.attempts).catch(() => {
           /* non-fatal */
         });
       }
-      this?.emit("suppressed", { patternId: pattern.id, attempts: st.attempts });
+      this.emit("suppressed", { patternId: pattern.id, attempts: st.attempts });
       return;
     }
 
@@ -1399,7 +1399,7 @@ class ChainErrorAutoFixer extends EventEmitter {
       st.successCount++;
       st.lastFixResult = "success";
       entry.result = "success";
-      this?.emit("fixed", { patternId: pattern.id, attempt: st.attempts });
+      this.emit("fixed", { patternId: pattern.id, attempt: st.attempts });
 
       // ── PERMANENT FIX REGISTRY: record success so escalation can accumulate ──
       // Fire-and-forget — non-fatal; escalates to persistent constant change after N fires
@@ -1408,60 +1408,60 @@ class ChainErrorAutoFixer extends EventEmitter {
         .catch(() => {});
 
       // ── OFFENSIVE: chain prediction — pattern fired, pre-empt known downstream ──
-      this?._predictAndPreemptChain(pattern?.id);
+      this._predictAndPreemptChain(pattern?.id);
     } catch (err) {
       st.failCount++;
       st.lastFixResult = "failed";
       entry.result = "failed";
-      this?.emit("fixFailed", { patternId: pattern.id, error: err.message });
+      this.emit("fixFailed", { patternId: pattern.id, error: err.message });
     }
 
-    this?.pushHistory(entry);
+    this.pushHistory(entry);
   }
 
   private pushHistory(entry: FixHistoryEntry): void {
-    this?.history.unshift(entry);
-    if (this?.history.length > this?.MAX_HISTORY) {
-      this.history.length = this?.MAX_HISTORY;
+    this.history.unshift(entry);
+    if (this.history.length > this.MAX_HISTORY) {
+      this.history.length = this.MAX_HISTORY;
     }
   }
 
   // ─── Public API ────────────────────────────────────────────────────────────
 
   start(): void {
-    if (this?.started) return;
+    if (this.started) return;
     this.started = true;
 
     addLogTransport((entry) => {
-      this?.onLogEntry(entry).catch(() => {
+      this.onLogEntry(entry).catch(() => {
         /* non-fatal */
       });
     });
-    this?.installProcessHooks();
-    this?.startHealthCheck();
+    this.installProcessHooks();
+    this.startHealthCheck();
 
     // Every 24 h: un-suppress all patterns that have been quiet for at least 6 h.
     // This ensures long-dormant error classes are re-monitored after they reoccur
     // following an extended quiet period — critical for 100+ year deployments.
-    const jitterMs = Math?.floor(Math?.random() * 30_000);
+    const jitterMs = Math.floor(Math.random() * 30_000);
     this._unsuppressTimer = setInterval(
       () => {
-        this?._dailyUnsuppress();
+        this._dailyUnsuppress();
       },
       24 * 60 * 60_000 + jitterMs,
     );
-    this?._unsuppressTimer.unref();
+    this._unsuppressTimer.unref();
 
-    logger?.info(
-      `[ChainFixer] Chain error auto-fixer active — monitoring ${this?.patterns.length} error patterns (adaptive cooldowns, daily un-suppress)`,
+    logger.info(
+      `[ChainFixer] Chain error auto-fixer active — monitoring ${this.patterns.length} error patterns (adaptive cooldowns, daily un-suppress)`,
     );
   }
 
   private _dailyUnsuppress(): void {
     const now = Date?.now();
     let reset = 0;
-    for (const pattern of this?.patterns) {
-      const st = this?.state.get(pattern?.id)!;
+    for (const pattern of this.patterns) {
+      const st = this.state.get(pattern?.id)!;
       if (!st?.suppressed) continue;
       // Only reset if the pattern hasn't fired in the last 6 h (it genuinely went quiet).
       const lastFire =
@@ -1561,7 +1561,7 @@ class ChainErrorAutoFixer extends EventEmitter {
       );
       const stats = getLuaExecutorStats();
       if (stats?.queued > 5 && stats?.active >= stats?.max) {
-        logger?.info(
+        logger.info(
           `[ChainFixer] 🎯 OFFENSIVE: LuaExecutor approaching saturation ` +
             `(active=${stats.active}/${stats.max}, queued=${stats?.queued}) — ` +
             `pre-emptively clearing before timeout cascade`,
@@ -1577,7 +1577,7 @@ class ChainErrorAutoFixer extends EventEmitter {
     // ── Pre-condition: Memory on a growth trajectory above 80% ───────────────
     // The reactive pattern fires at >85%. Offensive: GC at >75% when growing.
     try {
-      const mem = process?.memoryUsage();
+      const mem = process.memoryUsage();
       const { getHeapStatistics } = await import("v8");
       const v8stats = getHeapStatistics();
       const limitBytes =
@@ -1589,8 +1589,8 @@ class ChainErrorAutoFixer extends EventEmitter {
         typeof global?.gc === "function"
       ) {
         global?.gc();
-        logger?.info(
-          `[ChainFixer] 🎯 OFFENSIVE: Pre-emptive GC at ${Math?.round(heapPct * 100)}% heap ` +
+        logger.info(
+          `[ChainFixer] 🎯 OFFENSIVE: Pre-emptive GC at ${Math.round(heapPct * 100)}% heap ` +
             `(below reactive 85% threshold — acting before pressure builds)`,
         );
         this._offensiveActionsTotal++;
@@ -1619,10 +1619,10 @@ class ChainErrorAutoFixer extends EventEmitter {
         const floor = getPdimGapFloor();
         const queueDepth = getPdimQueueDepth();
         // Only nudge when: gap well above floor, queue idle (no active 429 backoff), floor is sane
-        if (gap > Math?.max(4_000, floor * 4) && queueDepth === 0) {
-          const target = Math?.max(floor, Math?.round(gap * 0.8));
+        if (gap > Math.max(4_000, floor * 4) && queueDepth === 0) {
+          const target = Math.max(floor, Math.round(gap * 0.8));
           setPdimAdaptiveGap(target);
-          logger?.info(
+          logger.info(
             `[ChainFixer] 🎯 OFFENSIVE: PDIM gap drift corrected — ${gap}ms → ${target}ms ` +
               `(floor ${floor}ms, queue idle — AIMD recovering post-cascade)`,
           );
@@ -1639,7 +1639,7 @@ class ChainErrorAutoFixer extends EventEmitter {
     // not ticking) and restart it before any error is emitted.
     // Only run on the background worker (worker 0) — autonomous ops are
     // intentionally not started on other workers.
-    const _cwid = process?.env.CLUSTER_WORKER_ID;
+    const _cwid = process.env.CLUSTER_WORKER_ID;
     const _isBgForOffensive = _cwid === undefined || _cwid === "0";
     if (_isBgForOffensive) {
       try {
@@ -1651,9 +1651,9 @@ class ChainErrorAutoFixer extends EventEmitter {
         const stalledMs = lastActivity > 0 ? now - lastActivity : 0;
         // If supposedly running but no activity for > 10 min, it has silently stalled
         if (status?.isRunning && stalledMs > 10 * 60_000) {
-          logger?.warn(
+          logger.warn(
             `[ChainFixer] 🎯 OFFENSIVE: Autonomous service silently stalled ` +
-              `(no activity for ${Math?.round(stalledMs / 60_000)} min) — restarting pre-emptively`,
+              `(no activity for ${Math.round(stalledMs / 60_000)} min) — restarting pre-emptively`,
           );
           autonomousService?.startAutonomousOperations();
           this._offensiveActionsTotal++;
@@ -1684,13 +1684,13 @@ class ChainErrorAutoFixer extends EventEmitter {
         .map((id) => ({ id, pattern: this.patterns.find((p) => p?.id === id) }))
         .filter(({ pattern, id }) => {
           if (!pattern) return false;
-          const st = this?.state.get(id);
+          const st = this.state.get(id);
           return st && !st?.suppressed;
         });
 
       Promise?.allSettled(
         eligible?.map(async ({ id: downstreamId, pattern: downstream }) => {
-          logger?.info(
+          logger.info(
             `[ChainFixer] 🎯 OFFENSIVE: Chain prediction — '${firedPatternId}' historically ` +
               `precedes '${downstreamId}'. Pre-applying fix now.`,
           );
@@ -1700,7 +1700,7 @@ class ChainErrorAutoFixer extends EventEmitter {
             );
             this._chainPredictionsTotal++;
             this._offensiveActionsTotal++;
-            this?.pushHistory({
+            this.pushHistory({
               patternId: downstreamId,
               patternName: `[PREDICTED] ${downstream!.name}`,
               triggeredAt: Date.now(),
@@ -1709,7 +1709,7 @@ class ChainErrorAutoFixer extends EventEmitter {
               attemptNumber: 0,
             });
           } catch {
-            logger?.info(
+            logger.info(
               `[ChainFixer] 🎯 OFFENSIVE: Chain prediction fix for '${downstreamId}' was not needed (no-op)`,
             );
           }
@@ -1751,8 +1751,8 @@ class ChainErrorAutoFixer extends EventEmitter {
       "pdim_unsupported_command", // no-op ack — rate limiter already self-heals
     ]);
 
-    for (const pattern of this?.patterns) {
-      const st = this?.state.get(pattern?.id)!;
+    for (const pattern of this.patterns) {
+      const st = this.state.get(pattern?.id)!;
       if (st?.suppressed) continue;
       if (WEAPONIZE_BLOCKLIST?.has(pattern?.id)) continue;
 
@@ -1897,20 +1897,20 @@ class ChainErrorAutoFixer extends EventEmitter {
   }
 
   resetPattern(id: string): boolean {
-    const st = this?.state.get(id);
+    const st = this.state.get(id);
     if (!st) return false;
     st.attempts = 0;
     st.suppressed = false;
     st.lastFix = 0;
     st.lastFixResult = "none";
-    logger?.info(`[ChainFixer] Pattern '${id}' manually reset`);
+    logger.info(`[ChainFixer] Pattern '${id}' manually reset`);
     return true;
   }
 
   forceCheck(message: string): void {
-    for (const pattern of this?.patterns) {
+    for (const pattern of this.patterns) {
       if (pattern?.matchers.some((r) => r?.test(message))) {
-        this?.triggerFix(pattern, message).catch(() => {
+        this.triggerFix(pattern, message).catch(() => {
           /* non-fatal */
         });
       }

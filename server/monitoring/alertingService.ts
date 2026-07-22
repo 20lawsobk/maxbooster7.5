@@ -38,24 +38,24 @@ export class AlertingService {
       webhookUrl: process.env.ALERT_WEBHOOK_URL,
       thresholds: {
         queueMaxWaiting: parseInt(
-          process?.env.ALERT_QUEUE_MAX_WAITING || "100",
+          process.env.ALERT_QUEUE_MAX_WAITING || "100",
           10,
         ),
         queueMaxFailed: parseInt(
-          process?.env.ALERT_QUEUE_MAX_FAILED || "50",
+          process.env.ALERT_QUEUE_MAX_FAILED || "50",
           10,
         ),
         queueMaxLatency: parseInt(
-          process?.env.ALERT_QUEUE_MAX_LATENCY || "100",
+          process.env.ALERT_QUEUE_MAX_LATENCY || "100",
           10,
         ),
         aiCacheMaxUtilization: parseInt(
-          process?.env.ALERT_AI_CACHE_MAX_UTIL || "90",
+          process.env.ALERT_AI_CACHE_MAX_UTIL || "90",
           10,
         ),
-        memoryMaxMB: parseInt(process?.env.ALERT_MEMORY_MAX_MB || "2048", 10),
+        memoryMaxMB: parseInt(process.env.ALERT_MEMORY_MAX_MB || "2048", 10),
         errorRateMaxPercent: parseInt(
-          process?.env.ALERT_ERROR_RATE_MAX || "5",
+          process.env.ALERT_ERROR_RATE_MAX || "5",
           10,
         ),
       },
@@ -63,46 +63,46 @@ export class AlertingService {
   }
 
   private shouldSendAlert(alertKey: string): boolean {
-    const lastSent = this?.recentAlerts.get(alertKey);
+    const lastSent = this.recentAlerts.get(alertKey);
     if (!lastSent) return true;
 
-    const cooldownMs = this?.alertCooldownMinutes * 60 * 1000;
+    const cooldownMs = this.alertCooldownMinutes * 60 * 1000;
     const timeSinceLastAlert = Date?.now() - lastSent?.getTime();
 
     return timeSinceLastAlert > cooldownMs;
   }
 
   private markAlertSent(alertKey: string): void {
-    this?.recentAlerts.set(alertKey, new Date());
+    this.recentAlerts.set(alertKey, new Date());
   }
 
   async sendAlert(alert: Alert): Promise<void> {
     const alertKey = `${alert?.title}-${alert?.severity}`;
 
-    if (!this?.shouldSendAlert(alertKey)) {
-      logger?.debug(`Alert suppressed (cooldown): ${alert?.title}`);
+    if (!this.shouldSendAlert(alertKey)) {
+      logger.debug(`Alert suppressed (cooldown): ${alert?.title}`);
       return;
     }
 
-    logger?.warn(`🚨 ALERT [${alert?.severity.toUpperCase()}]: ${alert?.title}`);
-    logger?.warn(`   ${alert?.message}`);
+    logger.warn(`🚨 ALERT [${alert?.severity.toUpperCase()}]: ${alert?.title}`);
+    logger.warn(`   ${alert?.message}`);
 
     const promises: Promise<void>[] = [];
 
-    if (this?.config.webhookEnabled && this?.config.webhookUrl) {
-      promises?.push(this?.sendWebhookAlert(alert));
+    if (this.config.webhookEnabled && this.config.webhookUrl) {
+      promises?.push(this.sendWebhookAlert(alert));
     }
 
-    if (this?.config.emailEnabled && this?.config.emailRecipients?.length > 0) {
-      promises?.push(this?.sendEmailAlert(alert));
+    if (this.config.emailEnabled && this.config.emailRecipients?.length > 0) {
+      promises?.push(this.sendEmailAlert(alert));
     }
 
     await Promise?.allSettled(promises);
-    this?.markAlertSent(alertKey);
+    this.markAlertSent(alertKey);
   }
 
   private async sendWebhookAlert(alert: Alert): Promise<void> {
-    if (!this?.config.webhookUrl) return;
+    if (!this.config.webhookUrl) return;
 
     try {
       const payload = {
@@ -114,7 +114,7 @@ export class AlertingService {
         source: "Max Booster Platform",
       };
 
-      const response = await fetch(this?.config.webhookUrl, {
+      const response = await fetch(this.config.webhookUrl, {
         method: "POST",
         signal: AbortSignal.timeout(10_000), // 10 s — alert delivery must not block monitoring loop
         headers: { "Content-Type": "application/json" },
@@ -125,9 +125,9 @@ export class AlertingService {
         throw new Error(`Webhook returned ${response?.status}`);
       }
 
-      logger?.info(`✅ Webhook alert sent: ${alert?.title}`);
+      logger.info(`✅ Webhook alert sent: ${alert?.title}`);
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to send webhook alert:");
+      logger.warn({ err: error }, "Failed to send webhook alert:");
     }
   }
 
@@ -154,7 +154,7 @@ Time: ${alert?.timestamp.toISOString()}
 
 ${alert?.message}
 
-${alert?.metadata ? `\nAdditional Details:\n${JSON?.stringify(alert?.metadata, null, 2)}` : ""}
+${alert?.metadata ? `\nAdditional Details:\n${JSON.stringify(alert?.metadata, null, 2)}` : ""}
 
 ---
 This is an automated alert from Max Booster Platform Monitoring System.
@@ -184,7 +184,7 @@ This is an automated alert from Max Booster Platform Monitoring System.
         ? `
       <div class="metadata">
         <strong>Additional Details:</strong>
-        <pre>${JSON?.stringify(alert?.metadata, null, 2)}</pre>
+        <pre>${JSON.stringify(alert?.metadata, null, 2)}</pre>
       </div>
     `
         : ""
@@ -199,40 +199,40 @@ This is an automated alert from Max Booster Platform Monitoring System.
       };
 
       await sgMail?.default.send(msg);
-      logger?.info(
-        `✅ Email alert sent to ${this?.config.emailRecipients?.length} recipient(s)`,
+      logger.info(
+        `✅ Email alert sent to ${this.config.emailRecipients?.length} recipient(s)`,
       );
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to send email alert:");
+      logger.warn({ err: error }, "Failed to send email alert:");
     }
   }
 
   async checkQueueMetrics(metrics: Record<string, unknown>): Promise<void> {
-    if (metrics?.waiting > this?.config.thresholds?.queueMaxWaiting) {
-      await this?.sendAlert({
+    if (metrics?.waiting > this.config.thresholds?.queueMaxWaiting) {
+      await this.sendAlert({
         severity: "warning",
         title: "High Queue Backlog",
-        message: `Queue has ${metrics?.waiting} waiting jobs (threshold: ${this?.config.thresholds?.queueMaxWaiting})`,
+        message: `Queue has ${metrics?.waiting} waiting jobs (threshold: ${this.config.thresholds?.queueMaxWaiting})`,
         timestamp: new Date(),
         metadata: { queueName: metrics.queueName, waiting: metrics.waiting },
       });
     }
 
-    if (metrics?.failed > this?.config.thresholds?.queueMaxFailed) {
-      await this?.sendAlert({
+    if (metrics?.failed > this.config.thresholds?.queueMaxFailed) {
+      await this.sendAlert({
         severity: "critical",
         title: "High Failed Job Count",
-        message: `Queue has ${metrics?.failed} failed jobs (threshold: ${this?.config.thresholds?.queueMaxFailed})`,
+        message: `Queue has ${metrics?.failed} failed jobs (threshold: ${this.config.thresholds?.queueMaxFailed})`,
         timestamp: new Date(),
         metadata: { queueName: metrics.queueName, failed: metrics.failed },
       });
     }
 
-    if (metrics?.redisLatency > this?.config.thresholds?.queueMaxLatency) {
-      await this?.sendAlert({
+    if (metrics?.redisLatency > this.config.thresholds?.queueMaxLatency) {
+      await this.sendAlert({
         severity: "warning",
         title: "High Redis Latency",
-        message: `Redis latency is ${metrics?.redisLatency}ms (threshold: ${this?.config.thresholds?.queueMaxLatency}ms)`,
+        message: `Redis latency is ${metrics?.redisLatency}ms (threshold: ${this.config.thresholds?.queueMaxLatency}ms)`,
         timestamp: new Date(),
         metadata: {
           queueName: metrics.queueName,
@@ -246,21 +246,21 @@ This is an automated alert from Max Booster Platform Monitoring System.
     const socialUtil = parseFloat(metrics?.social.utilizationPercent);
     const adUtil = parseFloat(metrics?.advertising.utilizationPercent);
 
-    if (socialUtil > this?.config.thresholds?.aiCacheMaxUtilization) {
-      await this?.sendAlert({
+    if (socialUtil > this.config.thresholds?.aiCacheMaxUtilization) {
+      await this.sendAlert({
         severity: "warning",
         title: "High AI Cache Utilization - Social",
-        message: `Social Media AI cache at ${socialUtil?.toFixed(1)}% utilization (threshold: ${this?.config.thresholds?.aiCacheMaxUtilization}%)`,
+        message: `Social Media AI cache at ${socialUtil?.toFixed(1)}% utilization (threshold: ${this.config.thresholds?.aiCacheMaxUtilization}%)`,
         timestamp: new Date(),
         metadata: { type: "social", utilization: socialUtil },
       });
     }
 
-    if (adUtil > this?.config.thresholds?.aiCacheMaxUtilization) {
-      await this?.sendAlert({
+    if (adUtil > this.config.thresholds?.aiCacheMaxUtilization) {
+      await this.sendAlert({
         severity: "warning",
         title: "High AI Cache Utilization - Advertising",
-        message: `Advertising AI cache at ${adUtil?.toFixed(1)}% utilization (threshold: ${this?.config.thresholds?.aiCacheMaxUtilization}%)`,
+        message: `Advertising AI cache at ${adUtil?.toFixed(1)}% utilization (threshold: ${this.config.thresholds?.aiCacheMaxUtilization}%)`,
         timestamp: new Date(),
         metadata: { type: "advertising", utilization: adUtil },
       });
@@ -268,11 +268,11 @@ This is an automated alert from Max Booster Platform Monitoring System.
   }
 
   async checkMemoryUsage(memoryMB: number): Promise<void> {
-    if (memoryMB > this?.config.thresholds?.memoryMaxMB) {
-      await this?.sendAlert({
+    if (memoryMB > this.config.thresholds?.memoryMaxMB) {
+      await this.sendAlert({
         severity: "critical",
         title: "High Memory Usage",
-        message: `Server memory usage is ${memoryMB?.toFixed(0)}MB (threshold: ${this?.config.thresholds?.memoryMaxMB}MB)`,
+        message: `Server memory usage is ${memoryMB?.toFixed(0)}MB (threshold: ${this.config.thresholds?.memoryMaxMB}MB)`,
         timestamp: new Date(),
         metadata: { memoryMB },
       });
@@ -280,7 +280,7 @@ This is an automated alert from Max Booster Platform Monitoring System.
   }
 
   getConfig(): AlertConfig {
-    return { ...this?.config };
+    return { ...this.config };
   }
 }
 

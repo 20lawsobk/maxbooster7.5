@@ -49,7 +49,7 @@ export interface AuditEntry {
 }
 
 // Write-ahead log for critical events
-const WAL_PATH = path?.join(process?.cwd(), ".audit-wal");
+const WAL_PATH = path?.join(process.cwd(), ".audit-wal");
 const walBuffer: AuditEntry[] = [];
 let walFlushTimer: NodeJS.Timeout | null = null;
 
@@ -63,7 +63,7 @@ export async function initAuditLogger(): Promise<void> {
       fs?.mkdirSync(WAL_PATH, { recursive: true });
     }
   } catch (error) {
-    logger?.warn({ err: error }, "[Audit] Could not create WAL directory:");
+    logger.warn({ err: error }, "[Audit] Could not create WAL directory:");
   }
 
   // Recover any pending WAL entries
@@ -72,7 +72,7 @@ export async function initAuditLogger(): Promise<void> {
   // Start periodic WAL flush
   walFlushTimer = setInterval(() => flushWAL(), 5000);
 
-  logger?.info("[Audit] Audit logger initialized");
+  logger.info("[Audit] Audit logger initialized");
 }
 
 /**
@@ -126,9 +126,9 @@ export async function audit(
 async function writeToWAL(entry: AuditEntry): Promise<void> {
   try {
     const walFile = path?.join(WAL_PATH, `${entry?.id}.json`);
-    await fs?.promises.writeFile(walFile, JSON?.stringify(entry), "utf8");
+    await fs?.promises.writeFile(walFile, JSON.stringify(entry), "utf8");
   } catch (error) {
-    logger?.warn({ err: error }, "[Audit] Failed to write to WAL:");
+    logger.warn({ err: error }, "[Audit] Failed to write to WAL:");
   }
 }
 
@@ -153,7 +153,7 @@ async function flushWAL(): Promise<void> {
           ) VALUES (
             ${entry?.id}, ${entry?.timestamp}, ${entry?.category}, ${entry?.severity}, ${entry?.action},
             ${entry?.userId}, ${entry?.targetId}, ${entry?.targetType}, ${entry?.ipAddress}, ${entry?.userAgent},
-            ${JSON?.stringify(entry?.details)}, ${entry?.success}, ${entry?.errorMessage}
+            ${JSON.stringify(entry?.details)}, ${entry?.success}, ${entry?.errorMessage}
           )
           ON CONFLICT (id) DO NOTHING
         `);
@@ -163,13 +163,13 @@ async function flushWAL(): Promise<void> {
       } catch (dbError) {
         // Put back in buffer for retry
         walBuffer?.push(entry);
-        logger?.warn("[Audit] Failed to persist audit entry:", dbError);
+        logger.warn("[Audit] Failed to persist audit entry:", dbError);
       }
     }
   } catch (error) {
     // Put all entries back in buffer
     walBuffer?.push(...entries);
-    logger?.warn({ err: error }, "[Audit] Failed to flush WAL:");
+    logger.warn({ err: error }, "[Audit] Failed to flush WAL:");
   }
 }
 
@@ -184,7 +184,7 @@ function removeFromWAL(entryId: string): void {
     }
   } catch (error) {
     // Non-critical, just log
-    logger?.debug("[Audit] Could not remove WAL file:", error);
+    logger.debug("[Audit] Could not remove WAL file:", error);
   }
 }
 
@@ -204,7 +204,7 @@ async function recoverWAL(): Promise<void> {
     );
 
     if (files?.length > 0) {
-      logger?.info(
+      logger.info(
         `[Audit] Recovering ${files?.length} pending audit entries from WAL`,
       );
     }
@@ -215,10 +215,10 @@ async function recoverWAL(): Promise<void> {
           path?.join(WAL_PATH, file),
           "utf8",
         );
-        const entry = JSON?.parse(content) as AuditEntry;
+        const entry = JSON.parse(content) as AuditEntry;
         walBuffer?.push(entry);
       } catch (error) {
-        logger?.warn(
+        logger.warn(
           { err: error },
           `[Audit] Failed to recover WAL entry ${file}:`,
         );
@@ -230,7 +230,7 @@ async function recoverWAL(): Promise<void> {
       await flushWAL();
     }
   } catch (error) {
-    logger?.warn({ err: error }, "[Audit] WAL recovery failed:");
+    logger.warn({ err: error }, "[Audit] WAL recovery failed:");
   }
 }
 
@@ -429,7 +429,7 @@ export async function getAuditLog(params: {
   offset?: number;
 }): Promise<AuditEntry[]> {
   try {
-    const limit = Math?.min(params?.limit || 100, 1000);
+    const limit = Math.min(params?.limit || 100, 1000);
     const offset = params?.offset || 0;
 
     const result = await db?.execute(sql`
@@ -447,7 +447,7 @@ export async function getAuditLog(params: {
 
     return result?.rows as unknown as AuditEntry[];
   } catch (error) {
-    logger?.warn({ err: error }, "[Audit] Failed to query audit log:");
+    logger.warn({ err: error }, "[Audit] Failed to query audit log:");
     return [];
   }
 }
@@ -473,12 +473,12 @@ export async function cleanupAuditLog(
 
     const deleted = result?.rows.length;
     if (deleted > 0) {
-      logger?.info(`[Audit] Cleaned up ${deleted} old audit entries`);
+      logger.info(`[Audit] Cleaned up ${deleted} old audit entries`);
     }
 
     return deleted;
   } catch (error) {
-    logger?.warn({ err: error }, "[Audit] Failed to cleanup audit log:");
+    logger.warn({ err: error }, "[Audit] Failed to cleanup audit log:");
     return 0;
   }
 }
@@ -491,5 +491,5 @@ export async function shutdownAuditLogger(): Promise<void> {
     clearInterval(walFlushTimer);
   }
   await flushWAL();
-  logger?.info("[Audit] Audit logger shut down");
+  logger.info("[Audit] Audit logger shut down");
 }

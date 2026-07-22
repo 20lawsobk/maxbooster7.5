@@ -89,38 +89,38 @@ class SocialChatbotService {
   private threadLastAccess: Map<string, number> = new Map();
 
   constructor() {
-    this?.initializeDefaultTemplates();
-    this?.initializeIntentPatterns();
-    this?.initializeEscalationRules();
+    this.initializeDefaultTemplates();
+    this.initializeIntentPatterns();
+    this.initializeEscalationRules();
     setInterval(
-      () => this?._sweepExpiredThreads(),
+      () => this._sweepExpiredThreads(),
       CHATBOT_THREAD_TTL_MS,
     ).unref();
   }
 
   private _sweepExpiredThreads(): void {
     const cutoff = Date?.now() - CHATBOT_THREAD_TTL_MS;
-    for (const [tid, ts] of this?.threadLastAccess) {
+    for (const [tid, ts] of this.threadLastAccess) {
       if (ts < cutoff) {
-        this?.messageHistory.delete(tid);
-        this?.threadLastAccess.delete(tid);
+        this.messageHistory.delete(tid);
+        this.threadLastAccess.delete(tid);
       }
     }
   }
 
   private _evictOldestThreadIfFull(): void {
-    if (this?.messageHistory.size < CHATBOT_MAX_THREADS) return;
+    if (this.messageHistory.size < CHATBOT_MAX_THREADS) return;
     let oldestKey: string | null = null;
     let oldestTime = Infinity;
-    for (const [tid, ts] of this?.threadLastAccess) {
+    for (const [tid, ts] of this.threadLastAccess) {
       if (ts < oldestTime) {
         oldestTime = ts;
         oldestKey = tid;
       }
     }
     if (oldestKey) {
-      this?.messageHistory.delete(oldestKey);
-      this?.threadLastAccess.delete(oldestKey);
+      this.messageHistory.delete(oldestKey);
+      this.threadLastAccess.delete(oldestKey);
     }
   }
 
@@ -291,28 +291,28 @@ class SocialChatbotService {
     ];
 
     defaultTemplates?.forEach((template) => {
-      this?.templates.set(template?.id, template);
+      this.templates.set(template?.id, template);
     });
   }
 
   private initializeIntentPatterns() {
-    this?.intentPatterns.set("greeting", [
+    this.intentPatterns.set("greeting", [
       /^(hi|hello|hey|howdy|greetings|good\s*(morning|afternoon|evening))/i,
     ]);
-    this?.intentPatterns.set("inquiry_music", [
+    this.intentPatterns.set("inquiry_music", [
       /(new|latest|upcoming)\s*(music|song|album|release|track)/i,
       /when\s*(is|will|are)\s*(the|your)\s*(new|next)/i,
     ]);
-    this?.intentPatterns.set("inquiry_collab", [
+    this.intentPatterns.set("inquiry_collab", [
       /(collab|collaborate|feature|work\s*together|partnership)/i,
     ]);
-    this?.intentPatterns.set("inquiry_booking", [
+    this.intentPatterns.set("inquiry_booking", [
       /(book|booking|event|show|performance|gig|hire)/i,
     ]);
-    this?.intentPatterns.set("inquiry_merch", [
+    this.intentPatterns.set("inquiry_merch", [
       /(merch|merchandise|shirt|hoodie|store|shop|buy)/i,
     ]);
-    this?.intentPatterns.set("support", [
+    this.intentPatterns.set("support", [
       /(help|issue|problem|not\s*working|error|broken|can'?t)/i,
     ]);
     this.intentPatterns.set("appreciation", [
@@ -694,7 +694,7 @@ class SocialChatbotService {
     intent: MessageIntent,
     message: ChatbotMessage,
   ): boolean {
-    for (const rule of this?.escalationRules) {
+    for (const rule of this.escalationRules) {
       switch (rule?.condition) {
         case "sentiment":
           if (rule?.operator === "equals" && intent?.sentiment === rule?.value) {
@@ -755,12 +755,12 @@ class SocialChatbotService {
   }
 
   private storeMessageInHistory(message: ChatbotMessage) {
-    this?._evictOldestThreadIfFull();
-    const history = this?.messageHistory.get(message?.threadId) || [];
+    this._evictOldestThreadIfFull();
+    const history = this.messageHistory.get(message?.threadId) || [];
     history?.push(message);
     if (history?.length > 100) history?.shift();
-    this?.messageHistory.set(message?.threadId, history);
-    this?.threadLastAccess.set(message?.threadId, Date?.now());
+    this.messageHistory.set(message?.threadId, history);
+    this.threadLastAccess.set(message?.threadId, Date?.now());
   }
 
   async addToKnowledgeBase(
@@ -778,9 +778,9 @@ class SocialChatbotService {
       usageCount: 0,
     };
 
-    this?.knowledgeBase.set(newEntry?.id, newEntry);
+    this.knowledgeBase.set(newEntry?.id, newEntry);
 
-    logger?.info(`Knowledge base entry added by user ${userId}`, {
+    logger.info(`Knowledge base entry added by user ${userId}`, {
       entryId: newEntry.id,
       category: entry.category,
     });
@@ -823,7 +823,7 @@ class SocialChatbotService {
   }
 
   async getTemplates(): Promise<ResponseTemplate[]> {
-    return Array?.from(this?.templates.values());
+    return Array.from(this.templates.values());
   }
 
   async addTemplate(
@@ -833,7 +833,7 @@ class SocialChatbotService {
       id: randomBytes(8).toString("hex"),
       ...template,
     };
-    this?.templates.set(newTemplate?.id, newTemplate);
+    this.templates.set(newTemplate?.id, newTemplate);
     return newTemplate;
   }
 
@@ -841,11 +841,11 @@ class SocialChatbotService {
     id: string,
     updates: Partial<ResponseTemplate>,
   ): Promise<ResponseTemplate | null> {
-    const template = this?.templates.get(id);
+    const template = this.templates.get(id);
     if (!template) return null;
 
     const updated = { ...template, ...updates };
-    this?.templates.set(id, updated);
+    this.templates.set(id, updated);
     return updated;
   }
 
@@ -857,7 +857,7 @@ class SocialChatbotService {
     assignedTo?: string;
     priority: number;
   }> {
-    const intent = await this?.detectIntent(message?.content);
+    const intent = await this.detectIntent(message?.content);
 
     if (intent?.urgency === "critical") {
       return { action: "escalate", priority: 1 };
@@ -887,8 +887,8 @@ class SocialChatbotService {
     const results = [];
 
     for (const message of messages) {
-      const routing = await this?.routeMessage(message, userId);
-      const response = await this?.generateResponse(message, userId);
+      const routing = await this.routeMessage(message, userId);
+      const response = await this.generateResponse(message, userId);
 
       results?.push({
         message,

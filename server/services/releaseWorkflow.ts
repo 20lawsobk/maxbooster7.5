@@ -129,26 +129,26 @@ export class ReleaseWorkflowService {
     setInterval(
       () => {
         // Drop oldest entries when over cap
-        while (this?.auditLog.size > ReleaseWorkflowService.MAX_AUDIT) {
-          const k = this?.auditLog.keys().next().value;
-          if (k !== undefined) this?.auditLog.delete(k);
+        while (this.auditLog.size > ReleaseWorkflowService.MAX_AUDIT) {
+          const k = this.auditLog.keys().next().value;
+          if (k !== undefined) this.auditLog.delete(k);
           else break;
         }
         while (
-          this?.takedownRequests.size > ReleaseWorkflowService.MAX_TAKEDOWNS
+          this.takedownRequests.size > ReleaseWorkflowService.MAX_TAKEDOWNS
         ) {
-          const k = this?.takedownRequests.keys().next().value;
-          if (k !== undefined) this?.takedownRequests.delete(k);
+          const k = this.takedownRequests.keys().next().value;
+          if (k !== undefined) this.takedownRequests.delete(k);
           else break;
         }
-        while (this?.updateRequests.size > ReleaseWorkflowService.MAX_UPDATES) {
-          const k = this?.updateRequests.keys().next().value;
-          if (k !== undefined) this?.updateRequests.delete(k);
+        while (this.updateRequests.size > ReleaseWorkflowService.MAX_UPDATES) {
+          const k = this.updateRequests.keys().next().value;
+          if (k !== undefined) this.updateRequests.delete(k);
           else break;
         }
-        while (this?.stateHistory.size > ReleaseWorkflowService.MAX_HISTORY) {
-          const k = this?.stateHistory.keys().next().value;
-          if (k !== undefined) this?.stateHistory.delete(k);
+        while (this.stateHistory.size > ReleaseWorkflowService.MAX_HISTORY) {
+          const k = this.stateHistory.keys().next().value;
+          if (k !== undefined) this.stateHistory.delete(k);
           else break;
         }
       },
@@ -180,17 +180,17 @@ export class ReleaseWorkflowService {
     } = {},
   ): Promise<{ success: boolean; error?: string; newState?: ReleaseState }> {
     try {
-      const release = await this?.getRelease(releaseId);
+      const release = await this.getRelease(releaseId);
       if (!release) {
         return { success: false, error: "Release not found" };
       }
 
       const currentState = (release?.status as ReleaseState) || "draft";
 
-      if (!this?.canTransition(currentState, targetState)) {
+      if (!this.canTransition(currentState, targetState)) {
         return {
           success: false,
-          error: `Cannot transition from "${currentState}" to "${targetState}". Valid transitions: ${this?.getValidTransitions(currentState).join(", ")}`,
+          error: `Cannot transition from "${currentState}" to "${targetState}". Valid transitions: ${this.getValidTransitions(currentState).join(", ")}`,
         };
       }
 
@@ -204,11 +204,11 @@ export class ReleaseWorkflowService {
         metadata: options.metadata,
       };
 
-      const history = this?.stateHistory.get(releaseId) || [];
+      const history = this.stateHistory.get(releaseId) || [];
       history?.push(transition);
-      this?.stateHistory.set(releaseId, history);
+      this.stateHistory.set(releaseId, history);
 
-      await this?.logAudit(releaseId, {
+      await this.logAudit(releaseId, {
         action: "state_transition",
         userId,
         details: {
@@ -221,13 +221,13 @@ export class ReleaseWorkflowService {
         userAgent: options.userAgent,
       });
 
-      logger?.info(
+      logger.info(
         `Release ${releaseId} transitioned from ${currentState} to ${targetState} by user ${userId}`,
       );
 
       return { success: true, newState: targetState };
     } catch (error) {
-      logger?.warn({ err: error }, "Error transitioning release state:");
+      logger.warn({ err: error }, "Error transitioning release state:");
       return { success: false, error: "Failed to transition release state" };
     }
   }
@@ -236,12 +236,12 @@ export class ReleaseWorkflowService {
     releaseId: string,
     userId: string,
   ): Promise<{ success: boolean; error?: string }> {
-    const result = await this?.transition(releaseId, userId, "pending_review", {
+    const result = await this.transition(releaseId, userId, "pending_review", {
       reason: "Submitted for distribution review",
     });
 
     if (result?.success) {
-      await this?.logAudit(releaseId, {
+      await this.logAudit(releaseId, {
         action: "submit_for_review",
         userId,
         details: { message: "Release submitted for review" },
@@ -256,13 +256,13 @@ export class ReleaseWorkflowService {
     reviewerId: string,
     notes?: string,
   ): Promise<{ success: boolean; error?: string }> {
-    const result = await this?.transition(releaseId, reviewerId, "approved", {
+    const result = await this.transition(releaseId, reviewerId, "approved", {
       reason: "Approved for distribution",
       metadata: { notes, reviewedBy: reviewerId },
     });
 
     if (result?.success) {
-      await this?.logAudit(releaseId, {
+      await this.logAudit(releaseId, {
         action: "approved",
         userId: reviewerId,
         details: { notes, status: "approved" },
@@ -277,13 +277,13 @@ export class ReleaseWorkflowService {
     reviewerId: string,
     reason: string,
   ): Promise<{ success: boolean; error?: string }> {
-    const result = await this?.transition(releaseId, reviewerId, "rejected", {
+    const result = await this.transition(releaseId, reviewerId, "rejected", {
       reason,
       metadata: { rejectionReason: reason, reviewedBy: reviewerId },
     });
 
     if (result?.success) {
-      await this?.logAudit(releaseId, {
+      await this.logAudit(releaseId, {
         action: "rejected",
         userId: reviewerId,
         details: { reason, status: "rejected" },
@@ -305,7 +305,7 @@ export class ReleaseWorkflowService {
     },
   ): Promise<{ success: boolean; requestId?: string; error?: string }> {
     try {
-      const release = await this?.getRelease(releaseId);
+      const release = await this.getRelease(releaseId);
       if (!release) {
         return { success: false, error: "Release not found" };
       }
@@ -332,9 +332,9 @@ export class ReleaseWorkflowService {
         notes: options.notes,
       };
 
-      this?.takedownRequests.set(requestId, request);
+      this.takedownRequests.set(requestId, request);
 
-      await this?.logAudit(releaseId, {
+      await this.logAudit(releaseId, {
         action: "takedown_requested",
         userId,
         details: {
@@ -346,13 +346,13 @@ export class ReleaseWorkflowService {
         },
       });
 
-      logger?.info(
+      logger.info(
         `Takedown request ${requestId} created for release ${releaseId}`,
       );
 
       return { success: true, requestId };
     } catch (error) {
-      logger?.warn({ err: error }, "Error creating takedown request:");
+      logger.warn({ err: error }, "Error creating takedown request:");
       return { success: false, error: "Failed to create takedown request" };
     }
   }
@@ -363,7 +363,7 @@ export class ReleaseWorkflowService {
     action: "approve" | "reject",
     notes?: string,
   ): Promise<{ success: boolean; error?: string }> {
-    const request = this?.takedownRequests.get(requestId);
+    const request = this.takedownRequests.get(requestId);
     if (!request) {
       return { success: false, error: "Takedown request not found" };
     }
@@ -378,7 +378,7 @@ export class ReleaseWorkflowService {
     request.notes = notes;
 
     if (action === "approve") {
-      const transitionResult = await this?.transition(
+      const transitionResult = await this.transition(
         request?.releaseId,
         processedBy,
         "taken_down",
@@ -393,9 +393,9 @@ export class ReleaseWorkflowService {
       }
     }
 
-    this?.takedownRequests.set(requestId, request);
+    this.takedownRequests.set(requestId, request);
 
-    await this?.logAudit(request?.releaseId, {
+    await this.logAudit(request?.releaseId, {
       action: `takedown_${action}ed`,
       userId: processedBy,
       details: { requestId, notes, action },
@@ -411,7 +411,7 @@ export class ReleaseWorkflowService {
     notes?: string,
   ): Promise<{ success: boolean; requestId?: string; error?: string }> {
     try {
-      const release = await this?.getRelease(releaseId);
+      const release = await this.getRelease(releaseId);
       if (!release) {
         return { success: false, error: "Release not found" };
       }
@@ -440,14 +440,14 @@ export class ReleaseWorkflowService {
         affectedPlatforms: this.determineAffectedPlatforms(changes),
       };
 
-      this?.updateRequests.set(requestId, request);
+      this.updateRequests.set(requestId, request);
 
-      await this?.transition(releaseId, userId, "update_pending", {
+      await this.transition(releaseId, userId, "update_pending", {
         reason: "Update request submitted",
         metadata: { updateRequestId: requestId },
       });
 
-      await this?.logAudit(releaseId, {
+      await this.logAudit(releaseId, {
         action: "update_requested",
         userId,
         details: {
@@ -457,13 +457,13 @@ export class ReleaseWorkflowService {
         },
       });
 
-      logger?.info(
+      logger.info(
         `Update request ${requestId} created for release ${releaseId}`,
       );
 
       return { success: true, requestId };
     } catch (error) {
-      logger?.warn({ err: error }, "Error creating update request:");
+      logger.warn({ err: error }, "Error creating update request:");
       return { success: false, error: "Failed to create update request" };
     }
   }
@@ -474,7 +474,7 @@ export class ReleaseWorkflowService {
     action: "approve" | "reject",
     notes?: string,
   ): Promise<{ success: boolean; error?: string }> {
-    const request = this?.updateRequests.get(requestId);
+    const request = this.updateRequests.get(requestId);
     if (!request) {
       return { success: false, error: "Update request not found" };
     }
@@ -491,7 +491,7 @@ export class ReleaseWorkflowService {
     if (action === "approve") {
       request.status = "processing";
 
-      const transitionResult = await this?.transition(
+      const transitionResult = await this.transition(
         request?.releaseId,
         processedBy,
         "updated",
@@ -505,15 +505,15 @@ export class ReleaseWorkflowService {
         request.status = "completed";
       }
     } else {
-      await this?.transition(request?.releaseId, processedBy, "live", {
+      await this.transition(request?.releaseId, processedBy, "live", {
         reason: "Update rejected, reverting to live state",
         metadata: { updateRequestId: requestId },
       });
     }
 
-    this?.updateRequests.set(requestId, request);
+    this.updateRequests.set(requestId, request);
 
-    await this?.logAudit(request?.releaseId, {
+    await this.logAudit(request?.releaseId, {
       action: `update_${action}ed`,
       userId: processedBy,
       details: { requestId, notes, action, changes: request.changes },
@@ -553,7 +553,7 @@ export class ReleaseWorkflowService {
       }
     }
 
-    return Array?.from(platforms);
+    return Array.from(platforms);
   }
 
   async logAudit(
@@ -567,11 +567,11 @@ export class ReleaseWorkflowService {
       ...entry,
     };
 
-    const log = this?.auditLog.get(releaseId) || [];
+    const log = this.auditLog.get(releaseId) || [];
     log?.push(auditEntry);
-    this?.auditLog.set(releaseId, log);
+    this.auditLog.set(releaseId, log);
 
-    logger?.debug(
+    logger.debug(
       `Audit log entry created for release ${releaseId}: ${entry?.action}`,
     );
   }
@@ -585,7 +585,7 @@ export class ReleaseWorkflowService {
       limit?: number;
     } = {},
   ): AuditLogEntry[] {
-    let log = this?.auditLog.get(releaseId) || [];
+    let log = this.auditLog.get(releaseId) || [];
 
     if (options?.startDate) {
       log = log?.filter((e) => e?.timestamp >= options?.startDate!);
@@ -609,31 +609,31 @@ export class ReleaseWorkflowService {
   }
 
   getStateHistory(releaseId: string): StateTransition[] {
-    return this?.stateHistory.get(releaseId) || [];
+    return this.stateHistory.get(releaseId) || [];
   }
 
   getTakedownRequest(requestId: string): TakedownRequest | undefined {
-    return this?.takedownRequests.get(requestId);
+    return this.takedownRequests.get(requestId);
   }
 
   getTakedownRequestsForRelease(releaseId: string): TakedownRequest[] {
-    return Array?.from(this?.takedownRequests.values())
+    return Array.from(this.takedownRequests.values())
       .filter((r) => r?.releaseId === releaseId)
       .sort((a, b) => b?.requestedAt.getTime() - a?.requestedAt.getTime());
   }
 
   getUpdateRequest(requestId: string): UpdateRequest | undefined {
-    return this?.updateRequests.get(requestId);
+    return this.updateRequests.get(requestId);
   }
 
   getUpdateRequestsForRelease(releaseId: string): UpdateRequest[] {
-    return Array?.from(this?.updateRequests.values())
+    return Array.from(this.updateRequests.values())
       .filter((r) => r?.releaseId === releaseId)
       .sort((a, b) => b?.requestedAt.getTime() - a?.requestedAt.getTime());
   }
 
   getPendingTakedowns(): TakedownRequest[] {
-    return Array?.from(this?.takedownRequests.values())
+    return Array.from(this.takedownRequests.values())
       .filter((r) => r?.status === "pending")
       .sort((a, b) => {
         const urgencyOrder = { emergency: 0, urgent: 1, normal: 2 };
@@ -645,7 +645,7 @@ export class ReleaseWorkflowService {
   }
 
   getPendingUpdates(): UpdateRequest[] {
-    return Array?.from(this?.updateRequests.values())
+    return Array.from(this.updateRequests.values())
       .filter((r) => r?.status === "pending")
       .sort((a, b) => a?.requestedAt.getTime() - b?.requestedAt.getTime());
   }
@@ -655,7 +655,7 @@ export class ReleaseWorkflowService {
   }
 
   getAllTakedownReasons(): { code: TakedownReason; label: string }[] {
-    return Object?.entries(TAKEDOWN_REASON_LABELS).map(([code, label]) => ({
+    return Object.entries(TAKEDOWN_REASON_LABELS).map(([code, label]) => ({
       code: code as TakedownReason,
       label,
     }));
@@ -684,7 +684,7 @@ export class ReleaseWorkflowService {
     const dayAgo = new Date(now?.getTime() - 24 * 60 * 60 * 1000);
     let recentActivity = 0;
 
-    for (const history of this?.stateHistory.values()) {
+    for (const history of this.stateHistory.values()) {
       if (history?.length > 0) {
         const currentState = history[history?.length - 1].to;
         stateCount[currentState]++;
@@ -705,7 +705,7 @@ export class ReleaseWorkflowService {
     try {
       return await storage?.getDistroRelease(releaseId);
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching release:");
+      logger.warn({ err: error }, "Error fetching release:");
       return null;
     }
   }
@@ -753,17 +753,17 @@ export class ReleaseWorkflowService {
     };
 
     const allKeys = new Set([
-      ...Object?.keys(oldRelease),
-      ...Object?.keys(newRelease),
+      ...Object.keys(oldRelease),
+      ...Object.keys(newRelease),
     ]);
 
     for (const key of allKeys) {
       const oldVal = oldRelease[key];
       const newVal = newRelease[key];
 
-      if (JSON?.stringify(oldVal) !== JSON?.stringify(newVal)) {
+      if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
         const changeType = fieldTypeMap[key] || "metadata";
-        changes?.push(this?.createChangeRecord(key, oldVal, newVal, changeType));
+        changes?.push(this.createChangeRecord(key, oldVal, newVal, changeType));
       }
     }
 

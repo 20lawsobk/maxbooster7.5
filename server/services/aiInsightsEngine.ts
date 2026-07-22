@@ -186,8 +186,8 @@ export class CustomAIEngine {
   async getAIModel(
     modelName: string,
   ): Promise<{ modelId: string; versionId: string }> {
-    if (this?.modelCache.has(modelName)) {
-      return this?.modelCache.get(modelName)!;
+    if (this.modelCache.has(modelName)) {
+      return this.modelCache.get(modelName)!;
     }
 
     const model = await db
@@ -207,7 +207,7 @@ export class CustomAIEngine {
       versionId: model[0].currentVersionId!,
     };
 
-    this?.modelCache.set(modelName, result);
+    this.modelCache.set(modelName, result);
     return result;
   }
 
@@ -235,7 +235,7 @@ export class CustomAIEngine {
         success: true,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Failed to log AI inference:");
+      logger.warn({ err: error }, "Failed to log AI inference:");
     }
   }
 
@@ -251,11 +251,11 @@ export class CustomAIEngine {
     confidenceLevel: number = 0.95,
   ): Promise<MetricPrediction[]> {
     const startTime = Date?.now();
-    const { modelId, versionId } = await this?.getAIModel(
+    const { modelId, versionId } = await this.getAIModel(
       "time_series_predictor_v1",
     );
 
-    const historicalData = await this?.getHistoricalMetricData(
+    const historicalData = await this.getHistoricalMetricData(
       userId,
       metricName,
       horizon,
@@ -269,27 +269,27 @@ export class CustomAIEngine {
     const predictions: MetricPrediction[] = [];
 
     const { seasonality, trend } =
-      this?.detectSeasonalityAndTrend(historicalData);
+      this.detectSeasonalityAndTrend(historicalData);
     const algorithm = seasonality
       ? "seasonal_decomposition"
       : "exponential_smoothing";
 
     for (
       let i = 1;
-      i <= Math?.min(horizonDays, 365);
-      i += Math?.max(1, Math?.floor(horizonDays / 10))
+      i <= Math.min(horizonDays, 365);
+      i += Math.max(1, Math.floor(horizonDays / 10))
     ) {
       const forecastDate = new Date();
       forecastDate?.setDate(forecastDate?.getDate() + i);
 
-      const prediction = this?.forecastValue(
+      const prediction = this.forecastValue(
         historicalData,
         i,
         algorithm,
         seasonality,
         trend,
       );
-      const { lowerBound, upperBound } = this?.calculateConfidenceInterval(
+      const { lowerBound, upperBound } = this.calculateConfidenceInterval(
         prediction,
         historicalData,
         confidenceLevel,
@@ -335,7 +335,7 @@ export class CustomAIEngine {
       });
     }
 
-    await this?.logInference(
+    await this.logInference(
       modelId,
       versionId,
       "time_series_forecast",
@@ -354,9 +354,9 @@ export class CustomAIEngine {
     metrics: string[] = ["retention", "ltv", "engagement"],
   ): Promise<CohortAnalysisResult> {
     const startTime = Date?.now();
-    const { modelId, versionId } = await this?.getAIModel("cohort_analyzer_v1");
+    const { modelId, versionId } = await this.getAIModel("cohort_analyzer_v1");
 
-    const cohortUsers = await this?.getCohortUsers(cohortDefinition);
+    const cohortUsers = await this.getCohortUsers(cohortDefinition);
     const cohortSize = cohortUsers?.length;
 
     const timePoints = [1, 7, 30, 90, 365];
@@ -364,7 +364,7 @@ export class CustomAIEngine {
 
     for (const days of timePoints) {
       const dayKey = `day${days}`;
-      cohortMetrics[dayKey] = await this?.calculateCohortMetrics(
+      cohortMetrics[dayKey] = await this.calculateCohortMetrics(
         cohortUsers,
         cohortDefinition?.startDate,
         days,
@@ -395,12 +395,12 @@ export class CustomAIEngine {
       });
     }
 
-    const comparisonToAverage = await this?.compareCohortToAverage(
+    const comparisonToAverage = await this.compareCohortToAverage(
       cohortMetrics,
       cohortDefinition?.cohortType,
     );
 
-    await this?.logInference(
+    await this.logInference(
       modelId,
       versionId,
       "cohort_analysis",
@@ -423,14 +423,14 @@ export class CustomAIEngine {
 
   async predictChurn(userId: string): Promise<ChurnPrediction> {
     const startTime = Date?.now();
-    const { modelId, versionId } = await this?.getAIModel("churn_predictor_v1");
+    const { modelId, versionId } = await this.getAIModel("churn_predictor_v1");
 
-    const features = await this?.extractChurnFeatures(userId);
-    const churnProbability = this?.calculateChurnProbability(features);
-    const riskLevel = this?.determineRiskLevel(churnProbability);
-    const timeWindow = this?.estimateChurnTimeWindow(features);
-    const topRiskFactors = this?.identifyTopRiskFactors(features);
-    const retentionRecommendations = this?.generateRetentionRecommendations(
+    const features = await this.extractChurnFeatures(userId);
+    const churnProbability = this.calculateChurnProbability(features);
+    const riskLevel = this.determineRiskLevel(churnProbability);
+    const timeWindow = this.estimateChurnTimeWindow(features);
+    const topRiskFactors = this.identifyTopRiskFactors(features);
+    const retentionRecommendations = this.generateRetentionRecommendations(
       topRiskFactors,
       features,
     );
@@ -467,7 +467,7 @@ export class CustomAIEngine {
       validUntil,
     });
 
-    await this?.logInference(
+    await this.logInference(
       modelId,
       versionId,
       "churn_prediction",
@@ -486,24 +486,24 @@ export class CustomAIEngine {
     breakdown?: boolean,
   ): Promise<RevenueForecast[]> {
     const startTime = Date?.now();
-    const { modelId, versionId } = await this?.getAIModel(
+    const { modelId, versionId } = await this.getAIModel(
       "revenue_forecaster_v1",
     );
 
-    const historicalRevenue = await this?.getHistoricalRevenueData(
+    const historicalRevenue = await this.getHistoricalRevenueData(
       userId,
       period,
     );
-    const periods = this?.getPeriodCount(period);
+    const periods = this.getPeriodCount(period);
     const forecasts: RevenueForecast[] = [];
 
     for (let i = 1; i <= periods; i++) {
-      const forecastDate = this?.calculateForecastDate(period, i);
+      const forecastDate = this.calculateForecastDate(period, i);
       const { baseCaseForecast, bestCaseForecast, worstCaseForecast } =
-        this?.calculateScenarioForecasts(historicalRevenue, i);
+        this.calculateScenarioForecasts(historicalRevenue, i);
 
-      const seasonality = this?.detectSeasonality(historicalRevenue);
-      const growthRates = this?.calculateGrowthRates(historicalRevenue);
+      const seasonality = this.detectSeasonality(historicalRevenue);
+      const growthRates = this.calculateGrowthRates(historicalRevenue);
 
       const forecast: RevenueForecast = {
         period,
@@ -513,7 +513,7 @@ export class CustomAIEngine {
         bestCaseForecast,
         worstCaseForecast,
         breakdown: breakdown
-          ? await this?.calculateRevenueBreakdown(userId, forecastDate)
+          ? await this.calculateRevenueBreakdown(userId, forecastDate)
           : undefined,
         seasonalityAdjustment: seasonality || 1.0,
         monthOverMonthGrowth: growthRates.mom,
@@ -546,7 +546,7 @@ export class CustomAIEngine {
       });
     }
 
-    await this?.logInference(
+    await this.logInference(
       modelId,
       versionId,
       "revenue_forecast",
@@ -566,17 +566,17 @@ export class CustomAIEngine {
     context?: unknown,
   ): Promise<AnomalyDetectionResult | null> {
     const startTime = Date?.now();
-    const { modelId, versionId } = await this?.getAIModel("anomaly_detector_v1");
+    const { modelId, versionId } = await this.getAIModel("anomaly_detector_v1");
 
-    const historicalData = await this?.getHistoricalMetricData(
+    const historicalData = await this.getHistoricalMetricData(
       userId,
       metricName,
       "30d",
     );
-    const baseline = this?.calculateBaseline(historicalData);
-    const stdDev = this?.calculateStdDev(historicalData, baseline);
+    const baseline = this.calculateBaseline(historicalData);
+    const stdDev = this.calculateStdDev(historicalData, baseline);
 
-    const deviationScore = Math?.abs(value - baseline) / (stdDev || 1);
+    const deviationScore = Math.abs(value - baseline) / (stdDev || 1);
 
     if (deviationScore < 2.0) {
       return null;
@@ -588,17 +588,17 @@ export class CustomAIEngine {
         : value < baseline * 0.8
           ? "drop"
           : "trend_break";
-    const severity = this?.calculateAnomalySeverity(deviationScore);
+    const severity = this.calculateAnomalySeverity(deviationScore);
     const deviationPercentage = ((value - baseline) / baseline) * 100;
 
-    const rootCauseAnalysis = await this?.performRootCauseAnalysis(
+    const rootCauseAnalysis = await this.performRootCauseAnalysis(
       userId,
       metricName,
       value,
       baseline,
       context,
     );
-    const correlatedEvents = await this?.findCorrelatedEvents(userId, context);
+    const correlatedEvents = await this.findCorrelatedEvents(userId, context);
 
     const result: AnomalyDetectionResult = {
       metricName,
@@ -610,12 +610,12 @@ export class CustomAIEngine {
       deviationScore,
       rootCauseAnalysis,
       correlatedEvents,
-      revenueImpact: await this?.estimateRevenueImpact(
+      revenueImpact: await this.estimateRevenueImpact(
         metricName,
         value,
         baseline,
       ),
-      userImpact: await this?.estimateUserImpact(metricName, value, baseline),
+      userImpact: await this.estimateUserImpact(metricName, value, baseline),
     };
 
     await db?.insert(aiAnomalyDetections).values({
@@ -640,7 +640,7 @@ export class CustomAIEngine {
         severity === "critical" || severity === "high" ? new Date() : null,
     });
 
-    await this?.logInference(
+    await this.logInference(
       modelId,
       versionId,
       "anomaly_detection",
@@ -660,9 +660,9 @@ export class CustomAIEngine {
     Date?.now();
     const insights: InsightNarrative[] = [];
 
-    const stats = await this?.getUserStats(userId, timeframe);
-    const trends = await this?.analyzeTrends(userId, timeframe);
-    const benchmarks = await this?.compareToBenchmarks(userId, stats);
+    const stats = await this.getUserStats(userId, timeframe);
+    const trends = await this.analyzeTrends(userId, timeframe);
+    const benchmarks = await this.compareToBenchmarks(userId, stats);
 
     if (stats?.revenueGrowth > 10) {
       insights?.push({
@@ -690,7 +690,7 @@ export class CustomAIEngine {
     if (trends?.streamDecline && trends?.streamDecline < -5) {
       insights?.push({
         title: "Stream Count Declining",
-        narrative: `Your streams have decreased by ${Math?.abs(trends?.streamDecline).toFixed(1)}% over the past ${timeframe}. This correlates with reduced social media activity and longer gaps between releases.`,
+        narrative: `Your streams have decreased by ${Math.abs(trends?.streamDecline).toFixed(1)}% over the past ${timeframe}. This correlates with reduced social media activity and longer gaps between releases.`,
         category: "engagement",
         priority: "high",
         confidence: 0.88,
@@ -722,7 +722,7 @@ export class CustomAIEngine {
     if (stats?.conversionRate < benchmarks?.averageConversionRate * 0.7) {
       insights?.push({
         title: "Conversion Rate Below Average",
-        narrative: `Your fan-to-paying-listener conversion rate (${stats?.conversionRate.toFixed(2)}%) is ${Math?.round((1 - stats?.conversionRate / benchmarks?.averageConversionRate) * 100)}% below the platform average. This represents significant untapped revenue potential.`,
+        narrative: `Your fan-to-paying-listener conversion rate (${stats?.conversionRate.toFixed(2)}%) is ${Math.round((1 - stats?.conversionRate / benchmarks?.averageConversionRate) * 100)}% below the platform average. This represents significant untapped revenue potential.`,
         category: "monetization",
         priority: "medium",
         confidence: 0.85,
@@ -870,15 +870,15 @@ export class CustomAIEngine {
       historicalData[historicalData?.length - 2];
     forecast = forecast + recentTrend * 0.5;
 
-    return Math?.max(0, Math?.round(forecast));
+    return Math.max(0, Math.round(forecast));
   }
 
   calculateViralPotential(stats: DashboardStats): number {
-    const growthScore = Math?.min(stats?.monthlyGrowth.streams / 100, 1) * 0.4;
-    const revenueScore = Math?.min(stats?.totalRevenue / 1000, 1) * 0.3;
-    const platformScore = Math?.min(stats?.topPlatforms.length / 5, 1) * 0.3;
+    const growthScore = Math.min(stats?.monthlyGrowth.streams / 100, 1) * 0.4;
+    const revenueScore = Math.min(stats?.totalRevenue / 1000, 1) * 0.3;
+    const platformScore = Math.min(stats?.topPlatforms.length / 5, 1) * 0.3;
 
-    return Math?.min(growthScore + revenueScore + platformScore, 1);
+    return Math.min(growthScore + revenueScore + platformScore, 1);
   }
 
   getGrowthTrend(monthlyGrowth: {
@@ -936,7 +936,7 @@ export class CustomAIEngine {
 
     for (const period of periods) {
       if (data?.length < period * 2) continue;
-      const correlation = this?.calculateAutocorrelation(data, period);
+      const correlation = this.calculateAutocorrelation(data, period);
       if (correlation > maxCorrelation && correlation > 0.5) {
         maxCorrelation = correlation;
         bestPeriod = period;
@@ -963,7 +963,7 @@ export class CustomAIEngine {
     }
 
     for (let i = 0; i < data?.length; i++) {
-      denominator += Math?.pow(data[i] - mean, 2);
+      denominator += Math.pow(data[i] - mean, 2);
     }
 
     return denominator === 0 ? 0 : numerator / denominator;
@@ -982,7 +982,7 @@ export class CustomAIEngine {
       const seasonalIndex = daysAhead % seasonality?.period;
       const seasonalAdjustment =
         seasonality?.amplitude *
-        Math?.sin((2 * Math.PI * seasonalIndex) / seasonality?.period);
+        Math.sin((2 * Math.PI * seasonalIndex) / seasonality?.period);
       return baseValue + trendAdjustment + seasonalAdjustment * baseValue * 0.1;
     }
 
@@ -1000,7 +1000,7 @@ export class CustomAIEngine {
     historicalData: number[],
     confidenceLevel: number,
   ): { lowerBound: number; upperBound: number } {
-    const stdDev = this?.calculateStdDev(historicalData, prediction);
+    const stdDev = this.calculateStdDev(historicalData, prediction);
     const zScore = confidenceLevel === 0.99 ? 2.576 : 1.96;
     const margin = zScore * stdDev;
 
@@ -1012,9 +1012,9 @@ export class CustomAIEngine {
 
   private calculateStdDev(data: number[], mean?: number): number {
     const avg = mean ?? data?.reduce((a, b) => a + b, 0) / data?.length;
-    const squareDiffs = data?.map((value) => Math?.pow(value - avg, 2));
+    const squareDiffs = data?.map((value) => Math.pow(value - avg, 2));
     const avgSquareDiff = squareDiffs?.reduce((a, b) => a + b, 0) / data?.length;
-    return Math?.sqrt(avgSquareDiff);
+    return Math.sqrt(avgSquareDiff);
   }
 
   private getMetricType(metricName: string): string {
@@ -1068,7 +1068,7 @@ export class CustomAIEngine {
     const ltv = activeUsers > 0 ? totalRevenue / activeUsers : 0;
     const engagement =
       totalStreams > 0 && activeUsers > 0
-        ? Math?.min(1, totalStreams / (activeUsers * 30))
+        ? Math.min(1, totalStreams / (activeUsers * 30))
         : 0;
     return {
       retention: parseFloat(retention?.toFixed(3)),
@@ -1134,7 +1134,7 @@ export class CustomAIEngine {
     if (features.paymentFailures > 0) probability += 0.15;
     if (features.supportTickets > 3) probability += 0.1;
 
-    return Math?.min(probability, 0.95);
+    return Math.min(probability, 0.95);
   }
 
   private determineRiskLevel(
@@ -1240,7 +1240,7 @@ export class CustomAIEngine {
     userId: string,
     period: string,
   ): Promise<number[]> {
-    const periods = this?.getPeriodCount(period) * 2;
+    const periods = this.getPeriodCount(period) * 2;
 
     const revenueData = await db
       .select()
@@ -1284,7 +1284,7 @@ export class CustomAIEngine {
     bestCaseForecast: number;
     worstCaseForecast: number;
   } {
-    const baseCase = this?.forecastValue(
+    const baseCase = this.forecastValue(
       historicalRevenue,
       periodsAhead,
       "exponential_smoothing",
@@ -1418,7 +1418,7 @@ export class CustomAIEngine {
     value: number,
     baseline: number,
   ): Promise<number> {
-    return Math?.round(Math?.abs(value - baseline) * 0.1);
+    return Math.round(Math.abs(value - baseline) * 0.1);
   }
 
   private async getUserStats(
@@ -1487,7 +1487,7 @@ export class CustomAIEngine {
     const topChannelStreams = topPlatformData[0]?.streams || 0;
     const topChannelContribution =
       totalStreams > 0
-        ? Math?.round((topChannelStreams / totalStreams) * 100)
+        ? Math.round((topChannelStreams / totalStreams) * 100)
         : 0;
 
     const primaryGrowthDriver =
@@ -1500,7 +1500,7 @@ export class CustomAIEngine {
     const conversionRate =
       prevStreams > 0
         ? parseFloat(
-            ((totalRevenue / Math?.max(totalStreams, 1)) * 1000).toFixed(2),
+            ((totalRevenue / Math.max(totalStreams, 1)) * 1000).toFixed(2),
           )
         : 0;
 

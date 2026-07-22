@@ -45,16 +45,16 @@ function createBatchResult(
 
 router?.post("/releases/submit", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { ids } = req?.body as BatchRequest;
-    if (!ids || !Array?.isArray(ids) || ids?.length === 0) {
-      return res?.status(400).json({ error: "No IDs provided" });
+    const { ids } = req.body as BatchRequest;
+    if (!ids || !Array.isArray(ids) || ids?.length === 0) {
+      return res.status(400).json({ error: "No IDs provided" });
     }
 
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
@@ -82,25 +82,25 @@ router?.post("/releases/submit", async (req: Request, res: Response) => {
         });
     }
 
-    res?.json(createBatchResult(successIds, failures, ids?.length));
+    res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger?.warn("Batch release submit error:", error?.message || error);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Batch release submit error:", error?.message || error);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.post("/releases/takedown", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { ids } = req?.body as BatchRequest;
-    if (!ids || !Array?.isArray(ids) || ids?.length === 0) {
-      return res?.status(400).json({ error: "No IDs provided" });
+    const { ids } = req.body as BatchRequest;
+    if (!ids || !Array.isArray(ids) || ids?.length === 0) {
+      return res.status(400).json({ error: "No IDs provided" });
     }
 
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
@@ -128,25 +128,25 @@ router?.post("/releases/takedown", async (req: Request, res: Response) => {
         });
     }
 
-    res?.json(createBatchResult(successIds, failures, ids?.length));
+    res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger?.warn("Batch release takedown error:", error?.message || error);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Batch release takedown error:", error?.message || error);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.put("/releases/update", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { ids, data } = req?.body as BatchRequest;
-    if (!ids || !Array?.isArray(ids) || ids?.length === 0) {
-      return res?.status(400).json({ error: "No IDs provided" });
+    const { ids, data } = req.body as BatchRequest;
+    if (!ids || !Array.isArray(ids) || ids?.length === 0) {
+      return res.status(400).json({ error: "No IDs provided" });
     }
 
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const allowedUpdate: Record<string, unknown> = {};
     if (data?.title && typeof data?.title === "string")
       allowedUpdate.title = data?.title;
@@ -182,25 +182,25 @@ router?.put("/releases/update", async (req: Request, res: Response) => {
         });
     }
 
-    res?.json(createBatchResult(successIds, failures, ids?.length));
+    res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger?.warn("Batch release update error:", error?.message || error);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Batch release update error:", error?.message || error);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.post("/releases/delete", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { ids } = req?.body as BatchRequest;
-    if (!ids || !Array?.isArray(ids) || ids?.length === 0) {
-      return res?.status(400).json({ error: "No IDs provided" });
+    const { ids } = req.body as BatchRequest;
+    if (!ids || !Array.isArray(ids) || ids?.length === 0) {
+      return res.status(400).json({ error: "No IDs provided" });
     }
 
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
@@ -228,25 +228,25 @@ router?.post("/releases/delete", async (req: Request, res: Response) => {
         });
     }
 
-    res?.json(createBatchResult(successIds, failures, ids?.length));
+    res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger?.warn("Batch release delete error:", error?.message || error);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Batch release delete error:", error?.message || error);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.post("/posts/schedule", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { ids, data } = req?.body as BatchRequest;
-    if (!ids || !Array?.isArray(ids) || ids?.length === 0) {
-      return res?.status(400).json({ error: "No IDs provided" });
+    const { ids, data } = req.body as BatchRequest;
+    if (!ids || !Array.isArray(ids) || ids?.length === 0) {
+      return res.status(400).json({ error: "No IDs provided" });
     }
 
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const scheduledAt = data?.scheduledTime
       ? new Date(data?.scheduledTime)
       : new Date();
@@ -275,25 +275,25 @@ router?.post("/posts/schedule", async (req: Request, res: Response) => {
         });
     }
 
-    res?.json(createBatchResult(successIds, failures, ids?.length));
+    res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger?.warn("Batch post schedule error:", error?.message || error);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Batch post schedule error:", error?.message || error);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.post("/posts/delete", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { ids } = req?.body as BatchRequest;
-    if (!ids || !Array?.isArray(ids) || ids?.length === 0) {
-      return res?.status(400).json({ error: "No IDs provided" });
+    const { ids } = req.body as BatchRequest;
+    if (!ids || !Array.isArray(ids) || ids?.length === 0) {
+      return res.status(400).json({ error: "No IDs provided" });
     }
 
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
@@ -318,25 +318,25 @@ router?.post("/posts/delete", async (req: Request, res: Response) => {
         });
     }
 
-    res?.json(createBatchResult(successIds, failures, ids?.length));
+    res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger?.warn("Batch post delete error:", error?.message || error);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Batch post delete error:", error?.message || error);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.put("/posts/update", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { ids, data } = req?.body as BatchRequest;
-    if (!ids || !Array?.isArray(ids) || ids?.length === 0) {
-      return res?.status(400).json({ error: "No IDs provided" });
+    const { ids, data } = req.body as BatchRequest;
+    if (!ids || !Array.isArray(ids) || ids?.length === 0) {
+      return res.status(400).json({ error: "No IDs provided" });
     }
 
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const allowedUpdate: Record<string, unknown> = {};
     if (data?.content && typeof data?.content === "string")
       allowedUpdate.content = data?.content;
@@ -370,25 +370,25 @@ router?.put("/posts/update", async (req: Request, res: Response) => {
         });
     }
 
-    res?.json(createBatchResult(successIds, failures, ids?.length));
+    res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger?.warn("Batch post update error:", error?.message || error);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Batch post update error:", error?.message || error);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.post("/files/delete", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { ids } = req?.body as BatchRequest;
-    if (!ids || !Array?.isArray(ids) || ids?.length === 0) {
-      return res?.status(400).json({ error: "No IDs provided" });
+    const { ids } = req.body as BatchRequest;
+    if (!ids || !Array.isArray(ids) || ids?.length === 0) {
+      return res.status(400).json({ error: "No IDs provided" });
     }
 
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
@@ -419,25 +419,25 @@ router?.post("/files/delete", async (req: Request, res: Response) => {
         });
     }
 
-    res?.json(createBatchResult(successIds, failures, ids?.length));
+    res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger?.warn("Batch file delete error:", error?.message || error);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Batch file delete error:", error?.message || error);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.post("/files/move", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { ids, data } = req?.body as BatchRequest;
-    if (!ids || !Array?.isArray(ids) || ids?.length === 0) {
-      return res?.status(400).json({ error: "No IDs provided" });
+    const { ids, data } = req.body as BatchRequest;
+    if (!ids || !Array.isArray(ids) || ids?.length === 0) {
+      return res.status(400).json({ error: "No IDs provided" });
     }
 
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const targetFolder = typeof data?.folder === "string" ? data?.folder : "/";
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
@@ -469,25 +469,25 @@ router?.post("/files/move", async (req: Request, res: Response) => {
         });
     }
 
-    res?.json(createBatchResult(successIds, failures, ids?.length));
+    res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger?.warn("Batch file move error:", error?.message || error);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Batch file move error:", error?.message || error);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.post("/files/download", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { ids } = req?.body as BatchRequest;
-    if (!ids || !Array?.isArray(ids) || ids?.length === 0) {
-      return res?.status(400).json({ error: "No IDs provided" });
+    const { ids } = req.body as BatchRequest;
+    if (!ids || !Array.isArray(ids) || ids?.length === 0) {
+      return res.status(400).json({ error: "No IDs provided" });
     }
 
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
@@ -523,28 +523,28 @@ router?.post("/files/download", async (req: Request, res: Response) => {
         ? `/api/files/bulk-download?ids=${successIds?.join(",")}`
         : null;
 
-    res?.json({
+    res.json({
       ...createBatchResult(successIds, failures, ids?.length),
       downloadUrl,
     });
   } catch (error) {
-    logger?.warn("Batch file download error:", error?.message || error);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Batch file download error:", error?.message || error);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.put("/files/update", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { ids, data } = req?.body as BatchRequest;
-    if (!ids || !Array?.isArray(ids) || ids?.length === 0) {
-      return res?.status(400).json({ error: "No IDs provided" });
+    const { ids, data } = req.body as BatchRequest;
+    if (!ids || !Array.isArray(ids) || ids?.length === 0) {
+      return res.status(400).json({ error: "No IDs provided" });
     }
 
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const allowedUpdate: Record<string, unknown> = {};
     if (data?.isPublic !== undefined)
       allowedUpdate.isPublic = Boolean(data?.isPublic);
@@ -583,25 +583,25 @@ router?.put("/files/update", async (req: Request, res: Response) => {
         });
     }
 
-    res?.json(createBatchResult(successIds, failures, ids?.length));
+    res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger?.warn("Batch file update error:", error?.message || error);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Batch file update error:", error?.message || error);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.put("/marketplace/update", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { ids, data } = req?.body as BatchRequest;
-    if (!ids || !Array?.isArray(ids) || ids?.length === 0) {
-      return res?.status(400).json({ error: "No IDs provided" });
+    const { ids, data } = req.body as BatchRequest;
+    if (!ids || !Array.isArray(ids) || ids?.length === 0) {
+      return res.status(400).json({ error: "No IDs provided" });
     }
 
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const allowedUpdate: Record<string, unknown> = {};
     if (data?.title && typeof data?.title === "string")
       allowedUpdate.title = data?.title;
@@ -637,25 +637,25 @@ router?.put("/marketplace/update", async (req: Request, res: Response) => {
         });
     }
 
-    res?.json(createBatchResult(successIds, failures, ids?.length));
+    res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger?.warn("Batch marketplace update error:", error?.message || error);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Batch marketplace update error:", error?.message || error);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.post("/marketplace/delete", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { ids } = req?.body as BatchRequest;
-    if (!ids || !Array?.isArray(ids) || ids?.length === 0) {
-      return res?.status(400).json({ error: "No IDs provided" });
+    const { ids } = req.body as BatchRequest;
+    if (!ids || !Array.isArray(ids) || ids?.length === 0) {
+      return res.status(400).json({ error: "No IDs provided" });
     }
 
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
@@ -681,25 +681,25 @@ router?.post("/marketplace/delete", async (req: Request, res: Response) => {
         });
     }
 
-    res?.json(createBatchResult(successIds, failures, ids?.length));
+    res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger?.warn("Batch marketplace delete error:", error?.message || error);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Batch marketplace delete error:", error?.message || error);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.post("/analytics/export", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { ids } = req?.body as BatchRequest;
-    if (!ids || !Array?.isArray(ids) || ids?.length === 0) {
-      return res?.status(400).json({ error: "No IDs provided" });
+    const { ids } = req.body as BatchRequest;
+    if (!ids || !Array.isArray(ids) || ids?.length === 0) {
+      return res.status(400).json({ error: "No IDs provided" });
     }
 
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
     const rows = await db
       .select({
@@ -730,7 +730,7 @@ router?.post("/analytics/export", async (req: Request, res: Response) => {
       exportData: rows as unknown as Record<string, unknown>[],
     });
 
-    res?.json({
+    res.json({
       success: ids,
       failed: [],
       totalRequested: ids.length,
@@ -740,8 +740,8 @@ router?.post("/analytics/export", async (req: Request, res: Response) => {
       downloadUrl: `/api/batch/analytics/export/${exportId}/download`,
     });
   } catch (error) {
-    logger?.warn("Batch analytics export error:", error?.message || error);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Batch analytics export error:", error?.message || error);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
@@ -749,15 +749,15 @@ router?.get(
   "/analytics/export/:exportId/download",
   async (req: Request, res: Response) => {
     try {
-      if (!req?.isAuthenticated()) {
-        return res?.status(401).json({ error: "Unauthorized" });
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: "Unauthorized" });
       }
 
-      const { exportId } = req?.params;
+      const { exportId } = req.params;
       const job = batchJobs?.get(exportId);
 
       if (!job || !job?.exportData) {
-        return res?.status(404).json({ error: "Export not found or expired" });
+        return res.status(404).json({ error: "Export not found or expired" });
       }
 
       const rows = job?.exportData;
@@ -784,31 +784,31 @@ router?.get(
         ),
       ];
 
-      res?.setHeader("Content-Type", "text/csv");
-      res?.setHeader(
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader(
         "Content-Disposition",
         `attachment; filename="analytics-export-${exportId}.csv"`,
       );
-      res?.send(csvLines?.join("\n"));
+      res.send(csvLines?.join("\n"));
     } catch (error) {
-      logger?.warn("Analytics export download error:", error?.message || error);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Analytics export download error:", error?.message || error);
+      res.status(500).json({ error: "Failed to process request" });
     }
   },
 );
 
 router?.post("/analytics/compare", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { ids } = req?.body as BatchRequest;
-    if (!ids || !Array?.isArray(ids) || ids?.length === 0) {
-      return res?.status(400).json({ error: "No IDs provided" });
+    const { ids } = req.body as BatchRequest;
+    if (!ids || !Array.isArray(ids) || ids?.length === 0) {
+      return res.status(400).json({ error: "No IDs provided" });
     }
 
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
     const analyticsData = await db
       .select({
@@ -830,14 +830,14 @@ router?.post("/analytics/compare", async (req: Request, res: Response) => {
       const listeners = Number(data?.listeners) || 0;
       const engagement =
         streamCount > 0 && listeners > 0
-          ? Math?.round((streamCount / listeners) * 100) / 100
+          ? Math.round((streamCount / listeners) * 100) / 100
           : 0;
       return { id, streams: streamCount, revenue: rev, engagement };
     });
 
     const succeeded = comparisonData?.map((d) => d?.id);
 
-    res?.json({
+    res.json({
       success: succeeded,
       failed: [],
       totalRequested: ids.length,
@@ -846,8 +846,8 @@ router?.post("/analytics/compare", async (req: Request, res: Response) => {
       comparisonData,
     });
   } catch (error) {
-    logger?.warn("Batch analytics compare error:", error?.message || error);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Batch analytics compare error:", error?.message || error);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
@@ -886,13 +886,13 @@ setInterval(
 
 router?.post("/tracks/move", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { ids, data } = req?.body as BatchRequest;
-    if (!ids || !Array?.isArray(ids) || ids?.length === 0) {
-      return res?.status(400).json({ error: "No IDs provided" });
+    const { ids, data } = req.body as BatchRequest;
+    if (!ids || !Array.isArray(ids) || ids?.length === 0) {
+      return res.status(400).json({ error: "No IDs provided" });
     }
 
     const targetProjectId =
@@ -906,7 +906,7 @@ router?.post("/tracks/move", async (req: Request, res: Response) => {
         const updatePayload: Record<string, unknown> = {};
         if (targetProjectId) updatePayload.projectId = targetProjectId;
         if (newOrder !== null) updatePayload.order = newOrder;
-        if (Object?.keys(updatePayload).length === 0) return id;
+        if (Object.keys(updatePayload).length === 0) return id;
         const result = await db
           .update(studioTracks)
           .set(updatePayload)
@@ -926,25 +926,25 @@ router?.post("/tracks/move", async (req: Request, res: Response) => {
         });
     }
 
-    res?.json(createBatchResult(successIds, failures, ids?.length));
+    res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger?.warn("Batch track move error:", error?.message || error);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Batch track move error:", error?.message || error);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.post("/tracks/tag", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { ids, data } = req?.body as BatchRequest;
-    if (!ids || !Array?.isArray(ids) || ids?.length === 0) {
-      return res?.status(400).json({ error: "No IDs provided" });
+    const { ids, data } = req.body as BatchRequest;
+    if (!ids || !Array.isArray(ids) || ids?.length === 0) {
+      return res.status(400).json({ error: "No IDs provided" });
     }
 
-    const tags = Array?.isArray(data?.tags) ? data?.tags : [];
+    const tags = Array.isArray(data?.tags) ? data?.tags : [];
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
@@ -975,25 +975,25 @@ router?.post("/tracks/tag", async (req: Request, res: Response) => {
         });
     }
 
-    res?.json(createBatchResult(successIds, failures, ids?.length));
+    res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger?.warn("Batch track tag error:", error?.message || error);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Batch track tag error:", error?.message || error);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.post("/tracks/export", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { ids, data } = req?.body as BatchRequest;
-    if (!ids || !Array?.isArray(ids) || ids?.length === 0) {
-      return res?.status(400).json({ error: "No IDs provided" });
+    const { ids, data } = req.body as BatchRequest;
+    if (!ids || !Array.isArray(ids) || ids?.length === 0) {
+      return res.status(400).json({ error: "No IDs provided" });
     }
 
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const format = typeof data?.format === "string" ? data?.format : "wav";
     const bitDepth = typeof data?.bitDepth === "number" ? data?.bitDepth : 24;
     const sampleRate =
@@ -1006,7 +1006,7 @@ router?.post("/tracks/export", async (req: Request, res: Response) => {
       .limit(1);
 
     if (!firstTrack) {
-      return res?.status(404).json({ error: "Track not found" });
+      return res.status(404).json({ error: "Track not found" });
     }
 
     const [exportRecord] = await db
@@ -1033,7 +1033,7 @@ router?.post("/tracks/export", async (req: Request, res: Response) => {
       startTime: Date.now(),
     });
 
-    res?.json({
+    res.json({
       success: ids,
       failed: [],
       totalRequested: ids.length,
@@ -1043,20 +1043,20 @@ router?.post("/tracks/export", async (req: Request, res: Response) => {
       jobId: exportRecord.id,
     });
   } catch (error) {
-    logger?.warn("Batch track export error:", error?.message || error);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Batch track export error:", error?.message || error);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.post("/tracks/delete", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { ids } = req?.body as BatchRequest;
-    if (!ids || !Array?.isArray(ids) || ids?.length === 0) {
-      return res?.status(400).json({ error: "No IDs provided" });
+    const { ids } = req.body as BatchRequest;
+    if (!ids || !Array.isArray(ids) || ids?.length === 0) {
+      return res.status(400).json({ error: "No IDs provided" });
     }
 
     const successIds: string[] = [];
@@ -1082,25 +1082,25 @@ router?.post("/tracks/delete", async (req: Request, res: Response) => {
         });
     }
 
-    res?.json(createBatchResult(successIds, failures, ids?.length));
+    res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger?.warn("Batch track delete error:", error?.message || error);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Batch track delete error:", error?.message || error);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.put("/beats/update", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { ids, data } = req?.body as BatchRequest;
-    if (!ids || !Array?.isArray(ids) || ids?.length === 0) {
-      return res?.status(400).json({ error: "No IDs provided" });
+    const { ids, data } = req.body as BatchRequest;
+    if (!ids || !Array.isArray(ids) || ids?.length === 0) {
+      return res.status(400).json({ error: "No IDs provided" });
     }
 
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const allowedUpdate: Record<string, unknown> = {};
     if (data?.title && typeof data?.title === "string")
       allowedUpdate.title = data?.title;
@@ -1137,25 +1137,25 @@ router?.put("/beats/update", async (req: Request, res: Response) => {
         });
     }
 
-    res?.json(createBatchResult(successIds, failures, ids?.length));
+    res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger?.warn("Batch beat update error:", error?.message || error);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Batch beat update error:", error?.message || error);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.post("/beats/delete", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { ids } = req?.body as BatchRequest;
-    if (!ids || !Array?.isArray(ids) || ids?.length === 0) {
-      return res?.status(400).json({ error: "No IDs provided" });
+    const { ids } = req.body as BatchRequest;
+    if (!ids || !Array.isArray(ids) || ids?.length === 0) {
+      return res.status(400).json({ error: "No IDs provided" });
     }
 
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
@@ -1181,25 +1181,25 @@ router?.post("/beats/delete", async (req: Request, res: Response) => {
         });
     }
 
-    res?.json(createBatchResult(successIds, failures, ids?.length));
+    res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger?.warn("Batch beat delete error:", error?.message || error);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Batch beat delete error:", error?.message || error);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.post("/posts/approve", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { ids } = req?.body as BatchRequest;
-    if (!ids || !Array?.isArray(ids) || ids?.length === 0) {
-      return res?.status(400).json({ error: "No IDs provided" });
+    const { ids } = req.body as BatchRequest;
+    if (!ids || !Array.isArray(ids) || ids?.length === 0) {
+      return res.status(400).json({ error: "No IDs provided" });
     }
 
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
@@ -1228,27 +1228,27 @@ router?.post("/posts/approve", async (req: Request, res: Response) => {
         });
     }
 
-    res?.json(createBatchResult(successIds, failures, ids?.length));
+    res.json(createBatchResult(successIds, failures, ids?.length));
   } catch (error) {
-    logger?.warn("Batch post approve error:", error?.message || error);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Batch post approve error:", error?.message || error);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.get("/progress/:jobId", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { jobId } = req?.params;
+    const { jobId } = req.params;
     const job = batchJobs?.get(jobId);
 
     if (!job) {
-      return res?.status(404).json({ error: "Job not found" });
+      return res.status(404).json({ error: "Job not found" });
     }
 
-    res?.json({
+    res.json({
       jobId,
       status: job.status,
       processed: job.processed,
@@ -1260,19 +1260,19 @@ router?.get("/progress/:jobId", async (req: Request, res: Response) => {
       elapsedMs: Date.now() - job?.startTime,
     });
   } catch (error) {
-    logger?.warn("Get batch progress error:", error?.message || error);
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn("Get batch progress error:", error?.message || error);
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.get("/templates", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const userId = req?.user.id;
-    const resource = req?.query.resource as string | undefined;
+    const userId = req.user.id;
+    const resource = req.query.resource as string | undefined;
 
     const conditions = [eq(batchTemplates?.userId, userId)];
     if (resource) {
@@ -1286,21 +1286,21 @@ router?.get("/templates", async (req: Request, res: Response) => {
       .orderBy(desc(batchTemplates?.updatedAt))
       .limit(200);
 
-    res?.json({ templates: rows });
+    res.json({ templates: rows });
   } catch (error) {
-    logger?.warn({ err: error }, "Get templates error:");
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn({ err: error }, "Get templates error:");
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.post("/templates", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const userId = req?.user.id;
-    const { name, description, resource, action, configuration } = req?.body;
+    const userId = req.user.id;
+    const { name, description, resource, action, configuration } = req.body;
 
     if (!name || !resource || !configuration) {
       return res
@@ -1320,21 +1320,21 @@ router?.post("/templates", async (req: Request, res: Response) => {
       })
       .returning();
 
-    res?.json(inserted);
+    res.json(inserted);
   } catch (error) {
-    logger?.warn({ err: error }, "Create template error:");
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn({ err: error }, "Create template error:");
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.put("/templates/:id", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { id } = req?.params;
-    const userId = req?.user.id;
+    const { id } = req.params;
+    const userId = req.user.id;
 
     const [existing] = await db
       .select({ id: batchTemplates.id, userId: batchTemplates.userId })
@@ -1343,14 +1343,14 @@ router?.put("/templates/:id", async (req: Request, res: Response) => {
       .limit(1);
 
     if (!existing) {
-      return res?.status(404).json({ error: "Template not found" });
+      return res.status(404).json({ error: "Template not found" });
     }
     if (existing?.userId !== userId) {
-      return res?.status(403).json({ error: "Forbidden" });
+      return res.status(403).json({ error: "Forbidden" });
     }
 
     const { name, description, resource, action, configuration, isFavorite } =
-      req?.body;
+      req.body;
 
     const [updated] = await db
       .update(batchTemplates)
@@ -1366,21 +1366,21 @@ router?.put("/templates/:id", async (req: Request, res: Response) => {
       .where(and(eq(batchTemplates?.id, id), eq(batchTemplates?.userId, userId)))
       .returning();
 
-    res?.json(updated);
+    res.json(updated);
   } catch (error) {
-    logger?.warn({ err: error }, "Update template error:");
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn({ err: error }, "Update template error:");
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.delete("/templates/:id", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { id } = req?.params;
-    const userId = req?.user.id;
+    const { id } = req.params;
+    const userId = req.user.id;
 
     const [deleted] = await db
       .delete(batchTemplates)
@@ -1388,28 +1388,28 @@ router?.delete("/templates/:id", async (req: Request, res: Response) => {
       .returning({ id: batchTemplates.id });
 
     if (!deleted) {
-      return res?.status(404).json({ error: "Template not found" });
+      return res.status(404).json({ error: "Template not found" });
     }
 
-    res?.json({ success: true, message: "Template deleted" });
+    res.json({ success: true, message: "Template deleted" });
   } catch (error) {
-    logger?.warn({ err: error }, "Delete template error:");
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn({ err: error }, "Delete template error:");
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 
 router?.post("/templates/:id/share", async (req: Request, res: Response) => {
   try {
-    if (!req?.isAuthenticated()) {
-      return res?.status(401).json({ error: "Unauthorized" });
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { id } = req?.params;
-    const { email } = req?.body;
-    const userId = req?.user.id;
+    const { id } = req.params;
+    const { email } = req.body;
+    const userId = req.user.id;
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return res?.status(400).json({ error: "Valid email address is required" });
+      return res.status(400).json({ error: "Valid email address is required" });
     }
 
     const [original] = await db
@@ -1419,7 +1419,7 @@ router?.post("/templates/:id/share", async (req: Request, res: Response) => {
       .limit(1);
 
     if (!original) {
-      return res?.status(404).json({ error: "Template not found" });
+      return res.status(404).json({ error: "Template not found" });
     }
 
     const [sharedCopy] = await db
@@ -1432,19 +1432,19 @@ router?.post("/templates/:id/share", async (req: Request, res: Response) => {
         action: original.action,
         configuration: original.configuration as Record<string, unknown>,
         isShared: true,
-        sharedBy: req.user.email || req?.user.username,
+        sharedBy: req.user.email || req.user.username,
         usageCount: 0,
       })
       .returning();
 
-    res?.json({
+    res.json({
       success: true,
       message: "Template shared successfully",
       sharedTemplate: sharedCopy,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Share template error:");
-    res?.status(500).json({ error: "Failed to process request" });
+    logger.warn({ err: error }, "Share template error:");
+    res.status(500).json({ error: "Failed to process request" });
   }
 });
 

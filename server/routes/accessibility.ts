@@ -125,21 +125,21 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const user = await storage?.getUser(userId);
 
       if (!user) {
-        return res?.status(404).json({ error: "User not found" });
+        return res.status(404).json({ error: "User not found" });
       }
 
       const preferences = user?.accessibilityPreferences || defaultPreferences;
 
-      return res?.json({
+      return res.json({
         ...defaultPreferences,
         ...preferences,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching accessibility preferences:");
+      logger.warn({ err: error }, "Error fetching accessibility preferences:");
       return res
         .status(500)
         .json({ error: "Failed to fetch accessibility preferences" });
@@ -152,13 +152,13 @@ router?.put(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const updates = req?.body;
+      const userId = req.user!.id;
+      const updates = req.body;
 
       const { valid, errors, sanitized } = validatePreferences(updates);
 
       if (!valid) {
-        return res?.status(400).json({
+        return res.status(400).json({
           message: "Invalid accessibility preferences",
           errors,
         });
@@ -166,7 +166,7 @@ router?.put(
 
       const user = await storage?.getUser(userId);
       if (!user) {
-        return res?.status(404).json({ error: "User not found" });
+        return res.status(404).json({ error: "User not found" });
       }
 
       const currentPreferences =
@@ -180,14 +180,14 @@ router?.put(
         accessibilityPreferences: newPreferences,
       });
 
-      logger?.info(`Updated accessibility preferences for user ${userId}`);
+      logger.info(`Updated accessibility preferences for user ${userId}`);
 
-      return res?.json({
+      return res.json({
         message: "Accessibility preferences updated successfully",
         preferences: newPreferences,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error updating accessibility preferences:");
+      logger.warn({ err: error }, "Error updating accessibility preferences:");
       return res
         .status(500)
         .json({ error: "Failed to update accessibility preferences" });
@@ -200,20 +200,20 @@ router?.delete(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       await storage?.updateUser(userId, {
         accessibilityPreferences: defaultPreferences,
       });
 
-      logger?.info(`Reset accessibility preferences for user ${userId}`);
+      logger.info(`Reset accessibility preferences for user ${userId}`);
 
-      return res?.json({
+      return res.json({
         message: "Accessibility preferences reset to defaults",
         preferences: defaultPreferences,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error resetting accessibility preferences:");
+      logger.warn({ err: error }, "Error resetting accessibility preferences:");
       return res
         .status(500)
         .json({ error: "Failed to reset accessibility preferences" });
@@ -224,7 +224,7 @@ router?.delete(
 router?.get(
   "/accessibility-preferences/defaults",
   (_req: Request, res: Response) => {
-    return res?.json(defaultPreferences);
+    return res.json(defaultPreferences);
   },
 );
 

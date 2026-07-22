@@ -179,7 +179,7 @@ export function generateKeyPair(
   const flags = isKsk ? KSK_FLAGS : ZSK_FLAGS;
   const keyTag = computeKeyTag(flags, 3, DNSSEC_ALGORITHM, publicKeyRaw);
 
-  logger?.info({ zone, isKsk, keyTag }, "[DNSSEC] Generated key pair");
+  logger.info({ zone, isKsk, keyTag }, "[DNSSEC] Generated key pair");
   return { privateKeyPem, publicKeyPem, publicKeyRaw, flags, keyTag };
 }
 
@@ -338,7 +338,7 @@ export function signRRset(
   keyTag: number,
   zone: string,
 ): RrsigRecord {
-  const now = Math?.floor(Date?.now() / 1000);
+  const now = Math.floor(Date?.now() / 1000);
   const inception = now - 300; // 5 min backdated for clock skew
   const expiration = now + SIGNATURE_VALIDITY_DAYS * 86400;
   const labels = countLabels(ownerName);
@@ -460,8 +460,8 @@ export function buildTypeBitmap(types: number[]): Buffer {
 
   const parts: Buffer[] = [];
   for (const [windowNum, bits] of [...windows].sort((a, b) => a[0] - b[0])) {
-    const maxBit = Math?.max(...bits);
-    const bitmapLen = Math?.ceil((maxBit + 1) / 8);
+    const maxBit = Math.max(...bits);
+    const bitmapLen = Math.ceil((maxBit + 1) / 8);
     const bitmap = Buffer?.alloc(bitmapLen);
     for (const bit of bits) {
       bitmap[bit >> 3] |= 0x80 >> (bit & 7);
@@ -580,7 +580,7 @@ export async function loadKeys(
 
     return { ksk: toKeyPair(kskRow), zsk: toKeyPair(zskRow) };
   } catch (err) {
-    logger?.warn({ err, zone }, "[DNSSEC] Failed to load keys from DB");
+    logger.warn({ err, zone }, "[DNSSEC] Failed to load keys from DB");
     return null;
   }
 }
@@ -613,7 +613,7 @@ export async function provisionKeys(
     .insert(dnssecKeys)
     .values([toInsert(kskGen, true), toInsert(zskGen, false)]);
 
-  logger?.info(
+  logger.info(
     { zone, kskTag: kskGen.keyTag, zskTag: zskGen.keyTag },
     "[DNSSEC] Keys provisioned",
   );

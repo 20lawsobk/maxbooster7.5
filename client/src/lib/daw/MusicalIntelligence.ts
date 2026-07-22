@@ -124,7 +124,7 @@ export class MusicalIntelligenceEngine {
   }
 
   getState(): Readonly<MusicalIntelligenceState> {
-    return { ...this?.state };
+    return { ...this.state };
   }
 
   detectKey(notes: MIDINote[]): {
@@ -166,14 +166,14 @@ export class MusicalIntelligenceEngine {
     }
 
     const totalNotes = notes?.length;
-    const confidence = Math?.min(1, bestScore / (totalNotes * 1.5));
+    const confidence = Math.min(1, bestScore / (totalNotes * 1.5));
 
     this.state.currentKey = NOTE_NAMES[bestKey];
     this.state.currentMode = bestMode;
     this.state.currentScale = SCALE_PATTERNS[bestMode].map(
       (i) => (bestKey + i) % 12,
     );
-    this?.notify();
+    this.notify();
 
     return { key: NOTE_NAMES[bestKey], mode: bestMode, confidence };
   }
@@ -188,7 +188,7 @@ export class MusicalIntelligenceEngine {
     );
 
     for (let root = 0; root < 12; root++) {
-      for (const [quality, pattern] of Object?.entries(CHORD_PATTERNS)) {
+      for (const [quality, pattern] of Object.entries(CHORD_PATTERNS)) {
         const chordNotes = pattern?.map((i) => (root + i) % 12);
         const matches = pitchClasses?.every((pc) => chordNotes?.includes(pc));
 
@@ -232,7 +232,7 @@ export class MusicalIntelligenceEngine {
           ];
 
     const progression =
-      progressions[Math?.floor(Math?.random() * progressions?.length)];
+      progressions[Math.floor(Math.random() * progressions?.length)];
     const chordQualities =
       mode === "major"
         ? ["major", "minor", "minor", "major", "major", "minor", "diminished"]
@@ -269,21 +269,21 @@ export class MusicalIntelligenceEngine {
     while (currentBeat < totalBeats) {
       const rhythmPatterns = [0.25, 0.5, 0.5, 1, 1, 2];
       const duration =
-        rhythmPatterns[Math?.floor(Math?.random() * rhythmPatterns?.length)];
+        rhythmPatterns[Math.floor(Math.random() * rhythmPatterns?.length)];
 
       if (currentBeat + duration > totalBeats) break;
 
-      const scaleIndex = Math?.floor(Math?.random() * scale?.length);
-      const octaveOffset = Math?.floor(Math?.random() * 2) - 0.5;
+      const scaleIndex = Math.floor(Math.random() * scale?.length);
+      const octaveOffset = Math.floor(Math.random() * 2) - 0.5;
       const pitch =
         rootNote +
         scale[scaleIndex] +
-        (baseOctave + Math?.round(octaveOffset)) * 12;
+        (baseOctave + Math.round(octaveOffset)) * 12;
 
       notes?.push({
-        id: `note_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`,
+        id: `note_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`,
         pitch,
-        velocity: 80 + Math?.floor(Math?.random() * 40),
+        velocity: 80 + Math.floor(Math.random() * 40),
         startBeat: currentBeat,
         durationBeats: duration * 0.9,
         channel: 0,
@@ -316,12 +316,12 @@ export class MusicalIntelligenceEngine {
         } else {
           pitch =
             chord?.root +
-            CHORD_PATTERNS[chord?.quality][Math?.floor(Math?.random() * 3)] +
+            CHORD_PATTERNS[chord?.quality][Math.floor(Math.random() * 3)] +
             36;
         }
 
         notes?.push({
-          id: `note_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`,
+          id: `note_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`,
           pitch,
           velocity: beat === 0 ? 100 : 80,
           startBeat: currentBeat + beat,
@@ -356,7 +356,7 @@ export class MusicalIntelligenceEngine {
 
       if (beatInBar === 0 || beatInBar === 2.5) {
         notes?.push({
-          id: `note_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`,
+          id: `note_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`,
           pitch: KICK,
           velocity: 100,
           startBeat: beat,
@@ -369,7 +369,7 @@ export class MusicalIntelligenceEngine {
 
       if (beatInBar === 1 || beatInBar === 3) {
         notes?.push({
-          id: `note_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`,
+          id: `note_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`,
           pitch: SNARE,
           velocity: 100,
           startBeat: beat,
@@ -383,7 +383,7 @@ export class MusicalIntelligenceEngine {
       if (style === "basic" || style === "funk") {
         if (sixteenth === 0 || sixteenth === 2) {
           notes?.push({
-            id: `note_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`,
+            id: `note_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`,
             pitch: HIHAT,
             velocity: sixteenth === 0 ? 90 : 70,
             startBeat: beat,
@@ -395,9 +395,9 @@ export class MusicalIntelligenceEngine {
         }
       } else {
         notes?.push({
-          id: `note_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`,
+          id: `note_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`,
           pitch: HIHAT,
-          velocity: 70 + Math?.floor(Math?.random() * 30),
+          velocity: 70 + Math.floor(Math.random() * 30),
           startBeat: beat,
           durationBeats: 0.2,
           channel: 9,
@@ -417,7 +417,7 @@ export class MusicalIntelligenceEngine {
 
     for (const track of tracks) {
       if (track?.type === "drums" || track?.type === "bass") {
-        if (Math?.abs(track?.pan) > 0.2) {
+        if (Math.abs(track?.pan) > 0.2) {
           suggestions?.push({
             type: "pan",
             trackId: track.id,
@@ -440,7 +440,7 @@ export class MusicalIntelligenceEngine {
     }
 
     this.state.suggestions = suggestions;
-    this?.notify();
+    this.notify();
 
     return suggestions;
   }
@@ -476,7 +476,7 @@ export class MusicalIntelligenceEngine {
     }
 
     this.state.arrangementSections = sections;
-    this?.notify();
+    this.notify();
 
     return sections;
   }
@@ -556,17 +556,17 @@ export class MusicalIntelligenceEngine {
     key: string,
     mode: "major" | "minor" = "major",
   ): boolean {
-    const scaleNotes = this?.getScaleNotes(key, mode);
+    const scaleNotes = this.getScaleNotes(key, mode);
     return scaleNotes?.includes(pitch % 12);
   }
 
   subscribe(listener: () => void): () => void {
-    this?.listeners.add(listener);
-    return () => this?.listeners.delete(listener);
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
   }
 
   private notify(): void {
-    this?.listeners.forEach((l) => l());
+    this.listeners.forEach((l) => l());
   }
 }
 

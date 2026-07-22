@@ -12,11 +12,11 @@
 import { logger } from "../logger.js";
 import dns from "dns";
 
-export const PLATFORM_DOMAIN = process?.env.BASE_DOMAIN || "max-booster.com";
+export const PLATFORM_DOMAIN = process.env.BASE_DOMAIN || "max-booster.com";
 export const NS = PLATFORM_DOMAIN;
-export const NS1 = process?.env.NS1 || `ns1.${PLATFORM_DOMAIN}`;
-export const NS2 = process?.env.NS2 || `ns2.${PLATFORM_DOMAIN}`;
-export const NS3 = process?.env.NS3 || `ns3.${PLATFORM_DOMAIN}`;
+export const NS1 = process.env.NS1 || `ns1.${PLATFORM_DOMAIN}`;
+export const NS2 = process.env.NS2 || `ns2.${PLATFORM_DOMAIN}`;
+export const NS3 = process.env.NS3 || `ns3.${PLATFORM_DOMAIN}`;
 
 /** All three Max Booster authoritative nameservers. */
 export const ALL_NS = [NS1, NS2, NS3];
@@ -55,7 +55,7 @@ export const DOMAIN_PRICES: Record<
   ".info": { registrationCents: 298, renewalCents: 1498, label: ".info" },
 };
 
-export const SEARCH_TLDS = Object?.keys(DOMAIN_PRICES);
+export const SEARCH_TLDS = Object.keys(DOMAIN_PRICES);
 
 // ── Domain availability check via DNS ─────────────────────────────────────────
 
@@ -106,7 +106,7 @@ export async function checkDomainAvailability(
 }
 
 export function logClaim(domain: string, userId: string) {
-  logger?.info(
+  logger.info(
     { domain, userId },
     "[domainRegistrar] domain claimed via built-in DNS",
   );

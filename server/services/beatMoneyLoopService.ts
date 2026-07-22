@@ -1493,7 +1493,7 @@ class BeatMoneyLoopService {
         .where(eq(beats?.id, cycle?.beatId))
         .limit(1);
       if (!beat) continue;
-      const revenueCents = Math?.round(
+      const revenueCents = Math.round(
         (beat?.downloads ?? 0) * (beat?.price ?? 0) * 100,
       );
       if (

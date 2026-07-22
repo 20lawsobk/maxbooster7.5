@@ -18,7 +18,7 @@ interface ValidationResult {
 }
 
 const isProduction = () =>
-  process?.env.NODE_ENV === "production" || !!process?.env.REPLIT_DEPLOYMENT;
+  process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT;
 
 export function validateScaleConfig(): ValidationResult {
   const warnings: string[] = [];
@@ -27,7 +27,7 @@ export function validateScaleConfig(): ValidationResult {
   if (!isProduction()) return { warnings: [], errors: [] };
 
   // ── Database ──────────────────────────────────────────────────────────────
-  if (!process?.env.DATABASE_REPLICA_URLS) {
+  if (!process.env.DATABASE_REPLICA_URLS) {
     warnings?.push(
       "[ScaleConfig] DATABASE_REPLICA_URLS is not set. " +
         "All database reads hit the primary instance. " +
@@ -37,13 +37,13 @@ export function validateScaleConfig(): ValidationResult {
   }
 
   // ── Redis ─────────────────────────────────────────────────────────────────
-  if (!process?.env.REDIS_URL && !process?.env.REDIS_CLUSTER_URLS) {
+  if (!process.env.REDIS_URL && !process.env.REDIS_CLUSTER_URLS) {
     errors?.push(
       "[ScaleConfig] Neither REDIS_URL nor REDIS_CLUSTER_URLS is set. Redis is required in production.",
     );
   }
 
-  if (process?.env.REDIS_URL && !process?.env.REDIS_CLUSTER_URLS) {
+  if (process.env.REDIS_URL && !process.env.REDIS_CLUSTER_URLS) {
     warnings?.push(
       "[ScaleConfig] Redis is running in standalone mode (REDIS_URL set, REDIS_CLUSTER_URLS not set). " +
         "A single Redis node handles ~100k ops/sec. " +
@@ -53,7 +53,7 @@ export function validateScaleConfig(): ValidationResult {
   }
 
   // ── Secrets ───────────────────────────────────────────────────────────────
-  if (!process?.env.WEBHOOK_SECRET && !env?.STRIPE_WEBHOOK_SECRET) {
+  if (!process.env.WEBHOOK_SECRET && !env?.STRIPE_WEBHOOK_SECRET) {
     warnings?.push(
       "[ScaleConfig] WEBHOOK_SECRET is not set. Webhook signature verification is disabled — set WEBHOOK_SECRET to enable it.",
     );
@@ -61,7 +61,7 @@ export function validateScaleConfig(): ValidationResult {
 
   // ── Admission control ─────────────────────────────────────────────────────
   const maxConcurrent = parseInt(
-    process?.env.MAX_CONCURRENT_REQUESTS ?? "5000",
+    process.env.MAX_CONCURRENT_REQUESTS ?? "5000",
     10,
   );
   if (maxConcurrent > 10_000) {
@@ -74,9 +74,9 @@ export function validateScaleConfig(): ValidationResult {
 
   // ── App URL ───────────────────────────────────────────────────────────────
   if (
-    !process?.env.APP_URL &&
-    !process?.env.REPLIT_DEV_DOMAIN &&
-    !process?.env.DOMAIN
+    !process.env.APP_URL &&
+    !process.env.REPLIT_DEV_DOMAIN &&
+    !process.env.DOMAIN
   ) {
     warnings?.push(
       "[ScaleConfig] APP_URL is not set. " +
@@ -86,7 +86,7 @@ export function validateScaleConfig(): ValidationResult {
   }
 
   // ── BullMQ ────────────────────────────────────────────────────────────────
-  const bullConcurrency = parseInt(process?.env.BULLMQ_CONCURRENCY ?? "5", 10);
+  const bullConcurrency = parseInt(process.env.BULLMQ_CONCURRENCY ?? "5", 10);
   if (bullConcurrency > 20) {
     warnings?.push(
       `[ScaleConfig] BULLMQ_CONCURRENCY is ${bullConcurrency}. ` +
@@ -95,13 +95,13 @@ export function validateScaleConfig(): ValidationResult {
   }
 
   // ── Print ─────────────────────────────────────────────────────────────────
-  for (const w of warnings) logger?.warn(w);
-  for (const e of errors) logger?.warn(e);
+  for (const w of warnings) logger.warn(w);
+  for (const e of errors) logger.warn(e);
 
   if (warnings?.length === 0 && errors?.length === 0) {
-    logger?.info("✅ [ScaleConfig] All scale configuration checks passed");
+    logger.info("✅ [ScaleConfig] All scale configuration checks passed");
   } else {
-    logger?.info(
+    logger.info(
       `[ScaleConfig] Validation complete — ${warnings?.length} warning(s), ${errors?.length} error(s). ` +
         "See above for remediation steps.",
     );

@@ -17,21 +17,21 @@ router?.get(
   asyncHandler(async (_req, res) => {
     try {
       const metrics = await queueMonitor?.collectAllMetrics();
-      const metricsArray = Array?.from(metrics?.entries()).map(
+      const metricsArray = Array.from(metrics?.entries()).map(
         ([name, data]) => ({
           queue: name,
           ...data,
         }),
       );
 
-      res?.json({
+      res.json({
         success: true,
         timestamp: new Date(),
         metrics: metricsArray,
       });
     } catch (error) {
-      logger?.warn("Error in queue-metrics:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in queue-metrics:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -40,23 +40,23 @@ router?.get(
   "/queue-metrics/:queueName",
   asyncHandler(async (req, res) => {
     try {
-      const { queueName } = req?.params;
+      const { queueName } = req.params;
       const metrics = await queueMonitor?.collectMetrics(queueName);
 
       if (!metrics) {
-        return res?.status(404).json({
+        return res.status(404).json({
           success: false,
           error: `Queue '${queueName}' not found or not monitored`,
         });
       }
 
-      res?.json({
+      res.json({
         success: true,
         metrics,
       });
     } catch (error) {
-      logger?.warn("Error in queue-metrics by name:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in queue-metrics by name:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -67,7 +67,7 @@ router?.get(
     try {
       const healthStatus = await queueMonitor?.getHealthStatus();
 
-      res?.json({
+      res.json({
         success: true,
         healthy: healthStatus.healthy,
         queues: Array.from(healthStatus?.queues.entries()).map(
@@ -78,8 +78,8 @@ router?.get(
         ),
       });
     } catch (error) {
-      logger?.warn("Error in queue-health:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in queue-health:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -92,15 +92,15 @@ router?.get(
       const summary = aiModelManager?.getTelemetrySummary();
       const cacheStats = aiModelManager?.getCacheStats();
 
-      res?.json({
+      res.json({
         success: true,
         metrics,
         summary,
         cacheStats,
       });
     } catch (error) {
-      logger?.warn("Error in ai-models:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in ai-models:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -123,7 +123,7 @@ router?.get(
 
       const systemHealthy = allQueuesHealthy && aiModelsHealthy;
 
-      res?.json({
+      res.json({
         success: true,
         healthy: systemHealthy,
         status: systemHealthy ? "healthy" : "degraded",
@@ -162,8 +162,8 @@ router?.get(
         timestamp: new Date(),
       });
     } catch (error) {
-      logger?.warn("Error in system-health:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in system-health:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -173,7 +173,7 @@ router?.post(
   asyncHandler(async (req, res) => {
     try {
       const { maxWaitingJobs, maxFailedRate, maxStalledJobs, maxRedisLatency } =
-        req?.body;
+        req.body;
 
       queueMonitor?.setAlertThresholds({
         maxWaitingJobs,
@@ -182,7 +182,7 @@ router?.post(
         maxRedisLatency,
       });
 
-      logger?.info("📊 Queue monitoring thresholds updated by admin", {
+      logger.info("📊 Queue monitoring thresholds updated by admin", {
         adminId: req.user.id,
         thresholds: {
           maxWaitingJobs,
@@ -192,13 +192,13 @@ router?.post(
         },
       });
 
-      res?.json({
+      res.json({
         success: true,
         message: "Alert thresholds updated successfully",
       });
     } catch (error) {
-      logger?.warn("Error in set-thresholds:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in set-thresholds:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -210,7 +210,7 @@ router?.get(
       const dashboardData = metricsCollector?.getDashboardData();
       const alertConfig = alertingService?.getConfig();
 
-      res?.json({
+      res.json({
         success: true,
         dashboard: dashboardData,
         alerting: {
@@ -221,8 +221,8 @@ router?.get(
         timestamp: new Date(),
       });
     } catch (error) {
-      logger?.warn("Error in monitoring dashboard:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in monitoring dashboard:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -231,24 +231,24 @@ router?.post(
   "/baseline/save",
   asyncHandler(async (req, res) => {
     try {
-      const { name } = req?.body;
+      const { name } = req.body;
       const baselineName = name || "baseline";
       const filepath = await metricsCollector?.saveBaseline(baselineName);
 
-      logger?.info("📊 Baseline metrics saved by admin", {
+      logger.info("📊 Baseline metrics saved by admin", {
         adminId: req.user.id,
         baselineName,
         filepath,
       });
 
-      res?.json({
+      res.json({
         success: true,
         message: "Baseline metrics saved successfully",
         filepath,
       });
     } catch (error) {
-      logger?.warn("Error in baseline save:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in baseline save:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -259,7 +259,7 @@ router?.get(
     try {
       const config = alertingService?.getConfig();
 
-      res?.json({
+      res.json({
         success: true,
         config: {
           emailEnabled: config.emailEnabled,
@@ -269,8 +269,8 @@ router?.get(
         },
       });
     } catch (error) {
-      logger?.warn("Error in alerting config:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in alerting config:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -287,13 +287,13 @@ router?.post(
         metadata: { testBy: req.user.email },
       });
 
-      res?.json({
+      res.json({
         success: true,
         message: "Test alert sent successfully",
       });
     } catch (error) {
-      logger?.warn("Error in alerting test:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in alerting test:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );

@@ -34,7 +34,7 @@ const autopilotConfigSchema = z.object({
 // Get autopilot status
 router?.get("/status", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const now = new Date();
 
     const config = await storage?.getAutopilotConfig(userId).catch(() => null);
@@ -48,7 +48,7 @@ router?.get("/status", requireAuth, async (req, res) => {
       socialTrained = socialModel?.getIsTrained();
       socialVersion = socialModel?.getVersion();
     } catch (e) {
-      logger?.warn(
+      logger.warn(
         { err: e },
         "getSocialAutopilot unavailable, using defaults:",
       );
@@ -59,7 +59,7 @@ router?.get("/status", requireAuth, async (req, res) => {
       advertisingTrained = advertisingModel?.getIsTrained();
       advertisingVersion = advertisingModel?.getVersion();
     } catch (e) {
-      logger?.warn(
+      logger.warn(
         { err: e },
         "getAdvertisingAutopilot unavailable, using defaults:",
       );
@@ -142,7 +142,7 @@ router?.get("/status", requireAuth, async (req, res) => {
     };
     const activeConfig = config || defaultConfig;
 
-    res?.json({
+    res.json({
       isRunning: activeConfig.enabled || false,
       config: activeConfig || {
         enabled: false,
@@ -171,15 +171,15 @@ router?.get("/status", requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get autopilot status:");
-    res?.status(500).json({ error: "Failed to get autopilot status" });
+    logger.warn({ err: error }, "Failed to get autopilot status:");
+    res.status(500).json({ error: "Failed to get autopilot status" });
   }
 });
 
 // Start autopilot
 router?.post("/start", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
     let config = await storage?.getAutopilotConfig(userId);
     if (!config) {
@@ -223,32 +223,32 @@ router?.post("/start", requireAuth, async (req, res) => {
           contentTypes: config.contentTypes || ["tips", "insights"],
           autoPublish: config.autoPublish || false,
         });
-        logger?.info(`✅ Autopilot engine started for user ${userId}`);
+        logger.info(`✅ Autopilot engine started for user ${userId}`);
       } catch (err) {
-        logger?.warn(
+        logger.warn(
           { err: err },
           `⚠️ Autopilot engine start failed for user ${userId}:`,
         );
       }
     });
 
-    logger?.info(`✅ Autopilot started for user ${userId}`);
+    logger.info(`✅ Autopilot started for user ${userId}`);
 
-    res?.json({
+    res.json({
       success: true,
       message: "Autopilot activated",
       config,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to start autopilot:");
-    res?.status(500).json({ error: "Failed to start autopilot" });
+    logger.warn({ err: error }, "Failed to start autopilot:");
+    res.status(500).json({ error: "Failed to start autopilot" });
   }
 });
 
 // Stop autopilot
 router?.post("/stop", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
     const config = await storage?.getAutopilotConfig(userId);
     if (config) {
@@ -260,32 +260,32 @@ router?.post("/stop", requireAuth, async (req, res) => {
       try {
         const engine = promotionalToolsService?.getAutopilotForUser(userId);
         await engine?.configure({ enabled: false });
-        logger?.info(`⏸️ Autopilot engine stopped for user ${userId}`);
+        logger.info(`⏸️ Autopilot engine stopped for user ${userId}`);
       } catch (err) {
-        logger?.warn(
+        logger.warn(
           { err: err },
           `⚠️ Autopilot engine stop failed for user ${userId}:`,
         );
       }
     });
 
-    logger?.info(`⏸️ Autopilot stopped for user ${userId}`);
+    logger.info(`⏸️ Autopilot stopped for user ${userId}`);
 
-    res?.json({
+    res.json({
       success: true,
       message: "Autopilot paused",
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to stop autopilot:");
-    res?.status(500).json({ error: "Failed to stop autopilot" });
+    logger.warn({ err: error }, "Failed to stop autopilot:");
+    res.status(500).json({ error: "Failed to stop autopilot" });
   }
 });
 
 // Configure autopilot
 router?.post("/configure", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const config = autopilotConfigSchema?.parse(req?.body);
+    const userId = req.user!.id;
+    const config = autopilotConfigSchema?.parse(req.body);
 
     await storage?.saveAutopilotConfig(userId, config);
 
@@ -302,7 +302,7 @@ router?.post("/configure", requireAuth, async (req, res) => {
             autoPublish: config.autoPublish || false,
           });
         } catch (err) {
-          logger?.warn(
+          logger.warn(
             { err: err },
             `⚠️ Autopilot engine configure failed for user ${userId}:`,
           );
@@ -310,9 +310,9 @@ router?.post("/configure", requireAuth, async (req, res) => {
       });
     }
 
-    logger?.info(`⚙️ Autopilot configured for user ${userId}`);
+    logger.info(`⚙️ Autopilot configured for user ${userId}`);
 
-    res?.json({
+    res.json({
       success: true,
       message: "Configuration updated",
       config,
@@ -324,16 +324,16 @@ router?.post("/configure", requireAuth, async (req, res) => {
         .json({ error: "Invalid configuration", details: error.issues });
       return;
     }
-    logger?.warn({ err: error }, "Failed to configure autopilot:");
-    res?.status(500).json({ error: "Failed to update configuration" });
+    logger.warn({ err: error }, "Failed to configure autopilot:");
+    res.status(500).json({ error: "Failed to update configuration" });
   }
 });
 
 // Generate AI content recommendations using multimodal analysis
 router?.post("/recommend", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { contentType, includeMultimodal } = req?.body;
+    const userId = req.user!.id;
+    const { contentType, includeMultimodal } = req.body;
 
     const socialModel = await aiModelManager?.getSocialAutopilot(userId);
 
@@ -353,25 +353,25 @@ router?.post("/recommend", requireAuth, async (req, res) => {
       multimodalFeatures,
     );
 
-    res?.json({
+    res.json({
       success: true,
       recommendations,
       usedMultimodal: !!multimodalFeatures,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to generate recommendations:");
-    res?.status(500).json({ error: "Failed to generate recommendations" });
+    logger.warn({ err: error }, "Failed to generate recommendations:");
+    res.status(500).json({ error: "Failed to generate recommendations" });
   }
 });
 
 // Predict engagement for content with multimodal features
 router?.post("/predict-engagement", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { platform, content, multimodalFeatures } = req?.body;
+    const userId = req.user!.id;
+    const { platform, content, multimodalFeatures } = req.body;
 
     if (!platform || !content) {
-      res?.status(400).json({ error: "Platform and content are required" });
+      res.status(400).json({ error: "Platform and content are required" });
       return;
     }
 
@@ -390,25 +390,25 @@ router?.post("/predict-engagement", requireAuth, async (req, res) => {
 
     const prediction = await socialModel?.predictEngagement(features);
 
-    res?.json({
+    res.json({
       success: true,
       prediction,
       usedMultimodal: !!multimodalFeatures,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to predict engagement:");
-    res?.status(500).json({ error: "Failed to predict engagement" });
+    logger.warn({ err: error }, "Failed to predict engagement:");
+    res.status(500).json({ error: "Failed to predict engagement" });
   }
 });
 
 // Save analyzed content features for autopilot training
 router?.post("/save-features", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { contentType, features, contentUrl, contentText } = req?.body;
+    const userId = req.user!.id;
+    const { contentType, features, contentUrl, contentText } = req.body;
 
     if (!contentType || !features) {
-      res?.status(400).json({ error: "Content type and features are required" });
+      res.status(400).json({ error: "Content type and features are required" });
       return;
     }
 
@@ -449,27 +449,27 @@ router?.post("/save-features", requireAuth, async (req, res) => {
       featuresToSave,
     );
 
-    logger?.info(
+    logger.info(
       `✅ Saved ${contentType} features for user ${userId} autopilot training`,
     );
 
-    res?.json({
+    res.json({
       success: true,
       message: "Features saved for autopilot training",
       featureId,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to save features:");
-    res?.status(500).json({ error: "Failed to save features for training" });
+    logger.warn({ err: error }, "Failed to save features:");
+    res.status(500).json({ error: "Failed to save features for training" });
   }
 });
 
 // Train autopilot AI with user's historical data + analyzed multimodal features
 router?.post("/train", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
 
-    logger?.info(
+    logger.info(
       `🤖 Starting autopilot AI training for user ${userId} with multimodal features...`,
     );
 
@@ -478,7 +478,7 @@ router?.post("/train", requireAuth, async (req, res) => {
     const analyzedFeatures =
       await storage?.getAnalyzedContentForTraining(userId);
 
-    logger?.info(
+    logger.info(
       `📊 Loaded ${posts?.length} posts, ${campaigns?.length} campaigns, ${analyzedFeatures?.length} analyzed features`,
     );
 
@@ -490,7 +490,7 @@ router?.post("/train", requireAuth, async (req, res) => {
       posts,
       analyzedFeatures,
     );
-    logger?.info(
+    logger.info(
       `✅ Enriched ${enrichedPosts?.filter((p: Record<string, unknown>) => p?.contentAnalysis).length} posts with multimodal features`,
     );
 
@@ -499,7 +499,7 @@ router?.post("/train", requireAuth, async (req, res) => {
         campaigns,
         analyzedFeatures,
       );
-    logger?.info(
+    logger.info(
       `✅ Enriched ${enrichedCampaigns?.filter((c: Record<string, unknown>) => c?.contentAnalysis).length} campaigns with multimodal features`,
     );
 
@@ -510,35 +510,35 @@ router?.post("/train", requireAuth, async (req, res) => {
       if (enrichedPosts?.length >= 50) {
         socialResult =
           await socialModel?.trainOnUserEngagementData(enrichedPosts);
-        logger?.info(
+        logger.info(
           `✅ Social autopilot trained: ${socialResult?.postsProcessed} posts`,
         );
       } else {
-        logger?.warn(
+        logger.warn(
           `⚠️ Not enough posts for social training (${enrichedPosts?.length}/50)`,
         );
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Social model training failed:");
+      logger.warn({ err: error }, "Social model training failed:");
     }
 
     try {
       if (enrichedCampaigns?.length >= 30) {
         advertisingResult =
           await advertisingModel?.trainOnHistoricalCampaigns(enrichedCampaigns);
-        logger?.info(
+        logger.info(
           `✅ Advertising autopilot trained: ${advertisingResult?.campaignsProcessed} campaigns`,
         );
       } else {
-        logger?.warn(
+        logger.warn(
           `⚠️ Not enough campaigns for advertising training (${enrichedCampaigns?.length}/30)`,
         );
       }
     } catch (error) {
-      logger?.warn({ err: error }, "Advertising model training failed:");
+      logger.warn({ err: error }, "Advertising model training failed:");
     }
 
-    res?.json({
+    res.json({
       success: true,
       message: "Autopilot AI training completed with multimodal features",
       results: {
@@ -558,8 +558,8 @@ router?.post("/train", requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to train autopilot:");
-    res?.status(500).json({ error: "Failed to train autopilot AI" });
+    logger.warn({ err: error }, "Failed to train autopilot:");
+    res.status(500).json({ error: "Failed to train autopilot AI" });
   }
 });
 

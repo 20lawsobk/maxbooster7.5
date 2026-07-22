@@ -357,18 +357,18 @@ export class ContentAnalysisService {
    * This provides a readiness gate that guarantees deterministic behavior.
    */
   private async ensureInitialized(): Promise<void> {
-    if (this?.ready) return;
-    if (!this?.initializationPromise) {
-      this.initializationPromise = this?.initializeModels();
+    if (this.ready) return;
+    if (!this.initializationPromise) {
+      this.initializationPromise = this.initializeModels();
     }
-    await this?.initializationPromise;
+    await this.initializationPromise;
   }
 
   /**
    * Initialize custom TensorFlow?.js models
    */
   private async initializeModels(): Promise<void> {
-    if (this?.modelsInitialized) {
+    if (this.modelsInitialized) {
       this.ready = true;
       return;
     }
@@ -376,7 +376,7 @@ export class ContentAnalysisService {
     await initTensorFlow();
 
     if (!isTensorFlowAvailable()) {
-      logger?.info(
+      logger.info(
         "[ContentAnalysis] Skipping model initialization - TensorFlow not available",
       );
       this.modelsInitialized = true;
@@ -385,14 +385,14 @@ export class ContentAnalysisService {
     }
 
     try {
-      this.imageClassificationModel = this?.buildImageClassificationModel();
-      this.faceDetectionModel = this?.buildFaceDetectionModel();
-      this.textDetectionModel = this?.buildTextDetectionModel();
+      this.imageClassificationModel = this.buildImageClassificationModel();
+      this.faceDetectionModel = this.buildFaceDetectionModel();
+      this.textDetectionModel = this.buildTextDetectionModel();
       this.modelsInitialized = true;
       this.ready = true;
-      logger?.info("[ContentAnalysis] Custom models initialized successfully");
+      logger.info("[ContentAnalysis] Custom models initialized successfully");
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "[ContentAnalysis] Model initialization error:",
       );
@@ -510,26 +510,26 @@ export class ContentAnalysisService {
    * Analyze image content (URL or base64) - 100% CUSTOM
    */
   async analyzeImage(imageUrl: string): Promise<ImageAnalysisResult> {
-    await this?.ensureInitialized();
+    await this.ensureInitialized();
 
     try {
       // Download and process image
-      const imageBuffer = await this?.fetchImage(imageUrl);
+      const imageBuffer = await this.fetchImage(imageUrl);
 
       // Extract colors using custom algorithm
-      const colors = await this?.extractDominantColors(imageBuffer);
+      const colors = await this.extractDominantColors(imageBuffer);
 
       // Analyze composition using custom computer vision
-      const composition = await this?.analyzeComposition(imageBuffer);
+      const composition = await this.analyzeComposition(imageBuffer);
 
       // Detect faces using custom model
-      const faceAnalysis = await this?.detectFaces(imageBuffer);
+      const faceAnalysis = await this.detectFaces(imageBuffer);
 
       // Detect text using custom OCR-like approach
-      const textAnalysis = await this?.detectText(imageBuffer);
+      const textAnalysis = await this.detectText(imageBuffer);
 
       // Analyze visual features
-      const visualFeatures = await this?.extractVisualFeatures(imageBuffer);
+      const visualFeatures = await this.extractVisualFeatures(imageBuffer);
 
       const result: ImageAnalysisResult = {
         colors: {
@@ -575,8 +575,8 @@ export class ContentAnalysisService {
 
       return result;
     } catch (error) {
-      logger?.warn({ err: error }, "Image analysis error:");
-      return this?.getFallbackImageAnalysis();
+      logger.warn({ err: error }, "Image analysis error:");
+      return this.getFallbackImageAnalysis();
     }
   }
 
@@ -627,11 +627,11 @@ export class ContentAnalysisService {
       }
 
       // Perform k-means clustering to find 5 dominant colors
-      const clusters = this?.kMeansClustering(samples, 5);
+      const clusters = this.kMeansClustering(samples, 5);
 
       // Convert to hex colors
       const dominantColors = clusters?.map((cluster) =>
-        this?.rgbToHex(cluster[0], cluster[1], cluster[2]),
+        this.rgbToHex(cluster[0], cluster[1], cluster[2]),
       );
 
       // Calculate overall brightness and saturation
@@ -640,8 +640,8 @@ export class ContentAnalysisService {
         clusters?.length;
       const avgSaturation =
         clusters?.reduce((sum, c) => {
-          const max = Math?.max(c[0], c[1], c[2]);
-          const min = Math?.min(c[0], c[1], c[2]);
+          const max = Math.max(c[0], c[1], c[2]);
+          const min = Math.min(c[0], c[1], c[2]);
           return sum + (max - min);
         }, 0) / clusters?.length;
 
@@ -658,7 +658,7 @@ export class ContentAnalysisService {
         mood,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Color extraction error:");
+      logger.warn({ err: error }, "Color extraction error:");
       return {
         dominant: ["#4A90E2", "#F5A623", "#50E3C2"],
         palette: ["#4A90E2", "#F5A623", "#50E3C2", "#E24A4A", "#9B59B6"],
@@ -689,7 +689,7 @@ export class ContentAnalysisService {
         let closestCentroid = 0;
 
         for (let i = 0; i < k; i++) {
-          const dist = this?.euclideanDistance(point, centroids[i]);
+          const dist = this.euclideanDistance(point, centroids[i]);
           if (dist < minDist) {
             minDist = dist;
             closestCentroid = i;
@@ -718,8 +718,8 @@ export class ContentAnalysisService {
    * Euclidean distance between two points
    */
   private euclideanDistance(a: number[], b: number[]): number {
-    return Math?.sqrt(
-      a?.reduce((sum, val, i) => sum + Math?.pow(val - b[i], 2), 0),
+    return Math.sqrt(
+      a?.reduce((sum, val, i) => sum + Math.pow(val - b[i], 2), 0),
     );
   }
 
@@ -731,7 +731,7 @@ export class ContentAnalysisService {
       "#" +
       [r, g, b]
         .map((x) => {
-          const hex = Math?.round(x).toString(16);
+          const hex = Math.round(x).toString(16);
           return hex?.length === 1 ? "0" + hex : hex;
         })
         .join("")
@@ -795,12 +795,12 @@ export class ContentAnalysisService {
       // Determine layout
       const centerDensity = regionDensities[1][1];
       const avgDensity = regionDensities?.flat().reduce((a, b) => a + b) / 9;
-      const maxDensity = Math?.max(...regionDensities?.flat());
+      const maxDensity = Math.max(...regionDensities?.flat());
 
       let layout: "centered" | "rule-of-thirds" | "symmetric" | "dynamic" =
         "centered";
       if (centerDensity > maxDensity * 0.8) layout = "centered";
-      else if (Math?.abs(regionDensities[0][0] - regionDensities[2][2]) < 0.1)
+      else if (Math.abs(regionDensities[0][0] - regionDensities[2][2]) < 0.1)
         layout = "symmetric";
       else if (
         regionDensities[1][0] > avgDensity ||
@@ -843,11 +843,11 @@ export class ContentAnalysisService {
       else if (rightHalf > leftHalf * 1.3) visualWeight = "right";
 
       // Calculate complexity (edge density)
-      const complexity = Math?.min(1, avgDensity * 2);
+      const complexity = Math.min(1, avgDensity * 2);
 
       return { layout, visualWeight, complexity };
     } catch (error) {
-      logger?.warn({ err: error }, "Composition analysis error:");
+      logger.warn({ err: error }, "Composition analysis error:");
       return {
         layout: "centered",
         visualWeight: "balanced",
@@ -863,7 +863,7 @@ export class ContentAnalysisService {
     hasFaces: boolean;
     count: number;
   }> {
-    if (!isTensorFlowAvailable() || !tf || !this?.faceDetectionModel) {
+    if (!isTensorFlowAvailable() || !tf || !this.faceDetectionModel) {
       return { hasFaces: false, count: 0 };
     }
 
@@ -883,7 +883,7 @@ export class ContentAnalysisService {
         .div(255.0)
         .expandDims(0);
 
-      const prediction = this?.faceDetectionModel.predict(imageTensor) as Record<
+      const prediction = this.faceDetectionModel.predict(imageTensor) as Record<
         string,
         unknown
       >;
@@ -893,11 +893,11 @@ export class ContentAnalysisService {
       prediction?.dispose();
 
       const hasFaces = hasFacesProbability > 0.5;
-      const count = hasFaces ? Math?.ceil(hasFacesProbability * 2) : 0;
+      const count = hasFaces ? Math.ceil(hasFacesProbability * 2) : 0;
 
       return { hasFaces, count };
     } catch (error) {
-      logger?.warn({ err: error }, "[ContentAnalysis] Face detection error:");
+      logger.warn({ err: error }, "[ContentAnalysis] Face detection error:");
       return { hasFaces: false, count: 0 };
     }
   }
@@ -928,7 +928,7 @@ export class ContentAnalysisService {
       const threshold = 128;
 
       for (let i = 0; i < processed?.length - 1; i++) {
-        const diff = Math?.abs(processed[i] - processed[i + 1]);
+        const diff = Math.abs(processed[i] - processed[i + 1]);
         if (diff > threshold) textPixels++;
       }
 
@@ -942,7 +942,7 @@ export class ContentAnalysisService {
 
       return { hasText, amount };
     } catch (error) {
-      logger?.warn({ err: error }, "Text detection error:");
+      logger.warn({ err: error }, "Text detection error:");
       return { hasText: false, amount: "none" };
     }
   }
@@ -972,7 +972,7 @@ export class ContentAnalysisService {
       // Analyze image metadata and quality
       const metadata = await sharpInstance(imageBuffer).metadata();
 
-      const professionalQuality = Math?.min(1, (metadata?.width || 1000) / 1000);
+      const professionalQuality = Math.min(1, (metadata?.width || 1000) / 1000);
       const brandingStrength = (metadata?.density || 72) > 100 ? 0.8 : 0.5;
 
       return {
@@ -983,7 +983,7 @@ export class ContentAnalysisService {
         professionalQuality,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Visual feature extraction error:");
+      logger.warn({ err: error }, "Visual feature extraction error:");
       return {
         mainSubject: "content",
         objects: [],
@@ -1013,7 +1013,7 @@ export class ContentAnalysisService {
     // Dynamic composition is more engaging
     if (composition?.layout === "dynamic") score += 0.1;
 
-    return Math?.min(1, score);
+    return Math.min(1, score);
   }
 
   /**
@@ -1042,7 +1042,7 @@ export class ContentAnalysisService {
     if (composition.complexity > 0.6) score += 0.15;
     if (features.professionalQuality > 0.8) score += 0.2;
 
-    return Math?.min(1, score);
+    return Math.min(1, score);
   }
 
   /**
@@ -1073,7 +1073,7 @@ export class ContentAnalysisService {
     _videoUrl: string,
     duration: number,
   ): Promise<VideoAnalysisResult> {
-    await this?.ensureInitialized();
+    await this.ensureInitialized();
 
     try {
       // For now, use heuristics + AI for metadata analysis
@@ -1128,7 +1128,7 @@ export class ContentAnalysisService {
 
       return result;
     } catch (error) {
-      logger?.warn({ err: error }, "Video analysis error:");
+      logger.warn({ err: error }, "Video analysis error:");
       throw error;
     }
   }
@@ -1140,7 +1140,7 @@ export class ContentAnalysisService {
     _audioUrl: string,
     metadata?: Record<string, unknown>,
   ): Promise<AudioAnalysisResult> {
-    await this?.ensureInitialized();
+    await this.ensureInitialized();
 
     try {
       // Use music-metadata library or AI analysis
@@ -1176,7 +1176,7 @@ export class ContentAnalysisService {
 
       return result;
     } catch (error) {
-      logger?.warn({ err: error }, "Audio analysis error:");
+      logger.warn({ err: error }, "Audio analysis error:");
       throw error;
     }
   }
@@ -1185,7 +1185,7 @@ export class ContentAnalysisService {
    * Analyze website/landing page - 100% CUSTOM
    */
   async analyzeWebsite(url: string): Promise<WebsiteAnalysisResult> {
-    await this?.ensureInitialized();
+    await this.ensureInitialized();
 
     try {
       // Fetch and analyze website HTML
@@ -1199,10 +1199,10 @@ export class ContentAnalysisService {
       });
 
       const html = response?.data.toString();
-      return this?.analyzeHTMLCustom(html);
+      return this.analyzeHTMLCustom(html);
     } catch (error) {
-      logger?.warn({ err: error }, "Website analysis error:");
-      return this?.getFallbackWebsiteAnalysis("");
+      logger.warn({ err: error }, "Website analysis error:");
+      return this.getFallbackWebsiteAnalysis("");
     }
   }
 
@@ -1211,7 +1211,7 @@ export class ContentAnalysisService {
    */
   private analyzeHTMLCustom(html: string): WebsiteAnalysisResult {
     // Extract colors from CSS and inline styles
-    const colors = this?.extractColorsFromHTML(html);
+    const colors = this.extractColorsFromHTML(html);
 
     // Count CTAs (call-to-action buttons)
     const ctaWords = [
@@ -1339,7 +1339,7 @@ export class ContentAnalysisService {
       rgbMatches?.slice(0, 3).forEach((rgb) => {
         const match = rgb?.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
         if (match) {
-          const hex = this?.rgbToHex(
+          const hex = this.rgbToHex(
             parseInt(match[1]),
             parseInt(match[2]),
             parseInt(match[3]),
@@ -1354,14 +1354,14 @@ export class ContentAnalysisService {
       return ["#1DB954", "#191414", "#FFFFFF"];
     }
 
-    return Array?.from(colors).slice(0, 5);
+    return Array.from(colors).slice(0, 5);
   }
 
   /**
    * Analyze text content
    */
   async analyzeText(text: string): Promise<TextAnalysisResult> {
-    await this?.ensureInitialized();
+    await this.ensureInitialized();
 
     try {
       const sentences = text?.split(/[.!?]+/).filter((s) => s?.trim().length > 0);
@@ -1373,10 +1373,10 @@ export class ContentAnalysisService {
       const mentions = (text?.match(/@\w+/g) || []).map((m) => m?.substring(1));
 
       // Calculate readability (simplified Flesch score)
-      const avgWordsPerSentence = words?.length / Math?.max(sentences?.length, 1);
-      const readability = Math?.max(
+      const avgWordsPerSentence = words?.length / Math.max(sentences?.length, 1);
+      const readability = Math.max(
         0,
-        Math?.min(100, 100 - avgWordsPerSentence * 2),
+        Math.min(100, 100 - avgWordsPerSentence * 2),
       );
 
       // Detect call to action
@@ -1435,7 +1435,7 @@ export class ContentAnalysisService {
 
       return result;
     } catch (error) {
-      logger?.warn({ err: error }, "Text analysis error:");
+      logger.warn({ err: error }, "Text analysis error:");
       throw error;
     }
   }

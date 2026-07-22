@@ -293,12 +293,12 @@ function extractCommonFields(items: unknown[]): Record<string, any> {
   const common: Record<string, any> = {};
   const firstItem = items[0];
 
-  for (const key of Object?.keys(firstItem)) {
+  for (const key of Object.keys(firstItem)) {
     if (key === "id" || key === "createdAt" || key === "updatedAt") continue;
 
     const firstValue = firstItem[key];
     const allSame = items?.every(
-      (item) => JSON?.stringify(item[key]) === JSON?.stringify(firstValue),
+      (item) => JSON.stringify(item[key]) === JSON.stringify(firstValue),
     );
 
     if (allSame) {

@@ -41,7 +41,7 @@ export class LoggingService {
     context?: unknown,
     userId?: string,
   ): Promise<LogEvent> {
-    return this?.log("debug", service, message, context, userId);
+    return this.log("debug", service, message, context, userId);
   }
 
   async logInfo(
@@ -50,7 +50,7 @@ export class LoggingService {
     context?: unknown,
     userId?: string,
   ): Promise<LogEvent> {
-    return this?.log("info", service, message, context, userId);
+    return this.log("info", service, message, context, userId);
   }
 
   async logWarn(
@@ -59,7 +59,7 @@ export class LoggingService {
     context?: unknown,
     userId?: string,
   ): Promise<LogEvent> {
-    return this?.log("warn", service, message, context, userId);
+    return this.log("warn", service, message, context, userId);
   }
 
   async logError(
@@ -77,7 +77,7 @@ export class LoggingService {
       errorName: error.name,
     };
 
-    return this?.log(
+    return this.log(
       "error",
       service,
       message,
@@ -102,7 +102,7 @@ export class LoggingService {
       errorName: error.name,
     };
 
-    return this?.log(
+    return this.log(
       "critical",
       service,
       message,
@@ -146,7 +146,7 @@ export class LoggingService {
       }
 
       try {
-        const logs = await this?.queryLogs(
+        const logs = await this.queryLogs(
           {
             ...filters,
             startTime: new Date(Date?.now() - 5000),
@@ -156,7 +156,7 @@ export class LoggingService {
 
         logs?.forEach((log) => callback(log));
       } catch (error: unknown) {
-        logger?.warn({ err: error }, "Error streaming logs:");
+        logger.warn({ err: error }, "Error streaming logs:");
       }
     }, 2000);
 

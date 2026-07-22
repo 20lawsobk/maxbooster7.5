@@ -19,7 +19,7 @@ async function getMaxBooster247() {
       importAttempted = true;
       return maxBooster247Cache;
     } catch (error: unknown) {
-      logger?.warn(
+      logger.warn(
         "⚠️ Reliability system import failed:",
         error?.message || error,
       );
@@ -49,8 +49,8 @@ export function requestCorrelation(
 ): void {
   // Generate or extract request ID
   const requestId =
-    (req?.headers["x-request-id"] as string) ||
-    (req?.headers["x-correlation-id"] as string) ||
+    (req.headers["x-request-id"] as string) ||
+    (req.headers["x-correlation-id"] as string) ||
     randomUUID();
 
   // Store request ID in request object
@@ -58,8 +58,8 @@ export function requestCorrelation(
   req.startTime = Date?.now();
 
   // Add request ID to response headers
-  res?.set("X-Request-ID", requestId);
-  res?.set("X-Correlation-ID", requestId);
+  res.set("X-Request-ID", requestId);
+  res.set("X-Correlation-ID", requestId);
 
   next();
 }
@@ -70,16 +70,16 @@ export function performanceMonitoring(
   res: Response,
   next: NextFunction,
 ): void {
-  const start = process?.hrtime.bigint();
+  const start = process.hrtime.bigint();
 
-  // Override res?.end to capture timing
-  const originalEnd = res?.end.bind(res);
+  // Override res.end to capture timing
+  const originalEnd = res.end.bind(res);
   res.end = function (
     chunk?: unknown,
     encoding?: unknown,
     cb?: unknown,
   ): Response {
-    const end = process?.hrtime.bigint();
+    const end = process.hrtime.bigint();
     const duration = Number(end - start) / 1000000; // Convert to milliseconds
 
     // Add performance headers only if headers haven't been sent
@@ -119,12 +119,12 @@ export function performanceMonitoring(
             }
           } catch (trackingError: unknown) {
             // Don't let tracking errors break requests
-            logger?.warn("⚠️ Request tracking failed:", trackingError);
+            logger.warn("⚠️ Request tracking failed:", trackingError);
           }
         }
       })
       .catch((error) => {
-        logger?.warn("⚠️ Request tracking import failed:", error?.message);
+        logger.warn("⚠️ Request tracking import failed:", error?.message);
       });
 
     // Properly forward all arguments to original end method
@@ -148,32 +148,32 @@ export function memoryMonitoring(
   res: Response,
   next: NextFunction,
 ): void {
-  const initialMemory = process?.memoryUsage();
+  const initialMemory = process.memoryUsage();
 
-  // Override res?.end to capture memory usage
-  const originalEnd = res?.end.bind(res);
+  // Override res.end to capture memory usage
+  const originalEnd = res.end.bind(res);
   res.end = function (
     chunk?: unknown,
     encoding?: unknown,
     cb?: unknown,
   ): Response {
-    const finalMemory = process?.memoryUsage();
+    const finalMemory = process.memoryUsage();
     const memoryDelta = finalMemory?.heapUsed - initialMemory?.heapUsed;
 
     // Add memory usage header only if headers haven't been sent
-    if (!res?.headersSent) {
-      res?.set(
+    if (!res.headersSent) {
+      res.set(
         "X-Memory-Usage",
-        `${Math?.round(finalMemory?.heapUsed / 1024 / 1024)}MB`,
+        `${Math.round(finalMemory?.heapUsed / 1024 / 1024)}MB`,
       );
     }
 
     // Log memory leaks (> 10MB increase per request)
     if (memoryDelta > 10 * 1024 * 1024) {
-      logger?.warn(`🧠 MEMORY LEAK DETECTED: ${req?.method} ${req?.originalUrl}`, {
+      logger.warn(`🧠 MEMORY LEAK DETECTED: ${req.method} ${req.originalUrl}`, {
         requestId: req.requestId,
-        memoryIncrease: `${Math?.round(memoryDelta / 1024 / 1024)}MB`,
-        currentHeapUsed: `${Math?.round(finalMemory?.heapUsed / 1024 / 1024)}MB`,
+        memoryIncrease: `${Math.round(memoryDelta / 1024 / 1024)}MB`,
+        currentHeapUsed: `${Math.round(finalMemory?.heapUsed / 1024 / 1024)}MB`,
         url: req.originalUrl,
       });
     }

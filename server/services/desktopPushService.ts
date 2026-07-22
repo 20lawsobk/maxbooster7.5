@@ -94,17 +94,17 @@ class DesktopPushService {
   private initialized = false;
 
   constructor() {
-    this?.initialize();
+    this.initialize();
   }
 
   private initialize() {
-    const publicKey = process?.env.VAPID_PUBLIC_KEY;
-    const privateKey = process?.env.VAPID_PRIVATE_KEY;
+    const publicKey = process.env.VAPID_PUBLIC_KEY;
+    const privateKey = process.env.VAPID_PRIVATE_KEY;
     const subject =
-      process?.env.VAPID_SUBJECT || "mailto:notifications@maxbooster.ai";
+      process.env.VAPID_SUBJECT || "mailto:notifications@maxbooster.ai";
 
     if (!publicKey || !privateKey) {
-      logger?.warn(
+      logger.warn(
         "🖥️ Desktop Push Service: VAPID keys not set — desktop push unavailable",
       );
       return;
@@ -113,14 +113,14 @@ class DesktopPushService {
     try {
       webpush?.setVapidDetails(subject, publicKey, privateKey);
       this.initialized = true;
-      logger?.info("🖥️ Desktop Push Service initialized (VAPID / Web Push)");
+      logger.info("🖥️ Desktop Push Service initialized (VAPID / Web Push)");
     } catch (error) {
-      logger?.warn({ err: error }, "🖥️ Desktop Push Service: VAPID init error:");
+      logger.warn({ err: error }, "🖥️ Desktop Push Service: VAPID init error:");
     }
   }
 
   isReady(): boolean {
-    return this?.initialized;
+    return this.initialized;
   }
 
   // ── Subscription Lookup ────────────────────────────────────────────────────
@@ -139,19 +139,19 @@ class DesktopPushService {
   }
 
   async getDesktopSubscriptions(userId: string): Promise<SubscriptionRecord[]> {
-    const all = await this?.getAllUserSubscriptions(userId);
+    const all = await this.getAllUserSubscriptions(userId);
     return all?.filter((s) => isDesktopUserAgent(s?.userAgent));
   }
 
   async getMobileWebSubscriptions(
     userId: string,
   ): Promise<SubscriptionRecord[]> {
-    const all = await this?.getAllUserSubscriptions(userId);
+    const all = await this.getAllUserSubscriptions(userId);
     return all?.filter((s) => isMobileUserAgent(s?.userAgent));
   }
 
   async getSubscriptionBreakdown(userId: string) {
-    const all = await this?.getAllUserSubscriptions(userId);
+    const all = await this.getAllUserSubscriptions(userId);
     const desktop = all?.filter((s) => isDesktopUserAgent(s?.userAgent));
     const mobile = all?.filter((s) => isMobileUserAgent(s?.userAgent));
     return {
@@ -188,7 +188,7 @@ class DesktopPushService {
       } catch (error) {
         failed++;
         if (error?.statusCode === 410 || error?.statusCode === 404) {
-          logger?.info(
+          logger.info(
             `🖥️ Removing expired desktop subscription: ${sub?.endpoint.substring(0, 60)}...`,
           );
           await db
@@ -196,7 +196,7 @@ class DesktopPushService {
             .where(eq(pushSubscriptions?.endpoint, sub?.endpoint))
             .catch(() => {});
         } else {
-          logger?.warn(
+          logger.warn(
             `🖥️ Desktop push failed for sub ${sub?.id}:`,
             error?.statusCode || error?.message,
           );
@@ -211,12 +211,12 @@ class DesktopPushService {
     userId: string,
     payload: DesktopPushPayload,
   ): Promise<{ sent: number; failed: number }> {
-    if (!this?.initialized) return { sent: 0, failed: 0 };
+    if (!this.initialized) return { sent: 0, failed: 0 };
 
-    const subs = await this?.getDesktopSubscriptions(userId);
+    const subs = await this.getDesktopSubscriptions(userId);
     if (subs?.length === 0) return { sent: 0, failed: 0 };
 
-    const serialized = JSON?.stringify({
+    const serialized = JSON.stringify({
       title: payload.title,
       body: payload.body,
       url: payload.url || "/",
@@ -237,10 +237,10 @@ class DesktopPushService {
       data: { ...payload?.data, url: payload.url || "/" },
     });
 
-    const result = await this?.deliverToSubscriptions(subs, serialized);
+    const result = await this.deliverToSubscriptions(subs, serialized);
 
     if (result?.sent > 0) {
-      logger?.info(
+      logger.info(
         `🖥️ Desktop push sent to ${result?.sent}/${subs?.length} browser(s) for user ${userId}`,
       );
     }
@@ -270,7 +270,7 @@ class DesktopPushService {
       data: richPayload.data,
     };
 
-    return this?.sendToDesktop(userId, desktopPayload);
+    return this.sendToDesktop(userId, desktopPayload);
   }
 
   // ── Utility ────────────────────────────────────────────────────────────────

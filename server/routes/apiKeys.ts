@@ -19,7 +19,7 @@ const keyCreateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 7_200_000_000,
   keyGenerator: (req) =>
-    `apikey-create:${(req?.user as Record<string, unknown>)?.id ?? "anon"}`,
+    `apikey-create:${(req.user as Record<string, unknown>)?.id ?? "anon"}`,
   message: { error: "Too many API key operations, please try again later" },
   standardHeaders: true,
   legacyHeaders: false,
@@ -41,7 +41,7 @@ const getKeyPrefix = (key: string): string => {
 
 router?.get("/", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user.id;
+    const userId = req.user.id;
     const rows = await db
       .select()
       .from(apiKeys)
@@ -64,20 +64,20 @@ router?.get("/", async (req: Request, res: Response) => {
       },
     }));
 
-    res?.json(result);
+    res.json(result);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching API keys:");
-    res?.status(500).json({ error: "Failed to fetch API keys" });
+    logger.warn({ err: error }, "Error fetching API keys:");
+    res.status(500).json({ error: "Failed to fetch API keys" });
   }
 });
 
 router?.post("/", keyCreateLimiter, async (req: Request, res: Response) => {
   try {
-    const userId = req?.user.id;
-    const { name, scopes = ["read"] } = req?.body;
+    const userId = req.user.id;
+    const { name, scopes = ["read"] } = req.body;
 
     if (!name || typeof name !== "string" || name?.trim().length === 0) {
-      return res?.status(400).json({ error: "Key name is required" });
+      return res.status(400).json({ error: "Key name is required" });
     }
 
     const VALID_SCOPES = new Set([
@@ -90,7 +90,7 @@ router?.post("/", keyCreateLimiter, async (req: Request, res: Response) => {
       "admin",
     ]);
     const trimmedName = name?.trim().substring(0, 100);
-    const requestedScopes = Array?.isArray(scopes) ? scopes : ["read"];
+    const requestedScopes = Array.isArray(scopes) ? scopes : ["read"];
     const invalidScopes = requestedScopes?.filter(
       (s: Record<string, unknown>) =>
         typeof s !== "string" || !VALID_SCOPES?.has(s),
@@ -112,7 +112,7 @@ router?.post("/", keyCreateLimiter, async (req: Request, res: Response) => {
       .where(and(eq(apiKeys?.userId, userId), eq(apiKeys?.isActive, true)));
 
     if (Number(activeCount) >= MAX_KEYS_PER_USER) {
-      return res?.status(409).json({
+      return res.status(409).json({
         error: `Maximum of ${MAX_KEYS_PER_USER} active API keys reached. Revoke an existing key first.`,
       });
     }
@@ -134,7 +134,7 @@ router?.post("/", keyCreateLimiter, async (req: Request, res: Response) => {
       })
       .returning();
 
-    res?.status(201).json({
+    res.status(201).json({
       id: inserted.id,
       name: inserted.name,
       key: rawKey,
@@ -143,15 +143,15 @@ router?.post("/", keyCreateLimiter, async (req: Request, res: Response) => {
       scopes: inserted.scopes ?? ["read"],
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error creating API key:");
-    res?.status(500).json({ error: "Failed to create API key" });
+    logger.warn({ err: error }, "Error creating API key:");
+    res.status(500).json({ error: "Failed to create API key" });
   }
 });
 
 router?.delete("/:keyId", async (req: Request, res: Response) => {
   try {
-    const userId = req?.user.id;
-    const { keyId } = req?.params;
+    const userId = req.user.id;
+    const { keyId } = req.params;
 
     const [updated] = await db
       .update(apiKeys)
@@ -160,13 +160,13 @@ router?.delete("/:keyId", async (req: Request, res: Response) => {
       .returning({ id: apiKeys.id });
 
     if (!updated) {
-      return res?.status(404).json({ error: "API key not found" });
+      return res.status(404).json({ error: "API key not found" });
     }
 
-    res?.json({ success: true, message: "API key revoked successfully" });
+    res.json({ success: true, message: "API key revoked successfully" });
   } catch (error) {
-    logger?.warn({ err: error }, "Error revoking API key:");
-    res?.status(500).json({ error: "Failed to revoke API key" });
+    logger.warn({ err: error }, "Error revoking API key:");
+    res.status(500).json({ error: "Failed to revoke API key" });
   }
 });
 
@@ -175,8 +175,8 @@ router?.post(
   keyCreateLimiter,
   async (req: Request, res: Response) => {
     try {
-      const userId = req?.user.id;
-      const { keyId } = req?.params;
+      const userId = req.user.id;
+      const { keyId } = req.params;
 
       const [existing] = await db
         .select({ id: apiKeys.id })
@@ -185,7 +185,7 @@ router?.post(
         .limit(1);
 
       if (!existing) {
-        return res?.status(404).json({ error: "API key not found" });
+        return res.status(404).json({ error: "API key not found" });
       }
 
       const rawKey = generateApiKey();
@@ -204,7 +204,7 @@ router?.post(
         .where(and(eq(apiKeys?.id, keyId), eq(apiKeys?.userId, userId)))
         .returning();
 
-      res?.json({
+      res.json({
         id: updated.id,
         name: updated.name,
         key: rawKey,
@@ -213,8 +213,8 @@ router?.post(
         scopes: updated.scopes ?? ["read"],
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error regenerating API key:");
-      res?.status(500).json({ error: "Failed to regenerate API key" });
+      logger.warn({ err: error }, "Error regenerating API key:");
+      res.status(500).json({ error: "Failed to regenerate API key" });
     }
   },
 );

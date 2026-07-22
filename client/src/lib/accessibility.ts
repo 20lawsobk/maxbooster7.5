@@ -57,7 +57,7 @@ export function getFocusableElements(container: HTMLElement): HTMLElement[] {
   const elements = container?.querySelectorAll<HTMLElement>(
     focusableElements?.join(","),
   );
-  return Array?.from(elements).filter((el) => {
+  return Array.from(elements).filter((el) => {
     const style = window?.getComputedStyle(el);
     return (
       style?.display !== "none" &&
@@ -125,7 +125,7 @@ export function getContrastRatio(color1: string, color2: string): number {
       const val = parseInt(c) / 255;
       return val <= 0.03928
         ? val / 12.92
-        : Math?.pow((val + 0.055) / 1.055, 2.4);
+        : Math.pow((val + 0.055) / 1.055, 2.4);
     });
 
     return 0.2126 * r + 0.7152 * g + 0.0722 * b;
@@ -133,8 +133,8 @@ export function getContrastRatio(color1: string, color2: string): number {
 
   const l1 = getLuminance(color1);
   const l2 = getLuminance(color2);
-  const lighter = Math?.max(l1, l2);
-  const darker = Math?.min(l1, l2);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
 
   return (lighter + 0.05) / (darker + 0.05);
 }
@@ -147,7 +147,7 @@ export function meetsContrastStandard(
 }
 
 export function generateAriaId(prefix: string): string {
-  return `${prefix}-${Math?.random().toString(36).substr(2, 9)}`;
+  return `${prefix}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
 export function toggleAriaExpanded(element: HTMLElement) {
@@ -306,7 +306,7 @@ export function createAriaProgressBar(
     "aria-valuenow": value,
     "aria-valuemin": min,
     "aria-valuemax": max,
-    "aria-valuetext": `${Math?.round((value / max) * 100)}%`,
+    "aria-valuetext": `${Math.round((value / max) * 100)}%`,
     "aria-label": label,
   };
 }
@@ -525,25 +525,25 @@ export function useRovingTabIndex(
         case "ArrowUp":
           if (orientation === "vertical" || orientation === "both") {
             event?.preventDefault();
-            nextIndex = Math?.max(0, currentIndex - 1);
+            nextIndex = Math.max(0, currentIndex - 1);
           }
           break;
         case "ArrowDown":
           if (orientation === "vertical" || orientation === "both") {
             event?.preventDefault();
-            nextIndex = Math?.min(items?.length - 1, currentIndex + 1);
+            nextIndex = Math.min(items?.length - 1, currentIndex + 1);
           }
           break;
         case "ArrowLeft":
           if (orientation === "horizontal" || orientation === "both") {
             event?.preventDefault();
-            nextIndex = Math?.max(0, currentIndex - 1);
+            nextIndex = Math.max(0, currentIndex - 1);
           }
           break;
         case "ArrowRight":
           if (orientation === "horizontal" || orientation === "both") {
             event?.preventDefault();
-            nextIndex = Math?.min(items?.length - 1, currentIndex + 1);
+            nextIndex = Math.min(items?.length - 1, currentIndex + 1);
           }
           break;
         case "Home":

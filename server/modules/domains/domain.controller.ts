@@ -11,8 +11,8 @@ import {
 import { validateDnsLabel, validateDomain } from "./dnsValidators.js";
 import { logger } from "../../logger.js";
 
-const BASE_DOMAIN = process?.env.BASE_DOMAIN || "max-booster.com";
-const PLATFORM_IP = process?.env.DNS_SERVER_IP || "34.111.179.208";
+const BASE_DOMAIN = process.env.BASE_DOMAIN || "max-booster.com";
+const PLATFORM_IP = process.env.DNS_SERVER_IP || "34.111.179.208";
 
 const SUBDOMAIN_MIN = 3;
 const SUBDOMAIN_MAX = 30;
@@ -122,10 +122,10 @@ function validateSubdomainLabel(
 
 export async function checkManaged(req: Request, res: Response) {
   try {
-    const { desiredLabel } = req?.body as { desiredLabel?: string };
+    const { desiredLabel } = req.body as { desiredLabel?: string };
     const result = validateSubdomainLabel(desiredLabel || "");
     if (!result?.ok)
-      return res?.status(400).json({ ok: false, error: result.error });
+      return res.status(400).json({ ok: false, error: result.error });
 
     const fqdn = `${result?.normalized}.${BASE_DOMAIN}`;
     const existing = await db
@@ -134,23 +134,23 @@ export async function checkManaged(req: Request, res: Response) {
       .where(eq(storefrontDomains?.domain, fqdn))
       .limit(1);
 
-    return res?.json({
+    return res.json({
       ok: true,
       available: existing.length === 0,
       domain: fqdn,
     });
   } catch (err) {
-    logger?.warn({ err }, "[domains] checkManaged error");
-    return res?.status(500).json({ ok: false, error: "Internal error." });
+    logger.warn({ err }, "[domains] checkManaged error");
+    return res.status(500).json({ ok: false, error: "Internal error." });
   }
 }
 
 export async function reserveManaged(req: Request, res: Response) {
   try {
-    if (!req?.isAuthenticated())
-      return res?.status(401).json({ ok: false, error: "Unauthorized." });
+    if (!req.isAuthenticated())
+      return res.status(401).json({ ok: false, error: "Unauthorized." });
 
-    const { storefrontId, desiredLabel } = req?.body as {
+    const { storefrontId, desiredLabel } = req.body as {
       storefrontId?: string;
       desiredLabel?: string;
     };
@@ -161,7 +161,7 @@ export async function reserveManaged(req: Request, res: Response) {
 
     const labelResult = validateSubdomainLabel(desiredLabel || "");
     if (!labelResult?.ok)
-      return res?.status(400).json({ ok: false, error: labelResult.error });
+      return res.status(400).json({ ok: false, error: labelResult.error });
 
     const fqdn = `${labelResult?.normalized}.${BASE_DOMAIN}`;
 
@@ -175,8 +175,8 @@ export async function reserveManaged(req: Request, res: Response) {
       return res
         .status(404)
         .json({ ok: false, error: "Storefront not found." });
-    if (sf?.userId !== (req?.user as Record<string, unknown>).id)
-      return res?.status(403).json({ ok: false, error: "Unauthorized." });
+    if (sf?.userId !== (req.user as Record<string, unknown>).id)
+      return res.status(403).json({ ok: false, error: "Unauthorized." });
 
     const label = labelResult?.normalized;
 
@@ -248,7 +248,7 @@ export async function reserveManaged(req: Request, res: Response) {
     // wildcard A/CNAME record and are routed by the Host-header middleware.
     const publicShortUrl = `https://${label}.${BASE_DOMAIN}`;
 
-    logger?.info(
+    logger.info(
       `[domains] Managed subdomain reserved: ${fqdn} → storefront ${storefrontId} (public: ${publicShortUrl})`,
     );
     return res
@@ -446,11 +446,11 @@ export async function verifyCustomDomain(req: Request, res: Response) {
       })
       .where(eq(storefronts?.id, record?.storefrontId));
 
-    logger?.info(`[domains] Custom domain verified and activated: ${domain}`);
-    return res?.json({ ok: true, verified: true, domain });
+    logger.info(`[domains] Custom domain verified and activated: ${domain}`);
+    return res.json({ ok: true, verified: true, domain });
   } catch (err) {
-    logger?.warn("[domains] verifyCustomDomain error:", err);
-    return res?.status(500).json({ ok: false, error: "Internal error." });
+    logger.warn("[domains] verifyCustomDomain error:", err);
+    return res.status(500).json({ ok: false, error: "Internal error." });
   }
 }
 
@@ -458,10 +458,10 @@ export async function verifyCustomDomain(req: Request, res: Response) {
 
 export async function listDomains(req: Request, res: Response) {
   try {
-    if (!req?.isAuthenticated())
-      return res?.status(401).json({ ok: false, error: "Unauthorized." });
+    if (!req.isAuthenticated())
+      return res.status(401).json({ ok: false, error: "Unauthorized." });
 
-    const { storefrontId } = req?.params;
+    const { storefrontId } = req.params;
     const [sf] = await db
       .select({ userId: storefronts.userId })
       .from(storefronts)
@@ -472,27 +472,27 @@ export async function listDomains(req: Request, res: Response) {
       return res
         .status(404)
         .json({ ok: false, error: "Storefront not found." });
-    if (sf?.userId !== (req?.user as Record<string, unknown>).id)
-      return res?.status(403).json({ ok: false, error: "Unauthorized." });
+    if (sf?.userId !== (req.user as Record<string, unknown>).id)
+      return res.status(403).json({ ok: false, error: "Unauthorized." });
 
     const domains = await db
       .select()
       .from(storefrontDomains)
       .where(eq(storefrontDomains?.storefrontId, storefrontId));
 
-    return res?.json({ ok: true, domains });
+    return res.json({ ok: true, domains });
   } catch (err) {
-    logger?.warn("[domains] listDomains error:", err);
-    return res?.status(500).json({ ok: false, error: "Internal error." });
+    logger.warn("[domains] listDomains error:", err);
+    return res.status(500).json({ ok: false, error: "Internal error." });
   }
 }
 
 export async function deleteDomain(req: Request, res: Response) {
   try {
-    if (!req?.isAuthenticated())
-      return res?.status(401).json({ ok: false, error: "Unauthorized." });
+    if (!req.isAuthenticated())
+      return res.status(401).json({ ok: false, error: "Unauthorized." });
 
-    const { domainId } = req?.params;
+    const { domainId } = req.params;
     const [record] = await db
       .select()
       .from(storefrontDomains)
@@ -500,7 +500,7 @@ export async function deleteDomain(req: Request, res: Response) {
       .limit(1);
 
     if (!record)
-      return res?.status(404).json({ ok: false, error: "Domain not found." });
+      return res.status(404).json({ ok: false, error: "Domain not found." });
 
     const [sf] = await db
       .select({ userId: storefronts.userId })
@@ -508,8 +508,8 @@ export async function deleteDomain(req: Request, res: Response) {
       .where(eq(storefronts?.id, record?.storefrontId))
       .limit(1);
 
-    if (sf?.userId !== (req?.user as Record<string, unknown>).id)
-      return res?.status(403).json({ ok: false, error: "Unauthorized." });
+    if (sf?.userId !== (req.user as Record<string, unknown>).id)
+      return res.status(403).json({ ok: false, error: "Unauthorized." });
 
     await db
       .delete(storefrontDomains)
@@ -528,9 +528,9 @@ export async function deleteDomain(req: Request, res: Response) {
         .where(eq(storefrontHosts?.host, `www.${record?.domain}`));
     }
 
-    return res?.json({ ok: true });
+    return res.json({ ok: true });
   } catch (err) {
-    logger?.warn("[domains] deleteDomain error:", err);
-    return res?.status(500).json({ ok: false, error: "Internal error." });
+    logger.warn("[domains] deleteDomain error:", err);
+    return res.status(500).json({ ok: false, error: "Internal error." });
   }
 }

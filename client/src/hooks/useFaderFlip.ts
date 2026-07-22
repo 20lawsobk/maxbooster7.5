@@ -253,7 +253,7 @@ export function useFaderFlip({
         ...prev,
         [channelId]: {
           ...(prev[channelId] || {}),
-          [currentMode]: Math?.max(0, Math?.min(1, value)),
+          [currentMode]: Math.max(0, Math.min(1, value)),
         },
       }));
     },
@@ -274,7 +274,7 @@ export function useFaderFlip({
     } else {
       setGlobalModeState(null);
       setChannelModes((prev) =>
-        Object?.keys(prev).reduce((acc, id) => ({ ...acc, [id]: "volume" }), {}),
+        Object.keys(prev).reduce((acc, id) => ({ ...acc, [id]: "volume" }), {}),
       );
     }
   }, []);
@@ -314,10 +314,10 @@ export function useFaderFlip({
       const modeConfig = getModeConfig(mode);
       if (modeConfig?.type === "volume") {
         if (value === 0) return "-∞ dB";
-        const db = 20 * Math?.log10(value);
+        const db = 20 * Math.log10(value);
         return `${db > 0 ? "+" : ""}${db?.toFixed(1)} dB`;
       }
-      return `${Math?.round(value * 100)}%`;
+      return `${Math.round(value * 100)}%`;
     },
     [getModeConfig],
   );

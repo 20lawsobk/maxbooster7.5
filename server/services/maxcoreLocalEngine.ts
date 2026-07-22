@@ -45,7 +45,7 @@ export interface MaxCoreInferResponse {
 export async function maxcoreLocalInfer(
   _req: MaxCoreInferRequest,
 ): Promise<MaxCoreInferResponse | null> {
-  logger?.warn(
+  logger.warn(
     "[MaxCoreLocal] maxcoreLocalInfer() called — local engine removed. Use MaxCoreAIClient.infer() for 8TB dataset access.",
   );
   return null;

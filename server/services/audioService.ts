@@ -30,12 +30,12 @@ async function initializeFfmpeg() {
         ffmpeg?.setFfmpegPath(ffmpegStatic?.default);
       }
     } catch {
-      logger?.warn("ffmpeg-static not available, using system ffmpeg");
+      logger.warn("ffmpeg-static not available, using system ffmpeg");
     }
     ffmpegAvailable = true;
     return true;
   } catch (error) {
-    logger?.warn(
+    logger.warn(
       { err: error },
       "FFmpeg not available - audio processing features will be limited:",
     );
@@ -141,7 +141,7 @@ export class AudioService {
         expiresAt: new Date(Date?.now() + 3600000).toISOString(),
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error generating upload URL:");
+      logger.warn({ err: error }, "Error generating upload URL:");
       throw error instanceof Error
         ? error
         : new Error("Failed to generate upload URL");
@@ -158,17 +158,17 @@ export class AudioService {
       }
 
       // Get file metadata using ffmpeg
-      const metadata = await this?.getAudioMetadata(filePath);
+      const metadata = await this.getAudioMetadata(filePath);
 
       // Generate waveform and analysis data
-      const waveformData = await this?.generateWaveformFromFile(filePath);
-      const peaks = this?.extractPeaks(waveformData);
-      const rms = this?.calculateRMS(waveformData);
-      const peakLevel = this?.calculatePeakLevel(waveformData);
+      const waveformData = await this.generateWaveformFromFile(filePath);
+      const peaks = this.extractPeaks(waveformData);
+      const rms = this.calculateRMS(waveformData);
+      const peakLevel = this.calculatePeakLevel(waveformData);
 
       // Detect BPM and key (basic implementation)
-      const bpm = await this?.detectBPM(waveformData, metadata?.sampleRate);
-      const key = await this?.detectKey(waveformData, metadata?.sampleRate);
+      const bpm = await this.detectBPM(waveformData, metadata?.sampleRate);
+      const key = await this.detectKey(waveformData, metadata?.sampleRate);
 
       const analysis: AudioAnalysis = {
         duration: metadata.duration,
@@ -186,7 +186,7 @@ export class AudioService {
 
       return analysis;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error processing audio file:");
+      logger.warn({ err: error }, "Error processing audio file:");
       throw new Error("Failed to process audio file");
     }
   }
@@ -227,8 +227,8 @@ export class AudioService {
   private async generateWaveformFromFile(filePath: string): Promise<number[]> {
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
-      logger?.warn("FFmpeg not available - using fallback waveform data");
-      return this?.generateFallbackWaveform();
+      logger.warn("FFmpeg not available - using fallback waveform data");
+      return this.generateFallbackWaveform();
     }
     const tempWavPath = path?.join(os?.tmpdir(), `waveform_${randomUUID()}.wav`);
 
@@ -254,12 +254,12 @@ export class AudioService {
         samplesData instanceof Int16Array
           ? samplesData
           : new Int16Array(samplesData);
-      const downsampledData = this?.downsampleAudio(samples, 2000); // 2000 points for waveform
+      const downsampledData = this.downsampleAudio(samples, 2000); // 2000 points for waveform
 
       return downsampledData;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error generating waveform:");
-      return this?.generateFallbackWaveform();
+      logger.warn({ err: error }, "Error generating waveform:");
+      return this.generateFallbackWaveform();
     } finally {
       // Clean up temp file
       try {
@@ -280,14 +280,14 @@ export class AudioService {
     const downsampled: number[] = [];
 
     for (let i = 0; i < targetLength; i++) {
-      const start = Math?.floor(i * step);
-      const end = Math?.floor((i + 1) * step);
+      const start = Math.floor(i * step);
+      const end = Math.floor((i + 1) * step);
 
       let sum = 0;
       let count = 0;
 
       for (let j = start; j < end && j < samples?.length; j++) {
-        sum += Math?.abs(samples[j]);
+        sum += Math.abs(samples[j]);
         count++;
       }
 
@@ -300,12 +300,12 @@ export class AudioService {
 
   private extractPeaks(waveformData: number[]): number[] {
     const peaks: number[] = [];
-    const windowSize = Math?.floor(waveformData?.length / 200); // 200 peak points
+    const windowSize = Math.floor(waveformData?.length / 200); // 200 peak points
 
     for (let i = 0; i < waveformData.length; i += windowSize) {
       let maxPeak = 0;
-      for (let j = i; j < Math?.min(i + windowSize, waveformData?.length); j++) {
-        maxPeak = Math?.max(maxPeak, Math?.abs(waveformData[j]));
+      for (let j = i; j < Math.min(i + windowSize, waveformData?.length); j++) {
+        maxPeak = Math.max(maxPeak, Math.abs(waveformData[j]));
       }
       peaks?.push(maxPeak);
     }
@@ -318,11 +318,11 @@ export class AudioService {
     for (const sample of waveformData) {
       sum += sample * sample;
     }
-    return Math?.sqrt(sum / waveformData?.length);
+    return Math.sqrt(sum / waveformData?.length);
   }
 
   private calculatePeakLevel(waveformData: number[]): number {
-    return Math?.max(...waveformData?.map(Math?.abs));
+    return Math.max(...waveformData?.map(Math.abs));
   }
 
   async convertAudioFormat(
@@ -378,12 +378,12 @@ export class AudioService {
     );
 
     try {
-      logger?.info(
+      logger.info(
         `Converting ${inputPath} to ${outputFormat} format (${audioFormat}, ${sampleRate}Hz, ${bitDepth}-bit)`,
       );
 
       // Validate audio configuration
-      const validation = this?.validateAudioQuality({
+      const validation = this.validateAudioQuality({
         sampleRate,
         bitDepth,
         audioFormat,
@@ -410,7 +410,7 @@ export class AudioService {
         switch (outputFormat?.toLowerCase()) {
           case "wav":
             // WAV supports PCM16, PCM24, and Float32
-            const wavCodec = this?.getFFmpegCodec(
+            const wavCodec = this.getFFmpegCodec(
               audioFormat as AudioFormat,
               bitDepth,
             );
@@ -418,7 +418,7 @@ export class AudioService {
               .audioCodec(wavCodec)
               .audioFrequency(options?.sampleRate)
               .audioChannels(options?.channels);
-            logger?.info(`  WAV export: ${wavCodec} @ ${options?.sampleRate}Hz`);
+            logger.info(`  WAV export: ${wavCodec} @ ${options?.sampleRate}Hz`);
             break;
           case "mp3":
             command = command
@@ -478,9 +478,9 @@ export class AudioService {
       await storageService?.deleteWithTTL(key, 86400000);
 
       // Get duration from metadata
-      const metadata = await this?.getAudioMetadata(tempOutputPath);
+      const metadata = await this.getAudioMetadata(tempOutputPath);
 
-      logger?.info(`✅ Successfully converted to ${outputFormat}`);
+      logger.info(`✅ Successfully converted to ${outputFormat}`);
 
       return {
         storageKey: key,
@@ -488,7 +488,7 @@ export class AudioService {
         format: outputFormat,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error converting audio format:");
+      logger.warn({ err: error }, "Error converting audio format:");
       throw new Error("Failed to convert audio format");
     } finally {
       // Clean up temp file
@@ -523,13 +523,13 @@ export class AudioService {
     const { filePath } = data;
 
     try {
-      logger?.info(`Generating waveform for ${filePath}`);
+      logger.info(`Generating waveform for ${filePath}`);
 
-      const waveformData = await this?.generateWaveformFromFile(filePath);
-      const metadata = await this?.getAudioMetadata(filePath);
+      const waveformData = await this.generateWaveformFromFile(filePath);
+      const metadata = await this.getAudioMetadata(filePath);
 
       // Store waveform data in storage as JSON
-      const waveformJson = JSON?.stringify({
+      const waveformJson = JSON.stringify({
         waveformData,
         peaks: this.extractPeaks(waveformData),
         rms: this.calculateRMS(waveformData),
@@ -550,7 +550,7 @@ export class AudioService {
       // Schedule cleanup after 24 hours
       await storageService?.deleteWithTTL(key, 86400000);
 
-      logger?.info(`✅ Successfully generated waveform`);
+      logger.info(`✅ Successfully generated waveform`);
 
       return {
         storageKey: key,
@@ -558,7 +558,7 @@ export class AudioService {
         format: "json",
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error generating waveform:");
+      logger.warn({ err: error }, "Error generating waveform:");
       throw new Error("Failed to generate waveform");
     }
   }
@@ -576,7 +576,7 @@ export class AudioService {
 
       const previewPath = filePath?.replace(/\.[^/.]+$/, "_preview.mp3");
 
-      logger?.info(
+      logger.info(
         `Generating preview for ${filePath} from ${startTime}s for ${duration}s`,
       );
 
@@ -590,11 +590,11 @@ export class AudioService {
           .audioFrequency(44100)
           .output(previewPath)
           .on("end", () => {
-            logger?.info(`✅ Generated preview at ${previewPath}`);
+            logger.info(`✅ Generated preview at ${previewPath}`);
             resolve();
           })
           .on("error", (err: Error) => {
-            logger?.warn({ err: err }, "FFmpeg preview error:");
+            logger.warn({ err: err }, "FFmpeg preview error:");
             reject(err);
           })
           .run();
@@ -602,7 +602,7 @@ export class AudioService {
 
       return previewPath;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error generating audio preview:");
+      logger.warn({ err: error }, "Error generating audio preview:");
       throw new Error("Failed to generate audio preview");
     }
   }
@@ -613,7 +613,7 @@ export class AudioService {
   ): Promise<number> {
     try {
       // Simple onset detection algorithm
-      const onsets = this?.detectOnsets(waveformData, sampleRate);
+      const onsets = this.detectOnsets(waveformData, sampleRate);
       if (onsets?.length < 2) {
         return 120; // Default BPM
       }
@@ -626,12 +626,12 @@ export class AudioService {
 
       // Find most common interval (simplified)
       const avgInterval = intervals?.reduce((a, b) => a + b) / intervals?.length;
-      const bpm = Math?.round(60 / avgInterval);
+      const bpm = Math.round(60 / avgInterval);
 
       // Constrain to reasonable BPM range
-      return Math?.max(60, Math?.min(200, bpm));
+      return Math.max(60, Math.min(200, bpm));
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error detecting BPM:");
+      logger.warn({ err: error }, "Error detecting BPM:");
       return 120;
     }
   }
@@ -649,8 +649,8 @@ export class AudioService {
       // Compute a basic chromagram: for each sample, map its energy to a pitch class
       // using zero-crossing rate as a proxy for dominant frequency.
       // We process the signal in overlapping 50 ms frames.
-      const frameSize = Math?.max(1, Math?.floor(sampleRate * 0.05));
-      const hopSize = Math?.floor(frameSize / 2);
+      const frameSize = Math.max(1, Math.floor(sampleRate * 0.05));
+      const hopSize = Math.floor(frameSize / 2);
       const A4 = 440;
       const A4_MIDI = 69;
 
@@ -666,7 +666,7 @@ export class AudioService {
           if (waveformData[i] >= 0 !== waveformData[i - 1] >= 0) zcr++;
           rms += waveformData[i] * waveformData[i];
         }
-        rms = Math?.sqrt(rms / frameSize);
+        rms = Math.sqrt(rms / frameSize);
         if (rms < 0.001) continue; // Skip silent frames
 
         // ZCR → approximate frequency
@@ -674,8 +674,8 @@ export class AudioService {
         if (freq < 20 || freq > 8000) continue;
 
         // Frequency → MIDI pitch → pitch class
-        const midi = 12 * Math?.log2(freq / A4) + A4_MIDI;
-        const pitchClass = ((Math?.round(midi) % 12) + 12) % 12;
+        const midi = 12 * Math.log2(freq / A4) + A4_MIDI;
+        const pitchClass = ((Math.round(midi) % 12) + 12) % 12;
         chroma[pitchClass] += rms;
       }
 
@@ -723,7 +723,7 @@ export class AudioService {
           sumB2 += b[i] * b[i];
         }
         const num = n * sumAB - sumA * sumB;
-        const den = Math?.sqrt(
+        const den = Math.sqrt(
           (n * sumA2 - sumA * sumA) * (n * sumB2 - sumB * sumB),
         );
         return den === 0 ? 0 : num / den;
@@ -752,19 +752,19 @@ export class AudioService {
 
       return `${bestKey} ${bestMode}`;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error detecting key:");
+      logger.warn({ err: error }, "Error detecting key:");
       return "C Major";
     }
   }
 
   private detectOnsets(waveformData: number[], sampleRate: number): number[] {
     const onsets: number[] = [];
-    const windowSize = Math?.floor(sampleRate * 0.02); // 20ms window
+    const windowSize = Math.floor(sampleRate * 0.02); // 20ms window
     const threshold = 0.1;
 
     for (let i = windowSize; i < waveformData?.length - windowSize; i++) {
-      const current = Math?.abs(waveformData[i]);
-      const previous = Math?.abs(waveformData[i - windowSize]);
+      const current = Math.abs(waveformData[i]);
+      const previous = Math.abs(waveformData[i - windowSize]);
 
       if (current > previous + threshold) {
         const timeInSeconds = i / sampleRate;
@@ -782,15 +782,15 @@ export class AudioService {
     filePath: string,
   ): Promise<{ bpm: number; confidence: number }> {
     try {
-      const waveformData = await this?.generateWaveformFromFile(filePath);
-      const metadata = await this?.getAudioMetadata(filePath);
-      const bpm = await this?.detectBPM(waveformData, metadata?.sampleRate);
+      const waveformData = await this.generateWaveformFromFile(filePath);
+      const metadata = await this.getAudioMetadata(filePath);
+      const bpm = await this.detectBPM(waveformData, metadata?.sampleRate);
 
-      logger?.info(`Analyzed tempo for ${filePath}: ${bpm} BPM`);
+      logger.info(`Analyzed tempo for ${filePath}: ${bpm} BPM`);
 
       return { bpm, confidence: 0.85 };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error analyzing audio tempo:");
+      logger.warn({ err: error }, "Error analyzing audio tempo:");
       return { bpm: 120, confidence: 0.5 };
     }
   }
@@ -799,10 +799,10 @@ export class AudioService {
     filePath: string,
   ): Promise<{ key: string; scale: string; confidence: number }> {
     try {
-      const waveformData = await this?.generateWaveformFromFile(filePath);
-      const metadata = await this?.getAudioMetadata(filePath);
+      const waveformData = await this.generateWaveformFromFile(filePath);
+      const metadata = await this.getAudioMetadata(filePath);
 
-      const chroma = this?.computeChromaFeatures(
+      const chroma = this.computeChromaFeatures(
         waveformData,
         metadata?.sampleRate,
       );
@@ -838,11 +838,11 @@ export class AudioService {
       for (let i = 0; i < 12; i++) {
         const rotatedChroma = [...chroma?.slice(i), ...chroma?.slice(0, i)];
 
-        const majorCorr = this?.pearsonCorrelation(
+        const majorCorr = this.pearsonCorrelation(
           rotatedChroma,
           keyProfiles?.major,
         );
-        const minorCorr = this?.pearsonCorrelation(
+        const minorCorr = this.pearsonCorrelation(
           rotatedChroma,
           keyProfiles?.minor,
         );
@@ -859,18 +859,18 @@ export class AudioService {
         }
       }
 
-      const confidence = Math?.min(
+      const confidence = Math.min(
         0.95,
-        Math?.max(0.5, (bestCorrelation + 1) / 2),
+        Math.max(0.5, (bestCorrelation + 1) / 2),
       );
 
-      logger?.info(
-        `Detected key for ${filePath}: ${bestKey} ${bestScale} (${Math?.round(confidence * 100)}% confidence)`,
+      logger.info(
+        `Detected key for ${filePath}: ${bestKey} ${bestScale} (${Math.round(confidence * 100)}% confidence)`,
       );
 
       return { key: bestKey, scale: bestScale, confidence };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error detecting audio key:");
+      logger.warn({ err: error }, "Error detecting audio key:");
       return { key: "C", scale: "Major", confidence: 0.5 };
     }
   }
@@ -886,23 +886,23 @@ export class AudioService {
     for (let i = 0; i < waveformData.length - windowSize; i += hopSize) {
       const window = waveformData?.slice(i, i + windowSize);
       const magnitude =
-        window?.reduce((sum, val) => sum + Math?.abs(val), 0) / windowSize;
+        window?.reduce((sum, val) => sum + Math.abs(val), 0) / windowSize;
 
       for (let note = 0; note < 12; note++) {
-        const freq = 440 * Math?.pow(2, (note - 9) / 12);
+        const freq = 440 * Math.pow(2, (note - 9) / 12);
         const period = sampleRate / freq;
         let correlation = 0;
 
         for (
           let j = 0;
-          j < Math?.min(window?.length, Math?.floor(period * 4));
+          j < Math.min(window?.length, Math.floor(period * 4));
           j++
         ) {
           const phase = (2 * Math.PI * j) / period;
-          correlation += window[j] * Math?.sin(phase);
+          correlation += window[j] * Math.sin(phase);
         }
 
-        chroma[note] += Math?.abs(correlation) * magnitude;
+        chroma[note] += Math.abs(correlation) * magnitude;
       }
     }
 
@@ -919,7 +919,7 @@ export class AudioService {
     const sumY2 = y?.reduce((sum, yi) => sum + yi * yi, 0);
 
     const numerator = n * sumXY - sumX * sumY;
-    const denominator = Math?.sqrt(
+    const denominator = Math.sqrt(
       (n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY),
     );
 
@@ -938,7 +938,7 @@ export class AudioService {
 
       const processedPath = filePath?.replace(/\.[^/.]+$/, "_processed.wav");
 
-      logger?.info(`Applying ${effects?.length} effects to ${filePath}`);
+      logger.info(`Applying ${effects?.length} effects to ${filePath}`);
 
       let audioFilters: string[] = [];
 
@@ -968,7 +968,7 @@ export class AudioService {
             const damping = effect?.settings?.damping || 0.5;
             const wetLevel = effect?.settings?.wetLevel || 0.3;
             audioFilters?.push(
-              `aecho=0.8:${wetLevel}:${Math?.floor(roomSize * 100)}:${damping}`,
+              `aecho=0.8:${wetLevel}:${Math.floor(roomSize * 100)}:${damping}`,
             );
             break;
           case "delay":
@@ -998,7 +998,7 @@ export class AudioService {
             audioFilters.push(`volume=${gainDb}dB`);
             break;
           default:
-            logger?.warn(`Unknown effect type: ${effect?.type}`);
+            logger.warn(`Unknown effect type: ${effect?.type}`);
         }
       }
 
@@ -1015,11 +1015,11 @@ export class AudioService {
           .audioFrequency(48000)
           .output(processedPath)
           .on("end", () => {
-            logger?.info(`✅ Applied ${effects?.length} effects successfully`);
+            logger.info(`✅ Applied ${effects?.length} effects successfully`);
             resolve();
           })
           .on("error", (err: Error) => {
-            logger?.warn({ err: err }, "FFmpeg effects error:");
+            logger.warn({ err: err }, "FFmpeg effects error:");
             reject(err);
           })
           .run();
@@ -1027,7 +1027,7 @@ export class AudioService {
 
       return processedPath;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error applying audio effects:");
+      logger.warn({ err: error }, "Error applying audio effects:");
       throw new Error("Failed to apply audio effects");
     }
   }
@@ -1069,7 +1069,7 @@ export class AudioService {
     );
 
     try {
-      logger?.info(`Mixing ${tracks?.length} tracks`);
+      logger.info(`Mixing ${tracks?.length} tracks`);
 
       if (tracks?.length === 0) {
         throw new Error("No tracks to mix");
@@ -1105,7 +1105,7 @@ export class AudioService {
 
           await storageService?.deleteWithTTL(key, 86400000);
 
-          const metadata = await this?.getAudioMetadata(tempTracks[0].filePath);
+          const metadata = await this.getAudioMetadata(tempTracks[0].filePath);
 
           return {
             storageKey: key,
@@ -1123,7 +1123,7 @@ export class AudioService {
 
             // Apply volume/gain if specified (track?.volume should be 0-1, convert to dB)
             if (track?.volume !== undefined && track?.volume !== 1.0) {
-              const gainDb = 20 * Math?.log10(track?.volume);
+              const gainDb = 20 * Math.log10(track?.volume);
               command?.complexFilter([
                 `[${index}:a]volume=${gainDb}dB[a${index}]`,
               ]);
@@ -1162,9 +1162,9 @@ export class AudioService {
         await storageService?.deleteWithTTL(key, 86400000);
 
         // Get duration from metadata
-        const metadata = await this?.getAudioMetadata(tempMixPath);
+        const metadata = await this.getAudioMetadata(tempMixPath);
 
-        logger?.info(`✅ Successfully mixed ${tempTracks?.length} tracks`);
+        logger.info(`✅ Successfully mixed ${tempTracks?.length} tracks`);
 
         return {
           storageKey: key,
@@ -1182,7 +1182,7 @@ export class AudioService {
         }
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error mixing audio tracks:");
+      logger.warn({ err: error }, "Error mixing audio tracks:");
       throw new Error("Failed to mix audio tracks");
     } finally {
       // Clean up temp mix file
@@ -1206,7 +1206,7 @@ export class AudioService {
 
       const masteredPath = filePath?.replace(/\.[^/.]+$/, "_mastered.wav");
 
-      logger?.info(`Mastering ${filePath} with settings:`, masteringSettings);
+      logger.info(`Mastering ${filePath} with settings:`, masteringSettings);
 
       const targetLoudness = masteringSettings?.targetLoudness || -14;
       const truePeak = masteringSettings?.truePeak || -1;
@@ -1250,11 +1250,11 @@ export class AudioService {
           .audioFrequency(48000)
           .output(masteredPath)
           .on("end", () => {
-            logger?.info(`✅ Mastered audio saved to ${masteredPath}`);
+            logger.info(`✅ Mastered audio saved to ${masteredPath}`);
             resolve();
           })
           .on("error", (err: Error) => {
-            logger?.warn({ err: err }, "FFmpeg mastering error:");
+            logger.warn({ err: err }, "FFmpeg mastering error:");
             reject(err);
           })
           .run();
@@ -1262,7 +1262,7 @@ export class AudioService {
 
       return masteredPath;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error mastering audio:");
+      logger.warn({ err: error }, "Error mastering audio:");
       throw new Error("Failed to master audio");
     }
   }
@@ -1273,14 +1273,14 @@ export class AudioService {
     format: string = "wav",
   ): Promise<{ stems: string[]; zip?: string }> {
     try {
-      logger?.info(`Exporting ${tracks?.length} stems as ${format}`);
+      logger.info(`Exporting ${tracks?.length} stems as ${format}`);
 
       const stems: string[] = [];
 
       // Export each track as individual stem
       for (const track of tracks) {
         if (!track?.filePath || !fs?.existsSync(track?.filePath)) {
-          logger?.warn(
+          logger.warn(
             `Skipping track ${track?.name}: file not found at ${track?.filePath}`,
           );
           continue;
@@ -1289,7 +1289,7 @@ export class AudioService {
         const stemName = `${track?.name || `track_${track?.trackNumber}`}_stem.${format}`;
 
         // Convert to requested format (returns storage key)
-        const convertedKey = await this?.convertAudioFormat(
+        const convertedKey = await this.convertAudioFormat(
           track?.filePath,
           format,
         );
@@ -1310,11 +1310,11 @@ export class AudioService {
         // The converted file will be auto-cleaned by TTL
       }
 
-      logger?.info(`✅ Exported ${stems?.length} stems successfully`);
+      logger.info(`✅ Exported ${stems?.length} stems successfully`);
 
       return { stems };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error exporting stems:");
+      logger.warn({ err: error }, "Error exporting stems:");
       throw new Error("Failed to export stems");
     }
   }
@@ -1328,11 +1328,11 @@ export class AudioService {
     try {
       if (exportType === "stems") {
         // Export individual stems
-        return await this?.exportStems(tracks, "", format);
+        return await this.exportStems(tracks, "", format);
       } else {
         // Export mixed down audio
         // First mix all tracks (returns storage key for temp file)
-        const mixedKey = await this?.mixAudioTracks(tracks);
+        const mixedKey = await this.mixAudioTracks(tracks);
 
         // Download the mixed file to convert it
         const mixedBuffer = await storageService?.downloadFile(mixedKey);
@@ -1341,7 +1341,7 @@ export class AudioService {
 
         try {
           // Convert to requested format (returns storage key)
-          const convertedKey = await this?.convertAudioFormat(
+          const convertedKey = await this.convertAudioFormat(
             tempMixPath,
             format,
             {
@@ -1372,7 +1372,7 @@ export class AudioService {
         }
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error exporting project audio:");
+      logger.warn({ err: error }, "Error exporting project audio:");
       throw new Error("Failed to export project audio");
     }
   }

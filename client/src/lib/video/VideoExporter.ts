@@ -103,7 +103,7 @@ function getDefaultBitrate(
   };
 
   const fpsMultiplier = frameRate / 30;
-  return Math?.round(baseBitrates[resolution] * fpsMultiplier);
+  return Math.round(baseBitrates[resolution] * fpsMultiplier);
 }
 
 export class VideoExporter {
@@ -127,7 +127,7 @@ export class VideoExporter {
       );
     }
 
-    if (this?.isExporting) {
+    if (this.isExporting) {
       throw new VideoExportError(
         "Export already in progress",
         "ENCODING_FAILED",
@@ -146,12 +146,12 @@ export class VideoExporter {
 
     if (options?.signal) {
       options?.signal.addEventListener("abort", () => {
-        this?.abort();
+        this.abort();
       });
     }
 
     try {
-      this?.reportProgress(options?.onProgress, {
+      this.reportProgress(options?.onProgress, {
         phase: "preparing",
         currentFrame: 0,
         totalFrames: Math.ceil(project?.duration * frameRate),
@@ -164,8 +164,8 @@ export class VideoExporter {
       this.canvas.width = resolution?.width;
       this.canvas.height = resolution?.height;
 
-      this.stream = this?.canvas.captureStream(frameRate);
-      if (!this?.stream) {
+      this.stream = this.canvas.captureStream(frameRate);
+      if (!this.stream) {
         throw new VideoExportError(
           "Failed to capture canvas stream",
           "CANVAS_CAPTURE_FAILED",
@@ -183,9 +183,9 @@ export class VideoExporter {
         recorderOptions.audioBitsPerSecond = options?.audioBitrate;
       }
 
-      this.mediaRecorder = new MediaRecorder(this?.stream, recorderOptions);
+      this.mediaRecorder = new MediaRecorder(this.stream, recorderOptions);
 
-      const videoBlob = await this?.recordFrames(
+      const videoBlob = await this.recordFrames(
         project,
         frameRenderer,
         resolution,
@@ -193,23 +193,23 @@ export class VideoExporter {
         options?.onProgress,
       );
 
-      if (this?.aborted) {
+      if (this.aborted) {
         throw new VideoExportError("Export was cancelled", "ABORTED");
       }
 
       let finalBlob = videoBlob;
 
       if (options?.audioUrl) {
-        this?.reportProgress(options?.onProgress, {
+        this.reportProgress(options?.onProgress, {
           phase: "muxing",
           currentFrame: Math.ceil(project?.duration * frameRate),
           totalFrames: Math.ceil(project?.duration * frameRate),
           percentage: 95,
           estimatedTimeRemaining: 0,
-          elapsedTime: (performance?.now() - this?.startTime) / 1000,
+          elapsedTime: (performance?.now() - this.startTime) / 1000,
         });
 
-        finalBlob = await this?.muxAudio(
+        finalBlob = await this.muxAudio(
           videoBlob,
           options?.audioUrl,
           format,
@@ -217,13 +217,13 @@ export class VideoExporter {
         );
       }
 
-      this?.reportProgress(options?.onProgress, {
+      this.reportProgress(options?.onProgress, {
         phase: "finalizing",
         currentFrame: Math.ceil(project?.duration * frameRate),
         totalFrames: Math.ceil(project?.duration * frameRate),
         percentage: 100,
         estimatedTimeRemaining: 0,
-        elapsedTime: (performance?.now() - this?.startTime) / 1000,
+        elapsedTime: (performance?.now() - this.startTime) / 1000,
       });
 
       return {
@@ -234,7 +234,7 @@ export class VideoExporter {
         fileSize: finalBlob.size,
       };
     } finally {
-      this?.cleanup();
+      this.cleanup();
     }
   }
 
@@ -246,25 +246,25 @@ export class VideoExporter {
     onProgress?: (progress: ExportProgress) => void,
   ): Promise<Blob> {
     return new Promise((resolve, reject) => {
-      if (!this?.mediaRecorder || !this?.canvas) {
+      if (!this.mediaRecorder || !this.canvas) {
         reject(
           new VideoExportError("Recorder not initialized", "ENCODING_FAILED"),
         );
         return;
       }
 
-      const totalFrames = Math?.ceil(project?.duration * frameRate);
+      const totalFrames = Math.ceil(project?.duration * frameRate);
       let currentFrame = 0;
 
       this.mediaRecorder.ondataavailable = (event) => {
         if (event?.data.size > 0) {
-          this?.recordedChunks.push(event?.data);
+          this.recordedChunks.push(event?.data);
         }
       };
 
       this.mediaRecorder.onstop = () => {
-        const mimeType = this?.mediaRecorder?.mimeType ?? "video/webm";
-        const blob = new Blob(this?.recordedChunks, { type: mimeType });
+        const mimeType = this.mediaRecorder?.mimeType ?? "video/webm";
+        const blob = new Blob(this.recordedChunks, { type: mimeType });
         resolve(blob);
       };
 
@@ -278,23 +278,23 @@ export class VideoExporter {
         );
       };
 
-      this?.mediaRecorder.start();
+      this.mediaRecorder.start();
 
       const renderNextFrame = async () => {
-        if (this?.aborted) {
-          this?.mediaRecorder?.stop();
+        if (this.aborted) {
+          this.mediaRecorder?.stop();
           return;
         }
 
         if (currentFrame >= totalFrames) {
-          this?.mediaRecorder?.stop();
+          this.mediaRecorder?.stop();
           return;
         }
 
         const timestamp = currentFrame / frameRate;
 
         try {
-          await frameRenderer(this?.canvas!, currentFrame, timestamp);
+          await frameRenderer(this.canvas!, currentFrame, timestamp);
         } catch (error) {
           reject(
             new VideoExportError(
@@ -308,13 +308,13 @@ export class VideoExporter {
 
         currentFrame++;
 
-        const elapsedTime = (performance?.now() - this?.startTime) / 1000;
+        const elapsedTime = (performance?.now() - this.startTime) / 1000;
         const framesPerSecond = currentFrame / elapsedTime;
         const remainingFrames = totalFrames - currentFrame;
         const estimatedTimeRemaining =
           framesPerSecond > 0 ? remainingFrames / framesPerSecond : 0;
 
-        this?.reportProgress(onProgress, {
+        this.reportProgress(onProgress, {
           phase: "rendering",
           currentFrame,
           totalFrames,
@@ -427,17 +427,17 @@ export class VideoExporter {
 
   abort(): void {
     this.aborted = true;
-    if (this?.mediaRecorder && this?.mediaRecorder.state !== "inactive") {
-      this?.mediaRecorder.stop();
+    if (this.mediaRecorder && this.mediaRecorder.state !== "inactive") {
+      this.mediaRecorder.stop();
     }
-    this?.cleanup();
+    this.cleanup();
   }
 
   private cleanup(): void {
     this.isExporting = false;
 
-    if (this?.stream) {
-      for (const track of this?.stream.getTracks()) {
+    if (this.stream) {
+      for (const track of this.stream.getTracks()) {
         track?.stop();
       }
       this.stream = null;
@@ -458,7 +458,7 @@ export class VideoExporter {
   }
 
   isActive(): boolean {
-    return this?.isExporting;
+    return this.isExporting;
   }
 
   static isFormatSupported(format: VideoFormat): boolean {

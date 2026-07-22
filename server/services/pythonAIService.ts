@@ -3,14 +3,14 @@ import { logger } from "../logger.js";
 // Call the Python AI sidecar directly (loopback, no CSRF/auth layer needed).
 // Routing through the main Express server (/api/ai-service) would hit the CSRF
 // middleware and fail because server-to-server fetches carry no CSRF cookie.
-const PYTHON_AI_PORT = parseInt(process?.env.PYTHON_AI_PORT || "9878", 10);
+const PYTHON_AI_PORT = parseInt(process.env.PYTHON_AI_PORT || "9878", 10);
 const AI_MODEL_URL =
-  process?.env.AI_MODEL_SERVICE_URL || `http://127.0.0.1:${PYTHON_AI_PORT}`;
+  process.env.AI_MODEL_SERVICE_URL || `http://127.0.0.1:${PYTHON_AI_PORT}`;
 const TIMEOUT_MS = 120_000; // raised: audio analysis, transcription, and heavy ML inference can exceed 30s
 
 // Kept for any callers that still pass through Express; unused when calling the
 // sidecar directly since the sidecar binds to 127.0.0.1 only.
-const _INTERNAL_SECRET = process?.env.BOOSTERSTATE_SECRET || "";
+const _INTERNAL_SECRET = process.env.BOOSTERSTATE_SECRET || "";
 function internalAuthHeaders(): Record<string, string> {
   return _INTERNAL_SECRET
     ? { Authorization: `Bearer ${_INTERNAL_SECRET}` }
@@ -54,7 +54,7 @@ async function callAIModel<T>(
 
     if (!response?.ok) {
       const errorText = await response?.text();
-      logger?.warn(
+      logger.warn(
         `[PythonAI] ${endpoint} returned ${response?.status}: ${errorText}`,
       );
       return { success: false, error: `AI Model returned ${response?.status}` };
@@ -64,10 +64,10 @@ async function callAIModel<T>(
     return { success: true, data };
   } catch (err) {
     if (err instanceof Error && err?.name === "AbortError") {
-      logger?.warn(`[PythonAI] ${endpoint} timed out after ${TIMEOUT_MS}ms`);
+      logger.warn(`[PythonAI] ${endpoint} timed out after ${TIMEOUT_MS}ms`);
       return { success: false, error: "AI Model request timed out" };
     }
-    logger?.warn({ err: err }, `[PythonAI] ${endpoint} failed:`);
+    logger.warn({ err: err }, `[PythonAI] ${endpoint} failed:`);
     return { success: false, error: "AI Model service unavailable" };
   }
 }
@@ -178,10 +178,10 @@ export class PythonAIService {
 
   async isAvailable(): Promise<boolean> {
     const now = Date?.now();
-    if (this?.available === true) return true;
+    if (this.available === true) return true;
     if (
-      this?.available === false &&
-      now - this?.lastCheckMs < this?.RECHECK_INTERVAL_MS
+      this.available === false &&
+      now - this.lastCheckMs < this.RECHECK_INTERVAL_MS
     )
       return false;
     try {
@@ -195,10 +195,10 @@ export class PythonAIService {
       );
       this.available = response?.ok;
       this.lastCheckMs = now;
-      if (this?.available) {
-        logger?.info("[PythonAI] AI Content Model service is available");
+      if (this.available) {
+        logger.info("[PythonAI] AI Content Model service is available");
       }
-      return this?.available;
+      return this.available;
     } catch {
       this.available = false;
       this.lastCheckMs = now;

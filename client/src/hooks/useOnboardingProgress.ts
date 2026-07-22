@@ -74,7 +74,7 @@ export function useOnboardingProgress() {
       }
     },
     onError: (error) => {
-      logger?.error("Failed to complete onboarding step:", error);
+      logger.error("Failed to complete onboarding step:", error);
     },
   });
 
@@ -97,7 +97,7 @@ export function useOnboardingProgress() {
     async (name: OnboardingTaskName): Promise<boolean> => {
       const task = findTaskByName(name);
       if (!task) {
-        logger?.warn(`Onboarding task not found: ${name}`);
+        logger.warn(`Onboarding task not found: ${name}`);
         return false;
       }
 
@@ -109,7 +109,7 @@ export function useOnboardingProgress() {
         await completeStepMutation?.mutateAsync(task?.id);
         return true;
       } catch (error) {
-        logger?.error(`Failed to complete task: ${name}`, error);
+        logger.error(`Failed to complete task: ${name}`, error);
         return false;
       }
     },
@@ -120,7 +120,7 @@ export function useOnboardingProgress() {
     async (stepId: string): Promise<boolean> => {
       const task = progress?.tasks?.find((t) => t?.id === stepId);
       if (!task) {
-        logger?.warn(`Onboarding task not found with id: ${stepId}`);
+        logger.warn(`Onboarding task not found with id: ${stepId}`);
         return false;
       }
 
@@ -132,7 +132,7 @@ export function useOnboardingProgress() {
         await completeStepMutation?.mutateAsync(stepId);
         return true;
       } catch (error) {
-        logger?.error(`Failed to complete task: ${stepId}`, error);
+        logger.error(`Failed to complete task: ${stepId}`, error);
         return false;
       }
     },

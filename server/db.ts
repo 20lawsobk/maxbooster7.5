@@ -224,7 +224,7 @@ export const pool = new InstrumentedPool({
 // which may not forward arbitrary startup options to the backend.
 pool?.on("connect", (client: Record<string, unknown>) => {
   client.query("SET statement_timeout = '30000'").catch((err: Error) => {
-    logger?.warn(
+    logger.warn(
       "[DB] Failed to set statement_timeout on new connection:",
       err?.message,
     );
@@ -234,7 +234,7 @@ pool?.on("connect", (client: Record<string, unknown>) => {
 // Pool-level error handler — prevents unhandled 'error' events from idle client
 // disconnects from becoming uncaughtExceptions and crashing the process.
 pool?.on("error", (err: Error) => {
-  logger?.warn("[DB] Idle client error (pool):", err?.message);
+  logger.warn("[DB] Idle client error (pool):", err?.message);
 });
 
 export const db = drizzle(pool, { schema });
@@ -243,9 +243,9 @@ export const db = drizzle(pool, { schema });
 // In production, DATABASE_REPLICA_URLS routes SELECT queries to the Neon read replica.
 // In development, all queries run on the primary — replicas are a production resource.
 const isProduction =
-  process?.env.NODE_ENV === "production" || !!process?.env.REPLIT_DEPLOYMENT;
+  process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT;
 const replicaUrl = isProduction
-  ? (process?.env.DATABASE_REPLICA_URLS || "").split(",").filter(Boolean)[0]
+  ? (process.env.DATABASE_REPLICA_URLS || "").split(",").filter(Boolean)[0]
   : undefined;
 
 export const replicaPool = replicaUrl
@@ -260,16 +260,16 @@ export const replicaPool = replicaUrl
 // Prevent uncaughtException from replica pool idle client disconnects
 if (replicaPool) {
   replicaPool?.on("error", (err: Error) => {
-    logger?.warn("[DB] Idle client error (replica pool):", err?.message);
+    logger.warn("[DB] Idle client error (replica pool):", err?.message);
   });
 }
 
 if (isProduction && replicaPool) {
-  logger?.info(
+  logger.info(
     "[db] Read replica pool created — will verify connectivity at startup",
   );
 } else if (isProduction && !replicaPool) {
-  logger?.warn(
+  logger.warn(
     "[db] DATABASE_REPLICA_URLS not set — all queries routed to primary in production",
   );
 }
@@ -286,15 +286,15 @@ export async function verifyReadReplica(): Promise<void> {
   if (!replicaPool) return;
   try {
     await dbRead?.execute(sql`SELECT 1`);
-    logger?.info(
+    logger.info(
       "[db] ✅ Read replica verified — SELECTs route to Neon replica",
     );
   } catch (err) {
-    logger?.warn(
+    logger.warn(
       "[db] ❌ Read replica health check FAILED — routing ALL queries to primary",
     );
-    logger?.warn(`[db]    Replica error: ${err?.message}`);
-    logger?.warn(
+    logger.warn(`[db]    Replica error: ${err?.message}`);
+    logger.warn(
       "[db]    Check DATABASE_REPLICA_URLS — the replica URL may be invalid or the Neon replica may be down",
     );
     dbRead = db;

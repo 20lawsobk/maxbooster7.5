@@ -85,7 +85,7 @@ export class DatabaseStorage implements IStorage {
             causeMsg?.includes("WebSocket") ||
             causeMsg?.includes("closed"));
         if (isTransient && attempt < MAX_ATTEMPTS) {
-          logger?.warn(
+          logger.warn(
             `[Storage] ${label} transient DB error (attempt ${attempt}/${MAX_ATTEMPTS}), retrying in 300ms:`,
             msg,
             "| cause:",
@@ -96,7 +96,7 @@ export class DatabaseStorage implements IStorage {
           await new Promise((r) => setTimeout(r, 300));
           continue;
         }
-        logger?.warn(
+        logger.warn(
           `[Storage] ${label} final DB error after ${attempt} attempts:`,
           msg,
           "| cause:",
@@ -104,7 +104,7 @@ export class DatabaseStorage implements IStorage {
           "| code:",
           causeCode || "none",
           "| causeDetail:",
-          JSON?.stringify(err?.cause ?? null),
+          JSON.stringify(err?.cause ?? null),
         );
         throw err;
       }
@@ -113,7 +113,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await this?._retryQuery(
+    const [user] = await this._retryQuery(
       () => db?.select().from(users).where(eq(users?.id, id)).limit(1),
       "getUser",
     );
@@ -121,7 +121,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await this?._retryQuery(
+    const [user] = await this._retryQuery(
       () => db?.select().from(users).where(eq(users?.email, email)).limit(1),
       "getUserByEmail",
     );
@@ -129,7 +129,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await this?._retryQuery(
+    const [user] = await this._retryQuery(
       () =>
         db?.select().from(users).where(eq(users?.username, username)).limit(1),
       "getUserByUsername",
@@ -138,7 +138,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByPasswordResetToken(token: string): Promise<User | undefined> {
-    const [user] = await this?._retryQuery(
+    const [user] = await this._retryQuery(
       () =>
         db
           .select()
@@ -160,7 +160,7 @@ export class DatabaseStorage implements IStorage {
         userPocketService?.initializeUserStorage(user?.id, user?.email),
       )
       .catch((error) =>
-        logger?.warn(
+        logger.warn(
           { err: error },
           `[Storage] Failed to initialize pocket dimension for user ${user?.id}:`,
         ),
@@ -294,11 +294,11 @@ export class DatabaseStorage implements IStorage {
       LIMIT 1000
     `);
     const rows = (result as { rows?: unknown[] }).rows ?? result;
-    return Array?.isArray(rows)
+    return Array.isArray(rows)
       ? rows?.map((user: Record<string, unknown>) => {
           const prefs =
             typeof user?.preferences === "string"
-              ? JSON?.parse(user?.preferences)
+              ? JSON.parse(user?.preferences)
               : (user?.preferences ?? {});
           const config = prefs?.autopilotConfig;
           return { userId: user.id, ...config };
@@ -324,7 +324,7 @@ export class DatabaseStorage implements IStorage {
     weights: unknown,
     metadata?: Record<string, unknown>,
   ): Promise<void> {
-    const existing = await this?.getUserAIModel(userId, modelType);
+    const existing = await this.getUserAIModel(userId, modelType);
     if (existing) {
       await db
         .update(aiModels)
@@ -372,7 +372,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserSocialPosts(userId: string): Promise<Post[]> {
-    return this?.getSocialPosts(userId);
+    return this.getSocialPosts(userId);
   }
 
   async getScheduledPosts(
@@ -414,11 +414,11 @@ export class DatabaseStorage implements IStorage {
         id: post.id,
         userId: post.userId,
         platform:
-          Array?.isArray(platforms) && platforms?.length > 0
+          Array.isArray(platforms) && platforms?.length > 0
             ? platforms[0]
             : "social",
         content:
-          typeof content === "string" ? content : JSON?.stringify(content),
+          typeof content === "string" ? content : JSON.stringify(content),
         scheduledAt: scheduledTime ? new Date(scheduledTime) : null,
         status: post.status || "scheduled",
         mediaUrls: Array.isArray(content?.mediaUrls) ? content?.mediaUrls : [],
@@ -471,12 +471,12 @@ export class DatabaseStorage implements IStorage {
       ...(rest as Record<string, unknown>),
     };
     if (platforms)
-      updateValues.platform = Array?.isArray(platforms)
+      updateValues.platform = Array.isArray(platforms)
         ? platforms[0]
         : platforms;
     if (content !== undefined)
       updateValues.content =
-        typeof content === "string" ? content : JSON?.stringify(content);
+        typeof content === "string" ? content : JSON.stringify(content);
     if (scheduledTime) updateValues.scheduledAt = new Date(scheduledTime);
     if (results !== undefined) updateValues.engagement = results;
     if (
@@ -511,7 +511,7 @@ export class DatabaseStorage implements IStorage {
 
     const [accounts, recentPosts, weekPosts, autopilotContent] =
       await Promise?.all([
-        this?.getSocialAccounts(userId),
+        this.getSocialAccounts(userId),
         db
           .select()
           .from(posts)
@@ -575,7 +575,7 @@ export class DatabaseStorage implements IStorage {
     const totalEngagement = totalLikes + totalComments + totalShares;
     const avgEngagementRate =
       totalViews > 0
-        ? Math?.round((totalEngagement / totalViews) * 10000) / 100
+        ? Math.round((totalEngagement / totalViews) * 10000) / 100
         : 0;
 
     const platformGrowth = accounts?.map((acc) => ({
@@ -786,10 +786,10 @@ export class DatabaseStorage implements IStorage {
         const rawContent =
           typeof p?.content === "string"
             ? p?.content
-            : JSON?.stringify(p?.content ?? "");
+            : JSON.stringify(p?.content ?? "");
         let parsedContent: Record<string, unknown> = {};
         try {
-          parsedContent = JSON?.parse(rawContent);
+          parsedContent = JSON.parse(rawContent);
         } catch {
           parsedContent = {};
         }
@@ -863,7 +863,7 @@ export class DatabaseStorage implements IStorage {
         .groupBy(posts?.status),
     ]);
 
-    const calendarCounts = Object?.fromEntries(
+    const calendarCounts = Object.fromEntries(
       calendarRows?.map((r) => [r?.status, r?.count]),
     );
     const postStatusMap: Record<string, string> = {
@@ -995,7 +995,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAdvertisingInsights(userId: string): Promise<unknown> {
-    const campaigns = await this?.getAdvertisingCampaigns(userId);
+    const campaigns = await this.getAdvertisingCampaigns(userId);
     if (campaigns?.length === 0) return null;
 
     const totalSpend = campaigns?.reduce((sum, c) => sum + (c?.budget || 0), 0);
@@ -1051,10 +1051,10 @@ export class DatabaseStorage implements IStorage {
       const impressions = perf?.impressions || 0;
       const clicks = perf?.clicks || 0;
       const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
-      const daysSinceCreated = Math?.floor(
+      const daysSinceCreated = Math.floor(
         (Date?.now() - new Date(c?.createdAt!).getTime()) / 86400000,
       );
-      const fatigueScore = Math?.min(
+      const fatigueScore = Math.min(
         100,
         daysSinceCreated * 2 +
           (impressions > 10000 ? 30 : 0) +
@@ -1094,9 +1094,9 @@ export class DatabaseStorage implements IStorage {
       const clicks = perf?.clicks || 0;
       const impressions = perf?.impressions || 1;
       const ctr = clicks / impressions;
-      const currentPerformance = Math?.min(
+      const currentPerformance = Math.min(
         100,
-        Math?.round(ctr * 10000 + (perf?.roas || 0) * 10),
+        Math.round(ctr * 10000 + (perf?.roas || 0) * 10),
       );
       return {
         id: c.id,
@@ -1111,9 +1111,9 @@ export class DatabaseStorage implements IStorage {
               : "Maintain current strategy",
         potentialImprovement: Math.max(
           0,
-          Math?.min(50, 90 - currentPerformance),
+          Math.min(50, 90 - currentPerformance),
         ),
-        confidence: Math.min(95, 60 + Math?.round(clicks / 10)),
+        confidence: Math.min(95, 60 + Math.round(clicks / 10)),
       };
     });
   }
@@ -1142,8 +1142,8 @@ export class DatabaseStorage implements IStorage {
       (s, c) => s + (c?.dailyBudget || 0),
       0,
     );
-    const estReach = Math?.round(totalDailyBudget * 400);
-    const estImpressions = Math?.round(totalDailyBudget * 1200);
+    const estReach = Math.round(totalDailyBudget * 400);
+    const estImpressions = Math.round(totalDailyBudget * 1200);
     return {
       activeCampaigns: campaigns.length,
       totalBudget,
@@ -1183,7 +1183,7 @@ export class DatabaseStorage implements IStorage {
       if (!byCampaign[key]) byCampaign[key] = [];
       byCampaign[key].push(c);
     });
-    return Object?.entries(byCampaign)
+    return Object.entries(byCampaign)
       .filter(([, variants]) => variants?.length >= 2)
       .map(([campaignId, variants]) => {
         variants?.map(
@@ -1192,13 +1192,13 @@ export class DatabaseStorage implements IStorage {
         const best = variants?.reduce((a, b) => {
           const aRate =
             ((a?.performance as Record<string, unknown>)?.clicks || 0) /
-            Math?.max(
+            Math.max(
               1,
               (a?.performance as Record<string, unknown>)?.impressions || 1,
             );
           const bRate =
             ((b?.performance as Record<string, unknown>)?.clicks || 0) /
-            Math?.max(
+            Math.max(
               1,
               (b?.performance as Record<string, unknown>)?.impressions || 1,
             );
@@ -1246,11 +1246,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRoasCampaigns(userId: string): Promise<any[]> {
-    return this?.getAdvertisingCampaigns(userId);
+    return this.getAdvertisingCampaigns(userId);
   }
 
   async getRoasAudienceSegments(userId: string): Promise<any[]> {
-    return this?.getAudienceSegments(userId);
+    return this.getAudienceSegments(userId);
   }
 
   async getRoasForecast(userId: string): Promise<any[]> {
@@ -1288,7 +1288,7 @@ export class DatabaseStorage implements IStorage {
       const perf = c?.performance as Record<string, any> | null;
       const roas = perf?.roas || 0;
       const spend = c?.budget || 0;
-      const efficiency = roas > 0 ? roas / Math?.max(1, spend / 100) : 0;
+      const efficiency = roas > 0 ? roas / Math.max(1, spend / 100) : 0;
       const recommendation =
         roas > 3
           ? "increase"
@@ -1323,11 +1323,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCreativeFatigueAnalysis(userId: string): Promise<any[]> {
-    return this?.getCreativeFatigue(userId);
+    return this.getCreativeFatigue(userId);
   }
 
   async getBudgetPacingCampaigns(userId: string): Promise<any[]> {
-    return this?.getAdvertisingCampaigns(userId);
+    return this.getAdvertisingCampaigns(userId);
   }
 
   async getBudgetPacingHistory(userId: string): Promise<any[]> {
@@ -1392,7 +1392,7 @@ export class DatabaseStorage implements IStorage {
         streams: r.streams,
         revenue: r.revenue,
         attributionShare:
-          total > 0 ? Math?.round((r?.streams / total) * 1000) / 10 : 0,
+          total > 0 ? Math.round((r?.streams / total) * 1000) / 10 : 0,
       }));
   }
 
@@ -1443,7 +1443,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSocialAIInsights(userId: string): Promise<any[]> {
-    const accounts = await this?.getSocialAccounts(userId);
+    const accounts = await this.getSocialAccounts(userId);
     const recentContent = await db
       .select()
       .from(socialAutopilotContent)
@@ -1473,7 +1473,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserSocialStats(userId: string): Promise<any | null> {
-    const accounts = await this?.getSocialAccounts(userId);
+    const accounts = await this.getSocialAccounts(userId);
     if (accounts?.length === 0) return null;
 
     const totalFollowers = accounts?.reduce(
@@ -1505,7 +1505,7 @@ export class DatabaseStorage implements IStorage {
       recentPosts?.length > 0 && totalFollowers > 0
         ? (totalEngagements /
             recentPosts?.length /
-            Math?.max(1, totalFollowers)) *
+            Math.max(1, totalFollowers)) *
           100
         : 0;
 
@@ -1574,7 +1574,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllPosts(userId: string): Promise<Post[]> {
-    return this?.getSocialPosts(userId);
+    return this.getSocialPosts(userId);
   }
 
   async getAllCampaigns(userId: string): Promise<any[]> {
@@ -1784,7 +1784,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (toInsert?.length > 0 || toUpdate?.length > 0) {
-      logger?.info(
+      logger.info(
         `   ✓ Plugin catalog: ${toInsert?.length} inserted, ${toUpdate?.length} updated (rev ${MANIFEST_REV})`,
       );
     }
@@ -1864,7 +1864,7 @@ export class DatabaseStorage implements IStorage {
       }
     }
     if (presetInserts?.length > 0 || presetRefreshed > 0) {
-      logger?.info(
+      logger.info(
         `   ✓ Factory genre presets: ${presetInserts?.length} inserted, ${presetRefreshed} refreshed (rev ${MANIFEST_REV})`,
       );
     }
@@ -1915,7 +1915,7 @@ export class DatabaseStorage implements IStorage {
       `);
 
       const rows = (result as { rows?: unknown[] }).rows ?? result;
-      if (!Array?.isArray(rows)) return [];
+      if (!Array.isArray(rows)) return [];
 
       return rows?.map((u: Record<string, unknown>) => {
         const displayName =
@@ -1943,7 +1943,7 @@ export class DatabaseStorage implements IStorage {
         };
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting producers:");
+      logger.warn({ err: error }, "Error getting producers:");
       return [];
     }
   }
@@ -1999,7 +1999,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getDistroTracks(releaseId: string): Promise<DistroTrack[]> {
-    return this?.getDistroTracksByRelease(releaseId);
+    return this.getDistroTracksByRelease(releaseId);
   }
 
   async updateDistroTrack(
@@ -2036,7 +2036,7 @@ export class DatabaseStorage implements IStorage {
         .returning({ id: distroTracks.id });
       return deleted?.length > 0;
     } catch (error) {
-      logger?.warn({ err: error }, "Error deleting distro track:");
+      logger.warn({ err: error }, "Error deleting distro track:");
       return false;
     }
   }
@@ -2047,7 +2047,7 @@ export class DatabaseStorage implements IStorage {
       await db?.delete(distroReleases).where(eq(distroReleases?.id, id));
       return true;
     } catch (error) {
-      logger?.warn({ err: error }, "Error deleting distro release:");
+      logger.warn({ err: error }, "Error deleting distro release:");
       return false;
     }
   }
@@ -2061,7 +2061,7 @@ export class DatabaseStorage implements IStorage {
         .limit(1);
       return provider || null;
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching DSP provider by slug:");
+      logger.warn({ err: error }, "Error fetching DSP provider by slug:");
       return null;
     }
   }
@@ -2071,7 +2071,7 @@ export class DatabaseStorage implements IStorage {
       const providers = await dbRead?.select().from(dspProviders).limit(100);
       return providers;
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching all DSP providers:");
+      logger.warn({ err: error }, "Error fetching all DSP providers:");
       return [];
     }
   }
@@ -2099,7 +2099,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return provider;
     } catch (error) {
-      logger?.warn({ err: error }, "Error creating DSP provider:");
+      logger.warn({ err: error }, "Error creating DSP provider:");
       throw error;
     }
   }
@@ -2123,7 +2123,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return provider || null;
     } catch (error) {
-      logger?.warn({ err: error }, "Error updating DSP provider:");
+      logger.warn({ err: error }, "Error updating DSP provider:");
       return null;
     }
   }
@@ -2133,7 +2133,7 @@ export class DatabaseStorage implements IStorage {
       await db?.delete(hyperFollowPages).where(eq(hyperFollowPages?.id, id));
       return true;
     } catch (error) {
-      logger?.warn({ err: error }, "Error deleting hyperfollow page:");
+      logger.warn({ err: error }, "Error deleting hyperfollow page:");
       return false;
     }
   }
@@ -2143,7 +2143,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   private async _loadDispatches(releaseId: string): Promise<any[]> {
-    const key = this?._dispatchSettingKey(releaseId);
+    const key = this._dispatchSettingKey(releaseId);
     const [row] = await db
       .select()
       .from(systemSettings)
@@ -2156,7 +2156,7 @@ export class DatabaseStorage implements IStorage {
     releaseId: string,
     dispatches: unknown[],
   ): Promise<void> {
-    const key = this?._dispatchSettingKey(releaseId);
+    const key = this._dispatchSettingKey(releaseId);
     const [existing] = await db
       .select({ id: systemSettings.id })
       .from(systemSettings)
@@ -2185,28 +2185,28 @@ export class DatabaseStorage implements IStorage {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    const releaseDispatches = await this?._loadDispatches(data?.releaseId);
+    const releaseDispatches = await this._loadDispatches(data?.releaseId);
     releaseDispatches?.push(dispatch);
-    await this?._saveDispatches(data?.releaseId, releaseDispatches);
+    await this._saveDispatches(data?.releaseId, releaseDispatches);
     return dispatch;
   }
 
   async getDistroDispatchStatuses(releaseId: string): Promise<any[]> {
-    return this?._loadDispatches(releaseId);
+    return this._loadDispatches(releaseId);
   }
 
   async updateDistroDispatchStatus(
     releaseId: string,
     data: Record<string, unknown>,
   ): Promise<Record<string, unknown> | null> {
-    const dispatches = await this?._loadDispatches(releaseId);
+    const dispatches = await this._loadDispatches(releaseId);
     if (data?.platform) {
       const dispatch = dispatches?.find(
         (d: Record<string, unknown>) => d?.platform === data?.platform,
       );
       if (dispatch) {
-        Object?.assign(dispatch, data, { updatedAt: new Date().toISOString() });
-        await this?._saveDispatches(releaseId, dispatches);
+        Object.assign(dispatch, data, { updatedAt: new Date().toISOString() });
+        await this._saveDispatches(releaseId, dispatches);
         return dispatch;
       }
     }
@@ -2228,9 +2228,9 @@ export class DatabaseStorage implements IStorage {
         (d: Record<string, unknown>) => d?.id === dispatchId,
       );
       if (dispatch) {
-        Object?.assign(dispatch, data, { updatedAt: new Date().toISOString() });
+        Object.assign(dispatch, data, { updatedAt: new Date().toISOString() });
         const releaseId = row?.key.replace("distro_dispatch:", "");
-        await this?._saveDispatches(releaseId, dispatches);
+        await this._saveDispatches(releaseId, dispatches);
         return dispatch;
       }
     }
@@ -2257,7 +2257,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return entry;
     } catch (error) {
-      logger?.warn({ err: error }, "Failed to persist audit log entry:");
+      logger.warn({ err: error }, "Failed to persist audit log entry:");
       return { id: `audit_${Date?.now()}`, ...data, createdAt: new Date() };
     }
   }
@@ -2340,7 +2340,7 @@ export class DatabaseStorage implements IStorage {
     const prevMonthStreams = Number(prevMonthAgg[0]?.streams ?? 0);
     const streamGrowth =
       prevMonthStreams > 0
-        ? Math?.round(
+        ? Math.round(
             ((thisMonthStreams - prevMonthStreams) / prevMonthStreams) * 100,
           )
         : 0;
@@ -2403,7 +2403,7 @@ export class DatabaseStorage implements IStorage {
 
       return payouts || [];
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching payout history:");
+      logger.warn({ err: error }, "Error fetching payout history:");
       return [];
     }
   }
@@ -2418,7 +2418,7 @@ export class DatabaseStorage implements IStorage {
         .limit(50);
       return pages || [];
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching hyperfollow pages:");
+      logger.warn({ err: error }, "Error fetching hyperfollow pages:");
       return [];
     }
   }
@@ -2432,7 +2432,7 @@ export class DatabaseStorage implements IStorage {
         .limit(1);
       return pages[0] || null;
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching hyperfollow page:");
+      logger.warn({ err: error }, "Error fetching hyperfollow page:");
       return null;
     }
   }
@@ -2446,7 +2446,7 @@ export class DatabaseStorage implements IStorage {
         .limit(1);
       return pages[0] || null;
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching hyperfollow page by slug:");
+      logger.warn({ err: error }, "Error fetching hyperfollow page by slug:");
       return null;
     }
   }
@@ -2460,7 +2460,7 @@ export class DatabaseStorage implements IStorage {
         .limit(100);
       return providers || [];
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching DSP providers:");
+      logger.warn({ err: error }, "Error fetching DSP providers:");
       return [];
     }
   }
@@ -2481,7 +2481,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return page;
     } catch (error) {
-      logger?.warn({ err: error }, "Error creating hyperfollow page:");
+      logger.warn({ err: error }, "Error creating hyperfollow page:");
       return null;
     }
   }
@@ -2498,7 +2498,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return page || null;
     } catch (error) {
-      logger?.warn({ err: error }, "Error updating hyperfollow page:");
+      logger.warn({ err: error }, "Error updating hyperfollow page:");
       return null;
     }
   }
@@ -2534,7 +2534,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return listing;
     } catch (error) {
-      logger?.warn({ err: error }, "Error creating listing:");
+      logger.warn({ err: error }, "Error creating listing:");
       throw error;
     }
   }
@@ -2584,12 +2584,12 @@ export class DatabaseStorage implements IStorage {
 
       if (filters?.minPrice != null) {
         conditions?.push(
-          gte(listings?.priceCents, Math?.round(filters?.minPrice * 100)),
+          gte(listings?.priceCents, Math.round(filters?.minPrice * 100)),
         );
       }
       if (filters?.maxPrice != null) {
         conditions?.push(
-          lte(listings?.priceCents, Math?.round(filters?.maxPrice * 100)),
+          lte(listings?.priceCents, Math.round(filters?.maxPrice * 100)),
         );
       }
 
@@ -2703,7 +2703,7 @@ export class DatabaseStorage implements IStorage {
         };
       });
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching beat listings:");
+      logger.warn({ err: error }, "Error fetching beat listings:");
       return [];
     }
   }
@@ -2768,7 +2768,7 @@ export class DatabaseStorage implements IStorage {
         })(),
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching beat listing:");
+      logger.warn({ err: error }, "Error fetching beat listing:");
       return null;
     }
   }
@@ -2802,7 +2802,7 @@ export class DatabaseStorage implements IStorage {
         createdAt: listing.createdAt,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "Error updating listing:");
+      logger.warn({ err: error }, "Error updating listing:");
       throw error;
     }
   }
@@ -2812,7 +2812,7 @@ export class DatabaseStorage implements IStorage {
       await db?.delete(listings).where(eq(listings?.id, id));
       return true;
     } catch (error) {
-      logger?.warn({ err: error }, "Error deleting listing:");
+      logger.warn({ err: error }, "Error deleting listing:");
       throw error;
     }
   }
@@ -2827,7 +2827,7 @@ export class DatabaseStorage implements IStorage {
         .limit(100);
       return results;
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching contract templates:");
+      logger.warn({ err: error }, "Error fetching contract templates:");
       return [];
     }
   }
@@ -2841,7 +2841,7 @@ export class DatabaseStorage implements IStorage {
         .limit(1);
       return template || null;
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching contract template:");
+      logger.warn({ err: error }, "Error fetching contract template:");
       return null;
     }
   }
@@ -2863,7 +2863,7 @@ export class DatabaseStorage implements IStorage {
         .limit(1);
       return template || null;
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching contract template by user:");
+      logger.warn({ err: error }, "Error fetching contract template by user:");
       return null;
     }
   }
@@ -2891,7 +2891,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return template;
     } catch (error) {
-      logger?.warn({ err: error }, "Error creating contract template:");
+      logger.warn({ err: error }, "Error creating contract template:");
       throw error;
     }
   }
@@ -2908,7 +2908,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return template || null;
     } catch (error) {
-      logger?.warn({ err: error }, "Error updating contract template:");
+      logger.warn({ err: error }, "Error updating contract template:");
       throw error;
     }
   }
@@ -2918,7 +2918,7 @@ export class DatabaseStorage implements IStorage {
       await db?.delete(contractTemplates).where(eq(contractTemplates?.id, id));
       return true;
     } catch (error) {
-      logger?.warn({ err: error }, "Error deleting contract template:");
+      logger.warn({ err: error }, "Error deleting contract template:");
       throw error;
     }
   }
@@ -2953,7 +2953,7 @@ export class DatabaseStorage implements IStorage {
         .orderBy(desc(orders?.createdAt));
       return results;
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching user orders:");
+      logger.warn({ err: error }, "Error fetching user orders:");
       return [];
     }
   }
@@ -2968,7 +2968,7 @@ export class DatabaseStorage implements IStorage {
         .limit(200);
       return results;
     } catch (error) {
-      logger?.warn({ err: error }, "Error fetching seller orders:");
+      logger.warn({ err: error }, "Error fetching seller orders:");
       return [];
     }
   }

@@ -277,7 +277,7 @@ export function useFeatureUsage() {
         const duration = Date?.now() - featureStartTime?.current;
         navigator?.sendBeacon(
           "/api/personalization/track-feature",
-          JSON?.stringify({
+          JSON.stringify({
             feature: activeFeature.current,
             duration,
           }),

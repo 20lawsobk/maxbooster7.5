@@ -5,7 +5,7 @@
  * In production, unhandled errors are always captured — to Sentry when configured,
  * and always to structured JSON logs. Observability cannot fail open.
  *
- * DESIGN RULE: This module only OBSERVES — it never calls process?.exit().
+ * DESIGN RULE: This module only OBSERVES — it never calls process.exit().
  * Graceful shutdown (HTTP server close + DB pool drain) is the exclusive
  * responsibility of server/index?.ts. Calling exit here would race against
  * that cleanup and leave connections open / requests half-answered.
@@ -21,13 +21,13 @@ import { logger } from "./logger.js";
 import { env } from "./config/env.js";
 
 const isProduction =
-  process?.env.NODE_ENV === "production" || !!process?.env.REPLIT_DEPLOYMENT;
+  process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT;
 const dsn = env?.SENTRY_DSN;
 
 // Many subsystems (circuit breakers, workers, reliability monitors) each attach
 // listeners to the global process object.  Raise the cap to silence the Node?.js
 // MaxListeners warning that would otherwise fire at > 10 listeners.
-process?.setMaxListeners(50);
+process.setMaxListeners(50);
 
 // ── Dynamic Sentry load — safe even when @sentry/node is absent ──────────────
 // Using createRequire() inside a try/catch works in both ESM (development, tsx)
@@ -52,7 +52,7 @@ try {
 } catch (loadErr) {
   // @sentry/node not available — observability degraded to structured local logs.
   // This is non-fatal: the server continues running; all errors are still logged.
-  logger?.warn(
+  logger.warn(
     { err: loadErr },
     "[Observability] @sentry/node unavailable — Sentry disabled, local logging active",
   );
@@ -72,12 +72,12 @@ const NON_FATAL_MSG =
 const SILENT_MSG =
   /\[LuaExecutor\] PDIM circuit OPEN|PDIM circuit OPEN.*skipping Worker|Circuit OPEN.*skipping/i;
 
-process?.on("uncaughtException", (err) => {
+process.on("uncaughtException", (err) => {
   const code = (err as NodeJS.ErrnoException).code;
 
   // Non-fatal stream/pipe errors — log as warn and continue.
   if (code && NON_FATAL_CODES?.has(code)) {
-    logger?.warn(
+    logger.warn(
       { err, type: "non-fatal-uncaughtException", code },
       `Non-fatal ${code}: ${err?.message}`,
     );
@@ -85,12 +85,12 @@ process?.on("uncaughtException", (err) => {
   }
 
   // Fatal: capture to Sentry + structured log.
-  // Do NOT call process?.exit() here — server/index?.ts registers its own
+  // Do NOT call process.exit() here — server/index?.ts registers its own
   // uncaughtException handler that performs the full graceful shutdown
-  // (HTTP server close → DB pool drain → process?.exit).  Calling exit here
+  // (HTTP server close → DB pool drain → process.exit).  Calling exit here
   // would race against that cleanup and terminate the process before in-flight
   // requests/queries have had a chance to complete.
-  logger?.warn(
+  logger.warn(
     { err, type: "uncaughtException" },
     `FATAL uncaughtException: ${err?.message}`,
   );
@@ -103,7 +103,7 @@ process?.on("uncaughtException", (err) => {
     });
 });
 
-process?.on("unhandledRejection", (reason: Record<string, unknown>) => {
+process.on("unhandledRejection", (reason: Record<string, unknown>) => {
   const err = reason instanceof Error ? reason : new Error(String(reason));
   const code = (reason as NodeJS.ErrnoException)?.code;
 
@@ -114,14 +114,14 @@ process?.on("unhandledRejection", (reason: Record<string, unknown>) => {
 
   // Non-fatal: expected transient errors from PDIM / LuaExecutor / BullMQ.
   if ((code && NON_FATAL_CODES?.has(code)) || NON_FATAL_MSG?.test(err?.message)) {
-    logger?.warn(
+    logger.warn(
       { err, type: "non-fatal-unhandledRejection" },
       `Non-fatal rejection: ${err?.message}`,
     );
     return;
   }
 
-  logger?.warn(
+  logger.warn(
     { err, type: "unhandledRejection" },
     `unhandledRejection: ${err?.message}`,
   );
@@ -130,16 +130,16 @@ process?.on("unhandledRejection", (reason: Record<string, unknown>) => {
 
 if (isProduction) {
   if (Sentry) {
-    logger?.info(
+    logger.info(
       "✅ [Observability] Sentry active — errors will be captured and reported",
     );
   } else {
-    logger?.warn(
+    logger.warn(
       "⚠️  [Observability] Sentry unavailable — structured JSON logging only (check @sentry/node installation)",
     );
   }
 } else {
-  logger?.info(
+  logger.info(
     "✅ [Observability] Structured error logging active (Sentry disabled in dev)",
   );
 }

@@ -212,16 +212,16 @@ class SeededRandom {
   }
 
   next(): number {
-    const x = Math?.sin(this.seed++) * 10000;
-    return x - Math?.floor(x);
+    const x = Math.sin(this.seed++) * 10000;
+    return x - Math.floor(x);
   }
 
   nextInt(min: number, max: number): number {
-    return Math?.floor(this?.next() * (max - min + 1)) + min;
+    return Math.floor(this.next() * (max - min + 1)) + min;
   }
 
   choice<T>(array: T[]): T {
-    return array[this?.nextInt(0, array?.length - 1)];
+    return array[this.nextInt(0, array?.length - 1)];
   }
 }
 
@@ -237,7 +237,7 @@ export function parseTextToParameters(text: string): MusicParameters {
   let scale: "major" | "minor" = "major";
   let tempo = 120;
 
-  for (const [keyword, data] of Object?.entries(moodKeywords)) {
+  for (const [keyword, data] of Object.entries(moodKeywords)) {
     if (lowerText?.includes(keyword)) {
       mood = keyword;
       scale = data?.scale;
@@ -247,7 +247,7 @@ export function parseTextToParameters(text: string): MusicParameters {
   }
 
   // Extract tempo overrides
-  for (const [keyword, bpm] of Object?.entries(tempoKeywords)) {
+  for (const [keyword, bpm] of Object.entries(tempoKeywords)) {
     if (lowerText?.includes(keyword)) {
       tempo = bpm;
       break;
@@ -256,7 +256,7 @@ export function parseTextToParameters(text: string): MusicParameters {
 
   // Extract genre
   let genre = "pop";
-  for (const genreName of Object?.keys(genreTemplates)) {
+  for (const genreName of Object.keys(genreTemplates)) {
     if (lowerText?.includes(genreName)) {
       genre = genreName;
       break;
@@ -391,13 +391,13 @@ export function generateMelody(
     // Generate pitch with constraints
     const direction = seed?.next() > 0.5 ? 1 : -1;
     const interval = seed?.nextInt(0, 2); // Stepwise motion preferred
-    currentPitchIndex = Math?.max(
+    currentPitchIndex = Math.max(
       0,
-      Math?.min(scaleArray?.length - 1, currentPitchIndex + direction * interval),
+      Math.min(scaleArray?.length - 1, currentPitchIndex + direction * interval),
     );
 
     const note = scaleArray[currentPitchIndex];
-    const octave = 4 + Math?.floor(currentPitchIndex / scaleArray?.length);
+    const octave = 4 + Math.floor(currentPitchIndex / scaleArray?.length);
 
     notes?.push({
       note,
@@ -512,13 +512,13 @@ export async function analyzeAudioForGeneration(
     const zcRate = zeroCrossings / duration;
 
     // Estimate tempo from zero-crossing patterns (rough estimation)
-    const estimatedTempo = Math?.round(Math?.max(60, Math?.min(180, zcRate / 50)));
+    const estimatedTempo = Math.round(Math.max(60, Math.min(180, zcRate / 50)));
 
     // Analyze spectral energy for mood detection
     let highFreqEnergy = 0;
     let lowFreqEnergy = 0;
     for (let i = 0; i < samples?.length; i++) {
-      const val = Math?.abs(samples[i]);
+      const val = Math.abs(samples[i]);
       if (i % 2 === 0) lowFreqEnergy += val;
       else highFreqEnergy += val;
     }
@@ -548,7 +548,7 @@ export async function analyzeAudioForGeneration(
       "A#",
       "B",
     ];
-    const keyIndex = Math?.floor(zeroCrossings % 12);
+    const keyIndex = Math.floor(zeroCrossings % 12);
     const detectedKey = keys[keyIndex];
 
     // Determine scale (major/minor) based on spectral characteristics

@@ -20,10 +20,10 @@ import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
 const POLL_INTERVAL_MS = 2_000;
 const POLL_MAX_ATTEMPTS = 150; // 5 min
 
-const MAXCORE_ORIGIN = (process?.env.AI_SERVER_URL || "").replace(/\/+$/, "");
+const MAXCORE_ORIGIN = (process.env.AI_SERVER_URL || "").replace(/\/+$/, "");
 const MC_AI_KEY =
-  process?.env.AI_SERVER_KEY || process?.env.MAXCORE_ADMIN_KEY || "";
-const LOCAL_VIDEO_DIR = path?.join(process?.cwd(), "uploads", "videos");
+  process.env.AI_SERVER_KEY || process.env.MAXCORE_ADMIN_KEY || "";
+const LOCAL_VIDEO_DIR = path?.join(process.cwd(), "uploads", "videos");
 
 // ── MaxCore video URL cache ───────────────────────────────────────────────────
 
@@ -173,7 +173,7 @@ async function cacheVideoLocally(rawUrl: string): Promise<string> {
   const localPath = path?.join(LOCAL_VIDEO_DIR, filename);
 
   // Log the exact URL MaxCore returned so we can diagnose path issues
-  logger?.info(
+  logger.info(
     `[AdvancedVideoRenderer] cacheVideoLocally — rawUrl from MaxCore: "${rawUrl}"`,
   );
 
@@ -196,7 +196,7 @@ async function cacheVideoLocally(rawUrl: string): Promise<string> {
         const ct = response?.headers.get("content-type") ?? "unknown";
         const cl = response?.headers.get("content-length") ?? "unknown";
         if (!response?.ok) {
-          logger?.info(
+          logger.info(
             `[AdvancedVideoRenderer] Candidate ${url} → HTTP ${response.status} ct="${ct}"`,
           );
           continue;

@@ -111,8 +111,8 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const { content } = scoreViralSchema?.parse(req?.body);
+      const userId = req.user!.id;
+      const { content } = scoreViralSchema?.parse(req.body);
 
       const contentData: ContentData = {
         ...content,
@@ -125,17 +125,17 @@ router?.post(
 
       const score = await viralScoringService?.scoreContent(contentData);
 
-      logger?.info(
+      logger.info(
         `📊 Viral score calculated for user ${userId}: ${score?.overall}/100`,
       );
 
-      res?.json({
+      res.json({
         success: true,
         score,
       });
     } catch (error) {
-      logger?.warn("Error in score-viral:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in score-viral:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -145,8 +145,8 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const { content } = scoreViralSchema?.parse(req?.body);
+      const userId = req.user!.id;
+      const { content } = scoreViralSchema?.parse(req.body);
 
       const contentData: ContentData = {
         ...content,
@@ -157,14 +157,14 @@ router?.post(
       const potential =
         await viralScoringService?.predictViralPotential(contentData);
 
-      res?.json({
+      res.json({
         success: true,
         potential,
         category: potential >= 80 ? "high" : potential >= 50 ? "medium" : "low",
       });
     } catch (error) {
-      logger?.warn("Error in predict-potential:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in predict-potential:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -174,8 +174,8 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const { content } = scoreViralSchema?.parse(req?.body);
+      const userId = req.user!.id;
+      const { content } = scoreViralSchema?.parse(req.body);
 
       const contentData: ContentData = {
         ...content,
@@ -186,13 +186,13 @@ router?.post(
       const improvements =
         await viralScoringService?.suggestImprovements(contentData);
 
-      res?.json({
+      res.json({
         success: true,
         improvements,
       });
     } catch (error) {
-      logger?.warn("Error in suggest-improvements:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in suggest-improvements:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -202,8 +202,8 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const { variants } = compareVariantsSchema?.parse(req?.body);
+      const userId = req.user!.id;
+      const { variants } = compareVariantsSchema?.parse(req.body);
 
       const contentVariants: ContentData[] = variants?.map((v) => ({
         ...v,
@@ -214,13 +214,13 @@ router?.post(
       const comparison =
         await viralScoringService?.compareVariants(contentVariants);
 
-      res?.json({
+      res.json({
         success: true,
         comparison,
       });
     } catch (error) {
-      logger?.warn("Error in compare-variants:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in compare-variants:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -230,9 +230,9 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const { platform } = req?.params;
-      const { timezone = "America/New_York" } = req?.query;
+      const userId = req.user!.id;
+      const { platform } = req.params;
+      const { timezone = "America/New_York" } = req.query;
 
       const validPlatforms = [
         "tiktok",
@@ -247,7 +247,7 @@ router?.get(
         "threads",
       ];
       if (!validPlatforms?.includes(platform)) {
-        return res?.status(400).json({ error: "Invalid platform" });
+        return res.status(400).json({ error: "Invalid platform" });
       }
 
       const timing = await timingOptimizerService?.getOptimalTiming(
@@ -256,13 +256,13 @@ router?.get(
         userId,
       );
 
-      res?.json({
+      res.json({
         success: true,
         timing,
       });
     } catch (error) {
-      logger?.warn("Error in optimal-timing:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in optimal-timing:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -272,20 +272,20 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const { timezone = "America/New_York" } = req?.query;
+      const { timezone = "America/New_York" } = req.query;
 
       const allTimings =
         await timingOptimizerService?.getOptimalTimingForAllPlatforms(
           timezone as string,
         );
 
-      res?.json({
+      res.json({
         success: true,
         timings: allTimings,
       });
     } catch (error) {
-      logger?.warn("Error in optimal-timing-all:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in optimal-timing-all:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -295,7 +295,7 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const { platform, timezone, targetDate } = timingSchema?.parse(req?.body);
+      const { platform, timezone, targetDate } = timingSchema?.parse(req.body);
 
       const date = targetDate ? new Date(targetDate) : new Date();
       const recommendation =
@@ -305,13 +305,13 @@ router?.post(
           timezone,
         );
 
-      res?.json({
+      res.json({
         success: true,
         recommendation,
       });
     } catch (error) {
-      logger?.warn("Error in timing-recommendation:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in timing-recommendation:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -321,21 +321,21 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const { platform } = req?.body;
+      const userId = req.user!.id;
+      const { platform } = req.body;
 
       const patterns = await timingOptimizerService?.analyzeAudiencePatterns(
         userId,
         platform,
       );
 
-      res?.json({
+      res.json({
         success: true,
         patterns,
       });
     } catch (error) {
-      logger?.warn("Error in audience-patterns:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in audience-patterns:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -345,18 +345,18 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const { platform } = req?.params;
+      const { platform } = req.params;
 
       const competitorTiming =
         await timingOptimizerService?.getCompetitorTiming(platform);
 
-      res?.json({
+      res.json({
         success: true,
         competitorTiming,
       });
     } catch (error) {
-      logger?.warn("Error in competitor-timing:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in competitor-timing:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -370,10 +370,10 @@ router?.post(
         platforms,
         postsPerWeek = 7,
         timezone = "America/New_York",
-      } = req?.body;
+      } = req.body;
 
-      if (!platforms || !Array?.isArray(platforms) || platforms?.length === 0) {
-        return res?.status(400).json({ error: "Platforms array is required" });
+      if (!platforms || !Array.isArray(platforms) || platforms?.length === 0) {
+        return res.status(400).json({ error: "Platforms array is required" });
       }
 
       const schedule = await timingOptimizerService?.suggestPostingSchedule(
@@ -382,13 +382,13 @@ router?.post(
         timezone,
       );
 
-      res?.json({
+      res.json({
         success: true,
         schedule,
       });
     } catch (error) {
-      logger?.warn("Error in posting-schedule:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in posting-schedule:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -398,8 +398,8 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const { content, count } = generateVariantsSchema?.parse(req?.body);
+      const userId = req.user!.id;
+      const { content, count } = generateVariantsSchema?.parse(req.body);
 
       const contentData: ContentData = {
         ...content,
@@ -412,17 +412,17 @@ router?.post(
         count,
       );
 
-      logger?.info(
+      logger.info(
         `🎯 Generated ${result?.variants.length} variants for user ${userId}`,
       );
 
-      res?.json({
+      res.json({
         success: true,
         ...result,
       });
     } catch (error) {
-      logger?.warn("Error in generate-variants:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in generate-variants:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -432,10 +432,10 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const { caption, count = 5 } = req?.body;
+      const { caption, count = 5 } = req.body;
 
       if (!caption) {
-        return res?.status(400).json({ error: "Caption is required" });
+        return res.status(400).json({ error: "Caption is required" });
       }
 
       const variants =
@@ -444,13 +444,13 @@ router?.post(
           count,
         );
 
-      res?.json({
+      res.json({
         success: true,
         variants,
       });
     } catch (error) {
-      logger?.warn("Error in generate-caption-variants:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in generate-caption-variants:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -460,7 +460,7 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const { content, count = 5 } = generateVariantsSchema?.parse(req?.body);
+      const { content, count = 5 } = generateVariantsSchema?.parse(req.body);
 
       const hashtagSets =
         await contentVariantGeneratorService?.generateHashtagSets(
@@ -468,13 +468,13 @@ router?.post(
           count,
         );
 
-      res?.json({
+      res.json({
         success: true,
         hashtagSets,
       });
     } catch (error) {
-      logger?.warn("Error in generate-hashtag-sets:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in generate-hashtag-sets:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -484,19 +484,19 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const { content } = scoreViralSchema?.parse(req?.body);
+      const { content } = scoreViralSchema?.parse(req.body);
 
       const hooks = await contentVariantGeneratorService?.generateHookVariants(
         content as Record<string, unknown>,
       );
 
-      res?.json({
+      res.json({
         success: true,
         hooks,
       });
     } catch (error) {
-      logger?.warn("Error in generate-hooks:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in generate-hooks:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -506,8 +506,8 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const { content, variantCount = 2 } = req?.body;
+      const userId = req.user!.id;
+      const { content, variantCount = 2 } = req.body;
 
       if (!content || typeof content !== "object") {
         return res
@@ -529,15 +529,15 @@ router?.post(
         variantCount,
       );
 
-      logger?.info(`🧪 A/B test created for user ${userId}: ${abTest?.testId}`);
+      logger.info(`🧪 A/B test created for user ${userId}: ${abTest?.testId}`);
 
-      res?.json({
+      res.json({
         success: true,
         ...abTest,
       });
     } catch (error) {
-      logger?.warn("Error in create-ab-test:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in create-ab-test:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -547,8 +547,8 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const { platform, recentMetrics } = algorithmHealthSchema?.parse(req?.body);
+      const userId = req.user!.id;
+      const { platform, recentMetrics } = algorithmHealthSchema?.parse(req.body);
 
       const health = await algorithmIntelligenceService?.checkAlgorithmHealth(
         platform,
@@ -556,13 +556,13 @@ router?.post(
         recentMetrics,
       );
 
-      res?.json({
+      res.json({
         success: true,
         health,
       });
     } catch (error) {
-      logger?.warn("Error in algorithm-health:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in algorithm-health:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -572,8 +572,8 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const { platform } = req?.params;
+      const userId = req.user!.id;
+      const { platform } = req.params;
 
       const validPlatforms = [
         "tiktok",
@@ -588,7 +588,7 @@ router?.get(
         "threads",
       ];
       if (!validPlatforms?.includes(platform)) {
-        return res?.status(400).json({ error: "Invalid platform" });
+        return res.status(400).json({ error: "Invalid platform" });
       }
 
       const health = await algorithmIntelligenceService?.checkAlgorithmHealth(
@@ -596,13 +596,13 @@ router?.get(
         userId,
       );
 
-      res?.json({
+      res.json({
         success: true,
         health,
       });
     } catch (error) {
-      logger?.warn("Error in algorithm-health by platform:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in algorithm-health by platform:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -612,8 +612,8 @@ router?.post(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const { platform, recentMetrics } = shadowbanCheckSchema?.parse(req?.body);
+      const userId = req.user!.id;
+      const { platform, recentMetrics } = shadowbanCheckSchema?.parse(req.body);
 
       const result = await algorithmIntelligenceService?.checkShadowBan(
         platform,
@@ -621,17 +621,17 @@ router?.post(
         recentMetrics,
       );
 
-      logger?.info(
+      logger.info(
         `🔍 Shadowban check for ${platform}: ${result?.isShadowbanned ? "DETECTED" : "Clear"}`,
       );
 
-      res?.json({
+      res.json({
         success: true,
         result,
       });
     } catch (error) {
-      logger?.warn("Error in shadowban-check:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in shadowban-check:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -641,21 +641,21 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const { platform } = req?.params;
+      const userId = req.user!.id;
+      const { platform } = req.params;
 
       const patterns = await algorithmIntelligenceService?.getEngagementPatterns(
         platform,
         userId,
       );
 
-      res?.json({
+      res.json({
         success: true,
         patterns,
       });
     } catch (error) {
-      logger?.warn("Error in engagement-patterns:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in engagement-patterns:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -665,18 +665,18 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const { platform } = req?.params;
+      const { platform } = req.params;
 
       const profile =
         await algorithmIntelligenceService?.getPlatformProfile(platform);
 
-      res?.json({
+      res.json({
         success: true,
         profile,
       });
     } catch (error) {
-      logger?.warn("Error in platform-profile:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in platform-profile:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -686,21 +686,21 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const { platform } = req?.params;
+      const userId = req.user!.id;
+      const { platform } = req.params;
 
       const insights = await algorithmIntelligenceService?.getAlgorithmInsights(
         platform,
         userId,
       );
 
-      res?.json({
+      res.json({
         success: true,
         insights,
       });
     } catch (error) {
-      logger?.warn("Error in algorithm-insights:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in algorithm-insights:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -710,8 +710,8 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
-      const { timezone = "America/New_York" } = req?.query;
+      const userId = req.user!.id;
+      const { timezone = "America/New_York" } = req.query;
 
       const platforms = ["tiktok", "instagram", "youtube", "twitter"];
 
@@ -731,8 +731,8 @@ router?.get(
         platformHealth[platform] = healthResults[index];
       });
 
-      const overallHealth = Math?.round(
-        Object?.values(platformHealth).reduce(
+      const overallHealth = Math.round(
+        Object.values(platformHealth).reduce(
           (sum, h) => sum + h?.overallScore,
           0,
         ) / platforms?.length,
@@ -740,7 +740,7 @@ router?.get(
 
       const reachMultiplier = 1 + (overallHealth - 50) / 100;
 
-      const allAlerts = Object?.values(platformHealth)
+      const allAlerts = Object.values(platformHealth)
         .flatMap((h) => h?.alerts)
         .filter((a) => !a?.resolved)
         .sort((a, b) => {
@@ -750,7 +750,7 @@ router?.get(
 
       const allRecommendations = [
         ...new Set(
-          Object?.values(platformHealth).flatMap((h) => h?.recommendations),
+          Object.values(platformHealth).flatMap((h) => h?.recommendations),
         ),
       ].slice(0, 10);
 
@@ -788,7 +788,7 @@ router?.get(
         }
       }
 
-      res?.json({
+      res.json({
         success: true,
         dashboard: {
           overallHealth,
@@ -804,8 +804,8 @@ router?.get(
         },
       });
     } catch (error) {
-      logger?.warn("Error in dashboard:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in dashboard:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );
@@ -815,7 +815,7 @@ router?.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       const defaultPlatform = "instagram";
       const [health, patterns, insights] = await Promise?.all([
@@ -833,7 +833,7 @@ router?.get(
         ),
       ]);
 
-      res?.json({
+      res.json({
         success: true,
         summary: {
           healthScore: health.overallScore,
@@ -846,8 +846,8 @@ router?.get(
         },
       });
     } catch (error) {
-      logger?.warn("Error in summary:", error?.message);
-      res?.status(500).json({ error: "Failed to process request" });
+      logger.warn("Error in summary:", error?.message);
+      res.status(500).json({ error: "Failed to process request" });
     }
   }),
 );

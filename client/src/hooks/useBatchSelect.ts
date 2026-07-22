@@ -43,7 +43,7 @@ export function useBatchSelect<T = string>(
   const updateSelection = useCallback(
     (newSelection: Set<T>) => {
       setSelectedIds(newSelection);
-      onSelectionChange?.(Array?.from(newSelection));
+      onSelectionChange?.(Array.from(newSelection));
     },
     [onSelectionChange],
   );

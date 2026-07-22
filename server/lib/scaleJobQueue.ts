@@ -31,7 +31,7 @@ export const RETENTION_QUEUE = "retention-jobs";
  * Capped to 3 to prevent DB connection storms during queue drain.
  * Override with BULLMQ_CONCURRENCY env var.
  */
-const WORKER_CONCURRENCY = parseInt(process?.env.BULLMQ_CONCURRENCY ?? "3", 10);
+const WORKER_CONCURRENCY = parseInt(process.env.BULLMQ_CONCURRENCY ?? "3", 10);
 
 /**
  * Job persistence + retry policy.
@@ -92,7 +92,7 @@ async function cleanStalledJobs(attempt = 1): Promise<void> {
     // legitimately-running active jobs exist to be accidentally removed.
     try {
       await queue?.clean(0, 500, "active");
-      logger?.info(
+      logger.info(
         "[Worker] Stale active-state jobs from prior session cleaned (single bulk Lua call)",
       );
     } catch {
@@ -112,13 +112,13 @@ async function cleanStalledJobs(attempt = 1): Promise<void> {
         // Legitimate named jobs are re-added by the scheduler on its next tick
         // (cron is typically seconds away at startup, so no jobs are lost).
         await queue?.drain();
-        logger?.info(
+        logger.info(
           `[Worker] Bulk-drained ${stale?.length} stale orphan waiting job(s) from prior session (single Lua call — avoids PDIM saturation)`,
         );
       } else if (stale?.length > 0) {
         // Small count — individual removes are fine
         await Promise?.allSettled(stale?.map((j) => j?.remove()));
-        logger?.info(
+        logger.info(
           `[Worker] Purged ${stale?.length} stale orphan waiting job(s) from prior session`,
         );
       }
@@ -326,7 +326,7 @@ export function startRetentionWorker(): Worker {
       msg?.includes("PDIM HTTP 429") ||
       msg?.includes("ERR PDIM")
     ) {
-      logger?.warn(`[Worker] Recoverable (self-healing): ${msg}`);
+      logger.warn(`[Worker] Recoverable (self-healing): ${msg}`);
     } else if (
       // LuaExecutor slot-queue timeout — all MAX_CONCURRENT_WORKERS slots were
       // occupied for 30-55 s; happens under PDIM back-pressure during boot settling
@@ -335,7 +335,7 @@ export function startRetentionWorker(): Worker {
       // already acknowledged by the autonomousJobScheduler registration handler.
       msg?.includes("Timeout waiting for worker slot")
     ) {
-      logger?.info(`[Worker] LuaExecutor slot busy (self-healing): ${msg}`);
+      logger.info(`[Worker] LuaExecutor slot busy (self-healing): ${msg}`);
     } else if (
       // BullMQ lock extension errors — fired when a job processor takes longer
       // than the job's lockDuration (default 30s).  BullMQ re-queues the job
@@ -349,10 +349,10 @@ export function startRetentionWorker(): Worker {
       // Worker thread hard-killed by LuaExecutor timeout — already logged at ERROR
       msg?.includes("worker hard-killed")
     ) {
-      logger?.warn(`[Worker] BullMQ lock / stall (self-healing): ${msg}`);
+      logger.warn(`[Worker] BullMQ lock / stall (self-healing): ${msg}`);
     } else {
       // Unknown error — log with full error object so we can diagnose it
-      logger?.warn({ err: err }, `[Worker] Unexpected error: ${msg}`);
+      logger.warn({ err: err }, `[Worker] Unexpected error: ${msg}`);
     }
   });
 

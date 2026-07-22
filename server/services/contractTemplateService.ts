@@ -257,25 +257,25 @@ class ContractTemplateService {
   private static readonly MAX_CONTRACTS = 100_000;
 
   private cacheContract(id: string, contract: GeneratedContract): void {
-    while (this?.contracts.size >= ContractTemplateService.MAX_CONTRACTS) {
-      const oldestKey = this?.contracts.keys().next().value;
+    while (this.contracts.size >= ContractTemplateService.MAX_CONTRACTS) {
+      const oldestKey = this.contracts.keys().next().value;
       if (oldestKey !== undefined) {
-        this?.contracts.delete(oldestKey);
+        this.contracts.delete(oldestKey);
       } else {
         break;
       }
     }
-    this?.contracts.set(id, contract);
+    this.contracts.set(id, contract);
   }
 
   constructor() {
-    this.dbInitPromise = this?.loadFromDatabase().catch((err) => {
-      logger?.warn("Failed to load contracts from DB on startup:", err);
+    this.dbInitPromise = this.loadFromDatabase().catch((err) => {
+      logger.warn("Failed to load contracts from DB on startup:", err);
     });
   }
 
   async waitForInit(): Promise<void> {
-    await this?.dbInitPromise;
+    await this.dbInitPromise;
   }
 
   private async loadFromDatabase(): Promise<void> {
@@ -304,11 +304,11 @@ class ContractTemplateService {
           expiresAt: row.expiresAt ?? undefined,
           pdfUrl: row.pdfUrl ?? undefined,
         };
-        this?.cacheContract(contract?.id, contract);
+        this.cacheContract(contract?.id, contract);
       }
-      logger?.info(`Loaded ${rows?.length} contracts from database`);
+      logger.info(`Loaded ${rows?.length} contracts from database`);
     } catch (err) {
-      logger?.warn("Error loading contracts from DB:", err);
+      logger.warn("Error loading contracts from DB:", err);
     }
   }
 
@@ -348,7 +348,7 @@ class ContractTemplateService {
         },
       })
       .catch((err) =>
-        logger?.warn(`Failed to persist contract ${contract?.id} to DB:`, err),
+        logger.warn(`Failed to persist contract ${contract?.id} to DB:`, err),
       );
   }
 
@@ -369,13 +369,13 @@ class ContractTemplateService {
     variables: ContractVariables,
     createdBy: string,
   ): GeneratedContract {
-    const template = this?.getTemplateById(templateId);
+    const template = this.getTemplateById(templateId);
     if (!template) {
       throw new Error(`Template ${templateId} not found`);
     }
 
-    const content = this?.generateContractContent(template?.type, variables);
-    const parties = this?.extractParties(template?.type, variables);
+    const content = this.generateContractContent(template?.type, variables);
+    const parties = this.extractParties(template?.type, variables);
 
     const contract: GeneratedContract = {
       id: `contract_${randomBytes(6).toString("hex")}`,
@@ -392,9 +392,9 @@ class ContractTemplateService {
       expiresAt: variables.expirationDate,
     };
 
-    this?.cacheContract(contract?.id, contract);
-    this?.persistToDb(contract);
-    logger?.info(
+    this.cacheContract(contract?.id, contract);
+    this.persistToDb(contract);
+    logger.info(
       `Generated contract ${contract?.id} from template ${templateId}`,
     );
     return contract;
@@ -435,33 +435,33 @@ class ContractTemplateService {
 
     switch (type) {
       case "non_exclusive_license":
-        return this?.generateNonExclusiveLicense(vars, effectiveDate, currency);
+        return this.generateNonExclusiveLicense(vars, effectiveDate, currency);
       case "exclusive_license":
-        return this?.generateExclusiveLicense(vars, effectiveDate, currency);
+        return this.generateExclusiveLicense(vars, effectiveDate, currency);
       case "free_download":
-        return this?.generateFreeDownloadLicense(vars, effectiveDate);
+        return this.generateFreeDownloadLicense(vars, effectiveDate);
       case "nda":
-        return this?.generateNDA(vars, effectiveDate);
+        return this.generateNDA(vars, effectiveDate);
       case "session_musician":
-        return this?.generateSessionMusicianAgreement(
+        return this.generateSessionMusicianAgreement(
           vars,
           effectiveDate,
           currency,
         );
       case "mixer_engineer":
-        return this?.generateMixerEngineerAgreement(
+        return this.generateMixerEngineerAgreement(
           vars,
           effectiveDate,
           currency,
         );
       case "split_sheet":
-        return this?.generateSplitSheet(vars, effectiveDate);
+        return this.generateSplitSheet(vars, effectiveDate);
       case "sync_license":
-        return this?.generateSyncLicense(vars, effectiveDate, currency);
+        return this.generateSyncLicense(vars, effectiveDate, currency);
       case "work_for_hire":
-        return this?.generateWorkForHire(vars, effectiveDate, currency);
+        return this.generateWorkForHire(vars, effectiveDate, currency);
       case "producer_agreement":
-        return this?.generateProducerAgreement(vars, effectiveDate, currency);
+        return this.generateProducerAgreement(vars, effectiveDate, currency);
       default:
         throw new Error(`Unknown contract type: ${type}`);
     }
@@ -1195,11 +1195,11 @@ ${vars?.producerName || "[PRODUCER NAME]"}
   }
 
   getContract(contractId: string): GeneratedContract | undefined {
-    return this?.contracts.get(contractId);
+    return this.contracts.get(contractId);
   }
 
   getContractsByUser(userId: string): GeneratedContract[] {
-    return Array?.from(this?.contracts.values()).filter(
+    return Array.from(this.contracts.values()).filter(
       (c) =>
         c?.createdBy === userId ||
         c?.parties.some((p) => p?.name.includes(userId)),
@@ -1211,7 +1211,7 @@ ${vars?.producerName || "[PRODUCER NAME]"}
     partyName: string,
     signatureData: { signatureHash: string; ipAddress: string },
   ): Promise<GeneratedContract> {
-    const contract = this?.contracts.get(contractId);
+    const contract = this.contracts.get(contractId);
     if (!contract) {
       throw new Error("Contract not found");
     }
@@ -1243,16 +1243,16 @@ ${vars?.producerName || "[PRODUCER NAME]"}
       contract.status = "partially_signed";
     }
 
-    this?.cacheContract(contractId, contract);
-    this?.persistToDb(contract);
-    logger?.info(
+    this.cacheContract(contractId, contract);
+    this.persistToDb(contract);
+    logger.info(
       `Contract ${contractId} signed by ${partyName}. Status: ${contract?.status}`,
     );
     return contract;
   }
 
   generatePDF(contractId: string): Buffer {
-    const contract = this?.contracts.get(contractId);
+    const contract = this.contracts.get(contractId);
     if (!contract) {
       throw new Error("Contract not found");
     }
@@ -1357,7 +1357,7 @@ ${vars?.producerName || "[PRODUCER NAME]"}
     errors: string[];
     warnings: string[];
   } {
-    const template = this?.getTemplateById(templateId);
+    const template = this.getTemplateById(templateId);
     if (!template) {
       return { valid: false, errors: ["Template not found"], warnings: [] };
     }
@@ -1402,7 +1402,7 @@ ${vars?.producerName || "[PRODUCER NAME]"}
         (sum, s) => sum + s?.percentage,
         0,
       );
-      if (Math?.abs(totalSplit - 100) > 0.01) {
+      if (Math.abs(totalSplit - 100) > 0.01) {
         errors?.push(
           `Split percentages must total 100%, got ${totalSplit?.toFixed(2)}%`,
         );
@@ -1424,7 +1424,7 @@ ${vars?.producerName || "[PRODUCER NAME]"}
     contractId: string,
     variables: Partial<ContractVariables>,
   ): GeneratedContract {
-    const contract = this?.contracts.get(contractId);
+    const contract = this.contracts.get(contractId);
     if (!contract) {
       throw new Error("Contract not found");
     }
@@ -1434,16 +1434,16 @@ ${vars?.producerName || "[PRODUCER NAME]"}
     }
 
     const updatedVariables = { ...contract?.variables, ...variables };
-    const template = this?.getTemplateById(contract?.templateId);
+    const template = this.getTemplateById(contract?.templateId);
     if (!template) {
       throw new Error("Template not found");
     }
 
-    const content = this?.generateContractContent(
+    const content = this.generateContractContent(
       template?.type,
       updatedVariables,
     );
-    const parties = this?.extractParties(template?.type, updatedVariables);
+    const parties = this.extractParties(template?.type, updatedVariables);
 
     const updatedContract: GeneratedContract = {
       ...contract,
@@ -1453,14 +1453,14 @@ ${vars?.producerName || "[PRODUCER NAME]"}
       signatures: parties.map((p) => ({ partyName: p.name })),
     };
 
-    this?.cacheContract(contractId, updatedContract);
-    this?.persistToDb(updatedContract);
-    logger?.info(`Contract ${contractId} draft updated`);
+    this.cacheContract(contractId, updatedContract);
+    this.persistToDb(updatedContract);
+    logger.info(`Contract ${contractId} draft updated`);
     return updatedContract;
   }
 
   sendForSignature(contractId: string): GeneratedContract {
-    const contract = this?.contracts.get(contractId);
+    const contract = this.contracts.get(contractId);
     if (!contract) {
       throw new Error("Contract not found");
     }
@@ -1470,9 +1470,9 @@ ${vars?.producerName || "[PRODUCER NAME]"}
     }
 
     contract.status = "pending_signature";
-    this?.cacheContract(contractId, contract);
-    this?.persistToDb(contract);
-    logger?.info(`Contract ${contractId} sent for signature`);
+    this.cacheContract(contractId, contract);
+    this.persistToDb(contract);
+    logger.info(`Contract ${contractId} sent for signature`);
     return contract;
   }
 
@@ -1481,7 +1481,7 @@ ${vars?.producerName || "[PRODUCER NAME]"}
     partyName: string,
     reason: string,
   ): GeneratedContract {
-    const contract = this?.contracts.get(contractId);
+    const contract = this.contracts.get(contractId);
     if (!contract) {
       throw new Error("Contract not found");
     }
@@ -1494,16 +1494,16 @@ ${vars?.producerName || "[PRODUCER NAME]"}
     }
 
     contract.status = "voided";
-    this?.cacheContract(contractId, contract);
-    this?.persistToDb(contract);
-    logger?.info(
+    this.cacheContract(contractId, contract);
+    this.persistToDb(contract);
+    logger.info(
       `Contract ${contractId} declined by ${partyName}. Reason: ${reason}`,
     );
     return contract;
   }
 
   voidContract(contractId: string, reason: string): GeneratedContract {
-    const contract = this?.contracts.get(contractId);
+    const contract = this.contracts.get(contractId);
     if (!contract) {
       throw new Error("Contract not found");
     }
@@ -1513,9 +1513,9 @@ ${vars?.producerName || "[PRODUCER NAME]"}
     }
 
     contract.status = "voided";
-    this?.cacheContract(contractId, contract);
-    this?.persistToDb(contract);
-    logger?.info(`Contract ${contractId} voided. Reason: ${reason}`);
+    this.cacheContract(contractId, contract);
+    this.persistToDb(contract);
+    logger.info(`Contract ${contractId} voided. Reason: ${reason}`);
     return contract;
   }
 
@@ -1525,7 +1525,7 @@ ${vars?.producerName || "[PRODUCER NAME]"}
     actor?: string;
     details?: string;
   }> {
-    const contract = this?.contracts.get(contractId);
+    const contract = this.contracts.get(contractId);
     if (!contract) {
       throw new Error("Contract not found");
     }
@@ -1588,7 +1588,7 @@ ${vars?.producerName || "[PRODUCER NAME]"}
     }>;
     allSigned: boolean;
   } {
-    const contract = this?.contracts.get(contractId);
+    const contract = this.contracts.get(contractId);
     if (!contract) {
       throw new Error("Contract not found");
     }
@@ -1630,7 +1630,7 @@ ${vars?.producerName || "[PRODUCER NAME]"}
     voided: number;
     expired: number;
   } {
-    const userContracts = this?.getContractsByUser(userId);
+    const userContracts = this.getContractsByUser(userId);
     return {
       total: userContracts.length,
       draft: userContracts.filter((c) => c?.status === "draft").length,
@@ -1648,12 +1648,12 @@ ${vars?.producerName || "[PRODUCER NAME]"}
   }
 
   getContractPreview(templateId: string, variables: ContractVariables): string {
-    const template = this?.getTemplateById(templateId);
+    const template = this.getTemplateById(templateId);
     if (!template) {
       throw new Error("Template not found");
     }
 
-    return this?.generateContractContent(template?.type, variables);
+    return this.generateContractContent(template?.type, variables);
   }
 }
 

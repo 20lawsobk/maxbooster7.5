@@ -85,11 +85,11 @@ export async function checkDiffusionAvailable(): Promise<boolean> {
   const available = await isPyTorchDiffusionReady();
   _availabilityCache = { ts: Date.now(), available };
   if (available) {
-    logger?.info(
+    logger.info(
       "[DiffusionScene] PyTorch diffusion API is ready — Tier 1 active",
     );
   } else {
-    logger?.debug(
+    logger.debug(
       "[DiffusionScene] PyTorch diffusion API not reachable — Tier 1 bypassed, using Ken Burns",
     );
   }
@@ -198,11 +198,11 @@ export async function renderDiffusionScene(
     let energy = 0.65;
     if (ba?.energyEnvelope && ba?.energyEnvelope.length > 0) {
       const midpoint = (opts?.sceneIndex + 0.5) / totalSc;
-      const idx = Math?.min(
-        Math?.floor(midpoint * ba?.energyEnvelope.length),
+      const idx = Math.min(
+        Math.floor(midpoint * ba?.energyEnvelope.length),
         ba?.energyEnvelope.length - 1,
       );
-      energy = Math?.max(0.1, Math?.min(1.0, ba?.energyEnvelope[idx]));
+      energy = Math.max(0.1, Math.min(1.0, ba?.energyEnvelope[idx]));
     }
 
     // Check if this scene contains an energy peak (drop / chorus)
@@ -227,11 +227,11 @@ export async function renderDiffusionScene(
     // Diffusion API is capped at 48 frames per call for performance.
     // The post-process FFmpeg step trims/loops to exact durationSec.
     const fps = 30;
-    const frames = Math?.min(Math?.ceil(opts?.durationSec * fps), 48);
+    const frames = Math.min(Math.ceil(opts?.durationSec * fps), 48);
 
     // Cap resolution — diffusion API works best at ≤512 on each axis.
-    const H = Math?.min(opts?.height, 512);
-    const W = Math?.min(opts?.width, 512);
+    const H = Math.min(opts?.height, 512);
+    const W = Math.min(opts?.width, 512);
 
     const diffRequest: PyTorchDiffusionRequest = {
       prompt,
@@ -252,7 +252,7 @@ export async function renderDiffusionScene(
       temporal_smooth: true,
     };
 
-    logger?.info(
+    logger.info(
       `[DiffusionScene] Scene ${opts?.sceneIndex + 1}/${totalSc} → ` +
         `style=${styleName} bpm=${bpm.toFixed(0)} energy=${energy?.toFixed(2)} ` +
         `frames=${frames} drop=${isDrop} goal=${emotionalGoal}`,
@@ -261,7 +261,7 @@ export async function renderDiffusionScene(
     // ── Call diffusion API ───────────────────────────────────────────────────
     const result = await generatePyTorchDiffusionVideo(diffRequest);
     if (result?.status !== "ok" || !result?.mp4_b64) {
-      logger?.warn(
+      logger.warn(
         `[DiffusionScene] Scene ${opts.sceneIndex + 1} — API returned status="${result.status}" with no mp4_b64`,
       );
       return null;
@@ -322,14 +322,14 @@ export async function renderDiffusionScene(
       /* intentional: temp raw diffusion file cleanup */
     }
 
-    logger?.info(
+    logger.info(
       `[DiffusionScene] ✅ Scene ${opts?.sceneIndex + 1} — ` +
         `gpu=${result.gpu_applied} style=${result?.style_used ?? styleName} ` +
         `scene=${result?.scene_name ?? "?"}`,
     );
     return opts?.outputPath;
   } catch (err) {
-    logger?.warn(
+    logger.warn(
       `[DiffusionScene] Scene ${opts?.sceneIndex + 1} failed (${err?.message ?? err}) ` +
         `— will fall back to Ken Burns`,
     );

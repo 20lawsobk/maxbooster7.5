@@ -52,7 +52,7 @@ import {
 const execFileAsync = promisify(execFile);
 
 function resolveFFmpegPath(): string {
-  if (process?.env.FFMPEG_PATH) return process?.env.FFMPEG_PATH;
+  if (process.env.FFMPEG_PATH) return process.env.FFMPEG_PATH;
   try {
     const p = execFileSync("/bin/sh", ["-c", "which ffmpeg"], { timeout: 3000 })
       .toString()
@@ -72,8 +72,8 @@ function resolveFFmpegPath(): string {
 }
 
 const FFMPEG = resolveFFmpegPath();
-const OUTPUT_DIR = path?.join(process?.cwd(), "uploads", "videos");
-const TEMP_DIR = path?.join(process?.cwd(), "uploads", "video_temp");
+const OUTPUT_DIR = path?.join(process.cwd(), "uploads", "videos");
+const TEMP_DIR = path?.join(process.cwd(), "uploads", "video_temp");
 const FONT_DIR = "/usr/share/fonts/truetype/dejavu";
 
 const FONTS = {

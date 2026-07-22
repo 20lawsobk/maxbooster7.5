@@ -136,7 +136,7 @@ export class ParticleVisualizer {
   }
 
   updateOptions(options: Partial<ParticleVisualizerOptions>): void {
-    this.options = { ...this?.options, ...options };
+    this.options = { ...this.options, ...options };
   }
 
   render(
@@ -148,30 +148,30 @@ export class ParticleVisualizer {
   ): void {
     this.time = time;
 
-    const emissionMultiplier = this?.options.audioReactive
-      ? 1 + audioData?.average * this?.options.audioEmissionMultiplier
+    const emissionMultiplier = this.options.audioReactive
+      ? 1 + audioData?.average * this.options.audioEmissionMultiplier
       : 1;
 
-    this?.emitParticles(width, height, emissionMultiplier);
+    this.emitParticles(width, height, emissionMultiplier);
 
-    if (this?.options.beatBurst && audioData?.beatDetected) {
-      this?.emitBurstParticles(width, height);
+    if (this.options.beatBurst && audioData?.beatDetected) {
+      this.emitBurstParticles(width, height);
     }
 
-    this?.updateParticles(width, height, audioData);
+    this.updateParticles(width, height, audioData);
 
     ctx?.save();
 
-    if (this?.options.glow) {
-      ctx.shadowColor = this?.options.glowColor;
-      ctx.shadowBlur = this?.options.glowBlur * this?.options.glowIntensity;
+    if (this.options.glow) {
+      ctx.shadowColor = this.options.glowColor;
+      ctx.shadowBlur = this.options.glowBlur * this.options.glowIntensity;
     }
 
-    if (this?.options.trailLength > 0) {
-      this?.renderTrails(ctx);
+    if (this.options.trailLength > 0) {
+      this.renderTrails(ctx);
     }
 
-    this?.renderParticles(ctx, audioData);
+    this.renderParticles(ctx, audioData);
 
     ctx?.restore();
   }
@@ -181,54 +181,54 @@ export class ParticleVisualizer {
     height: number,
     multiplier: number,
   ): void {
-    this.emissionAccumulator += this?.options.emissionRate * multiplier;
+    this.emissionAccumulator += this.options.emissionRate * multiplier;
 
     while (
-      this?.emissionAccumulator >= 1 &&
-      this?.particles.length < this?.options.maxParticles
+      this.emissionAccumulator >= 1 &&
+      this.particles.length < this.options.maxParticles
     ) {
       this.emissionAccumulator--;
-      this?.createParticle(width, height);
+      this.createParticle(width, height);
     }
   }
 
   private emitBurstParticles(width: number, height: number): void {
-    const centerX = width * this?.options.emissionArea?.x;
-    const centerY = height * this?.options.emissionArea?.y;
+    const centerX = width * this.options.emissionArea?.x;
+    const centerY = height * this.options.emissionArea?.y;
 
     for (
       let i = 0;
-      i < this?.options.beatBurstCount &&
-      this?.particles.length < this?.options.maxParticles;
+      i < this.options.beatBurstCount &&
+      this.particles.length < this.options.maxParticles;
       i++
     ) {
-      const angle = Math?.random() * Math.PI * 2;
-      const speed = this?.options.beatBurstSpeed * (0.5 + Math?.random() * 0.5);
+      const angle = Math.random() * Math.PI * 2;
+      const speed = this.options.beatBurstSpeed * (0.5 + Math.random() * 0.5);
 
-      this?.particles.push(
-        this?.createParticleAt(
+      this.particles.push(
+        this.createParticleAt(
           centerX,
           centerY,
-          Math?.cos(angle) * speed,
-          Math?.sin(angle) * speed,
+          Math.cos(angle) * speed,
+          Math.sin(angle) * speed,
         ),
       );
     }
   }
 
   private createParticle(width: number, height: number): void {
-    const pos = this?.getEmissionPosition(width, height);
-    const angle = Math?.random() * Math.PI * 2;
+    const pos = this.getEmissionPosition(width, height);
+    const angle = Math.random() * Math.PI * 2;
     const speed =
-      this?.options.speedMin +
-      Math?.random() * (this?.options.speedMax - this?.options.speedMin);
+      this.options.speedMin +
+      Math.random() * (this.options.speedMax - this.options.speedMin);
 
-    this?.particles.push(
-      this?.createParticleAt(
+    this.particles.push(
+      this.createParticleAt(
         pos?.x,
         pos?.y,
-        Math?.cos(angle) * speed,
-        Math?.sin(angle) * speed - this?.options.speedMax * 0.5,
+        Math.cos(angle) * speed,
+        Math.sin(angle) * speed - this.options.speedMax * 0.5,
       ),
     );
   }
@@ -240,11 +240,11 @@ export class ParticleVisualizer {
     vy: number,
   ): Particle {
     const size =
-      this?.options.sizeMin +
-      Math?.random() * (this?.options.sizeMax - this?.options.sizeMin);
+      this.options.sizeMin +
+      Math.random() * (this.options.sizeMax - this.options.sizeMin);
     const lifetime =
-      this?.options.lifetime +
-      (Math?.random() - 0.5) * 2 * this?.options.lifetimeVariance;
+      this.options.lifetime +
+      (Math.random() - 0.5) * 2 * this.options.lifetimeVariance;
 
     return {
       x,
@@ -258,8 +258,8 @@ export class ParticleVisualizer {
       color: this.getParticleColor(),
       rotation: Math.random() * Math.PI * 2,
       rotationSpeed:
-        this?.options.rotationSpeed +
-        (Math?.random() - 0.5) * 2 * this?.options.rotationVariance,
+        this.options.rotationSpeed +
+        (Math.random() - 0.5) * 2 * this.options.rotationVariance,
       shape: this.options.particleShape,
       trail: [],
     };
@@ -269,35 +269,35 @@ export class ParticleVisualizer {
     width: number,
     height: number,
   ): { x: number; y: number } {
-    const area = this?.options.emissionArea;
+    const area = this.options.emissionArea;
     const centerX = width * area?.x;
     const centerY = height * area?.y;
     const areaWidth = width * area?.width;
     const areaHeight = height * area?.height;
 
-    switch (this?.options.emissionPattern) {
+    switch (this.options.emissionPattern) {
       case "point":
         return { x: centerX, y: centerY };
 
       case "line":
         return {
-          x: centerX - areaWidth / 2 + Math?.random() * areaWidth,
+          x: centerX - areaWidth / 2 + Math.random() * areaWidth,
           y: centerY,
         };
 
       case "circle": {
-        const angle = Math?.random() * Math.PI * 2;
-        const radius = Math?.random() * this?.options.emissionRadius;
+        const angle = Math.random() * Math.PI * 2;
+        const radius = Math.random() * this.options.emissionRadius;
         return {
-          x: centerX + Math?.cos(angle) * radius,
-          y: centerY + Math?.sin(angle) * radius,
+          x: centerX + Math.cos(angle) * radius,
+          y: centerY + Math.sin(angle) * radius,
         };
       }
 
       case "rectangle":
         return {
-          x: centerX - areaWidth / 2 + Math?.random() * areaWidth,
-          y: centerY - areaHeight / 2 + Math?.random() * areaHeight,
+          x: centerX - areaWidth / 2 + Math.random() * areaWidth,
+          y: centerY - areaHeight / 2 + Math.random() * areaHeight,
         };
 
       case "random":
@@ -312,25 +312,25 @@ export class ParticleVisualizer {
   }
 
   private getParticleColor(): string {
-    const { colors, colorMode } = this?.options;
+    const { colors, colorMode } = this.options;
 
     switch (colorMode) {
       case "random":
-        return colors[Math?.floor(Math?.random() * colors?.length)];
+        return colors[Math.floor(Math.random() * colors?.length)];
 
       case "cycle":
-        this.colorIndex = (this?.colorIndex + 1) % colors?.length;
-        return colors[this?.colorIndex];
+        this.colorIndex = (this.colorIndex + 1) % colors?.length;
+        return colors[this.colorIndex];
 
       case "gradient": {
         const t =
-          (this?.particles.length / this?.options.maxParticles) *
+          (this.particles.length / this.options.maxParticles) *
           (colors?.length - 1);
-        const index = Math?.floor(t);
+        const index = Math.floor(t);
         const frac = t - index;
-        return this?.interpolateColors(
+        return this.interpolateColors(
           colors[index],
-          colors[Math?.min(index + 1, colors?.length - 1)],
+          colors[Math.min(index + 1, colors?.length - 1)],
           frac,
         );
       }
@@ -345,49 +345,49 @@ export class ParticleVisualizer {
     height: number,
     _audioData: AudioAnalysisData,
   ): void {
-    const attractorX = width * this?.options.attractorX;
-    const attractorY = height * this?.options.attractorY;
+    const attractorX = width * this.options.attractorX;
+    const attractorY = height * this.options.attractorY;
 
-    this.particles = this?.particles.filter((p) => {
-      if (this?.options.trailLength > 0) {
+    this.particles = this.particles.filter((p) => {
+      if (this.options.trailLength > 0) {
         p?.trail.push({ x: p.x, y: p.y });
-        if (p?.trail.length > this?.options.trailLength) {
+        if (p?.trail.length > this.options.trailLength) {
           p?.trail.shift();
         }
       }
 
-      p.vy += this?.options.gravity;
+      p.vy += this.options.gravity;
 
-      p.vx += (Math?.random() - 0.5) * this?.options.turbulence;
-      p.vy += (Math?.random() - 0.5) * this?.options.turbulence;
+      p.vx += (Math.random() - 0.5) * this.options.turbulence;
+      p.vy += (Math.random() - 0.5) * this.options.turbulence;
 
-      if (this?.options.attractorStrength !== 0) {
+      if (this.options.attractorStrength !== 0) {
         const dx = attractorX - p?.x;
         const dy = attractorY - p?.y;
-        const dist = Math?.sqrt(dx * dx + dy * dy);
+        const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist > 0) {
-          const force = this?.options.attractorStrength / dist;
+          const force = this.options.attractorStrength / dist;
           p.vx += (dx / dist) * force;
           p.vy += (dy / dist) * force;
         }
       }
 
-      p.vx *= this?.options.friction;
-      p.vy *= this?.options.friction;
+      p.vx *= this.options.friction;
+      p.vy *= this.options.friction;
 
       p.x += p?.vx;
       p.y += p?.vy;
 
       p.rotation += p?.rotationSpeed;
 
-      if (this?.options.bounce) {
+      if (this.options.bounce) {
         if (p?.x < 0 || p?.x > width) {
-          p.vx *= -this?.options.bounceElasticity;
-          p.x = Math?.max(0, Math?.min(width, p?.x));
+          p.vx *= -this.options.bounceElasticity;
+          p.x = Math.max(0, Math.min(width, p?.x));
         }
         if (p?.y < 0 || p?.y > height) {
-          p.vy *= -this?.options.bounceElasticity;
-          p.y = Math?.max(0, Math?.min(height, p?.y));
+          p.vy *= -this.options.bounceElasticity;
+          p.y = Math.max(0, Math.min(height, p?.y));
         }
       }
 
@@ -398,7 +398,7 @@ export class ParticleVisualizer {
   }
 
   private renderTrails(ctx: CanvasRenderingContext2D): void {
-    for (const particle of this?.particles) {
+    for (const particle of this.particles) {
       if (particle?.trail.length < 2) continue;
 
       ctx?.beginPath();
@@ -422,7 +422,7 @@ export class ParticleVisualizer {
       ctx.strokeStyle = gradient;
       ctx.lineWidth = particle?.size * 0.5;
       ctx.lineCap = "round";
-      ctx.globalAlpha = this?.options.trailOpacity;
+      ctx.globalAlpha = this.options.trailOpacity;
       ctx?.stroke();
       ctx.globalAlpha = 1;
     }
@@ -432,20 +432,20 @@ export class ParticleVisualizer {
     ctx: CanvasRenderingContext2D,
     audioData: AudioAnalysisData,
   ): void {
-    const sizeMultiplier = this?.options.audioReactive
-      ? 1 + audioData?.average * this?.options.audioSizeMultiplier
+    const sizeMultiplier = this.options.audioReactive
+      ? 1 + audioData?.average * this.options.audioSizeMultiplier
       : 1;
 
-    for (const particle of this?.particles) {
+    for (const particle of this.particles) {
       const lifeRatio = particle?.life / particle?.maxLife;
 
       let size = particle?.size * sizeMultiplier;
-      if (this?.options.sizeDecay) {
+      if (this.options.sizeDecay) {
         size *= lifeRatio;
       }
 
-      let opacity = this?.options.opacity;
-      if (this?.options.opacityDecay) {
+      let opacity = this.options.opacity;
+      if (this.options.opacityDecay) {
         opacity *= lifeRatio;
       }
 
@@ -455,7 +455,7 @@ export class ParticleVisualizer {
       ctx.globalAlpha = opacity;
       ctx.fillStyle = particle?.color;
 
-      this?.drawShape(ctx, particle?.shape, size);
+      this.drawShape(ctx, particle?.shape, size);
 
       ctx?.restore();
     }
@@ -497,11 +497,11 @@ export class ParticleVisualizer {
         break;
 
       case "star":
-        this?.drawStar(ctx, size, 5, 0.5);
+        this.drawStar(ctx, size, 5, 0.5);
         break;
 
       case "spark":
-        this?.drawSpark(ctx, size);
+        this.drawSpark(ctx, size);
         break;
     }
   }
@@ -517,8 +517,8 @@ export class ParticleVisualizer {
     for (let i = 0; i < points * 2; i++) {
       const angle = (i * Math.PI) / points - Math.PI / 2;
       const radius = i % 2 === 0 ? size : size * innerRatio;
-      const x = Math?.cos(angle) * radius;
-      const y = Math?.sin(angle) * radius;
+      const x = Math.cos(angle) * radius;
+      const y = Math.sin(angle) * radius;
 
       if (i === 0) {
         ctx?.moveTo(x, y);
@@ -552,14 +552,14 @@ export class ParticleVisualizer {
   }
 
   private interpolateColors(color1: string, color2: string, t: number): string {
-    const c1 = this?.hexToRgb(color1);
-    const c2 = this?.hexToRgb(color2);
+    const c1 = this.hexToRgb(color1);
+    const c2 = this.hexToRgb(color2);
 
     if (!c1 || !c2) return color1;
 
-    const r = Math?.round(c1?.r + (c2?.r - c1?.r) * t);
-    const g = Math?.round(c1?.g + (c2?.g - c1?.g) * t);
-    const b = Math?.round(c1?.b + (c2?.b - c1?.b) * t);
+    const r = Math.round(c1?.r + (c2?.r - c1?.r) * t);
+    const g = Math.round(c1?.g + (c2?.g - c1?.g) * t);
+    const b = Math.round(c1?.b + (c2?.b - c1?.b) * t);
 
     return `rgb(${r}, ${g}, ${b})`;
   }
@@ -576,7 +576,7 @@ export class ParticleVisualizer {
   }
 
   getParticleCount(): number {
-    return this?.particles.length;
+    return this.particles.length;
   }
 
   reset(): void {

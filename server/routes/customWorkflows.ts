@@ -291,7 +291,7 @@ const updateWorkflowSchema = createWorkflowSchema?.partial().extend({
 });
 
 router?.get("/catalog", (_req, res) => {
-  res?.json({ triggers: CUSTOM_TRIGGERS, actions: CUSTOM_ACTIONS });
+  res.json({ triggers: CUSTOM_TRIGGERS, actions: CUSTOM_ACTIONS });
 });
 
 router?.get("/", requireAuth, async (req, res) => {
@@ -300,14 +300,14 @@ router?.get("/", requireAuth, async (req, res) => {
     const rows = await db
       .select()
       .from(customWorkflows)
-      .where(eq(customWorkflows?.userId, req?.user!.id))
+      .where(eq(customWorkflows?.userId, req.user!.id))
       .orderBy(desc(customWorkflows?.createdAt))
       .limit(limit)
       .offset(offset);
-    res?.json(rows);
+    res.json(rows);
   } catch (error) {
-    logger?.warn({ err: error }, "[CustomWorkflow] Error fetching:");
-    res?.status(500).json({ error: "Failed to fetch custom workflows" });
+    logger.warn({ err: error }, "[CustomWorkflow] Error fetching:");
+    res.status(500).json({ error: "Failed to fetch custom workflows" });
   }
 });
 
@@ -318,22 +318,22 @@ router?.get("/:id", requireAuth, async (req, res) => {
       .from(customWorkflows)
       .where(
         and(
-          eq(customWorkflows?.id, req?.params.id),
-          eq(customWorkflows?.userId, req?.user!.id),
+          eq(customWorkflows?.id, req.params.id),
+          eq(customWorkflows?.userId, req.user!.id),
         ),
       )
       .limit(1);
-    if (!row) return res?.status(404).json({ error: "Workflow not found" });
-    res?.json(row);
+    if (!row) return res.status(404).json({ error: "Workflow not found" });
+    res.json(row);
   } catch (error) {
-    logger?.warn({ err: error }, "[CustomWorkflow] Error fetching workflow:");
-    res?.status(500).json({ error: "Failed to fetch workflow" });
+    logger.warn({ err: error }, "[CustomWorkflow] Error fetching workflow:");
+    res.status(500).json({ error: "Failed to fetch workflow" });
   }
 });
 
 router?.post("/", requireAuth, async (req, res) => {
   try {
-    const parsed = createWorkflowSchema?.safeParse(req?.body);
+    const parsed = createWorkflowSchema?.safeParse(req.body);
     if (!parsed?.success) {
       return res
         .status(400)
@@ -354,16 +354,16 @@ router?.post("/", requireAuth, async (req, res) => {
         enabled: false,
       })
       .returning();
-    res?.status(201).json(row);
+    res.status(201).json(row);
   } catch (error) {
-    logger?.warn({ err: error }, "[CustomWorkflow] Error creating:");
-    res?.status(500).json({ error: "Failed to create custom workflow" });
+    logger.warn({ err: error }, "[CustomWorkflow] Error creating:");
+    res.status(500).json({ error: "Failed to create custom workflow" });
   }
 });
 
 router?.put("/:id", requireAuth, async (req, res) => {
   try {
-    const parsed = updateWorkflowSchema?.safeParse(req?.body);
+    const parsed = updateWorkflowSchema?.safeParse(req.body);
     if (!parsed?.success) {
       return res
         .status(400)
@@ -391,16 +391,16 @@ router?.put("/:id", requireAuth, async (req, res) => {
       })
       .where(
         and(
-          eq(customWorkflows?.id, req?.params.id),
-          eq(customWorkflows?.userId, req?.user!.id),
+          eq(customWorkflows?.id, req.params.id),
+          eq(customWorkflows?.userId, req.user!.id),
         ),
       )
       .returning();
-    if (!row) return res?.status(404).json({ error: "Workflow not found" });
-    res?.json(row);
+    if (!row) return res.status(404).json({ error: "Workflow not found" });
+    res.json(row);
   } catch (error) {
-    logger?.warn({ err: error }, "[CustomWorkflow] Error updating:");
-    res?.status(500).json({ error: "Failed to update custom workflow" });
+    logger.warn({ err: error }, "[CustomWorkflow] Error updating:");
+    res.status(500).json({ error: "Failed to update custom workflow" });
   }
 });
 
@@ -410,16 +410,16 @@ router?.delete("/:id", requireAuth, async (req, res) => {
       .delete(customWorkflows)
       .where(
         and(
-          eq(customWorkflows?.id, req?.params.id),
-          eq(customWorkflows?.userId, req?.user!.id),
+          eq(customWorkflows?.id, req.params.id),
+          eq(customWorkflows?.userId, req.user!.id),
         ),
       )
       .returning();
-    if (!deleted) return res?.status(404).json({ error: "Workflow not found" });
-    res?.json({ success: true });
+    if (!deleted) return res.status(404).json({ error: "Workflow not found" });
+    res.json({ success: true });
   } catch (error) {
-    logger?.warn({ err: error }, "[CustomWorkflow] Error deleting:");
-    res?.status(500).json({ error: "Failed to delete custom workflow" });
+    logger.warn({ err: error }, "[CustomWorkflow] Error deleting:");
+    res.status(500).json({ error: "Failed to delete custom workflow" });
   }
 });
 
@@ -430,16 +430,16 @@ router?.post("/:id/enable", requireAuth, async (req, res) => {
       .set({ enabled: true, updatedAt: new Date() })
       .where(
         and(
-          eq(customWorkflows?.id, req?.params.id),
-          eq(customWorkflows?.userId, req?.user!.id),
+          eq(customWorkflows?.id, req.params.id),
+          eq(customWorkflows?.userId, req.user!.id),
         ),
       )
       .returning();
-    if (!row) return res?.status(404).json({ error: "Workflow not found" });
-    res?.json(row);
+    if (!row) return res.status(404).json({ error: "Workflow not found" });
+    res.json(row);
   } catch (error) {
-    logger?.warn({ err: error }, "[CustomWorkflow] Error enabling:");
-    res?.status(500).json({ error: "Failed to enable workflow" });
+    logger.warn({ err: error }, "[CustomWorkflow] Error enabling:");
+    res.status(500).json({ error: "Failed to enable workflow" });
   }
 });
 
@@ -450,34 +450,34 @@ router?.post("/:id/disable", requireAuth, async (req, res) => {
       .set({ enabled: false, updatedAt: new Date() })
       .where(
         and(
-          eq(customWorkflows?.id, req?.params.id),
-          eq(customWorkflows?.userId, req?.user!.id),
+          eq(customWorkflows?.id, req.params.id),
+          eq(customWorkflows?.userId, req.user!.id),
         ),
       )
       .returning();
-    if (!row) return res?.status(404).json({ error: "Workflow not found" });
-    res?.json(row);
+    if (!row) return res.status(404).json({ error: "Workflow not found" });
+    res.json(row);
   } catch (error) {
-    logger?.warn({ err: error }, "[CustomWorkflow] Error disabling:");
-    res?.status(500).json({ error: "Failed to disable workflow" });
+    logger.warn({ err: error }, "[CustomWorkflow] Error disabling:");
+    res.status(500).json({ error: "Failed to disable workflow" });
   }
 });
 
 router?.post("/:id/test", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const [workflow] = await db
       .select()
       .from(customWorkflows)
       .where(
         and(
-          eq(customWorkflows?.id, req?.params.id),
+          eq(customWorkflows?.id, req.params.id),
           eq(customWorkflows?.userId, userId),
         ),
       )
       .limit(1);
 
-    if (!workflow) return res?.status(404).json({ error: "Workflow not found" });
+    if (!workflow) return res.status(404).json({ error: "Workflow not found" });
 
     const actionsRun: string[] = [];
     const actions = workflow?.actions as Array<{
@@ -532,7 +532,7 @@ router?.post("/:id/test", requireAuth, async (req, res) => {
             if (action?.config.url && typeof action?.config.url === "string") {
               const webhookUrl = String(action?.config.url);
               if (!isSafeWebhookUrl(webhookUrl)) {
-                logger?.warn(
+                logger.warn(
                   `[CustomWorkflow] Blocked SSRF attempt — unsafe webhook URL: ${webhookUrl}`,
                 );
                 actionsRun?.push(
@@ -579,10 +579,10 @@ router?.post("/:id/test", requireAuth, async (req, res) => {
       })
       .where(eq(customWorkflows?.id, workflow?.id));
 
-    res?.json({ success: true, actionsRun });
+    res.json({ success: true, actionsRun });
   } catch (error) {
-    logger?.warn({ err: error }, "[CustomWorkflow] Error testing:");
-    res?.status(500).json({ error: "Failed to test workflow" });
+    logger.warn({ err: error }, "[CustomWorkflow] Error testing:");
+    res.status(500).json({ error: "Failed to test workflow" });
   }
 });
 

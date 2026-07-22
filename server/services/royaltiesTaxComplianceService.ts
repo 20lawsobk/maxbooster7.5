@@ -9,7 +9,7 @@ export class RoyaltiesTaxComplianceService {
   }
 
   async generate1099MISC(userId: string, year: number) {
-    const earnings = await this?.aggregateAnnualEarnings(userId, year);
+    const earnings = await this.aggregateAnnualEarnings(userId, year);
 
     if (!earnings || earnings?.totalEarnings < TAX_THRESHOLD) {
       return {
@@ -67,7 +67,7 @@ export class RoyaltiesTaxComplianceService {
   }
 
   async exportTaxDocument(userId: string, year: number) {
-    const doc = await this?.generate1099MISC(userId, year);
+    const doc = await this.generate1099MISC(userId, year);
 
     return {
       format: "json",

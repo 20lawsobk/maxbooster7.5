@@ -46,7 +46,7 @@ export class PeakCacheEngine {
     sampleRate: number,
     channels: number = 1,
   ): PeakCacheEntry {
-    const existing = this?.cache.get(sourceId);
+    const existing = this.cache.get(sourceId);
     if (existing && existing?.totalSamples === audioData?.length) {
       return existing;
     }
@@ -77,7 +77,7 @@ export class PeakCacheEngine {
         continue;
       }
 
-      const peaks = this?.computeMinMaxRMS(audioData, level?.samplesPerPeak);
+      const peaks = this.computeMinMaxRMS(audioData, level?.samplesPerPeak);
       entry?.levels.set(level?.resolution, {
         resolution: level.resolution,
         samplesPerPeak: level.samplesPerPeak,
@@ -86,8 +86,8 @@ export class PeakCacheEngine {
       });
     }
 
-    this?.evictIfNeeded(entry);
-    this?.cache.set(sourceId, entry);
+    this.evictIfNeeded(entry);
+    this.cache.set(sourceId, entry);
     return entry;
   }
 
@@ -95,12 +95,12 @@ export class PeakCacheEngine {
     data: Float32Array,
     samplesPerPeak: number,
   ): PeakData[] {
-    const numPeaks = Math?.ceil(data?.length / samplesPerPeak);
+    const numPeaks = Math.ceil(data?.length / samplesPerPeak);
     const peaks: PeakData[] = new Array(numPeaks);
 
     for (let i = 0; i < numPeaks; i++) {
       const start = i * samplesPerPeak;
-      const end = Math?.min(start + samplesPerPeak, data?.length);
+      const end = Math.min(start + samplesPerPeak, data?.length);
       let min = Infinity;
       let max = -Infinity;
       let sumSquared = 0;
@@ -129,7 +129,7 @@ export class PeakCacheEngine {
     viewEndSample: number,
     targetPixelWidth: number,
   ): { peaks: PeakData[]; resolution: number; samplesPerPeak: number } | null {
-    const entry = this?.cache.get(sourceId);
+    const entry = this.cache.get(sourceId);
     if (!entry) return null;
 
     const viewSamples = viewEndSample - viewStartSample;
@@ -150,13 +150,13 @@ export class PeakCacheEngine {
       else return null;
     }
 
-    const startPeak = Math?.max(
+    const startPeak = Math.max(
       0,
-      Math?.floor(viewStartSample / bestLevel?.samplesPerPeak),
+      Math.floor(viewStartSample / bestLevel?.samplesPerPeak),
     );
-    const endPeak = Math?.min(
+    const endPeak = Math.min(
       bestLevel?.peaks.length,
-      Math?.ceil(viewEndSample / bestLevel?.samplesPerPeak),
+      Math.ceil(viewEndSample / bestLevel?.samplesPerPeak),
     );
 
     const viewPeaks = bestLevel?.peaks.slice(startPeak, endPeak);
@@ -181,8 +181,8 @@ export class PeakCacheEngine {
     const peaksPerBin = peaks?.length / targetCount;
 
     for (let i = 0; i < targetCount; i++) {
-      const start = Math?.floor(i * peaksPerBin);
-      const end = Math?.min(Math?.floor((i + 1) * peaksPerBin), peaks?.length);
+      const start = Math.floor(i * peaksPerBin);
+      const end = Math.min(Math.floor((i + 1) * peaksPerBin), peaks?.length);
 
       let min = Infinity;
       let max = -Infinity;
@@ -206,7 +206,7 @@ export class PeakCacheEngine {
   }
 
   getOptimalResolutionLevel(sourceId: string, pixelsPerSecond: number): number {
-    const entry = this?.cache.get(sourceId);
+    const entry = this.cache.get(sourceId);
     if (!entry) return 4;
 
     const samplesPerPixel = entry?.sampleRate / pixelsPerSecond;
@@ -224,7 +224,7 @@ export class PeakCacheEngine {
     threshold: number = 0.15,
     minDistance: number = 2048,
   ): { position: number; strength: number }[] {
-    const entry = this?.cache.get(sourceId);
+    const entry = this.cache.get(sourceId);
     if (!entry) return [];
 
     const level = entry?.levels.get(2);
@@ -254,15 +254,15 @@ export class PeakCacheEngine {
   }
 
   invalidateCache(sourceId: string): void {
-    const entry = this?.cache.get(sourceId);
+    const entry = this.cache.get(sourceId);
     if (entry) {
-      this.currentCacheBytes -= this?.estimateEntrySize(entry);
-      this?.cache.delete(sourceId);
+      this.currentCacheBytes -= this.estimateEntrySize(entry);
+      this.cache.delete(sourceId);
     }
   }
 
   clearAll(): void {
-    this?.cache.clear();
+    this.cache.clear();
     this.currentCacheBytes = 0;
   }
 
@@ -276,7 +276,7 @@ export class PeakCacheEngine {
       entries: this.cache.size,
       totalBytes: this.currentCacheBytes,
       maxBytes: this.maxCacheSize,
-      utilizationPercent: (this?.currentCacheBytes / this?.maxCacheSize) * 100,
+      utilizationPercent: (this.currentCacheBytes / this.maxCacheSize) * 100,
     };
   }
 
@@ -292,16 +292,16 @@ export class PeakCacheEngine {
   }
 
   private evictIfNeeded(newEntry: PeakCacheEntry): void {
-    const newSize = this?.estimateEntrySize(newEntry);
+    const newSize = this.estimateEntrySize(newEntry);
 
     while (
-      this?.currentCacheBytes + newSize > this?.maxCacheSize &&
-      this?.cache.size > 0
+      this.currentCacheBytes + newSize > this.maxCacheSize &&
+      this.cache.size > 0
     ) {
       let oldestKey: string | null = null;
       let oldestTime = Infinity;
 
-      for (const [key, entry] of this?.cache) {
+      for (const [key, entry] of this.cache) {
         const entryTime = entry?.levels.get(0)?.timestamp || 0;
         if (entryTime < oldestTime) {
           oldestTime = entryTime;
@@ -310,9 +310,9 @@ export class PeakCacheEngine {
       }
 
       if (oldestKey) {
-        const evicted = this?.cache.get(oldestKey)!;
-        this.currentCacheBytes -= this?.estimateEntrySize(evicted);
-        this?.cache.delete(oldestKey);
+        const evicted = this.cache.get(oldestKey)!;
+        this.currentCacheBytes -= this.estimateEntrySize(evicted);
+        this.cache.delete(oldestKey);
       } else {
         break;
       }

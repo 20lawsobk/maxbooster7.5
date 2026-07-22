@@ -268,7 +268,7 @@ export class SupportAIService {
     }
 
     try {
-      const aiGeneratedAnswer = await this?.generateAIAnswer(query?.question);
+      const aiGeneratedAnswer = await this.generateAIAnswer(query?.question);
       return {
         answer: aiGeneratedAnswer,
         confidence: 0.6,
@@ -276,7 +276,7 @@ export class SupportAIService {
         shouldEscalate: false,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "AI generation failed:");
+      logger.warn({ err: error }, "AI generation failed:");
       return {
         answer:
           "I apologize, but I'm having trouble understanding your question. Our support team can help! Would you like to create a support ticket or try rephrasing your question?",
@@ -290,10 +290,10 @@ export class SupportAIService {
   private findDirectAnswer(
     question: string,
   ): { answer: string; category: string } | null {
-    for (const [key, value] of this?.commonQuestions) {
+    for (const [key, value] of this.commonQuestions) {
       if (
         question?.includes(key) ||
-        this?.calculateSimilarity(question, key) > 0.7
+        this.calculateSimilarity(question, key) > 0.7
       ) {
         return value;
       }
@@ -302,7 +302,7 @@ export class SupportAIService {
   }
 
   private async findRelevantArticles(question: string) {
-    const keywords = this?.extractKeywords(question);
+    const keywords = this.extractKeywords(question);
     const articles = await knowledgeBaseService?.searchArticles(
       keywords?.join(" "),
       undefined,
@@ -358,7 +358,7 @@ export class SupportAIService {
     const words1 = str1?.split(/\s+/);
     const words2 = str2?.split(/\s+/);
     const commonWords = words1?.filter((w) => words2?.includes(w));
-    return commonWords?.length / Math?.max(words1?.length, words2?.length);
+    return commonWords?.length / Math.max(words1?.length, words2?.length);
   }
 
   private extractKeywords(text: string): string[] {
@@ -399,7 +399,7 @@ export class SupportAIService {
       .map((w) => w?.replace(/[^a-z0-9]/g, ""))
       .filter((w) => w?.length > 2 && !stopWords?.has(w));
 
-    return Array?.from(new Set(words));
+    return Array.from(new Set(words));
   }
 
   private async generateAIAnswer(question: string): Promise<string> {
@@ -463,7 +463,7 @@ export class SupportAIService {
     let bestCategory = "general";
     let maxScore = 0;
 
-    for (const [category, keywords] of Object?.entries(categories)) {
+    for (const [category, keywords] of Object.entries(categories)) {
       const score = keywords?.filter((keyword) => text?.includes(keyword)).length;
       if (score > maxScore) {
         maxScore = score;
@@ -480,7 +480,7 @@ export class SupportAIService {
       throw new Error("Ticket not found");
     }
 
-    const response = await this?.answerQuestion({
+    const response = await this.answerQuestion({
       question: `${ticket?.subject}. ${ticket?.description}`,
     });
 

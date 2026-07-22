@@ -61,11 +61,11 @@ router?.get("/", async (req: Request, res: Response) => {
     const [preferences] = await db
       .select()
       .from(autopilotPreferences)
-      .where(eq(autopilotPreferences?.userId, req?.user.id))
+      .where(eq(autopilotPreferences?.userId, req.user.id))
       .limit(1);
 
     if (!preferences) {
-      return res?.json({
+      return res.json({
         userId: req.user.id,
         artistName: "",
         artistBio: "",
@@ -111,23 +111,23 @@ router?.get("/", async (req: Request, res: Response) => {
       });
     }
 
-    res?.json(preferences);
+    res.json(preferences);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching autopilot preferences:");
-    res?.status(500).json({ error: "Failed to fetch preferences" });
+    logger.warn({ err: error }, "Error fetching autopilot preferences:");
+    res.status(500).json({ error: "Failed to fetch preferences" });
   }
 });
 
 router?.post("/", async (req: Request, res: Response) => {
   try {
-    const parsed = preferencesSchema?.safeParse(req?.body);
+    const parsed = preferencesSchema?.safeParse(req.body);
     if (!parsed?.success) {
       const msg = parsed?.error.issues[0]?.message || "Invalid input";
-      logger?.warn(
+      logger.warn(
         { validationErrors: parsed.error.issues },
         "Autopilot preferences validation failed",
       );
-      return res?.status(400).json({ error: msg });
+      return res.status(400).json({ error: msg });
     }
 
     const updatePayload = {
@@ -150,10 +150,10 @@ router?.post("/", async (req: Request, res: Response) => {
       })
       .returning();
 
-    logger?.info(`Autopilot preferences saved for user ${req?.user.id}`);
-    res?.json(result);
+    logger.info(`Autopilot preferences saved for user ${req.user.id}`);
+    res.json(result);
   } catch (error) {
-    logger?.warn(
+    logger.warn(
       { err: error, message: error.message, code: error.code },
       "Error saving autopilot preferences",
     );
@@ -165,7 +165,7 @@ router?.post("/", async (req: Request, res: Response) => {
 
 router?.patch("/", async (req: Request, res: Response) => {
   try {
-    const parsed = preferencesSchema?.safeParse(req?.body);
+    const parsed = preferencesSchema?.safeParse(req.body);
     if (!parsed?.success) {
       return res
         .status(400)
@@ -175,7 +175,7 @@ router?.patch("/", async (req: Request, res: Response) => {
     const [existing] = await db
       .select()
       .from(autopilotPreferences)
-      .where(eq(autopilotPreferences?.userId, req?.user.id))
+      .where(eq(autopilotPreferences?.userId, req.user.id))
       .limit(1);
 
     if (!existing) {
@@ -192,13 +192,13 @@ router?.patch("/", async (req: Request, res: Response) => {
     const [result] = await db
       .update(autopilotPreferences)
       .set(updateData)
-      .where(eq(autopilotPreferences?.userId, req?.user.id))
+      .where(eq(autopilotPreferences?.userId, req.user.id))
       .returning();
 
-    logger?.info(`Autopilot preferences updated for user ${req?.user.id}`);
-    res?.json(result);
+    logger.info(`Autopilot preferences updated for user ${req.user.id}`);
+    res.json(result);
   } catch (error) {
-    logger?.warn(
+    logger.warn(
       { err: error, message: error.message, code: error.code },
       "Error updating autopilot preferences",
     );

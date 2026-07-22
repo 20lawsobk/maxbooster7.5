@@ -70,13 +70,13 @@ router.get("/platforms", async (req: ApiKeyRequest, res) => {
     if (user?.twitter) platforms?.push({ name: "Twitter", status: "connected" });
     if (user?.tiktok) platforms?.push({ name: "TikTok", status: "connected" });
 
-    return res?.json({
+    return res.json({
       success: true,
       platforms,
       totalConnected: platforms.length,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching platforms:");
+    logger.warn({ err: error }, "Error fetching platforms:");
     return res
       .status(500)
       .json({
@@ -93,9 +93,9 @@ router.get("/platforms", async (req: ApiKeyRequest, res) => {
  */
 router?.get("/streams{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
-    const userId = req?.apiKey?.userId;
-    const artistId = req?.params.artistId || userId;
-    const { startDate, endDate, platform, timeRange = "30d" } = req?.query;
+    const userId = req.apiKey?.userId;
+    const artistId = req.params.artistId || userId;
+    const { startDate, endDate, platform, timeRange = "30d" } = req.query;
 
     if (!userId) {
       return res
@@ -179,9 +179,9 @@ router?.get("/streams{/:artistId}", async (req: ApiKeyRequest, res) => {
       60,
     );
 
-    return res?.json(payload);
+    return res.json(payload);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching stream data:");
+    logger.warn({ err: error }, "Error fetching stream data:");
     return res
       .status(500)
       .json({
@@ -197,9 +197,9 @@ router?.get("/streams{/:artistId}", async (req: ApiKeyRequest, res) => {
  */
 router?.get("/engagement{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
-    const userId = req?.apiKey?.userId;
-    const artistId = req?.params.artistId || userId;
-    const { startDate, endDate, timeRange = "30d" } = req?.query;
+    const userId = req.apiKey?.userId;
+    const artistId = req.params.artistId || userId;
+    const { startDate, endDate, timeRange = "30d" } = req.query;
 
     if (!userId) {
       return res
@@ -258,7 +258,7 @@ router?.get("/engagement{/:artistId}", async (req: ApiKeyRequest, res) => {
       { likes: 0, shares: 0, comments: 0, saves: 0 },
     );
 
-    return res?.json({
+    return res.json({
       success: true,
       timeRange: {
         start: start.toISOString(),
@@ -268,7 +268,7 @@ router?.get("/engagement{/:artistId}", async (req: ApiKeyRequest, res) => {
       timeline: engagement,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching engagement data:");
+    logger.warn({ err: error }, "Error fetching engagement data:");
     return res
       .status(500)
       .json({
@@ -284,9 +284,9 @@ router?.get("/engagement{/:artistId}", async (req: ApiKeyRequest, res) => {
  */
 router?.get("/demographics{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
-    const userId = req?.apiKey?.userId;
-    const artistId = req?.params.artistId || userId;
-    const { startDate, endDate, timeRange = "30d" } = req?.query;
+    const userId = req.apiKey?.userId;
+    const artistId = req.params.artistId || userId;
+    const { startDate, endDate, timeRange = "30d" } = req.query;
 
     if (!userId) {
       return res
@@ -328,7 +328,7 @@ router?.get("/demographics{/:artistId}", async (req: ApiKeyRequest, res) => {
       location: [],
     };
 
-    return res?.json({
+    return res.json({
       success: true,
       timeRange: {
         start: start.toISOString(),
@@ -343,7 +343,7 @@ router?.get("/demographics{/:artistId}", async (req: ApiKeyRequest, res) => {
       },
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching demographics data:");
+    logger.warn({ err: error }, "Error fetching demographics data:");
     return res
       .status(500)
       .json({
@@ -359,9 +359,9 @@ router?.get("/demographics{/:artistId}", async (req: ApiKeyRequest, res) => {
  */
 router?.get("/playlists{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
-    const userId = req?.apiKey?.userId;
-    const artistId = req?.params.artistId || userId;
-    const { startDate, endDate, timeRange = "30d" } = req?.query;
+    const userId = req.apiKey?.userId;
+    const artistId = req.params.artistId || userId;
+    const { startDate, endDate, timeRange = "30d" } = req.query;
 
     if (!userId) {
       return res
@@ -413,7 +413,7 @@ router?.get("/playlists{/:artistId}", async (req: ApiKeyRequest, res) => {
     const totalPlacements = playlists?.length;
     const totalFollowers = playlists?.reduce((sum, p) => sum + p?.followers, 0);
 
-    return res?.json({
+    return res.json({
       success: true,
       timeRange: {
         start: start.toISOString(),
@@ -424,13 +424,13 @@ router?.get("/playlists{/:artistId}", async (req: ApiKeyRequest, res) => {
         totalFollowers,
         avgFollowers:
           totalPlacements > 0
-            ? Math?.round(totalFollowers / totalPlacements)
+            ? Math.round(totalFollowers / totalPlacements)
             : 0,
       },
       playlists: playlists.slice(0, 50), // Limit to top 50
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching playlist data:");
+    logger.warn({ err: error }, "Error fetching playlist data:");
     return res
       .status(500)
       .json({
@@ -446,14 +446,14 @@ router?.get("/playlists{/:artistId}", async (req: ApiKeyRequest, res) => {
  */
 router?.get("/tracks{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
-    const userId = req?.apiKey?.userId;
-    const artistId = req?.params.artistId || userId;
-    const rawLimit = parseInt(String(req?.query.limit ?? "50"), 10);
-    const limit = Math?.min(
-      Number?.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 50,
+    const userId = req.apiKey?.userId;
+    const artistId = req.params.artistId || userId;
+    const rawLimit = parseInt(String(req.query.limit ?? "50"), 10);
+    const limit = Math.min(
+      Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 50,
       500,
     );
-    const { sortBy = "streams" } = req?.query;
+    const { sortBy = "streams" } = req.query;
 
     if (!userId) {
       return res
@@ -479,13 +479,13 @@ router?.get("/tracks{/:artistId}", async (req: ApiKeyRequest, res) => {
       .orderBy(desc(sortBy === "revenue" ? projects?.revenue : projects?.streams))
       .limit(limit);
 
-    return res?.json({
+    return res.json({
       success: true,
       total: tracks.length,
       tracks,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching track data:");
+    logger.warn({ err: error }, "Error fetching track data:");
     return res
       .status(500)
       .json({
@@ -501,9 +501,9 @@ router?.get("/tracks{/:artistId}", async (req: ApiKeyRequest, res) => {
  */
 router?.get("/summary{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
-    const userId = req?.apiKey?.userId;
-    const artistId = req?.params.artistId || userId;
-    const { timeRange = "30d" } = req?.query;
+    const userId = req.apiKey?.userId;
+    const artistId = req.params.artistId || userId;
+    const { timeRange = "30d" } = req.query;
 
     if (!userId) {
       return res
@@ -552,7 +552,7 @@ router?.get("/summary{/:artistId}", async (req: ApiKeyRequest, res) => {
       )
       .groupBy(analytics?.platform);
 
-    return res?.json({
+    return res.json({
       success: true,
       timeRange: {
         start: start.toISOString(),
@@ -567,7 +567,7 @@ router?.get("/summary{/:artistId}", async (req: ApiKeyRequest, res) => {
       platforms,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching analytics summary:");
+    logger.warn({ err: error }, "Error fetching analytics summary:");
     return res
       .status(500)
       .json({
@@ -583,7 +583,7 @@ router?.get("/summary{/:artistId}", async (req: ApiKeyRequest, res) => {
  */
 router?.post("/playlist-journeys", async (req: ApiKeyRequest, res) => {
   try {
-    const userId = req?.apiKey?.userId;
+    const userId = req.apiKey?.userId;
 
     if (!userId) {
       return res
@@ -602,7 +602,7 @@ router?.post("/playlist-journeys", async (req: ApiKeyRequest, res) => {
       previousPosition,
       followerCount,
       curatorName,
-    } = req?.body;
+    } = req.body;
 
     if (
       !trackId ||
@@ -639,13 +639,13 @@ router?.post("/playlist-journeys", async (req: ApiKeyRequest, res) => {
       trackId,
     );
 
-    return res?.json({
+    return res.json({
       success: true,
       message: "Playlist journey tracked successfully",
       journeys,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error tracking playlist journey:");
+    logger.warn({ err: error }, "Error tracking playlist journey:");
     return res
       .status(500)
       .json({
@@ -661,9 +661,9 @@ router?.post("/playlist-journeys", async (req: ApiKeyRequest, res) => {
  */
 router?.get("/global-ranking{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
-    const userId = req?.apiKey?.userId;
-    const artistId = req?.params.artistId || userId;
-    const { days = "30" } = req?.query;
+    const userId = req.apiKey?.userId;
+    const artistId = req.params.artistId || userId;
+    const { days = "30" } = req.query;
 
     if (!userId) {
       return res
@@ -679,13 +679,13 @@ router?.get("/global-ranking{/:artistId}", async (req: ApiKeyRequest, res) => {
       parseInt(days as string),
     );
 
-    return res?.json({
+    return res.json({
       success: true,
       ranking,
       history,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching global ranking:");
+    logger.warn({ err: error }, "Error fetching global ranking:");
     return res
       .status(500)
       .json({
@@ -701,7 +701,7 @@ router?.get("/global-ranking{/:artistId}", async (req: ApiKeyRequest, res) => {
  */
 router?.post("/ar-discovery", async (req: ApiKeyRequest, res) => {
   try {
-    const userId = req?.apiKey?.userId;
+    const userId = req.apiKey?.userId;
 
     if (!userId) {
       return res
@@ -710,12 +710,12 @@ router?.post("/ar-discovery", async (req: ApiKeyRequest, res) => {
     }
 
     const { artistId, genre, country, minGrowthScore, minOverallScore, limit } =
-      req?.body;
+      req.body;
 
     if (artistId) {
       const analysis =
         await advancedAnalyticsService?.analyzeArtistForAR(artistId);
-      return res?.json({
+      return res.json({
         success: true,
         analysis,
       });
@@ -729,13 +729,13 @@ router?.post("/ar-discovery", async (req: ApiKeyRequest, res) => {
       limit,
     });
 
-    return res?.json({
+    return res.json({
       success: true,
       discoveries,
       total: discoveries.length,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error performing A&R discovery:");
+    logger.warn({ err: error }, "Error performing A&R discovery:");
     return res
       .status(500)
       .json({
@@ -751,7 +751,7 @@ router?.post("/ar-discovery", async (req: ApiKeyRequest, res) => {
  */
 router?.post("/nlp-query", async (req: ApiKeyRequest, res) => {
   try {
-    const userId = req?.apiKey?.userId;
+    const userId = req.apiKey?.userId;
 
     if (!userId) {
       return res
@@ -759,7 +759,7 @@ router?.post("/nlp-query", async (req: ApiKeyRequest, res) => {
         .json({ error: "Unauthorized", message: "User ID not found" });
     }
 
-    const { query } = req?.body;
+    const { query } = req.body;
 
     if (!query || typeof query !== "string") {
       return res
@@ -775,12 +775,12 @@ router?.post("/nlp-query", async (req: ApiKeyRequest, res) => {
       query,
     );
 
-    return res?.json({
+    return res.json({
       success: true,
       result,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error processing NLP query:");
+    logger.warn({ err: error }, "Error processing NLP query:");
     return res
       .status(500)
       .json({
@@ -796,9 +796,9 @@ router?.post("/nlp-query", async (req: ApiKeyRequest, res) => {
  */
 router?.get("/historical{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
-    const userId = req?.apiKey?.userId;
-    const artistId = req?.params.artistId || userId;
-    const { startDate, endDate, period, trackId } = req?.query;
+    const userId = req.apiKey?.userId;
+    const artistId = req.params.artistId || userId;
+    const { startDate, endDate, period, trackId } = req.query;
 
     if (!userId) {
       return res
@@ -828,12 +828,12 @@ router?.get("/historical{/:artistId}", async (req: ApiKeyRequest, res) => {
       options,
     );
 
-    return res?.json({
+    return res.json({
       success: true,
       ...historicalData,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching historical data:");
+    logger.warn({ err: error }, "Error fetching historical data:");
     return res
       .status(500)
       .json({
@@ -849,9 +849,9 @@ router?.get("/historical{/:artistId}", async (req: ApiKeyRequest, res) => {
  */
 router?.get("/sync-impact{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
-    const userId = req?.apiKey?.userId;
-    const artistId = req?.params.artistId || userId;
-    const { trackId } = req?.query;
+    const userId = req.apiKey?.userId;
+    const artistId = req.params.artistId || userId;
+    const { trackId } = req.query;
 
     if (!userId) {
       return res
@@ -873,7 +873,7 @@ router?.get("/sync-impact{/:artistId}", async (req: ApiKeyRequest, res) => {
       0,
     );
 
-    return res?.json({
+    return res.json({
       success: true,
       summary: {
         totalTracks: syncImpact.length,
@@ -887,7 +887,7 @@ router?.get("/sync-impact{/:artistId}", async (req: ApiKeyRequest, res) => {
       tracks: syncImpact,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching sync impact:");
+    logger.warn({ err: error }, "Error fetching sync impact:");
     return res
       .status(500)
       .json({
@@ -903,9 +903,9 @@ router?.get("/sync-impact{/:artistId}", async (req: ApiKeyRequest, res) => {
  */
 router?.get("/cross-platform{/:artistId}", async (req: ApiKeyRequest, res) => {
   try {
-    const userId = req?.apiKey?.userId;
-    const artistId = req?.params.artistId || userId;
-    const { startDate, endDate, timeRange = "30d" } = req?.query;
+    const userId = req.apiKey?.userId;
+    const artistId = req.params.artistId || userId;
+    const { startDate, endDate, timeRange = "30d" } = req.query;
 
     if (!userId) {
       return res
@@ -928,7 +928,7 @@ router?.get("/cross-platform{/:artistId}", async (req: ApiKeyRequest, res) => {
         end,
       );
 
-    return res?.json({
+    return res.json({
       success: true,
       timeRange: {
         start: start.toISOString(),
@@ -937,7 +937,7 @@ router?.get("/cross-platform{/:artistId}", async (req: ApiKeyRequest, res) => {
       ...crossPlatform,
     });
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error fetching cross-platform data:");
+    logger.warn({ err: error }, "Error fetching cross-platform data:");
     return res
       .status(500)
       .json({
@@ -955,9 +955,9 @@ router?.get(
   "/data-sources/shazam{/:artistId}",
   async (req: ApiKeyRequest, res) => {
     try {
-      const userId = req?.apiKey?.userId;
-      const artistId = req?.params.artistId || userId;
-      const { startDate, endDate, timeRange = "30d" } = req?.query;
+      const userId = req.apiKey?.userId;
+      const artistId = req.params.artistId || userId;
+      const { startDate, endDate, timeRange = "30d" } = req.query;
 
       if (!userId) {
         return res
@@ -979,7 +979,7 @@ router?.get(
         end,
       );
 
-      return res?.json({
+      return res.json({
         success: true,
         timeRange: {
           start: start.toISOString(),
@@ -988,7 +988,7 @@ router?.get(
         ...shazamData,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching Shazam data:");
+      logger.warn({ err: error }, "Error fetching Shazam data:");
       return res
         .status(500)
         .json({
@@ -1007,9 +1007,9 @@ router?.get(
   "/data-sources/radio{/:artistId}",
   async (req: ApiKeyRequest, res) => {
     try {
-      const userId = req?.apiKey?.userId;
-      const artistId = req?.params.artistId || userId;
-      const { startDate, endDate, timeRange = "30d" } = req?.query;
+      const userId = req.apiKey?.userId;
+      const artistId = req.params.artistId || userId;
+      const { startDate, endDate, timeRange = "30d" } = req.query;
 
       if (!userId) {
         return res
@@ -1031,7 +1031,7 @@ router?.get(
         end,
       );
 
-      return res?.json({
+      return res.json({
         success: true,
         timeRange: {
           start: start.toISOString(),
@@ -1040,7 +1040,7 @@ router?.get(
         ...radioData,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching radio data:");
+      logger.warn({ err: error }, "Error fetching radio data:");
       return res
         .status(500)
         .json({
@@ -1059,8 +1059,8 @@ router?.get(
   "/data-sources/tour{/:artistId}",
   async (req: ApiKeyRequest, res) => {
     try {
-      const userId = req?.apiKey?.userId;
-      const artistId = req?.params.artistId || userId;
+      const userId = req.apiKey?.userId;
+      const artistId = req.params.artistId || userId;
 
       if (!userId) {
         return res
@@ -1072,12 +1072,12 @@ router?.get(
         artistId as string,
       );
 
-      return res?.json({
+      return res.json({
         success: true,
         ...tourData,
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching tour data:");
+      logger.warn({ err: error }, "Error fetching tour data:");
       return res
         .status(500)
         .json({

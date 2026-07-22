@@ -54,7 +54,7 @@ export function useOfflineStatus(): OfflineStatusState & {
         conflictCount: stats.conflict,
       }));
     } catch (error) {
-      logger?.error("[useOfflineStatus] Failed to load stats:", error);
+      logger.error("[useOfflineStatus] Failed to load stats:", error);
     }
   }, []);
 

@@ -64,11 +64,11 @@ export class RoutingEngine {
   }
 
   getState(): Readonly<RoutingGraphState> {
-    return { ...this?.state };
+    return { ...this.state };
   }
 
   addNode(node: Omit<RoutingNode, "id" | "inputs" | "outputs">): string {
-    const id = `node_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    const id = `node_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const newNode: RoutingNode = {
       ...node,
       id,
@@ -76,38 +76,38 @@ export class RoutingEngine {
       outputs: [],
     };
 
-    this?.state.nodes?.push(newNode);
-    this?.adjacencyList.set(id, new Set());
+    this.state.nodes?.push(newNode);
+    this.adjacencyList.set(id, new Set());
 
-    if (node?.type === "master" && !this?.state.masterNodeId) {
+    if (node?.type === "master" && !this.state.masterNodeId) {
       this.state.masterNodeId = id;
     }
 
-    this?.notify();
+    this.notify();
     return id;
   }
 
   removeNode(nodeId: string): void {
-    const node = this?.state.nodes?.find((n) => n?.id === nodeId);
+    const node = this.state.nodes?.find((n) => n?.id === nodeId);
     if (!node) return;
 
-    this.state.edges = this?.state.edges?.filter(
+    this.state.edges = this.state.edges?.filter(
       (e) => e?.sourceId !== nodeId && e?.targetId !== nodeId,
     );
 
-    for (const [, targets] of this?.adjacencyList) {
+    for (const [, targets] of this.adjacencyList) {
       targets?.delete(nodeId);
     }
-    this?.adjacencyList.delete(nodeId);
+    this.adjacencyList.delete(nodeId);
 
-    this.state.nodes = this?.state.nodes?.filter((n) => n?.id !== nodeId);
+    this.state.nodes = this.state.nodes?.filter((n) => n?.id !== nodeId);
 
-    if (this?.state.masterNodeId === nodeId) {
+    if (this.state.masterNodeId === nodeId) {
       this.state.masterNodeId = null;
     }
 
-    this?.recalculateLatencies();
-    this?.notify();
+    this.recalculateLatencies();
+    this.notify();
   }
 
   connect(
@@ -115,17 +115,17 @@ export class RoutingEngine {
     targetId: string,
     options: Partial<Omit<RoutingEdge, "id" | "sourceId" | "targetId">> = {},
   ): string | null {
-    const source = this?.state.nodes?.find((n) => n?.id === sourceId);
-    const target = this?.state.nodes?.find((n) => n?.id === targetId);
+    const source = this.state.nodes?.find((n) => n?.id === sourceId);
+    const target = this.state.nodes?.find((n) => n?.id === targetId);
 
     if (!source || !target) return null;
 
-    if (this?.wouldCreateCycle(sourceId, targetId)) {
-      logger?.warn("Cannot create connection: would create a cycle");
+    if (this.wouldCreateCycle(sourceId, targetId)) {
+      logger.warn("Cannot create connection: would create a cycle");
       return null;
     }
 
-    const id = `edge_${Date?.now()}_${Math?.random().toString(36).substr(2, 9)}`;
+    const id = `edge_${Date?.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const edge: RoutingEdge = {
       id,
       sourceId,
@@ -138,26 +138,26 @@ export class RoutingEngine {
       type: options.type ?? "audio",
     };
 
-    this?.state.edges?.push(edge);
+    this.state.edges?.push(edge);
     source?.outputs.push(targetId);
     target?.inputs.push(sourceId);
 
-    if (!this?.adjacencyList.has(sourceId)) {
-      this?.adjacencyList.set(sourceId, new Set());
+    if (!this.adjacencyList.has(sourceId)) {
+      this.adjacencyList.set(sourceId, new Set());
     }
-    this?.adjacencyList.get(sourceId)!.add(targetId);
+    this.adjacencyList.get(sourceId)!.add(targetId);
 
-    this?.recalculateLatencies();
-    this?.notify();
+    this.recalculateLatencies();
+    this.notify();
     return id;
   }
 
   disconnect(edgeId: string): void {
-    const edge = this?.state.edges?.find((e) => e?.id === edgeId);
+    const edge = this.state.edges?.find((e) => e?.id === edgeId);
     if (!edge) return;
 
-    const source = this?.state.nodes?.find((n) => n?.id === edge?.sourceId);
-    const target = this?.state.nodes?.find((n) => n?.id === edge?.targetId);
+    const source = this.state.nodes?.find((n) => n?.id === edge?.sourceId);
+    const target = this.state.nodes?.find((n) => n?.id === edge?.targetId);
 
     if (source) {
       source.outputs = source?.outputs.filter((id) => id !== edge?.targetId);
@@ -166,52 +166,52 @@ export class RoutingEngine {
       target.inputs = target?.inputs.filter((id) => id !== edge?.sourceId);
     }
 
-    this?.adjacencyList.get(edge?.sourceId)?.delete(edge?.targetId);
-    this.state.edges = this?.state.edges?.filter((e) => e?.id !== edgeId);
+    this.adjacencyList.get(edge?.sourceId)?.delete(edge?.targetId);
+    this.state.edges = this.state.edges?.filter((e) => e?.id !== edgeId);
 
-    this?.recalculateLatencies();
-    this?.notify();
+    this.recalculateLatencies();
+    this.notify();
   }
 
   setEdgeGain(edgeId: string, gain: number): void {
-    const edge = this?.state.edges?.find((e) => e?.id === edgeId);
+    const edge = this.state.edges?.find((e) => e?.id === edgeId);
     if (edge) {
-      edge.gain = Math?.max(0, Math?.min(4, gain));
-      this?.notify();
+      edge.gain = Math.max(0, Math.min(4, gain));
+      this.notify();
     }
   }
 
   setEdgeMuted(edgeId: string, muted: boolean): void {
-    const edge = this?.state.edges?.find((e) => e?.id === edgeId);
+    const edge = this.state.edges?.find((e) => e?.id === edgeId);
     if (edge) {
       edge.muted = muted;
-      this?.notify();
+      this.notify();
     }
   }
 
   setEdgePreFader(edgeId: string, preFader: boolean): void {
-    const edge = this?.state.edges?.find((e) => e?.id === edgeId);
+    const edge = this.state.edges?.find((e) => e?.id === edgeId);
     if (edge) {
       edge.preFader = preFader;
-      this?.notify();
+      this.notify();
     }
   }
 
   setNodeLatency(nodeId: string, latency: number): void {
-    const node = this?.state.nodes?.find((n) => n?.id === nodeId);
+    const node = this.state.nodes?.find((n) => n?.id === nodeId);
     if (node) {
-      node.latency = Math?.max(0, latency);
-      this?.recalculateLatencies();
-      this?.notify();
+      node.latency = Math.max(0, latency);
+      this.recalculateLatencies();
+      this.notify();
     }
   }
 
   setNodeBypass(nodeId: string, bypass: boolean): void {
-    const node = this?.state.nodes?.find((n) => n?.id === nodeId);
+    const node = this.state.nodes?.find((n) => n?.id === nodeId);
     if (node) {
       node.bypass = bypass;
-      this?.recalculateLatencies();
-      this?.notify();
+      this.recalculateLatencies();
+      this.notify();
     }
   }
 
@@ -221,7 +221,7 @@ export class RoutingEngine {
     gain: number = 1,
     preFader: boolean = false,
   ): string | null {
-    const sendNodeId = this?.addNode({
+    const sendNodeId = this.addNode({
       type: "send",
       name: `Send to ${targetBusId}`,
       trackId: sourceTrackId,
@@ -229,17 +229,17 @@ export class RoutingEngine {
       bypass: false,
     });
 
-    const edgeToSend = this?.connect(sourceTrackId, sendNodeId, {
+    const edgeToSend = this.connect(sourceTrackId, sendNodeId, {
       gain: 1,
       preFader,
     });
-    const edgeToBus = this?.connect(sendNodeId, targetBusId, {
+    const edgeToBus = this.connect(sendNodeId, targetBusId, {
       gain,
       preFader: true,
     });
 
     if (!edgeToSend || !edgeToBus) {
-      this?.removeNode(sendNodeId);
+      this.removeNode(sendNodeId);
       return null;
     }
 
@@ -247,7 +247,7 @@ export class RoutingEngine {
   }
 
   createBus(name: string): string {
-    return this?.addNode({
+    return this.addNode({
       type: "bus",
       name,
       latency: 0,
@@ -256,7 +256,7 @@ export class RoutingEngine {
   }
 
   createAux(name: string): string {
-    return this?.addNode({
+    return this.addNode({
       type: "aux",
       name,
       latency: 0,
@@ -268,7 +268,7 @@ export class RoutingEngine {
     sourceId: string,
     targetPluginId: string,
   ): string | null {
-    const sidechainNodeId = this?.addNode({
+    const sidechainNodeId = this.addNode({
       type: "sidechain",
       name: `Sidechain from ${sourceId}`,
       pluginId: targetPluginId,
@@ -276,9 +276,9 @@ export class RoutingEngine {
       bypass: false,
     });
 
-    const edge = this?.connect(sourceId, sidechainNodeId, { type: "sidechain" });
+    const edge = this.connect(sourceId, sidechainNodeId, { type: "sidechain" });
     if (!edge) {
-      this?.removeNode(sidechainNodeId);
+      this.removeNode(sidechainNodeId);
       return null;
     }
 
@@ -299,7 +299,7 @@ export class RoutingEngine {
       if (visited?.has(current)) continue;
       visited?.add(current);
 
-      const neighbors = this?.adjacencyList.get(current);
+      const neighbors = this.adjacencyList.get(current);
       if (neighbors) {
         for (const neighbor of neighbors) {
           stack?.push(neighbor);
@@ -319,7 +319,7 @@ export class RoutingEngine {
       if (visited?.has(nodeId)) return;
       visited?.add(nodeId);
 
-      const node = this?.state.nodes?.find((n) => n?.id === nodeId);
+      const node = this.state.nodes?.find((n) => n?.id === nodeId);
       if (!node) return;
 
       for (const inputId of node?.inputs) {
@@ -328,18 +328,18 @@ export class RoutingEngine {
       sorted?.push(nodeId);
     };
 
-    for (const node of this?.state.nodes) {
+    for (const node of this.state.nodes) {
       visit(node?.id);
     }
 
     for (const nodeId of sorted) {
-      const node = this?.state.nodes?.find((n) => n?.id === nodeId);
+      const node = this.state.nodes?.find((n) => n?.id === nodeId);
       if (!node) continue;
 
       let maxInputLatency = 0;
       for (const inputId of node?.inputs) {
         const inputLatency = latencies?.get(inputId) ?? 0;
-        maxInputLatency = Math?.max(maxInputLatency, inputLatency);
+        maxInputLatency = Math.max(maxInputLatency, inputLatency);
       }
 
       const nodeLatency = node?.bypass ? 0 : node?.latency;
@@ -348,23 +348,23 @@ export class RoutingEngine {
 
     let maxLatency = 0;
     for (const [nodeId, latency] of latencies) {
-      maxLatency = Math?.max(maxLatency, latency);
+      maxLatency = Math.max(maxLatency, latency);
     }
 
     this.state.maxLatency = maxLatency;
     this.state.compensatedLatencies = new Map();
 
     for (const [nodeId, latency] of latencies) {
-      this?.state.compensatedLatencies?.set(nodeId, maxLatency - latency);
+      this.state.compensatedLatencies?.set(nodeId, maxLatency - latency);
     }
   }
 
   getLatencyCompensation(nodeId: string): number {
-    return this?.state.compensatedLatencies?.get(nodeId) ?? 0;
+    return this.state.compensatedLatencies?.get(nodeId) ?? 0;
   }
 
   getTotalLatency(): number {
-    return this?.state.maxLatency;
+    return this.state.maxLatency;
   }
 
   findPath(sourceId: string, targetId: string): RoutingPath | null {
@@ -380,7 +380,7 @@ export class RoutingEngine {
       if (visited?.has(current)) return false;
       visited?.add(current);
 
-      const neighbors = this?.adjacencyList.get(current);
+      const neighbors = this.adjacencyList.get(current);
       if (!neighbors) return false;
 
       for (const neighbor of neighbors) {
@@ -397,7 +397,7 @@ export class RoutingEngine {
 
     let totalLatency = 0;
     for (const nodeId of path) {
-      const node = this?.state.nodes?.find((n) => n?.id === nodeId);
+      const node = this.state.nodes?.find((n) => n?.id === nodeId);
       if (node && !node?.bypass) {
         totalLatency += node?.latency;
       }
@@ -407,39 +407,39 @@ export class RoutingEngine {
   }
 
   getNodesOfType(type: NodeType): RoutingNode[] {
-    return this?.state.nodes?.filter((n) => n?.type === type);
+    return this.state.nodes?.filter((n) => n?.type === type);
   }
 
   getConnectedNodes(
     nodeId: string,
     direction: "inputs" | "outputs",
   ): RoutingNode[] {
-    const node = this?.state.nodes?.find((n) => n?.id === nodeId);
+    const node = this.state.nodes?.find((n) => n?.id === nodeId);
     if (!node) return [];
 
     const ids = direction === "inputs" ? node?.inputs : node?.outputs;
-    return this?.state.nodes?.filter((n) => ids?.includes(n?.id));
+    return this.state.nodes?.filter((n) => ids?.includes(n?.id));
   }
 
   getEdgesForNode(nodeId: string): RoutingEdge[] {
-    return this?.state.edges?.filter(
+    return this.state.edges?.filter(
       (e) => e?.sourceId === nodeId || e?.targetId === nodeId,
     );
   }
 
   subscribe(listener: () => void): () => void {
-    this?.listeners.add(listener);
-    return () => this?.listeners.delete(listener);
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
   }
 
   private notify(): void {
-    this?.listeners.forEach((l) => l());
+    this.listeners.forEach((l) => l());
   }
 
   serialize(): { nodes: RoutingNode[]; edges: RoutingEdge[] } {
     return {
-      nodes: structuredClone(this?.state.nodes),
-      edges: structuredClone(this?.state.edges),
+      nodes: structuredClone(this.state.nodes),
+      edges: structuredClone(this.state.edges),
     };
   }
 
@@ -447,20 +447,20 @@ export class RoutingEngine {
     this.state.nodes = structuredClone(data?.nodes);
     this.state.edges = structuredClone(data?.edges);
 
-    this?.adjacencyList.clear();
-    for (const node of this?.state.nodes) {
-      this?.adjacencyList.set(node?.id, new Set());
+    this.adjacencyList.clear();
+    for (const node of this.state.nodes) {
+      this.adjacencyList.set(node?.id, new Set());
       if (node?.type === "master") {
         this.state.masterNodeId = node?.id;
       }
     }
 
-    for (const edge of this?.state.edges) {
-      this?.adjacencyList.get(edge?.sourceId)?.add(edge?.targetId);
+    for (const edge of this.state.edges) {
+      this.adjacencyList.get(edge?.sourceId)?.add(edge?.targetId);
     }
 
-    this?.recalculateLatencies();
-    this?.notify();
+    this.recalculateLatencies();
+    this.notify();
   }
 }
 

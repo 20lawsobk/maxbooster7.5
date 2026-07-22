@@ -28,13 +28,13 @@ export class SessionGuard {
       }
 
       if (SessionGuard?.cachedCount >= config?.session.maxSessions) {
-        logger?.warn(
+        logger.warn(
           `⚠️ Session capacity exceeded: ${SessionGuard?.cachedCount} active sessions`,
         );
 
         // For unauthenticated requests, reject with 503
-        if (!req?.isAuthenticated || !req?.isAuthenticated()) {
-          return res?.status(503).json({
+        if (!req.isAuthenticated || !req.isAuthenticated()) {
+          return res.status(503).json({
             error: "Service temporarily unavailable",
             message:
               "The system has reached maximum capacity. New sessions cannot be created at this time.",
@@ -45,7 +45,7 @@ export class SessionGuard {
 
       next();
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Session guard error:");
+      logger.warn({ err: error }, "Session guard error:");
       next(); // Fail open
     }
   }

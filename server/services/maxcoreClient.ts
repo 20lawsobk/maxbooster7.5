@@ -19,10 +19,10 @@
 
 import { logger } from "../logger.js";
 
-const MC_AI_URL = process?.env.AI_SERVER_URL || "";
+const MC_AI_URL = process.env.AI_SERVER_URL || "";
 // AI_SERVER_KEY is the active generation credential; MAXCORE_ADMIN_KEY is the admin credential
 const MC_AI_KEY =
-  process?.env.AI_SERVER_KEY || process?.env.MAXCORE_ADMIN_KEY || "";
+  process.env.AI_SERVER_KEY || process.env.MAXCORE_ADMIN_KEY || "";
 
 /** Parse MaxCore's "Circuit breaker open — retry in ~Ns." message → ms to wait. */
 function parseCbRetryMs(body: string): number {
@@ -51,7 +51,7 @@ export class MaxCoreAIClient {
       path,
       Date.now() + MaxCoreAIClient.ENDPOINT_SUPPRESS_MS,
     );
-    logger?.debug(`[MaxCoreAI] remote ${path} suppressed for 2 min`);
+    logger.debug(`[MaxCoreAI] remote ${path} suppressed for 2 min`);
   }
 
   private static isJson(r: Response): boolean {
@@ -89,7 +89,7 @@ export class MaxCoreAIClient {
           .then((r) => {
             MaxCoreAIClient._remoteAvailable = r?.ok;
             if (MaxCoreAIClient._remoteAvailable)
-              logger?.info("[MaxCoreAI] Remote server is online ✅");
+              logger.info("[MaxCoreAI] Remote server is online ✅");
           })
           .catch(() => {
             MaxCoreAIClient._remoteAvailable = false;
@@ -181,7 +181,7 @@ export class MaxCoreAIClient {
     MaxCoreAIClient._cbProbing = false;
     if (MaxCoreAIClient._cbFailures >= MaxCoreAIClient.CB_THRESHOLD) {
       MaxCoreAIClient._cbOpenUntil = Date.now() + MaxCoreAIClient.CB_COOLDOWN_MS;
-      logger?.warn(
+      logger.warn(
         `[MaxCoreAI] Circuit breaker OPEN after ${MaxCoreAIClient._cbFailures} consecutive failures (last: ${path}) — failing fast for ${MaxCoreAIClient.CB_COOLDOWN_MS / 1000}s`,
       );
     }
@@ -210,7 +210,7 @@ export class MaxCoreAIClient {
       }
       return (await r?.json()) as T;
     } catch (e) {
-      logger?.debug(`[MaxCoreAI] GET ${path} failed: ${(e as Error).message}`);
+      logger.debug(`[MaxCoreAI] GET ${path} failed: ${(e as Error).message}`);
       return null;
     }
   }
@@ -231,14 +231,14 @@ export class MaxCoreAIClient {
         redirect: "manual",
       });
       if (!r?.ok || !MaxCoreAIClient.isJson(r)) {
-        logger?.debug(
+        logger.debug(
           `[MaxCoreAI] poll ${path} → HTTP ${r?.status} (continuing)`,
         );
         return null;
       }
       return (await r?.json()) as T;
     } catch (e) {
-      logger?.debug(
+      logger.debug(
         `[MaxCoreAI] poll ${path} network error (continuing): ${(e as Error).message}`,
       );
       return null;
@@ -263,7 +263,7 @@ export class MaxCoreAIClient {
     const path = endpoint?.startsWith("/api/") ? endpoint : `/api${endpoint}`;
 
     if (MaxCoreAIClient.isEndpointSuppressed(path)) {
-      logger?.debug(
+      logger.debug(
         `[MaxCoreAI] generate ${path} — skipping (endpoint suppressed)`,
       );
       return null;
@@ -271,7 +271,7 @@ export class MaxCoreAIClient {
 
     // Circuit breaker: fail fast while MaxCore is known-down.
     if (MaxCoreAIClient.cbBlocked()) {
-      logger?.debug(`[MaxCoreAI] generate ${path} — circuit open, failing fast`);
+      logger.debug(`[MaxCoreAI] generate ${path} — circuit open, failing fast`);
       return null;
     }
 
@@ -279,7 +279,7 @@ export class MaxCoreAIClient {
     if (!(await MaxCoreAIClient.acquireSlot())) {
       // Not a MaxCore failure — free the half-open probe slot if we held it.
       MaxCoreAIClient.cbAbortProbe();
-      logger?.warn(`[MaxCoreAI] generate ${path} — bulkhead full (30 s wait), failing fast`);
+      logger.warn(`[MaxCoreAI] generate ${path} — bulkhead full (30 s wait), failing fast`);
       return null;
     }
 
@@ -299,7 +299,7 @@ export class MaxCoreAIClient {
           const text = await r.text();
           return { r, text };
         } catch (e) {
-          logger?.debug(
+          logger.debug(
             `[MaxCoreAI] generate ${path} network error: ${(e as Error).message}`,
           );
           return null;
@@ -311,7 +311,7 @@ export class MaxCoreAIClient {
       // Retry once on 503 circuit-breaker — wait the suggested cooldown then try again
       if (result && result.r.status === 503) {
         const retryMs = parseCbRetryMs(result.text);
-        logger?.debug(
+        logger.debug(
           `[MaxCoreAI] generate ${path} — 503 circuit-breaker, retrying in ${retryMs}ms`,
         );
         await new Promise((res) => setTimeout(res, retryMs));
@@ -334,7 +334,7 @@ export class MaxCoreAIClient {
           MaxCoreAIClient._remoteAvailable = true;
           MaxCoreAIClient._lastCheck = Date.now();
           MaxCoreAIClient._endpointSuppressed.delete(path);
-          logger?.debug(`[MaxCoreAI] generate ${path} → success`);
+          logger.debug(`[MaxCoreAI] generate ${path} → success`);
           return data as T;
         } catch {
           return null;
@@ -342,7 +342,7 @@ export class MaxCoreAIClient {
       }
 
       const failReason = `HTTP ${r.status}`;
-      logger?.debug(
+      logger.debug(
         `[MaxCoreAI] generate ${path} → ${failReason} — returning null`,
       );
       if (r.status === 404 || r.status === 405) {
@@ -384,7 +384,7 @@ export class MaxCoreAIClient {
 
     // Circuit breaker: fail fast while MaxCore is known-down.
     if (MaxCoreAIClient.cbBlocked()) {
-      logger?.debug(`[MaxCoreAI] infer ${path} — circuit open, failing fast`);
+      logger.debug(`[MaxCoreAI] infer ${path} — circuit open, failing fast`);
       return null;
     }
 
@@ -392,7 +392,7 @@ export class MaxCoreAIClient {
     if (!(await MaxCoreAIClient.acquireSlot())) {
       // Not a MaxCore failure — free the half-open probe slot if we held it.
       MaxCoreAIClient.cbAbortProbe();
-      logger?.warn(`[MaxCoreAI] infer ${path} — bulkhead full (30 s wait), failing fast`);
+      logger.warn(`[MaxCoreAI] infer ${path} — bulkhead full (30 s wait), failing fast`);
       return null;
     }
 
@@ -500,9 +500,9 @@ function wakeMaxCore(): void {
     if (ok) {
       MaxCoreAIClient._remoteAvailable = true;
       MaxCoreAIClient._lastCheck = Date.now();
-      logger?.info("[MaxCoreAI] Wake check succeeded — MaxCore is ready ✅");
+      logger.info("[MaxCoreAI] Wake check succeeded — MaxCore is ready ✅");
     } else {
-      logger?.warn("[MaxCoreAI] Wake check → MaxCore not yet reachable");
+      logger.warn("[MaxCoreAI] Wake check → MaxCore not yet reachable");
     }
   });
 }
@@ -522,15 +522,15 @@ export function startMaxCoreLLMWarmth(): void {
     pingMaxCoreHealth().then((ok) => {
       if (ok) {
         if (_consecutiveFailures > 0) {
-          logger?.info(`[MaxCoreAI] ✅ MaxCore reconnected after ${_consecutiveFailures} failed ping(s)`);
+          logger.info(`[MaxCoreAI] ✅ MaxCore reconnected after ${_consecutiveFailures} failed ping(s)`);
         }
         _consecutiveFailures = 0;
         MaxCoreAIClient._remoteAvailable = true;
         MaxCoreAIClient._lastCheck = Date.now();
-        logger?.debug("[MaxCoreAI] Health ping → MaxCore alive ✅");
+        logger.debug("[MaxCoreAI] Health ping → MaxCore alive ✅");
       } else {
         _consecutiveFailures++;
-        logger?.warn(`[MaxCoreAI] Health ping failed (failure #${_consecutiveFailures})`);
+        logger.warn(`[MaxCoreAI] Health ping failed (failure #${_consecutiveFailures})`);
       }
     });
   };
@@ -542,19 +542,19 @@ export function startMaxCoreLLMWarmth(): void {
   const t = setInterval(pingWithTracking, WARMTH_INTERVAL_MS);
   if (t?.unref) t.unref();
 
-  logger?.info(
+  logger.info(
     "[MaxCoreAI] Health pinger started — polling /api/platform/model/info every 55s",
   );
 }
 
 if (MC_AI_URL && MC_AI_KEY) {
-  logger?.info(
+  logger.info(
     `[MaxCoreAI] Configured — remote: ${MC_AI_URL} | MaxCore is the only AI source`,
   );
   // Fire an immediate wake request so MaxCore is ready before users arrive
   wakeMaxCore();
 } else {
-  logger?.warn(
+  logger.warn(
     "[MaxCoreAI] No remote URL/key configured — all generate/infer calls will return null",
   );
 }

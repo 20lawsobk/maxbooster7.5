@@ -15,7 +15,7 @@ export function useNotifications() {
     userId: user.id,
     onMessage: (message) => {
       if (message?.type === "notification") {
-        logger?.info("📬 Real-time notification received:", message?.data);
+        logger.info("📬 Real-time notification received:", message?.data);
         queryClient?.invalidateQueries({ queryKey: ["/api/notifications"] });
 
         if (message?.data?.title) {
@@ -37,9 +37,9 @@ export function useNotifications() {
         }
       }
     },
-    onConnect: () => logger?.info("🔌 WebSocket connected for notifications"),
-    onDisconnect: () => logger?.info("🔌 WebSocket disconnected"),
-    onError: (error) => logger?.error("❌ WebSocket error:", error),
+    onConnect: () => logger.info("🔌 WebSocket connected for notifications"),
+    onDisconnect: () => logger.info("🔌 WebSocket disconnected"),
+    onError: (error) => logger.error("❌ WebSocket error:", error),
   });
 
   const {

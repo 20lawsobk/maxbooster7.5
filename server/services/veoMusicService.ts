@@ -1,11 +1,11 @@
 import { logger } from "../logger.js";
 
-const PYTHON_AI_PORT = parseInt(process?.env.PYTHON_AI_PORT || "9878", 10);
+const PYTHON_AI_PORT = parseInt(process.env.PYTHON_AI_PORT || "9878", 10);
 const AI_MODEL_URL =
-  process?.env.AI_MODEL_SERVICE_URL || `http://127.0.0.1:${PYTHON_AI_PORT}`;
+  process.env.AI_MODEL_SERVICE_URL || `http://127.0.0.1:${PYTHON_AI_PORT}`;
 const VEO_TIMEOUT_MS = 180_000; // raised: full Veo campaign generation and multi-platform video rendering
 
-const _INTERNAL_SECRET = process?.env.BOOSTERSTATE_SECRET || "";
+const _INTERNAL_SECRET = process.env.BOOSTERSTATE_SECRET || "";
 function internalAuthHeaders(): Record<string, string> {
   return _INTERNAL_SECRET
     ? { Authorization: `Bearer ${_INTERNAL_SECRET}` }
@@ -102,10 +102,10 @@ class VeoMusicService {
     request: VeoCampaignRequest,
   ): Promise<VeoCampaignResult> {
     try {
-      logger?.info(
+      logger.info(
         `[VeoMusic] Generating campaign for "${request.title}" by ${request?.artist}`,
       );
-      logger?.info(
+      logger.info(
         `[VeoMusic] Platforms: ${(request?.primary_platforms || ["tiktok", "youtube", "instagram"]).join(", ")}`,
       );
 
@@ -120,7 +120,7 @@ class VeoMusicService {
 
       if (!response?.ok) {
         const errorText = await response?.text();
-        logger?.warn(
+        logger.warn(
           `[VeoMusic] Campaign generation failed: ${response?.status} - ${errorText}`,
         );
         return {
@@ -132,7 +132,7 @@ class VeoMusicService {
       const data = (await response?.json()) as VeoCampaignResult;
 
       if (data?.success && data?.campaign) {
-        logger?.info(
+        logger.info(
           `[VeoMusic] Campaign generated: ${data?.campaign.total_platforms} platforms, ${data?.campaign.total_frames} frames in ${data?.campaign.generation_time_s}s`,
         );
       }
@@ -140,12 +140,12 @@ class VeoMusicService {
       return data;
     } catch (err) {
       if (err instanceof Error && err?.name === "AbortError") {
-        logger?.warn(
+        logger.warn(
           `[VeoMusic] Campaign generation timed out after ${VEO_TIMEOUT_MS}ms`,
         );
         return { success: false, error: "Veo campaign generation timed out" };
       }
-      logger?.warn({ err: err }, "[VeoMusic] Campaign generation failed:");
+      logger.warn({ err: err }, "[VeoMusic] Campaign generation failed:");
       return { success: false, error: "Veo Music service unavailable" };
     }
   }
@@ -251,7 +251,7 @@ class VeoMusicService {
     try {
       const body: Record<string, any> = { url };
       if (overrides) {
-        Object?.assign(body, overrides);
+        Object.assign(body, overrides);
       }
 
       const response = await fetchWithTimeout(
@@ -288,7 +288,7 @@ class VeoMusicService {
     lyrics?: string;
     tone?: string;
   }): Promise<VeoAsset | null> {
-    const result = await this?.generateCampaign({
+    const result = await this.generateCampaign({
       title: options.title,
       artist: options.artist,
       mood: options.mood || options?.tone || "energetic",

@@ -89,7 +89,7 @@ export function useSyncQueue(
       const queueStats = await offlineQueue?.getStats();
       setStats(queueStats);
     } catch (error) {
-      logger?.error("[useSyncQueue] Failed to load stats:", error);
+      logger.error("[useSyncQueue] Failed to load stats:", error);
     }
   }, []);
 
@@ -100,7 +100,7 @@ export function useSyncQueue(
       const conflicts = await offlineQueue?.getByStatus("conflict");
       setActions([...pending, ...failed, ...conflicts]);
     } catch (error) {
-      logger?.error("[useSyncQueue] Failed to load actions:", error);
+      logger.error("[useSyncQueue] Failed to load actions:", error);
     }
   }, []);
 

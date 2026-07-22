@@ -256,7 +256,7 @@ export function canPerformAction(
   // Check permission level
   const level = permissions?.permissions[action];
   if (!level || level === "none") {
-    logger?.warn(
+    logger.warn(
       `[RBAC] ${systemName} attempted unauthorized action: ${action}`,
     );
     return { allowed: false, reason: `Action not permitted: ${action}` };
@@ -291,7 +291,7 @@ export function canPerformAction(
 
   // Check hourly action limit
   if (tracker?.lastHourActions >= permissions?.maxActionsPerHour) {
-    logger?.warn(`[RBAC] ${systemName} exceeded hourly action limit`);
+    logger.warn(`[RBAC] ${systemName} exceeded hourly action limit`);
     return { allowed: false, reason: "Hourly action limit exceeded" };
   }
 
@@ -300,7 +300,7 @@ export function canPerformAction(
     spendAmount > 0 &&
     tracker?.spentToday + spendAmount > permissions?.maxSpendPerDay
   ) {
-    logger?.warn(`[RBAC] ${systemName} exceeded daily spend limit`);
+    logger.warn(`[RBAC] ${systemName} exceeded daily spend limit`);
     return { allowed: false, reason: "Daily spend limit exceeded" };
   }
 
@@ -320,7 +320,7 @@ export function recordAction(
   tracker.lastHourActions++;
   tracker.spentToday += spendAmount;
 
-  logger?.debug(
+  logger.debug(
     `[RBAC] ${systemName} performed ${action} (hourly: ${tracker?.lastHourActions}, spent: $${(tracker?.spentToday / 100).toFixed(2)})`,
   );
 }
@@ -345,7 +345,7 @@ export function requestApproval(
   };
 
   pendingApprovals?.set(id, approval);
-  logger?.info(
+  logger.info(
     `[RBAC] Approval requested: ${systemName} wants to ${action} (ID: ${id})`,
   );
 
@@ -377,7 +377,7 @@ export function processApproval(
 
   approval.status = approved ? "approved" : "rejected";
 
-  logger?.info(
+  logger.info(
     `[RBAC] Approval ${approvalId} ${approved ? "APPROVED" : "REJECTED"} by ${approvedBy}`,
   );
 
@@ -388,7 +388,7 @@ export function processApproval(
  * Get pending approvals
  */
 export function getPendingApprovals(systemName?: string): PendingApproval[] {
-  const approvals = Array?.from(pendingApprovals?.values()).filter(
+  const approvals = Array.from(pendingApprovals?.values()).filter(
     (a) => a?.status === "pending" && a?.expiresAt > new Date(),
   );
 
@@ -433,7 +433,7 @@ export function getRBACStatus(): Record<
 > {
   const result: Record<string, any> = {};
 
-  for (const [name, config] of Object?.entries(SYSTEM_PERMISSIONS)) {
+  for (const [name, config] of Object.entries(SYSTEM_PERMISSIONS)) {
     const tracker = actionTrackers?.get(name);
     const pending = getPendingApprovals(name);
 

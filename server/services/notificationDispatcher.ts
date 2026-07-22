@@ -59,12 +59,12 @@ class NotificationDispatcher {
     const richPayload = buildPushPayload(notificationType, ctx);
 
     if (richPayload?.silent) {
-      return this?.dispatchSilent(userId, "feed_refresh");
+      return this.dispatchSilent(userId, "feed_refresh");
     }
 
-    const prefs = await this?.getUserPushPrefs(userId);
+    const prefs = await this.getUserPushPrefs(userId);
     if (!prefs?.enabled && !opts?.skipCategoryCheck) {
-      logger?.info(`[Dispatcher] Push disabled for user ${userId}, skipping`);
+      logger.info(`[Dispatcher] Push disabled for user ${userId}, skipping`);
       return ZERO;
     }
 
@@ -72,7 +72,7 @@ class NotificationDispatcher {
       const category = richPayload?.category;
       const allowed = prefs?.categories[category] ?? true;
       if (!allowed) {
-        logger?.info(
+        logger.info(
           `[Dispatcher] Category ${category} disabled for user ${userId}, skipping`,
         );
         return ZERO;
@@ -113,7 +113,7 @@ class NotificationDispatcher {
       webResult?.failed + desktopResult?.failed + mobileResult?.failed;
 
     if (totalSent > 0) {
-      logger?.info(
+      logger.info(
         `[Dispatcher] ${notificationType} → ${totalSent} device(s) [${activeChannels?.join(", ")}] for user ${userId}`,
       );
     }
@@ -181,13 +181,13 @@ class NotificationDispatcher {
     await Promise?.all(
       userIds?.map(async (userId) => {
         try {
-          const result = await this?.dispatch(userId, notificationType, ctx);
+          const result = await this.dispatch(userId, notificationType, ctx);
           if (result?.totalSent > 0) {
             dispatched++;
             totalSent += result?.totalSent;
           }
         } catch (err) {
-          logger?.warn(
+          logger.warn(
             { err: err },
             `[Dispatcher] Error dispatching to ${userId}:`,
           );
@@ -195,7 +195,7 @@ class NotificationDispatcher {
       }),
     );
 
-    logger?.info(
+    logger.info(
       `[Dispatcher] Bulk dispatch ${notificationType}: ${dispatched}/${userIds?.length} users reached (${totalSent} devices)`,
     );
     return { dispatched, totalSent };

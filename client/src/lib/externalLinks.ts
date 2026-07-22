@@ -17,7 +17,7 @@ export function sanitizeUrl(url: string): string | null {
   try {
     const parsed = new URL(url);
     if (!ALLOWED_SCHEMES?.includes(parsed?.protocol)) {
-      logger?.warn(
+      logger.warn(
         `[ExternalLinks] Blocked URL with unsafe protocol: ${parsed?.protocol}`,
       );
       return null;
@@ -29,7 +29,7 @@ export function sanitizeUrl(url: string): string | null {
       const withProtocol = new URL(`https://${url}`);
       return withProtocol?.href;
     } catch {
-      logger?.warn(`[ExternalLinks] Invalid URL: ${url}`);
+      logger.warn(`[ExternalLinks] Invalid URL: ${url}`);
       return null;
     }
   }

@@ -40,8 +40,8 @@ class RequestQueue {
       ...config,
     };
 
-    for (let i = 0; i < this?.config.priorityLevels; i++) {
-      this?.queues.set(i, []);
+    for (let i = 0; i < this.config.priorityLevels; i++) {
+      this.queues.set(i, []);
     }
   }
 
@@ -51,24 +51,24 @@ class RequestQueue {
 
   private getTotalQueueSize(): number {
     let total = 0;
-    for (const queue of this?.queues.values()) {
+    for (const queue of this.queues.values()) {
       total += queue?.length;
     }
     return total;
   }
 
   enqueue(req: Request, res: Response, next: NextFunction): boolean {
-    if (this?.getTotalQueueSize() >= this?.config.maxQueueSize) {
+    if (this.getTotalQueueSize() >= this.config.maxQueueSize) {
       this.stats.rejected++;
       return false;
     }
 
-    const priority = this?.determinePriority(req);
-    const id = this?.generateId();
+    const priority = this.determinePriority(req);
+    const id = this.generateId();
 
     const timeout = setTimeout(() => {
-      this?.handleTimeout(id, priority);
-    }, this?.config.requestTimeout);
+      this.handleTimeout(id, priority);
+    }, this.config.requestTimeout);
 
     const queuedRequest: QueuedRequest = {
       id,
@@ -80,10 +80,10 @@ class RequestQueue {
       timeout,
     };
 
-    this?.queues.get(priority)!.push(queuedRequest);
+    this.queues.get(priority)!.push(queuedRequest);
     this.stats.queued++;
 
-    this?.processQueue();
+    this.processQueue();
 
     return true;
   }
@@ -95,22 +95,22 @@ class RequestQueue {
     if (user?.subscriptionTier === "lifetime") return 0;
     if (user?.subscriptionTier === "yearly") return 1;
 
-    if (req?.path.includes("/health") || req?.path.includes("/status")) return 0;
+    if (req.path.includes("/health") || req.path.includes("/status")) return 0;
 
     return 2;
   }
 
   private processQueue(): void {
-    if (this?.processing >= this?.config.maxConcurrent) {
+    if (this.processing >= this.config.maxConcurrent) {
       return;
     }
 
-    for (let priority = 0; priority < this?.config.priorityLevels; priority++) {
-      const queue = this?.queues.get(priority)!;
+    for (let priority = 0; priority < this.config.priorityLevels; priority++) {
+      const queue = this.queues.get(priority)!;
 
-      while (queue?.length > 0 && this?.processing < this?.config.maxConcurrent) {
+      while (queue?.length > 0 && this.processing < this.config.maxConcurrent) {
         const request = queue?.shift()!;
-        this?.processRequest(request);
+        this.processRequest(request);
       }
     }
   }
@@ -141,7 +141,7 @@ class RequestQueue {
 
     // Guard: decrement exactly once, whether the response ends normally or the
     // client disconnects abruptly.  Without the 'close' handler, an aborted
-    // connection never fires res?.end(), causing `processing` to leak upward
+    // connection never fires res.end(), causing `processing` to leak upward
     // until it reaches maxConcurrent and ALL future requests are silently dropped.
     let released = false;
     const release = () => {
@@ -149,7 +149,7 @@ class RequestQueue {
       released = true;
       this.processing--;
       this.stats.processed++;
-      setImmediate(() => this?.processQueue());
+      setImmediate(() => this.processQueue());
     };
 
     const originalEnd = queuedRequest?.res.end?.bind(queuedRequest?.res);
@@ -172,11 +172,11 @@ class RequestQueue {
     // API call with no timeout) that would otherwise hold a concurrency slot open
     // indefinitely.  Streaming/AI routes are exempt because they can legitimately
     // run longer and the client reads data incrementally.
-    if (!this?.isStreamingRoute(queuedRequest?.req.path)) {
+    if (!this.isStreamingRoute(queuedRequest?.req.path)) {
       const activeTimeout = setTimeout(() => {
         if (!queuedRequest?.res.headersSent) {
           this.stats.timedOut++;
-          logger?.warn(
+          logger.warn(
             `[RequestQueue] Active handler timeout on ${queuedRequest?.req.method} ${queuedRequest?.req.path}`,
           );
           queuedRequest?.res.status(503).json({
@@ -201,7 +201,7 @@ class RequestQueue {
   }
 
   private handleTimeout(id: string, priority: number): void {
-    const queue = this?.queues.get(priority)!;
+    const queue = this.queues.get(priority)!;
     const index = queue?.findIndex((r) => r?.id === id);
 
     if (index !== -1) {
@@ -220,12 +220,12 @@ class RequestQueue {
 
   getStats() {
     const queueSizes: Record<string, number> = {};
-    for (const [priority, queue] of this?.queues.entries()) {
+    for (const [priority, queue] of this.queues.entries()) {
       queueSizes[`priority_${priority}`] = queue?.length;
     }
 
     return {
-      ...this?.stats,
+      ...this.stats,
       currentlyProcessing: this.processing,
       queueSizes,
       totalQueued: this.getTotalQueueSize(),
@@ -233,7 +233,7 @@ class RequestQueue {
   }
 
   clear(): void {
-    for (const queue of this?.queues.values()) {
+    for (const queue of this.queues.values()) {
       for (const request of queue) {
         clearTimeout(request?.timeout);
         if (!request?.res.headersSent) {
@@ -262,10 +262,10 @@ export const createQueueMiddleware = (
 
   return (req: Request, res: Response, next: NextFunction): void => {
     const shouldSkipQueue =
-      req?.path.startsWith("/api/health") ||
-      req?.path === "/api/version" ||
-      req?.path.startsWith("/api/monitoring") ||
-      req?.method === "OPTIONS";
+      req.path.startsWith("/api/health") ||
+      req.path === "/api/version" ||
+      req.path.startsWith("/api/monitoring") ||
+      req.method === "OPTIONS";
 
     if (shouldSkipQueue) {
       next();
@@ -275,7 +275,7 @@ export const createQueueMiddleware = (
     const enqueued = queue?.enqueue(req, res, next);
 
     if (!enqueued) {
-      res?.status(503).json({
+      res.status(503).json({
         error: "Service overloaded",
         message: "Too many requests. Please try again in a few seconds.",
         retryAfter: 5,
@@ -296,11 +296,11 @@ export class LoadShedder {
   private recoveryThreshold = 0.7;
 
   constructor(private queue: RequestQueue = globalRequestQueue) {
-    setInterval(() => this?.evaluate(), 5000);
+    setInterval(() => this.evaluate(), 5000);
   }
 
   private evaluate(): void {
-    const stats = this?.queue.getStats();
+    const stats = this.queue.getStats();
     const concurrencyUtil = stats?.currentlyProcessing / 1000;
 
     // Memory pressure check: use heap_size_limit (the configured --max-old-space-size)
@@ -309,42 +309,42 @@ export class LoadShedder {
     const heapUtil =
       heapStats?.heap_size_limit > 0
         ? heapStats?.used_heap_size / heapStats?.heap_size_limit
-        : process?.memoryUsage().heapUsed / process?.memoryUsage().heapTotal;
+        : process.memoryUsage().heapUsed / process.memoryUsage().heapTotal;
 
     // Activate shedding when either concurrency OR memory breaches the threshold.
-    const utilization = Math?.max(concurrencyUtil, heapUtil);
+    const utilization = Math.max(concurrencyUtil, heapUtil);
 
-    if (!this?.shedding && utilization > this?.threshold) {
+    if (!this.shedding && utilization > this.threshold) {
       this.shedding = true;
       const reason =
         concurrencyUtil >= heapUtil ? "concurrency" : "memory pressure";
-      logger?.warn(
+      logger.warn(
         `Load shedding ACTIVATED (${reason}) — util at ${(utilization * 100).toFixed(1)}%`,
       );
-    } else if (this?.shedding && utilization < this?.recoveryThreshold) {
+    } else if (this.shedding && utilization < this.recoveryThreshold) {
       this.shedding = false;
-      logger?.info(
+      logger.info(
         `Load shedding DEACTIVATED — util at ${(utilization * 100).toFixed(1)}%`,
       );
     }
   }
 
   shouldShed(req: Request): boolean {
-    if (!this?.shedding) return false;
+    if (!this.shedding) return false;
 
     const user = (req as Record<string, unknown>).user;
     if (user?.role === "admin") return false;
     if (user?.subscriptionTier === "lifetime") return false;
-    if (req?.path.includes("/health") || req?.path.includes("/critical"))
+    if (req.path.includes("/health") || req.path.includes("/critical"))
       return false;
 
-    return Math?.random() > 0.5;
+    return Math.random() > 0.5;
   }
 
   middleware(): RequestHandler {
     return (req: Request, res: Response, next: NextFunction): void => {
-      if (this?.shouldShed(req)) {
-        res?.status(503).json({
+      if (this.shouldShed(req)) {
+        res.status(503).json({
           error: "Service overloaded",
           message: "Server is under heavy load. Please try again shortly.",
           retryAfter: 10,

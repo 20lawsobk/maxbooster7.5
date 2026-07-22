@@ -145,7 +145,7 @@ export class RBACService {
     },
   ): Promise<{ success: boolean; role?: WorkspaceRole; error?: string }> {
     try {
-      const existingRole = await this?.getRoleByName(workspaceId, params?.name);
+      const existingRole = await this.getRoleByName(workspaceId, params?.name);
       if (existingRole) {
         return {
           success: false,
@@ -155,9 +155,9 @@ export class RBACService {
 
       let effectivePermissions = params?.permissions;
       if (params?.parentRoleId) {
-        const parentRole = await this?.getRole(params?.parentRoleId);
+        const parentRole = await this.getRole(params?.parentRoleId);
         if (parentRole) {
-          effectivePermissions = this?.mergePermissions(
+          effectivePermissions = this.mergePermissions(
             parentRole?.permissions as Permission[],
             params?.permissions,
           );
@@ -179,7 +179,7 @@ export class RBACService {
 
       return { success: true, role };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Create role error:");
+      logger.warn({ err: error }, "Create role error:");
       return { success: false, error: "Failed to create role" };
     }
   }
@@ -193,7 +193,7 @@ export class RBACService {
         .limit(1);
       return role || null;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get role error:");
+      logger.warn({ err: error }, "Get role error:");
       return null;
     }
   }
@@ -215,7 +215,7 @@ export class RBACService {
         .limit(1);
       return role || null;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get role by name error:");
+      logger.warn({ err: error }, "Get role by name error:");
       return null;
     }
   }
@@ -230,7 +230,7 @@ export class RBACService {
 
       return roles;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get workspace roles error:");
+      logger.warn({ err: error }, "Get workspace roles error:");
       return [];
     }
   }
@@ -245,7 +245,7 @@ export class RBACService {
     }>,
   ): Promise<{ success: boolean; role?: WorkspaceRole; error?: string }> {
     try {
-      const existingRole = await this?.getRole(roleId);
+      const existingRole = await this.getRole(roleId);
       if (!existingRole) {
         return { success: false, error: "Role not found" };
       }
@@ -265,7 +265,7 @@ export class RBACService {
 
       return { success: true, role };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Update role error:");
+      logger.warn({ err: error }, "Update role error:");
       return { success: false, error: "Failed to update role" };
     }
   }
@@ -274,7 +274,7 @@ export class RBACService {
     roleId: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const role = await this?.getRole(roleId);
+      const role = await this.getRole(roleId);
       if (!role) {
         return { success: false, error: "Role not found" };
       }
@@ -300,7 +300,7 @@ export class RBACService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Delete role error:");
+      logger.warn({ err: error }, "Delete role error:");
       return { success: false, error: "Failed to delete role" };
     }
   }
@@ -333,7 +333,7 @@ export class RBACService {
       let permissions: Permission[] = [];
 
       if (member?.roleId) {
-        const role = await this?.getRole(member?.roleId);
+        const role = await this.getRole(member?.roleId);
         if (role) {
           permissions = role?.permissions as Permission[];
         }
@@ -345,7 +345,7 @@ export class RBACService {
       }
 
       if (member?.customPermissions) {
-        permissions = this?.mergePermissions(
+        permissions = this.mergePermissions(
           permissions,
           member?.customPermissions as Permission[],
         );
@@ -353,7 +353,7 @@ export class RBACService {
 
       return permissions;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get user permissions error:");
+      logger.warn({ err: error }, "Get user permissions error:");
       return [];
     }
   }
@@ -365,7 +365,7 @@ export class RBACService {
     action: ActionType,
   ): Promise<boolean> {
     try {
-      const permissions = await this?.getUserPermissions(workspaceId, userId);
+      const permissions = await this.getUserPermissions(workspaceId, userId);
 
       for (const permission of permissions) {
         if (
@@ -378,7 +378,7 @@ export class RBACService {
 
       return false;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Check permission error:");
+      logger.warn({ err: error }, "Check permission error:");
       return false;
     }
   }
@@ -389,7 +389,7 @@ export class RBACService {
     checks: Array<{ resource: ResourceType; action: ActionType }>,
   ): Promise<Record<string, boolean>> {
     try {
-      const permissions = await this?.getUserPermissions(workspaceId, userId);
+      const permissions = await this.getUserPermissions(workspaceId, userId);
       const results: Record<string, boolean> = {};
 
       for (const check of checks) {
@@ -402,13 +402,13 @@ export class RBACService {
 
       return results;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Check multiple permissions error:");
+      logger.warn({ err: error }, "Check multiple permissions error:");
       return {};
     }
   }
 
   async canManageTeam(workspaceId: string, userId: string): Promise<boolean> {
-    return this?.checkPermission(workspaceId, userId, "team", "update");
+    return this.checkPermission(workspaceId, userId, "team", "update");
   }
 
   async canApproveContent(
@@ -416,7 +416,7 @@ export class RBACService {
     userId: string,
     contentType: ResourceType,
   ): Promise<boolean> {
-    return this?.checkPermission(workspaceId, userId, contentType, "approve");
+    return this.checkPermission(workspaceId, userId, contentType, "approve");
   }
 
   async isWorkspaceOwner(
@@ -432,7 +432,7 @@ export class RBACService {
 
       return workspace?.ownerId === userId;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Check workspace owner error:");
+      logger.warn({ err: error }, "Check workspace owner error:");
       return false;
     }
   }
@@ -452,7 +452,7 @@ export class RBACService {
 
       return member?.role === "owner" || member?.role === "admin";
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Check admin error:");
+      logger.warn({ err: error }, "Check admin error:");
       return false;
     }
   }
@@ -481,7 +481,7 @@ export class RBACService {
       );
     }
 
-    return Array?.from(merged?.entries()).map(([resource, actions]) => ({
+    return Array.from(merged?.entries()).map(([resource, actions]) => ({
       resource,
       actions: Array.from(actions),
     }));
@@ -497,7 +497,7 @@ export class RBACService {
       return { success: false, error: "Template not found" };
     }
 
-    return this?.createRole(workspaceId, {
+    return this.createRole(workspaceId, {
       name: customName || template?.name,
       description: template.description,
       permissions: template.permissions,
@@ -511,7 +511,7 @@ export class RBACService {
     actions: ActionType[],
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const role = await this?.getRole(roleId);
+      const role = await this.getRole(roleId);
       if (!role) {
         return { success: false, error: "Role not found" };
       }
@@ -531,7 +531,7 @@ export class RBACService {
         );
         actions?.forEach((action) => existingActions?.add(action));
         currentPermissions[existingPermIndex].actions =
-          Array?.from(existingActions);
+          Array.from(existingActions);
       } else {
         currentPermissions?.push({ resource, actions });
       }
@@ -543,7 +543,7 @@ export class RBACService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Grant permission error:");
+      logger.warn({ err: error }, "Grant permission error:");
       return { success: false, error: "Failed to grant permission" };
     }
   }
@@ -554,7 +554,7 @@ export class RBACService {
     actions?: ActionType[],
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const role = await this?.getRole(roleId);
+      const role = await this.getRole(roleId);
       if (!role) {
         return { success: false, error: "Role not found" };
       }
@@ -592,7 +592,7 @@ export class RBACService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Revoke permission error:");
+      logger.warn({ err: error }, "Revoke permission error:");
       return { success: false, error: "Failed to revoke permission" };
     }
   }

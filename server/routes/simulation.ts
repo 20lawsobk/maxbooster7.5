@@ -82,14 +82,14 @@ function getPeroidDescription(name: string): string {
 // GET /api/simulation/periods - Get available simulation periods
 router?.get("/periods", (_req: Request, res: Response) => {
   try {
-    const periods = Object?.entries(SIMULATION_PERIODS).map(([name, days]) => ({
+    const periods = Object.entries(SIMULATION_PERIODS).map(([name, days]) => ({
       name,
       days,
-      estimatedRealTime: `${Math?.ceil((days * REAL_SECONDS_PER_DAY) / 60)} minutes`,
+      estimatedRealTime: `${Math.ceil((days * REAL_SECONDS_PER_DAY) / 60)} minutes`,
       description: getPeroidDescription(name),
     }));
 
-    res?.json({
+    res.json({
       success: true,
       periods,
       accelerationFactor: REAL_SECONDS_PER_DAY / (24 * 60 * 60),
@@ -97,7 +97,7 @@ router?.get("/periods", (_req: Request, res: Response) => {
       realSecondsPerDay: REAL_SECONDS_PER_DAY,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching simulation periods:");
+    logger.warn({ err: error }, "Error fetching simulation periods:");
     res
       .status(500)
       .json({ success: false, error: "Failed to fetch simulation periods" });
@@ -107,12 +107,12 @@ router?.get("/periods", (_req: Request, res: Response) => {
 // GET /api/simulation/benchmarks - Get industry benchmarks
 router?.get("/benchmarks", (_req: Request, res: Response) => {
   try {
-    res?.json({
+    res.json({
       success: true,
       benchmarks: INDUSTRY_BENCHMARKS,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching benchmarks:");
+    logger.warn({ err: error }, "Error fetching benchmarks:");
     res
       .status(500)
       .json({ success: false, error: "Failed to fetch benchmarks" });
@@ -130,12 +130,12 @@ router?.post("/start", async (req: Request, res: Response) => {
       enableAutonomousSystems = true,
       enableSystemFailures = true,
       enableMarketFluctuations = true,
-    } = req?.body;
+    } = req.body;
 
     if (!SIMULATION_PERIODS[periodName as keyof typeof SIMULATION_PERIODS]) {
-      return res?.status(400).json({
+      return res.status(400).json({
         success: false,
-        error: `Invalid period. Valid options: ${Object?.keys(SIMULATION_PERIODS).join(", ")}`,
+        error: `Invalid period. Valid options: ${Object.keys(SIMULATION_PERIODS).join(", ")}`,
       });
     }
 
@@ -154,7 +154,7 @@ router?.post("/start", async (req: Request, res: Response) => {
       realTimeTracking: true,
       snapshotIntervalDays: Math.max(
         1,
-        Math?.floor(
+        Math.floor(
           SIMULATION_PERIODS[periodName as keyof typeof SIMULATION_PERIODS] /
             30,
         ),
@@ -167,20 +167,20 @@ router?.post("/start", async (req: Request, res: Response) => {
     simulation?.on("event", (event) => {
       const logs = simulationLogs?.get(simulationId) || [];
       logs?.push(
-        `[${event?.simulatedTime.toISOString()}] ${event?.type}: ${JSON?.stringify(event?.data)}`,
+        `[${event?.simulatedTime.toISOString()}] ${event?.type}: ${JSON.stringify(event?.data)}`,
       );
       if (logs?.length > 1000) logs?.shift();
       simulationLogs?.set(simulationId, logs);
     });
 
     simulation?.on("progress", (progress) => {
-      logger?.debug(
+      logger.debug(
         `[SIM ${simulationId}] Day ${progress?.day}/${progress?.totalDays} (${progress?.percentComplete.toFixed(1)}%)`,
       );
     });
 
     simulation?.on("snapshot", (snapshot) => {
-      logger?.info(
+      logger.info(
         `[SIM ${simulationId}] Snapshot at day ${snapshot?.dayNumber}`,
       );
     });
@@ -189,17 +189,17 @@ router?.post("/start", async (req: Request, res: Response) => {
       simulationResults?.set(simulationId, result);
       simulationResultTimestamps?.set(simulationId, Date?.now());
       activeSimulations?.delete(simulationId);
-      logger?.info(`[SIM ${simulationId}] Complete - stored results`);
+      logger.info(`[SIM ${simulationId}] Complete - stored results`);
     });
 
     simulation?.runSimulation().catch((error) => {
-      logger?.warn({ err: error }, `[SIM ${simulationId}] Failed:`);
+      logger.warn({ err: error }, `[SIM ${simulationId}] Failed:`);
       simulationResults?.set(simulationId, { error: error.message });
       simulationResultTimestamps?.set(simulationId, Date?.now());
       activeSimulations?.delete(simulationId);
     });
 
-    res?.json({
+    res.json({
       success: true,
       simulationId,
       config: {
@@ -212,13 +212,13 @@ router?.post("/start", async (req: Request, res: Response) => {
         enableSystemFailures,
         enableMarketFluctuations,
       },
-      estimatedRealTime: `${Math?.ceil((SIMULATION_PERIODS[periodName as keyof typeof SIMULATION_PERIODS] * 0.02 * 24) / 60)} minutes`,
+      estimatedRealTime: `${Math.ceil((SIMULATION_PERIODS[periodName as keyof typeof SIMULATION_PERIODS] * 0.02 * 24) / 60)} minutes`,
       message:
         "Simulation started. Use /api/simulation/status/:id to track progress.",
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to start simulation:");
-    res?.status(500).json({ success: false, error: "Internal server error" });
+    logger.warn({ err: error }, "Failed to start simulation:");
+    res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
 
@@ -227,7 +227,7 @@ router?.post("/start-full", async (_req: Request, res: Response) => {
   try {
     const simulationId = `full_${Date?.now()}`;
 
-    res?.json({
+    res.json({
       success: true,
       simulationId,
       message: "Full lifecycle simulation starting in background",
@@ -239,28 +239,28 @@ router?.post("/start-full", async (_req: Request, res: Response) => {
       .then((results) => {
         simulationResults?.set(simulationId, results);
         simulationResultTimestamps?.set(simulationId, Date?.now());
-        logger?.info(`Full lifecycle simulation complete: ${simulationId}`);
+        logger.info(`Full lifecycle simulation complete: ${simulationId}`);
       })
       .catch((error) => {
-        logger?.warn({ err: error }, `Full lifecycle simulation failed:`);
+        logger.warn({ err: error }, `Full lifecycle simulation failed:`);
         simulationResults?.set(simulationId, { error: error.message });
         simulationResultTimestamps?.set(simulationId, Date?.now());
       });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to start full simulation:");
-    res?.status(500).json({ success: false, error: "Internal server error" });
+    logger.warn({ err: error }, "Failed to start full simulation:");
+    res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
 
 // GET /api/simulation/status/:id - Get simulation status
 router?.get("/status/:id", (req: Request, res: Response) => {
   try {
-    const id = String(req?.params?.id ?? "");
+    const id = String(req.params?.id ?? "");
 
     const simulation = activeSimulations?.get(id);
     if (simulation) {
       const status = simulation?.getStatus();
-      return res?.json({
+      return res.json({
         success: true,
         status: "running",
         ...status,
@@ -270,7 +270,7 @@ router?.get("/status/:id", (req: Request, res: Response) => {
 
     const result = simulationResults?.get(id);
     if (result) {
-      return res?.json({
+      return res.json({
         success: true,
         status: "completed",
         result: {
@@ -281,9 +281,9 @@ router?.get("/status/:id", (req: Request, res: Response) => {
       });
     }
 
-    res?.status(404).json({ success: false, error: "Simulation not found" });
+    res.status(404).json({ success: false, error: "Simulation not found" });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching simulation status:");
+    logger.warn({ err: error }, "Error fetching simulation status:");
     res
       .status(500)
       .json({ success: false, error: "Failed to fetch simulation status" });
@@ -293,12 +293,12 @@ router?.get("/status/:id", (req: Request, res: Response) => {
 // GET /api/simulation/metrics/:id - Get real-time metrics
 router?.get("/metrics/:id", (req: Request, res: Response) => {
   try {
-    const id = String(req?.params?.id ?? "");
+    const id = String(req.params?.id ?? "");
 
     const simulation = activeSimulations?.get(id);
     if (simulation) {
       const status = simulation?.getStatus();
-      return res?.json({
+      return res.json({
         success: true,
         metrics: status.metrics,
         day: status.currentDay,
@@ -309,7 +309,7 @@ router?.get("/metrics/:id", (req: Request, res: Response) => {
 
     const result = simulationResults?.get(id);
     if (result && !result?.error) {
-      return res?.json({
+      return res.json({
         success: true,
         metrics: result.finalMetrics,
         kpis: result.kpis,
@@ -317,9 +317,9 @@ router?.get("/metrics/:id", (req: Request, res: Response) => {
       });
     }
 
-    res?.status(404).json({ success: false, error: "Simulation not found" });
+    res.status(404).json({ success: false, error: "Simulation not found" });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching simulation metrics:");
+    logger.warn({ err: error }, "Error fetching simulation metrics:");
     res
       .status(500)
       .json({ success: false, error: "Failed to fetch simulation metrics" });
@@ -329,11 +329,11 @@ router?.get("/metrics/:id", (req: Request, res: Response) => {
 // GET /api/simulation/snapshots/:id - Get simulation snapshots
 router?.get("/snapshots/:id", (req: Request, res: Response) => {
   try {
-    const id = String(req?.params?.id ?? "");
+    const id = String(req.params?.id ?? "");
 
     const result = simulationResults?.get(id);
     if (result && result?.snapshots) {
-      return res?.json({
+      return res.json({
         success: true,
         snapshotCount: result.snapshots.length,
         snapshots: result.snapshots.map((s: any) => ({
@@ -353,7 +353,7 @@ router?.get("/snapshots/:id", (req: Request, res: Response) => {
       .status(404)
       .json({ success: false, error: "Simulation snapshots not found" });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching simulation snapshots:");
+    logger.warn({ err: error }, "Error fetching simulation snapshots:");
     res
       .status(500)
       .json({ success: false, error: "Failed to fetch simulation snapshots" });
@@ -363,8 +363,8 @@ router?.get("/snapshots/:id", (req: Request, res: Response) => {
 // GET /api/simulation/events/:id - Get simulation events
 router?.get("/events/:id", (req: Request, res: Response) => {
   try {
-    const id = String(req?.params?.id ?? "");
-    const { category, impact, limit = 100 } = req?.query;
+    const id = String(req.params?.id ?? "");
+    const { category, impact, limit = 100 } = req.query;
 
     const result = simulationResults?.get(id);
     if (result && result?.allEvents) {
@@ -381,10 +381,10 @@ router?.get("/events/:id", (req: Request, res: Response) => {
         );
       }
 
-      const limitNum = Math?.min(parseInt(limit as string) || 100, 1000);
+      const limitNum = Math.min(parseInt(limit as string) || 100, 1000);
       events = events?.slice(-limitNum);
 
-      return res?.json({
+      return res.json({
         success: true,
         totalEvents: result.allEvents.length,
         returnedEvents: events.length,
@@ -394,11 +394,11 @@ router?.get("/events/:id", (req: Request, res: Response) => {
 
     const logs = simulationLogs?.get(id);
     if (logs) {
-      return res?.json({
+      return res.json({
         success: true,
         status: "running",
         recentEvents: logs.slice(
-          -Math?.min(Math?.max(parseInt(limit as string) || 100, 1), 500),
+          -Math.min(Math.max(parseInt(limit as string) || 100, 1), 500),
         ),
       });
     }
@@ -407,7 +407,7 @@ router?.get("/events/:id", (req: Request, res: Response) => {
       .status(404)
       .json({ success: false, error: "Simulation events not found" });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching simulation events:");
+    logger.warn({ err: error }, "Error fetching simulation events:");
     res
       .status(500)
       .json({ success: false, error: "Failed to fetch simulation events" });
@@ -417,19 +417,19 @@ router?.get("/events/:id", (req: Request, res: Response) => {
 // POST /api/simulation/pause/:id - Pause simulation
 router?.post("/pause/:id", (req: Request, res: Response) => {
   try {
-    const id = String(req?.params?.id ?? "");
+    const id = String(req.params?.id ?? "");
 
     const simulation = activeSimulations?.get(id);
     if (simulation) {
       simulation?.pause();
-      return res?.json({ success: true, message: "Simulation paused" });
+      return res.json({ success: true, message: "Simulation paused" });
     }
 
     res
       .status(404)
       .json({ success: false, error: "Simulation not found or not running" });
   } catch (error) {
-    logger?.warn({ err: error }, "Error pausing simulation:");
+    logger.warn({ err: error }, "Error pausing simulation:");
     res
       .status(500)
       .json({ success: false, error: "Failed to pause simulation" });
@@ -439,19 +439,19 @@ router?.post("/pause/:id", (req: Request, res: Response) => {
 // POST /api/simulation/resume/:id - Resume simulation
 router?.post("/resume/:id", (req: Request, res: Response) => {
   try {
-    const id = String(req?.params?.id ?? "");
+    const id = String(req.params?.id ?? "");
 
     const simulation = activeSimulations?.get(id);
     if (simulation) {
       simulation?.resume();
-      return res?.json({ success: true, message: "Simulation resumed" });
+      return res.json({ success: true, message: "Simulation resumed" });
     }
 
     res
       .status(404)
       .json({ success: false, error: "Simulation not found or not running" });
   } catch (error) {
-    logger?.warn({ err: error }, "Error resuming simulation:");
+    logger.warn({ err: error }, "Error resuming simulation:");
     res
       .status(500)
       .json({ success: false, error: "Failed to resume simulation" });
@@ -461,20 +461,20 @@ router?.post("/resume/:id", (req: Request, res: Response) => {
 // POST /api/simulation/stop/:id - Stop simulation
 router?.post("/stop/:id", (req: Request, res: Response) => {
   try {
-    const id = String(req?.params?.id ?? "");
+    const id = String(req.params?.id ?? "");
 
     const simulation = activeSimulations?.get(id);
     if (simulation) {
       simulation?.stop();
       activeSimulations?.delete(id);
-      return res?.json({ success: true, message: "Simulation stopped" });
+      return res.json({ success: true, message: "Simulation stopped" });
     }
 
     res
       .status(404)
       .json({ success: false, error: "Simulation not found or not running" });
   } catch (error) {
-    logger?.warn({ err: error }, "Error stopping simulation:");
+    logger.warn({ err: error }, "Error stopping simulation:");
     res
       .status(500)
       .json({ success: false, error: "Failed to stop simulation" });
@@ -484,15 +484,15 @@ router?.post("/stop/:id", (req: Request, res: Response) => {
 // GET /api/simulation/results/:id - Get final results
 router?.get("/results/:id", (req: Request, res: Response) => {
   try {
-    const id = String(req?.params?.id ?? "");
+    const id = String(req.params?.id ?? "");
 
     const result = simulationResults?.get(id);
     if (result) {
       if (result?.error) {
-        return res?.status(500).json({ success: false, error: result.error });
+        return res.status(500).json({ success: false, error: result.error });
       }
 
-      return res?.json({
+      return res.json({
         success: true,
         config: result.config,
         duration: {
@@ -512,7 +512,7 @@ router?.get("/results/:id", (req: Request, res: Response) => {
       .status(404)
       .json({ success: false, error: "Simulation results not found" });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching simulation results:");
+    logger.warn({ err: error }, "Error fetching simulation results:");
     res
       .status(500)
       .json({ success: false, error: "Failed to fetch simulation results" });
@@ -522,25 +522,25 @@ router?.get("/results/:id", (req: Request, res: Response) => {
 // GET /api/simulation/report/:id - Generate detailed report
 router?.get("/report/:id", (req: Request, res: Response) => {
   try {
-    const id = String(req?.params?.id ?? "");
+    const id = String(req.params?.id ?? "");
 
     const result = simulationResults?.get(id);
     if (!result || result?.error) {
-      return res?.status(404).json({
+      return res.status(404).json({
         success: false,
         error: "Simulation results not found or simulation failed",
       });
     }
 
     const report = generateSimulationReport(result);
-    res?.setHeader("Content-Type", "text/markdown");
-    res?.setHeader(
+    res.setHeader("Content-Type", "text/markdown");
+    res.setHeader(
       "Content-Disposition",
       `attachment; filename="simulation_report_${id}.md"`,
     );
-    res?.send(report);
+    res.send(report);
   } catch (error) {
-    logger?.warn({ err: error }, "Error generating simulation report:");
+    logger.warn({ err: error }, "Error generating simulation report:");
     res
       .status(500)
       .json({ success: false, error: "Failed to generate simulation report" });
@@ -669,7 +669,7 @@ ${
 // GET /api/simulation/list - List all simulations
 router?.get("/list", (_req: Request, res: Response) => {
   try {
-    const running = Array?.from(activeSimulations?.entries()).map(
+    const running = Array.from(activeSimulations?.entries()).map(
       ([id, sim]) => ({
         id,
         status: "running",
@@ -677,7 +677,7 @@ router?.get("/list", (_req: Request, res: Response) => {
       }),
     );
 
-    const completed = Array?.from(simulationResults?.entries()).map(
+    const completed = Array.from(simulationResults?.entries()).map(
       ([id, result]) => ({
         id,
         status: result.error ? "failed" : "completed",
@@ -690,14 +690,14 @@ router?.get("/list", (_req: Request, res: Response) => {
       }),
     );
 
-    res?.json({
+    res.json({
       success: true,
       running,
       completed,
       total: running.length + completed?.length,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error listing simulations:");
+    logger.warn({ err: error }, "Error listing simulations:");
     res
       .status(500)
       .json({ success: false, error: "Failed to list simulations" });
@@ -707,10 +707,10 @@ router?.get("/list", (_req: Request, res: Response) => {
 // POST /api/simulation/generate-event - Generate test event
 router?.post("/generate-event", (req: Request, res: Response) => {
   try {
-    const { type, params = {} } = req?.body;
+    const { type, params = {} } = req.body;
 
     if (!type || typeof type !== "string") {
-      return res?.status(400).json({
+      return res.status(400).json({
         success: false,
         error: "Event type is required",
       });
@@ -730,27 +730,27 @@ router?.post("/generate-event", (req: Request, res: Response) => {
         event = generator?.generateSystemEvent();
         break;
       default:
-        return res?.status(400).json({
+        return res.status(400).json({
           success: false,
           error: "Invalid event type. Valid types: user_signup, market, system",
         });
     }
 
-    res?.json({ success: true, event });
+    res.json({ success: true, event });
   } catch (error) {
-    logger?.warn({ err: error }, "Error generating simulation event:");
-    res?.status(500).json({ success: false, error: "Failed to generate event" });
+    logger.warn({ err: error }, "Error generating simulation event:");
+    res.status(500).json({ success: false, error: "Failed to generate event" });
   }
 });
 
 // GET /api/simulation/:id - Get overview of a specific simulation (must be after all literal paths)
 router?.get("/:id", (req: Request, res: Response) => {
   try {
-    const id = String(req?.params?.id ?? "");
+    const id = String(req.params?.id ?? "");
 
     const running = activeSimulations?.get(id);
     if (running) {
-      return res?.json({
+      return res.json({
         success: true,
         id,
         status: "running",
@@ -761,7 +761,7 @@ router?.get("/:id", (req: Request, res: Response) => {
 
     const result = simulationResults?.get(id);
     if (result) {
-      return res?.json({
+      return res.json({
         success: true,
         id,
         status: result.error ? "failed" : "completed",
@@ -774,7 +774,7 @@ router?.get("/:id", (req: Request, res: Response) => {
       .status(404)
       .json({ success: false, error: "Simulation not found" });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching simulation:");
+    logger.warn({ err: error }, "Error fetching simulation:");
     res
       .status(500)
       .json({ success: false, error: "Failed to fetch simulation" });
@@ -783,7 +783,7 @@ router?.get("/:id", (req: Request, res: Response) => {
 
 router?.delete("/:id", (req: Request, res: Response) => {
   try {
-    const id = String(req?.params?.id ?? "");
+    const id = String(req.params?.id ?? "");
 
     const simulation = activeSimulations?.get(id);
     if (simulation) {
@@ -795,9 +795,9 @@ router?.delete("/:id", (req: Request, res: Response) => {
     simulationLogs?.delete(id);
     simulationResultTimestamps?.delete(id);
 
-    res?.json({ success: true, message: "Simulation deleted" });
+    res.json({ success: true, message: "Simulation deleted" });
   } catch (error) {
-    logger?.warn({ err: error }, "Error deleting simulation:");
+    logger.warn({ err: error }, "Error deleting simulation:");
     res
       .status(500)
       .json({ success: false, error: "Failed to delete simulation" });

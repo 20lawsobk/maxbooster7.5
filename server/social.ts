@@ -18,10 +18,10 @@ google?.mybusinessbusinessinformation({
 let twitterClient: TwitterApi | null = null;
 try {
   if (
-    process?.env.TWITTER_API_KEY &&
-    process?.env.TWITTER_API_SECRET &&
-    process?.env.TWITTER_ACCESS_TOKEN &&
-    process?.env.TWITTER_ACCESS_TOKEN_SECRET
+    process.env.TWITTER_API_KEY &&
+    process.env.TWITTER_API_SECRET &&
+    process.env.TWITTER_ACCESS_TOKEN &&
+    process.env.TWITTER_ACCESS_TOKEN_SECRET
   ) {
     twitterClient = new TwitterApi({
       appKey: process.env.TWITTER_API_KEY,
@@ -31,7 +31,7 @@ try {
     });
   }
 } catch (error: unknown) {
-  logger?.warn({ err: error }, "Twitter API initialization failed:");
+  logger.warn({ err: error }, "Twitter API initialization failed:");
 }
 
 export interface SocialMediaMetrics {
@@ -56,12 +56,12 @@ export class SocialMediaService {
     _pageId?: string,
   ): Promise<Partial<SocialMediaMetrics> | null> {
     try {
-      if (!process?.env.FACEBOOK_APP_ID || !process?.env.FACEBOOK_APP_SECRET) {
-        logger?.warn("Facebook API credentials not configured");
+      if (!process.env.FACEBOOK_APP_ID || !process.env.FACEBOOK_APP_SECRET) {
+        logger.warn("Facebook API credentials not configured");
         return null;
       }
 
-      const accessToken = `${process?.env.FACEBOOK_APP_ID}|${process?.env.FACEBOOK_APP_SECRET}`;
+      const accessToken = `${process.env.FACEBOOK_APP_ID}|${process.env.FACEBOOK_APP_SECRET}`;
       const response = await axios?.get(
         `https://graph.facebook.com/v18.0/me/accounts`,
         {
@@ -84,15 +84,15 @@ export class SocialMediaService {
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Facebook API error:");
+      logger.warn({ err: error }, "Facebook API error:");
       return null;
     }
   }
 
   async getInstagramMetrics(): Promise<Partial<SocialMediaMetrics> | null> {
     try {
-      if (!process?.env.INSTAGRAM_ACCESS_TOKEN) {
-        logger?.warn("Instagram access token not configured");
+      if (!process.env.INSTAGRAM_ACCESS_TOKEN) {
+        logger.warn("Instagram access token not configured");
         return null;
       }
 
@@ -111,7 +111,7 @@ export class SocialMediaService {
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Instagram API error:");
+      logger.warn({ err: error }, "Instagram API error:");
       return null;
     }
   }
@@ -120,7 +120,7 @@ export class SocialMediaService {
   async getTwitterMetrics(): Promise<Partial<SocialMediaMetrics> | null> {
     try {
       if (!twitterClient) {
-        logger?.warn("Twitter API not initialized - check credentials");
+        logger.warn("Twitter API not initialized - check credentials");
         return null;
       }
 
@@ -139,7 +139,7 @@ export class SocialMediaService {
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Twitter API error:");
+      logger.warn({ err: error }, "Twitter API error:");
       return null;
     }
   }
@@ -149,13 +149,13 @@ export class SocialMediaService {
     accessToken?: string,
   ): Promise<Partial<SocialMediaMetrics> | null> {
     try {
-      if (!process?.env.TIKTOK_CLIENT_KEY || !process?.env.TIKTOK_CLIENT_SECRET) {
-        logger?.warn("TikTok API credentials not configured");
+      if (!process.env.TIKTOK_CLIENT_KEY || !process.env.TIKTOK_CLIENT_SECRET) {
+        logger.warn("TikTok API credentials not configured");
         return null;
       }
 
       if (!accessToken) {
-        logger?.warn("TikTok access token required for user metrics");
+        logger.warn("TikTok access token required for user metrics");
         return {
           platform: "TikTok",
           followers: 0,
@@ -182,7 +182,7 @@ export class SocialMediaService {
 
       const userData = response?.data?.data?.user;
       if (!userData) {
-        logger?.warn("TikTok API returned empty user data");
+        logger.warn("TikTok API returned empty user data");
         return null;
       }
 
@@ -200,7 +200,7 @@ export class SocialMediaService {
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "TikTok API error:");
+      logger.warn({ err: error }, "TikTok API error:");
       return null;
     }
   }
@@ -211,15 +211,15 @@ export class SocialMediaService {
   ): Promise<Partial<SocialMediaMetrics> | null> {
     try {
       if (
-        !process?.env.LINKEDIN_CLIENT_ID ||
-        !process?.env.LINKEDIN_CLIENT_SECRET
+        !process.env.LINKEDIN_CLIENT_ID ||
+        !process.env.LINKEDIN_CLIENT_SECRET
       ) {
-        logger?.warn("LinkedIn API credentials not configured");
+        logger.warn("LinkedIn API credentials not configured");
         return null;
       }
 
       if (!accessToken) {
-        logger?.warn("LinkedIn access token required for user metrics");
+        logger.warn("LinkedIn access token required for user metrics");
         return {
           platform: "LinkedIn",
           followers: 0,
@@ -276,7 +276,7 @@ export class SocialMediaService {
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "LinkedIn API error:");
+      logger.warn({ err: error }, "LinkedIn API error:");
       return null;
     }
   }
@@ -284,8 +284,8 @@ export class SocialMediaService {
   // Google My Business API Integration
   async getGoogleBusinessMetrics(): Promise<Partial<SocialMediaMetrics> | null> {
     try {
-      if (!process?.env.GOOGLE_MY_BUSINESS_API_KEY) {
-        logger?.warn("Google My Business API key not configured");
+      if (!process.env.GOOGLE_MY_BUSINESS_API_KEY) {
+        logger.warn("Google My Business API key not configured");
         return null;
       }
 
@@ -299,7 +299,7 @@ export class SocialMediaService {
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Google My Business API error:");
+      logger.warn({ err: error }, "Google My Business API error:");
       return null;
     }
   }
@@ -307,8 +307,8 @@ export class SocialMediaService {
   // Threads API Integration (Meta)
   async getThreadsMetrics(): Promise<Partial<SocialMediaMetrics> | null> {
     try {
-      if (!process?.env.THREADS_ACCESS_TOKEN || !process?.env.THREADS_APP_ID) {
-        logger?.warn("Threads API credentials not configured");
+      if (!process.env.THREADS_ACCESS_TOKEN || !process.env.THREADS_APP_ID) {
+        logger.warn("Threads API credentials not configured");
         return null;
       }
 
@@ -346,7 +346,7 @@ export class SocialMediaService {
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Threads API error:");
+      logger.warn({ err: error }, "Threads API error:");
       return null;
     }
   }
@@ -355,8 +355,8 @@ export class SocialMediaService {
     channelId: string,
   ): Promise<YouTubeChannelData | null> {
     try {
-      if (!process?.env.GOOGLE_API_KEY) {
-        logger?.warn("YouTube API requires GOOGLE_API_KEY to be set");
+      if (!process.env.GOOGLE_API_KEY) {
+        logger.warn("YouTube API requires GOOGLE_API_KEY to be set");
         return null;
       }
 
@@ -375,7 +375,7 @@ export class SocialMediaService {
         channelId,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "YouTube API error:");
+      logger.warn({ err: error }, "YouTube API error:");
       return null;
     }
   }
@@ -421,7 +421,7 @@ export class SocialMediaService {
           }
         : null;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "YouTube upload error:");
+      logger.warn({ err: error }, "YouTube upload error:");
       return null;
     }
   }
@@ -442,14 +442,14 @@ export class SocialMediaService {
         googleBusinessData,
         linkedinData,
       ] = await Promise?.allSettled([
-        this?.getFacebookMetrics(),
-        this?.getInstagramMetrics(),
-        this?.getTwitterMetrics(),
-        this?.getYouTubeChannelMetrics(),
-        this?.getTikTokMetrics(),
-        this?.getThreadsMetrics(),
-        this?.getGoogleBusinessMetrics(),
-        this?.getLinkedInMetrics(),
+        this.getFacebookMetrics(),
+        this.getInstagramMetrics(),
+        this.getTwitterMetrics(),
+        this.getYouTubeChannelMetrics(),
+        this.getTikTokMetrics(),
+        this.getThreadsMetrics(),
+        this.getGoogleBusinessMetrics(),
+        this.getLinkedInMetrics(),
       ]);
 
       // Process Facebook data
@@ -523,7 +523,7 @@ export class SocialMediaService {
 
       return metrics;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error fetching social media metrics:");
+      logger.warn({ err: error }, "Error fetching social media metrics:");
       return [];
     }
   }
@@ -531,8 +531,8 @@ export class SocialMediaService {
   // Enhanced YouTube metrics
   async getYouTubeChannelMetrics(): Promise<Partial<YouTubeChannelData> | null> {
     try {
-      if (!process?.env.YOUTUBE_API_KEY) {
-        logger?.warn("YouTube API key not configured");
+      if (!process.env.YOUTUBE_API_KEY) {
+        logger.warn("YouTube API key not configured");
         return null;
       }
 
@@ -759,14 +759,14 @@ export class SocialMediaService {
       },
     );
 
-    logger?.info(`[Social] LinkedIn post created — id: ${response?.data?.id}`);
+    logger.info(`[Social] LinkedIn post created — id: ${response?.data?.id}`);
   }
 
   private async postToTikTok(
     content: string,
     mediaUrl?: string,
   ): Promise<void> {
-    if (!process?.env.TIKTOK_CLIENT_KEY || !process?.env.TIKTOK_CLIENT_SECRET) {
+    if (!process.env.TIKTOK_CLIENT_KEY || !process.env.TIKTOK_CLIENT_SECRET) {
       throw new Error("TikTok API credentials not configured");
     }
 
@@ -776,7 +776,7 @@ export class SocialMediaService {
 
     // TikTok Content Posting API v2 — requires a user access token
     // The token must be obtained via the TikTok OAuth flow (socialOAuth routes)
-    const accessToken = process?.env.TIKTOK_ACCESS_TOKEN;
+    const accessToken = process.env.TIKTOK_ACCESS_TOKEN;
     if (!accessToken) {
       throw new Error(
         "TikTok access token not available — complete OAuth flow first",
@@ -808,11 +808,11 @@ export class SocialMediaService {
 
     if (!response?.data?.data?.publish_id) {
       throw new Error(
-        `TikTok API returned unexpected response: ${JSON?.stringify(response?.data)}`,
+        `TikTok API returned unexpected response: ${JSON.stringify(response?.data)}`,
       );
     }
 
-    logger?.info(
+    logger.info(
       `[Social] TikTok video post initiated — publish_id: ${response?.data.data?.publish_id}`,
     );
   }
@@ -821,7 +821,7 @@ export class SocialMediaService {
     content: string,
     mediaUrl?: string,
   ): Promise<void> {
-    const accessToken = process?.env.YOUTUBE_ACCESS_TOKEN;
+    const accessToken = process.env.YOUTUBE_ACCESS_TOKEN;
     if (!accessToken) {
       throw new Error(
         "YouTube access token not available — complete OAuth flow first",
@@ -853,7 +853,7 @@ export class SocialMediaService {
       },
     );
 
-    logger?.info(
+    logger.info(
       `[Social] YouTube community post created — id: ${response?.data?.id}`,
     );
   }
@@ -862,7 +862,7 @@ export class SocialMediaService {
     content: string,
     mediaUrl?: string,
   ): Promise<void> {
-    if (!process?.env.THREADS_ACCESS_TOKEN || !process?.env.THREADS_APP_ID) {
+    if (!process.env.THREADS_ACCESS_TOKEN || !process.env.THREADS_APP_ID) {
       throw new Error("Threads API credentials not configured");
     }
 

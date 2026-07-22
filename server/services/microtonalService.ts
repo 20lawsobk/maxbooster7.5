@@ -383,7 +383,7 @@ class MicrotonalService {
   }
 
   getAllTuningSystems(): TuningSystem[] {
-    return Object?.values(TUNING_SYSTEMS);
+    return Object.values(TUNING_SYSTEMS);
   }
 
   getScale(id: string): MicrotonalScale | undefined {
@@ -391,11 +391,11 @@ class MicrotonalService {
   }
 
   getAllScales(): MicrotonalScale[] {
-    return Object?.values(MICROTONAL_SCALES);
+    return Object.values(MICROTONAL_SCALES);
   }
 
   getScalesByCategory(category: string): MicrotonalScale[] {
-    return Object?.values(MICROTONAL_SCALES).filter(
+    return Object.values(MICROTONAL_SCALES).filter(
       (s) => s?.category === category,
     );
   }
@@ -407,15 +407,15 @@ class MicrotonalService {
     referenceFrequency: number = 440,
   ): number {
     const tuning = TUNING_SYSTEMS[tuningSystem] || TUNING_SYSTEMS?.equal12;
-    const octave = Math?.floor(midiNote / tuning?.cents.length);
+    const octave = Math.floor(midiNote / tuning?.cents.length);
     const noteInOctave = midiNote % tuning?.cents.length;
     const cents = tuning?.cents[noteInOctave] || 0;
     const totalCents = octave * 1200 + cents;
-    const refOctave = Math?.floor(referenceNote / 12);
+    const refOctave = Math.floor(referenceNote / 12);
     const refNoteInOctave = referenceNote % 12;
     const refCents = refOctave * 1200 + (tuning?.cents[refNoteInOctave] || 0);
     const centsDiff = totalCents - refCents;
-    return referenceFrequency * Math?.pow(2, centsDiff / 1200);
+    return referenceFrequency * Math.pow(2, centsDiff / 1200);
   }
 
   frequencyToNote(
@@ -425,17 +425,17 @@ class MicrotonalService {
     referenceFrequency: number = 440,
   ): { note: number; cents: number } {
     const tuning = TUNING_SYSTEMS[tuningSystem] || TUNING_SYSTEMS?.equal12;
-    const centsDiff = 1200 * Math?.log2(frequency / referenceFrequency);
-    const refOctave = Math?.floor(referenceNote / 12);
+    const centsDiff = 1200 * Math.log2(frequency / referenceFrequency);
+    const refOctave = Math.floor(referenceNote / 12);
     const refNoteInOctave = referenceNote % 12;
     const refCents = refOctave * 1200 + (tuning?.cents[refNoteInOctave] || 0);
     const targetCents = refCents + centsDiff;
-    const octave = Math?.floor(targetCents / 1200);
+    const octave = Math.floor(targetCents / 1200);
     const centsInOctave = targetCents - octave * 1200;
     let closestNote = 0;
     let minDiff = Infinity;
     for (let i = 0; i < tuning?.cents.length; i++) {
-      const diff = Math?.abs(tuning?.cents[i] - centsInOctave);
+      const diff = Math.abs(tuning?.cents[i] - centsInOctave);
       if (diff < minDiff) {
         minDiff = diff;
         closestNote = i;
@@ -451,7 +451,7 @@ class MicrotonalService {
     tuningSystem: string = "equal12",
   ): number {
     const tuning = TUNING_SYSTEMS[tuningSystem] || TUNING_SYSTEMS?.equal12;
-    const octaves = Math?.floor(interval / tuning?.cents.length);
+    const octaves = Math.floor(interval / tuning?.cents.length);
     const noteInOctave = interval % tuning?.cents.length;
     return octaves * 1200 + (tuning?.cents[noteInOctave] || 0);
   }
@@ -466,8 +466,8 @@ class MicrotonalService {
     const frequencies: number[] = [];
     for (let oct = 0; oct < octaves; oct++) {
       for (const interval of scale?.intervals) {
-        const midiNote = rootNote + Math?.round(interval) + oct * 12;
-        frequencies?.push(this?.noteToFrequency(midiNote, tuningSystem));
+        const midiNote = rootNote + Math.round(interval) + oct * 12;
+        frequencies?.push(this.noteToFrequency(midiNote, tuningSystem));
       }
     }
     return frequencies;
@@ -475,7 +475,7 @@ class MicrotonalService {
 
   fitNoteToScale(midiNote: number, rootNote: number, scaleId: string): number {
     const scale = MICROTONAL_SCALES[scaleId] || MICROTONAL_SCALES?.major;
-    const intervals = scale?.intervals.map((i) => Math?.round(i));
+    const intervals = scale?.intervals.map((i) => Math.round(i));
     const noteClass = (midiNote - rootNote + 1200) % 12;
     if (intervals?.includes(noteClass)) {
       return midiNote;
@@ -483,16 +483,16 @@ class MicrotonalService {
     let closestInterval = intervals[0];
     let minDistance = Infinity;
     for (const interval of intervals) {
-      const distance = Math?.min(
-        Math?.abs(noteClass - interval),
-        12 - Math?.abs(noteClass - interval),
+      const distance = Math.min(
+        Math.abs(noteClass - interval),
+        12 - Math.abs(noteClass - interval),
       );
       if (distance < minDistance) {
         minDistance = distance;
         closestInterval = interval;
       }
     }
-    const octave = Math?.floor((midiNote - rootNote) / 12);
+    const octave = Math.floor((midiNote - rootNote) / 12);
     return rootNote + closestInterval + octave * 12;
   }
 
@@ -542,18 +542,18 @@ class MicrotonalService {
   }
 
   setScaleSync(config: ScaleSyncConfig): void {
-    this?.scaleSyncConfigs.set(config?.projectId, config);
-    logger?.info(
+    this.scaleSyncConfigs.set(config?.projectId, config);
+    logger.info(
       `Scale sync set for project ${config?.projectId}: ${config?.scale} in ${config?.rootNote}`,
     );
   }
 
   getScaleSync(projectId: string): ScaleSyncConfig | undefined {
-    return this?.scaleSyncConfigs.get(projectId);
+    return this.scaleSyncConfigs.get(projectId);
   }
 
   removeScaleSync(projectId: string): void {
-    this?.scaleSyncConfigs.delete(projectId);
+    this.scaleSyncConfigs.delete(projectId);
   }
 
   getScaleNotes(
@@ -565,7 +565,7 @@ class MicrotonalService {
     const notes: number[] = [];
     for (let oct = 0; oct < octaves; oct++) {
       for (const interval of scale?.intervals) {
-        notes?.push(rootNote + Math?.round(interval) + oct * 12);
+        notes?.push(rootNote + Math.round(interval) + oct * 12);
       }
     }
     return notes?.filter((n) => n >= 0 && n <= 127);
@@ -577,7 +577,7 @@ class MicrotonalService {
     degree: number,
     extensions: number = 3,
   ): number[] {
-    const scaleNotes = this?.getScaleNotes(rootNote, scaleId, 3);
+    const scaleNotes = this.getScaleNotes(rootNote, scaleId, 3);
     const chord: number[] = [];
     for (let i = 0; i < extensions; i++) {
       const idx = degree + i * 2;
@@ -594,25 +594,25 @@ class MicrotonalService {
     rootNote: number,
     scaleId: string,
   ): number {
-    const scaleNotes = this?.getScaleNotes(rootNote, scaleId, 11);
-    const fittedNote = this?.fitNoteToScale(midiNote, rootNote, scaleId);
+    const scaleNotes = this.getScaleNotes(rootNote, scaleId, 11);
+    const fittedNote = this.fitNoteToScale(midiNote, rootNote, scaleId);
     const currentIndex = scaleNotes?.indexOf(fittedNote);
     if (currentIndex === -1) {
       const closestIndex = scaleNotes?.reduce((closest, note, idx) => {
-        return Math?.abs(note - fittedNote) <
-          Math?.abs(scaleNotes[closest] - fittedNote)
+        return Math.abs(note - fittedNote) <
+          Math.abs(scaleNotes[closest] - fittedNote)
           ? idx
           : closest;
       }, 0);
-      const newIndex = Math?.max(
+      const newIndex = Math.max(
         0,
-        Math?.min(scaleNotes?.length - 1, closestIndex + steps),
+        Math.min(scaleNotes?.length - 1, closestIndex + steps),
       );
       return scaleNotes[newIndex];
     }
-    const newIndex = Math?.max(
+    const newIndex = Math.max(
       0,
-      Math?.min(scaleNotes?.length - 1, currentIndex + steps),
+      Math.min(scaleNotes?.length - 1, currentIndex + steps),
     );
     return scaleNotes[newIndex];
   }
@@ -634,9 +634,9 @@ class MicrotonalService {
       12: "Octave",
     };
     if (semitones < 0) {
-      return `Descending ${intervals[Math?.abs(semitones) % 12] || `${Math?.abs(semitones)} semitones`}`;
+      return `Descending ${intervals[Math.abs(semitones) % 12] || `${Math.abs(semitones)} semitones`}`;
     }
-    const octaves = Math?.floor(semitones / 12);
+    const octaves = Math.floor(semitones / 12);
     const remainder = semitones % 12;
     if (octaves === 0) {
       return intervals[remainder] || `${semitones} semitones`;
@@ -656,9 +656,9 @@ class MicrotonalService {
     frequency: number;
     cents: number;
   } {
-    const octave = Math?.floor(midiNote / 12) - 1;
+    const octave = Math.floor(midiNote / 12) - 1;
     const noteIndex = midiNote % 12;
-    const frequency = this?.noteToFrequency(midiNote, tuningSystem);
+    const frequency = this.noteToFrequency(midiNote, tuningSystem);
     const tuning = TUNING_SYSTEMS[tuningSystem] || TUNING_SYSTEMS?.equal12;
     const cents = tuning?.cents[noteIndex] || 0;
     return {

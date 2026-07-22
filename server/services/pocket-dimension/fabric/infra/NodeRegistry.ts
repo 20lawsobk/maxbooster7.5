@@ -41,7 +41,7 @@ export class NodeRegistry {
     if (patch?.healthy !== undefined) values.healthy = patch?.healthy;
     if (patch?.lastHeartbeat !== undefined)
       values.lastHeartbeat = patch?.lastHeartbeat;
-    if (Object?.keys(values).length > 0) {
+    if (Object.keys(values).length > 0) {
       await db
         .update(fabricStorageNodes)
         .set(values)
@@ -50,7 +50,7 @@ export class NodeRegistry {
   }
 
   async heartbeat(id: NodeId, usedBytes: number): Promise<void> {
-    await this?.updateNode(id, {
+    await this.updateNode(id, {
       lastHeartbeat: new Date(),
       usedBytes,
       healthy: true,
@@ -62,12 +62,12 @@ export class NodeRegistry {
       .select()
       .from(fabricStorageNodes)
       .where(eq(fabricStorageNodes?.healthy, true));
-    return rows?.map(this?.rowToNode);
+    return rows?.map(this.rowToNode);
   }
 
   async listAllNodes(): Promise<FabricStorageNode[]> {
     const rows = await db?.select().from(fabricStorageNodes);
-    return rows?.map(this?.rowToNode);
+    return rows?.map(this.rowToNode);
   }
 
   async getNode(id: NodeId): Promise<FabricStorageNode | null> {
@@ -75,7 +75,7 @@ export class NodeRegistry {
       .select()
       .from(fabricStorageNodes)
       .where(eq(fabricStorageNodes?.id, id));
-    return rows[0] ? this?.rowToNode(rows[0]) : null;
+    return rows[0] ? this.rowToNode(rows[0]) : null;
   }
 
   private rowToNode(

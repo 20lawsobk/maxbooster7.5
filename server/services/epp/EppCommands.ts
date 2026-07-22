@@ -91,7 +91,7 @@ export class EppCommands {
         <contact:voice>${contact?.phone || "+1.0000000000"}</contact:voice>
         <contact:email>${contact?.email}</contact:email>
         <contact:authInfo>
-          <contact:pw>pw-${Math?.random().toString(36).slice(2)}</contact:pw>
+          <contact:pw>pw-${Math.random().toString(36).slice(2)}</contact:pw>
         </contact:authInfo>
       </contact:create>
     </create>
@@ -115,7 +115,7 @@ export class EppCommands {
         <domain:contact type="admin">${params?.adminId}</domain:contact>
         <domain:contact type="tech">${params?.techId}</domain:contact>
         <domain:authInfo>
-          <domain:pw>${params?.authInfo || "pw-" + Math?.random().toString(36).slice(2)}</domain:pw>
+          <domain:pw>${params?.authInfo || "pw-" + Math.random().toString(36).slice(2)}</domain:pw>
         </domain:authInfo>
       </domain:create>
     </create>

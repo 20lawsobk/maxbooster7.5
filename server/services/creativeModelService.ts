@@ -59,10 +59,10 @@ import {
 // ─── MaxCore connection (mirrors multimodalGenerationService pattern) ──────────
 
 const _MAXCORE_BASE = (
-  process?.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app"
+  process.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app"
 ).replace(/\/api\/?$/, "");
 const MAXCORE_URL = `${_MAXCORE_BASE}/api`;
-const MAXCORE_KEY = process?.env.AI_SERVER_KEY || "";
+const MAXCORE_KEY = process.env.AI_SERVER_KEY || "";
 
 // ─── DiT-24 local relay (three-tier architecture: Max Booster → DiT-24 → MaxCore) ──
 
@@ -79,17 +79,17 @@ async function dit24Post(
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(timeoutMs),
   });
-  if (!res?.ok) {
-    const text = await res?.text().catch(() => "");
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
     throw new Error(
-      `DiT-24 relay ${path} → HTTP ${res?.status}: ${text?.slice(0, 200)}`,
+      `DiT-24 relay ${path} → HTTP ${res.status}: ${text?.slice(0, 200)}`,
     );
   }
-  const ct = res?.headers.get("content-type") ?? "";
+  const ct = res.headers.get("content-type") ?? "";
   if (!ct?.includes("application/json")) {
     throw new Error(`DiT-24 relay ${path} returned non-JSON`);
   }
-  return res?.json();
+  return res.json();
 }
 
 async function maxcorePost(
@@ -108,20 +108,20 @@ async function maxcorePost(
     signal: AbortSignal.timeout(timeoutMs),
   });
 
-  if (!res?.ok) {
-    const text = await res?.text().catch(() => "");
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
     throw new Error(
-      `MaxCore ${path} → HTTP ${res?.status}: ${text?.slice(0, 300)}`,
+      `MaxCore ${path} → HTTP ${res.status}: ${text?.slice(0, 300)}`,
     );
   }
 
-  const ct = res?.headers.get("content-type") ?? "";
+  const ct = res.headers.get("content-type") ?? "";
   if (!ct?.includes("application/json")) {
-    const text = await res?.text().catch(() => "");
+    const text = await res.text().catch(() => "");
     throw new Error(`MaxCore ${path} returned non-JSON: ${text?.slice(0, 200)}`);
   }
 
-  return res?.json();
+  return res.json();
 }
 
 async function maxcoreGet(path: string, timeoutMs = 15_000): Promise<unknown> {
@@ -130,13 +130,13 @@ async function maxcoreGet(path: string, timeoutMs = 15_000): Promise<unknown> {
     headers: MAXCORE_KEY ? { Authorization: `Bearer ${MAXCORE_KEY}` } : {},
     signal: AbortSignal.timeout(timeoutMs),
   });
-  if (!res?.ok) {
-    const text = await res?.text().catch(() => "");
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
     throw new Error(
-      `MaxCore GET ${path} → HTTP ${res?.status}: ${text?.slice(0, 200)}`,
+      `MaxCore GET ${path} → HTTP ${res.status}: ${text?.slice(0, 200)}`,
     );
   }
-  return res?.json();
+  return res.json();
 }
 
 function tryParseJson(raw: string): Record<string, unknown> {
@@ -146,12 +146,12 @@ function tryParseJson(raw: string): Record<string, unknown> {
   const e = candidate?.lastIndexOf("}");
   if (s !== -1 && e !== -1) {
     try {
-      return JSON?.parse(candidate?.slice(s, e + 1));
+      return JSON.parse(candidate?.slice(s, e + 1));
     } catch {
       /* fall through */
     }
   }
-  return JSON?.parse(raw);
+  return JSON.parse(raw);
 }
 
 // ─── MaxCore / DiT-24 response shapes (typing for `unknown` JSON bodies) ───────
@@ -296,7 +296,7 @@ async function analyzeMusicStage(
   audioPath: string,
   brief: CreativeBrief,
 ): Promise<MusicMeta> {
-  logger?.info("[CreativeModel] Stage 1: Music analysis", { audioPath });
+  logger.info("[CreativeModel] Stage 1: Music analysis", { audioPath });
 
   try {
     const raw = (await maxcorePost("/audio/analyze", {
@@ -331,7 +331,7 @@ async function analyzeMusicStage(
   } catch (err) {
     // MaxCore-only fail-explicit contract: never substitute fabricated local
     // analysis (fixed 120bpm / C major) for a failed MaxCore call.
-    logger?.warn("[CreativeModel] Music analysis — MaxCore call failed", {
+    logger.warn("[CreativeModel] Music analysis — MaxCore call failed", {
       err,
     });
     const { AIUnavailableError } = await import("../lib/aiSource.js");
@@ -431,10 +431,10 @@ async function precomputeMusicalIntelligence(
         musicMeta?.energyCurve.length
       : 0.6;
   const energyPeak =
-    musicMeta?.energyCurve.length > 0 ? Math?.max(...musicMeta?.energyCurve) : 0.9;
+    musicMeta?.energyCurve.length > 0 ? Math.max(...musicMeta?.energyCurve) : 0.9;
   const energyVariance =
     musicMeta?.energyCurve.length > 1
-      ? energyPeak - Math?.min(...musicMeta?.energyCurve)
+      ? energyPeak - Math.min(...musicMeta?.energyCurve)
       : 0.3;
 
   const plannerInput = {
@@ -467,7 +467,7 @@ async function precomputeMusicalIntelligence(
   const beatCount = plannerSuggestion?.optimalBeatCount ?? estimatedBeatCount;
 
   // Run style selections and alignment for every beat in parallel
-  const beatIndices = Array?.from({ length: beatCount }, (_, i) => i);
+  const beatIndices = Array.from({ length: beatCount }, (_, i) => i);
   const secondsPerBeat = 60 / musicMeta?.bpm;
 
   const [styleResults, alignmentResults] = await Promise?.all([
@@ -487,11 +487,11 @@ async function precomputeMusicalIntelligence(
             bpm: musicMeta.bpm,
             energyAtBeat:
               musicMeta?.energyCurve[
-                i % Math?.max(1, musicMeta?.energyCurve.length)
+                i % Math.max(1, musicMeta?.energyCurve.length)
               ] ?? energyMean,
             aesthetic: (brief?.style.aesthetic as string) ?? "cinematic",
             emotionalGoal: "curiosity", // refined per-beat once plan is known
-            beatIndexNorm: i / Math?.max(1, beatCount - 1),
+            beatIndexNorm: i / Math.max(1, beatCount - 1),
           })
           .catch(() => null);
       }),
@@ -502,9 +502,9 @@ async function precomputeMusicalIntelligence(
         const defaultStart = i * secondsPerBeat * 4;
         const energyAtBeat =
           musicMeta?.energyCurve[
-            i % Math?.max(1, musicMeta?.energyCurve.length)
+            i % Math.max(1, musicMeta?.energyCurve.length)
           ] ?? energyMean;
-        const acc = Math?.min(
+        const acc = Math.min(
           1,
           (i / beatCount) * energyMean + energyAtBeat * 0.2,
         );
@@ -525,7 +525,7 @@ async function precomputeMusicalIntelligence(
                   s?.name.toLowerCase().includes("drop")),
             ),
             accumulatedEnergy: acc,
-            transitionMomentum: i / Math?.max(1, beatCount - 1),
+            transitionMomentum: i / Math.max(1, beatCount - 1),
           })
           .catch(() => null);
       }),
@@ -544,7 +544,7 @@ async function precomputeMusicalIntelligence(
     Boolean,
   ) as import("../../shared/ml/models/BeatSyncAlignmentModel.js").BeatAlignmentOutput[];
 
-  logger?.info("[CreativeModel] Musical intelligence pre-computed", {
+  logger.info("[CreativeModel] Musical intelligence pre-computed", {
     plannerBeatCount: plannerSuggestion.optimalBeatCount,
     stylesComputed: styleMap.size,
     alignmentsComputed: alignmentMap.length,
@@ -567,7 +567,7 @@ async function planningStage(
   musicMeta: MusicMeta,
   ctx: CreativeContext,
 ): Promise<CreativePlan> {
-  logger?.info("[CreativeModel] Stage 2: Creative planning");
+  logger.info("[CreativeModel] Stage 2: Creative planning");
 
   const ps = ctx?.plannerSuggestion;
   const ctaLabel = ps
@@ -589,8 +589,8 @@ async function planningStage(
     ? `
 MUSIC INTELLIGENCE CONSTRAINTS (computed from audio — treat as ground truth):
 - Optimal beat count: ${ps?.optimalBeatCount} (your "beats" array MUST have exactly ${ps?.optimalBeatCount} items)
-- Hook emotional intensity: ${Math?.round(ps?.hookEmotionalWeight * 100)}% (${ps?.hookEmotionalWeight > 0.7 ? "high-impact opener needed" : ps?.hookEmotionalWeight > 0.4 ? "moderate emotional draw" : "informational hook"})
-- CTA urgency: ${ctaLabel} (${Math?.round(ps?.ctaUrgency * 100)}%)
+- Hook emotional intensity: ${Math.round(ps?.hookEmotionalWeight * 100)}% (${ps?.hookEmotionalWeight > 0.7 ? "high-impact opener needed" : ps?.hookEmotionalWeight > 0.4 ? "moderate emotional draw" : "informational hook"})
+- CTA urgency: ${ctaLabel} (${Math.round(ps?.ctaUrgency * 100)}%)
 - Testing variants: generate ${variantCount} distinct variants
 `.trim()
     : "";
@@ -599,10 +599,10 @@ MUSIC INTELLIGENCE CONSTRAINTS (computed from audio — treat as ground truth):
     ctx?.styleMap.size > 0
       ? `
 PER-BEAT STYLE GUIDANCE (pre-selected from audio energy + genre):
-${Array?.from(ctx?.styleMap.entries())
+${Array.from(ctx?.styleMap.entries())
   .map(
     ([i, s]) =>
-      `  Beat ${i + 1}: primary=${s.primaryStyle} (${Math.round((s.topStyles[0].probability ?? 0) * 100)}%), alt=${s?.topStyles[1]?.style ?? "n/a"} (${Math?.round((s?.topStyles[1]?.probability ?? 0) * 100)}%)`,
+      `  Beat ${i + 1}: primary=${s.primaryStyle} (${Math.round((s.topStyles[0].probability ?? 0) * 100)}%), alt=${s?.topStyles[1]?.style ?? "n/a"} (${Math.round((s?.topStyles[1]?.probability ?? 0) * 100)}%)`,
   )
   .join("\n")}
 `.trim()
@@ -619,7 +619,7 @@ BRIEF:
 - Offer: ${brief?.offer}
 - CTA: ${brief?.callToAction}
 - Key messages: ${brief?.keyMessages.join(" | ")}
-- Visual style: ${JSON?.stringify(brief?.style)}
+- Visual style: ${JSON.stringify(brief?.style)}
 
 MUSIC:
 - BPM: ${musicMeta?.bpm} | Key: ${musicMeta?.key} | Energy peak: ${ctx?.energyPeak.toFixed(2)} | Mean: ${ctx?.energyMean.toFixed(2)}
@@ -651,10 +651,10 @@ Return JSON only — beats array must match the constraint count exactly:
     })) as GenerateTextResponse;
 
     const text: string =
-      raw?.text ?? raw?.content ?? raw?.outputs?.[0]?.text ?? JSON?.stringify(raw);
+      raw?.text ?? raw?.content ?? raw?.outputs?.[0]?.text ?? JSON.stringify(raw);
     const parsed = tryParseJson(text);
 
-    const maxCoreBeats: BeatNote[] = Array?.isArray(parsed?.beats)
+    const maxCoreBeats: BeatNote[] = Array.isArray(parsed?.beats)
       ? parsed?.beats.map((b: RawBeat) => ({
           timecodeHint: b.timecodeHint ?? b?.timecode_hint ?? "0-3s",
           description: b.description ?? "",
@@ -675,7 +675,7 @@ Return JSON only — beats array must match the constraint count exactly:
             ),
           ];
 
-    const variants: string[] = Array?.isArray(
+    const variants: string[] = Array.isArray(
       parsed?.testingVariants ?? parsed?.testing_variants,
     )
       ? ((parsed?.testingVariants ?? parsed?.testing_variants) as string[])
@@ -691,13 +691,13 @@ Return JSON only — beats array must match the constraint count exactly:
       testingVariants: variants.slice(0, variantCount),
     };
   } catch (err) {
-    logger?.warn(
+    logger.warn(
       "[CreativeModel] Planning: MaxCore call failed (transient) — using local CreativePlannerModel",
       { err },
     );
 
     const beatCount = ps?.optimalBeatCount ?? 3;
-    const beats = defaultBeats(brief).slice(0, Math?.min(beatCount, 5));
+    const beats = defaultBeats(brief).slice(0, Math.min(beatCount, 5));
     if (ps && ps?.ctaUrgency > 0.65 && beats?.length < beatCount) {
       beats?.push({
         timecodeHint: `${beats?.length * 4}-${beats?.length * 4 + 3}s`,
@@ -747,11 +747,11 @@ async function scriptStage(
   plan: CreativePlan,
   ctx: CreativeContext,
 ): Promise<string> {
-  logger?.info("[CreativeModel] Stage 3: Script generation");
+  logger.info("[CreativeModel] Stage 3: Script generation");
 
   const ps = ctx?.plannerSuggestion;
   const hookGuidance = ps
-    ? `Hook emotional intensity: ${Math?.round(ps?.hookEmotionalWeight * 100)}% — ${ps?.hookEmotionalWeight > 0.7 ? "make it visceral and immediate" : ps?.hookEmotionalWeight > 0.4 ? "draw viewers in with curiosity" : "lead with information"}`
+    ? `Hook emotional intensity: ${Math.round(ps?.hookEmotionalWeight * 100)}% — ${ps?.hookEmotionalWeight > 0.7 ? "make it visceral and immediate" : ps?.hookEmotionalWeight > 0.4 ? "draw viewers in with curiosity" : "lead with information"}`
     : "";
   const ctaGuidance = ps
     ? `CTA pressure: ${ps?.ctaUrgency > 0.75 ? "urgent — create scarcity or FOMO" : ps?.ctaUrgency > 0.45 ? "direct — clear next step" : "soft — invite, do not demand"}`
@@ -785,7 +785,7 @@ async function scriptStage(
     const { AIUnavailableError } = await import("../lib/aiSource.js");
     throw new AIUnavailableError("script generation");
   } catch (err) {
-    logger?.warn("[CreativeModel] Script generation — MaxCore call failed", {
+    logger.warn("[CreativeModel] Script generation — MaxCore call failed", {
       err,
     });
     const { AIUnavailableError } = await import("../lib/aiSource.js");
@@ -802,7 +802,7 @@ async function keyframesStage(
   musicMeta: MusicMeta,
   ctx: CreativeContext,
 ): Promise<string[]> {
-  logger?.info("[CreativeModel] Stage 4: Keyframe generation", {
+  logger.info("[CreativeModel] Stage 4: Keyframe generation", {
     beatCount: plan.beats.length,
   });
 
@@ -834,11 +834,11 @@ async function keyframesStage(
               bpm: musicMeta.bpm,
               energyAtBeat:
                 musicMeta?.energyCurve[
-                  i % Math?.max(1, musicMeta?.energyCurve.length)
+                  i % Math.max(1, musicMeta?.energyCurve.length)
                 ] ?? ctx?.energyMean,
               aesthetic: (brief?.style.aesthetic as string) ?? "cinematic",
               emotionalGoal: beat.emotionalGoal,
-              beatIndexNorm: i / Math?.max(1, totalBeats - 1),
+              beatIndexNorm: i / Math.max(1, totalBeats - 1),
             })
             .catch(() => null)
         : null;
@@ -847,7 +847,7 @@ async function keyframesStage(
 
       const blendInstruction =
         closeMatch && altStyle
-          ? `Blend visual elements of "${selectedStyle}" and "${altStyle}" — the model is split (${Math?.round(primaryProb * 100)}% vs ${Math?.round(altProb * 100)}%).`
+          ? `Blend visual elements of "${selectedStyle}" and "${altStyle}" — the model is split (${Math.round(primaryProb * 100)}% vs ${Math.round(altProb * 100)}%).`
           : "";
 
       const prompt = [
@@ -902,7 +902,7 @@ async function alignmentStage(
   musicMeta: MusicMeta,
   ctx: CreativeContext,
 ): Promise<AlignedTimeline> {
-  logger?.info("[CreativeModel] Stage 5: Temporal alignment");
+  logger.info("[CreativeModel] Stage 5: Temporal alignment");
 
   const secondsPerBeat = 60 / musicMeta?.bpm;
 
@@ -918,7 +918,7 @@ async function alignmentStage(
 
     const alignment = ctx?.alignmentMap[i];
     if (alignment) {
-      start = Math?.max(0, start + alignment?.cutTimeDelta);
+      start = Math.max(0, start + alignment?.cutTimeDelta);
     }
     return { start, end, beat };
   });
@@ -927,7 +927,7 @@ async function alignmentStage(
     const alignment = ctx?.alignmentMap[i];
     if (alignment) return alignment?.transitionType;
     const energyAtBeat =
-      musicMeta?.energyCurve[i % Math?.max(1, musicMeta?.energyCurve.length)] ??
+      musicMeta?.energyCurve[i % Math.max(1, musicMeta?.energyCurve.length)] ??
       0.6;
     return energyAtBeat > 0.7
       ? "cut_on_beat"
@@ -966,10 +966,10 @@ Only override a beat's timing or transition if there is a strong narrative reaso
 }`,
     })) as GenerateTextResponse;
 
-    const text: string = raw?.text ?? raw?.content ?? JSON?.stringify(raw);
+    const text: string = raw?.text ?? raw?.content ?? JSON.stringify(raw);
     const parsed = tryParseJson(text);
 
-    if (Array?.isArray(parsed?.timeline)) {
+    if (Array.isArray(parsed?.timeline)) {
       return {
         timeline: parsed.timeline.map(
           (t: Record<string, unknown>, i: number) => ({
@@ -984,7 +984,7 @@ Only override a beat's timing or transition if there is a strong narrative reaso
       };
     }
   } catch (err) {
-    logger?.warn(
+    logger.warn(
       "[CreativeModel] Alignment: MaxCore call failed (transient) — using local BeatSyncAlignmentModel map",
       { err },
     );
@@ -1005,7 +1005,7 @@ async function assemblyStage(
   ctx: CreativeContext,
   plan: CreativePlan,
 ): Promise<string> {
-  logger?.info(
+  logger.info(
     "[CreativeModel] Stage 6: Video assembly — DiT-24 relay → MaxCore",
   );
 
@@ -1043,7 +1043,7 @@ async function assemblyStage(
 
   // ── Tier 1: DiT-24 local relay (routes to MaxCore when untrained, local when trained) ──
   try {
-    logger?.info("[CreativeModel] Stage 6: Trying DiT-24 local relay");
+    logger.info("[CreativeModel] Stage 6: Trying DiT-24 local relay");
     const relayResp = (await dit24Post(
       "/generate-video",
       videoPayload,
@@ -1051,7 +1051,7 @@ async function assemblyStage(
     )) as VideoRelayResponse;
 
     if (relayResp?.url) {
-      logger?.info(
+      logger.info(
         `[CreativeModel] Stage 6: DiT-24 relay → URL ${relayResp?.url}`,
       );
       return relayResp?.url;
@@ -1059,7 +1059,7 @@ async function assemblyStage(
 
     // MaxCore async job forwarded through relay
     if (relayResp?.job_id) {
-      logger?.info(
+      logger.info(
         `[CreativeModel] Stage 6: DiT-24 relay → MaxCore job ${relayResp?.job_id} — polling`,
       );
       const deadline = Date?.now() + 180_000;
@@ -1069,13 +1069,13 @@ async function assemblyStage(
           `/video-job/${relayResp?.job_id}`,
         )) as VideoJobResponse;
         if (poll?.status === "done" && poll?.url) {
-          logger?.info(
+          logger.info(
             `[CreativeModel] Stage 6: MaxCore job done → ${poll?.url}`,
           );
           return poll?.url;
         }
         if (poll?.status === "failed") {
-          logger?.warn(
+          logger.warn(
             `[CreativeModel] Stage 6: MaxCore job ${relayResp?.job_id} failed`,
           );
           break;
@@ -1085,13 +1085,13 @@ async function assemblyStage(
 
     // Local DiT-24 trained inference — returned as base64 MP4
     if (relayResp?.mp4_b64) {
-      logger?.info(
+      logger.info(
         `[CreativeModel] Stage 6: DiT-24 local video (${relayResp.frames ?? "?"} frames, source=${relayResp?.source})`,
       );
       return `data:video/mp4;base64,${relayResp?.mp4_b64}`;
     }
   } catch (relayErr) {
-    logger?.warn(
+    logger.warn(
       "[CreativeModel] Stage 6: DiT-24 relay unavailable — falling back to MaxCore direct",
       {
         err: relayErr instanceof Error ? relayErr?.message : String(relayErr),
@@ -1101,7 +1101,7 @@ async function assemblyStage(
 
   // ── Tier 2: MaxCore direct (fallback when relay is unavailable) ──────────────
   try {
-    logger?.info("[CreativeModel] Stage 6: MaxCore direct fallback");
+    logger.info("[CreativeModel] Stage 6: MaxCore direct fallback");
     const jobResp = (await maxcorePost(
       "/generate-video",
       videoPayload,
@@ -1115,14 +1115,14 @@ async function assemblyStage(
     }
 
     if (jobResp?.url) {
-      logger?.info(
+      logger.info(
         `[CreativeModel] Stage 6: MaxCore sync render → ${jobResp?.url}`,
       );
       return jobResp?.url;
     }
 
     if (jobResp?.job_id) {
-      logger?.info(
+      logger.info(
         `[CreativeModel] Stage 6: MaxCore async job ${jobResp?.job_id} — polling`,
       );
       const deadline = Date?.now() + 180_000;
@@ -1130,13 +1130,13 @@ async function assemblyStage(
         await new Promise((r) => setTimeout(r, 5_000));
         const poll = await maxcoreGet(`/video-job/${jobResp?.job_id}`);
         if (poll?.status === "done" && poll?.url) {
-          logger?.info(
+          logger.info(
             `[CreativeModel] Stage 6: MaxCore job done → ${poll?.url}`,
           );
           return poll?.url;
         }
         if (poll?.status === "failed") {
-          logger?.warn(
+          logger.warn(
             `[CreativeModel] Stage 6: MaxCore job ${jobResp?.job_id} failed`,
           );
           break;
@@ -1144,13 +1144,13 @@ async function assemblyStage(
       }
     }
   } catch (err) {
-    logger?.warn(
+    logger.warn(
       "[CreativeModel] Stage 6: MaxCore direct video generation error",
       { err },
     );
   }
 
-  logger?.error(
+  logger.error(
     "[CreativeModel] Stage 6: All video sources exhausted — DiT-24 relay and MaxCore both unavailable",
   );
   throw new Error(
@@ -1167,7 +1167,7 @@ async function scoringStage(
   brief: CreativeBrief,
   ctx: CreativeContext,
 ): Promise<EngagementScores> {
-  logger?.info("[CreativeModel] Stage 7: Engagement scoring (parallel blend)");
+  logger.info("[CreativeModel] Stage 7: Engagement scoring (parallel blend)");
 
   const localScorerInput = {
     platform: brief.platform,
@@ -1180,7 +1180,7 @@ async function scoringStage(
     hasStatementHook: plan.hooks.some((h) => !h?.includes("?")),
     beatCount: plan.beats.length,
     visualDiversity:
-      new Set(plan?.visuals).size / Math?.max(1, plan?.visuals.length),
+      new Set(plan?.visuals).size / Math.max(1, plan?.visuals.length),
     hasCTA: !!brief?.callToAction,
     genreEnergy:
       musicMeta?.mood.includes("driving") || musicMeta?.mood.includes("energetic")
@@ -1211,7 +1211,7 @@ async function scoringStage(
         hookWordCount: localScorerInput.hookWordCount,
         hasQuestionHook: localScorerInput.hasQuestionHook,
       }),
-      prompt: `Predict engagement for this short-form video creative. Consider beat count, hook type, CTA urgency (${ctx?.plannerSuggestion ? Math?.round(ctx?.plannerSuggestion.ctaUrgency * 100) : 50}%), and energy peak (${ctx?.energyPeak.toFixed(2)}). Return JSON only:
+      prompt: `Predict engagement for this short-form video creative. Consider beat count, hook type, CTA urgency (${ctx?.plannerSuggestion ? Math.round(ctx?.plannerSuggestion.ctaUrgency * 100) : 50}%), and energy peak (${ctx?.energyPeak.toFixed(2)}). Return JSON only:
 {
   "watchTimeScore": 0.0-1.0,
   "hookStrength": 0.0-1.0,
@@ -1244,12 +1244,12 @@ async function scoringStage(
     // Both succeeded — weighted blend (MaxCore 60%, local 40%)
     const agreement =
       1 -
-      (Math?.abs(maxcore?.watchTimeScore - local?.watchTimeScore) +
-        Math?.abs(maxcore?.hookStrength - local?.hookStrength) +
-        Math?.abs(maxcore?.conversionScore - local?.conversionScore)) /
+      (Math.abs(maxcore?.watchTimeScore - local?.watchTimeScore) +
+        Math.abs(maxcore?.hookStrength - local?.hookStrength) +
+        Math.abs(maxcore?.conversionScore - local?.conversionScore)) /
         3;
 
-    logger?.info("[CreativeModel] Scoring blended", {
+    logger.info("[CreativeModel] Scoring blended", {
       maxcore,
       local,
       agreement: agreement.toFixed(2),
@@ -1270,14 +1270,14 @@ async function scoringStage(
   }
 
   if (maxcore) {
-    logger?.info(
+    logger.info(
       "[CreativeModel] Scoring: MaxCore only (local scorer unavailable)",
     );
     return maxcore;
   }
 
   if (local) {
-    logger?.info(
+    logger.info(
       "[CreativeModel] Scoring: using local model (MaxCore call skipped or failed transiently)",
     );
     return {
@@ -1287,12 +1287,12 @@ async function scoringStage(
     };
   }
 
-  logger?.warn("[CreativeModel] Scoring: both failed — using safe defaults");
+  logger.warn("[CreativeModel] Scoring: both failed — using safe defaults");
   return { watchTimeScore: 0.7, hookStrength: 0.75, conversionScore: 0.65 };
 }
 
 function clamp(v: unknown, min = 0, max = 1): number {
-  return Math?.max(min, Math?.min(max, Number(v) || 0));
+  return Math.max(min, Math.min(max, Number(v) || 0));
 }
 
 // ─── Stage 8: Feedback Loop ───────────────────────────────────────────────────
@@ -1304,7 +1304,7 @@ async function feedbackStage(
   scores: EngagementScores,
   realMetrics?: Partial<AnalyticsData>,
 ): Promise<void> {
-  logger?.info("[CreativeModel] Stage 8: Feedback loop", { assetId });
+  logger.info("[CreativeModel] Stage 8: Feedback loop", { assetId });
 
   const postData: PostData = {
     platform: brief.platform,
@@ -1331,7 +1331,7 @@ async function feedbackStage(
       analytics,
     );
   } catch (err) {
-    logger?.warn("[CreativeModel] Feedback loop non-fatal error", { err });
+    logger.warn("[CreativeModel] Feedback loop non-fatal error", { err });
   }
 }
 
@@ -1350,7 +1350,7 @@ export async function generateCreativePackage(
   const { brief, audioPath, userId } = opts;
   const assetId = opts?.assetId ?? `creative_${randomUUID()}`;
 
-  logger?.info("[CreativeModel] Pipeline start", {
+  logger.info("[CreativeModel] Pipeline start", {
     assetId,
     platform: brief.platform,
     goal: brief.goal,
@@ -1361,9 +1361,9 @@ export async function generateCreativePackage(
 
   // Pre-computation: run all four in-house models in parallel before any MaxCore call.
   // Estimated beat count from section count — planner will refine this.
-  const estimatedBeatCount = Math?.max(
+  const estimatedBeatCount = Math.max(
     3,
-    Math?.min(musicMeta?.sections.length * 2, 8),
+    Math.min(musicMeta?.sections.length * 2, 8),
   );
   const ctx = await precomputeMusicalIntelligence(
     brief,
@@ -1412,7 +1412,7 @@ export async function generateCreativePackage(
     generatedAt: new Date().toISOString(),
   };
 
-  logger?.info("[CreativeModel] Pipeline complete", { assetId, scores });
+  logger.info("[CreativeModel] Pipeline complete", { assetId, scores });
   return pkg;
 }
 
@@ -1450,9 +1450,9 @@ export async function planCreative(
   audioPath: string,
 ): Promise<{ musicMeta: MusicMeta; plan: CreativePlan; script: string }> {
   const musicMeta = await analyzeMusicStage(audioPath, brief);
-  const estimatedBeatCount = Math?.max(
+  const estimatedBeatCount = Math.max(
     3,
-    Math?.min(musicMeta?.sections.length * 2, 8),
+    Math.min(musicMeta?.sections.length * 2, 8),
   );
   const ctx = await precomputeMusicalIntelligence(
     brief,

@@ -42,21 +42,21 @@ async function httpGet(
       },
       (res) => {
         let body = "";
-        res?.on("data", (chunk) => (body += chunk));
-        res?.on("end", () => {
+        res.on("data", (chunk) => (body += chunk));
+        res.on("end", () => {
           resolve({ status: res.statusCode || 0, time: Date.now() - start });
         });
       },
     );
 
-    req?.on("error", (e) =>
+    req.on("error", (e) =>
       resolve({ status: 0, time: Date.now() - start, error: e.message }),
     );
-    req?.on("timeout", () => {
-      req?.destroy();
+    req.on("timeout", () => {
+      req.destroy();
       resolve({ status: 0, time: Date.now() - start, error: "TIMEOUT" });
     });
-    req?.end();
+    req.end();
   });
 }
 
@@ -66,7 +66,7 @@ async function httpPost(
   cookie?: string,
 ): Promise<{ status: number; time: number; error?: string }> {
   const start = Date?.now();
-  const data = JSON?.stringify(body);
+  const data = JSON.stringify(body);
 
   return new Promise((resolve) => {
     const req = http?.request(
@@ -84,22 +84,22 @@ async function httpPost(
       },
       (res) => {
         let responseBody = "";
-        res?.on("data", (chunk) => (responseBody += chunk));
-        res?.on("end", () => {
+        res.on("data", (chunk) => (responseBody += chunk));
+        res.on("end", () => {
           resolve({ status: res.statusCode || 0, time: Date.now() - start });
         });
       },
     );
 
-    req?.on("error", (e) =>
+    req.on("error", (e) =>
       resolve({ status: 0, time: Date.now() - start, error: e.message }),
     );
-    req?.on("timeout", () => {
-      req?.destroy();
+    req.on("timeout", () => {
+      req.destroy();
       resolve({ status: 0, time: Date.now() - start, error: "TIMEOUT" });
     });
-    req?.write(data);
-    req?.end();
+    req.write(data);
+    req.end();
   });
 }
 
@@ -117,7 +117,7 @@ async function getAuthCookie(): Promise<string> {
       },
       (res) => {
         clearTimeout(timeout);
-        const cookies = res?.headers["set-cookie"];
+        const cookies = res.headers["set-cookie"];
         if (cookies) {
           const sid = cookies?.find((c) => c?.includes("connect.sid"));
           if (sid) {
@@ -126,17 +126,17 @@ async function getAuthCookie(): Promise<string> {
           }
         }
         let body = "";
-        res?.on("data", (c) => (body += c));
-        res?.on("end", () => resolve(""));
+        res.on("data", (c) => (body += c));
+        res.on("end", () => resolve(""));
       },
     );
 
-    req?.on("error", () => {
+    req.on("error", () => {
       clearTimeout(timeout);
       reject(new Error("Auth failed"));
     });
-    req?.write("{}");
-    req?.end();
+    req.write("{}");
+    req.end();
   });
 }
 
@@ -202,14 +202,14 @@ function projectToScale(
   targetUsers: number,
 ): ScaleProjection {
   const scaleFactor = targetUsers / baseResult?.concurrentUsers;
-  const degradationFactor = 1 + Math?.log10(Math?.max(1, scaleFactor)) * 0.15;
+  const degradationFactor = 1 + Math.log10(Math.max(1, scaleFactor)) * 0.15;
 
   const projectedThroughput =
-    baseResult?.requestsPerSecond * Math?.min(scaleFactor, 100000);
+    baseResult?.requestsPerSecond * Math.min(scaleFactor, 100000);
   const projectedLatency = baseResult?.avgResponseMs * degradationFactor;
 
   const requiredThroughput = targetUsers / 10;
-  const serversNeeded = Math?.ceil(
+  const serversNeeded = Math.ceil(
     requiredThroughput / baseResult?.requestsPerSecond,
   );
 
@@ -259,15 +259,15 @@ function formatNumber(n: number): string {
 }
 
 async function main() {
-  logger?.info("MAX BOOSTER LOAD TESTING - SCALING TO 80 BILLION USERS");
+  logger.info("MAX BOOSTER LOAD TESTING - SCALING TO 80 BILLION USERS");
 
   let cookie = "";
   try {
-    logger?.info("Authenticating...");
+    logger.info("Authenticating...");
     cookie = await getAuthCookie();
-    logger?.info("Authenticated");
+    logger.info("Authenticated");
   } catch (e) {
-    logger?.warn("Auth failed, proceeding with unauthenticated tests");
+    logger.warn("Auth failed, proceeding with unauthenticated tests");
   }
 
   const endpoints = [
@@ -311,12 +311,12 @@ async function main() {
   const allIssues: string[] = [];
 
   for (const ep of endpoints) {
-    logger?.info(`Testing: ${ep?.name}`, { path: ep.path });
+    logger.info(`Testing: ${ep?.name}`, { path: ep.path });
 
     const results: LoadTestResult[] = [];
 
     for (const concurrency of scales) {
-      process?.stdout.write(`  Testing ${concurrency} concurrent users... `);
+      process.stdout.write(`  Testing ${concurrency} concurrent users... `);
 
       try {
         const result = await runConcurrentRequests(
@@ -333,7 +333,7 @@ async function main() {
           (result?.successfulRequests / result?.totalRequests) *
           100
         ).toFixed(1);
-        logger?.info(`Load test passed`, {
+        logger.info(`Load test passed`, {
           endpoint: ep.path,
           concurrency,
           reqPerSec: result.requestsPerSecond.toFixed(0),
@@ -343,11 +343,11 @@ async function main() {
 
         if (result?.failedRequests > 0) {
           allIssues?.push(
-            `${ep?.name} at ${concurrency} users: ${JSON?.stringify(result?.errors)}`,
+            `${ep?.name} at ${concurrency} users: ${JSON.stringify(result?.errors)}`,
           );
         }
       } catch (error) {
-        logger?.warn(`Load test failed`, {
+        logger.warn(`Load test failed`, {
           endpoint: ep.path,
           concurrency,
           error: error.message,
@@ -359,7 +359,7 @@ async function main() {
     allResults?.set(ep?.name, results);
   }
 
-  logger?.info("SCALE PROJECTIONS UP TO 80 BILLION USERS");
+  logger.info("SCALE PROJECTIONS UP TO 80 BILLION USERS");
 
   for (const [name, results] of allResults?.entries()) {
     if (results?.length === 0) continue;
@@ -375,13 +375,13 @@ async function main() {
         `~${formatNumber(projection?.serversNeeded)} servers, ${projection?.projectedLatency.toFixed(0)}ms latency`;
     }
 
-    logger?.info(`Scale projection: ${name}`, {
+    logger.info(`Scale projection: ${name}`, {
       basePerformance: `${bestResult?.requestsPerSecond.toFixed(0)} req/s, ${bestResult?.avgResponseMs.toFixed(0)}ms latency`,
       ...projections,
     });
   }
 
-  logger?.info("Recommendations for 80 billion scale", {
+  logger.info("Recommendations for 80 billion scale", {
     infrastructure: [
       "Deploy 50,000+ Kubernetes pods across 100 regions",
       "Use multi-cloud (AWS + GCP + Azure) for redundancy",
@@ -414,23 +414,23 @@ async function main() {
   });
 
   if (allIssues?.length > 0) {
-    logger?.warn("Issues detected during testing", {
+    logger.warn("Issues detected during testing", {
       issues: [...new Set(allIssues)],
     });
   }
 
   const totalEndpoints = allResults?.size;
-  const successfulEndpoints = Array?.from(allResults?.values()).filter(
+  const successfulEndpoints = Array.from(allResults?.values()).filter(
     (r) =>
       r?.length > 0 &&
       r[r?.length - 1].failedRequests / r[r?.length - 1].totalRequests < 0.05,
   ).length;
 
-  logger?.info("Load testing complete", {
+  logger.info("Load testing complete", {
     summary: `${successfulEndpoints}/${totalEndpoints} endpoints passed stress testing`,
     conclusion:
       "Platform is architecturally prepared for 80 billion scale with recommended infrastructure.",
   });
 }
 
-main().catch((err) => logger?.warn("Load test failed", { error: err }));
+main().catch((err) => logger.warn("Load test failed", { error: err }));

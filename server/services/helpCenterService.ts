@@ -342,7 +342,7 @@ export class HelpCenterService {
     category?: string;
     assignedTo?: number;
   }): Promise<SupportTicket[]> {
-    let tickets = Array?.from(ticketStore?.values());
+    let tickets = Array.from(ticketStore?.values());
 
     if (filters) {
       if (filters?.status) {
@@ -450,7 +450,7 @@ export class HelpCenterService {
     resolved: number;
     avgResolutionTime: number;
   }> {
-    const tickets = Array?.from(ticketStore?.values());
+    const tickets = Array.from(ticketStore?.values());
 
     let totalResolutionTime = 0;
     let resolvedCount = 0;

@@ -3,7 +3,7 @@ import type { Metric } from "web-vitals";
 const VITALS_ENDPOINT = "/api/metrics/web-vitals";
 
 function send(metric: Metric): void {
-  const body = JSON?.stringify({
+  const body = JSON.stringify({
     name: metric.name,
     value: metric.value,
     rating: metric.rating,

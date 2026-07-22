@@ -180,7 +180,7 @@ export const useStudioLayoutStore = create<StudioLayoutState>()(
       setChannelWidth: (width) => set({ channelWidth: width }),
 
       setZoomLevel: (level) =>
-        set({ zoomLevel: Math.max(0.1, Math?.min(10, level)) }),
+        set({ zoomLevel: Math.max(0.1, Math.min(10, level)) }),
 
       setScroll: (horizontal, vertical) =>
         set({

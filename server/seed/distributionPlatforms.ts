@@ -1938,13 +1938,13 @@ export const DISTRIBUTION_PLATFORMS = [
 ];
 
 export async function seedDistributionPlatforms() {
-  logger?.info("🌱 Seeding distribution platforms...");
+  logger.info("🌱 Seeding distribution platforms...");
 
   try {
     const [{ total }] = await db?.select({ total: count() }).from(dspProviders);
 
     if (Number(total) >= DISTRIBUTION_PLATFORMS?.length) {
-      logger?.info(
+      logger.info(
         `✅ Distribution platform seeding complete! ${DISTRIBUTION_PLATFORMS?.length} platforms available.`,
       );
       return;
@@ -1969,11 +1969,11 @@ export async function seedDistributionPlatforms() {
         },
       });
 
-    logger?.info(
+    logger.info(
       `✅ Distribution platform seeding complete! ${DISTRIBUTION_PLATFORMS?.length} platforms available.`,
     );
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "❌ Error seeding distribution platforms:");
+    logger.warn({ err: error }, "❌ Error seeding distribution platforms:");
     throw error;
   }
 }

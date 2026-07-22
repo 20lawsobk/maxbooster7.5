@@ -122,7 +122,7 @@ export function useMultiTrackRecorder(
 
         return { stream, source, analyser, intervalId };
       } catch (error: unknown) {
-        logger?.error("Error starting input monitoring:", error);
+        logger.error("Error starting input monitoring:", error);
         return null;
       }
     },
@@ -249,7 +249,7 @@ export function useMultiTrackRecorder(
 
         return { sessionId, takeGroupId, takeNumber };
       } catch (error: unknown) {
-        logger?.error("Error starting multi-track recording:", error);
+        logger.error("Error starting multi-track recording:", error);
         throw error;
       }
     },
@@ -349,7 +349,7 @@ export function useMultiTrackRecorder(
           const result = await response?.json();
           uploadResults?.set(trackId, result);
         } catch (error: unknown) {
-          logger?.error(
+          logger.error(
             `Error uploading recording for track ${trackId}:`,
             error,
           );
@@ -365,7 +365,7 @@ export function useMultiTrackRecorder(
   const compensateLatency = useCallback(
     (startPosition: number): number => {
       const latencySec = state?.latencyMs / 1000;
-      return Math?.max(0, startPosition - latencySec);
+      return Math.max(0, startPosition - latencySec);
     },
     [state?.latencyMs],
   );

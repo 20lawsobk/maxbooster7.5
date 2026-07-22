@@ -166,8 +166,8 @@ export function useSmartScheduling(
       const times = daySuggestions?.map((s) =>
         parseInt(s?.specificTime.split(":")[0]),
       );
-      const minHour = Math?.min(...times);
-      const maxHour = Math?.max(...times);
+      const minHour = Math.min(...times);
+      const maxHour = Math.max(...times);
 
       return {
         start: `${minHour?.toString().padStart(2, "0")}:00`,

@@ -238,7 +238,7 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
     }
 
     // 3. gTLD → live DNS/RDAP check
-    const dnsGone = await this?._dnsAvailable(domain);
+    const dnsGone = await this._dnsAvailable(domain);
     const tld = "." + domain?.split(".").slice(1).join(".");
     const priceEntry = DOMAIN_PRICES[tld];
 
@@ -289,9 +289,9 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
     });
 
     // Auto-create DNS zone with all 3 nameservers
-    await this?._ensureDnsZone(domain, userId, true, registryId);
+    await this._ensureDnsZone(domain, userId, true, registryId);
 
-    logger?.info(
+    logger.info(
       { fqdn: domain, registryId, provider: this.name, ns: ALL_NS },
       "[MaxBoosterRegistrar] Domain registered",
     );
@@ -331,7 +331,7 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
       .set({ expiresAt, status: "active", updatedAt: new Date() })
       .where(eq(claimedDomains?.id, row?.id));
 
-    logger?.info(
+    logger.info(
       { fqdn: domain, years, expiresAt, provider: this.name },
       "[MaxBoosterRegistrar] Domain renewed",
     );
@@ -367,13 +367,13 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
         );
       }
     } catch (e) {
-      logger?.warn(
+      logger.warn(
         { fqdn, err: e.message },
         "[MaxBoosterRegistrar] NS zone record update failed (non-fatal)",
       );
     }
 
-    logger?.info(
+    logger.info(
       { fqdn: domain, ns1, ns2, provider: this.name },
       "[MaxBoosterRegistrar] Nameservers updated",
     );
@@ -436,12 +436,12 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
     try {
       await pool.query("DELETE FROM dns_zones WHERE domain = $1", [domain]);
     } catch (e) {
-      logger?.warn(
+      logger.warn(
         { fqdn, err: e.message },
         "[MaxBoosterRegistrar] DNS zone removal on release failed (non-fatal)",
       );
     }
-    logger?.info(
+    logger.info(
       { fqdn: domain, provider: this.name },
       "[MaxBoosterRegistrar] Domain released",
     );
@@ -471,7 +471,7 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
       pricePaidCents: 0,
     });
 
-    await this?._ensureDnsZone(domain, userId, false, null);
+    await this._ensureDnsZone(domain, userId, false, null);
 
     return {
       ok: true,
@@ -552,12 +552,12 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
         ],
       );
 
-      logger?.info(
+      logger.info(
         { domain, zoneId, ns: ALL_NS },
         "[MaxBoosterRegistrar] DNS zone ensured",
       );
     } catch (e) {
-      logger?.warn(
+      logger.warn(
         { domain, err: e.message },
         "[MaxBoosterRegistrar] _ensureDnsZone failed (non-fatal)",
       );

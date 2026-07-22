@@ -93,11 +93,11 @@ export class AutonomousService extends EventEmitter {
 
   constructor() {
     super();
-    this.autonomousMode = process?.env.AUTONOMOUS_MODE === "true" || false;
-    this.config = this?.getDefaultConfig();
-    this.metrics = this?.initializeMetrics();
-    this?.loadAutonomousWhitelist();
-    this?.loadMetricsFromCache();
+    this.autonomousMode = process.env.AUTONOMOUS_MODE === "true" || false;
+    this.config = this.getDefaultConfig();
+    this.metrics = this.initializeMetrics();
+    this.loadAutonomousWhitelist();
+    this.loadMetricsFromCache();
   }
 
 
@@ -107,7 +107,7 @@ export class AutonomousService extends EventEmitter {
     // If PDIM circuit is OPEN at startup, the load will fail for every attempt.
     // Skip silently and schedule a retry — in-memory defaults are already in place.
     if (cbIsOpen()) {
-      setTimeout(() => this?.loadMetricsFromCache(), 30_000);
+      setTimeout(() => this.loadMetricsFromCache(), 30_000);
       return;
     }
     try {
@@ -115,7 +115,7 @@ export class AutonomousService extends EventEmitter {
         await distributedCache?.get<AutonomousMetrics>(METRICS_CACHE_KEY);
       if (cached) {
         this.metrics = { ...cached, lastUpdated: new Date(cached?.lastUpdated) };
-        logger?.info("[AUTONOMOUS] Metrics restored from shared cache");
+        logger.info("[AUTONOMOUS] Metrics restored from shared cache");
       }
     } catch (err) {
       // Only warn when PDIM is genuinely UP but the cache operation fails unexpectedly.
@@ -124,7 +124,7 @@ export class AutonomousService extends EventEmitter {
         const now = Date?.now();
         if (now - _lastLoadWarnAt >= 60_000) {
           _lastLoadWarnAt = now;
-          logger?.warn(
+          logger.warn(
             { err: err },
             "[AUTONOMOUS] Could not load metrics from cache:",
           );
@@ -135,7 +135,7 @@ export class AutonomousService extends EventEmitter {
 
   async persistMetricsToCache(): Promise<void> {
     try {
-      await distributedCache?.set(METRICS_CACHE_KEY, this?.metrics, 3600);
+      await distributedCache?.set(METRICS_CACHE_KEY, this.metrics, 3600);
     } catch (err) {
       // Rate-limit to once per 60 s so a sustained PDIM outage doesn't flood logs.
       const now = Date.now();
@@ -344,12 +344,12 @@ export class AutonomousService extends EventEmitter {
           userId,
         );
         if (!dispatch?.success) {
-          logger?.warn(
+          logger.warn(
             `[AUTONOMOUS] Campaign ${newCampaign?.id} created but not dispatched: ${dispatch?.error ?? dispatch?.message}`,
           );
         }
         scheduleCampaignOptimization(newCampaign?.id).catch((err) =>
-          logger?.warn(
+          logger.warn(
             { err: err },
             "[AUTONOMOUS] Failed to schedule campaign optimization:",
           ),
@@ -364,7 +364,7 @@ export class AutonomousService extends EventEmitter {
           requiresApproval: false,
         };
       } else {
-        logger?.info(
+        logger.info(
           `[APPROVAL] Routing campaign through approval for user ${userId}`,
         );
 
@@ -379,7 +379,7 @@ export class AutonomousService extends EventEmitter {
         // campaign-level review pipeline in approvalService (it is post-centric),
         // so we do not submit it there — doing so previously threw and silently
         // discarded the campaign. The pending record is the source of truth.
-        logger?.info(
+        logger.info(
           `[APPROVAL] Campaign ${newCampaign?.id} created as pending for user ${userId} (awaiting manual approval)`,
         );
 
@@ -390,10 +390,10 @@ export class AutonomousService extends EventEmitter {
         };
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error in autonomous campaign launch:");
+      logger.warn({ err: error }, "Error in autonomous campaign launch:");
       return {
         success: false,
-        requiresApproval: !this?.isAutonomousEnabled(userId),
+        requiresApproval: !this.isAutonomousEnabled(userId),
       };
     }
   }
@@ -404,11 +404,11 @@ export class AutonomousService extends EventEmitter {
     platforms: string[],
   ): Promise<AutoContentResult> {
     try {
-      if (!this?.config.contentOptimization) {
+      if (!this.config.contentOptimization) {
         return { success: false };
       }
 
-      logger?.info(`[AUTO-CONTENT] Generating optimized content for ${userId}`);
+      logger.info(`[AUTO-CONTENT] Generating optimized content for ${userId}`);
 
       const variants = await contentVariantGenerator?.generateVariants({
         topic,
@@ -452,7 +452,7 @@ export class AutonomousService extends EventEmitter {
         platforms,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error in auto content generation:");
+      logger.warn({ err: error }, "Error in auto content generation:");
       return { success: false };
     }
   }
@@ -462,11 +462,11 @@ export class AutonomousService extends EventEmitter {
     releaseData: Partial<Release>,
   ): Promise<AutoDistributionResult> {
     try {
-      if (!this?.config.distribution) {
+      if (!this.config.distribution) {
         return { success: false };
       }
 
-      logger?.info(`[AUTO-DISTRIBUTE] Processing release for ${userId}`);
+      logger.info(`[AUTO-DISTRIBUTE] Processing release for ${userId}`);
 
       const release = await distributionService?.createRelease({
         ...releaseData,
@@ -493,7 +493,7 @@ export class AutonomousService extends EventEmitter {
           );
           dispatchResults?.push({ provider, ...result });
         } catch (err) {
-          logger?.warn({ err: err }, `Failed to dispatch to ${provider}:`);
+          logger.warn({ err: err }, `Failed to dispatch to ${provider}:`);
         }
       }
 
@@ -513,7 +513,7 @@ export class AutonomousService extends EventEmitter {
         royaltyProjection,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error in auto distribution:");
+      logger.warn({ err: error }, "Error in auto distribution:");
       return { success: false };
     }
   }
@@ -529,11 +529,11 @@ export class AutonomousService extends EventEmitter {
     } = {},
   ): Promise<AutoImageResult> {
     try {
-      if (!this?.config.imageProcessing) {
+      if (!this.config.imageProcessing) {
         return { success: false };
       }
 
-      logger?.info("[AUTO-IMAGE] Processing image with Sharp");
+      logger.info("[AUTO-IMAGE] Processing image with Sharp");
 
       let processor = sharp(imageBuffer);
       const metadata = await processor?.metadata();
@@ -607,7 +607,7 @@ export class AutonomousService extends EventEmitter {
         optimizedSize: outputBuffer.length,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error in auto image processing:");
+      logger.warn({ err: error }, "Error in auto image processing:");
       return { success: false };
     }
   }
@@ -618,7 +618,7 @@ export class AutonomousService extends EventEmitter {
   ): Promise<AutoImageResult> {
     const standardSize = 3000;
 
-    return this?.autoProcessImage(imageBuffer, {
+    return this.autoProcessImage(imageBuffer, {
       resize: { width: standardSize, height: standardSize },
       format: "jpeg",
       quality: 100,
@@ -647,7 +647,7 @@ export class AutonomousService extends EventEmitter {
 
     const specs = platformSpecs[platform] || platformSpecs?.instagram_post;
 
-    return this?.autoProcessImage(imageBuffer, {
+    return this.autoProcessImage(imageBuffer, {
       resize: { width: specs.width, height: specs.height },
       format: specs.format,
       quality: 95,
@@ -662,11 +662,11 @@ export class AutonomousService extends EventEmitter {
     predictions?: Record<string, unknown>;
   }> {
     try {
-      if (!this?.config.analytics) {
+      if (!this.config.analytics) {
         return { success: false };
       }
 
-      logger?.info(`[AUTO-ANALYTICS] Generating insights for ${userId}`);
+      logger.info(`[AUTO-ANALYTICS] Generating insights for ${userId}`);
 
       const analyticsData = await storage?.getAnalyticsData(userId);
 
@@ -711,7 +711,7 @@ export class AutonomousService extends EventEmitter {
         predictions,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error in auto analytics:");
+      logger.warn({ err: error }, "Error in auto analytics:");
       return { success: false };
     }
   }
@@ -723,11 +723,11 @@ export class AutonomousService extends EventEmitter {
     recommendations?: Record<string, unknown>;
   }> {
     try {
-      if (!this?.config.growthHacking) {
+      if (!this.config.growthHacking) {
         return { success: false };
       }
 
-      logger?.info(`[AUTO-GROWTH] Optimizing growth for ${userId}`);
+      logger.info(`[AUTO-GROWTH] Optimizing growth for ${userId}`);
 
       const algorithmInsights = await algorithmIntelligence?.analyzeAlgorithm({
         platforms: ["instagram", "tiktok", "twitter", "youtube"],
@@ -766,7 +766,7 @@ export class AutonomousService extends EventEmitter {
         recommendations: algorithmInsights,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error in auto growth optimization:");
+      logger.warn({ err: error }, "Error in auto growth optimization:");
       return { success: false };
     }
   }
@@ -780,7 +780,7 @@ export class AutonomousService extends EventEmitter {
     totalReach?: number;
   }> {
     try {
-      logger?.info(`[AUTO-SCHEDULE] Creating week schedule for ${userId}`);
+      logger.info(`[AUTO-SCHEDULE] Creating week schedule for ${userId}`);
 
       const scheduledPosts: Record<string, unknown>[] = [];
       const now = new Date();
@@ -788,7 +788,7 @@ export class AutonomousService extends EventEmitter {
       for (let i = 0; i < contentPlan?.length; i++) {
         const plan = contentPlan[i];
 
-        const contentResult = await this?.autoGenerateContent(
+        const contentResult = await this.autoGenerateContent(
           userId,
           plan?.topic,
           plan?.platforms,
@@ -796,10 +796,10 @@ export class AutonomousService extends EventEmitter {
 
         if (contentResult?.success) {
           const scheduledDate = new Date(now);
-          scheduledDate?.setDate(scheduledDate?.getDate() + Math?.floor(i / 3));
+          scheduledDate?.setDate(scheduledDate?.getDate() + Math.floor(i / 3));
           scheduledDate?.setHours(9 + (i % 3) * 4);
 
-          const postResult = await this?.postContent(
+          const postResult = await this.postContent(
             userId,
             {
               content: contentResult.variants?.[0],
@@ -831,7 +831,7 @@ export class AutonomousService extends EventEmitter {
         totalReach,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error in auto week scheduling:");
+      logger.warn({ err: error }, "Error in auto week scheduling:");
       return { success: false };
     }
   }
@@ -850,9 +850,9 @@ export class AutonomousService extends EventEmitter {
         publishedAt: new Date(),
       });
 
-      logger?.info(`[AUTONOMOUS] Content ${postId} published successfully`);
+      logger.info(`[AUTONOMOUS] Content ${postId} published successfully`);
     } catch (error: unknown) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `[AUTONOMOUS] Error dispatching content ${postId}:`,
       );
@@ -885,7 +885,7 @@ export class AutonomousService extends EventEmitter {
       this.metrics.campaignsOptimized++;
       this.metrics.lastUpdated = new Date();
 
-      logger?.info(
+      logger.info(
         `[AUTONOMOUS] Campaign ${campaignId} optimized - CTR: ${metrics?.ctr}, ROAS: ${metrics?.roas}`,
       );
 
@@ -909,14 +909,14 @@ export class AutonomousService extends EventEmitter {
             },
           })
           .catch((err) =>
-            logger?.warn(
+            logger.warn(
               { err: err },
               "[AUTONOMOUS] Failed to send campaign notification:",
             ),
           );
       }
     } catch (error: unknown) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `[AUTONOMOUS] Error optimizing campaign ${campaignId}:`,
       );
@@ -925,14 +925,14 @@ export class AutonomousService extends EventEmitter {
 
   async runContentDispatch(): Promise<void> {
     try {
-      const autonomousUsers = Array?.from(this?.autonomousWhitelist);
+      const autonomousUsers = Array.from(this.autonomousWhitelist);
 
       for (const userId of autonomousUsers) {
         const pendingPosts = await storage?.getPendingSocialPosts(userId);
 
         for (const post of pendingPosts) {
           if (post?.scheduledAt && new Date(post?.scheduledAt) <= new Date()) {
-            await this?.dispatchAutonomousContent(post?.id);
+            await this.dispatchAutonomousContent(post?.id);
           }
         }
 
@@ -944,7 +944,7 @@ export class AutonomousService extends EventEmitter {
         }
       }
     } catch (error: unknown) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "[AUTONOMOUS] Error in content dispatch job:",
       );
@@ -953,46 +953,46 @@ export class AutonomousService extends EventEmitter {
 
   async runPeriodicAnalytics(): Promise<void> {
     try {
-      const autonomousUsers = Array?.from(this?.autonomousWhitelist);
+      const autonomousUsers = Array.from(this.autonomousWhitelist);
 
       for (const userId of autonomousUsers) {
-        await this?.autoAnalyzePerformance(userId);
-        await this?.autoOptimizeGrowth(userId);
+        await this.autoAnalyzePerformance(userId);
+        await this.autoOptimizeGrowth(userId);
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "[AUTONOMOUS] Error in analytics job:");
+      logger.warn({ err: error }, "[AUTONOMOUS] Error in analytics job:");
     }
   }
 
   startAutonomousOperations(): void {
-    if (this?.isRunning) return;
+    if (this.isRunning) return;
     this.isRunning = true;
 
-    logger?.info("[AUTONOMOUS] Starting 24/7 autonomous operations...");
+    logger.info("[AUTONOMOUS] Starting 24/7 autonomous operations...");
 
     setupRepeatableJobs().catch((err) =>
-      logger?.warn(
+      logger.warn(
         { err: err },
         "[AUTONOMOUS] Failed to register repeatable jobs:",
       ),
     );
 
-    logger?.info("[AUTONOMOUS] 24/7 operations started successfully");
-    this?.emit("operationsStarted");
+    logger.info("[AUTONOMOUS] 24/7 operations started successfully");
+    this.emit("operationsStarted");
   }
 
   stopAutonomousOperations(): void {
     this.isRunning = false;
 
     teardownRepeatableJobs().catch((err) =>
-      logger?.warn(
+      logger.warn(
         { err: err },
         "[AUTONOMOUS] Failed to remove repeatable jobs:",
       ),
     );
 
-    logger?.info("[AUTONOMOUS] 24/7 operations stopped");
-    this?.emit("operationsStopped");
+    logger.info("[AUTONOMOUS] 24/7 operations stopped");
+    this.emit("operationsStopped");
   }
 
   getStatus(): {

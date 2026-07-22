@@ -125,7 +125,7 @@ class CatalogImporter {
       })
       .returning();
 
-    logger?.info(`Created import job ${job?.id} for user ${userId}`);
+    logger.info(`Created import job ${job?.id} for user ${userId}`);
     return job?.id;
   }
 
@@ -137,13 +137,13 @@ class CatalogImporter {
       );
     }
 
-    const headers = this?.parseCSVLine(lines[0]).map((h) =>
-      this?.normalizeHeader(h),
+    const headers = this.parseCSVLine(lines[0]).map((h) =>
+      this.normalizeHeader(h),
     );
     const rows: ImportRow[] = [];
 
     for (let i = 1; i < lines?.length; i++) {
-      const values = this?.parseCSVLine(lines[i]);
+      const values = this.parseCSVLine(lines[i]);
       const row: ImportRow = {} as ImportRow;
 
       for (let j = 0; j < headers?.length; j++) {
@@ -153,7 +153,7 @@ class CatalogImporter {
         if (value) {
           const mappedField =
             CSV_COLUMN_MAPPINGS[header?.toLowerCase()] || header;
-          row[mappedField] = this?.parseValue(mappedField, value);
+          row[mappedField] = this.parseValue(mappedField, value);
         }
       }
 

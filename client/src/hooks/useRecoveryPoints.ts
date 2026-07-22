@@ -255,7 +255,7 @@ export function useRecoveryPoints(
         name: "Auto-recovery point",
         description: `Automatically created at ${new Date().toLocaleTimeString()}`,
       }).catch((err) => {
-        logger?.warn("Auto-recovery failed:", err);
+        logger.warn("Auto-recovery failed:", err);
       });
     }, autoRecoveryInterval);
 

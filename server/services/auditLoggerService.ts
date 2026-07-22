@@ -52,27 +52,27 @@ export class AuditLoggerService {
     this.archivalCronJob = cron?.schedule(
       "0 3 * * *",
       async () => {
-        await this?.archiveOldLogs();
+        await this.archiveOldLogs();
       },
       {
         timezone: "UTC",
       },
     );
 
-    logger?.info(
+    logger.info(
       "✅ AuditLoggerService initialized - daily archival job at 3 AM UTC",
     );
   }
 
   public stop(): void {
-    if (this?.archivalCronJob) {
-      this?.archivalCronJob.stop();
-      logger?.info("🛑 AuditLoggerService stopped");
+    if (this.archivalCronJob) {
+      this.archivalCronJob.stop();
+      logger.info("🛑 AuditLoggerService stopped");
     }
   }
 
   private generateHash(entry: AuditLogEntry, timestamp: Date): string {
-    const data = JSON?.stringify({
+    const data = JSON.stringify({
       ...entry,
       timestamp: timestamp.toISOString(),
       prevHash: this.lastHash,
@@ -83,8 +83,8 @@ export class AuditLoggerService {
   public async log(entry: AuditLogEntry): Promise<AuditLog | null> {
     try {
       const timestamp = new Date();
-      const hash = this?.generateHash(entry, timestamp);
-      const prevHash = this?.lastHash;
+      const hash = this.generateHash(entry, timestamp);
+      const prevHash = this.lastHash;
 
       const [auditLog] = await db
         .insert(auditLogs)
@@ -112,7 +112,7 @@ export class AuditLoggerService {
       this.lastHash = hash;
 
       if (entry?.riskLevel === "high" || entry?.riskLevel === "critical") {
-        logger?.warn(`🔒 High-risk audit event: ${entry?.action}`, {
+        logger.warn(`🔒 High-risk audit event: ${entry?.action}`, {
           userId: entry.userId,
           resourceType: entry.resourceType,
           resourceId: entry.resourceId,
@@ -122,7 +122,7 @@ export class AuditLoggerService {
 
       return auditLog;
     } catch (error) {
-      logger?.warn({ err: error }, "❌ Failed to persist audit log:");
+      logger.warn({ err: error }, "❌ Failed to persist audit log:");
       return null;
     }
   }
@@ -136,7 +136,7 @@ export class AuditLoggerService {
     sessionId?: string,
     details?: Record<string, any>,
   ): Promise<void> {
-    await this?.log({
+    await this.log({
       userId,
       userEmail,
       action: "LOGIN",
@@ -161,7 +161,7 @@ export class AuditLoggerService {
     userAgent: string,
     sessionId?: string,
   ): Promise<void> {
-    await this?.log({
+    await this.log({
       userId,
       userEmail,
       action: "LOGOUT",
@@ -184,7 +184,7 @@ export class AuditLoggerService {
     sessionId?: string,
     details?: Record<string, any>,
   ): Promise<void> {
-    await this?.log({
+    await this.log({
       userId,
       userEmail,
       action: "REGISTER",
@@ -209,7 +209,7 @@ export class AuditLoggerService {
     sessionId?: string,
     stripeSessionId?: string,
   ): Promise<void> {
-    await this?.log({
+    await this.log({
       userId,
       userEmail,
       action: "PAYMENT",
@@ -239,7 +239,7 @@ export class AuditLoggerService {
     sessionId?: string,
     details?: Record<string, any>,
   ): Promise<void> {
-    await this?.log({
+    await this.log({
       userId,
       userEmail,
       action: `ADMIN_${action?.toUpperCase()}`,
@@ -267,7 +267,7 @@ export class AuditLoggerService {
     success: boolean,
     sessionId?: string,
   ): Promise<void> {
-    await this?.log({
+    await this.log({
       userId,
       userEmail,
       action: "FILE_UPLOAD",
@@ -295,7 +295,7 @@ export class AuditLoggerService {
     success: boolean,
     sessionId?: string,
   ): Promise<void> {
-    await this?.log({
+    await this.log({
       userId,
       userEmail,
       action: "OAUTH_CONNECT",
@@ -318,7 +318,7 @@ export class AuditLoggerService {
     sessionId?: string,
     details?: Record<string, any>,
   ): Promise<void> {
-    await this?.log({
+    await this.log({
       action: `SECURITY_${event?.toUpperCase()}`,
       resourceType: "security",
       ipAddress,
@@ -336,7 +336,7 @@ export class AuditLoggerService {
     ipAddress: string,
     userAgent: string,
   ): Promise<void> {
-    await this?.log({
+    await this.log({
       action: "RATE_LIMIT_EXCEEDED",
       resourceType: "security",
       ipAddress,
@@ -358,7 +358,7 @@ export class AuditLoggerService {
     userAgent: string,
     sessionId?: string,
   ): Promise<void> {
-    await this?.log({
+    await this.log({
       userId,
       userEmail,
       action: "DATA_EXPORT",
@@ -384,7 +384,7 @@ export class AuditLoggerService {
     userAgent: string,
     sessionId?: string,
   ): Promise<void> {
-    await this?.log({
+    await this.log({
       userId,
       userEmail,
       action: "DATA_DELETE",
@@ -411,7 +411,7 @@ export class AuditLoggerService {
     userAgent: string,
     sessionId?: string,
   ): Promise<void> {
-    await this?.log({
+    await this.log({
       userId,
       userEmail,
       action: "CONSENT_UPDATE",
@@ -480,7 +480,7 @@ export class AuditLoggerService {
         total: countResult.count || 0,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "❌ Failed to query audit logs:");
+      logger.warn({ err: error }, "❌ Failed to query audit logs:");
       throw error;
     }
   }
@@ -489,7 +489,7 @@ export class AuditLoggerService {
     userId: string,
     limit: number = 100,
   ): Promise<AuditLog[]> {
-    const result = await this?.queryLogs({
+    const result = await this.queryLogs({
       userId,
       limit,
       includeArchived: false,
@@ -502,9 +502,9 @@ export class AuditLoggerService {
     errors: number;
   }> {
     const cutoffDate = new Date();
-    cutoffDate?.setDate(cutoffDate?.getDate() - this?.RETENTION_DAYS);
+    cutoffDate?.setDate(cutoffDate?.getDate() - this.RETENTION_DAYS);
 
-    logger?.info(
+    logger.info(
       `📦 Starting audit log archival for logs older than ${cutoffDate?.toISOString()}`,
     );
 
@@ -524,8 +524,8 @@ export class AuditLoggerService {
         .returning({ id: auditLogs.id });
 
       const archivedCount = result?.length;
-      logger?.info(
-        `✅ Archived ${archivedCount} audit logs older than ${this?.RETENTION_DAYS} days`,
+      logger.info(
+        `✅ Archived ${archivedCount} audit logs older than ${this.RETENTION_DAYS} days`,
       );
 
       return {
@@ -533,7 +533,7 @@ export class AuditLoggerService {
         errors: 0,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "❌ Failed to archive audit logs:");
+      logger.warn({ err: error }, "❌ Failed to archive audit logs:");
       return {
         archived: 0,
         errors: 1,
@@ -557,12 +557,12 @@ export class AuditLoggerService {
         .returning({ id: auditLogs.id });
 
       const purgedCount = result?.length;
-      logger?.info(
+      logger.info(
         `🗑️ Purged ${purgedCount} archived audit logs older than ${olderThanDays} days`,
       );
       return purgedCount;
     } catch (error) {
-      logger?.warn({ err: error }, "❌ Failed to purge archived logs:");
+      logger.warn({ err: error }, "❌ Failed to purge archived logs:");
       throw error;
     }
   }
@@ -641,7 +641,7 @@ export class AuditLoggerService {
         newestLog: newestLog.timestamp || null,
       };
     } catch (error) {
-      logger?.warn({ err: error }, "❌ Failed to get audit log stats:");
+      logger.warn({ err: error }, "❌ Failed to get audit log stats:");
       throw error;
     }
   }

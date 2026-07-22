@@ -43,21 +43,21 @@ class RedisRateLimitStore implements Store {
   init(options: Options): void {
     this.windowMs = options?.windowMs;
     this.maxRequests =
-      typeof options?.max === "number" ? options?.max : this?.maxRequests;
+      typeof options?.max === "number" ? options?.max : this.maxRequests;
   }
 
   private fallbackIncrement(key: string): IncrementResponse {
     const now = Date?.now();
-    if (now - this?.fallbackPrunedAt > 60_000) {
-      for (const [k, v] of this?.fallbackStore) {
-        if (now > v?.resetAt) this?.fallbackStore.delete(k);
+    if (now - this.fallbackPrunedAt > 60_000) {
+      for (const [k, v] of this.fallbackStore) {
+        if (now > v?.resetAt) this.fallbackStore.delete(k);
       }
       this.fallbackPrunedAt = now;
     }
-    const entry = this?.fallbackStore.get(key);
+    const entry = this.fallbackStore.get(key);
     if (!entry || now > entry?.resetAt) {
-      const resetAt = now + this?.windowMs;
-      this?.fallbackStore.set(key, { hits: 1, resetAt });
+      const resetAt = now + this.windowMs;
+      this.fallbackStore.set(key, { hits: 1, resetAt });
       return { totalHits: 1, resetTime: new Date(resetAt) };
     }
     entry.hits += 1;
@@ -67,9 +67,9 @@ class RedisRateLimitStore implements Store {
   async increment(key: string): Promise<IncrementResponse> {
     const rKey = `${RL_PREFIX}${key}`;
     const now = Date?.now();
-    const windowStart = now - this?.windowMs;
-    const entryId = `${now}:${Math?.random().toString(36).slice(2, 9)}`;
-    const windowExpireSecs = Math?.ceil(this?.windowMs / 1000) + 60;
+    const windowStart = now - this.windowMs;
+    const entryId = `${now}:${Math.random().toString(36).slice(2, 9)}`;
+    const windowExpireSecs = Math.ceil(this.windowMs / 1000) + 60;
 
     try {
       const redis = getRedisClient();
@@ -83,7 +83,7 @@ class RedisRateLimitStore implements Store {
               1,
               rKey,
               String(windowStart),
-              String(this?.maxRequests),
+              String(this.maxRequests),
               String(now),
               entryId,
               String(windowExpireSecs),
@@ -91,11 +91,11 @@ class RedisRateLimitStore implements Store {
             // Lua returns [{isLimited: 0|1}, {remaining}]; convert to totalHits.
             // express-rate-limit blocks when totalHits > max, so a limited request
             // must produce a value STRICTLY greater than maxRequests.
-            const arr = Array?.isArray(raw) ? raw : [];
+            const arr = Array.isArray(raw) ? raw : [];
             const isLimited = Number(arr[0] ?? 0) === 1;
             const remaining = Number(arr[1] ?? 0);
-            if (isLimited) return this?.maxRequests + 1; // force the limiter to block
-            return this?.maxRequests - remaining;
+            if (isLimited) return this.maxRequests + 1; // force the limiter to block
+            return this.maxRequests - remaining;
           } catch {
             // EVAL unsupported — PDIM does not support ZREMRANGEBYSCORE, so use
             // ZCOUNT directly to count only in-window members without pruning.
@@ -103,7 +103,7 @@ class RedisRateLimitStore implements Store {
             const count: number = await redis?.zcount(rKey, windowStart, "+inf");
             // Mirror the Lua path: do NOT record the request when already limited.
             // Avoids extending the blocking window on hot keys.
-            if (count >= this?.maxRequests) return this?.maxRequests + 1;
+            if (count >= this.maxRequests) return this.maxRequests + 1;
             await redis?.zadd(rKey, now, entryId);
             Promise?.resolve(redis?.expire(rKey, windowExpireSecs)).catch(
               () => {},
@@ -123,13 +123,13 @@ class RedisRateLimitStore implements Store {
           ),
         ),
       ]);
-      const resetTime = new Date(now + this?.windowMs);
+      const resetTime = new Date(now + this.windowMs);
       return { totalHits, resetTime };
     } catch {
-      logger?.warn(
+      logger.warn(
         "[GlobalRateLimit] Redis unavailable — using in-memory fallback",
       );
-      return this?.fallbackIncrement(key);
+      return this.fallbackIncrement(key);
     }
   }
 
@@ -142,13 +142,13 @@ class RedisRateLimitStore implements Store {
       const redis = getRedisClient();
       await redis?.zremrangebyrank(rKey, -1, -1);
     } catch {
-      const entry = this?.fallbackStore.get(key);
+      const entry = this.fallbackStore.get(key);
       if (entry && entry?.hits > 0) entry.hits--;
     }
   }
 
   async resetKey(key: string): Promise<void> {
-    this?.fallbackStore.delete(key);
+    this.fallbackStore.delete(key);
     try {
       const redis = getRedisClient();
       await redis?.del(`${RL_PREFIX}${key}`);
@@ -175,33 +175,33 @@ export const globalRateLimiter = rateLimit({
     error: "Too many requests",
     message:
       "You have exceeded the request limit. Please slow down and try again later.",
-    retryAfter: `${Math?.ceil(config?.rateLimiting.windowMs / 1000)} seconds`,
+    retryAfter: `${Math.ceil(config?.rateLimiting.windowMs / 1000)} seconds`,
   },
   standardHeaders: true,
   legacyHeaders: false,
   validate: { trustProxy: false },
   skip: (req: Request) => {
     const isDevelopment =
-      process?.env.NODE_ENV !== "production" && !process?.env.REPLIT_DEPLOYMENT;
+      process.env.NODE_ENV !== "production" && !process.env.REPLIT_DEPLOYMENT;
     const isMonitoringEndpoint =
-      req?.path.startsWith("/api/monitoring/") ||
-      req?.path.startsWith("/api/system/");
+      req.path.startsWith("/api/monitoring/") ||
+      req.path.startsWith("/api/system/");
     const isStaticAsset =
-      req?.path.startsWith("/@fs/") ||
-      req?.path.startsWith("/src/") ||
-      req?.path.startsWith("/node_modules/") ||
-      req?.path.startsWith("/@vite/") ||
-      req?.path.startsWith("/@react-refresh") ||
-      req?.path.startsWith("/@replit/");
+      req.path.startsWith("/@fs/") ||
+      req.path.startsWith("/src/") ||
+      req.path.startsWith("/node_modules/") ||
+      req.path.startsWith("/@vite/") ||
+      req.path.startsWith("/@react-refresh") ||
+      req.path.startsWith("/@replit/");
     const isLocalhost =
-      req?.ip === "127.0.0.1" ||
-      req?.ip === "::1" ||
-      req?.ip === "::ffff:127.0.0.1" ||
-      (typeof req?.ip === "string" && req?.ip.startsWith("10."));
+      req.ip === "127.0.0.1" ||
+      req.ip === "::1" ||
+      req.ip === "::ffff:127.0.0.1" ||
+      (typeof req.ip === "string" && req.ip.startsWith("10."));
     const isSessionMaintenance =
-      req?.path === "/api/auth/refresh-token" ||
-      req?.path === "/api/auth/me" ||
-      req?.path === "/api/auth/heartbeat";
+      req.path === "/api/auth/refresh-token" ||
+      req.path === "/api/auth/me" ||
+      req.path === "/api/auth/heartbeat";
 
     if (isMonitoringEndpoint) return true;
     if (isDevelopment) return true;
@@ -210,8 +210,8 @@ export const globalRateLimiter = rateLimit({
     return isStaticAsset;
   },
   handler: (req: Request, res: Response) => {
-    logger?.warn(`⚠️ Global rate limit exceeded for IP: ${req?.ip}`);
-    res?.status(429).json({
+    logger.warn(`⚠️ Global rate limit exceeded for IP: ${req.ip}`);
+    res.status(429).json({
       error: "Too many requests",
       message:
         "You have exceeded the request limit. Please slow down and try again later.",
@@ -231,10 +231,10 @@ export const criticalEndpointLimiter = rateLimit({
   validate: { trustProxy: false },
   skip: (req: Request) => {
     return (
-      req?.ip === "127.0.0.1" ||
-      req?.ip === "::1" ||
-      req?.ip === "::ffff:127.0.0.1" ||
-      (typeof req?.ip === "string" && req?.ip.startsWith("10."))
+      req.ip === "127.0.0.1" ||
+      req.ip === "::1" ||
+      req.ip === "::ffff:127.0.0.1" ||
+      (typeof req.ip === "string" && req.ip.startsWith("10."))
     );
   },
 });

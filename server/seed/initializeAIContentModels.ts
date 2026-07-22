@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { logger } from "../logger.js";
 
 export async function initializeAIContentModels() {
-  logger?.info("🚀 Initializing AI Content Models...");
+  logger.info("🚀 Initializing AI Content Models...");
 
   try {
     const models = [
@@ -127,12 +127,12 @@ export async function initializeAIContentModels() {
         .limit(1);
 
       if (existing) {
-        logger?.info(`   ✓ AI Model ${modelData?.modelName} already exists`);
+        logger.info(`   ✓ AI Model ${modelData?.modelName} already exists`);
         continue;
       }
 
       const [model] = await db?.insert(aiModels).values(modelData).returning();
-      logger?.info(`   ✓ Created AI Model: ${model?.modelName}`);
+      logger.info(`   ✓ Created AI Model: ${model?.modelName}`);
 
       const [version] = await db
         .insert(aiModelVersions)
@@ -148,12 +148,12 @@ export async function initializeAIContentModels() {
         })
         .returning();
 
-      logger?.info(`   ✓ Created version for ${model?.modelName}`);
+      logger.info(`   ✓ Created version for ${model?.modelName}`);
     }
 
-    logger?.info("✅ AI Content Models initialized");
+    logger.info("✅ AI Content Models initialized");
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "❌ Failed to initialize AI Content Models:");
+    logger.warn({ err: error }, "❌ Failed to initialize AI Content Models:");
     throw error;
   }
 }

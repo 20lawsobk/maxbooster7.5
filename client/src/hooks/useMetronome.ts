@@ -237,7 +237,7 @@ export function useMetronome(initialSettings?: Partial<MetronomeSettings>) {
    * Set BPM
    */
   const setBPM = useCallback((bpm: number) => {
-    setSettings((prev) => ({ ...prev, bpm: Math.max(20, Math?.min(300, bpm)) }));
+    setSettings((prev) => ({ ...prev, bpm: Math.max(20, Math.min(300, bpm)) }));
   }, []);
 
   /**
@@ -259,7 +259,7 @@ export function useMetronome(initialSettings?: Partial<MetronomeSettings>) {
   const setVolume = useCallback((volume: number) => {
     setSettings((prev) => ({
       ...prev,
-      volume: Math.max(0, Math?.min(1, volume)),
+      volume: Math.max(0, Math.min(1, volume)),
     }));
   }, []);
 

@@ -12,29 +12,29 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Sharp is always available - no Canvas fallback needed
-logger?.info("✅ Sharp-based image generation loaded for social media content");
+logger.info("✅ Sharp-based image generation loaded for social media content");
 
 // AI-powered social media content generation (images, videos, audio)
 // Uses 100% in-house AI services from shared/ml
 export class SocialMediaContentGenerator {
   private readonly contentDir = join(__dirname, "../public/generated-content");
-  private readonly imageDir = join(this?.contentDir, "images");
-  private readonly videoDir = join(this?.contentDir, "videos");
-  private readonly audioDir = join(this?.contentDir, "audio");
+  private readonly imageDir = join(this.contentDir, "images");
+  private readonly videoDir = join(this.contentDir, "videos");
+  private readonly audioDir = join(this.contentDir, "audio");
 
   private audioGenerator: AIAudioGenerator;
   private contentGenerator: ContentGenerator;
 
   constructor() {
-    mkdirSync(this?.contentDir, { recursive: true });
-    mkdirSync(this?.imageDir, { recursive: true });
-    mkdirSync(this?.videoDir, { recursive: true });
-    mkdirSync(this?.audioDir, { recursive: true });
+    mkdirSync(this.contentDir, { recursive: true });
+    mkdirSync(this.imageDir, { recursive: true });
+    mkdirSync(this.videoDir, { recursive: true });
+    mkdirSync(this.audioDir, { recursive: true });
 
     this.audioGenerator = new AIAudioGenerator(44100);
     this.contentGenerator = new ContentGenerator();
 
-    logger?.info(
+    logger.info(
       "✅ In-house AI services initialized (AIAudioGenerator, ContentGenerator)",
     );
   }
@@ -53,7 +53,7 @@ export class SocialMediaContentGenerator {
   }> {
     try {
       const result: Record<string, unknown> = {
-        content: await this?.generateAIContent(
+        content: await this.generateAIContent(
           platform,
           musicData,
           targetAudience,
@@ -61,7 +61,7 @@ export class SocialMediaContentGenerator {
       };
 
       if (contentType === "image" || contentType === "all") {
-        result.image = await this?.generateSocialMediaImage(
+        result.image = await this.generateSocialMediaImage(
           platform,
           musicData,
           targetAudience,
@@ -69,7 +69,7 @@ export class SocialMediaContentGenerator {
       }
 
       if (contentType === "video" || contentType === "all") {
-        result.video = await this?.generateSocialMediaVideo(
+        result.video = await this.generateSocialMediaVideo(
           platform,
           musicData,
           targetAudience,
@@ -77,7 +77,7 @@ export class SocialMediaContentGenerator {
       }
 
       if (contentType === "audio" || contentType === "all") {
-        result.audio = await this?.generateSocialMediaAudio(
+        result.audio = await this.generateSocialMediaAudio(
           platform,
           musicData,
           targetAudience,
@@ -86,9 +86,9 @@ export class SocialMediaContentGenerator {
 
       return result;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error generating social media content:");
+      logger.warn({ err: error }, "Error generating social media content:");
       return {
-        content: await this?.generateAIContent(
+        content: await this.generateAIContent(
           platform,
           musicData,
           targetAudience,
@@ -114,17 +114,17 @@ export class SocialMediaContentGenerator {
   }> {
     try {
       // Extract content from URL
-      const extractedData = await this?.extractContentFromURL(url);
+      const extractedData = await this.extractContentFromURL(url);
 
       // Generate AI content based on extracted data
-      const aiContent = await this?.generateAIContentFromExtractedData(
+      const aiContent = await this.generateAIContentFromExtractedData(
         extractedData,
         platform,
         targetAudience,
       );
 
       // Generate media content
-      const result = await this?.generateSocialMediaContent(
+      const result = await this.generateSocialMediaContent(
         platform,
         extractedData,
         targetAudience,
@@ -137,7 +137,7 @@ export class SocialMediaContentGenerator {
         content: aiContent,
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error generating content from URL:");
+      logger.warn({ err: error }, "Error generating content from URL:");
       throw error;
     }
   }
@@ -149,11 +149,11 @@ export class SocialMediaContentGenerator {
   ): Promise<string> {
     try {
       // Get platform-specific dimensions
-      const dimensions = this?.getPlatformDimensions(platform);
+      const dimensions = this.getPlatformDimensions(platform);
       const { width, height } = dimensions;
 
       // Generate AI-optimized SVG design
-      const svgContent = await this?.createSharpOptimizedDesign(
+      const svgContent = await this.createSharpOptimizedDesign(
         platform,
         musicData,
         targetAudience,
@@ -167,17 +167,17 @@ export class SocialMediaContentGenerator {
 
       // Save image
       const filename = `social-${platform}-${Date?.now()}.png`;
-      const filepath = join(this?.imageDir, filename);
+      const filepath = join(this.imageDir, filename);
 
       await fsWriteFile(filepath, buffer);
-      logger?.info(`✅ Generated Sharp image: ${filename} (${width}x${height})`);
+      logger.info(`✅ Generated Sharp image: ${filename} (${width}x${height})`);
 
       // Return public URL
       return `/generated-content/images/${filename}`;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Error generating social media image:");
+      logger.warn({ err: error }, "Error generating social media image:");
       // Fallback to default image
-      return this?.getDefaultImage(platform);
+      return this.getDefaultImage(platform);
     }
   }
 
@@ -238,7 +238,7 @@ export class SocialMediaContentGenerator {
               font-size="${Math.min(width * 0.08, 80)}px" 
               font-weight="bold" 
               fill="white">
-          ${this?.escapeXml(title?.substring(0, 30))}
+          ${this.escapeXml(title?.substring(0, 30))}
         </text>
         
         <!-- Artist text -->
@@ -247,7 +247,7 @@ export class SocialMediaContentGenerator {
               font-family="Arial, sans-serif" 
               font-size="${Math.min(width * 0.04, 40)}px" 
               fill="${brandGold}">
-          ${this?.escapeXml(artist?.substring(0, 40))}
+          ${this.escapeXml(artist?.substring(0, 40))}
         </text>
         
         <!-- Platform badge -->

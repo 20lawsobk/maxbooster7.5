@@ -177,7 +177,7 @@ async function proxyToMaxCore(req: Request, res: Response): Promise<void> {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     const aborted = message.includes("aborted") || message.includes("timeout");
-    logger?.warn(
+    logger.warn(
       `[MaxCoreProxy] ${method} ${req.originalUrl} → ${aborted ? "timeout" : "error"}: ${message}`,
     );
     res.status(aborted ? 504 : 502).json({

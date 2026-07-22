@@ -58,12 +58,12 @@ export async function withRetry<T>(
     } catch (err) {
       lastErr = err;
       if (attempt === retries || !retryOn(err, attempt)) break;
-      const expo = Math?.min(maxMs, baseMs * Math?.pow(factor, attempt));
+      const expo = Math.min(maxMs, baseMs * Math.pow(factor, attempt));
       const delay = jitter
-        ? Math?.floor(expo / 2 + Math?.random() * (expo / 2))
+        ? Math.floor(expo / 2 + Math.random() * (expo / 2))
         : expo;
       opts?.onRetry?.(err, attempt + 1, delay);
-      logger?.debug?.(
+      logger.debug?.(
         {
           attempt: attempt + 1,
           retries,

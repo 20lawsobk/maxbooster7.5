@@ -77,11 +77,11 @@ export function getInstrumentSynthesizer(
 }
 
 export function listAvailableEffects(): string[] {
-  return Object?.keys(ALL_EFFECT_PROCESSORS);
+  return Object.keys(ALL_EFFECT_PROCESSORS);
 }
 
 export function listAvailableInstruments(): string[] {
-  return Object?.keys(ALL_INSTRUMENT_SYNTHESIZERS);
+  return Object.keys(ALL_INSTRUMENT_SYNTHESIZERS);
 }
 
 export function getProcessorInfo() {
@@ -111,8 +111,8 @@ export function getProcessorInfo() {
       total: Object.keys(ALL_INSTRUMENT_SYNTHESIZERS).length,
     },
     grandTotal:
-      Object?.keys(ALL_EFFECT_PROCESSORS).length +
-      Object?.keys(ALL_INSTRUMENT_SYNTHESIZERS).length,
+      Object.keys(ALL_EFFECT_PROCESSORS).length +
+      Object.keys(ALL_INSTRUMENT_SYNTHESIZERS).length,
   };
 }
 

@@ -50,41 +50,41 @@ export class LoadTestFramework extends EventEmitter {
   private startTime = 0;
 
   async runLoadTest(config: LoadTestConfig): Promise<LoadTestResult> {
-    this?.reset();
+    this.reset();
     this.startTime = Date?.now();
 
-    const usersPerBatch = Math?.min(config?.concurrentUsers, 100);
-    const batches = Math?.ceil(config?.concurrentUsers / usersPerBatch);
+    const usersPerBatch = Math.min(config?.concurrentUsers, 100);
+    const batches = Math.ceil(config?.concurrentUsers / usersPerBatch);
     const delayBetweenBatches = (config?.rampUpSeconds * 1000) / batches;
 
     const promises: Promise<void>[] = [];
 
     for (let batch = 0; batch < batches; batch++) {
-      const usersInThisBatch = Math?.min(
+      const usersInThisBatch = Math.min(
         usersPerBatch,
         config?.concurrentUsers - batch * usersPerBatch,
       );
 
       for (let user = 0; user < usersInThisBatch; user++) {
-        promises?.push(this?.simulateUser(config));
+        promises?.push(this.simulateUser(config));
       }
 
       if (batch < batches - 1) {
-        await this?.sleep(delayBetweenBatches);
+        await this.sleep(delayBetweenBatches);
       }
     }
 
     await Promise?.all(promises);
 
-    return this?.calculateResults();
+    return this.calculateResults();
   }
 
   private async simulateUser(config: LoadTestConfig): Promise<void> {
     for (let i = 0; i < config?.requestsPerUser; i++) {
-      await this?.makeRequest(config);
+      await this.makeRequest(config);
       if (config?.thinkTimeMs > 0) {
-        await this?.sleep(
-          config?.thinkTimeMs + Math?.random() * config?.thinkTimeMs * 0.5,
+        await this.sleep(
+          config?.thinkTimeMs + Math.random() * config?.thinkTimeMs * 0.5,
         );
       }
     }
@@ -94,10 +94,10 @@ export class LoadTestFramework extends EventEmitter {
     const startTime = Date?.now();
 
     try {
-      const response = await this?.httpRequest(config);
+      const response = await this.httpRequest(config);
       const duration = Date?.now() - startTime;
 
-      this?.responseTimes.push(duration);
+      this.responseTimes.push(duration);
 
       if (
         response?.statusCode &&
@@ -108,14 +108,14 @@ export class LoadTestFramework extends EventEmitter {
       } else {
         this.failCount++;
         const errorKey = `HTTP ${response?.statusCode}`;
-        this?.errors.set(errorKey, (this?.errors.get(errorKey) || 0) + 1);
+        this.errors.set(errorKey, (this.errors.get(errorKey) || 0) + 1);
       }
     } catch (error) {
       const duration = Date?.now() - startTime;
-      this?.responseTimes.push(duration);
+      this.responseTimes.push(duration);
       this.failCount++;
       const errorKey = error?.code || error?.message || "Unknown";
-      this?.errors.set(errorKey, (this?.errors.get(errorKey) || 0) + 1);
+      this.errors.set(errorKey, (this.errors.get(errorKey) || 0) + 1);
     }
   }
 
@@ -141,30 +141,30 @@ export class LoadTestFramework extends EventEmitter {
 
       const req = lib?.request(options, (res) => {
         let body = "";
-        res?.on("data", (chunk) => (body += chunk));
-        res?.on("end", () => resolve({ statusCode: res.statusCode, body }));
+        res.on("data", (chunk) => (body += chunk));
+        res.on("end", () => resolve({ statusCode: res.statusCode, body }));
       });
 
-      req?.on("error", reject);
-      req?.on("timeout", () => {
-        req?.destroy();
+      req.on("error", reject);
+      req.on("timeout", () => {
+        req.destroy();
         reject(new Error("TIMEOUT"));
       });
 
       if (config?.body) {
-        req?.write(JSON?.stringify(config?.body));
+        req.write(JSON.stringify(config?.body));
       }
-      req?.end();
+      req.end();
     });
   }
 
   private calculateResults(): LoadTestResult {
-    const sortedTimes = [...this?.responseTimes].sort((a, b) => a - b);
-    const totalRequests = this?.successCount + this?.failCount;
-    const durationMs = Date?.now() - this?.startTime;
+    const sortedTimes = [...this.responseTimes].sort((a, b) => a - b);
+    const totalRequests = this.successCount + this.failCount;
+    const durationMs = Date?.now() - this.startTime;
 
-    const memoryUsage = process?.memoryUsage();
-    const cpuUsage = process?.cpuUsage();
+    const memoryUsage = process.memoryUsage();
+    const cpuUsage = process.cpuUsage();
 
     return {
       totalRequests,
@@ -180,7 +180,7 @@ export class LoadTestFramework extends EventEmitter {
       p95ResponseTimeMs: this.percentile(sortedTimes, 95),
       p99ResponseTimeMs: this.percentile(sortedTimes, 99),
       requestsPerSecond: totalRequests / (durationMs / 1000),
-      errorRate: totalRequests > 0 ? this?.failCount / totalRequests : 0,
+      errorRate: totalRequests > 0 ? this.failCount / totalRequests : 0,
       errors: this.errors,
       durationMs,
       memoryUsageMB: memoryUsage.heapUsed / (1024 * 1024),
@@ -190,8 +190,8 @@ export class LoadTestFramework extends EventEmitter {
 
   private percentile(arr: number[], p: number): number {
     if (arr?.length === 0) return 0;
-    const index = Math?.ceil((p / 100) * arr?.length) - 1;
-    return arr[Math?.max(0, index)];
+    const index = Math.ceil((p / 100) * arr?.length) - 1;
+    return arr[Math.max(0, index)];
   }
 
   private reset(): void {
@@ -230,31 +230,31 @@ export class ScalabilityTester {
   ): Promise<ScaleTestResult[]> {
     const results: ScaleTestResult[] = [];
 
-    for (const profile of this?.scaleProfiles) {
-      logger?.info(`Testing at ${profile?.name} scale`, {
+    for (const profile of this.scaleProfiles) {
+      logger.info(`Testing at ${profile?.name} scale`, {
         simulatedUsers: this.formatNumber(profile?.multiplier),
       });
 
-      const actualConcurrentUsers = Math?.min(profile?.users, 1000);
+      const actualConcurrentUsers = Math.min(profile?.users, 1000);
 
       const config: LoadTestConfig = {
         ...baseConfig,
         concurrentUsers: actualConcurrentUsers,
         requestsPerUser: Math.min(
           10,
-          Math?.ceil(profile?.multiplier / actualConcurrentUsers / 1000),
+          Math.ceil(profile?.multiplier / actualConcurrentUsers / 1000),
         ),
       };
 
       try {
-        const testResult = await this?.framework.runLoadTest(config);
+        const testResult = await this.framework.runLoadTest(config);
 
-        const scaledResult = this?.projectToScale(
+        const scaledResult = this.projectToScale(
           testResult,
           profile?.multiplier,
         );
 
-        const analysis = this?.analyzeResults(scaledResult, profile?.multiplier);
+        const analysis = this.analyzeResults(scaledResult, profile?.multiplier);
 
         results?.push({
           scale: profile.name,
@@ -265,17 +265,17 @@ export class ScalabilityTester {
           passed: analysis.passed,
         });
 
-        this?.printResults(results[results?.length - 1]);
+        this.printResults(results[results?.length - 1]);
 
         if (!analysis?.passed) {
-          logger?.warn(
+          logger.warn(
             `Performance degradation detected at ${profile?.name} scale`,
           );
         }
 
         if (profile?.name === maxScale) break;
       } catch (error) {
-        logger?.warn(`Test failed at ${profile?.name} scale`, {
+        logger.warn(`Test failed at ${profile?.name} scale`, {
           error: error.message,
         });
         results?.push({
@@ -299,7 +299,7 @@ export class ScalabilityTester {
     const actualScale = result?.totalRequests;
     const scaleFactor = targetScale / actualScale;
 
-    const degradationFactor = 1 + Math?.log10(scaleFactor) * 0.1;
+    const degradationFactor = 1 + Math.log10(scaleFactor) * 0.1;
 
     return {
       ...result,
@@ -312,7 +312,7 @@ export class ScalabilityTester {
       p95ResponseTimeMs: result.p95ResponseTimeMs * degradationFactor * 1.5,
       p99ResponseTimeMs: result.p99ResponseTimeMs * degradationFactor * 2,
       requestsPerSecond:
-        result?.requestsPerSecond * Math?.min(scaleFactor, 1000000),
+        result?.requestsPerSecond * Math.min(scaleFactor, 1000000),
       errorRate: Math.min(0.99, result?.errorRate * degradationFactor),
     };
   }
@@ -378,14 +378,14 @@ export class ScalabilityTester {
   }
 
   private printResults(result: ScaleTestResult): void {
-    logger?.info(`Results for ${result?.scale} scale`, {
+    logger.info(`Results for ${result?.scale} scale`, {
       simulatedUsers: this.formatNumber(result?.simulatedUsers),
       totalRequests: this.formatNumber(result?.results.totalRequests),
       successRate: `${((1 - result?.results.errorRate) * 100).toFixed(2)}%`,
       avgResponse: `${result?.results.avgResponseTimeMs?.toFixed(2) || "N/A"}ms`,
       p95Response: `${result?.results.p95ResponseTimeMs?.toFixed(2) || "N/A"}ms`,
       p99Response: `${result?.results.p99ResponseTimeMs?.toFixed(2) || "N/A"}ms`,
-      throughput: `${this?.formatNumber(Math?.round(result?.results.requestsPerSecond || 0))} req/s`,
+      throughput: `${this.formatNumber(Math.round(result?.results.requestsPerSecond || 0))} req/s`,
       status: result.passed ? "PASSED" : "NEEDS OPTIMIZATION",
       bottlenecks: result.bottlenecks,
       recommendations: result.recommendations,
@@ -426,7 +426,7 @@ export async function runComprehensiveLoadTest(
   const allResults: Map<string, ScaleTestResult[]> = new Map();
 
   for (const ep of endpoints) {
-    logger?.info(`Testing endpoint: ${ep?.name}`);
+    logger.info(`Testing endpoint: ${ep?.name}`);
 
     const results = await tester?.runProgressiveScaleTest({
       targetUrl: baseUrl,
@@ -441,11 +441,11 @@ export async function runComprehensiveLoadTest(
     allResults?.set(ep?.name, results);
   }
 
-  logger?.info("FINAL SUMMARY");
+  logger.info("FINAL SUMMARY");
 
   for (const [endpoint, results] of allResults?.entries()) {
     const lastResult = results[results?.length - 1];
-    logger?.info(`Endpoint summary: ${endpoint}`, {
+    logger.info(`Endpoint summary: ${endpoint}`, {
       maxScaleTested: lastResult.scale,
       simulatedUsers: tester["formatNumber"](lastResult?.simulatedUsers),
       status: lastResult.passed ? "PASSED" : "NEEDS WORK",

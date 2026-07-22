@@ -116,7 +116,7 @@ export function useMIDIDevices() {
   const handleStateChange = useCallback(
     (event: Event) => {
       const e = event as MIDIConnectionEvent;
-      logger?.info(`MIDI device ${e?.port.state}: ${e?.port.name}`);
+      logger.info(`MIDI device ${e?.port.state}: ${e?.port.name}`);
 
       // Re-enumerate devices when state changes
       if (midiAccess) {
@@ -237,7 +237,7 @@ export function useMIDIDevices() {
         port?.send(message);
         return true;
       } catch (error: unknown) {
-        logger?.error("Failed to send MIDI message:", error);
+        logger.error("Failed to send MIDI message:", error);
         return false;
       }
     },

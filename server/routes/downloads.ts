@@ -80,7 +80,7 @@ async function fetchLatestRelease(): Promise<ReleaseInfo | null> {
       "User-Agent": "MaxBooster-App",
     };
     const token =
-      process?.env.GITHUB_PAT || process?.env.GITHUB_PERSONAL_ACCESS_TOKEN;
+      process.env.GITHUB_PAT || process.env.GITHUB_PERSONAL_ACCESS_TOKEN;
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
     }
@@ -97,21 +97,21 @@ async function fetchLatestRelease(): Promise<ReleaseInfo | null> {
           { signal: AbortSignal.timeout(10_000), headers },
         );
         if (!allResponse?.ok) {
-          logger?.warn(`GitHub releases API returned ${allResponse?.status}`);
+          logger.warn(`GitHub releases API returned ${allResponse?.status}`);
           return null;
         }
         const releases = await allResponse?.json();
         if (!releases?.length) return null;
         return processRelease(releases[0]);
       }
-      logger?.warn(`GitHub releases API returned ${response?.status}`);
+      logger.warn(`GitHub releases API returned ${response?.status}`);
       return null;
     }
 
     const data = await response?.json();
     return processRelease(data);
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to fetch GitHub releases:");
+    logger.warn({ err: error }, "Failed to fetch GitHub releases:");
     return null;
   }
 }
@@ -170,7 +170,7 @@ router?.get("/latest", async (_req, res) => {
   try {
     const release = await fetchLatestRelease();
     if (!release) {
-      return res?.json({
+      return res.json({
         available: false,
         message: "No releases found",
         fallbackUrl: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases`,
@@ -285,7 +285,7 @@ router?.get("/latest", async (_req, res) => {
       });
     }
 
-    res?.json({
+    res.json({
       available: true,
       version: release.version,
       publishedAt: release.published_at,
@@ -295,8 +295,8 @@ router?.get("/latest", async (_req, res) => {
       mobile: mobileDownloads,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Failed to get download info:");
-    res?.status(500).json({
+    logger.warn({ err: error }, "Failed to get download info:");
+    res.status(500).json({
       available: false,
       error: "Failed to fetch release information",
       fallbackUrl: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases`,

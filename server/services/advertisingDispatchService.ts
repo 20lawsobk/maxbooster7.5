@@ -92,17 +92,17 @@ export class AdvertisingDispatchService {
       // NOTE: adCampaigns has a singular `platform` column (NOT `platforms`).
       // Additional fan-out platforms may be supplied via metadata?.fanOutPlatforms.
       const meta = (campaign?.metadata as Record<string, unknown> | null) || {};
-      const fanOut = Array?.isArray(meta?.fanOutPlatforms)
+      const fanOut = Array.isArray(meta?.fanOutPlatforms)
         ? (meta?.fanOutPlatforms as unknown[]).filter(
             (p): p is string => typeof p === "string",
           )
         : [];
-      const requestedPlatforms = Array?.from(
+      const requestedPlatforms = Array.from(
         new Set([campaign?.platform, ...fanOut].filter((p): p is string => !!p)),
       );
 
       // 5. Verify user has connected social accounts
-      const connectedPlatforms = await this?.getConnectedPlatforms(userId);
+      const connectedPlatforms = await this.getConnectedPlatforms(userId);
 
       if (connectedPlatforms?.length === 0) {
         return {
@@ -187,7 +187,7 @@ export class AdvertisingDispatchService {
 
             // Create content calendar entry
             try {
-              const calendarEntry = await this?.createCalendarEntry(
+              const calendarEntry = await this.createCalendarEntry(
                 userId,
                 creative,
                 result?.platform,
@@ -196,7 +196,7 @@ export class AdvertisingDispatchService {
               );
               calendarEntries?.push(calendarEntry?.id);
             } catch (err: unknown) {
-              logger?.warn({ err: err }, "Failed to create calendar entry:");
+              logger.warn({ err: err }, "Failed to create calendar entry:");
               errors?.push(
                 `Calendar entry failed for ${result?.platform}: ${err?.message}`,
               );
@@ -216,7 +216,7 @@ export class AdvertisingDispatchService {
                 deliveredAt: new Date(),
               });
             } catch (err: unknown) {
-              logger?.warn({ err: err }, "Failed to create delivery log:");
+              logger.warn({ err: err }, "Failed to create delivery log:");
             }
           } else {
             errors?.push(
@@ -233,7 +233,7 @@ export class AdvertisingDispatchService {
                 retryCount: 1,
               });
             } catch (err: unknown) {
-              logger?.warn({ err: err }, "Failed to create delivery log:");
+              logger.warn({ err: err }, "Failed to create delivery log:");
             }
           }
         }
@@ -290,7 +290,7 @@ export class AdvertisingDispatchService {
         },
       };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Campaign activation error:");
+      logger.warn({ err: error }, "Campaign activation error:");
       return {
         success: false,
         message: "Campaign activation failed",
@@ -330,7 +330,7 @@ export class AdvertisingDispatchService {
       const organicMetrics = campaign?.organicMetrics as Record<string, unknown>;
 
       if (!organicMetrics || !organicMetrics?.posts) {
-        logger?.info("No organic posts to track for campaign", campaignId);
+        logger.info("No organic posts to track for campaign", campaignId);
         return;
       }
 
@@ -374,7 +374,7 @@ export class AdvertisingDispatchService {
           totalEngagements += updatedPost?.metrics.engagements;
           totalReach += updatedPost?.metrics.reach;
         } catch (err: unknown) {
-          logger?.warn(
+          logger.warn(
             `Failed to collect engagement for ${post?.platform} post ${post?.postId}:`,
             err?.message,
           );
@@ -403,11 +403,11 @@ export class AdvertisingDispatchService {
         })
         .where(eq(adCampaigns?.id, campaignId));
 
-      logger?.info(
+      logger.info(
         `✅ Updated engagement metrics for campaign ${campaignId}: ${totalImpressions} impressions, ${totalEngagements} engagements`,
       );
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Failed to collect campaign engagement:");
+      logger.warn({ err: error }, "Failed to collect campaign engagement:");
     }
   }
 
@@ -531,22 +531,22 @@ export class AdvertisingDispatchService {
             .where(eq(adCampaigns?.status, "active"))
             .limit(200);
 
-      logger?.info(
+      logger.info(
         `🔄 Collecting engagement for ${activeCampaigns?.length} active campaigns...`,
       );
 
       for (const campaign of activeCampaigns) {
-        await this?.collectCampaignEngagement(campaign?.id, campaign?.userId);
+        await this.collectCampaignEngagement(campaign?.id, campaign?.userId);
 
         // Small delay to avoid rate limits
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
 
-      logger?.info(
+      logger.info(
         `✅ Finished collecting engagement for ${activeCampaigns?.length} campaigns`,
       );
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Failed to collect all engagement:");
+      logger.warn({ err: error }, "Failed to collect all engagement:");
     }
   }
 

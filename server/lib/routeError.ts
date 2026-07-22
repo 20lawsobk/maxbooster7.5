@@ -70,17 +70,17 @@ export function routeError(context: string, err: unknown): void {
   const detail = e?.message ?? String(err);
 
   if (level === "debug") {
-    logger?.debug({ context, detail }, `[Route] ${context}`);
+    logger.debug({ context, detail }, `[Route] ${context}`);
     return;
   }
 
   if (level === "info") {
-    logger?.info({ context, detail }, `[Route] ${context}`);
+    logger.info({ context, detail }, `[Route] ${context}`);
     return;
   }
 
   if (!shouldThrottle(context)) {
-    logger?.warn({ context, detail }, `[Route] ${context}: ${detail}`);
+    logger.warn({ context, detail }, `[Route] ${context}: ${detail}`);
   }
 }
 

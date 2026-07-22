@@ -115,7 +115,7 @@ export function extractSubdomainPart(domain: string): string {
 
 /** Enforce the minimum TTL floor (60 s) — matches Vercel's policy. */
 function clampTtl(ttl: number): number {
-  return Math?.max(MIN_TTL, ttl);
+  return Math.max(MIN_TTL, ttl);
 }
 
 /**

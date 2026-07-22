@@ -67,14 +67,14 @@ class StructuredLogger {
     this.service = options?.service;
     this.defaultMetadata = options?.defaultMetadata;
     this.isProduction =
-      process?.env.NODE_ENV === "production" || !!process?.env.REPLIT_DEPLOYMENT;
+      process.env.NODE_ENV === "production" || !!process.env.REPLIT_DEPLOYMENT;
     this.minLevel =
-      (process?.env.LOG_LEVEL as LogLevel) ||
-      (this?.isProduction ? "info" : "debug");
+      (process.env.LOG_LEVEL as LogLevel) ||
+      (this.isProduction ? "info" : "debug");
   }
 
   private shouldLog(level: LogLevel): boolean {
-    return LEVEL_PRIORITY[level] >= LEVEL_PRIORITY[this?.minLevel];
+    return LEVEL_PRIORITY[level] >= LEVEL_PRIORITY[this.minLevel];
   }
 
   private getRequestContext(): {
@@ -94,8 +94,8 @@ class StructuredLogger {
   }
 
   private formatMessage(entry: LogEntry): string {
-    if (this?.isProduction) {
-      return JSON?.stringify(entry);
+    if (this.isProduction) {
+      return JSON.stringify(entry);
     }
 
     const color = LEVEL_COLORS[entry?.level];
@@ -117,8 +117,8 @@ class StructuredLogger {
 
     let output = `${COLORS?.dim}${timestamp}${COLORS?.reset} ${color}${icon} ${entry?.level.toUpperCase().padEnd(5)}${COLORS?.reset} ${reqId}${svc} ${entry?.message} ${dur} ${usr}`;
 
-    if (entry?.metadata && Object?.keys(entry?.metadata).length > 0) {
-      output += `\n  ${COLORS?.dim}metadata: ${JSON?.stringify(entry?.metadata)}${COLORS?.reset}`;
+    if (entry?.metadata && Object.keys(entry?.metadata).length > 0) {
+      output += `\n  ${COLORS?.dim}metadata: ${JSON.stringify(entry?.metadata)}${COLORS?.reset}`;
     }
 
     if (entry?.error) {
@@ -141,12 +141,12 @@ class StructuredLogger {
     metadata?: Record<string, unknown>,
     error?: Error | unknown,
   ): void {
-    if (!this?.shouldLog(level)) {
+    if (!this.shouldLog(level)) {
       return;
     }
 
-    const ctx = this?.getRequestContext();
-    const errorObj = error ? this?.formatError(error) : undefined;
+    const ctx = this.getRequestContext();
+    const errorObj = error ? this.formatError(error) : undefined;
 
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),
@@ -156,20 +156,20 @@ class StructuredLogger {
       userId: ctx.userId,
       service: this.service,
       duration: ctx.duration,
-      metadata: { ...this?.defaultMetadata, ...metadata },
+      metadata: { ...this.defaultMetadata, ...metadata },
       error: errorObj,
     };
 
-    if (Object?.keys(entry?.metadata || {}).length === 0) {
+    if (Object.keys(entry?.metadata || {}).length === 0) {
       delete entry?.metadata;
     }
 
-    const formattedMessage = this?.formatMessage(entry);
+    const formattedMessage = this.formatMessage(entry);
 
     if (level === "error") {
-      process?.stderr.write(formattedMessage + "\n");
+      process.stderr.write(formattedMessage + "\n");
     } else {
-      process?.stdout.write(formattedMessage + "\n");
+      process.stdout.write(formattedMessage + "\n");
     }
 
     for (const transport of globalTransports) {
@@ -177,11 +177,11 @@ class StructuredLogger {
         const result = transport(entry);
         if (result instanceof Promise) {
           result?.catch((err) => {
-            process?.stderr.write(`[LogTransport Error] ${err?.message}\n`);
+            process.stderr.write(`[LogTransport Error] ${err?.message}\n`);
           });
         }
       } catch (err) {
-        process?.stderr.write(
+        process.stderr.write(
           `[LogTransport Error] ${err instanceof Error ? err?.message : String(err)}\n`,
         );
       }
@@ -206,7 +206,7 @@ class StructuredLogger {
     if (typeof error === "object" && error !== null) {
       const err = error as Record<string, unknown>;
       return {
-        message: String(err?.message || JSON?.stringify(error)),
+        message: String(err?.message || JSON.stringify(error)),
         stack: err.stack as string | undefined,
         code: err.code as string | undefined,
       };
@@ -215,15 +215,15 @@ class StructuredLogger {
   }
 
   debug(message: string, metadata?: Record<string, unknown>): void {
-    this?.log("debug", message, metadata);
+    this.log("debug", message, metadata);
   }
 
   info(message: string, metadata?: Record<string, unknown>): void {
-    this?.log("info", message, metadata);
+    this.log("info", message, metadata);
   }
 
   warn(message: string, metadata?: Record<string, unknown>): void {
-    this?.log("warn", message, metadata);
+    this.log("warn", message, metadata);
   }
 
   error(
@@ -232,36 +232,36 @@ class StructuredLogger {
     metadata?: Record<string, unknown>,
   ): void {
     if (errorOrMetadata instanceof Error) {
-      this?.log("error", message, metadata, errorOrMetadata);
+      this.log("error", message, metadata, errorOrMetadata);
     } else {
-      this?.log("error", message, errorOrMetadata);
+      this.log("error", message, errorOrMetadata);
     }
   }
 
   child(options: LoggerOptions): StructuredLogger {
     return new StructuredLogger({
-      service: options.service || this?.service,
-      defaultMetadata: { ...this?.defaultMetadata, ...options?.defaultMetadata },
+      service: options.service || this.service,
+      defaultMetadata: { ...this.defaultMetadata, ...options?.defaultMetadata },
     });
   }
 
   withContext(metadata: Record<string, unknown>): StructuredLogger {
-    return this?.child({ defaultMetadata: metadata });
+    return this.child({ defaultMetadata: metadata });
   }
 
   time(label: string): () => void {
-    const start = process?.hrtime.bigint();
+    const start = process.hrtime.bigint();
     return () => {
-      const end = process?.hrtime.bigint();
+      const end = process.hrtime.bigint();
       const durationMs = Number(end - start) / 1_000_000;
-      this?.info(`${label} completed`, {
+      this.info(`${label} completed`, {
         durationMs: Math.round(durationMs * 100) / 100,
       });
     };
   }
 
   measure<T>(label: string, fn: () => T): T {
-    const end = this?.time(label);
+    const end = this.time(label);
     try {
       const result = fn();
       if (result instanceof Promise) {
@@ -276,7 +276,7 @@ class StructuredLogger {
   }
 
   static createMemorySnapshot(): Record<string, number> {
-    const usage = process?.memoryUsage();
+    const usage = process.memoryUsage();
     return {
       heapUsedMB: Math.round((usage?.heapUsed / 1024 / 1024) * 100) / 100,
       heapTotalMB: Math.round((usage?.heapTotal / 1024 / 1024) * 100) / 100,

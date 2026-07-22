@@ -265,14 +265,14 @@ export function parseECS(queryBuf: Buffer): EcsInfo | null {
             if (family === 1 && addrBytes?.length >= 1) {
               // IPv4: pad to 4 bytes
               const padded = Buffer?.alloc(4);
-              addrBytes?.copy(padded, 0, 0, Math?.min(addrBytes?.length, 4));
-              ip = Array?.from(padded).join(".");
+              addrBytes?.copy(padded, 0, 0, Math.min(addrBytes?.length, 4));
+              ip = Array.from(padded).join(".");
               return { ip, sourcePrefixLen, family };
             } else if (family === 2 && addrBytes?.length >= 1) {
               // IPv6: pad to 16 bytes
               const padded = Buffer?.alloc(16);
-              addrBytes?.copy(padded, 0, 0, Math?.min(addrBytes?.length, 16));
-              ip = Array?.from({ length: 8 }, (_, j) =>
+              addrBytes?.copy(padded, 0, 0, Math.min(addrBytes?.length, 16));
+              ip = Array.from({ length: 8 }, (_, j) =>
                 padded?.readUInt16BE(j * 2).toString(16),
               ).join(":");
               return { ip, sourcePrefixLen, family };
@@ -344,7 +344,7 @@ export async function resolveGeoIP(
   const selectedIp = selectRegionIp(geo);
 
   if (selectedIp !== DNS_SERVER_IP) {
-    logger?.debug(
+    logger.debug(
       {
         ip: lookupIp,
         continent: geo.continent,

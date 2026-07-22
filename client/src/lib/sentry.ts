@@ -64,12 +64,12 @@ class SentryService {
       options?.environment || import.meta.env?.MODE || "development";
     this.release = options?.release || import.meta.env?.VITE_APP_VERSION || null;
 
-    if (this?.dsn) {
+    if (this.dsn) {
       this.isInitialized = true;
-      this?.setupGlobalErrorHandlers();
-      logger?.info("[Sentry] Initialized for environment:", this?.environment);
+      this.setupGlobalErrorHandlers();
+      logger.info("[Sentry] Initialized for environment:", this.environment);
     } else {
-      logger?.info("[Sentry] No DSN provided, running in mock mode");
+      logger.info("[Sentry] No DSN provided, running in mock mode");
       this.isInitialized = true;
     }
   }
@@ -80,7 +80,7 @@ class SentryService {
         return;
       }
 
-      this?.captureException(event?.error || new Error(event?.message), {
+      this.captureException(event?.error || new Error(event?.message), {
         extra: {
           filename: event.filename,
           lineno: event.lineno,
@@ -90,7 +90,7 @@ class SentryService {
     });
 
     window?.addEventListener("unhandledrejection", (event) => {
-      this?.captureException(
+      this.captureException(
         event?.reason || new Error("Unhandled promise rejection"),
         {
           tags: { type: "unhandled_rejection" },
@@ -101,7 +101,7 @@ class SentryService {
 
   setUser(user: SentryContext["user"] | null) {
     this.userContext = user;
-    this?.addBreadcrumb({
+    this.addBreadcrumb({
       category: "auth",
       message: user ? `User set: ${user?.id}` : "User cleared",
       level: "info",
@@ -113,17 +113,17 @@ class SentryService {
   }
 
   setTags(tags: Record<string, string>) {
-    this.tags = { ...this?.tags, ...tags };
+    this.tags = { ...this.tags, ...tags };
   }
 
   addBreadcrumb(breadcrumb: SentryBreadcrumb) {
-    this?.breadcrumbs.push({
+    this.breadcrumbs.push({
       ...breadcrumb,
       timestamp: breadcrumb.timestamp || Date?.now() / 1000,
     });
 
-    if (this?.breadcrumbs.length > this?.maxBreadcrumbs) {
-      this.breadcrumbs = this?.breadcrumbs.slice(-this?.maxBreadcrumbs);
+    if (this.breadcrumbs.length > this.maxBreadcrumbs) {
+      this.breadcrumbs = this.breadcrumbs.slice(-this.maxBreadcrumbs);
     }
   }
 
@@ -135,11 +135,11 @@ class SentryService {
     };
 
     const fullContext: SentryContext = {
-      user: context.user || this?.userContext || undefined,
-      tags: { ...this?.tags, ...context?.tags },
+      user: context.user || this.userContext || undefined,
+      tags: { ...this.tags, ...context?.tags },
       extra: {
         ...context?.extra,
-        breadcrumbs: [...this?.breadcrumbs],
+        breadcrumbs: [...this.breadcrumbs],
         url: window.location.href,
         userAgent: navigator.userAgent,
         timestamp: new Date().toISOString(),
@@ -147,17 +147,17 @@ class SentryService {
       fingerprint: context.fingerprint,
     };
 
-    if (this?.dsn) {
-      this?.errorQueue.push({ error: sentryError, context: fullContext });
-      this?.processQueue();
+    if (this.dsn) {
+      this.errorQueue.push({ error: sentryError, context: fullContext });
+      this.processQueue();
     } else {
-      logger?.error("[Sentry Mock] Captured exception:", {
+      logger.error("[Sentry Mock] Captured exception:", {
         error: sentryError,
         context: fullContext,
       });
     }
 
-    return this?.generateEventId();
+    return this.generateEventId();
   }
 
   captureMessage(
@@ -166,43 +166,43 @@ class SentryService {
     context: SentryContext = {},
   ) {
     const fullContext: SentryContext = {
-      user: context.user || this?.userContext || undefined,
-      tags: { ...this?.tags, ...context?.tags },
+      user: context.user || this.userContext || undefined,
+      tags: { ...this.tags, ...context?.tags },
       extra: {
         ...context?.extra,
-        breadcrumbs: [...this?.breadcrumbs],
+        breadcrumbs: [...this.breadcrumbs],
         url: window.location.href,
       },
     };
 
-    if (this?.dsn) {
-      this?.sendToSentry({
+    if (this.dsn) {
+      this.sendToSentry({
         message,
         level,
         context: fullContext,
       });
     } else {
-      logger?.info(
+      logger.info(
         `[Sentry Mock] Captured message (${level}):`,
         message,
         fullContext,
       );
     }
 
-    return this?.generateEventId();
+    return this.generateEventId();
   }
 
   private async processQueue() {
-    if (this?.isReporting || this?.errorQueue.length === 0) {
+    if (this.isReporting || this.errorQueue.length === 0) {
       return;
     }
 
     this.isReporting = true;
 
-    while (this?.errorQueue.length > 0) {
-      const item = this?.errorQueue.shift();
+    while (this.errorQueue.length > 0) {
+      const item = this.errorQueue.shift();
       if (item) {
-        await this?.sendToSentry(item);
+        await this.sendToSentry(item);
       }
     }
 
@@ -215,7 +215,7 @@ class SentryService {
     level?: SentryLevel;
     context: SentryContext;
   }) {
-    if (!this?.dsn) {
+    if (!this.dsn) {
       return;
     }
 
@@ -247,7 +247,7 @@ class SentryService {
         timestamp: Date.now() / 1000,
       };
 
-      const response = await fetch(this?.dsn, {
+      const response = await fetch(this.dsn, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -256,10 +256,10 @@ class SentryService {
       });
 
       if (!response?.ok) {
-        logger?.warn("[Sentry] Failed to send error:", response?.status);
+        logger.warn("[Sentry] Failed to send error:", response?.status);
       }
     } catch (err) {
-      logger?.warn("[Sentry] Error sending to Sentry:", err);
+      logger.warn("[Sentry] Error sending to Sentry:", err);
     }
   }
 
@@ -298,7 +298,7 @@ class SentryService {
 
   private generateEventId(): string {
     return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-      const r = (Math?.random() * 16) | 0;
+      const r = (Math.random() * 16) | 0;
       const v = c === "x" ? r : (r & 0x3) | 0x8;
       return v?.toString(16);
     });
@@ -313,7 +313,7 @@ class SentryService {
   ) {
     const scopeTags: Record<string, string> = {};
     const scopeExtra: Record<string, unknown> = {};
-    let scopeUser: SentryContext["user"] = this?.userContext || undefined;
+    let scopeUser: SentryContext["user"] = this.userContext || undefined;
 
     const scope = {
       setTag: (key: string, value: string) => {
@@ -331,14 +331,14 @@ class SentryService {
 
     return {
       captureException: (error: Error | unknown) => {
-        return this?.captureException(error, {
+        return this.captureException(error, {
           tags: scopeTags,
           extra: scopeExtra,
           user: scopeUser,
         });
       },
       captureMessage: (message: string, level?: SentryLevel) => {
-        return this?.captureMessage(message, level, {
+        return this.captureMessage(message, level, {
           tags: scopeTags,
           extra: scopeExtra,
           user: scopeUser,
@@ -351,8 +351,8 @@ class SentryService {
     return new Promise((resolve) => {
       const start = Date?.now();
       const check = () => {
-        if (!this?.isReporting || Date?.now() - start > timeout) {
-          resolve(!this?.isReporting);
+        if (!this.isReporting || Date?.now() - start > timeout) {
+          resolve(!this.isReporting);
         } else {
           setTimeout(check, 100);
         }
@@ -362,7 +362,7 @@ class SentryService {
   }
 
   isEnabled(): boolean {
-    return this?.isInitialized;
+    return this.isInitialized;
   }
 }
 

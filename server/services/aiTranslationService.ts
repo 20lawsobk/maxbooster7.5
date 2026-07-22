@@ -354,7 +354,7 @@ class AITranslationService {
 
     for (const targetLang of request?.targetLanguages) {
       try {
-        const translated = await this?.translateToLanguage(
+        const translated = await this.translateToLanguage(
           request?.content,
           request?.headline,
           request?.hashtags || [],
@@ -366,7 +366,7 @@ class AITranslationService {
         results?.push(translated);
       } catch (error) {
         const msg = (error as Error)?.message ?? String(error);
-        logger?.warn(
+        logger.warn(
           `[Translation] Failed to translate to ${targetLang}: ${msg}`,
         );
         throw error;
@@ -392,32 +392,32 @@ class AITranslationService {
       );
     }
 
-    let translatedContent = this?.applyPhraseTranslations(content, targetLang);
-    translatedContent = this?.applyMusicTermTranslations(
+    let translatedContent = this.applyPhraseTranslations(content, targetLang);
+    translatedContent = this.applyMusicTermTranslations(
       translatedContent,
       targetLang,
     );
 
     if (preserveTone) {
-      translatedContent = this?.adaptTone(translatedContent, langData);
+      translatedContent = this.adaptTone(translatedContent, langData);
     }
 
     let translatedHeadline: string | undefined;
     if (headline) {
-      translatedHeadline = this?.applyPhraseTranslations(headline, targetLang);
-      translatedHeadline = this?.applyMusicTermTranslations(
+      translatedHeadline = this.applyPhraseTranslations(headline, targetLang);
+      translatedHeadline = this.applyMusicTermTranslations(
         translatedHeadline,
         targetLang,
       );
     }
 
-    const translatedHashtags = this?.translateHashtags(
+    const translatedHashtags = this.translateHashtags(
       hashtags,
       targetLang,
       langData?.hashtagStyle,
     );
 
-    translatedContent = this?.addCulturalAdaptations(
+    translatedContent = this.addCulturalAdaptations(
       translatedContent,
       langData,
     );
@@ -442,7 +442,7 @@ class AITranslationService {
     if (!langData) return text;
 
     let result = text;
-    for (const [english, translated] of Object?.entries(
+    for (const [english, translated] of Object.entries(
       langData?.commonPhrases,
     )) {
       const regex = new RegExp(english, "gi");
@@ -455,7 +455,7 @@ class AITranslationService {
   private applyMusicTermTranslations(text: string, targetLang: string): string {
     let result = text;
 
-    for (const [english, translations] of Object?.entries(MUSIC_TERMS)) {
+    for (const [english, translations] of Object.entries(MUSIC_TERMS)) {
       if (translations[targetLang]) {
         const regex = new RegExp(`\\b${english}\\b`, "gi");
         result = result?.replace(regex, translations[targetLang]);
@@ -513,11 +513,11 @@ class AITranslationService {
       const cleanTag = hashtag?.replace("#", "").toLowerCase();
 
       if (style === "native") {
-        const nativeTag = this?.translateHashtagContent(cleanTag, targetLang);
+        const nativeTag = this.translateHashtagContent(cleanTag, targetLang);
         translated?.push(`#${nativeTag}`);
       } else {
         translated?.push(hashtag);
-        const nativeTag = this?.translateHashtagContent(cleanTag, targetLang);
+        const nativeTag = this.translateHashtagContent(cleanTag, targetLang);
         if (nativeTag !== cleanTag) {
           translated?.push(`#${nativeTag}`);
         }
@@ -531,7 +531,7 @@ class AITranslationService {
     const langData = LANGUAGE_DATA[targetLang];
     if (!langData) return tag;
 
-    for (const [english, translated] of Object?.entries(
+    for (const [english, translated] of Object.entries(
       langData?.commonPhrases,
     )) {
       const englishNormalized = english?.replace(/\s+/g, "").toLowerCase();
@@ -540,7 +540,7 @@ class AITranslationService {
       }
     }
 
-    for (const [english, translations] of Object?.entries(MUSIC_TERMS)) {
+    for (const [english, translations] of Object.entries(MUSIC_TERMS)) {
       if (
         tag?.toLowerCase() === english?.toLowerCase() &&
         translations[targetLang]
@@ -597,22 +597,22 @@ class AITranslationService {
     if (langData) {
       confidence += 10;
 
-      const phrasesApplied = Object?.keys(langData?.commonPhrases).filter(
+      const phrasesApplied = Object.keys(langData?.commonPhrases).filter(
         (phrase) => original?.toLowerCase().includes(phrase?.toLowerCase()),
       ).length;
-      confidence += Math?.min(phrasesApplied * 3, 10);
+      confidence += Math.min(phrasesApplied * 3, 10);
     }
 
     if (translated !== original) {
       confidence += 5;
     }
 
-    const termsTranslated = Object?.keys(MUSIC_TERMS).filter((term) =>
+    const termsTranslated = Object.keys(MUSIC_TERMS).filter((term) =>
       original?.toLowerCase().includes(term?.toLowerCase()),
     ).length;
-    confidence += Math?.min(termsTranslated * 2, 5);
+    confidence += Math.min(termsTranslated * 2, 5);
 
-    return Math?.min(confidence, 95);
+    return Math.min(confidence, 95);
   }
 
 
@@ -621,7 +621,7 @@ class AITranslationService {
     name: string;
     nativeName: string;
   }[] {
-    return Object?.entries(LANGUAGE_DATA).map(([code, data]) => ({
+    return Object.entries(LANGUAGE_DATA).map(([code, data]) => ({
       code,
       name: data.name,
       nativeName: data.nativeName,
@@ -640,7 +640,7 @@ class AITranslationService {
       const platformTranslations = new Map<string, TranslatedContent>();
 
       for (const lang of targetLanguages) {
-        const translated = await this?.translateToLanguage(
+        const translated = await this.translateToLanguage(
           content,
           headline,
           [],

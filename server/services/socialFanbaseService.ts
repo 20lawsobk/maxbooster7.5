@@ -138,7 +138,7 @@ class SocialFanbaseService {
 
       return contents;
     } catch (error) {
-      logger?.warn("Error fetching contents", { userId, date, error });
+      logger.warn("Error fetching contents", { userId, date, error });
       return [];
     }
   }
@@ -164,14 +164,14 @@ class SocialFanbaseService {
         })
         .returning();
 
-      logger?.info("Saved music impact metric", {
+      logger.info("Saved music impact metric", {
         userId,
         contentId,
         totalScore: impactData.totalScore,
       });
       return inserted;
     } catch (error) {
-      logger?.warn("Error saving music impact", { userId, contentId, error });
+      logger.warn("Error saving music impact", { userId, contentId, error });
       return null;
     }
   }
@@ -211,7 +211,7 @@ class SocialFanbaseService {
     impactScore: number,
   ): Promise<SocialPatternAggregate | null> {
     try {
-      const patternHash = this?.generatePatternHash(pattern);
+      const patternHash = this.generatePatternHash(pattern);
 
       const existing = await db
         .select()
@@ -234,7 +234,7 @@ class SocialFanbaseService {
         const existingStd = current?.impactStd || 0;
         const n = current?.totalPosts || 1;
         const delta = impactScore - existingAvg;
-        const newStd = Math?.sqrt(
+        const newStd = Math.sqrt(
           ((n - 1) * existingStd * existingStd + delta * delta) / n,
         );
 
@@ -273,7 +273,7 @@ class SocialFanbaseService {
         return inserted;
       }
     } catch (error) {
-      logger?.warn("Error saving pattern aggregate", { userId, pattern, error });
+      logger.warn("Error saving pattern aggregate", { userId, pattern, error });
       return null;
     }
   }
@@ -284,14 +284,14 @@ class SocialFanbaseService {
   ): Promise<void> {
     try {
       for (const event of events) {
-        await this?.updateSegmentBehavior(event?.segmentId, event?.signals);
+        await this.updateSegmentBehavior(event?.segmentId, event?.signals);
       }
-      logger?.info("Updated fan segments", {
+      logger.info("Updated fan segments", {
         userId,
         segmentCount: events.length,
       });
     } catch (error) {
-      logger?.warn("Error updating fan segments", { userId, error });
+      logger.warn("Error updating fan segments", { userId, error });
     }
   }
 
@@ -302,9 +302,9 @@ class SocialFanbaseService {
     try {
       for (const content of contents) {
         const performance = (content?.performance as PerformanceData) || {};
-        const impact = this?.computeMusicImpact(performance);
+        const impact = this.computeMusicImpact(performance);
 
-        await this?.saveMusicImpact(userId, content?.id, impact);
+        await this.saveMusicImpact(userId, content?.id, impact);
 
         const pattern: PatternKey = {
           hookType: content.hookType,
@@ -313,7 +313,7 @@ class SocialFanbaseService {
           trackUsed: content.trackUsed || undefined,
         };
 
-        await this?.savePatternAggregate(userId, pattern, impact?.totalScore);
+        await this.savePatternAggregate(userId, pattern, impact?.totalScore);
       }
 
       const topPatterns = await db
@@ -325,7 +325,7 @@ class SocialFanbaseService {
 
       return topPatterns;
     } catch (error) {
-      logger?.warn("Error deriving patterns", { userId, error });
+      logger.warn("Error deriving patterns", { userId, error });
       return [];
     }
   }
@@ -355,12 +355,12 @@ class SocialFanbaseService {
         candidates?.push(candidate);
       }
 
-      const exploreCandidates = await this?.generateExploreCandidates(userId);
+      const exploreCandidates = await this.generateExploreCandidates(userId);
       candidates?.push(...exploreCandidates);
 
       return candidates;
     } catch (error) {
-      logger?.warn("Error generating content candidates", { userId, error });
+      logger.warn("Error generating content candidates", { userId, error });
       return [];
     }
   }
@@ -394,9 +394,9 @@ class SocialFanbaseService {
       const candidate: ContentCandidate = {
         id: randomBytes(8).toString("hex"),
         type: "explore",
-        format: formats[Math?.floor(Math?.random() * formats?.length)],
-        hookType: hookTypes[Math?.floor(Math?.random() * hookTypes?.length)],
-        tone: tones[Math?.floor(Math?.random() * tones?.length)],
+        format: formats[Math.floor(Math.random() * formats?.length)],
+        hookType: hookTypes[Math.floor(Math.random() * hookTypes?.length)],
+        tone: tones[Math.floor(Math.random() * tones?.length)],
         platform: "tiktok",
         expectedImpact: 0,
         isExplore: true,
@@ -442,7 +442,7 @@ class SocialFanbaseService {
 
       return 0;
     } catch (error) {
-      logger?.warn("Error predicting expected impact", {
+      logger.warn("Error predicting expected impact", {
         userId,
         candidateId: candidate.id,
         error,
@@ -474,7 +474,7 @@ class SocialFanbaseService {
     try {
       for (const candidate of candidates) {
         if (!candidate?.isExplore) {
-          candidate.expectedImpact = await this?.predictExpectedImpact(
+          candidate.expectedImpact = await this.predictExpectedImpact(
             userId,
             candidate,
           );
@@ -483,19 +483,19 @@ class SocialFanbaseService {
 
       const avgImpact =
         candidates?.reduce((sum, c) => sum + c?.expectedImpact, 0) /
-        Math?.max(candidates?.length, 1);
+        Math.max(candidates?.length, 1);
 
       const exploreCandidates = candidates?.filter(
-        (c) => this?.labelExploreOrExploit(c, avgImpact) === "explore",
+        (c) => this.labelExploreOrExploit(c, avgImpact) === "explore",
       );
       const exploitCandidates = candidates?.filter(
-        (c) => this?.labelExploreOrExploit(c, avgImpact) === "exploit",
+        (c) => this.labelExploreOrExploit(c, avgImpact) === "exploit",
       );
 
       exploitCandidates?.sort((a, b) => b?.expectedImpact - a?.expectedImpact);
 
-      const totalSlots = Math?.min(candidates?.length, 10);
-      const exploreSlots = Math?.ceil(totalSlots * exploreRatio);
+      const totalSlots = Math.min(candidates?.length, 10);
+      const exploreSlots = Math.ceil(totalSlots * exploreRatio);
       const exploitSlots = totalSlots - exploreSlots;
 
       const selectedExploreCandidates = exploreCandidates?.slice(
@@ -520,7 +520,7 @@ class SocialFanbaseService {
         exploitCount: selectedExploitCandidates.length,
       };
 
-      logger?.info("Built daily schedule", {
+      logger.info("Built daily schedule", {
         userId,
         totalCandidates: finalCandidates.length,
         explore: schedule.exploreCount,
@@ -529,7 +529,7 @@ class SocialFanbaseService {
 
       return schedule;
     } catch (error) {
-      logger?.warn("Error building daily schedule", { userId, error });
+      logger.warn("Error building daily schedule", { userId, error });
       return {
         userId,
         date: new Date(),
@@ -542,7 +542,7 @@ class SocialFanbaseService {
 
   async dailySocialLoop(userId: string, date: Date): Promise<DailySchedule> {
     try {
-      logger?.info("Starting daily social loop", {
+      logger.info("Starting daily social loop", {
         userId,
         date: date.toISOString(),
       });
@@ -555,29 +555,29 @@ class SocialFanbaseService {
       // Step 2: Compute MusicImpact for yesterday's content
       for (const content of yesterdayContents) {
         const performance = (content?.performance as PerformanceData) || {};
-        const impact = this?.computeMusicImpact(performance);
-        await this?.saveMusicImpact(userId, content?.id, impact);
+        const impact = this.computeMusicImpact(performance);
+        await this.saveMusicImpact(userId, content?.id, impact);
       }
 
       // Step 3: Update fan segments from behavioral data
-      const segments = await this?.getFanSegments(userId);
+      const segments = await this.getFanSegments(userId);
       const primarySegment = segments?.length > 0 ? segments[0] : null;
 
       // Step 4: Derive top patterns from high-performing content
-      const topPatterns = await this?.derivePatterns(yesterdayContents, userId);
+      const topPatterns = await this.derivePatterns(yesterdayContents, userId);
 
       // Step 5: Apply time decay to old patterns
-      await this?.applyTimeDecay(userId);
+      await this.applyTimeDecay(userId);
 
       // Step 6: Generate content candidates based on segments and patterns
-      const candidates = await this?.generateContentCandidates(
+      const candidates = await this.generateContentCandidates(
         userId,
         primarySegment,
         topPatterns,
       );
 
       // Step 7: Score & rank candidates, build schedule with explore/exploit balance
-      const schedule = await this?.buildDailySchedule(userId, candidates);
+      const schedule = await this.buildDailySchedule(userId, candidates);
 
       // Step 8: Persist scheduled content to database for autopilot publishing
       const persistedContentIds: string[] = [];
@@ -593,7 +593,7 @@ class SocialFanbaseService {
       for (let i = 0; i < schedule?.candidates.length; i++) {
         const candidate = schedule?.candidates[i];
         const postingTime = new Date(date);
-        postingTime?.setHours(9 + Math?.floor(i * 2), 0, 0, 0); // Space posts 2 hours apart starting at 9am
+        postingTime?.setHours(9 + Math.floor(i * 2), 0, 0, 0); // Space posts 2 hours apart starting at 9am
 
         const platform = candidate?.platform || platforms[i % platforms?.length];
 
@@ -620,9 +620,9 @@ class SocialFanbaseService {
       }
 
       // Step 9: Compress old content to long-term memory
-      await this?.compressToLongTermMemory(userId);
+      await this.compressToLongTermMemory(userId);
 
-      logger?.info("Completed daily social loop", {
+      logger.info("Completed daily social loop", {
         userId,
         scheduleSize: schedule.candidates.length,
         explore: schedule.exploreCount,
@@ -632,7 +632,7 @@ class SocialFanbaseService {
 
       return schedule;
     } catch (error) {
-      logger?.warn("Error in daily social loop", { userId, date, error });
+      logger.warn("Error in daily social loop", { userId, date, error });
       return {
         userId,
         date,
@@ -666,7 +666,7 @@ class SocialFanbaseService {
 
       for (const content of oldContents) {
         const performance = (content?.performance as PerformanceData) || {};
-        const impact = this?.computeMusicImpact(performance);
+        const impact = this.computeMusicImpact(performance);
 
         const pattern: PatternKey = {
           hookType: content.hookType,
@@ -675,15 +675,15 @@ class SocialFanbaseService {
           trackUsed: content.trackUsed || undefined,
         };
 
-        await this?.savePatternAggregate(userId, pattern, impact?.totalScore);
+        await this.savePatternAggregate(userId, pattern, impact?.totalScore);
       }
 
-      logger?.info("Compressed old content to long-term memory", {
+      logger.info("Compressed old content to long-term memory", {
         userId,
         contentCount: oldContents.length,
       });
     } catch (error) {
-      logger?.warn("Error compressing to long-term memory", { userId, error });
+      logger.warn("Error compressing to long-term memory", { userId, error });
     }
   }
 
@@ -701,7 +701,7 @@ class SocialFanbaseService {
         const daysSinceUpdate =
           (now?.getTime() - lastUpdated?.getTime()) / (1000 * 60 * 60 * 24);
 
-        const decayFactor = Math?.pow(
+        const decayFactor = Math.pow(
           0.5,
           daysSinceUpdate / TIME_DECAY_HALF_LIFE_DAYS,
         );
@@ -715,12 +715,12 @@ class SocialFanbaseService {
           .where(eq(socialPatternAggregates?.id, pattern?.id));
       }
 
-      logger?.info("Applied time decay to patterns", {
+      logger.info("Applied time decay to patterns", {
         userId,
         patternCount: patterns.length,
       });
     } catch (error) {
-      logger?.warn("Error applying time decay", { userId, error });
+      logger.warn("Error applying time decay", { userId, error });
     }
   }
 
@@ -742,14 +742,14 @@ class SocialFanbaseService {
         })
         .returning();
 
-      logger?.info("Created fan segment", {
+      logger.info("Created fan segment", {
         userId,
         segmentId: inserted.id,
         name,
       });
       return inserted;
     } catch (error) {
-      logger?.warn("Error creating fan segment", { userId, name, error });
+      logger.warn("Error creating fan segment", { userId, name, error });
       return null;
     }
   }
@@ -766,7 +766,7 @@ class SocialFanbaseService {
         .limit(1);
 
       if (existing?.length === 0) {
-        logger?.warn("Segment not found", { segmentId });
+        logger.warn("Segment not found", { segmentId });
         return null;
       }
 
@@ -783,10 +783,10 @@ class SocialFanbaseService {
         .where(eq(fanSegments?.id, segmentId))
         .returning();
 
-      logger?.info("Updated segment behavior", { segmentId });
+      logger.info("Updated segment behavior", { segmentId });
       return updated;
     } catch (error) {
-      logger?.warn("Error updating segment behavior", { segmentId, error });
+      logger.warn("Error updating segment behavior", { segmentId, error });
       return null;
     }
   }
@@ -810,7 +810,7 @@ class SocialFanbaseService {
       const patterns: SocialPatternAggregate[] = [];
 
       for (const pattern of preferredPatterns) {
-        const patternHash = this?.generatePatternHash(pattern);
+        const patternHash = this.generatePatternHash(pattern);
         const found = await db
           .select()
           .from(socialPatternAggregates)
@@ -829,7 +829,7 @@ class SocialFanbaseService {
 
       return patterns;
     } catch (error) {
-      logger?.warn("Error getting preferred patterns", { segmentId, error });
+      logger.warn("Error getting preferred patterns", { segmentId, error });
       return [];
     }
   }
@@ -844,7 +844,7 @@ class SocialFanbaseService {
 
       return segments;
     } catch (error) {
-      logger?.warn("Error fetching fan segments", { userId, error });
+      logger.warn("Error fetching fan segments", { userId, error });
       return [];
     }
   }
@@ -861,7 +861,7 @@ class SocialFanbaseService {
 
       return patterns;
     } catch (error) {
-      logger?.warn("Error fetching pattern aggregates", { userId, error });
+      logger.warn("Error fetching pattern aggregates", { userId, error });
       return [];
     }
   }
@@ -880,7 +880,7 @@ class SocialFanbaseService {
 
       return metrics;
     } catch (error) {
-      logger?.warn("Error fetching music impact metrics", { userId, error });
+      logger.warn("Error fetching music impact metrics", { userId, error });
       return [];
     }
   }
@@ -917,13 +917,13 @@ class SocialFanbaseService {
         })
         .returning();
 
-      logger?.info("Created social autopilot content", {
+      logger.info("Created social autopilot content", {
         userId,
         contentId: inserted.id,
       });
       return inserted;
     } catch (error) {
-      logger?.warn("Error creating content", { userId, error });
+      logger.warn("Error creating content", { userId, error });
       return null;
     }
   }
@@ -942,10 +942,10 @@ class SocialFanbaseService {
         .where(eq(socialAutopilotContent?.id, contentId))
         .returning();
 
-      logger?.info("Updated content performance", { contentId });
+      logger.info("Updated content performance", { contentId });
       return updated;
     } catch (error) {
-      logger?.warn("Error updating content performance", { contentId, error });
+      logger.warn("Error updating content performance", { contentId, error });
       return null;
     }
   }
@@ -953,10 +953,10 @@ class SocialFanbaseService {
   async deleteSegment(segmentId: string): Promise<boolean> {
     try {
       await db?.delete(fanSegments).where(eq(fanSegments?.id, segmentId));
-      logger?.info("Deleted fan segment", { segmentId });
+      logger.info("Deleted fan segment", { segmentId });
       return true;
     } catch (error) {
-      logger?.warn("Error deleting segment", { segmentId, error });
+      logger.warn("Error deleting segment", { segmentId, error });
       return false;
     }
   }
@@ -985,7 +985,7 @@ class SocialFanbaseService {
 
       return sorted?.map((s) => s?.content);
     } catch (error) {
-      logger?.warn("Error fetching top performing content", { userId, error });
+      logger.warn("Error fetching top performing content", { userId, error });
       return [];
     }
   }

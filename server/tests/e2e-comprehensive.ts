@@ -23,7 +23,7 @@ async function runTest(
     await testFn();
     const duration = Date?.now() - start;
     results?.push({ section, test: testName, status: "pass", duration });
-    logger?.info(`  ✅ ${testName} (${duration}ms)`);
+    logger.info(`  ✅ ${testName} (${duration}ms)`);
   } catch (error) {
     const duration = Date?.now() - start;
     results?.push({
@@ -33,12 +33,12 @@ async function runTest(
       message: error.message,
       duration,
     });
-    logger?.warn(`  ❌ ${testName}: ${error?.message}`);
+    logger.warn(`  ❌ ${testName}: ${error?.message}`);
   }
 }
 
 async function testDatabaseConnection() {
-  logger?.info("\n📊 1. DATABASE CONNECTION TESTS");
+  logger.info("\n📊 1. DATABASE CONNECTION TESTS");
 
   await runTest("Database", "PostgreSQL connection", async () => {
     const result = await db?.execute(sql`SELECT 1 as test`);
@@ -54,7 +54,7 @@ async function testDatabaseConnection() {
 }
 
 async function testDistributionPlatforms() {
-  logger?.info("\n🎵 2. DISTRIBUTION PLATFORMS TESTS");
+  logger.info("\n🎵 2. DISTRIBUTION PLATFORMS TESTS");
 
   await runTest("Distribution", "All 53 platforms seeded", async () => {
     const platforms = await db?.select().from(dspProviders);
@@ -192,7 +192,7 @@ async function testDistributionPlatforms() {
 }
 
 async function testOnboardingSystem() {
-  logger?.info("\n🚀 3. ONBOARDING & RETENTION SYSTEM TESTS");
+  logger.info("\n🚀 3. ONBOARDING & RETENTION SYSTEM TESTS");
 
   await runTest("Onboarding", "user_onboarding table exists", async () => {
     const result = await db?.execute(
@@ -228,7 +228,7 @@ async function testOnboardingSystem() {
 }
 
 async function testSocialMediaSystem() {
-  logger?.info("\n📱 4. SOCIAL MEDIA SYSTEM TESTS");
+  logger.info("\n📱 4. SOCIAL MEDIA SYSTEM TESTS");
 
   await runTest("Social", "scheduled_post_batches table exists", async () => {
     const result = await db?.execute(
@@ -264,7 +264,7 @@ async function testSocialMediaSystem() {
 }
 
 async function testMarketplaceSystem() {
-  logger?.info("\n🛒 5. BEAT MARKETPLACE TESTS");
+  logger.info("\n🛒 5. BEAT MARKETPLACE TESTS");
 
   await runTest("Marketplace", "beats table exists", async () => {
     const result = await db?.execute(sql`SELECT to_regclass('beats') as exists`);
@@ -295,7 +295,7 @@ async function testMarketplaceSystem() {
 }
 
 async function testAnalyticsSystem() {
-  logger?.info("\n📈 6. ANALYTICS SYSTEM TESTS");
+  logger.info("\n📈 6. ANALYTICS SYSTEM TESTS");
 
   await runTest("Analytics", "analytics table exists", async () => {
     const result = await db?.execute(
@@ -329,7 +329,7 @@ async function testAnalyticsSystem() {
 }
 
 async function testBillingSystem() {
-  logger?.info("\n💰 7. BILLING & PAYMENTS TESTS");
+  logger.info("\n💰 7. BILLING & PAYMENTS TESTS");
 
   await runTest("Billing", "invoices table exists", async () => {
     const result = await db?.execute(
@@ -371,12 +371,12 @@ async function testBillingSystem() {
 }
 
 async function testAdminAccount() {
-  logger?.info("\n👤 8. ADMIN ACCOUNT TESTS");
+  logger.info("\n👤 8. ADMIN ACCOUNT TESTS");
 
-  const adminEmail = process?.env.ADMIN_EMAIL;
+  const adminEmail = process.env.ADMIN_EMAIL;
 
   if (!adminEmail) {
-    logger?.warn("⚠️ ADMIN_EMAIL not set - skipping admin tests");
+    logger.warn("⚠️ ADMIN_EMAIL not set - skipping admin tests");
     return;
   }
 
@@ -403,7 +403,7 @@ async function testAdminAccount() {
 }
 
 async function testStudioSystem() {
-  logger?.info("\n🎹 9. AI STUDIO TESTS");
+  logger.info("\n🎹 9. AI STUDIO TESTS");
 
   await runTest("Studio", "projects table exists", async () => {
     const result = await db?.execute(
@@ -444,38 +444,38 @@ async function testStudioSystem() {
 }
 
 async function testAPIEndpoints() {
-  logger?.info("\n🌐 10. API ENDPOINT TESTS");
+  logger.info("\n🌐 10. API ENDPOINT TESTS");
 
   const baseUrl = "http://localhost:5000";
 
   await runTest("API", "Health endpoint responds", async () => {
     const res = await fetch(`${baseUrl}/api/health`);
-    if (!res?.ok) throw new Error(`Health check failed: ${res?.status}`);
+    if (!res.ok) throw new Error(`Health check failed: ${res.status}`);
   });
 
   await runTest("API", "Distribution platforms endpoint", async () => {
     const res = await fetch(`${baseUrl}/api/distribution/platforms`);
-    if (res?.status === 401 || res?.status === 404) return; // Auth required or not exposed publicly
-    if (!res?.ok) throw new Error(`Failed: ${res?.status}`);
+    if (res.status === 401 || res.status === 404) return; // Auth required or not exposed publicly
+    if (!res.ok) throw new Error(`Failed: ${res.status}`);
   });
 
   await runTest("API", "Onboarding endpoint", async () => {
     const res = await fetch(`${baseUrl}/api/onboarding/progress`);
-    if (res?.status === 401) return; // Auth required - this is OK
-    if (!res?.ok && res?.status !== 401) throw new Error(`Failed: ${res?.status}`);
+    if (res.status === 401) return; // Auth required - this is OK
+    if (!res.ok && res.status !== 401) throw new Error(`Failed: ${res.status}`);
   });
 
   await runTest("API", "Achievements endpoint", async () => {
     const res = await fetch(`${baseUrl}/api/achievements`);
-    if (res?.status === 401) return; // Auth required - this is OK
-    if (!res?.ok && res?.status !== 401) throw new Error(`Failed: ${res?.status}`);
+    if (res.status === 401) return; // Auth required - this is OK
+    if (!res.ok && res.status !== 401) throw new Error(`Failed: ${res.status}`);
   });
 }
 
 async function runAllTests() {
-  logger?.info("═══════════════════════════════════════════════════════════");
-  logger?.info("       MAX BOOSTER - COMPREHENSIVE END-TO-END TESTS        ");
-  logger?.info("═══════════════════════════════════════════════════════════");
+  logger.info("═══════════════════════════════════════════════════════════");
+  logger.info("       MAX BOOSTER - COMPREHENSIVE END-TO-END TESTS        ");
+  logger.info("═══════════════════════════════════════════════════════════");
 
   const startTime = Date?.now();
 
@@ -492,30 +492,30 @@ async function runAllTests() {
 
   const totalDuration = Date?.now() - startTime;
 
-  logger?.info("\n═══════════════════════════════════════════════════════════");
-  logger?.info("                      TEST SUMMARY                         ");
-  logger?.info("═══════════════════════════════════════════════════════════");
+  logger.info("\n═══════════════════════════════════════════════════════════");
+  logger.info("                      TEST SUMMARY                         ");
+  logger.info("═══════════════════════════════════════════════════════════");
 
   const passed = results?.filter((r) => r?.status === "pass").length;
   const failed = results?.filter((r) => r?.status === "fail").length;
   const total = results?.length;
 
-  logger?.info(`\n  Total Tests: ${total}`);
-  logger?.info(`  ✅ Passed: ${passed}`);
-  logger?.info(`  ❌ Failed: ${failed}`);
-  logger?.info(`  📊 Pass Rate: ${((passed / total) * 100).toFixed(1)}%`);
-  logger?.info(`  ⏱️  Duration: ${totalDuration}ms`);
+  logger.info(`\n  Total Tests: ${total}`);
+  logger.info(`  ✅ Passed: ${passed}`);
+  logger.info(`  ❌ Failed: ${failed}`);
+  logger.info(`  📊 Pass Rate: ${((passed / total) * 100).toFixed(1)}%`);
+  logger.info(`  ⏱️  Duration: ${totalDuration}ms`);
 
   if (failed > 0) {
-    logger?.info("\n  Failed Tests:");
+    logger.info("\n  Failed Tests:");
     results
       .filter((r) => r?.status === "fail")
       .forEach((r) => {
-        logger?.info(`    ❌ [${r?.section}] ${r?.test}: ${r?.message}`);
+        logger.info(`    ❌ [${r?.section}] ${r?.test}: ${r?.message}`);
       });
   }
 
-  logger?.info("\n═══════════════════════════════════════════════════════════");
+  logger.info("\n═══════════════════════════════════════════════════════════");
 
   return { passed, failed, total, results };
 }
@@ -523,11 +523,11 @@ async function runAllTests() {
 runAllTests()
   .then(({ passed, failed }) => {
     if (failed > 0) {
-      process?.exit(1);
+      process.exit(1);
     }
-    process?.exit(0);
+    process.exit(0);
   })
   .catch((error) => {
-    logger?.warn({ err: error }, "Test suite failed:");
-    process?.exit(1);
+    logger.warn({ err: error }, "Test suite failed:");
+    process.exit(1);
   });

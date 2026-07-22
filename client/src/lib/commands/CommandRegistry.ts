@@ -38,7 +38,7 @@ class CommandRegistryImpl {
 
   constructor() {
     if (typeof window !== "undefined") {
-      this?.loadHistory();
+      this.loadHistory();
     }
   }
 
@@ -46,43 +46,43 @@ class CommandRegistryImpl {
     try {
       const stored = localStorage?.getItem(HISTORY_STORAGE_KEY);
       if (stored) {
-        this.history = JSON?.parse(stored);
+        this.history = JSON.parse(stored);
       }
     } catch (e) {
-      logger?.warn("Failed to load command history:", e);
+      logger.warn("Failed to load command history:", e);
     }
   }
 
   private saveHistory(): void {
     try {
-      localStorage?.setItem(HISTORY_STORAGE_KEY, JSON?.stringify(this?.history));
+      localStorage?.setItem(HISTORY_STORAGE_KEY, JSON.stringify(this.history));
     } catch (e) {
-      logger?.warn("Failed to save command history:", e);
+      logger.warn("Failed to save command history:", e);
     }
   }
 
   register(command: Command): void {
-    this?.commands.set(command?.id, command);
+    this.commands.set(command?.id, command);
   }
 
   unregister(commandId: string): void {
-    this?.commands.delete(commandId);
+    this.commands.delete(commandId);
   }
 
   registerMany(commands: Command[]): void {
-    commands?.forEach((c) => this?.register(c));
+    commands?.forEach((c) => this.register(c));
   }
 
   getCommand(id: string): Command | undefined {
-    return this?.commands.get(id);
+    return this.commands.get(id);
   }
 
   getAllCommands(): Command[] {
-    return Array?.from(this?.commands.values());
+    return Array.from(this.commands.values());
   }
 
   getEnabledCommands(): Command[] {
-    return this?.getAllCommands().filter((cmd) => {
+    return this.getAllCommands().filter((cmd) => {
       if (cmd?.enabled === undefined) return true;
       if (typeof cmd?.enabled === "function") return cmd?.enabled();
       return cmd?.enabled;
@@ -90,11 +90,11 @@ class CommandRegistryImpl {
   }
 
   getCommandsByCategory(category: string): Command[] {
-    return this?.getEnabledCommands().filter((c) => c?.category === category);
+    return this.getEnabledCommands().filter((c) => c?.category === category);
   }
 
   getCommandsForContext(context: string): Command[] {
-    return this?.getEnabledCommands().filter((cmd) => {
+    return this.getEnabledCommands().filter((cmd) => {
       if (!cmd?.context) return true;
       return cmd?.context.includes(context) || cmd?.context.includes("global");
     });
@@ -105,17 +105,17 @@ class CommandRegistryImpl {
   }
 
   getContext(): string {
-    return this?.currentContext;
+    return this.currentContext;
   }
 
   getContextualCommands(): Command[] {
-    return this?.getCommandsForContext(this?.currentContext);
+    return this.getCommandsForContext(this.currentContext);
   }
 
   async execute(commandId: string): Promise<void> {
-    const command = this?.commands.get(commandId);
+    const command = this.commands.get(commandId);
     if (!command) {
-      logger?.warn(`Command not found: ${commandId}`);
+      logger.warn(`Command not found: ${commandId}`);
       return;
     }
 
@@ -127,51 +127,51 @@ class CommandRegistryImpl {
           : command?.enabled;
 
     if (!enabled) {
-      logger?.warn(`Command is disabled: ${commandId}`);
+      logger.warn(`Command is disabled: ${commandId}`);
       return;
     }
 
-    this?.addToHistory(commandId);
+    this.addToHistory(commandId);
     await command?.action();
   }
 
   private addToHistory(commandId: string): void {
-    this.history = this?.history.filter((h) => h?.commandId !== commandId);
-    this?.history.unshift({
+    this.history = this.history.filter((h) => h?.commandId !== commandId);
+    this.history.unshift({
       commandId,
       timestamp: Date.now(),
     });
-    if (this?.history.length > MAX_HISTORY_SIZE) {
-      this.history = this?.history.slice(0, MAX_HISTORY_SIZE);
+    if (this.history.length > MAX_HISTORY_SIZE) {
+      this.history = this.history.slice(0, MAX_HISTORY_SIZE);
     }
-    this?.saveHistory();
+    this.saveHistory();
   }
 
   getHistory(): CommandHistoryEntry[] {
-    return [...this?.history];
+    return [...this.history];
   }
 
   getRecentCommands(limit: number = 5): Command[] {
-    return this?.history
+    return this.history
       .slice(0, limit)
-      .map((h) => this?.commands.get(h?.commandId))
+      .map((h) => this.commands.get(h?.commandId))
       .filter((c): c is Command => c !== undefined);
   }
 
   clearHistory(): void {
     this.history = [];
-    this?.saveHistory();
+    this.saveHistory();
   }
 
   search(query: string): Command[] {
     if (!query?.trim()) {
-      return this?.getContextualCommands();
+      return this.getContextualCommands();
     }
 
     const lowerQuery = query?.toLowerCase();
     const terms = lowerQuery?.split(/\s+/);
 
-    const commands = this?.getContextualCommands();
+    const commands = this.getContextualCommands();
     const scored = commands?.map((cmd) => {
       let score = 0;
       const name = cmd?.name.toLowerCase();
@@ -188,7 +188,7 @@ class CommandRegistryImpl {
         if (keywords?.some((k) => k.includes(term))) score += 8;
       });
 
-      if (this?.fuzzyMatch(name, lowerQuery)) {
+      if (this.fuzzyMatch(name, lowerQuery)) {
         score += 15;
       }
 
@@ -216,7 +216,7 @@ class CommandRegistryImpl {
   }
 
   getGroups(): CommandGroup[] {
-    const commands = this?.getContextualCommands();
+    const commands = this.getContextualCommands();
     const groups = new Map<string, Command[]>();
 
     commands?.forEach((cmd) => {
@@ -225,7 +225,7 @@ class CommandRegistryImpl {
       groups?.set(cmd?.category, existing);
     });
 
-    return Array?.from(groups?.entries()).map(([category, cmds]) => ({
+    return Array.from(groups?.entries()).map(([category, cmds]) => ({
       id: category,
       name: this.formatCategoryName(category),
       commands: cmds,
@@ -240,13 +240,13 @@ class CommandRegistryImpl {
   }
 
   getFormattedShortcut(commandId: string): string {
-    const command = this?.commands.get(commandId);
+    const command = this.commands.get(commandId);
     if (!command?.shortcut) return "";
     return formatShortcutKeys(command?.shortcut.key, command?.shortcut.modifiers);
   }
 
   clear(): void {
-    this?.commands.clear();
+    this.commands.clear();
   }
 }
 

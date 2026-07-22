@@ -35,7 +35,7 @@ export class ChunkIndex {
       .select()
       .from(fabricChunks)
       .where(eq(fabricChunks?.id, chunkId));
-    return rows[0] ? this?.rowToChunk(rows[0]) : null;
+    return rows[0] ? this.rowToChunk(rows[0]) : null;
   }
 
   async getManyChunkLocations(
@@ -47,7 +47,7 @@ export class ChunkIndex {
       .from(fabricChunks)
       .where(inArray(fabricChunks?.id, chunkIds));
     const map = new Map<ChunkId, FabricChunkLocation>();
-    for (const row of rows) map?.set(row?.id, this?.rowToChunk(row));
+    for (const row of rows) map?.set(row?.id, this.rowToChunk(row));
     return map;
   }
 
@@ -60,7 +60,7 @@ export class ChunkIndex {
       .select()
       .from(fabricChunks)
       .where(eq(fabricChunks?.objectId, objectId));
-    return rows?.map(this?.rowToChunk);
+    return rows?.map(this.rowToChunk);
   }
 
   private rowToChunk(

@@ -14,7 +14,7 @@ interface AuthenticatedRequest extends Request {
 const router = Router();
 
 function sanitizeError(err: unknown): string {
-  if (process?.env.NODE_ENV !== "production" && !process?.env.REPLIT_DEPLOYMENT) {
+  if (process.env.NODE_ENV !== "production" && !process.env.REPLIT_DEPLOYMENT) {
     return err instanceof Error ? err?.message : String(err);
   }
   return "Internal server error";
@@ -25,17 +25,17 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { name, policy } = req?.body;
-      if (!name) return res?.status(400).json({ error: "name is required" });
+      const { name, policy } = req.body;
+      if (!name) return res.status(400).json({ error: "name is required" });
       const pocket = await fabricStorage?.createPocket(
-        req?.user!.id,
+        req.user!.id,
         name,
         policy || {},
       );
-      res?.status(201).json(pocket);
+      res.status(201).json(pocket);
     } catch (err) {
-      logger?.warn({ err: err }, "[FabricRoute] createPocket:");
-      res?.status(500).json({ error: sanitizeError(err) });
+      logger.warn({ err: err }, "[FabricRoute] createPocket:");
+      res.status(500).json({ error: sanitizeError(err) });
     }
   },
 );
@@ -45,11 +45,11 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const pockets = await fabricStorage?.listPockets(req?.user!.id);
-      res?.json(pockets);
+      const pockets = await fabricStorage?.listPockets(req.user!.id);
+      res.json(pockets);
     } catch (err) {
-      logger?.warn({ err: err }, "[FabricRoute] listPockets:");
-      res?.status(500).json({ error: sanitizeError(err) });
+      logger.warn({ err: err }, "[FabricRoute] listPockets:");
+      res.status(500).json({ error: sanitizeError(err) });
     }
   },
 );
@@ -59,14 +59,14 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const pocket = await fabricStorage?.getPocket(req?.params.pocketId);
-      if (!pocket) return res?.status(404).json({ error: "Pocket not found" });
-      if (pocket?.ownerId !== req?.user!.id)
-        return res?.status(403).json({ error: "Forbidden" });
-      res?.json(pocket);
+      const pocket = await fabricStorage?.getPocket(req.params.pocketId);
+      if (!pocket) return res.status(404).json({ error: "Pocket not found" });
+      if (pocket?.ownerId !== req.user!.id)
+        return res.status(403).json({ error: "Forbidden" });
+      res.json(pocket);
     } catch (err) {
-      logger?.warn({ err: err }, "[FabricRoute] getPocket:");
-      res?.status(500).json({ error: sanitizeError(err) });
+      logger.warn({ err: err }, "[FabricRoute] getPocket:");
+      res.status(500).json({ error: sanitizeError(err) });
     }
   },
 );
@@ -76,21 +76,21 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const pocket = await fabricStorage?.getPocket(req?.params.pocketId);
-      if (!pocket) return res?.status(404).json({ error: "Pocket not found" });
-      if (pocket?.ownerId !== req?.user!.id)
-        return res?.status(403).json({ error: "Forbidden" });
-      const { name, type } = req?.body;
-      if (!name) return res?.status(400).json({ error: "name is required" });
+      const pocket = await fabricStorage?.getPocket(req.params.pocketId);
+      if (!pocket) return res.status(404).json({ error: "Pocket not found" });
+      if (pocket?.ownerId !== req.user!.id)
+        return res.status(403).json({ error: "Forbidden" });
+      const { name, type } = req.body;
+      if (!name) return res.status(400).json({ error: "name is required" });
       const volume = await fabricStorage?.createVolume(
-        req?.params.pocketId,
+        req.params.pocketId,
         name,
         type || "objects",
       );
-      res?.status(201).json(volume);
+      res.status(201).json(volume);
     } catch (err) {
-      logger?.warn({ err: err }, "[FabricRoute] createVolume:");
-      res?.status(500).json({ error: sanitizeError(err) });
+      logger.warn({ err: err }, "[FabricRoute] createVolume:");
+      res.status(500).json({ error: sanitizeError(err) });
     }
   },
 );
@@ -100,15 +100,15 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const pocket = await fabricStorage?.getPocket(req?.params.pocketId);
-      if (!pocket) return res?.status(404).json({ error: "Pocket not found" });
-      if (pocket?.ownerId !== req?.user!.id)
-        return res?.status(403).json({ error: "Forbidden" });
-      const volumes = await fabricStorage?.listVolumes(req?.params.pocketId);
-      res?.json(volumes);
+      const pocket = await fabricStorage?.getPocket(req.params.pocketId);
+      if (!pocket) return res.status(404).json({ error: "Pocket not found" });
+      if (pocket?.ownerId !== req.user!.id)
+        return res.status(403).json({ error: "Forbidden" });
+      const volumes = await fabricStorage?.listVolumes(req.params.pocketId);
+      res.json(volumes);
     } catch (err) {
-      logger?.warn({ err: err }, "[FabricRoute] listVolumes:");
-      res?.status(500).json({ error: sanitizeError(err) });
+      logger.warn({ err: err }, "[FabricRoute] listVolumes:");
+      res.status(500).json({ error: sanitizeError(err) });
     }
   },
 );
@@ -118,31 +118,31 @@ router?.put(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const pocket = await fabricStorage?.getPocket(req?.params.pocketId);
-      if (!pocket) return res?.status(404).json({ error: "Pocket not found" });
-      if (pocket?.ownerId !== req?.user!.id)
-        return res?.status(403).json({ error: "Forbidden" });
+      const pocket = await fabricStorage?.getPocket(req.params.pocketId);
+      if (!pocket) return res.status(404).json({ error: "Pocket not found" });
+      if (pocket?.ownerId !== req.user!.id)
+        return res.status(403).json({ error: "Forbidden" });
 
       const chunks: Buffer[] = [];
       for await (const chunk of req) chunks?.push(chunk as Buffer);
       const data = Buffer?.concat(chunks);
 
       const originalName =
-        (req?.headers["x-original-name"] as string) || "untitled";
+        (req.headers["x-original-name"] as string) || "untitled";
       const contentType =
-        req?.headers["content-type"] || "application/octet-stream";
+        req.headers["content-type"] || "application/octet-stream";
 
       const objectId = await fabricStorage?.putObject(
-        req?.params.pocketId,
-        req?.params.volumeId,
+        req.params.pocketId,
+        req.params.volumeId,
         data,
         originalName,
         contentType,
       );
-      res?.status(201).json({ objectId });
+      res.status(201).json({ objectId });
     } catch (err) {
-      logger?.warn({ err: err }, "[FabricRoute] putObject:");
-      res?.status(500).json({ error: sanitizeError(err) });
+      logger.warn({ err: err }, "[FabricRoute] putObject:");
+      res.status(500).json({ error: sanitizeError(err) });
     }
   },
 );
@@ -152,15 +152,15 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const pocket = await fabricStorage?.getPocket(req?.params.pocketId);
-      if (!pocket) return res?.status(404).json({ error: "Pocket not found" });
-      if (pocket?.ownerId !== req?.user!.id)
-        return res?.status(403).json({ error: "Forbidden" });
-      const objects = await fabricStorage?.listObjects(req?.params.volumeId);
-      res?.json(objects);
+      const pocket = await fabricStorage?.getPocket(req.params.pocketId);
+      if (!pocket) return res.status(404).json({ error: "Pocket not found" });
+      if (pocket?.ownerId !== req.user!.id)
+        return res.status(403).json({ error: "Forbidden" });
+      const objects = await fabricStorage?.listObjects(req.params.volumeId);
+      res.json(objects);
     } catch (err) {
-      logger?.warn({ err: err }, "[FabricRoute] listObjects:");
-      res?.status(500).json({ error: sanitizeError(err) });
+      logger.warn({ err: err }, "[FabricRoute] listObjects:");
+      res.status(500).json({ error: sanitizeError(err) });
     }
   },
 );
@@ -170,21 +170,21 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const pocket = await fabricStorage?.getPocket(req?.params.pocketId);
-      if (!pocket) return res?.status(404).json({ error: "Pocket not found" });
-      if (pocket?.ownerId !== req?.user!.id)
-        return res?.status(403).json({ error: "Forbidden" });
+      const pocket = await fabricStorage?.getPocket(req.params.pocketId);
+      if (!pocket) return res.status(404).json({ error: "Pocket not found" });
+      if (pocket?.ownerId !== req.user!.id)
+        return res.status(403).json({ error: "Forbidden" });
 
-      const result = await fabricStorage?.getObject(req?.params.objectId);
-      if (!result) return res?.status(404).json({ error: "Object not found" });
+      const result = await fabricStorage?.getObject(req.params.objectId);
+      if (!result) return res.status(404).json({ error: "Object not found" });
 
-      res?.setHeader("Content-Type", result?.object.contentType);
-      res?.setHeader("Content-Length", result?.data.length);
-      res?.setHeader("X-Original-Name", result?.object.originalName);
-      res?.send(result?.data);
+      res.setHeader("Content-Type", result?.object.contentType);
+      res.setHeader("Content-Length", result?.data.length);
+      res.setHeader("X-Original-Name", result?.object.originalName);
+      res.send(result?.data);
     } catch (err) {
-      logger?.warn({ err: err }, "[FabricRoute] getObject:");
-      res?.status(500).json({ error: sanitizeError(err) });
+      logger.warn({ err: err }, "[FabricRoute] getObject:");
+      res.status(500).json({ error: sanitizeError(err) });
     }
   },
 );
@@ -194,15 +194,15 @@ router?.delete(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const pocket = await fabricStorage?.getPocket(req?.params.pocketId);
-      if (!pocket) return res?.status(404).json({ error: "Pocket not found" });
-      if (pocket?.ownerId !== req?.user!.id)
-        return res?.status(403).json({ error: "Forbidden" });
-      await fabricStorage?.deleteObject(req?.params.objectId);
-      res?.status(204).end();
+      const pocket = await fabricStorage?.getPocket(req.params.pocketId);
+      if (!pocket) return res.status(404).json({ error: "Pocket not found" });
+      if (pocket?.ownerId !== req.user!.id)
+        return res.status(403).json({ error: "Forbidden" });
+      await fabricStorage?.deleteObject(req.params.objectId);
+      res.status(204).end();
     } catch (err) {
-      logger?.warn({ err: err }, "[FabricRoute] deleteObject:");
-      res?.status(500).json({ error: sanitizeError(err) });
+      logger.warn({ err: err }, "[FabricRoute] deleteObject:");
+      res.status(500).json({ error: sanitizeError(err) });
     }
   },
 );
@@ -212,10 +212,10 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      if (req?.user?.role !== "admin")
-        return res?.status(403).json({ error: "Admin only" });
+      if (req.user?.role !== "admin")
+        return res.status(403).json({ error: "Admin only" });
       const { region, costTier, backendType, backendConfig, capacityBytes } =
-        req?.body;
+        req.body;
       const node = await fabricNodeRegistry?.registerNode({
         region: region || "us-east",
         costTier: costTier || "standard",
@@ -225,10 +225,10 @@ router?.post(
         usedBytes: 0,
         healthy: true,
       });
-      res?.status(201).json(node);
+      res.status(201).json(node);
     } catch (err) {
-      logger?.warn({ err: err }, "[FabricRoute] registerNode:");
-      res?.status(500).json({ error: sanitizeError(err) });
+      logger.warn({ err: err }, "[FabricRoute] registerNode:");
+      res.status(500).json({ error: sanitizeError(err) });
     }
   },
 );
@@ -238,13 +238,13 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      if (req?.user?.role !== "admin")
-        return res?.status(403).json({ error: "Admin only" });
+      if (req.user?.role !== "admin")
+        return res.status(403).json({ error: "Admin only" });
       const nodes = await fabricNodeRegistry?.listAllNodes();
-      res?.json(nodes);
+      res.json(nodes);
     } catch (err) {
-      logger?.warn({ err: err }, "[FabricRoute] listNodes:");
-      res?.status(500).json({ error: sanitizeError(err) });
+      logger.warn({ err: err }, "[FabricRoute] listNodes:");
+      res.status(500).json({ error: sanitizeError(err) });
     }
   },
 );
@@ -255,10 +255,10 @@ router?.get(
   async (_req: AuthenticatedRequest, res: Response) => {
     try {
       const stats = await fabricStorage?.getStats();
-      res?.json(stats);
+      res.json(stats);
     } catch (err) {
-      logger?.warn({ err: err }, "[FabricRoute] getStats:");
-      res?.status(500).json({ error: sanitizeError(err) });
+      logger.warn({ err: err }, "[FabricRoute] getStats:");
+      res.status(500).json({ error: sanitizeError(err) });
     }
   },
 );
@@ -268,12 +268,12 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      if (req?.user?.role !== "admin")
-        return res?.status(403).json({ error: "Admin only" });
+      if (req.user?.role !== "admin")
+        return res.status(403).json({ error: "Admin only" });
       const nodes = await fabricNodeRegistry?.listAllNodes();
       const pdNodes = nodes?.filter((n) => n?.backendType === "pocket-dimension");
       const status = autoClusterManager?.getStatus();
-      res?.json({
+      res.json({
         cluster: {
           totalNodes: pdNodes.length,
           healthyNodes: pdNodes.filter((n) => n?.healthy).length,
@@ -294,8 +294,8 @@ router?.get(
         autoScaler: status,
       });
     } catch (err) {
-      logger?.warn({ err: err }, "[FabricRoute] cluster/status:");
-      res?.status(500).json({ error: sanitizeError(err) });
+      logger.warn({ err: err }, "[FabricRoute] cluster/status:");
+      res.status(500).json({ error: sanitizeError(err) });
     }
   },
 );
@@ -305,14 +305,14 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      if (req?.user?.role !== "admin")
-        return res?.status(403).json({ error: "Admin only" });
-      logger?.info("[FabricRoute] Manual cluster evaluation triggered");
+      if (req.user?.role !== "admin")
+        return res.status(403).json({ error: "Admin only" });
+      logger.info("[FabricRoute] Manual cluster evaluation triggered");
       const result = await autoClusterManager?.evaluate();
-      res?.json({ triggered: true, ...result });
+      res.json({ triggered: true, ...result });
     } catch (err) {
-      logger?.warn({ err: err }, "[FabricRoute] cluster/evaluate:");
-      res?.status(500).json({ error: sanitizeError(err) });
+      logger.warn({ err: err }, "[FabricRoute] cluster/evaluate:");
+      res.status(500).json({ error: sanitizeError(err) });
     }
   },
 );

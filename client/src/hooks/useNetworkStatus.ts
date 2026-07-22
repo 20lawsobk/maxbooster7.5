@@ -185,8 +185,8 @@ export function useNetworkStatus(
         return;
       }
 
-      const delay = Math?.min(1000 * Math?.pow(2, attempt), 30000);
-      const jitter = Math?.random() * 1000;
+      const delay = Math.min(1000 * Math.pow(2, attempt), 30000);
+      const jitter = Math.random() * 1000;
 
       reconnectTimeoutRef.current = setTimeout(async () => {
         if (!mountedRef?.current) return;
@@ -423,8 +423,8 @@ export function useRetryWithBackoff<T>(
 
       if (i > 0) {
         setIsRetrying(true);
-        const delay = Math?.min(initialDelay * Math?.pow(2, i - 1), maxDelay);
-        const jitter = Math?.random() * 1000;
+        const delay = Math.min(initialDelay * Math.pow(2, i - 1), maxDelay);
+        const jitter = Math.random() * 1000;
 
         await new Promise<void>((resolve) => {
           timeoutRef.current = setTimeout(resolve, delay + jitter);

@@ -342,7 +342,7 @@ async function provisionCaaRecords(
     );
   }
 
-  logger?.info({ domain, zoneId }, "[storefrontDns] CAA records provisioned");
+  logger.info({ domain, zoneId }, "[storefrontDns] CAA records provisioned");
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
@@ -705,7 +705,7 @@ export async function provisionCertificateForHost(host: string): Promise<void> {
   );
   const { provisionCertificate } = await import("./acmeClient.js");
   const result = await provisionCertificate(host);
-  logger?.info({ host, result }, "[storefrontDns] cert provisioning result");
+  logger.info({ host, result }, "[storefrontDns] cert provisioning result");
 }
 
 /**
@@ -750,7 +750,7 @@ export async function detachDomainFromStorefront(
     );
 
     await client?.query("COMMIT");
-    logger?.info(
+    logger.info(
       { storefrontDomainId, domain },
       "[storefrontDns] domain detached",
     );
@@ -900,7 +900,7 @@ export async function runDomainHealthSweep(): Promise<{
           [String(failures), newStatus, row?.id],
         )
         .catch((err) => {
-          logger?.warn(
+          logger.warn(
             { err, domain: row.domain },
             "[storefrontDns] health sweep update failed",
           );
@@ -908,12 +908,12 @@ export async function runDomainHealthSweep(): Promise<{
     }
     if (newStatus === "health_degraded") {
       degraded++;
-      logger?.warn(
+      logger.warn(
         `[storefrontDns] Domain ${row?.domain} health degraded (${failures} consecutive failures)`,
       );
     }
   }
-  logger?.info(
+  logger.info(
     `[storefrontDns] Health sweep complete — ${checked} checked, ${degraded} degraded`,
   );
   return { checked, degraded };

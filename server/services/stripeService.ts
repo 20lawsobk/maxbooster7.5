@@ -28,12 +28,12 @@ if (isProductionEnv()) {
 }
 
 if (!actualStripeKey) {
-  logger?.warn("❌ STRIPE CONFIGURATION ERROR in stripeService.ts:");
-  logger?.warn("   Missing or invalid Stripe secret key.");
-  logger?.warn(
+  logger.warn("❌ STRIPE CONFIGURATION ERROR in stripeService.ts:");
+  logger.warn("   Missing or invalid Stripe secret key.");
+  logger.warn(
     "   Expected: STRIPE_SECRET_KEY (production) or TESTING_STRIPE_SECRET_KEY (development)",
   );
-  logger?.warn("   Format: sk_test_... or sk_live_...");
+  logger.warn("   Format: sk_test_... or sk_live_...");
   throw new Error(
     "Invalid Stripe configuration - cannot initialize payment service",
   );
@@ -94,7 +94,7 @@ export class StripeService {
       }
 
       // Get price ID based on tier
-      const priceId = this?.getPriceId(tier);
+      const priceId = this.getPriceId(tier);
 
       if (tier === "lifetime") {
         const result = await executeStripeOperation(() =>
@@ -138,7 +138,7 @@ export class StripeService {
         };
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Subscription error:");
+      logger.warn({ err: error }, "Subscription error:");
       throw error;
     }
   }
@@ -164,7 +164,7 @@ export class StripeService {
 
       return result?.data;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Beat purchase intent error:");
+      logger.warn({ err: error }, "Beat purchase intent error:");
       throw error;
     }
   }
@@ -181,15 +181,15 @@ export class StripeService {
         // Subscription & payment events
         case "payment_intent.succeeded":
           const paymentIntent = event?.data.object as Stripe.PaymentIntent;
-          await this?.handlePaymentSuccess(paymentIntent);
+          await this.handlePaymentSuccess(paymentIntent);
           break;
         case "invoice.payment_succeeded":
           const invoice = event?.data.object as Stripe.Invoice;
-          await this?.handleSubscriptionPayment(invoice);
+          await this.handleSubscriptionPayment(invoice);
           break;
         case "customer.subscription.deleted":
           const subscription = event?.data.object as Stripe.Subscription;
-          await this?.handleSubscriptionCanceled(subscription);
+          await this.handleSubscriptionCanceled(subscription);
           break;
 
         // Marketplace payout events (Transfers)
@@ -214,10 +214,10 @@ export class StripeService {
           break;
 
         default:
-          logger?.info(`Unhandled webhook event type: ${event?.type}`);
+          logger.info(`Unhandled webhook event type: ${event?.type}`);
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Webhook error:");
+      logger.warn({ err: error }, "Webhook error:");
       throw error;
     }
   }
@@ -250,7 +250,7 @@ export class StripeService {
       listingId
     ) {
       // Handle stem purchase completion
-      await this?.handleStemPurchase({
+      await this.handleStemPurchase({
         stemId,
         buyerId,
         sellerId,
@@ -261,7 +261,7 @@ export class StripeService {
     } else if (beatId && buyerId && licenseType) {
       // Beat purchase webhook handler reserved for future beat-specific purchases
       // Currently marketplace uses stem purchase flow above
-      logger?.info({ beatId, buyerId, licenseType }, "Beat purchase completed");
+      logger.info({ beatId, buyerId, licenseType }, "Beat purchase completed");
     }
   }
 
@@ -292,7 +292,7 @@ export class StripeService {
     const downloadToken = crypto?.randomBytes(32).toString("hex");
 
     // stemOrders table not yet in schema — download token stored in order downloadUrl
-    logger?.debug(
+    logger.debug(
       `Stem order token generated for order ${order?.id}: ${downloadToken}`,
     );
 
@@ -302,7 +302,7 @@ export class StripeService {
       .set({ downloadCount: sql`${listingStems?.downloadCount} + 1` })
       .where(eq(listingStems?.id, data?.stemId));
 
-    logger?.info(
+    logger.info(
       `✅ Stem purchase completed: ${data?.stemId} by ${data?.buyerId}`,
     );
   }
@@ -386,10 +386,10 @@ export class StripeService {
         return { success: false, error: "No payment found for order" };
       }
 
-      const amountCents = params?.amountCents || Math?.round(order?.amount * 100);
+      const amountCents = params?.amountCents || Math.round(order?.amount * 100);
       const refundType =
         params?.amountCents &&
-        params?.amountCents < Math?.round(order?.amount * 100)
+        params?.amountCents < Math.round(order?.amount * 100)
           ? "partial"
           : "full";
 
@@ -716,7 +716,7 @@ export class StripeService {
 
       return formData;
     } catch (error) {
-      logger?.warn({ err: error }, "Error generating tax form data:");
+      logger.warn({ err: error }, "Error generating tax form data:");
       throw error;
     }
   }

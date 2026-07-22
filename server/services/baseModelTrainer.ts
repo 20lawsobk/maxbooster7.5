@@ -21,13 +21,13 @@ const OBJECTIVES: Array<"awareness" | "engagement" | "conversions" | "viral"> =
   ["awareness", "engagement", "conversions", "viral"];
 
 function rand(min: number, max: number) {
-  return Math?.random() * (max - min) + min;
+  return Math.random() * (max - min) + min;
 }
 function randInt(min: number, max: number) {
-  return Math?.floor(rand(min, max + 1));
+  return Math.floor(rand(min, max + 1));
 }
 function pick<T>(arr: readonly T[]): T {
-  return arr[Math?.floor(Math?.random() * arr?.length)];
+  return arr[Math.floor(Math.random() * arr?.length)];
 }
 
 function makeSyntheticPosts(count: number): SocialPost[] {
@@ -40,7 +40,7 @@ function makeSyntheticPosts(count: number): SocialPost[] {
     const platform = pick(PLATFORMS);
     const mediaType = pick(MEDIA_TYPES);
     const peakHours = temporalFactors?.hourOfDay.peakHours;
-    const isPeak = Math?.random() > 0.4;
+    const isPeak = Math.random() > 0.4;
     const hour = isPeak ? pick(peakHours) : randInt(0, 23);
     const postedAt = new Date(Date?.now() - randInt(0, 90) * 24 * 3600 * 1000);
     postedAt?.setHours(hour);
@@ -52,9 +52,9 @@ function makeSyntheticPosts(count: number): SocialPost[] {
     const emojiCount = randInt(0, 5);
     const mentionCount = randInt(0, 3);
     const contentLength = randInt(60, 280);
-    const hasCallToAction = Math?.random() > 0.4;
+    const hasCallToAction = Math.random() > 0.4;
 
-    const isNewRelease = Math?.random() > 0.7;
+    const isNewRelease = Math.random() > 0.7;
     const mediaMultiplier =
       mediaType === "video"
         ? contentFactors?.mediaPresence.videoMultiplier
@@ -67,12 +67,12 @@ function makeSyntheticPosts(count: number): SocialPost[] {
     const peakMultiplier = isPeak ? 1.6 : 0.7;
 
     const baseEngagement = rand(200, 5000);
-    const engagement = Math?.round(
+    const engagement = Math.round(
       baseEngagement * mediaMultiplier * releaseMultiplier * peakMultiplier,
     );
-    const reach = Math?.round(engagement * rand(8, 25));
-    const likes = Math?.round(engagement * rand(0.6, 0.8));
-    const comments = Math?.round(engagement * rand(0.1, 0.2));
+    const reach = Math.round(engagement * rand(8, 25));
+    const likes = Math.round(engagement * rand(0.6, 0.8));
+    const comments = Math.round(engagement * rand(0.1, 0.2));
     const shares = engagement - likes - comments;
 
     posts?.push({
@@ -111,17 +111,17 @@ function makeSyntheticCampaigns(count: number): OrganicCampaign[] {
       hourOfDay >= 10 && hourOfDay <= 20 && dayOfWeek >= 2 && dayOfWeek <= 5;
 
     const impressions = randInt(500, 50000);
-    const reach = Math?.round(impressions * rand(0.6, 0.9));
-    const organicReach = Math?.round(reach * rand(0.7, 1));
-    const likes = Math?.round(impressions * rand(0.02, 0.12));
-    const comments = Math?.round(impressions * rand(0.005, 0.03));
-    const shares = Math?.round(impressions * rand(0.001, 0.02));
-    const saves = Math?.round(impressions * rand(0.005, 0.04));
+    const reach = Math.round(impressions * rand(0.6, 0.9));
+    const organicReach = Math.round(reach * rand(0.7, 1));
+    const likes = Math.round(impressions * rand(0.02, 0.12));
+    const comments = Math.round(impressions * rand(0.005, 0.03));
+    const shares = Math.round(impressions * rand(0.001, 0.02));
+    const saves = Math.round(impressions * rand(0.005, 0.04));
     const engagement = likes + comments + shares + saves;
-    const clicks = Math?.round(impressions * rand(0.01, 0.05));
-    const conversions = Math?.round(clicks * rand(0.02, 0.15));
-    const engagementRate = engagement / Math?.max(impressions, 1);
-    const viralCoefficient = shares / Math?.max(impressions, 1);
+    const clicks = Math.round(impressions * rand(0.01, 0.05));
+    const conversions = Math.round(clicks * rand(0.02, 0.15));
+    const engagementRate = engagement / Math.max(impressions, 1);
+    const viralCoefficient = shares / Math.max(impressions, 1);
     const wentViral = viralCoefficient > 0.01;
 
     campaigns?.push({
@@ -220,28 +220,28 @@ function makeOrganicAsAdsCampaigns(count: number): OrganicCampaign[] {
 
     // Algorithm-triggered impressions: organic reach * boost
     const baseReach = randInt(800, 15000);
-    const boostedReach = Math?.round(baseReach * algoBoost);
-    const impressions = Math?.round(boostedReach * rand(1.1, 1.6));
+    const boostedReach = Math.round(baseReach * algoBoost);
+    const impressions = Math.round(boostedReach * rand(1.1, 1.6));
     const organicReach = boostedReach; // 100% organic — no paid promotion
     const reach = organicReach;
 
     // High save/share rates are what trigger the algorithm (these are the "spend")
-    const saves = Math?.round(impressions * rand(0.04, 0.12)); // above Explore threshold
-    const shares = Math?.round(impressions * rand(0.02, 0.06)); // above viral threshold
-    const likes = Math?.round(impressions * rand(0.05, 0.18));
-    const comments = Math?.round(impressions * rand(0.01, 0.04));
+    const saves = Math.round(impressions * rand(0.04, 0.12)); // above Explore threshold
+    const shares = Math.round(impressions * rand(0.02, 0.06)); // above viral threshold
+    const likes = Math.round(impressions * rand(0.05, 0.18));
+    const comments = Math.round(impressions * rand(0.01, 0.04));
     const engagement = likes + comments + shares + saves;
-    const clicks = Math?.round(impressions * rand(0.03, 0.08));
-    const engagementRate = engagement / Math?.max(impressions, 1);
+    const clicks = Math.round(impressions * rand(0.03, 0.08));
+    const engagementRate = engagement / Math.max(impressions, 1);
 
     // Viral coefficient: shares/impressions — higher than paid because content spreads authentically
-    const viralCoefficient = shares / Math?.max(impressions, 1);
+    const viralCoefficient = shares / Math.max(impressions, 1);
     const wentViral = viralCoefficient > 0.015;
 
     // Conversions: organic converts better (higher trust) than paid
     const organicCVR =
       PAID_AD_BENCHMARKS?.performanceVsOrganic.conversionComparison?.organicCVR;
-    const conversions = Math?.round(
+    const conversions = Math.round(
       clicks * rand(organicCVR * 0.7, organicCVR * 1.4),
     );
 
@@ -356,7 +356,7 @@ function makePaidAdCampaigns(count: number): OrganicCampaign[] {
   const tiktokBenchmarks = PAID_AD_BENCHMARKS?.platformMetrics.tiktok_ads;
 
   for (let i = 0; i < count; i++) {
-    const isPrimarilyInstagram = Math?.random() > 0.4;
+    const isPrimarilyInstagram = Math.random() > 0.4;
     const campaignType = pick(campaignTypes);
     const mediaType = pick(mediaMix);
     const hourOfDay = randInt(8, 22);
@@ -376,15 +376,15 @@ function makePaidAdCampaigns(count: number): OrganicCampaign[] {
           tiktokBenchmarks?.avgCPM.engagement,
           tiktokBenchmarks?.avgCPM.conversion,
         );
-    const impressions = Math?.round((budget / avgCPM) * 1000);
-    const reach = Math?.round(
+    const impressions = Math.round((budget / avgCPM) * 1000);
+    const reach = Math.round(
       impressions /
         rand(
           instaBenchmarks?.frequencyOptimal.min,
           instaBenchmarks?.frequencyOptimal.max,
         ),
     );
-    const organicReach = Math?.round(reach * rand(0.05, 0.2)); // paid campaigns get minimal organic lift
+    const organicReach = Math.round(reach * rand(0.05, 0.2)); // paid campaigns get minimal organic lift
 
     // CTR from benchmarks
     const avgCTR =
@@ -393,26 +393,26 @@ function makePaidAdCampaigns(count: number): OrganicCampaign[] {
         : mediaType === "carousel"
           ? instaBenchmarks?.avgCTR.carousel
           : instaBenchmarks?.avgCTR.image;
-    const clicks = Math?.round(impressions * (avgCTR + rand(-0.01, 0.01)));
+    const clicks = Math.round(impressions * (avgCTR + rand(-0.01, 0.01)));
 
     // CVR from benchmarks — paid audience is colder than organic
     const avgCVR = instaBenchmarks?.avgCVR.coldAudience;
-    const conversions = Math?.round(clicks * rand(avgCVR * 0.5, avgCVR * 1.5));
+    const conversions = Math.round(clicks * rand(avgCVR * 0.5, avgCVR * 1.5));
 
     // Engagement metrics — paid gets lower authentic engagement
-    const likes = Math?.round(impressions * rand(0.01, 0.06));
-    const comments = Math?.round(impressions * rand(0.002, 0.015));
-    const shares = Math?.round(impressions * rand(0.001, 0.008)); // paid rarely goes viral organically
-    const saves = Math?.round(impressions * rand(0.002, 0.02));
+    const likes = Math.round(impressions * rand(0.01, 0.06));
+    const comments = Math.round(impressions * rand(0.002, 0.015));
+    const shares = Math.round(impressions * rand(0.001, 0.008)); // paid rarely goes viral organically
+    const saves = Math.round(impressions * rand(0.002, 0.02));
     const engagement = likes + comments + shares + saves;
-    const engagementRate = engagement / Math?.max(impressions, 1);
-    const viralCoefficient = shares / Math?.max(impressions, 1);
+    const engagementRate = engagement / Math.max(impressions, 1);
+    const viralCoefficient = shares / Math.max(impressions, 1);
 
     campaigns?.push({
       campaignId: `paid_ad_${i}_${campaignType}`,
       platforms,
       content: {
-        headline: `Paid ${campaignType} campaign - $${Math?.round(budget)} budget`,
+        headline: `Paid ${campaignType} campaign - $${Math.round(budget)} budget`,
         body: `Ad creative for ${objective} objective targeting cold audience`,
         hashtags: getHashtagsForGenre("pop").slice(0, 3),
         mentions: [],
@@ -466,24 +466,24 @@ function makePaidAdCampaigns(count: number): OrganicCampaign[] {
 async function trainAndSaveSocialBase(): Promise<boolean> {
   try {
     if (await modelWeightStorage?.exists("social_base")) {
-      logger?.info(
+      logger.info(
         "[BaseTrainer] Social base weights found in storage, skipping re-training",
       );
       return true;
     }
 
-    logger?.info(
+    logger.info(
       "[BaseTrainer] Generating 300 synthetic music industry posts for social autopilot training...",
     );
     const posts = makeSyntheticPosts(300);
 
     const model = new SocialMediaAutopilotAI();
-    logger?.info(
+    logger.info(
       "[BaseTrainer] Training Social Autopilot on music industry data...",
     );
 
     const result = await model?.trainOnUserEngagementData(posts);
-    logger?.info(
+    logger.info(
       `[BaseTrainer] Social training complete: ${result?.postsProcessed} posts, models: ${result?.modelsTrained.join(", ")}`,
     );
 
@@ -496,10 +496,10 @@ async function trainAndSaveSocialBase(): Promise<boolean> {
       state,
     });
 
-    logger?.info("[BaseTrainer] Social base weights saved to storage bubble");
+    logger.info("[BaseTrainer] Social base weights saved to storage bubble");
     return true;
   } catch (err) {
-    logger?.warn(
+    logger.warn(
       { err: err },
       "[BaseTrainer] Social autopilot training failed:",
     );
@@ -510,14 +510,14 @@ async function trainAndSaveSocialBase(): Promise<boolean> {
 async function trainAndSaveAdvertisingBase(): Promise<boolean> {
   try {
     if (await modelWeightStorage?.exists("advertising_base")) {
-      logger?.info(
+      logger.info(
         "[BaseTrainer] Advertising base weights found in storage, skipping re-training",
       );
       return true;
     }
 
     // Dataset 1: General music industry campaigns (original)
-    logger?.info(
+    logger.info(
       "[BaseTrainer] Generating 200 general music industry campaigns...",
     );
     const generalCampaigns = makeSyntheticCampaigns(200);
@@ -525,14 +525,14 @@ async function trainAndSaveAdvertisingBase(): Promise<boolean> {
     // Dataset 2: Organic-as-ads campaigns — the zero-spend, paid-results strategy
     // These teach the model algorithm exploitation, funnel replication, and
     // cross-platform burst coordination as a substitute for paid ad spend.
-    logger?.info(
+    logger.info(
       "[BaseTrainer] Generating 250 organic-as-ads campaigns (zero-spend, paid-results strategy)...",
     );
     const organicAsAdsCampaigns = makeOrganicAsAdsCampaigns(250);
 
     // Dataset 3: Real paid ad benchmarks — so the model knows paid performance targets
     // and can learn to match or exceed them organically.
-    logger?.info(
+    logger.info(
       "[BaseTrainer] Generating 150 paid advertising benchmark campaigns...",
     );
     const paidAdCampaigns = makePaidAdCampaigns(150);
@@ -542,20 +542,20 @@ async function trainAndSaveAdvertisingBase(): Promise<boolean> {
       ...generalCampaigns,
       ...organicAsAdsCampaigns,
       ...paidAdCampaigns,
-    ].sort(() => Math?.random() - 0.5);
+    ].sort(() => Math.random() - 0.5);
 
-    logger?.info(
+    logger.info(
       `[BaseTrainer] Training Advertising Autopilot on ${allCampaigns?.length} total campaigns across 3 datasets...`,
     );
-    logger?.info("[BaseTrainer]   - General music industry: 200 campaigns");
-    logger?.info("[BaseTrainer]   - Organic-as-ads (zero spend): 250 campaigns");
-    logger?.info(
+    logger.info("[BaseTrainer]   - General music industry: 200 campaigns");
+    logger.info("[BaseTrainer]   - Organic-as-ads (zero spend): 250 campaigns");
+    logger.info(
       "[BaseTrainer]   - Paid ad benchmarks (target perf): 150 campaigns",
     );
 
     const model = new AdvertisingAutopilotAI_v3();
     const result = await model?.trainOnOrganicCampaigns(allCampaigns);
-    logger?.info(
+    logger.info(
       `[BaseTrainer] Advertising training complete: ${result?.campaignsProcessed} campaigns processed`,
     );
 
@@ -573,12 +573,12 @@ async function trainAndSaveAdvertisingBase(): Promise<boolean> {
       state,
     });
 
-    logger?.info(
+    logger.info(
       "[BaseTrainer] Advertising base weights v2.0 saved to storage bubble — organic-as-ads + paid benchmarks trained",
     );
     return true;
   } catch (err) {
-    logger?.warn(
+    logger.warn(
       { err: err },
       "[BaseTrainer] Advertising autopilot training failed:",
     );
@@ -588,19 +588,19 @@ async function trainAndSaveAdvertisingBase(): Promise<boolean> {
 
 async function trainMusicGenerator(): Promise<boolean> {
   try {
-    logger?.info(
+    logger.info(
       "[BaseTrainer] Music generator uses embedded theory data — loading genre taxonomy and BPM ranges...",
     );
     const { AdvancedMusicAI } = await import(
       "../../shared/ml/audio/AdvancedMusicAI.js"
     );
     new AdvancedMusicAI();
-    logger?.info(
+    logger.info(
       "[BaseTrainer] Music generator initialized with full harmonic/rhythmic knowledge base",
     );
     return true;
   } catch (err) {
-    logger?.warn(
+    logger.warn(
       "[BaseTrainer] Music generator warm-up skipped:",
       err instanceof Error ? err?.message : String(err),
     );
@@ -626,17 +626,17 @@ async function trainMusicGenerator(): Promise<boolean> {
 async function fineTuneWithPublicDatasets(): Promise<boolean> {
   try {
     if (await modelWeightStorage?.exists("fine_tune_public_datasets")) {
-      logger?.info(
+      logger.info(
         "[BaseTrainer] Fine-tune weights found in storage, skipping re-training",
       );
       return true;
     }
 
-    logger?.info(
+    logger.info(
       "[BaseTrainer] ── Fine-tuning with public music industry datasets ──",
     );
 
-    const genres = Object?.keys(GENRE_VIRAL_HOOKS) as Array<
+    const genres = Object.keys(GENRE_VIRAL_HOOKS) as Array<
       keyof typeof GENRE_VIRAL_HOOKS
     >;
     const platforms = ["tiktok", "instagram", "twitter", "youtube"] as const;
@@ -647,7 +647,7 @@ async function fineTuneWithPublicDatasets(): Promise<boolean> {
     let totalEmotionalSamples = 0;
 
     // ── Phase 1: Genre Viral Hook corpus sizing ──────────────────────────────
-    logger?.info(
+    logger.info(
       "[BaseTrainer] Phase 1: Indexing genre-specific viral hook corpus (HARRISON + Social-Media-Instruction)...",
     );
     const hookCorpus: Record<
@@ -668,12 +668,12 @@ async function fineTuneWithPublicDatasets(): Promise<boolean> {
         }
       }
     }
-    logger?.info(
+    logger.info(
       `[BaseTrainer] Phase 1 complete: ${totalHookSamples} viral hook samples indexed across ${genres?.length} genres`,
     );
 
     // ── Phase 2: CTA library engagement signal mapping ───────────────────────
-    logger?.info(
+    logger.info(
       "[BaseTrainer] Phase 2: Encoding CTA performance signals from social dataset...",
     );
     const ctaSignals = {
@@ -687,13 +687,13 @@ async function fineTuneWithPublicDatasets(): Promise<boolean> {
       follow_prompts: CALL_TO_ACTION_LIBRARY.engagement.follow_prompts?.length,
       presave: CALL_TO_ACTION_LIBRARY.presave.length,
     };
-    totalCTASamples = Object?.values(ctaSignals).reduce((a, b) => a + b, 0);
-    logger?.info(
-      `[BaseTrainer] Phase 2 complete: ${totalCTASamples} CTA samples across ${Object?.keys(ctaSignals).length} categories`,
+    totalCTASamples = Object.values(ctaSignals).reduce((a, b) => a + b, 0);
+    logger.info(
+      `[BaseTrainer] Phase 2 complete: ${totalCTASamples} CTA samples across ${Object.keys(ctaSignals).length} categories`,
     );
 
     // ── Phase 3: YouTube-8M + AudioSet video engagement signals ─────────────
-    logger?.info(
+    logger.info(
       "[BaseTrainer] Phase 3: Loading YouTube-8M music category engagement rates + AudioSet audio signals...",
     );
     const videoEngagementMatrix =
@@ -705,16 +705,16 @@ async function fineTuneWithPublicDatasets(): Promise<boolean> {
     const harmonyLift =
       VIDEO_CONTENT_TRAINING_PACK?.harmonySetPatterns.videoMusicAlignment;
 
-    for (const [genre, rates] of Object?.entries(videoEngagementMatrix)) {
+    for (const [genre, rates] of Object.entries(videoEngagementMatrix)) {
       const avgEngagement =
         (rates?.likeRate + rates?.commentRate + rates?.shareRate) / 3;
       totalVideoSamples++;
-      logger?.debug(
+      logger.debug(
         `[BaseTrainer] YT-8M ${genre}: avg engagement signal ${avgEngagement?.toFixed(4)}`,
       );
     }
 
-    const hookBoostFactors = Object?.entries(audioSignals).map(
+    const hookBoostFactors = Object.entries(audioSignals).map(
       ([signal, data]) => ({
         signal,
         engagementBoost: data.engagementBoost,
@@ -722,38 +722,38 @@ async function fineTuneWithPublicDatasets(): Promise<boolean> {
       }),
     );
 
-    logger?.info(
+    logger.info(
       `[BaseTrainer] Phase 3 complete: ${totalVideoSamples} video genre profiles, ${hookBoostFactors?.length} audio signal boost factors loaded`,
     );
-    logger?.info(
+    logger.info(
       `[BaseTrainer]   HarmonySet beat-sync lift: +${(harmonyLift?.beatSyncedEditing.retentionLift * 100).toFixed(0)}% retention, +${(harmonyLift?.beatSyncedEditing.shareabilityLift * 100).toFixed(0)}% shareability`,
     );
-    logger?.info(
+    logger.info(
       `[BaseTrainer]   AudioSet drop signal: ${audioSignals?.dropPresent.engagementBoost?.toFixed(2)}x engagement boost`,
     );
-    logger?.info(
+    logger.info(
       `[BaseTrainer]   YouTube-8M hook-first-3s importance: ${(videoFeatures?.hookInFirst3Seconds * 100).toFixed(0)}%`,
     );
 
     // ── Phase 4: MusicBench text-pair descriptors ────────────────────────────
-    logger?.info(
+    logger.info(
       "[BaseTrainer] Phase 4: Loading MusicBench text-music pair descriptors (52,768 sample calibration)...",
     );
     const textPairs =
       VIDEO_CONTENT_TRAINING_PACK?.musicBenchTextPairs.genreDescriptors;
     let musicBenchSamples = 0;
-    for (const [genre, descriptors] of Object?.entries(textPairs)) {
+    for (const [genre, descriptors] of Object.entries(textPairs)) {
       musicBenchSamples += descriptors?.length;
-      logger?.debug(
+      logger.debug(
         `[BaseTrainer] MusicBench ${genre}: ${descriptors?.length} descriptor templates`,
       );
     }
-    logger?.info(
+    logger.info(
       `[BaseTrainer] Phase 4 complete: ${musicBenchSamples} MusicBench-calibrated genre descriptor templates loaded`,
     );
 
     // ── Phase 5: MTG-Jamendo tag-engagement correlations ────────────────────
-    logger?.info(
+    logger.info(
       "[BaseTrainer] Phase 5: Encoding MTG-Jamendo CC-licensed genre distribution + tag-engagement correlations...",
     );
     const jamendoTags =
@@ -761,43 +761,43 @@ async function fineTuneWithPublicDatasets(): Promise<boolean> {
         .highEngagementTagCombinations;
     const jamendoTempo =
       VIDEO_CONTENT_TRAINING_PACK?.mtgJamendoInsights.tempoEngagementCorrelation;
-    logger?.info(
+    logger.info(
       `[BaseTrainer] Phase 5 complete: ${jamendoTags?.length} high-engagement tag combos, tempo-engagement curve encoded`,
     );
 
     // ── Phase 6: Emotional trigger pattern encoding ──────────────────────────
-    logger?.info(
+    logger.info(
       "[BaseTrainer] Phase 6: Encoding emotional trigger pattern library...",
     );
-    const triggerCategories = Object?.keys(EMOTIONAL_TRIGGER_PATTERNS) as Array<
+    const triggerCategories = Object.keys(EMOTIONAL_TRIGGER_PATTERNS) as Array<
       keyof typeof EMOTIONAL_TRIGGER_PATTERNS
     >;
     for (const category of triggerCategories) {
       totalEmotionalSamples += EMOTIONAL_TRIGGER_PATTERNS[category].length;
     }
-    logger?.info(
+    logger.info(
       `[BaseTrainer] Phase 6 complete: ${totalEmotionalSamples} emotional triggers across ${triggerCategories?.length} psychological categories`,
     );
 
     // ── Phase 7: Platform content script formula encoding ───────────────────
-    logger?.info(
+    logger.info(
       "[BaseTrainer] Phase 7: Loading platform-specific content script formulas (TikTok, Instagram, Twitter, YouTube, Spotify)...",
     );
     const tiktokHookFormulas =
       PLATFORM_CONTENT_SCRIPTS?.tiktok.viralHookFormulas?.length;
     const igReelsHooks =
       PLATFORM_CONTENT_SCRIPTS?.instagram.reelsHookFormulas?.length;
-    const twitterFormats = Object?.keys(
+    const twitterFormats = Object.keys(
       PLATFORM_CONTENT_SCRIPTS?.twitter.standaloneFormats,
     ).length;
     const ytTitleFormulas =
       PLATFORM_CONTENT_SCRIPTS?.youtube.titleFormulas?.length;
     const totalScriptSamples =
       tiktokHookFormulas + igReelsHooks + twitterFormats + ytTitleFormulas;
-    logger?.info(
+    logger.info(
       `[BaseTrainer] Phase 7 complete: ${totalScriptSamples} platform content scripts loaded`,
     );
-    logger?.info(
+    logger.info(
       `[BaseTrainer]   TikTok hooks: ${tiktokHookFormulas}, IG Reels: ${igReelsHooks}, Twitter: ${twitterFormats}, YouTube: ${ytTitleFormulas}`,
     );
 
@@ -875,24 +875,24 @@ async function fineTuneWithPublicDatasets(): Promise<boolean> {
 
     await modelWeightStorage?.save("fine_tune_public_datasets", fineTuneWeights);
 
-    logger?.info(
+    logger.info(
       "[BaseTrainer] ══════════════════════════════════════════════════════════",
     );
-    logger?.info(
+    logger.info(
       `[BaseTrainer] Fine-tuning complete — ${totalSamples} total samples encoded`,
     );
-    logger?.info(`[BaseTrainer]   Genres enriched: ${genres?.join(", ")}`);
-    logger?.info(`[BaseTrainer]   Platforms: ${platforms?.join(", ")}`);
-    logger?.info(
+    logger.info(`[BaseTrainer]   Genres enriched: ${genres?.join(", ")}`);
+    logger.info(`[BaseTrainer]   Platforms: ${platforms?.join(", ")}`);
+    logger.info(
       "[BaseTrainer]   Weights saved to Pocket Dimension storage bubble",
     );
-    logger?.info(
+    logger.info(
       "[BaseTrainer] ══════════════════════════════════════════════════════════",
     );
 
     return true;
   } catch (err) {
-    logger?.warn(
+    logger.warn(
       { err: err },
       "[BaseTrainer] Fine-tuning with public datasets failed:",
     );
@@ -907,23 +907,23 @@ export async function runPublicDatasetFineTuning(): Promise<boolean> {
 export async function runBaseModelTraining(): Promise<void> {
   try {
     await import("@tensorflow/tfjs");
-    logger?.info("[BaseTrainer] TF.js CPU backend active");
+    logger.info("[BaseTrainer] TF.js CPU backend active");
   } catch {
-    logger?.info("[BaseTrainer] TF.js backend unavailable — training skipped");
+    logger.info("[BaseTrainer] TF.js backend unavailable — training skipped");
   }
 
-  logger?.info(
+  logger.info(
     "[BaseTrainer] ═══════════════════════════════════════════════════",
   );
-  logger?.info("[BaseTrainer] Starting base model training");
-  logger?.info("[BaseTrainer] Primary source: MaxCore external server");
-  logger?.info(
+  logger.info("[BaseTrainer] Starting base model training");
+  logger.info("[BaseTrainer] Primary source: MaxCore external server");
+  logger.info(
     "[BaseTrainer] Fallback source: local synthetic data (if MaxCore unavailable)",
   );
-  logger?.info(
+  logger.info(
     "[BaseTrainer] Also trained by: real user engagement + autopilot activity",
   );
-  logger?.info(
+  logger.info(
     "[BaseTrainer] ═══════════════════════════════════════════════════",
   );
 
@@ -934,23 +934,23 @@ export async function runBaseModelTraining(): Promise<void> {
   let maxcoreSynced = 0;
   try {
     const { syncWeightsNow } = await import("./maxcoreSync.js");
-    logger?.info(
+    logger.info(
       "[BaseTrainer] Requesting weights from MaxCore (primary source)…",
     );
     maxcoreSynced = await syncWeightsNow();
     if (maxcoreSynced > 0) {
-      logger?.info(
+      logger.info(
         `[BaseTrainer] MaxCore provided ${maxcoreSynced} model weight set(s) — ` +
           "local synthetic seeding will be skipped for synced models",
       );
     } else {
-      logger?.info(
+      logger.info(
         "[BaseTrainer] MaxCore unavailable or no weights yet — " +
           "local synthetic seeding will run as fallback",
       );
     }
   } catch (err) {
-    logger?.warn(
+    logger.warn(
       "[BaseTrainer] MaxCore weight fetch failed — falling back to synthetic seeding:",
       err instanceof Error ? err?.message : String(err),
     );
@@ -974,20 +974,20 @@ export async function runBaseModelTraining(): Promise<void> {
     fineTune: fineTuneOk.status === "fulfilled" && fineTuneOk?.value,
   };
 
-  logger?.info(
+  logger.info(
     `[BaseTrainer] Initialization complete — maxcoreSynced: ${results?.maxcoreSynced}, ` +
       `social: ${results?.social ? "OK" : "SKIP/FAIL"}, ` +
       `advertising: ${results?.advertising ? "OK" : "SKIP/FAIL"}, ` +
       `music: ${results?.music ? "OK" : "SKIP/FAIL"}, ` +
       `fineTune: ${results?.fineTune ? "OK" : "SKIP/FAIL"}`,
   );
-  logger?.info(
+  logger.info(
     "[BaseTrainer] Ongoing learning continues via: user engagement + autopilot + MaxCore 10-min sync (10 yrs simulated per session)",
   );
 
   // Train the creative model pipeline (deferred, non-blocking)
   trainCreativeModelPipeline().catch((err) =>
-    logger?.warn(
+    logger.warn(
       "[BaseTrainer] Creative pipeline training deferred error:",
       err?.message,
     ),
@@ -1015,7 +1015,7 @@ export function loadFineTuneState(): Record<string, unknown> | null {
 async function trainCreativePlannerBase(): Promise<boolean> {
   try {
     if (await modelWeightStorage?.exists("creative_planner_base")) {
-      logger?.info(
+      logger.info(
         "[BaseTrainer] CreativePlannerModel weights found in storage, skipping re-training",
       );
       return true;
@@ -1023,7 +1023,7 @@ async function trainCreativePlannerBase(): Promise<boolean> {
     const { CreativePlannerModel } = await import(
       "../../shared/ml/models/CreativePlannerModel.js"
     );
-    logger?.info(
+    logger.info(
       "[BaseTrainer] Training CreativePlannerModel (500 synthetic briefs)...",
     );
 
@@ -1043,10 +1043,10 @@ async function trainCreativePlannerBase(): Promise<boolean> {
       trained: true,
       samples: 500,
     });
-    logger?.info("[BaseTrainer] ✅ CreativePlannerModel trained");
+    logger.info("[BaseTrainer] ✅ CreativePlannerModel trained");
     return true;
   } catch (err) {
-    logger?.warn(
+    logger.warn(
       `[BaseTrainer] CreativePlannerModel training failed: ${err?.message}`,
     );
     return false;
@@ -1056,7 +1056,7 @@ async function trainCreativePlannerBase(): Promise<boolean> {
 async function trainBeatSyncAlignmentBase(): Promise<boolean> {
   try {
     if (await modelWeightStorage?.exists("beat_sync_alignment_base")) {
-      logger?.info(
+      logger.info(
         "[BaseTrainer] BeatSyncAlignmentModel weights found in storage, skipping re-training",
       );
       return true;
@@ -1064,7 +1064,7 @@ async function trainBeatSyncAlignmentBase(): Promise<boolean> {
     const { BeatSyncAlignmentModel } = await import(
       "../../shared/ml/models/BeatSyncAlignmentModel.js"
     );
-    logger?.info(
+    logger.info(
       "[BaseTrainer] Training BeatSyncAlignmentModel (600 synthetic beat sequences)...",
     );
 
@@ -1084,10 +1084,10 @@ async function trainBeatSyncAlignmentBase(): Promise<boolean> {
       trained: true,
       samples: 600,
     });
-    logger?.info("[BaseTrainer] ✅ BeatSyncAlignmentModel trained");
+    logger.info("[BaseTrainer] ✅ BeatSyncAlignmentModel trained");
     return true;
   } catch (err) {
-    logger?.warn(
+    logger.warn(
       `[BaseTrainer] BeatSyncAlignmentModel training failed: ${err?.message}`,
     );
     return false;
@@ -1097,7 +1097,7 @@ async function trainBeatSyncAlignmentBase(): Promise<boolean> {
 async function trainVideoCreativeScorerBase(): Promise<boolean> {
   try {
     if (await modelWeightStorage?.exists("video_creative_scorer_base")) {
-      logger?.info(
+      logger.info(
         "[BaseTrainer] VideoCreativeScorer weights found in storage, skipping re-training",
       );
       return true;
@@ -1105,7 +1105,7 @@ async function trainVideoCreativeScorerBase(): Promise<boolean> {
     const { VideoCreativeScorer } = await import(
       "../../shared/ml/models/VideoCreativeScorer.js"
     );
-    logger?.info(
+    logger.info(
       "[BaseTrainer] Training VideoCreativeScorer (800 synthetic creative packages)...",
     );
 
@@ -1125,10 +1125,10 @@ async function trainVideoCreativeScorerBase(): Promise<boolean> {
       trained: true,
       samples: 800,
     });
-    logger?.info("[BaseTrainer] ✅ VideoCreativeScorer trained");
+    logger.info("[BaseTrainer] ✅ VideoCreativeScorer trained");
     return true;
   } catch (err) {
-    logger?.warn(
+    logger.warn(
       `[BaseTrainer] VideoCreativeScorer training failed: ${err?.message}`,
     );
     return false;
@@ -1138,7 +1138,7 @@ async function trainVideoCreativeScorerBase(): Promise<boolean> {
 async function trainKeyframeSelectorBase(): Promise<boolean> {
   try {
     if (await modelWeightStorage?.exists("keyframe_style_selector_base")) {
-      logger?.info(
+      logger.info(
         "[BaseTrainer] KeyframeStyleSelector weights found in storage, skipping re-training",
       );
       return true;
@@ -1146,7 +1146,7 @@ async function trainKeyframeSelectorBase(): Promise<boolean> {
     const { KeyframeStyleSelector } = await import(
       "../../shared/ml/models/KeyframeStyleSelector.js"
     );
-    logger?.info(
+    logger.info(
       "[BaseTrainer] Training KeyframeStyleSelector (700 synthetic keyframe–style pairs)...",
     );
 
@@ -1166,10 +1166,10 @@ async function trainKeyframeSelectorBase(): Promise<boolean> {
       trained: true,
       samples: 700,
     });
-    logger?.info("[BaseTrainer] ✅ KeyframeStyleSelector trained");
+    logger.info("[BaseTrainer] ✅ KeyframeStyleSelector trained");
     return true;
   } catch (err) {
-    logger?.warn(
+    logger.warn(
       `[BaseTrainer] KeyframeStyleSelector training failed: ${err?.message}`,
     );
     return false;
@@ -1177,11 +1177,11 @@ async function trainKeyframeSelectorBase(): Promise<boolean> {
 }
 
 export async function trainCreativeModelPipeline(): Promise<void> {
-  logger?.info(
+  logger.info(
     "[BaseTrainer] ──────────────────────────────────────────────────",
   );
-  logger?.info("[BaseTrainer] Training Creative Model Pipeline (4 models)");
-  logger?.info(
+  logger.info("[BaseTrainer] Training Creative Model Pipeline (4 models)");
+  logger.info(
     "[BaseTrainer] ──────────────────────────────────────────────────",
   );
 
@@ -1196,7 +1196,7 @@ export async function trainCreativeModelPipeline(): Promise<void> {
     (r) => r?.status === "fulfilled" && r?.value,
   );
 
-  logger?.info(
+  logger.info(
     `[BaseTrainer] Creative pipeline — planner: ${planner ? "OK" : "FAILED"}, ` +
       `alignment: ${align ? "OK" : "FAILED"}, scorer: ${scorer ? "OK" : "FAILED"}, ` +
       `style: ${style ? "OK" : "FAILED"}`,

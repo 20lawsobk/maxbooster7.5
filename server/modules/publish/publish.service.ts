@@ -21,7 +21,7 @@ export async function publishStorefront(
     .set({ isPublic: true, isActive: true, updatedAt: new Date() })
     .where(eq(storefronts?.id, storefrontId));
 
-  logger?.info(
+  logger.info(
     `[publish] Storefront ${storefrontId} published by user ${userId}`,
   );
 }
@@ -44,7 +44,7 @@ export async function unpublishStorefront(
     .set({ isPublic: false, updatedAt: new Date() })
     .where(eq(storefronts?.id, storefrontId));
 
-  logger?.info(
+  logger.info(
     `[publish] Storefront ${storefrontId} unpublished by user ${userId}`,
   );
 }

@@ -29,7 +29,7 @@ export class ZstdEngine {
     data: Buffer,
     dictId?: string,
   ): Promise<{ compressed: Buffer; dictId?: string }> {
-    const dict = dictId ? await this?.loadDict(dictId) : undefined;
+    const dict = dictId ? await this.loadDict(dictId) : undefined;
 
     const opts: Parameters<typeof zstdCompressAsync>[1] = {
       params: {
@@ -53,17 +53,17 @@ export class ZstdEngine {
   }
 
   async addSample(domain: string, sample: Buffer): Promise<void> {
-    if (!this?.sampleAccumulator.has(domain)) {
-      this?.sampleAccumulator.set(domain, []);
+    if (!this.sampleAccumulator.has(domain)) {
+      this.sampleAccumulator.set(domain, []);
     }
-    const samples = this?.sampleAccumulator.get(domain)!;
+    const samples = this.sampleAccumulator.get(domain)!;
     if (samples?.length < DICT_SAMPLE_MAX) {
       samples?.push(sample);
     }
   }
 
   async trainDict(domain: string): Promise<string | null> {
-    const samples = this?.sampleAccumulator.get(domain);
+    const samples = this.sampleAccumulator.get(domain);
     if (!samples || samples?.length < 10) return null;
 
     const combined = Buffer?.concat(samples);
@@ -72,15 +72,15 @@ export class ZstdEngine {
       .digest("hex")
       .substring(0, 16);
 
-    const existing = this?.dictMeta.get(domain);
+    const existing = this.dictMeta.get(domain);
     if (existing && existing?.sampleCount >= samples?.length) {
       return existing?.id;
     }
 
-    const dictData = this?.buildDict(combined, samples);
+    const dictData = this.buildDict(combined, samples);
 
-    await this?.persistDict(dictId, domain, dictData, samples?.length);
-    this?.dictCache.set(dictId, dictData);
+    await this.persistDict(dictId, domain, dictData, samples?.length);
+    this.dictCache.set(dictId, dictData);
 
     const entry: DictEntry = {
       id: dictId,
@@ -89,23 +89,23 @@ export class ZstdEngine {
       dictBytes: dictData.length,
       createdAt: new Date(),
     };
-    this?.dictMeta.set(domain, entry);
+    this.dictMeta.set(domain, entry);
 
     return dictId;
   }
 
   async getDictForDomain(domain: string): Promise<string | undefined> {
-    const entry = this?.dictMeta.get(domain);
+    const entry = this.dictMeta.get(domain);
     return entry?.id;
   }
 
   private buildDict(combined: Buffer, samples: Buffer[]): Buffer {
-    const target = Math?.min(DICT_SIZE, Math?.floor(combined?.length * 0.02));
-    const chunkSize = Math?.floor(target / samples?.length);
+    const target = Math.min(DICT_SIZE, Math.floor(combined?.length * 0.02));
+    const chunkSize = Math.floor(target / samples?.length);
     const chunks: Buffer[] = [];
 
     for (const sample of samples) {
-      const take = Math?.min(chunkSize, sample?.length);
+      const take = Math.min(chunkSize, sample?.length);
       chunks?.push(sample?.subarray(0, take));
     }
 
@@ -113,10 +113,10 @@ export class ZstdEngine {
   }
 
   private async loadDict(id: string): Promise<Buffer | undefined> {
-    if (this?.dictCache.has(id)) return this?.dictCache.get(id)!;
+    if (this.dictCache.has(id)) return this.dictCache.get(id)!;
     try {
       const data = await fs?.readFile(path?.join(DICT_DIR, `${id}.dict`));
-      this?.dictCache.set(id, data);
+      this.dictCache.set(id, data);
       return data;
     } catch {
       return undefined;
@@ -133,7 +133,7 @@ export class ZstdEngine {
     await fs?.writeFile(path?.join(DICT_DIR, `${id}.dict`), data);
     await fs?.writeFile(
       path?.join(DICT_DIR, `${id}.meta.json`),
-      JSON?.stringify({
+      JSON.stringify({
         id,
         domain,
         sampleCount,
@@ -144,7 +144,7 @@ export class ZstdEngine {
   }
 
   async compressionRatio(data: Buffer, dictId?: string): Promise<number> {
-    const { compressed } = await this?.compress(data, dictId);
+    const { compressed } = await this.compress(data, dictId);
     return data?.length / compressed?.length;
   }
 }

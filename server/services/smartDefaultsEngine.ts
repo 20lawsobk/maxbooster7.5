@@ -261,25 +261,25 @@ class SmartDefaultsEngine {
     try {
       const redis = await getRedisClient();
       if (redis) {
-        const cached = await redis?.get(`${this?.CACHE_PREFIX}${userId}`);
+        const cached = await redis?.get(`${this.CACHE_PREFIX}${userId}`);
         if (cached) {
-          return JSON?.parse(cached);
+          return JSON.parse(cached);
         }
       }
 
-      const defaults = await this?.calculateSmartDefaults(userId);
+      const defaults = await this.calculateSmartDefaults(userId);
 
       if (redis) {
         await redis?.setEx(
-          `${this?.CACHE_PREFIX}${userId}`,
-          this?.CACHE_TTL,
-          JSON?.stringify(defaults),
+          `${this.CACHE_PREFIX}${userId}`,
+          this.CACHE_TTL,
+          JSON.stringify(defaults),
         );
       }
 
       return defaults;
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting smart defaults:");
+      logger.warn({ err: error }, "Error getting smart defaults:");
       return [];
     }
   }
@@ -291,7 +291,7 @@ class SmartDefaultsEngine {
     const preferences = await userPreferencesService?.getUserPreferences(userId);
     if (!preferences) return defaults;
 
-    const genreTemplate = this?.getGenreTemplate(preferences?.genres[0] || "pop");
+    const genreTemplate = this.getGenreTemplate(preferences?.genres[0] || "pop");
 
     defaults?.push({
       category: "studio",
@@ -325,7 +325,7 @@ class SmartDefaultsEngine {
       reasoning: `Colors associated with ${genreTemplate?.genre} aesthetics`,
     });
 
-    const careerStageDefaults = this?.getCareerStageDefaults(
+    const careerStageDefaults = this.getCareerStageDefaults(
       preferences?.careerStage,
     );
     defaults?.push(...careerStageDefaults);
@@ -339,7 +339,7 @@ class SmartDefaultsEngine {
   }
 
   getAllGenreTemplates(): GenreTemplate[] {
-    return Object?.values(GENRE_TEMPLATES);
+    return Object.values(GENRE_TEMPLATES);
   }
 
   private getCareerStageDefaults(stage: CareerStage): SmartDefault[] {
@@ -424,7 +424,7 @@ class SmartDefaultsEngine {
             times,
             platform,
             reason: `Peak engagement times for ${platform} in ${timezone}`,
-            engagementScore: 0.75 + Math?.random() * 0.2,
+            engagementScore: 0.75 + Math.random() * 0.2,
           });
         }
       }
@@ -433,7 +433,7 @@ class SmartDefaultsEngine {
         .sort((a, b) => b?.engagementScore - a?.engagementScore)
         .slice(0, 10);
     } catch (error) {
-      logger?.warn({ err: error }, "Error getting scheduling suggestions:");
+      logger.warn({ err: error }, "Error getting scheduling suggestions:");
       return [];
     }
   }
@@ -446,14 +446,14 @@ class SmartDefaultsEngine {
         await userPreferencesService?.getUserPreferences(userId);
       if (!preferences) return [];
 
-      const genreTemplate = this?.getGenreTemplate(
+      const genreTemplate = this.getGenreTemplate(
         preferences?.genres[0] || "pop",
       );
       const audienceAge = preferences?.targetAudience.ageRange;
       const recommendations: PlatformRecommendation[] = [];
 
-      for (const [platform, data] of Object?.entries(PLATFORM_DATA)) {
-        const ageOverlap = this?.calculateAgeOverlap(
+      for (const [platform, data] of Object.entries(PLATFORM_DATA)) {
+        const ageOverlap = this.calculateAgeOverlap(
           audienceAge,
           data?.audienceAge,
         );
@@ -499,7 +499,7 @@ class SmartDefaultsEngine {
         })
         .slice(0, 8);
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "Error getting distribution recommendations:",
       );
@@ -519,7 +519,7 @@ class SmartDefaultsEngine {
 
     if (genres?.length > 0) {
       const primaryGenre = genres[0];
-      const template = this?.getGenreTemplate(primaryGenre);
+      const template = this.getGenreTemplate(primaryGenre);
 
       basePreferences.genres = genres;
       basePreferences.studioPreferences.defaultBPM = template?.defaultBPM;
@@ -537,15 +537,15 @@ class SmartDefaultsEngine {
     range1: [number, number],
     range2: [number, number],
   ): number {
-    const start = Math?.max(range1[0], range2[0]);
-    const end = Math?.min(range1[1], range2[1]);
+    const start = Math.max(range1[0], range2[0]);
+    const end = Math.min(range1[1], range2[1]);
     if (start >= end) return 0;
 
     const overlapSize = end - start;
     const range1Size = range1[1] - range1[0];
     const range2Size = range2[1] - range2[0];
 
-    return overlapSize / Math?.max(range1Size, range2Size);
+    return overlapSize / Math.max(range1Size, range2Size);
   }
 }
 

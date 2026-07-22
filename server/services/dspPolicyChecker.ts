@@ -10,10 +10,10 @@ async function getSharp() {
   try {
     sharpModule = (await import("sharp")).default;
     _sharpAvailable = true;
-    logger?.info("Sharp module loaded for DSP policy checking");
+    logger.info("Sharp module loaded for DSP policy checking");
     return sharpModule;
   } catch (error) {
-    logger?.warn(
+    logger.warn(
       `Sharp not available - cover art validation will use basic checks: ${error instanceof Error ? error.message : String(error)}`,
     );
     sharpModule = false;
@@ -754,28 +754,28 @@ export class DSPPolicyChecker {
   private policies: Map<string, DSPPolicy> = new Map();
 
   constructor() {
-    for (const [key, policy] of Object?.entries(DSP_POLICIES)) {
-      this?.policies.set(key?.toLowerCase(), policy);
+    for (const [key, policy] of Object.entries(DSP_POLICIES)) {
+      this.policies.set(key?.toLowerCase(), policy);
     }
   }
 
   getPolicy(dsp: string): DSPPolicy | undefined {
-    return this?.policies.get(dsp?.toLowerCase());
+    return this.policies.get(dsp?.toLowerCase());
   }
 
   getAllPolicies(): DSPPolicy[] {
-    return Array?.from(this?.policies.values());
+    return Array.from(this.policies.values());
   }
 
   listDSPs(): string[] {
-    return Array?.from(this?.policies.keys());
+    return Array.from(this.policies.keys());
   }
 
   async checkCompliance(
     release: ReleaseToCheck,
     dsp: string,
   ): Promise<ComplianceResult> {
-    const policy = this?.getPolicy(dsp);
+    const policy = this.getPolicy(dsp);
     if (!policy) {
       return {
         dsp,
@@ -796,17 +796,17 @@ export class DSPPolicyChecker {
     const errors: ComplianceError[] = [];
     const warnings: ComplianceWarning[] = [];
 
-    const metadataErrors = this?.checkMetadataCompliance(release, policy);
+    const metadataErrors = this.checkMetadataCompliance(release, policy);
     errors?.push(...metadataErrors);
 
-    const coverArtResult = await this?.checkCoverArtCompliance(release, policy);
+    const coverArtResult = await this.checkCoverArtCompliance(release, policy);
     errors?.push(...coverArtResult?.errors);
     warnings?.push(...coverArtResult?.warnings);
 
-    const audioErrors = this?.checkAudioCompliance(release, policy);
+    const audioErrors = this.checkAudioCompliance(release, policy);
     errors?.push(...audioErrors);
 
-    const timingResult = this?.checkReleaseTiming(release, policy);
+    const timingResult = this.checkReleaseTiming(release, policy);
     errors?.push(...timingResult?.errors);
     warnings?.push(...timingResult?.warnings);
 
@@ -938,7 +938,7 @@ export class DSPPolicyChecker {
       try {
         const sharpInstance = await getSharp();
         if (!sharpInstance) {
-          logger?.warn(
+          logger.warn(
             "Sharp not available - skipping cover art validation for file path",
           );
         } else {
@@ -955,7 +955,7 @@ export class DSPPolicyChecker {
           };
         }
       } catch (error) {
-        logger?.warn({ err: error }, "Error reading cover art metadata:");
+        logger.warn({ err: error }, "Error reading cover art metadata:");
       }
     }
 
@@ -1011,8 +1011,8 @@ export class DSPPolicyChecker {
         errors?.push({
           category: "coverArt",
           field: "coverArt.fileSize",
-          message: `Cover art file size (${Math?.round(metadata?.fileSize / 1024 / 1024)}MB) exceeds maximum`,
-          requirement: `Maximum file size: ${Math?.round(art?.maxFileSize / 1024 / 1024)}MB`,
+          message: `Cover art file size (${Math.round(metadata?.fileSize / 1024 / 1024)}MB) exceeds maximum`,
+          requirement: `Maximum file size: ${Math.round(art?.maxFileSize / 1024 / 1024)}MB`,
           currentValue: metadata.fileSize,
         });
       }
@@ -1144,7 +1144,7 @@ export class DSPPolicyChecker {
 
     const releaseDate = new Date(release?.releaseDate);
     const now = new Date();
-    const daysUntilRelease = Math?.floor(
+    const daysUntilRelease = Math.floor(
       (releaseDate?.getTime() - now?.getTime()) / (1000 * 60 * 60 * 24),
     );
 
@@ -1203,8 +1203,8 @@ export class DSPPolicyChecker {
   ): Promise<{ [dsp: string]: ComplianceResult }> {
     const results: { [dsp: string]: ComplianceResult } = {};
 
-    for (const dsp of this?.listDSPs()) {
-      results[dsp] = await this?.checkCompliance(release, dsp);
+    for (const dsp of this.listDSPs()) {
+      results[dsp] = await this.checkCompliance(release, dsp);
     }
 
     return results;
@@ -1217,7 +1217,7 @@ export class DSPPolicyChecker {
     timing: string[];
     additional: string[];
   } | null {
-    const policy = this?.getPolicy(dsp);
+    const policy = this.getPolicy(dsp);
     if (!policy) return null;
 
     return {
@@ -1225,7 +1225,7 @@ export class DSPPolicyChecker {
         `Dimensions: ${policy?.coverArt.minWidth}x${policy?.coverArt.minHeight} to ${policy?.coverArt.maxWidth}x${policy?.coverArt.maxHeight} pixels`,
         `Aspect ratio: ${policy?.coverArt.aspectRatio}`,
         `Formats: ${policy?.coverArt.formats?.join(", ")}`,
-        `Max file size: ${Math?.round(policy?.coverArt.maxFileSize / 1024 / 1024)}MB`,
+        `Max file size: ${Math.round(policy?.coverArt.maxFileSize / 1024 / 1024)}MB`,
         `Color mode: ${policy?.coverArt.colorMode?.join(", ")}`,
       ],
       audio: [

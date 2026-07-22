@@ -88,7 +88,7 @@ export class StatusPageService {
       })
       .returning();
 
-    logger?.info(`Status page service created: ${created?.id} - ${created?.name}`);
+    logger.info(`Status page service created: ${created?.id} - ${created?.name}`);
 
     return created;
   }
@@ -106,7 +106,7 @@ export class StatusPageService {
       .where(eq(statusPageServices?.id, serviceId))
       .returning();
 
-    logger?.info(`Status page service updated: ${serviceId}`);
+    logger.info(`Status page service updated: ${serviceId}`);
 
     return updated;
   }
@@ -125,9 +125,9 @@ export class StatusPageService {
       .where(eq(statusPageServices?.id, serviceId))
       .returning();
 
-    logger?.info(`Service ${serviceId} status updated to ${status}`);
+    logger.info(`Service ${serviceId} status updated to ${status}`);
 
-    await this?.recordUptimeMetric(serviceId, status === "operational");
+    await this.recordUptimeMetric(serviceId, status === "operational");
 
     return updated;
   }
@@ -170,11 +170,11 @@ export class StatusPageService {
   }
 
   async getStatusSummary(): Promise<ServiceStatusSummary> {
-    const services = await this?.getAllServices(true);
-    const activeIncidents = await this?.getActiveIncidents();
-    const scheduledMaintenance = await this?.getScheduledMaintenance();
+    const services = await this.getAllServices(true);
+    const activeIncidents = await this.getActiveIncidents();
+    const scheduledMaintenance = await this.getScheduledMaintenance();
 
-    const overallStatus = this?.calculateOverallStatus(services);
+    const overallStatus = this.calculateOverallStatus(services);
 
     return {
       services,
@@ -208,10 +208,10 @@ export class StatusPageService {
         serviceId,
       });
 
-      const impactStatus = this?.impactToServiceStatus(
+      const impactStatus = this.impactToServiceStatus(
         request?.impact || "minor",
       );
-      await this?.updateServiceStatus(serviceId, impactStatus);
+      await this.updateServiceStatus(serviceId, impactStatus);
     }
 
     await db?.insert(statusPageIncidentUpdates).values({
@@ -221,11 +221,11 @@ export class StatusPageService {
       createdBy: request.createdBy,
     });
 
-    logger?.info(`Incident created: ${incident?.id} - ${incident?.title}`);
+    logger.info(`Incident created: ${incident?.id} - ${incident?.title}`);
 
-    await this?.notifySubscribers(incident, "new");
+    await this.notifySubscribers(incident, "new");
 
-    return this?.getIncidentWithDetails(
+    return this.getIncidentWithDetails(
       incident?.id,
     ) as Promise<IncidentWithUpdates>;
   }
@@ -234,7 +234,7 @@ export class StatusPageService {
     incidentId: string,
     request: UpdateIncidentRequest,
   ): Promise<IncidentWithUpdates> {
-    const incident = await this?.getIncident(incidentId);
+    const incident = await this.getIncident(incidentId);
     if (!incident) {
       throw new Error("Incident not found");
     }
@@ -262,20 +262,20 @@ export class StatusPageService {
     });
 
     if (request?.resolve) {
-      const affectedServiceIds = await this?.getAffectedServiceIds(incidentId);
+      const affectedServiceIds = await this.getAffectedServiceIds(incidentId);
       for (const serviceId of affectedServiceIds) {
-        await this?.updateServiceStatus(serviceId, "operational");
+        await this.updateServiceStatus(serviceId, "operational");
       }
     }
 
-    logger?.info(`Incident ${incidentId} updated to ${newStatus}`);
+    logger.info(`Incident ${incidentId} updated to ${newStatus}`);
 
-    await this?.notifySubscribers(
+    await this.notifySubscribers(
       updated,
       request?.resolve ? "resolved" : "update",
     );
 
-    return this?.getIncidentWithDetails(
+    return this.getIncidentWithDetails(
       incidentId,
     ) as Promise<IncidentWithUpdates>;
   }
@@ -293,7 +293,7 @@ export class StatusPageService {
   async getIncidentWithDetails(
     incidentId: string,
   ): Promise<IncidentWithUpdates | null> {
-    const incident = await this?.getIncident(incidentId);
+    const incident = await this.getIncident(incidentId);
     if (!incident) return null;
 
     const updates = await db
@@ -309,7 +309,7 @@ export class StatusPageService {
 
     const affectedServices: StatusPageService[] = [];
     for (const link of serviceLinks) {
-      const service = await this?.getService(link?.serviceId);
+      const service = await this.getService(link?.serviceId);
       if (service) affectedServices?.push(service);
     }
 
@@ -358,7 +358,7 @@ export class StatusPageService {
     serviceId: string,
     days: number = 90,
   ): Promise<UptimeHistory> {
-    const service = await this?.getService(serviceId);
+    const service = await this.getService(serviceId);
     if (!service) {
       throw new Error("Service not found");
     }
@@ -434,10 +434,10 @@ export class StatusPageService {
       .returning();
 
     if (!request?.userId) {
-      await this?.sendVerificationEmail(subscriber);
+      await this.sendVerificationEmail(subscriber);
     }
 
-    logger?.info(
+    logger.info(
       `Status page subscriber added: ${subscriber?.id} - ${subscriber?.email}`,
     );
 
@@ -465,7 +465,7 @@ export class StatusPageService {
       .where(eq(statusPageSubscribers?.id, subscriber?.id))
       .returning();
 
-    logger?.info(`Subscription verified: ${subscriber?.email}`);
+    logger.info(`Subscription verified: ${subscriber?.email}`);
 
     return updated;
   }
@@ -475,7 +475,7 @@ export class StatusPageService {
       .delete(statusPageSubscribers)
       .where(eq(statusPageSubscribers?.unsubscribeToken, token));
 
-    logger?.info(`Subscription removed via unsubscribe token`);
+    logger.info(`Subscription removed via unsubscribe token`);
   }
 
   async getSubscribers(): Promise<StatusPageSubscriber[]> {
@@ -579,7 +579,7 @@ export class StatusPageService {
     incident: StatusPageIncident,
     type: "new" | "update" | "resolved",
   ): Promise<void> {
-    const subscribers = await this?.getSubscribers();
+    const subscribers = await this.getSubscribers();
 
     const relevantSubscribers = subscribers?.filter((s) => {
       if (incident?.isScheduled) return s?.notifyMaintenance;
@@ -612,14 +612,14 @@ export class StatusPageService {
           `,
         });
       } catch (error) {
-        logger?.warn(
+        logger.warn(
           { err: error },
           `Failed to notify subscriber ${subscriber?.email}:`,
         );
       }
     }
 
-    logger?.info(
+    logger.info(
       `Notified ${relevantSubscribers?.length} subscribers about incident ${incident?.id}`,
     );
   }
@@ -638,7 +638,7 @@ export class StatusPageService {
         `,
       });
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         `Failed to send verification email to ${subscriber?.email}:`,
       );
@@ -646,7 +646,7 @@ export class StatusPageService {
   }
 
   async initializeDefaultServices(): Promise<void> {
-    const existingServices = await this?.getAllServices(false);
+    const existingServices = await this.getAllServices(false);
     if (existingServices?.length > 0) return;
 
     const defaultServices = [
@@ -693,14 +693,14 @@ export class StatusPageService {
     ];
 
     for (let i = 0; i < defaultServices?.length; i++) {
-      await this?.createService({
+      await this.createService({
         ...defaultServices[i],
         displayOrder: i,
         isPublic: true,
       });
     }
 
-    logger?.info("Default status page services initialized");
+    logger.info("Default status page services initialized");
   }
 }
 

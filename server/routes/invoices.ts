@@ -24,10 +24,10 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const limit = Math?.min(parseInt(req?.query.limit as string) || 50, 500);
-      const offset = Math?.min(
-        Math?.max(parseInt(req?.query.offset as string) || 0, 0),
+      const userId = req.user!.id;
+      const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
+      const offset = Math.min(
+        Math.max(parseInt(req.query.offset as string) || 0, 0),
         100_000,
       );
 
@@ -40,10 +40,10 @@ router?.get(
         .offset(offset);
 
       const userInvoices = await query;
-      res?.json({ invoices: userInvoices, pagination: { limit, offset } });
+      res.json({ invoices: userInvoices, pagination: { limit, offset } });
     } catch (error) {
-      logger?.warn({ err: error }, "[Invoices] Failed to get invoices:");
-      res?.status(500).json({ error: "Failed to get invoices" });
+      logger.warn({ err: error }, "[Invoices] Failed to get invoices:");
+      res.status(500).json({ error: "Failed to get invoices" });
     }
   },
 );
@@ -53,7 +53,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { invoiceId } = req?.params;
+      const { invoiceId } = req.params;
 
       const [invoice] = await db
         .select()
@@ -62,17 +62,17 @@ router?.get(
         .limit(1);
 
       if (!invoice) {
-        return res?.status(404).json({ error: "Invoice not found" });
+        return res.status(404).json({ error: "Invoice not found" });
       }
 
-      if (invoice?.userId !== req?.user!.id) {
-        return res?.status(403).json({ error: "Forbidden" });
+      if (invoice?.userId !== req.user!.id) {
+        return res.status(403).json({ error: "Forbidden" });
       }
 
-      res?.json(invoice);
+      res.json(invoice);
     } catch (error) {
-      logger?.warn({ err: error }, "[Invoices] Failed to get invoice:");
-      res?.status(500).json({ error: "Failed to get invoice" });
+      logger.warn({ err: error }, "[Invoices] Failed to get invoice:");
+      res.status(500).json({ error: "Failed to get invoice" });
     }
   },
 );
@@ -82,7 +82,7 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
       const {
         lineItems,
         toAddress,
@@ -91,10 +91,10 @@ router?.post(
         notes,
         terms,
         invoiceType,
-      } = req?.body;
+      } = req.body;
 
-      if (!lineItems || !Array?.isArray(lineItems) || lineItems?.length === 0) {
-        return res?.status(400).json({ error: "Line items are required" });
+      if (!lineItems || !Array.isArray(lineItems) || lineItems?.length === 0) {
+        return res.status(400).json({ error: "Line items are required" });
       }
 
       const subtotalCents = lineItems?.reduce(
@@ -104,7 +104,7 @@ router?.post(
         0,
       );
 
-      const taxCents = Math?.round(subtotalCents * 0.0); // Calculate based on location
+      const taxCents = Math.round(subtotalCents * 0.0); // Calculate based on location
       const totalCents = subtotalCents + taxCents;
 
       const invoiceNumber = generateInvoiceNumber();
@@ -130,14 +130,14 @@ router?.post(
         })
         .returning();
 
-      logger?.info("[Invoices] Invoice created:", {
+      logger.info("[Invoices] Invoice created:", {
         invoiceId: invoice.id,
         invoiceNumber,
       });
-      res?.status(201).json(invoice);
+      res.status(201).json(invoice);
     } catch (error) {
-      logger?.warn({ err: error }, "[Invoices] Failed to create invoice:");
-      res?.status(500).json({ error: "Failed to create invoice" });
+      logger.warn({ err: error }, "[Invoices] Failed to create invoice:");
+      res.status(500).json({ error: "Failed to create invoice" });
     }
   },
 );
@@ -147,8 +147,8 @@ router?.put(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { invoiceId } = req?.params;
-      const userId = req?.user!.id;
+      const { invoiceId } = req.params;
+      const userId = req.user!.id;
 
       const [existing] = await db
         .select()
@@ -157,11 +157,11 @@ router?.put(
         .limit(1);
 
       if (!existing) {
-        return res?.status(404).json({ error: "Invoice not found" });
+        return res.status(404).json({ error: "Invoice not found" });
       }
 
       if (existing?.status === "paid") {
-        return res?.status(400).json({ error: "Cannot modify paid invoice" });
+        return res.status(400).json({ error: "Cannot modify paid invoice" });
       }
 
       const {
@@ -172,12 +172,12 @@ router?.put(
         notes,
         terms,
         status,
-      } = req?.body;
+      } = req.body;
 
       let subtotalCents = existing?.subtotalCents;
       let totalCents = existing?.totalCents;
 
-      if (lineItems && Array?.isArray(lineItems)) {
+      if (lineItems && Array.isArray(lineItems)) {
         subtotalCents = lineItems?.reduce(
           (sum: number, item: Record<string, unknown>) => {
             return sum + item?.quantity * item?.unitPrice * 100;
@@ -204,10 +204,10 @@ router?.put(
         .where(eq(invoices?.id, invoiceId))
         .returning();
 
-      res?.json(updated);
+      res.json(updated);
     } catch (error) {
-      logger?.warn({ err: error }, "[Invoices] Failed to update invoice:");
-      res?.status(500).json({ error: "Failed to update invoice" });
+      logger.warn({ err: error }, "[Invoices] Failed to update invoice:");
+      res.status(500).json({ error: "Failed to update invoice" });
     }
   },
 );
@@ -217,8 +217,8 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { invoiceId } = req?.params;
-      const userId = req?.user!.id;
+      const { invoiceId } = req.params;
+      const userId = req.user!.id;
 
       const [invoice] = await db
         .select()
@@ -227,7 +227,7 @@ router?.post(
         .limit(1);
 
       if (!invoice) {
-        return res?.status(404).json({ error: "Invoice not found" });
+        return res.status(404).json({ error: "Invoice not found" });
       }
 
       await db
@@ -235,14 +235,14 @@ router?.post(
         .set({ status: "sent", updatedAt: new Date() })
         .where(eq(invoices?.id, invoiceId));
 
-      logger?.info("[Invoices] Invoice sent:", {
+      logger.info("[Invoices] Invoice sent:", {
         invoiceId,
         invoiceNumber: invoice.invoiceNumber,
       });
-      res?.json({ success: true, message: "Invoice sent successfully" });
+      res.json({ success: true, message: "Invoice sent successfully" });
     } catch (error) {
-      logger?.warn({ err: error }, "[Invoices] Failed to send invoice:");
-      res?.status(500).json({ error: "Failed to send invoice" });
+      logger.warn({ err: error }, "[Invoices] Failed to send invoice:");
+      res.status(500).json({ error: "Failed to send invoice" });
     }
   },
 );
@@ -252,9 +252,9 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { invoiceId } = req?.params;
-      const userId = req?.user!.id;
-      const { paymentMethod } = req?.body;
+      const { invoiceId } = req.params;
+      const userId = req.user!.id;
+      const { paymentMethod } = req.body;
 
       const [invoice] = await db
         .select()
@@ -263,7 +263,7 @@ router?.post(
         .limit(1);
 
       if (!invoice) {
-        return res?.status(404).json({ error: "Invoice not found" });
+        return res.status(404).json({ error: "Invoice not found" });
       }
 
       await db
@@ -276,14 +276,14 @@ router?.post(
         })
         .where(eq(invoices?.id, invoiceId));
 
-      logger?.info("[Invoices] Invoice marked paid:", {
+      logger.info("[Invoices] Invoice marked paid:", {
         invoiceId,
         invoiceNumber: invoice.invoiceNumber,
       });
-      res?.json({ success: true, message: "Invoice marked as paid" });
+      res.json({ success: true, message: "Invoice marked as paid" });
     } catch (error) {
-      logger?.warn({ err: error }, "[Invoices] Failed to mark invoice paid:");
-      res?.status(500).json({ error: "Failed to mark invoice as paid" });
+      logger.warn({ err: error }, "[Invoices] Failed to mark invoice paid:");
+      res.status(500).json({ error: "Failed to mark invoice as paid" });
     }
   },
 );
@@ -293,8 +293,8 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { invoiceId } = req?.params;
-      const userId = req?.user!.id;
+      const { invoiceId } = req.params;
+      const userId = req.user!.id;
 
       const [invoice] = await db
         .select()
@@ -303,7 +303,7 @@ router?.get(
         .limit(1);
 
       if (!invoice) {
-        return res?.status(404).json({ error: "Invoice not found" });
+        return res.status(404).json({ error: "Invoice not found" });
       }
 
       const pdfData = await invoiceService?.generatePDF({
@@ -359,15 +359,15 @@ router?.get(
         terms: invoice.terms || undefined,
       });
 
-      res?.setHeader("Content-Type", "application/pdf");
-      res?.setHeader(
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
         "Content-Disposition",
         `attachment; filename="${invoice.invoiceNumber}.pdf"`,
       );
-      res?.send(Buffer?.from(pdfData, "base64"));
+      res.send(Buffer?.from(pdfData, "base64"));
     } catch (error) {
-      logger?.warn({ err: error }, "[Invoices] Failed to generate PDF:");
-      res?.status(500).json({ error: "Failed to generate PDF" });
+      logger.warn({ err: error }, "[Invoices] Failed to generate PDF:");
+      res.status(500).json({ error: "Failed to generate PDF" });
     }
   },
 );
@@ -377,8 +377,8 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { orderId } = req?.params;
-      const userId = req?.user!.id;
+      const { orderId } = req.params;
+      const userId = req.user!.id;
 
       const [order] = await db
         .select()
@@ -387,7 +387,7 @@ router?.post(
         .limit(1);
 
       if (!order) {
-        return res?.status(404).json({ error: "Order not found" });
+        return res.status(404).json({ error: "Order not found" });
       }
 
       const invoiceNumber = generateInvoiceNumber();
@@ -414,17 +414,17 @@ router?.post(
         })
         .returning();
 
-      logger?.info("[Invoices] Invoice generated from order:", {
+      logger.info("[Invoices] Invoice generated from order:", {
         invoiceId: invoice.id,
         orderId,
       });
-      res?.status(201).json(invoice);
+      res.status(201).json(invoice);
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "[Invoices] Failed to generate invoice from order:",
       );
-      res?.status(500).json({ error: "Failed to generate invoice" });
+      res.status(500).json({ error: "Failed to generate invoice" });
     }
   },
 );
@@ -434,8 +434,8 @@ router?.post(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
-      const { startDate, endDate } = req?.body;
+      const userId = req.user!.id;
+      const { startDate, endDate } = req.body;
 
       const start = startDate
         ? new Date(startDate)
@@ -493,21 +493,21 @@ router?.post(
         generatedInvoices?.push(invoice?.id);
       }
 
-      logger?.info("[Invoices] Bulk invoices generated:", {
+      logger.info("[Invoices] Bulk invoices generated:", {
         count: generatedInvoices.length,
         userId,
       });
-      res?.json({
+      res.json({
         success: true,
         generated: generatedInvoices.length,
         invoiceIds: generatedInvoices,
       });
     } catch (error) {
-      logger?.warn(
+      logger.warn(
         { err: error },
         "[Invoices] Failed to bulk generate invoices:",
       );
-      res?.status(500).json({ error: "Failed to bulk generate invoices" });
+      res.status(500).json({ error: "Failed to bulk generate invoices" });
     }
   },
 );
@@ -517,7 +517,7 @@ router?.get(
   requireAuth,
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const userId = req?.user!.id;
+      const userId = req.user!.id;
 
       const statsResult = await db?.execute(
         sql`SELECT 
@@ -534,7 +534,7 @@ router?.get(
 
       const stats = statsResult?.rows?.[0] || {};
 
-      res?.json({
+      res.json({
         totalInvoices: Number(stats?.total_invoices) || 0,
         paidCount: Number(stats?.paid_count) || 0,
         sentCount: Number(stats?.sent_count) || 0,
@@ -544,8 +544,8 @@ router?.get(
         totalPending: Number(stats?.total_pending_cents) / 100 || 0,
       });
     } catch (error) {
-      logger?.warn({ err: error }, "[Invoices] Failed to get invoice stats:");
-      res?.status(500).json({ error: "Failed to get invoice statistics" });
+      logger.warn({ err: error }, "[Invoices] Failed to get invoice stats:");
+      res.status(500).json({ error: "Failed to get invoice statistics" });
     }
   },
 );

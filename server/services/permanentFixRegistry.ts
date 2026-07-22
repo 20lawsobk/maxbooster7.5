@@ -192,14 +192,14 @@ class PermanentFixRegistry {
   // ── Startup: load saved overrides from PDIM ──────────────────────────────────
 
   async loadPermanentOverrides(): Promise<void> {
-    if (this?._loaded) return;
+    if (this._loaded) return;
     this._loaded = true;
 
-    await this?._tryConnectPdim();
+    await this._tryConnectPdim();
 
-    const get = this?._pdimGet;
+    const get = this._pdimGet;
     if (!get) {
-      logger?.info(
+      logger.info(
         "[PermanentFixer] PDIM unavailable — starting with default constants",
       );
       return;
@@ -265,16 +265,16 @@ class PermanentFixRegistry {
 
       // Apply loaded overrides to live modules
       if (changed) {
-        await this?._applyOverridesToModules();
-        logger?.info(
-          `[PermanentFixer] ✅ Loaded permanent overrides from ${this?._escalationsAllTime} prior escalation(s): ` +
-            `PDIM gap floor=${this?._overrides.pdimGapFloorMs}ms, ` +
-            `LuaWait=${this?._overrides.luaWaitMs / 1000}s, ` +
-            `heapWarn=${Math?.round(this?._overrides.heapWarnRatio * 100)}%, ` +
-            `heapPatch=${Math?.round(this?._overrides.heapPatchRatio * 100)}%`,
+        await this._applyOverridesToModules();
+        logger.info(
+          `[PermanentFixer] ✅ Loaded permanent overrides from ${this._escalationsAllTime} prior escalation(s): ` +
+            `PDIM gap floor=${this._overrides.pdimGapFloorMs}ms, ` +
+            `LuaWait=${this._overrides.luaWaitMs / 1000}s, ` +
+            `heapWarn=${Math.round(this._overrides.heapWarnRatio * 100)}%, ` +
+            `heapPatch=${Math.round(this._overrides.heapPatchRatio * 100)}%`,
         );
       } else {
-        logger?.info(
+        logger.info(
           "[PermanentFixer] No permanent overrides saved yet — running with default constants",
         );
       }
@@ -289,13 +289,13 @@ class PermanentFixRegistry {
       const _AIMD_RESTORE_CAP_MS = 400;
       if (rawAimdGap) {
         const saved = parseInt(rawAimdGap, 10);
-        if (!isNaN(saved) && saved > this?._overrides.pdimGapFloorMs) {
+        if (!isNaN(saved) && saved > this._overrides.pdimGapFloorMs) {
           try {
             const { setPdimAdaptiveGap } = await import("../lib/pdimClient.js");
             if (typeof setPdimAdaptiveGap === "function") {
-              const capped = Math?.min(saved, _AIMD_RESTORE_CAP_MS);
+              const capped = Math.min(saved, _AIMD_RESTORE_CAP_MS);
               setPdimAdaptiveGap(capped);
-              logger?.info(
+              logger.info(
                 `[PermanentFixer] ✅ AIMD gap restored to ${capped}ms` +
                   (saved > _AIMD_RESTORE_CAP_MS
                     ? ` (capped from ${saved}ms — startup drain guard)`
@@ -309,26 +309,26 @@ class PermanentFixRegistry {
         }
       }
     } catch (err) {
-      logger?.warn(`[PermanentFixer] Failed to load overrides: ${err?.message}`);
+      logger.warn(`[PermanentFixer] Failed to load overrides: ${err?.message}`);
     }
 
     // Start background timers (after data is loaded)
-    this?._startAimdPersistTimer();
-    this?._scheduleDeEscalationCheck();
+    this._startAimdPersistTimer();
+    this._scheduleDeEscalationCheck();
   }
 
   // ── AIMD gap state persistence (every 60s) ────────────────────────────────
 
   private _startAimdPersistTimer(): void {
-    if (this?._aimdPersistTimer) return;
+    if (this._aimdPersistTimer) return;
     this._aimdPersistTimer = setInterval(() => {
-      this?._persistAimdGap().catch(() => {});
+      this._persistAimdGap().catch(() => {});
     }, AIMD_PERSIST_INTERVAL_MS);
-    (this?._aimdPersistTimer as Record<string, unknown>).unref?.();
+    (this._aimdPersistTimer as Record<string, unknown>).unref?.();
   }
 
   private async _persistAimdGap(): Promise<void> {
-    const set = this?._pdimSet;
+    const set = this._pdimSet;
     if (!set) return;
     try {
       const { getPdimAdaptiveGapMs } = await import("../lib/pdimClient.js");
@@ -350,24 +350,24 @@ class PermanentFixRegistry {
   // genuinely resolve.
 
   private _scheduleDeEscalationCheck(): void {
-    if (this?._deEscalationTimer) return;
+    if (this._deEscalationTimer) return;
     this._deEscalationTimer = setTimeout(async () => {
-      await this?._runDeEscalationCheck();
+      await this._runDeEscalationCheck();
     }, DEESCALATION_WINDOW_MS);
-    (this?._deEscalationTimer as Record<string, unknown>).unref?.();
+    (this._deEscalationTimer as Record<string, unknown>).unref?.();
   }
 
   private async _runDeEscalationCheck(): Promise<void> {
     // Map each override key to the minimum session count across all patterns that drive it.
     // If ANY pattern on that key fired this session, we do NOT de-escalate that key.
     const keyFirings = new Map<string, number>();
-    for (const [id, target] of Object?.entries(ESCALATION_MAP)) {
-      const fires = this?._sessionCounts.get(id) ?? 0;
+    for (const [id, target] of Object.entries(ESCALATION_MAP)) {
+      const fires = this._sessionCounts.get(id) ?? 0;
       const prev = keyFirings?.get(target?.key) ?? 0;
       keyFirings?.set(target?.key, prev + fires);
     }
 
-    for (const [id, target] of Object?.entries(ESCALATION_MAP)) {
+    for (const [id, target] of Object.entries(ESCALATION_MAP)) {
       const keyFired = keyFirings?.get(target?.key) ?? 0;
       if (keyFired > 0) continue; // pattern drove activity this session — don't de-escalate
 
@@ -387,8 +387,8 @@ class PermanentFixRegistry {
       const rawNew = current + step;
       const newValue =
         target?.delta > 0
-          ? Math?.max(defaultV, Math?.min(target?.max, rawNew))
-          : Math?.min(defaultV, Math?.max(target?.min, rawNew));
+          ? Math.max(defaultV, Math.min(target?.max, rawNew))
+          : Math.min(defaultV, Math.max(target?.min, rawNew));
 
       if (newValue === current) continue;
 
@@ -525,19 +525,19 @@ class PermanentFixRegistry {
         `${target?.label} ${oldValue} → ${newValue} (saved to PDIM, applied immediately)`,
     );
 
-    await this?._applyOverridesToModules();
+    await this._applyOverridesToModules();
 
-    const set = this?._pdimSet;
-    const lpush = this?._pdimLpush;
-    const ltrim = this?._pdimLtrim;
+    const set = this._pdimSet;
+    const lpush = this._pdimLpush;
+    const ltrim = this._pdimLtrim;
     if (set) {
-      const pdimKey = this?._overrideKeyToPdim(target?.key);
+      const pdimKey = this._overrideKeyToPdim(target?.key);
       await set(`${PFR}override:${pdimKey}`, String(newValue));
-      await set(`${PFR}escalations_all_time`, String(this?._escalationsAllTime));
+      await set(`${PFR}escalations_all_time`, String(this._escalationsAllTime));
     }
     if (lpush && ltrim) {
-      await lpush(`${PFR}audit`, JSON?.stringify(entry));
-      await ltrim(`${PFR}audit`, 0, this?._MAX_AUDIT - 1);
+      await lpush(`${PFR}audit`, JSON.stringify(entry));
+      await ltrim(`${PFR}audit`, 0, this._MAX_AUDIT - 1);
     }
   }
 
@@ -559,51 +559,51 @@ class PermanentFixRegistry {
   // ── Public getters — used by platformAutoFixer at scan time ─────────────────
 
   getHeapWarnRatio(): number {
-    return this?._overrides.heapWarnRatio;
+    return this._overrides.heapWarnRatio;
   }
   getHeapPatchRatio(): number {
-    return this?._overrides.heapPatchRatio;
+    return this._overrides.heapPatchRatio;
   }
   getPdimGapFloorMs(): number {
-    return this?._overrides.pdimGapFloorMs;
+    return this._overrides.pdimGapFloorMs;
   }
   getLuaWaitMs(): number {
-    return this?._overrides.luaWaitMs;
+    return this._overrides.luaWaitMs;
   }
 
   // ── Status — exposed via admin endpoint ─────────────────────────────────────
 
   getStatus() {
-    const upMinutes = Math?.round((Date?.now() - this?._sessionStartMs) / 60_000);
+    const upMinutes = Math.round((Date?.now() - this._sessionStartMs) / 60_000);
     return {
       loaded: this._loaded,
       sessionUptimeMinutes: upMinutes,
       escalationsThisSession: this._escalationsThisSession,
       escalationsAllTime: this._escalationsAllTime,
       deEscalationsAllTime: this._deEscalationsAllTime,
-      currentOverrides: { ...this?._overrides },
+      currentOverrides: { ...this._overrides },
       defaults: { ...DEFAULTS },
       improvementsVsDefaults: {
         pdimGapFloorMs:
-          this?._overrides.pdimGapFloorMs > DEFAULTS?.pdimGapFloorMs
-            ? `+${this?._overrides.pdimGapFloorMs - DEFAULTS?.pdimGapFloorMs}ms more conservative`
+          this._overrides.pdimGapFloorMs > DEFAULTS?.pdimGapFloorMs
+            ? `+${this._overrides.pdimGapFloorMs - DEFAULTS?.pdimGapFloorMs}ms more conservative`
             : "at default",
         luaWaitMs:
-          this?._overrides.luaWaitMs > DEFAULTS?.luaWaitMs
-            ? `+${(this?._overrides.luaWaitMs - DEFAULTS?.luaWaitMs) / 1000}s more headroom`
+          this._overrides.luaWaitMs > DEFAULTS?.luaWaitMs
+            ? `+${(this._overrides.luaWaitMs - DEFAULTS?.luaWaitMs) / 1000}s more headroom`
             : "at default",
         heapWarnRatio:
-          this?._overrides.heapWarnRatio < DEFAULTS?.heapWarnRatio
-            ? `GC triggers ${Math?.round((DEFAULTS?.heapWarnRatio - this?._overrides.heapWarnRatio) * 100)}% earlier`
+          this._overrides.heapWarnRatio < DEFAULTS?.heapWarnRatio
+            ? `GC triggers ${Math.round((DEFAULTS?.heapWarnRatio - this._overrides.heapWarnRatio) * 100)}% earlier`
             : "at default",
         heapPatchRatio:
-          this?._overrides.heapPatchRatio < DEFAULTS?.heapPatchRatio
-            ? `Critical patch triggers ${Math?.round((DEFAULTS?.heapPatchRatio - this?._overrides.heapPatchRatio) * 100)}% earlier`
+          this._overrides.heapPatchRatio < DEFAULTS?.heapPatchRatio
+            ? `Critical patch triggers ${Math.round((DEFAULTS?.heapPatchRatio - this._overrides.heapPatchRatio) * 100)}% earlier`
             : "at default",
       },
-      sessionFixCounts: Object.fromEntries(this?._sessionCounts),
+      sessionFixCounts: Object.fromEntries(this._sessionCounts),
       escalationMap: Object.fromEntries(
-        Object?.entries(ESCALATION_MAP).map(([id, t]) => [
+        Object.entries(ESCALATION_MAP).map(([id, t]) => [
           id,
           {
             overrideKey: t.key,

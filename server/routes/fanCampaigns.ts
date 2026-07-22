@@ -34,20 +34,20 @@ router?.get("/", requireAuth, async (req, res) => {
     const campaigns = await db
       .select()
       .from(fanCampaigns)
-      .where(eq(fanCampaigns?.userId, req?.user!.id))
+      .where(eq(fanCampaigns?.userId, req.user!.id))
       .orderBy(desc(fanCampaigns?.createdAt))
       .limit(limit)
       .offset(offset);
-    res?.json(campaigns);
+    res.json(campaigns);
   } catch (error) {
-    logger?.warn({ err: error }, "[FanCampaigns] Failed to list campaigns:");
-    res?.status(500).json({ error: "Failed to fetch campaigns" });
+    logger.warn({ err: error }, "[FanCampaigns] Failed to list campaigns:");
+    res.status(500).json({ error: "Failed to fetch campaigns" });
   }
 });
 
 router?.get("/stats", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
+    const userId = req.user!.id;
     const cacheKey = createCacheKey("stats:fanCampaigns", userId);
 
     const stats = await queryCache?.getOrCompute(
@@ -76,7 +76,7 @@ router?.get("/stats", requireAuth, async (req, res) => {
         const totalSubscribers = Number(subscriberCount?.total);
         const avgOpenRate =
           totalRecipients > 0
-            ? Math?.round((totalOpens / totalRecipients) * 100)
+            ? Math.round((totalOpens / totalRecipients) * 100)
             : 0;
 
         return {
@@ -89,26 +89,26 @@ router?.get("/stats", requireAuth, async (req, res) => {
       CACHE_TTL,
     );
 
-    res?.json(stats);
+    res.json(stats);
   } catch (error) {
-    logger?.warn({ err: error }, "[FanCampaigns] Failed to fetch stats:");
-    res?.status(500).json({ error: "Failed to fetch campaign stats" });
+    logger.warn({ err: error }, "[FanCampaigns] Failed to fetch stats:");
+    res.status(500).json({ error: "Failed to fetch campaign stats" });
   }
 });
 
 router?.post("/", requireAuth, async (req, res) => {
   try {
     const data = insertFanCampaignSchema?.parse({
-      ...req?.body,
+      ...req.body,
       userId: req.user!.id,
     });
     const [campaign] = await db?.insert(fanCampaigns).values(data).returning();
     await queryCache?.invalidate(
-      createCacheKey("stats:fanCampaigns", req?.user!.id),
+      createCacheKey("stats:fanCampaigns", req.user!.id),
     );
-    res?.status(201).json(campaign);
+    res.status(201).json(campaign);
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "[FanCampaigns] Failed to create campaign:");
+    logger.warn({ err: error }, "[FanCampaigns] Failed to create campaign:");
     if (error instanceof Error && error?.name === "ZodError") {
       return res
         .status(400)
@@ -117,7 +117,7 @@ router?.post("/", requireAuth, async (req, res) => {
           details: (error as Record<string, unknown>).flatten(),
         });
     }
-    res?.status(500).json({ error: "Failed to create campaign" });
+    res.status(500).json({ error: "Failed to create campaign" });
   }
 });
 
@@ -128,23 +128,23 @@ router?.get("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
       .from(fanCampaigns)
       .where(
         and(
-          eq(fanCampaigns?.id, req?.params.id),
-          eq(fanCampaigns?.userId, req?.user!.id),
+          eq(fanCampaigns?.id, req.params.id),
+          eq(fanCampaigns?.userId, req.user!.id),
         ),
       )
       .limit(1);
-    if (!item) return res?.status(404).json({ error: "Campaign not found" });
-    res?.json(item);
+    if (!item) return res.status(404).json({ error: "Campaign not found" });
+    res.json(item);
   } catch (error) {
-    logger?.warn({ err: error }, "[FanCampaigns] Failed to fetch campaign:");
-    res?.status(500).json({ error: "Failed to fetch campaign" });
+    logger.warn({ err: error }, "[FanCampaigns] Failed to fetch campaign:");
+    res.status(500).json({ error: "Failed to fetch campaign" });
   }
 });
 
 router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { id } = req?.params;
+    const userId = req.user!.id;
+    const { id } = req.params;
 
     const existing = await db
       .select()
@@ -153,14 +153,14 @@ router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
       .limit(1);
 
     if (existing?.length === 0) {
-      return res?.status(404).json({ error: "Campaign not found" });
+      return res.status(404).json({ error: "Campaign not found" });
     }
 
     if (existing[0].status === "sent") {
-      return res?.status(400).json({ error: "Cannot modify a sent campaign" });
+      return res.status(400).json({ error: "Cannot modify a sent campaign" });
     }
 
-    const parsed = updateCampaignSchema?.safeParse(req?.body);
+    const parsed = updateCampaignSchema?.safeParse(req.body);
     if (!parsed?.success) {
       return res
         .status(400)
@@ -174,17 +174,17 @@ router?.put("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
       .returning();
 
     await queryCache?.invalidate(createCacheKey("stats:fanCampaigns", userId));
-    res?.json(campaign);
+    res.json(campaign);
   } catch (error) {
-    logger?.warn({ err: error }, "[FanCampaigns] Failed to update campaign:");
-    res?.status(500).json({ error: "Failed to update campaign" });
+    logger.warn({ err: error }, "[FanCampaigns] Failed to update campaign:");
+    res.status(500).json({ error: "Failed to update campaign" });
   }
 });
 
 router?.post("/:id/send", requireAuth, async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { id } = req?.params;
+    const userId = req.user!.id;
+    const { id } = req.params;
 
     const existing = await db
       .select()
@@ -193,11 +193,11 @@ router?.post("/:id/send", requireAuth, async (req, res) => {
       .limit(1);
 
     if (existing?.length === 0) {
-      return res?.status(404).json({ error: "Campaign not found" });
+      return res.status(404).json({ error: "Campaign not found" });
     }
 
     if (existing[0].status === "sent") {
-      return res?.status(400).json({ error: "Campaign already sent" });
+      return res.status(400).json({ error: "Campaign already sent" });
     }
 
     const [recipientCountRow] = await db
@@ -219,17 +219,17 @@ router?.post("/:id/send", requireAuth, async (req, res) => {
       .returning();
 
     await queryCache?.invalidate(createCacheKey("stats:fanCampaigns", userId));
-    res?.json({ success: true, recipientCount, campaign });
+    res.json({ success: true, recipientCount, campaign });
   } catch (error) {
-    logger?.warn({ err: error }, "[FanCampaigns] Failed to send campaign:");
-    res?.status(500).json({ error: "Failed to send campaign" });
+    logger.warn({ err: error }, "[FanCampaigns] Failed to send campaign:");
+    res.status(500).json({ error: "Failed to send campaign" });
   }
 });
 
 router?.delete("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => {
   try {
-    const userId = req?.user!.id;
-    const { id } = req?.params;
+    const userId = req.user!.id;
+    const { id } = req.params;
 
     const existing = await db
       .select()
@@ -238,7 +238,7 @@ router?.delete("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => 
       .limit(1);
 
     if (existing?.length === 0) {
-      return res?.status(404).json({ error: "Campaign not found" });
+      return res.status(404).json({ error: "Campaign not found" });
     }
 
     await db
@@ -246,10 +246,10 @@ router?.delete("/:id", requireAuth, requireUUIDParam("id"), async (req, res) => 
       .where(and(eq(fanCampaigns?.id, id), eq(fanCampaigns?.userId, userId)));
 
     await queryCache?.invalidate(createCacheKey("stats:fanCampaigns", userId));
-    res?.json({ success: true });
+    res.json({ success: true });
   } catch (error) {
-    logger?.warn({ err: error }, "[FanCampaigns] Failed to delete campaign:");
-    res?.status(500).json({ error: "Failed to delete campaign" });
+    logger.warn({ err: error }, "[FanCampaigns] Failed to delete campaign:");
+    res.status(500).json({ error: "Failed to delete campaign" });
   }
 });
 

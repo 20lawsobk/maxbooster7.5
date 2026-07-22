@@ -88,7 +88,7 @@ export class ApprovalWorkflowService {
         })
         .returning();
 
-      await this?.logAuditEvent({
+      await this.logAuditEvent({
         workspaceId: params.workspaceId,
         userId: params.createdBy,
         action: "workflow.created",
@@ -99,7 +99,7 @@ export class ApprovalWorkflowService {
 
       return { success: true, workflow };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Create workflow error:");
+      logger.warn({ err: error }, "Create workflow error:");
       return { success: false, error: "Failed to create workflow" };
     }
   }
@@ -113,7 +113,7 @@ export class ApprovalWorkflowService {
         .limit(1);
       return workflow || null;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get workflow error:");
+      logger.warn({ err: error }, "Get workflow error:");
       return null;
     }
   }
@@ -131,7 +131,7 @@ export class ApprovalWorkflowService {
 
       return workflows;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get workspace workflows error:");
+      logger.warn({ err: error }, "Get workspace workflows error:");
       return [];
     }
   }
@@ -154,7 +154,7 @@ export class ApprovalWorkflowService {
         .limit(1);
       return workflow || null;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get workflow by trigger error:");
+      logger.warn({ err: error }, "Get workflow by trigger error:");
       return null;
     }
   }
@@ -169,7 +169,7 @@ export class ApprovalWorkflowService {
     error?: string;
   }> {
     try {
-      const existingWorkflow = await this?.getWorkflow(workflowId);
+      const existingWorkflow = await this.getWorkflow(workflowId);
       if (!existingWorkflow) {
         return { success: false, error: "Workflow not found" };
       }
@@ -183,7 +183,7 @@ export class ApprovalWorkflowService {
         .where(eq(approvalWorkflows?.id, workflowId))
         .returning();
 
-      await this?.logAuditEvent({
+      await this.logAuditEvent({
         workspaceId: existingWorkflow.workspaceId,
         userId: updatedBy,
         action: "workflow.updated",
@@ -195,7 +195,7 @@ export class ApprovalWorkflowService {
 
       return { success: true, workflow };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Update workflow error:");
+      logger.warn({ err: error }, "Update workflow error:");
       return { success: false, error: "Failed to update workflow" };
     }
   }
@@ -205,7 +205,7 @@ export class ApprovalWorkflowService {
     deletedBy: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const workflow = await this?.getWorkflow(workflowId);
+      const workflow = await this.getWorkflow(workflowId);
       if (!workflow) {
         return { success: false, error: "Workflow not found" };
       }
@@ -234,7 +234,7 @@ export class ApprovalWorkflowService {
         .delete(approvalWorkflows)
         .where(eq(approvalWorkflows?.id, workflowId));
 
-      await this?.logAuditEvent({
+      await this.logAuditEvent({
         workspaceId: workflow.workspaceId,
         userId: deletedBy,
         action: "workflow.deleted",
@@ -244,7 +244,7 @@ export class ApprovalWorkflowService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Delete workflow error:");
+      logger.warn({ err: error }, "Delete workflow error:");
       return { success: false, error: "Failed to delete workflow" };
     }
   }
@@ -253,8 +253,8 @@ export class ApprovalWorkflowService {
     params: SubmitApprovalParams,
   ): Promise<{ success: boolean; request?: ApprovalRequest; error?: string }> {
     try {
-      const trigger = this?.mapResourceTypeToTrigger(params?.resourceType);
-      const workflow = await this?.getWorkflowByTrigger(
+      const trigger = this.mapResourceTypeToTrigger(params?.resourceType);
+      const workflow = await this.getWorkflowByTrigger(
         params?.workspaceId,
         trigger,
       );
@@ -300,9 +300,9 @@ export class ApprovalWorkflowService {
         });
       }
 
-      await this?.notifyApprovers(request?.id, 0);
+      await this.notifyApprovers(request?.id, 0);
 
-      await this?.logAuditEvent({
+      await this.logAuditEvent({
         workspaceId: params.workspaceId,
         userId: params.requesterId,
         action: "approval.submitted",
@@ -313,7 +313,7 @@ export class ApprovalWorkflowService {
 
       return { success: true, request };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Submit for approval error:");
+      logger.warn({ err: error }, "Submit for approval error:");
       return { success: false, error: "Failed to submit for approval" };
     }
   }
@@ -386,7 +386,7 @@ export class ApprovalWorkflowService {
           })
           .where(eq(approvalRequests?.id, requestId));
 
-        await this?.notifyRequester(request, "rejected", comment);
+        await this.notifyRequester(request, "rejected", comment);
       } else {
         const nextStepNumber = stepNumber + 1;
         if (nextStepNumber >= request?.totalSteps!) {
@@ -402,7 +402,7 @@ export class ApprovalWorkflowService {
             })
             .where(eq(approvalRequests?.id, requestId));
 
-          await this?.notifyRequester(request, "approved", comment);
+          await this.notifyRequester(request, "approved", comment);
         } else {
           await db
             .update(approvalRequests)
@@ -423,11 +423,11 @@ export class ApprovalWorkflowService {
               ),
             );
 
-          await this?.notifyApprovers(requestId, nextStepNumber);
+          await this.notifyApprovers(requestId, nextStepNumber);
         }
       }
 
-      await this?.logAuditEvent({
+      await this.logAuditEvent({
         workspaceId: request.workspaceId,
         userId: approverId,
         action: `approval.${decision}`,
@@ -438,7 +438,7 @@ export class ApprovalWorkflowService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Process approval decision error:");
+      logger.warn({ err: error }, "Process approval decision error:");
       return { success: false, error: "Failed to process approval decision" };
     }
   }
@@ -452,7 +452,7 @@ export class ApprovalWorkflowService {
         .limit(1);
       return request || null;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get approval request error:");
+      logger.warn({ err: error }, "Get approval request error:");
       return null;
     }
   }
@@ -461,7 +461,7 @@ export class ApprovalWorkflowService {
     requestId: string,
   ): Promise<{ request: ApprovalRequest; steps: ApprovalStep[] } | null> {
     try {
-      const request = await this?.getApprovalRequest(requestId);
+      const request = await this.getApprovalRequest(requestId);
       if (!request) return null;
 
       const steps = await db
@@ -472,7 +472,7 @@ export class ApprovalWorkflowService {
 
       return { request, steps };
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get approval request with steps error:");
+      logger.warn({ err: error }, "Get approval request with steps error:");
       return null;
     }
   }
@@ -514,7 +514,7 @@ export class ApprovalWorkflowService {
 
       return pendingRequests;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get pending approvals error:");
+      logger.warn({ err: error }, "Get pending approvals error:");
       return [];
     }
   }
@@ -549,7 +549,7 @@ export class ApprovalWorkflowService {
 
       return pendingSteps;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get user pending approvals error:");
+      logger.warn({ err: error }, "Get user pending approvals error:");
       return [];
     }
   }
@@ -589,7 +589,7 @@ export class ApprovalWorkflowService {
 
       return history;
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Get approval history error:");
+      logger.warn({ err: error }, "Get approval history error:");
       return [];
     }
   }
@@ -612,16 +612,16 @@ export class ApprovalWorkflowService {
         .limit(100);
 
       for (const request of overdueRequests) {
-        const workflow = await this?.getWorkflow(request?.workflowId);
+        const workflow = await this.getWorkflow(request?.workflowId);
         if (!workflow) continue;
 
         const escalationPolicy = workflow?.escalationPolicy as EscalationPolicy;
         if (escalationPolicy?.enabled) {
-          await this?.escalateRequest(request?.id, escalationPolicy);
+          await this.escalateRequest(request?.id, escalationPolicy);
         }
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Check escalations error:");
+      logger.warn({ err: error }, "Check escalations error:");
     }
   }
 
@@ -650,7 +650,7 @@ export class ApprovalWorkflowService {
         });
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Escalate request error:");
+      logger.warn({ err: error }, "Escalate request error:");
     }
   }
 
@@ -695,7 +695,7 @@ export class ApprovalWorkflowService {
         });
       }
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Notify approvers error:");
+      logger.warn({ err: error }, "Notify approvers error:");
     }
   }
 
@@ -720,7 +720,7 @@ export class ApprovalWorkflowService {
         },
       });
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Notify requester error:");
+      logger.warn({ err: error }, "Notify requester error:");
     }
   }
 
@@ -741,7 +741,7 @@ export class ApprovalWorkflowService {
     try {
       await db?.insert(workspaceAuditLog).values(params);
     } catch (error: unknown) {
-      logger?.warn({ err: error }, "Log audit event error:");
+      logger.warn({ err: error }, "Log audit event error:");
     }
   }
 }

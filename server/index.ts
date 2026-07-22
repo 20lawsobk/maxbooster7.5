@@ -79,7 +79,7 @@ setupStartupEndpoints(app);
 // Kick off readiness probes asynchronously — /ready transitions from
 // "not_ready" → "ready"/"degraded" once DB + Redis + TF have responded.
 startupProbes?.runAllProbes().catch((err) => {
-  logger?.warn({ err }, "[startup-probes] runAllProbes failed");
+  logger.warn({ err }, "[startup-probes] runAllProbes failed");
 });
 
 import("./lib/configValidator.js")
@@ -151,7 +151,7 @@ app.set("trust proxy", buildTrustProxyValue());
 
 // Cloudflare integration — extracts real client IP from CF-Connecting-IP (validated against
 // Cloudflare's published IP ranges), adds no-store headers on /api routes, and annotates
-// req?.isBehindCloudflare / req?.realClientIp for downstream middleware (rate limiter, audit log).
+// req.isBehindCloudflare / req.realClientIp for downstream middleware (rate limiter, audit log).
 app?.use(cloudflareMiddleware);
 
 // ========================================
@@ -160,11 +160,11 @@ app?.use(cloudflareMiddleware);
 // These are production-critical and will throw if they fail
 try {
   applyMandatoryMiddleware(app);
-  logger?.info("✅ Mandatory safety middleware applied");
+  logger.info("✅ Mandatory safety middleware applied");
 } catch (error) {
-  logger?.warn("❌ CRITICAL: Failed to apply mandatory safety middleware");
-  logger?.warn(`   └─ Error: ${error?.message}`);
-  process?.exit(1);
+  logger.warn("❌ CRITICAL: Failed to apply mandatory safety middleware");
+  logger.warn(`   └─ Error: ${error?.message}`);
+  process.exit(1);
 }
 
 // Apply input sanitization
@@ -249,13 +249,13 @@ app?.use(express?.urlencoded({ extended: true, limit: "1mb" }));
 // Serve client/public static files (sw?.js, manifest?.json, etc.) early — before
 // session/PDIM middleware so the service worker and PWA assets are always available.
 app?.use(
-  express?.static(path?.join(process?.cwd(), "client", "public"), {
+  express?.static(path?.join(process.cwd(), "client", "public"), {
     maxAge: 0,
     setHeaders: (res, filePath) => {
       if (filePath?.endsWith("sw.js")) {
         res.setHeader("Content-Type", "application/javascript; charset=utf-8");
-        res?.setHeader("Service-Worker-Allowed", "/");
-        res?.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        res.setHeader("Service-Worker-Allowed", "/");
+        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
       }
     },
   }),
@@ -264,14 +264,14 @@ app?.use(
 // Serve generated audio content from root public folder
 app?.use(
   "/generated-content",
-  express?.static(path?.join(process?.cwd(), "public", "generated-content"), {
+  express?.static(path?.join(process.cwd(), "public", "generated-content"), {
     setHeaders: (res, filePath) => {
       if (filePath?.endsWith(".wav") || filePath?.endsWith(".mp3")) {
-        res?.setHeader(
+        res.setHeader(
           "Content-Type",
           filePath?.endsWith(".wav") ? "audio/wav" : "audio/mpeg",
         );
-        res?.setHeader("Accept-Ranges", "bytes");
+        res.setHeader("Accept-Ranges", "bytes");
       }
     },
   }),
@@ -279,7 +279,7 @@ app?.use(
 
 app?.use(
   "/uploads/images",
-  express?.static(path?.join(process?.cwd(), "uploads", "images"), {
+  express?.static(path?.join(process.cwd(), "uploads", "images"), {
     setHeaders: (res, filePath) => {
       if (
         filePath?.endsWith(".png") ||
@@ -287,7 +287,7 @@ app?.use(
         filePath?.endsWith(".jpeg") ||
         filePath?.endsWith(".webp")
       ) {
-        res?.setHeader(
+        res.setHeader(
           "Cache-Control",
           "public, max-age=2592000, stale-while-revalidate=86400",
         );
@@ -298,12 +298,12 @@ app?.use(
 
 app?.use(
   "/uploads/videos",
-  express?.static(path?.join(process?.cwd(), "uploads", "videos"), {
+  express?.static(path?.join(process.cwd(), "uploads", "videos"), {
     setHeaders: (res, filePath) => {
       if (filePath?.endsWith(".mp4")) {
-        res?.setHeader("Content-Type", "video/mp4");
-        res?.setHeader("Accept-Ranges", "bytes");
-        res?.setHeader(
+        res.setHeader("Content-Type", "video/mp4");
+        res.setHeader("Accept-Ranges", "bytes");
+        res.setHeader(
           "Cache-Control",
           "public, max-age=2592000, stale-while-revalidate=86400",
         );
@@ -314,19 +314,19 @@ app?.use(
 
 app?.use(
   "/uploads/audio",
-  express?.static(path?.join(process?.cwd(), "uploads", "audio"), {
+  express?.static(path?.join(process.cwd(), "uploads", "audio"), {
     setHeaders: (res, filePath) => {
       if (filePath?.endsWith(".mp3")) {
-        res?.setHeader("Content-Type", "audio/mpeg");
-        res?.setHeader("Accept-Ranges", "bytes");
-        res?.setHeader(
+        res.setHeader("Content-Type", "audio/mpeg");
+        res.setHeader("Accept-Ranges", "bytes");
+        res.setHeader(
           "Cache-Control",
           "public, max-age=2592000, stale-while-revalidate=86400",
         );
       } else if (filePath?.endsWith(".wav")) {
-        res?.setHeader("Content-Type", "audio/wav");
-        res?.setHeader("Accept-Ranges", "bytes");
-        res?.setHeader(
+        res.setHeader("Content-Type", "audio/wav");
+        res.setHeader("Accept-Ranges", "bytes");
+        res.setHeader(
           "Cache-Control",
           "public, max-age=2592000, stale-while-revalidate=86400",
         );
@@ -343,26 +343,26 @@ export function log(message: string, source = "express") {
     hour12: true,
   });
 
-  logger?.info(`${formattedTime} [${source}] ${message}`);
+  logger.info(`${formattedTime} [${source}] ${message}`);
 }
 
 app?.use((req, res, next) => {
   const start = Date?.now();
-  const path = req?.path;
+  const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
-  const originalResJson = res?.json;
+  const originalResJson = res.json;
   res.json = function (bodyJson, ...args) {
     capturedJsonResponse = bodyJson;
     return originalResJson?.apply(res, [bodyJson, ...args]);
   };
 
-  res?.on("finish", () => {
+  res.on("finish", () => {
     const duration = Date?.now() - start;
     if (path?.startsWith("/api")) {
-      let logLine = `${req?.method} ${path} ${res?.statusCode} in ${duration}ms`;
+      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
       if (capturedJsonResponse && !isProductionEnv()) {
-        const responseStr = JSON?.stringify(capturedJsonResponse);
+        const responseStr = JSON.stringify(capturedJsonResponse);
         logLine += ` :: ${responseStr?.length > 500 ? responseStr?.substring(0, 500) + "...[truncated]" : responseStr}`;
       }
 
@@ -394,7 +394,7 @@ let _spaHandlerReady = false;
 // handing off to the real handlers in routes?.ts.
 let _routesReady = false;
 const _spaFallbackIndexPath = path?.resolve(
-  process?.cwd(),
+  process.cwd(),
   "dist",
   "public",
   "index.html",
@@ -403,7 +403,7 @@ const _spaFallbackIndexPath = path?.resolve(
 // Lightweight boot-status endpoint — always available, no proxy/header issues.
 // The boot loading page polls this instead of sniffing response headers.
 app?.get("/api/boot-status", (_req: Request, res: Response) => {
-  res?.json({ ready: _spaHandlerReady });
+  res.json({ ready: _spaHandlerReady });
 });
 
 // Early client-error collector — registered here so it is reachable immediately
@@ -411,7 +411,7 @@ app?.get("/api/boot-status", (_req: Request, res: Response) => {
 // route at routes?.ts also registers this path; once that handler is active it
 // takes precedence because Express matches the first registered handler.
 app?.post("/api/errors", (_req: Request, res: Response) => {
-  res?.json({ received: true });
+  res.json({ received: true });
 });
 
 // ── Early-boot stubs ──────────────────────────────────────────────────────────
@@ -429,14 +429,14 @@ app?.get("/api/auth/me", (_req: Request, res: Response, next: NextFunction) => {
   // During the boot window we cannot check the session store (PDIM may be cold).
   // Return unauthenticated so the React app shows the login screen rather than
   // hanging or routing to a broken state.
-  res?.status(200).json({ authenticated: false, bootPhase: true });
+  res.status(200).json({ authenticated: false, bootPhase: true });
 });
 
 app?.post("/api/metrics/web-vitals", (_req: Request, res: Response) => {
   // Silently accept browser web-vitals payloads during the boot window so the
   // browser doesn't log 404 errors on first paint.  Metrics from this window
   // are lost; that's acceptable — the real handler registers within seconds.
-  res?.status(204).end();
+  res.status(204).end();
 });
 
 app?.use((req: Request, res: Response, next: NextFunction) => {
@@ -444,26 +444,26 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   if (_spaHandlerReady) return next();
   // API routes must never receive an HTML shell — let them fall through to
   // the registered handler (or the /api 404 guard that comes later).
-  if (req?.originalUrl.startsWith("/api/") || req?.method !== "GET")
+  if (req.originalUrl.startsWith("/api/") || req.method !== "GET")
     return next();
   // Static assets (JS chunks, CSS, images, fonts) must not receive an HTML
   // shell during the boot window — they must reach the express?.static handler.
   const assetExt =
     /\.(js|css|png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|eot|map|json)$/i;
-  if (req?.path.startsWith("/assets/") || assetExt?.test(req?.path)) return next();
+  if (req.path.startsWith("/assets/") || assetExt?.test(req.path)) return next();
   // Serve the pre-built SPA shell if it exists.  In development this is the
   // last production build; in production it is the freshly built dist/.
   if (fs?.existsSync(_spaFallbackIndexPath)) {
-    res?.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    res?.setHeader("X-Boot-Fallback", "1");
-    return res?.sendFile(_spaFallbackIndexPath);
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.setHeader("X-Boot-Fallback", "1");
+    return res.sendFile(_spaFallbackIndexPath);
   }
   // In dev mode (no built index?.html) serve a minimal loading page so mobile
   // browsers see something instead of a white screen during the boot window.
-  res?.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
   res.setHeader("Content-Type", "text/html; charset=utf-8");
-  res?.setHeader("X-Boot-Fallback", "1");
-  res?.status(200).send(`<!DOCTYPE html>
+  res.setHeader("X-Boot-Fallback", "1");
+  res.status(200).send(`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
@@ -559,7 +559,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   // express.static() calls next() for unknown paths so Vite's own module graph
   // (/@vite/client, /src/...) is unaffected.
   serveStaticFiles(app);
-  logger?.info(
+  logger.info(
     "✅ [Static] Pre-session asset serving registered (assets bypass session/PDIM)",
   );
 
@@ -593,7 +593,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     );
     systemIntelligence?.initialize();
   } catch (e) {
-    logger?.warn(
+    logger.warn(
       `[SystemIntelligence] Failed to initialize: ${(e as Error).message}`,
     );
   }
@@ -606,7 +606,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     );
     chainErrorAutoFixer?.start();
   } catch (e) {
-    logger?.warn(`[ChainFixer] Failed to start: ${e?.message}`);
+    logger.warn(`[ChainFixer] Failed to start: ${e?.message}`);
   }
 
   // Start platform auto-fixer — proactive subsystem health probing + runtime patching.
@@ -620,13 +620,13 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     if (isBgWorker) {
       platformAutoFixer?.start();
     } else {
-      logger?.info(
+      logger.info(
         `[PlatformAutoFixer] Worker ${clusterId} — middleware active, probe loop handled by worker 0`,
       );
     }
     app?.use(platformFixerMiddleware);
   } catch (e) {
-    logger?.warn(`[PlatformAutoFixer] Failed to start: ${e?.message}`);
+    logger.warn(`[PlatformAutoFixer] Failed to start: ${e?.message}`);
   }
 
   // Load permanent overrides — restores improvements accumulated across prior sessions.
@@ -639,7 +639,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       );
       await permanentFixRegistry?.loadPermanentOverrides();
     } catch (e) {
-      logger?.warn(`[PermanentFixer] Failed to load overrides: ${e?.message}`);
+      logger.warn(`[PermanentFixer] Failed to load overrides: ${e?.message}`);
     }
   }, 8_000);
 
@@ -652,17 +652,17 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   if (isProduction) {
     const sessionSecret = env?.SESSION_SECRET;
     if (!sessionSecret) {
-      logger?.warn(
+      logger.warn(
         "❌ CRITICAL: SESSION_SECRET environment variable is required in production",
       );
-      logger?.warn(
+      logger.warn(
         "❌ Cannot start server without secure session configuration",
       );
-      process?.exit(1);
+      process.exit(1);
     }
     if (sessionSecret?.length < 32) {
-      logger?.warn("❌ CRITICAL: SESSION_SECRET must be at least 32 characters");
-      process?.exit(1);
+      logger.warn("❌ CRITICAL: SESSION_SECRET must be at least 32 characters");
+      process.exit(1);
     }
   }
 
@@ -672,7 +672,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   activeSessionStore = await createSessionStore();
   const sessionConfig = getSessionConfig(activeSessionStore);
   app?.use(session(sessionConfig));
-  logger?.info("✅ Session store initialized (PDIM)");
+  logger.info("✅ Session store initialized (PDIM)");
 
   // distributedCache?.connect() is deferred to the setImmediate block below.
   // Keeping it here would stall route registration for up to ~20 s if PDIM is
@@ -688,7 +688,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   // REQUEST ORIGIN VALIDATION
   // ========================================
   app?.use(originValidation);
-  logger?.info(
+  logger.info(
     "✅ Origin validation enabled (SameSite=Lax + Origin header check)",
   );
 
@@ -705,11 +705,11 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     );
     app?.use(generateCsrfToken);
     app?.use(csrfProtectionWithExemptions);
-    logger?.info(
+    logger.info(
       "✅ CSRF protection enabled (double-submit cookie, with safe exemptions)",
     );
   } catch (e) {
-    logger?.warn(`⚠️  CSRF middleware failed to load: ${e?.message}`);
+    logger.warn(`⚠️  CSRF middleware failed to load: ${e?.message}`);
   }
 
   // Verify read replica once at startup. On failure dbRead is permanently
@@ -717,7 +717,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   try {
     await verifyReadReplica();
   } catch (e) {
-    logger?.warn(`[db] Failed to run replica verification: ${e?.message}`);
+    logger.warn(`[db] Failed to run replica verification: ${e?.message}`);
   }
 
   // ========================================
@@ -726,12 +726,12 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   try {
     const safetyResult = await initializeSafetySystems();
     if (!safetyResult?.success) {
-      logger?.warn(
+      logger.warn(
         `⚠️ Safety systems initialized with warnings: ${safetyResult?.errors.join(", ")}`,
       );
     }
   } catch (error) {
-    logger?.warn("⚠️ Safety systems initialization error:", error?.message);
+    logger.warn("⚠️ Safety systems initialization error:", error?.message);
   }
 
   // Ensure optional modules finished loading (they ran concurrently with the
@@ -742,28 +742,28 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   try {
     if (metricsCollector?.start) {
       metricsCollector?.start();
-      logger?.info("Metrics collector started");
+      logger.info("Metrics collector started");
     }
   } catch (e) {
-    logger?.warn("Metrics collector not available");
+    logger.warn("Metrics collector not available");
   }
 
   try {
     if (alertingService?.start) {
       alertingService?.start();
-      logger?.info("Alerting service started");
+      logger.info("Alerting service started");
     }
   } catch (e) {
-    logger?.warn("Alerting service not available");
+    logger.warn("Alerting service not available");
   }
 
   try {
     if (capacityMonitor?.start) {
       capacityMonitor?.start();
-      logger?.info("Capacity monitor started");
+      logger.info("Capacity monitor started");
     }
   } catch (e) {
-    logger?.warn("Capacity monitor not available");
+    logger.warn("Capacity monitor not available");
   }
 
   // Initialize realtime WebSocket server for studio collaboration
@@ -775,10 +775,10 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         setSessionStore(activeSessionStore);
       }
       initializeRealtimeServer(httpServer);
-      logger?.info("Realtime collaboration server initialized");
+      logger.info("Realtime collaboration server initialized");
     }
   } catch (e) {
-    logger?.warn("Realtime server not available");
+    logger.warn("Realtime server not available");
   }
 
   // Initialize background workers on one cluster worker only.
@@ -789,14 +789,14 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   try {
     if (isBgWorker && typeof initializeWorkers === "function") {
       await initializeWorkers();
-      logger?.info("Background workers initialized");
+      logger.info("Background workers initialized");
     } else if (!isBgWorker) {
-      logger?.info(
+      logger.info(
         `[Cluster] Worker ${clusterId} — HTTP only, background jobs handled by worker 0`,
       );
     }
   } catch (e) {
-    logger?.warn("Workers not available");
+    logger.warn("Workers not available");
   }
 
   // Domain verification worker — polls storefront_domains for pending custom domains
@@ -806,9 +806,9 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       "./workers/domainVerificationWorker.js"
     );
     startDomainVerificationWorker();
-    logger?.info("Domain verification worker started");
+    logger.info("Domain verification worker started");
   } catch (e) {
-    logger?.warn(`Domain verification worker unavailable: ${e?.message}`);
+    logger.warn(`Domain verification worker unavailable: ${e?.message}`);
   }
 
   // Domain lifecycle job — manages expiry states, auto-renewal, and grace periods.
@@ -818,9 +818,9 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       "./services/domainLifecycleJob.js"
     );
     startDomainLifecycleJob();
-    logger?.info("[domainVerify] Domain lifecycle job started");
+    logger.info("[domainVerify] Domain lifecycle job started");
   } catch (e) {
-    logger?.warn(`Domain lifecycle job unavailable: ${e?.message}`);
+    logger.warn(`Domain lifecycle job unavailable: ${e?.message}`);
   }
 
   // ── Backfill: mark existing Max Booster-registered domain zones as verified ──
@@ -839,12 +839,12 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
          AND (z.is_verified = false OR z.status = 'pending')
     `);
     if (rowCount && rowCount > 0) {
-      logger?.info(
+      logger.info(
         `[domainVerify] Backfilled ${rowCount} Max Booster-owned zone(s) to verified/active`,
       );
     }
   } catch (e) {
-    logger?.warn(`[domainVerify] Backfill skipped: ${e?.message}`);
+    logger.warn(`[domainVerify] Backfill skipped: ${e?.message}`);
   }
 
   // Initialize TensorFlow worker pool — keeps inference off the HTTP event loop
@@ -856,10 +856,10 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       const { mlModelRegistry } = await import("./services/mlModelRegistry.js");
       await tfWorkerPool?.loadAllModels(mlModelRegistry);
     } catch (modelErr) {
-      logger?.warn(`[TFWorkerPool] Model preload skipped: ${modelErr?.message}`);
+      logger.warn(`[TFWorkerPool] Model preload skipped: ${modelErr?.message}`);
     }
   } catch (e) {
-    logger?.warn(`[TFWorkerPool] Initialization skipped: ${e?.message}`);
+    logger.warn(`[TFWorkerPool] Initialization skipped: ${e?.message}`);
   }
 
   // Autonomous systems initialization is deferred to after server starts
@@ -878,31 +878,31 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   // Apply each in the correct precedence order (import order above matches use order)
   if (demoAuthResult?.status === "fulfilled") {
     app?.use("/api", demoAuthResult?.value.blockDemoWrite);
-    logger?.info("✅ Demo write protection applied");
+    logger.info("✅ Demo write protection applied");
   } else {
-    logger?.warn(
+    logger.warn(
       `⚠️ Demo write protection not available: ${((demoAuthResult as PromiseRejectedResult).reason as Error)?.message}`,
     );
   }
 
   if (rateLimiterResult?.status === "fulfilled") {
     app?.use("/api", rateLimiterResult?.value.globalScalableRateLimiter);
-    logger?.info("✅ Scalable rate limiter applied");
+    logger.info("✅ Scalable rate limiter applied");
   } else {
-    logger?.warn(
+    logger.warn(
       `⚠️ Rate limiter not available: ${((rateLimiterResult as PromiseRejectedResult).reason as Error)?.message}`,
     );
   }
 
   if (admissionResult?.status === "fulfilled") {
     app?.use("/api", admissionResult?.value.admissionControl);
-    logger?.info(
+    logger.info(
       "✅ Admission control applied (max concurrent: " +
-        (process?.env.MAX_CONCURRENT_REQUESTS ?? "5000") +
+        (process.env.MAX_CONCURRENT_REQUESTS ?? "5000") +
         ")",
     );
   } else {
-    logger?.warn(
+    logger.warn(
       `⚠️ Admission control not available: ${((admissionResult as PromiseRejectedResult).reason as Error)?.message}`,
     );
   }
@@ -927,8 +927,8 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       res,
       next,
     ) => {
-      if (req?.method !== "GET") return next();
-      const basePath = req?.path.replace(/\/$/, "") || req?.path;
+      if (req.method !== "GET") return next();
+      const basePath = req.path.replace(/\/$/, "") || req.path;
       const ttl = cachedRoutes[basePath];
       if (ttl)
         return cacheMiddleware({ ttlSeconds: ttl, varyByUser: true })(
@@ -956,19 +956,19 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       "/api/achievements": "private, max-age=120, stale-while-revalidate=900",
     };
     app?.use("/api", (req, res, next) => {
-      if (req?.method !== "GET") return next();
-      const directive = SWR_ROUTES[req?.path.replace(/\/$/, "") || req?.path];
-      if (directive && !res?.getHeader("Cache-Control")) {
-        res?.setHeader("Cache-Control", directive);
+      if (req.method !== "GET") return next();
+      const directive = SWR_ROUTES[req.path.replace(/\/$/, "") || req.path];
+      if (directive && !res.getHeader("Cache-Control")) {
+        res.setHeader("Cache-Control", directive);
       }
       next();
     });
 
-    logger?.info(
-      `✅ API response cache initialized (${Object?.keys(cachedRoutes).length} cached routes)`,
+    logger.info(
+      `✅ API response cache initialized (${Object.keys(cachedRoutes).length} cached routes)`,
     );
   } else {
-    logger?.warn(
+    logger.warn(
       `⚠️ API cache middleware: ${((apiCacheResult as PromiseRejectedResult).reason as Error)?.message}`,
     );
   }
@@ -1090,7 +1090,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       "./services/featureEventBuffer.js"
     );
     recoverStaleProcessingBatches().catch((e) =>
-      logger?.warn(
+      logger.warn(
         "[Retention] Stale batch recovery failed (non-blocking):",
         e?.message,
       ),
@@ -1112,7 +1112,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       },
       6 * 60 * 60 * 1000,
     );
-    logger?.info("[Retention] Dunning processor enqueued (6h interval)");
+    logger.info("[Retention] Dunning processor enqueued (6h interval)");
 
     setInterval(
       async () => {
@@ -1127,7 +1127,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       },
       24 * 60 * 60 * 1000,
     );
-    logger?.info(
+    logger.info(
       "[Retention] Health score batch processor enqueued (24h interval)",
     );
 
@@ -1138,7 +1138,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         /* non-critical */
       }
     }, 60 * 1000);
-    logger?.info(
+    logger.info(
       "[Retention] Feature event buffer flush enqueued (60s interval)",
     );
 
@@ -1152,12 +1152,12 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
           );
           await advertisingDispatchService?.collectAllActiveEngagement();
         } catch (e) {
-          logger?.warn("[Engagement] Refresh failed (non-fatal):", e?.message);
+          logger.warn("[Engagement] Refresh failed (non-fatal):", e?.message);
         }
       },
       8 * 60 * 60 * 1000,
     );
-    logger?.info(
+    logger.info(
       "[Engagement] Social engagement refresh cron started (8h interval)",
     );
   } catch (retentionErr) {
@@ -1165,17 +1165,17 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       retentionErr instanceof Error
         ? `${retentionErr?.message}\n${retentionErr?.stack}`
         : String(retentionErr);
-    logger?.warn("[Retention] Background services failed to start:\n" + errMsg);
+    logger.warn("[Retention] Background services failed to start:\n" + errMsg);
   }
 
   // JSON 404 handler for unmatched API routes (must be after all API routes)
   // This prevents the SPA fallback from returning HTML for missing API endpoints
   // Uses path-agnostic approach to respect multi-handler pipelines
   app?.use((req: Request, res: Response, next: NextFunction) => {
-    if (!res?.headersSent && req?.originalUrl.startsWith("/api/")) {
-      return res?.status(404).json({
+    if (!res.headersSent && req.originalUrl.startsWith("/api/")) {
+      return res.status(404).json({
         error: "Not found",
-        message: `API endpoint ${req?.originalUrl} does not exist`,
+        message: `API endpoint ${req.originalUrl} does not exist`,
         status: 404,
       });
     }
@@ -1187,7 +1187,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
     const seoRoutes = (await import("./routes/seo.js")).default;
     app?.use(seoRoutes);
   } catch (e) {
-    logger?.warn(`⚠️ SEO routes not available: ${e?.message}`);
+    logger.warn(`⚠️ SEO routes not available: ${e?.message}`);
   }
 
   // ── Platform Subdomain Router ────────────────────────────────────────────────
@@ -1201,14 +1201,14 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
   // API + asset paths are passed through so the full app still works on the subdomain.
   app?.use(async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const BASE = process?.env.BASE_DOMAIN || "max-booster.com";
-      const host = req?.hostname ?? "";
+      const BASE = process.env.BASE_DOMAIN || "max-booster.com";
+      const host = req.hostname ?? "";
 
       // Only intercept true subdomains of the platform domain (not the root itself)
       if (host === BASE || !host?.endsWith(`.${BASE}`)) return next();
 
       // Let API calls, assets, and Vite HMR pass through unchanged
-      const p = req?.path;
+      const p = req.path;
       if (
         p?.startsWith("/api/") ||
         p?.startsWith("/assets/") ||
@@ -1252,7 +1252,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         .limit(1);
 
       if (domRow?.slug) {
-        return res?.redirect(302, `/storefront/${domRow?.slug}`);
+        return res.redirect(302, `/storefront/${domRow?.slug}`);
       }
 
       // 2. Claimed domains registry — try by domain name even without storefrontId,
@@ -1266,7 +1266,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         .limit(1);
 
       if (claimRow?.slug) {
-        return res?.redirect(302, `/storefront/${claimRow?.slug}`);
+        return res.redirect(302, `/storefront/${claimRow?.slug}`);
       }
 
       // 3. Direct slug match (artist's slug == subdomain label)
@@ -1449,20 +1449,20 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
           try {
             const result = await hybridStorageService?.runAutoTiering();
             if (result?.tieredDown > 0 || result?.tieredUp > 0) {
-              logger?.info(
+              logger.info(
                 `[Storage] Auto-tiering: ${result?.tieredDown} files moved to cold, ${result?.tieredUp} promoted to hot`,
               );
             }
           } catch (e) {
-            logger?.warn(`[Storage] Auto-tiering error: ${e?.message}`);
+            logger.warn(`[Storage] Auto-tiering error: ${e?.message}`);
           }
         }, autoTierInterval);
-        logger?.info(
+        logger.info(
           "✅ [Storage] Auto-tiering scheduler started (every 6 hours)",
         );
       }
     } catch (e) {
-      logger?.warn(`⚠️ [Storage] Hybrid Storage init: ${e?.message}`);
+      logger.warn(`⚠️ [Storage] Hybrid Storage init: ${e?.message}`);
     }
 
     // 0e. Pocket Dimension Fabric (Distributed storage layer + Auto-cluster)
@@ -1471,13 +1471,13 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         "./pocket-dimension/fabric/index.js"
       );
       await initializeFabric();
-      logger?.info("✅ [PocketFabric] Distributed fabric storage initialized");
+      logger.info("✅ [PocketFabric] Distributed fabric storage initialized");
       killSwitch?.registerSystem("pocket-fabric-autocluster" as string, {
         kill: () => autoClusterManager?.stop(),
         resume: () => autoClusterManager?.start(),
       });
     } catch (e) {
-      logger?.warn(`⚠️ [PocketFabric] Fabric init: ${e?.message}`);
+      logger.warn(`⚠️ [PocketFabric] Fabric init: ${e?.message}`);
     }
 
     // 1. Autonomous Service (Core)
@@ -1492,14 +1492,14 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
           if (typeof svc?.startAutonomousOperations === "function") {
             svc?.startAutonomousOperations();
           }
-          logger?.info(`✅ [Autonomy] Autonomous Service started on worker 0`);
+          logger.info(`✅ [Autonomy] Autonomous Service started on worker 0`);
         } else {
-          logger?.info(
+          logger.info(
             `[Autonomy] Worker ${clusterId} — autonomous ops handled by worker 0`,
           );
         }
         const status = svc?.getStatus();
-        logger?.info(
+        logger.info(
           `✅ [Autonomy] Autonomous Service initialized - Running: ${status?.isRunning}`,
         );
         killSwitch?.registerSystem("autonomous-service", {
@@ -1517,7 +1517,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         });
       }
     } catch (e) {
-      logger?.warn(`⚠️ [Autonomy] Autonomous Service: ${e?.message}`);
+      logger.warn(`⚠️ [Autonomy] Autonomous Service: ${e?.message}`);
     }
 
     // 2. Automation System
@@ -1529,20 +1529,20 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         typeof AutomationSystemClass?.getInstance === "function"
       ) {
         const system = AutomationSystemClass?.getInstance();
-        logger?.info("✅ [Autonomy] Automation System initialized");
+        logger.info("✅ [Autonomy] Automation System initialized");
         killSwitch?.registerSystem("automation-system", {
           kill: () => {
             (system as Record<string, unknown>)._killSwitchPaused = true;
-            logger?.warn("[AutomationSystem] Paused by kill switch");
+            logger.warn("[AutomationSystem] Paused by kill switch");
           },
           resume: () => {
             (system as Record<string, unknown>)._killSwitchPaused = false;
-            logger?.info("[AutomationSystem] Resumed");
+            logger.info("[AutomationSystem] Resumed");
           },
         });
       }
     } catch (e) {
-      logger?.warn(`⚠️ [Autonomy] Automation System: ${e?.message}`);
+      logger.warn(`⚠️ [Autonomy] Automation System: ${e?.message}`);
     }
 
     // 3. Autonomous Updates Orchestrator
@@ -1562,7 +1562,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         } else if (typeof orchestrator?.start === "function") {
           await orchestrator?.start();
         }
-        logger?.info("✅ [Autonomy] Auto-Upgrade System ENABLED");
+        logger.info("✅ [Autonomy] Auto-Upgrade System ENABLED");
         killSwitch?.registerSystem("autonomous-updates", {
           kill: () => {
             if (typeof orchestrator?.stop === "function") orchestrator?.stop();
@@ -1573,7 +1573,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         });
       }
     } catch (e) {
-      logger?.warn(`⚠️ [Autonomy] Autonomous Updates: ${e?.message}`);
+      logger.warn(`⚠️ [Autonomy] Autonomous Updates: ${e?.message}`);
     }
 
     // 4-9. Other autonomous modules — load in parallel then register with kill switch
@@ -1592,7 +1592,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         parallelMods[0] as PromiseFulfilledResult<Record<string, unknown>>
       ).value;
       if (mod?.autonomousAutopilot) {
-        logger?.info("✅ [Autonomy] Autonomous Autopilot loaded");
+        logger.info("✅ [Autonomy] Autonomous Autopilot loaded");
         killSwitch?.registerSystem("autonomous-autopilot", {
           kill: () => {
             if (
@@ -1601,14 +1601,14 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
               mod?.autonomousAutopilot.stopAutonomousMode();
           },
           resume: () => {
-            logger?.info(
+            logger.info(
               "[AutonomousAutopilot] Kill switch released — restart per-user as needed",
             );
           },
         });
       }
     } else
-      logger?.warn(
+      logger.warn(
         `⚠️ [Autonomy] Autonomous Autopilot: ${((parallelMods[0] as PromiseRejectedResult).reason as Error)?.message}`,
       );
 
@@ -1621,7 +1621,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         mod?.autopilotEngine ??
         (mod?.AutopilotEngine ? new mod.AutopilotEngine() : null);
       if (engine) {
-        logger?.info("✅ [Autonomy] Autopilot Engine loaded");
+        logger.info("✅ [Autonomy] Autopilot Engine loaded");
         killSwitch?.registerSystem("autopilot-engine", {
           kill: () => {
             if (typeof engine?.stop === "function") engine?.stop();
@@ -1632,7 +1632,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         });
       }
     } else
-      logger?.warn(
+      logger.warn(
         `⚠️ [Autonomy] Autopilot Engine: ${((parallelMods[1] as PromiseRejectedResult).reason as Error)?.message}`,
       );
 
@@ -1642,7 +1642,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         parallelMods[2] as PromiseFulfilledResult<Record<string, unknown>>
       ).value;
       if (mod?.autoPostingService) {
-        logger?.info("✅ [Autonomy] Auto-Posting Service V1 initialized");
+        logger.info("✅ [Autonomy] Auto-Posting Service V1 initialized");
         killSwitch?.registerSystem("auto-posting-v1", {
           kill: () => {
             if (typeof mod?.autoPostingService.pause === "function")
@@ -1655,7 +1655,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         });
       }
     } else
-      logger?.warn(
+      logger.warn(
         `⚠️ [Autonomy] Auto-Posting V1: ${((parallelMods[2] as PromiseRejectedResult).reason as Error)?.message}`,
       );
 
@@ -1665,7 +1665,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         parallelMods[3] as PromiseFulfilledResult<Record<string, unknown>>
       ).value;
       if (mod?.autoPostingServiceV2) {
-        logger?.info("✅ [Autonomy] Auto-Posting Service V2 initialized");
+        logger.info("✅ [Autonomy] Auto-Posting Service V2 initialized");
         killSwitch?.registerSystem("auto-posting-v2", {
           kill: () => {
             if (typeof mod?.autoPostingServiceV2.pause === "function")
@@ -1678,7 +1678,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         });
       }
     } else
-      logger?.warn(
+      logger.warn(
         `⚠️ [Autonomy] Auto-Posting V2: ${((parallelMods[3] as PromiseRejectedResult).reason as Error)?.message}`,
       );
 
@@ -1688,20 +1688,20 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         parallelMods[4] as PromiseFulfilledResult<Record<string, unknown>>
       ).value;
       if (mod?.autoPostGenerator) {
-        logger?.info("✅ [Autonomy] Auto Post Generator initialized");
+        logger.info("✅ [Autonomy] Auto Post Generator initialized");
         killSwitch?.registerSystem("auto-post-generator", {
           kill: () => {
             (mod.autoPostGenerator as Record<string, unknown>)._killed = true;
-            logger?.warn("[AutoPostGenerator] Paused by kill switch");
+            logger.warn("[AutoPostGenerator] Paused by kill switch");
           },
           resume: () => {
             (mod.autoPostGenerator as Record<string, unknown>)._killed = false;
-            logger?.info("[AutoPostGenerator] Resumed");
+            logger.info("[AutoPostGenerator] Resumed");
           },
         });
       }
     } else
-      logger?.warn(
+      logger.warn(
         `⚠️ [Autonomy] Auto Post Generator: ${((parallelMods[4] as PromiseRejectedResult).reason as Error)?.message}`,
       );
 
@@ -1711,7 +1711,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         parallelMods[5] as PromiseFulfilledResult<Record<string, unknown>>
       ).value;
       if (mod?.autopilotPublisher) {
-        logger?.info("✅ [Autonomy] Autopilot Publisher initialized");
+        logger.info("✅ [Autonomy] Autopilot Publisher initialized");
         killSwitch?.registerSystem("autopilot-publisher", {
           kill: () => {
             if (typeof mod?.autopilotPublisher.stopScheduler === "function")
@@ -1724,20 +1724,20 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         });
       }
     } else
-      logger?.warn(
+      logger.warn(
         `⚠️ [Autonomy] Autopilot Publisher: ${((parallelMods[5] as PromiseRejectedResult).reason as Error)?.message}`,
       );
 
-    logger?.info(
+    logger.info(
       "🤖 ═══════════════════════════════════════════════════════════",
     );
-    logger?.info("🤖 AUTONOMOUS SYSTEMS READY");
+    logger.info("🤖 AUTONOMOUS SYSTEMS READY");
 
     // Built-in authoritative DNS server for *.maxbooster?.replit.app
     import("./services/dnsServer.js")
       .then(({ startDNSServer }) => {
         startDNSServer().catch((e) =>
-          logger?.warn("[DNS] Start error:", e?.message),
+          logger.warn("[DNS] Start error:", e?.message),
         );
       })
       .catch(() => {});
@@ -1750,7 +1750,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       import("./services/baseModelTrainer.js")
         .then(({ runBaseModelTraining }) => {
           runBaseModelTraining().catch((e) => {
-            logger?.warn(
+            logger.warn(
               `[BaseTrainer] Background training error: ${e instanceof Error ? e?.message : String(e)}`,
             );
           });
@@ -1761,12 +1761,12 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
       import("./services/maxcoreSync.js")
         .then(({ initMaxCoreSync }) => {
           initMaxCoreSync().catch((e) =>
-            logger?.warn("[MaxCoreSync] Init error:", e?.message),
+            logger.warn("[MaxCoreSync] Init error:", e?.message),
           );
         })
         .catch(() => {});
     } else {
-      logger?.info(
+      logger.info(
         `[Sync] Worker ${clusterId} — base trainer + MaxCore sync handled by worker 0`,
       );
     }
@@ -1782,7 +1782,7 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
         })
         .catch(() => {});
     } else {
-      logger?.info(
+      logger.info(
         `[ScoreCalibrator] Worker ${clusterId} — calibration handled by worker 0`,
       );
     }
@@ -1799,26 +1799,26 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
           .then(({ startBackgroundTraining }) => {
             startBackgroundTraining()
               .then((result?: void) => {
-                logger?.info(
+                logger.info(
                   "🎬 [DiffBG] Diffusion trainer initialised (MaxCore Gateway or local fallback)",
                 );
               })
               .catch((e) =>
-                logger?.warn(
+                logger.warn(
                   "[DiffBG] Background trainer init error:",
                   e?.message,
                 ),
               );
           })
           .catch((e) =>
-            logger?.warn(
+            logger.warn(
               "[DiffBG] Could not import background trainer:",
               e?.message,
             ),
           );
       }, 60_000);
     } else {
-      logger?.info(
+      logger.info(
         `[DiffBG] Worker ${clusterId} — diffusion training handled by worker 0`,
       );
     }
@@ -1838,21 +1838,21 @@ app?.use((req: Request, res: Response, next: NextFunction) => {
           _replicaKeepPool?.query("SELECT 1").catch(() => {});
       }, 25_000);
       keepalive?.unref();
-      logger?.info(
+      logger.info(
         "[DB] Keepalive started — pinging primary + replica every 25s to prevent Neon cold-start latency",
       );
     } catch {
       // Non-fatal — server continues without keepalive
     }
 
-    logger?.info(
+    logger.info(
       "🤖 ═══════════════════════════════════════════════════════════",
     );
   });
 })().catch((error) => {
   console?.error("FATAL: Server startup failed:", error);
-  logger?.warn({ err: error }, "FATAL: Server startup failed");
-  process?.exit(1);
+  logger.warn({ err: error }, "FATAL: Server startup failed");
+  process.exit(1);
 });
 
 // Graceful shutdown — stops accepting new connections, drains in-flight requests,
@@ -1864,21 +1864,21 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
   if (_shutdownInProgress) return;
   _shutdownInProgress = true;
 
-  logger?.info(`[Shutdown] Received ${signal}, starting graceful shutdown...`);
+  logger.info(`[Shutdown] Received ${signal}, starting graceful shutdown...`);
 
   // Hard deadline: autoscale sends SIGKILL at ~30 s, so we must complete within 25 s.
   const hardExit = setTimeout(() => {
-    logger?.warn("[Shutdown] Hard timeout reached — forcing exit");
-    process?.exit(exitCode);
+    logger.warn("[Shutdown] Hard timeout reached — forcing exit");
+    process.exit(exitCode);
   }, 25_000);
   hardExit?.unref(); // do not keep the event loop alive just for this timer
 
   try {
     // 1. Stop accepting new HTTP connections so the load balancer re-routes immediately.
     await new Promise<void>((resolve) => httpServer?.close(() => resolve()));
-    logger?.info("[Shutdown] HTTP server closed");
+    logger.info("[Shutdown] HTTP server closed");
   } catch (err) {
-    logger?.warn({ err: err }, "[Shutdown] Error closing HTTP server:");
+    logger.warn({ err: err }, "[Shutdown] Error closing HTTP server:");
   }
 
   try {
@@ -1891,9 +1891,9 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
         setTimeout(() => rej(new Error("BullMQ drain timeout")), 10_000),
       ),
     ]);
-    logger?.info("[Shutdown] BullMQ workers drained");
+    logger.info("[Shutdown] BullMQ workers drained");
   } catch (err) {
-    logger?.warn("[Shutdown] BullMQ drain error (non-fatal):", err?.message);
+    logger.warn("[Shutdown] BullMQ drain error (non-fatal):", err?.message);
   }
 
   try {
@@ -1958,14 +1958,14 @@ process.on("uncaughtException", (error: Error) => {
   // Truncate to first line so pino-pretty doesn't emit bare multi-line stack
   // traces that appear without timestamp prefixes in the workflow logs.
   const summary = eMsg?.split("\n")[0] ?? eMsg;
-  logger?.warn(
+  logger.warn(
     { errMsg: summary },
     "[Process] Uncaught exception — shutting down:",
   );
   gracefulShutdown("uncaughtException", 1);
 });
 
-process?.on("unhandledRejection", (reason: unknown) => {
+process.on("unhandledRejection", (reason: unknown) => {
   const err = reason instanceof Error ? reason : new Error(String(reason));
   const code = (reason as NodeJS.ErrnoException)?.code;
 
@@ -1983,7 +1983,7 @@ process?.on("unhandledRejection", (reason: unknown) => {
   // Trigger a graceful shutdown so the process manager can restart clean.
   // This mirrors the uncaughtException handler behaviour and ensures no
   // "zombie" server serves requests from a corrupted async call stack.
-  logger?.warn(
+  logger.warn(
     { err },
     "[Process] Fatal unhandled promise rejection — shutting down:",
   );

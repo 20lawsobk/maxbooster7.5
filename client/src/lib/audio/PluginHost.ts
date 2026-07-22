@@ -169,30 +169,30 @@ export class PluginHost {
    * Routes mb-* plugin slugs to the appropriate Web Audio API processor.
    */
   createPlugin(type: string): BasePlugin | null {
-    const resolved = this?.resolveType(type);
+    const resolved = this.resolveType(type);
     switch (resolved) {
       case "compressor":
-        return new CompressorPlugin(this?.context);
+        return new CompressorPlugin(this.context);
       case "eq":
-        return new EQPlugin(this?.context);
+        return new EQPlugin(this.context);
       case "reverb":
-        return new ReverbPlugin(this?.context);
+        return new ReverbPlugin(this.context);
       case "delay":
-        return new DelayPlugin(this?.context);
+        return new DelayPlugin(this.context);
       case "distortion":
-        return new DistortionPlugin(this?.context);
+        return new DistortionPlugin(this.context);
       case "chorus":
-        return new ChorusPlugin(this?.context);
+        return new ChorusPlugin(this.context);
       case "flanger":
-        return new FlangerPlugin(this?.context);
+        return new FlangerPlugin(this.context);
       case "phaser":
-        return new PhaserPlugin(this?.context);
+        return new PhaserPlugin(this.context);
       case "deesser":
-        return new DeEsserPlugin(this?.context);
+        return new DeEsserPlugin(this.context);
       case "vocoder":
-        return new VocoderPlugin(this?.context);
+        return new VocoderPlugin(this.context);
       case "dynamiceq":
-        return new DynamicEQPlugin(this?.context);
+        return new DynamicEQPlugin(this.context);
       default:
         return null;
     }
@@ -202,8 +202,8 @@ export class PluginHost {
    * Create a plugin chain for a track
    */
   createChain(trackId: string): PluginChain {
-    const chain = new PluginChain(this?.context, trackId);
-    this?.chains.set(trackId, chain);
+    const chain = new PluginChain(this.context, trackId);
+    this.chains.set(trackId, chain);
     return chain;
   }
 
@@ -211,7 +211,7 @@ export class PluginHost {
    * Get chain for track
    */
   getChain(trackId: string): PluginChain | undefined {
-    return this?.chains.get(trackId);
+    return this.chains.get(trackId);
   }
 
   /**
@@ -222,10 +222,10 @@ export class PluginHost {
     pluginType: string,
     position?: number,
   ): BasePlugin | null {
-    const chain = this?.chains.get(trackId);
+    const chain = this.chains.get(trackId);
     if (!chain) return null;
 
-    const plugin = this?.createPlugin(pluginType);
+    const plugin = this.createPlugin(pluginType);
     if (!plugin) return null;
 
     chain?.addPlugin(plugin, position);
@@ -236,11 +236,11 @@ export class PluginHost {
    * Remove all chains and plugins
    */
   destroy(): void {
-    for (const chain of this?.chains.values()) {
+    for (const chain of this.chains.values()) {
       chain?.destroy();
     }
-    this?.chains.clear();
-    this?.plugins.clear();
+    this.chains.clear();
+    this.plugins.clear();
   }
 }
 
@@ -259,15 +259,15 @@ export class PluginChain {
     this.trackId = trackId;
     this.input = context?.createGain();
     this.output = context?.createGain();
-    this?.input.connect(this?.output);
+    this.input.connect(this.output);
   }
 
   /**
    * Connect chain between source and destination
    */
   connect(source: AudioNode, destination: AudioNode): void {
-    source?.connect(this?.input);
-    this?.output.connect(destination);
+    source?.connect(this.input);
+    this.output.connect(destination);
   }
 
   /**
@@ -275,32 +275,32 @@ export class PluginChain {
    */
   addPlugin(plugin: BasePlugin, position?: number): void {
     // Disconnect current chain
-    this?.reconnectChain();
+    this.reconnectChain();
 
     // Add plugin at position
     if (
       position !== undefined &&
       position >= 0 &&
-      position < this?.plugins.length
+      position < this.plugins.length
     ) {
-      this?.plugins.splice(position, 0, plugin);
+      this.plugins.splice(position, 0, plugin);
     } else {
-      this?.plugins.push(plugin);
+      this.plugins.push(plugin);
     }
 
     // Reconnect with new plugin
-    this?.reconnectChain();
+    this.reconnectChain();
   }
 
   /**
    * Remove plugin from chain
    */
   removePlugin(plugin: BasePlugin): void {
-    const index = this?.plugins.indexOf(plugin);
+    const index = this.plugins.indexOf(plugin);
     if (index >= 0) {
-      this?.plugins.splice(index, 1);
+      this.plugins.splice(index, 1);
       plugin?.destroy();
-      this?.reconnectChain();
+      this.reconnectChain();
     }
   }
 
@@ -308,11 +308,11 @@ export class PluginChain {
    * Move plugin in chain
    */
   movePlugin(plugin: BasePlugin, newPosition: number): void {
-    const index = this?.plugins.indexOf(plugin);
+    const index = this.plugins.indexOf(plugin);
     if (index >= 0) {
-      this?.plugins.splice(index, 1);
-      this?.plugins.splice(newPosition, 0, plugin);
-      this?.reconnectChain();
+      this.plugins.splice(index, 1);
+      this.plugins.splice(newPosition, 0, plugin);
+      this.reconnectChain();
     }
   }
 
@@ -320,7 +320,7 @@ export class PluginChain {
    * Get all plugins in chain
    */
   getPlugins(): BasePlugin[] {
-    return [...this?.plugins];
+    return [...this.plugins];
   }
 
   /**
@@ -328,26 +328,26 @@ export class PluginChain {
    */
   private reconnectChain(): void {
     // Disconnect all
-    this?.input.disconnect();
-    for (const plugin of this?.plugins) {
+    this.input.disconnect();
+    for (const plugin of this.plugins) {
       plugin?.disconnect();
     }
-    this?.output.disconnect();
+    this.output.disconnect();
 
     // Reconnect chain
-    if (this?.plugins.length === 0) {
+    if (this.plugins.length === 0) {
       // Direct connection if no plugins
-      this?.input.connect(this?.output);
+      this.input.connect(this.output);
     } else {
       // Connect through plugin chain
-      let previousNode: AudioNode = this?.input;
+      let previousNode: AudioNode = this.input;
 
-      for (const plugin of this?.plugins) {
+      for (const plugin of this.plugins) {
         previousNode?.connect(plugin?.getInput());
         previousNode = plugin?.getOutput();
       }
 
-      previousNode?.connect(this?.output);
+      previousNode?.connect(this.output);
     }
   }
 
@@ -355,7 +355,7 @@ export class PluginChain {
    * Bypass all plugins
    */
   setBypass(bypass: boolean): void {
-    for (const plugin of this?.plugins) {
+    for (const plugin of this.plugins) {
       plugin?.setBypass(bypass);
     }
   }
@@ -378,26 +378,26 @@ export class PluginChain {
    */
   loadState(_state: PluginChainState): void {
     // Clear existing plugins
-    for (const plugin of this?.plugins) {
+    for (const plugin of this.plugins) {
       plugin?.destroy();
     }
     this.plugins = [];
 
     // Recreate plugins from state
     // Would need plugin factory here
-    this?.reconnectChain();
+    this.reconnectChain();
   }
 
   /**
    * Cleanup
    */
   destroy(): void {
-    for (const plugin of this?.plugins) {
+    for (const plugin of this.plugins) {
       plugin?.destroy();
     }
     this.plugins = [];
-    this?.input.disconnect();
-    this?.output.disconnect();
+    this.input.disconnect();
+    this.output.disconnect();
   }
 }
 

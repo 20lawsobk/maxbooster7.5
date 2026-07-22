@@ -75,19 +75,19 @@ class SubatomicCore {
   private initialized: boolean = false;
 
   constructor() {
-    this.storagePath = path?.join(process?.cwd(), ".subatomic");
+    this.storagePath = path?.join(process.cwd(), ".subatomic");
   }
 
   async initialize(): Promise<void> {
-    if (this?.initialized) return;
+    if (this.initialized) return;
 
     try {
-      await mkdir(this?.storagePath, { recursive: true });
-      await mkdir(path?.join(this?.storagePath, "cache"), { recursive: true });
-      await mkdir(path?.join(this?.storagePath, "compressed"), {
+      await mkdir(this.storagePath, { recursive: true });
+      await mkdir(path?.join(this.storagePath, "cache"), { recursive: true });
+      await mkdir(path?.join(this.storagePath, "compressed"), {
         recursive: true,
       });
-      await mkdir(path?.join(this?.storagePath, "particles"), {
+      await mkdir(path?.join(this.storagePath, "particles"), {
         recursive: true,
       });
       this.initialized = true;
@@ -107,7 +107,7 @@ class SubatomicCore {
     loader: () => Promise<unknown>,
     dependencies: string[] = [],
   ): void {
-    this?.modules.set(id, {
+    this.modules.set(id, {
       id,
       name,
       state: "superposition",
@@ -126,22 +126,22 @@ class SubatomicCore {
    * Returns cached version on subsequent accesses
    */
   async loadModule<T>(id: string): Promise<T> {
-    const module = this?.modules.get(id);
+    const module = this.modules.get(id);
     if (!module) {
       throw new Error(`[SUBATOMIC] Module ${id} not registered`);
     }
 
     // Check if already loaded (wave function collapsed)
-    if (this?.loadedModules.has(id)) {
+    if (this.loadedModules.has(id)) {
       module.accessCount++;
       module.lastAccess = new Date();
-      return this?.loadedModules.get(id) as T;
+      return this.loadedModules.get(id) as T;
     }
 
     // Load dependencies first (entanglement)
     for (const depId of module?.dependencies) {
-      if (!this?.loadedModules.has(depId)) {
-        await this?.loadModule(depId);
+      if (!this.loadedModules.has(depId)) {
+        await this.loadModule(depId);
       }
     }
 
@@ -155,8 +155,8 @@ class SubatomicCore {
     module.accessCount = 1;
     module.lastAccess = new Date();
 
-    this?.loadedModules.set(id, loaded);
-    this?.accessLog.push({ module: id, time: new Date(), duration: loadTime });
+    this.loadedModules.set(id, loaded);
+    this.accessLog.push({ module: id, time: new Date(), duration: loadTime });
 
     // Module collapsed
 
@@ -182,7 +182,7 @@ class SubatomicCore {
       .substring(0, 16);
 
     // Check cache
-    const cached = this?.compressionCache.get(hash);
+    const cached = this.compressionCache.get(hash);
     if (cached) {
       return {
         original: originalSize,
@@ -195,8 +195,8 @@ class SubatomicCore {
 
     // Try multiple algorithms and pick the best
     const results = await Promise?.all([
-      this?.compressGzip(input),
-      this?.compressBrotli(input),
+      this.compressGzip(input),
+      this.compressBrotli(input),
     ]);
 
     // Select smallest result
@@ -205,12 +205,12 @@ class SubatomicCore {
     );
 
     // Cache the result
-    this?.compressionCache.set(hash, best?.compressed);
+    this.compressionCache.set(hash, best?.compressed);
 
     // Apply subatomic optimization for text/json
     let finalCompressed = best?.compressed;
     if (type === "json" || type === "text") {
-      finalCompressed = await this?.subatomicOptimize(best?.compressed);
+      finalCompressed = await this.subatomicOptimize(best?.compressed);
     }
 
     return {
@@ -290,16 +290,16 @@ class SubatomicCore {
         .digest("hex")
         .substring(0, 16);
       const chunkPath = path?.join(
-        this?.storagePath,
+        this.storagePath,
         "particles",
         `${hash}.particle`,
       );
 
       // Compress and save chunk
-      const compressed = await this?.compress(chunk);
+      const compressed = await this.compress(chunk);
       await writeFile(
         chunkPath,
-        this?.compressionCache.get(compressed?.hash) || chunk,
+        this.compressionCache.get(compressed?.hash) || chunk,
       );
 
       chunks?.push(hash);
@@ -314,7 +314,7 @@ class SubatomicCore {
    * Evicts least recently used and least frequently accessed
    */
   async evictCache(targetSize: number): Promise<number> {
-    const entries = Array?.from(this?.compressionCache.entries());
+    const entries = Array.from(this.compressionCache.entries());
     const currentSize = entries?.reduce((sum, [_, v]) => sum + v?.length, 0);
 
     if (currentSize <= targetSize) return 0;
@@ -327,7 +327,7 @@ class SubatomicCore {
 
     for (const [key, value] of entries) {
       if (currentSize - freedSize <= targetSize) break;
-      this?.compressionCache.delete(key);
+      this.compressionCache.delete(key);
       freedSize += value?.length;
       evicted++;
     }
@@ -344,7 +344,7 @@ class SubatomicCore {
     totalEstimated: number;
   }> {
     const content = await readFile(packageJsonPath, "utf-8");
-    const pkg = JSON?.parse(content);
+    const pkg = JSON.parse(content);
     const deps = { ...pkg?.dependencies, ...pkg?.devDependencies };
 
     // Known heavy packages and their lightweight alternatives
@@ -389,7 +389,7 @@ class SubatomicCore {
     }> = [];
     let totalEstimated = 0;
 
-    for (const [name] of Object?.entries(deps)) {
+    for (const [name] of Object.entries(deps)) {
       if (heavyPackages[name]) {
         heavy?.push({
           name,
@@ -410,10 +410,10 @@ class SubatomicCore {
    * Get subatomic statistics
    */
   getStats(): SubatomicStats {
-    const modules = Array?.from(this?.modules.values());
+    const modules = Array.from(this.modules.values());
     const loadedModules = modules?.filter((m) => m?.state === "collapsed");
 
-    const cacheSize = Array?.from(this?.compressionCache.values()).reduce(
+    const cacheSize = Array.from(this.compressionCache.values()).reduce(
       (sum, buf) => sum + buf?.length,
       0,
     );
@@ -444,7 +444,7 @@ class SubatomicCore {
           : 0,
       averageLoadTime: avgLoadTime,
       cacheHitRate: totalHits > 0 ? (totalHits - uniqueLoads) / totalHits : 0,
-      memoryFootprint: cacheSize + process?.memoryUsage().heapUsed,
+      memoryFootprint: cacheSize + process.memoryUsage().heapUsed,
     };
   }
 
@@ -452,9 +452,9 @@ class SubatomicCore {
    * Generate a subatomic report
    */
   async generateReport(): Promise<string> {
-    const stats = this?.getStats();
-    const depsAnalysis = await this?.analyzeDependencies(
-      path?.join(process?.cwd(), "package.json"),
+    const stats = this.getStats();
+    const depsAnalysis = await this.analyzeDependencies(
+      path?.join(process.cwd(), "package.json"),
     );
 
     return `
@@ -496,10 +496,10 @@ export function subatomicMiddleware() {
     next: Record<string, unknown>,
   ) => {
     // Check if client accepts brotli
-    const acceptEncoding = req?.headers["accept-encoding"] || "";
+    const acceptEncoding = req.headers["accept-encoding"] || "";
 
     // Store original send
-    const originalSend = res?.send.bind(res);
+    const originalSend = res.send.bind(res);
 
     res.send = async function (body: Record<string, unknown>) {
       if (typeof body === "string" || Buffer?.isBuffer(body)) {
@@ -511,12 +511,12 @@ export function subatomicMiddleware() {
 
           if (result?.ratio < 0.9) {
             // Only if we saved >10%
-            res?.setHeader(
+            res.setHeader(
               "Content-Encoding",
               acceptEncoding?.includes("br") ? "br" : "gzip",
             );
-            res?.setHeader("X-Subatomic-Ratio", result?.ratio.toFixed(3));
-            res?.setHeader("X-Original-Size", result?.original);
+            res.setHeader("X-Subatomic-Ratio", result?.ratio.toFixed(3));
+            res.setHeader("X-Original-Size", result?.original);
             return originalSend(
               subatomicCore["compressionCache"].get(result?.hash),
             );

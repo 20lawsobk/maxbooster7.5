@@ -330,7 +330,7 @@ export async function analyzeReferenceVoice(
 
     return { estimatedPitch, estimatedTempo, energy, suggestedProfileId };
   } catch (e) {
-    logger?.warn("[VoiceSynth] Reference analysis failed:", e?.message);
+    logger.warn("[VoiceSynth] Reference analysis failed:", e?.message);
     return {
       estimatedPitch: "medium",
       estimatedTempo: "medium",
@@ -535,7 +535,7 @@ export async function synthesizeSegments(
 }
 
 export function listVoiceProfiles(): VoiceProfile[] {
-  return Object?.values(VOICE_PROFILES);
+  return Object.values(VOICE_PROFILES);
 }
 
 export function getVoiceProfile(id: string): VoiceProfile | undefined {

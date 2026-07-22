@@ -1940,15 +1940,15 @@ export function enrichPlugin(plugin: PluginDefinition): PluginDefinition {
   if (typePresets) {
     const validIds = new Set(mergedParams?.map((p) => p?.id));
     genrePresets = {};
-    for (const [genre, preset] of Object?.entries(typePresets)) {
+    for (const [genre, preset] of Object.entries(typePresets)) {
       if (!preset) continue;
       const filtered: Record<string, number | boolean | string> = {};
-      for (const [k, v] of Object?.entries(preset)) {
+      for (const [k, v] of Object.entries(preset)) {
         if (validIds.has(k)) filtered[k] = v;
       }
       if (Object.keys(filtered).length > 0) genrePresets[genre] = filtered;
     }
-    if (Object?.keys(genrePresets).length === 0) genrePresets = undefined;
+    if (Object.keys(genrePresets).length === 0) genrePresets = undefined;
   }
 
   return {
@@ -1982,7 +1982,7 @@ export function buildFactoryPresetRows(plugins: PluginDefinition[]): Array<{
   }> = [];
   for (const p of plugins) {
     if (!p?.genrePresets) continue;
-    for (const [genre, params] of Object?.entries(p?.genrePresets)) {
+    for (const [genre, params] of Object.entries(p?.genrePresets)) {
       out?.push({
         pluginSlug: p.slug,
         name: `Genre: ${genre}`,
@@ -2011,7 +2011,7 @@ export function enrichmentCoverage(plugins: PluginDefinition[]): {
       typesEnriched?.add(p?.type);
       enriched++;
     } else typesPassThrough?.add(p?.type);
-    if (p?.genrePresets && Object?.keys(p?.genrePresets).length > 0)
+    if (p?.genrePresets && Object.keys(p?.genrePresets).length > 0)
       withGenrePresets++;
   }
   return {

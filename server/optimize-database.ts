@@ -19,7 +19,7 @@ class DatabaseOptimizer {
   private results: OptimizationResult[] = [];
 
   async executeOptimization(): Promise<void> {
-    logger?.info("🚀 Starting Max Booster Database Performance Optimization...");
+    logger.info("🚀 Starting Max Booster Database Performance Optimization...");
 
     const sqlFilePath = path?.join(__dirname, "performance-optimization.sql");
     const sqlContent = fs?.readFileSync(sqlFilePath, "utf-8");
@@ -35,13 +35,13 @@ class DatabaseOptimizer {
           cmd?.toUpperCase().includes("CREATE INDEX"),
       );
 
-    logger?.info(`📊 Found ${commands?.length} index optimization commands`);
+    logger.info(`📊 Found ${commands?.length} index optimization commands`);
 
     for (const command of commands) {
-      await this?.executeIndexCommand(command);
+      await this.executeIndexCommand(command);
     }
 
-    this?.printResults();
+    this.printResults();
   }
 
   private async executeIndexCommand(command: string): Promise<void> {
@@ -63,8 +63,8 @@ class DatabaseOptimizer {
       const exists = (result?.rows[0] as Record<string, unknown>)?.exists;
 
       if (exists) {
-        logger?.info(`⏭️  Index ${indexName} already exists, skipping...`);
-        this?.results.push({
+        logger.info(`⏭️  Index ${indexName} already exists, skipping...`);
+        this.results.push({
           indexName,
           created: false,
           executionTime: Date.now() - startTime,
@@ -76,9 +76,9 @@ class DatabaseOptimizer {
       await db?.execute(sql?.raw(command));
 
       const executionTime = Date?.now() - startTime;
-      logger?.info(`✅ Created index ${indexName} (${executionTime}ms)`);
+      logger.info(`✅ Created index ${indexName} (${executionTime}ms)`);
 
-      this?.results.push({
+      this.results.push({
         indexName,
         created: true,
         executionTime,
@@ -86,9 +86,9 @@ class DatabaseOptimizer {
     } catch (error: unknown) {
       const executionTime = Date?.now() - startTime;
       const errMsg = error instanceof Error ? error?.message : String(error);
-      logger?.warn(`❌ Failed to create index ${indexName}: ${errMsg}`);
+      logger.warn(`❌ Failed to create index ${indexName}: ${errMsg}`);
 
-      this?.results.push({
+      this.results.push({
         indexName,
         created: false,
         error: errMsg,
@@ -98,38 +98,38 @@ class DatabaseOptimizer {
   }
 
   private printResults(): void {
-    logger?.info("\n📈 Database Optimization Results:");
-    logger?.info("==================================");
+    logger.info("\n📈 Database Optimization Results:");
+    logger.info("==================================");
 
-    const created = this?.results.filter((r) => r?.created);
-    const skipped = this?.results.filter((r) => !r?.created && !r?.error);
-    const failed = this?.results.filter((r) => r?.error);
+    const created = this.results.filter((r) => r?.created);
+    const skipped = this.results.filter((r) => !r?.created && !r?.error);
+    const failed = this.results.filter((r) => r?.error);
 
-    logger?.info(`✅ Indexes Created: ${created?.length}`);
-    logger?.info(`⏭️  Indexes Skipped: ${skipped?.length}`);
-    logger?.info(`❌ Indexes Failed: ${failed?.length}`);
+    logger.info(`✅ Indexes Created: ${created?.length}`);
+    logger.info(`⏭️  Indexes Skipped: ${skipped?.length}`);
+    logger.info(`❌ Indexes Failed: ${failed?.length}`);
 
-    const totalTime = this?.results.reduce((sum, r) => sum + r?.executionTime, 0);
-    logger?.info(`⏱️  Total Execution Time: ${totalTime}ms`);
+    const totalTime = this.results.reduce((sum, r) => sum + r?.executionTime, 0);
+    logger.info(`⏱️  Total Execution Time: ${totalTime}ms`);
 
     if (failed?.length > 0) {
-      logger?.info("\n❌ Failed Indexes:");
+      logger.info("\n❌ Failed Indexes:");
       failed?.forEach((f) => {
-        logger?.info(`   ${f?.indexName}: ${f?.error}`);
+        logger.info(`   ${f?.indexName}: ${f?.error}`);
       });
     }
 
-    logger?.info("\n🎯 Expected Performance Improvements:");
-    logger?.info("   • User project queries: 80-95% faster");
-    logger?.info("   • Analytics dashboard: 70-90% faster");
-    logger?.info("   • Distribution analytics: 75-90% faster");
-    logger?.info("   • Search operations: 60-85% faster");
-    logger?.info("   • Financial reporting: 80-95% faster");
-    logger?.info("\n🚀 Database optimization complete!");
+    logger.info("\n🎯 Expected Performance Improvements:");
+    logger.info("   • User project queries: 80-95% faster");
+    logger.info("   • Analytics dashboard: 70-90% faster");
+    logger.info("   • Distribution analytics: 75-90% faster");
+    logger.info("   • Search operations: 60-85% faster");
+    logger.info("   • Financial reporting: 80-95% faster");
+    logger.info("\n🚀 Database optimization complete!");
   }
 
   async analyzeQueryPerformance(): Promise<void> {
-    logger?.info("\n🔍 Analyzing Query Performance...");
+    logger.info("\n🔍 Analyzing Query Performance...");
 
     try {
       // Get slow queries from pg_stat_statements if available
@@ -147,20 +147,20 @@ class DatabaseOptimizer {
       `);
 
       if (slowQueriesResult?.rows && slowQueriesResult?.rows.length > 0) {
-        logger?.info("🐌 Top Slow Queries (>100ms average):");
+        logger.info("🐌 Top Slow Queries (>100ms average):");
         slowQueriesResult?.rows.forEach((row: unknown, i: number) => {
-          logger?.info(
+          logger.info(
             `${i + 1}. ${row?.mean_time.toFixed(2)}ms avg (${row?.calls} calls)`,
           );
-          logger?.info(`   ${row?.query.substring(0, 100)}...`);
+          logger.info(`   ${row?.query.substring(0, 100)}...`);
         });
       } else {
-        logger?.info(
+        logger.info(
           "✅ No slow queries detected or pg_stat_statements not enabled",
         );
       }
     } catch (error: unknown) {
-      logger?.info("ℹ️  Query analysis requires pg_stat_statements extension");
+      logger.info("ℹ️  Query analysis requires pg_stat_statements extension");
     }
 
     // Analyze table sizes
@@ -177,19 +177,19 @@ class DatabaseOptimizer {
         LIMIT 10
       `);
 
-      logger?.info("\n📊 Largest Tables:");
+      logger.info("\n📊 Largest Tables:");
       if (tableSizes?.rows) {
         tableSizes?.rows.forEach((row: unknown, i: number) => {
-          logger?.info(`${i + 1}. ${row?.tablename}: ${row?.size}`);
+          logger.info(`${i + 1}. ${row?.tablename}: ${row?.size}`);
         });
       }
     } catch (error: unknown) {
-      logger?.info("❌ Could not analyze table sizes:", error);
+      logger.info("❌ Could not analyze table sizes:", error);
     }
   }
 
   async validateOptimizations(): Promise<boolean> {
-    logger?.info("\n🧪 Validating Database Optimizations...");
+    logger.info("\n🧪 Validating Database Optimizations...");
 
     const criticalIndexes = [
       "idx_projects_user_updated",
@@ -215,13 +215,13 @@ class DatabaseOptimizer {
           result?.rows[0] &&
           (result?.rows[0] as Record<string, unknown>).exists
         ) {
-          logger?.info(`✅ ${indexName} - OK`);
+          logger.info(`✅ ${indexName} - OK`);
         } else {
-          logger?.info(`❌ ${indexName} - MISSING`);
+          logger.info(`❌ ${indexName} - MISSING`);
           allValid = false;
         }
       } catch (error: unknown) {
-        logger?.info(`❌ ${indexName} - ERROR: ${error}`);
+        logger.info(`❌ ${indexName} - ERROR: ${error}`);
         allValid = false;
       }
     }

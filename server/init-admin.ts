@@ -34,14 +34,14 @@ import { DSP_POLICIES } from "./services/dspPolicyChecker";
 
 export async function initializeAdmin() {
   try {
-    const adminEmail = process?.env.ADMIN_EMAIL || process?.env.Admin_Email;
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.Admin_Email;
     const adminPassword =
-      process?.env.ADMIN_PASSWORD || process?.env.Admin_Password;
+      process.env.ADMIN_PASSWORD || process.env.Admin_Password;
     const adminUsername =
-      process?.env.ADMIN_USERNAME || process?.env.Admin_Username;
+      process.env.ADMIN_USERNAME || process.env.Admin_Username;
 
     if (!adminEmail) {
-      logger?.warn("⚠️ ADMIN_EMAIL not set - skipping admin initialization");
+      logger.warn("⚠️ ADMIN_EMAIL not set - skipping admin initialization");
       await seedPluginCatalog();
       await seedAchievementsData();
       await seedStatusPageServices();
@@ -52,7 +52,7 @@ export async function initializeAdmin() {
     }
 
     if (!adminPassword) {
-      logger?.warn("⚠️ ADMIN_PASSWORD not set - skipping admin initialization");
+      logger.warn("⚠️ ADMIN_PASSWORD not set - skipping admin initialization");
       await seedPluginCatalog();
       await seedAchievementsData();
       await seedStatusPageServices();
@@ -62,7 +62,7 @@ export async function initializeAdmin() {
       return null;
     }
 
-    logger?.info("🔐 Checking for admin account...");
+    logger.info("🔐 Checking for admin account...");
 
     // Check by email using direct DB query to avoid any caching/case issues
     // LIMIT 1 lets the query planner stop at first match — avoids full-table scan cost
@@ -75,7 +75,7 @@ export async function initializeAdmin() {
     let isNewAdmin = false;
 
     if (admin) {
-      logger?.info(`✅ Admin account exists: ${adminEmail}`);
+      logger.info(`✅ Admin account exists: ${adminEmail}`);
 
       // Sync password, role, subscription, and ensure onboarding is complete
       const hashedPassword = await bcrypt?.hash(adminPassword, 12);
@@ -99,10 +99,10 @@ export async function initializeAdmin() {
           },
         })
         .where(eq(users?.id, admin?.id));
-      logger?.info("✅ Admin credentials and subscription synced");
+      logger.info("✅ Admin credentials and subscription synced");
     } else {
       if (!adminUsername) {
-        logger?.warn(
+        logger.warn(
           "⚠️ ADMIN_USERNAME not set - cannot create new admin account",
         );
         await seedPluginCatalog();
@@ -112,7 +112,7 @@ export async function initializeAdmin() {
         return null;
       }
 
-      logger?.info("🔐 Creating admin account...");
+      logger.info("🔐 Creating admin account...");
       isNewAdmin = true;
 
       const hashedPassword = await bcrypt?.hash(adminPassword, 12);
@@ -144,7 +144,7 @@ export async function initializeAdmin() {
         })
         .where(eq(users?.id, admin?.id));
 
-      logger?.info(`✅ Admin account created: ${admin?.email}`);
+      logger.info(`✅ Admin account created: ${admin?.email}`);
     }
 
     // Ensure admin has all user resources initialized
@@ -161,7 +161,7 @@ export async function initializeAdmin() {
 
     return admin;
   } catch (error: unknown) {
-    logger?.warn({ err: error }, "Error during admin initialization:");
+    logger.warn({ err: error }, "Error during admin initialization:");
     throw error;
   }
 }
@@ -188,14 +188,14 @@ async function initializeAdminResources(
           "./services/userPocketDimensionService.js"
         );
         await userPocketService?.initializeUserStorage(adminId, adminEmail);
-        logger?.info("   ✓ Admin Pocket Dimension storage initialized");
+        logger.info("   ✓ Admin Pocket Dimension storage initialized");
       } catch (error) {
-        logger?.warn(
+        logger.warn(
           "   ⚠️ Admin Pocket Dimension storage initialization skipped (non-critical)",
         );
       }
     } else {
-      logger?.info("   ✓ Admin Pocket Dimension storage exists");
+      logger.info("   ✓ Admin Pocket Dimension storage exists");
     }
 
     // 2. Check and initialize user taste profile for discovery algorithm
@@ -217,9 +217,9 @@ async function initializeAdminResources(
         totalInteractions: 0,
         purchaseCount: 0,
       });
-      logger?.info("   ✓ Admin taste profile initialized");
+      logger.info("   ✓ Admin taste profile initialized");
     } else {
-      logger?.info("   ✓ Admin taste profile exists");
+      logger.info("   ✓ Admin taste profile exists");
     }
 
     // 3. Check and initialize admin producer storefront
@@ -229,7 +229,7 @@ async function initializeAdminResources(
       .where(eq(storefronts?.userId, adminId));
 
     if (!existingStorefront) {
-      const adminUsername = process?.env.ADMIN_USERNAME || "blawz";
+      const adminUsername = process.env.ADMIN_USERNAME || "blawz";
       const slug = adminUsername?.toLowerCase().replace(/[^a-z0-9]/g, "-");
 
       await db?.insert(storefronts).values({
@@ -269,9 +269,9 @@ async function initializeAdminResources(
         isPublished: true,
         isVerified: true,
       });
-      logger?.info("   ✓ Admin producer storefront initialized");
+      logger.info("   ✓ Admin producer storefront initialized");
     } else {
-      logger?.info("   ✓ Admin producer storefront exists");
+      logger.info("   ✓ Admin producer storefront exists");
     }
 
     // 4. Check and initialize default license templates
@@ -348,9 +348,9 @@ async function initializeAdminResources(
         },
       ];
       await db?.insert(licenseTemplates).values(defaultLicenses);
-      logger?.info("   ✓ Admin license templates seeded (4 templates)");
+      logger.info("   ✓ Admin license templates seeded (4 templates)");
     } else {
-      logger?.info(
+      logger.info(
         `   ✓ Admin license templates exist (${existingLicenses?.length} templates)`,
       );
     }
@@ -525,11 +525,11 @@ async function initializeAdminResources(
         },
       ];
       await db?.insert(contractTemplates).values(defaultContractTemplates);
-      logger?.info(
+      logger.info(
         `   ✓ Admin contract templates seeded (${defaultContractTemplates?.length} templates)`,
       );
     } else {
-      logger?.info(
+      logger.info(
         `   ✓ Admin contract templates exist (${existingContractTemplates?.length} templates)`,
       );
     }
@@ -606,19 +606,19 @@ async function initializeAdminResources(
           },
         ];
         await db?.insert(membershipTiers).values(defaultTiers);
-        logger?.info(
+        logger.info(
           `   ✓ Admin membership tiers seeded (${defaultTiers?.length} tiers)`,
         );
       } else {
-        logger?.info(
+        logger.info(
           `   ✓ Admin membership tiers exist (${existingTiers?.length} tiers)`,
         );
       }
     }
 
-    logger?.info("✅ Admin resources verified/initialized");
+    logger.info("✅ Admin resources verified/initialized");
   } catch (error) {
-    logger?.warn({ err: error }, "Error initializing admin resources:");
+    logger.warn({ err: error }, "Error initializing admin resources:");
     // Don't throw - admin account is still functional without these
   }
 }
@@ -1658,7 +1658,7 @@ async function seedDistributionPlatformsFromFile() {
     );
     await seedDistributionPlatforms();
   } catch (error) {
-    logger?.warn("Distribution platforms seeding skipped:", error?.message);
+    logger.warn("Distribution platforms seeding skipped:", error?.message);
   }
 }
 
@@ -1666,9 +1666,9 @@ async function seedAchievementsData() {
   try {
     const { seedAchievements } = await import("./seed/seedAchievements.js");
     await seedAchievements();
-    logger?.info("   ✓ Achievements seeded");
+    logger.info("   ✓ Achievements seeded");
   } catch (error) {
-    logger?.warn("Achievements seeding skipped:", error?.message);
+    logger.warn("Achievements seeding skipped:", error?.message);
   }
 }
 
@@ -1678,9 +1678,9 @@ async function seedStatusPageServices() {
       "./services/statusPageService.js"
     );
     await statusPageService?.initializeDefaultServices();
-    logger?.info("   ✓ Status page services initialized");
+    logger.info("   ✓ Status page services initialized");
   } catch (error) {
-    logger?.warn("Status page services seeding skipped:", error?.message);
+    logger.warn("Status page services seeding skipped:", error?.message);
   }
 }
 
@@ -1698,9 +1698,9 @@ async function seedAIModels() {
       "./seed/initializeAIContentModels.js"
     );
     await initializeAIContentModels();
-    logger?.info("   ✓ AI models seeded");
+    logger.info("   ✓ AI models seeded");
   } catch (error) {
-    logger?.warn("AI models seeding skipped:", error?.message);
+    logger.warn("AI models seeding skipped:", error?.message);
   }
 }
 
@@ -1708,7 +1708,7 @@ async function seedSystemSettings() {
   try {
     const existing = await db?.select().from(systemSettings);
     if (existing?.length > 0) {
-      logger?.info("   ✓ System settings already seeded");
+      logger.info("   ✓ System settings already seeded");
       return;
     }
 
@@ -1825,9 +1825,9 @@ async function seedSystemSettings() {
     for (const setting of defaults) {
       await db?.insert(systemSettings).values(setting).onConflictDoNothing();
     }
-    logger?.info(`   ✓ System settings seeded (${defaults?.length} defaults)`);
+    logger.info(`   ✓ System settings seeded (${defaults?.length} defaults)`);
   } catch (error) {
-    logger?.warn("System settings seeding skipped:", error?.message);
+    logger.warn("System settings seeding skipped:", error?.message);
   }
 }
 
@@ -1835,7 +1835,7 @@ async function seedAlertRules() {
   try {
     const existing = await db?.select().from(alertRules);
     if (existing?.length > 0) {
-      logger?.info("   ✓ Alert rules already seeded");
+      logger.info("   ✓ Alert rules already seeded");
       return;
     }
 
@@ -1984,8 +1984,8 @@ async function seedAlertRules() {
     for (const rule of defaults) {
       await db?.insert(alertRules).values(rule).onConflictDoNothing();
     }
-    logger?.info(`   ✓ Alert rules seeded (${defaults?.length} defaults)`);
+    logger.info(`   ✓ Alert rules seeded (${defaults?.length} defaults)`);
   } catch (error) {
-    logger?.warn("Alert rules seeding skipped:", error?.message);
+    logger.warn("Alert rules seeding skipped:", error?.message);
   }
 }

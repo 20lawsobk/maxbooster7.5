@@ -367,21 +367,21 @@ export class PlatformAlgorithmOptimizer {
     switch (key) {
       case "twitter":
       case "x":
-        return this?.scoreTwitter(full, headline, cta, content);
+        return this.scoreTwitter(full, headline, cta, content);
       case "instagram":
-        return this?.scoreInstagram(full, headline, cta, content);
+        return this.scoreInstagram(full, headline, cta, content);
       case "tiktok":
-        return this?.scoreTikTok(full, headline, cta, content);
+        return this.scoreTikTok(full, headline, cta, content);
       case "linkedin":
-        return this?.scoreLinkedIn(full, headline, cta, content);
+        return this.scoreLinkedIn(full, headline, cta, content);
       case "facebook":
-        return this?.scoreFacebook(full, headline, cta, content);
+        return this.scoreFacebook(full, headline, cta, content);
       case "threads":
-        return this?.scoreThreads(full, headline, cta, content);
+        return this.scoreThreads(full, headline, cta, content);
       case "youtube":
-        return this?.scoreYouTube(full, headline, cta, content);
+        return this.scoreYouTube(full, headline, cta, content);
       default:
-        return this?.scoreInstagram(full, headline, cta, content);
+        return this.scoreInstagram(full, headline, cta, content);
     }
   }
 
@@ -456,7 +456,7 @@ export class PlatformAlgorithmOptimizer {
       boosts?.push("thread signal");
     }
 
-    return this?.buildScore({
+    return this.buildScore({
       primarySignal,
       hookStrength,
       ctaAlignment,
@@ -617,7 +617,7 @@ export class PlatformAlgorithmOptimizer {
       penalties?.push("long caption competes with the video");
     }
 
-    return this?.buildScore({
+    return this.buildScore({
       primarySignal,
       hookStrength,
       ctaAlignment,
@@ -701,7 +701,7 @@ export class PlatformAlgorithmOptimizer {
       boosts?.push("readable paragraph structure");
     }
 
-    return this?.buildScore({
+    return this.buildScore({
       primarySignal,
       hookStrength,
       ctaAlignment,
@@ -773,7 +773,7 @@ export class PlatformAlgorithmOptimizer {
       boosts?.push("story-driven structure");
     }
 
-    return this?.buildScore({
+    return this.buildScore({
       primarySignal,
       hookStrength,
       ctaAlignment,
@@ -845,7 +845,7 @@ export class PlatformAlgorithmOptimizer {
       penalties?.push("too long for Threads — loses conversational feel");
     }
 
-    return this?.buildScore({
+    return this.buildScore({
       primarySignal,
       hookStrength,
       ctaAlignment,
@@ -918,7 +918,7 @@ export class PlatformAlgorithmOptimizer {
       boosts?.push("detailed description aids search ranking");
     }
 
-    return this?.buildScore({
+    return this.buildScore({
       primarySignal,
       hookStrength,
       ctaAlignment,
@@ -938,7 +938,7 @@ export class PlatformAlgorithmOptimizer {
     penalties: string[];
     boosts: string[];
   }): AlgorithmAlignmentScore {
-    const clamp = (n: number) => Math?.min(100, Math?.max(0, n));
+    const clamp = (n: number) => Math.min(100, Math.max(0, n));
 
     const primarySignal = clamp(input?.primarySignal);
     const hookStrength = clamp(input?.hookStrength);
@@ -970,7 +970,7 @@ export class PlatformAlgorithmOptimizer {
    * every variant is written with the algorithm in mind from the start.
    */
   buildAlgorithmPromptSuffix(platform: string): string {
-    const d = this?.getDirectives(platform);
+    const d = this.getDirectives(platform);
     return [
       `PLATFORM ALGORITHM DIRECTIVES (${platform?.toUpperCase()}):`,
       `• Primary signal to trigger: ${d?.primarySignal.replace(/_/g, " ")}`,
@@ -985,7 +985,7 @@ export class PlatformAlgorithmOptimizer {
 
   logAlignment(platform: string, score: AlgorithmAlignmentScore): void {
     const icon = score?.score >= 75 ? "✅" : score?.score >= 55 ? "⚠️" : "❌";
-    logger?.info(
+    logger.info(
       `[AlgoOptimizer] ${icon} ${platform} algorithm alignment: ${score?.score.toFixed(1)}/100 ` +
         `(signal=${score.primarySignal.toFixed(0)} hook=${score?.hookStrength.toFixed(0)} ` +
         `cta=${score.ctaAlignment.toFixed(0)} structure=${score?.structureScore.toFixed(0)})` +

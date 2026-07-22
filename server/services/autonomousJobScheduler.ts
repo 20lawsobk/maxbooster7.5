@@ -56,7 +56,7 @@ async function pruneSystemLogs(days = 7): Promise<void> {
   );
   const count = (result as Record<string, unknown>).rowCount ?? 0;
   if (count > 0)
-    logger?.info(
+    logger.info(
       `[Maintenance] Pruned ${count} system_logs rows older than ${days}d`,
     );
 }
@@ -66,7 +66,7 @@ async function pruneAuditLog(days = 90): Promise<void> {
   const { cleanupAuditLog } = await import("../safety/auditLogger.js");
   const count = await cleanupAuditLog(days);
   if (count > 0)
-    logger?.info(
+    logger.info(
       `[Maintenance] Pruned ${count} audit_log rows older than ${days}d`,
     );
 }
@@ -79,7 +79,7 @@ async function pruneNotifications(days = 30): Promise<void> {
   );
   const count = (result as Record<string, unknown>).rowCount ?? 0;
   if (count > 0)
-    logger?.info(
+    logger.info(
       `[Maintenance] Pruned ${count} notifications older than ${days}d`,
     );
 }
@@ -87,10 +87,10 @@ async function pruneNotifications(days = 30): Promise<void> {
 /** Delete files older than `days` days from local upload cache directories. */
 async function pruneUploadDirs(days = 7): Promise<void> {
   const dirs = [
-    path?.join(process?.cwd(), "uploads", "audio"),
-    path?.join(process?.cwd(), "uploads", "videos"),
-    path?.join(process?.cwd(), "uploads", "processed"),
-    path?.join(process?.cwd(), "uploads", "normalized"),
+    path?.join(process.cwd(), "uploads", "audio"),
+    path?.join(process.cwd(), "uploads", "videos"),
+    path?.join(process.cwd(), "uploads", "processed"),
+    path?.join(process.cwd(), "uploads", "normalized"),
   ];
   const cutoffMs = Date?.now() - days * 86_400_000;
   let total = 0;
@@ -139,7 +139,7 @@ async function pruneUploadDirs(days = 7): Promise<void> {
   );
 
   if (total > 0)
-    logger?.info(
+    logger.info(
       `[Maintenance] Pruned ${total} upload cache files older than ${days}d`,
     );
 }
@@ -161,11 +161,11 @@ async function processAutonomousJob(job: Job): Promise<void> {
         recovered.startsWith("campaign-optimize-"))
     ) {
       jobName = recovered;
-      logger?.info(
+      logger.info(
         `[AutonomousScheduler] Recovered job name "${recovered}" from id=${job?.id} (name missing from job hash)`,
       );
     } else {
-      logger?.warn(
+      logger.warn(
         `[AutonomousScheduler] Skipping job with undefined name (id=${job?.id}) — could not recover a known job name`,
       );
       return;
@@ -205,7 +205,7 @@ async function processAutonomousJob(job: Job): Promise<void> {
       );
       const result = await beatMoneyLoopService?.tick();
       if (result?.ran) {
-        logger?.info(
+        logger.info(
           `[AutonomousScheduler] beat-money-loop-tick fired cycle ${result?.cycleId} (${result?.reason})`,
         );
       }
@@ -213,7 +213,7 @@ async function processAutonomousJob(job: Job): Promise<void> {
       await beatMoneyLoopService
         .analyseRecentCycles()
         .catch((err) =>
-          logger?.warn(
+          logger.warn(
             { err },
             "[AutonomousScheduler] beat-money-loop analyseRecentCycles failed",
           ),
@@ -227,12 +227,12 @@ async function processAutonomousJob(job: Job): Promise<void> {
           const { autonomousService } = await import("./autonomousService.js");
           await autonomousService?.runCampaignOptimization(campaignId);
         } else {
-          logger?.warn(
+          logger.warn(
             `[AutonomousScheduler] campaign-optimize job missing campaignId: ${jobName}`,
           );
         }
       } else {
-        logger?.warn(`[AutonomousScheduler] Unknown job: ${jobName}`);
+        logger.warn(`[AutonomousScheduler] Unknown job: ${jobName}`);
       }
   }
 }
@@ -287,17 +287,17 @@ function createAutonomousWorker(): Worker {
 
   setImmediate(() => {
     worker?.run().catch((err) => {
-      logger?.warn({ err }, "[AutonomousScheduler] Worker run loop failed:");
+      logger.warn({ err }, "[AutonomousScheduler] Worker run loop failed:");
     });
   });
 
   worker?.on("completed", (job) =>
-    logger?.info(`[AutonomousScheduler] ✅ ${job?.name} done`),
+    logger.info(`[AutonomousScheduler] ✅ ${job?.name} done`),
   );
   worker?.on("failed", (job, err) => {
     const msg = err?.message ?? "";
     if (/PDIM circuit OPEN|Circuit OPEN/i?.test(msg)) return; // circuit-open is self-healing
-    logger?.warn(`[AutonomousScheduler] ❌ ${job?.name} failed: ${msg}`);
+    logger.warn(`[AutonomousScheduler] ❌ ${job?.name} failed: ${msg}`);
   });
   worker?.on("error", (err) => {
     const full = err?.message ?? "";
@@ -320,13 +320,13 @@ function createAutonomousWorker(): Worker {
       ) ||
       /StalledJobsError|worker hard-killed|moveToFinished/i?.test(msg)
     ) {
-      logger?.warn(
+      logger.warn(
         `[AutonomousScheduler] BullMQ lock/stall (self-healing): ${msg}`,
       );
       return;
     }
     // Unknown — log full error object so we can diagnose it
-    logger?.warn(
+    logger.warn(
       { err },
       `[AutonomousScheduler] Unexpected worker error: ${msg}`,
     );
@@ -395,7 +395,7 @@ async function waitForPdimSettled(
   if (!isPdimConfigured()) return;
 
   // Fixed initial wait — the burst is coming even if the queue is empty now.
-  logger?.info(
+  logger.info(
     `[AutonomousScheduler] Waiting ${minWaitMs / 1000}s for startup PDIM burst to settle ` +
       `before registering BullMQ repeatable jobs…`,
   );
@@ -406,20 +406,20 @@ async function waitForPdimSettled(
   while (Date?.now() < deadline) {
     const depth = getPdimQueueDepth();
     if (depth < maxDepth) {
-      logger?.info(
+      logger.info(
         `[AutonomousScheduler] PDIM settled (depth=${depth}) — registering jobs now`,
       );
       return;
     }
-    logger?.info(
+    logger.info(
       `[AutonomousScheduler] PDIM depth=${depth} ≥ ${maxDepth} — ` +
-        `waiting ${Math?.round((deadline - Date?.now()) / 1000)}s more`,
+        `waiting ${Math.round((deadline - Date?.now()) / 1000)}s more`,
     );
     await new Promise((r) => setTimeout(r, 5_000));
   }
   // Log at INFO not WARN — a long settling period is an operational note, not an error.
   // The hard-kills that may follow are self-healing via ChainFixer and LuaExecutor recovery.
-  logger?.info(
+  logger.info(
     `[AutonomousScheduler] PDIM still congested after ${(minWaitMs + extraTimeoutMs) / 1000}s — ` +
       `proceeding with job registration (hard-kills are self-healing)`,
   );
@@ -529,13 +529,13 @@ export async function setupRepeatableJobs(): Promise<void> {
               msg,
             )
           ) {
-            logger?.info(
+            logger.info(
               `[AutonomousScheduler] ${name} registration deferred ` +
                 `(LuaExecutor slot busy during startup — will retry next boot)`,
             );
             return;
           }
-          logger?.warn(
+          logger.warn(
             `[AutonomousScheduler] Failed to register ${name}: ${msg}`,
           );
         });
@@ -549,14 +549,14 @@ export async function setupRepeatableJobs(): Promise<void> {
     //     Covers the BullMQ worker-startup PDIM spike that occurs when the newly
     //     registered workers begin executing their first cycle simultaneously.
     const elapsed = Date?.now() - regStart;
-    const fromStart = Math?.max(0, REG_MIN_HOLD_MS - elapsed);
+    const fromStart = Math.max(0, REG_MIN_HOLD_MS - elapsed);
     const fromEnd = 2 * 60_000;
-    const holdMs = Math?.max(fromStart, fromEnd);
+    const holdMs = Math.max(fromStart, fromEnd);
     setTimeout(() => setLuaRegistrationMode(false), holdMs);
   }
 
   worker = createAutonomousWorker();
-  logger?.info(
+  logger.info(
     "[AutonomousScheduler] ✅ Repeatable jobs registered (BullMQ, Redis-backed, exactly-once per interval)",
   );
 }
@@ -594,7 +594,7 @@ export async function scheduleCampaignOptimization(
   const found = repeatableJobs?.find((j) => j?.name === jobName);
   if (found?.key) _campaignJobKeys?.set(campaignId, found?.key);
 
-  logger?.info(
+  logger.info(
     `[AutonomousScheduler] Campaign ${campaignId} optimization scheduled (5 min, BullMQ repeatable)`,
   );
 }
@@ -617,7 +617,7 @@ export async function removeCampaignOptimization(
     if (found?.key)
       await queue?.removeRepeatableByKey(found?.key).catch(() => {});
   }
-  logger?.info(
+  logger.info(
     `[AutonomousScheduler] Campaign ${campaignId} optimization stopped`,
   );
 }
@@ -632,7 +632,7 @@ export async function teardownRepeatableJobs(): Promise<void> {
     worker = null;
   }
   _isProcessingJob = false;
-  logger?.info(
+  logger.info(
     "[AutonomousScheduler] Scheduler worker stopped (repeatable job schedules remain in Redis)",
   );
 }

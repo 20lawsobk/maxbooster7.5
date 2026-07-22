@@ -11,11 +11,11 @@ import { require2FA } from "../../middleware/auth.js";
 const router = Router();
 
 const requireAdmin: RequestHandler = (req, res, next) => {
-  if (!req?.isAuthenticated()) {
-    return res?.status(401).json({ error: "Authentication required" });
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ error: "Authentication required" });
   }
-  if (req?.user?.role !== "admin") {
-    return res?.status(403).json({ error: "Admin access required" });
+  if (req.user?.role !== "admin") {
+    return res.status(403).json({ error: "Admin access required" });
   }
   next();
 };
@@ -51,11 +51,11 @@ const ALLOWED_SETTING_KEYS = new Set([
 // ============================================================
 router?.put("/settings", async (req, res) => {
   try {
-    const body = req?.body as Record<string, unknown>;
-    if (!body || typeof body !== "object" || Array?.isArray(body)) {
-      return res?.status(400).json({ error: "Request body must be an object" });
+    const body = req.body as Record<string, unknown>;
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return res.status(400).json({ error: "Request body must be an object" });
     }
-    const unknown = Object?.keys(body).filter(
+    const unknown = Object.keys(body).filter(
       (k) => !ALLOWED_SETTING_KEYS?.has(k),
     );
     if (unknown?.length > 0) {
@@ -64,12 +64,12 @@ router?.put("/settings", async (req, res) => {
         .json({ error: "Unknown setting keys", keys: unknown });
     }
     await Promise?.all(
-      Object?.entries(body).map(([key, value]) => updateSetting(key, value)),
+      Object.entries(body).map(([key, value]) => updateSetting(key, value)),
     );
-    res?.json({ success: true, message: "Settings updated" });
+    res.json({ success: true, message: "Settings updated" });
   } catch (error) {
-    logger?.warn({ err: error }, "Error updating admin settings:");
-    res?.status(500).json({ error: "Failed to update settings" });
+    logger.warn({ err: error }, "Error updating admin settings:");
+    res.status(500).json({ error: "Failed to update settings" });
   }
 });
 
@@ -79,11 +79,11 @@ router?.put("/settings", async (req, res) => {
 
 router?.get("/users", async (req, res) => {
   try {
-    const { page = "1", limit = "20", search = "", status, plan } = req?.query;
-    const pageNum = Math?.max(1, parseInt(page as string, 10) || 1);
-    const limitNum = Math?.min(
+    const { page = "1", limit = "20", search = "", status, plan } = req.query;
+    const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
+    const limitNum = Math.min(
       100,
-      Math?.max(1, parseInt(limit as string, 10) || 20),
+      Math.max(1, parseInt(limit as string, 10) || 20),
     );
     const offset = (pageNum - 1) * limitNum;
 
@@ -151,7 +151,7 @@ router?.get("/users", async (req, res) => {
         "User",
     }));
 
-    res?.json({
+    res.json({
       users: usersWithDisplayName,
       pagination: {
         total,
@@ -161,19 +161,19 @@ router?.get("/users", async (req, res) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching users:");
-    res?.status(500).json({ error: "Failed to fetch users" });
+    logger.warn({ err: error }, "Error fetching users:");
+    res.status(500).json({ error: "Failed to fetch users" });
   }
 });
 
 router?.get("/users/export", async (req, res) => {
   try {
-    const pageSize = Math?.min(
-      parseInt(req?.query.limit as string) || 1000,
+    const pageSize = Math.min(
+      parseInt(req.query.limit as string) || 1000,
       5000,
     );
-    const offset = Math?.min(
-      Math?.max(parseInt(req?.query.offset as string) || 0, 0),
+    const offset = Math.min(
+      Math.max(parseInt(req.query.offset as string) || 0, 0),
       100_000,
     );
 
@@ -199,7 +199,7 @@ router?.get("/users/export", async (req, res) => {
 
     const total = Number(totalResult[0]?.count ?? 0);
 
-    res?.json({
+    res.json({
       users: exportedUsers,
       exportedAt: new Date().toISOString(),
       pagination: {
@@ -210,14 +210,14 @@ router?.get("/users/export", async (req, res) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error exporting users:");
-    res?.status(500).json({ error: "Failed to export users" });
+    logger.warn({ err: error }, "Error exporting users:");
+    res.status(500).json({ error: "Failed to export users" });
   }
 });
 
 router?.get("/users/:userId", async (req, res) => {
   try {
-    const { userId } = req?.params;
+    const { userId } = req.params;
     const user = await db
       .select({
         id: users.id,
@@ -235,20 +235,20 @@ router?.get("/users/:userId", async (req, res) => {
       .limit(1);
 
     if (!user?.length) {
-      return res?.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: "User not found" });
     }
 
-    res?.json(user[0]);
+    res.json(user[0]);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching user:");
-    res?.status(500).json({ error: "Failed to fetch user" });
+    logger.warn({ err: error }, "Error fetching user:");
+    res.status(500).json({ error: "Failed to fetch user" });
   }
 });
 
 router?.put("/users/:userId", async (req, res) => {
   try {
-    const { userId } = req?.params;
-    const { role, subscriptionTier, subscriptionStatus } = req?.body;
+    const { userId } = req.params;
+    const { role, subscriptionTier, subscriptionStatus } = req.body;
 
     const allowedRoles = ["user", "admin"];
     const allowedTiers = ["free", "monthly", "yearly", "lifetime", null];
@@ -288,15 +288,15 @@ router?.put("/users/:userId", async (req, res) => {
     if (subscriptionStatus !== undefined)
       updateData.subscriptionStatus = subscriptionStatus;
 
-    if (Object?.keys(updateData).length === 0) {
-      return res?.status(400).json({ error: "No valid fields to update" });
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: "No valid fields to update" });
     }
 
     await db?.update(users).set(updateData).where(eq(users?.id, userId));
 
-    logger?.info(`Admin ${req?.user?.email} updated user ${userId}:`, updateData);
+    logger.info(`Admin ${req.user?.email} updated user ${userId}:`, updateData);
 
-    res?.json({ success: true, message: "User updated" });
+    res.json({ success: true, message: "User updated" });
 
     setImmediate(async () => {
       // SECURITY: Revoke all active sessions when role or subscription status changes.
@@ -311,7 +311,7 @@ router?.put("/users/:userId", async (req, res) => {
           );
           await revokeUserSessions(String(userId));
         } catch (revokeErr: unknown) {
-          logger?.warn(
+          logger.warn(
             { err: revokeErr },
             `[Security] Session revocation failed after admin update of user ${userId}`,
           );
@@ -333,23 +333,23 @@ router?.put("/users/:userId", async (req, res) => {
             );
           }
         } catch (err) {
-          logger?.warn({ err: err }, "User flagged notification error:");
+          logger.warn({ err: err }, "User flagged notification error:");
         }
       }
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error updating user:");
-    res?.status(500).json({ error: "Failed to update user" });
+    logger.warn({ err: error }, "Error updating user:");
+    res.status(500).json({ error: "Failed to update user" });
   }
 });
 
 router?.post("/users/:userId/report", requireAdmin, async (req, res) => {
   try {
-    const { userId } = req?.params;
-    const { reason } = req?.body;
+    const { userId } = req.params;
+    const { reason } = req.body;
 
     if (!reason) {
-      return res?.status(400).json({ error: "Reason is required" });
+      return res.status(400).json({ error: "Reason is required" });
     }
 
     const [targetUser] = await db
@@ -359,50 +359,50 @@ router?.post("/users/:userId/report", requireAdmin, async (req, res) => {
       .limit(1);
 
     if (!targetUser) {
-      return res?.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: "User not found" });
     }
 
-    logger?.info(`Admin ${req?.user?.email} reported user ${userId}: ${reason}`);
+    logger.info(`Admin ${req.user?.email} reported user ${userId}: ${reason}`);
 
-    res?.json({ success: true, message: "User reported" });
+    res.json({ success: true, message: "User reported" });
 
     setImmediate(async () => {
       try {
         await notificationService?.sendAdminUserReportNotification(
-          req?.user!.email!,
+          req.user!.email!,
           targetUser?.email!,
           reason,
         );
       } catch (err) {
-        logger?.warn({ err: err }, "User report notification error:");
+        logger.warn({ err: err }, "User report notification error:");
       }
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error reporting user:");
-    res?.status(500).json({ error: "Failed to report user" });
+    logger.warn({ err: error }, "Error reporting user:");
+    res.status(500).json({ error: "Failed to report user" });
   }
 });
 
 router?.delete("/users/:userId", async (req, res) => {
   try {
-    const { userId } = req?.params;
+    const { userId } = req.params;
 
-    if (userId === req?.user?.id) {
-      return res?.status(400).json({ error: "Cannot delete your own account" });
+    if (userId === req.user?.id) {
+      return res.status(400).json({ error: "Cannot delete your own account" });
     }
 
     await db?.delete(users).where(eq(users?.id, userId));
-    res?.json({ success: true, message: "User deleted" });
+    res.json({ success: true, message: "User deleted" });
   } catch (error) {
-    logger?.warn({ err: error }, "Error deleting user:");
-    res?.status(500).json({ error: "Failed to delete user" });
+    logger.warn({ err: error }, "Error deleting user:");
+    res.status(500).json({ error: "Failed to delete user" });
   }
 });
 
 router?.post("/users/:userId/email", async (req, res) => {
   try {
-    const { userId } = req?.params;
-    const { subject, message } = req?.body;
+    const { userId } = req.params;
+    const { subject, message } = req.body;
 
     if (!subject || !message) {
       return res
@@ -417,22 +417,22 @@ router?.post("/users/:userId/email", async (req, res) => {
       .limit(1);
 
     if (!targetUser?.length) {
-      return res?.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: "User not found" });
     }
 
-    logger?.info(
-      `Admin ${req?.user?.email} initiated email to ${targetUser[0].email}: ${subject}`,
+    logger.info(
+      `Admin ${req.user?.email} initiated email to ${targetUser[0].email}: ${subject}`,
     );
 
-    res?.json({
+    res.json({
       success: true,
       message:
         "Email request logged. Note: Email delivery requires SendGrid configuration.",
       recipient: targetUser[0].email,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error processing email request:");
-    res?.status(500).json({ error: "Failed to process email request" });
+    logger.warn({ err: error }, "Error processing email request:");
+    res.status(500).json({ error: "Failed to process email request" });
   }
 });
 
@@ -442,7 +442,7 @@ router?.post("/users/:userId/email", async (req, res) => {
 
 router?.get("/analytics", async (_req, res) => {
   try {
-    const cacheKey = `admin:stats:${Math?.floor(Date?.now() / 60000)}`;
+    const cacheKey = `admin:stats:${Math.floor(Date?.now() / 60000)}`;
     const payload = await distributedCache?.getOrSet(
       cacheKey,
       async () => {
@@ -511,10 +511,10 @@ router?.get("/analytics", async (_req, res) => {
       },
       60,
     );
-    res?.json(payload);
+    res.json(payload);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching analytics:");
-    res?.status(500).json({ error: "Failed to fetch analytics" });
+    logger.warn({ err: error }, "Error fetching analytics:");
+    res.status(500).json({ error: "Failed to fetch analytics" });
   }
 });
 
@@ -541,22 +541,22 @@ router?.get("/settings", async (_req, res) => {
     settings?.forEach((s) => {
       const key = s?.key.replace("platform.", "");
       try {
-        settingsMap[key] = JSON?.parse(s?.value);
+        settingsMap[key] = JSON.parse(s?.value);
       } catch {
         settingsMap[key] = s?.value;
       }
     });
 
-    res?.json(settingsMap);
+    res.json(settingsMap);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching settings:");
-    res?.status(500).json({ error: "Failed to fetch settings" });
+    logger.warn({ err: error }, "Error fetching settings:");
+    res.status(500).json({ error: "Failed to fetch settings" });
   }
 });
 
 async function updateSetting(key: string, value: Record<string, unknown>) {
   const fullKey = `platform.${key}`;
-  const stringValue = JSON?.stringify(value);
+  const stringValue = JSON.stringify(value);
 
   const existing = await db
     .select()
@@ -578,56 +578,56 @@ async function updateSetting(key: string, value: Record<string, unknown>) {
 
 router?.post("/settings/notifications", async (req, res) => {
   try {
-    const { enabled } = req?.body;
+    const { enabled } = req.body;
     await updateSetting("emailNotifications", enabled);
-    res?.json({ success: true, enabled });
+    res.json({ success: true, enabled });
   } catch (error) {
-    logger?.warn({ err: error }, "Error updating notifications setting:");
-    res?.status(500).json({ error: "Failed to update setting" });
+    logger.warn({ err: error }, "Error updating notifications setting:");
+    res.status(500).json({ error: "Failed to update setting" });
   }
 });
 
 router?.post("/settings/maintenance", async (req, res) => {
   try {
-    const { enabled } = req?.body;
+    const { enabled } = req.body;
     await updateSetting("maintenanceMode", enabled);
-    res?.json({ success: true, enabled });
+    res.json({ success: true, enabled });
   } catch (error) {
-    logger?.warn({ err: error }, "Error updating maintenance setting:");
-    res?.status(500).json({ error: "Failed to update setting" });
+    logger.warn({ err: error }, "Error updating maintenance setting:");
+    res.status(500).json({ error: "Failed to update setting" });
   }
 });
 
 router?.post("/settings/registration", async (req, res) => {
   try {
-    const { enabled } = req?.body;
+    const { enabled } = req.body;
     await updateSetting("userRegistrationEnabled", enabled);
-    res?.json({ success: true, enabled });
+    res.json({ success: true, enabled });
   } catch (error) {
-    logger?.warn({ err: error }, "Error updating registration setting:");
-    res?.status(500).json({ error: "Failed to update setting" });
+    logger.warn({ err: error }, "Error updating registration setting:");
+    res.status(500).json({ error: "Failed to update setting" });
   }
 });
 
 router?.post("/settings/rate-limit", async (req, res) => {
   try {
-    const { limit } = req?.body;
+    const { limit } = req.body;
     await updateSetting("apiRateLimit", limit);
-    res?.json({ success: true, limit });
+    res.json({ success: true, limit });
   } catch (error) {
-    logger?.warn({ err: error }, "Error updating rate limit:");
-    res?.status(500).json({ error: "Failed to update setting" });
+    logger.warn({ err: error }, "Error updating rate limit:");
+    res.status(500).json({ error: "Failed to update setting" });
   }
 });
 
 router?.post("/settings/webhook", async (req, res) => {
   try {
-    const { endpoint } = req?.body;
+    const { endpoint } = req.body;
     await updateSetting("webhookEndpoint", endpoint);
-    res?.json({ success: true, endpoint });
+    res.json({ success: true, endpoint });
   } catch (error) {
-    logger?.warn({ err: error }, "Error updating webhook:");
-    res?.status(500).json({ error: "Failed to update setting" });
+    logger.warn({ err: error }, "Error updating webhook:");
+    res.status(500).json({ error: "Failed to update setting" });
   }
 });
 
@@ -637,8 +637,8 @@ router?.post("/settings/webhook", async (req, res) => {
 
 router?.get("/activity", async (req, res) => {
   try {
-    const { limit = "20" } = req?.query;
-    const limitNum = Math?.min(parseInt(limit as string) || 20, 100);
+    const { limit = "20" } = req.query;
+    const limitNum = Math.min(parseInt(limit as string) || 20, 100);
 
     const [recentUsers, recentReleases, pendingFixers] = await Promise?.all([
       db
@@ -659,7 +659,7 @@ router?.get("/activity", async (req, res) => {
         })
         .from(releases)
         .orderBy(desc(releases?.createdAt))
-        .limit(Math?.floor(limitNum / 2)),
+        .limit(Math.floor(limitNum / 2)),
       db
         .select({
           id: artistProfiles.id,
@@ -707,10 +707,10 @@ router?.get("/activity", async (req, res) => {
       )
       .slice(0, limitNum);
 
-    res?.json(activities);
+    res.json(activities);
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching activity:");
-    res?.status(500).json({ error: "Failed to fetch activity" });
+    logger.warn({ err: error }, "Error fetching activity:");
+    res.status(500).json({ error: "Failed to fetch activity" });
   }
 });
 
@@ -718,9 +718,9 @@ function formatTimeAgo(date: Date | null): string {
   if (!date) return "Unknown";
   const now = new Date();
   const diff = now?.getTime() - new Date(date).getTime();
-  const minutes = Math?.floor(diff / 60000);
-  const hours = Math?.floor(diff / 3600000);
-  const days = Math?.floor(diff / 86400000);
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
 
   if (minutes < 60) return `${minutes}m ago`;
   if (hours < 24) return `${hours}h ago`;
@@ -733,19 +733,19 @@ function formatTimeAgo(date: Date | null): string {
 
 router?.get("/metrics", async (_req, res) => {
   try {
-    const memUsage = process?.memoryUsage();
-    const uptimeSeconds = process?.uptime();
+    const memUsage = process.memoryUsage();
+    const uptimeSeconds = process.uptime();
 
     const cpus = os?.cpus();
     const loadAvg1m = os?.loadavg()[0];
-    const cpuPercent = Math?.min(
+    const cpuPercent = Math.min(
       100,
-      Math?.round((loadAvg1m / cpus?.length) * 100),
+      Math.round((loadAvg1m / cpus?.length) * 100),
     );
 
     const totalMem = os?.totalmem();
     const freeMem = os?.freemem();
-    const memPercent = Math?.round(((totalMem - freeMem) / totalMem) * 100);
+    const memPercent = Math.round(((totalMem - freeMem) / totalMem) * 100);
 
     const [activeUsersResult] = await Promise?.all([
       db
@@ -754,7 +754,7 @@ router?.get("/metrics", async (_req, res) => {
         .where(eq(users?.subscriptionStatus, "active")),
     ]);
 
-    res?.json({
+    res.json({
       cpu: cpuPercent,
       memory: memPercent,
       heapUsedMb: Math.round(memUsage?.heapUsed / 1024 / 1024),
@@ -765,8 +765,8 @@ router?.get("/metrics", async (_req, res) => {
       activeUsers: activeUsersResult[0]?.count || 0,
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching metrics:");
-    res?.status(500).json({ error: "Failed to fetch metrics" });
+    logger.warn({ err: error }, "Error fetching metrics:");
+    res.status(500).json({ error: "Failed to fetch metrics" });
   }
 });
 
@@ -776,8 +776,8 @@ router?.get("/metrics", async (_req, res) => {
 
 router?.get("/system-health", async (_req, res) => {
   try {
-    const memUsage = process?.memoryUsage();
-    const uptimeSeconds = process?.uptime();
+    const memUsage = process.memoryUsage();
+    const uptimeSeconds = process.uptime();
     const loadAvg = os?.loadavg();
     const cpus = os?.cpus();
     const totalMem = os?.totalmem();
@@ -791,7 +791,7 @@ router?.get("/system-health", async (_req, res) => {
       dbStatus = "error";
     }
 
-    return res?.json({
+    return res.json({
       status: "healthy",
       timestamp: new Date().toISOString(),
       uptime: Math.round(uptimeSeconds),
@@ -814,8 +814,8 @@ router?.get("/system-health", async (_req, res) => {
       },
     });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching system health:");
-    return res?.status(500).json({ error: "Failed to fetch system health" });
+    logger.warn({ err: error }, "Error fetching system health:");
+    return res.status(500).json({ error: "Failed to fetch system health" });
   }
 });
 
@@ -825,7 +825,7 @@ router?.get("/system-health", async (_req, res) => {
 
 router?.get("/moderation/reports", async (req, res) => {
   try {
-    const { status } = req?.query as { status?: string };
+    const { status } = req.query as { status?: string };
     // Return reports from posts table — flagged posts serve as moderation queue
     let query = db
       .select({
@@ -843,17 +843,17 @@ router?.get("/moderation/reports", async (req, res) => {
     }
 
     const reports = await query?.orderBy(desc(posts?.createdAt)).limit(50);
-    return res?.json({ reports, total: reports.length });
+    return res.json({ reports, total: reports.length });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching moderation reports:");
-    return res?.json({ reports: [], total: 0 });
+    logger.warn({ err: error }, "Error fetching moderation reports:");
+    return res.json({ reports: [], total: 0 });
   }
 });
 
 router?.post("/moderation/:id/action", async (req, res) => {
   try {
-    const { id } = req?.params;
-    const { action } = req?.body as {
+    const { id } = req.params;
+    const { action } = req.body as {
       action: "approve" | "remove" | "warn";
       reason?: string;
     };
@@ -864,9 +864,9 @@ router?.post("/moderation/:id/action", async (req, res) => {
           ? "published"
           : "flagged";
     await db?.update(posts).set({ status: newStatus }).where(eq(posts?.id, id));
-    return res?.json({ success: true, id, action, newStatus });
+    return res.json({ success: true, id, action, newStatus });
   } catch (error) {
-    logger?.warn({ err: error }, "Error executing moderation action:");
+    logger.warn({ err: error }, "Error executing moderation action:");
     return res
       .status(500)
       .json({ error: "Failed to execute moderation action" });
@@ -876,8 +876,8 @@ router?.post("/moderation/:id/action", async (req, res) => {
 // POST /api/admin/moderation/reports/:id/review (alias used by Admin?.tsx)
 router?.post("/moderation/reports/:id/review", async (req, res) => {
   try {
-    const { id } = req?.params;
-    const { action, notes } = req?.body as {
+    const { id } = req.params;
+    const { action, notes } = req.body as {
       action: "approve" | "remove" | "warn" | "dismiss";
       notes?: string;
     };
@@ -890,9 +890,9 @@ router?.post("/moderation/reports/:id/review", async (req, res) => {
             ? "published"
             : "flagged";
     await db?.update(posts).set({ status: newStatus }).where(eq(posts?.id, id));
-    return res?.json({ success: true, id, action, newStatus, notes });
+    return res.json({ success: true, id, action, newStatus, notes });
   } catch (error) {
-    logger?.warn({ err: error }, "Error reviewing moderation report:");
+    logger.warn({ err: error }, "Error reviewing moderation report:");
     return res
       .status(500)
       .json({ error: "Failed to review moderation report" });
@@ -1060,18 +1060,18 @@ router?.get("/financial-config/royalty-rates", async (_req, res) => {
       .where(eq(systemSettings?.key, "royalty_rates"))
       .limit(1);
     if (stored?.length && stored[0].value) {
-      return res?.json(JSON?.parse(stored[0].value as string));
+      return res.json(JSON.parse(stored[0].value as string));
     }
-    return res?.json({ rates: DEFAULT_ROYALTY_RATES, source: "defaults" });
+    return res.json({ rates: DEFAULT_ROYALTY_RATES, source: "defaults" });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching royalty rates:");
-    return res?.json({ rates: DEFAULT_ROYALTY_RATES, source: "defaults" });
+    logger.warn({ err: error }, "Error fetching royalty rates:");
+    return res.json({ rates: DEFAULT_ROYALTY_RATES, source: "defaults" });
   }
 });
 
 router?.put("/financial-config/royalty-rates", async (req, res) => {
   try {
-    const { rates } = req?.body;
+    const { rates } = req.body;
     await db
       .insert(systemSettings)
       .values({ key: "royalty_rates", value: JSON.stringify({ rates }) })
@@ -1079,10 +1079,10 @@ router?.put("/financial-config/royalty-rates", async (req, res) => {
         target: systemSettings.key,
         set: { value: JSON.stringify({ rates }), updatedAt: new Date() },
       });
-    return res?.json({ success: true, rates });
+    return res.json({ success: true, rates });
   } catch (error) {
-    logger?.warn({ err: error }, "Error updating royalty rates:");
-    return res?.status(500).json({ error: "Failed to update royalty rates" });
+    logger.warn({ err: error }, "Error updating royalty rates:");
+    return res.status(500).json({ error: "Failed to update royalty rates" });
   }
 });
 
@@ -1094,12 +1094,12 @@ router?.get("/financial-config/tax-treaties", async (_req, res) => {
       .where(eq(systemSettings?.key, "tax_treaties"))
       .limit(1);
     if (stored?.length && stored[0].value) {
-      return res?.json(JSON?.parse(stored[0].value as string));
+      return res.json(JSON.parse(stored[0].value as string));
     }
-    return res?.json({ treaties: DEFAULT_TAX_TREATIES, source: "defaults" });
+    return res.json({ treaties: DEFAULT_TAX_TREATIES, source: "defaults" });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching tax treaties:");
-    return res?.json({ treaties: DEFAULT_TAX_TREATIES, source: "defaults" });
+    logger.warn({ err: error }, "Error fetching tax treaties:");
+    return res.json({ treaties: DEFAULT_TAX_TREATIES, source: "defaults" });
   }
 });
 
@@ -1111,12 +1111,12 @@ router?.get("/financial-config/label-settings", async (_req, res) => {
       .where(eq(systemSettings?.key, "label_settings"))
       .limit(1);
     if (stored?.length && stored[0].value) {
-      return res?.json(JSON?.parse(stored[0].value as string));
+      return res.json(JSON.parse(stored[0].value as string));
     }
-    return res?.json({ settings: DEFAULT_LABEL_SETTINGS, source: "defaults" });
+    return res.json({ settings: DEFAULT_LABEL_SETTINGS, source: "defaults" });
   } catch (error) {
-    logger?.warn({ err: error }, "Error fetching label settings:");
-    return res?.json({ settings: DEFAULT_LABEL_SETTINGS, source: "defaults" });
+    logger.warn({ err: error }, "Error fetching label settings:");
+    return res.json({ settings: DEFAULT_LABEL_SETTINGS, source: "defaults" });
   }
 });
 
@@ -1139,13 +1139,13 @@ const TAX_TREATY_FIELDS = new Set([
 // PATCH individual royalty rate entry
 router?.patch("/financial-config/royalty-rates/:id", async (req, res) => {
   try {
-    const { id } = req?.params;
-    const raw = req?.body as Record<string, unknown>;
+    const { id } = req.params;
+    const raw = req.body as Record<string, unknown>;
     const update: Record<string, unknown> = {};
-    for (const k of Object?.keys(raw)) {
+    for (const k of Object.keys(raw)) {
       if (ROYALTY_RATE_FIELDS.has(k)) update[k] = raw[k];
     }
-    if (Object?.keys(update).length === 0) {
+    if (Object.keys(update).length === 0) {
       return res
         .status(400)
         .json({
@@ -1159,7 +1159,7 @@ router?.patch("/financial-config/royalty-rates/:id", async (req, res) => {
       .where(eq(systemSettings?.key, "royalty_rates"))
       .limit(1);
     const current = stored?.length
-      ? JSON?.parse(stored[0].value as string)
+      ? JSON.parse(stored[0].value as string)
       : { rates: DEFAULT_ROYALTY_RATES };
     const rates = (current?.rates || DEFAULT_ROYALTY_RATES).map(
       (r: Record<string, unknown>, idx: number) =>
@@ -1174,23 +1174,23 @@ router?.patch("/financial-config/royalty-rates/:id", async (req, res) => {
         target: systemSettings.key,
         set: { value: JSON.stringify({ rates }), updatedAt: new Date() },
       });
-    return res?.json({ success: true, rates });
+    return res.json({ success: true, rates });
   } catch (error) {
-    logger?.warn({ err: error }, "Error updating royalty rate:");
-    return res?.status(500).json({ error: "Failed to update royalty rate" });
+    logger.warn({ err: error }, "Error updating royalty rate:");
+    return res.status(500).json({ error: "Failed to update royalty rate" });
   }
 });
 
 // PATCH individual tax treaty entry
 router?.patch("/financial-config/tax-treaties/:id", async (req, res) => {
   try {
-    const { id } = req?.params;
-    const raw = req?.body as Record<string, unknown>;
+    const { id } = req.params;
+    const raw = req.body as Record<string, unknown>;
     const update: Record<string, unknown> = {};
-    for (const k of Object?.keys(raw)) {
+    for (const k of Object.keys(raw)) {
       if (TAX_TREATY_FIELDS.has(k)) update[k] = raw[k];
     }
-    if (Object?.keys(update).length === 0) {
+    if (Object.keys(update).length === 0) {
       return res
         .status(400)
         .json({
@@ -1204,7 +1204,7 @@ router?.patch("/financial-config/tax-treaties/:id", async (req, res) => {
       .where(eq(systemSettings?.key, "tax_treaties"))
       .limit(1);
     const current = stored?.length
-      ? JSON?.parse(stored[0].value as string)
+      ? JSON.parse(stored[0].value as string)
       : { treaties: DEFAULT_TAX_TREATIES };
     const treaties = (current?.treaties || DEFAULT_TAX_TREATIES).map(
       (t: Record<string, unknown>, idx: number) =>
@@ -1217,25 +1217,25 @@ router?.patch("/financial-config/tax-treaties/:id", async (req, res) => {
         target: systemSettings.key,
         set: { value: JSON.stringify({ treaties }), updatedAt: new Date() },
       });
-    return res?.json({ success: true, treaties });
+    return res.json({ success: true, treaties });
   } catch (error) {
-    logger?.warn({ err: error }, "Error updating tax treaty:");
-    return res?.status(500).json({ error: "Failed to update tax treaty" });
+    logger.warn({ err: error }, "Error updating tax treaty:");
+    return res.status(500).json({ error: "Failed to update tax treaty" });
   }
 });
 
 // PATCH a label setting key
 router?.patch("/financial-config/label-settings/:key", async (req, res) => {
   try {
-    const { key } = req?.params;
-    const { value } = req?.body;
+    const { key } = req.params;
+    const { value } = req.body;
     const stored = await db
       .select()
       .from(systemSettings)
       .where(eq(systemSettings?.key, "label_settings"))
       .limit(1);
     const current = stored?.length
-      ? JSON?.parse(stored[0].value as string)
+      ? JSON.parse(stored[0].value as string)
       : { settings: DEFAULT_LABEL_SETTINGS };
     const settings = {
       ...(current?.settings || DEFAULT_LABEL_SETTINGS),
@@ -1248,10 +1248,10 @@ router?.patch("/financial-config/label-settings/:key", async (req, res) => {
         target: systemSettings.key,
         set: { value: JSON.stringify({ settings }), updatedAt: new Date() },
       });
-    return res?.json({ success: true, settings });
+    return res.json({ success: true, settings });
   } catch (error) {
-    logger?.warn({ err: error }, "Error updating label setting:");
-    return res?.status(500).json({ error: "Failed to update label setting" });
+    logger.warn({ err: error }, "Error updating label setting:");
+    return res.status(500).json({ error: "Failed to update label setting" });
   }
 });
 

@@ -23,10 +23,10 @@ const router = Router();
 // ─── Full status dashboard ────────────────────────────────────────────────────
 router?.get("/status", (_req, res) => {
   try {
-    res?.json(systemIntelligence?.getStatus());
+    res.json(systemIntelligence?.getStatus());
   } catch (err) {
-    logger?.warn("[IntelligenceRoute] /status error", { err });
-    res?.status(500).json({ error: "Intelligence layer unavailable" });
+    logger.warn("[IntelligenceRoute] /status error", { err });
+    res.status(500).json({ error: "Intelligence layer unavailable" });
   }
 });
 
@@ -34,10 +34,10 @@ router?.get("/status", (_req, res) => {
 router?.get("/narrative", (_req, res) => {
   try {
     const narrative = systemIntelligence?.narrateSystemState();
-    res?.json(narrative);
+    res.json(narrative);
   } catch (err) {
-    logger?.warn("[IntelligenceRoute] /narrative error", { err });
-    res?.status(500).json({ error: "Intelligence layer unavailable" });
+    logger.warn("[IntelligenceRoute] /narrative error", { err });
+    res.status(500).json({ error: "Intelligence layer unavailable" });
   }
 });
 
@@ -45,10 +45,10 @@ router?.get("/narrative", (_req, res) => {
 router?.get("/insights", (_req, res) => {
   try {
     const insights = systemIntelligence?.getInsights();
-    res?.json({ insights, count: insights.length, generatedAt: Date.now() });
+    res.json({ insights, count: insights.length, generatedAt: Date.now() });
   } catch (err) {
-    logger?.warn("[IntelligenceRoute] /insights error", { err });
-    res?.status(500).json({ error: "Intelligence layer unavailable" });
+    logger.warn("[IntelligenceRoute] /insights error", { err });
+    res.status(500).json({ error: "Intelligence layer unavailable" });
   }
 });
 
@@ -56,30 +56,30 @@ router?.get("/insights", (_req, res) => {
 router?.get("/security", (_req, res) => {
   try {
     const report = systemIntelligence?.getSecurityReport();
-    res?.json(report);
+    res.json(report);
   } catch (err) {
-    logger?.warn("[IntelligenceRoute] /security error", { err });
-    res?.status(500).json({ error: "Intelligence layer unavailable" });
+    logger.warn("[IntelligenceRoute] /security error", { err });
+    res.status(500).json({ error: "Intelligence layer unavailable" });
   }
 });
 
 // ─── Raw event window ─────────────────────────────────────────────────────────
 router?.get("/events", (req, res) => {
   try {
-    const limit = Math?.min(
+    const limit = Math.min(
       500,
-      Math?.max(10, parseInt(String(req?.query.limit ?? "100"), 10)),
+      Math.max(10, parseInt(String(req.query.limit ?? "100"), 10)),
     );
     const events = systemIntelligence?.getEventWindow(limit);
-    res?.json({
+    res.json({
       events,
       count: events.length,
       windowMinutes: 10,
       generatedAt: Date.now(),
     });
   } catch (err) {
-    logger?.warn("[IntelligenceRoute] /events error", { err });
-    res?.status(500).json({ error: "Intelligence layer unavailable" });
+    logger.warn("[IntelligenceRoute] /events error", { err });
+    res.status(500).json({ error: "Intelligence layer unavailable" });
   }
 });
 
@@ -87,7 +87,7 @@ router?.get("/events", (req, res) => {
 // Feed any log snippet or error message and get back a structured Understanding.
 router?.post("/analyze", (req, res) => {
   try {
-    const body = req?.body as Record<string, unknown>;
+    const body = req.body as Record<string, unknown>;
     const text = typeof body?.text === "string" ? body?.text.slice(0, 2000) : "";
     if (!text) {
       return res
@@ -123,7 +123,7 @@ router?.post("/analyze", (req, res) => {
         understandings[0])
       : understandings[0];
 
-    res?.json({
+    res.json({
       inputText: text.slice(0, 200) + (text?.length > 200 ? "…" : ""),
       mostLikelyUnderstanding: hintedUnderstanding ?? null,
       allActiveUnderstandings: understandings,
@@ -131,8 +131,8 @@ router?.post("/analyze", (req, res) => {
       analyzedAt: Date.now(),
     });
   } catch (err) {
-    logger?.warn("[IntelligenceRoute] /analyze error", { err });
-    res?.status(500).json({ error: "Intelligence layer unavailable" });
+    logger.warn("[IntelligenceRoute] /analyze error", { err });
+    res.status(500).json({ error: "Intelligence layer unavailable" });
   }
 });
 
