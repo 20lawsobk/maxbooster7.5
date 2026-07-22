@@ -642,6 +642,42 @@ export class DatabaseStorage implements IStorage {
       .limit(50);
   }
 
+  async getUserSocialAccountDetails(
+    userId: string,
+    platform: string,
+  ): Promise<{ accessToken: string; platformUserId: string | null } | null> {
+    const rows = await db
+      .select({
+        accessToken: socialAccounts.accessToken,
+        tokenExpiresAt: socialAccounts.tokenExpiresAt,
+        platformUserId: socialAccounts.platformUserId,
+      })
+      .from(socialAccounts)
+      .where(
+        and(
+          eq(socialAccounts.userId, userId),
+          eq(socialAccounts.platform, platform),
+          eq(socialAccounts.isActive, true),
+        ),
+      )
+      .limit(1);
+
+    if (!rows[0]?.accessToken) return null;
+
+    const expires = rows[0]?.tokenExpiresAt;
+    if (expires && new Date(expires) < new Date()) {
+      logger.warn(
+        `[SocialAccounts] ${platform} OAuth token for user ${userId} expired at ${expires} — skipping (reconnect required)`,
+      );
+      return null;
+    }
+
+    return {
+      accessToken: rows[0].accessToken,
+      platformUserId: rows[0].platformUserId ?? null,
+    };
+  }
+
   async getUserSocialToken(
     userId: string,
     platform: string,

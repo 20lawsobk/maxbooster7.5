@@ -782,6 +782,9 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
     let instagramProfileUrl = "";
     let facebookPlatformUserId = "";
     let instagramPlatformUserId = "";
+    // Page token captured during Meta callback — required for both FB page
+    // posting and Instagram Business Account publishing via the Graph API.
+    let metaPageToken = "";
 
     try {
       if (platform === "meta") {
@@ -809,6 +812,8 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
           if (igData.data && igData.data.length > 0) {
             const pageId = igData.data[0].id;
             const pageToken = igData.data[0].access_token;
+            // Hoist page token so both FB and IG rows can use it for posting.
+            metaPageToken = pageToken;
             const igAccountResponse = await timedFetch(
               `https://graph.facebook.com/${pageId}?fields=instagram_business_account&access_token=${pageToken}`,
               { signal: AbortSignal.timeout(10_000) },
@@ -999,6 +1004,9 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
               profileUrl: facebookProfileUrl,
               platformUserId: facebookPlatformUserId,
               metadata: facebookMetadata,
+              // Use page token for posting to FB Pages; fall back to user token
+              // if no pages were found (personal profile flow).
+              accessToken: metaPageToken || tokenData.access_token,
             },
             {
               name: "instagram",
@@ -1007,6 +1015,9 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
               profileUrl: instagramProfileUrl,
               platformUserId: instagramPlatformUserId,
               metadata: instagramMetadata,
+              // Instagram Business API requires the page token, not the raw
+              // user token — the user token causes "Cannot parse access token".
+              accessToken: metaPageToken || tokenData.access_token,
             },
           ]
         : [
@@ -1032,11 +1043,16 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
         )
         .limit(1);
 
+      // `p.accessToken` overrides the default when a platform-specific token
+      // (e.g. Meta page token) was captured; otherwise fall back to the OAuth
+      // token. Non-Meta platforms won't have p.accessToken set.
+      const effectiveToken = (p as any).accessToken ?? tokenData.access_token;
+
       if (existingConnection.length > 0) {
         await db
           .update(socialAccounts)
           .set({
-            accessToken: tokenData.access_token,
+            accessToken: effectiveToken,
             refreshToken: tokenData.refresh_token,
             tokenExpiresAt: tokenData.expires_in
               ? new Date(Date.now() + tokenData.expires_in * 1000)
@@ -1053,7 +1069,7 @@ router.get("/callback/:platform", async (req: Request, res: Response) => {
         await db.insert(socialAccounts).values({
           userId: stateData.userId,
           platform: p.name,
-          accessToken: tokenData.access_token,
+          accessToken: effectiveToken,
           refreshToken: tokenData.refresh_token,
           tokenExpiresAt: tokenData.expires_in
             ? new Date(Date.now() + tokenData.expires_in * 1000)

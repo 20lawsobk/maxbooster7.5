@@ -108,9 +108,21 @@ export const platformAPI = {
             postId = await this.postToFacebook(fullText, mediaUrl, token);
             break;
 
-          case "instagram":
-            postId = await this.postToInstagram(fullText, mediaUrl, token);
+          case "instagram": {
+            // Instagram Business API needs the IG Business Account ID
+            // (stored as platformUserId) alongside the page token.
+            const igDetails = await storage.getUserSocialAccountDetails(
+              userId,
+              "instagram",
+            );
+            postId = await this.postToInstagram(
+              fullText,
+              mediaUrl,
+              token,
+              igDetails?.platformUserId ?? undefined,
+            );
             break;
+          }
 
           case "linkedin":
             postId = await this.postToLinkedIn(
@@ -357,6 +369,7 @@ export const platformAPI = {
     text: string,
     mediaUrl: string | null,
     token: string,
+    igBusinessAccountId?: string,
   ): Promise<string> {
     if (!mediaUrl) {
       throw new Error("Instagram posts require media (image or video)");
@@ -365,6 +378,13 @@ export const platformAPI = {
     const result = await executeSocialApiOperation(
       "instagram",
       async () => {
+        // Instagram Business API (Graph API) requires posting to the IG
+        // Business Account ID endpoint, not graph.instagram.com/me which
+        // uses the Basic Display API and rejects page tokens.
+        // Fall back to "me" only if no account ID is stored (legacy rows).
+        const igAccountPath = igBusinessAccountId || "me";
+        const baseUrl = `https://graph.facebook.com/v19.0/${igAccountPath}`;
+
         // Detect media type: MP4/video → REELS container, else IMAGE container.
         const isVideo = /\.(mp4|mov|avi|webm)(\?|$)/i.test(mediaUrl);
         const containerPayload = isVideo
@@ -372,7 +392,7 @@ export const platformAPI = {
           : { image_url: mediaUrl, caption: text, access_token: token };
 
         const mediaResponse = await axios?.post(
-          `https://graph.instagram.com/me/media`,
+          `${baseUrl}/media`,
           containerPayload,
         );
 
@@ -383,7 +403,7 @@ export const platformAPI = {
           for (let i = 0; i < 12; i++) {
             await new Promise((r) => setTimeout(r, 5_000));
             const statusRes = await axios?.get(
-              `https://graph.instagram.com/${creationId}?fields=status_code&access_token=${token}`,
+              `https://graph.facebook.com/v19.0/${creationId}?fields=status_code&access_token=${token}`,
             );
             const sc = statusRes?.data?.status_code;
             if (sc === "FINISHED") break;
@@ -392,7 +412,7 @@ export const platformAPI = {
         }
 
         const publishResponse = await axios?.post(
-          `https://graph.instagram.com/me/media_publish`,
+          `${baseUrl}/media_publish`,
           {
             creation_id: creationId,
             access_token: token,
