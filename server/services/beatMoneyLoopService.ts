@@ -24,8 +24,9 @@
  * runs only when (enabled && now ≥ state.nextRunAt). Adaptive cadence is
  * bounded to [1 h, 24 h].
  *
- * Admin gating: hard-coded to user 31b06dba-b992-4da5-90ef-3dac95692716
- * (blawzmusic@gmail.com). All admin endpoints sit behind requireAdmin.
+ * Admin gating: resolved at startup by querying users WHERE role='admin' AND
+ * email=ADMIN_EMAIL. Cached in memory; the loop disables itself if no match is
+ * found so a re-created admin account is picked up on next restart.
  *
  * Paused by default — operator flips `enabled=true` via POST /api/admin/beat-money-loop/enable.
  */
@@ -38,6 +39,7 @@ import {
   beatMoneyLoopCycles,
   adCampaigns,
   adCreatives,
+  users,
   type BeatMoneyLoopState,
   type BeatMoneyLoopCycle,
 } from "@shared/schema";
@@ -56,8 +58,6 @@ import fsPromises from "fs/promises";
 import { randomBytes } from "crypto";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-
-export const BEAT_MONEY_LOOP_ADMIN_ID = "31b06dba-b992-4da5-90ef-3dac95692716";
 const STATE_ROW_ID = "singleton";
 const MIN_CADENCE_MS = 60 * 60 * 1000; // 1 h
 const MAX_CADENCE_MS = 24 * 60 * 60 * 1000; // 24 h
@@ -119,6 +119,63 @@ export interface RunCycleResult {
 
 class BeatMoneyLoopService {
   private _runningCycle = false;
+  /** Resolved once at startup; null means no matching admin was found. */
+  private _adminId: string | null = null;
+
+  /**
+   * Resolve and cache the admin user ID from the DB.
+   * Looks up users WHERE role='admin' AND email=ADMIN_EMAIL.
+   * Called once at startup (and lazily on first enable/runCycle).
+   * Returns the resolved ID, or null if no match.
+   */
+  async resolveAdminId(): Promise<string | null> {
+    if (this._adminId) return this._adminId;
+    const adminEmail = process.env.ADMIN_EMAIL;
+    if (!adminEmail) {
+      logger.warn(
+        "[BeatMoneyLoop] ADMIN_EMAIL env var is not set — cannot resolve admin user; loop will be disabled",
+      );
+      return null;
+    }
+    try {
+      const rows = await db
+        .select({ id: users.id })
+        .from(users)
+        .where(and(eq(users.role, "admin"), eq(users.email, adminEmail)))
+        .limit(1);
+      if (rows.length === 0) {
+        logger.warn(
+          `[BeatMoneyLoop] No admin user found with role='admin' AND email='${adminEmail}' — loop will be disabled until the account exists`,
+        );
+        return null;
+      }
+      this._adminId = rows[0].id;
+      logger.info(
+        `[BeatMoneyLoop] Admin user resolved: ${this._adminId} (${adminEmail})`,
+      );
+      return this._adminId;
+    } catch (err) {
+      logger.warn(
+        { err },
+        "[BeatMoneyLoop] DB error while resolving admin user ID — loop will be disabled",
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Require that the admin ID has been resolved; throws with a clear message
+   * if not. All cycle operations call this so failures are explicit.
+   */
+  private async _requireAdminId(): Promise<string> {
+    const id = await this.resolveAdminId();
+    if (!id) {
+      throw new Error(
+        "Beat Money Loop admin user not found — set ADMIN_EMAIL and ensure the account exists (role='admin')",
+      );
+    }
+    return id;
+  }
 
   /**
    * On startup, any cycle stuck in 'generating' was interrupted mid-flight by
@@ -214,9 +271,18 @@ class BeatMoneyLoopService {
   /** Turn the loop on. Also whitelists admin in autonomousService so campaigns auto-approve. */
   async enable(): Promise<BeatMoneyLoopStatus> {
     await this._ensureStateRow();
+    // Ensure we can resolve the admin before enabling the loop.
+    const adminId = await this.resolveAdminId();
+    if (!adminId) {
+      logger.warn(
+        "[BeatMoneyLoop] Cannot enable — admin user not found. Set ADMIN_EMAIL and ensure the account exists (role='admin').",
+      );
+      // Return current status (loop stays disabled); caller sees enabled=false.
+      return this.getStatus();
+    }
     // Whitelist admin so launchCampaign() auto-approves rather than routing through approvals.
     try {
-      await autonomousService.setAutonomousMode(BEAT_MONEY_LOOP_ADMIN_ID, true);
+      await autonomousService.setAutonomousMode(adminId, true);
     } catch (err) {
       logger.warn(
         { err },
@@ -850,6 +916,7 @@ class BeatMoneyLoopService {
     audioAbsPath: string;
     title: string;
   }): Promise<{ beatId: string; audioUrl: string }> {
+    const adminId = await this._requireAdminId();
     // Read the WAV bytes MaxCore generation just wrote to disk
     const buf = await fsPromises.readFile(args.audioAbsPath);
     const filename = path.basename(args.audioAbsPath);
@@ -876,7 +943,7 @@ class BeatMoneyLoopService {
     const [created] = await db
       .insert(beats)
       .values({
-        userId: BEAT_MONEY_LOOP_ADMIN_ID,
+        userId: adminId,
         title: args.title,
         description: this._buildBeatDescription(args.scan, args.price),
         price: args.price,
@@ -909,7 +976,7 @@ class BeatMoneyLoopService {
         .limit(1);
       if (existing.length === 0) {
         await db.insert(listings).values({
-          userId: BEAT_MONEY_LOOP_ADMIN_ID,
+          userId: adminId,
           title: args.title,
           description: this._buildBeatDescription(args.scan, args.price),
           priceCents: Math.round(args.price * 100),
@@ -958,6 +1025,7 @@ class BeatMoneyLoopService {
     audioUrl: string;
     audioAbsPath?: string;
   }): Promise<AdvertiseOutcome> {
+    const adminId = await this._requireAdminId();
     let campaignId: string | null = null;
     try {
       // Build the ad copy from the trending scan signals.
@@ -986,7 +1054,7 @@ class BeatMoneyLoopService {
       const [campaign] = await db
         .insert(adCampaigns)
         .values({
-          userId: BEAT_MONEY_LOOP_ADMIN_ID,
+          userId: adminId,
           name: `[BML] ${args.title}`,
           platform: PLATFORMS_FOR_CAMPAIGN[0],
           objective: "beat_sales",
@@ -1040,7 +1108,7 @@ class BeatMoneyLoopService {
       const [creative] = await db
         .insert(adCreatives)
         .values({
-          userId: BEAT_MONEY_LOOP_ADMIN_ID,
+          userId: adminId,
           campaignId: campaign.id,
           name: `[BML] ${args.title}`,
           type: "social_post",
@@ -1077,7 +1145,7 @@ class BeatMoneyLoopService {
       // it returns a clear reason and the cycle records the truth.
       const result = await advertisingDispatchService.activateCampaign(
         campaign.id,
-        BEAT_MONEY_LOOP_ADMIN_ID,
+        adminId,
       );
       const postsCreated = result.results?.postsCreated ?? 0;
       if (result.success && postsCreated > 0) {

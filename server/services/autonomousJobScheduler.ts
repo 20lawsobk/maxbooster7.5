@@ -441,9 +441,12 @@ export async function setupRepeatableJobs(): Promise<void> {
 
   // Recover any beat-loop cycles that were left in 'generating' state by a
   // prior server restart (in-flight cycle killed mid-audio-generation).
+  // Also resolve (and cache) the admin user ID so the first tick is fast
+  // and startup logs make it obvious if the admin account is missing.
   try {
     const { beatMoneyLoopService } = await import("./beatMoneyLoopService.js");
     await beatMoneyLoopService.recoverOrphanedCycles();
+    await beatMoneyLoopService.resolveAdminId();
   } catch {
     // Non-fatal; the loop will still schedule normally.
   }
