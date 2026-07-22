@@ -1412,6 +1412,15 @@ class AdvancedSocialAIService {
       target_audience: request.targetAudience,
       storefront_url: request.storefrontUrl,
       beat_context: request.beatContext,
+      // Server-side: pass purchase intent + platform constraints so MaxCore
+      // optimises copy for conversion and avoids platform-inappropriate CTAs.
+      goal: request.beatContext ? "drive_purchase" : undefined,
+      platform_constraints: (() => {
+        const pl = (request.platforms?.[0] || "instagram").toLowerCase();
+        if (pl === "linkedin") return { professional_register: true };
+        if (pl === "tiktok" || pl === "threads") return { no_link_in_bio: true };
+        return undefined;
+      })(),
       promotion_context: request.promotionContext,
       // Self-Evolution content_optimization knobs forwarded so MaxCore can bias
       // generation; we ALSO post-process below so the knob is guaranteed to take

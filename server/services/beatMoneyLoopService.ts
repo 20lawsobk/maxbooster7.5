@@ -51,7 +51,12 @@ import {
 } from "./musicIndustryContextFilter.js";
 import { storageService } from "./storageService.js";
 import { distributedCache } from "../infrastructure/distributedCache.js";
-import { normalizeHashtags } from "../lib/contentPostProcessor.js";
+import {
+  normalizeHashtags,
+  cleanMaxCoreContent,
+  selectBestVariant,
+} from "../lib/contentPostProcessor.js";
+import { MaxCoreAIClient } from "./unifiedAIController.js";
 import { autonomousService } from "./autonomousService.js";
 import { advertisingDispatchService } from "./advertisingDispatchService.js";
 import path from "path";
@@ -640,6 +645,21 @@ class BeatMoneyLoopService {
       status?: string;
       mc_key?: string;
       mc_bpm?: number;
+      /** Real rendered BPM returned by the MaxCore audio engine */
+      bpm?: number;
+      /** Musical key detected / used by MaxCore (e.g. "F# minor") */
+      key?: string;
+      /** Post-render audio analysis block (new MaxCore server-side field) */
+      audio_analysis?: {
+        loudness_db?: number;
+        energy?: number;
+        spectral_brightness?: string;
+        bass_weight?: string;
+      };
+      /** Conceptual description MaxCore attached to the generated beat */
+      concept?: string;
+      /** Style/production hook MaxCore used when generating */
+      style_hook?: string;
       backend?: string;
     };
 
@@ -648,16 +668,27 @@ class BeatMoneyLoopService {
       wavBytes: Buffer;
       mcKey?: string;
       mcBpm?: number;
+      mcMusicalKey?: string;
+      audioAnalysis?: typeof data["audio_analysis"];
+      concept?: string;
+      styleHook?: string;
       backend: string;
     }> => {
+      // Real BPM: prefer top-level `bpm` (audio engine output) over `mc_bpm`
+      // which is the requested BPM echoed back. Key is only in the new field.
+      const mcBpm = d.bpm ?? d.mc_bpm;
+      const extras = {
+        mcKey: d.mc_key,
+        mcBpm,
+        mcMusicalKey: d.key,
+        audioAnalysis: d.audio_analysis,
+        concept: d.concept,
+        styleHook: d.style_hook,
+        backend: d.backend ?? backend,
+      };
       const b64 = d.wav_b64 ?? d.audio_b64;
       if (b64) {
-        return {
-          wavBytes: Buffer.from(b64, "base64"),
-          mcKey: d.mc_key,
-          mcBpm: d.mc_bpm,
-          backend: d.backend ?? backend,
-        };
+        return { wavBytes: Buffer.from(b64, "base64"), ...extras };
       }
       const rawUrl = d.url ?? d.audio_url;
       if (rawUrl) {
@@ -678,12 +709,7 @@ class BeatMoneyLoopService {
         const bytes = Buffer.from(await dl.arrayBuffer());
         if (bytes.length < 1_024)
           throw new Error(`MaxCore audio download too small (${bytes.length} bytes)`);
-        return {
-          wavBytes: bytes,
-          mcKey: d.mc_key,
-          mcBpm: d.mc_bpm,
-          backend: d.backend ?? backend,
-        };
+        return { wavBytes: bytes, ...extras };
       }
       throw new Error("MaxCore returned no audio payload (no wav_b64/url)");
     };
@@ -808,8 +834,12 @@ class BeatMoneyLoopService {
         const audioAbsPath = path.join(outputDir, filename);
         await fsPromises.writeFile(audioAbsPath, mc.wavBytes);
         const audioRelUrl = `/generated-content/audio/${filename}`;
-        const keyStr = mc.mcKey ? ` (${mc.mcKey})` : "";
-        const title = `${titleAdj} ${titleGenre} Type Beat${keyStr} — ${stamp}`;
+        // Prefer real rendered BPM/key from the audio engine over the requested values
+        const realBpm = mc.mcBpm ?? scan.tempo;
+        const musicalKey = mc.mcMusicalKey ?? mc.mcKey;
+        const keyStr = musicalKey ? ` (${musicalKey})` : "";
+        const bpmStr = ` ${realBpm} BPM`;
+        const title = `${titleAdj} ${titleGenre} Type Beat${keyStr}${bpmStr} — ${stamp}`;
         logger.info(
           `[BeatMoneyLoop] Beat generated via MaxCore mode ${mode} (backend=${mc.backend})`,
         );
@@ -1029,15 +1059,24 @@ class BeatMoneyLoopService {
     const adminId = await this._requireAdminId();
     let campaignId: string | null = null;
     try {
-      // Build the ad copy from the trending scan signals.
-      // Fix 3: use genre-specific discovery hashtags instead of raw genre/mood strings
+      // Build the ad copy — try MaxCore content generation first so the caption
+      // benefits from goal=drive_purchase + beat_context. Fall back to local
+      // _buildAdCaption when MaxCore is unavailable.
       const hashtags = normalizeHashtags([], args.scan.genre, "instagram");
-      const caption = this._buildAdCaption({
-        title: args.title,
-        scan: args.scan,
-        price: args.price,
-        hashtags,
-      });
+      const caption = await this._generateMaxCoreCaption(args, hashtags).catch(
+        (err) => {
+          logger.warn(
+            { err },
+            "[BeatMoneyLoop] MaxCore caption generation failed — using local fallback",
+          );
+          return this._buildAdCaption({
+            title: args.title,
+            scan: args.scan,
+            price: args.price,
+            hashtags,
+          });
+        },
+      );
 
       // 1. Create the campaign first so the creative can reference its id.
       //    budget=0: organic distribution only (no paid spend). metadata carries
@@ -1248,6 +1287,88 @@ class BeatMoneyLoopService {
    * Build a real social ad caption — no raw hook-type labels leaked into copy.
    * Converts scan signals into marketing language a human would actually write.
    */
+  /**
+   * Call MaxCore /api/generate/content with beat_context + goal=drive_purchase
+   * and run our post-processor over the result to produce a clean, conversion-
+   * optimised caption. Throws when MaxCore returns no usable content so the
+   * caller can fall back to _buildAdCaption.
+   */
+  private async _generateMaxCoreCaption(
+    args: {
+      beatId: string;
+      scan: { genre: string; mood: string; tempo: number; hooks: string[] };
+      price: number;
+      title: string;
+      audioUrl: string;
+    },
+    hashtags: string[],
+  ): Promise<string> {
+    const marketplaceUrl =
+      process.env.MARKETPLACE_URL || "https://blawz.com/marketplace";
+    const listenUrl = `${marketplaceUrl}?beat=${args.beatId}`;
+
+    const mcRaw = await MaxCoreAIClient.infer<{
+      hook?: string;
+      body?: string;
+      cta?: string;
+      caption?: string;
+      hashtags?: string[];
+      variants?: Array<{ hook?: string; body?: string; cta?: string; hashtags?: string[] }>;
+    }>("/api/generate/content", {
+      platform: "instagram",
+      content_type: "post",
+      topic: `${args.scan.mood} ${args.scan.genre} type beat — ${args.title}`,
+      tone: "hype",
+      genre: args.scan.genre,
+      include_hashtags: true,
+      goal: "drive_purchase",
+      beat_context: {
+        title: args.title,
+        bpm: args.scan.tempo,
+        price: args.price,
+        production_details: args.scan.hooks.slice(0, 3).join("; ") || args.scan.mood,
+        listen_url: listenUrl,
+      },
+      platform_constraints: { no_link_in_bio: true },
+    });
+
+    if (!mcRaw) throw new Error("MaxCore returned null for caption");
+
+    const candidate =
+      mcRaw.variants && mcRaw.variants.length > 0
+        ? selectBestVariant(mcRaw.variants)
+        : mcRaw;
+
+    if (!candidate || (!candidate.hook && !candidate.caption)) {
+      throw new Error("MaxCore returned no usable caption content");
+    }
+
+    const cleaned = cleanMaxCoreContent({
+      body: candidate.body || "",
+      hook: candidate.hook || "",
+      cta: candidate.cta || "",
+      hashtags: Array.isArray(candidate.hashtags) ? candidate.hashtags : hashtags,
+      genre: args.scan.genre,
+      platform: "instagram",
+    });
+
+    const tagStr = normalizeHashtags(
+      cleaned.hashtags,
+      args.scan.genre,
+      "instagram",
+    ).join(" ");
+
+    return [
+      cleaned.hook,
+      cleaned.body,
+      cleaned.cta,
+      tagStr,
+    ]
+      .filter(Boolean)
+      .join("\n")
+      .trim();
+  }
+
   private _buildAdCaption(args: {
     title: string;
     scan: { genre: string; mood: string; tempo: number; hooks: string[] };
