@@ -2,7 +2,7 @@ import { db } from "../db";
 import { storage } from "../storage";
 import { platformAPI } from "../platform-apis";
 import { adCampaigns, adCreatives, contentCalendar, socialAccounts } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { logger } from "../logger.js";
 
 /**
@@ -264,10 +264,14 @@ export class AdvertisingDispatchService {
         activatedAt: new Date().toISOString(),
       };
 
+      // Only mark "active" when at least one post actually went through.
+      // Keeping status as "draft" when 0 posts succeed allows the campaign to
+      // be re-dispatched later (e.g. once expired tokens are refreshed) without
+      // the "already active" guard blocking it.
       await db
         .update(adCampaigns)
         .set({
-          status: "active",
+          status: successfulPosts > 0 ? "active" : "draft",
           organicMetrics: organicMetrics as Record<string, unknown>,
           connectedPlatforms: platformsToUse as Record<string, unknown>,
         })
@@ -421,6 +425,10 @@ export class AdvertisingDispatchService {
         and(
           eq(socialAccounts.userId, userId),
           eq(socialAccounts.isActive, true),
+          // Exclude accounts whose OAuth tokens have already expired.
+          // Platforms that don't use token_expires_at (e.g. Instagram, Facebook,
+          // Threads) leave it NULL — treat NULL as "never expires" (still valid).
+          sql`(${socialAccounts.tokenExpiresAt} IS NULL OR ${socialAccounts.tokenExpiresAt} > NOW())`,
         ),
       );
     return rows.map((r) => r.platform.toLowerCase());
