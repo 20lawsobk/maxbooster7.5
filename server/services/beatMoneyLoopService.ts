@@ -48,6 +48,7 @@ import {
   type MusicIndustryContext,
 } from "./musicIndustryContextFilter.js";
 import { storageService } from "./storageService.js";
+import { distributedCache } from "../infrastructure/distributedCache.js";
 import { autonomousService } from "./autonomousService.js";
 import { advertisingDispatchService } from "./advertisingDispatchService.js";
 import path from "path";
@@ -926,11 +927,14 @@ class BeatMoneyLoopService {
             sourceBeatId: beatId,
           },
         });
+        // Immediately bust marketplace caches so the new beat appears without
+        // waiting for the 30–60 s TTL to expire naturally.
+        distributedCache.invalidatePattern("marketplace:beats:*").catch(() => {});
       }
     } catch (err) {
       logger.error(
         { err, beatId },
-        "[BeatMoneyLoop] Failed to bridge beat into marketplace listings (beat created; listing missing — will self-heal on next backfill)",
+        "[BeatMoneyLoop] Failed to bridge beat into marketplace listings (beat created; listing missing — will self-heal on next backfill) —",
       );
     }
 

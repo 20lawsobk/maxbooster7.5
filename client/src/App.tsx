@@ -212,6 +212,7 @@ function Router() {
       <Route path="/admin/kyc" component={KYCReview} />
       <Route path="/admin/training" component={TrainingDashboard} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
+      <Route path="/admin/beat-money-loop" component={() => <AdminDashboard defaultTab="money-loop" />} />
       <Route path="/admin" component={Admin} />
       <Route path="/settings" component={Settings} />
       <Route path="/features" component={Features} />

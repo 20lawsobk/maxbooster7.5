@@ -498,6 +498,16 @@ function ProducerFollowButton({
 
 export default function Marketplace() {
   const { user, isLoading: authLoading } = useAuth();
+  // Cap how long we wait for the auth state to resolve. If the session check
+  // takes > 4 s (slow network, PDIM cold start) we stop blocking and render
+  // the marketplace in guest mode — beats are public content.
+  const [authTimedOut, setAuthTimedOut] = useState(false);
+  useEffect(() => {
+    if (!authLoading) return;
+    const t = setTimeout(() => setAuthTimedOut(true), 4_000);
+    return () => clearTimeout(t);
+  }, [authLoading]);
+  const isMarketplaceLoading = authLoading && !authTimedOut;
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
@@ -2509,7 +2519,7 @@ export default function Marketplace() {
     }
   };
 
-  if (authLoading) {
+  if (isMarketplaceLoading) {
     return (
       <AppLayout>
         <div className="max-w-7xl mx-auto p-6 space-y-6">

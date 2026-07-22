@@ -150,9 +150,9 @@ interface LogsResponse {
   logs: LogEntry[];
 }
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ defaultTab }: { defaultTab?: string } = {}) {
   const { user, isLoading: authLoading } = useRequireAdmin();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState(defaultTab || "overview");
   const [refreshing, setRefreshing] = useState(false);
   const [usersPage, setUsersPage] = useState(1);
   const [usersSearch, setUsersSearch] = useState("");
