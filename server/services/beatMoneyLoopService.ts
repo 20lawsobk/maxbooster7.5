@@ -374,7 +374,7 @@ class BeatMoneyLoopService {
       );
 
       // 2. GENERATE
-      const { audioRelUrl, audioAbsPath, title, audioGenBackend } =
+      const { audioRelUrl, audioAbsPath, title, audioGenBackend, musicalKey } =
         await this._generateBeat(scan);
       await db
         .update(beatMoneyLoopCycles)
@@ -395,6 +395,7 @@ class BeatMoneyLoopService {
         audioRelUrl,
         audioAbsPath,
         title,
+        musicalKey,
       });
       await db
         .update(beatMoneyLoopCycles)
@@ -577,6 +578,7 @@ class BeatMoneyLoopService {
       tempo: number;
       productionStyles: string[];
       hooks: string[];
+      requestedKey?: string;
     },
     mode: "C" | "B",
   ): Promise<{
@@ -589,12 +591,11 @@ class BeatMoneyLoopService {
       process.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app"
     ).replace(/\/api\/?$/, "");
     const key = process.env.AI_SERVER_KEY || "";
-    // Beat duration. Default 15 s — renders reliably within the poll budget.
-    // A 30 s clip takes >10 min on MaxCore's current queue; 15 s finishes in ~5 min.
+    // Beat duration. Default 30 s — a full-length sellable clip.
     // Override via BEAT_DURATION_SECONDS env var (max 120 s).
     const durationSec = Math.min(
       120,
-      Math.max(10, Number(process.env.BEAT_DURATION_SECONDS) || 15),
+      Math.max(10, Number(process.env.BEAT_DURATION_SECONDS) || 30),
     );
     const body: Record<string, unknown> = {
       genre: scan.genre,
@@ -604,6 +605,9 @@ class BeatMoneyLoopService {
       energy: 0.8,
       mode,
     };
+    // Send the requested key so MaxCore generates in that tonality, giving
+    // each cycle a different key rather than always defaulting to C Minor.
+    if (scan.requestedKey) body.key = scan.requestedKey;
     if (scan.productionStyles.length > 0)
       body.style = scan.productionStyles.slice(0, 3).join(", ");
     if (scan.hooks.length > 0)
@@ -804,13 +808,23 @@ class BeatMoneyLoopService {
    * The industry scan (genre / mood / tempo / production styles / viral hooks)
    * is forwarded to MaxCore so generation is biased toward what's trending.
    */
+  // Chromatic key pool — 24 keys ensures catalog variety cycle over cycle.
+  private static readonly MUSICAL_KEYS = [
+    "C Major", "C Minor", "C# Minor", "Db Major",
+    "D Major", "D Minor", "Eb Major", "Eb Minor",
+    "E Major", "E Minor", "F Major", "F Minor",
+    "F# Minor", "G Major", "G Minor",
+    "Ab Major", "Ab Minor", "A Major", "A Minor",
+    "Bb Major", "Bb Minor", "B Major", "B Minor",
+  ];
+
   private async _generateBeat(scan: {
     genre: string;
     mood: string;
     tempo: number;
     productionStyles: string[];
     hooks: string[];
-  }): Promise<{ audioRelUrl: string; audioAbsPath: string; title: string; audioGenBackend: string }> {
+  }): Promise<{ audioRelUrl: string; audioAbsPath: string; title: string; audioGenBackend: string; musicalKey: string }> {
     const outputDir = path.join(
       process.cwd(),
       "public",
@@ -818,6 +832,11 @@ class BeatMoneyLoopService {
       "audio",
     );
     await fsPromises.mkdir(outputDir, { recursive: true });
+
+    // Pick a random key each cycle — catalog must span all 24 tonalities.
+    const keys = BeatMoneyLoopService.MUSICAL_KEYS;
+    const requestedKey = keys[Math.floor(Math.random() * keys.length)];
+    const scanWithKey = { ...scan, requestedKey };
 
     const titleAdj =
       scan.mood.charAt(0).toUpperCase() + scan.mood.slice(1);
@@ -829,21 +848,21 @@ class BeatMoneyLoopService {
     const modeErrors: string[] = [];
     for (const mode of ["C", "B"] as const) {
       try {
-        const mc = await this._maxcoreAudio(scan, mode);
+        const mc = await this._maxcoreAudio(scanWithKey, mode);
         const filename = `beat_${Date.now()}_${randomBytes(8).toString("hex")}.wav`;
         const audioAbsPath = path.join(outputDir, filename);
         await fsPromises.writeFile(audioAbsPath, mc.wavBytes);
         const audioRelUrl = `/generated-content/audio/${filename}`;
-        // Prefer real rendered BPM/key from the audio engine over the requested values
+        // Prefer real rendered BPM/key from the audio engine over the requested values.
         const realBpm = mc.mcBpm ?? scan.tempo;
-        const musicalKey = mc.mcMusicalKey ?? mc.mcKey;
+        const musicalKey = (mc as any).mcMusicalKey ?? mc.mcKey ?? requestedKey;
         const keyStr = musicalKey ? ` (${musicalKey})` : "";
         const bpmStr = ` ${realBpm} BPM`;
         const title = `${titleAdj} ${titleGenre} Type Beat${keyStr}${bpmStr} — ${stamp}`;
         logger.info(
-          `[BeatMoneyLoop] Beat generated via MaxCore mode ${mode} (backend=${mc.backend})`,
+          `[BeatMoneyLoop] Beat generated via MaxCore mode ${mode} (backend=${mc.backend}, key=${musicalKey})`,
         );
-        return { audioRelUrl, audioAbsPath, title, audioGenBackend: mc.backend };
+        return { audioRelUrl, audioAbsPath, title, audioGenBackend: mc.backend, musicalKey: musicalKey || requestedKey };
       } catch (err) {
         const msg = (err as Error).message;
         modeErrors.push(`mode ${mode}: ${msg}`);
@@ -946,8 +965,11 @@ class BeatMoneyLoopService {
     audioRelUrl: string;
     audioAbsPath: string;
     title: string;
+    musicalKey?: string;
   }): Promise<{ beatId: string; audioUrl: string }> {
     const adminId = await this._requireAdminId();
+    const keyDisplay = args.musicalKey || "C Minor";
+
     // Read the WAV bytes MaxCore generation just wrote to disk
     const buf = await fsPromises.readFile(args.audioAbsPath);
     const filename = path.basename(args.audioAbsPath);
@@ -959,6 +981,48 @@ class BeatMoneyLoopService {
       "audio/wav",
     );
     const audioUrl = `/api/marketplace/audio/${storageKey}`;
+
+    // Generate cover artwork via MaxCore image endpoint — fire-and-forget if it
+    // fails, so a slow image render never aborts the upload step.
+    let artworkUrl: string | null = null;
+    try {
+      const base = (
+        process.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app"
+      ).replace(/\/api\/?$/, "");
+      const aiKey = process.env.AI_SERVER_KEY || "";
+      const artPrompt =
+        `${args.scan.mood} ${args.scan.genre} music producer — album cover art, cinematic, high contrast`;
+      const artRes = await fetch(`${base}/api/generate/image`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(aiKey ? { Authorization: `Bearer ${aiKey}` } : {}),
+        },
+        body: JSON.stringify({
+          prompt: artPrompt,
+          platform: "instagram",
+          style: "cinematic",
+          aspect_ratio: "1:1",
+        }),
+        signal: AbortSignal.timeout(30_000),
+      });
+      if (artRes.ok) {
+        const artData = (await artRes.json()) as { url?: string; image_url?: string; outputs?: Array<{ url?: string }> };
+        const rawUrl =
+          artData.url ??
+          artData.image_url ??
+          artData.outputs?.[0]?.url;
+        if (rawUrl) {
+          // Absolutize relative paths returned by MaxCore
+          artworkUrl = /^https?:\/\//i.test(rawUrl)
+            ? rawUrl
+            : `${base}${rawUrl}`;
+        }
+      }
+    } catch (_artErr) {
+      // Non-fatal — beat still gets listed without artwork
+      logger.warn("[BeatMoneyLoop] Artwork generation skipped (non-fatal)");
+    }
 
     const tags = Array.from(
       new Set([
@@ -980,8 +1044,9 @@ class BeatMoneyLoopService {
         price: args.price,
         genre: args.scan.genre,
         bpm: args.scan.tempo,
-        key: "C Minor", // music engine default tonic; safe display value
+        key: keyDisplay,
         audioUrl,
+        artworkUrl,
         licenseType: "basic",
         tags,
         isPublished: true,
@@ -1013,12 +1078,13 @@ class BeatMoneyLoopService {
           priceCents: Math.round(args.price * 100),
           category: args.scan.genre,
           audioUrl,
+          artworkUrl,
           isPublished: true,
           metadata: {
             genre: args.scan.genre,
             mood: args.scan.mood,
             bpm: args.scan.tempo,
-            key: "C Minor",
+            key: keyDisplay,
             tempo: args.scan.tempo,
             licenseType: "basic",
             tags,

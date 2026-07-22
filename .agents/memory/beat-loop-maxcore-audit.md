@@ -64,19 +64,6 @@ These are registered in `maxcoreProxy.ts` POST_PATHS/GET_PATHS but MaxCore doesn
 2. **Expired tokens (tiktok Jun 13, twitter Jun 17, youtube+googlebusiness Jul 14)**: Need OAuth re-connect via Social Media Management UI (Task #4)
 3. **`PUBLIC_BASE_URL` env var not set**: Ad video URLs fall back to `REPLIT_DEV_DOMAIN`; set to production domain after Task #3 (publish)
 
-## Social Accounts Token Status (admin blawzmusic@gmail.com)
-| Platform | Status | Expiry |
-|---|---|---|
-| facebook | NO_EXPIRY (valid) | long-lived Meta token |
-| instagram | NO_EXPIRY (valid) | same Meta token |
-| threads | NO_EXPIRY (valid) | no expiry stored |
-| linkedin | VALID | 2026-08-11 |
-| tiktok | EXPIRED | 2026-06-13 |
-| twitter | EXPIRED | 2026-06-17 |
-| youtube | EXPIRED | 2026-07-14 |
-| googlebusiness | EXPIRED | 2026-07-14 |
-
-When a cycle succeeds with audio, facebook + instagram + threads + linkedin will post; tiktok/twitter/youtube will log a clear "expired" skip.
 
 ## How the Ad System Works
 MaxCore AI replicates paid ad performance using its model. Social accounts are delivery conduits (zero ad spend). `advertisingDispatchService.activateCampaign` fans out to all matching connected+requested platforms. Expired tokens skip per-platform without aborting the whole campaign.
