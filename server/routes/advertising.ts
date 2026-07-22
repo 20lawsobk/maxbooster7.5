@@ -1215,6 +1215,9 @@ router?.post("/generate-content", requireAuthOnly, async (req, res) => {
       content: result.data,
     });
   } catch (error) {
+    if (error instanceof AIUnavailableError) {
+      return res.status(error.statusCode).json({ success: false, code: error.code, error: error.message });
+    }
     logger?.warn({ err: error }, "Failed to generate ad content:");
     res?.status(500).json({ error: "Failed to generate content" });
   }
@@ -1335,6 +1338,9 @@ router?.post(
           "MaxCore image generation temporarily unavailable — retry shortly",
       });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({ success: false, code: error.code, error: error.message });
+      }
       logger?.warn({ err: error }, "Failed to generate ad image:");
       res
         .status(500)
