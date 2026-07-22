@@ -23,7 +23,7 @@
     "deploy": "npx tsx scripts/deploy.ts",
     "start": "bash start.sh",
     "demo:security": "npx tsx scripts/security-self-healing-demo.ts",
-    "postinstall": "node scripts/postinstall.mjs",
+    "postinstall": "SKIP_POSTINSTALL=1 node scripts/postinstall.mjs",
     "check": "tsc -p tsconfig.server.json && tsc -p tsconfig.client.json",
     "check:server": "tsc -p tsconfig.server.json",
     "check:client": "tsc -p tsconfig.client.json",
@@ -387,15 +387,41 @@
     "native-run": ">=2.0.0",
     "yauzl": ">=3.2.0",
     "node-abi": "^3.89.0",
-    "tar": "file:./stubs/tar",
-    "@tensorflow/tfjs-node": {
-      "tar": "file:./stubs/tar"
-    },
-    "@mapbox/node-pre-gyp": {
-      "tar": "file:./stubs/tar"
-    }
+    "tar": "file:./stubs/tar"
   },
   "engines": {
     "node": ">=22"
+  },
+  "pnpm": {
+    "overrides": {
+      "tar": "file:./stubs/tar",
+      "follow-redirects": ">=1.16.0",
+      "minimatch": "^10.2.3",
+      "braces": "^3.0.3",
+      "set-value": "^4.0.1",
+      "bn.js": "^5.2.3",
+      "glob": "^11.0.2",
+      "esbuild": ">=0.25.12",
+      "fast-xml-builder": "^1.2.0",
+      "@xmldom/xmldom": "^0.9.10",
+      "micromatch": ">=0.7.4",
+      "base-store": ">=0.7.4",
+      "data-store": ">=0.7.4",
+      "expand-object": ">=0.7.4",
+      "git-repo-name": ">=0.7.4",
+      "gulp-eslint": ">=0.7.4",
+      "gulp-util": ">=0.7.4",
+      "lodash.template": ">=0.7.4",
+      "parse-git-config": ">=0.7.4",
+      "project-name": ">=0.7.4",
+      "remote-origin-url": ">=0.7.4",
+      "update": ">=0.7.4",
+      "extract-zip": ">=2.0.0",
+      "native-run": ">=2.0.0",
+      "yauzl": ">=3.2.0",
+      "node-abi": "^3.89.0",
+      "@tensorflow/tfjs-node>tar": "file:./stubs/tar",
+      "@mapbox/node-pre-gyp>tar": "file:./stubs/tar"
+    }
   }
 }

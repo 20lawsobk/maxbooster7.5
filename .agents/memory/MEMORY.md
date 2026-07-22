@@ -50,3 +50,4 @@
 - [distributionService baseStorage import](distribution-service-import.md) — distributionService.ts uses `baseStorage` but imports it as `storage`; fix: `import { storage as baseStorage }` at top of file
 - [Beat loop orphan-recovery guard](beat-loop-orphan-guard.md) — scheduler calls recoverOrphanedCycles ~75s after boot; it must exclude cycles started in the current process (startedAt < process-start cutoff) or it kills live cycles
 - [CSRF double-submit pattern in curl tests](csrf-curl-pattern.md) — /api/auth/csrf returns 404; the CSRF token IS the `csrf-token` cookie value; pass it as `X-CSRF-Token` header to satisfy double-submit validation
+- [Project setup state](project-setup-state.md) — what's working vs pending after fresh import; pnpm install quirks, musicIndustryTrainingData stub, PDIM timeout behavior
