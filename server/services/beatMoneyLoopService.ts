@@ -51,6 +51,7 @@ import {
 } from "./musicIndustryContextFilter.js";
 import { storageService } from "./storageService.js";
 import { distributedCache } from "../infrastructure/distributedCache.js";
+import { normalizeHashtags } from "../lib/contentPostProcessor.js";
 import { autonomousService } from "./autonomousService.js";
 import { advertisingDispatchService } from "./advertisingDispatchService.js";
 import path from "path";
@@ -218,8 +219,8 @@ class BeatMoneyLoopService {
       }
     } catch (err) {
       logger.warn(
-        "[BeatMoneyLoop] Could not recover orphaned cycles:",
-        (err as Error).message,
+        { err },
+        "[BeatMoneyLoop] Could not recover orphaned cycles",
       );
     }
   }
@@ -1029,17 +1030,8 @@ class BeatMoneyLoopService {
     let campaignId: string | null = null;
     try {
       // Build the ad copy from the trending scan signals.
-      const hashtags = Array.from(
-        new Set([
-          args.scan.genre.replace(/\s+/g, ""),
-          args.scan.mood.replace(/\s+/g, ""),
-          "typebeat",
-          "beatsforsale",
-          "producer",
-        ]),
-      )
-        .filter(Boolean)
-        .map((t) => `#${t}`);
+      // Fix 3: use genre-specific discovery hashtags instead of raw genre/mood strings
+      const hashtags = normalizeHashtags([], args.scan.genre, "instagram");
       const caption = this._buildAdCaption({
         title: args.title,
         scan: args.scan,
@@ -1185,36 +1177,71 @@ class BeatMoneyLoopService {
     scan: { genre: string; mood: string; tempo: number; hooks: string[] },
     price: number,
   ): string {
-    const genreDescMap: Record<string, string> = {
-      trap: "trap and hip-hop", hiphop: "hip-hop and rap", "hip-hop": "hip-hop and rap",
-      rnb: "R&B and soul", pop: "pop and indie", reggaeton: "reggaeton and Latin trap",
-      indie: "indie pop and alternative", drill: "drill and UK rap",
-      afrobeats: "afrobeats and Afropop", dancehall: "dancehall and Caribbean",
-      lo_fi: "lo-fi and chill study beats", jazz: "jazz-influenced and neo-soul",
+    // Fix 8: three-sentence structure — emotional lead, production detail,
+    // target artist type. Buyers make decisions here; specs alone don't close.
+
+    // Sentence 1: emotional feel — what this beat makes you feel, not BPM/key
+    const emotionalLeadMap: Record<string, string> = {
+      dark:       "A cinematic beat built for artists who paint pictures with words — raw, atmospheric, and impossible to skip.",
+      empowering: "An anthem-grade production built for artists who make records that move rooms.",
+      driven:     "High-momentum energy that demands a verse with something to prove.",
+      aggressive: "Hard-hitting production with no filler — made for artists who don't pull punches.",
+      melancholy: "Emotionally rich and cinematic — the kind of beat that turns a journal entry into a record.",
+      chill:      "Smooth, late-night energy that gives artists room to breathe, flow, and say something real.",
+      upbeat:     "Feel-good and infectious — the kind of record listeners play twice before they even know why.",
+      mysterious: "Dark and layered with a hook that lingers long after the track ends.",
+      euphoric:   "Euphoric energy that lifts the room — built for moments that matter.",
+      romantic:   "Warm and intimate production that gives love songs the sonic space they deserve.",
     };
-    const moodSentenceMap: Record<string, string> = {
-      dark: "Built for artists who go hard — raw, gritty, and unfiltered.",
-      empowering: "Built for anthem-makers. This one demands to be heard.",
-      driven: "High-momentum production engineered for artists with something to prove.",
-      aggressive: "High-energy, no compromises — made for tracks that hit different.",
-      melancholy: "Emotional depth with cinematic range. Perfect for introspective records.",
-      chill: "Smooth and laid-back. Ideal for tracks that breathe and flow.",
-      upbeat: "Feel-good energy with infectious rhythm. Listeners won't skip this one.",
-      mysterious: "Dark, layered atmosphere with a hook that lingers long after the song ends.",
-    };
-    const genreKey = scan.genre.toLowerCase().replace(/[-\s]/g, "_");
     const moodKey = scan.mood.toLowerCase();
-    const genreDesc = genreDescMap[scan.genre.toLowerCase()] ?? scan.genre;
-    const moodSentence =
-      moodSentenceMap[moodKey] ??
-      `${scan.mood.charAt(0).toUpperCase() + scan.mood.slice(1)} energy meets professional production.`;
+    const emotionalLead =
+      emotionalLeadMap[moodKey] ??
+      `${scan.mood.charAt(0).toUpperCase() + scan.mood.slice(1)} energy with the kind of production that sticks.`;
+
+    // Sentence 2: specific production elements that differentiate this beat
+    const productionDetailMap: Record<string, string> = {
+      trap:      "Features rolling hi-hats, punchy 808s, and layered synth textures at " + scan.tempo + " BPM.",
+      drill:     "Dark sliding 808s, staccato hi-hats, and cinematic strings locked at " + scan.tempo + " BPM.",
+      rnb:       "Smooth chord stabs, warm bass, and live-feel percussion at " + scan.tempo + " BPM.",
+      "r&b":     "Smooth chord stabs, warm bass, and live-feel percussion at " + scan.tempo + " BPM.",
+      hiphop:    "Sampled-feel drums, deep sub bass, and melodic layers at " + scan.tempo + " BPM.",
+      "hip-hop": "Sampled-feel drums, deep sub bass, and melodic layers at " + scan.tempo + " BPM.",
+      afrobeats: "Percussive rhythm beds, bright plucks, and afro-swing groove at " + scan.tempo + " BPM.",
+      dancehall: "Riddim-ready percussion, catchy melody loops, and sub bass at " + scan.tempo + " BPM.",
+      pop:       "Punchy drums, ear-catching hooks, and radio-ready arrangement at " + scan.tempo + " BPM.",
+      indie:     "Live-textured drums, guitar-adjacent tones, and lo-fi warmth at " + scan.tempo + " BPM.",
+      lo_fi:     "Dusty samples, mellow chords, and a boom-bap swing at " + scan.tempo + " BPM.",
+      jazz:      "Neo-soul chord progressions, brushed drums, and melodic bass at " + scan.tempo + " BPM.",
+    };
+    const genreKey = scan.genre.toLowerCase().replace(/[-\s]/g, "");
+    const productionDetail =
+      productionDetailMap[scan.genre.toLowerCase()] ||
+      productionDetailMap[genreKey] ||
+      `Professionally arranged at ${scan.tempo} BPM with full mix headroom.`;
+
+    // Sentence 3: artist type comparison — the question every buyer asks is
+    // "is this for someone like me?" Answer it directly.
+    const artistTypeMap: Record<string, string> = {
+      trap:      "Ideal for introspective trap, story-driven rap, and cinematic R&B — think Cole, Kendrick, or JID.",
+      drill:     "Built for UK and Brooklyn drill — artists in the lane of Central Cee, Pop Smoke, or Fivio.",
+      rnb:       "Perfect for modern R&B vocalists and neo-soul artists who write with feeling first.",
+      "r&b":     "Perfect for modern R&B vocalists and neo-soul artists who write with feeling first.",
+      hiphop:    "Made for lyricists who have something to say — classic boom-bap energy, modern mix.",
+      "hip-hop": "Made for lyricists who have something to say — classic boom-bap energy, modern mix.",
+      afrobeats: "For Afrobeats and Afropop artists who move between genres — the lane of Burna, Wizkid, and Rema.",
+      dancehall: "Caribbean artists and global pop crossovers — think Sean Paul, Popcaan, or Kranium.",
+      pop:       "Radio-ready for pop and crossover artists building a streaming catalogue.",
+      indie:     "Indie artists and alternative singer-songwriters who value texture over trend.",
+      lo_fi:     "Content creators, study channels, and chill-hop artists who need something timeless.",
+      jazz:      "Neo-soul and jazz-influenced artists in the lane of Sampha, Sault, or Thundercat.",
+    };
+    const artistType =
+      artistTypeMap[scan.genre.toLowerCase()] ||
+      artistTypeMap[genreKey] ||
+      "Built for independent artists who take their craft seriously.";
+
     const cleanPrice = Math.round(price);
-    return (
-      `${moodSentence} ` +
-      `${scan.tempo} BPM, C Minor — tuned for ${genreDesc} artists. ` +
-      `Studio-ready with full mixing and mastering headroom. ` +
-      `Non-exclusive lease from ${cleanPrice}. Exclusive rights available on request.`
-    );
+    return `${emotionalLead} ${productionDetail} ${artistType} Non-exclusive lease from $${cleanPrice} — exclusive rights available on request.`;
   }
 
   /**
@@ -1248,13 +1275,17 @@ class BeatMoneyLoopService {
     const genrePart = `${args.scan.mood} ${args.scan.genre}`.toLowerCase();
     const tagStr = args.hashtags.join(" ");
 
+    // Fix 7: inject price anchor, scarcity signal, and direct marketplace link
+    // so the post does conversion work, not just awareness.
+    const marketplaceUrl = process.env.MARKETPLACE_URL || "https://blawz.com/marketplace";
+
     const lines = [
       `🔥 "${args.title}" — ${args.scan.tempo} BPM ${genrePart} type beat.`,
       hookSentence ?? `Professional-grade production built for artists who take their craft seriously.`,
-      `Non-exclusive lease from ${cleanPrice} — link in bio.`,
+      `Non-exclusive lease from $${cleanPrice} · Limited slots · Stream + license 🎧 ${marketplaceUrl}`,
       tagStr,
     ];
-    return lines.join(" ").trim();
+    return lines.join("\n").trim();
   }
 
   /**
@@ -1269,7 +1300,7 @@ class BeatMoneyLoopService {
   private _computeNextCadenceMs(
     scan: { confidence: number } | null,
     failed: boolean,
-    state: BeatMoneyLoopState | null,
+    _state: BeatMoneyLoopState | null,
   ): number {
     if (failed) return FAILURE_BACKOFF_CADENCE_MS;
     if (!scan) return DEFAULT_CADENCE_MS;

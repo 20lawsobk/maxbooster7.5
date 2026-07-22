@@ -23,6 +23,11 @@ import { eq } from "drizzle-orm";
 import { MaxCoreAIClient } from "./unifiedAIController.js";
 import { requireMaxCore } from "../lib/aiSource.js";
 import { evolutionRegistry } from "./evolutionRegistry.js";
+import {
+  cleanMaxCoreContent,
+  selectBestVariant,
+  normalizeHashtags,
+} from "../lib/contentPostProcessor.js";
 
 // ============================================================================
 // SEEDED PRNG HELPER
@@ -1415,9 +1420,10 @@ class AdvancedSocialAIService {
       caption_length: request.captionLength,
       cta_strength: request.callToActionStrength,
     });
+    // Fix 4: rotate stale hook templates instead of always taking variants[0]
     const mcCandidate =
       mcRaw && Array.isArray(mcRaw.variants) && mcRaw.variants.length > 0
-        ? mcRaw.variants[0]
+        ? selectBestVariant(mcRaw.variants)
         : mcRaw;
 
     // MaxCore is the ONLY source for social content. Throw explicitly (HTTP 503)
@@ -1429,12 +1435,23 @@ class AdvancedSocialAIService {
       "advanced social content",
     );
 
-    const hook = mc.hook || "";
-    const bodyText = mc.body || "";
+    // Fix 1 + 2: strip audience metadata and filler lines from body
+    const cleaned = cleanMaxCoreContent({
+      body: mc.body || "",
+      hook: mc.hook || "",
+      cta: mc.cta || "",
+      hashtags: Array.isArray(mc.hashtags) ? mc.hashtags : [],
+      genre: request.genre || "hip-hop",
+      platform: (request.platforms?.[0] || "instagram").toLowerCase(),
+    });
+
+    const hook = cleaned.hook;
+    const bodyText = cleaned.body;
     // Apply the call-to-action strength knob BEFORE appending the storefront URL
     // so the strengthened/softened CTA still carries the link.
+    // Fix 5: platform CTA already applied inside cleanMaxCoreContent
     const baseCta = this.applyCtaStrength(
-      mc.cta || "",
+      cleaned.cta,
       request.callToActionStrength,
     );
 
@@ -1445,9 +1462,15 @@ class AdvancedSocialAIService {
         ? `${baseCta}\n🔗 ${request.storefrontUrl}`.trim()
         : baseCta;
 
-    const rawHashtags: string[] = Array.isArray(mc.hashtags) ? mc.hashtags : [];
+    // Fix 3: clean broken hashtags and inject genre-specific discovery tags,
+    // then run through the platform strategy knob as before
+    const cleanHashtags = normalizeHashtags(
+      cleaned.hashtags,
+      request.genre || "hip-hop",
+      (request.platforms?.[0] || "instagram").toLowerCase(),
+    );
     const hashtags = this.applyHashtagStrategy(
-      rawHashtags,
+      cleanHashtags,
       request.hashtagStrategy,
       primaryPlatform,
     );
