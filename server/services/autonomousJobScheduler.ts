@@ -390,6 +390,15 @@ async function waitForPdimSettled(
   minWaitMs = 75_000,
   extraTimeoutMs = 300_000,
 ): Promise<void> {
+  // Fast-path: BullMQ is backed by native local Redis — no PDIM burst to wait for.
+  const redisUrl = process.env.REDIS_URL || process.env.NATIVE_REDIS_URL || "";
+  if (redisUrl.startsWith("redis://") || redisUrl.startsWith("rediss://")) {
+    logger.info(
+      "[AutonomousScheduler] Native Redis detected — skipping PDIM startup wait",
+    );
+    return;
+  }
+
   // Single-instance mode: no concurrent PDIM writers, no burst to wait for.
   const { isPdimConfigured } = await import("../lib/pdimClient.js");
   if (!isPdimConfigured()) return;

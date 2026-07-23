@@ -463,11 +463,11 @@ export async function cleanupAuditLog(
       Date?.now() - retentionDays * 24 * 60 * 60 * 1000,
     );
 
-    // Keep critical entries for longer
+    // Keep critical entries for longer (column is `risk`, not `severity`)
     const result = await db?.execute(sql`
       DELETE FROM audit_logs
       WHERE timestamp < ${cutoffDate}
-        AND severity != 'critical'
+        AND risk != 'critical'
       RETURNING id
     `);
 

@@ -3176,6 +3176,7 @@ router.post("/folders", requireAuth, async (req: Request, res: Response) => {
       })
       .returning();
 
+    if (!folder[0]) return res.status(500).json({ error: "Folder insert returned no row" });
     res.json(folder[0]);
   } catch (error: unknown) {
     logger.warn({ err: error }, "Error creating folder:");
@@ -3286,7 +3287,7 @@ router.patch(
         }
       }
 
-      res.json({ ...updated[0], collapsed });
+      res.json({ ...(updated[0] ?? {}), collapsed });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error updating folder:");
       res.status(500).json({ error: "Failed to update folder" });

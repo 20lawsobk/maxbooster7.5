@@ -81,10 +81,10 @@ let _graceWasActive = true;
 //
 // This is purely event-driven (first success) in the fast case and time-bounded
 // in the slow case, making it safe regardless of PDIM's cold-start duration.
-const STARTUP_GRACE_MAX_MS = 120_000; // Phase 1 ceiling — 2 minutes
+const STARTUP_GRACE_MAX_MS = 20_000; // Phase 1 ceiling — 20 s (reduced: if PDIM is dead it's obvious fast)
 const SETTLING_MS = 10_000; // Phase 2 — post-first-success quiet window
-const POST_GRACE_SLOW_MS = 660_000; // Phase 3 — slow-lane window after cap (11 min)
-const POST_GRACE_FAILURE_CAP = 800; // Phase 3 — max failures before circuit opens
+const POST_GRACE_SLOW_MS = 30_000; // Phase 3 — slow-lane window after cap (30 s)
+const POST_GRACE_FAILURE_CAP = 15; // Phase 3 — max failures before circuit opens (reduced from 800)
 const _startedAt = Date?.now();
 // Timestamp of the first cbRecordSuccess() call; 0 if none yet.
 let _firstSuccessAt = 0;

@@ -6516,7 +6516,12 @@ router?.get(
           .status(404)
           .json({ error: "No distribution package found for this project" });
 
-      const pkg = JSON.parse(data?.toString());
+      let pkg: unknown;
+      try {
+        pkg = JSON.parse(data?.toString());
+      } catch {
+        return res.status(500).json({ error: "Distribution package data is corrupted" });
+      }
       res.json(pkg);
     } catch (error: unknown) {
       const err = error as { message?: string };

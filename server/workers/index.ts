@@ -44,10 +44,27 @@ function checkMemoryUsage(workerName: string): void {
 }
 
 function workerOpts(concurrency: number) {
-  // PDIM is an HTTP-backed Redis replacement — each redis?.call() inside a Lua
-  // script costs ~100-300 ms over the network.  Keep concurrency low and add a
-  // generous drainDelay so idle workers back off instead of hammering the Lua
-  // executor with continuous moveToActive polls.
+  // Detect whether BullMQ is backed by native local Redis (redis://) or PDIM HTTP.
+  // Native Redis: use full concurrency and default timing values.
+  // PDIM HTTP: keep conservative values because each Lua call costs 100-300 ms over HTTP.
+  const redisUrl = process.env.REDIS_URL || process.env.NATIVE_REDIS_URL || "";
+  const usingNativeRedis = redisUrl.startsWith("redis://") || redisUrl.startsWith("rediss://");
+
+  if (usingNativeRedis) {
+    return {
+      connection: newBullMQRedisConnection(),
+      concurrency,
+      autorun: false,
+      drainDelay: 5_000,          // 5 s — native Redis is fast
+      runRetryDelay: 5_000,       // 5 s after any worker error
+      limiter: { max: concurrency, duration: 1000 },
+      lockDuration: 30_000,       // 30 s lock (renewed every 15 s)
+      stalledInterval: 30_000,    // 30 s stall check interval
+      maxStalledCount: 2,
+    };
+  }
+
+  // PDIM HTTP path — keep conservative values to avoid hammering the Lua executor.
   const pdimConcurrency = Math.min(concurrency, 2);
   return {
     connection: newBullMQRedisConnection(),
@@ -57,14 +74,9 @@ function workerOpts(concurrency: number) {
     // Reduces idle BZPOPMIN+moveToActive Lua script executions against PDIM
     // from ~80/min (4 workers × 3s) to ~2/min (4 workers × 2 min).
     drainDelay: 120_000,
-    runRetryDelay: 30_000, // wait 30 s after any worker error before retrying
+    runRetryDelay: 30_000,
     limiter: { max: pdimConcurrency, duration: 1000 },
-    // lockDuration: 10 min — lock renewal (every lockDuration/2 = 5 min) runs
-    // one Lua script per renewal.  Raising from 2 min cuts renewal frequency 5×.
     lockDuration: 600_000,
-    // stalledInterval: 5 min — moveStalledJobsToWait is a heavy 35-call Lua
-    // script.  Raising from 30 s to 5 min reduces these executions 10× and
-    // eliminates the majority of 45s script timeouts in steady state.
     stalledInterval: 300_000,
     maxStalledCount: 2,
   };
@@ -273,6 +285,14 @@ async function waitForPdimReady(
   maxWaitMs = 130_000,
   retryMs = 2_000,
 ): Promise<void> {
+  // When BullMQ is backed by native Redis there is no PDIM HTTP queue to wait
+  // for — skip immediately so workers start without the 130s ceiling.
+  const redisUrl = process.env.REDIS_URL ?? process.env.NATIVE_REDIS_URL ?? "";
+  if (redisUrl.startsWith("redis://") || redisUrl.startsWith("rediss://")) {
+    logger.info("[Workers] Native Redis detected — skipping PDIM readiness gate");
+    return;
+  }
+
   const pdimUrl = process.env.PDIM_HTTP_EXEC_URL;
   const pdimToken = process.env.PDIM_BEARER_TOKEN;
   if (!pdimUrl || !pdimToken) return; // no PDIM configured — skip gate

@@ -156,10 +156,8 @@ export class DistributedCache {
     try {
       await this.redis.setex(key, ttl, serialized);
     } catch (err: unknown) {
-      logger.warn(
-        { err },
-        "[DistributedCache] set() failed — entry in L1 only",
-      );
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.warn("[DistributedCache] set() failed — entry in L1 only: " + msg.slice(0, 80));
     }
   }
 
@@ -169,7 +167,8 @@ export class DistributedCache {
     try {
       await this.redis.del(key);
     } catch (err: unknown) {
-      logger.warn({ err }, "[DistributedCache] delete() failed");
+      const msg = err instanceof Error ? err.message : String(err);
+      logger.warn("[DistributedCache] delete() failed: " + msg.slice(0, 80));
     }
   }
 

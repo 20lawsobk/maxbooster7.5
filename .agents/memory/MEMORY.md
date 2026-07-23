@@ -52,3 +52,5 @@
 - [Beat loop orphan-recovery guard](beat-loop-orphan-guard.md) — scheduler calls recoverOrphanedCycles ~75s after boot; it must exclude cycles started in the current process (startedAt < process-start cutoff) or it kills live cycles
 - [CSRF double-submit pattern in curl tests](csrf-curl-pattern.md) — /api/auth/csrf returns 404; the CSRF token IS the `csrf-token` cookie value; pass it as `X-CSRF-Token` header to satisfy double-submit validation
 - [Replit install quirks](replit-install-quirks.md) — pnpm postinstall exits 1 in Replit sandbox; tar npm blocked by firewall; pnpm.overrides cannot have object values
+- [musicIndustryTrainingData stub shapes](music-industry-training-stub.md) — full shape contract; 3 rounds of fixes needed; EMOTIONAL_TRIGGER_PATTERNS must be RECORD not array; PAID_AD_BENCHMARKS platformMetrics needs avgCTR as object not number
+- [audit_logs column: risk not severity](audit-logs-risk-column.md) — cleanupAuditLog query used `severity` but table has `risk` (low/medium/high/critical); fix: `AND risk != 'critical'`

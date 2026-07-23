@@ -4188,7 +4188,7 @@ router.post(
             platform: resolvedPlatform,
             genre: genre || "",
           }),
-          signal: AbortSignal.timeout(30_000),
+          signal: AbortSignal.timeout(60_000), // 60s — MaxCore image gen can take up to 45s on cold start
         });
         if (imgRes.ok) {
           const imgData = (await imgRes.json()) as { url?: string; image_url?: string; outputs?: { url?: string }[] };

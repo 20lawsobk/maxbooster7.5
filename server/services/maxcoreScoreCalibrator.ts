@@ -352,7 +352,7 @@ async function fetchMaxCoreContentSignals(): Promise<Partial<ScoreWeights> | nul
       "/api/generate/content",
       { topic, platform, tone },
     );
-    if (res.caption || res.hook) results?.push(res);
+    if (res != null && (res.caption || res.hook)) results?.push(res);
     // Brief pause — lets MaxCore flush its response before the next request.
     await new Promise<void>((r) => setTimeout(r, SEQUENTIAL_GAP_MS));
   }
