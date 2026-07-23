@@ -1232,7 +1232,11 @@ export class PdimRedisClient extends EventEmitter {
             Authorization: `Bearer ${this.bearerToken}`,
           },
           body: JSON.stringify({ cmd, args: strArgs }),
-          signal: AbortSignal.timeout(15_000),
+          signal: AbortSignal.timeout(PDIM_EXEC_TIMEOUT_MS),
+          // Do not follow redirects — a 3xx from Replit's proxy (PDIM sleeping)
+          // must be seen as a failure here, not silently followed to an HTML page.
+          // Same reasoning as the main exec() path.
+          redirect: "manual",
         });
 
         if (!res.ok) {
@@ -1242,9 +1246,25 @@ export class PdimRedisClient extends EventEmitter {
             PdimRedisClient?._set429Deadline(Date?.now() + newGap);
             throw new Error(`PDIM HTTP 429 (script ${cmd}): gap→${newGap}ms`);
           }
-          throw new Error(
-            `PDIM HTTP ${res.status} (script ${cmd}): ${text?.slice(0, 200)}`,
-          );
+          // 3xx = Replit proxy redirect (PDIM sleeping); 5xx = PDIM server error.
+          // Both are counted as circuit-breaker failures in the catch block.
+          if (res.status >= 300 && res.status < 400) {
+            cbRecord503();
+            counted = true;
+            throw new Error(`PDIM HTTP ${res.status} (script ${cmd}): service temporarily unreachable`);
+          }
+          if (res.status >= 500) {
+            cbRecord503();
+            counted = true;
+            throw new Error(`PDIM HTTP ${res.status} (script ${cmd}): ${text?.slice(0, 200)}`);
+          }
+          // 4xx other than 429 — command not supported; record success so circuit stays closed.
+          counted = true;
+          PdimRedisClient._clearRateLimitIfExpired();
+          _pdimAdaptSuccess();
+          cbRecordSuccess();
+          logger.warn(`[PDIM] (script) ${String(cmd)} → HTTP ${res.status} (unsupported) — returning null`);
+          return null;
         }
 
         PdimRedisClient?._clearRateLimitIfExpired();

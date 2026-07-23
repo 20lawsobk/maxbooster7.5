@@ -394,6 +394,18 @@ async function waitForPdimSettled(
   const { isPdimConfigured } = await import("../lib/pdimClient.js");
   if (!isPdimConfigured()) return;
 
+  // Fast-path: if the circuit breaker is already OPEN, PDIM is confirmed down.
+  // Startup calls fail before joining the chain (depth stays at 0), so there is
+  // no burst to wait for.  Registering BullMQ jobs immediately is safe — the
+  // Lua scripts will fail fast and retry once PDIM recovers.
+  const { cbIsOpen } = await import("../lib/pdimCircuitBreaker.js");
+  if (cbIsOpen()) {
+    logger.info(
+      "[AutonomousScheduler] PDIM circuit OPEN — skipping startup wait; registering jobs immediately",
+    );
+    return;
+  }
+
   // Fixed initial wait — the burst is coming even if the queue is empty now.
   logger.info(
     `[AutonomousScheduler] Waiting ${minWaitMs / 1000}s for startup PDIM burst to settle ` +
