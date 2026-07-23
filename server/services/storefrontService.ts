@@ -377,8 +377,9 @@ export class StorefrontService {
       // Merge: template configuration is the base, user-supplied customization
       // overrides on top (so colors/fonts from the chosen template are always
       // applied even when the user hasn't touched the customization panel yet).
+      // Guard: template may be undefined when templateId doesn't match any row.
       const templateConfig =
-        template.configuration &&
+        template?.configuration &&
         typeof template.configuration === "object" &&
         !Array.isArray(template.configuration)
           ? (template.configuration as Record<string, unknown>)

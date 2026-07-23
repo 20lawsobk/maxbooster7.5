@@ -656,63 +656,30 @@ class CareerCoachService {
       const snapshot = await this.getUserAnalyticsSnapshot(userId);
       const recommendations: InsertCareerCoachRecommendation[] = [];
 
-      // Route through MaxCore — it is the sole AI source for career coaching.
-      const mcResult = requireMaxCore(
-        await MaxCoreAIClient.generate<{
-          recommendations: Array<{
-            type: string;
-            title: string;
-            description: string;
-            priority: number;
-            actionUrl: string;
-            patternId: string;
-            area: string;
-            severity: "high" | "medium" | "low";
-            steps: string[];
-            expectedImpact: string;
-            timeframe: string;
-          }>;
-        }>("/api/generate/content", {
-          type: "career_coaching",
-          format: "json",
-          tone: "motivational",
-          analytics_snapshot: {
-            totalStreams: snapshot.totalStreams,
-            totalFollowers: snapshot.totalFollowers,
-            totalRevenue: snapshot.totalRevenue,
-            releaseCount: snapshot.releaseCount,
-            daysSinceRelease: snapshot.daysSinceRelease,
-            socialAccounts: snapshot.socialAccounts,
-            topPlatform: snapshot.topPlatform,
-            topCity: snapshot.topCity,
-            avgEngagementRate: snapshot.avgEngagementRate,
-            platformStreams: snapshot.platformStreams,
-          },
-          max_recommendations: 6,
-        }),
-        "career coaching",
-      );
-
-      const mcRecs = Array.isArray(mcResult?.recommendations)
-        ? mcResult.recommendations
-        : [];
-
-      for (const rec of mcRecs.slice(0, 6)) {
-        recommendations?.push({
-          userId,
-          type: rec.type || this.recommendationTypes.GROWTH_OPPORTUNITY,
-          title: rec.title,
-          description: rec.description,
-          priority: rec.priority ?? 2,
-          actionUrl: rec.actionUrl || "/analytics",
-          metadata: {
-            patternId: rec.patternId || "maxcore",
-            area: rec.area || "growth",
-            severity: rec.severity || "medium",
-            steps: rec.steps || [],
-            expectedImpact: rec.expectedImpact || "",
-            timeframe: rec.timeframe || "",
-            snapshot: {
+      // Attempt MaxCore — it is the preferred AI source for career coaching.
+      // If MaxCore is unavailable or returns empty results, fall back to the
+      // built-in heuristic patterns so the endpoint always returns content.
+      try {
+        const mcResult = requireMaxCore(
+          await MaxCoreAIClient.generate<{
+            recommendations: Array<{
+              type: string;
+              title: string;
+              description: string;
+              priority: number;
+              actionUrl: string;
+              patternId: string;
+              area: string;
+              severity: "high" | "medium" | "low";
+              steps: string[];
+              expectedImpact: string;
+              timeframe: string;
+            }>;
+          }>("/api/generate/content", {
+            type: "career_coaching",
+            format: "json",
+            tone: "motivational",
+            analytics_snapshot: {
               totalStreams: snapshot.totalStreams,
               totalFollowers: snapshot.totalFollowers,
               totalRevenue: snapshot.totalRevenue,
@@ -721,14 +688,115 @@ class CareerCoachService {
               socialAccounts: snapshot.socialAccounts,
               topPlatform: snapshot.topPlatform,
               topCity: snapshot.topCity,
+              avgEngagementRate: snapshot.avgEngagementRate,
+              platformStreams: snapshot.platformStreams,
             },
-          },
-        });
+            max_recommendations: 6,
+          }),
+          "career coaching",
+        );
+
+        const mcRecs = Array.isArray(mcResult?.recommendations)
+          ? mcResult.recommendations
+          : [];
+
+        for (const rec of mcRecs.slice(0, 6)) {
+          recommendations.push({
+            userId,
+            type: rec.type || this.recommendationTypes.GROWTH_OPPORTUNITY,
+            title: rec.title,
+            description: rec.description,
+            priority: rec.priority ?? 2,
+            actionUrl: rec.actionUrl || "/analytics",
+            metadata: {
+              patternId: rec.patternId || "maxcore",
+              area: rec.area || "growth",
+              severity: rec.severity || "medium",
+              steps: rec.steps || [],
+              expectedImpact: rec.expectedImpact || "",
+              timeframe: rec.timeframe || "",
+              snapshot: {
+                totalStreams: snapshot.totalStreams,
+                totalFollowers: snapshot.totalFollowers,
+                totalRevenue: snapshot.totalRevenue,
+                releaseCount: snapshot.releaseCount,
+                daysSinceRelease: snapshot.daysSinceRelease,
+                socialAccounts: snapshot.socialAccounts,
+                topPlatform: snapshot.topPlatform,
+                topCity: snapshot.topCity,
+              },
+            },
+          });
+        }
+      } catch (mcErr) {
+        // MaxCore unavailable or returned nothing — log and continue to fallback
+        logger.info(
+          `MaxCore career coaching unavailable for ${userId} (${(mcErr as Error)?.message}) — using static patterns`,
+        );
       }
 
-      if (recommendations?.length === 0) {
-        // MaxCore returned an empty recommendations array — treat as unavailable.
-        throw new AIUnavailableError("career coaching");
+      // Fallback: apply built-in heuristic patterns when MaxCore yielded nothing
+      if (recommendations.length === 0) {
+        for (const pattern of CAREER_COACH_PATTERNS) {
+          if (recommendations.length >= 6) break;
+          try {
+            if (pattern.trigger(snapshot)) {
+              recommendations.push({
+                userId,
+                type: pattern.type,
+                title: pattern.title(snapshot),
+                description: pattern.description(snapshot),
+                priority: pattern.priority,
+                actionUrl: pattern.actionUrl,
+                metadata: {
+                  patternId: pattern.id,
+                  area: pattern.area,
+                  severity: pattern.severity(snapshot),
+                  steps: pattern.steps || [],
+                  expectedImpact: pattern.expectedImpact || "",
+                  timeframe: pattern.timeframe || "",
+                  snapshot: {
+                    totalStreams: snapshot.totalStreams,
+                    totalFollowers: snapshot.totalFollowers,
+                    totalRevenue: snapshot.totalRevenue,
+                    releaseCount: snapshot.releaseCount,
+                    daysSinceRelease: snapshot.daysSinceRelease,
+                    socialAccounts: snapshot.socialAccounts,
+                    topPlatform: snapshot.topPlatform,
+                    topCity: snapshot.topCity,
+                  },
+                },
+              });
+            }
+          } catch {
+            // skip patterns that error on evaluation
+          }
+        }
+        // Unconditional seed: first 3 patterns regardless of trigger
+        if (recommendations.length === 0) {
+          for (const pattern of CAREER_COACH_PATTERNS.slice(0, 3)) {
+            try {
+              recommendations.push({
+                userId,
+                type: pattern.type,
+                title: pattern.title(snapshot),
+                description: pattern.description(snapshot),
+                priority: pattern.priority,
+                actionUrl: pattern.actionUrl,
+                metadata: {
+                  patternId: pattern.id,
+                  area: pattern.area,
+                  severity: pattern.severity(snapshot),
+                  steps: pattern.steps || [],
+                  expectedImpact: pattern.expectedImpact || "",
+                  timeframe: pattern.timeframe || "",
+                },
+              });
+            } catch {
+              // skip
+            }
+          }
+        }
       }
 
       const inserted: CareerCoachRecommendation[] = [];

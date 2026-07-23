@@ -4,6 +4,7 @@ import { asyncHandler } from "../middleware/errorHandler";
 import { careerCoachService } from "../services/careerCoachService";
 import { logger } from "../logger";
 import { z } from "zod";
+import { AIUnavailableError } from "../lib/aiSource.js";
 import { requireSafeParam } from "../middleware/requestValidation.js";
 import { db } from "../db";
 import {
@@ -56,6 +57,9 @@ router?.get(
         "Error fetching career coach recommendations:",
         error?.message,
       );
+      if (error instanceof AIUnavailableError) {
+        return res.status(503).json({ error: error.message });
+      }
       res.status(500).json({ error: "Failed to process request" });
     }
   }),

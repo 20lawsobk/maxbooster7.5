@@ -384,10 +384,30 @@ const _pdimConfigured = !!(
   process.env.PDIM_HTTP_EXEC_URL || process.env.PDIM_EXEC_URL
 );
 
+/** Returns true only when PDIM env is set AND the endpoint responds (not 502). */
+async function _pdimReachable(): Promise<boolean> {
+  if (!_pdimConfigured) return false;
+  try {
+    const url = process.env.PDIM_HTTP_EXEC_URL || process.env.PDIM_EXEC_URL!;
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 3_000);
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ command: "PING", args: [] }),
+      signal: ctrl.signal,
+    }).finally(() => clearTimeout(t));
+    return res.status !== 502 && res.status !== 503;
+  } catch {
+    return false;
+  }
+}
+
 describe("Sliding-Window — Real PDIM Integration", () => {
   it.skipIf(!_pdimConfigured)(
     "allows limit requests, blocks limit+1th, recovers after window expires",
-    async () => {
+    async (ctx) => {
+      if (!(await _pdimReachable())) return ctx.skip();
       const { DistributedRateLimiter } =
         await import("../server/middleware/scalableRateLimiter.js");
       const { getRedisClient } = await import("../server/lib/redisClient.js");
@@ -432,7 +452,8 @@ describe("Sliding-Window — Real PDIM Integration", () => {
 
   it.skipIf(!_pdimConfigured)(
     "boundary-burst: burst fired before window expiry is blocked; request after expiry passes",
-    async () => {
+    async (ctx) => {
+      if (!(await _pdimReachable())) return ctx.skip();
       // Anchors all timing to t0 so the test stays correct regardless of how long
       // each PDIM round-trip takes.  PDIM's fallback path uses ZREMRANGEBYSCORE +
       // ZCARD (or ZCOUNT when ZREMRANGEBYSCORE is unsupported) — 2-3 calls per
