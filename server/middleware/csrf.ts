@@ -143,6 +143,7 @@ const CSRF_EXEMPT_PATHS = [
   "/api/sendgrid/webhook",
   "/api/metrics/web-vitals",
   "/api/dns/query",
+  "/api/dev/", // dev-only triggers, never exist in production
   "/api/dns/resolve",
   "/api/dns/resolver/",
   "/health",

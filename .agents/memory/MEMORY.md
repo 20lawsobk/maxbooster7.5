@@ -4,6 +4,7 @@
 - [MaxCore reachability distinction](maxcore-reachability-distinction.md) — fetchers must return `{value, reachable}` so callers don't log "unreachable" when MaxCore is up but has no data yet
 - [Rate-limiter coalescing](rate-limiter-coalescing.md) — every high-volume PDIM-direct caller needs an L1 cache; the limiter was the dominant one and had none
 - [PDIM passive AIMD decay](pdim-passive-decay.md) — traffic-driven additive decay leaves workers pinned at the 429 ceiling for many minutes; a passive time-based geometric pull toward floor is required
+- [PDIM timeout-as-429 gap-pin](pdim-timeout-gap-pin.md) — timeouts must call _pdimAdaptTimeout() NOT _pdimAdapt429(); the latter sets _last429At every 5s, permanently blocking passive decay → gap pinned at 2000ms forever
 - [Plugin catalog seeding path](plugin-catalog-seeding.md) — two seed paths existed; only `storage.seedPluginCatalog` is wired from init-admin, and Drizzle silently dropped fields written to columns that didn't exist
 - [PDIM direct parallel lanes](pdim-direct-parallel-lanes.md) — when chain pins at fast-fail boundary with gap at floor, the constraint is concurrency; split direct chain into N round-robin lanes
 - [Plugin enrichment rev marker](plugin-enrichment-rev.md) — built-in plugin parameter/preset bumps gate on `presets._rev` and `metadata._rev`; bump `MANIFEST_REV` to force re-upsert across all rows

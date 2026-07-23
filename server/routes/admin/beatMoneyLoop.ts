@@ -47,14 +47,22 @@ router?.post("/disable", async (_req, res) => {
   }
 });
 
-router?.post("/run-now", async (_req, res) => {
+router?.post("/run-now", async (req, res) => {
   // 202 Accepted pattern: a cycle can take 10+ minutes (MaxCore audio jobs have
   // no server-side timeouts). Holding the HTTP connection open would get killed
   // by the proxy (~120 s). Kick off the cycle in the background and return
   // immediately; the client tracks progress via GET /status and /cycles.
+  //
+  // Optional body: { genre, mood, key } to override the random scan selection.
+  const { genre, mood, key } = (req.body ?? {}) as {
+    genre?: string;
+    mood?: string;
+    key?: string;
+  };
+  const overrides = (genre || mood || key) ? { genre, mood, key } : undefined;
   try {
     beatMoneyLoopService
-      ?.runCycle("manual")
+      ?.runCycle("manual", overrides)
       .then((result) => {
         logger.info(
           `[BeatMoneyLoop] manual cycle finished: ${JSON.stringify(result)?.slice(0, 300)}`,

@@ -432,6 +432,26 @@ app?.get("/api/auth/me", (_req: Request, res: Response, next: NextFunction) => {
   res.status(200).json({ authenticated: false, bootPhase: true });
 });
 
+// Dev-only beat trigger — available from early listen, no auth/CSRF needed.
+// Lets the operator fire beat cycles when PDIM congestion blocks normal login.
+// No-ops in production (route never registered).
+if (process.env.NODE_ENV !== "production") {
+  app?.post("/api/dev/trigger-beat", async (req: Request, res: Response) => {
+    try {
+      const { genre, mood, key } = (req.body ?? {}) as Record<string, string>;
+      const { beatMoneyLoopService } = await import("./services/beatMoneyLoopService.js");
+      const overrides = (genre || mood || key) ? { genre, mood, key } : undefined;
+      beatMoneyLoopService.runCycle("manual", overrides)
+        .then((r: { status: string; cycleId?: string }) =>
+          logger.info(`[DevTrigger] cycle done: ${JSON.stringify(r).slice(0, 200)}`))
+        .catch((e: Error) => logger.warn(`[DevTrigger] cycle failed: ${e.message}`));
+      res.status(202).json({ ok: true, overrides, message: "Cycle started in background" });
+    } catch (e) {
+      res.status(500).json({ error: (e as Error).message });
+    }
+  });
+}
+
 app?.post("/api/metrics/web-vitals", (_req: Request, res: Response) => {
   // Silently accept browser web-vitals payloads during the boot window so the
   // browser doesn't log 404 errors on first paint.  Metrics from this window

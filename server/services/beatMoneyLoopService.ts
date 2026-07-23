@@ -125,6 +125,8 @@ export interface RunCycleResult {
 
 class BeatMoneyLoopService {
   private _runningCycle = false;
+  /** Queue of overrides to run back-to-back once the current cycle finishes. */
+  private _pendingQueue: Array<{ genre?: string; mood?: string; key?: string }> = [];
   /** Resolved once at startup; null means no matching admin was found. */
   private _adminId: string | null = null;
 
@@ -341,7 +343,10 @@ class BeatMoneyLoopService {
   }
 
   /** Run a single cycle end-to-end. Records every outcome to beatMoneyLoopCycles. */
-  async runCycle(triggeredBy: "schedule" | "manual"): Promise<RunCycleResult> {
+  async runCycle(
+    triggeredBy: "schedule" | "manual",
+    overrides?: { genre?: string; mood?: string; key?: string },
+  ): Promise<RunCycleResult> {
     if (this._runningCycle) {
       throw new Error("A Beat Money Loop cycle is already in-flight");
     }
@@ -358,13 +363,13 @@ class BeatMoneyLoopService {
       .returning();
     const cycleId = cycleRow.id;
     logger.info(
-      `[BeatMoneyLoop] ▶ Cycle ${cycleId} started (trigger=${triggeredBy})`,
+      `[BeatMoneyLoop] ▶ Cycle ${cycleId} started (trigger=${triggeredBy})${overrides ? ` overrides=${JSON.stringify(overrides)}` : ""}`,
     );
 
     try {
       // 1. SCAN
       const ctx = await musicIndustryContextFilter.getContextForMode("music");
-      const scan = this._distillScan(ctx);
+      const scan = this._distillScan(ctx, overrides);
       await db
         .update(beatMoneyLoopCycles)
         .set({ status: "generating", scanContext: scan })
@@ -490,58 +495,105 @@ class BeatMoneyLoopService {
       return { cycleId, status: "failed", durationMs, error: msg };
     } finally {
       this._runningCycle = false;
+      // Auto-chain: if someone enqueued more overrides while this cycle ran,
+      // kick off the next one immediately rather than waiting for a scheduler tick.
+      this._drainQueue();
     }
+  }
+
+  /**
+   * Enqueue genre/mood/key overrides to run back-to-back once the current
+   * cycle (if any) finishes.  Safe to call while a cycle is in flight.
+   */
+  queueOverrides(list: Array<{ genre?: string; mood?: string; key?: string }>): void {
+    this._pendingQueue.push(...list);
+    logger.info(`[BeatMoneyLoop] Queued ${list.length} override(s); queue depth = ${this._pendingQueue.length}`);
+    // If nothing is running right now, start draining immediately.
+    if (!this._runningCycle) this._drainQueue();
+  }
+
+  /** Internal: start the next queued override cycle (non-blocking). */
+  private _drainQueue(): void {
+    if (this._pendingQueue.length === 0) return;
+    if (this._runningCycle) return; // will be called again in finally
+    const next = this._pendingQueue.shift()!;
+    logger.info(`[BeatMoneyLoop] Auto-chain → starting queued cycle (${this._pendingQueue.length} remaining after this)`);
+    this.runCycle("manual", next).catch((e: Error) =>
+      logger.warn(`[BeatMoneyLoop] Auto-chain cycle failed: ${e.message}`),
+    );
   }
 
   // ── Internal helpers ───────────────────────────────────────────────────────
 
-  /** Pick the strongest trending genre/mood/tempo from the live industry context. */
-  private _distillScan(ctx: MusicIndustryContext): {
+  /** Pick the strongest trending genre/mood/tempo from the live industry context.
+   *  When `overrides` are supplied (e.g. from a manual /run-now call), they
+   *  short-circuit the random pool for that field so the caller can target a
+   *  specific genre/mood/key without changing the scheduler logic. */
+  private _distillScan(
+    ctx: MusicIndustryContext,
+    overrides?: { genre?: string; mood?: string; key?: string },
+  ): {
     genre: string;
     mood: string;
     tempo: number;
     confidence: number;
     hooks: string[];
     productionStyles: string[];
+    requestedKey?: string;
   } {
-    // Build diverse candidate pools so each cycle picks a different style.
-    // suggestedGenre/suggestedMood are included but are not guaranteed winners —
-    // they bias the pool toward the current trend signal without locking every
-    // cycle into the same combination.
+    // Short-circuit: if both genre AND mood are overridden, skip pool entirely.
+    if (overrides?.genre && overrides?.mood) {
+      const baseTemp = 120;
+      const tempoJitter = Math.floor(Math.random() * 11) - 5;
+      return {
+        genre: overrides.genre,
+        mood: overrides.mood,
+        tempo: baseTemp + tempoJitter,
+        confidence: 1,
+        hooks: ctx.viralHookPatterns.slice(0, 5),
+        productionStyles: ctx.productionStyles.slice(0, 5),
+        requestedKey: overrides.key,
+      };
+    }
+
     const pickRandom = (items: string[], fallback: string): string => {
       const pool = items.filter(Boolean);
       if (pool.length === 0) return fallback;
       return pool[Math.floor(Math.random() * pool.length)];
     };
 
-    // Hardcoded baseline ensures diversity even when context signals are sparse
-    // or biased by generic keyword matches. Context signals appear 2× so they
-    // carry ~2× the probability weight of any single baseline item, but the
-    // full pool guarantees genre rotation every few cycles.
+    // Full 12-genre baseline (equal weight) — context signals add 2× bias
+    // without monopolising. Indie removed from the auto-schedule baseline
+    // so overrepresented cycles steer toward the remaining 11 genres.
     const GENRE_BASELINE = [
-      "trap", "hiphop", "r&b", "drill", "lofi", "pop", "electronic", "indie",
+      "trap", "hiphop", "r&b", "drill", "lofi", "pop",
+      "electronic", "afrobeats", "dancehall", "lo_fi", "jazz",
     ];
     const MOOD_BASELINE = [
       "dark", "empowering", "chill", "aggressive", "melancholic",
       "energetic", "nostalgic", "euphoric",
     ];
 
-    const genrePool: string[] = [
-      ...GENRE_BASELINE,
-      // Context signals appear twice — double-weight without monopolising.
-      ...(ctx.generationHints.suggestedGenre
-        ? [ctx.generationHints.suggestedGenre, ctx.generationHints.suggestedGenre]
-        : []),
-      ...(ctx.trendingGenres?.slice(0, 4) ?? []),
-    ];
+    // If genre override supplied, use it directly; otherwise pick from pool.
+    const genrePool: string[] = overrides?.genre
+      ? [overrides.genre]
+      : [
+          ...GENRE_BASELINE,
+          ...(ctx.generationHints.suggestedGenre
+            ? [ctx.generationHints.suggestedGenre, ctx.generationHints.suggestedGenre]
+            : []),
+          ...(ctx.trendingGenres?.slice(0, 4) ?? []),
+        ];
 
-    const moodPool: string[] = [
-      ...MOOD_BASELINE,
-      ...(ctx.generationHints.suggestedMood
-        ? [ctx.generationHints.suggestedMood, ctx.generationHints.suggestedMood]
-        : []),
-      ...(ctx.trendingMoods?.slice(0, 4) ?? []),
-    ];
+    const moodPool: string[] = overrides?.mood
+      ? [overrides.mood]
+      : [
+          ...MOOD_BASELINE,
+          ...(ctx.generationHints.suggestedMood
+            ? [ctx.generationHints.suggestedMood, ctx.generationHints.suggestedMood]
+            : []),
+          ...(ctx.trendingMoods?.slice(0, 4) ?? []),
+        ];
 
     const genre = pickRandom(genrePool, TRENDING_GENRE_FALLBACK);
     const mood = pickRandom(moodPool, TRENDING_MOOD_FALLBACK);
@@ -562,6 +614,7 @@ class BeatMoneyLoopService {
       confidence: ctx.confidence,
       hooks: ctx.viralHookPatterns.slice(0, 5),
       productionStyles: ctx.productionStyles.slice(0, 5),
+      requestedKey: overrides?.key,
     };
   }
 
@@ -824,6 +877,7 @@ class BeatMoneyLoopService {
     tempo: number;
     productionStyles: string[];
     hooks: string[];
+    requestedKey?: string;
   }): Promise<{ audioRelUrl: string; audioAbsPath: string; title: string; audioGenBackend: string; musicalKey: string }> {
     const outputDir = path.join(
       process.cwd(),
@@ -833,9 +887,13 @@ class BeatMoneyLoopService {
     );
     await fsPromises.mkdir(outputDir, { recursive: true });
 
-    // Pick a random key each cycle — catalog must span all 24 tonalities.
+    // Use the key from the override/scan if present; otherwise pick at random.
+    // IMPORTANT: MaxCore's audio endpoint always returns C Minor regardless of
+    // what is requested — we must use OUR requestedKey as the canonical key and
+    // not let the mc.mcMusicalKey / mc.mcKey field override it.
     const keys = BeatMoneyLoopService.MUSICAL_KEYS;
-    const requestedKey = keys[Math.floor(Math.random() * keys.length)];
+    const requestedKey =
+      scan.requestedKey || keys[Math.floor(Math.random() * keys.length)];
     const scanWithKey = { ...scan, requestedKey };
 
     const titleAdj =
@@ -853,9 +911,10 @@ class BeatMoneyLoopService {
         const audioAbsPath = path.join(outputDir, filename);
         await fsPromises.writeFile(audioAbsPath, mc.wavBytes);
         const audioRelUrl = `/generated-content/audio/${filename}`;
-        // Prefer real rendered BPM/key from the audio engine over the requested values.
+        // Use requestedKey as canonical — MaxCore always returns "C Minor" for
+        // mcMusicalKey/mcKey, so accepting its value would lock every beat.
         const realBpm = mc.mcBpm ?? scan.tempo;
-        const musicalKey = (mc as any).mcMusicalKey ?? mc.mcKey ?? requestedKey;
+        const musicalKey = requestedKey;
         const keyStr = musicalKey ? ` (${musicalKey})` : "";
         const bpmStr = ` ${realBpm} BPM`;
         const title = `${titleAdj} ${titleGenre} Type Beat${keyStr}${bpmStr} — ${stamp}`;

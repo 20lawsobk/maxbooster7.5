@@ -170,7 +170,10 @@ export function getPdimGapFloor(): number {
 // Fix: initialise each process's gap with a random offset in [0, JITTER_INIT_MS).
 // Workers drift apart within the first AIMD cycle and never re-synchronise because
 // each subsequent 429 backoff also adds a random fraction (see _pdimAdapt429).
-const _PDIM_JITTER_INIT_MS = 1_500; // spread initial gaps over 1.5 s window
+// In single-worker dev there is no thundering herd risk — jitter only matters
+// when multiple workers start simultaneously.  Start dev at the minimum gap so
+// the first ~40s of passive decay aren't wasted recovering from a jitter spike.
+const _PDIM_JITTER_INIT_MS = clusterWorkers <= 1 ? 0 : 1_500;
 let _pdimGapMs =
   _PDIM_GAP_INIT_MS + Math.floor(Math.random() * _PDIM_JITTER_INIT_MS);
 let _pdimQueueDepth = 0; // callers waiting in the chain (not yet executing)
@@ -195,10 +198,14 @@ let _pdimQueueDepth = 0; // callers waiting in the chain (not yet executing)
 //     with worker count.  Dev: 4 lanes × 1 worker × 1000/(4+80) ≈ 47 req/s.
 //     Prod: 2 lanes × 13 workers × 1000/(52+80) ≈ 197 req/s combined.
 //
-// Dev uses 4 lanes because there's only one worker process and the in-process
-// background load is the same.  Prod uses 2 lanes/worker to stay modest per-worker
-// while still gaining 2× throughput per worker over the prior single-lane chain.
-const _PDIM_DIRECT_LANES = clusterWorkers <= 1 ? 4 : 2;
+// Dev uses 8 lanes (increased from 4) because dev background load (BullMQ workers,
+// session store, audit pump, presence, HyperLearning, PlatformAutoFixer) generates
+// 200-210 direct callers simultaneously at startup.  With 4 lanes and cap=48ms
+// the estimate is 204/4×48=2448ms — within 52ms of the fast-fail threshold and
+// occasionally over with bursts to 209.  8 lanes halves the per-lane depth:
+// 209/8×48=1254ms — well clear of the 2500ms threshold with full burst headroom.
+// Prod uses 2 lanes/worker to stay modest per-worker.
+const _PDIM_DIRECT_LANES = clusterWorkers <= 1 ? 8 : 2;
 const _pdimDirectChains: Promise<unknown>[] = Array.from(
   { length: _PDIM_DIRECT_LANES },
   () => Promise.resolve(),
@@ -282,6 +289,24 @@ function _pdimAdapt429(): number {
   );
   _last429At = Date?.now();
   return _pdimGapMs;
+}
+
+/**
+ * On a PDIM timeout (AbortSignal timeout — NOT a 429 rate-limit response):
+ * apply mild backpressure by bumping the gap by 1 floor-unit, but do NOT
+ * set _last429At.  Timeouts mean PDIM is busy/slow; they are NOT rate-limit
+ * signals.  The old behaviour of calling _pdimAdapt429() on every timeout
+ * was setting _last429At every ~5 seconds, which permanently blocked the
+ * passive-decay timer (which requires 5s of 429-quiet to run).  Result: gap
+ * pinned at 2000ms ceiling forever, session store unreachable, auth broken.
+ */
+function _pdimAdaptTimeout(): void {
+  // Nudge the gap up very slightly — just enough to acknowledge backpressure
+  // without permanently disabling passive decay.  The passive timer (0.8×
+  // every 2s, 5s quiet guard) will pull it back to floor within ~30s as long
+  // as no real 429s are arriving.
+  _pdimGapMs = Math.min(_PDIM_GAP_CEIL_MS, _pdimGapMs + _PDIM_GAP_FLOOR_MS);
+  // _last429At is intentionally NOT updated here.
 }
 
 /** Wall-clock timestamp of the most recent 429.  Unlike
@@ -963,8 +988,13 @@ export class PdimRedisClient extends EventEmitter {
         if (!counted && !isTimeout && !isCircuitMsg) {
           cbRecord503();
         } else if (isTimeout) {
-          // Slow PDIM response — increase AIMD gap to apply backpressure.
-          _pdimAdapt429();
+          // Slow PDIM response — apply mild backpressure WITHOUT setting _last429At.
+          // Using _pdimAdapt429() here was the root cause of permanent gap-pinning:
+          // it set _last429At on every timeout, blocking the passive-decay timer that
+          // needs 5s of 429-quiet to run. Gap stayed at 2000ms forever → session store
+          // unreachable → auth broken. _pdimAdaptTimeout() nudges the gap but does NOT
+          // update _last429At so passive decay can still pull the gap back to floor.
+          _pdimAdaptTimeout();
         }
         if (!counted) {
           // Only log errors we haven't already logged inline.
@@ -1259,7 +1289,7 @@ export class PdimRedisClient extends EventEmitter {
         if (!counted && !isTimeout && !isCircuitMsg) {
           cbRecord503();
         } else if (isTimeout) {
-          _pdimAdapt429(); // backpressure: slow = back off
+          _pdimAdaptTimeout(); // backpressure: slow timeout, NOT a 429 — don't set _last429At
         }
         cbHalfOpenFailed();
         throw err;
@@ -1914,9 +1944,12 @@ export function isPdimConfigured(): boolean {
 const DIRECT_PROBE_INTERVAL_MS = 15_000;
 const DIRECT_PROBE_TIMEOUT_MS = 5_000;
 // Timeout for every individual PDIM exec() call.
-// 15 s covers the worst-case BullMQ Lua script redis.call() round-trip
-// under PDIM load (observed RTT ~200ms; 15 s gives 75× headroom).
-const PDIM_EXEC_TIMEOUT_MS = 15_000;
+// Reduced from 15s → 1500ms: when PDIM is congested, the 15s timeout means
+// each timed-out caller holds its lane slot for 15s, giving a drain rate of
+// only ~0.5 calls/s across 8 lanes.  At 1500ms the drain rate is ~5 calls/s,
+// clearing a 950-deep queue in ~3 min instead of ~30 min.  PDIM's normal RTT
+// is 100-300ms, so 1500ms still gives 5-15× headroom for slow responses.
+const PDIM_EXEC_TIMEOUT_MS = 1_500;
 
 let _directProbeTimer: ReturnType<typeof setInterval> | null = null;
 
