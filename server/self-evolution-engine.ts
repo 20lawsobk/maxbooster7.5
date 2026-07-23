@@ -2274,8 +2274,8 @@ export class SelfEvolutionEngine extends EventEmitter {
           upgradeId: upgrade.id,
           changeId: upgrade.changeId,
           category: upgrade.enhancementCategory,
-          title: change.title || upgrade?.changeId,
-          source: change.source || "unknown",
+          title: change?.title || upgrade?.changeId,
+          source: change?.source || "unknown",
           payload: upgrade.enhancementPayload,
         });
 

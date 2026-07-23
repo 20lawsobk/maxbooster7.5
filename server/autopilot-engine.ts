@@ -708,29 +708,29 @@ export class AutopilotEngine extends EventEmitter {
         params.platform.toLowerCase(),
       );
       const variantCount =
-        typeof contentOpt.variantCount === "number"
+        typeof contentOpt?.variantCount === "number"
           ? contentOpt.variantCount
           : 3;
       const includeEmojis =
-        typeof contentOpt.visualPriority === "boolean"
+        typeof contentOpt?.visualPriority === "boolean"
           ? contentOpt.visualPriority
           : true;
       // The remaining content_optimization knobs reshape the hashtags, caption
       // length, and call-to-action of the generated post. Pass them through only
       // when present; absent an override they stay undefined and the generator
       // uses its prior behavior.
-      const hashtagStrategy = contentOpt.hashtagStrategy as
+      const hashtagStrategy = contentOpt?.hashtagStrategy as
         | "trending"
         | "niche"
         | "branded"
         | "balanced"
         | undefined;
-      const captionLength = contentOpt.captionLength as
+      const captionLength = contentOpt?.captionLength as
         | "short"
         | "optimal"
         | "long"
         | undefined;
-      const callToActionStrength = contentOpt.callToActionStrength as
+      const callToActionStrength = contentOpt?.callToActionStrength as
         | "low"
         | "medium"
         | "high"

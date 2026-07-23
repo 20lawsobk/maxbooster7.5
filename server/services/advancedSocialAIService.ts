@@ -1380,7 +1380,7 @@ class AdvancedSocialAIService {
       TONE_PROFILES[request.tone || "casual"] || TONE_PROFILES.casual;
     const audience =
       AUDIENCE_PROFILES[
-        request.targetAudience.toLowerCase().replace(/\s+/g, "_") ||
+        request.targetAudience?.toLowerCase().replace(/\s+/g, "_") ||
           "indie_artists"
       ] || AUDIENCE_PROFILES.indie_artists;
 
@@ -1585,10 +1585,10 @@ class AdvancedSocialAIService {
           .limit(1),
       ]);
       return {
-        brandVoice: brandVoice.voiceProfile,
-        artistName: preferences.artistName || "Artist",
-        genre: preferences.genre,
-        preferences,
+        brandVoice: brandVoice?.voiceProfile ?? null,
+        artistName: preferences?.artistName || "Artist",
+        genre: preferences?.genre,
+        preferences: preferences ?? null,
       };
     } catch (error) {
       const msg = (error as Error).message ?? String(error);
@@ -1903,7 +1903,7 @@ class AdvancedSocialAIService {
 
     const audienceMatch =
       (1 - Math.abs(audience.preferredTone - tone.formality)) * 100;
-    const trendAlignment = request.trendContext.length
+    const trendAlignment = request.trendContext?.length
       ? Math.min(95, 65 + request.trendContext.length * 5)
       : 50;
     const uniqueWords = new Set(words.map((w) => w.replace(/[^a-z]/g, "")))
@@ -2297,7 +2297,7 @@ class AdvancedSocialAIService {
     const secondarySegments = Object.entries(AUDIENCE_PROFILES)
       .filter(
         ([key]) =>
-          key !== request.targetAudience.toLowerCase().replace(/\s+/g, "_"),
+          key !== request.targetAudience?.toLowerCase().replace(/\s+/g, "_"),
       )
       .filter(([_, profile]) => {
         const interestOverlap = profile.interests.some((i) =>

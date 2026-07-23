@@ -6,8 +6,8 @@
  * This prevents unbounded DB scans and negative offset attacks.
  */
 import { describe, it, expect } from "vitest";
-import { readFileSync, existsSync } from "fs";
-import { globSync } from "glob";
+import { readFileSync, readdirSync, statSync } from "fs";
+import { join } from "path";
 
 function capOffset(raw: string | undefined): number {
   return Math.min(Math.max(parseInt(raw ?? "") || 0, 0), 100_000);
@@ -15,6 +15,20 @@ function capOffset(raw: string | undefined): number {
 
 function capLimit(raw: string | undefined, max = 100): number {
   return Math.min(Math.max(parseInt(raw ?? "") || 0, 0), max);
+}
+
+/** Recursively collect all .ts files under a directory. */
+function collectTs(dir: string): string[] {
+  const results: string[] = [];
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) {
+      results.push(...collectTs(full));
+    } else if (entry.endsWith(".ts")) {
+      results.push(full);
+    }
+  }
+  return results;
 }
 
 describe("Offset cap formula", () => {
@@ -66,9 +80,8 @@ describe("Limit cap formula", () => {
 });
 
 describe("Pagination cap pattern is consistently applied in route files", () => {
-  const routeFiles = globSync("server/routes/**/*.ts");
+  const routeFiles = collectTs("server/routes");
   const offsetPattern = /Math\.min\(Math\.max\(parseInt\(/;
-  const rawOffsetPattern = /parseInt\(req\.query\.offset.*\|\|.*0.*\)/;
 
   it("no route file uses a raw parseInt(offset) without capping", () => {
     const violations: string[] = [];

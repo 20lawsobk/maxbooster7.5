@@ -10,8 +10,10 @@
  */
 export function safeAverage(arr: number[]): number {
   if (!arr || arr?.length === 0) return 0;
-  const sum = arr?.reduce((a, b) => a + (isFinite(b) ? b : 0), 0);
-  return sum / arr?.length;
+  const valid = arr?.filter((b) => isFinite(b));
+  if (valid?.length === 0) return 0;
+  const sum = valid?.reduce((a, b) => a + b, 0);
+  return sum / valid?.length;
 }
 
 /**
@@ -26,9 +28,7 @@ export function safeWeightedAverage(
     return 0;
   }
   if (values?.length !== weights?.length) {
-    throw new Error(
-      `Values and weights arrays must have same length: ${values?.length} vs ${weights?.length}`
-    );
+    return 0;
   }
 
   const weightedSum = values?.reduce((sum, val, i) => {

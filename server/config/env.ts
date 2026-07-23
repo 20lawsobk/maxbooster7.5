@@ -45,7 +45,7 @@ const envSchema = z.object({
   REPLIT_OBJECT_STORAGE_BUCKET: z.string().optional(),
 
   // ── Monitoring ────────────────────────────────────────────────────────────
-  SENTRY_DSN: z.string().url().optional(),
+  SENTRY_DSN: z.string().url().optional().catch(undefined),
 
   // ── OAuth ─────────────────────────────────────────────────────────────────
   GOOGLE_CLIENT_ID: z.string().optional(),
@@ -60,7 +60,7 @@ const envSchema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(),
 
   // ── App config ────────────────────────────────────────────────────────────
-  BASE_URL: z.string().url().optional(),
+  BASE_URL: z.string().url().optional().catch(undefined),
   BASE_DOMAIN: z.string().optional(),
   APP_NAME: z.string().default("Max Booster"),
   APP_URL: z.string().optional(),

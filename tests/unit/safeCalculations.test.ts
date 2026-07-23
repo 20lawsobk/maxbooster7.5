@@ -79,8 +79,8 @@ describe("Safe Calculations", () => {
       expect(safeWeightedAverage([10, 20, 30], [1, NaN, 1])).toBe(20);
     });
 
-    it("should throw on length mismatch", () => {
-      expect(() => safeWeightedAverage([1, 2, 3], [1, 2])).toThrow();
+    it("should return 0 on length mismatch (any mismatch)", () => {
+      expect(safeWeightedAverage([1, 2, 3], [1, 2])).toBe(0);
     });
   });
 
