@@ -60,6 +60,7 @@
     "adminDashboard": "Admin Dashboard",
     "adminAutonomy": "Admin Autonomy",
     "adminSecurity": "Admin Security",
+    "contentSampler": "Content Sampler",
     "videoGenerator": "Video Generator"
   },
   "auth": {

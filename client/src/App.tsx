@@ -134,6 +134,7 @@ const ProducerProfilePage = lazy(() => import("@/pages/ProducerProfilePage"));
 const Verification = lazy(() => import("@/pages/Verification"));
 const KYCReview = lazy(() => import("@/pages/admin/KYCReview"));
 const TrainingDashboard = lazy(() => import("@/pages/admin/TrainingDashboard"));
+const ContentSampler = lazy(() => import("@/pages/admin/ContentSampler"));
 const Contracts = lazy(() => import("@/pages/Contracts"));
 const Workspaces = lazy(() => import("@/pages/Workspaces"));
 const Collaborations = lazy(() => import("@/pages/Collaborations"));
@@ -211,6 +212,7 @@ function Router() {
       <Route path="/admin/support" component={SupportDashboard} />
       <Route path="/admin/kyc" component={KYCReview} />
       <Route path="/admin/training" component={TrainingDashboard} />
+      <Route path="/admin/content-sampler" component={ContentSampler} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       <Route path="/admin/beat-money-loop" component={() => <AdminDashboard defaultTab="money-loop" />} />
       <Route path="/admin" component={Admin} />

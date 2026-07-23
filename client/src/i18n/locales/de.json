@@ -38,7 +38,8 @@
     "help": "Hilfe",
     "desktopApp": "Desktop-App",
     "adminPanel": "Admin-Panel",
-    "adminSecurity": "Admin-Sicherheit"
+    "adminSecurity": "Admin-Sicherheit",
+    "contentSampler": "Inhalts-Sampler"
   },
   "auth": {
     "loginTitle": "Anmelden bei Max Booster",

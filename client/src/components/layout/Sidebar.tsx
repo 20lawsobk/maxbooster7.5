@@ -163,6 +163,12 @@ const navItems: NavItem[] = [
     icon: ShieldAlert,
     adminOnly: true,
   },
+  {
+    labelKey: "navigation.contentSampler",
+    path: "/admin/content-sampler",
+    icon: Zap,
+    adminOnly: true,
+  },
 ];
 
 interface SidebarProps {

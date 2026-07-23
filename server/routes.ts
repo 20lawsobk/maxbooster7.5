@@ -6754,6 +6754,11 @@ export async function registerRoutes(
       loader: () => import("./routes/admin/beatMoneyLoop"),
     },
     {
+      path: "/api/admin/content-sampler",
+      name: "adminContentSampler",
+      loader: () => import("./routes/admin/contentSampler"),
+    },
+    {
       path: "/api/audit",
       name: "audit",
       loader: () => import("./routes/audit"),

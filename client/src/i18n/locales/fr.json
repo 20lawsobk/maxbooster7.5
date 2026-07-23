@@ -38,7 +38,8 @@
     "help": "Aide",
     "desktopApp": "Application de Bureau",
     "adminPanel": "Panneau Admin",
-    "adminSecurity": "Sécurité Admin"
+    "adminSecurity": "Sécurité Admin",
+    "contentSampler": "Échantillonneur de Contenu"
   },
   "auth": {
     "loginTitle": "Connexion à Max Booster",

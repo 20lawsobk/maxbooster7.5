@@ -38,7 +38,8 @@
     "help": "ヘルプ",
     "desktopApp": "デスクトップアプリ",
     "adminPanel": "管理パネル",
-    "adminSecurity": "管理セキュリティ"
+    "adminSecurity": "管理セキュリティ",
+    "contentSampler": "コンテンツサンプラー"
   },
   "auth": {
     "loginTitle": "Max Boosterにログイン",

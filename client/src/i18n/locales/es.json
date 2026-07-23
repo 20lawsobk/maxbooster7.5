@@ -38,7 +38,8 @@
     "help": "Ayuda",
     "desktopApp": "Aplicación de Escritorio",
     "adminPanel": "Panel de Administración",
-    "adminSecurity": "Seguridad Admin"
+    "adminSecurity": "Seguridad Admin",
+    "contentSampler": "Muestreador de Contenido"
   },
   "auth": {
     "loginTitle": "Iniciar sesión en Max Booster",
