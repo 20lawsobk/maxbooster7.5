@@ -1,9 +1,9 @@
 #!/bin/bash
+# Post-merge setup — runs automatically after every task merge.
+# Must be idempotent, non-interactive, and fast.
 set -e
 
-echo "=== Post-merge setup ==="
+echo "[post-merge] Installing dependencies..."
+SKIP_POSTINSTALL=1 pnpm install --no-frozen-lockfile 2>&1
 
-echo "Installing dependencies..."
-npm install --no-audit --no-fund --ignore-scripts --legacy-peer-deps 2>&1 | tail -5
-
-echo "=== Done ==="
+echo "[post-merge] Done ✅"
