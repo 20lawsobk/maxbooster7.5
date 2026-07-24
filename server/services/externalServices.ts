@@ -34,7 +34,7 @@ export const socialApiCircuit = new CircuitBreaker({
   failureThreshold: 5,
   resetTimeout: 45000,
   monitorInterval: 5000,
-  timeout: 20000,
+  timeout: 45000,
   successThreshold: 3,
 });
 
@@ -61,7 +61,7 @@ export const instagramCircuit = new CircuitBreaker({
   failureThreshold: 5,
   resetTimeout: 60000,
   monitorInterval: 5000,
-  timeout: 20000,
+  timeout: 45000, // bumped from 20s — media uploads need more time
   successThreshold: 3,
 });
 
@@ -106,7 +106,7 @@ export const threadsCircuit = new CircuitBreaker({
   failureThreshold: 5,
   resetTimeout: 60000,
   monitorInterval: 5000,
-  timeout: 20000,
+  timeout: 45000, // bumped from 20s — consistent with instagram
   successThreshold: 3,
 });
 

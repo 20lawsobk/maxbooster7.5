@@ -40,6 +40,7 @@ import {
   adCampaigns,
   adCreatives,
   users,
+  royaltySplits,
   type BeatMoneyLoopState,
   type BeatMoneyLoopCycle,
 } from "@shared/schema";
@@ -492,6 +493,12 @@ class BeatMoneyLoopService {
       });
       logger.info(
         `[BeatMoneyLoop] ${ad.posted ? "✅" : "⚠️"} Cycle ${cycleId} ${finalStatus} in ${durationMs}ms (ads ${ad.posted ? "posted" : "NOT posted: " + ad.reason}) — next in ${Math.round(nextCadence / 60000)} min`,
+      );
+
+      // Backfill revenue metrics on this cycle immediately so the dashboard
+      // reflects the new beat without waiting for the next scheduler heartbeat.
+      this.analyseRecentCycles().catch((e: Error) =>
+        logger.warn(`[BeatMoneyLoop] analyseRecentCycles after cycle failed: ${e.message}`),
       );
 
       return {
@@ -995,12 +1002,24 @@ class BeatMoneyLoopService {
 
         // Use MaxCore's concept name when available — more evocative and
         // searchable than the generic "Dark Trap Type Beat" format.
-        // Sanitise: strip surrounding quotes, cap at 50 chars.
+        // Sanitise: take first line only (MaxCore sometimes returns multi-paragraph
+        // text with embedded BPM/key metadata), strip quotes, strip any embedded
+        // BPM/key/tempo that would duplicate the title suffix, cap at 50 chars.
         const conceptRaw = mc.concept ?? mc.styleHook ?? "";
         const conceptClean = conceptRaw
           .trim()
-          .replace(/^["'«»]|["'«»]$/g, "")
-          .slice(0, 50);
+          // First line only — MaxCore sometimes returns multi-line paragraphs
+          .split(/\r?\n/)[0]
+          .trim()
+          // Strip surrounding quote characters (ASCII + Unicode)
+          .replace(/^["'«»\u201C\u201D\u2018\u2019]|["'«»\u201C\u201D\u2018\u2019]$/g, "")
+          // Strip embedded "fast tempo", "slow tempo", BPM, key that would duplicate the suffix
+          .replace(/\s*[,(]\s*(?:fast|slow|medium)\s+tempo[^)]*\)?/gi, "")
+          .replace(/\s*[,(]\s*[\d.]+\s*BPM[^)]*\)?/gi, "")
+          .replace(/\s*[,(]\s*[A-G][b#]?\s+(?:major|minor)[^)]*\)?/gi, "")
+          .trim()
+          .slice(0, 50)
+          .trim();
         const title = conceptClean
           ? `${conceptClean.charAt(0).toUpperCase() + conceptClean.slice(1)} — ${titleAdj} ${titleGenre} Type Beat${keyStr}${bpmStr}`
           : `${titleAdj} ${titleGenre} Type Beat${keyStr}${bpmStr} — ${stamp}`;
@@ -1224,6 +1243,33 @@ class BeatMoneyLoopService {
       .returning({ id: beats.id });
 
     const beatId = created.id;
+
+    // Create a royalty_splits record: admin owns 100% of this beat's revenue.
+    // This ensures a "revenue row" exists in the DB immediately after listing —
+    // the marketplace payment flow uses royalty_splits to route earnings.
+    try {
+      const adminEmail = process.env.ADMIN_EMAIL || "admin@platform.com";
+      await db.insert(royaltySplits).values({
+        releaseId: beatId,            // repurpose releaseId as beatId (varchar, no FK)
+        userId: adminId,
+        collaboratorName: "Platform Admin",
+        collaboratorEmail: adminEmail,
+        role: "producer",
+        percentage: 100,
+        status: "active",
+        metadata: {
+          source: "beat-money-loop",
+          beatId,
+          genre: args.scan.genre,
+          mood: args.scan.mood,
+          listingDate: new Date().toISOString(),
+        } as Record<string, unknown>,
+      });
+      logger.info(`[BeatMoneyLoop] Royalty split created for beat ${beatId} (admin 100%)`);
+    } catch (splitErr) {
+      // Non-fatal — beat is still listed even without the royalty record
+      logger.warn({ err: splitErr, beatId }, "[BeatMoneyLoop] Royalty split creation failed (non-fatal)");
+    }
 
     // Bridge the beat into the marketplace `listings` table. The entire
     // marketplace (producer list, beats feed, producer profile page) reads
