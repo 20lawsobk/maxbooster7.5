@@ -1964,12 +1964,13 @@ export function isPdimConfigured(): boolean {
 const DIRECT_PROBE_INTERVAL_MS = 15_000;
 const DIRECT_PROBE_TIMEOUT_MS = 5_000;
 // Timeout for every individual PDIM exec() call.
-// Reduced from 15s → 1500ms: when PDIM is congested, the 15s timeout means
-// each timed-out caller holds its lane slot for 15s, giving a drain rate of
-// only ~0.5 calls/s across 8 lanes.  At 1500ms the drain rate is ~5 calls/s,
-// clearing a 950-deep queue in ~3 min instead of ~30 min.  PDIM's normal RTT
-// is 100-300ms, so 1500ms still gives 5-15× headroom for slow responses.
-const PDIM_EXEC_TIMEOUT_MS = 1_500;
+// History: originally 15s → reduced to 1500ms to improve queue drain rate
+// when PDIM was congested.  Raised to 4000ms because PDIM is a permanently
+// running service whose RTT occasionally spikes to ~3–4 s under write load;
+// 1500ms caused spurious SET/SETEX timeouts during those spikes.  4000ms
+// still keeps the per-lane drain rate at ~2 calls/s (vs 0.5 at 15s) and
+// gives real latency spikes a chance to resolve before the timeout fires.
+const PDIM_EXEC_TIMEOUT_MS = 4_000;
 
 let _directProbeTimer: ReturnType<typeof setInterval> | null = null;
 

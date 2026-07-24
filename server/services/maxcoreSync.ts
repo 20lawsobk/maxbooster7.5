@@ -88,7 +88,10 @@ async function fetchMaxCore<T = any>(
       );
       return { ok: false, data: null, status: r.status };
     }
-  } catch {
+  } catch (networkErr) {
+    logger.debug(
+      `[MaxCoreSync] ${endpoint} network error: ${(networkErr as Error).message ?? String(networkErr)}`,
+    );
     return { ok: false, data: null };
   }
 }

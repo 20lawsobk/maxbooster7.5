@@ -12,6 +12,7 @@ import { syncPlatformData } from "../services/socialSyncService";
 import { requireAuth, requireAuthOnly } from "../middleware/auth.js";
 import { aiRateLimiter } from "../middleware/rateLimiter.js";
 import { AIUnavailableError } from "../lib/aiSource.js";
+import { MaxCoreAIClient } from "../services/maxcoreClient.js";
 import { notificationService } from "../services/notificationService.js";
 import {
   audioUpload,
@@ -4172,35 +4173,27 @@ router.post(
       const resolvedTone = String(tone || "energetic").toLowerCase();
 
       // ── Try MaxCore /api/generate/image first ────────────────────────────
+      // Uses MaxCoreAIClient so the bulkhead, circuit breaker, and auth
+      // centralization all apply (avoids the manual-fetch bypass pattern).
       let imageUrl: string | null = null;
       try {
-        const mcBase = (process.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app").replace(/\/+$/, "");
-        const mcKey = process.env.AI_SERVER_KEY || "";
-        const imgRes = await fetch(`${mcBase}/api/generate/image`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(mcKey ? { Authorization: `Bearer ${mcKey}` } : {}),
-          },
-          body: JSON.stringify({
-            prompt: enrichedTopic || topic,
-            style: resolvedTone,
-            platform: resolvedPlatform,
-            genre: genre || "",
-          }),
-          signal: AbortSignal.timeout(60_000), // 60s — MaxCore image gen can take up to 45s on cold start
+        type McImgResp = { url?: string; image_url?: string; outputs?: { url?: string }[] };
+        const imgData = await MaxCoreAIClient?.infer<McImgResp>("/api/generate/image", {
+          prompt: enrichedTopic || topic,
+          style: resolvedTone,
+          platform: resolvedPlatform,
+          genre: genre || "",
         });
-        if (imgRes.ok) {
-          const imgData = (await imgRes.json()) as { url?: string; image_url?: string; outputs?: { url?: string }[] };
-          const raw = imgData.url ?? imgData.image_url ?? imgData.outputs?.[0]?.url ?? null;
-          // MaxCore returns relative paths like /uploads/images/img_xxx.png —
-          // make them absolute so the browser can load them.
-          if (raw) {
-            imageUrl = /^https?:\/\//i.test(raw) ? raw : `${mcBase}${raw.startsWith("/") ? "" : "/"}${raw}`;
-          }
+        const raw = imgData?.url ?? imgData?.image_url ?? imgData?.outputs?.[0]?.url ?? null;
+        // MaxCore may return relative paths like /uploads/images/img_xxx.png —
+        // make them absolute so the browser can load them.
+        if (raw) {
+          const mcBase = (process.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app").replace(/\/+$/, "");
+          imageUrl = /^https?:\/\//i.test(raw) ? raw : `${mcBase}${raw.startsWith("/") ? "" : "/"}${raw}`;
         }
-      } catch {
-        // MaxCore unavailable — fall through to visual spec
+      } catch (imgErr) {
+        if (imgErr instanceof AIUnavailableError) throw imgErr;
+        // Any other error — fall through to visual spec
       }
 
       // ── Build visual spec (always returned as UI fallback) ───────────────

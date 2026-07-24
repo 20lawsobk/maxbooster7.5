@@ -211,15 +211,22 @@ class BeatMoneyLoopService {
         })
         .where(
           and(
-            eq(beatMoneyLoopCycles.status, "generating"),
+            // All non-terminal states — a restart can interrupt a cycle at any
+            // stage, not just 'generating'.
+            inArray(beatMoneyLoopCycles.status, [
+              "pending",
+              "generating",
+              "uploading",
+              "advertising",
+            ]),
             // Only mark cycles that started before this server session.
             sql`${beatMoneyLoopCycles.startedAt} < ${cutoff}`,
           ),
         )
-        .returning({ id: beatMoneyLoopCycles.id });
+        .returning({ id: beatMoneyLoopCycles.id, status: beatMoneyLoopCycles.status });
       if (orphans.length > 0) {
         logger.warn(
-          `[BeatMoneyLoop] Recovered ${orphans.length} orphaned cycle(s) stuck in 'generating': ${orphans.map((r) => r.id).join(", ")}`,
+          `[BeatMoneyLoop] Recovered ${orphans.length} orphaned cycle(s): ${orphans.map((r) => `${r.id}(${r.status})`).join(", ")}`,
         );
         // Also reset the in-flight lock so the loop can schedule normally.
         this._runningCycle = false;
@@ -550,8 +557,8 @@ class BeatMoneyLoopService {
         mood: overrides.mood,
         tempo: baseTemp + tempoJitter,
         confidence: 1,
-        hooks: ctx.viralHookPatterns.slice(0, 5),
-        productionStyles: ctx.productionStyles.slice(0, 5),
+        hooks: (ctx.viralHookPatterns ?? []).slice(0, 5),
+        productionStyles: (ctx.productionStyles ?? []).slice(0, 5),
         requestedKey: overrides.key,
       };
     }
@@ -1155,10 +1162,50 @@ class BeatMoneyLoopService {
         distributedCache.invalidatePattern("marketplace:beats:*").catch(() => {});
       }
     } catch (err) {
-      logger.error(
+      logger.warn(
         { err, beatId },
-        "[BeatMoneyLoop] Failed to bridge beat into marketplace listings (beat created; listing missing — will self-heal on next backfill) —",
+        "[BeatMoneyLoop] Listings insert failed — retrying in 2 s…",
       );
+      // One-shot retry: transient DB connectivity blips should resolve quickly.
+      await new Promise((r) => setTimeout(r, 2_000));
+      try {
+        const existing2 = await db
+          .select({ id: listings.id })
+          .from(listings)
+          .where(sql`metadata->>'sourceBeatId' = ${beatId}`)
+          .limit(1);
+        if (existing2.length === 0) {
+          await db.insert(listings).values({
+            userId: adminId,
+            title: args.title,
+            description: this._buildBeatDescription(args.scan, args.price),
+            priceCents: Math.round(args.price * 100),
+            category: args.scan.genre,
+            audioUrl,
+            artworkUrl,
+            isPublished: true,
+            metadata: {
+              genre: args.scan.genre,
+              mood: args.scan.mood,
+              bpm: args.scan.tempo,
+              key: keyDisplay,
+              tempo: args.scan.tempo,
+              licenseType: "basic",
+              tags,
+              sourceBeatId: beatId,
+            },
+          });
+          distributedCache.invalidatePattern("marketplace:beats:*").catch(() => {});
+          logger.info(
+            `[BeatMoneyLoop] Listings retry succeeded for beat ${beatId}`,
+          );
+        }
+      } catch (retryErr) {
+        logger.error(
+          { err: retryErr, beatId },
+          "[BeatMoneyLoop] Listings retry also failed — beat created; listing missing (self-heals on next backfill)",
+        );
+      }
     }
 
     return { beatId, audioUrl };
@@ -1288,8 +1335,25 @@ class BeatMoneyLoopService {
       //    video render failed — social platforms reject raw WAV audio, so
       //    dispatching would produce zero successful posts.
       if (videoRenderFailed) {
+        // Mark the campaign and creative as paused so they don't show up as
+        // "active" campaigns with 0 posts — they were never dispatched.
+        try {
+          await db
+            .update(adCampaigns)
+            .set({ status: "paused" })
+            .where(eq(adCampaigns.id, campaign.id));
+          await db
+            .update(adCreatives)
+            .set({ status: "draft" })
+            .where(eq(adCreatives.id, creative.id));
+        } catch (cleanupErr) {
+          logger.warn(
+            { err: cleanupErr },
+            "[BeatMoneyLoop] Could not mark failed-media campaign/creative as paused",
+          );
+        }
         logger.warn(
-          `[BeatMoneyLoop] campaign ${campaign.id} created but dispatch skipped — no postable video media`,
+          `[BeatMoneyLoop] campaign ${campaign.id} paused — video render failed, no postable media`,
         );
         return {
           campaignId: campaign.id,

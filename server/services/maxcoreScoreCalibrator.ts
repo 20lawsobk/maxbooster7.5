@@ -137,16 +137,18 @@ export async function runCalibration(): Promise<void> {
     }
 
     _lastCalibrated = Date.now();
+    const thresholds = _cachedThresholds ?? DEFAULT_THRESHOLDS;
+    const weights = _cachedWeights ?? DEFAULT_WEIGHTS;
     logger.info(
       `[ScoreCalibrator] Calibration complete. ` +
-        `Gate=${_cachedThresholds.gate ?? DEFAULT_THRESHOLDS.gate} ` +
-        `Floor=${_cachedThresholds.floor ?? DEFAULT_THRESHOLDS.floor} ` +
-        `Top weights: engagement=${(_cachedWeights.engagement ?? DEFAULT_WEIGHTS.engagement).toFixed(3)}, ` +
-        `hook=${(_cachedWeights.hookStrength ?? DEFAULT_WEIGHTS.hookStrength).toFixed(3)}`,
+        `Gate=${thresholds.gate ?? DEFAULT_THRESHOLDS.gate} ` +
+        `Floor=${thresholds.floor ?? DEFAULT_THRESHOLDS.floor} ` +
+        `Top weights: engagement=${(weights.engagement ?? DEFAULT_WEIGHTS.engagement).toFixed(3)}, ` +
+        `hook=${(weights.hookStrength ?? DEFAULT_WEIGHTS.hookStrength).toFixed(3)}`,
     );
   } catch (err) {
     logger.warn(
-      `[ScoreCalibrator] Calibration error: ${err.message} — retaining previous values`,
+      `[ScoreCalibrator] Calibration error: ${(err as Error).message ?? String(err)} — retaining previous values`,
     );
   } finally {
     _calibrating = false;
@@ -248,7 +250,7 @@ async function buildPerformanceSummary(): Promise<PerformanceSummary | null> {
       percentileP90: p90,
     };
   } catch (err) {
-    logger.debug(`[ScoreCalibrator] DB query error: ${err.message}`);
+    logger.debug(`[ScoreCalibrator] DB query error: ${(err as Error).message ?? String(err)}`);
     return null;
   }
 }
@@ -549,7 +551,7 @@ async function fetchMaxCoreCalibration(
     // Thrown error from Promise.all (network failure, DNS error, etc.) — this
     // is the ONLY case where MaxCore is genuinely unreachable.
     logger.info(
-      `[ScoreCalibrator] MaxCore calibration fetch failed: ${err.message}`,
+      `[ScoreCalibrator] MaxCore calibration fetch failed: ${(err as Error).message ?? String(err)}`,
     );
     return { calibration: null, reachable: false };
   }
