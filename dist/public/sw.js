@@ -31,13 +31,20 @@ const IS_DEV =
   self.location.hostname.endsWith(".replit.dev") ||
   self.location.hostname.endsWith(".picard.replit.dev");
 
-const CACHE_VER = "v10";
+const CACHE_VER = "v11";
 const STATIC_CACHE = "max-booster-static-" + CACHE_VER;
 const DYNAMIC_CACHE = "max-booster-dynamic-" + CACHE_VER;
 const API_CACHE = "max-booster-api-" + CACHE_VER;
 const SHELL_CACHE = "max-booster-shell-" + CACHE_VER;
 
-const STATIC_ASSETS = ["/manifest.json", "/offline.html", "/favicon.png"];
+const STATIC_ASSETS = [
+  "/manifest.json",
+  "/offline.html",
+  "/favicon.png",
+  "/favicon.svg",
+  "/favicon-32.png",
+  "/logo.png",
+];
 
 const API_CACHE_ENDPOINTS = [
   "/api/analytics",

@@ -93,6 +93,9 @@ router?.post(
         confidence: result.confidence,
       });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
       logger.warn({ err: error }, "Content generation route error:");
       res.status(500).json({ error: "Failed to generate content" });
     }
@@ -185,6 +188,9 @@ router?.post(
         confidence: result.confidence,
       });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
       logger.warn({ err: error }, "Recommendations route error:");
       res.status(500).json({ error: "Failed to get recommendations" });
     }
@@ -434,6 +440,9 @@ router?.post("/forecast", requireAuth, async (req: Request, res: Response) => {
       confidence: result.confidence,
     });
   } catch (error) {
+    if (error instanceof AIUnavailableError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     logger.warn({ err: error }, "Forecast route error:");
     res.status(500).json({ error: "Failed to generate forecast" });
   }
@@ -495,6 +504,9 @@ router?.post(
         data: { hashtags },
       });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
       logger.warn({ err: error }, "Hashtag generation route error:");
       res.status(500).json({ error: "Failed to generate hashtags" });
     }
@@ -574,6 +586,9 @@ router?.get("/trends", requireAuth, async (req: Request, res: Response) => {
       data: trends,
     });
   } catch (error) {
+    if (error instanceof AIUnavailableError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     logger.warn({ err: error }, "Trends detection route error:");
     res.status(500).json({ error: "Failed to detect trends" });
   }
@@ -605,6 +620,9 @@ router?.post(
         data: adaptedContent,
       });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
       logger.warn({ err: error }, "Content adaptation route error:");
       res.status(500).json({ error: "Failed to adapt content" });
     }
@@ -636,6 +654,9 @@ router?.get("/models", requireAuth, async (req: Request, res: Response) => {
       data: models,
     });
   } catch (error) {
+    if (error instanceof AIUnavailableError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     logger.warn({ err: error }, "Get models route error:");
     res.status(500).json({ error: "Failed to get registered models" });
   }
@@ -668,6 +689,9 @@ router?.get(
         },
       });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
       logger.warn({ err: error }, "Get model performance route error:");
       res.status(500).json({ error: "Failed to get model performance" });
     }
@@ -683,6 +707,9 @@ router?.get("/stats", requireAuth, async (_req: Request, res: Response) => {
       data: stats,
     });
   } catch (error) {
+    if (error instanceof AIUnavailableError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     logger.warn({ err: error }, "Get AI stats route error:");
     res.status(500).json({ error: "Failed to get AI stats" });
   }
@@ -719,6 +746,9 @@ router?.post(
         data: prediction,
       });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
       logger.warn({ err: error }, "Analytics prediction route error:");
       res.status(500).json({ error: "Failed to predict analytics metric" });
     }
@@ -734,6 +764,9 @@ router?.get("/insights", requireAuth, async (_req: Request, res: Response) => {
       data: insights,
     });
   } catch (error) {
+    if (error instanceof AIUnavailableError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     logger.warn({ err: error }, "Generate insights route error:");
     res.status(500).json({ error: "Failed to generate insights" });
   }
@@ -748,6 +781,9 @@ router?.get("/anomalies", requireAuth, async (_req: Request, res: Response) => {
       data: anomalies,
     });
   } catch (error) {
+    if (error instanceof AIUnavailableError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     logger.warn({ err: error }, "Detect anomalies route error:");
     res.status(500).json({ error: "Failed to detect anomalies" });
   }
@@ -765,6 +801,9 @@ router?.post(
         data: prediction,
       });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
       logger.warn({ err: error }, "Churn prediction route error:");
       res.status(500).json({ error: "Failed to predict churn" });
     }
@@ -787,6 +826,9 @@ router?.post(
         data: forecast,
       });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
       logger.warn({ err: error }, "Revenue forecast route error:");
       res.status(500).json({ error: "Failed to forecast revenue" });
     }
@@ -827,6 +869,9 @@ router?.post(
         message: "Personal Ad Network optimization complete",
       });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
       logger.warn({ err: error }, "Organic optimization route error:");
       res.status(500).json({ error: "Failed to optimize organic growth" });
     }
@@ -868,6 +913,9 @@ router?.post(
         message: "Organic ROI calculated - see equivalent ad spend savings",
       });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
       logger.warn({ err: error }, "Organic ROI route error:");
       res.status(500).json({ error: "Failed to calculate organic ROI" });
     }
@@ -905,6 +953,9 @@ router?.post(
         message: "Optimal organic posting schedule generated",
       });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
       logger.warn({ err: error }, "Organic schedule route error:");
       res.status(500).json({ error: "Failed to generate organic schedule" });
     }
@@ -925,6 +976,9 @@ router?.get(
         message: "Personal Ad Network analysis complete",
       });
     } catch (error) {
+      if (error instanceof AIUnavailableError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
       logger.warn({ err: error }, "Network analysis route error:");
       res.status(500).json({ error: "Failed to analyze personal ad network" });
     }
