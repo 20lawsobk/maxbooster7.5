@@ -2,14 +2,16 @@
  * Content Post-Processor
  *
  * Cleans MaxCore content generation output before any caption is stored or
- * posted. Fixes five recurring quality defects observed across all platforms:
+ * posted. Fixes six recurring quality defects observed across all platforms:
  *
  *  1. Audience-segment metadata leaking into body copy ("for Gen-Z (16-24)")
  *  2. Garbage filler lines ("Spotify. Spotify.", "Facebook. Facebook.")
  *  3. Broken hashtags (raw topic string jammed into a # slot with em-dashes,
  *     commas, parens, or spaces) replaced with genre-specific discovery tags
- *  4. Stale hook templates recycled across platforms rotated out
+ *  4. Stale hook templates recycled across platforms rotated out and replaced
+ *     with fresh beat-specific hooks from a mood-indexed pool
  *  5. Platform-mismatched CTAs overridden with platform-appropriate language
+ *  6. Generic audience-metadata phrases stripped from body copy
  *
  * All functions are pure and side-effect free — safe to call anywhere.
  */
@@ -55,24 +57,28 @@ function killFillerLines(text: string): string {
 
 /** Genre → beat-market discovery hashtags. Keyed by lowercase, no hyphens. */
 const GENRE_HASHTAGS: Record<string, string[]> = {
-  trap:       ["#trapbeats", "#trapbeats2026", "#typebeat"],
-  drill:      ["#drillbeats", "#ukdrill", "#typebeat"],
-  rnb:        ["#rnbbeats", "#rnbtypebeat", "#smoothbeats"],
-  "r&b":      ["#rnbbeats", "#rnbtypebeat", "#smoothbeats"],
-  afrobeats:  ["#afrobeatstypebeat", "#afropop", "#afrobeatsnew"],
-  dancehall:  ["#dancehallbeats", "#afropop", "#typebeat"],
-  hiphop:     ["#hiphopbeats", "#hiphoptypebeat", "#beatsforsale"],
-  "hip-hop":  ["#hiphopbeats", "#hiphoptypebeat", "#beatsforsale"],
-  pop:        ["#popbeats", "#poptypebeat", "#beatsforsale"],
-  indie:      ["#indiebeats", "#alternativebeats", "#typebeat"],
-  lo_fi:      ["#lofiberats", "#chillbeats", "#studybeats"],
-  lofi:       ["#lofiberats", "#chillbeats", "#studybeats"],
-  jazz:       ["#jazzbeats", "#neosoulbeats", "#typebeat"],
-  reggaeton:  ["#reggaetonbeats", "#latinbeats", "#typebeat"],
+  trap:       ["#trapbeats", "#traptype", "#808trap", "#darktrapsound"],
+  drill:      ["#drillbeats", "#ukdrill", "#brooklyndrill", "#drilltype"],
+  rnb:        ["#rnbbeats", "#rnbtypebeat", "#neosoulbeats", "#smoothrnb"],
+  "r&b":      ["#rnbbeats", "#rnbtypebeat", "#neosoulbeats", "#smoothrnb"],
+  afrobeats:  ["#afrobeatstypebeat", "#afropop", "#afrobeatsnew", "#afrotrap"],
+  dancehall:  ["#dancehallbeats", "#afropop", "#riddimbeats", "#caribbeanbeats"],
+  hiphop:     ["#hiphopbeats", "#hiphoptypebeat", "#boombaptybeats", "#rapbeats"],
+  "hip-hop":  ["#hiphopbeats", "#hiphoptypebeat", "#boombaptybeats", "#rapbeats"],
+  pop:        ["#popbeats", "#poptypebeat", "#popproducer", "#chartreadybeats"],
+  indie:      ["#indiebeats", "#alternativebeats", "#indieproducer", "#indietype"],
+  lo_fi:      ["#lofiberats", "#chillbeats", "#studybeats", "#lofihiphop"],
+  lofi:       ["#lofiberats", "#chillbeats", "#studybeats", "#lofihiphop"],
+  jazz:       ["#jazzbeats", "#neosoulbeats", "#jazztype", "#smoothjazz"],
+  reggaeton:  ["#reggaetonbeats", "#latinbeats", "#latintype", "#urbanlatino"],
+  amapiano:   ["#amapiano", "#amapianobeats", "#southafricanbeats", "#logbeats"],
+  phonk:      ["#phonkbeats", "#phonktype", "#darkphonk", "#driftphonk"],
+  cloud:      ["#cloudrap", "#cloudbeats", "#melodictrap", "#sadtrap"],
+  jersey:     ["#jerseyclub", "#clubbeats", "#clubtype", "#dancebeats"],
 };
 
 /** Always appended (unless LinkedIn) for beat-market discoverability. */
-const UNIVERSAL_BEAT_TAGS = ["#beatsforsale", "#typebeat"];
+const UNIVERSAL_BEAT_TAGS = ["#beatsforsale", "#typebeat", "#producerlife"];
 
 /** Professional tags for LinkedIn — no beat-market discovery language. */
 const LINKEDIN_TAGS = [
@@ -85,8 +91,10 @@ const LINKEDIN_TAGS = [
 /** A hashtag is "broken" if it contains characters that platforms won't parse. */
 function isBrokenHashtag(tag: string): boolean {
   const stripped = tag.startsWith("#") ? tag.slice(1) : tag;
-  // em-dash, comma, period, parens, brackets, or any whitespace → broken
-  return /[\s—\-–,.()\[\]{}]/.test(stripped) || stripped.length > 50;
+  // em-dash, regular hyphen, en-dash, comma, period, parens, brackets,
+  // or any whitespace → broken. Also reject suspiciously long strings
+  // (MaxCore sometimes jams the full topic into one hashtag slot).
+  return /[\s\u2014\-\u2013,.()\[\]{}]/.test(stripped) || stripped.length > 40;
 }
 
 /**
@@ -106,7 +114,7 @@ export function normalizeHashtags(
   const valid = tags.filter((t) => !isBrokenHashtag(t));
 
   // Resolve genre key — strip hyphens and spaces for lookup
-  const genreKey = genre.toLowerCase().replace(/[\s-]/g, "");
+  const genreKey = genre.toLowerCase().replace(/[\s_-]/g, "");
   const genreTags =
     GENRE_HASHTAGS[genre.toLowerCase()] ||
     GENRE_HASHTAGS[genreKey] ||
@@ -118,18 +126,119 @@ export function normalizeHashtags(
   );
 }
 
-// ── Fix 4: Rotate stale hook templates ──────────────────────────────────────
+// ── Fix 4: Replace stale hook templates ─────────────────────────────────────
 
-/** Hook prefixes MaxCore recycles at high volume. */
+/** Hook prefixes MaxCore recycles at high volume. Case-insensitive prefix match. */
 const STALE_HOOK_PREFIXES = [
+  // Awareness-layer templates observed in the wild (update as new ones appear)
+  "exclusive: playlist editors are watching",
+  "this is what the viral algorithm wants right now",
+  "don't scroll —",
+  "don't scroll—",
   "what the artist was really making this whole time",
   "the secret the artist kept for six months just dropped",
   "what the producer was really making this whole time",
+  "this is what you've been waiting for",
+  "the algorithm is finally pushing",
+  "the beat that's been on repeat in my studio",
+  "drop everything and listen",
 ];
 
 function isStaleHook(text: string): boolean {
-  const lower = text.toLowerCase().slice(0, 80);
+  const lower = text.toLowerCase().slice(0, 100);
   return STALE_HOOK_PREFIXES.some((p) => lower.startsWith(p));
+}
+
+/**
+ * Fresh, mood-indexed hooks to substitute when MaxCore returns a stale
+ * template. Each entry is a ready-to-post first line — no placeholders.
+ */
+const FRESH_BEAT_HOOKS: Record<string, string[]> = {
+  dark: [
+    "This one hits different at 2AM. 🌑 Turn it up.",
+    "Dark energy. No skips. 808s that shake the room. 🔥",
+    "The type of beat that turns a verse into a moment. 🎧",
+    "Built for artists who paint pictures with their words. 🖤",
+    "Some beats don't ask for attention — they demand it.",
+  ],
+  aggressive: [
+    "No filler. No fluff. Just bars and 808s. 🔥",
+    "This beat doesn't wait for permission — neither should you.",
+    "Built for artists who mean every single word. 🎧",
+    "Hard-hitting production made for records that leave marks.",
+    "The drop is doing work before the first bar. 💥",
+  ],
+  melancholy: [
+    "The type of beat that makes you write your best verse. 🎧",
+    "Some beats hit different when you've got something to say. 💙",
+    "Emotion-first production. Say what needs to be said.",
+    "This one was built for the records people keep for years.",
+    "Not every beat needs to be loud. Some just need to be true.",
+  ],
+  empowering: [
+    "An anthem-grade beat for artists who make records that move rooms. 🔥",
+    "Built for the come-up era. This one's for the ones on the rise. 💪",
+    "Production that feels like a win before you write the first word.",
+    "The type of instrumental that makes you close your eyes and just go.",
+    "This beat's been waiting for someone to say something real over it.",
+  ],
+  chill: [
+    "Late-night energy. Something smooth for the real ones. 🌙",
+    "Flow-ready production that gives artists room to breathe and say something.",
+    "Not everything needs to be loud. This one hits quiet and hard. 🎧",
+    "Laid-back but intentional — the kind of beat that holds a whole verse.",
+    "Perfect tempo for the introspective record you've been sitting on.",
+  ],
+  upbeat: [
+    "Feel-good and infectious — the kind of record listeners play twice. 🔥",
+    "High energy from the jump. This one was built for playlists and moments.",
+    "You'll have the hook before the first loop ends. Trust. 🎶",
+    "The production is doing the heavy lifting — just bring the words.",
+    "This beat has 'I heard it and had to write something' written all over it.",
+  ],
+  mysterious: [
+    "Dark, layered, and impossible to place. The perfect canvas. 🎧",
+    "The kind of beat that gives artists total creative freedom. 🌑",
+    "Atmosphere-first production with a hook that lingers.",
+    "This one creates space — and space is where the best bars come from.",
+    "Intrigue before the first word. That's the goal. 🔥",
+  ],
+  euphoric: [
+    "Euphoric energy that lifts the room — built for moments that matter. ✨",
+    "This one was made for the records people remember exactly where they were. 🔥",
+    "Production at this level makes the verse write itself.",
+    "Feel it in your chest from the first bar. That's the standard. 🎧",
+    "The type of instrumental that makes the room go quiet and then loud.",
+  ],
+  driven: [
+    "High-momentum production that demands a verse with something to prove. 🔥",
+    "Built for artists in their bag. The energy is already there — use it.",
+    "This beat has urgency built into every layer. No slowing down.",
+    "The type of instrumental that makes you want to run through a wall. 💪",
+    "Relentless tempo. Relentless production. No excuses for a weak verse.",
+  ],
+};
+
+/** Fallback hooks when mood doesn't match any pool. */
+const DEFAULT_FRESH_HOOKS = [
+  "The marketplace just got a new drop — and it goes. 🔥",
+  "License-ready production built for artists who take their craft seriously. 🎧",
+  "This one's been sitting in the vault long enough. Available now.",
+  "Built for artists who show up and deliver. The beat will match that energy.",
+  "New drop. Real production. Available for immediate licensing. 🎧",
+];
+
+/**
+ * Pick a random fresh hook from the mood pool. Seeded by title length so
+ * successive calls with different titles almost always return different lines.
+ */
+function freshHook(mood: string, title: string): string {
+  const pool =
+    FRESH_BEAT_HOOKS[mood.toLowerCase()] ?? DEFAULT_FRESH_HOOKS;
+  const seed = (title?.length ?? 0) % pool.length;
+  // Shift by a random offset so repeated calls vary even with the same title
+  const idx = (seed + Math.floor(Math.random() * pool.length)) % pool.length;
+  return pool[idx];
 }
 
 /**
@@ -156,15 +265,36 @@ export function selectBestVariant<
 
 const WEAK_CTA_RE = /^[a-z\s]{0,20}$/i; // no verb, no emoji, very short
 
+/** Beat-sale CTAs — rotated so posts don't all end the same way. */
+const BEAT_SALE_CTAS = [
+  "License this beat — link in bio 🔗",
+  "Available now — link in bio 🎧",
+  "Get the license — link in bio 💰",
+  "Grab the lease — link in bio 🔥",
+  "License available now — link in bio",
+];
+
+/** Generic non-conversion CTAs MaxCore emits that need replacing for beat posts. */
+const GENERIC_CTA_RE = /^(support the artist|follow for more|drop a like|react|like and share|share this post|check it out|listen now|stream now|click the link)$/i;
+
 /**
  * Override CTAs that are wrong for a given platform.
+ * - instagram/tiktok/threads beat context: generic → direct beat-licensing ask
  * - twitter/x: bare category labels → emoji engagement ask
  * - linkedin:  "link in bio" / emoji reaction asks → professional alternatives
  * - tiktok:    "link in bio" → "link in profile"
  */
-export function fixPlatformCta(cta: string, platform: string): string {
+export function fixPlatformCta(cta: string, platform: string, isBeatPost = false): string {
   if (!cta) return cta;
   const pl = platform.toLowerCase();
+
+  // For beat-sale posts: replace any generic non-conversion CTA on visual platforms
+  if (isBeatPost && (pl === "instagram" || pl === "tiktok" || pl === "threads" || pl === "facebook")) {
+    if (GENERIC_CTA_RE.test(cta.trim()) || (cta.length < 30 && WEAK_CTA_RE.test(cta))) {
+      const idx = Math.floor(Math.random() * BEAT_SALE_CTAS.length);
+      return BEAT_SALE_CTAS[idx];
+    }
+  }
 
   if (pl === "twitter" || pl === "x") {
     if (
@@ -203,6 +333,12 @@ export interface CleanContentArgs {
   hashtags: string[];
   genre: string;
   platform: string;
+  /** Beat mood — used to substitute fresh hooks when MaxCore returns a stale template */
+  mood?: string;
+  /** Beat title — used as a seed for hook variation */
+  title?: string;
+  /** When true, generic CTAs are replaced with direct beat-licensing language */
+  isBeatPost?: boolean;
 }
 
 export interface CleanContentResult {
@@ -213,15 +349,22 @@ export interface CleanContentResult {
 }
 
 /**
- * Apply all five fixes to a MaxCore content response in one call.
+ * Apply all six fixes to a MaxCore content response in one call.
  * Safe to call on already-clean content — functions are idempotent.
  */
 export function cleanMaxCoreContent(
   args: CleanContentArgs,
 ): CleanContentResult {
   const body = killFillerLines(stripAudienceMetadata(args.body || ""));
-  const hook = args.hook || "";
-  const cta = fixPlatformCta(args.cta || "", args.platform);
+
+  // Replace stale hooks with mood-matched originals so every beat caption
+  // has a unique, conversion-optimised opening line.
+  const rawHook = args.hook || "";
+  const hook = isStaleHook(rawHook)
+    ? freshHook(args.mood || "dark", args.title || "")
+    : rawHook;
+
+  const cta = fixPlatformCta(args.cta || "", args.platform, args.isBeatPost ?? false);
   const hashtags = normalizeHashtags(
     args.hashtags || [],
     args.genre || "hip-hop",

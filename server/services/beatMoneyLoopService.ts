@@ -385,7 +385,38 @@ class BeatMoneyLoopService {
         `[BeatMoneyLoop] ${cycleId} scan: genre=${scan.genre} mood=${scan.mood} tempo=${scan.tempo} conf=${scan.confidence.toFixed(2)}`,
       );
 
-      // 2. GENERATE
+      // 2a. MaxCore pre-warm — if MaxCore is sleeping, wait up to 90 s for it
+      //     to wake before attempting audio generation.  A cold /generate/audio
+      //     call against a sleeping MaxCore returns the Replit "not live yet" 404
+      //     and fails the whole cycle.  A single lightweight GET is enough to
+      //     trigger the wake; subsequent calls will find it ready.
+      const mcBase = (
+        process.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app"
+      ).replace(/\/api\/?$/, "");
+      const mcKey = process.env.AI_SERVER_KEY || "";
+      const PREWARM_BUDGET_MS = 90_000;
+      const prewarmStart = Date.now();
+      let maxcoreReady = false;
+      while (Date.now() - prewarmStart < PREWARM_BUDGET_MS) {
+        try {
+          const hRes = await fetch(`${mcBase}/api/health`, {
+            headers: { Authorization: `Bearer ${mcKey}` },
+            signal: AbortSignal.timeout(8_000),
+          });
+          // Accept 200 or any non-sleeping response (non-HTML content-type)
+          const ct = hRes.headers.get("content-type") ?? "";
+          if (hRes.ok && ct.includes("json")) { maxcoreReady = true; break; }
+          if (hRes.status !== 200 && hRes.status !== 404) { maxcoreReady = true; break; }
+        } catch (_) { /* timeout or network error — keep waiting */ }
+        await new Promise((r) => setTimeout(r, 6_000));
+      }
+      if (!maxcoreReady) {
+        logger.warn(
+          `[BeatMoneyLoop] MaxCore pre-warm timed out after ${PREWARM_BUDGET_MS / 1000}s — attempting audio anyway`,
+        );
+      }
+
+      // 2b. GENERATE
       const { audioRelUrl, audioAbsPath, title, audioGenBackend, musicalKey } =
         await this._generateBeat(scan);
       await db
@@ -645,7 +676,19 @@ class BeatMoneyLoopService {
     wavBytes: Buffer;
     mcKey?: string;
     mcBpm?: number;
+    mcMusicalKey?: string;
     backend: string;
+    /** Creative concept name MaxCore sometimes returns (e.g. "midnight void") */
+    concept?: string;
+    /** Alternate field name MaxCore uses for the concept */
+    styleHook?: string;
+    /** Raw audio quality metrics from MaxCore (spectral/bass as strings per MaxCore schema) */
+    audioAnalysis?: {
+      loudness_db?: number;
+      energy?: number;
+      spectral_brightness?: string;
+      bass_weight?: string;
+    };
   }> {
     const base = (
       process.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app"
@@ -682,25 +725,43 @@ class BeatMoneyLoopService {
     logger.info(
       `[BeatMoneyLoop] _maxcoreAudio mode=${mode} → POST ${base}/api/generate/audio (duration=${durationSec}s)`,
     );
-    const res = await fetch(`${base}/api/generate/audio`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...authHeaders },
-      body: JSON.stringify(body),
-      // MaxCore has NO server-side timeout — it holds the connection while it
-      // wakes/works, so every abort here is OUR side killing a request that
-      // would eventually succeed. Give the initial POST 15 min.
-      signal: AbortSignal.timeout(900_000),
-    });
+    // Retry the initial POST up to 3 times on transient network errors (ECONNRESET,
+    // ECONNREFUSED) — MaxCore can drop the connection while waking from sleep.
+    // Each attempt has a 15-min abort in case MaxCore holds the conn while warming.
+    let res: Response | null = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        res = await fetch(`${base}/api/generate/audio`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...authHeaders },
+          body: JSON.stringify(body),
+          // MaxCore has NO server-side timeout — it holds the connection while it
+          // wakes/works, so every abort here is OUR side killing a request that
+          // would eventually succeed. Give the initial POST 15 min.
+          signal: AbortSignal.timeout(900_000),
+        });
+        break; // success — exit retry loop
+      } catch (fetchErr) {
+        const isTimeout =
+          (fetchErr as Error).name === "AbortError" ||
+          (fetchErr as Error).name === "TimeoutError";
+        if (isTimeout || attempt === 3) throw fetchErr;
+        logger.warn(
+          `[BeatMoneyLoop] _maxcoreAudio mode=${mode} POST attempt ${attempt} failed (${(fetchErr as Error).message}) — retrying in 15 s`,
+        );
+        await new Promise((r) => setTimeout(r, 15_000));
+      }
+    }
     logger.info(
-      `[BeatMoneyLoop] _maxcoreAudio mode=${mode} POST → HTTP ${res.status}`,
+      `[BeatMoneyLoop] _maxcoreAudio mode=${mode} POST → HTTP ${res!.status}`,
     );
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
+    if (!res!.ok) {
+      const text = await res!.text().catch(() => "");
       throw new Error(
-        `MaxCore /generate/audio HTTP ${res.status}: ${text.slice(0, 200)}`,
+        `MaxCore /generate/audio HTTP ${res!.status}: ${text.slice(0, 200)}`,
       );
     }
-    const data = (await res.json()) as {
+    const data = (await res!.json()) as {
       wav_b64?: string;
       audio_b64?: string;
       url?: string;
@@ -787,10 +848,10 @@ class BeatMoneyLoopService {
     // Poll /api/audio-job/:id until done. Budget scales with requested length:
     // rendering a full 3-min beat takes far longer than the old 30 s clip.
     if (data.job_id) {
-      // Poll budget: at least 20 min — 15 s audio renders in ~5-8 min on MaxCore;
-      // 30 s audio was exceeding the old 10 min cap. Each poll has a 20 s
-      // per-request timeout; individual timeouts do NOT terminate the budget.
-      const pollBudgetMs = Math.max(1_200_000, durationSec * 20_000);
+      // Poll budget: at least 30 min — 30 s audio was historically completing in
+      // ~18-20 min. The old 20-min cap caused us to bail 12 s before completion.
+      // Use 40× duration with a 30 min floor so there's always plenty of headroom.
+      const pollBudgetMs = Math.max(1_800_000, durationSec * 40_000);
       const deadline = Date.now() + pollBudgetMs;
       logger.info(
         `[BeatMoneyLoop] mode=${mode} polling job ${data.job_id} (budget=${Math.round(pollBudgetMs / 1000)}s)`,
@@ -821,9 +882,16 @@ class BeatMoneyLoopService {
           if (name === "AbortError" || name === "TimeoutError") continue;
           throw pollFetchErr; // unexpected non-timeout error — propagate
         }
-        // Terminal auth/not-found statuses will never recover — fail fast.
-        if (jr.status === 401 || jr.status === 403 || jr.status === 404) {
+        // Terminal auth failures — will never recover within this budget.
+        if (jr.status === 401 || jr.status === 403) {
           throw new Error(`MaxCore audio job poll HTTP ${jr.status}`);
+        }
+        // 404 on a poll = MaxCore cleaned up the job record after completion
+        // or the server restarted and lost in-memory job state. Treat as
+        // "job expired" — throw with a distinguishable message so the caller
+        // can log it rather than continuing to spin for 30 min on a dead job.
+        if (jr.status === 404) {
+          throw new Error(`MaxCore audio job ${data.job_id} expired (404) — job record no longer exists on server`);
         }
         if (!jr.ok) {
           logger.warn(`[BeatMoneyLoop] mode=${mode} job poll HTTP ${jr.status} — continuing`);
@@ -924,9 +992,45 @@ class BeatMoneyLoopService {
         const musicalKey = requestedKey;
         const keyStr = musicalKey ? ` (${musicalKey})` : "";
         const bpmStr = ` ${realBpm} BPM`;
-        const title = `${titleAdj} ${titleGenre} Type Beat${keyStr}${bpmStr} — ${stamp}`;
+
+        // Use MaxCore's concept name when available — more evocative and
+        // searchable than the generic "Dark Trap Type Beat" format.
+        // Sanitise: strip surrounding quotes, cap at 50 chars.
+        const conceptRaw = mc.concept ?? mc.styleHook ?? "";
+        const conceptClean = conceptRaw
+          .trim()
+          .replace(/^["'«»]|["'«»]$/g, "")
+          .slice(0, 50);
+        const title = conceptClean
+          ? `${conceptClean.charAt(0).toUpperCase() + conceptClean.slice(1)} — ${titleAdj} ${titleGenre} Type Beat${keyStr}${bpmStr}`
+          : `${titleAdj} ${titleGenre} Type Beat${keyStr}${bpmStr} — ${stamp}`;
+
+        // Log audio quality metrics so near-silent or low-energy beats are
+        // visible in the log and can be audited / gated later.
+        if (mc.audioAnalysis) {
+          const qa = mc.audioAnalysis;
+          logger.info(
+            `[BeatMoneyLoop] Audio quality — loudness=${qa.loudness_db ?? "?"}dB ` +
+            `energy=${qa.energy ?? "?"} spectral=${qa.spectral_brightness ?? "?"} ` +
+            `bass=${qa.bass_weight ?? "?"}`,
+          );
+          // Soft quality gate: reject near-silent files rather than listing
+          // unplayable audio. Threshold is generous (-40 dB) to avoid false
+          // positives — MaxCore sometimes renders very clean, quiet intros.
+          if (
+            typeof qa.loudness_db === "number" &&
+            qa.loudness_db < -40 &&
+            typeof qa.energy === "number" &&
+            qa.energy < 0.05
+          ) {
+            throw new Error(
+              `MaxCore audio quality too low (loudness=${qa.loudness_db}dB, energy=${qa.energy}) — rejecting beat`,
+            );
+          }
+        }
+
         logger.info(
-          `[BeatMoneyLoop] Beat generated via MaxCore mode ${mode} (backend=${mc.backend}, key=${musicalKey})`,
+          `[BeatMoneyLoop] Beat generated via MaxCore mode ${mode} (backend=${mc.backend}, key=${musicalKey}) → "${title}"`,
         );
         return { audioRelUrl, audioAbsPath, title, audioGenBackend: mc.backend, musicalKey: musicalKey || requestedKey };
       } catch (err) {
@@ -1318,7 +1422,7 @@ class BeatMoneyLoopService {
           headline: args.title,
           description: caption,
           mediaUrl,
-          callToAction: "Stream & License",
+          callToAction: "License This Beat",
           landingUrl: "/marketplace",
           status: "active",
           ...(mediaLocalPath
@@ -1506,19 +1610,30 @@ class BeatMoneyLoopService {
     }>("/api/generate/content", {
       platform: "instagram",
       content_type: "post",
-      topic: `${args.scan.mood} ${args.scan.genre} type beat — ${args.title}`,
+      // SHORT topic = beat title only. When the full "145BPM $29 non-exclusive…"
+      // phrase is used, MaxCore jams the entire string into hashtag slot [0],
+      // producing a broken 80-char tag. Price/BPM context lives in beat_context
+      // where MaxCore reads it without embedding it in hashtag strings.
+      topic: args.title,
       tone: "hype",
       genre: args.scan.genre,
+      mood: args.scan.mood,
       include_hashtags: true,
       goal: "drive_purchase",
+      // Explicit CTA instruction — MaxCore respects this field in most cases
+      cta: "License this beat — link in bio",
       beat_context: {
         title: args.title,
         bpm: args.scan.tempo,
         price: args.price,
+        license_type: "non-exclusive",
+        marketplace: "MaxBooster",
+        action: "license_beat",
         production_details: args.scan.hooks.slice(0, 3).join("; ") || args.scan.mood,
         listen_url: listenUrl,
       },
-      platform_constraints: { no_link_in_bio: true },
+      // Allow "link in bio" CTAs — this post is the beat-sale call-to-action
+      platform_constraints: { allow_link_in_bio: true, cta_style: "direct_sale" },
     });
 
     if (!mcRaw) throw new Error("MaxCore returned null for caption");
@@ -1528,7 +1643,10 @@ class BeatMoneyLoopService {
         ? selectBestVariant(mcRaw.variants)
         : mcRaw;
 
-    if (!candidate || (!candidate.hook && !candidate.caption)) {
+    // Some MaxCore content endpoints return `caption` instead of `hook`;
+    // cast to access it without breaking the stricter variant type.
+    const candidateCaption = (candidate as { caption?: string }).caption;
+    if (!candidate || (!candidate.hook && !candidateCaption)) {
       throw new Error("MaxCore returned no usable caption content");
     }
 
@@ -1539,6 +1657,11 @@ class BeatMoneyLoopService {
       hashtags: Array.isArray(candidate.hashtags) ? candidate.hashtags : hashtags,
       genre: args.scan.genre,
       platform: "instagram",
+      // Pass mood + title so stale hooks are replaced with mood-matched originals
+      mood: args.scan.mood,
+      title: args.title,
+      // This is always a beat-sale post — replace generic CTAs with licensing language
+      isBeatPost: true,
     });
 
     const tagStr = normalizeHashtags(

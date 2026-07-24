@@ -48,6 +48,7 @@
 - [MaxCore X-API-Key sweep](maxcore-xapikey-sweep.md) — X-API-Key debris recurs in service-local fetch helpers; grep whole server; viral-score/safety/distribution endpoints NOW exist; 500→503 aiErrorStatus helper pattern
 - [Embedded-string ?. debris](embedded-string-oc-debris.md) — `?.` in string literals is a bug only when the embedded language isn't JS (GLSL/shell/SQL/URLs/paths); scan with scripts/_scan_oc.cjs; the SQL fixer can append a stray trailing backtick
 - [Beat loop output quality](beat-loop-output-quality.md) — audio is 30s mono ~92kbps MP3-in-.wav & clips; old listings 404; scan context constant; ads "activate" but post 0 — verify servable audio + posts rows, not statuses
+- [MaxCore endpoint quality](maxcore-endpoint-quality.md) — per-endpoint quality verdict, stale hook list, beat loop payload decisions (short topic, explicit CTA, isBeatPost flag)
 - [distributionService baseStorage import](distribution-service-import.md) — distributionService.ts uses `baseStorage` but imports it as `storage`; fix: `import { storage as baseStorage }` at top of file
 - [Beat loop orphan-recovery guard](beat-loop-orphan-guard.md) — scheduler calls recoverOrphanedCycles ~75s after boot; it must exclude cycles started in the current process (startedAt < process-start cutoff) or it kills live cycles
 - [CSRF double-submit pattern in curl tests](csrf-curl-pattern.md) — /api/auth/csrf returns 404; the CSRF token IS the `csrf-token` cookie value; pass it as `X-CSRF-Token` header to satisfy double-submit validation
