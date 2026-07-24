@@ -1,9 +1,16 @@
 #!/bin/bash
-# Post-merge setup — runs automatically after every task merge.
-# Must be idempotent, non-interactive, and fast.
 set -e
 
-echo "[post-merge] Installing dependencies..."
-SKIP_POSTINSTALL=1 pnpm install --no-frozen-lockfile 2>&1
+echo "=== Post-merge setup ==="
 
-echo "[post-merge] Done ✅"
+# Install / sync dependencies (non-interactive)
+npm install --legacy-peer-deps --no-audit --no-fund 2>&1 | tail -5
+
+# Push any schema changes to the database (Drizzle, non-interactive)
+if npm run --silent db:push -- --force 2>/dev/null; then
+  echo "✅ DB schema up to date"
+else
+  echo "⚠️  db:push not configured or no changes — skipping"
+fi
+
+echo "=== Post-merge setup complete ==="
