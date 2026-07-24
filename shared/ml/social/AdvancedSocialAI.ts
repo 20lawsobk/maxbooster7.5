@@ -1082,7 +1082,6 @@ export interface SemanticAnalysis {
 export class AdvancedSocialAI {
   private initialized: boolean = false;
   private wordEmbeddings: Map<string, SocialWordVector> = new Map();
-  private contextMemory: Map<string, any> = new Map();
 
   constructor() {
     this.initializeEmbeddings();

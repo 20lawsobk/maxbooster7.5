@@ -45,6 +45,7 @@ interface MoodVector {
   dominance: number; // submissive to dominant (-1 to 1)
   tension: number; // relaxed to tense (0 to 1)
   brightness: number; // dark to bright (0 to 1)
+  complexity?: number; // structural complexity (0 to 1)
 }
 
 interface HarmonicContext {
@@ -1850,7 +1851,7 @@ class MusicTheoryEngine {
       swing: genreInfo?.swing || 0,
       groove: this.determineGroove(genre, mood),
       syncopation: Math.abs(mood.arousal) * 0.5 + 0.2,
-      polyrhythm: mood.complexity > 0.7 ? 0.3 : 0,
+      polyrhythm: (mood.complexity ?? 0) > 0.7 ? 0.3 : 0,
       subdivision: this.determineSubdivision(genre, tempo),
     };
   }
@@ -2184,17 +2185,13 @@ class CreativeParameterSynthesizer {
 export class AdvancedMusicAI {
   private parameterSynthesizer: CreativeParameterSynthesizer;
   private semanticAnalyzer: SemanticAnalyzer;
-  private theoryEngine: MusicTheoryEngine;
-  private initialized: boolean = false;
-
   constructor() {
     this.parameterSynthesizer = new CreativeParameterSynthesizer();
     this.semanticAnalyzer = new SemanticAnalyzer();
-    this.theoryEngine = new MusicTheoryEngine();
   }
 
   async initialize(): Promise<void> {
-    this.initialized = true;
+    // no-op: initialization is synchronous in this implementation
   }
 
   interpretText(text: string): CreativeParameters {

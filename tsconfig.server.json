@@ -9,6 +9,7 @@
     "build",
     "dist",
     "**/*.test.ts",
-    "node_modules/googleapis/**"
+    "node_modules/googleapis/**",
+    "fix-*.ts"
   ]
 }

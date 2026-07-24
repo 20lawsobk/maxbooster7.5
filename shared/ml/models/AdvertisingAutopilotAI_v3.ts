@@ -1175,7 +1175,7 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
     this.audienceSegments = [];
     let segmentId = 0;
 
-    for (const [cluster, segmentCamps] of segmentCampaigns) {
+    for (const [, segmentCamps] of segmentCampaigns) {
       if (segmentCamps.length < 3) continue; // Need minimum campaigns per segment
 
       const avgEngagementRate =
@@ -2472,7 +2472,7 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
 
     for (const platform of platforms) {
       for (const mediaType of mediaTypes) {
-        const adFormat = platformAdFormats[platform][mediaType];
+        const adFormat = (platformAdFormats as Record<string, Record<string, unknown>>)[platform][mediaType];
 
         // Generate platform-optimized ad creative
         const creative = this.generateAdCreative(
@@ -2561,7 +2561,7 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
     };
 
     const baseText =
-      objectiveTemplates[objective]?.[mediaType] ||
+      (objectiveTemplates as Record<string, Record<string, string>>)[objective]?.[mediaType] ||
       `Experience ${platform} excellence with ${mediaType} content!`;
 
     return {
@@ -2593,7 +2593,7 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
       youtube: { text: 3000, image: 5000, video: 100000, audio: 20000 },
     };
 
-    let reach = baseReach[platform]?.[mediaType] || 5000;
+    let reach = (baseReach as Record<string, Record<string, number>>)[platform]?.[mediaType] || 5000;
 
     if (multimodalFeatures?.videoEngagement?.viralPotential) {
       reach *= 1 + multimodalFeatures.videoEngagement.viralPotential;
@@ -2615,7 +2615,7 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
       youtube: { text: 100, image: 150, video: 5000, audio: 800 },
     };
 
-    return baseEngagement[platform]?.[mediaType] || 200;
+    return (baseEngagement as Record<string, Record<string, number>>)[platform]?.[mediaType] || 200;
   }
 
   private predictCampaignROI(
@@ -2659,7 +2659,7 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
       tiktok: "6-9 AM, 7-11 PM",
       youtube: "12-3 PM, 7-10 PM",
     };
-    return optimalTimes[platform] || "12-3 PM";
+    return (optimalTimes as Record<string, string>)[platform] || "12-3 PM";
   }
 
   private getOptimalBidStrategy(_platform: string, _mediaType: string): string {
@@ -2674,7 +2674,27 @@ export class AdvertisingAutopilotAI_v3 extends BaseModel {
       tiktok: ["For You Page", "Following Feed"],
       youtube: ["In-Stream", "Discovery", "Shorts"],
     };
-    return placements[platform] || ["Feed"];
+    return (placements as Record<string, string[]>)[platform] || ["Feed"];
+  }
+
+  /** Extract a fixed-length numeric feature vector from an OrganicCampaign. */
+  private extractCampaignFeatures(campaign: OrganicCampaign): number[] {
+    const p = campaign.performance;
+    const a = campaign.algorithms;
+    return [
+      p.impressions / 1e6,
+      p.organicReach / Math.max(p.impressions, 1),
+      p.engagementRate,
+      p.viralCoefficient,
+      p.authenticityScore,
+      p.conversions / Math.max(p.clicks, 1),
+      a.engagementVelocity / 100,
+      a.algorithmicBoost,
+      a.decayRate,
+      a.peakEngagementTime / 24,
+      campaign.timing.hourOfDay / 24,
+      campaign.timing.dayOfWeek / 7,
+    ];
   }
 
   protected preprocessInput(

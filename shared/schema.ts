@@ -4271,7 +4271,7 @@ export const beatDiscoveryScores = pgTable("beat_discovery_scores", {
 export type BeatDiscoveryScore = typeof beatDiscoveryScores.$inferSelect;
 export const insertBeatDiscoveryScoreSchema = createInsertSchema(
   beatDiscoveryScores,
-).omit({ id: true, createdAt: true });
+).omit({ id: true });
 
 // ============================================================================
 // PLAYLIST JOURNEYS (Track playlist progression over time)

@@ -160,8 +160,26 @@ export class CreativePlannerModel extends BaseModel {
   ): Promise<CreativePlannerOutput> {
     if (!this.model) await this.initialize();
     const features = extractCreativePlannerFeatures(input);
-    const result = await this.predict(features);
-    return result.prediction as CreativePlannerOutput;
+    // Use model tensor directly so postprocessOutput result is not discarded
+    // (BaseModel.predict() calls postprocessOutput but ignores its return value).
+    const inputTensor = this.preprocessInput(features);
+    try {
+      const outputTensor = this.model!.predict(inputTensor) as tf.Tensor;
+      const out = this.postprocessOutput(outputTensor);
+      // Runtime shape guard — fail fast before NaN propagates into scheduling pipelines.
+      if (
+        typeof out.optimalBeatCount !== "number" ||
+        typeof out.hookEmotionalWeight !== "number"
+      ) {
+        throw new Error(
+          `[CreativePlannerModel] postprocessOutput returned invalid shape: ` +
+            `optimalBeatCount=${out.optimalBeatCount}, hookEmotionalWeight=${out.hookEmotionalWeight}`,
+        );
+      }
+      return out;
+    } finally {
+      inputTensor.dispose();
+    }
   }
 
   /** Synthetic training sample generator */

@@ -120,8 +120,29 @@ export class VideoCreativeScorer extends BaseModel {
   ): Promise<CreativeScorerOutput> {
     if (!this.model) await this.initialize();
     const features = extractScorerFeatures(input);
-    const result = await this.predict(features);
-    return result.prediction as CreativeScorerOutput;
+    // Use the model tensor directly so postprocessOutput (which correctly builds
+    // CreativeScorerOutput) is not discarded as it is inside BaseModel.predict().
+    const inputTensor = this.preprocessInput(features);
+    try {
+      const outputTensor = this.model!.predict(inputTensor) as tf.Tensor;
+      const out = this.postprocessOutput(outputTensor);
+      // Runtime shape guard — fail fast before NaN/undefined propagates into
+      // scoring pipelines that blend watchTimeScore, hookStrength, conversionScore.
+      if (
+        typeof out.watchTimeScore !== "number" ||
+        typeof out.hookStrength !== "number" ||
+        typeof out.conversionScore !== "number"
+      ) {
+        throw new Error(
+          `[VideoCreativeScorer] postprocessOutput returned invalid shape: ` +
+            `watchTimeScore=${out.watchTimeScore}, hookStrength=${out.hookStrength}, ` +
+            `conversionScore=${out.conversionScore}`,
+        );
+      }
+      return out;
+    } finally {
+      inputTensor.dispose();
+    }
   }
 
   public static makeSyntheticSamples(count: number): {

@@ -500,7 +500,7 @@ export class GenreClassificationModel extends BaseModel {
       const prediction = await this.classifyGenre(testMFCC[i]);
       const actual = testLabels[i];
 
-      const predictedIdx = GENRES.indexOf(prediction.genre);
+      const predictedIdx = GENRES.indexOf(prediction.genre as Genre);
       const actualIdx = GENRES.indexOf(actual);
 
       confusionMatrix[actualIdx][predictedIdx]++;

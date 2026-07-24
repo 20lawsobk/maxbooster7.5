@@ -864,7 +864,9 @@ export class IntelligentMasteringEngine {
     sampleRate?: number,
   ): Float32Array {
     const sr = sampleRate || this.sampleRate;
-    let processed = new Float32Array(audioData);
+    // Declare with ArrayBufferLike so private helpers (TS 5.x Float32Array<ArrayBufferLike>)
+    // can be reassigned without type errors.
+    let processed: Float32Array<ArrayBufferLike> = new Float32Array(audioData);
 
     processed = this.applyGain(processed, config.inputGain);
 
@@ -888,7 +890,7 @@ export class IntelligentMasteringEngine {
       processed = this.applyDithering(processed, config.bitDepth);
     }
 
-    return processed;
+    return processed as Float32Array;
   }
 
   /**
@@ -1546,13 +1548,13 @@ export class IntelligentMasteringEngine {
     bands: EQBand[],
     sampleRate: number,
   ): Float32Array {
-    let result = new Float32Array(audioData);
+    let result: Float32Array<ArrayBufferLike> = new Float32Array(audioData);
 
     for (const band of bands) {
       result = this.applyBiquadFilter(result, band, sampleRate);
     }
 
-    return result;
+    return result as Float32Array;
   }
 
   private applyBiquadFilter(
@@ -1674,7 +1676,7 @@ export class IntelligentMasteringEngine {
     highFreq: number,
     sampleRate: number,
   ): Float32Array {
-    let result = new Float32Array(audioData);
+    let result: Float32Array<ArrayBufferLike> = new Float32Array(audioData);
 
     if (lowFreq > 20) {
       result = this.applyBiquadFilter(

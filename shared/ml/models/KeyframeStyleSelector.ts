@@ -184,8 +184,29 @@ export class KeyframeStyleSelector extends BaseModel {
   ): Promise<KeyframeSelectorOutput> {
     if (!this.model) await this.initialize();
     const features = extractStyleFeatures(input);
-    const result = await this.predict(features);
-    return result.prediction as KeyframeSelectorOutput;
+    // Use the model tensor directly so postprocessOutput (which correctly builds
+    // KeyframeSelectorOutput) is not discarded as it is inside BaseModel.predict().
+    const inputTensor = this.preprocessInput(features);
+    try {
+      const outputTensor = this.model!.predict(inputTensor) as tf.Tensor;
+      const out = this.postprocessOutput(outputTensor);
+      // Runtime shape guard — fail fast before bad output propagates into the
+      // creative pipeline (callers dereference topStyles[0].probability).
+      if (
+        typeof out.primaryStyle !== "string" ||
+        !Array.isArray(out.topStyles) ||
+        out.topStyles.length === 0 ||
+        !Array.isArray(out.probabilities)
+      ) {
+        throw new Error(
+          `[KeyframeStyleSelector] postprocessOutput returned invalid shape: ` +
+            `primaryStyle=${out.primaryStyle}, topStyles.length=${out.topStyles?.length}`,
+        );
+      }
+      return out;
+    } finally {
+      inputTensor.dispose();
+    }
   }
 
   public static makeSyntheticSamples(count: number): {

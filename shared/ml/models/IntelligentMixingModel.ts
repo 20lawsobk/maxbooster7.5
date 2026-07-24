@@ -328,7 +328,9 @@ export class IntelligentMixingModel {
     audioBuffer: Float32Array,
     params: MixingParameters,
   ): Float32Array {
-    let processed = new Float32Array(audioBuffer);
+    // Declare with ArrayBufferLike so private helpers (which TS 5.x infers as
+    // Float32Array<ArrayBufferLike>) can be reassigned without type errors.
+    let processed: Float32Array<ArrayBufferLike> = new Float32Array(audioBuffer);
 
     processed = this.applyGain(processed, params.gainDB);
 

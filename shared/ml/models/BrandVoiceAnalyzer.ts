@@ -679,7 +679,7 @@ export class BrandVoiceAnalyzer {
         const postText = post.toLowerCase();
         this.tokenize(postText);
         let topScore = 0;
-        for (const [archetype, config] of Object.entries(ARTIST_ARCHETYPES)) {
+        for (const [, config] of Object.entries(ARTIST_ARCHETYPES)) {
           let s = 0;
           for (const ind of config.indicators) {
             if (postText.includes(ind)) s += 0.15;

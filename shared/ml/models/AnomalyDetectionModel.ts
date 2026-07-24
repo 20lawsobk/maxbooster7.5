@@ -25,9 +25,7 @@ const STAT_WEIGHT = 0.2;
 const ANOMALY_THRESHOLD = 0.55; // weighted score must exceed this
 
 export class AnomalyDetectionModel extends BaseModel {
-  private autoencoderModel: tf.LayersModel | null = null;
   private reconstructionThreshold99: number = 0;
-  private reconstructionThreshold95: number = 0;
   private statisticalBaseline: { mean: number; std: number } | null = null;
   private isolationForest: IsolationForest | null = null;
 
@@ -70,7 +68,6 @@ export class AnomalyDetectionModel extends BaseModel {
       loss: "meanSquaredError",
     });
 
-    this.autoencoderModel = autoencoder;
     return autoencoder;
   }
 
@@ -106,8 +103,6 @@ export class AnomalyDetectionModel extends BaseModel {
       const errorTensor = tf.losses.meanSquaredError(inputTensor, predictions);
       const errors = Array.from(await errorTensor.data()).sort((a, b) => a - b);
 
-      this.reconstructionThreshold95 =
-        errors[Math.floor(errors.length * 0.95)] ?? 0;
       this.reconstructionThreshold99 =
         errors[Math.floor(errors.length * 0.99)] ?? 0;
 

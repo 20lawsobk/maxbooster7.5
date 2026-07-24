@@ -105,8 +105,23 @@ export class BeatSyncAlignmentModel extends BaseModel {
   ): Promise<BeatAlignmentOutput> {
     if (!this.model) await this.initialize();
     const features = extractAlignmentFeatures(input);
-    const result = await this.predict(features);
-    return result.prediction as BeatAlignmentOutput;
+    // Use model tensor directly so postprocessOutput result is not discarded
+    // (BaseModel.predict() calls postprocessOutput but ignores its return value).
+    const inputTensor = this.preprocessInput(features);
+    try {
+      const outputTensor = this.model!.predict(inputTensor) as tf.Tensor;
+      const out = this.postprocessOutput(outputTensor);
+      // Runtime shape guard — fail fast before bad output reaches the creative pipeline.
+      if (typeof out.cutTimeDelta !== "number" || typeof out.transitionScore !== "number") {
+        throw new Error(
+          `[BeatSyncAlignmentModel] postprocessOutput returned invalid shape: ` +
+            `cutTimeDelta=${out.cutTimeDelta}, transitionScore=${out.transitionScore}`,
+        );
+      }
+      return out;
+    } finally {
+      inputTensor.dispose();
+    }
   }
 
   public static makeSyntheticSamples(count: number): {

@@ -236,7 +236,7 @@ export class RecommendationEngine extends BaseModel {
     if (Array.isArray(input)) {
       return tf.tensor2d([input]);
     }
-    return tf.tensor2d([[...Object.values(input)]]);
+    return tf.tensor2d([[...(Object.values(input) as number[])]]);
   }
 
   protected postprocessOutput(output: tf.Tensor): number[] {

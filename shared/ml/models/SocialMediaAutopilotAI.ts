@@ -1263,7 +1263,7 @@ export class SocialMediaAutopilotAI extends BaseModel {
 
     for (const platform of platforms) {
       for (const mediaType of mediaTypes) {
-        const template = platformTemplates[platform][mediaType];
+        const template = (platformTemplates as Record<string, Record<string, any>>)[platform][mediaType];
 
         // Generate platform-optimized content
         const content = this.generateOptimizedContent(
@@ -1343,7 +1343,7 @@ export class SocialMediaAutopilotAI extends BaseModel {
     };
 
     let baseText =
-      contentTemplates[contentType]?.[mediaType] ||
+      (contentTemplates as Record<string, Record<string, string> | undefined>)[contentType]?.[mediaType] ||
       `Check out this amazing ${mediaType} content on ${platform}! ${this.getPlatformCTA(platform)}`;
 
     // Trim to platform max length
@@ -1403,7 +1403,7 @@ export class SocialMediaAutopilotAI extends BaseModel {
     };
 
     return (
-      platformHashtags[platform] || hashtagPool.music.slice(0, maxHashtags)
+      (platformHashtags as Record<string, string[]>)[platform] || hashtagPool.music.slice(0, maxHashtags)
     );
   }
 
@@ -1472,7 +1472,7 @@ export class SocialMediaAutopilotAI extends BaseModel {
       youtube: { text: 70, image: 80, video: 500, audio: 200 },
     };
 
-    let baseEngagement = baseRates[platform]?.[mediaType] || 100;
+    let baseEngagement = (baseRates as Record<string, Record<string, number>>)[platform]?.[mediaType] || 100;
 
     // Boost based on multimodal features if available
     if (multimodalFeatures) {
@@ -1502,7 +1502,7 @@ export class SocialMediaAutopilotAI extends BaseModel {
       tiktok: "Drop a ❤️ and follow for more!",
       youtube: "Subscribe for weekly music tips!",
     };
-    return ctas[platform] || "Engage below!";
+    return (ctas as Record<string, string>)[platform] || "Engage below!";
   }
 
   /**
@@ -1516,6 +1516,6 @@ export class SocialMediaAutopilotAI extends BaseModel {
       tiktok: "6-10 AM, 7-11 PM",
       youtube: "2-4 PM, 8-11 PM",
     };
-    return optimalTimes[platform] || "12-3 PM";
+    return (optimalTimes as Record<string, string>)[platform] || "12-3 PM";
   }
 }

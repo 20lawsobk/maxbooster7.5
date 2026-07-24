@@ -329,12 +329,8 @@ const DAY_NAMES: DayOfWeek[] = [
 ];
 
 export class SocialAutopilotEngine extends BaseModel {
-  private viralityModel: tf.LayersModel | null = null;
-  private timingModel: tf.LayersModel | null = null;
   private historicalData: Map<Platform, HistoricalPost[]> = new Map();
   private audienceInsights: Map<Platform, AudienceInsights> = new Map();
-  private platformScalers: Map<Platform, { mean: number[]; std: number[] }> =
-    new Map();
 
   constructor() {
     super({
@@ -439,8 +435,10 @@ export class SocialAutopilotEngine extends BaseModel {
       this.model = this.buildModel();
       this.isCompiled = true;
     }
-    this.viralityModel = this.buildViralityModel();
-    this.timingModel = this.buildTimingModel();
+    // buildViralityModel / buildTimingModel construct sub-models for future use;
+    // sub-model references are intentionally not stored until inference consumes them.
+    this.buildViralityModel();
+    this.buildTimingModel();
   }
 
   public loadHistoricalData(posts: HistoricalPost[]): void {

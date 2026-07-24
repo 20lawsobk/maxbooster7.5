@@ -569,15 +569,12 @@ class SchroederReverb {
   private preDelay: Float32Array;
   private preDelayIndex: number = 0;
   private preDelayLength: number;
-  private sampleRate: number;
 
   constructor(
     sampleRate: number,
     roomSize: number = 0.5,
     damping: number = 0.5,
   ) {
-    this.sampleRate = sampleRate;
-
     this.preDelayLength = Math.floor(sampleRate * 0.012);
     this.preDelay = new Float32Array(Math.max(1, this.preDelayLength));
 
@@ -2414,14 +2411,12 @@ export class PlateReverb {
   private positions: number[];
   private sizes: number[];
   private decays: number[];
-  private sr: number;
 
   constructor(
     sampleRate: number,
     roomSize: number = 0.7,
     damping: number = 0.5,
   ) {
-    this.sr = sampleRate;
     // Comb filter delays (prime numbers of samples)
     this.sizes = [1031, 1153, 1237, 1301].map((d) => Math.floor(d * roomSize));
     this.decays = this.sizes.map((s) =>

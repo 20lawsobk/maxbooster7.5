@@ -1050,7 +1050,7 @@ class IntentClassifier {
     }
 
     // Specific drum type detection
-    for (const [drumType, keywords] of Object.entries(DRUM_TYPE_KEYWORDS)) {
+    for (const [, keywords] of Object.entries(DRUM_TYPE_KEYWORDS)) {
       for (const keyword of keywords) {
         if (lowerText.includes(keyword)) {
           scores.drums += 1.5; // Boost drums score
@@ -1073,10 +1073,10 @@ class IntentClassifier {
     let subType = "default";
 
     if (bestCategory === "drums") {
-      for (const [drumType, keywords] of Object.entries(DRUM_TYPE_KEYWORDS)) {
+      for (const [drumSubType, keywords] of Object.entries(DRUM_TYPE_KEYWORDS)) {
         for (const keyword of keywords) {
           if (lowerText.includes(keyword)) {
-            subType = drumType;
+            subType = drumSubType;
             break;
           }
         }

@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 export default {
+  // @ts-ignore — tailwind v3 accepts ["class"] tuple; v4 type requires ["class", selector]
   darkMode: ["class"],
   content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
   theme: {

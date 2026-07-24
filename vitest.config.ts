@@ -26,6 +26,7 @@ export default defineConfig({
     testTimeout: 15000,
     hookTimeout: 15000,
     pool: "forks",
+    // @ts-ignore — poolOptions is valid in vitest 4.x but missing from older type stubs
     poolOptions: {
       forks: {
         execArgv: ["--max-old-space-size=4096"],
