@@ -98,6 +98,20 @@ function isBrokenHashtag(tag: string): boolean {
 }
 
 /**
+ * Hashtags that are shadow-banned, too broad, or actively hurt reach.
+ * MaxCore often returns these when PDIM storage is offline — strip them
+ * before merging so they don't consume slots that genre-specific tags need.
+ */
+const SHADOW_BANNED_TAGS = new Set([
+  // Platform names as hashtags are shadow-banned on all major platforms
+  "#instagram", "#tiktok", "#twitter", "#facebook", "#youtube",
+  "#snapchat", "#pinterest", "#threads",
+  // Saturated/ineffective catch-alls
+  "#music", "#newrelease", "#newdrop", "#artist", "#art",
+  "#love", "#follow", "#followme", "#like", "#likeforlike",
+]);
+
+/**
  * Clean MaxCore's hashtag array and enrich with genre-specific discovery tags.
  * Keeps up to 8 tags on most platforms; uses professional tags on LinkedIn.
  */
@@ -107,11 +121,16 @@ export function normalizeHashtags(
   platform: string,
 ): string[] {
   if (platform === "linkedin") {
-    const valid = tags.filter((t) => !isBrokenHashtag(t)).slice(0, 2);
+    const valid = tags
+      .filter((t) => !isBrokenHashtag(t) && !SHADOW_BANNED_TAGS.has(t.toLowerCase()))
+      .slice(0, 2);
     return [...new Set([...valid, ...LINKEDIN_TAGS])].slice(0, 5);
   }
 
-  const valid = tags.filter((t) => !isBrokenHashtag(t));
+  // Strip broken + shadow-banned so genre tags get priority slots
+  const valid = tags.filter(
+    (t) => !isBrokenHashtag(t) && !SHADOW_BANNED_TAGS.has(t.toLowerCase()),
+  );
 
   // Resolve genre key — strip hyphens and spaces for lookup
   const genreKey = genre.toLowerCase().replace(/[\s_-]/g, "");
@@ -142,6 +161,14 @@ const STALE_HOOK_PREFIXES = [
   "the algorithm is finally pushing",
   "the beat that's been on repeat in my studio",
   "drop everything and listen",
+  // Video-endpoint script bleeding into content gen
+  "in this video, i'm going to show you something incredible",
+  "in this video i'm going to",
+  // Generic listener-appreciation hooks with no beat-sale intent
+  "real listeners know",
+  // Autopilot/template hooks
+  "this is what you've been waiting for",
+  "new drop alert",
 ];
 
 function isStaleHook(text: string): boolean {
@@ -274,23 +301,39 @@ const BEAT_SALE_CTAS = [
   "License available now — link in bio",
 ];
 
-/** Generic non-conversion CTAs MaxCore emits that need replacing for beat posts. */
-const GENERIC_CTA_RE = /^(support the artist|follow for more|drop a like|react|like and share|share this post|check it out|listen now|stream now|click the link)$/i;
+/**
+ * Positive allowlist: a CTA is already beat-sale appropriate if it contains
+ * any of these purchase-intent signals. Anything that DOESN'T match gets
+ * replaced with a beat-sale CTA when isBeatPost=true.
+ *
+ * Catches the full range of MaxCore non-sale outputs:
+ *   "Add NightFire to the playlist — link in bio"  → no purchase keyword → replace
+ *   "Drop a 🔥 if NightFire hits different"        → no purchase keyword → replace
+ *   "Follow now and be first for every drop"        → no purchase keyword → replace
+ *   "New Drop Alert"                                → no purchase keyword → replace
+ *   "License this beat — link in bio 🔗"           → "license" present   → keep
+ *   "Get the license — link in bio 💰"             → "license" present   → keep
+ *   "First listeners get first access — link in bio"→ "first access"     → keep
+ */
+const BEAT_SALE_KEYWORDS_RE =
+  /\b(licen[sc]e|lease|buy|get the|grab the|purchase|available now|first access)\b/i;
 
 /**
  * Override CTAs that are wrong for a given platform.
- * - instagram/tiktok/threads beat context: generic → direct beat-licensing ask
+ * - instagram/tiktok/threads/facebook beat context: replace any non-purchase CTA
  * - twitter/x: bare category labels → emoji engagement ask
  * - linkedin:  "link in bio" / emoji reaction asks → professional alternatives
- * - tiktok:    "link in bio" → "link in profile"
+ * - tiktok:    standalone "link in bio" → "link in profile"
  */
 export function fixPlatformCta(cta: string, platform: string, isBeatPost = false): string {
   if (!cta) return cta;
   const pl = platform.toLowerCase();
 
-  // For beat-sale posts: replace any generic non-conversion CTA on visual platforms
+  // For beat-sale posts: replace any CTA that lacks purchase-intent language.
+  // This catches the full range of MaxCore non-sale outputs (playlist adds,
+  // engagement prompts, follow asks, generic awareness CTAs).
   if (isBeatPost && (pl === "instagram" || pl === "tiktok" || pl === "threads" || pl === "facebook")) {
-    if (GENERIC_CTA_RE.test(cta.trim()) || (cta.length < 30 && WEAK_CTA_RE.test(cta))) {
+    if (!BEAT_SALE_KEYWORDS_RE.test(cta)) {
       const idx = Math.floor(Math.random() * BEAT_SALE_CTAS.length);
       return BEAT_SALE_CTAS[idx];
     }
@@ -348,14 +391,49 @@ export interface CleanContentResult {
   hashtags: string[];
 }
 
+// ── Fix 7: Strip prompt bleed + restore title casing in body ────────────────
+
 /**
- * Apply all six fixes to a MaxCore content response in one call.
+ * MaxCore sometimes leaks its own system-prompt instructions into body copy
+ * when PDIM storage is offline (fallback mode). Patterns observed:
+ *  - "Write about the actual beat — trap sound, 145 BPM. Reference these..."
+ *  - "Reference these real production facts instead of generic hype."
+ * Strip any sentence that reads as an instruction rather than copy.
+ * Also restores the proper case of a lowercased beat title.
+ */
+function repairBody(body: string, title?: string): string {
+  const PROMPT_BLEED_RE =
+    /^(write about|reference these|add (a |an )?(compelling|urgent)|use the following|replace this with|include the|note:|instruction:)/i;
+
+  const lines = body.split("\n").filter((line) => {
+    const t = line.trim();
+    return t.length === 0 || !PROMPT_BLEED_RE.test(t);
+  });
+  let cleaned = lines.join("\n").trim();
+
+  // Restore proper case of beat title if MaxCore lowercased it
+  if (title && title.length >= 3) {
+    const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    cleaned = cleaned.replace(
+      new RegExp(`\\b${escaped}\\b`, "gi"),
+      title,
+    );
+  }
+
+  return cleaned;
+}
+
+/**
+ * Apply all seven fixes to a MaxCore content response in one call.
  * Safe to call on already-clean content — functions are idempotent.
  */
 export function cleanMaxCoreContent(
   args: CleanContentArgs,
 ): CleanContentResult {
-  const body = killFillerLines(stripAudienceMetadata(args.body || ""));
+  const body = repairBody(
+    killFillerLines(stripAudienceMetadata(args.body || "")),
+    args.title,
+  );
 
   // Replace stale hooks with mood-matched originals so every beat caption
   // has a unique, conversion-optimised opening line.

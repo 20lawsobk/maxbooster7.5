@@ -9,6 +9,9 @@ description: Quality problems found in the beat money loop's generated content a
 - "What the artist was really making this whole time…"
 - "This is what you've been waiting for"
 - "The algorithm is finally pushing"
+- "Real listeners know [title] is special before the algorithm catches up" (score=100, not beat-sale)
+- "In this video, I'm going to show you something incredible" (video endpoint bleed)
+- "New Drop Alert" (template header)
 
 **Fix:** `isStaleHook()` detects these prefixes; `freshHook(mood, title)` picks from a
 mood-indexed pool (dark / aggressive / melancholy / empowering / chill / upbeat /
@@ -17,6 +20,61 @@ mysterious / euphoric / driven) so each beat gets a distinct, high-energy opener
 
 **How to apply:** Call `cleanMaxCoreContent({ …, mood, title })` — already wired in
 `_generateMaxCoreCaption` at the bottom of `beatMoneyLoopService.ts`.
+
+---
+
+## CTA Gate — Positive Allowlist (contentPostProcessor.ts `fixPlatformCta`)
+
+**Problem:** The old deny-list regex (`GENERIC_CTA_RE`) missed many non-sale CTAs that
+MaxCore emits for beat posts on visual platforms:
+- "Add NightFire to the playlist — link in bio" (has "link in bio" but is NOT purchase)
+- "Drop a 🔥 if NightFire hits different" (engagement)
+- "Follow now and be first for every drop" (follower growth)
+- "Stay close: everything behind X drops here first!" (engagement)
+- "Subscribe and hit the bell" (YouTube bleed)
+
+**Fix:** Flipped from deny-list to **positive allowlist**. For `isBeatPost=true` on
+instagram/tiktok/threads/facebook: replace the CTA unless it contains:
+```
+/\b(licen[sc]e|lease|buy|get the|grab the|purchase|available now|first access)\b/i
+```
+Note: `link in bio` alone is NOT sufficient — a purchase verb must be present.
+
+**Why:** MaxCore PDIM fallback mode degrades CTA quality significantly. The deny-list
+approach required continuously expanding as new templates appeared; the allowlist is stable.
+
+**Test:** 13/13 cases pass. "Add X to the playlist — link in bio" → REPLACE. "License
+this beat — link in bio" → KEEP. "First listeners get first access — link in bio" → KEEP.
+
+---
+
+## Shadow-Banned Hashtag Filtering (contentPostProcessor.ts `normalizeHashtags`)
+
+**Problem:** When PDIM is offline, MaxCore returns platform names and broad terms as
+hashtags: `#instagram`, `#tiktok`, `#twitter`, `#music`, `#newrelease`, `#artist`.
+These are shadow-banned on all major platforms and waste discovery slots.
+
+**Fix:** `SHADOW_BANNED_TAGS` Set in `normalizeHashtags` strips them before merging
+genre-specific tags. Ensures `#NightFire #trapbeats #traptype #808trap #darktrapsound
+#beatsforsale #typebeat #producerlife` instead of `#NightFire #instagram #music #newrelease`.
+
+---
+
+## Body Repair: Prompt Bleed + Title Casing (contentPostProcessor.ts `repairBody`)
+
+**Problem A:** MaxCore PDIM-fallback mode sometimes leaks prompt instructions into body:
+`"Write about the actual beat — trap sound, 145 BPM. Reference these real production
+facts instead of generic hype."` — literal instruction text in the post body.
+
+**Problem B:** MaxCore lowercases the beat title in body: `"Built around one thing:
+nightfire — energetic, hype, no filler."` instead of `NightFire`.
+
+**Fix:** `repairBody(body, title)` function:
+1. Strips lines starting with imperative instruction verbs (`write about`, `reference
+   these`, `use the following`, `include the`, `note:`, `instruction:`)
+2. Restores proper title casing via case-insensitive replace with the original title
+
+**Applied in:** `cleanMaxCoreContent()` — runs before other body transformations.
 
 ---
 
@@ -53,12 +111,14 @@ Result: "Midnight Chase — Dark Trap Type Beat (G Minor) 140 BPM".
 
 ## Richer Caption Topic (beatMoneyLoopService.ts `_generateMaxCoreCaption`)
 
-**Problem:** Topic sent to MaxCore was `"${mood} ${genre} type beat — ${title}"` — no
-price anchor, no call to action context, so MaxCore wrote awareness copy not purchase copy.
+**Problem:** `beat_context` was being sent as a formatted string — MaxCore requires a
+JSON dict `{bpm, price, genre, license_type}` or returns 422. Topic was also too long
+(full metadata phrase), causing MaxCore to jam it into hashtag slot 0.
 
-**Fix:** Topic now: `"${title} — ${mood} ${genre} type beat at ${bpm} BPM. Non-exclusive
-license from $${price}. Available now on MaxBooster marketplace."` plus `beat_context`
-with `license_type`, `marketplace` fields. `goal: "drive_purchase"` preserved.
+**Fix:**
+- `topic`: beat title only (`args.title`)
+- `beat_context`: always a dict `{title, bpm, price, license_type, marketplace, action, production_details, listen_url}`
+- Added `cta: "License this beat — link in bio"`, `action: "license_beat"`, `platform_constraints: {allow_link_in_bio: true, cta_style: "direct_sale"}`
 
 ---
 
@@ -78,3 +138,19 @@ false positives on quiet cinematic intros.
 - Added `concept?`, `styleHook?`, `mcMusicalKey?`
 - `audioAnalysis` fields `spectral_brightness` and `bass_weight` are `string` (not `number`)
   per MaxCore's schema.
+
+---
+
+## MaxCore PDIM Offline Behaviour (Observed)
+
+When PDIM storage is offline, MaxCore runs in local fallback mode:
+- All endpoints still respond (HTTP 200)
+- `quality_score` may appear inflated (98-100) but output is degraded
+- Body copy is minimal: `"Built around one thing: {title} — {tone}, no filler."`
+- Hook is always a recycled stale template
+- CTA is rarely a beat-sale CTA
+- Hashtags are generic platform names + `#music`, `#newrelease`
+- A `storage_warning` field is present in the response
+
+Post-processor catches all of the above; the cycle can still produce usable output
+even with PDIM offline, as long as `cleanMaxCoreContent` runs with `isBeatPost: true`.
