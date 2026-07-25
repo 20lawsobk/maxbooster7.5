@@ -122,9 +122,34 @@ export class AdvertisingDispatchService {
       }
 
       // Filter to only use platforms that are both requested AND connected
-      const platformsToUse = requestedPlatforms?.filter((p) =>
+      let platformsToUse = requestedPlatforms?.filter((p) =>
         connectedPlatforms?.includes(p?.toLowerCase()),
       );
+
+      // Self-optimization feedback: optimizeTargeting() persists
+      // targetAudience.priorityPlatforms ranked by real engagement — dispatch
+      // in that order (and include any connected priority platform even if it
+      // wasn't in the original request) so targeting changes take real effect.
+      const ta = (campaign?.targetAudience as Record<string, unknown> | null) || {};
+      const priority = Array.isArray(ta?.priorityPlatforms)
+        ? (ta.priorityPlatforms as unknown[]).filter(
+            (p): p is string => typeof p === "string",
+          )
+        : [];
+      if (priority.length > 0) {
+        const connectedPriority = priority.filter((p) =>
+          connectedPlatforms?.includes(p.toLowerCase()),
+        );
+        const rank = (p: string) => {
+          const i = connectedPriority.findIndex(
+            (q) => q.toLowerCase() === p.toLowerCase(),
+          );
+          return i === -1 ? Number.MAX_SAFE_INTEGER : i;
+        };
+        platformsToUse = Array.from(
+          new Set([...connectedPriority, ...platformsToUse]),
+        ).sort((a, b) => rank(a) - rank(b));
+      }
 
       if (platformsToUse?.length === 0) {
         return {
@@ -243,8 +268,12 @@ export class AdvertisingDispatchService {
       const organicMetrics = {
         posts: Object.entries(postResults).map(([key, postId]) => {
           const [platform] = key?.split("_");
+          // Key format is `${platform}_${creative.id}` — recover the creative
+          // id so per-creative performance can drive optimizeCreative().
+          const creativeId = key?.slice((platform?.length ?? 0) + 1) || undefined;
           return {
             platform,
+            creativeId,
             posted: true,
             postId,
             metrics: {
@@ -616,6 +645,254 @@ export class AdvertisingDispatchService {
       });
       throw error;
     }
+  }
+
+  /**
+   * Load a campaign by id (internal/autonomous context — no user filter).
+   */
+  private async getCampaignById(campaignId: string) {
+    const rows = await db
+      .select()
+      .from(adCampaigns)
+      .where(eq(adCampaigns.id, campaignId))
+      .limit(1);
+    return rows[0] ?? null;
+  }
+
+  /**
+   * Aggregate real stored delivery metrics for a campaign.
+   * Derived entirely from data collected by collectCampaignEngagement —
+   * returns zeros when nothing has been collected yet (never fabricated).
+   */
+  async getCampaignMetrics(campaignId: string): Promise<{
+    impressions: number;
+    engagements: number;
+    ctr: number;
+    conversionRate: number;
+    roas: number;
+    perPlatform: Record<
+      string,
+      { impressions: number; engagements: number; posts: number }
+    >;
+  }> {
+    const campaign = await this.getCampaignById(campaignId);
+    if (!campaign) throw new Error(`Campaign ${campaignId} not found`);
+
+    const organic = (campaign.organicMetrics ?? {}) as {
+      posts?: Array<{
+        platform?: string;
+        metrics?: {
+          impressions?: number;
+          engagements?: number;
+          clicks?: number;
+        };
+      }>;
+      totalImpressions?: number;
+      totalEngagements?: number;
+    };
+
+    const impressions =
+      organic.totalImpressions ?? campaign.impressions ?? 0;
+    const engagements = organic.totalEngagements ?? campaign.clicks ?? 0;
+
+    const perPlatform: Record<
+      string,
+      { impressions: number; engagements: number; posts: number }
+    > = {};
+    for (const post of organic.posts ?? []) {
+      const platform = post.platform || "unknown";
+      if (!perPlatform[platform])
+        perPlatform[platform] = { impressions: 0, engagements: 0, posts: 0 };
+      perPlatform[platform].impressions += post.metrics?.impressions ?? 0;
+      perPlatform[platform].engagements += post.metrics?.engagements ?? 0;
+      perPlatform[platform].posts += 1;
+    }
+
+    const ctr = impressions > 0 ? engagements / impressions : 0;
+    // Organic delivery has no conversion pixel; approximate conversion rate
+    // as engagement depth (engagements per impression) — same source data,
+    // clearly a proxy, never invented.
+    const conversionRate = ctr;
+    // ROAS proxy for zero-cost organic delivery: estimated media value of
+    // impressions (CPM $5) versus configured budget. budget=0 → roas 0 when
+    // no data, or a large value when impressions exist at no cost.
+    const budget = campaign.budget ?? 0;
+    const estimatedValue = (impressions / 1000) * 5;
+    const roas =
+      budget > 0 ? estimatedValue / budget : impressions > 0 ? 999 : 0;
+
+    return { impressions, engagements, ctr, conversionRate, roas, perPlatform };
+  }
+
+  /**
+   * Refocus targeting on the platforms that actually perform.
+   * Real side effect: rewrites targetAudience.priorityPlatforms (read on the
+   * next dispatch) and appends to aiOptimizations.history.
+   */
+  async optimizeTargeting(campaignId: string): Promise<boolean> {
+    const campaign = await this.getCampaignById(campaignId);
+    if (!campaign) return false;
+    const metrics = await this.getCampaignMetrics(campaignId);
+
+    const ranked = Object.entries(metrics.perPlatform)
+      .map(([platform, m]) => ({
+        platform,
+        rate: m.impressions > 0 ? m.engagements / m.impressions : 0,
+      }))
+      .sort((a, b) => b.rate - a.rate);
+
+    if (ranked.length === 0) {
+      logger.info(
+        `[AdDispatch] optimizeTargeting(${campaignId}): no per-platform data yet — skipping`,
+      );
+      return false;
+    }
+
+    const priorityPlatforms = ranked
+      .filter((r) => r.rate > 0)
+      .map((r) => r.platform);
+    const targetAudience = {
+      ...((campaign.targetAudience as Record<string, unknown>) ?? {}),
+      priorityPlatforms:
+        priorityPlatforms.length > 0
+          ? priorityPlatforms
+          : ranked.map((r) => r.platform),
+    };
+
+    await db
+      .update(adCampaigns)
+      .set({
+        targetAudience,
+        aiOptimizations: this.appendOptimization(campaign, {
+          type: "targeting",
+          priorityPlatforms: targetAudience.priorityPlatforms,
+          basis: ranked,
+        }),
+        updatedAt: new Date(),
+      })
+      .where(eq(adCampaigns.id, campaignId));
+    logger.info(
+      `[AdDispatch] optimizeTargeting(${campaignId}): priority=${(targetAudience.priorityPlatforms as string[]).join(",")}`,
+    );
+    return true;
+  }
+
+  /**
+   * Reorder creatives so best-engaging variants dispatch first.
+   * Real side effect: rewrites creativeIds order + aiOptimizations.history.
+   */
+  async optimizeCreative(campaignId: string): Promise<boolean> {
+    const campaign = await this.getCampaignById(campaignId);
+    if (!campaign) return false;
+    const ids = campaign.creativeIds ?? [];
+    if (ids.length < 2) {
+      logger.info(
+        `[AdDispatch] optimizeCreative(${campaignId}): ${ids.length} creative(s) — nothing to reorder`,
+      );
+      return false;
+    }
+
+    // Score creatives by engagement recorded on delivery logs / organic posts.
+    const organic = (campaign.organicMetrics ?? {}) as {
+      posts?: Array<{
+        creativeId?: string;
+        metrics?: { engagements?: number; impressions?: number };
+      }>;
+    };
+    const score = new Map<string, number>();
+    for (const post of organic.posts ?? []) {
+      if (!post.creativeId) continue;
+      const imp = post.metrics?.impressions ?? 0;
+      const eng = post.metrics?.engagements ?? 0;
+      const rate = imp > 0 ? eng / imp : 0;
+      score.set(post.creativeId, Math.max(score.get(post.creativeId) ?? 0, rate));
+    }
+    if (score.size === 0) {
+      logger.info(
+        `[AdDispatch] optimizeCreative(${campaignId}): no creative-level metrics yet — skipping`,
+      );
+      return false;
+    }
+
+    const reordered = [...ids].sort(
+      (a, b) => (score.get(b) ?? 0) - (score.get(a) ?? 0),
+    );
+    if (reordered.join() === ids.join()) return false; // no change → no claim
+
+    await db
+      .update(adCampaigns)
+      .set({
+        creativeIds: reordered,
+        aiOptimizations: this.appendOptimization(campaign, {
+          type: "creative",
+          order: reordered,
+          scores: Object.fromEntries(score),
+        }),
+        updatedAt: new Date(),
+      })
+      .where(eq(adCampaigns.id, campaignId));
+    logger.info(
+      `[AdDispatch] optimizeCreative(${campaignId}): reordered ${reordered.length} creatives by engagement`,
+    );
+    return true;
+  }
+
+  /**
+   * Budget/pacing optimization for organic-first delivery.
+   * Real side effect: adjusts dailyBudget pacing + aiOptimizations.history.
+   */
+  async optimizeBidding(campaignId: string): Promise<boolean> {
+    const campaign = await this.getCampaignById(campaignId);
+    if (!campaign) return false;
+    const metrics = await this.getCampaignMetrics(campaignId);
+
+    const currentDaily = campaign.dailyBudget ?? 0;
+    if (currentDaily <= 0) {
+      logger.info(
+        `[AdDispatch] optimizeBidding(${campaignId}): organic-only (no paid budget) — nothing to adjust`,
+      );
+      return false;
+    }
+
+    // Low ROAS → throttle paid spend 15% and lean on organic delivery;
+    // strong ROAS is handled by the caller not invoking this method.
+    const newDaily = Math.max(1, Number((currentDaily * 0.85).toFixed(2)));
+    if (newDaily === currentDaily) return false;
+
+    await db
+      .update(adCampaigns)
+      .set({
+        dailyBudget: newDaily,
+        aiOptimizations: this.appendOptimization(campaign, {
+          type: "bidding",
+          previousDailyBudget: currentDaily,
+          newDailyBudget: newDaily,
+          roas: metrics.roas,
+        }),
+        updatedAt: new Date(),
+      })
+      .where(eq(adCampaigns.id, campaignId));
+    logger.info(
+      `[AdDispatch] optimizeBidding(${campaignId}): dailyBudget ${currentDaily} → ${newDaily} (roas=${metrics.roas.toFixed(2)})`,
+    );
+    return true;
+  }
+
+  /** Append an entry to aiOptimizations.history, preserving existing keys. */
+  private appendOptimization(
+    campaign: { aiOptimizations?: unknown },
+    entry: Record<string, unknown>,
+  ): Record<string, unknown> {
+    const existing =
+      (campaign.aiOptimizations as Record<string, unknown>) ?? {};
+    const history = Array.isArray(existing.history) ? existing.history : [];
+    return {
+      ...existing,
+      realTimeOptimization: true,
+      history: [...history, { ...entry, at: new Date().toISOString() }].slice(
+        -50,
+      ),
+    };
   }
 }
 

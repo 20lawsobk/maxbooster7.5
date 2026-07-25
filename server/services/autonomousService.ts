@@ -1,4 +1,7 @@
 import { storage } from "../storage";
+import { db } from "../db";
+import { adCampaigns } from "@shared/schema";
+import { eq } from "drizzle-orm";
 import { socialQueueService } from "./socialQueueService";
 import { advertisingDispatchService } from "./advertisingDispatchService";
 import { approvalService } from "./approvalService";
@@ -861,7 +864,11 @@ export class AutonomousService extends EventEmitter {
 
   async runCampaignOptimization(campaignId: string): Promise<void> {
     try {
-      const campaign = await storage?.getAdCampaign(campaignId);
+      const [campaign] = await db
+        .select()
+        .from(adCampaigns)
+        .where(eq(adCampaigns.id, campaignId))
+        .limit(1);
       if (!campaign || campaign?.status !== "active") {
         await removeCampaignOptimization(campaignId);
         return;
@@ -870,23 +877,45 @@ export class AutonomousService extends EventEmitter {
       const metrics =
         await advertisingDispatchService?.getCampaignMetrics(campaignId);
 
+      if (!metrics || metrics.impressions === 0) {
+        logger.info(
+          `[AUTONOMOUS] Campaign ${campaignId}: no delivery metrics collected yet — skipping optimization pass`,
+        );
+        return;
+      }
+
+      // Track which optimizers actually persisted a change so status,
+      // counters, and the notification stay honest (no claim without a
+      // real applied update).
+      const applied: string[] = [];
+
       if (metrics?.ctr < 0.01) {
-        await advertisingDispatchService?.optimizeTargeting(campaignId);
+        if (await advertisingDispatchService?.optimizeTargeting(campaignId))
+          applied.push("targeting");
       }
 
       if (metrics?.conversionRate < 0.02) {
-        await advertisingDispatchService?.optimizeCreative(campaignId);
+        if (await advertisingDispatchService?.optimizeCreative(campaignId))
+          applied.push("creative");
       }
 
       if (metrics?.roas < 2) {
-        await advertisingDispatchService?.optimizeBidding(campaignId);
+        if (await advertisingDispatchService?.optimizeBidding(campaignId))
+          applied.push("bidding");
+      }
+
+      if (applied.length === 0) {
+        logger.info(
+          `[AUTONOMOUS] Campaign ${campaignId}: no optimization applied (metrics healthy or insufficient data) - CTR: ${metrics?.ctr}, ROAS: ${metrics?.roas}`,
+        );
+        return;
       }
 
       this.metrics.campaignsOptimized++;
       this.metrics.lastUpdated = new Date();
 
       logger.info(
-        `[AUTONOMOUS] Campaign ${campaignId} optimized - CTR: ${metrics?.ctr}, ROAS: ${metrics?.roas}`,
+        `[AUTONOMOUS] Campaign ${campaignId} optimized (${applied.join(", ")}) - CTR: ${metrics?.ctr}, ROAS: ${metrics?.roas}`,
       );
 
       if (campaign?.userId) {
@@ -899,7 +928,7 @@ export class AutonomousService extends EventEmitter {
             userId: campaign.userId,
             type: "ad_campaign_optimized",
             title: "🚀 Campaign Automatically Optimized",
-            message: `Your campaign "${campaign.name || campaignId}" was optimized by the AI. ${roasLabel}. Targeting, creative, and bidding updated.`,
+            message: `Your campaign "${campaign.name || campaignId}" was optimized by the AI. ${roasLabel}. Updated: ${applied.join(", ")}.`,
             link: `/campaigns/${campaignId}`,
             metadata: {
               campaignId,
@@ -928,7 +957,10 @@ export class AutonomousService extends EventEmitter {
       const autonomousUsers = Array.from(this.autonomousWhitelist);
 
       for (const userId of autonomousUsers) {
-        const pendingPosts = await storage?.getPendingSocialPosts(userId);
+        const allPosts = await storage?.getSocialPosts(userId);
+        const pendingPosts = (allPosts ?? []).filter(
+          (p) => p?.status === "scheduled" || p?.status === "pending",
+        );
 
         for (const post of pendingPosts) {
           if (post?.scheduledAt && new Date(post?.scheduledAt) <= new Date()) {
@@ -936,10 +968,15 @@ export class AutonomousService extends EventEmitter {
           }
         }
 
-        const activeCampaigns = await storage?.getActiveAdCampaigns(userId);
+        const allCampaigns = await storage?.getAdvertisingCampaigns(userId);
+        const activeCampaigns = (allCampaigns ?? []).filter(
+          (c) => c?.status === "active",
+        );
         for (const campaign of activeCampaigns) {
-          if (campaign?.approvalStatus === "auto-approved") {
-            await advertisingDispatchService?.optimizeCampaign(campaign?.id);
+          const approval = (campaign?.metadata as Record<string, unknown>)
+            ?.approvalStatus;
+          if (approval === "auto-approved" || approval === undefined) {
+            await this.runCampaignOptimization(campaign.id);
           }
         }
       }

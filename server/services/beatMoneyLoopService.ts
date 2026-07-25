@@ -343,11 +343,55 @@ class BeatMoneyLoopService {
       };
     }
     const result = await this.runCycle("schedule");
+
+    // ── Self-optimization: adaptive batch size ────────────────────────────
+    // When demand is proven (recent downloads/revenue) and the loop is healthy,
+    // queue extra back-to-back cycles this tick (up to 3 total). Extra cycles
+    // reuse the auto-chain queue, so they run sequentially and each records
+    // its own cycle row. Failures or zero demand keep the batch at 1.
+    if (result.status !== "failed") {
+      try {
+        const extra = (await this._optimalBatchSize()) - 1;
+        if (extra > 0) {
+          logger.info(
+            `[BeatMoneyLoop] batch self-opt: demand supports ${extra + 1} beats this tick — queueing ${extra} extra cycle(s)`,
+          );
+          this.queueOverrides(Array.from({ length: extra }, () => ({})));
+        }
+      } catch (e) {
+        logger.warn(
+          `[BeatMoneyLoop] batch-size self-opt skipped: ${(e as Error).message}`,
+        );
+      }
+    }
+
     return {
       ran: true,
       reason: `cycle-${result.status}`,
       cycleId: result.cycleId,
     };
+  }
+
+  /**
+   * Self-optimized number of beats to generate per scheduled tick (1–3).
+   * Driven ONLY by real outcomes: recent downloads/revenue raise the batch,
+   * recent failures pin it at 1 (protects MaxCore + avoids waste).
+   */
+  private async _optimalBatchSize(): Promise<number> {
+    const state = await this._ensureStateRow();
+    if (state.consecutiveFailures > 0) return 1;
+
+    const perf = await this._genrePerformance();
+    let downloads = 0;
+    let revenueCents = 0;
+    for (const stats of perf.values()) {
+      downloads += stats.downloads;
+      revenueCents += stats.revenueCents;
+    }
+
+    if (downloads >= 5 || revenueCents >= 10_000) return 3;
+    if (downloads >= 1 || revenueCents > 0) return 2;
+    return 1;
   }
 
   /** Run a single cycle end-to-end. Records every outcome to beatMoneyLoopCycles. */
@@ -377,7 +421,7 @@ class BeatMoneyLoopService {
     try {
       // 1. SCAN
       const ctx = await musicIndustryContextFilter.getContextForMode("music");
-      const scan = this._distillScan(ctx, overrides);
+      const scan = await this._distillScan(ctx, overrides);
       await db
         .update(beatMoneyLoopCycles)
         .set({ status: "generating", scanContext: scan })
@@ -574,10 +618,10 @@ class BeatMoneyLoopService {
    *  When `overrides` are supplied (e.g. from a manual /run-now call), they
    *  short-circuit the random pool for that field so the caller can target a
    *  specific genre/mood/key without changing the scheduler logic. */
-  private _distillScan(
+  private async _distillScan(
     ctx: MusicIndustryContext,
     overrides?: { genre?: string; mood?: string; key?: string },
-  ): {
+  ): Promise<{
     genre: string;
     mood: string;
     tempo: number;
@@ -585,7 +629,7 @@ class BeatMoneyLoopService {
     hooks: string[];
     productionStyles: string[];
     requestedKey?: string;
-  } {
+  }> {
     // Short-circuit: if both genre AND mood are overridden, skip pool entirely.
     if (overrides?.genre && overrides?.mood) {
       const baseTemp = 120;
@@ -640,7 +684,20 @@ class BeatMoneyLoopService {
           ...(ctx.trendingMoods?.slice(0, 4) ?? []),
         ];
 
-    const genre = pickRandom(genrePool, TRENDING_GENRE_FALLBACK);
+    // ── Self-optimization: weight genre selection by real revenue outcomes ──
+    // Recent cycles' plays/downloads/revenue (backfilled by analyseRecentCycles)
+    // bias the pick toward genres that actually earn, while untried genres get
+    // a forced-exploration bonus so the loop never locks onto one arm.
+    let genre: string;
+    try {
+      const perf = await this._genrePerformance();
+      genre = this._weightedGenrePick(genrePool, perf, TRENDING_GENRE_FALLBACK);
+    } catch (e) {
+      logger.warn(
+        `[BeatMoneyLoop] genre performance lookup failed — falling back to uniform pick: ${(e as Error).message}`,
+      );
+      genre = pickRandom(genrePool, TRENDING_GENRE_FALLBACK);
+    }
     const mood = pickRandom(moodPool, TRENDING_MOOD_FALLBACK);
 
     // Tempo: bias from hint + ±5 BPM jitter so consecutive cycles differ.
@@ -1140,11 +1197,130 @@ class BeatMoneyLoopService {
       .sort((a, b) => a - b);
     if (sorted.length === 0) return FALLBACK_PRICE;
     const median = sorted[Math.floor(sorted.length / 2)];
-    const competitive = Math.max(
-      9.99,
-      +(median * PRICE_UNDERCUT_FACTOR).toFixed(2),
-    );
+
+    // ── Self-optimization: adapt the price factor to real demand ──────────
+    // Genres with actual downloads can bear a higher price (up to +15% over
+    // median); genres with 3+ listings and zero downloads discount to move
+    // inventory. Falls back to the static undercut factor when history is
+    // thin or the lookup fails.
+    let factor = PRICE_UNDERCUT_FACTOR;
+    try {
+      const perf = await this._genrePerformance();
+      const stats = perf.get(this._genreKey(genre));
+      if (stats) {
+        if (stats.downloads > 0) {
+          factor = Math.min(
+            1.15,
+            PRICE_UNDERCUT_FACTOR + 0.05 * Math.min(4, stats.downloads),
+          );
+        } else if (stats.cycles >= 3) {
+          factor = 0.85;
+        }
+        if (factor !== PRICE_UNDERCUT_FACTOR) {
+          logger.info(
+            `[BeatMoneyLoop] price self-opt: genre=${genre} cycles=${stats.cycles} downloads=${stats.downloads} → factor ${factor.toFixed(2)} (base ${PRICE_UNDERCUT_FACTOR})`,
+          );
+        }
+      }
+    } catch {
+      /* keep static factor */
+    }
+
+    const competitive = Math.max(9.99, +(median * factor).toFixed(2));
     return competitive;
+  }
+
+  /** Normalize genre spellings so history aggregates correctly (lo_fi/lofi, r&b/rnb). */
+  private _genreKey(genre: string): string {
+    return genre.toLowerCase().replace(/[-_\s]/g, "").replace("&", "n");
+  }
+
+  /**
+   * Self-optimization data source: per-genre outcomes from recent cycles.
+   * Uses ONLY real backfilled metrics (plays/downloads/revenueCents written
+   * by analyseRecentCycles) — no fabricated scores.
+   */
+  private async _genrePerformance(): Promise<
+    Map<
+      string,
+      { cycles: number; plays: number; downloads: number; revenueCents: number }
+    >
+  > {
+    const rows = await db
+      .select({
+        scanContext: beatMoneyLoopCycles.scanContext,
+        plays: beatMoneyLoopCycles.plays,
+        downloads: beatMoneyLoopCycles.downloads,
+        revenueCents: beatMoneyLoopCycles.revenueCents,
+      })
+      .from(beatMoneyLoopCycles)
+      .where(
+        and(
+          inArray(beatMoneyLoopCycles.status, ["completed", "listed"]),
+          gte(
+            beatMoneyLoopCycles.startedAt,
+            new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
+          ),
+        ),
+      )
+      .limit(500);
+
+    const map = new Map<
+      string,
+      { cycles: number; plays: number; downloads: number; revenueCents: number }
+    >();
+    for (const row of rows) {
+      const g = (row.scanContext as { genre?: string } | null)?.genre;
+      if (!g) continue;
+      const key = this._genreKey(g);
+      const agg = map.get(key) ?? {
+        cycles: 0,
+        plays: 0,
+        downloads: 0,
+        revenueCents: 0,
+      };
+      agg.cycles += 1;
+      agg.plays += row.plays ?? 0;
+      agg.downloads += row.downloads ?? 0;
+      agg.revenueCents += row.revenueCents ?? 0;
+      map.set(key, agg);
+    }
+    return map;
+  }
+
+  /**
+   * Revenue-weighted genre pick with forced exploration.
+   * - Every candidate keeps a base weight of 1 (never fully excluded).
+   * - Earning genres gain up to +4 weight from revenue/downloads/plays.
+   * - Untried genres get +1.5 exploration bonus so the loop keeps sampling
+   *   the full space and never locks onto a single arm.
+   */
+  private _weightedGenrePick(
+    pool: string[],
+    perf: Map<
+      string,
+      { cycles: number; plays: number; downloads: number; revenueCents: number }
+    >,
+    fallback: string,
+  ): string {
+    const candidates = pool.filter(Boolean);
+    if (candidates.length === 0) return fallback;
+
+    const weights = candidates.map((g) => {
+      const stats = perf.get(this._genreKey(g));
+      if (!stats || stats.cycles === 0) return 1 + 1.5; // force-explore untried
+      const earned =
+        stats.revenueCents / 100 + stats.downloads * 2 + stats.plays * 0.05;
+      return 1 + Math.min(4, earned / Math.max(1, stats.cycles));
+    });
+
+    const total = weights.reduce((a, b) => a + b, 0);
+    let roll = Math.random() * total;
+    for (let i = 0; i < candidates.length; i++) {
+      roll -= weights[i];
+      if (roll <= 0) return candidates[i];
+    }
+    return candidates[candidates.length - 1];
   }
 
   /** Upload WAV bytes to hybrid storage + insert beats row. Returns beat id. */
