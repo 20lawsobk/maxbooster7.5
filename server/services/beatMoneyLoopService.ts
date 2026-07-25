@@ -1075,7 +1075,13 @@ class BeatMoneyLoopService {
           .replace(/\s*[,(]\s*[\d.]+\s*BPM[^)]*\)?/gi, "")
           .replace(/\s*[,(]\s*[A-G][b#]?\s+(?:major|minor)[^)]*\)?/gi, "")
           .trim()
-          .slice(0, 50)
+          // Cap at 50 chars — but cut at a word boundary so the title never
+          // ends mid-word (e.g. "…away from the industr").
+          .replace(/^([\s\S]{0,50})(?:\s[\s\S]*)?$/, (_m, head: string) =>
+            head.length === 50 && /\S/.test(head.charAt(49))
+              ? head.replace(/\s+\S*$/, "")
+              : head,
+          )
           .trim();
         const title = conceptClean
           ? `${conceptClean.charAt(0).toUpperCase() + conceptClean.slice(1)} — ${titleAdj} ${titleGenre} Type Beat${keyStr}${bpmStr}`

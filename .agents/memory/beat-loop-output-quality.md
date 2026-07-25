@@ -154,3 +154,5 @@ When PDIM storage is offline, MaxCore runs in local fallback mode:
 
 Post-processor catches all of the above; the cycle can still produce usable output
 even with PDIM offline, as long as `cleanMaxCoreContent` runs with `isBeatPost: true`.
+
+UPDATE 2026-07-25: MaxCore now returns 320kbps stereo 30s MP3 (in .wav filename), max_volume -8.2dB (no clipping) — old mono/92kbps/clipping issues resolved server-side. Title truncation now cuts at word boundary (was mid-word).
