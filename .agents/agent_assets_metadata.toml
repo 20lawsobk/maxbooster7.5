@@ -48,3 +48,9 @@ id = "VLLh5EMV-WgVaeWPO2YxI"
 uri = "file://patents/pdf/07_maxcore_score_calibrator.pdf"
 type = "pdf"
 title = "Patent BLM-007 — MaxCore Score Calibrator"
+
+[[outputs]]
+id = "UMsK4nmnO5ZVs3mQzrtCC"
+uri = "file://public/generated-content/audio/beat_1784973558829_690bf5d3dbb9d57b.wav"
+type = "audio"
+title = "Chill Indie Type Beat (G Major) 95.7 BPM — MaxCore"
