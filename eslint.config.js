@@ -115,6 +115,16 @@ export default [
       // HARDENING: Division-by-zero prevention (Recommendation 1)
       "no-division-by-zero/no-division-by-zero": "error",
 
+      // HARDENING: code-injection primitives are always errors.
+      "no-eval": "error",
+      "no-implied-eval": "error",
+      "no-new-func": "error",
+      "no-script-url": "error",
+      // Ratchet rules — warnings for now (see header comment).
+      "eqeqeq": ["warn", "smart"],
+      "no-return-assign": "warn",
+      "no-param-reassign": "off",
+
       "no-console": ["warn", { allow: ["warn", "error"] }],
       "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": [

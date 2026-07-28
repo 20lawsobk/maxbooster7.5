@@ -2,9 +2,17 @@
   "appId": "com.blawzmusic.maxbooster",
   "appName": "Max Booster",
   "webDir": "dist/public",
+  "backgroundColor": "#0a0a0f",
   "server": {
     "url": "https://maxbooster.replit.app",
-    "cleartext": true
+    "cleartext": false,
+    "androidScheme": "https",
+    "iosScheme": "https",
+    "allowNavigation": [
+      "maxbooster.replit.app",
+      "max-booster.com",
+      "*.max-booster.com"
+    ]
   },
   "plugins": {
     "SplashScreen": {

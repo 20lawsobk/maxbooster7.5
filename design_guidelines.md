@@ -6,6 +6,24 @@
 
 ## Core Design Elements
 
+### Spacing Scale
+
+Canonical pixel scale (Tailwind unit in parentheses): **4 (1) · 8 (2) · 12 (3) · 16 (4) · 24 (6) · 32 (8)**, extending to 48 (12), 64 (16), 96 (24) for section rhythm. Never use arbitrary values between steps; if a layout needs an in-between value, the layout is wrong.
+
+### Typography Scale (px)
+
+| Token | Size | Usage |
+|---|---|---|
+| xs | 12px | Captions, timestamps, mono data labels |
+| sm | 14px | Secondary body, table cells |
+| base | 16px | Body copy |
+| lg | 18px | Lead paragraphs |
+| xl | 20px | Card titles |
+| 2xl | 24px | Subsection headers |
+| 3xl | 32px | Section headers (page-level h2) |
+
+Hero/display sizes (5xl–7xl) sit above this scale and are reserved for marketing surfaces only.
+
 ### Typography
 
 - **Primary Font**: Inter (700 for headings, 600 for subheadings, 400/500 for body)
@@ -26,6 +44,34 @@
 - **Foundation**: Deep navy/midnight blues (multiple depths for layering)
 - **Accents**: Rich purples (secondary actions, highlights), Gold/Amber (premium features, CTAs, success states)
 - **Application**: Gold for primary CTAs and premium badges, Purple for interactive states and data viz, maintain dark background hierarchy throughout
+
+### Motion Guidelines (Framer Motion)
+
+- **Durations:** micro-interactions 120–180ms, component transitions 200–300ms, page/section entrances 300–450ms. Nothing over 500ms.
+- **Easing:** `easeOut` for entrances, `easeInOut` for state changes; springs only for playful marketplace elements (`stiffness: 300, damping: 25`).
+- **Stagger:** feature/card grids stagger children at 60–80ms.
+- **Respect `prefers-reduced-motion`:** wrap non-essential animation in `useReducedMotion()`; scroll-triggered fades degrade to instant visibility.
+- Never animate layout-affecting properties on scroll (use `transform`/`opacity` only).
+
+### Accessibility Rules
+
+- **Contrast:** body text ≥ 4.5:1 against its background; large text and UI glyphs ≥ 3:1. Gold-on-dark CTAs must use the darkened gold text variant, not pure amber.
+- **Focus states:** every interactive element gets a visible focus ring (2px, brand purple, 2px offset). Never `outline: none` without a replacement.
+- **Targets:** minimum 44×44px touch targets on mobile surfaces.
+- **Semantics:** Radix primitives supply ARIA; don't rebuild dialogs/menus by hand. Images require `alt`; decorative SVGs get `aria-hidden`.
+- **Motion & audio:** honor `prefers-reduced-motion`; no auto-playing audio anywhere.
+
+### Component Library Mapping
+
+| Design element | Implementation |
+|---|---|
+| Button | Radix Slot + ShadCN `button.tsx` variants (gold = `default`, purple = `secondary`) |
+| Dialog/Modal | Radix Dialog via ShadCN `dialog.tsx` |
+| Dropdown/Menu | Radix DropdownMenu via ShadCN |
+| Toast | ShadCN `toaster` (Radix Toast) |
+| Forms | react-hook-form + Zod + ShadCN `form.tsx` |
+| Charts | Recharts with purple-gold gradient tokens |
+| Images w/ fallback | `safe-img.tsx` / `lazy-image.tsx` (fall back to `/placeholder.svg`) |
 
 ## Component Library
 

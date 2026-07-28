@@ -11,6 +11,18 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(clients.claim());
 });
 
+// Only same-origin URLs may be opened from a notification click.
+function sanitizeUrl(url) {
+  if (typeof url !== "string" || !url) return "/";
+  try {
+    const resolved = new URL(url, self.location.origin);
+    if (resolved.origin !== self.location.origin) return "/";
+    return resolved.pathname + resolved.search + resolved.hash;
+  } catch {
+    return "/";
+  }
+}
+
 self.addEventListener("push", (event) => {
   if (!event.data) return;
 
@@ -28,7 +40,7 @@ self.addEventListener("push", (event) => {
     badge: payload.badge || DEFAULT_BADGE,
     tag: payload.tag || "max-booster-notification",
     renotify: true,
-    data: { url: payload.url || "/" },
+    data: { url: sanitizeUrl(payload.url) },
     actions: payload.actions || [
       { action: "open", title: "Open" },
       { action: "dismiss", title: "Dismiss" },
@@ -43,7 +55,7 @@ self.addEventListener("notificationclick", (event) => {
 
   if (event.action === "dismiss") return;
 
-  const targetUrl = event.notification.data?.url || "/";
+  const targetUrl = sanitizeUrl(event.notification.data?.url);
 
   event.waitUntil(
     clients

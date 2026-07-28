@@ -91,17 +91,20 @@
     {
       "name": "Dashboard",
       "url": "/dashboard",
-      "description": "View your music career dashboard"
+      "description": "View your music career dashboard",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96", "type": "image/png" }]
     },
     {
-      "name": "Studio",
+      "name": "Open Studio",
       "url": "/studio",
-      "description": "Open the music production studio"
+      "description": "Open the music production studio",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96", "type": "image/png" }]
     },
     {
       "name": "Distribution",
       "url": "/distribution",
-      "description": "Distribute your music to platforms"
+      "description": "Distribute your music to platforms",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96", "type": "image/png" }]
     }
   ],
   "related_applications": [],

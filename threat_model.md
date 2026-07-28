@@ -59,3 +59,25 @@ This codebase has many route groups with mixed public and authenticated behavior
 ### Repudiation
 
 Sensitive actions such as admin changes, subscription updates, domain attachment, DNS record changes, and publishing events should be attributable to the acting user with durable logs that avoid leaking secrets. Auditability matters because the platform automates artist workflows and can affect payments, routing, and public storefront visibility.
+
+## Mitigation Matrix (STRIDE → Controls)
+
+| STRIDE category | Primary threats | Implemented controls | Severity if broken (CVSS-style) |
+|---|---|---|---|
+| **S**poofing | Session/JWT forgery, OAuth callback forgery, webhook spoofing | Session cookies (`SESSION_SECRET`), JWT verification, CSRF double-submit (`csrf-token` cookie + `X-CSRF-Token` header), Stripe/webhook signature checks, 2FA via Twilio Verify | Critical (9.x) — account takeover |
+| **T**ampering | Cross-tenant writes by ID, DNS record injection, price manipulation | Server-side ownership checks per route, Drizzle parameterized queries, Zod input validation on mutation routes | Critical (9.x) — cross-tenant data integrity |
+| **R**epudiation | Untraceable admin/financial actions | `audit_logs` table (`risk` column: low→critical), pino structured logging, per-user attribution on sensitive routes | Medium (5.x) |
+| **I**nformation disclosure | Secret leakage in responses/logs, cross-tenant reads | Secrets only via env/Replit Secrets, helmet security headers, worker-level HSTS/CSP fallback (cf-subdomain-worker.js), sanitized error responses | High (7.x–8.x) |
+| **D**enial of service | Cheap triggering of expensive AI/DNS/media work | Rate limiting middleware, MaxCore circuit breaker + bulkhead, request timeouts (25s generation cap), SW/API cache TTLs | Medium-High (6.x) |
+| **E**levation of privilege | Public routes reaching admin behavior, sidecar proxy abuse | `useRequireAdmin` client gating + server-side role checks on `/api/admin/*`, internal-proxy shared secret, MaxCore Bearer-only auth | Critical (9.x) |
+
+## Automated Scanning
+
+- `npm run lint` — ESLint with injection-primitive rules (`no-eval`, `no-implied-eval`, `no-new-func`, `no-script-url`) as hard errors.
+- `npm audit` / dependency audit — run via `npm run audit`; `tar` is stubbed locally due to a platform-blocked advisory.
+- Replit Agent security scans (SAST + dependency + secret-detection) available on demand.
+- `npm run check` — split server/client typecheck, catches unsafe API-shape drift.
+
+## Review Cadence
+
+Re-run this model when adding: a new public route group, a new external provider, a new tenant-owned resource type, or any change to auth/session code.
