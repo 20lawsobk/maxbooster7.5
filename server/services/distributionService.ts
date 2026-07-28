@@ -1,0 +1,2000 @@
+import { randomBytes } from "crypto";
+import { storage as baseStorage } from "../storage";
+import { db } from "../db.js";
+import { dspAnalytics, releases, royaltySplits } from "@shared/schema";
+import { eq, sql as drizzleSql } from "drizzle-orm";
+import { notificationService } from "./notificationService.js";
+
+import type { InsertRelease, Release, DistributionPackage, InsertDistributionPackage, DistributionTrack, InsertDistributionTrack, DistributionSLAMetric, ContentIdRegistration, InsertSyncLicense, SyncLicense, InsertSyncLicenseInquiry, SyncLicenseInquiry, InsertRoyaltySplit, RoyaltySplit, InsertRoyaltyTransaction, RoyaltyTransaction, InsertPreSaveCampaign, PreSaveCampaign, InsertPreSaveEntry, PreSaveEntry } from "@shared/schema";
+import archiver from "archiver";
+import fs from "fs";
+import fsPromises from "fs/promises";
+import path from "path";
+import { createWriteStream } from "fs";
+import { storageService } from "./storageService.js";
+import os from "os";
+import { randomUUID } from "crypto";
+import { labelGridService } from "./labelgrid-service.js";
+import { logger } from "../logger.js";
+
+const DEFAULT_SLA_TARGET_HOURS = 48;
+
+// ---------------------------------------------------------------------------
+// Local boundary types.
+//
+// The distribution "package"/"track" feature and several storage helper methods
+// referenced below are not (yet) part of the generated Drizzle schema or the
+// DatabaseStorage class. Rather than mutate shared schema / storage definitions,
+// we describe the shapes we consume here and cast at the storage read seam. This
+// preserves runtime behavior exactly (the same method calls are issued at
+// runtime) while giving the type checker precise, local information.
+// ---------------------------------------------------------------------------
+
+interface DistributionPackage {
+  id: string;
+  upc?: string | null;
+  albumTitle?: string | null;
+  releaseDate?: Date | null;
+  label?: string | null;
+  artworkUrl?: string | null;
+  copyrightP?: string | null;
+  copyrightC?: string | null;
+  [key: string]: unknown;
+}
+
+type InsertDistributionPackage = Omit<DistributionPackage, "id"> & {
+  upc?: string | null;
+};
+
+interface DistributionTrack {
+  id: string;
+  isrc?: string | null;
+  trackNumber?: number | null;
+  title?: string | null;
+  artist?: string | null;
+  genre?: string | null;
+  duration?: number | null;
+  explicitContent?: boolean | null;
+  credits?: string | null;
+  lyrics?: string | null;
+  [key: string]: unknown;
+}
+
+type InsertDistributionTrack = Omit<DistributionTrack, "id"> & {
+  isrc?: string | null;
+};
+
+// Enriched release row shape: the base `releases` table does not carry these
+// DSP-facing fields directly (some live in metadata / related records), but the
+// distribution flow reads them off the release object. Declared locally and
+// applied at the read seam.
+type EnrichedRelease = Release & {
+  artist?: string | null;
+  genre?: string | null;
+  label?: string | null;
+  coverArt?: string | null;
+  copyrightHolder?: string | null;
+  platforms?: unknown;
+};
+
+interface DistributionStorage {
+  createRelease(data: InsertRelease): Promise<Release>;
+  getUserReleases(userId: string): Promise<Release[]>;
+  updateRelease(
+    releaseId: string,
+    userId: string,
+    updates: Record<string, unknown>,
+  ): Promise<Release>;
+  getDistroRelease(releaseId: string): Promise<EnrichedRelease | undefined>;
+
+  createDistributionPackage(
+    data: InsertDistributionPackage,
+  ): Promise<DistributionPackage>;
+  getDistributionPackage(
+    projectId: string,
+  ): Promise<DistributionPackage | undefined>;
+  getDistributionPackageById(
+    packageId: string,
+  ): Promise<DistributionPackage | undefined>;
+  updateDistributionPackage(
+    packageId: string,
+    updates: Partial<DistributionPackage>,
+  ): Promise<DistributionPackage>;
+  createDistributionTrack(
+    track: InsertDistributionTrack,
+  ): Promise<DistributionTrack>;
+  getPackageTracks(packageId: string): Promise<DistributionTrack[]>;
+
+  createDistributionSLAMetric(
+    data: Record<string, unknown>,
+  ): Promise<DistributionSLAMetric>;
+  getDistributionSLAMetric(
+    metricId: string,
+  ): Promise<DistributionSLAMetric | undefined>;
+  updateDistributionSLAMetric(
+    metricId: string,
+    updates: Record<string, unknown>,
+  ): Promise<DistributionSLAMetric>;
+  getDistributionSLAMetricsByRelease(
+    releaseId: string,
+  ): Promise<DistributionSLAMetric[]>;
+  getSLAMetricsByUser(
+    userId: string,
+    days: number,
+  ): Promise<DistributionSLAMetric[]>;
+
+  createContentIdRegistration(
+    data: Record<string, unknown>,
+  ): Promise<ContentIdRegistration>;
+  getContentIdRegistrationsByRelease(
+    releaseId: string,
+  ): Promise<ContentIdRegistration[]>;
+  getContentIdRegistrationsByUser(
+    userId: string,
+  ): Promise<ContentIdRegistration[]>;
+  updateContentIdRegistration(
+    registrationId: string,
+    data: Record<string, unknown>,
+  ): Promise<ContentIdRegistration>;
+
+  createSyncLicense(data: InsertSyncLicense): Promise<SyncLicense>;
+  getSyncLicense(
+    releaseId: string,
+    trackId?: string,
+  ): Promise<SyncLicense | undefined>;
+  updateSyncLicense(
+    licenseId: string,
+    updates: Partial<InsertSyncLicense>,
+  ): Promise<SyncLicense>;
+  createSyncLicenseInquiry(
+    data: InsertSyncLicenseInquiry,
+  ): Promise<SyncLicenseInquiry>;
+  incrementSyncLicenseInquiries(syncLicenseId: string): Promise<void>;
+  getSyncInquiriesByUser(userId: string): Promise<SyncLicenseInquiry[]>;
+  updateSyncLicenseInquiry(
+    inquiryId: string,
+    updates: Record<string, unknown>,
+  ): Promise<SyncLicenseInquiry>;
+
+  createRoyaltySplit(data: Record<string, unknown>): Promise<RoyaltySplit>;
+  getRoyaltySplitsByRelease(
+    releaseId: string,
+    trackId?: string,
+  ): Promise<RoyaltySplit[]>;
+  getRoyaltySplit(splitId: string): Promise<RoyaltySplit | undefined>;
+  updateRoyaltySplit(
+    splitId: string,
+    updates: Record<string, unknown>,
+  ): Promise<RoyaltySplit>;
+  deleteRoyaltySplit(splitId: string): Promise<void>;
+  createRoyaltyTransaction(
+    data: InsertRoyaltyTransaction,
+  ): Promise<RoyaltyTransaction>;
+  getRoyaltyTransactionsBySplit(
+    splitId: string,
+  ): Promise<RoyaltyTransaction[]>;
+
+  createPreSaveCampaign(
+    data: Record<string, unknown>,
+  ): Promise<PreSaveCampaign>;
+  getPreSaveCampaignBySlug(
+    slug: string,
+  ): Promise<PreSaveCampaign | undefined>;
+  getPreSaveCampaignsByUser(userId: string): Promise<PreSaveCampaign[]>;
+  getPreSaveCampaign(campaignId: string): Promise<PreSaveCampaign | undefined>;
+  updatePreSaveCampaign(
+    campaignId: string,
+    updates: Partial<PreSaveCampaign>,
+  ): Promise<PreSaveCampaign>;
+  createPreSaveEntry(data: InsertPreSaveEntry): Promise<PreSaveEntry>;
+  getPreSaveEntriesByCampaign(campaignId: string): Promise<PreSaveEntry[]>;
+}
+
+// Boundary cast: the same runtime `storage` instance, typed with the surface
+// this service actually uses (see note above).
+const storage = baseStorage as unknown as DistributionStorage;
+
+// LabelGrid integration surface consumed here. The runtime `labelGridService`
+// instance is reached through this typed view; see POSSIBLE UNBUILT FEATURES.
+interface DistributionLabelGrid {
+  isConfigured(): boolean;
+  submitRelease(release: Record<string, unknown>): Promise<{
+    releaseId: string;
+    estimatedLiveDate?: string | Date;
+  }>;
+  getDeliveryStatus(releaseId: string): Promise<{
+    status?: string;
+    platforms?: Array<{
+      platform?: string;
+      status?: string;
+      liveDate?: string | number | Date;
+    }>;
+  }>;
+}
+const labelGrid = labelGridService as unknown as DistributionLabelGrid;
+
+// Notification surface consumed here (see POSSIBLE UNBUILT FEATURES).
+interface DistributionNotifier {
+  sendNotification(
+    userId: string,
+    type: string,
+    title: string,
+    body: string,
+    data: Record<string, unknown>,
+  ): Promise<void>;
+}
+const notifier = notificationService as unknown as DistributionNotifier;
+
+export interface DSPProvider {
+  id: string;
+  name: string;
+  type: "streaming" | "download" | "social";
+  isActive: boolean;
+}
+
+export interface DispatchStatus {
+  provider: string;
+  status: "pending" | "processing" | "live" | "failed";
+  submittedAt?: Date;
+  liveDate?: Date;
+  errorMessage?: string;
+}
+
+export class DistributionService {
+  /**
+   * Create a new release
+   */
+  async createRelease(data: InsertRelease): Promise<Release> {
+    try {
+      const release = await storage?.createRelease(data);
+      return release;
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error creating release:");
+      throw new Error("Failed to create release");
+    }
+  }
+
+  /**
+   * Get user's releases
+   */
+  async getUserReleases(userId: string): Promise<Release[]> {
+    try {
+      return await storage.getUserReleases(userId);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching releases:");
+      throw new Error("Failed to fetch releases");
+    }
+  }
+
+  /**
+   * Get release by ID
+   */
+  async getRelease(
+    releaseId: string,
+    userId: string,
+  ): Promise<EnrichedRelease | undefined> {
+    try {
+      const releases = (await storage.getUserReleases(
+        userId,
+      )) as EnrichedRelease[];
+      return releases.find((r) => r.id === releaseId);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching release:");
+      throw new Error("Failed to fetch release");
+    }
+  }
+
+  /**
+   * Submit release to DSP providers via LabelGrid
+   */
+  async submitToProvider(
+    releaseId: string,
+    providerId: string,
+    userId: string,
+  ): Promise<{
+    success: boolean;
+    dispatchId: string;
+    estimatedLiveDate: Date;
+  }> {
+    try {
+      const release = await this.getRelease(releaseId, userId);
+      if (!release) {
+        throw new Error("Release not found");
+      }
+
+      // Check if LabelGrid is configured
+      if (labelGrid.isConfigured()) {
+        // PRODUCTION: Use LabelGrid API for real distribution
+        try {
+          // Prepare release data for LabelGrid
+          const labelGridRelease = {
+            title: release.title,
+            artist: release.artist,
+            releaseDate:
+              release.releaseDate?.toISOString() || new Date().toISOString(),
+            upc: release.upc || undefined,
+            tracks: [],
+            artwork: release.coverArt || "",
+            genre: release.genre || "General",
+            platforms: [providerId], // Submit to specific platform
+            label: release.label,
+            copyrightYear: new Date().getFullYear(),
+            copyrightOwner: release.copyrightHolder || release.artist,
+          };
+
+          // Submit to LabelGrid (it handles database updates internally)
+          const result = await labelGrid.submitRelease(labelGridRelease);
+
+          return {
+            success: true,
+            dispatchId: result.releaseId,
+            estimatedLiveDate: result.estimatedLiveDate
+              ? new Date(result.estimatedLiveDate)
+              : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          };
+        } catch (error: unknown) {
+          logger.warn({ err: error }, "LabelGrid distribution failed:");
+          throw error;
+        }
+      } else {
+        // DEVELOPMENT/DEMO MODE: Simulated distribution (no real API calls)
+        logger.warn("⚠️  LabelGrid API token not configured - using demo mode");
+        logger.warn(
+          "   Set LABELGRID_API_TOKEN in environment to enable real distribution",
+        );
+
+        const dispatchId = `demo_dispatch_${randomBytes(8).toString("hex")}`;
+        const estimatedLiveDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+        // Update release platforms
+        const platforms = (release.platforms as unknown[]) || [];
+        platforms.push({
+          providerId,
+          status: "processing",
+          dispatchId,
+          submittedAt: new Date(),
+          estimatedLiveDate,
+        });
+
+        await storage.updateRelease(releaseId, userId, { platforms });
+
+        return {
+          success: true,
+          dispatchId,
+          estimatedLiveDate,
+        };
+      }
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error submitting to provider:");
+      throw new Error("Failed to submit to provider");
+    }
+  }
+
+  /**
+   * Track distribution dispatch status
+   */
+  async trackDispatchStatus(
+    releaseId: string,
+    userId: string,
+  ): Promise<DispatchStatus[]> {
+    try {
+      const release = await this.getRelease(releaseId, userId);
+      if (!release) {
+        throw new Error("Release not found");
+      }
+
+      interface PlatformEntry {
+        providerId: string;
+        status: DispatchStatus["status"];
+        submittedAt?: string | number | Date;
+        liveDate?: string | number | Date;
+        errorMessage?: string;
+      }
+      const platforms = (release.platforms as PlatformEntry[]) || [];
+
+      return platforms.map((p) => ({
+        provider: p.providerId,
+        status: p.status,
+        submittedAt: p.submittedAt ? new Date(p.submittedAt) : undefined,
+        liveDate: p.liveDate ? new Date(p.liveDate) : undefined,
+        errorMessage: p.errorMessage,
+      }));
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error tracking dispatch status:");
+      throw new Error("Failed to track dispatch status");
+    }
+  }
+
+  /**
+   * Handle DSP webhook for status updates
+   */
+  async handleDSPWebhook(payload: {
+    provider: string;
+    releaseId: string;
+    status: string;
+    liveDate?: string;
+    errorMessage?: string;
+    externalId?: string;
+  }): Promise<void> {
+    try {
+      logger.info("DSP Webhook received:", payload);
+
+      // Validate required fields before proceeding
+      const provider = String(payload.provider ?? "").trim();
+      const releaseId = String(payload.releaseId ?? "").trim();
+      const rawStatus = String(payload.status ?? "").trim();
+      const liveDate = payload.liveDate
+        ? String(payload.liveDate).trim()
+        : undefined;
+      const errorMessage = payload.errorMessage
+        ? String(payload.errorMessage).trim()
+        : undefined;
+
+      if (!provider || !releaseId || !rawStatus) {
+        logger.warn("DSP Webhook: missing required fields", {
+          provider,
+          releaseId,
+          rawStatus,
+        });
+        return;
+      }
+
+      // Map DSP status strings to internal status values
+      const STATUS_MAP: Record<string, string> = {
+        live: "live",
+        delivered: "live",
+        approved: "live",
+        distributed: "live",
+        released: "live",
+        published: "live",
+        rejected: "rejected",
+        failed: "rejected",
+        error: "rejected",
+        refused: "rejected",
+        takedown_requested: "takedown",
+        taken_down: "takedown",
+        removed: "takedown",
+        processing: "processing",
+        pending: "processing",
+        submitted: "processing",
+        queued: "processing",
+        in_review: "in_review",
+        under_review: "in_review",
+        review: "in_review",
+      };
+      const internalStatus = STATUS_MAP[rawStatus.toLowerCase()] || rawStatus;
+      const status = rawStatus; // keep original for metadata storage
+
+      // Parse live date safely — guard against invalid date strings
+      let parsedLiveDate: Date | undefined;
+      if (liveDate) {
+        const d = new Date(liveDate);
+        parsedLiveDate = isNaN(d.getTime()) ? undefined : d;
+        if (!parsedLiveDate) {
+          logger.warn("DSP Webhook: invalid liveDate value, ignoring", {
+            liveDate,
+            provider,
+          });
+        }
+      }
+
+      // Update the release status in DB
+      const updatedRows = await db
+        .update(releases)
+        .set({
+          status: internalStatus,
+          ...(parsedLiveDate ? { releaseDate: parsedLiveDate } : {}),
+          metadata: drizzleSql`
+            COALESCE(metadata, '{}'::jsonb) ||
+            ${JSON.stringify({ [`${provider}status`]: status, [`${provider}_updated_at`]: new Date().toISOString(), ...(errorMessage ? { [`${provider}_error`]: errorMessage } : {}) })}::jsonb
+          `,
+        })
+        .where(eq(releases.id, releaseId))
+        .returning();
+
+      if (!updatedRows.length) {
+        logger.warn("DSP Webhook: release not found", { releaseId, provider });
+        return;
+      }
+
+      const release = updatedRows[0];
+
+      // Build a meaningful notification for the artist
+      const NOTIF: Record<
+        string,
+        { title: string; body: string; type: string }
+      > = {
+        live: {
+          title: "🎉 Your release is now live!",
+          body: `"${release.title}" is now streaming on ${provider}.`,
+          type: "release",
+        },
+        rejected: {
+          title: "⚠️ Release rejected by distributor",
+          body: `"${release.title}" was rejected by ${provider}${errorMessage ? `: ${errorMessage}` : ""}. Please review and resubmit.`,
+          type: "system",
+        },
+        takedown: {
+          title: "📥 Takedown processed",
+          body: `"${release.title}" has been taken down from ${provider}.`,
+          type: "release",
+        },
+        processing: {
+          title: "⏳ Release being processed",
+          body: `"${release.title}" is now in delivery queue on ${provider}.`,
+          type: "release",
+        },
+        in_review: {
+          title: "🔍 Release under review",
+          body: `"${release.title}" is under review by ${provider}.`,
+          type: "release",
+        },
+      };
+
+      const notifData = NOTIF[internalStatus];
+      if (notifData && release.userId) {
+        await notifier.sendNotification(
+          release.userId,
+          notifData.type,
+          notifData.title,
+          notifData.body,
+          { releaseId, provider, status: internalStatus },
+        );
+      }
+
+      logger.info("DSP Webhook processed successfully", {
+        releaseId,
+        provider,
+        internalStatus,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error handling DSP webhook:");
+      throw new Error("Failed to handle DSP webhook");
+    }
+  }
+
+  /**
+   * Get available DSP providers
+   */
+  async getProviders(): Promise<DSPProvider[]> {
+    return [
+      { id: "spotify", name: "Spotify", type: "streaming", isActive: true },
+      {
+        id: "apple_music",
+        name: "Apple Music",
+        type: "streaming",
+        isActive: true,
+      },
+      {
+        id: "youtube_music",
+        name: "YouTube Music",
+        type: "streaming",
+        isActive: true,
+      },
+      {
+        id: "amazon_music",
+        name: "Amazon Music",
+        type: "streaming",
+        isActive: true,
+      },
+      { id: "deezer", name: "Deezer", type: "streaming", isActive: true },
+      { id: "tidal", name: "Tidal", type: "streaming", isActive: true },
+      {
+        id: "soundcloud",
+        name: "SoundCloud",
+        type: "streaming",
+        isActive: true,
+      },
+      { id: "pandora", name: "Pandora", type: "streaming", isActive: true },
+      { id: "tiktok", name: "TikTok", type: "social", isActive: true },
+      {
+        id: "instagram",
+        name: "Instagram/Facebook",
+        type: "social",
+        isActive: true,
+      },
+    ];
+  }
+
+  /**
+   * Distribute release to all selected platforms
+   */
+  async distributeRelease(releaseId: string, userId: string) {
+    try {
+      const release = await this.getRelease(releaseId, userId);
+      if (!release) {
+        throw new Error("Release not found");
+      }
+
+      const platforms = [
+        "spotify",
+        "apple_music",
+        "youtube_music",
+        "amazon_music",
+        "deezer",
+        "tidal",
+      ];
+
+      const distributionResults = platforms.map((platform) => ({
+        platform,
+        status: "processing",
+        estimatedLiveDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      }));
+
+      return {
+        success: true,
+        distributionId: `dist_${releaseId}`,
+        platforms: distributionResults,
+      };
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Distribution error:");
+      throw new Error("Failed to distribute release");
+    }
+  }
+
+  /**
+   * Get release analytics — aggregated from dsp_analytics table
+   */
+  async getReleaseAnalytics(releaseId: string, _userId: string) {
+    try {
+      const rows = await db
+        .select({
+          platform: dspAnalytics.platform,
+          totalStreams: drizzleSql<number>`COALESCE(SUM(${dspAnalytics.streams}), 0)`,
+          totalRevenue: drizzleSql<number>`COALESCE(SUM(${dspAnalytics.revenue}), 0)`,
+          totalSaves: drizzleSql<number>`COALESCE(SUM(${dspAnalytics.saves}), 0)`,
+          totalListeners: drizzleSql<number>`COALESCE(SUM(${dspAnalytics.listeners}), 0)`,
+        })
+        .from(dspAnalytics)
+        .where(eq(dspAnalytics.releaseId, releaseId))
+        .groupBy(dspAnalytics.platform);
+
+      const totalStreams = rows.reduce((s, r) => s + Number(r.totalStreams), 0);
+      const totalRevenue = rows.reduce((s, r) => s + Number(r.totalRevenue), 0);
+
+      const platforms: Record<
+        string,
+        { streams: number; revenue: number; saves: number; listeners: number }
+      > = {};
+      for (const row of rows) {
+        platforms[row.platform] = {
+          streams: Number(row.totalStreams),
+          revenue: Number(row.totalRevenue),
+          saves: Number(row.totalSaves),
+          listeners: Number(row.totalListeners),
+        };
+      }
+
+      const timeline = await db
+        .select({
+          date: dspAnalytics.date,
+          streams: drizzleSql<number>`COALESCE(SUM(${dspAnalytics.streams}), 0)`,
+          revenue: drizzleSql<number>`COALESCE(SUM(${dspAnalytics.revenue}), 0)`,
+        })
+        .from(dspAnalytics)
+        .where(eq(dspAnalytics.releaseId, releaseId))
+        .groupBy(dspAnalytics.date)
+        .orderBy(dspAnalytics.date);
+
+      return {
+        totalStreams,
+        totalRevenue: Math.round(totalRevenue * 100) / 100,
+        platforms,
+        demographics: {},
+        timeline: timeline.map((t) => ({
+          date: t.date,
+          streams: Number(t.streams),
+          revenue: Math.round(Number(t.revenue) * 100) / 100,
+        })),
+      };
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Analytics error:");
+      throw new Error("Failed to fetch analytics");
+    }
+  }
+
+  /**
+   * Setup royalty splits for collaborators
+   */
+  async setupRoyaltySplit(
+    releaseId: string,
+    splits: Array<{
+      userId: string;
+      percentage: number;
+      role: string;
+      name?: string;
+      email?: string;
+    }>,
+  ) {
+    try {
+      const total = splits.reduce((sum, s) => sum + s.percentage, 0);
+      if (Math.abs(total - 100) > 0.01) {
+        throw new Error(
+          `Split percentages must total 100% (got ${total.toFixed(2)}%)`,
+        );
+      }
+
+      await db
+        .delete(royaltySplits)
+        .where(eq(royaltySplits.releaseId, releaseId));
+
+      const splitValues = splits.map((s) => {
+        if (!s.email) {
+          logger.warn(
+            `[Distribution] Royalty split collaborator ${s.userId} has no email — ` +
+              `payouts may not be deliverable. Ask the collaborator to update their profile.`,
+          );
+        }
+        return {
+          releaseId,
+          userId: s.userId,
+          collaboratorName: s.name || s.userId,
+          collaboratorEmail: s.email || null,
+          role: s.role,
+          percentage: s.percentage,
+          status: "active",
+        };
+      });
+
+      const inserted = await db
+        .insert(royaltySplits)
+        .values(splitValues)
+        .returning();
+
+      return { success: true, splitId: `split_${releaseId}`, splits: inserted };
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Royalty split error:");
+      throw new Error("Failed to setup royalty split");
+    }
+  }
+
+  /**
+   * Validate ISRC (International Standard Recording Code)
+   * Format: CC-XXX-YY-NNNNN (e.g., US-S1Z-99-00001)
+   *
+   * NOTE: This validates the dashed format. ISRC can also be represented as 12 continuous
+   * characters (CCXXXYYNNNNN). Some DSPs accept either format. Consider normalizing input
+   * by stripping dashes before validation for broader compatibility.
+   */
+  validateISRC(isrc: string): boolean {
+    // HARDENING: Accept both dashed and non-dashed formats
+    const normalizedIsrc = isrc.replace(/[-\s]/g, "").toUpperCase();
+    if (normalizedIsrc.length !== 12) {
+      return false;
+    }
+    // Pattern: 2 country letters + 3 registrant alphanumeric + 2 year digits + 5 designation digits
+    const isrcPattern = /^[A-Z]{2}[A-Z0-9]{3}\d{2}\d{5}$/;
+    return isrcPattern.test(normalizedIsrc);
+  }
+
+  /**
+   * Validate UPC/EAN code
+   * Format: 12-13 digits
+   */
+  validateUPC(upc: string): boolean {
+    const upcPattern = /^\d{12,13}$/;
+    return upcPattern.test(upc);
+  }
+
+  /**
+   * Validate artwork dimensions and format
+   */
+  async validateArtwork(
+    artworkPath: string,
+  ): Promise<{ valid: boolean; error?: string }> {
+    try {
+      if (!fs.existsSync(artworkPath)) {
+        return { valid: false, error: "Artwork file not found" };
+      }
+
+      const ext = path.extname(artworkPath).toLowerCase();
+      if (![".jpg", ".jpeg", ".png"].includes(ext)) {
+        return { valid: false, error: "Artwork must be JPEG or PNG" };
+      }
+
+      // In production, use sharp or similar to check dimensions
+      // For now, we'll accept the file
+      return { valid: true };
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Artwork validation error:");
+      return { valid: false, error: "Failed to validate artwork" };
+    }
+  }
+
+  /**
+   * Create distribution package from project data
+   */
+  async createDistributionPackage(
+    data: InsertDistributionPackage,
+  ): Promise<DistributionPackage> {
+    try {
+      // Validate UPC if provided
+      if (data?.upc && !this.validateUPC(data?.upc)) {
+        throw new Error("Invalid UPC format. Must be 12-13 digits.");
+      }
+
+      const pkg = await storage?.createDistributionPackage(data);
+      return pkg;
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error creating distribution package:");
+      throw new Error("Failed to create distribution package");
+    }
+  }
+
+  /**
+   * Generate DSP-compliant metadata JSON
+   */
+  async generateMetadataJSON(
+    packageId: string,
+    artistProfileData?: Record<string, string | null>,
+  ): Promise<unknown> {
+    try {
+      const pkg = await storage?.getDistributionPackageById(packageId);
+      if (!pkg) {
+        throw new Error("Distribution package not found");
+      }
+
+      const tracks = await storage?.getPackageTracks(packageId);
+
+      // Build DSP-compliant metadata structure
+      const metadata: Record<string, any> = {
+        release: {
+          upc: pkg.upc,
+          title: pkg.albumTitle,
+          releaseDate: pkg.releaseDate?.toISOString().split("T")[0],
+          label: pkg.label,
+          artwork: pkg.artworkUrl,
+          copyrightP: pkg.copyrightP,
+          copyrightC: pkg.copyrightC,
+        },
+        tracks: tracks.map((track) => ({
+          isrc: track.isrc,
+          trackNumber: track.trackNumber,
+          title: track.title,
+          artist: track.artist,
+          genre: track.genre,
+          duration: track.duration,
+          explicitContent: track.explicitContent,
+          credits: track.credits ? JSON.parse(track?.credits) : {},
+          lyrics: track.lyrics,
+        })),
+        licensing: {
+          territories: ["WORLDWIDE"],
+          rights: ["streaming", "download"],
+          restrictions: [],
+        },
+        metadata_version: "1.0",
+        generated_at: new Date().toISOString(),
+      };
+
+      // Include artist platform identifiers when available.
+      // These IDs instruct DSPs to map the release to an existing artist page
+      // rather than creating a new one (DistroKid-style identity anchoring).
+      if (artistProfileData) {
+        metadata.artist_identifiers = {
+          is_new_artist: artistProfileData.isNewArtist === "true",
+          spotify_artist_id: artistProfileData.spotifyArtistId ?? null,
+          spotify_artist_uri: artistProfileData.spotifyArtistUri ?? null,
+          apple_artist_id: artistProfileData.appleArtistId ?? null,
+          youtube_channel_id: artistProfileData.youtubeChannelId ?? null,
+          tidal_artist_id: artistProfileData.tidalArtistId ?? null,
+          deezer_artist_id: artistProfileData.deezerArtistId ?? null,
+          soundcloud_artist_id: artistProfileData.soundcloudArtistId ?? null,
+          amazon_music_artist_id: artistProfileData.amazonMusicArtistId ?? null,
+        };
+      }
+
+      return metadata;
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error generating metadata JSON:");
+      throw new Error("Failed to generate metadata JSON");
+    }
+  }
+
+  /**
+   * Generate CSV export of track list
+   */
+  async generateCSV(packageId: string): Promise<string> {
+    try {
+      const tracks = await storage?.getPackageTracks(packageId);
+
+      const headers = [
+        "Track Number",
+        "ISRC",
+        "Title",
+        "Artist",
+        "Genre",
+        "Duration (seconds)",
+        "Explicit Content",
+      ];
+
+      const rows = tracks?.map((track) => [
+        track?.trackNumber?.toString() || "",
+        track?.isrc || "",
+        track?.title || "",
+        track?.artist || "",
+        track?.genre || "",
+        track?.duration?.toString() || "",
+        track?.explicitContent ? "Yes" : "No",
+      ]);
+
+      const csvContent = [
+        headers?.join(","),
+        ...rows?.map((row) => row?.map((cell) => `"${cell}"`).join(",")),
+      ].join("\n");
+
+      return csvContent;
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error generating CSV:");
+      throw new Error("Failed to generate CSV");
+    }
+  }
+
+  /**
+   * Package metadata, CSV, and artwork as ZIP file
+   */
+  async packageAsZIP(packageId: string): Promise<string> {
+    const tempZipPath = path?.join(
+      os?.tmpdir(),
+      `distribution_${randomUUID()}.zip`,
+    );
+
+    try {
+      const pkg = await storage?.getDistributionPackageById(packageId);
+      if (!pkg) {
+        throw new Error("Distribution package not found");
+      }
+
+      const output = createWriteStream(tempZipPath);
+      const archive = archiver("zip", { zlib: { level: 9 } });
+
+      await new Promise<void>((resolve, reject) => {
+        output?.on("close", () => {
+          logger.info(`ZIP package created: ${archive?.pointer()} bytes`);
+          resolve();
+        });
+
+        output?.on("error", (err) => reject(err));
+        archive?.on("error", (err) => reject(err));
+        archive?.pipe(output);
+
+        // Add metadata?.json
+        this.generateMetadataJSON(packageId)
+          .then((metadata) => {
+            archive?.append(JSON.stringify(metadata, null, 2), {
+              name: "metadata.json",
+            });
+
+            // Add tracks?.csv
+            this.generateCSV(packageId)
+              .then((csv) => {
+                archive?.append(csv, { name: "tracks.csv" });
+
+                // Add artwork if available
+                if (pkg?.artworkUrl) {
+                  // Convert public URL path to filesystem path
+                  // pkg?.artworkUrl is like "/distribution/artwork/artwork_123.jpg"
+                  const artworkFilePath = path?.join(
+                    process.cwd(),
+                    "public",
+                    pkg?.artworkUrl,
+                  );
+
+                  if (fs?.existsSync(artworkFilePath)) {
+                    const artworkExt = path?.extname(pkg?.artworkUrl);
+                    archive?.file(artworkFilePath, {
+                      name: `artwork${artworkExt}`,
+                    });
+                  } else {
+                    logger.warn(`Artwork file not found: ${artworkFilePath}`);
+                  }
+                }
+
+                // Add README
+                const readme = `Distribution Package
+=====================
+
+Package ID: ${packageId}
+Album: ${pkg?.albumTitle}
+UPC: ${pkg?.upc}
+Release Date: ${pkg?.releaseDate?.toISOString().split("T")[0] || "Not set"}
+Label: ${pkg?.label || "Not set"}
+
+Files Included:
+- metadata.json: DSP-compliant metadata
+- tracks.csv: Track listing
+${pkg?.artworkUrl ? "- artwork: Album artwork" : ""}
+
+Generated: ${new Date().toISOString()}
+`;
+                archive?.append(readme, { name: "README.txt" });
+
+                archive?.finalize();
+              })
+              .catch(reject);
+          })
+          .catch(reject);
+      });
+
+      // Upload ZIP to storageService
+      const zipBuffer = await fsPromises?.readFile(tempZipPath);
+      const zipFilename = `distribution_${packageId}_${Date?.now()}.zip`;
+      const zipKey = await storageService?.uploadFile(
+        zipBuffer,
+        "exports",
+        zipFilename,
+        "application/zip",
+      );
+
+      logger.info(`✅ Distribution package uploaded: ${zipKey}`);
+
+      return zipKey;
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error packaging ZIP:");
+      throw new Error("Failed to package distribution files");
+    } finally {
+      // Clean up temp file
+      try {
+        await fsPromises?.unlink(tempZipPath);
+      } catch (error: unknown) {
+        // Ignore cleanup errors
+      }
+    }
+  }
+
+  /**
+   * Get distribution package by project ID
+   */
+  async getDistributionPackageByProject(
+    projectId: string,
+  ): Promise<DistributionPackage | undefined> {
+    try {
+      return await storage?.getDistributionPackage(projectId);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error getting distribution package:");
+      throw new Error("Failed to get distribution package");
+    }
+  }
+
+  /**
+   * Update distribution package
+   */
+  async updateDistributionPackage(
+    packageId: string,
+    updates: Partial<DistributionPackage>,
+  ): Promise<DistributionPackage> {
+    try {
+      // Validate UPC if being updated
+      if (updates?.upc && !this.validateUPC(updates?.upc)) {
+        throw new Error("Invalid UPC format. Must be 12-13 digits.");
+      }
+
+      return await storage?.updateDistributionPackage(packageId, updates);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error updating distribution package:");
+      throw new Error("Failed to update distribution package");
+    }
+  }
+
+  /**
+   * Add track to distribution package
+   */
+  async addPackageTrack(
+    track: InsertDistributionTrack,
+  ): Promise<DistributionTrack> {
+    try {
+      // Validate ISRC if provided
+      if (track?.isrc && !this.validateISRC(track?.isrc)) {
+        throw new Error("Invalid ISRC format. Expected: CC-XXX-YY-NNNNN");
+      }
+
+      return await storage?.createDistributionTrack(track);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error adding package track:");
+      throw new Error("Failed to add track to package");
+    }
+  }
+
+  /**
+   * Get all tracks for a distribution package
+   */
+  async getPackageTracks(packageId: string): Promise<DistributionTrack[]> {
+    try {
+      return await storage?.getPackageTracks(packageId);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error getting package tracks:");
+      throw new Error("Failed to get package tracks");
+    }
+  }
+
+  /**
+   * Refresh release status from LabelGrid or demo mode
+   */
+  async refreshReleaseStatus(releaseId: string): Promise<{
+    status: string;
+    platforms: Array<{ platform: string; status: string; liveDate?: Date }>;
+    lastChecked: Date;
+  }> {
+    try {
+      const release = await storage?.getDistroRelease(releaseId);
+      if (!release) {
+        throw new Error("Release not found");
+      }
+
+      if (labelGrid?.isConfigured()) {
+        try {
+          const status = await labelGrid?.getDeliveryStatus(releaseId);
+          return {
+            status: status.status || "pending",
+            platforms:
+              status?.platforms?.map(
+                (p: {
+                  platform?: string;
+                  status?: string;
+                  liveDate?: string | number | Date;
+                }) => ({
+                  platform: p.platform ?? "",
+                  status: p.status ?? "pending",
+                  liveDate: p.liveDate ? new Date(p?.liveDate) : undefined,
+                }),
+              ) || [],
+            lastChecked: new Date(),
+          };
+        } catch (error: unknown) {
+          logger.warn({ err: error }, "Error fetching status from LabelGrid:");
+        }
+      }
+
+      const currentPlatforms =
+        (release?.platforms as Array<string | Record<string, unknown>>) || [];
+      return {
+        status: release.status || "draft",
+        platforms: currentPlatforms.map((p) => {
+          const obj = typeof p === "string" ? undefined : p;
+          const rawPlatform =
+            typeof p === "string" ? p : obj?.platform ?? obj?.name;
+          const rawLiveDate = obj?.liveDate as
+            | string
+            | number
+            | Date
+            | undefined;
+          return {
+            platform: String(rawPlatform ?? ""),
+            status: String(obj?.status ?? "pending"),
+            liveDate: rawLiveDate ? new Date(rawLiveDate) : undefined,
+          };
+        }),
+        lastChecked: new Date(),
+      };
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error refreshing release status:");
+      throw new Error("Failed to refresh release status");
+    }
+  }
+
+  // ============================================================================
+  // SLA METRICS TRACKING (Production delivery 1-2 day targets)
+  // ============================================================================
+
+  /**
+   * Create SLA metric for distribution tracking
+   */
+  async createSLAMetric(
+    releaseId: string,
+    platform: string,
+  ): Promise<DistributionSLAMetric> {
+    try {
+      const submittedAt = new Date();
+      const targetDeliveryAt = new Date(
+        submittedAt?.getTime() + DEFAULT_SLA_TARGET_HOURS * 60 * 60 * 1000,
+      );
+
+      const metric = await storage?.createDistributionSLAMetric({
+        releaseId,
+        platform,
+        submittedAt,
+        targetDeliveryAt,
+        slaTargetHours: DEFAULT_SLA_TARGET_HOURS,
+        status: "pending",
+        deliveryPhase: "queued",
+      });
+
+      logger.info(
+        `✅ SLA metric created for ${platform}: target ${DEFAULT_SLA_TARGET_HOURS}h delivery`,
+      );
+      return metric;
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error creating SLA metric:");
+      throw new Error("Failed to create SLA metric");
+    }
+  }
+
+  /**
+   * Update SLA metric when delivery is confirmed
+   */
+  async markDelivered(
+    metricId: string,
+    liveAt?: Date,
+  ): Promise<DistributionSLAMetric> {
+    try {
+      const metric = await storage?.getDistributionSLAMetric(metricId);
+      if (!metric) {
+        throw new Error("SLA metric not found");
+      }
+
+      const actualDeliveryAt = new Date();
+      const deliveryHours =
+        (actualDeliveryAt?.getTime() - metric?.submittedAt.getTime()) /
+        (1000 * 60 * 60);
+      const metSLA =
+        deliveryHours <= (metric?.slaTargetHours || DEFAULT_SLA_TARGET_HOURS);
+
+      const updated = await storage?.updateDistributionSLAMetric(metricId, {
+        actualDeliveryAt,
+        liveAt: liveAt || actualDeliveryAt,
+        actualDeliveryHours: deliveryHours,
+        metSLA,
+        status: "delivered",
+        deliveryPhase: "live",
+      });
+
+      logger.info(
+        `✅ Delivery confirmed: ${deliveryHours?.toFixed(1)}h (SLA ${metSLA ? "MET" : "MISSED"})`,
+      );
+      return updated;
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error marking delivery:");
+      throw new Error("Failed to mark delivery");
+    }
+  }
+
+  /**
+   * Get SLA metrics for a release
+   */
+  async getReleaseSLAMetrics(
+    releaseId: string,
+  ): Promise<DistributionSLAMetric[]> {
+    try {
+      return await storage?.getDistributionSLAMetricsByRelease(releaseId);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching SLA metrics:");
+      throw new Error("Failed to fetch SLA metrics");
+    }
+  }
+
+  /**
+   * Get SLA compliance report
+   */
+  async getSLAComplianceReport(
+    userId: string,
+    days: number = 30,
+  ): Promise<{
+    totalDeliveries: number;
+    onTimeDeliveries: number;
+    lateDeliveries: number;
+    averageDeliveryHours: number;
+    complianceRate: number;
+    byPlatform: Record<string, { total: number; onTime: number; rate: number }>;
+  }> {
+    try {
+      const metrics = await storage?.getSLAMetricsByUser(userId, days);
+
+      const completed = metrics?.filter((m) => m?.actualDeliveryAt);
+      const onTime = completed?.filter((m) => m?.metSLA);
+
+      const avgHours =
+        completed?.length > 0
+          ? completed?.reduce(
+              (sum, m) => sum + (m?.actualDeliveryHours || 0),
+              0,
+            ) / completed?.length
+          : 0;
+
+      const byPlatform: Record<
+        string,
+        { total: number; onTime: number; rate: number }
+      > = {};
+      for (const m of completed) {
+        if (!byPlatform[m?.platform]) {
+          byPlatform[m.platform] = { total: 0, onTime: 0, rate: 0 };
+        }
+        byPlatform[m?.platform].total++;
+        if (m?.metSLA) byPlatform[m?.platform].onTime++;
+      }
+
+      for (const platform of Object.keys(byPlatform)) {
+        byPlatform[platform].rate =
+          (byPlatform[platform].onTime / byPlatform[platform].total) * 100;
+      }
+
+      return {
+        totalDeliveries: completed.length,
+        onTimeDeliveries: onTime.length,
+        lateDeliveries: completed.length - onTime?.length,
+        averageDeliveryHours: Math.round(avgHours * 10) / 10,
+        complianceRate:
+          completed?.length > 0 ? (onTime?.length / completed?.length) * 100 : 100,
+        byPlatform,
+      };
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error generating SLA report:");
+      throw new Error("Failed to generate SLA report");
+    }
+  }
+
+  /**
+   * Retry failed delivery
+   */
+  async retryDelivery(metricId: string): Promise<DistributionSLAMetric> {
+    try {
+      const metric = await storage?.getDistributionSLAMetric(metricId);
+      if (!metric) {
+        throw new Error("SLA metric not found");
+      }
+
+      const updated = await storage?.updateDistributionSLAMetric(metricId, {
+        status: "pending",
+        deliveryPhase: "retrying",
+        retryCount: (metric?.retryCount || 0) + 1,
+        lastRetryAt: new Date(),
+        errorMessage: null,
+      });
+
+      logger.info(
+        `🔄 Retry initiated for ${metric?.platform} (attempt ${updated?.retryCount})`,
+      );
+      return updated;
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error retrying delivery:");
+      throw new Error("Failed to retry delivery");
+    }
+  }
+
+  // ============================================================================
+  // CONTENT ID REGISTRATION (YouTube monetization)
+  // ============================================================================
+
+  /**
+   * Register track for Content ID (YouTube monetization)
+   */
+  async registerContentId(data: {
+    releaseId: string;
+    trackId: string;
+    userId: string;
+    isrc: string;
+    registrationType?: "sound_recording" | "composition";
+    ownershipPercentage?: number;
+    territories?: string[];
+    matchPolicy?: "monetize" | "track" | "block";
+    claimPolicy?: "monetize" | "track" | "block";
+    allowUserUploads?: boolean;
+    youtubeChannelId?: string;
+  }): Promise<ContentIdRegistration> {
+    try {
+      const registration = await storage?.createContentIdRegistration({
+        releaseId: data.releaseId,
+        trackId: data.trackId,
+        userId: data.userId,
+        isrc: data.isrc,
+        registrationType: data.registrationType || "sound_recording",
+        ownershipPercentage: data.ownershipPercentage || 100,
+        territories: data.territories || ["WORLDWIDE"],
+        matchPolicy: data.matchPolicy || "monetize",
+        claimPolicy: data.claimPolicy || "monetize",
+        allowUserUploads: data.allowUserUploads || false,
+        youtubeChannelId: data.youtubeChannelId,
+        status: "pending",
+        submittedAt: new Date(),
+      });
+
+      logger.info(
+        `✅ Content ID registration submitted for ISRC: ${data?.isrc}`,
+      );
+      return registration;
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error registering Content ID:");
+      throw new Error("Failed to register Content ID");
+    }
+  }
+
+  /**
+   * Get Content ID registrations for a release
+   */
+  async getContentIdRegistrations(
+    releaseId: string,
+  ): Promise<ContentIdRegistration[]> {
+    try {
+      return await storage?.getContentIdRegistrationsByRelease(releaseId);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching Content ID registrations:");
+      throw new Error("Failed to fetch Content ID registrations");
+    }
+  }
+
+  /**
+   * Update Content ID registration status
+   */
+  async updateContentIdStatus(
+    registrationId: string,
+    data: {
+      status?: string;
+      assetId?: string;
+      approvedAt?: Date;
+      activeAt?: Date;
+      errorMessage?: string;
+    },
+  ): Promise<ContentIdRegistration> {
+    try {
+      return await storage?.updateContentIdRegistration(registrationId, data);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error updating Content ID status:");
+      throw new Error("Failed to update Content ID status");
+    }
+  }
+
+  /**
+   * Get Content ID revenue summary
+   */
+  async getContentIdRevenue(userId: string): Promise<{
+    totalClaims: number;
+    totalRevenue: number;
+    byTrack: Array<{
+      trackId: string;
+      isrc: string;
+      claims: number;
+      revenue: number;
+    }>;
+  }> {
+    try {
+      const registrations =
+        await storage?.getContentIdRegistrationsByUser(userId);
+
+      const byTrack = registrations?.map((r) => ({
+        trackId: r.trackId,
+        isrc: r.isrc,
+        claims: r.totalClaims || 0,
+        revenue: r.totalRevenue || 0,
+      }));
+
+      return {
+        totalClaims: registrations.reduce(
+          (sum, r) => sum + (r?.totalClaims || 0),
+          0,
+        ),
+        totalRevenue: registrations.reduce(
+          (sum, r) => sum + (r?.totalRevenue || 0),
+          0,
+        ),
+        byTrack,
+      };
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching Content ID revenue:");
+      throw new Error("Failed to fetch Content ID revenue");
+    }
+  }
+
+  // ============================================================================
+  // SYNC LICENSING (Film/TV/Ads)
+  // ============================================================================
+
+  /**
+   * Create or update sync license for a track/release
+   */
+  async createSyncLicense(data: InsertSyncLicense): Promise<SyncLicense> {
+    try {
+      const license = await storage?.createSyncLicense(data);
+      logger.info(`✅ Sync license created for release: ${data?.releaseId}`);
+      return license;
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error creating sync license:");
+      throw new Error("Failed to create sync license");
+    }
+  }
+
+  /**
+   * Get sync license for a release/track
+   */
+  async getSyncLicense(
+    releaseId: string,
+    trackId?: string,
+  ): Promise<SyncLicense | undefined> {
+    try {
+      return await storage?.getSyncLicense(releaseId, trackId);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching sync license:");
+      throw new Error("Failed to fetch sync license");
+    }
+  }
+
+  /**
+   * Update sync license settings
+   */
+  async updateSyncLicense(
+    licenseId: string,
+    updates: Partial<InsertSyncLicense>,
+  ): Promise<SyncLicense> {
+    try {
+      return await storage?.updateSyncLicense(licenseId, updates);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error updating sync license:");
+      throw new Error("Failed to update sync license");
+    }
+  }
+
+  /**
+   * Submit sync license inquiry
+   */
+  async submitSyncInquiry(
+    data: InsertSyncLicenseInquiry,
+  ): Promise<SyncLicenseInquiry> {
+    try {
+      const inquiry = await storage?.createSyncLicenseInquiry(data);
+
+      // Update inquiry count on license
+      await storage?.incrementSyncLicenseInquiries(data?.syncLicenseId);
+
+      logger.info(`📩 Sync inquiry received from ${data?.inquirerEmail}`);
+      return inquiry;
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error submitting sync inquiry:");
+      throw new Error("Failed to submit sync inquiry");
+    }
+  }
+
+  /**
+   * Get sync inquiries for a user
+   */
+  async getSyncInquiries(userId: string): Promise<SyncLicenseInquiry[]> {
+    try {
+      return await storage?.getSyncInquiriesByUser(userId);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching sync inquiries:");
+      throw new Error("Failed to fetch sync inquiries");
+    }
+  }
+
+  /**
+   * Respond to sync inquiry
+   */
+  async respondToSyncInquiry(
+    inquiryId: string,
+    response: {
+      status: "approved" | "rejected" | "negotiating";
+      responseNotes?: string;
+    },
+  ): Promise<SyncLicenseInquiry> {
+    try {
+      return await storage?.updateSyncLicenseInquiry(inquiryId, {
+        status: response.status,
+        responseNotes: response.responseNotes,
+        respondedAt: new Date(),
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error responding to sync inquiry:");
+      throw new Error("Failed to respond to sync inquiry");
+    }
+  }
+
+  // ============================================================================
+  // ROYALTY SPLIT MANAGEMENT
+  // ============================================================================
+
+  /**
+   * Create royalty split for a release
+   */
+  async createRoyaltySplit(data: InsertRoyaltySplit): Promise<RoyaltySplit> {
+    try {
+      // Validate that total splits don't exceed 100%
+      const existingSplits = await storage?.getRoyaltySplitsByRelease(
+        data?.releaseId,
+        data?.trackId,
+      );
+      const totalExisting = existingSplits?.reduce(
+        (sum, s) => sum + s?.percentage,
+        0,
+      );
+
+      if (totalExisting + data?.percentage > 100) {
+        throw new Error(
+          `Total splits cannot exceed 100%. Current: ${totalExisting}%, Adding: ${data?.percentage}%`,
+        );
+      }
+
+      const split = await storage?.createRoyaltySplit({
+        ...data,
+        status: "pending",
+        inviteSentAt: new Date(),
+      });
+
+      logger.info(
+        `✅ Royalty split created: ${data?.collaboratorName} (${data?.percentage}%)`,
+      );
+      return split;
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error creating royalty split:");
+      throw new Error(
+        error instanceof Error
+          ? error?.message
+          : "Failed to create royalty split",
+      );
+    }
+  }
+
+  /**
+   * Get all royalty splits for a release
+   */
+  async getRoyaltySplits(
+    releaseId: string,
+    trackId?: string,
+  ): Promise<RoyaltySplit[]> {
+    try {
+      return await storage?.getRoyaltySplitsByRelease(releaseId, trackId);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching royalty splits:");
+      throw new Error("Failed to fetch royalty splits");
+    }
+  }
+
+  /**
+   * Update royalty split
+   */
+  async updateRoyaltySplit(
+    splitId: string,
+    updates: Partial<InsertRoyaltySplit>,
+  ): Promise<RoyaltySplit> {
+    try {
+      if (updates?.percentage !== undefined) {
+        const split = await storage?.getRoyaltySplit(splitId);
+        if (!split) throw new Error("Split not found");
+
+        const otherSplits = await storage?.getRoyaltySplitsByRelease(
+          split?.releaseId,
+          split?.trackId,
+        );
+        const otherTotal = otherSplits
+          .filter((s) => s?.id !== splitId)
+          .reduce((sum, s) => sum + s?.percentage, 0);
+
+        if (otherTotal + updates?.percentage > 100) {
+          throw new Error(
+            `Total splits cannot exceed 100%. Others: ${otherTotal}%, New: ${updates?.percentage}%`,
+          );
+        }
+      }
+
+      return await storage?.updateRoyaltySplit(splitId, updates);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error updating royalty split:");
+      throw new Error(
+        error instanceof Error
+          ? error?.message
+          : "Failed to update royalty split",
+      );
+    }
+  }
+
+  /**
+   * Accept royalty split invite
+   */
+  async acceptRoyaltySplit(
+    splitId: string,
+    userId: string,
+    payoutDetails: {
+      payoutMethod: "stripe" | "paypal" | "bank";
+      stripeAccountId?: string;
+      paypalEmail?: string;
+      bankDetails?: Record<string, any>;
+    },
+  ): Promise<RoyaltySplit> {
+    try {
+      return await storage?.updateRoyaltySplit(splitId, {
+        userId,
+        status: "accepted",
+        inviteAcceptedAt: new Date(),
+        payoutMethod: payoutDetails.payoutMethod,
+        stripeAccountId: payoutDetails.stripeAccountId,
+        paypalEmail: payoutDetails.paypalEmail,
+        bankDetails: payoutDetails.bankDetails,
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error accepting royalty split:");
+      throw new Error("Failed to accept royalty split");
+    }
+  }
+
+  /**
+   * Remove royalty split
+   */
+  async removeRoyaltySplit(splitId: string): Promise<void> {
+    try {
+      await storage?.deleteRoyaltySplit(splitId);
+      logger.info(`🗑️ Royalty split removed: ${splitId}`);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error removing royalty split:");
+      throw new Error("Failed to remove royalty split");
+    }
+  }
+
+  /**
+   * Calculate royalty distribution for earnings
+   */
+  async calculateRoyaltyDistribution(
+    releaseId: string,
+    totalEarnings: number,
+    _periodStart: Date,
+    _periodEnd: Date,
+  ): Promise<{
+    distributions: Array<{
+      splitId: string;
+      collaboratorName: string;
+      amount: number;
+      percentage: number;
+    }>;
+    totalDistributed: number;
+  }> {
+    try {
+      const splits = await storage?.getRoyaltySplitsByRelease(releaseId);
+
+      const distributions = splits?.map((split) => ({
+        splitId: split.id,
+        collaboratorName: split.collaboratorName,
+        percentage: split.percentage,
+        amount: (totalEarnings * split?.percentage) / 100,
+      }));
+
+      const totalDistributed = distributions?.reduce(
+        (sum, d) => sum + d?.amount,
+        0,
+      );
+
+      return { distributions, totalDistributed };
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error calculating royalty distribution:");
+      throw new Error("Failed to calculate royalty distribution");
+    }
+  }
+
+  /**
+   * Record royalty transaction
+   */
+  async recordRoyaltyTransaction(
+    data: InsertRoyaltyTransaction,
+  ): Promise<RoyaltyTransaction> {
+    try {
+      const transaction = await storage?.createRoyaltyTransaction(data);
+
+      // Update split totals
+      const split = await storage?.getRoyaltySplit(data?.splitId);
+      if (split) {
+        await storage?.updateRoyaltySplit(data?.splitId, {
+          totalEarned: (split?.totalEarned || 0) + data?.amount,
+          pendingPayout: (split?.pendingPayout || 0) + data?.amount,
+        });
+      }
+
+      return transaction;
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error recording royalty transaction:");
+      throw new Error("Failed to record royalty transaction");
+    }
+  }
+
+  /**
+   * Get royalty transaction history
+   */
+  async getRoyaltyTransactions(splitId: string): Promise<RoyaltyTransaction[]> {
+    try {
+      return await storage?.getRoyaltyTransactionsBySplit(splitId);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching royalty transactions:");
+      throw new Error("Failed to fetch royalty transactions");
+    }
+  }
+
+  // ============================================================================
+  // PRE-SAVE CAMPAIGNS (Enhanced)
+  // ============================================================================
+
+  /**
+   * Create pre-save campaign
+   */
+  async createPreSaveCampaign(
+    data: InsertPreSaveCampaign,
+  ): Promise<PreSaveCampaign> {
+    try {
+      const slug =
+        data?.slug ||
+        `${data?.name.toLowerCase().replace(/\s+/g, "-")}-${randomBytes(3).toString("hex")}`;
+
+      const campaign = await storage?.createPreSaveCampaign({
+        ...data,
+        slug,
+        status: "active",
+        totalSaves: 0,
+        spotifySaves: 0,
+        appleMusicSaves: 0,
+        deezerSaves: 0,
+        emailSignups: 0,
+      });
+
+      logger.info(`✅ Pre-save campaign created: ${campaign?.name}`);
+      return campaign;
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error creating pre-save campaign:");
+      throw new Error("Failed to create pre-save campaign");
+    }
+  }
+
+  /**
+   * Get pre-save campaign by slug
+   */
+  async getPreSaveCampaignBySlug(
+    slug: string,
+  ): Promise<PreSaveCampaign | undefined> {
+    try {
+      return await storage?.getPreSaveCampaignBySlug(slug);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching pre-save campaign:");
+      throw new Error("Failed to fetch pre-save campaign");
+    }
+  }
+
+  /**
+   * Get pre-save campaigns for a user
+   */
+  async getUserPreSaveCampaigns(userId: string): Promise<PreSaveCampaign[]> {
+    try {
+      return await storage?.getPreSaveCampaignsByUser(userId);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching pre-save campaigns:");
+      throw new Error("Failed to fetch pre-save campaigns");
+    }
+  }
+
+  /**
+   * Record pre-save entry
+   */
+  async recordPreSave(data: InsertPreSaveEntry): Promise<PreSaveEntry> {
+    try {
+      const entry = await storage?.createPreSaveEntry(data);
+
+      // Update campaign counters
+      const campaign = await storage?.getPreSaveCampaign(data?.campaignId);
+      if (campaign) {
+        const updates: Partial<PreSaveCampaign> = {
+          totalSaves: (campaign?.totalSaves || 0) + 1,
+        };
+
+        if (data?.platform === "spotify") {
+          updates.spotifySaves = (campaign?.spotifySaves || 0) + 1;
+        } else if (data?.platform === "apple_music") {
+          updates.appleMusicSaves = (campaign?.appleMusicSaves || 0) + 1;
+        } else if (data?.platform === "deezer") {
+          updates.deezerSaves = (campaign?.deezerSaves || 0) + 1;
+        }
+
+        if (data?.email) {
+          updates.emailSignups = (campaign?.emailSignups || 0) + 1;
+        }
+
+        // Calculate conversion rate
+        const totalSaves = updates?.totalSaves || campaign?.totalSaves || 0;
+        const pageViews =
+          (campaign?.metadata as Record<string, unknown>)?.pageViews || 1;
+        updates.conversionRate = (totalSaves / pageViews) * 100;
+
+        await storage?.updatePreSaveCampaign(data?.campaignId, updates);
+      }
+
+      logger.info(`✅ Pre-save recorded: ${data?.platform}`);
+      return entry;
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error recording pre-save:");
+      throw new Error("Failed to record pre-save");
+    }
+  }
+
+  /**
+   * Get pre-save entries for a campaign
+   */
+  async getPreSaveEntries(campaignId: string): Promise<PreSaveEntry[]> {
+    try {
+      return await storage?.getPreSaveEntriesByCampaign(campaignId);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching pre-save entries:");
+      throw new Error("Failed to fetch pre-save entries");
+    }
+  }
+
+  /**
+   * Get pre-save campaign analytics
+   */
+  async getPreSaveCampaignAnalytics(campaignId: string): Promise<{
+    totalSaves: number;
+    byPlatform: Record<string, number>;
+    byCountry: Record<string, number>;
+    bySource: Record<string, number>;
+    emailSignups: number;
+    conversionRate: number;
+    timeline: Array<{ date: string; saves: number }>;
+  }> {
+    try {
+      const campaign = await storage?.getPreSaveCampaign(campaignId);
+      if (!campaign) {
+        throw new Error("Campaign not found");
+      }
+
+      const entries = await storage?.getPreSaveEntriesByCampaign(campaignId);
+
+      const byPlatform: Record<string, number> = {};
+      const byCountry: Record<string, number> = {};
+      const bySource: Record<string, number> = {};
+      const byDate: Record<string, number> = {};
+
+      for (const entry of entries) {
+        byPlatform[entry.platform] = (byPlatform[entry?.platform] || 0) + 1;
+
+        if (entry?.country) {
+          byCountry[entry.country] = (byCountry[entry?.country] || 0) + 1;
+        }
+
+        const source = entry?.utmSource || "direct";
+        bySource[source] = (bySource[source] || 0) + 1;
+
+        if (entry?.createdAt) {
+          const date = entry?.createdAt.toISOString().split("T")[0];
+          byDate[date] = (byDate[date] || 0) + 1;
+        }
+      }
+
+      const timeline = Object.entries(byDate)
+        .map(([date, saves]) => ({ date, saves }))
+        .sort((a, b) => a?.date.localeCompare(b?.date));
+
+      return {
+        totalSaves: campaign.totalSaves || 0,
+        byPlatform,
+        byCountry,
+        bySource,
+        emailSignups: campaign.emailSignups || 0,
+        conversionRate: campaign.conversionRate || 0,
+        timeline,
+      };
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error fetching campaign analytics:");
+      throw new Error("Failed to fetch campaign analytics");
+    }
+  }
+
+  /**
+   * Update pre-save campaign
+   */
+  async updatePreSaveCampaign(
+    campaignId: string,
+    updates: Partial<InsertPreSaveCampaign>,
+  ): Promise<PreSaveCampaign> {
+    try {
+      return await storage?.updatePreSaveCampaign(campaignId, updates);
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error updating pre-save campaign:");
+      throw new Error("Failed to update pre-save campaign");
+    }
+  }
+
+  /**
+   * End pre-save campaign (convert to live release)
+   */
+  async endPreSaveCampaign(campaignId: string): Promise<PreSaveCampaign> {
+    try {
+      return await storage?.updatePreSaveCampaign(campaignId, {
+        status: "completed",
+        endDate: new Date(),
+      });
+    } catch (error: unknown) {
+      logger.warn({ err: error }, "Error ending pre-save campaign:");
+      throw new Error("Failed to end pre-save campaign");
+    }
+  }
+}
+
+export const distributionService = new DistributionService();

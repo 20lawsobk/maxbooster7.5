@@ -1,0 +1,18 @@
+[Unit]
+Description=Max Booster DNS Region Node
+After=network.target
+
+[Service]
+Type=simple
+Environment=NODE_ENV=production
+Environment=REGION_NAME=US-EAST
+# This service would typically run the main app or a dedicated proxy app
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=dns-region
+
+[Install]
+WantedBy=multi-user.target

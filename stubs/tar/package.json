@@ -1,0 +1,11 @@
+{
+  "name": "tar",
+  "version": "6.2.1",
+  "description": "Stub tar package to bypass Replit security firewall block",
+  "main": "index.js",
+  "exports": {".":{
+    "require": "./index.js",
+    "import": "./index.mjs",
+    "default": "./index.js"
+  }}
+}

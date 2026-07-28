@@ -1,0 +1,60 @@
+import type { PluginDefinition } from "../server/services/pluginHostService";
+
+const MbVocalVocoderSynthPlugin: PluginDefinition = {
+  id: "mb-vocal-vocoder-synth",
+  slug: "mb-vocal-vocoder-synth",
+  name: "MB Vocoder Synth",
+  category: "instrument",
+  type: "vocal" as any,
+  version: "1.0.0",
+  description: "Classic vocoder synth with carrier/modulator",
+  author: "Max Booster",
+  grade: "A",
+  oscillators: [
+    { type: "sawtooth", detune: 0, gain: 0.5 },
+    { type: "square", detune: 0, gain: 0.3 },
+    { type: "noise", detune: 0, gain: 0.2 },
+  ],
+  envelope: { attack: 0.01, decay: 0.2, sustain: 0.9, release: 0.1 },
+  parameters: [
+    {
+      id: "bands",
+      name: "Band Count",
+      type: "float",
+      defaultValue: 0.7,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "carrier",
+      name: "Carrier Mix",
+      type: "float",
+      defaultValue: 0.5,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "formant",
+      name: "Formant Shift",
+      type: "float",
+      defaultValue: 0.5,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+    {
+      id: "volume",
+      name: "Volume",
+      type: "float",
+      defaultValue: 0.8,
+      minValue: 0,
+      maxValue: 1,
+      automatable: true,
+    },
+  ],
+  defaultPreset: { bands: 0.7, carrier: 0.5, formant: 0.5, volume: 0.8 },
+};
+
+export default MbVocalVocoderSynthPlugin;

@@ -1,0 +1,47 @@
+# Max Booster crawler rules — https://maxbooster.replit.app
+# Public surfaces stay crawlable; authenticated/app surfaces are excluded.
+
+User-agent: *
+Allow: /
+Allow: /marketplace
+Allow: /storefront/
+Allow: /share/
+
+Disallow: /api/
+Disallow: /ws/
+Disallow: /auth/
+Disallow: /login
+Disallow: /register
+Disallow: /dashboard
+Disallow: /studio
+Disallow: /settings
+Disallow: /admin
+Disallow: /billing
+
+Crawl-delay: 10
+
+# Major engines ignore Crawl-delay; give them the same path rules explicitly.
+User-agent: Googlebot
+Allow: /
+Disallow: /api/
+Disallow: /ws/
+Disallow: /auth/
+Disallow: /dashboard
+Disallow: /studio
+Disallow: /settings
+Disallow: /admin
+Disallow: /billing
+
+User-agent: Bingbot
+Crawl-delay: 10
+Allow: /
+Disallow: /api/
+Disallow: /ws/
+Disallow: /auth/
+Disallow: /dashboard
+Disallow: /studio
+Disallow: /settings
+Disallow: /admin
+Disallow: /billing
+
+Sitemap: https://maxbooster.replit.app/sitemap.xml

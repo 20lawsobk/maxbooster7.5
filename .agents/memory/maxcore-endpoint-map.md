@@ -1,0 +1,67 @@
+---
+name: MaxCore endpoint map
+description: Correct MaxCore API paths per architecture doc — content, image, and video generation
+---
+
+## Correct MaxCore generation endpoints
+
+Base URL: `AI_SERVER_URL` env var (e.g. `https://secure-ai-forge.replit.app`)
+
+| What | Path | Notes |
+|---|---|---|
+| Content/text gen | `POST /api/generate/content` | topic, platform, tone, genre required |
+| Image gen | `POST /api/generate/image` | returns `{outputs:[{url: "/uploads/images/img_xxx.png"}]}` — relative path, prepend MAXCORE_ORIGIN; file publicly served at that origin path |
+| Audio gen | `POST /api/generate/audio` | returns async job `{job_id, status:"processing"}` — poll `GET /api/audio-job/:id` (Bearer) until `done`/`error`. Status GETs on wrong paths hit the SPA catch-all (HTML 200) — guard on JSON content-type. As of 2026-07 MaxCore errors "no real audio dataset available (mb:dataset:audio)" — server-side seeding needed before real audio returns |
+| Video gen | `POST /api/platform/video/generate` | requires `user_id`; returns synchronous scene-script (not a job_id) |
+
+## Dedicated `/platform/*` feature endpoints (verified 2026-07, richer than generic `/generate/content`)
+Wire feature services to these instead of the generic content endpoint. All Bearer-only. Key gotcha: **output is NESTED, not top-level** — normalize before consumers read it.
+| What | Path | Required | Response shape |
+|---|---|---|---|
+| Social gen | `POST /api/platform/social/generate` | topic, platform | `{variants:[{hook,body,cta,caption,hashtags}]}` — read `variants[0]` |
+| Ads gen | `POST /api/platform/ads/generate` | **`product`** (NOT topic — 422 without it) | `{creatives:[{hook,headline,body,cta,creative_brief}], targeting:{primary_interests,...}}` — read `creatives[0]`+`targeting` |
+| Social autopilot | `POST /api/platform/social/autopilot` | user_id, platform | `{recommendations:{next_topics:[{topic,hook,cta}], best_posting_times, content_type, style_focus}}` (recommendations, not raw gen) |
+| Ads audience | `POST /api/platform/ads/audience` | **`product`** | `{targeting:{...}, audience_segments:[]}` |
+| Safety screen | `POST /api/safety/screen` | content | `{allowed, flagged, severity, categories, enforced_text, stats}` |
+| Artist storage | `GET/POST /api/storage/artist/:profileId` | — | GET `{profile_id, profile:{genre,tone,...}, releases:[]}` |
+
+**Why:** switching social/ads generation from `/generate/content` to these gives platform-aware, multi-variant output. The `product`-required 422 on ads endpoints is the #1 wiring trap. MaxCore + PDIM are guaranteed always-up (per user), so these are the primary source — existing null→local fallback is harmless insurance, not a required design constraint.
+
+## Mirroring media locally
+MaxCore media URLs are relative and its /uploads may be ephemeral — mirror bytes into `public/generated-content/<kind>/` with magic-byte validation (SPA answers unknown paths HTML 200). SECURITY: only fetch MaxCore-origin URLs server-side and NEVER send the Bearer key to any other host (SSRF/key-leak — architect-flagged).
+
+## Video endpoint response format
+`/api/platform/video/generate` returns synchronously:
+```json
+{
+  "success": true, "user_id": "...", "title": "...", "hook": "...",
+  "script": "...", "scenes": [...], "hashtags": [...], "duration_seconds": 10
+}
+```
+- No `job_id` — do NOT attempt async polling
+- No `url` — route through `renderPhotorealisticVideo` (MaxCore `/generate/image` + FFmpeg) to produce the actual MP4
+- Detect by: `scenes.length > 0` OR `(success && !url && !job_id)`
+
+## Auth
+`AI_SERVER_KEY` is the active generation credential. **Bearer ONLY** — `Authorization: Bearer <key>` and nothing else. Sending `X-API-Key`/`X-Admin-Key` alongside (even the same value) makes MaxCore validate those schemes first and 401 every call (see maxcore-auth-header.md). Never re-add dual headers.
+
+**Key priority in code:** `AI_SERVER_KEY || MAXCORE_ADMIN_KEY` — AI_SERVER_KEY is the active generation credential.
+
+## Architecture layers
+```
+Our server → MaxCore Node.js Express proxy (8080)
+  → enrichWithAwareness() injected into req.body.awareness automatically by MaxCore
+  → Python FastAPI (9878) — actual handler
+```
+MaxCore's Node layer injects awareness automatically; we do not need to send it.
+
+## Awareness layer = quality bridge (per user, 2026-07)
+Every MaxCore generation endpoint has an advanced awareness layer wired in to bridge the content-quality gap until the external PDIM server accumulates enough datasets to match that quality natively. Visible in responses as `"=== LIVE INDUSTRY SIGNALS ==="` injected into the echoed body and `intelligence` blocks (e.g. "quality buffer active — N studied exemplars, self-sufficiency X/500"). Implications: (1) send clean params only — the awareness/quality enrichment is MaxCore-side and automatic; (2) `intelligence`/awareness fields in responses are expected metadata, not errors or bloat; (3) content quality will improve over time as PDIM dataset self-sufficiency rises — don't "fix" quality client-side by stuffing prompts.
+
+**Why:** `/api/generate-video` does not exist on MaxCore. `/api/platform/video/generate` is the correct endpoint per the architecture document the user shared. The old endpoint returned 404/error silently.
+
+## Content composer & awareness intelligence (external; RESOLVED 2026-07)
+`/api/generate/content` runs an awareness layer (response `intelligence` block: keywords, audience, strategy). Earlier the hook/body/cta composer templated the RAW topic verbatim and ignored it (differential probe: rich vs minimal payload → byte-identical). User then upgraded MaxCore-side composer — copy now weaves in extracted keywords + audience intent. Lesson: when output quality looks templated, differential-probe (minimal vs rich payload) FIRST — if identical, the gap is MaxCore-side composition, not our request; pass-through wiring here is verified clean. Output quality is bounded by the `topic` we send — garbage topic (raw Spotify track ID when title extraction fails) = garbage copy regardless of awareness quality.
+
+## Audio dataset (RESOLVED 2026-07)
+`mb:dataset:audio` was seeded on MaxCore — `/api/generate/audio` jobs now complete with real MP3s (30s, served from MaxCore /uploads, mirrored locally). The local-ffmpeg fallback path remains for MaxCore outages.
