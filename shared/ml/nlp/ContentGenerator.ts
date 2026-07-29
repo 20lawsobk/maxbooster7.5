@@ -389,9 +389,10 @@ export class ContentGenerator {
   }
 
   public trainOnContent(content: string[]): void {
-    this.trainingCorpus = [...this.trainingCorpus, ...content];
+    const safeContent = content.filter((item) => typeof item === "string");
+    this.trainingCorpus = [...this.trainingCorpus, ...safeContent];
 
-    for (const text of content) {
+    for (const text of safeContent) {
       const tokens = this.tokenize(text);
       if (tokens.length < this.ngramModel.order + 1) continue;
 
@@ -1976,6 +1977,7 @@ export class ContentGenerator {
   }
 
   private tokenize(text: string): string[] {
+    if (typeof text !== "string") return [];
     return text
       .toLowerCase()
       .replace(/[^\w\s#@']/g, " ")
