@@ -2092,7 +2092,7 @@ export default function Marketplace() {
       beats.find((b) => b.id === beatId) ||
       myBeats.find((b) => b.id === beatId);
     let audioUrl =
-      beatUrl || beat?.audioUrl || beat?.previewUrl || beat?.fullUrl;
+      beatUrl || beat?.previewUrl || beat?.audioUrl || beat?.fullUrl;
 
     if (!audioUrl) {
       toast({
