@@ -99,10 +99,7 @@ class PocketDimensionStorageProvider implements StorageProvider {
       await ensureLocalDir(localPath);
       await fsPromises?.writeFile(localPath, file);
     } catch (fsErr) {
-      logger.warn(
-        `[Storage] Local filesystem write failed for key=${key}:`,
-        fsErr,
-      );
+      logger.warn({ err: fsErr }, `[Storage] Local filesystem write failed for key=${key}`);
     }
 
     // Also write to PDIM (with timeout so a congested queue never blocks the response)
@@ -133,7 +130,7 @@ class PocketDimensionStorageProvider implements StorageProvider {
     // Try PDIM first
     try {
       await this.ensure();
-      return await this.pocket.read(`files/${key}`);
+      return await (this.pocket as Record<string, (...a: unknown[]) => Promise<Buffer>>).read(`files/${key}`);
     } catch {
       // Fall through to local filesystem
     }
@@ -153,19 +150,16 @@ class PocketDimensionStorageProvider implements StorageProvider {
     // Delete from local filesystem
     try {
       await fsPromises?.unlink(localFilePath(key));
-    } catch (fsErr: Record<string, unknown>) {
-      if (fsErr?.code !== "ENOENT") {
-        logger.warn(
-          `[StorageService] local deleteFile failed for key=${key}:`,
-          fsErr,
-        );
+    } catch (fsErr: unknown) {
+      if ((fsErr as Record<string, unknown>)?.code !== "ENOENT") {
+        logger.warn({ err: fsErr }, `[StorageService] local deleteFile failed for key=${key}`);
       }
     }
 
     // Delete from PDIM
     try {
       await this.ensure();
-      await this.pocket.delete(`files/${key}`);
+      await (this.pocket as Record<string, (...a: unknown[]) => Promise<void>>).delete(`files/${key}`);
     } catch (err) {
       const now = Date.now();
       if (now - _lastPdimDeleteWarnAt >= _STORAGE_WARN_THROTTLE_MS) {
@@ -178,7 +172,7 @@ class PocketDimensionStorageProvider implements StorageProvider {
   }
 
   async getUploadUrl(
-    key: string,
+    _key: string,
     _contentType: string,
     _expiresIn?: number,
   ): Promise<string | null> {
@@ -197,7 +191,7 @@ class PocketDimensionStorageProvider implements StorageProvider {
     // Check PDIM
     try {
       await this.ensure();
-      return this.pocket.exists(`files/${key}`);
+      return (this.pocket as Record<string, (...a: unknown[]) => Promise<boolean>>).exists(`files/${key}`);
     } catch {
       return false;
     }

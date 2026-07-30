@@ -22,7 +22,7 @@ async function isJwtBlocked(key: string): Promise<boolean> {
     const client = await getRedisClient();
     if (client) {
       const redisKey = `ratelimit:jwt:${key}`;
-      const raw = await (client as Record<string, unknown>).get(redisKey);
+      const raw = await (client as any).get(redisKey) as string | null;
       const count = raw ? parseInt(raw, 10) : 0;
       return count >= JWT_RL_MAX_FAILURES;
     }
@@ -39,12 +39,9 @@ async function recordJwtFailure(key: string): Promise<void> {
     const client = await getRedisClient();
     if (client) {
       const redisKey = `ratelimit:jwt:${key}`;
-      const count = await (client as Record<string, unknown>).incr(redisKey);
+      const count = await (client as any).incr(redisKey) as number;
       if (count === 1)
-        await (client as Record<string, unknown>).pexpire(
-          redisKey,
-          JWT_RL_WINDOW_MS,
-        );
+        await (client as any).pexpire(redisKey, JWT_RL_WINDOW_MS);
       return;
     }
   } catch {
@@ -100,17 +97,7 @@ export const verifyJWT = async (
       return res.status(401).json({ message: "User not found" });
     }
 
-    req.user = {
-      id: user.id,
-      email: user.email,
-      name:
-        `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || user?.email,
-      subscriptionType: user.subscriptionTier || null,
-      subscriptionStatus: user.subscriptionStatus || null,
-      stripeCustomerId: user.stripeCustomerId || null,
-      subscriptionEndDate: user.subscriptionEndsAt || null,
-      trialEndDate: user.trialEndsAt || null,
-    };
+    req.user = user;
 
     next();
   } catch (error: unknown) {
@@ -136,28 +123,7 @@ export const requireAuthDual = async (
       const user = await storage?.getUser(req.session.userId);
 
       if (user) {
-        req.user = {
-          id: user.id,
-          email: user.email,
-          name:
-            `${user?.firstName || ""} ${user?.lastName || ""}`.trim() ||
-            user?.email,
-          username: user.username,
-          displayName:
-            (user as Record<string, unknown>).displayName || user?.username,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          avatarUrl: (user as Record<string, unknown>).avatarUrl || null,
-          profileImageUrl:
-            (user as Record<string, unknown>).profileImageUrl || null,
-          bio: (user as Record<string, unknown>).bio || null,
-          role: (user as Record<string, unknown>).role || "user",
-          subscriptionType: user.subscriptionTier || null,
-          subscriptionStatus: user.subscriptionStatus || null,
-          stripeCustomerId: user.stripeCustomerId || null,
-          subscriptionEndDate: user.subscriptionEndsAt || null,
-          trialEndDate: user.trialEndsAt || null,
-        };
+        req.user = user;
         return next();
       }
     } catch (error: unknown) {
@@ -198,7 +164,7 @@ export const blockDemoWrite = async (
   res: Response,
   next: NextFunction,
 ) => {
-  if ((req as Record<string, unknown>).user?.email !== "demo@maxbooster.ai") {
+  if ((req.user as { email?: string } | undefined)?.email !== "demo@maxbooster.ai") {
     return next();
   }
 
