@@ -676,18 +676,28 @@ async function fineTuneWithPublicDatasets(): Promise<boolean> {
     logger.info(
       "[BaseTrainer] Phase 2: Encoding CTA performance signals from social dataset...",
     );
+    const ctaArray = Array.isArray(CALL_TO_ACTION_LIBRARY)
+      ? CALL_TO_ACTION_LIBRARY
+      : [];
+    const ctaByType = ctaArray.reduce(
+      (acc: Record<string, number>, item: { type?: string }) => {
+        const key = item?.type ?? "other";
+        acc[key] = (acc[key] ?? 0) + 1;
+        return acc;
+      },
+      {},
+    );
     const ctaSignals = {
-      streaming_direct: CALL_TO_ACTION_LIBRARY.streaming.direct?.length,
-      streaming_urgent: CALL_TO_ACTION_LIBRARY.streaming.urgent?.length,
-      streaming_social_proof:
-        CALL_TO_ACTION_LIBRARY?.streaming.social_proof?.length,
-      comment_bait: CALL_TO_ACTION_LIBRARY.engagement.comment_bait?.length,
-      save_prompts: CALL_TO_ACTION_LIBRARY.engagement.save_prompts?.length,
-      share_prompts: CALL_TO_ACTION_LIBRARY.engagement.share_prompts?.length,
-      follow_prompts: CALL_TO_ACTION_LIBRARY.engagement.follow_prompts?.length,
-      presave: CALL_TO_ACTION_LIBRARY.presave.length,
+      stream: ctaByType["stream"] ?? 0,
+      follow: ctaByType["follow"] ?? 0,
+      dm: ctaByType["dm"] ?? 0,
+      engagement: ctaByType["engagement"] ?? 0,
+      share: ctaByType["share"] ?? 0,
+      subscribe: ctaByType["subscribe"] ?? 0,
+      save: ctaByType["save"] ?? 0,
+      tag: ctaByType["tag"] ?? 0,
     };
-    totalCTASamples = Object.values(ctaSignals).reduce((a, b) => a + b, 0);
+    totalCTASamples = ctaArray.length;
     logger.info(
       `[BaseTrainer] Phase 2 complete: ${totalCTASamples} CTA samples across ${Object.keys(ctaSignals).length} categories`,
     );
