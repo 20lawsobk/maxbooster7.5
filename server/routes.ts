@@ -5899,6 +5899,47 @@ export async function registerRoutes(
     },
   );
 
+  // GET /api/royalties/transactions — paginated royalty transaction ledger for the current user.
+  // Supports ?limit=&offset=&platform=&status= query params.
+  app.get("/api/royalties/transactions", async (req: Request, res: Response) => {
+    if (!req.user)
+      return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const limit = Math.min(100, Math.max(1, parseInt(String(req.query.limit || "50"), 10) || 50));
+      const offset = Math.max(0, parseInt(String(req.query.offset || "0"), 10) || 0);
+      const platform = req.query.platform as string | undefined;
+      const status = req.query.status as string | undefined;
+
+      const conditions = [eq(royaltyTransactions.userId, req.user.id as string)];
+      if (platform) conditions.push(eq(royaltyTransactions.platform, platform));
+      if (status) conditions.push(eq(royaltyTransactions.status, status));
+
+      const [rows, countResult] = await Promise.all([
+        db
+          .select()
+          .from(royaltyTransactions)
+          .where(and(...conditions))
+          .orderBy(desc(royaltyTransactions.createdAt))
+          .limit(limit)
+          .offset(offset),
+        db
+          .select({ total: sql<number>`count(*)::int` })
+          .from(royaltyTransactions)
+          .where(and(...conditions)),
+      ]);
+
+      return res.json({
+        transactions: rows,
+        total: countResult[0]?.total ?? 0,
+        limit,
+        offset,
+      });
+    } catch (error) {
+      logger.warn({ err: error }, "Get royalty transactions error");
+      return res.json({ transactions: [], total: 0, limit: 50, offset: 0 });
+    }
+  });
+
   // GET /api/royalties/statements — Royalty period statements (for Tax Intelligence tab)
   app.get("/api/royalties/statements", async (req: Request, res: Response) => {
     if (!req.user)

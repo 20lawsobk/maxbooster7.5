@@ -12,6 +12,7 @@ import {
   bigint,
   serial,
   index,
+  unique,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -2260,6 +2261,181 @@ export const insertRoyaltyTransactionSchema = createInsertSchema(
 ).omit({ id: true, createdAt: true });
 export type RoyaltyTransaction = typeof royaltyTransactions.$inferSelect;
 export type InsertRoyaltyTransaction = typeof royaltyTransactions.$inferInsert;
+
+// ============================================================================
+// REVENUE EVENTS  (marketplace sales + DSP streams → royalty statement input)
+// ============================================================================
+export const revenueEvents = pgTable(
+  "revenue_events",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    /** The user who earns from this event (seller / rights-holder). */
+    userId: varchar("user_id"),
+    /** "marketplace" | "spotify" | "apple_music" | etc. */
+    source: text("source").notNull(),
+    /** Territory code ("US", "GB") or event sub-type ("beat_sale"). */
+    sourceType: text("source_type"),
+    amount: real("amount").notNull(),
+    currency: text("currency").default("usd"),
+    /** Beat UUID or release UUID — links back to the earning asset. */
+    projectId: varchar("project_id"),
+    /** marketplace listing UUID (beat_sale events only). */
+    listingId: varchar("listing_id"),
+    /** marketplace order UUID (beat_sale events only). */
+    orderId: varchar("order_id"),
+    occurredAt: timestamp("occurred_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    /** Prevents double-booking when a Stripe webhook replays processPayment */
+    orderIdUnique: unique("revenue_events_order_id_unique").on(t.orderId),
+    userIdOccurredAtIdx: index("revenue_events_user_id_occurred_at_idx").on(
+      t.userId,
+      t.occurredAt,
+    ),
+    sourceOccurredAtIdx: index("revenue_events_source_occurred_at_idx").on(
+      t.source,
+      t.occurredAt,
+    ),
+  }),
+);
+export type RevenueEvent = typeof revenueEvents.$inferSelect;
+export type InsertRevenueEvent = typeof revenueEvents.$inferInsert;
+
+// ============================================================================
+// RECOUPMENT ACCOUNTS  (advance-against-royalties tracking)
+// ============================================================================
+export const recoupmentAccounts = pgTable(
+  "recoupment_accounts",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: varchar("user_id").notNull(),
+    releaseId: varchar("release_id"),
+    totalAdvance: real("total_advance").default(0),
+    recoupedAmount: real("recouped_amount").default(0),
+    /** Remaining balance as a precise decimal string. */
+    remainingBalance: text("remaining_balance").default("0"),
+    /** Percentage of each payment applied to recoupment (0–100). */
+    recoupmentRate: text("recoupment_rate").default("100"),
+    isActive: boolean("is_active").default(true),
+    priority: integer("priority").default(1),
+    fullyRecoupedAt: timestamp("fully_recouped_at"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (t) => ({
+    userIdActiveIdx: index("recoupment_accounts_user_id_active_idx").on(
+      t.userId,
+      t.isActive,
+    ),
+  }),
+);
+export type RecoupmentAccount = typeof recoupmentAccounts.$inferSelect;
+
+// ============================================================================
+// SPLIT CONTRACTS  (multi-party royalty agreements)
+// ============================================================================
+export const splitContracts = pgTable(
+  "split_contracts",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    releaseId: varchar("release_id").notNull(),
+    status: text("status").default("active"),
+    /** Array of { userId, name, role, splitPercentage } objects. */
+    participants: jsonb("participants"),
+    createdAt: timestamp("created_at").defaultNow(),
+    updatedAt: timestamp("updated_at").defaultNow(),
+  },
+  (t) => ({
+    releaseIdStatusIdx: index("split_contracts_release_id_status_idx").on(
+      t.releaseId,
+      t.status,
+    ),
+  }),
+);
+export type SplitContract = typeof splitContracts.$inferSelect;
+
+// ============================================================================
+// DSP RATES  (per-stream rates by platform + territory, admin-editable)
+// ============================================================================
+export const dspRates = pgTable(
+  "dsp_rates",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    dspName: text("dsp_name").notNull(),
+    dspSlug: text("dsp_slug").notNull(),
+    territory: text("territory").notNull().default("GLOBAL"),
+    /** Stored as a decimal string to avoid float precision loss. */
+    ratePerStream: text("rate_per_stream").notNull(),
+    currency: text("currency").default("USD"),
+    effectiveFrom: timestamp("effective_from").notNull(),
+    effectiveTo: timestamp("effective_to"),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (t) => ({
+    dspSlugTerritoryIdx: index("dsp_rates_slug_territory_idx").on(
+      t.dspSlug,
+      t.territory,
+    ),
+  }),
+);
+export type DspRate = typeof dspRates.$inferSelect;
+
+// ============================================================================
+// EXCHANGE RATES  (historical FX for royalty calculations)
+// ============================================================================
+export const exchangeRates = pgTable(
+  "exchange_rates",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    fromCurrency: text("from_currency").notNull(),
+    toCurrency: text("to_currency").notNull(),
+    /** Stored as a decimal string. */
+    rate: text("rate").notNull(),
+    rateDate: timestamp("rate_date").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (t) => ({
+    fxPairDateIdx: index("exchange_rates_pair_date_idx").on(
+      t.fromCurrency,
+      t.toCurrency,
+      t.rateDate,
+    ),
+  }),
+);
+export type ExchangeRate = typeof exchangeRates.$inferSelect;
+
+// ============================================================================
+// PROJECT ROYALTY SPLITS  (per-collaborator split on a project/beat)
+// ============================================================================
+export const projectRoyaltySplits = pgTable(
+  "project_royalty_splits",
+  {
+    id: varchar("id")
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    projectId: varchar("project_id").notNull(),
+    collaboratorId: varchar("collaborator_id").notNull(),
+    role: text("role"),
+    splitPercentage: real("split_percentage").notNull(),
+    createdAt: timestamp("created_at").defaultNow(),
+  },
+  (t) => ({
+    projectIdIdx: index("project_royalty_splits_project_id_idx").on(
+      t.projectId,
+    ),
+  }),
+);
+export type ProjectRoyaltySplit = typeof projectRoyaltySplits.$inferSelect;
 
 // ============================================================================
 // INSTANT PAYOUTS

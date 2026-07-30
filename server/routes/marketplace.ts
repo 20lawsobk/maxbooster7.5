@@ -997,6 +997,37 @@ router.post("/unfollow-producer", async (req: Request, res: Response) => {
   }
 });
 
+// POST /api/marketplace/checkout/initiate — Stripe Checkout Session initiation.
+// Accepts { beatId, licenseType } and returns { url } for the hosted checkout page.
+// This is the canonical front-end entry point for beat purchases.
+router.post("/checkout/initiate", async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+    const { beatId, licenseType } = req.body || {};
+    if (!beatId || !licenseType) {
+      return res.status(400).json({ error: "beatId and licenseType are required" });
+    }
+    const result = await marketplaceService.initiatePurchase(
+      req.user!.id,
+      beatId,
+      licenseType,
+    );
+    return res.json(result);
+  } catch (error) {
+    logger.warn({ err: error }, "[Marketplace] checkout/initiate error:");
+    const msg = (error as Error).message || "Failed to initiate checkout";
+    if (msg.includes("not found") || msg.includes("Not found"))
+      return res.status(404).json({ error: msg });
+    if (msg.includes("not configured") || msg.includes("Invalid") || msg.includes("inactive"))
+      return res.status(400).json({ error: msg });
+    if (msg.includes("Cannot purchase your own"))
+      return res.status(403).json({ error: msg });
+    return res.status(500).json({ error: "Failed to initiate checkout" });
+  }
+});
+
 router.post("/purchase", async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
