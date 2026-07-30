@@ -1402,7 +1402,7 @@ class BeatMoneyLoopService {
         "type beat",
         "beatsforsale",
         "producer",
-        ...args.scan.hooks.map((h) => h.toLowerCase().split(" ").slice(0, 2).join("")).slice(0, 3),
+        ...args.scan.hooks.filter((h): h is string => typeof h === "string").map((h) => h.toLowerCase().split(" ").slice(0, 2).join("")).slice(0, 3),
       ]),
     ).filter(Boolean);
 
@@ -1753,7 +1753,7 @@ class BeatMoneyLoopService {
       euphoric:   "Euphoric energy that lifts the room — built for moments that matter.",
       romantic:   "Warm and intimate production that gives love songs the sonic space they deserve.",
     };
-    const moodKey = scan.mood.toLowerCase();
+    const moodKey = (scan.mood ?? "").toLowerCase();
     const emotionalLead =
       emotionalLeadMap[moodKey] ??
       `${scan.mood.charAt(0).toUpperCase() + scan.mood.slice(1)} energy with the kind of production that sticks.`;
@@ -1773,9 +1773,9 @@ class BeatMoneyLoopService {
       lo_fi:     "Dusty samples, mellow chords, and a boom-bap swing at " + scan.tempo + " BPM.",
       jazz:      "Neo-soul chord progressions, brushed drums, and melodic bass at " + scan.tempo + " BPM.",
     };
-    const genreKey = scan.genre.toLowerCase().replace(/[-\s]/g, "");
+    const genreKey = (scan.genre ?? "").toLowerCase().replace(/[-\s]/g, "");
     const productionDetail =
-      productionDetailMap[scan.genre.toLowerCase()] ||
+      productionDetailMap[(scan.genre ?? "").toLowerCase()] ||
       productionDetailMap[genreKey] ||
       `Professionally arranged at ${scan.tempo} BPM with full mix headroom.`;
 
@@ -1796,7 +1796,7 @@ class BeatMoneyLoopService {
       jazz:      "Neo-soul and jazz-influenced artists in the lane of Sampha, Sault, or Thundercat.",
     };
     const artistType =
-      artistTypeMap[scan.genre.toLowerCase()] ||
+      artistTypeMap[(scan.genre ?? "").toLowerCase()] ||
       artistTypeMap[genreKey] ||
       "Built for independent artists who take their craft seriously.";
 
@@ -1929,6 +1929,7 @@ class BeatMoneyLoopService {
     // Find the first hook label that has a matching sentence, or skip
     const hookSentence = args.scan.hooks
       .slice(0, 3)
+      .filter((h): h is string => typeof h === "string")
       .map((h) => hookCopySentences[h.toLowerCase().trim()])
       .find(Boolean);
 
