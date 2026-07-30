@@ -222,6 +222,8 @@ export class DistributedRateLimiter {
         String(windowExpireSecs),
         String(batchCount),
       );
+      // null means PDIM returned 403/unsupported for EVAL — treat as fallback
+      if (raw === null) throw new Error("EVAL returned null — using fallback");
       const result = Array.isArray(raw) ? raw : [];
       const limited = Number(result[0] ?? 1) === 1;
       const remaining = Number(result[1] ?? 0);

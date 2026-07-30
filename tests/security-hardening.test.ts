@@ -384,20 +384,24 @@ const _pdimConfigured = !!(
   process.env.PDIM_HTTP_EXEC_URL || process.env.PDIM_EXEC_URL
 );
 
-/** Returns true only when PDIM env is set AND the endpoint responds (not 502). */
+/**
+ * Returns true only when PDIM is reachable AND the ZSET commands required by
+ * these tests (ZCOUNT, ZADD) are actually supported.  Some PDIM instances are
+ * job-queue proxies that return HTTP 403 on arbitrary Redis commands — in that
+ * case the tests skip themselves cleanly rather than failing.
+ *
+ * Uses the real app redis client so auth headers and request format are correct.
+ */
 async function _pdimReachable(): Promise<boolean> {
   if (!_pdimConfigured) return false;
   try {
-    const url = process.env.PDIM_HTTP_EXEC_URL || process.env.PDIM_EXEC_URL!;
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 3_000);
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ command: "PING", args: [] }),
-      signal: ctrl.signal,
-    }).finally(() => clearTimeout(t));
-    return res.status !== 502 && res.status !== 503;
+    const { getRedisClient } = await import("../server/lib/redisClient.js");
+    const redis = getRedisClient() as {
+      zcount(key: string, min: string | number, max: string | number): Promise<number | null>;
+    };
+    // null = PDIM returned 403 (unsupported) for ZCOUNT → skip these tests
+    const probe = await redis.zcount("_probe_zset_cap_", "-inf", "+inf");
+    return probe !== null;
   } catch {
     return false;
   }
