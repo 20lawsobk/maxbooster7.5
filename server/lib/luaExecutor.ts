@@ -609,8 +609,14 @@ export async function execLuaViaPdim(
             short.includes("429") ||
             short.includes("500") ||
             short.includes("502") ||
-            short.includes("Circuit OPEN")
+            short.includes("Circuit OPEN") ||
+            short.includes("timeout") ||
+            short.includes("aborted") ||
+            short.includes("Timeout") ||
+            short.includes("Abort")
           ) {
+            // Timeout/abort errors flood when PDIM is overwhelmed — demote to
+            // debug so the root-cause site (pdimClient) is the only visible warn.
             logger.debug(`[LuaExecutor] redis.call(${msg.cmd}) → ${short}`);
           } else {
             logger.warn(`[LuaExecutor] redis.call(${msg.cmd}) → ${short}`);

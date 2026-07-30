@@ -83,7 +83,8 @@ export class MaxCoreAIClient {
         fetch(`${MC_AI_URL}/api/platform/model/info`, {
           method: "GET",
           headers: MaxCoreAIClient.authHeaders(),
-          signal: AbortSignal.timeout(15_000),
+          // 60 s covers Replit cold-start (observed 30–60 s wake window).
+          signal: AbortSignal.timeout(60_000),
           redirect: "manual",
         })
           .then((r) => {
@@ -199,7 +200,7 @@ export class MaxCoreAIClient {
       const r = await fetch(`${MC_AI_URL}${path}`, {
         method: "GET",
         headers: MaxCoreAIClient.authHeaders(),
-        signal: AbortSignal.timeout(10_000),
+        signal: AbortSignal.timeout(60_000), // cover cold-start wake-up
         redirect: "manual",
       });
       if (!r?.ok || !MaxCoreAIClient.isJson(r)) {
@@ -272,6 +273,14 @@ export class MaxCoreAIClient {
     // Circuit breaker: fail fast while MaxCore is known-down.
     if (MaxCoreAIClient.cbBlocked()) {
       logger.debug(`[MaxCoreAI] generate ${path} — circuit open, failing fast`);
+      return null;
+    }
+
+    // Health-probe fast-fail: if the lightweight ping already confirmed MaxCore
+    // is unreachable, don't queue a 600 s hanging socket — return null now.
+    // (null → false means "no info yet" → allow through on first call)
+    if (MaxCoreAIClient._remoteAvailable === false) {
+      logger.debug(`[MaxCoreAI] generate ${path} — health probe says unreachable, skipping`);
       return null;
     }
 
@@ -388,6 +397,13 @@ export class MaxCoreAIClient {
       return null;
     }
 
+    // Health-probe fast-fail: avoids queuing a 600 s hanging socket when the
+    // lightweight ping already confirmed MaxCore is unreachable.
+    if (MaxCoreAIClient._remoteAvailable === false) {
+      logger.debug(`[MaxCoreAI] infer ${path} — health probe says unreachable, skipping`);
+      return null;
+    }
+
     // Bulkhead: cap concurrent long-held sockets.
     if (!(await MaxCoreAIClient.acquireSlot())) {
       // Not a MaxCore failure — free the half-open probe slot if we held it.
@@ -482,7 +498,10 @@ async function pingMaxCoreHealth(): Promise<boolean> {
     const r = await fetch(`${MC_AI_URL}/api/platform/model/info`, {
       method: "GET",
       headers: { Authorization: `Bearer ${MC_AI_KEY}` },
-      signal: AbortSignal.timeout(15_000),
+      // 60 s covers Replit cold-start (observed 30–60 s).  15 s was too short
+      // and always fired during wake-up, leaving _remoteAvailable = false and
+      // causing generate/infer to fast-fail for minutes after every cold-start.
+      signal: AbortSignal.timeout(60_000),
       redirect: "manual",
     });
     return r.ok;

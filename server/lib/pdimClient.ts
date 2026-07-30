@@ -572,6 +572,43 @@ function _logExecError(cmd: unknown, status: number, msg: string): void {
   _lastExecErrorLoggedAt = now;
 }
 
+// ── Network/timeout error dedup (separate from HTTP-status dedup above) ───────
+// Timeout and AbortErrors flood when PDIM is overwhelmed: hundreds of queued
+// callers each receive a 4 s abort in rapid succession.  Log the first one,
+// suppress the rest within the window, then emit a summary count.
+const _NET_ERROR_DEDUP_MS = 10_000; // 10 s burst window
+let _lastNetErrorMsg = "";
+let _lastNetErrorLoggedAt = 0;
+let _suppressedNetErrors = 0;
+
+function _logNetworkError(cmd: unknown, msg: string): void {
+  const now = Date.now();
+  const sameMsg = msg === _lastNetErrorMsg;
+  const withinWindow = now - _lastNetErrorLoggedAt < _NET_ERROR_DEDUP_MS;
+  if (sameMsg && withinWindow) {
+    _suppressedNetErrors++;
+    // Emit a periodic summary so the operator knows the burst is ongoing.
+    if (_suppressedNetErrors % 50 === 0) {
+      logger.warn(
+        `[PDIM] exec error [${String(cmd)}]: ${msg} — suppressed ×${_suppressedNetErrors} in last ${_NET_ERROR_DEDUP_MS / 1000}s`,
+      );
+    }
+    return;
+  }
+  // New message or window elapsed — flush summary then log fresh.
+  if (_suppressedNetErrors > 0) {
+    logger.warn(
+      `[PDIM] exec error [${String(cmd)}]: ${_lastNetErrorMsg} ` +
+        `(+ ${_suppressedNetErrors} suppressed in last ${_NET_ERROR_DEDUP_MS / 1000}s)`,
+    );
+    _suppressedNetErrors = 0;
+  } else {
+    logger.warn(`[PDIM] exec error [${String(cmd)}]: ${msg}`);
+  }
+  _lastNetErrorMsg = msg;
+  _lastNetErrorLoggedAt = now;
+}
+
 // ── Module-level ZPOPMIN serializer ───────────────────────────────────────────
 // Secondary layer specifically for BZPOPMIN polling: ensures at most 1 ZPOPMIN
 // is queued into the global AIMD chain at a time, with a minimal per-worker jitter gap
@@ -1000,9 +1037,10 @@ export class PdimRedisClient extends EventEmitter {
           // Only log errors we haven't already logged inline.
           // These are connectivity failures (ECONNREFUSED, timeouts, network errors)
           // — expected transient conditions, not bugs in our code.
-          logger.warn(
-            `[PDIM] exec error [${cmd}]: ${err.message.slice(0, 200)}`,
-          );
+          //
+          // Timeout/AbortErrors flood when PDIM is overwhelmed (many callers each
+          // get a 4 s abort): use the same dedup suppression as HTTP status errors.
+          _logNetworkError(cmd, err.message.slice(0, 200));
         }
         cbHalfOpenFailed(); // release HALF_OPEN probe slot so next interval can retry
         throw err;
