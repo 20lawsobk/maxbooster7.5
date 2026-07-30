@@ -49,6 +49,8 @@
 - [Embedded-string ?. debris](embedded-string-oc-debris.md) — `?.` in string literals is a bug only when the embedded language isn't JS (GLSL/shell/SQL/URLs/paths); scan with scripts/_scan_oc.cjs; the SQL fixer can append a stray trailing backtick
 - [Beat loop output quality](beat-loop-output-quality.md) — audio is 30s mono ~92kbps MP3-in-.wav & clips; old listings 404; scan context constant; ads "activate" but post 0 — verify servable audio + posts rows, not statuses
 - [Beat loop royalty splits and title fix](beat-loop-royalty-and-title.md) — royalty_splits row created on every beat listing; concept title must take first line only; instagram/threads CB timeout 20s→45s
+- [Beat loop dual-generation](beat-loop-dual-generation.md) — full-length WAV (180s default) + 30s ffmpeg preview trim; energy 1.0, quality:"professional", master:true; preview in listings.preview_url only
+- [MaxCore reconnect callback](maxcore-reconnect-callback.md) — MaxCoreAIClient.onReconnect fires offline→online; beat loop registers in enable() to reschedule from 12h backoff to MIN_CADENCE
 - [PDIM startup exec-chain probe flood](pdim-startup-probe-flood.md) — startup-probes/maxcoreSync/sessionConfig all called getPdimClient().ping() via exec() chain; replace with native fetch(); also workers need consecutiveOk≥2 before starting to avoid HSET burst on a still-warming PDIM
 - [MaxCore endpoint quality](maxcore-endpoint-quality.md) — per-endpoint quality verdict, stale hook list, beat loop payload decisions (short topic, explicit CTA, isBeatPost flag)
 - [distributionService baseStorage import](distribution-service-import.md) — distributionService.ts uses `baseStorage` but imports it as `storage`; fix: `import { storage as baseStorage }` at top of file

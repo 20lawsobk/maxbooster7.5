@@ -529,7 +529,10 @@ export async function setupRepeatableJobs(): Promise<void> {
   try {
     for (const { name, every } of REPEATABLE_JOBS) {
       await queue
-        .upsertJobScheduler(name, { every }, { data: {}, opts: SCHED_DEFAULTS })
+        // `name` must be in the job template — without it BullMQ writes the
+        // repeat hash without a name field, so after a restart the worker sees
+        // job.name === undefined and logs "[Worker] Removing stale/unnamed job".
+        .upsertJobScheduler(name, { every }, { name, data: {}, opts: SCHED_DEFAULTS })
         .catch((err: Error) => {
           // Truncate Lua stack traces to a single line; silence PDIM 5xx cold-start
           // errors (the scheduler retries automatically on the next boot cycle).

@@ -1,16 +1,14 @@
 #!/bin/bash
+# Post-merge setup script — runs automatically after every task merge.
+# Must be: idempotent, non-interactive, fast (< 2 min), and fail-fast.
 set -e
 
-echo "=== Post-merge setup ==="
-
-# Install / sync dependencies (non-interactive)
+echo "[post-merge] Installing dependencies..."
 npm install --legacy-peer-deps --no-audit --no-fund 2>&1 | tail -5
 
-# Push any schema changes to the database (Drizzle, non-interactive)
-if npm run --silent db:push -- --force 2>/dev/null; then
-  echo "✅ DB schema up to date"
-else
-  echo "⚠️  db:push not configured or no changes — skipping"
-fi
+echo "[post-merge] Running DB migrations (push, non-interactive)..."
+npx drizzle-kit push --config=drizzle.config.ts 2>&1 | tail -10 || {
+  echo "[post-merge] WARN: drizzle-kit push failed — schema may already be up to date"
+}
 
-echo "=== Post-merge setup complete ==="
+echo "[post-merge] Done."

@@ -314,6 +314,33 @@ class BeatMoneyLoopService {
       "[BeatMoneyLoop] ✅ Enabled — first cycle scheduled for " +
         nextRunAt.toISOString(),
     );
+
+    // When MaxCore comes back online after being down, the loop's nextRunAt
+    // may be many hours away (adaptive backoff from the failed cycle).
+    // Register a one-shot reconnect callback that reschedules to MIN_CADENCE
+    // from now so the loop resumes promptly rather than waiting out the full
+    // backoff window.
+    MaxCoreAIClient.onReconnect = async () => {
+      try {
+        const st = await this._ensureStateRow();
+        if (!st.enabled) return;
+        const MAX_BACKOFF_BEFORE_RESCHEDULE = MIN_CADENCE_MS * 3;
+        const msUntil = st.nextRunAt
+          ? st.nextRunAt.getTime() - Date.now()
+          : Infinity;
+        if (msUntil > MAX_BACKOFF_BEFORE_RESCHEDULE) {
+          const sooner = new Date(Date.now() + MIN_CADENCE_MS);
+          await db
+            .update(beatMoneyLoopState)
+            .set({ nextRunAt: sooner, updatedAt: new Date() })
+            .where(eq(beatMoneyLoopState.id, STATE_ROW_ID));
+          logger.info(
+            `[BeatMoneyLoop] MaxCore reconnected — rescheduled next cycle to ${sooner.toISOString()} (was ${msUntil / 60_000 | 0} min away)`,
+          );
+        }
+      } catch { /* non-fatal — next tick will run when due */ }
+    };
+
     return this.getStatus();
   }
 
@@ -1896,6 +1923,8 @@ class BeatMoneyLoopService {
       // where MaxCore reads it without embedding it in hashtag strings.
       topic: args.title,
       tone: "hype",
+      quality: "professional",  // request peak, industry-standard copy
+      content_tier: "peak",     // signal highest output tier to MaxCore
       genre: args.scan.genre,
       mood: args.scan.mood,
       include_hashtags: true,
