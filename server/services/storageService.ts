@@ -8,6 +8,12 @@
 
 import { randomUUID } from "crypto";
 import { logger } from "../logger.js";
+
+// Throttle noisy PDIM-unavailable warnings to once per 30 s per operation type
+// so a storage-server outage doesn't flood the log on every upload/delete.
+const _STORAGE_WARN_THROTTLE_MS = 30_000;
+let _lastPdimWriteWarnAt = 0;
+let _lastPdimDeleteWarnAt = 0;
 import fs from "fs";
 import fsPromises from "fs/promises";
 import path from "path";
@@ -111,10 +117,13 @@ class PocketDimensionStorageProvider implements StorageProvider {
         ),
       ]);
     } catch (pdimErr) {
-      logger.warn(
-        `[Storage] PDIM write failed for key=${key}, file is on disk only:`,
-        pdimErr,
-      );
+      const now = Date.now();
+      if (now - _lastPdimWriteWarnAt >= _STORAGE_WARN_THROTTLE_MS) {
+        _lastPdimWriteWarnAt = now;
+        logger.warn(
+          `[Storage] PDIM write failed (file is on disk only) — suppressing repeats for 30 s: ${(pdimErr as Error).message}`,
+        );
+      }
     }
 
     return key;
@@ -158,9 +167,13 @@ class PocketDimensionStorageProvider implements StorageProvider {
       await this.ensure();
       await this.pocket.delete(`files/${key}`);
     } catch (err) {
-      logger.warn(
-        `[StorageService] deleteFile failed for key=${key}: ${err?.message}`,
-      );
+      const now = Date.now();
+      if (now - _lastPdimDeleteWarnAt >= _STORAGE_WARN_THROTTLE_MS) {
+        _lastPdimDeleteWarnAt = now;
+        logger.warn(
+          `[StorageService] PDIM delete failed — suppressing repeats for 30 s: ${(err as Error)?.message}`,
+        );
+      }
     }
   }
 

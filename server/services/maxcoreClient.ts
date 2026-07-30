@@ -34,6 +34,13 @@ function parseCbRetryMs(body: string): number {
 export class MaxCoreAIClient {
   private static _remoteAvailable: boolean | null = null;
   private static _lastCheck = 0;
+  /**
+   * Optional callback fired once when MaxCore transitions from unreachable
+   * back to reachable.  Registered by subsystems (e.g. BeatMoneyLoop) that
+   * need to reschedule work when MaxCore recovers.  Single-slot — last
+   * registration wins, which is fine since only one loop uses this.
+   */
+  static onReconnect: (() => void) | null = null;
   private static readonly CHECK_TTL = 30_000;
 
   // Suppress only stable named endpoints (e.g. /api/generate/content) that
@@ -552,12 +559,18 @@ export function startMaxCoreLLMWarmth(): void {
   const pingWithTracking = () => {
     pingMaxCoreHealth().then((ok) => {
       if (ok) {
-        if (_consecutiveFailures > 0) {
+        const wasDown = _consecutiveFailures > 0;
+        if (wasDown) {
           logger.info(`[MaxCoreAI] ✅ MaxCore reconnected after ${_consecutiveFailures} failed ping(s)`);
         }
         _consecutiveFailures = 0;
         MaxCoreAIClient._remoteAvailable = true;
         MaxCoreAIClient._lastCheck = Date.now();
+        // Notify registered subsystems (e.g. BeatMoneyLoop) so they can
+        // reschedule work that was deferred while MaxCore was unreachable.
+        if (wasDown && MaxCoreAIClient.onReconnect) {
+          try { MaxCoreAIClient.onReconnect(); } catch { /* non-fatal */ }
+        }
         logger.debug("[MaxCoreAI] Health ping → MaxCore alive ✅");
       } else {
         _consecutiveFailures++;
