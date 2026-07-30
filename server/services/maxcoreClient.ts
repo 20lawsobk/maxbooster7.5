@@ -561,7 +561,13 @@ export function startMaxCoreLLMWarmth(): void {
         logger.debug("[MaxCoreAI] Health ping → MaxCore alive ✅");
       } else {
         _consecutiveFailures++;
-        logger.warn(`[MaxCoreAI] Health ping failed (failure #${_consecutiveFailures})`);
+        // Log first failure immediately, then only every 10th so a sleeping
+        // MaxCore doesn't flood the console every 55 s.
+        if (_consecutiveFailures === 1 || _consecutiveFailures % 10 === 0) {
+          logger.warn(
+            `[MaxCoreAI] Health ping failed (failure #${_consecutiveFailures}) — MaxCore unreachable, will keep retrying`,
+          );
+        }
       }
     });
   };
