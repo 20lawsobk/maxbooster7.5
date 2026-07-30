@@ -83,8 +83,8 @@ export class MaxCoreAIClient {
         fetch(`${MC_AI_URL}/api/platform/model/info`, {
           method: "GET",
           headers: MaxCoreAIClient.authHeaders(),
-          // 60 s covers Replit cold-start (observed 30–60 s wake window).
-          signal: AbortSignal.timeout(60_000),
+          // 10 s: matches pingMaxCoreHealth timeout (see note there).
+          signal: AbortSignal.timeout(10_000),
           redirect: "manual",
         })
           .then((r) => {
@@ -200,7 +200,9 @@ export class MaxCoreAIClient {
       const r = await fetch(`${MC_AI_URL}${path}`, {
         method: "GET",
         headers: MaxCoreAIClient.authHeaders(),
-        signal: AbortSignal.timeout(60_000), // cover cold-start wake-up
+        // 10 s: metadata GETs should be fast; 60 s caused hung sockets when
+        // the API endpoint was unresponsive (returned 0 bytes).
+        signal: AbortSignal.timeout(10_000),
         redirect: "manual",
       });
       if (!r?.ok || !MaxCoreAIClient.isJson(r)) {
@@ -498,14 +500,24 @@ async function pingMaxCoreHealth(): Promise<boolean> {
     const r = await fetch(`${MC_AI_URL}/api/platform/model/info`, {
       method: "GET",
       headers: { Authorization: `Bearer ${MC_AI_KEY}` },
-      // 60 s covers Replit cold-start (observed 30–60 s).  15 s was too short
-      // and always fired during wake-up, leaving _remoteAvailable = false and
-      // causing generate/infer to fast-fail for minutes after every cold-start.
-      signal: AbortSignal.timeout(60_000),
+      // 10 s: if MaxCore's API is working it responds in <1 s.
+      // 60 s was longer than the 55 s poll interval, so timed-out pings were
+      // always in-flight, permanently setting _remoteAvailable = false and
+      // causing generate/infer to fast-fail even when the server is alive.
+      signal: AbortSignal.timeout(10_000),
       redirect: "manual",
     });
-    return r.ok;
-  } catch {
+    // r.ok = 2xx status. Also require JSON content-type so a 200 HTML page
+    // (MaxCore's SPA catch-all) doesn't register as a healthy API response.
+    const ct = r.headers.get("content-type") ?? "";
+    return r.ok && (ct.includes("application/json") || ct.includes("text/json"));
+  } catch (e) {
+    const msg = (e as Error)?.message ?? String(e);
+    // Distinguish "API endpoint hangs / timed out" (server up, API broken)
+    // from "connection refused" (server fully down).
+    if (msg.includes("timed out") || msg.includes("The operation was aborted")) {
+      logger.debug("[MaxCoreAI] Health ping: server reachable but API not responding (timeout)");
+    }
     return false;
   }
 }
@@ -562,7 +574,7 @@ export function startMaxCoreLLMWarmth(): void {
   if (t?.unref) t.unref();
 
   logger.info(
-    "[MaxCoreAI] Health pinger started — polling /api/platform/model/info every 55s",
+    "[MaxCoreAI] Health pinger started — polling /api/platform/model/info every 55s (10s timeout)",
   );
 }
 
