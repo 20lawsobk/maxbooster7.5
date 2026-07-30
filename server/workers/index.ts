@@ -299,6 +299,7 @@ async function waitForPdimReady(
 
   const deadline = Date?.now() + maxWaitMs;
   let attempt = 0;
+  let consecutiveOk = 0;
 
   while (Date?.now() < deadline) {
     attempt++;
@@ -313,16 +314,30 @@ async function waitForPdimReady(
         signal: AbortSignal.timeout(5_000),
       });
       if (res.ok) {
-        const elapsed = Date?.now() - (deadline - maxWaitMs);
-        logger.info(
-          `[Workers] PDIM ready after ${attempt} probe(s) (${elapsed}ms) — starting BullMQ workers`,
+        // Require 2 consecutive successful PINGs before declaring PDIM ready.
+        // One PING means PDIM accepted a connection, but the first HSET flood
+        // from BullMQ startup scripts often still times out because PDIM needs
+        // a few more seconds to warm its internal state after accepting the first
+        // request.  Two consecutive successes (2×2s gap = ~2s stabilisation)
+        // eliminate nearly all startup HSET timeouts without meaningfully
+        // delaying the workers.
+        consecutiveOk = (consecutiveOk ?? 0) + 1;
+        if (consecutiveOk >= 2) {
+          const elapsed = Date?.now() - (deadline - maxWaitMs);
+          logger.info(
+            `[Workers] PDIM stable after ${attempt} probe(s) (${elapsed}ms) — starting BullMQ workers`,
+          );
+          return;
+        }
+        logger.debug(`[Workers] PDIM probe #${attempt}: OK (1/${2} consecutive) — waiting for confirmation`);
+      } else {
+        consecutiveOk = 0; // reset streak on any non-200
+        logger.debug(
+          `[Workers] PDIM probe #${attempt}: HTTP ${res.status} — retrying in ${retryMs}ms`,
         );
-        return;
       }
-      logger.debug(
-        `[Workers] PDIM probe #${attempt}: HTTP ${res.status} — retrying in ${retryMs}ms`,
-      );
     } catch (err) {
+      consecutiveOk = 0;
       logger.debug(
         `[Workers] PDIM probe #${attempt} error: ${(err as Error).message}`,
       );

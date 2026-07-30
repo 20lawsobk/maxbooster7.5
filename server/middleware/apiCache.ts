@@ -135,11 +135,28 @@ const PDIM_PATTERNS_KEEP = 100; // LTRIM: keep only last N pattern events
 const L1_ENTRY_TTL_MS = 4_000; // in-process entry TTL
 const BUST_L1_TTL_MS = 500; // defense-in-depth bust-key L1 (500 ms safety net)
 const L1_MAX = 5_000;
-const POLL_INTERVAL_MS = 100; // ~150 ms max cross-pod propagation lag
+// ── Adaptive poll backoff ─────────────────────────────────────────────────────
+// The cross-pod invalidation poller used to run at a fixed 100 ms interval,
+// generating 10 PDIM GET calls/second regardless of whether there was any
+// invalidation activity.  That alone accounts for hundreds of queued PDIM
+// calls during startup/cold-start when PDIM is running slowly.
+//
+// Adaptive strategy:
+//   • After an ACTIVE tick (seq changed — real invalidations to process):
+//     reset to POLL_MIN_MS so the next invalidation is picked up quickly.
+//   • After a QUIET tick (seq unchanged — nothing to do):
+//     double the interval, capped at POLL_MAX_MS.
+//
+// Steady-state PDIM call rate:
+//   No recent invalidations → ~0.2 calls/s (1 call every 5 s)
+//   Active invalidations     → ~5 calls/s  (1 call every 200 ms)
+// vs the old fixed 10 calls/s regardless.
+const POLL_MIN_MS = 200;   // fastest interval — right after an invalidation event
+const POLL_MAX_MS = 5_000; // slowest interval — when nothing is changing
 
 /**
  * APIResponseCache — two-tier, horizontally-safe response cache with
- * active cross-pod L1 invalidation via a 100 ms PDIM polling loop.
+ * active cross-pod L1 invalidation via an adaptive-backoff PDIM polling loop.
  *
  * Both invalidateForUser() and invalidatePattern() propagate to all pods.
  */
@@ -154,7 +171,10 @@ export class APIResponseCache {
   private pollSeq: string | null = null;
   private processedUsers = new Map<string, number>(); // userId → last ts cleared for
   private lastPatternCleared = 0; // newest pattern ts processed
-  private pollTimer: ReturnType<typeof setInterval> | null = null;
+  // Adaptive poller state — replaced fixed setInterval with setTimeout loop.
+  private _pollTimer: ReturnType<typeof setTimeout> | null = null;
+  private _pollIntervalMs = POLL_MIN_MS;
+  private _pollRunning = false;
 
   private hitCount = 0;
   private missCount = 0;
@@ -234,24 +254,50 @@ export class APIResponseCache {
    * Call once after distributedCache?.connect() — handled in server/index?.ts.
    */
   startPoller(): void {
-    if (this.pollTimer !== null) return;
+    if (this._pollRunning) return;
     if (!isPdimConfigured()) {
       logger.info(
         "[APICache] PDIM not configured — cross-pod invalidation poller skipped (single-instance mode)",
       );
       return;
     }
-    this.pollTimer = setInterval(() => void this.pollTick(), POLL_INTERVAL_MS);
+    this._pollRunning = true;
+    this._pollIntervalMs = POLL_MIN_MS;
     logger.info(
-      `[APICache] Cross-pod invalidation poller started (${POLL_INTERVAL_MS} ms interval, ~${POLL_INTERVAL_MS + 50} ms max propagation lag)`,
+      `[APICache] Cross-pod invalidation poller started (adaptive ${POLL_MIN_MS}–${POLL_MAX_MS} ms interval)`,
     );
+    this._scheduleNextPoll();
   }
 
   stopPoller(): void {
-    if (this.pollTimer !== null) {
-      clearInterval(this.pollTimer);
-      this.pollTimer = null;
+    this._pollRunning = false;
+    if (this._pollTimer !== null) {
+      clearTimeout(this._pollTimer);
+      this._pollTimer = null;
     }
+  }
+
+  private _scheduleNextPoll(): void {
+    if (!this._pollRunning) return;
+    this._pollTimer = setTimeout(() => void this._runAdaptiveTick(), this._pollIntervalMs);
+  }
+
+  private async _runAdaptiveTick(): Promise<void> {
+    if (!this._pollRunning) return;
+    try {
+      const wasActive = await this.pollTick();
+      if (wasActive) {
+        // Invalidation found — snap back to minimum interval for fast follow-up.
+        this._pollIntervalMs = POLL_MIN_MS;
+      } else {
+        // Quiet tick — back off exponentially to reduce PDIM load.
+        this._pollIntervalMs = Math.min(this._pollIntervalMs * 2, POLL_MAX_MS);
+      }
+    } catch {
+      // Unexpected error in tick — back off to avoid hammering PDIM.
+      this._pollIntervalMs = Math.min(this._pollIntervalMs * 2, POLL_MAX_MS);
+    }
+    this._scheduleNextPoll();
   }
 
   /**
@@ -260,21 +306,26 @@ export class APIResponseCache {
    * Quiet path (no new invalidations): 1 PDIM GET (seq check).
    * Active path: 1 PDIM GET (seq) + 1 HGETALL (user events) + 1 LRANGE (pattern events).
    */
-  async pollTick(): Promise<void> {
-    if (!distributedCache?.isConnected()) return;
+  /**
+   * One poller tick.  Returns true if an invalidation was processed (active),
+   * false if the sequence was unchanged (quiet).  The caller uses this to
+   * drive the adaptive back-off: active → reset to POLL_MIN_MS, quiet → double.
+   */
+  async pollTick(): Promise<boolean> {
+    if (!distributedCache?.isConnected()) return false;
     // Skip PDIM calls while PDIM is in any warm-up phase or circuit is open —
-    // the 100 ms interval would otherwise flood the exec queue during cold-start.
+    // the adaptive interval would otherwise accumulate queued calls on a cold PDIM.
     const { cbIsPdimUnhealthy } = await import("../lib/pdimCircuitBreaker.js");
-    if (cbIsPdimUnhealthy()) return;
+    if (cbIsPdimUnhealthy()) return false;
     try {
       const redis = getRedisClient();
 
-      // ── Fast path: check sequence number ──────────────────────────────────
+      // ── Fast path: check sequence number — 1 PDIM GET ─────────────────────
       const seqRaw = await redis?.get(PDIM_INV_SEQ);
       const seq = seqRaw as string | null;
-      if (seq === this.pollSeq) return;
+      if (seq === this.pollSeq) return false; // quiet — nothing changed
 
-      // ── Process user invalidation events ──────────────────────────────────
+      // ── Active path: process user + pattern invalidation events ───────────
       const userEvents = (await redis?.hgetall(PDIM_INV_USERS)) as Record<
         string,
         string
@@ -314,8 +365,10 @@ export class APIResponseCache {
       }
 
       this.pollSeq = seq;
+      return true; // active — caller will snap interval back to POLL_MIN_MS
     } catch {
-      // PDIM temporarily unreachable — skip this tick
+      // PDIM temporarily unreachable — treat as quiet (back off)
+      return false;
     }
   }
 

@@ -128,30 +128,58 @@ class StartupProbeManager {
     this.status.probes.redis.status = "checking";
     const startTime = Date?.now();
 
-    try {
-      const { getRedisClient } = await import(
-        "./lib/redisConnectionFactory.js"
-      );
-      const client = await getRedisClient();
+    // Use native fetch() directly to the PDIM HTTP endpoint — NOT the exec()
+    // chain.  The exec() chain has a 4 s AbortSignal timeout; during PDIM
+    // cold-start every exec()-based ping queues a 4 s wait and generates a
+    // flood of "exec error [PING]" warnings before timing out.  Native fetch
+    // bypasses all of that: one lightweight POST, no AIMD chain pressure.
+    const pdimUrl = process.env.PDIM_HTTP_EXEC_URL || process.env.PDIM_EXEC_URL || "";
+    const pdimToken = process.env.PDIM_BEARER_TOKEN || process.env.PDIM_EXEC_TOKEN || "";
 
-      await client?.ping();
-      this.status.probes.redis.status = "ready";
-      this.status.probes.redis.lastCheck = new Date();
-      this.status.probes.redis.latencyMs = Date?.now() - startTime;
-      this.status.probes.redis.error = undefined;
-      logger.info(
-        `✅ PDIM probe ready (${this.status.probes?.redis.latencyMs}ms)`,
-      );
+    if (!pdimUrl || !pdimToken) {
+      this.status.probes.redis.status = "degraded";
+      this.status.probes.redis.error = "PDIM not configured";
+      return true; // degraded, not fatal
+    }
+
+    try {
+      const res = await fetch(pdimUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${pdimToken}`,
+        },
+        body: JSON.stringify({ cmd: "PING", args: [] }),
+        signal: AbortSignal.timeout(5_000),
+        redirect: "manual",
+      });
+
+      if (res.ok) {
+        this.status.probes.redis.status = "ready";
+        this.status.probes.redis.lastCheck = new Date();
+        this.status.probes.redis.latencyMs = Date?.now() - startTime;
+        this.status.probes.redis.error = undefined;
+        logger.info(
+          `✅ PDIM probe ready (${this.status.probes?.redis.latencyMs}ms)`,
+        );
+      } else {
+        this.status.probes.redis.status = "degraded";
+        this.status.probes.redis.error = `HTTP ${res.status}`;
+        logger.info(
+          `⚠️ PDIM probe degraded (HTTP ${res.status}) — operating in fallback mode`,
+        );
+      }
       return true;
     } catch (error) {
       this.status.probes.redis.status = "degraded";
       this.status.probes.redis.lastCheck = new Date();
       this.status.probes.redis.error =
         error instanceof Error ? error?.message : String(error);
-      logger.warn(
-        `⚠️ BoosterState probe failed: ${this.status.probes?.redis.error}`,
+      // Log at info not warn — cold-start probe failure is expected and self-healing
+      logger.info(
+        `⚠️ PDIM probe: ${this.status.probes?.redis.error} — operating in fallback mode`,
       );
-      return true;
+      return true; // always non-fatal; circuit breaker handles recovery
     }
   }
 
