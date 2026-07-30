@@ -1474,15 +1474,13 @@ export class ContentGenerator {
     } = options;
     const hashtags: Set<string> = new Set();
 
+    const strategies = SOCIAL_MEDIA_MUSIC_PATTERNS.hashtagStrategies ?? {};
     const genreHashtags =
-      SOCIAL_MEDIA_MUSIC_PATTERNS.hashtagStrategies[
-        genre.toLowerCase() as keyof typeof SOCIAL_MEDIA_MUSIC_PATTERNS.hashtagStrategies
-      ] || [];
+      (strategies as Record<string, string[]>)[genre.toLowerCase()] || [];
     genreHashtags.forEach((h) => hashtags.add(h));
 
-    SOCIAL_MEDIA_MUSIC_PATTERNS.hashtagStrategies.general.forEach((h) =>
-      hashtags.add(h),
-    );
+    const generalTags = (strategies as Record<string, string[]>)["general"] ?? [];
+    generalTags.forEach((h) => hashtags.add(h));
 
     if (topic) {
       const topicTag = `#${topic.toLowerCase().replace(/\s+/g, "")}`;
