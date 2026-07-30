@@ -988,6 +988,7 @@ Manage your notification preferences: ${link || "https://maxbooster.ai/settings"
     beatTitle: string,
     licenseType: string,
     amount: number,
+    orderId?: string,
   ): Promise<void> {
     const licenseLabel =
       licenseType.charAt(0).toUpperCase() + licenseType.slice(1);
@@ -997,7 +998,7 @@ Manage your notification preferences: ${link || "https://maxbooster.ai/settings"
       title: "💰 Beat Sold!",
       message: `Your beat "${beatTitle}" just sold a ${licenseLabel} license for $${amount.toFixed(2)}. Payout is on its way!`,
       link: "/marketplace",
-      metadata: { beatTitle, licenseType, amount },
+      metadata: { beatTitle, licenseType, amount, ...(orderId ? { orderId } : {}) },
     });
   }
 
@@ -1005,6 +1006,7 @@ Manage your notification preferences: ${link || "https://maxbooster.ai/settings"
     userId: string,
     beatTitle: string,
     licenseType: string,
+    orderId?: string,
   ): Promise<void> {
     const licenseLabel =
       licenseType.charAt(0).toUpperCase() + licenseType.slice(1);
@@ -1014,7 +1016,7 @@ Manage your notification preferences: ${link || "https://maxbooster.ai/settings"
       title: "✅ Beat Purchase Confirmed",
       message: `You've licensed "${beatTitle}" with a ${licenseLabel} license. Access your files in your downloads.`,
       link: "/marketplace",
-      metadata: { beatTitle, licenseType },
+      metadata: { beatTitle, licenseType, ...(orderId ? { orderId } : {}) },
     });
   }
 

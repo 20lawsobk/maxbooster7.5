@@ -1055,29 +1055,10 @@ router.post("/purchase", async (req: Request, res: Response) => {
 
     res.json(result);
 
-    setImmediate(async () => {
-      try {
-        const beatTitle =
-          (result as Record<string, unknown>).beatTitle || "your beat";
-        const amount = (result as Record<string, unknown>).amount || 0;
-        const sellerId = (result as Record<string, unknown>).sellerId;
-        await notificationService.sendBeatPurchasedNotification(
-          req.user!.id,
-          beatTitle,
-          licenseType,
-        );
-        if (sellerId && sellerId !== req.user!.id) {
-          await notificationService.sendBeatSoldNotification(
-            sellerId,
-            beatTitle,
-            licenseType,
-            amount,
-          );
-        }
-      } catch (err) {
-        logger.warn({ err: err }, "[Marketplace] purchase notification error:");
-      }
-    });
+    // NOTE: beat_sold / beat_purchased notifications are sent by
+    // marketplaceService.processPayment() after Stripe payment confirmation,
+    // NOT here at initiation time (which fires before payment succeeds).
+    // Sending them here would cause premature and duplicate notifications.
   } catch (error) {
     logger.warn({ err: error }, "Error initiating purchase:");
     const msg = error.message || "Failed to initiate purchase";

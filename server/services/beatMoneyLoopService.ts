@@ -41,6 +41,8 @@ import {
   adCreatives,
   users,
   royaltySplits,
+  releases,
+  posts,
   type BeatMoneyLoopState,
   type BeatMoneyLoopCycle,
 } from "@shared/schema";
@@ -504,7 +506,7 @@ class BeatMoneyLoopService {
       const price = await this._competitivePrice(scan.genre);
 
       // 4. UPLOAD (persist beat record + upload bytes to hybrid storage)
-      const { beatId, audioUrl } = await this._createBeatRecord({
+      const { beatId, audioUrl, socialPostId } = await this._createBeatRecord({
         scan,
         price,
         audioRelUrl,
@@ -530,6 +532,7 @@ class BeatMoneyLoopService {
         title,
         audioUrl,
         audioAbsPath,
+        socialPostId,
       });
 
       // 6. RECORD outcome + schedule next.
@@ -1395,7 +1398,7 @@ class BeatMoneyLoopService {
     previewAbsPath?: string;
     title: string;
     musicalKey?: string;
-  }): Promise<{ beatId: string; audioUrl: string; previewUrl: string }> {
+  }): Promise<{ beatId: string; audioUrl: string; previewUrl: string; socialPostId: string | null }> {
     const adminId = await this._requireAdminId();
     const keyDisplay = args.musicalKey || "C Minor";
 
@@ -1619,7 +1622,78 @@ class BeatMoneyLoopService {
       }
     }
 
-    return { beatId, audioUrl, previewUrl };
+    // ── Auto-distribution queue entry ─────────────────────────────────────
+    // When BEAT_AUTO_DISTRIBUTION=true, create a draft `releases` row so the
+    // distribution system can pick it up without manual creator intervention.
+    // Non-fatal: a distribution failure must never abort or fail the listing.
+    if (process.env.BEAT_AUTO_DISTRIBUTION === "true") {
+      try {
+        await db.insert(releases).values({
+          userId: adminId,
+          title: args.title,
+          status: "draft",
+          artworkUrl: artworkUrl ?? null,
+          metadata: {
+            source: "beat-money-loop",
+            beatId,
+            genre: args.scan.genre,
+            mood: args.scan.mood,
+            bpm: args.scan.tempo,
+            audioUrl,
+            listingDate: new Date().toISOString(),
+          },
+        });
+        logger.info(
+          `[BeatMoneyLoop] Draft release queued for beat ${beatId} (BEAT_AUTO_DISTRIBUTION=true)`,
+        );
+      } catch (distroErr) {
+        logger.warn(
+          { err: distroErr, beatId },
+          "[BeatMoneyLoop] Auto-distribution release insert failed (non-fatal)",
+        );
+      }
+    }
+
+    // ── Content-dispatch social post ───────────────────────────────────────
+    // Create a scheduled social post so the `content-dispatch` job (60 s tick)
+    // can pick it up and publish via socialQueueService.  We schedule it 90 s
+    // out so the immediate activateCampaign dispatch in _launchCampaign fires
+    // first; if that succeeds _launchCampaign will mark this post `published`
+    // so content-dispatch skips it (no double-post).
+    // Non-fatal: ad delivery is the primary path; this is belt-and-suspenders.
+    let _socialPostId: string | null = null;
+    try {
+      const caption = this._buildBeatDescription(args.scan, args.price).slice(0, 280);
+      const [sp] = await db
+        .insert(posts)
+        .values({
+          userId: adminId,
+          platform: "instagram",
+          content: caption,
+          scheduledAt: new Date(Date.now() + 90_000),
+          status: "scheduled",
+          approvalStatus: "auto-approved",
+          engagement: {
+            _beatMoneyLoop: true,
+            beatId,
+            genre: args.scan.genre,
+            platforms: ["instagram", "tiktok"],
+            source: "beat-money-loop",
+          } as Record<string, unknown>,
+        })
+        .returning({ id: posts.id });
+      _socialPostId = sp.id;
+      logger.info(
+        `[BeatMoneyLoop] Content-dispatch social post ${sp.id} scheduled for beat ${beatId}`,
+      );
+    } catch (spErr) {
+      logger.warn(
+        { err: spErr, beatId },
+        "[BeatMoneyLoop] Social post scheduling failed (non-fatal)",
+      );
+    }
+
+    return { beatId, audioUrl, previewUrl, socialPostId: _socialPostId };
   }
 
   /**
@@ -1638,6 +1712,7 @@ class BeatMoneyLoopService {
     title: string;
     audioUrl: string;
     audioAbsPath?: string;
+    socialPostId?: string | null;
   }): Promise<AdvertiseOutcome> {
     const adminId = await this._requireAdminId();
     let campaignId: string | null = null;
@@ -1783,6 +1858,19 @@ class BeatMoneyLoopService {
         logger.info(
           `[BeatMoneyLoop] campaign ${campaign.id} posted to ${result.results!.platformsUsed.join(", ")} (${postsCreated} posts)`,
         );
+        // Mark the content-dispatch social post as published so the 60s cron
+        // doesn't pick it up again and double-post.  Non-fatal.
+        if (args.socialPostId) {
+          db.update(posts)
+            .set({ status: "published", publishedAt: new Date() })
+            .where(eq(posts.id, args.socialPostId))
+            .catch((e: Error) =>
+              logger.warn(
+                { err: e },
+                "[BeatMoneyLoop] Could not mark social post published (non-fatal)",
+              ),
+            );
+        }
         return {
           campaignId: campaign.id,
           posted: true,

@@ -6,14 +6,16 @@ import Stripe from "stripe";
 import {
   listingLicenseTiers,
   listings,
+  notifications,
   orders,
   royaltySplits,
   royaltyTransactions,
   revenueEvents,
   type ListingLicenseTier,
 } from "@shared/schema";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { instantPayoutService } from "./instantPayoutService";
+import { notificationService } from "./notificationService.js";
 import { logger } from "../logger.js";
 import { getBaseUrl } from "../config/defaults.js";
 
@@ -529,10 +531,6 @@ export class MarketplaceService {
     paymentIntentId: string,
   ): Promise<Order> {
     try {
-      if (!stripe) {
-        throw new Error("Stripe not configured");
-      }
-
       // Get existing order from database
       const dbOrder = await storage.getOrder(orderId);
       if (!dbOrder) {
@@ -541,13 +539,24 @@ export class MarketplaceService {
 
       // ── Idempotency guard ─────────────────────────────────────────────────
       // Stripe webhooks and client retries can replay processPayment for the
-      // same PaymentIntent. If the order is already completed all downstream
-      // ledger writes were already executed; return the existing record.
+      // same PaymentIntent.  If the order is already completed all downstream
+      // ledger writes were already executed.
+      //
+      // The completed-order path MUST NOT require Stripe so that webhook
+      // retries can reconcile notifications even in environments where Stripe
+      // is not yet initialised.  We run _deliverSaleNotifications here so
+      // a transient delivery failure on the first attempt can be retried.
       if (dbOrder.status === "completed") {
         logger.info(
-          `[Marketplace] processPayment: order ${orderId} already completed — returning cached result (idempotent replay)`,
+          `[Marketplace] processPayment: order ${orderId} already completed — reconciling notifications (idempotent replay)`,
         );
+        await this._deliverSaleNotifications(orderId, dbOrder);
         return toServiceOrder(dbOrder);
+      }
+
+      // Non-completed orders require Stripe to confirm payment.
+      if (!stripe) {
+        throw new Error("Stripe not configured");
       }
 
       // Retrieve payment intent
@@ -648,11 +657,118 @@ export class MarketplaceService {
         );
       }
 
+      // Notifications are handled by _deliverSaleNotifications — non-fatal.
+      await this._deliverSaleNotifications(orderId, updatedDBOrder);
+
       // Convert database order to service order
       return toServiceOrder(updatedDBOrder);
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error processing payment:");
       throw new Error("Failed to process payment");
+    }
+  }
+
+  /**
+   * Deliver beat-sold / beat-purchased notifications for a completed order.
+   *
+   * Idempotency contract:
+   *   • An atomic conditional UPDATE claims the slot (sets notifStatus='pending')
+   *     before any external call is made.  Two concurrent callers both run the
+   *     UPDATE; only the one that changes a row proceeds — the other sees
+   *     rowCount=0 and returns immediately.  This prevents duplicate sends
+   *     under concurrent Stripe webhook deliveries.
+   *   • On success the status is promoted to 'sent'; subsequent calls (replays)
+   *     see 'sent' in the WHERE clause and are filtered out → no-op.
+   *   • On any failure the status is reset to null so the next webhook retry
+   *     can re-attempt.  A transient error never permanently suppresses delivery.
+   *
+   * Call sites: processPayment (normal completion) AND the completed-order
+   * early-return replay path — so retries always attempt delivery.
+   */
+  async _deliverSaleNotifications(
+    orderId: string,
+    orderRow: Record<string, unknown>,
+  ): Promise<void> {
+    try {
+      // ── Atomic claim ────────────────────────────────────────────────────────
+      // COALESCE(metadata->>'notifStatus', '') NOT IN ('sent','pending') ensures:
+      //   - 'sent'    → skip (already done)
+      //   - 'pending' → skip (concurrent call is handling it)
+      //   - null/''   → this call wins and proceeds
+      const claimed = await db.execute(
+        sql`UPDATE orders
+            SET metadata = jsonb_set(
+              COALESCE(metadata, '{}'),
+              '{notifStatus}',
+              '"pending"'
+            )
+            WHERE id = ${orderId}
+              AND COALESCE(metadata->>'notifStatus', '') NOT IN ('sent', 'pending')`,
+      );
+      const rowsAffected = (claimed as { rowCount?: number }).rowCount ?? 0;
+      if (rowsAffected === 0) {
+        // Either already 'sent', or a concurrent call is actively delivering.
+        return;
+      }
+
+      // ── Deliver ─────────────────────────────────────────────────────────────
+      // After claiming we must unconditionally update notifStatus — either to
+      // 'sent' on success, or back to null on failure so retries can proceed.
+      let delivered = false;
+      try {
+        const listing = await this.getListing((orderRow.listingId as string) ?? "");
+        const beatTitle = (listing?.title as string) ?? "Your beat";
+        const licenseType = (orderRow.licenseType as string) || "basic";
+        const notifAmount =
+          (orderRow.amount as number) ?? ((orderRow.amountCents as number) || 0) / 100;
+
+        if (orderRow.sellerId && notifAmount > 0) {
+          await notificationService.sendBeatSoldNotification(
+            orderRow.sellerId as string,
+            beatTitle,
+            licenseType,
+            notifAmount,
+            orderId,
+          );
+        }
+
+        const buyerId =
+          (orderRow.userId as string) || (orderRow.buyerId as string);
+        if (buyerId) {
+          await notificationService.sendBeatPurchasedNotification(
+            buyerId,
+            beatTitle,
+            licenseType,
+            orderId,
+          );
+        }
+
+        delivered = true;
+        logger.info(
+          `[Marketplace] Sale notifications delivered for order ${orderId} (seller=${orderRow.sellerId})`,
+        );
+      } finally {
+        // Promote to 'sent' on success; reset to null on failure so the next
+        // webhook retry can re-attempt delivery.
+        if (delivered) {
+          await db.execute(
+            sql`UPDATE orders
+                SET metadata = jsonb_set(metadata, '{notifStatus}', '"sent"')
+                WHERE id = ${orderId}`,
+          );
+        } else {
+          await db.execute(
+            sql`UPDATE orders
+                SET metadata = metadata - 'notifStatus'
+                WHERE id = ${orderId}`,
+          );
+        }
+      }
+    } catch (outerErr) {
+      logger.warn(
+        { err: outerErr },
+        "[Marketplace] _deliverSaleNotifications failed (non-fatal):",
+      );
     }
   }
 
