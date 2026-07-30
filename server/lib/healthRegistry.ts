@@ -131,7 +131,10 @@ export function registerCoreProbes(): void {
       if (!audit) return { status: "unknown", detail: "not initialized" };
       const results = audit?.getAuditResults?.() ?? audit?.auditResults;
       const score = results?.overallScore ?? 0;
-      if (score === 0) return { status: "degraded", detail: "no audit yet" };
+      // score=0 on cold boot just means the async full-audit hasn't finished
+      // yet — return "unknown" (not "degraded") so we don't flood logs with
+      // false-positive degraded alerts every time the server restarts.
+      if (score === 0) return { status: "unknown", detail: "initializing" };
       if (score < 60)
         return { status: "degraded", detail: `low score ${score}` };
       return { status: "ok", detail: `score ${score}/100` };

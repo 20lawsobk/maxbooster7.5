@@ -496,6 +496,7 @@ export class RoyaltyEngine {
     const period = this.formatPeriod(startDate);
 
     const dateConditions = and(
+      eq(revenueEvents.userId, userId),
       gte(revenueEvents?.occurredAt, startDate),
       lte(revenueEvents?.occurredAt, endDate),
     );

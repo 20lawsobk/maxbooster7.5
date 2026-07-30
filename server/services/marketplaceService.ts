@@ -1,9 +1,18 @@
 import { storage } from "../storage";
 import { db } from "../db";
+import { randomUUID } from "crypto";
 
 import Stripe from "stripe";
-import { listingLicenseTiers, type ListingLicenseTier } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import {
+  listingLicenseTiers,
+  listings,
+  orders,
+  royaltySplits,
+  royaltyTransactions,
+  revenueEvents,
+  type ListingLicenseTier,
+} from "@shared/schema";
+import { eq, sql } from "drizzle-orm";
 import { instantPayoutService } from "./instantPayoutService";
 import { logger } from "../logger.js";
 import { getBaseUrl } from "../config/defaults.js";
@@ -530,6 +539,17 @@ export class MarketplaceService {
         throw new Error("Order not found");
       }
 
+      // ── Idempotency guard ─────────────────────────────────────────────────
+      // Stripe webhooks and client retries can replay processPayment for the
+      // same PaymentIntent. If the order is already completed all downstream
+      // ledger writes were already executed; return the existing record.
+      if (dbOrder.status === "completed") {
+        logger.info(
+          `[Marketplace] processPayment: order ${orderId} already completed — returning cached result (idempotent replay)`,
+        );
+        return toServiceOrder(dbOrder);
+      }
+
       // Retrieve payment intent
       const paymentIntent =
         await stripe.paymentIntents.retrieve(paymentIntentId);
@@ -594,6 +614,40 @@ export class MarketplaceService {
       // Distribute royalty splits if applicable
       await this.distributeSplits(orderId);
 
+      // Record marketplace revenue event so royaltyEngine aggregates beat sales
+      // in monthly statements.  Non-fatal: sale already succeeded.
+      try {
+        const saleAmount =
+          dbOrder.amount ?? (dbOrder.amountCents || 0) / 100;
+        if ((dbOrder.sellerId) && saleAmount > 0) {
+          // ON CONFLICT DO NOTHING: the unique constraint on order_id
+          // prevents a duplicate row if processPayment somehow reaches
+          // this branch twice (belt-and-suspenders with the status guard above).
+          await db
+            .insert(revenueEvents)
+            .values({
+              userId: dbOrder.sellerId,
+              source: "marketplace",
+              sourceType: "beat_sale",
+              amount: saleAmount,
+              currency: "usd",
+              projectId: dbOrder.listingId ?? undefined,
+              listingId: dbOrder.listingId ?? undefined,
+              orderId,
+              occurredAt: new Date(),
+            })
+            .onConflictDoNothing();
+          logger.info(
+            `[Marketplace] Revenue event recorded for order ${orderId}: $${saleAmount.toFixed(2)} → seller ${dbOrder.sellerId}`,
+          );
+        }
+      } catch (revErr) {
+        logger.warn(
+          { err: revErr },
+          "[Marketplace] Failed to record revenue event (non-fatal):",
+        );
+      }
+
       // Convert database order to service order
       return toServiceOrder(updatedDBOrder);
     } catch (error: unknown) {
@@ -603,24 +657,152 @@ export class MarketplaceService {
   }
 
   /**
-   * Distribute royalty splits to collaborators using Stripe Connect
+   * Distribute royalty splits to collaborators.
+   *
+   * For each split row tied to this listing (looked up via listingId or via
+   * listing.metadata.beatId), we:
+   *   1. Write a `royalty_transactions` row so the earning appears in statements.
+   *   2. Increment `royalty_splits.totalEarned` and `pendingPayout`.
+   *
+   * Non-fatal: if this fails the sale has already succeeded and splits will be
+   * reconciled in the next royalty-engine run.
    */
-  async distributeSplits(_orderId: string): Promise<{ success: boolean }> {
+  async distributeSplits(orderId: string): Promise<{ success: boolean }> {
     try {
-      if (!stripe) {
-        throw new Error("Stripe not configured");
+      // ── 1. Fetch order ───────────────────────────────────────────────────
+      const [orderRow] = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1);
+
+      if (!orderRow) {
+        logger.warn(
+          `[Marketplace] distributeSplits: order ${orderId} not found`,
+        );
+        return { success: true };
       }
 
-      // In production:
-      // 1. Get order details and beat metadata
-      // 2. Calculate split percentages for collaborators
-      // 3. Use Stripe Connect transfers to distribute funds
-      // 4. Record distribution in database
+      const listingId = orderRow.listingId;
+      const amount = orderRow.amount ?? 0; // real("amount") stored in dollars
+      const sellerId = orderRow.sellerId;
 
+      if (!listingId || amount <= 0) return { success: true };
+
+      // ── Idempotency guard ─────────────────────────────────────────────────
+      // If this order was already processed (e.g. webhook retry), skip all
+      // writes rather than double-crediting collaborators.
+      const existingTx = await db
+        .select({ id: royaltyTransactions.id })
+        .from(royaltyTransactions)
+        .where(sql`${royaltyTransactions.metadata}->>'orderId' = ${orderId}`)
+        .limit(1);
+
+      if (existingTx.length > 0) {
+        logger.info(
+          `[Marketplace] distributeSplits: order ${orderId} already has royalty records — skipping (idempotent replay)`,
+        );
+        return { success: true };
+      }
+
+      // ── 2. Find royalty splits ───────────────────────────────────────────
+      // Beat-loop stores releaseId = beatId (UUID from `beats` table).
+      // Try listingId first; fall back to listing.metadata.beatId.
+      let splits = await db
+        .select()
+        .from(royaltySplits)
+        .where(eq(royaltySplits.releaseId, listingId))
+        .limit(20);
+
+      if (splits.length === 0) {
+        const [listingRow] = await db
+          .select()
+          .from(listings)
+          .where(eq(listings.id, listingId))
+          .limit(1);
+        const beatId = (
+          listingRow?.metadata as Record<string, unknown> | null
+        )?.beatId as string | undefined;
+        if (beatId) {
+          splits = await db
+            .select()
+            .from(royaltySplits)
+            .where(eq(royaltySplits.releaseId, beatId))
+            .limit(20);
+        }
+      }
+
+      // ── 3. Resolve effective splits (default: 100 % to seller) ──────────
+      type MinSplit = {
+        id: string | null;
+        releaseId: string;
+        userId: string | null;
+        role: string;
+        percentage: number;
+      };
+      const totalPct = splits.reduce((s, r) => s + (r.percentage ?? 0), 0);
+      const effectiveSplits: MinSplit[] =
+        splits.length > 0 && totalPct > 0
+          ? splits.map((s) => ({
+              id: s.id,
+              releaseId: s.releaseId,
+              userId: s.userId,
+              role: s.role,
+              percentage: s.percentage ?? 0,
+            }))
+          : [
+              {
+                id: null,
+                releaseId: listingId,
+                userId: sellerId,
+                role: "producer",
+                percentage: 100,
+              },
+            ];
+
+      // ── 4. Write royalty_transaction per split + update running totals ───
+      await db.transaction(async (tx) => {
+        for (const split of effectiveSplits) {
+          const splitAmount = (split.percentage / 100) * amount;
+          const recipientId = split.userId ?? sellerId;
+
+          await tx.insert(royaltyTransactions).values({
+            splitId: split.id ?? randomUUID(),
+            releaseId: split.releaseId,
+            userId: recipientId,
+            amount: splitAmount,
+            currency: orderRow.currency ?? "usd",
+            transactionType: "marketplace_sale",
+            platform: "marketplace",
+            status: "completed",
+            metadata: {
+              orderId,
+              listingId,
+              beatSale: true,
+            } as Record<string, unknown>,
+          });
+
+          if (split.id) {
+            await tx
+              .update(royaltySplits)
+              .set({
+                totalEarned: sql`coalesce(${royaltySplits.totalEarned}, 0) + ${splitAmount}`,
+                pendingPayout: sql`coalesce(${royaltySplits.pendingPayout}, 0) + ${splitAmount}`,
+                updatedAt: new Date(),
+              })
+              .where(eq(royaltySplits.id, split.id));
+          }
+        }
+      });
+
+      logger.info(
+        `[Marketplace] ✅ distributeSplits: ${effectiveSplits.length} split(s) recorded for order ${orderId} — total $${amount.toFixed(2)}`,
+      );
       return { success: true };
     } catch (error: unknown) {
-      logger.warn({ err: error }, "Error distributing splits:");
-      throw new Error("Failed to distribute royalty splits");
+      // Non-fatal: sale already completed; splits reconciled in next engine run.
+      logger.warn({ err: error }, "[Marketplace] Error distributing splits (non-fatal):");
+      return { success: false };
     }
   }
 
