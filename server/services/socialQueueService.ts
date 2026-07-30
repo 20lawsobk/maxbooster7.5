@@ -1,6 +1,6 @@
 import { getBoosterStateClient } from "../lib/boosterStateClient.js";
 import { db } from "../db";
-import { posts, scheduledPostBatches } from "@shared/schema";
+import { posts, scheduledPostBatches, socialAccounts } from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { logger } from "../logger.js";
@@ -453,6 +453,85 @@ class SocialQueueService {
       socialPosts: { waiting: 0, active: 0, completed: 0, failed: 0 },
       batches: { waiting: 0, active: 0, completed: 0, failed: 0 },
     };
+  }
+
+  /**
+   * schedulePost — mark a post's DB scheduledAt timestamp and enqueue it for
+   * the given scheduled time.  Used by autonomousService when it wants to
+   * queue a post that was just created.
+   */
+  async schedulePost(postId: string, scheduledAt: Date): Promise<void> {
+    await db
+      .update(posts)
+      .set({ scheduledAt, status: "scheduled" })
+      .where(eq(posts.id, postId));
+
+    // Re-fetch to build the queue payload
+    const [post] = await db.select().from(posts).where(eq(posts.id, postId)).limit(1);
+    if (!post) return;
+
+    const platform = (post.platform as string) || "twitter";
+    const socialAccountId = (post.socialAccountId as string) ?? post.userId ?? "unknown";
+
+    await this.addSocialPostJob(
+      {
+        postId,
+        platform,
+        content: (post.content as string) || "",
+        socialAccountId,
+        scheduledAt,
+        campaignId: (post.campaignId as string) ?? postId,
+        mediaUrls: (post.mediaUrls as string[] | undefined) ?? [],
+      },
+      Math.max(0, scheduledAt.getTime() - Date.now()),
+    );
+  }
+
+  /**
+   * publishToPlatform — look up the post's connected social account for the
+   * given platform and enqueue an immediate publish job.  Used by
+   * dispatchAutonomousContent for each platform the post targets.
+   *
+   * Returns true if a job was enqueued, false if the post had no connected
+   * account for this platform (caller should log/skip, not throw).
+   */
+  async publishToPlatform(postId: string, platform: string): Promise<boolean> {
+    const [post] = await db.select().from(posts).where(eq(posts.id, postId)).limit(1);
+    if (!post) return false;
+
+    // Try to resolve a real social account for this platform; fall back to
+    // storing the userId so the queue worker can find it later.
+    const [account] = await db
+      .select({ id: socialAccounts.id })
+      .from(socialAccounts)
+      .where(
+        and(
+          eq(socialAccounts.userId, post.userId),
+          eq(socialAccounts.platform, platform),
+        ),
+      )
+      .limit(1);
+
+    if (!account?.id) {
+      // No connected social account for this platform — caller should log/skip,
+      // not treat as a success.  Do NOT fall back to userId: queue workers
+      // cannot use a userId as a social account credential.
+      logger.warn(
+        `[SocialQueue] publishToPlatform: no connected account for platform=${platform}, user=${post.userId} — skipping enqueue`,
+      );
+      return false;
+    }
+
+    await this.addSocialPostJob({
+      postId,
+      platform,
+      content: (post.content as string) || "",
+      socialAccountId: account.id,
+      campaignId: (post.campaignId as string) ?? postId,
+      mediaUrls: (post.mediaUrls as string[] | undefined) ?? [],
+    });
+
+    return true;
   }
 
   async close(): Promise<void> {

@@ -1,7 +1,7 @@
 import { storage } from "../storage";
 import { db } from "../db";
-import { adCampaigns } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { adCampaigns, posts } from "@shared/schema";
+import { and, eq, sql } from "drizzle-orm";
 import { socialQueueService } from "./socialQueueService";
 import { advertisingDispatchService } from "./advertisingDispatchService";
 import { approvalService } from "./approvalService";
@@ -844,16 +844,34 @@ export class AutonomousService extends EventEmitter {
       const post = await storage?.getSocialPost(postId);
       if (!post) return;
 
-      for (const platform of post?.platforms || []) {
-        await socialQueueService?.publishToPlatform(postId, platform);
+      const platforms: string[] = post?.platforms || [];
+      let enqueued = 0;
+      const failed: string[] = [];
+
+      for (const platform of platforms) {
+        const ok = await socialQueueService?.publishToPlatform(postId, platform);
+        if (ok) enqueued++;
+        else failed.push(platform);
       }
 
-      await storage?.updateSocialPost(postId, {
-        status: "published",
-        publishedAt: new Date(),
-      });
-
-      logger.info(`[AUTONOMOUS] Content ${postId} published successfully`);
+      if (enqueued > 0) {
+        // Only transition to published once at least one platform was actually queued.
+        // Posts with zero successful enqueues stay scheduled so they can be retried.
+        await storage?.updateSocialPost(postId, {
+          status: "published",
+          publishedAt: new Date(),
+        });
+        logger.info(
+          `[AUTONOMOUS] Content ${postId} enqueued on ${enqueued}/${platforms.length} platform(s)` +
+          (failed.length ? ` (no account for: ${failed.join(", ")})` : ""),
+        );
+      } else if (platforms.length === 0) {
+        logger.warn(`[AUTONOMOUS] Content ${postId} has no platforms — leaving scheduled`);
+      } else {
+        logger.warn(
+          `[AUTONOMOUS] Content ${postId} — no connected accounts for any platform (${platforms.join(", ")}); post left scheduled for retry`,
+        );
+      }
     } catch (error: unknown) {
       logger.warn(
         { err: error },
@@ -979,6 +997,34 @@ export class AutonomousService extends EventEmitter {
             await this.runCampaignOptimization(campaign.id);
           }
         }
+      }
+
+      // ── Beat-loop fallback dispatch ───────────────────────────────────────
+      // Beat-loop social posts are created by beatMoneyLoopService and are
+      // eligible for content-dispatch regardless of whether their owner is in
+      // the autonomous whitelist.  We query the posts table directly for any
+      // overdue `_beatMoneyLoop: true` scheduled posts and dispatch them here
+      // so the fallback fires reliably when activateCampaign fails.
+      const now = new Date();
+      const overdueBeatPosts = await db
+        .select({ id: posts.id })
+        .from(posts)
+        .where(
+          and(
+            eq(posts.status, "scheduled"),
+            sql`${posts.engagement}->>'_beatMoneyLoop' = 'true'`,
+            sql`${posts.scheduledAt} <= ${now.toISOString()}`,
+          ),
+        )
+        .limit(20);
+
+      for (const { id } of overdueBeatPosts) {
+        await this.dispatchAutonomousContent(id);
+      }
+      if (overdueBeatPosts.length > 0) {
+        logger.info(
+          `[AUTONOMOUS] content-dispatch: dispatched ${overdueBeatPosts.length} overdue beat-loop post(s)`,
+        );
       }
     } catch (error: unknown) {
       logger.warn(

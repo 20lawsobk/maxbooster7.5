@@ -445,13 +445,53 @@ export class DatabaseStorage implements IStorage {
     const meta = eng?._autopilotMeta ? eng : {};
     return {
       ...post,
-      platforms: meta.platforms || [post?.platform].filter(Boolean),
+      // Prefer explicit engagement.platforms (set by beat-loop and autopilot),
+      // then fall back to the singular platform column so dispatchAutonomousContent
+      // always has a non-empty array to iterate.
+      platforms: (eng.platforms as string[] | undefined)?.length
+        ? eng.platforms
+        : (meta.platforms as string[] | undefined) || [post?.platform].filter(Boolean),
       content: meta.content || post?.content,
       scheduledTime: post.scheduledAt,
       viralPrediction: meta.viralPrediction || null,
       createdBy: meta.createdBy || "manual",
       results: meta._autopilotMeta ? [] : post?.engagement || [],
     };
+  }
+
+  // ── Social-post aliases used by autonomousService ──────────────────────────
+  // The posts table uses singular `platform`; these wrappers handle the
+  // mapping so autonomousService can call createSocialPost/getSocialPost/
+  // updateSocialPost without knowing the underlying column shape.
+
+  async createSocialPost(
+    post: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    // Normalise: callers may pass either `scheduledAt` (Drizzle column name)
+    // or `scheduledTime` (createScheduledPost API).  Map both so the
+    // scheduled timestamp is never silently dropped.
+    const normalised = { ...post };
+    if (normalised.scheduledAt && !normalised.scheduledTime) {
+      normalised.scheduledTime = normalised.scheduledAt;
+    }
+    return this.createScheduledPost(normalised);
+  }
+
+  async getSocialPost(id: string): Promise<any | null> {
+    return this.getScheduledPostById(id);
+  }
+
+  async updateSocialPost(
+    id: string,
+    updates: Partial<Record<string, unknown>>,
+  ): Promise<unknown> {
+    // Same normalisation: map scheduledAt → scheduledTime for updateScheduledPost.
+    const normalised = { ...updates };
+    if (normalised.scheduledAt && !normalised.scheduledTime) {
+      normalised.scheduledTime = normalised.scheduledAt;
+      delete normalised.scheduledAt;
+    }
+    return this.updateScheduledPost(id, normalised);
   }
 
   async updateScheduledPost(
