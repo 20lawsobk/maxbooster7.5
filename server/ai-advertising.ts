@@ -13,7 +13,7 @@ export const MusicDataSchema = z
     duration: z.number().optional(),
     audioUrl: z.string().optional(),
     artworkUrl: z.string().optional(),
-    metadata: z.record(z.unknown()).optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
   })
   .passthrough();
 export type MusicData = z.infer<typeof MusicDataSchema>;
@@ -103,10 +103,11 @@ export class AIAdvertisingEngine {
     // Max Booster Proprietary AI Algorithm - No External APIs
     // Uses advanced pattern matching, psychological frameworks, and music industry data
 
-    const genre = musicData?.genre || "music";
-    const mood = musicData?.mood || "energetic";
-    const title = musicData?.title || "New Release";
-    const artist = musicData?.artist || "Artist";
+    const md = musicData as MusicData;
+    const genre = md?.genre || "music";
+    const mood = md?.mood || "energetic";
+    const title = md?.title || "New Release";
+    const artist = md?.artist || "Artist";
 
     // In-house AI-powered headline generation using psychological triggers
     const headlines = this.generatePsychologicalHeadlines(
@@ -216,7 +217,7 @@ export class AIAdvertisingEngine {
     campaignData: unknown,
   ): Promise<SmartBidding> {
     // Simulate advanced AI bidding that outperforms native systems
-    const baselinePerformance = await this.analyzeBaselinePerformance();
+    const baselinePerformance = await this.analyzeBaselinePerformance() as { averageCPM: number };
     const competitorIntelligence =
       await this.gatherCompetitorIntelligence(campaignData);
     const demandPrediction = await this.predictDemandCycles(campaignData);
@@ -228,7 +229,7 @@ export class AIAdvertisingEngine {
         competitorIntelligence,
       ),
       competitorAnalysis: competitorIntelligence,
-      demandForecast: demandPrediction,
+      demandForecast: demandPrediction as Record<string, unknown>,
       algorithmicAdvantage: 2.3, // 230% performance improvement
     };
   }
@@ -296,13 +297,14 @@ export class AIAdvertisingEngine {
 
   // Performance prediction and optimization
   async predictCampaignPerformance(campaignConfig: unknown): Promise<unknown> {
+    const cfg = campaignConfig as { budget: number };
     return {
       projectedMetrics: {
-        reach: campaignConfig.budget * 2500, // 2500 people per dollar (vs 800 industry average)
-        engagement: campaignConfig.budget * 180, // 180 engagements per dollar (vs 45 industry average)
-        conversions: campaignConfig.budget * 12, // 12 conversions per dollar (vs 3 industry average)
-        streamIncrease: campaignConfig.budget * 850, // 850 streams per dollar (vs 200 industry average)
-        followerGrowth: campaignConfig.budget * 25, // 25 followers per dollar (vs 8 industry average)
+        reach: cfg.budget * 2500, // 2500 people per dollar (vs 800 industry average)
+        engagement: cfg.budget * 180, // 180 engagements per dollar (vs 45 industry average)
+        conversions: cfg.budget * 12, // 12 conversions per dollar (vs 3 industry average)
+        streamIncrease: cfg.budget * 850, // 850 streams per dollar (vs 200 industry average)
+        followerGrowth: cfg.budget * 25, // 25 followers per dollar (vs 8 industry average)
         virality: 0.15, // 15% chance of viral content (vs 0.03% industry average)
       },
       optimizationRecommendations: [
@@ -396,7 +398,7 @@ export class AIAdvertisingEngine {
   }
 
   private calculateOptimalBid(baseline: unknown, _competition: unknown): number {
-    return baseline?.averageCPM * 0.75; // Start 25% below market rate
+    return (baseline as { averageCPM: number })?.averageCPM * 0.75; // Start 25% below market rate
   }
 
   private async generateDynamicHeadlines(
@@ -620,7 +622,7 @@ export class AIAdvertisingEngine {
   // In-House AI Helper Methods - 100% Proprietary
   private generatePsychologicalHeadlines(
     genre: string,
-    mood: string,
+    _mood: string,
     title: string,
     artist: string,
   ): string[] {
@@ -658,7 +660,7 @@ export class AIAdvertisingEngine {
       `Don't Miss ${artist}'s Latest: ${title}`,
     ];
 
-    return genreHeadlines[genre.toLowerCase()] || defaultHeadlines;
+    return (genreHeadlines as Record<string, string[]>)[genre.toLowerCase()] || defaultHeadlines;
   }
 
   private generatePlatformOptimizedCaptions(
@@ -679,8 +681,8 @@ export class AIAdvertisingEngine {
 
   private mapGenreEmotionalTriggers(
     genre: string,
-    mood: string,
-  ): Record<string, unknown> {
+    _mood: string,
+  ): string[] {
     const triggers = {
       "hip-hop": [
         "authenticity",
@@ -702,7 +704,7 @@ export class AIAdvertisingEngine {
     };
 
     return (
-      triggers[genre?.toLowerCase()] || [
+      (triggers as Record<string, string[]>)[genre?.toLowerCase()] || [
         "excitement",
         "discovery",
         "connection",
@@ -772,7 +774,7 @@ export class AIAdvertisingEngine {
   }
 
   private generateMicroMomentTargeting(
-    genre: string,
+    _genre: string,
     _targetAudience: unknown,
   ): Record<string, unknown> {
     return {
