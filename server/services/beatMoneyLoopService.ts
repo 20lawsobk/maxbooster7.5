@@ -462,7 +462,7 @@ class BeatMoneyLoopService {
       }
 
       // 2b. GENERATE
-      const { audioRelUrl, audioAbsPath, title, audioGenBackend, musicalKey } =
+      const { audioRelUrl, audioAbsPath, previewRelUrl, previewAbsPath, title, audioGenBackend, musicalKey } =
         await this._generateBeat(scan);
       await db
         .update(beatMoneyLoopCycles)
@@ -482,6 +482,8 @@ class BeatMoneyLoopService {
         price,
         audioRelUrl,
         audioAbsPath,
+        previewRelUrl,
+        previewAbsPath,
         title,
         musicalKey,
       });
@@ -758,27 +760,29 @@ class BeatMoneyLoopService {
       process.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app"
     ).replace(/\/api\/?$/, "");
     const key = process.env.AI_SERVER_KEY || "";
-    // Beat duration. Default 30 s — a full-length sellable clip.
-    // Override via BEAT_DURATION_SECONDS env var (max 120 s).
+    // Beat duration. Default 180 s (full-length sellable beat).
+    // Override via BEAT_DURATION_SECONDS env var (max 300 s / 5 min).
     const durationSec = Math.min(
-      120,
-      Math.max(10, Number(process.env.BEAT_DURATION_SECONDS) || 30),
+      300,
+      Math.max(10, Number(process.env.BEAT_DURATION_SECONDS) || 180),
     );
     const body: Record<string, unknown> = {
       genre: scan.genre,
       bpm: scan.tempo,
       mood: scan.mood,
       duration: durationSec,
-      energy: 0.8,
+      energy: 1.0,           // peak energy / presence
+      quality: "professional", // industry-grade output request
+      master: true,           // request mastered, release-ready output
       mode,
     };
     // Send the requested key so MaxCore generates in that tonality, giving
     // each cycle a different key rather than always defaulting to C Minor.
     if (scan.requestedKey) body.key = scan.requestedKey;
     if (scan.productionStyles.length > 0)
-      body.style = scan.productionStyles.slice(0, 3).join(", ");
+      body.style = scan.productionStyles.slice(0, 5).join(", ");
     if (scan.hooks.length > 0)
-      body.context = scan.hooks.slice(0, 3).join("; ");
+      body.context = scan.hooks.slice(0, 5).join("; ");
 
     // Bearer ONLY — MaxCore 401s the whole request when X-API-Key/X-Admin-Key
     // are present (see replit.md / maxcore-auth-header memory).
@@ -1017,7 +1021,7 @@ class BeatMoneyLoopService {
     productionStyles: string[];
     hooks: string[];
     requestedKey?: string;
-  }): Promise<{ audioRelUrl: string; audioAbsPath: string; title: string; audioGenBackend: string; musicalKey: string }> {
+  }): Promise<{ audioRelUrl: string; audioAbsPath: string; previewRelUrl: string; previewAbsPath: string; title: string; audioGenBackend: string; musicalKey: string }> {
     const outputDir = path.join(
       process.cwd(),
       "public",
@@ -1050,6 +1054,31 @@ class BeatMoneyLoopService {
         const audioAbsPath = path.join(outputDir, filename);
         await fsPromises.writeFile(audioAbsPath, mc.wavBytes);
         const audioRelUrl = `/generated-content/audio/${filename}`;
+
+        // Trim a 30 s preview from the full-length WAV using ffmpeg so buyers
+        // can audition the beat before purchasing. This is non-blocking — if
+        // the trim fails we fall back to using the full-length URL as preview.
+        let previewAbsPath = audioAbsPath;
+        let previewRelUrl = audioRelUrl;
+        try {
+          const { execFile } = await import("child_process");
+          const { promisify } = await import("util");
+          const runFf = promisify(execFile);
+          const previewFilename = `preview_30s_${Date.now()}_${randomBytes(6).toString("hex")}.wav`;
+          const previewAbs = path.join(outputDir, previewFilename);
+          await runFf("ffmpeg", [
+            "-y", "-i", audioAbsPath,
+            "-t", "30",
+            "-c", "copy",
+            previewAbs,
+          ], { timeout: 30_000 });
+          previewAbsPath = previewAbs;
+          previewRelUrl = `/generated-content/audio/${previewFilename}`;
+          logger.info(`[BeatMoneyLoop] 30 s preview trimmed → ${previewFilename}`);
+        } catch (previewErr) {
+          logger.warn(`[BeatMoneyLoop] Preview trim failed (non-fatal) — using full URL as preview: ${(previewErr as Error).message}`);
+        }
+
         // Use requestedKey as canonical — MaxCore always returns "C Minor" for
         // mcMusicalKey/mcKey, so accepting its value would lock every beat.
         const realBpm = mc.mcBpm ?? scan.tempo;
@@ -1114,7 +1143,7 @@ class BeatMoneyLoopService {
         logger.info(
           `[BeatMoneyLoop] Beat generated via MaxCore mode ${mode} (backend=${mc.backend}, key=${musicalKey}) → "${title}"`,
         );
-        return { audioRelUrl, audioAbsPath, title, audioGenBackend: mc.backend, musicalKey: musicalKey || requestedKey };
+        return { audioRelUrl, audioAbsPath, previewRelUrl, previewAbsPath, title, audioGenBackend: mc.backend, musicalKey: musicalKey || requestedKey };
       } catch (err) {
         const msg = (err as Error).message;
         modeErrors.push(`mode ${mode}: ${msg}`);
@@ -1335,9 +1364,11 @@ class BeatMoneyLoopService {
     price: number;
     audioRelUrl: string;
     audioAbsPath: string;
+    previewRelUrl?: string;
+    previewAbsPath?: string;
     title: string;
     musicalKey?: string;
-  }): Promise<{ beatId: string; audioUrl: string }> {
+  }): Promise<{ beatId: string; audioUrl: string; previewUrl: string }> {
     const adminId = await this._requireAdminId();
     const keyDisplay = args.musicalKey || "C Minor";
 
@@ -1352,6 +1383,25 @@ class BeatMoneyLoopService {
       "audio/wav",
     );
     const audioUrl = `/api/marketplace/audio/${storageKey}`;
+
+    // Upload the 30 s preview clip (trimmed in _generateBeat).
+    // Falls back to the full-length URL when no separate preview was produced.
+    let previewUrl = audioUrl;
+    if (args.previewAbsPath && args.previewAbsPath !== args.audioAbsPath) {
+      try {
+        const previewBuf = await fsPromises.readFile(args.previewAbsPath);
+        const previewFilename = path.basename(args.previewAbsPath);
+        const previewKey = await storageService.uploadFile(
+          previewBuf,
+          "beats",
+          previewFilename,
+          "audio/wav",
+        );
+        previewUrl = `/api/marketplace/audio/${previewKey}`;
+      } catch (previewUploadErr) {
+        logger.warn(`[BeatMoneyLoop] Preview upload failed (non-fatal) — using full URL as preview: ${(previewUploadErr as Error).message}`);
+      }
+    }
 
     // Generate cover artwork via MaxCore image endpoint — fire-and-forget if it
     // fails, so a slow image render never aborts the upload step.
@@ -1477,6 +1527,7 @@ class BeatMoneyLoopService {
           category: args.scan.genre,
           audioUrl,
           artworkUrl,
+          previewUrl,
           isPublished: true,
           metadata: {
             genre: args.scan.genre,
@@ -1515,6 +1566,7 @@ class BeatMoneyLoopService {
             category: args.scan.genre,
             audioUrl,
             artworkUrl,
+            previewUrl,
             isPublished: true,
             metadata: {
               genre: args.scan.genre,
@@ -1540,7 +1592,7 @@ class BeatMoneyLoopService {
       }
     }
 
-    return { beatId, audioUrl };
+    return { beatId, audioUrl, previewUrl };
   }
 
   /**
