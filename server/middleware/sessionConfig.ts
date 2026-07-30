@@ -553,11 +553,29 @@ class PdimSessionStore extends session.Store {
 // Kept intentionally short (3 attempts) so that when PDIM is genuinely
 // unreachable the PG-only fallback store kicks in within ~6 s instead of
 // blocking startup for 16 s before throwing.
+//
+// IMPORTANT: each attempt calls client.ping() which goes through the exec()
+// chain with a 4 s AbortSignal timeout.  3 attempts × 4 s = 12 s of cold-start
+// PDIM pressure.  If cbIsPdimUnhealthy() reports PDIM is in its grace/warm-up
+// period, skip all retries immediately so startup falls back to PG without
+// adding exec()-chain load on a cold PDIM.
 async function pingWithRetry(
   client: { ping: () => Promise<string> },
   maxAttempts = 3,
   delayMs = 2_000,
 ): Promise<void> {
+  // Fast-path: if PDIM is known cold/unreachable, don't attempt exec() pings.
+  // The session store falls through to PG-only mode which is fully functional.
+  try {
+    const { cbIsPdimUnhealthy } = await import("../lib/pdimCircuitBreaker.js");
+    if (cbIsPdimUnhealthy()) {
+      throw new Error("PDIM unhealthy — falling back to PG session store");
+    }
+  } catch (guardErr) {
+    // If the import itself fails just let the ping loop run normally.
+    if ((guardErr as Error).message?.includes("falling back")) throw guardErr;
+  }
+
   let lastErr: unknown;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {

@@ -124,16 +124,28 @@ async function pdimRpush(
 async function probeConnectivity(): Promise<void> {
   // PDIM
   if (isPdimConfigured()) {
+    // Use native fetch to probe PDIM — NOT getPdimClient().ping().
+    // The exec()-based ping queues a 4 s AbortSignal request on a cold PDIM
+    // and generates "exec error [PING]" warnings.  Native fetch bypasses the
+    // exec chain entirely and is the same approach used by waitForPdimReady().
+    const pdimUrl = process.env.PDIM_HTTP_EXEC_URL || process.env.PDIM_EXEC_URL || "";
+    const pdimToken = process.env.PDIM_BEARER_TOKEN || process.env.PDIM_EXEC_TOKEN || "";
     try {
-      const client = getPdimClient();
-      await (client as Record<string, unknown>).ping();
-      logger.info(
-        "[MaxCoreSync] PDIM ✅ reachable — Redis-compatible layer active",
-      );
+      const res = await fetch(pdimUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${pdimToken}` },
+        body: JSON.stringify({ cmd: "PING", args: [] }),
+        signal: AbortSignal.timeout(5_000),
+        redirect: "manual",
+      });
+      if (res.ok) {
+        logger.info("[MaxCoreSync] PDIM ✅ reachable — Redis-compatible layer active");
+      } else {
+        logger.info(`[MaxCoreSync] PDIM ⚠️ cold-starting (HTTP ${res.status}) — will retry`);
+      }
     } catch (err) {
-      logger.warn(
-        "[MaxCoreSync] PDIM ⚠️ ping failed:",
-        err instanceof Error ? err?.message : String(err),
+      logger.info(
+        `[MaxCoreSync] PDIM ⚠️ not yet reachable (${(err as Error).message}) — will retry`,
       );
     }
   } else {

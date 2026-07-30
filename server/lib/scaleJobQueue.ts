@@ -350,6 +350,18 @@ export function startRetentionWorker(): Worker {
       msg?.includes("worker hard-killed")
     ) {
       logger.warn(`[Worker] BullMQ lock / stall (self-healing): ${msg}`);
+    } else if (
+      // PDIM timeout/abort errors: the LuaExecutor worker rejects with
+      // "ERR The operation was aborted due to timeout" when a redis.call()
+      // inside Lua hits PDIM_EXEC_TIMEOUT_MS.  This is already reported and
+      // rate-limited by pdimClient._logNetworkError — suppress the full stack
+      // trace here so the console doesn't flood with identical Worker frames.
+      msg?.includes("aborted due to timeout") ||
+      msg?.includes("AbortError") ||
+      msg?.includes("TimeoutError") ||
+      msg?.includes("operation was aborted")
+    ) {
+      logger.debug(`[Worker] PDIM timeout (already tracked by pdimClient): ${msg}`);
     } else {
       // Unknown error — log with full error object so we can diagnose it
       logger.warn({ err: err }, `[Worker] Unexpected error: ${msg}`);
