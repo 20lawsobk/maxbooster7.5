@@ -120,7 +120,7 @@ export async function initializeSafetySystems(): Promise<{
       errors.push(...envResult.errors);
     }
   } catch (error) {
-    errors.push(`Environment validation failed: ${error.message}`);
+    errors.push(`Environment validation failed: ${(error as Error).message}`);
     logger.warn({ err: error }, "[Safety] Environment validation error:");
   }
 
@@ -130,7 +130,7 @@ export async function initializeSafetySystems(): Promise<{
     await initAuditLogger();
     logger.info("   ✓ Audit logger initialized");
   } catch (error) {
-    errors.push(`Audit logger failed: ${error.message}`);
+    errors.push(`Audit logger failed: ${(error as Error).message}`);
     logger.warn({ err: error }, "[Safety] Audit logger error:");
   }
 
@@ -145,7 +145,7 @@ export async function initializeSafetySystems(): Promise<{
     }
   } catch (error) {
     // Non-critical - log but don't fail
-    logger.warn("[Safety] Database index creation skipped:", error?.message);
+    logger.warn("[Safety] Database index creation skipped:", (error as any)?.message);
   }
 
   // 4. Register refund webhook handlers
@@ -154,7 +154,7 @@ export async function initializeSafetySystems(): Promise<{
     registerRefundWebhookHandlers();
     logger.info("   ✓ Refund webhook handlers registered");
   } catch (error) {
-    errors?.push(`Refund handlers failed: ${error?.message}`);
+    errors?.push(`Refund handlers failed: ${(error as any)?.message}`);
     logger.warn({ err: error }, "[Safety] Refund handler error:");
   }
 
@@ -166,7 +166,7 @@ export async function initializeSafetySystems(): Promise<{
       `   ✓ Kill switch ready (global killed: ${state?.globalKilled})`,
     );
   } catch (error) {
-    errors?.push(`Kill switch failed: ${error?.message}`);
+    errors?.push(`Kill switch failed: ${(error as any)?.message}`);
     logger.warn({ err: error }, "[Safety] Kill switch error:");
   }
 

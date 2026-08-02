@@ -158,7 +158,7 @@ export class RBACService {
         const parentRole = await this.getRole(params?.parentRoleId);
         if (parentRole) {
           effectivePermissions = this.mergePermissions(
-            parentRole?.permissions as Permission[],
+            parentRole?.permissions as unknown as Permission[],
             params?.permissions,
           );
         }
@@ -250,7 +250,7 @@ export class RBACService {
         return { success: false, error: "Role not found" };
       }
 
-      if (existingRole?.isSystem) {
+      if ((existingRole as any)?.isSystem) {
         return { success: false, error: "System roles cannot be modified" };
       }
 
@@ -279,7 +279,7 @@ export class RBACService {
         return { success: false, error: "Role not found" };
       }
 
-      if (role?.isSystem) {
+      if ((role as any)?.isSystem) {
         return { success: false, error: "System roles cannot be deleted" };
       }
 
@@ -335,7 +335,7 @@ export class RBACService {
       if (member?.roleId) {
         const role = await this.getRole(member?.roleId);
         if (role) {
-          permissions = role?.permissions as Permission[];
+          permissions = role?.permissions as unknown as Permission[];
         }
       } else if (member?.role) {
         const template = DEFAULT_ROLE_TEMPLATES[member?.role];
@@ -516,11 +516,11 @@ export class RBACService {
         return { success: false, error: "Role not found" };
       }
 
-      if (role?.isSystem) {
+      if ((role as any)?.isSystem) {
         return { success: false, error: "System roles cannot be modified" };
       }
 
-      const currentPermissions = role?.permissions as Permission[];
+      const currentPermissions = role?.permissions as unknown as Permission[];
       const existingPermIndex = currentPermissions?.findIndex(
         (p) => p?.resource === resource,
       );
@@ -559,11 +559,11 @@ export class RBACService {
         return { success: false, error: "Role not found" };
       }
 
-      if (role?.isSystem) {
+      if ((role as any)?.isSystem) {
         return { success: false, error: "System roles cannot be modified" };
       }
 
-      let currentPermissions = role?.permissions as Permission[];
+      let currentPermissions = role?.permissions as unknown as Permission[];
       const permIndex = currentPermissions?.findIndex(
         (p) => p?.resource === resource,
       );

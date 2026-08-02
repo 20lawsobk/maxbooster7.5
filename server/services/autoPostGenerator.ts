@@ -316,7 +316,7 @@ class AutoPostGenerator {
     userId: string,
     request: ContentGenerationRequest,
   ): Promise<GeneratedContent> {
-    const user = await storage.getUserById(userId);
+    const user = await (storage as any).getUserById(userId);
     const artistName = user.firstName || "Artist";
     const topic = request.topic || "new music release";
     const tone = request.tone || "inspirational";
@@ -343,13 +343,13 @@ class AutoPostGenerator {
       throw new AIUnavailableError("auto-post social content");
     }
 
-    const headline = mc.hook ?? mc.caption.split("\n")[0] ?? "";
+    const headline = mc.hook ?? mc.caption!.split("\n")[0] ?? "";
     const body =
       mc.caption ?? [mc.hook, mc.body, mc.cta].filter(Boolean).join("\n\n");
     const callToAction = mc.cta ?? "Check it out!";
     const hashtags =
       request.includeHashtags !== false
-        ? mc.hashtags.length
+        ? mc.hashtags!.length
           ? mc.hashtags
           : this.generateHashtags(topic, platforms)
         : [];
@@ -391,7 +391,7 @@ class AutoPostGenerator {
   ): Promise<GeneratedContent> {
     const ai = await this.getAdvertisingAI(userId);
 
-    const user = await storage.getUserById(userId);
+    const user = await (storage as any).getUserById(userId);
     const artistName = user.firstName || "Artist";
     const topic = request.topic || "new music";
     const platforms = request.platforms || [
@@ -422,7 +422,7 @@ class AutoPostGenerator {
       throw new AIUnavailableError("auto-post viral content");
     }
 
-    const headline = mc.hook ?? mc.caption.split("\n")[0] ?? "";
+    const headline = mc.hook ?? mc.caption!.split("\n")[0] ?? "";
     const body =
       mc.caption ?? [mc.hook, mc.body, mc.cta].filter(Boolean).join("\n\n");
     const callToAction = mc.cta ?? "Share with someone who needs to hear this!";
@@ -545,7 +545,7 @@ class AutoPostGenerator {
     const content = await this.generateEnhancedContent(userId, request);
 
     logger.info(
-      `Generated social content for user ${userId}: "${content.headline}" (score=${content.qualityScores.overall.toFixed(1) ?? "N/A"})`,
+      `Generated social content for user ${userId}: "${content.headline}" (score=${content.qualityScores!.overall.toFixed(1) ?? "N/A"})`,
     );
 
     let veoAssets: string[] = [];
@@ -613,7 +613,7 @@ class AutoPostGenerator {
     });
 
     logger.info(
-      `Generated viral content for user ${userId}: "${content.headline}" (score=${content.qualityScores.overall.toFixed(1) ?? "N/A"})`,
+      `Generated viral content for user ${userId}: "${content.headline}" (score=${content.qualityScores!.overall.toFixed(1) ?? "N/A"})`,
     );
 
     // Prepare post content

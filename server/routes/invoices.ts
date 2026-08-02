@@ -130,10 +130,10 @@ router?.post(
         })
         .returning();
 
-      logger.info("[Invoices] Invoice created:", {
+      logger.info({
         invoiceId: invoice.id,
         invoiceNumber,
-      });
+      }, "[Invoices] Invoice created:");
       res.status(201).json(invoice);
     } catch (error) {
       logger.warn({ err: error }, "[Invoices] Failed to create invoice:");
@@ -184,7 +184,7 @@ router?.put(
           },
           0,
         );
-        totalCents = subtotalCents + (existing?.taxCents || 0);
+        totalCents = subtotalCents! + (existing?.taxCents || 0);
       }
 
       const [updated] = await db
@@ -235,10 +235,10 @@ router?.post(
         .set({ status: "sent", updatedAt: new Date() })
         .where(eq(invoices?.id, invoiceId));
 
-      logger.info("[Invoices] Invoice sent:", {
+      logger.info({
         invoiceId,
         invoiceNumber: invoice.invoiceNumber,
-      });
+      }, "[Invoices] Invoice sent:");
       res.json({ success: true, message: "Invoice sent successfully" });
     } catch (error) {
       logger.warn({ err: error }, "[Invoices] Failed to send invoice:");
@@ -276,10 +276,10 @@ router?.post(
         })
         .where(eq(invoices?.id, invoiceId));
 
-      logger.info("[Invoices] Invoice marked paid:", {
+      logger.info({
         invoiceId,
         invoiceNumber: invoice.invoiceNumber,
-      });
+      }, "[Invoices] Invoice marked paid:");
       res.json({ success: true, message: "Invoice marked as paid" });
     } catch (error) {
       logger.warn({ err: error }, "[Invoices] Failed to mark invoice paid:");
@@ -414,10 +414,10 @@ router?.post(
         })
         .returning();
 
-      logger.info("[Invoices] Invoice generated from order:", {
+      logger.info({
         invoiceId: invoice.id,
         orderId,
-      });
+      }, "[Invoices] Invoice generated from order:");
       res.status(201).json(invoice);
     } catch (error) {
       logger.warn(
@@ -493,10 +493,10 @@ router?.post(
         generatedInvoices?.push(invoice?.id);
       }
 
-      logger.info("[Invoices] Bulk invoices generated:", {
+      logger.info({
         count: generatedInvoices.length,
         userId,
-      });
+      }, "[Invoices] Bulk invoices generated:");
       res.json({
         success: true,
         generated: generatedInvoices.length,

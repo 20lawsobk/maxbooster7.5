@@ -147,9 +147,9 @@ export function FlowStateCollaboration({
   const [showChat, setShowChat] = useState(true);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"editor" | "viewer">("editor");
-  const [isVideoOn, setIsVideoOn] = useState(false);
-  const [isAudioOn, setIsAudioOn] = useState(true);
-  const [shareLink, setShareLink] = useState(
+  const [_isVideoOn, _setIsVideoOn] = useState(false);
+  const [_isAudioOn, _setIsAudioOn] = useState(true);
+  const [shareLink, _setShareLink] = useState(
     `${window.location.origin}/collab/${projectId}`,
   );
   const [linkCopied, setLinkCopied] = useState(false);

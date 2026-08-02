@@ -92,7 +92,7 @@ const plans = {
 
 export default function RegisterPayment() {
   const { tier } = useParams<{ tier: string }>();
-  const [, navigate] = useLocation();
+  const [, _navigate] = useLocation();
   const [formData, setFormData] = useState({
     username: "",
     email: "",

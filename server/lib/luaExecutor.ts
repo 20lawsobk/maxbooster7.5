@@ -600,7 +600,7 @@ export async function execLuaViaPdim(
           payload = JSON.stringify(r ?? null);
           status = 1; // success
         } catch (e) {
-          const short = (e.message as string).slice(0, 200);
+          const short = ((e as Error).message as string).slice(0, 200);
           // 5xx, 429, and circuit-open fast-fails are already captured at
           // WARN/ERROR by pdimClient / the circuit breaker itself.  Repeating
           // them per-command floods the console during startup bursts — demote

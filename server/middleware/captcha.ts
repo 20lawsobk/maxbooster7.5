@@ -26,7 +26,7 @@ export async function getFailedAttempts(ip: string): Promise<number> {
 
   try {
     const key = `${CAPTCHA_KEY_PREFIX}${ip}`;
-    const count = await redis?.get(key);
+    const count = await (redis as any)?.get(key);
     return count ? parseInt(count, 10) : 0;
   } catch (error) {
     logger.warn({ err: error }, "Error getting failed attempts:");
@@ -40,11 +40,11 @@ export async function incrementFailedAttempts(ip: string): Promise<number> {
 
   try {
     const key = `${CAPTCHA_KEY_PREFIX}${ip}`;
-    const newCount = await redis?.incr(key);
+    const newCount = await (redis as any)?.incr(key);
 
-    const ttl = await redis?.ttl(key);
+    const ttl = await (redis as any)?.ttl(key);
     if (ttl < 0) {
-      await redis?.expire(key, Math.ceil(CAPTCHA_WINDOW_MS / 1000));
+      await (redis as any)?.expire(key, Math.ceil(CAPTCHA_WINDOW_MS / 1000));
     }
 
     return newCount;
@@ -60,7 +60,7 @@ export async function resetFailedAttempts(ip: string): Promise<boolean> {
 
   try {
     const key = `${CAPTCHA_KEY_PREFIX}${ip}`;
-    await redis?.del(key);
+    await (redis as any)?.del(key);
     return true;
   } catch (error) {
     logger.warn({ err: error }, "Error resetting failed attempts:");
@@ -113,10 +113,10 @@ async function verifyCaptchaToken(
       return true;
     }
 
-    logger.warn("Captcha verification failed:", {
+    logger.warn({
       success: data.success,
       score: data.score,
-    });
+    }, "Captcha verification failed:");
     return false;
   } catch (error) {
     logger.warn({ err: error }, "Captcha verification error:");
@@ -234,7 +234,7 @@ export function createCaptchaCheckMiddleware(): RequestHandler {
     const ip = getClientIP(req);
     const status = await getCaptchaStatus(ip);
 
-    (req as Record<string, unknown>).captchaStatus = status;
+    (req as unknown as Record<string, unknown>).captchaStatus = status;
     next();
   };
 }

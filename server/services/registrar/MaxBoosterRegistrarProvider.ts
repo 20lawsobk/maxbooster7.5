@@ -85,17 +85,17 @@ export function buildRdapResponse(
   if (row?.createdAt)
     events?.push({
       eventAction: "registration",
-      eventDate: new Date(row?.createdAt).toISOString(),
+      eventDate: new Date(row?.createdAt as any).toISOString(),
     });
   if (row?.updatedAt)
     events?.push({
       eventAction: "last changed",
-      eventDate: new Date(row?.updatedAt).toISOString(),
+      eventDate: new Date(row?.updatedAt as any).toISOString(),
     });
   if (row?.expiresAt)
     events?.push({
       eventAction: "expiration",
-      eventDate: new Date(row?.expiresAt).toISOString(),
+      eventDate: new Date(row?.expiresAt as any).toISOString(),
     });
 
   const statusMap: Record<string, string[]> = {
@@ -150,7 +150,7 @@ export function buildRdapResponse(
   return {
     objectClassName: "domain",
     handle: row.registryId || `MB-${row?.id}`,
-    ldhName: (row?.domain || "").toUpperCase(),
+    ldhName: ((row?.domain || "") as any).toUpperCase(),
     nameservers: ns.map((n: string) => ({
       objectClassName: "nameserver",
       ldhName: n.toUpperCase(),
@@ -368,7 +368,7 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
       }
     } catch (e) {
       logger.warn(
-        { fqdn, err: e.message },
+        { fqdn, err: (e as Error).message },
         "[MaxBoosterRegistrar] NS zone record update failed (non-fatal)",
       );
     }
@@ -437,7 +437,7 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
       await pool.query("DELETE FROM dns_zones WHERE domain = $1", [domain]);
     } catch (e) {
       logger.warn(
-        { fqdn, err: e.message },
+        { fqdn, err: (e as Error).message },
         "[MaxBoosterRegistrar] DNS zone removal on release failed (non-fatal)",
       );
     }
@@ -490,7 +490,7 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
         message: `${REGISTRAR_NAME} registry operational. Nameservers: ${ALL_NS.join(", ")}.`,
       };
     } catch (e) {
-      return { ok: false, message: `Registry DB unreachable: ${e.message}` };
+      return { ok: false, message: `Registry DB unreachable: ${(e as Error).message}` };
     }
   }
 
@@ -518,14 +518,14 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
     domain: string,
     userId: string,
     isActive: boolean,
-    registryId: string | null,
+    _registryId: string | null,
   ): Promise<void> {
     try {
       const existing = await pool.query(
         "SELECT id FROM dns_zones WHERE domain = $1 LIMIT 1",
         [domain],
       );
-      if (existing.rows.length > 0) return;
+      if ((existing as any).rows.length > 0) return;
 
       const { rows } = await pool.query(
         `INSERT INTO dns_zones (user_id, domain, status, is_verified, nameserver1, nameserver2)
@@ -558,7 +558,7 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
       );
     } catch (e) {
       logger.warn(
-        { domain, err: e.message },
+        { domain, err: (e as Error).message },
         "[MaxBoosterRegistrar] _ensureDnsZone failed (non-fatal)",
       );
     }

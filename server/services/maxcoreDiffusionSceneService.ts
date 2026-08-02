@@ -330,7 +330,7 @@ export async function renderDiffusionScene(
     return opts?.outputPath;
   } catch (err) {
     logger.warn(
-      `[DiffusionScene] Scene ${opts?.sceneIndex + 1} failed (${err?.message ?? err}) ` +
+      `[DiffusionScene] Scene ${opts?.sceneIndex + 1} failed (${(err as any)?.message ?? err}) ` +
         `— will fall back to Ken Burns`,
     );
     // Invalidate cache so the next availability check is fresh

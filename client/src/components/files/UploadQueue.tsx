@@ -74,7 +74,7 @@ export function UploadQueue({
   onCancel,
   onRetry,
   onRemove,
-  onClear,
+  _onClear,
   onPriorityChange,
   className,
 }: UploadQueueProps) {

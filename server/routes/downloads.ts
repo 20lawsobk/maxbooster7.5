@@ -124,7 +124,7 @@ function processRelease(data: Record<string, unknown>): ReleaseInfo {
     android: {},
   };
 
-  const assets: ReleaseAsset[] = (data?.assets || []).map(
+  const assets: ReleaseAsset[] = ((data?.assets || []) as any).map(
     (a: Record<string, unknown>) => ({
       name: a.name,
       browser_download_url: a.browser_download_url,
@@ -142,7 +142,7 @@ function processRelease(data: Record<string, unknown>): ReleaseInfo {
   }
 
   const version =
-    (data?.tag_name || "").replace(/^v/, "") || data?.name || "unknown";
+    ((data?.tag_name || "") as any).replace(/^v/, "") || data?.name || "unknown";
 
   const result: ReleaseInfo = {
     version,

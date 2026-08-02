@@ -251,7 +251,7 @@ async function getValidAccessToken(connection: {
     .where(eq(socialAccounts.id, connection.id));
 
   logger.info(
-    `[TokenRefresh] ${p}: token refreshed successfully, expires ${refreshed.expiresAt.toISOString() ?? "unknown"}`,
+    `[TokenRefresh] ${p}: token refreshed successfully, expires ${refreshed.expiresAt!.toISOString() ?? "unknown"}`,
   );
   return refreshed.accessToken;
 }
@@ -734,7 +734,7 @@ export async function syncPlatformData(
         }
       }
     } catch (apiErr) {
-      logger.warn(`[SocialSync] Failed to sync ${p} stats:`, apiErr);
+      logger.warn(apiErr, `[SocialSync] Failed to sync ${p} stats:`);
     }
 
     // Calculate engagement rate from our stored published posts

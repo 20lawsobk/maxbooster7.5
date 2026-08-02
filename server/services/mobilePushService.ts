@@ -328,7 +328,7 @@ class MobilePushService {
       });
 
       if (!response?.ok) {
-        logger.warn("Failed to get FCM access token:", await response?.text());
+        logger.warn({ value: await response?.text() }, "Failed to get FCM access token:");
         return null;
       }
 

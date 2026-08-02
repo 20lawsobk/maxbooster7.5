@@ -198,7 +198,7 @@ This is an automated alert from Max Booster Platform Monitoring System.
         `,
       };
 
-      await sgMail?.default.send(msg);
+      await (sgMail as any)?.default.send(msg);
       logger.info(
         `✅ Email alert sent to ${this.config.emailRecipients?.length} recipient(s)`,
       );

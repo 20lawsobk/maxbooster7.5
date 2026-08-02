@@ -172,11 +172,11 @@ interface RevenueAnalyticsProps {
 }
 
 export function RevenueAnalytics({
-  userId,
+  _userId,
   timeRange = "30d",
   onTimeRangeChange,
 }: RevenueAnalyticsProps) {
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  const [selectedPlatforms, _setSelectedPlatforms] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
 
   const { data, isLoading } = useQuery({

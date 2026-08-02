@@ -173,7 +173,7 @@ export class HnsClient {
   async isReady(): Promise<boolean> {
     try {
       const info = await this.getInfo();
-      return info?.version !== undefined;
+      return (info as any)?.version !== undefined;
     } catch {
       return false;
     }
@@ -183,7 +183,7 @@ export class HnsClient {
 
   async getNameInfo(name: string): Promise<HnsNameInfo> {
     const res = await this.rpc("getnameinfo", [name]);
-    return res.info || res;
+    return (res as any).info || res;
   }
 
   async getNameByHash(hash: string): Promise<string | null> {
@@ -255,7 +255,7 @@ export class HnsClient {
 
   async getReceiveAddress(): Promise<string> {
     const res = await this.walletGet("/key");
-    return res.address || "";
+    return (res as any).address || "";
   }
 
   async getWalletBids(own = true): Promise<HnsBid[]> {

@@ -17,7 +17,7 @@ router?.use(apiKeyService?.trackApiUsage);
 // IDOR protection: an API key can only access its own user's data.
 // If :artistId is provided and differs from the key owner, reject.
 router.param("artistId", (req: ApiKeyRequest, res, next, artistId) => {
-  const userId = req.apiKey.userId;
+  const userId = req.apiKey!.userId;
   if (userId && artistId && artistId !== userId) {
     return res.status(403).json({
       error: "Forbidden",
@@ -33,7 +33,7 @@ router.param("artistId", (req: ApiKeyRequest, res, next, artistId) => {
  */
 router.get("/platforms", async (req: ApiKeyRequest, res) => {
   try {
-    const userId = req.apiKey.userId;
+    const userId = req.apiKey!.userId;
 
     if (!userId) {
       return res
@@ -221,7 +221,7 @@ router?.get("/engagement{/:artistId}", async (req: ApiKeyRequest, res) => {
       .select({
         date: sql<string>`DATE(${analytics?.date})`,
         platform: analytics.platform,
-        platformData: analytics.platformData,
+        platformData: analytics.metadata,
       })
       .from(analytics)
       .where(
@@ -306,7 +306,7 @@ router?.get("/demographics{/:artistId}", async (req: ApiKeyRequest, res) => {
     // Get audience data from audienceData JSONB field
     const audienceData = await db
       .select({
-        audienceData: analytics.audienceData,
+        audienceData: analytics.metadata,
       })
       .from(analytics)
       .where(
@@ -383,7 +383,7 @@ router?.get("/playlists{/:artistId}", async (req: ApiKeyRequest, res) => {
       .select({
         date: sql<string>`DATE(${analytics?.date})`,
         platform: analytics.platform,
-        platformData: analytics.platformData,
+        platformData: analytics.metadata,
       })
       .from(analytics)
       .where(
@@ -398,14 +398,14 @@ router?.get("/playlists{/:artistId}", async (req: ApiKeyRequest, res) => {
     // Extract playlist information
     const playlists = playlistData?.flatMap((row) => {
       const data = (row?.platformData as Record<string, unknown>) || {};
-      return (data?.playlists || []).map((playlist: unknown) => ({
+      return ((data?.playlists || []) as any).map((playlist: unknown) => ({
         date: row.date,
         platform: row.platform,
-        playlistName: playlist.name,
-        playlistId: playlist.id,
-        followers: playlist.followers || 0,
-        streams: playlist.streams || 0,
-        position: playlist.position || null,
+        playlistName: (playlist as Error).name,
+        playlistId: (playlist as any).id,
+        followers: (playlist as any).followers || 0,
+        streams: (playlist as any).streams || 0,
+        position: (playlist as any).position || null,
       }));
     });
 

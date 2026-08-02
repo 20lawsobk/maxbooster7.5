@@ -53,31 +53,31 @@ class MetricsCollector implements CustomMetrics {
   ): void {
     this.increment(`payment.${status}.count`);
     this.increment(`payment.${status}.amount.${currency}`, amount);
-    logger.info("💰 Payment tracked", { amount, currency, status });
+    logger.info({ amount, currency, status }, "💰 Payment tracked");
   }
 
   trackSocialPost(platform: string, success: boolean): void {
     const status = success ? "success" : "failed";
     this.increment(`social.${platform}.${status}`);
-    logger.info("📱 Social post tracked", { platform, success });
+    logger.info({ platform, success }, "📱 Social post tracked");
   }
 
   trackDistribution(dsp: string, status: string): void {
     this.increment(`distribution.${dsp}.${status}`);
-    logger.info("🎵 Distribution tracked", { dsp, status });
+    logger.info({ dsp, status }, "🎵 Distribution tracked");
   }
 
   trackMarketplaceSale(amount: number, type: string): void {
     this.increment(`marketplace.${type}.count`);
     this.increment(`marketplace.${type}.amount`, amount);
-    logger.info("🛍️ Marketplace sale tracked", { amount, type });
+    logger.info({ amount, type }, "🛍️ Marketplace sale tracked");
   }
 
   // Performance Metrics
   trackDatabaseQuery(queryTime: number, queryType: string): void {
     this.increment(`database.${queryType}.count`);
     if (queryTime > 1000) {
-      logger.warn("⚠️ Slow database query", { queryTime, queryType });
+      logger.warn({ queryTime, queryType }, "⚠️ Slow database query");
     }
   }
 
@@ -85,7 +85,7 @@ class MetricsCollector implements CustomMetrics {
     this.increment(`api.${endpoint}.count`);
     this.increment(`api.status.${statusCode}`);
     if (duration > 5000) {
-      logger.warn("⚠️ Slow API call", { endpoint, duration, statusCode });
+      logger.warn({ endpoint, duration, statusCode }, "⚠️ Slow API call");
     }
   }
 
@@ -97,12 +97,12 @@ class MetricsCollector implements CustomMetrics {
   // User Metrics
   trackUserSignup(tier: string): void {
     this.increment(`user.signup.${tier}`);
-    logger.info("👤 User signup tracked", { tier });
+    logger.info({ tier }, "👤 User signup tracked");
   }
 
   trackUserLogin(method: string): void {
     this.increment(`user.login.${method}`);
-    logger.info("🔐 User login tracked", { method });
+    logger.info({ method }, "🔐 User login tracked");
   }
 
   trackFeatureUsage(feature: string): void {
@@ -147,12 +147,12 @@ export function metricsMiddleware(
 
     // Log slow requests and bump Prometheus counter (>5 s threshold)
     if (duration > 3000) {
-      logger.warn("🐌 Slow request", {
+      logger.warn({
         method: req.method,
         endpoint,
         duration,
         statusCode: res.statusCode,
-      });
+      }, "🐌 Slow request");
     }
     if (duration > 5000) {
       // Lazy import avoids circular-dep risk at module-load time.

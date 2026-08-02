@@ -280,12 +280,12 @@ const availableWidgets: SmartWidgetConfig[] = [
 
 export function DashboardCustomizer({
   onSave,
-  onCancel,
+  _onCancel,
   showPresets = true,
 }: DashboardCustomizerProps) {
   const queryClient = useQueryClient();
   const [widgets, setWidgets] = useState<SmartWidgetConfig[]>([]);
-  const [layoutName, setLayoutName] = useState("My Dashboard");
+  const [layoutName, _setLayoutName] = useState("My Dashboard");
   const [savePresetOpen, setSavePresetOpen] = useState(false);
   const [presetName, setPresetName] = useState("");
   const [draggedWidget, setDraggedWidget] = useState<string | null>(null);

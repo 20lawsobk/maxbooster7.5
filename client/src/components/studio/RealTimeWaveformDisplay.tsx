@@ -54,7 +54,7 @@ export function RealTimeWaveformDisplay({
   onPlayPause,
   onZoomChange,
   onRegionCreate,
-  onRegionUpdate,
+  _onRegionUpdate,
   showControls = true,
   showTimeline = true,
   height = 128,

@@ -54,7 +54,7 @@ async function pruneSystemLogs(days = 7): Promise<void> {
   const result = await db?.execute(
     sql`DELETE FROM system_logs WHERE timestamp < ${cutoff}`,
   );
-  const count = (result as Record<string, unknown>).rowCount ?? 0;
+  const count = (result as unknown as Record<string, unknown>).rowCount ?? 0;
   if (count > 0)
     logger.info(
       `[Maintenance] Pruned ${count} system_logs rows older than ${days}d`,
@@ -77,7 +77,7 @@ async function pruneNotifications(days = 30): Promise<void> {
   const result = await db?.execute(
     sql`DELETE FROM notifications WHERE created_at < ${cutoff}`,
   );
-  const count = (result as Record<string, unknown>).rowCount ?? 0;
+  const count = (result as unknown as Record<string, unknown>).rowCount ?? 0;
   if (count > 0)
     logger.info(
       `[Maintenance] Pruned ${count} notifications older than ${days}d`,

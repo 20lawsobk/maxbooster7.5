@@ -37,12 +37,12 @@ export class PocketDimensionChunkStore implements ChunkStore {
 
   async putChunk(chunkId: ChunkId, data: Buffer): Promise<void> {
     await this.ensureOpen();
-    await this.pocket.set(this.chunkKey(chunkId), data);
+    await (this as any).pocket.set(this.chunkKey(chunkId), data);
   }
 
   async getChunk(chunkId: ChunkId): Promise<Buffer> {
     await this.ensureOpen();
-    const data = await this.pocket.get(this.chunkKey(chunkId));
+    const data = await (this as any).pocket.get(this.chunkKey(chunkId));
     if (!data)
       throw new Error(
         `Chunk ${chunkId} not found in bubble ${this.pocketName}`,
@@ -52,13 +52,13 @@ export class PocketDimensionChunkStore implements ChunkStore {
 
   async deleteChunk(chunkId: ChunkId): Promise<void> {
     await this.ensureOpen();
-    await this.pocket.delete(this.chunkKey(chunkId));
+    await (this as any).pocket.delete(this.chunkKey(chunkId));
   }
 
   async hasChunk(chunkId: ChunkId): Promise<boolean> {
     try {
       await this.ensureOpen();
-      return await this.pocket.has(this.chunkKey(chunkId));
+      return await (this as any).pocket.has(this.chunkKey(chunkId));
     } catch {
       return false;
     }

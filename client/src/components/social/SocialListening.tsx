@@ -127,8 +127,8 @@ export function SocialListening() {
     platforms: [] as string[],
   });
   const [selectedTimeRange, setSelectedTimeRange] = useState("7d");
-  const [showAlertSettings, setShowAlertSettings] = useState(false);
-  const [alertThreshold, setAlertThreshold] = useState(10);
+  const [_showAlertSettings, _setShowAlertSettings] = useState(false);
+  const [_alertThreshold, _setAlertThreshold] = useState(10);
 
   const { data: keywordsData } = useQuery({
     queryKey: ["/api/social/listening/keywords"],
@@ -487,7 +487,7 @@ export function SocialListening() {
                     )}
                     {Array.from({ length: 24 }).map((_, i) => {
                       const mentionCount = alerts.filter(
-                        (a) =>
+                        (a: any) =>
                           a.timestamp && new Date(a.timestamp).getHours() === i,
                       ).length;
                       const height =

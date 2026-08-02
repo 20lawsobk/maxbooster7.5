@@ -3,7 +3,7 @@ import { eq, and, desc, isNull, sql, gte } from "drizzle-orm";
 import { careerCoachRecommendations, careerGoals, analytics, releases, socialAccounts, dspAnalytics, InsertCareerCoachRecommendation, InsertCareerGoal, CareerCoachRecommendation, CareerGoal } from "../../shared/schema";
 import { logger } from "../logger";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
-import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
+import { requireMaxCore, _AIUnavailableError } from "../lib/aiSource.js";
 
 interface CareerGap {
   area: string;
@@ -1111,7 +1111,7 @@ class CareerCoachService {
         totalEngagement += engagement;
         totalStreams += d?.streams || 0;
 
-        const geo = d?.geography as {
+        const geo = (d as any)?.geography as {
           countries?: { name: string; streams: number }[];
         } | null;
         if (geo?.countries?.[0]) {

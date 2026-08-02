@@ -53,7 +53,7 @@ class IdempotencyService {
       const redis = await getRedisClient();
 
       if (redis) {
-        const existing = await redis?.get(fullKey);
+        const existing = await (redis as any)?.get(fullKey);
         if (existing) {
           try {
             const parsed = JSON.parse(existing);
@@ -72,7 +72,7 @@ class IdempotencyService {
           result,
           cachedAt: new Date().toISOString(),
         });
-        await redis?.setEx(fullKey, ttlSeconds, data);
+        await (redis as any)?.setEx(fullKey, ttlSeconds, data);
         logger.info(`Idempotency key set: ${key} (TTL: ${ttlSeconds}s)`);
         return { exists: false };
       }
@@ -89,7 +89,7 @@ class IdempotencyService {
       return {
         exists: true,
         result: existing.data.result as T,
-        cachedAt: new Date(existing?.data.cachedAt),
+        cachedAt: new Date(existing?.data.cachedAt as any),
       };
     }
 
@@ -111,7 +111,7 @@ class IdempotencyService {
       const redis = await getRedisClient();
 
       if (redis) {
-        const existing = await redis?.get(fullKey);
+        const existing = await (redis as any)?.get(fullKey);
         if (existing) {
           try {
             const parsed = JSON.parse(existing);
@@ -137,7 +137,7 @@ class IdempotencyService {
       return {
         exists: true,
         result: existing.data.result,
-        cachedAt: new Date(existing?.data.cachedAt),
+        cachedAt: new Date(existing?.data.cachedAt as any),
       };
     }
     return { exists: false };
@@ -159,7 +159,7 @@ class IdempotencyService {
           result,
           cachedAt: new Date().toISOString(),
         });
-        await redis?.setEx(fullKey, ttlSeconds, data);
+        await (redis as any)?.setEx(fullKey, ttlSeconds, data);
         logger.info(`Idempotency key set: ${key} (TTL: ${ttlSeconds}s)`);
         return;
       }
@@ -187,7 +187,7 @@ class IdempotencyService {
       const redis = await getRedisClient();
 
       if (redis) {
-        const data = await redis?.get(fullKey);
+        const data = await (redis as any)?.get(fullKey);
         if (data) {
           try {
             const parsed = JSON.parse(data);
@@ -219,7 +219,7 @@ class IdempotencyService {
       const redis = await getRedisClient();
 
       if (redis) {
-        await redis?.del(fullKey);
+        await (redis as any)?.del(fullKey);
         logger.info(`Idempotency key removed: ${key}`);
         return;
       }
@@ -243,9 +243,9 @@ class IdempotencyService {
       const redis = await getRedisClient();
 
       if (redis) {
-        const existing = await redis?.get(fullKey);
+        const existing = await (redis as any)?.get(fullKey);
         if (existing) return false;
-        await redis?.setex(fullKey, ttlSeconds, "processing");
+        await (redis as any)?.setex(fullKey, ttlSeconds, "processing");
         return true;
       }
     } catch (error: unknown) {
@@ -278,7 +278,7 @@ class IdempotencyService {
       const redis = await getRedisClient();
 
       if (redis) {
-        await redis?.del(fullKey);
+        await (redis as any)?.del(fullKey);
         return;
       }
     } catch (error: unknown) {

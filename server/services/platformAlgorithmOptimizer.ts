@@ -856,7 +856,7 @@ export class PlatformAlgorithmOptimizer {
   }
 
   private scoreYouTube(
-    full: string,
+    _full: string,
     headline: string,
     cta: string,
     content: string,

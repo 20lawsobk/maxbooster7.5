@@ -203,7 +203,7 @@ function sanitizeCustomization(
             (link.url.startsWith("http://") || link.url.startsWith("https://")),
         )
         .map((link: Record<string, unknown>) => ({
-          platform: sanitizeString(link.platform),
+          platform: sanitizeString((link.platform as string)),
           url: link.url,
         }));
     }
@@ -694,7 +694,7 @@ export class StorefrontService {
 
           stripePriceId = price.id;
         } catch (stripeError: unknown) {
-          logger.warn("Error creating Stripe price:", stripeError);
+          logger.warn(stripeError, "Error creating Stripe price:");
         }
       }
 
@@ -750,7 +750,7 @@ export class StorefrontService {
         throw new Error("Membership tier not found");
       }
 
-      if (storefront.userId !== userId) {
+      if (storefront!.userId !== userId) {
         throw new Error("Unauthorized");
       }
 
@@ -789,7 +789,7 @@ export class StorefrontService {
         throw new Error("Membership tier not found");
       }
 
-      if (storefront.userId !== userId) {
+      if (storefront!.userId !== userId) {
         throw new Error("Unauthorized");
       }
 
@@ -844,7 +844,7 @@ export class StorefrontService {
 
       if (
         tier.maxSubscribers &&
-        tier.currentSubscribers >= tier.maxSubscribers
+        tier.currentSubscribers! >= tier.maxSubscribers
       ) {
         throw new Error("This membership tier is at maximum capacity");
       }

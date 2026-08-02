@@ -447,7 +447,7 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
     logger.info(
       `   Batch check: ${existingSet?.size}/${allNames?.length} indexes already exist`,
     );
-  } catch (batchErr: Record<string, unknown>) {
+  } catch (batchErr: any) {
     logger.warn(
       `[Indexes] Batch existence check failed (${batchErr?.message}) — will check individually`,
     );
@@ -498,12 +498,12 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
         `   ✓ Created ${index?.name} on ${index?.table}(${index?.columns.join(", ")})`,
       );
     } catch (error) {
-      if (error?.message?.includes("does not exist")) {
+      if ((error as any)?.message?.includes("does not exist")) {
         skipped?.push(index?.name);
-        logger.warn(`   ⚠️ ${index?.name} - ${error?.message}`);
+        logger.warn(`   ⚠️ ${index?.name} - ${(error as any)?.message}`);
       } else {
-        failed?.push({ name: index.name, error: error.message });
-        logger.warn(`   ✗ ${index?.name} - ${error?.message}`);
+        failed?.push({ name: index.name, error: (error as Error).message });
+        logger.warn(`   ✗ ${index?.name} - ${(error as any)?.message}`);
       }
     }
   }

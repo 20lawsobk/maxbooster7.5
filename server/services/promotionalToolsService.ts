@@ -132,7 +132,7 @@ class PromotionalToolsService {
     const autopilot = this.getAutopilotForUser(userId);
     autopilot?.emit("preSavePageCreated", { pageId: page.id, releaseId });
 
-    logger.info("Pre-save page created:", { pageId: page.id, slug: page.slug });
+    logger.info({ pageId: page.id, slug: page.slug }, "Pre-save page created:");
     return page;
   }
 
@@ -285,7 +285,7 @@ class PromotionalToolsService {
 
     let generatedImageUrl: string | null = null;
     try {
-      const imageBuffer = await sharpImageService?.createPromoCard({
+      const imageBuffer = await (sharpImageService as any)?.createPromoCard({
         width: dimensions.width,
         height: dimensions.height,
         backgroundColor: config.backgroundColor || "#1a1a2e",
@@ -340,7 +340,7 @@ class PromotionalToolsService {
       })
       .returning();
 
-    logger.info("Promo card created:", { cardId: card.id, type: config.type });
+    logger.info({ cardId: card.id, type: config.type }, "Promo card created:");
     return card;
   }
 
@@ -414,10 +414,10 @@ class PromotionalToolsService {
       })
       .returning();
 
-    logger.info("Mini video created:", {
+    logger.info({
       videoId: video.id,
       type: config.type,
-    });
+    }, "Mini video created:");
     return video;
   }
 
@@ -472,7 +472,7 @@ class PromotionalToolsService {
       })
       .returning();
 
-    logger.info("Spotify Canvas created:", { canvasId: canvas.id, trackId });
+    logger.info({ canvasId: canvas.id, trackId }, "Spotify Canvas created:");
     return canvas;
   }
 
@@ -513,7 +513,7 @@ class PromotionalToolsService {
       .where(eq(spotifyCanvases?.id, canvasId))
       .returning();
 
-    logger.info("Spotify Canvas submitted:", { canvasId });
+    logger.info({ canvasId }, "Spotify Canvas submitted:");
     return updated;
   }
 
@@ -569,7 +569,7 @@ class PromotionalToolsService {
       })
       .returning();
 
-    logger.info("Lyrics sync created:", { syncId: sync.id, trackId });
+    logger.info({ syncId: sync.id, trackId }, "Lyrics sync created:");
     return sync;
   }
 
@@ -617,10 +617,10 @@ class PromotionalToolsService {
       .where(eq(lyricsSyncs?.id, syncId))
       .returning();
 
-    logger.info("Lyrics submitted to platforms:", {
+    logger.info({
       syncId,
       platforms: sync.platforms,
-    });
+    }, "Lyrics submitted to platforms:");
     return updated;
   }
 
@@ -651,9 +651,9 @@ class PromotionalToolsService {
     const lyricsArray = (sync?.lyrics as unknown[]) || [];
     let lrc = "";
     for (const line of lyricsArray) {
-      const minutes = Math.floor(line?.startTime / 60);
-      const seconds = (line?.startTime % 60).toFixed(2);
-      lrc += `[${minutes?.toString().padStart(2, "0")}:${seconds?.padStart(5, "0")}]${line?.text}\n`;
+      const minutes = Math.floor((line as any)?.startTime / 60);
+      const seconds = ((line as any)?.startTime % 60).toFixed(2);
+      lrc += `[${minutes?.toString().padStart(2, "0")}:${seconds?.padStart(5, "0")}]${(line as any)?.text}\n`;
     }
     return lrc;
   }
@@ -662,9 +662,9 @@ class PromotionalToolsService {
     const lyricsArray = (sync?.lyrics as unknown[]) || [];
     let srt = "";
     lyricsArray?.forEach((line, index) => {
-      const startTime = this.formatSRTTime(line?.startTime);
-      const endTime = this.formatSRTTime(line?.endTime);
-      srt += `${index + 1}\n${startTime} --> ${endTime}\n${line?.text}\n\n`;
+      const startTime = this.formatSRTTime((line as any)?.startTime);
+      const endTime = this.formatSRTTime((line as any)?.endTime);
+      srt += `${index + 1}\n${startTime} --> ${endTime}\n${(line as any)?.text}\n\n`;
     });
     return srt;
   }
@@ -738,11 +738,11 @@ class PromotionalToolsService {
       })
       .returning();
 
-    logger.info("Artist score calculated:", {
+    logger.info({
       userId,
       artistScore,
       careerStage,
-    });
+    }, "Artist score calculated:");
     return score;
   }
 
@@ -789,7 +789,7 @@ class PromotionalToolsService {
       listingId,
     });
 
-    logger.info("Beat promotion created:", { promoId: promo.id, listingId });
+    logger.info({ promoId: promo.id, listingId }, "Beat promotion created:");
     return promo;
   }
 
@@ -840,10 +840,10 @@ class PromotionalToolsService {
       .values(recommendations)
       .returning();
 
-    logger.info("Personalized recommendations generated:", {
+    logger.info({
       userId,
       count: inserted.length,
-    });
+    }, "Personalized recommendations generated:");
     return inserted;
   }
 
@@ -860,7 +860,7 @@ class PromotionalToolsService {
       crossPlatformSyncing: true,
     });
 
-    logger.info("Autonomous promotion started:", { userId, releaseId });
+    logger.info({ userId, releaseId }, "Autonomous promotion started:");
   }
 }
 

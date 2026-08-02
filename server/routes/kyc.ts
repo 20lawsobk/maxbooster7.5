@@ -190,7 +190,7 @@ router?.get("/support", async (_req, res) => {
       ],
     });
   } catch (error) {
-    logger.warn("Error in KYC support info:", error.message);
+    logger.warn("Error in KYC support info:", (error as Error).message);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -228,7 +228,7 @@ router.get("/document-types", async (_req, res) => {
     ];
     res.json({ documentTypes });
   } catch (error) {
-    logger.warn("Error in KYC document types:", error.message);
+    logger.warn("Error in KYC document types:", (error as Error).message);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -652,7 +652,7 @@ router.post("/upgrade", async (req, res) => {
 
 router.get("/admin/pending", async (req, res) => {
   try {
-    if (!req.user.isAdmin) {
+    if ((!req.user! as any).isAdmin) {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -674,7 +674,7 @@ router.get("/admin/pending", async (req, res) => {
 
 router.get("/admin/documents/:documentId/view", async (req, res) => {
   try {
-    if (!req.user.isAdmin) {
+    if ((!req.user! as any).isAdmin) {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -709,7 +709,7 @@ router.get("/admin/documents/:documentId/view", async (req, res) => {
 
 router.post("/admin/review/:verificationId", async (req, res) => {
   try {
-    if (!req.user.isAdmin) {
+    if ((!req.user! as any).isAdmin) {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -726,7 +726,7 @@ router.post("/admin/review/:verificationId", async (req, res) => {
     if (action === "approve") {
       verification = await kycService?.approveVerification(
         verificationId,
-        req.user.id,
+        req.user!.id,
         notes,
       );
     } else {
@@ -735,7 +735,7 @@ router.post("/admin/review/:verificationId", async (req, res) => {
       }
       verification = await kycService?.rejectVerification(
         verificationId,
-        req.user.id,
+        req.user!.id,
         reason,
       );
     }
@@ -755,7 +755,7 @@ router.post("/admin/review/:verificationId", async (req, res) => {
 
 router?.post("/admin/documents/:documentId/review", async (req, res) => {
   try {
-    if (!req.user?.isAdmin) {
+    if ((!req.user as any)?.isAdmin) {
       return res.status(403).json({ error: "Admin access required" });
     }
 

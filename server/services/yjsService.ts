@@ -71,7 +71,7 @@ export class YjsCollaborationService {
       this.pubSubCallbacks.set(projectId, new Set());
       const channel = `yjs:updates:${projectId}`;
       try {
-        await this.subClient.subscribe(channel);
+        await (this as any).subClient.subscribe(channel);
         logger.info(`Subscribed to YJS updates for project: ${projectId}`);
       } catch (error) {
         logger.warn({ err: error }, `Failed to subscribe to ${channel}:`);
@@ -89,7 +89,7 @@ export class YjsCollaborationService {
     try {
       const redis = await getRedisClient();
       if (redis) {
-        cachedState = await redis?.get(redisKey);
+        cachedState = await (redis as any)?.get(redisKey);
       }
     } catch (error: unknown) {
       // Gracefully degrade to database if Redis unavailable
@@ -128,7 +128,7 @@ export class YjsCollaborationService {
           try {
             const redis = await getRedisClient();
             if (redis) {
-              await redis?.setEx(
+              await (redis as any)?.setEx(
                 redisKey,
                 this.REDIS_TTL,
                 snapshot?.documentState,
@@ -151,7 +151,7 @@ export class YjsCollaborationService {
           const redis = await getRedisClient();
           if (redis) {
             const base64Update = Buffer?.from(update).toString("base64");
-            await redis?.publish(`yjs:updates:${projectId}`, base64Update);
+            await (redis as any)?.publish(`yjs:updates:${projectId}`, base64Update);
           }
         } catch (error) {
           logger.warn({ err: error }, "Failed to publish YJS update:");
@@ -184,7 +184,7 @@ export class YjsCollaborationService {
           try {
             const redis = await getRedisClient();
             if (redis) {
-              await redis?.setEx(redisKey, this.REDIS_TTL, base64State);
+              await (redis as any)?.setEx(redisKey, this.REDIS_TTL, base64State);
             }
           } catch (error: unknown) {
             // Redis cache update failed, but snapshot saved to DB
@@ -219,10 +219,10 @@ export class YjsCollaborationService {
       try {
         const redis = await getRedisClient();
         if (redis) {
-          await redis?.setEx(redisKey, this.REDIS_TTL, base64State);
+          await (redis as any)?.setEx(redisKey, this.REDIS_TTL, base64State);
         }
       } catch (error: unknown) {
-        logger.warn("Redis cache update failed during force save:", projectId);
+        logger.warn({ value: projectId }, "Redis cache update failed during force save:");
       }
     } catch (error: unknown) {
       logger.warn("Failed to force save document:", projectId, error);
@@ -255,7 +255,7 @@ export class YjsCollaborationService {
     // Unsubscribe from pub/sub
     if (this.YJS_PUBSUB_ENABLED && this.subClient) {
       try {
-        await this.subClient.unsubscribe(`yjs:updates:${projectId}`);
+        await (this as any).subClient.unsubscribe(`yjs:updates:${projectId}`);
         this.pubSubCallbacks.delete(projectId);
       } catch (error) {
         logger.warn(
@@ -271,10 +271,10 @@ export class YjsCollaborationService {
         const redisKey = `${this.REDIS_DOC_PREFIX}${projectId}`;
         const redis = await getRedisClient();
         if (redis) {
-          await redis?.del(redisKey);
+          await (redis as any)?.del(redisKey);
         }
       } catch (error: unknown) {
-        logger.warn("Redis cache clear failed:", projectId);
+        logger.warn({ value: projectId }, "Redis cache clear failed:");
       }
     }
   }
@@ -285,7 +285,7 @@ export class YjsCollaborationService {
       const redisKey = `${this.REDIS_DOC_PREFIX}${projectId}`;
       const redis = await getRedisClient();
       if (redis) {
-        await redis?.del(redisKey);
+        await (redis as any)?.del(redisKey);
       }
     } catch (error: unknown) {
       // Redis cache clear failed, not critical
@@ -298,7 +298,7 @@ export class YjsCollaborationService {
       const redisKey = `${this.REDIS_DOC_PREFIX}${projectId}`;
       const redis = await getRedisClient();
       if (redis) {
-        const exists = await redis?.exists(redisKey);
+        const exists = await (redis as any)?.exists(redisKey);
         return exists === 1;
       }
     } catch (error: unknown) {

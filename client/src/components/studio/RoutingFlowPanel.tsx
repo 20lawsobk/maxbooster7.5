@@ -251,7 +251,7 @@ interface RoutingFlowPanelProps {
 }
 
 export function RoutingFlowPanel({
-  projectId,
+  _projectId,
   onClose,
 }: RoutingFlowPanelProps) {
   const store = useUnifiedStore();

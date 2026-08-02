@@ -178,10 +178,10 @@ class GoDaddyProvider implements DnsProvider {
     );
     if (!resp.ok) {
       const text = await resp.text();
-      logger.warn("[GoDaddy] listRecords error", {
+      logger.warn({
         status: resp.status,
         body: text,
-      });
+      }, "[GoDaddy] listRecords error");
       throw new Error(`GoDaddy API error: ${resp.status}`);
     }
     const data = (await resp.json()) as Array<{
@@ -236,10 +236,10 @@ class GoDaddyProvider implements DnsProvider {
     );
     if (!resp.ok) {
       const text = await resp.text();
-      logger.warn("[GoDaddy] addRecord error", {
+      logger.warn({
         status: resp.status,
         body: text,
-      });
+      }, "[GoDaddy] addRecord error");
       throw new Error(`GoDaddy API error: ${resp.status}`);
     }
     return true;
@@ -284,10 +284,10 @@ class GoDaddyProvider implements DnsProvider {
     );
     if (!resp.ok) {
       const text = await resp.text();
-      logger.warn("[GoDaddy] updateRecord error", {
+      logger.warn({
         status: resp.status,
         body: text,
-      });
+      }, "[GoDaddy] updateRecord error");
       throw new Error(`GoDaddy API error: ${resp.status}`);
     }
     return true;
@@ -306,10 +306,10 @@ class GoDaddyProvider implements DnsProvider {
     );
     if (!resp.ok) {
       const text = await resp.text();
-      logger.warn("[GoDaddy] deleteRecord error", {
+      logger.warn({
         status: resp.status,
         body: text,
-      });
+      }, "[GoDaddy] deleteRecord error");
       throw new Error(`GoDaddy API error: ${resp.status}`);
     }
     return true;
@@ -345,10 +345,10 @@ class GoDaddyProvider implements DnsProvider {
     );
     if (!resp.ok) {
       const text = await resp.text();
-      logger.warn("[GoDaddy] batchUpsert error", {
+      logger.warn({
         status: resp.status,
         body: text,
-      });
+      }, "[GoDaddy] batchUpsert error");
       throw new Error(`GoDaddy API error: ${resp.status}`);
     }
     return true;
@@ -594,10 +594,10 @@ class NamecheapProvider implements DnsProvider {
       `${this.baseParams(credentials)}&Command=namecheap.domains.dns.getHosts&SLD=${sld}&TLD=${tld}`,
     );
     if (!this.isSuccess(xml)) {
-      logger.warn("[Namecheap] listRecords failed", {
+      logger.warn({
         domain,
         xml: xml.slice(0, 500),
-      });
+      }, "[Namecheap] listRecords failed");
       throw new Error("Namecheap API error on listRecords");
     }
     const hostMatches = [...xml.matchAll(/<host\s+([^/]*?)\/>/gi)];
@@ -693,10 +693,10 @@ class NamecheapProvider implements DnsProvider {
     });
     const xml = await this.callApi(params.toString());
     if (!this.isSuccess(xml)) {
-      logger.warn("[Namecheap] setAllRecords failed", {
+      logger.warn({
         domain,
         xml: xml.slice(0, 500),
-      });
+      }, "[Namecheap] setAllRecords failed");
       throw new Error("Namecheap API error on setHosts");
     }
     return true;
@@ -776,7 +776,7 @@ class DigitalOceanProvider implements DnsProvider {
           weight: r.weight,
         });
       }
-      if (!data.links.pages.next) break;
+      if (!data.links!.pages.next) break;
       page++;
     }
     return results;
@@ -833,7 +833,7 @@ class DigitalOceanProvider implements DnsProvider {
     const found = data.domain_records.find(
       (r) => r.type === recordType && r.name === recordName,
     );
-    return found.id ?? null;
+    return found!.id ?? null;
   }
 
   async updateRecord(

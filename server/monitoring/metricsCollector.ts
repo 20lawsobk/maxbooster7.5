@@ -43,10 +43,10 @@ export class MetricsCollector {
       },
       aiCache: {
         socialUtilization: parseFloat(
-          aiMetrics?.social?.utilizationPercent || "0",
+          (aiMetrics?.social as any)?.utilizationPercent || "0",
         ),
         advertisingUtilization: parseFloat(
-          aiMetrics?.advertising?.utilizationPercent || "0",
+          (aiMetrics?.advertising as any)?.utilizationPercent || "0",
         ),
       },
       system: {

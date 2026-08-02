@@ -133,10 +133,10 @@ export const originValidation: RequestHandler = (
 
   if (!origin && !referer) {
     if (!isProductionEnv()) return next();
-    logger.warn(`Mutation without Origin: ${req.method} ${req.path}`, {
+    logger.warn({
       ip: req.ip,
       userAgent: req.get("user-agent"),
-    });
+    }, `Mutation without Origin: ${req.method} ${req.path}`);
     return next();
   }
 
@@ -155,11 +155,11 @@ export const originValidation: RequestHandler = (
 
   const allowed = getAllowedOrigins(req);
   if (!allowed?.includes(requestOrigin)) {
-    logger.warn(`Origin blocked: ${req.method} ${req.path}`, {
+    logger.warn({
       requestOrigin,
       allowed,
       ip: req.ip,
-    });
+    }, `Origin blocked: ${req.method} ${req.path}`);
     return res.status(403).json({
       error: "Origin not allowed",
       message: "Request blocked: unexpected origin.",

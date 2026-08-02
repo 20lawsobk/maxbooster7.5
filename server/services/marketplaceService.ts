@@ -6,14 +6,14 @@ import Stripe from "stripe";
 import {
   listingLicenseTiers,
   listings,
-  notifications,
+  _notifications,
   orders,
   royaltySplits,
   royaltyTransactions,
   revenueEvents,
   type ListingLicenseTier,
 } from "@shared/schema";
-import { and, eq, sql } from "drizzle-orm";
+import { _and, eq, sql } from "drizzle-orm";
 import { instantPayoutService } from "./instantPayoutService";
 import { notificationService } from "./notificationService.js";
 import { logger } from "../logger.js";
@@ -513,7 +513,7 @@ export class MarketplaceService {
       };
 
       // Create order in database (UUID generated automatically, payout event created in transaction)
-      const createdOrder = await storage.createOrder(dbOrder);
+      const createdOrder = await (storage as any).createOrder(dbOrder);
 
       // Convert database order to service order
       return toServiceOrder(createdOrder);
@@ -532,7 +532,7 @@ export class MarketplaceService {
   ): Promise<Order> {
     try {
       // Get existing order from database
-      const dbOrder = await storage.getOrder(orderId);
+      const dbOrder = await (storage as any).getOrder(orderId);
       if (!dbOrder) {
         throw new Error("Order not found");
       }
@@ -565,7 +565,7 @@ export class MarketplaceService {
 
       if (paymentIntent.status !== "succeeded") {
         // Handle failed payment - update order status
-        await storage.updateOrder(orderId, {
+        await (storage as any).updateOrder(orderId, {
           status: "failed",
           metadata: {
             ...((dbOrder.metadata as object) || {}),
@@ -582,7 +582,7 @@ export class MarketplaceService {
       }
 
       // Update order status to completed
-      const updatedDBOrder = await storage.updateOrder(orderId, {
+      const updatedDBOrder = await (storage as any).updateOrder(orderId, {
         status: "completed",
         stripePaymentIntentId: paymentIntentId,
       });
@@ -928,7 +928,7 @@ export class MarketplaceService {
   async generateLicense(orderId: string): Promise<{ licenseUrl: string }> {
     try {
       // Fetch order details
-      const order = await storage?.getOrder(orderId);
+      const order = await (storage as any)?.getOrder(orderId);
       if (!order) {
         throw new Error("Order not found");
       }
@@ -957,11 +957,11 @@ export class MarketplaceService {
         beatTitle: beat.title,
         beatId: beat.id,
         producer: {
-          name: seller.username || seller?.firstName || "Producer",
+          name: seller!.username || seller?.firstName || "Producer",
           id: order.sellerId,
         },
         buyer: {
-          name: buyer.username || buyer?.firstName || "Buyer",
+          name: buyer!.username || buyer?.firstName || "Buyer",
           id: order.buyerId,
         },
         purchaseDate:
@@ -987,7 +987,7 @@ export class MarketplaceService {
       const licenseUrl = `/licenses/${orderId}.pdf`;
 
       // Update order with license document
-      await storage?.updateOrder(orderId, {
+      await (storage as any)?.updateOrder(orderId, {
         licenseDocumentUrl: licenseUrl,
         metadata: {
           ...((order?.metadata as object) || {}),

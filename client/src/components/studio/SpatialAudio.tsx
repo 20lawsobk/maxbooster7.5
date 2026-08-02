@@ -167,7 +167,7 @@ export function SpatialAudio({
 
   const [selectedObjectId, setSelectedObjectId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"top" | "side">("top");
-  const [showObjectList, setShowObjectList] = useState(true);
+  const [_showObjectList, _setShowObjectList] = useState(true);
 
   const selectedObject = useMemo(
     () => value.objects.find((obj) => obj.id === selectedObjectId) || null,

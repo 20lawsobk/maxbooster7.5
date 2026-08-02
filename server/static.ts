@@ -198,7 +198,7 @@ async function getMetaForPath(
         const metadata = beat?.metadata as Record<string, any> | null;
         result = {
           title: `${beat?.title} - Beat on Max Booster Marketplace`,
-          description: `${beat?.title} by ${beat?.sellerName || "Producer"} | ${metadata?.genre || "Beat"} | ${metadata?.bpm ? metadata?.bpm + " BPM" : ""} | $${beat?.price || "0"} | License and download on Max Booster`,
+          description: `${beat?.title} by ${(beat as any)?.sellerName || "Producer"} | ${metadata?.genre || "Beat"} | ${metadata?.bpm ? metadata?.bpm + " BPM" : ""} | $${(beat as any)?.price || "0"} | License and download on Max Booster`,
           image: beat.artworkUrl || `${SITE_URL}/og-image.png`,
           url: `${SITE_URL}/marketplace/beat/${beatId}`,
         };
@@ -216,12 +216,12 @@ async function getMetaForPath(
           .limit(1);
         if (store) {
           result = {
-            title: `${store?.displayName || store?.slug} - Producer Storefront on Max Booster`,
+            title: `${(store as any)?.displayName || store?.slug} - Producer Storefront on Max Booster`,
             description:
-              store?.bio ||
-              `Browse beats and music from ${store?.displayName || store?.slug} on Max Booster Marketplace`,
+              (store as any)?.bio ||
+              `Browse beats and music from ${(store as any)?.displayName || store?.slug} on Max Booster Marketplace`,
             image:
-              store?.bannerUrl || store?.avatarUrl || `${SITE_URL}/og-image.png`,
+              (store as any)?.bannerUrl || (store as any)?.avatarUrl || `${SITE_URL}/og-image.png`,
             url: `${SITE_URL}/storefront/${slug}`,
           };
         }
@@ -474,20 +474,20 @@ function staticFileMiddlewareOptions() {
     lastModified: true,
     setHeaders: (res: Record<string, unknown>, filePath: string) => {
       if (filePath.endsWith(".html")) {
-        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        (res.setHeader as any)("Cache-Control", "no-cache, no-store, must-revalidate");
       } else if (
         /\/assets\/[^/]*-[A-Za-z0-9_-]{6,16}\.(js|css|woff2?|ttf|eot|svg|png|jpe?g|webp|gif|avif)$/.test(
           filePath,
         )
       ) {
         // All Vite content-hashed assets — safe to cache forever
-        res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        (res.setHeader as any)("Cache-Control", "public, max-age=31536000, immutable");
       } else if (filePath.match(/\.(js|css)$/)) {
-        res.setHeader("Cache-Control", "public, max-age=3600, must-revalidate");
+        (res.setHeader as any)("Cache-Control", "public, max-age=3600, must-revalidate");
       } else if (filePath.match(/\.(woff2?|ttf|eot)$/)) {
-        res.setHeader("Cache-Control", "public, max-age=604800");
+        (res.setHeader as any)("Cache-Control", "public, max-age=604800");
       } else if (filePath.match(/\.(png|jpg|jpeg|gif|webp|svg|ico)$/)) {
-        res.setHeader("Cache-Control", "public, max-age=86400");
+        (res.setHeader as any)("Cache-Control", "public, max-age=86400");
       }
     },
   };
@@ -525,7 +525,7 @@ export function serveStatic(app: Express) {
 
     // If multiTenantRouter already resolved a storefront via storefrontDomains table,
     // inject its slug and serve the SPA so the React app auto-loads the right storefront.
-    const resolvedStorefront = (req as Record<string, unknown>).storefront as
+    const resolvedStorefront = (req as unknown as Record<string, unknown>).storefront as
       | { slug?: string }
       | undefined;
     if (resolvedStorefront?.slug) {

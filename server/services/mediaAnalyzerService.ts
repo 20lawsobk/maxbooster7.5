@@ -421,8 +421,8 @@ export function urlToContentSeed(a: UrlAnalysis) {
 }
 
 export function audioToContentSeed(a: AudioAnalysis) {
-  const topic = a?.track
-    ? `${a?.track}${a?.artist ? ` by ${a?.artist}` : ""}`
+  const topic = (a as any)?.track
+    ? `${(a as any)?.track}${a?.artist ? ` by ${a?.artist}` : ""}`
     : a?.title || "New Track";
   return {
     topic,

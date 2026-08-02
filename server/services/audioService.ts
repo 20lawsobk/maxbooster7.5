@@ -167,15 +167,15 @@ export class AudioService {
       const peakLevel = this.calculatePeakLevel(waveformData);
 
       // Detect BPM and key (basic implementation)
-      const bpm = await this.detectBPM(waveformData, metadata?.sampleRate);
-      const key = await this.detectKey(waveformData, metadata?.sampleRate);
+      const bpm = await this.detectBPM(waveformData, (metadata as any)?.sampleRate);
+      const key = await this.detectKey(waveformData, (metadata as any)?.sampleRate);
 
       const analysis: AudioAnalysis = {
-        duration: metadata.duration,
-        sampleRate: metadata.sampleRate,
-        bitRate: metadata.bitRate,
-        channels: metadata.channels,
-        format: metadata.format,
+        duration: (metadata as any).duration,
+        sampleRate: (metadata as any).sampleRate,
+        bitRate: (metadata as any).bitRate,
+        channels: (metadata as any).channels,
+        format: (metadata as any).format,
         bpm,
         key,
         waveformData,
@@ -199,14 +199,14 @@ export class AudioService {
       );
     }
     return new Promise((resolve, reject) => {
-      ffmpeg?.ffprobe(filePath, (err, metadata) => {
+      ffmpeg?.ffprobe(filePath, (err: any, metadata: any) => {
         if (err) {
           reject(err);
           return;
         }
 
         const audioStream = metadata?.streams.find(
-          (s) => s?.codec_type === "audio",
+          (s: any) => s?.codec_type === "audio",
         );
         if (!audioStream) {
           reject(new Error("No audio stream found"));
@@ -246,7 +246,7 @@ export class AudioService {
 
       // Read WAV file and extract samples
       const wavBuffer = await fsPromises?.readFile(tempWavPath);
-      const wav = new WaveFile.WaveFile(wavBuffer);
+      const wav = new (WaveFile as any).WaveFile(wavBuffer);
 
       // Get samples and downsample for visualization
       const samplesData = wav?.getSamples(true) as Record<string, unknown>;
@@ -339,7 +339,7 @@ export class AudioService {
     const job = await queueService?.addAudioJob("convert", {
       userId,
       filePath: inputPath,
-      format: outputFormat as Record<string, unknown>,
+      format: outputFormat as unknown as Record<string, unknown>,
       quality: options.bitrate === "320k" ? "high" : "medium",
     });
 
@@ -404,7 +404,7 @@ export class AudioService {
       };
 
       await new Promise<void>((resolve, reject) => {
-        let command = ffmpeg(inputPath);
+        let command = ffmpeg!(inputPath);
 
         // Apply format-specific settings with professional audio quality
         switch (outputFormat?.toLowerCase()) {
@@ -484,7 +484,7 @@ export class AudioService {
 
       return {
         storageKey: key,
-        duration: metadata.duration,
+        duration: (metadata as any).duration,
         format: outputFormat,
       };
     } catch (error: unknown) {
@@ -534,8 +534,8 @@ export class AudioService {
         peaks: this.extractPeaks(waveformData),
         rms: this.calculateRMS(waveformData),
         peakLevel: this.calculatePeakLevel(waveformData),
-        duration: metadata.duration,
-        sampleRate: metadata.sampleRate,
+        duration: (metadata as any).duration,
+        sampleRate: (metadata as any).sampleRate,
       });
 
       const buffer = Buffer?.from(waveformJson, "utf-8");
@@ -554,7 +554,7 @@ export class AudioService {
 
       return {
         storageKey: key,
-        duration: metadata.duration,
+        duration: (metadata as any).duration,
         format: "json",
       };
     } catch (error: unknown) {
@@ -784,7 +784,7 @@ export class AudioService {
     try {
       const waveformData = await this.generateWaveformFromFile(filePath);
       const metadata = await this.getAudioMetadata(filePath);
-      const bpm = await this.detectBPM(waveformData, metadata?.sampleRate);
+      const bpm = await this.detectBPM(waveformData, (metadata as any)?.sampleRate);
 
       logger.info(`Analyzed tempo for ${filePath}: ${bpm} BPM`);
 
@@ -804,7 +804,7 @@ export class AudioService {
 
       const chroma = this.computeChromaFeatures(
         waveformData,
-        metadata?.sampleRate,
+        (metadata as any)?.sampleRate,
       );
 
       const keyProfiles = {
@@ -943,11 +943,11 @@ export class AudioService {
       let audioFilters: string[] = [];
 
       for (const effect of effects) {
-        switch (effect?.type) {
+        switch ((effect as any)?.type) {
           case "eq":
           case "equalizer":
-            if (effect?.settings?.bands) {
-              for (const band of effect?.settings.bands) {
+            if ((effect as any)?.settings?.bands) {
+              for (const band of (effect as any)?.settings.bands) {
                 audioFilters?.push(
                   `equalizer=f=${band.frequency}:width_type=o:width=1:g=${band?.gain}`,
                 );
@@ -955,25 +955,25 @@ export class AudioService {
             }
             break;
           case "compressor":
-            const threshold = effect?.settings?.threshold || -20;
-            const ratio = effect?.settings?.ratio || 4;
-            const attack = effect?.settings?.attack || 20;
-            const release = effect?.settings?.release || 250;
+            const threshold = (effect as any)?.settings?.threshold || -20;
+            const ratio = (effect as any)?.settings?.ratio || 4;
+            const attack = (effect as any)?.settings?.attack || 20;
+            const release = (effect as any)?.settings?.release || 250;
             audioFilters?.push(
               `acompressor=threshold=${threshold}dB:ratio=${ratio}:attack=${attack}:release=${release}`,
             );
             break;
           case "reverb":
-            const roomSize = effect?.settings?.roomSize || 0.5;
-            const damping = effect?.settings?.damping || 0.5;
-            const wetLevel = effect?.settings?.wetLevel || 0.3;
+            const roomSize = (effect as any)?.settings?.roomSize || 0.5;
+            const damping = (effect as any)?.settings?.damping || 0.5;
+            const wetLevel = (effect as any)?.settings?.wetLevel || 0.3;
             audioFilters?.push(
               `aecho=0.8:${wetLevel}:${Math.floor(roomSize * 100)}:${damping}`,
             );
             break;
           case "delay":
-            const delayTime = effect?.settings?.time || 500;
-            const feedback = effect?.settings?.feedback || 0.3;
+            const delayTime = (effect as any)?.settings?.time || 500;
+            const feedback = (effect as any)?.settings?.feedback || 0.3;
             audioFilters?.push(
               `adelay=${delayTime}|${delayTime},aecho=0.8:${feedback}:${delayTime}:0.5`,
             );
@@ -982,23 +982,23 @@ export class AudioService {
             audioFilters.push("loudnorm=I=-14:TP=-1:LRA=11");
             break;
           case "limiter":
-            const limit = effect?.settings?.limit || -1;
+            const limit = (effect as any)?.settings?.limit || -1;
             audioFilters.push(`alimiter=limit=${limit}dB:attack=5:release=50`);
             break;
           case "highpass":
-            const hpFreq = effect?.settings?.frequency || 80;
+            const hpFreq = (effect as any)?.settings?.frequency || 80;
             audioFilters.push(`highpass=f=${hpFreq}`);
             break;
           case "lowpass":
-            const lpFreq = effect?.settings?.frequency || 15000;
+            const lpFreq = (effect as any)?.settings?.frequency || 15000;
             audioFilters.push(`lowpass=f=${lpFreq}`);
             break;
           case "gain":
-            const gainDb = effect?.settings?.gain || 0;
+            const gainDb = (effect as any)?.settings?.gain || 0;
             audioFilters.push(`volume=${gainDb}dB`);
             break;
           default:
-            logger.warn(`Unknown effect type: ${effect?.type}`);
+            logger.warn(`Unknown effect type: ${(effect as any)?.type}`);
         }
       }
 
@@ -1038,8 +1038,8 @@ export class AudioService {
     _outputPath?: string,
   ): Promise<JobResponse> {
     const tracksData = tracks?.map((track) => ({
-      storageKey: track.filePath || track?.storageKey,
-      volume: track.volume || 1.0,
+      storageKey: (track as any).filePath || (track as any)?.storageKey,
+      volume: (track as any).volume || 1.0,
     }));
 
     const job = await queueService?.addAudioJob("mix", {
@@ -1109,13 +1109,13 @@ export class AudioService {
 
           return {
             storageKey: key,
-            duration: metadata.duration,
+            duration: (metadata as any).duration,
             format: outputFormat,
           };
         }
 
         await new Promise<void>((resolve, reject) => {
-          const command = ffmpeg();
+          const command = ffmpeg!();
 
           // Add all tracks as inputs with volume control
           tempTracks?.forEach((track, index) => {
@@ -1168,7 +1168,7 @@ export class AudioService {
 
         return {
           storageKey: key,
-          duration: metadata.duration,
+          duration: (metadata as any).duration,
           format: outputFormat,
         };
       } finally {
@@ -1206,7 +1206,7 @@ export class AudioService {
 
       const masteredPath = filePath?.replace(/\.[^/.]+$/, "_mastered.wav");
 
-      logger.info(`Mastering ${filePath} with settings:`, masteringSettings);
+      logger.info(masteringSettings, `Mastering ${filePath} with settings:`);
 
       const targetLoudness = masteringSettings?.targetLoudness || -14;
       const truePeak = masteringSettings?.truePeak || -1;
@@ -1279,18 +1279,18 @@ export class AudioService {
 
       // Export each track as individual stem
       for (const track of tracks) {
-        if (!track?.filePath || !fs?.existsSync(track?.filePath)) {
+        if ((!track as any)?.filePath || !fs?.existsSync((track as any)?.filePath)) {
           logger.warn(
-            `Skipping track ${track?.name}: file not found at ${track?.filePath}`,
+            `Skipping track ${(track as any)?.name}: file not found at ${(track as any)?.filePath}`,
           );
           continue;
         }
 
-        const stemName = `${track?.name || `track_${track?.trackNumber}`}_stem.${format}`;
+        const stemName = `${(track as any)?.name || `track_${(track as any)?.trackNumber}`}_stem.${format}`;
 
         // Convert to requested format (returns storage key)
         const convertedKey = await this.convertAudioFormat(
-          track?.filePath,
+          (track as any)?.filePath,
           format,
         );
 

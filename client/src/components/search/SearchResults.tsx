@@ -37,9 +37,9 @@ interface SearchResult {
 export function SearchResults({
   query,
   filters = {},
-  onFilterChange,
+  _onFilterChange,
   onResultClick,
-  showFilters = true,
+  _showFilters = true,
   initialCategory = "all",
 }: SearchResultsProps) {
   const [activeCategory, setActiveCategory] = useState(initialCategory);

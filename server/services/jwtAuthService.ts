@@ -57,7 +57,7 @@ interface RotatedTokenResult {
 }
 
 export class JWTAuthService {
-  private userTokenVersions: Map<string, number> = new Map();
+  private _userTokenVersions: Map<string, number> = new Map();
 
   async getUserTokenVersion(userId: string): Promise<number> {
     const user = await storage?.getUser(userId);
@@ -118,8 +118,8 @@ export class JWTAuthService {
     return {
       accessToken,
       refreshToken: refreshTokenValue,
-      accessTokenId: jwtTokenRecord.id,
-      refreshTokenId: refreshTokenRecord.id,
+      accessTokenId: (jwtTokenRecord as any).id,
+      refreshTokenId: (refreshTokenRecord as any).id,
       expiresAt: accessTokenExpiresAt,
       refreshTokenExpiresAt,
     };
@@ -174,21 +174,21 @@ export class JWTAuthService {
   ): Promise<RotatedTokenResult | null> {
     const refreshToken = await storage?.getRefreshToken(refreshTokenValue);
 
-    if (!refreshToken || refreshToken?.revoked) {
+    if (!refreshToken || (refreshToken as any)?.revoked) {
       return null;
     }
 
     const now = new Date();
-    if (refreshToken?.expiresAt < now) {
+    if ((refreshToken as any)?.expiresAt < now) {
       return null;
     }
 
-    const user = await storage?.getUser(refreshToken?.userId);
+    const user = await storage?.getUser((refreshToken as any)?.userId);
     if (!user) {
       return null;
     }
 
-    await storage?.revokeRefreshToken(refreshToken?.id, "Token rotation");
+    await storage?.revokeRefreshToken((refreshToken as any)?.id, "Token rotation");
 
     const tokenVersion = await this.getUserTokenVersion(user?.id);
     const accessTokenId = crypto?.randomUUID();
@@ -232,8 +232,8 @@ export class JWTAuthService {
     return {
       accessToken,
       refreshToken: newRefreshTokenValue,
-      accessTokenId: jwtTokenRecord.id,
-      refreshTokenId: newRefreshTokenRecord.id,
+      accessTokenId: (jwtTokenRecord as any).id,
+      refreshTokenId: (newRefreshTokenRecord as any).id,
       expiresAt: accessTokenExpiresAt,
       refreshTokenExpiresAt,
     };

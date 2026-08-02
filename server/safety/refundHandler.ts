@@ -117,7 +117,7 @@ export async function processRefund(params: {
       { err: error },
       `[Refund] Failed to process refund for ${params.chargeId}:`,
     );
-    return { success: false, error: error.message };
+    return { success: false, error: (error as Error).message };
   }
 }
 
@@ -261,7 +261,7 @@ async function persistRefundRecord(record: RefundRecord): Promise<void> {
     `);
   } catch (error) {
     // Table might not exist yet, log but don't fail
-    logger.debug("[Refund] Could not persist refund record:", error);
+    logger.debug({ err: error }, "[Refund] Could not persist refund record:");
   }
 }
 
@@ -287,7 +287,7 @@ async function persistChargebackRecord(
     `);
   } catch (error) {
     // Table might not exist yet, log but don't fail
-    logger.debug("[Chargeback] Could not persist chargeback record:", error);
+    logger.debug({ err: error }, "[Chargeback] Could not persist chargeback record:");
   }
 }
 

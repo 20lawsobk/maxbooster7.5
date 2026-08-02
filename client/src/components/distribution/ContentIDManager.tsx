@@ -70,7 +70,7 @@ interface ContentIDManagerProps {
 export function ContentIDManager({
   releaseId,
   tracks,
-  onComplete,
+  _onComplete,
 }: ContentIDManagerProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();

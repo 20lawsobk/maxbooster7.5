@@ -29,7 +29,7 @@ const createGoalSchema = z.object({
 router?.get(
   "/recommendations",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
 
@@ -55,7 +55,7 @@ router?.get(
     } catch (error) {
       logger.warn(
         "Error fetching career coach recommendations:",
-        error?.message,
+        (error as any)?.message,
       );
       if (error instanceof AIUnavailableError) {
         return res.status(503).json({ error: error.message });
@@ -69,7 +69,7 @@ router?.post(
   "/dismiss/:id",
   requireAuth,
   requireSafeParam("id"),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const recommendationId = req.params.id;
@@ -95,7 +95,7 @@ router?.post(
         message: "Recommendation dismissed",
       });
     } catch (error) {
-      logger.warn("Error dismissing recommendation:", error?.message);
+      logger.warn("Error dismissing recommendation:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -105,7 +105,7 @@ router?.post(
   "/complete/:id",
   requireAuth,
   requireSafeParam("id"),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const recommendationId = req.params.id;
@@ -131,7 +131,7 @@ router?.post(
         message: "Recommendation marked as completed",
       });
     } catch (error) {
-      logger.warn("Error completing recommendation:", error?.message);
+      logger.warn("Error completing recommendation:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -140,7 +140,7 @@ router?.post(
 router?.get(
   "/goals",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
 
@@ -163,7 +163,7 @@ router?.get(
         },
       });
     } catch (error) {
-      logger.warn("Error fetching career goals:", error?.message);
+      logger.warn("Error fetching career goals:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -172,7 +172,7 @@ router?.get(
 router?.post(
   "/goals",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
 
@@ -199,7 +199,7 @@ router?.post(
         data: goal,
       });
     } catch (error) {
-      logger.warn("Error creating career goal:", error?.message);
+      logger.warn("Error creating career goal:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -209,7 +209,7 @@ router?.delete(
   "/goals/:id",
   requireAuth,
   requireSafeParam("id"),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const goalId = req.params.id;
@@ -222,7 +222,7 @@ router?.delete(
       }
       res.json({ success: true, message: "Goal deleted" });
     } catch (error) {
-      logger.warn("Error deleting career goal:", error?.message);
+      logger.warn("Error deleting career goal:", (error as any)?.message);
       res.status(500).json({ error: "Failed to delete goal" });
     }
   }),
@@ -232,7 +232,7 @@ router?.put(
   "/goals/:id",
   requireAuth,
   requireSafeParam("id"),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const goalId = req.params.id;
@@ -260,7 +260,7 @@ router?.put(
       }
       res.json({ success: true, data: goal });
     } catch (error) {
-      logger.warn("Error updating career goal:", error?.message);
+      logger.warn("Error updating career goal:", (error as any)?.message);
       res.status(500).json({ error: "Failed to update goal" });
     }
   }),
@@ -273,7 +273,7 @@ const smartGoalTypeSchema = z
 router?.post(
   "/goals/smart",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const parsed = smartGoalTypeSchema?.safeParse(req.body.type);
@@ -295,7 +295,7 @@ router?.post(
         data: goal,
       });
     } catch (error) {
-      logger.warn("Error creating SMART goal:", error?.message);
+      logger.warn("Error creating SMART goal:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -305,7 +305,7 @@ router?.patch(
   "/goals/:id/progress",
   requireAuth,
   requireSafeParam("id"),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const goalId = req.params.id;
@@ -340,7 +340,7 @@ router?.patch(
         data: goal,
       });
     } catch (error) {
-      logger.warn("Error updating goal progress:", error?.message);
+      logger.warn("Error updating goal progress:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -349,7 +349,7 @@ router?.patch(
 router?.get(
   "/analyze",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
 
@@ -365,7 +365,7 @@ router?.get(
         },
       });
     } catch (error) {
-      logger.warn("Error analyzing career gaps:", error?.message);
+      logger.warn("Error analyzing career gaps:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -374,12 +374,12 @@ router?.get(
 router?.get(
   "/patterns",
   requireAuth,
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (_req: any, res: any) => {
     try {
       const patterns = careerCoachService?.getPatternLibrary();
       res.json({ success: true, data: { patterns, total: patterns.length } });
     } catch (error) {
-      logger.warn("Error fetching pattern library:", error?.message);
+      logger.warn("Error fetching pattern library:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -388,7 +388,7 @@ router?.get(
 router?.get(
   "/insights",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const now = new Date();
@@ -400,7 +400,7 @@ router?.get(
         currentAnalytics,
         previousAnalytics,
         recentReleases,
-        olderReleases,
+        _olderReleases,
         recentRevenue,
         previousRevenue,
         recentPosts,
@@ -572,7 +572,7 @@ router?.get(
         },
       });
     } catch (error) {
-      logger.warn("Error fetching career insights:", error?.message);
+      logger.warn("Error fetching career insights:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -715,7 +715,7 @@ const DEFAULT_RESPONSE =
 router?.post(
   "/chat",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     const parsed = chatSchema?.safeParse(req.body);
     if (!parsed?.success) {
       return res.status(400).json({ error: "Message is required" });

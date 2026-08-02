@@ -102,7 +102,7 @@ const permissionConfig: Record<
 export function SharingDialog({
   open,
   onOpenChange,
-  projectId,
+  _projectId,
   projectName,
   currentMembers,
   currentLinks,

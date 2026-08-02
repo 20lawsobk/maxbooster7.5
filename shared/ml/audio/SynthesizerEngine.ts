@@ -295,7 +295,7 @@ function generateEnvelope(
   params: EnvelopeParams,
   time: number,
   noteOffTime: number | null,
-  _sampleRate: number,
+  sampleRate: number,
 ): number {
   const { attack, decay, sustain, release } = params;
 

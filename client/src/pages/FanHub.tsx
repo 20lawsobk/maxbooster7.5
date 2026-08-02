@@ -110,7 +110,7 @@ export default function FanHub() {
   const [selectedFan, setSelectedFan] = useState<FanSubscriber | null>(null);
   const [isAddingFan, setIsAddingFan] = useState(false);
   const [isComposingMessage, setIsComposingMessage] = useState(false);
-  const [activeTab, setActiveTab] = useState("all");
+  const [_activeTab, setActiveTab] = useState("all");
   const [pendingDeleteFanId, setPendingDeleteFanId] = useState<string | null>(
     null,
   );

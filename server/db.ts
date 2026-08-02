@@ -193,7 +193,7 @@ class InstrumentedPool extends Pool {
   async query(...args: unknown[]): Promise<unknown> {
     const startTime = Date.now();
     const sql =
-      typeof args[0] === "string" ? args[0] : args[0].text || "unknown";
+      typeof args[0] === "string" ? args[0] : (args as any)[0].text || "unknown";
 
     try {
       const result = await super.query(...args);
@@ -223,7 +223,7 @@ export const pool = new InstrumentedPool({
 // than the 'options' startup parameter is safer with Neon's WebSocket proxy,
 // which may not forward arbitrary startup options to the backend.
 pool?.on("connect", (client: Record<string, unknown>) => {
-  client.query("SET statement_timeout = '30000'").catch((err: Error) => {
+  (client.query as any)("SET statement_timeout = '30000'").catch((err: Error) => {
     logger.warn(
       "[DB] Failed to set statement_timeout on new connection:",
       err?.message,
@@ -234,7 +234,7 @@ pool?.on("connect", (client: Record<string, unknown>) => {
 // Pool-level error handler — prevents unhandled 'error' events from idle client
 // disconnects from becoming uncaughtExceptions and crashing the process.
 pool?.on("error", (err: Error) => {
-  logger.warn("[DB] Idle client error (pool):", err?.message);
+  logger.warn({ value: err?.message }, "[DB] Idle client error (pool):");
 });
 
 export const db = drizzle(pool, { schema });
@@ -260,7 +260,7 @@ export const replicaPool = replicaUrl
 // Prevent uncaughtException from replica pool idle client disconnects
 if (replicaPool) {
   replicaPool?.on("error", (err: Error) => {
-    logger.warn("[DB] Idle client error (replica pool):", err?.message);
+    logger.warn({ value: err?.message }, "[DB] Idle client error (replica pool):");
   });
 }
 
@@ -293,7 +293,7 @@ export async function verifyReadReplica(): Promise<void> {
     logger.warn(
       "[db] ❌ Read replica health check FAILED — routing ALL queries to primary",
     );
-    logger.warn(`[db]    Replica error: ${err?.message}`);
+    logger.warn(`[db]    Replica error: ${(err as any)?.message}`);
     logger.warn(
       "[db]    Check DATABASE_REPLICA_URLS — the replica URL may be invalid or the Neon replica may be down",
     );

@@ -108,7 +108,7 @@ export class SocialService {
    */
   async getUserCampaigns(userId: string): Promise<AdCampaign[]> {
     try {
-      return await storage.getUserAdCampaigns(userId);
+      return await (storage as any).getUserAdCampaigns(userId);
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error fetching campaigns:");
       throw new Error("Failed to fetch campaigns");
@@ -123,7 +123,7 @@ export class SocialService {
     userId: string,
   ): Promise<AdCampaign | undefined> {
     try {
-      const campaign = await storage.getAdCampaign(campaignId);
+      const campaign = await (storage as any).getAdCampaign(campaignId);
 
       if (campaign && campaign.userId !== userId) {
         throw new Error("Unauthorized access to campaign");
@@ -146,7 +146,7 @@ export class SocialService {
     variants: Array<{ platform: string; content: string[] }>;
   }> {
     try {
-      const campaign = await storage.getAdCampaign(campaignId);
+      const campaign = await (storage as any).getAdCampaign(campaignId);
       if (!campaign) {
         throw new Error("Campaign not found");
       }
@@ -167,7 +167,7 @@ export class SocialService {
       }
 
       // Store variants in campaign
-      await storage.updateAdCampaign(campaignId, { variants });
+      await (storage as any).updateAdCampaign(campaignId, { variants });
 
       return { variants };
     } catch (error: unknown) {
@@ -184,7 +184,7 @@ export class SocialService {
     schedule: Array<{ platform: string; content: string; scheduledAt: Date }>,
   ): Promise<{ success: boolean; scheduled: number }> {
     try {
-      const campaign = await storage.getAdCampaign(campaignId);
+      const campaign = await (storage as any).getAdCampaign(campaignId);
       if (!campaign) {
         throw new Error("Campaign not found");
       }
@@ -193,7 +193,7 @@ export class SocialService {
       const existingSchedule = (campaign.schedule as unknown[]) || [];
       const newSchedule = [...existingSchedule, ...schedule];
 
-      await storage.updateAdCampaign(campaignId, { schedule: newSchedule });
+      await (storage as any).updateAdCampaign(campaignId, { schedule: newSchedule });
 
       return {
         success: true,
@@ -447,7 +447,7 @@ export class SocialService {
     performanceData: Record<string, unknown>;
   }> {
     try {
-      const campaign = await storage.getAdCampaign(campaignId);
+      const campaign = await (storage as any).getAdCampaign(campaignId);
       if (!campaign) {
         throw new Error("Campaign not found");
       }
@@ -662,8 +662,8 @@ export class SocialService {
 
       // 1. Seed from ad_campaigns.performance JSONB if present
       const perf = campaign.performance as Record<string, number> | null;
-      let totalReach = perf.reach || 0;
-      let totalEngagement = perf.engagement || 0;
+      let totalReach = perf!.reach || 0;
+      let totalEngagement = perf!.engagement || 0;
 
       // 2. Aggregate from published social_campaigns posts in the campaign window
       const startDate = campaign.startDate
@@ -700,10 +700,10 @@ export class SocialService {
       for (const post of posts) {
         const eng = post.engagement as Record<string, number> | null;
         const platform = post.platform || "unknown";
-        const reach = eng.reach || 0;
-        const likes = eng.likes || 0;
-        const comments = eng.comments || 0;
-        const shares = eng.shares || 0;
+        const reach = eng!.reach || 0;
+        const likes = eng!.likes || 0;
+        const comments = eng!.comments || 0;
+        const shares = eng!.shares || 0;
         const engSum = likes + comments + shares;
 
         totalReach += reach;

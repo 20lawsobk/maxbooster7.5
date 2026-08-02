@@ -73,8 +73,8 @@ export function FlowStateUndoHistory({
   onRedo,
   onJumpTo,
   onClear,
-  onBookmark,
-  onSaveSnapshot,
+  _onBookmark,
+  _onSaveSnapshot,
 }: FlowStateUndoHistoryProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);

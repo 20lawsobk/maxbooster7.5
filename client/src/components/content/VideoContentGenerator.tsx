@@ -171,7 +171,7 @@ export function VideoContentGenerator({
   );
 
   const [phase, setPhase] = useState<GeneratorPhase>("idle");
-  const [capabilities, setCapabilities] = useState<BrowserCapabilities | null>(
+  const [_capabilities, setCapabilities] = useState<BrowserCapabilities | null>(
     null,
   );
   const [compilationResult, setCompilationResult] =
@@ -482,18 +482,18 @@ export function VideoContentGenerator({
 
       onVideoGenerated(videoUrl, result.blob);
     } catch (error) {
-      if (error.code === "ABORTED") {
+      if ((error as Error).code === "ABORTED") {
         setPhase("ready");
         return;
       }
 
       logger.error("Export failed:", error);
-      setErrorMessage(error.message || "Video export failed.");
+      setErrorMessage((error as Error).message || "Video export failed.");
       setPhase("error");
 
       toast({
         title: "Export Failed",
-        description: error.message || "Failed to export video.",
+        description: (error as Error).message || "Failed to export video.",
         variant: "destructive",
       });
     }

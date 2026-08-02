@@ -181,7 +181,7 @@ router.get(
     `);
 
       const atRiskUsers = [];
-      for (const row of (rows as Record<string, unknown>).rows ?? rows) {
+      for (const row of (rows as unknown as Record<string, unknown>).rows ?? rows) {
         const activityScore = Number(row.activity_score ?? 0);
 
         if (activityScore === 0) {
@@ -239,8 +239,8 @@ router.get(
  */
 router.get("/ai/forecast-revenue", async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
-    const isAdmin = req.user.role === "admin";
+    const userId = req.user!.id;
+    const isAdmin = req.user!.role === "admin";
 
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -346,7 +346,7 @@ router.get("/ai/forecast-revenue", async (req: Request, res: Response) => {
  */
 router.get("/ai/detect-anomalies", async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
 
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -405,7 +405,7 @@ router.get("/ai/detect-anomalies", async (req: Request, res: Response) => {
  */
 router.get("/ai/insights", async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
 
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
@@ -786,17 +786,17 @@ router?.get("/music/insights", async (req: Request, res: Response) => {
       GROUP BY dow
       ORDER BY total_streams DESC
     `);
-    const dayRows = (dayStreams as Record<string, unknown>).rows ?? dayStreams;
+    const dayRows = (dayStreams as unknown as Record<string, unknown>).rows ?? dayStreams;
 
-    const bestDow = dayRows?.length > 0 ? Number(dayRows[0].dow) : 5;
+    const bestDow = (dayRows as any)?.length > 0 ? Number(dayRows[0].dow) : 5;
     const bestDay = DAY_NAMES[bestDow] ?? "Friday";
     const bestDayStreams =
-      dayRows?.length > 0 ? Number(dayRows[0].total_streams) : 0;
-    const fridayStreams = dayRows?.find(
+      (dayRows as any)?.length > 0 ? Number(dayRows[0].total_streams) : 0;
+    const fridayStreams = (dayRows as any)?.find(
       (r: Record<string, unknown>) => Number(r?.dow) === 5,
     )
       ? Number(
-          dayRows?.find((r: Record<string, unknown>) => Number(r?.dow) === 5)
+          (dayRows as any)?.find((r: Record<string, unknown>) => Number(r?.dow) === 5)
             .total_streams,
         )
       : 0;
@@ -956,8 +956,8 @@ router?.get("/music/release-strategy", async (req: Request, res: Response) => {
       ORDER BY total_streams DESC
     `);
     const dayRowsRS =
-      (dayStreamsRS as Record<string, unknown>).rows ?? dayStreamsRS;
-    const bestDowRS = dayRowsRS?.length > 0 ? Number(dayRowsRS[0].dow) : 5;
+      (dayStreamsRS as unknown as Record<string, unknown>).rows ?? dayStreamsRS;
+    const bestDowRS = (dayRowsRS as any)?.length > 0 ? Number(dayRowsRS[0].dow) : 5;
     const bestDayRS = DAY_NAMES_RS[bestDowRS] ?? "Friday";
 
     const releaseCountRow = await db
@@ -1088,7 +1088,7 @@ router?.get("/historical/yearly", async (req: Request, res: Response) => {
  */
 router.get("/historical/milestones", async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
@@ -1181,7 +1181,7 @@ router.get("/historical/milestones", async (req: Request, res: Response) => {
  */
 router.get("/historical/trends", async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
@@ -1259,7 +1259,7 @@ router.get("/historical/trends", async (req: Request, res: Response) => {
  */
 router.get("/global-ranking", async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
@@ -1438,7 +1438,7 @@ router.get("/global-ranking", async (req: Request, res: Response) => {
  */
 router.post("/natural-language-query", async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
@@ -1902,7 +1902,7 @@ router.post("/natural-language-query", async (req: Request, res: Response) => {
  */
 router.get("/playlist-journeys", async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
@@ -1989,7 +1989,7 @@ router.get("/playlist-journeys", async (req: Request, res: Response) => {
  */
 router.get("/ar-discovery", async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     if (!userId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
@@ -2021,8 +2021,8 @@ router.get("/ar-discovery", async (req: Request, res: Response) => {
       LIMIT 20
     `);
 
-    const rows = (growthRows as Record<string, unknown>).rows ?? growthRows;
-    let artists = rows?.map((row: Record<string, unknown>, _idx: number) => {
+    const rows = (growthRows as unknown as Record<string, unknown>).rows ?? growthRows;
+    let artists = (rows as any)?.map((row: Record<string, unknown>, _idx: number) => {
       const recent = Number(row?.recent_streams ?? 0);
       const prev = Number(row?.prev_streams ?? 0);
       const growth =
@@ -2118,7 +2118,7 @@ router?.post(
         scheduledAt: new Date().toISOString(),
       });
     } catch (error) {
-      logger.warn("Error scheduling export:", error?.message);
+      logger.warn("Error scheduling export:", (error as any)?.message);
       return res.status(500).json({ error: "Failed to schedule export" });
     }
   },

@@ -99,7 +99,7 @@ export class SupportTicketService {
       conditions?.push(
         inArray(
           supportTickets?.status,
-          filters?.status as Record<string, unknown>,
+          filters?.status as unknown as Record<string, unknown>,
         ),
       );
     }
@@ -108,7 +108,7 @@ export class SupportTicketService {
       conditions?.push(
         inArray(
           supportTickets?.priority,
-          filters?.priority as Record<string, unknown>,
+          filters?.priority as unknown as Record<string, unknown>,
         ),
       );
     }
@@ -140,7 +140,7 @@ export class SupportTicketService {
       conditions?.push(
         inArray(
           supportTickets?.status,
-          filters?.status as Record<string, unknown>,
+          filters?.status as unknown as Record<string, unknown>,
         ),
       );
     }
@@ -149,7 +149,7 @@ export class SupportTicketService {
       conditions?.push(
         inArray(
           supportTickets?.priority,
-          filters?.priority as Record<string, unknown>,
+          filters?.priority as unknown as Record<string, unknown>,
         ),
       );
     }
@@ -215,7 +215,7 @@ export class SupportTicketService {
       updateData.resolvedAt = new Date();
     }
 
-    if (updates?.status === "closed" && !ticket[0].closedAt) {
+    if (updates?.status === "closed" && (!ticket[0] as any).closedAt) {
       updateData.closedAt = new Date();
     }
 

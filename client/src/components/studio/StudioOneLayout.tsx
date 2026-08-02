@@ -30,7 +30,7 @@ export function StudioOneLayout({
   arrange,
   console: consolePanel,
   browser,
-  launcher,
+  _launcher,
 }: StudioOneLayoutProps) {
   const {
     
@@ -53,7 +53,7 @@ export function StudioOneLayout({
   const showBrowserInline = !isMobileMode && browserPanel.visible && browser;
   
   // On mobile, only one side panel can be visible at a time (as overlay)
-  const [mobileActivePanel, setMobileActivePanel] = useState<'inspector' | 'browser' | null>(null);
+  const [_mobileActivePanel, setMobileActivePanel] = useState<'inspector' | 'browser' | null>(null);
   
   useEffect(() => {
     if (isMobileMode) {

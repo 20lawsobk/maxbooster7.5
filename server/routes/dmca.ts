@@ -44,7 +44,7 @@ const dmcaNoticeLimiter = rateLimit({
   message: {
     error: "Too many DMCA notices from this IP. Please try again later.",
   },
-  skip: (req) => !!req.user?.isAdmin,
+  skip: (req) => (!!req.user as any)?.isAdmin,
 });
 
 router?.post("/notice", dmcaNoticeLimiter, async (req, res) => {
@@ -147,7 +147,7 @@ router?.get("/notices/:noticeId", async (req, res) => {
     if (
       req.user &&
       notice?.contentOwnerId !== req.user.id &&
-      !req.user.isAdmin
+      (!req.user as any).isAdmin
     ) {
       return res.status(403).json({ error: "Access denied" });
     }
@@ -182,7 +182,7 @@ router?.get("/strikes", async (req, res) => {
 
 router?.get("/admin/pending", async (req, res) => {
   try {
-    if (!req.user?.isAdmin) {
+    if ((!req.user as any)?.isAdmin) {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -201,7 +201,7 @@ router?.get("/admin/pending", async (req, res) => {
 
 router?.get("/admin/all", async (req, res) => {
   try {
-    if (!req.user?.isAdmin) {
+    if ((!req.user as any)?.isAdmin) {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -215,7 +215,7 @@ router?.get("/admin/all", async (req, res) => {
     const result = await dmcaService?.getAllNotices({
       limit,
       offset,
-      status: status as Record<string, unknown>,
+      status: status as unknown as Record<string, unknown>,
     });
 
     res.json(result);
@@ -229,7 +229,7 @@ router?.get("/admin/all", async (req, res) => {
 
 router?.post("/admin/process/:noticeId", async (req, res) => {
   try {
-    if (!req.user?.isAdmin) {
+    if ((!req.user as any)?.isAdmin) {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -264,7 +264,7 @@ router?.post("/admin/process/:noticeId", async (req, res) => {
 
 router?.post("/admin/strikes/:strikeId/revoke", async (req, res) => {
   try {
-    if (!req.user?.isAdmin) {
+    if ((!req.user as any)?.isAdmin) {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -296,7 +296,7 @@ router?.post("/admin/strikes/:strikeId/revoke", async (req, res) => {
 
 router?.get("/legal-holds", async (req, res) => {
   try {
-    if (!req.user?.isAdmin) {
+    if ((!req.user as any)?.isAdmin) {
       return res.status(403).json({ error: "Admin access required" });
     }
 
@@ -314,7 +314,7 @@ router?.get("/legal-holds", async (req, res) => {
 
 router?.post("/legal-holds/:holdId/release", async (req, res) => {
   try {
-    if (!req.user?.isAdmin) {
+    if ((!req.user as any)?.isAdmin) {
       return res.status(403).json({ error: "Admin access required" });
     }
 

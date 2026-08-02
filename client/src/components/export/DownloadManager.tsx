@@ -362,7 +362,7 @@ const DownloadItemRow = memo(function DownloadItemRow({
 
 export function DownloadManager({
   downloads,
-  onStart,
+  _onStart,
   onPause,
   onResume,
   onCancel,

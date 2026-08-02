@@ -124,8 +124,8 @@ export function Timeline({
   snapInterval = 0.25,
   zoom = 1,
   isPlaying = false,
-  selectedTrack = null,
-  onTrackSelect,
+  _selectedTrack = null,
+  _onTrackSelect,
   onTimeChange,
 }: TimelineProps) {
   const {

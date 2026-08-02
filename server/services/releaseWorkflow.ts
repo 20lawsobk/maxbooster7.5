@@ -185,7 +185,7 @@ export class ReleaseWorkflowService {
         return { success: false, error: "Release not found" };
       }
 
-      const currentState = (release?.status as ReleaseState) || "draft";
+      const currentState = ((release as any)?.status as ReleaseState) || "draft";
 
       if (!this.canTransition(currentState, targetState)) {
         return {
@@ -310,7 +310,7 @@ export class ReleaseWorkflowService {
         return { success: false, error: "Release not found" };
       }
 
-      const currentState = release?.status as ReleaseState;
+      const currentState = (release as any)?.status as ReleaseState;
       if (!["live", "updated", "update_pending"].includes(currentState)) {
         return {
           success: false,
@@ -416,7 +416,7 @@ export class ReleaseWorkflowService {
         return { success: false, error: "Release not found" };
       }
 
-      const currentState = release?.status as ReleaseState;
+      const currentState = (release as any)?.status as ReleaseState;
       if (!["live", "updated"].includes(currentState)) {
         return {
           success: false,

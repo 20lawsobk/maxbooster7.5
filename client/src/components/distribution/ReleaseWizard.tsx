@@ -88,7 +88,7 @@ interface ReleaseWizardProps {
 }
 
 export function ReleaseWizard({
-  releaseId,
+  _releaseId,
   onComplete,
   onCancel,
 }: ReleaseWizardProps) {

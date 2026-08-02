@@ -180,7 +180,7 @@ export class RoyaltyDisputeService {
     const conditions = [eq(royaltyDisputes?.userId, userId)];
     if (options?.status)
       conditions?.push(
-        eq(royaltyDisputes?.status, options?.status as Record<string, unknown>),
+        eq(royaltyDisputes?.status, options?.status as unknown as Record<string, unknown>),
       );
 
     return await db
@@ -210,7 +210,7 @@ export class RoyaltyDisputeService {
     const conditions = [];
     if (options?.status)
       conditions?.push(
-        eq(royaltyDisputes?.status, options?.status as Record<string, unknown>),
+        eq(royaltyDisputes?.status, options?.status as unknown as Record<string, unknown>),
       );
     if (options?.priority)
       conditions?.push(eq(royaltyDisputes?.priority, options?.priority));
@@ -245,26 +245,26 @@ export class RoyaltyDisputeService {
       updates.status = input?.status;
 
       if (input?.status === "resolved" || input?.status === "rejected") {
-        updates.resolvedAt = new Date();
+        (updates as any).resolvedAt = new Date();
       }
     }
 
     if (input?.priority) {
-      updates.priority = input?.priority;
+      (updates as any).priority = input?.priority;
     }
 
     if (input?.assignedTo) {
-      updates.assignedTo = input?.assignedTo;
+      (updates as any).assignedTo = input?.assignedTo;
     }
 
     if (input?.internalNote) {
       const existingNotes =
-        (dispute?.internalNotes as Array<{
+        ((dispute as any)?.internalNotes as Array<{
           note: string;
           addedBy: string;
           addedAt: string;
         }>) || [];
-      updates.internalNotes = [
+      (updates as any).internalNotes = [
         ...existingNotes,
         {
           note: input.internalNote.note,
@@ -284,7 +284,7 @@ export class RoyaltyDisputeService {
         input?.resolution.outcome === "partial"
           ? "resolved"
           : "rejected";
-      updates.resolvedAt = new Date();
+      (updates as any).resolvedAt = new Date();
     }
 
     const [updated] = await db
@@ -314,7 +314,7 @@ export class RoyaltyDisputeService {
     }
 
     const existingLog =
-      (dispute?.communicationLog as Array<
+      ((dispute as any)?.communicationLog as Array<
         typeof message & { sentAt: string }
       >) || [];
     const updatedLog = [
@@ -350,7 +350,7 @@ export class RoyaltyDisputeService {
     }
 
     const existingDocs =
-      (dispute?.supportingDocuments as Array<{
+      ((dispute as any)?.supportingDocuments as Array<{
         name: string;
         url: string;
         type: string;
@@ -390,7 +390,7 @@ export class RoyaltyDisputeService {
     }
 
     const existingNotes =
-      (dispute?.internalNotes as Array<{
+      ((dispute as any)?.internalNotes as Array<{
         note: string;
         addedBy: string;
         addedAt: string;
@@ -454,9 +454,9 @@ export class RoyaltyDisputeService {
       .where(eq(royaltyDisputes?.id, disputeId))
       .returning();
 
-    if (resolution?.adjustedAmount && dispute?.statementId) {
+    if (resolution?.adjustedAmount && (dispute as any)?.statementId) {
       await this.applyStatementAdjustment(
-        dispute?.statementId,
+        (dispute as any)?.statementId,
         resolution?.adjustedAmount,
       );
     }
@@ -535,13 +535,13 @@ export class RoyaltyDisputeService {
           break;
       }
 
-      if (dispute?.disputedAmount) {
-        totalDisputedAmount += Number(dispute?.disputedAmount);
+      if ((dispute as any)?.disputedAmount) {
+        totalDisputedAmount += Number((dispute as any)?.disputedAmount);
       }
 
-      if (dispute?.resolvedAt && dispute?.submittedAt) {
+      if ((dispute as any)?.resolvedAt && (dispute as any)?.submittedAt) {
         const days =
-          (dispute?.resolvedAt.getTime() - dispute?.submittedAt.getTime()) /
+          ((dispute as any)?.resolvedAt.getTime() - (dispute as any)?.submittedAt.getTime()) /
           (1000 * 60 * 60 * 24);
         totalResolutionDays += days;
         resolvedCount++;
@@ -594,7 +594,7 @@ export class RoyaltyDisputeService {
     }
 
     const existingAuditTrail =
-      (statement?.auditTrail as Array<{
+      ((statement as any)?.auditTrail as Array<{
         action: string;
         timestamp: string;
         userId: string;
@@ -652,11 +652,11 @@ export class RoyaltyDisputeService {
           outcome: string;
           explanation: string;
         } | null;
-        await emailService?.sendTemplatedEmail(user?.email, "dispute_resolved", {
+        await (emailService as any)?.sendTemplatedEmail(user?.email, "dispute_resolved", {
           userName: user.firstName || user?.username || "User",
           disputeId: dispute.id,
-          outcome: resolution.outcome || "unknown",
-          explanation: resolution.explanation || "",
+          outcome: resolution!.outcome || "unknown",
+          explanation: resolution!.explanation || "",
         });
       }
     } catch (error) {
@@ -858,11 +858,11 @@ export class RoyaltyDisputeService {
     disputeId: string,
   ): Promise<DisputeFundHoldResult | null> {
     const dispute = await this.getDisputeById(disputeId);
-    if (!dispute || !dispute?.disputedAmount) {
+    if (!dispute || (!dispute as any)?.disputedAmount) {
       return null;
     }
 
-    const amount = Number(dispute?.disputedAmount);
+    const amount = Number((dispute as any)?.disputedAmount);
     if (amount <= 0) {
       return null;
     }

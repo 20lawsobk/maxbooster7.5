@@ -255,7 +255,7 @@ router?.delete("/blocked-ips/:ip", async (req: Request, res: Response) => {
   try {
     const { ip } = req.params;
     await selfHealingEngine?.unblockIp(ip);
-    logger.info(`Admin ${req.user.email} unblocked IP: ${ip}`);
+    logger.info(`Admin ${req.user!.email} unblocked IP: ${ip}`);
     res.json({ success: true, message: `IP ${ip} unblocked` });
   } catch (error) {
     logger.warn({ err: error }, "Error unblocking IP:");
@@ -268,7 +268,7 @@ router?.post("/clear-all-blocks", async (req: Request, res: Response) => {
   if (!assertAdmin(req, res)) return;
   try {
     await selfHealingEngine?.clearAllBlocks();
-    logger.warn(`Admin ${req.user.email} cleared ALL blocked IPs`);
+    logger.warn(`Admin ${req.user!.email} cleared ALL blocked IPs`);
     res.json({ success: true, message: "All blocked IPs cleared" });
   } catch (error) {
     logger.warn({ err: error }, "Error clearing blocked IPs:");

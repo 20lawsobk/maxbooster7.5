@@ -163,7 +163,7 @@ router?.post("/", requireAuth, async (req, res) => {
         .status(400)
         .json({
           error: "Validation error",
-          details: (error as Record<string, unknown>).flatten(),
+          details: (error as unknown as Record<string, unknown>).flatten(),
         });
     }
     res.status(500).json({ error: "Failed to create songwriting session" });
@@ -210,7 +210,7 @@ router?.put("/:id", requireAuth, async (req, res) => {
         .status(400)
         .json({
           error: "Validation error",
-          details: (error as Record<string, unknown>).flatten(),
+          details: (error as unknown as Record<string, unknown>).flatten(),
         });
     }
     res.status(500).json({ error: "Failed to update songwriting session" });
@@ -339,11 +339,11 @@ router.post("/ai-assist", requireAuth, async (req, res) => {
     if (
       rhymeResult.status === "fulfilled" &&
       rhymeResult.value &&
-      (rhymeResult.value as Record<string, unknown>).success &&
-      (rhymeResult.value as Record<string, unknown>).data
+      (rhymeResult.value as unknown as Record<string, unknown>).success &&
+      (rhymeResult.value as unknown as Record<string, unknown>).data
     ) {
       const rhymeText: string =
-        (rhymeResult.value as Record<string, unknown>).data.caption || "";
+        (rhymeResult.value as unknown as Record<string, unknown>).data.caption || "";
       const extracted = rhymeText
         .split(/[\s,;|/]+/)
         .map((w: string) => w.replace(/[^a-zA-Z'-]/g, "").toLowerCase())

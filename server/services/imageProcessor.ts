@@ -120,7 +120,7 @@ export async function validateImageFormat(buffer: Buffer): Promise<{
       height: metadata.height,
     };
   } catch (error) {
-    logger.warn("Image format validation failed", { error });
+    logger.warn({ error }, "Image format validation failed");
     return { valid: false, error: "Invalid or corrupted image file" };
   }
 }
@@ -224,14 +224,14 @@ export async function processImage(
     webp: "image/webp",
   };
 
-  logger.info("Image processed successfully", {
+  logger.info({
     originalSize: buffer.length,
     processedSize: processedBuffer.length,
     originalDimensions: `${originalWidth}x${originalHeight}`,
     processedDimensions: `${processedMetadata?.width}x${processedMetadata?.height}`,
     format: outputFormat,
     metadataStripped: options.stripMetadata !== false,
-  });
+  }, "Image processed successfully");
 
   return {
     buffer: processedBuffer,
@@ -254,14 +254,14 @@ export async function stripImageMetadata(buffer: Buffer): Promise<Buffer> {
   try {
     const result = await sharpInstance(buffer).rotate().toBuffer();
 
-    logger.debug("Image metadata stripped", {
+    logger.debug({
       originalSize: buffer.length,
       strippedSize: result.length,
-    });
+    }, "Image metadata stripped");
 
     return result;
   } catch (error) {
-    logger.warn("Failed to strip image metadata", { error });
+    logger.warn({ error }, "Failed to strip image metadata");
     throw new Error("Failed to process image metadata");
   }
 }
@@ -304,7 +304,7 @@ export async function convertToSafeFormat(
       mimeType: mimeTypes[targetFormat],
     };
   } catch (error) {
-    logger.warn("Failed to convert image format", { error, targetFormat });
+    logger.warn({ error, targetFormat }, "Failed to convert image format");
     throw new Error(`Failed to convert image to ${targetFormat}`);
   }
 }
@@ -323,12 +323,12 @@ export async function resizeImage(
   try {
     return await sharpInstance(buffer)
       .resize(maxWidth, maxHeight, {
-        fit: options.fit || "inside",
+        fit: options!.fit || "inside",
         withoutEnlargement: true,
       })
       .toBuffer();
   } catch (error) {
-    logger.warn("Failed to resize image", { error, maxWidth, maxHeight });
+    logger.warn({ error, maxWidth, maxHeight }, "Failed to resize image");
     throw new Error("Failed to resize image");
   }
 }
@@ -348,7 +348,7 @@ export async function getImageDimensions(
     }
     return { width: metadata.width, height: metadata.height };
   } catch (error) {
-    logger.warn("Failed to get image dimensions", { error });
+    logger.warn({ error }, "Failed to get image dimensions");
     throw new Error("Failed to get image dimensions");
   }
 }

@@ -11,10 +11,10 @@ async function getPdimArtistLearningData(artistId: string) {
     const redis = await getRedisClient();
     if (!redis) return null;
     const [patternRaw, peaksRaw, runsRaw, statsRaw] = await Promise?.all([
-      redis?.get(`mb:ads:${artistId}:patterns`).catch(() => null),
-      redis?.lrange(`mb:ads:${artistId}:peaks`, 0, -1).catch(() => []),
-      redis?.lrange(`mb:ads:${artistId}:runs`, 0, -1).catch(() => []),
-      redis?.hgetall(`mb:ads:${artistId}:stats`).catch(() => null),
+      (redis as any)?.get(`mb:ads:${artistId}:patterns`).catch(() => null),
+      (redis as any)?.lrange(`mb:ads:${artistId}:peaks`, 0, -1).catch(() => []),
+      (redis as any)?.lrange(`mb:ads:${artistId}:runs`, 0, -1).catch(() => []),
+      (redis as any)?.hgetall(`mb:ads:${artistId}:stats`).catch(() => null),
     ]);
     return {
       patterns: patternRaw ? JSON.parse(patternRaw) : null,
@@ -40,7 +40,7 @@ async function getPdimArtistLearningData(artistId: string) {
     };
   } catch (e) {
     logger.warn(
-      `[AutopilotLearning] PDIM artist data fetch failed: ${e?.message}`,
+      `[AutopilotLearning] PDIM artist data fetch failed: ${(e as any)?.message}`,
     );
     return null;
   }
@@ -92,7 +92,7 @@ router?.get("/status", requireAuth, async (req, res) => {
         patternsDetected: metrics.patternsDetected,
         microPatternsFound: metrics.microPatternsFound,
         learningMultiplier: `${metrics?.learningMultiplier.toFixed(1)}x`,
-        lastLearningCycle: hyperStatus.metrics.lastCycleAt || null,
+        lastLearningCycle: (hyperStatus.metrics as any).lastCycleAt || null,
         processingTimeMs: metrics.actualProcessingTimeMs,
         humanEquivalentHours: metrics.humanEquivalentHours,
       },

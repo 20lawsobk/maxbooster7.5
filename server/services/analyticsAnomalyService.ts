@@ -64,7 +64,7 @@ export class AnalyticsAnomalyService {
   determineAnomalyType(
     zScore: number,
     _value: number,
-    mean: number,
+    _mean: number,
   ): "spike" | "drop" | "unusual_pattern" {
     if (zScore > 2) return "spike";
     if (zScore < -2) return "drop";
@@ -115,7 +115,7 @@ export class AnalyticsAnomalyService {
     const startDate = new Date();
     startDate?.setDate(startDate?.getDate() - days);
 
-    const analyticsData = await storage?.getStreamsAnalytics(userId, days);
+    const analyticsData = await (storage as any)?.getStreamsAnalytics(userId, days);
 
     const metricData: MetricData[] = [];
 
@@ -223,7 +223,7 @@ export class AnalyticsAnomalyService {
     } catch (error: unknown) {
       await loggingService?.logError(
         "anomaly_detection",
-        `Error detecting anomalies for user ${userId}: ${error?.message}`,
+        `Error detecting anomalies for user ${userId}: ${(error as any)?.message}`,
         error,
         { userId },
         userId,
@@ -282,7 +282,7 @@ export class AnalyticsAnomalyService {
     } catch (error: unknown) {
       await loggingService?.logError(
         "anomaly_detection",
-        `Error detecting anomalies for user ${userId}: ${error?.message}`,
+        `Error detecting anomalies for user ${userId}: ${(error as any)?.message}`,
         error,
         { userId },
         userId,
@@ -296,10 +296,10 @@ export class AnalyticsAnomalyService {
     anomaly: AnomalyDetectionResult,
   ): Promise<void> {
     try {
-      const recentAnomalies = await storage?.getUnacknowledgedAnomalies(userId);
+      const recentAnomalies = await (storage as any)?.getUnacknowledgedAnomalies(userId);
 
       const similarAnomaly = recentAnomalies?.find(
-        (a) =>
+        (a: any) =>
           a?.metricType === metricType &&
           a?.anomalyType === anomaly?.anomalyType &&
           new Date(a?.detectedAt).getTime() > Date?.now() - 60 * 60 * 1000,
@@ -323,7 +323,7 @@ export class AnalyticsAnomalyService {
       };
 
       const createdAnomaly =
-        await storage?.createAnalyticsAnomaly(anomalyRecord);
+        await (storage as any)?.createAnalyticsAnomaly(anomalyRecord);
 
       const shouldNotify =
         anomaly?.severity === "critical" ||
@@ -397,7 +397,7 @@ export class AnalyticsAnomalyService {
     } catch (error: unknown) {
       await loggingService?.logError(
         "anomaly_creation",
-        `Error creating anomaly record: ${error?.message}`,
+        `Error creating anomaly record: ${(error as any)?.message}`,
         error,
         { userId, metricType },
         userId,
@@ -407,7 +407,7 @@ export class AnalyticsAnomalyService {
 
   async detectAnomaliesForAllUsers(): Promise<void> {
     try {
-      const allUsers = await storage?.getAllUsers({ page: 1, limit: 1000 });
+      const allUsers = await (storage as any)?.getAllUsers({ page: 1, limit: 1000 });
 
       const realUsers = (allUsers?.data ?? []).filter(
         (u: { email?: string }) =>
@@ -430,7 +430,7 @@ export class AnalyticsAnomalyService {
     } catch (error: unknown) {
       await loggingService?.logError(
         "anomaly_detection",
-        `Error in batch anomaly detection: ${error?.message}`,
+        `Error in batch anomaly detection: ${(error as any)?.message}`,
         error,
         {},
       );

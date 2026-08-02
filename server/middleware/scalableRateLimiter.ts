@@ -433,7 +433,7 @@ function buildDistributedGlobal(
       maxRequests,
       skip: skipRateLimiting,
       keyGenerator: (req) => {
-        const userId = (req as Record<string, unknown>).user?.id;
+        const userId = ((req as unknown as Record<string, unknown>).user as any)?.id;
         const ip = req.ip || req.socket.remoteAddress || "unknown";
         return `${keyPrefix}:${userId ?? ip}`;
       },
@@ -464,7 +464,7 @@ export const createScalableRateLimiter = (
       skip: skipRateLimiting,
       keyGenerator: (req) => {
         const ip = req.ip || req.socket.remoteAddress || "unknown";
-        const userId = (req as Record<string, unknown>).user?.id;
+        const userId = ((req as unknown as Record<string, unknown>).user as any)?.id;
         return userId ? `user:${userId}` : `ip:${ip}`;
       },
       onRateLimit: (req, res) => {
@@ -525,7 +525,7 @@ export const createHighScaleRateLimiter = (
     ...limits[tier],
     skip: skipRateLimiting,
     keyGenerator: (req) => {
-      const userId = (req as Record<string, unknown>).user?.id;
+      const userId = ((req as unknown as Record<string, unknown>).user as any)?.id;
       return userId ? `${tier}:${userId}` : `${tier}:${req.ip}`;
     },
   });

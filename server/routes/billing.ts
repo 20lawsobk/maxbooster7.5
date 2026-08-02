@@ -481,8 +481,8 @@ router?.get(
       }
 
       const now = new Date();
-      const subscriptionEndsAt = stripeSubscription?.current_period_end
-        ? new Date(stripeSubscription?.current_period_end * 1000)
+      const subscriptionEndsAt = (stripeSubscription as any)?.current_period_end
+        ? new Date((stripeSubscription as any)?.current_period_end * 1000)
         : user?.subscriptionEndsAt;
 
       let computedStatus = user?.subscriptionStatus || "inactive";
@@ -807,7 +807,7 @@ router?.post(
           code: "SUBSCRIPTION_ALREADY_CANCELLING",
           retryable: false,
           cancelAt: new Date(
-            subscription?.current_period_end * 1000,
+            (subscription as any)?.current_period_end * 1000,
           ).toISOString(),
         });
       }
@@ -853,10 +853,10 @@ router?.post(
             "Subscription will be canceled at the end of the billing period",
           code: "SUBSCRIPTION_CANCELLING",
           cancelAt: new Date(
-            subscription?.current_period_end * 1000,
+            (subscription as any)?.current_period_end * 1000,
           ).toISOString(),
           daysRemaining: Math.ceil(
-            (subscription?.current_period_end * 1000 - Date?.now()) /
+            ((subscription as any)?.current_period_end * 1000 - Date?.now()) /
               (1000 * 60 * 60 * 24),
           ),
         });
@@ -970,7 +970,7 @@ router?.post(
         message: "Subscription has been reactivated",
         code: "SUBSCRIPTION_REACTIVATED",
         nextBillingDate: new Date(
-          subscription?.current_period_end * 1000,
+          (subscription as any)?.current_period_end * 1000,
         ).toISOString(),
       });
     } catch (error) {
@@ -1355,7 +1355,7 @@ router?.post(
 
         if (mappedError?.code === "REQUIRES_3D_SECURE") {
           const paymentIntent = await stripe!.paymentIntents?.retrieve(
-            latestInvoice?.payment_intent as string,
+            (latestInvoice as any)?.payment_intent as string,
           );
 
           return res.status(402).json({
@@ -1578,7 +1578,7 @@ router?.post(
             lastError?.message ||
             "3D Secure authentication failed. Please try a different card.",
           code: "3DS_FAILED",
-          declineCode: lastError.decline_code,
+          declineCode: lastError!.decline_code,
           status: "failed",
           retryable: true,
         });
@@ -1687,7 +1687,7 @@ router?.post(
           });
         }
 
-        chargeToRefund = invoice?.charge as string;
+        chargeToRefund = (invoice as any)?.charge as string;
         refundableAmount = invoice?.amount_paid;
       } else if (chargeId) {
         const charge = await stripe?.charges.retrieve(chargeId);
@@ -1989,7 +1989,7 @@ router?.get(
 
         const gracePeriodDays = 7;
         const currentPeriodEnd = new Date(
-          stripeSubscription?.current_period_end * 1000,
+          (stripeSubscription as any)?.current_period_end * 1000,
         );
         gracePeriodEndsAt = new Date(
           currentPeriodEnd?.getTime() + gracePeriodDays * 24 * 60 * 60 * 1000,
@@ -2017,17 +2017,17 @@ router?.get(
       res.json({
         inGracePeriod: gracePeriodActive && !isGracePeriodExpired,
         gracePeriodActive,
-        gracePeriodEndsAt: gracePeriodEndsAt.toISOString() || null,
+        gracePeriodEndsAt: gracePeriodEndsAt!.toISOString() || null,
         gracePeriodDaysRemaining: gracePeriodDaysRemaining || 0,
         gracePeriodExpired: isGracePeriodExpired,
         subscriptionStatus:
           stripeSubscription?.status || user?.subscriptionStatus || "inactive",
         tier: user.subscriptionTier || "free",
         payment: {
-          failedAt: paymentFailedAt.toISOString() || null,
+          failedAt: paymentFailedAt!.toISOString() || null,
           retryAttempts,
           maxRetryAttempts: 4,
-          nextRetryAt: nextRetryAt.toISOString() || null,
+          nextRetryAt: nextRetryAt!.toISOString() || null,
           retriesExhausted: retryAttempts >= 4,
         },
         actions: gracePeriodActive
@@ -2083,13 +2083,13 @@ router?.get(
           limit: 100,
         });
 
-        const disputedCharges = charges?.data.filter((charge) => charge?.dispute);
+        const disputedCharges = charges?.data.filter((charge) => (charge as any)?.dispute);
         const disputes: unknown[] = [];
 
         for (const charge of disputedCharges) {
-          if (charge?.dispute) {
+          if ((charge as any)?.dispute) {
             const dispute = await stripe?.disputes.retrieve(
-              charge?.dispute as string,
+              (charge as any)?.dispute as string,
             );
             disputes?.push({
               id: dispute.id,
@@ -2135,7 +2135,7 @@ router?.get(
 
         disputes?.sort(
           (a, b) =>
-            new Date(b?.created).getTime() - new Date(a?.created).getTime(),
+            new Date((b as any)?.created).getTime() - new Date((a as any)?.created).getTime(),
         );
 
         return res.json({
@@ -2228,7 +2228,7 @@ router?.get(
                         : "red",
             isOverdue,
             created: new Date(invoice?.created * 1000).toISOString(),
-            dueDate: dueDate.toISOString() || null,
+            dueDate: dueDate!.toISOString() || null,
             paidAt: invoice.status_transitions?.paid_at
               ? new Date(
                   invoice?.status_transitions.paid_at * 1000,
@@ -2320,7 +2320,7 @@ router?.get(
 
         refunds?.sort(
           (a, b) =>
-            new Date(b?.created).getTime() - new Date(a?.created).getTime(),
+            new Date((b as any)?.created).getTime() - new Date((a as any)?.created).getTime(),
         );
 
         return res.json({

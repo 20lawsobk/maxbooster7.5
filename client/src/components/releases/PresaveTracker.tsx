@@ -32,10 +32,10 @@ interface PresaveTrackerProps {
 }
 
 export function PresaveTracker({
-  countdownId,
+  _countdownId,
   presaveUrl,
   analytics,
-  isLoading,
+  _isLoading,
 }: PresaveTrackerProps) {
   const { toast } = useToast();
 

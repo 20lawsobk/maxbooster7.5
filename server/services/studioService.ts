@@ -379,7 +379,7 @@ export class StudioService {
   }
 
   async processAudio(
-    audioId: string,
+    _audioId: string,
     audioPath: string,
     userId?: string,
   ): Promise<{ waveformData: number[]; peaks: number[] }> {
@@ -475,12 +475,12 @@ export class StudioService {
       const [allAudioClipArrays, allMidiClipArrays] = await Promise?.all([
         Promise?.all(
           tracks?.map((t: Record<string, unknown>) =>
-            storageAny?.getTrackAudioClips(t?.id),
+            storageAny?.getTrackAudioClips((t?.id as string)),
           ),
         ),
         Promise?.all(
           tracks?.map((t: Record<string, unknown>) =>
-            storageAny?.getTrackMidiClips(t?.id),
+            storageAny?.getTrackMidiClips((t?.id as string)),
           ),
         ),
       ]);
@@ -968,7 +968,7 @@ export class StudioService {
         try {
           await fsPromises?.unlink(frozenPath);
         } catch (e) {
-          if (e?.code !== "ENOENT") throw e;
+          if ((e as any)?.code !== "ENOENT") throw e;
         }
       }
 

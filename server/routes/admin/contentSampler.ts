@@ -39,7 +39,7 @@ const CONTENT_TYPES_BY_PLATFORM: Record<string, string[]> = {
   linkedin:  ["article", "video", "poll", "document"],
 };
 
-const MUSICAL_KEYS = [
+const _MUSICAL_KEYS = [
   "C Major","C Minor","C# Minor","Db Major",
   "D Major","D Minor","Eb Major","Eb Minor",
   "E Major","E Minor","F Major","F Minor",
@@ -266,7 +266,7 @@ function buildPostCaption(platform: string, contentType: string, genre: string):
 
   const openLine = contentTypePitch[contentType] || `New ${genre} beat available for licensing.`;
   const [minL, maxL] = bench.idealCaptionLength;
-  const targetLen = Math.round((minL + maxL) / 2);
+  const _targetLen = Math.round((minL + maxL) / 2);
 
   let caption = openLine.replace(/\${genre}/g, genre);
   // Pad to target length naturally

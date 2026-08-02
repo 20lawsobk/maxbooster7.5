@@ -77,7 +77,7 @@ export function WebLayout({
   showSidebar = true,
   className,
 }: WebLayoutProps) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [_isSidebarOpen, _setIsSidebarOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const fluidLayout = useFluidLayout();
   const {

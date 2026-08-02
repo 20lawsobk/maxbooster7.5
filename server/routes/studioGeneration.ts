@@ -5,7 +5,7 @@ import { logger } from "../logger.js";
 import { createHardenedUpload } from "../middleware/uploadHandler.js";
 import { randomBytes } from "crypto";
 import {
-  generateFromText,
+  _generateFromText,
   generateFromReference,
 } from "../services/aiAudioGeneratorService.js";
 import {
@@ -294,7 +294,7 @@ router?.post(
 
       res.status(500).json({
         success: false,
-        message: error.message || "Failed to generate audio from reference",
+        message: (error as Error).message || "Failed to generate audio from reference",
       });
     }
   },
@@ -769,7 +769,7 @@ router?.post(
         );
         stdout = out?.stdout;
         stderr = out?.stderr;
-      } catch (execErr: Record<string, unknown>) {
+      } catch (execErr: any) {
         const msg =
           execErr?.stderr?.trim() ||
           execErr?.message ||
@@ -820,7 +820,7 @@ router?.post(
           noteName: NOTES[n?.midi % 12] + n?.octave,
           duration: n.duration_beats,
           syllable: "",
-          stress: n.position_beats % 1 < 0.1,
+          stress: (n.position_beats as any) % 1 < 0.1,
         }),
       );
 

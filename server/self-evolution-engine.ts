@@ -1810,14 +1810,14 @@ export class SelfEvolutionEngine extends EventEmitter {
         // Look up our advantage status for this feature (fuzzy key match)
         const advantageEntry = this.lookupAdvantage(feature);
 
-        if (advantageEntry.level === "surpassed") {
+        if (advantageEntry!.level === "surpassed") {
           // We win on this dimension — no action needed
           totalPoints += 3;
           surpassedCount++;
           continue;
         }
 
-        if (advantageEntry.level === "at_parity") {
+        if (advantageEntry!.level === "at_parity") {
           // Parity is not the goal — generate a change to SURPASS this feature
           totalPoints += 1;
           parityCount++;
@@ -1830,7 +1830,7 @@ export class SelfEvolutionEngine extends EventEmitter {
               source: "competitor",
               category: "optimization",
               title: `Surpass ${competitor.name}: "${feature}"`,
-              description: `Max Booster has an equivalent but has not meaningfully differentiated. ${advantageEntry.reason} Target: be definitively better than ${competitor.name} on this dimension.`,
+              description: `Max Booster has an equivalent but has not meaningfully differentiated. ${advantageEntry!.reason} Target: be definitively better than ${competitor.name} on this dimension.`,
               detectedAt: new Date(),
               urgency: "high",
               affectedModules: this.inferModulesFromFeature(feature),
@@ -2336,7 +2336,7 @@ export class SelfEvolutionEngine extends EventEmitter {
 
   private async recordDeployment(upgrade: CodeUpgrade): Promise<void> {
     try {
-      await storage?.createOptimizationTask({
+      await (storage as any)?.createOptimizationTask({
         taskType: "self_evolution",
         // Honest status: 'completed' only when a real behavior change was
         // applied; otherwise 'recorded' (stored but not behavior-changing).

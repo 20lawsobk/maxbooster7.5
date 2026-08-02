@@ -53,9 +53,9 @@ const COUNT_IN_OPTIONS = [0, 1, 2, 4];
 export function FlowStateRecording({
   open,
   onOpenChange,
-  trackId,
+  _trackId,
   trackName = "Audio Track",
-  projectId,
+  _projectId,
   onRecordingComplete,
   onRecordingStart,
   onRecordingStop,

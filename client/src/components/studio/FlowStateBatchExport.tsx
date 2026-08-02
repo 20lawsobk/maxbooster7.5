@@ -305,7 +305,7 @@ export function FlowStateBatchExport({
   const { toast } = useToast();
   const [exportTracks, setExportTracks] = useState<ExportTrack[]>(tracks);
   const [selectedPreset, setSelectedPreset] = useState<string>("distribution");
-  const [customOutputs, setCustomOutputs] = useState<ExportOutput[]>([]);
+  const [customOutputs, _setCustomOutputs] = useState<ExportOutput[]>([]);
   const [isExporting, setIsExporting] = useState(false);
   const [exportProgress, setExportProgress] = useState<ExportProgress[]>([]);
   const [outputFolder, setOutputFolder] = useState(`${projectName}_exports`);

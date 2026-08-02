@@ -143,7 +143,7 @@ const generateChordFromRoot = (
 };
 
 export function FlowStateChordSuggestions({
-  melodyNotes = [],
+  _melodyNotes = [],
   currentKey = "C Major",
   onSelectProgression,
   onApplyChord,

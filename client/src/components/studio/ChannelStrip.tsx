@@ -43,7 +43,7 @@ interface ChannelStripProps {
 }
 
 export function ChannelStrip({
-  id,
+  _id,
   name,
   color,
   volume,
@@ -356,7 +356,7 @@ export function ChannelStrip({
           step={0.01}
           size={40}
           label="PAN"
-          valueDisplay={(val) =>
+          valueDisplay={(val: any) =>
             val === 0
               ? "C"
               : val < 0

@@ -126,7 +126,7 @@ class AutoPostingService {
     const results: PostResult[] = [];
 
     // Get user's connected platforms and tokens
-    const user = await storage.getUserById(userId);
+    const user = await (storage as any).getUserById(userId);
     if (!user) {
       throw new Error("User not found");
     }
@@ -141,7 +141,7 @@ class AutoPostingService {
         results.push({
           platform,
           success: false,
-          error: error.message,
+          error: (error as Error).message,
           postedAt: new Date(),
         });
       }
@@ -150,7 +150,7 @@ class AutoPostingService {
     await Promise.all(postPromises);
 
     // Track in analytics
-    await storage.trackSocialPost({
+    await (storage as any).trackSocialPost({
       userId,
       platforms,
       content: content.text,
@@ -255,10 +255,10 @@ class AutoPostingService {
     } catch (error) {
       logger.warn(
         "Facebook posting error:",
-        error.response.data || error.message,
+        (error as any).response.data || (error as Error).message,
       );
       throw new Error(
-        `Facebook: ${error.response.data.error.message || error.message}`,
+        `Facebook: ${(error as any).response?.data?.message || (error as Error).message}`,
       );
     }
   }
@@ -310,10 +310,10 @@ class AutoPostingService {
     } catch (error) {
       logger.warn(
         "Instagram posting error:",
-        error.response.data || error.message,
+        (error as any).response.data || (error as Error).message,
       );
       throw new Error(
-        `Instagram: ${error.response.data.error.message || error.message}`,
+        `Instagram: ${(error as any).response?.data?.message || (error as Error).message}`,
       );
     }
   }
@@ -357,10 +357,10 @@ class AutoPostingService {
     } catch (error) {
       logger.warn(
         "Twitter posting error:",
-        error.response.data || error.message,
+        (error as any).response.data || (error as Error).message,
       );
       throw new Error(
-        `Twitter: ${error.response.data.detail || error.message}`,
+        `Twitter: ${(error as any).response.data.detail || (error as Error).message}`,
       );
     }
   }
@@ -419,10 +419,10 @@ class AutoPostingService {
     } catch (error) {
       logger.warn(
         "TikTok posting error:",
-        error.response.data || error.message,
+        (error as any).response.data || (error as Error).message,
       );
       throw new Error(
-        `TikTok: ${error.response.data.message || error.message}`,
+        `TikTok: ${(error as any).response.data.message || (error as Error).message}`,
       );
     }
   }
@@ -442,7 +442,7 @@ class AutoPostingService {
       };
 
       if (content.mediaUrl && content.mediaType === "image") {
-        postData.snippet.images = [{ url: content.mediaUrl }];
+        (postData.snippet as any).images = [{ url: content.mediaUrl }];
       }
 
       const response = await axios.post(
@@ -466,10 +466,10 @@ class AutoPostingService {
     } catch (error) {
       logger.warn(
         "YouTube posting error:",
-        error.response.data || error.message,
+        (error as any).response.data || (error as Error).message,
       );
       throw new Error(
-        `YouTube: ${error.response.data.error.message || error.message}`,
+        `YouTube: ${(error as any).response?.data?.message || (error as Error).message}`,
       );
     }
   }
@@ -514,7 +514,7 @@ class AutoPostingService {
       };
 
       if (content?.mediaUrl && content?.mediaType === "image") {
-        postData.specificContent["com.linkedin.ugc.ShareContent"].media = [
+        (postData.specificContent as any)["com.linkedin.ugc.ShareContent"].media = [
           {
             status: "READY",
             description: { text: this.formatContent(content, 200) },
@@ -545,10 +545,10 @@ class AutoPostingService {
     } catch (error) {
       logger.warn(
         "LinkedIn posting error:",
-        error?.response?.data || error?.message,
+        (error as any)?.response?.data || (error as any)?.message,
       );
       throw new Error(
-        `LinkedIn: ${error?.response?.data?.message || error?.message}`,
+        `LinkedIn: ${(error as any)?.response?.data?.message || (error as any)?.message}`,
       );
     }
   }
@@ -586,10 +586,10 @@ class AutoPostingService {
     } catch (error) {
       logger.warn(
         "Threads posting error:",
-        error?.response?.data || error?.message,
+        (error as any)?.response?.data || (error as any)?.message,
       );
       throw new Error(
-        `Threads: ${error?.response?.data?.error?.message || error?.message}`,
+        `Threads: ${(error as any)?.response?.data?.error?.message || (error as any)?.message}`,
       );
     }
   }
@@ -637,10 +637,10 @@ class AutoPostingService {
     } catch (error) {
       logger.warn(
         "Google Business posting error:",
-        error?.response?.data || error?.message,
+        (error as any)?.response?.data || (error as any)?.message,
       );
       throw new Error(
-        `Google Business: ${error?.response?.data?.error?.message || error?.message}`,
+        `Google Business: ${(error as any)?.response?.data?.error?.message || (error as any)?.message}`,
       );
     }
   }
@@ -714,7 +714,7 @@ class AutoPostingService {
     userId: string,
     platform: string,
   ): Promise<string | null> {
-    const tokens = await storage?.getSocialTokens(userId, platform);
+    const tokens = await (storage as any)?.getSocialTokens(userId, platform);
     if (!tokens || !tokens?.accessToken) {
       return null;
     }
@@ -762,7 +762,7 @@ class AutoPostingService {
     } catch (error) {
       logger.warn({ err: error }, `Token refresh failed for ${platform}:`);
       throw new Error(
-        `Failed to refresh ${platform} access token: ${error?.message}`,
+        `Failed to refresh ${platform} access token: ${(error as any)?.message}`,
       );
     }
   }

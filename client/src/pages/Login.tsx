@@ -83,11 +83,11 @@ export default function Login() {
     password?: string;
   }>({});
   const [isDemoLoading, setIsDemoLoading] = useState(false);
-  const [accountLockedUntil, setAccountLockedUntil] = useState<Date | null>(
+  const [_accountLockedUntil, _setAccountLockedUntil] = useState<Date | null>(
     null,
   );
   const queryClient = useQueryClient();
-  const [location, navigate] = useLocation();
+  const [_location, navigate] = useLocation();
   const { toast } = useToast();
 
   const redirectAfterLogin = (() => {

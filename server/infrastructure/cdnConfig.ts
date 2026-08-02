@@ -39,7 +39,7 @@ class CDNManager {
     this.config = {
       enabled: process.env.CDN_ENABLED === "true",
       provider:
-        (process.env.CDN_PROVIDER as Record<string, unknown>) || "cloudflare",
+        (process.env.CDN_PROVIDER as unknown as Record<string, unknown>) || "cloudflare",
       baseUrl: process.env.CDN_BASE_URL || "",
       staticAssetPaths: ["/static", "/assets", "/uploads", "/audio"],
       cacheControlRules: DEFAULT_CACHE_RULES,
@@ -129,7 +129,7 @@ class CDNManager {
         logger.info(`CDN cache purged for ${paths?.length} paths`);
         return true;
       } else {
-        logger.warn("CDN purge failed:", await response?.text());
+        logger.warn({ value: await response?.text() }, "CDN purge failed:");
         return false;
       }
     } catch (error) {
@@ -159,7 +159,7 @@ class CDNManager {
         logger.info("CDN cache fully purged");
         return true;
       } else {
-        logger.warn("CDN full purge failed:", await response?.text());
+        logger.warn({ value: await response?.text() }, "CDN full purge failed:");
         return false;
       }
     } catch (error) {

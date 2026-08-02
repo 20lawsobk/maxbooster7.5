@@ -72,8 +72,8 @@ export class SemanticArchiver {
         out["_truncated"] = `+${keys?.length - 32} more keys`;
       return out;
     }
-    if (typeof val === "string" && val?.length > 200) {
-      return val?.substring(0, 200) + "...[truncated]";
+    if (typeof val === "string" && (val as any)?.length > 200) {
+      return (val as any)?.substring(0, 200) + "...[truncated]";
     }
     return val;
   }

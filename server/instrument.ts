@@ -118,7 +118,7 @@ process.on("uncaughtException", (err) => {
 
 process.on("unhandledRejection", (reason: Record<string, unknown>) => {
   const err = reason instanceof Error ? reason : new Error(String(reason));
-  const code = (reason as NodeJS.ErrnoException)?.code;
+  const code = (reason as unknown as NodeJS.ErrnoException)?.code;
 
   // Completely silent: circuit-open rejections are already owned by the
   // circuit breaker's own rate-limited logging — duplicating them here

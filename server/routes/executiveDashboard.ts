@@ -17,7 +17,7 @@ router?.use(requireAdmin);
  */
 router?.get(
   "/dashboard",
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (_req: any, res: any) => {
     try {
       const [queueHealth, aiMetrics, dashboard] = await Promise?.all([
         queueMonitor?.getHealthStatus(),
@@ -131,7 +131,7 @@ router?.get(
         dashboard: executiveDashboard,
       });
     } catch (error) {
-      logger.warn("Error fetching executive dashboard:", error?.message);
+      logger.warn("Error fetching executive dashboard:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -144,7 +144,7 @@ router?.get(
  */
 router?.get(
   "/health-summary",
-  asyncHandler(async (_req, res) => {
+  asyncHandler(async (_req: any, res: any) => {
     try {
       const queueHealth = await queueMonitor?.getHealthStatus();
 
@@ -157,7 +157,7 @@ router?.get(
         timestamp: new Date(),
       });
     } catch (error) {
-      logger.warn("Error fetching health summary:", error?.message);
+      logger.warn("Error fetching health summary:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),

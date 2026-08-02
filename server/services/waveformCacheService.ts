@@ -44,21 +44,21 @@ class WaveformCacheService {
     const cached = waveformCache?.get(cacheKey);
 
     if (cached && cached?.expiresAt > new Date()) {
-      logger.debug("Waveform cache hit", { audioKey, resolution });
+      logger.debug({ audioKey, resolution }, "Waveform cache hit");
       return cached?.waveformData;
     }
 
-    logger.debug("Waveform cache miss, generating", { audioKey, resolution });
+    logger.debug({ audioKey, resolution }, "Waveform cache miss, generating");
 
     let buffer = audioBuffer;
     if (!buffer) {
       try {
         buffer = await storageService?.downloadFile(audioKey);
       } catch (error) {
-        logger.warn("Failed to download audio for waveform generation", {
+        logger.warn({
           audioKey,
           error,
-        });
+        }, "Failed to download audio for waveform generation");
         throw new Error(
           "Failed to retrieve audio file for waveform generation",
         );
@@ -133,7 +133,7 @@ class WaveformCacheService {
         resolution,
       };
     } catch (error) {
-      logger.warn("Error generating waveform from WAV", { error });
+      logger.warn({ error }, "Error generating waveform from WAV");
       return this.generateFallbackWaveform(resolution);
     }
   }
@@ -227,7 +227,7 @@ class WaveformCacheService {
         waveformCache?.delete(key);
       }
     }
-    logger.debug("Waveform cache invalidated", { audioKey });
+    logger.debug({ audioKey }, "Waveform cache invalidated");
   }
 
   clearExpiredCache(): number {
@@ -242,7 +242,7 @@ class WaveformCacheService {
     }
 
     if (cleared > 0) {
-      logger.info("Cleared expired waveform cache entries", { count: cleared });
+      logger.info({ count: cleared }, "Cleared expired waveform cache entries");
     }
 
     return cleared;

@@ -191,13 +191,13 @@ async function getCachedData<T>(key: string): Promise<T | null> {
     const redis = await getRedisClient();
     if (!redis) return null;
 
-    const cached = await redis?.get(`${CACHE_PREFIX}${key}`);
+    const cached = await (redis as any)?.get(`${CACHE_PREFIX}${key}`);
     if (cached) {
       return JSON.parse(cached) as T;
     }
     return null;
   } catch (error) {
-    logger.debug(`Cache read error for ${key}:`, error);
+    logger.debug({ err: error }, `Cache read error for ${key}:`);
     return null;
   }
 }
@@ -211,9 +211,9 @@ async function setCachedData<T>(
     const redis = await getRedisClient();
     if (!redis) return;
 
-    await redis?.setex(`${CACHE_PREFIX}${key}`, ttl, JSON.stringify(data));
+    await (redis as any)?.setex(`${CACHE_PREFIX}${key}`, ttl, JSON.stringify(data));
   } catch (error) {
-    logger.debug(`Cache write error for ${key}:`, error);
+    logger.debug({ err: error }, `Cache write error for ${key}:`);
   }
 }
 
@@ -357,9 +357,9 @@ export async function executeSendgridOperation<T>(
 ): Promise<FallbackResult<T>> {
   return executeWithFallback(sendgridCircuit, operation, {
     ...options,
-    queueOnFailure: options.queueOnFailure ?? true,
+    queueOnFailure: options!.queueOnFailure ?? true,
     operationName: "sendgrid_email",
-    payload: options.emailData,
+    payload: options!.emailData,
   });
 }
 
@@ -401,9 +401,9 @@ export async function executeSocialApiOperation<T>(
 
   return executeWithFallback(circuit, operation, {
     ...options,
-    queueOnFailure: options.queueOnFailure ?? true,
+    queueOnFailure: options!.queueOnFailure ?? true,
     operationName: `${platform}_api_call`,
-    payload: options.postData,
+    payload: options!.postData,
   });
 }
 
@@ -432,7 +432,7 @@ export async function executeLabelGridOperation<T>(
 ): Promise<FallbackResult<T>> {
   return executeWithFallback(labelGridCircuit, operation, {
     ...options,
-    queueOnFailure: options.queueOnFailure ?? true,
+    queueOnFailure: options!.queueOnFailure ?? true,
     operationName: "labelgrid_operation",
   });
 }
@@ -448,7 +448,7 @@ export async function executeDspOperation<T>(
 ): Promise<FallbackResult<T>> {
   return executeWithFallback(dspCircuit, operation, {
     ...options,
-    queueOnFailure: options.queueOnFailure ?? true,
+    queueOnFailure: options!.queueOnFailure ?? true,
     operationName: "dsp_operation",
   });
 }

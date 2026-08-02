@@ -203,7 +203,7 @@ interface StreamingAnalyticsProps {
 }
 
 export function StreamingAnalytics({
-  userId,
+  _userId,
   timeRange = "30d",
   onTimeRangeChange,
 }: StreamingAnalyticsProps) {

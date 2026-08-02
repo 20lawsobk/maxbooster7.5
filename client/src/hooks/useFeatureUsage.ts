@@ -168,15 +168,15 @@ export function useFeatureUsage() {
 
   const visibleFeatures = useMemo(() => {
     return (visibilitySettings || [])
-      .filter((f) => f?.isVisible)
-      .sort((a, b) => b?.priority - a?.priority)
-      .map((f) => f?.featureId);
+      .filter((f: any) => f?.isVisible)
+      .sort((a: any, b: any) => b?.priority - a?.priority)
+      .map((f: any) => f?.featureId);
   }, [visibilitySettings]);
 
   const hiddenFeatures = useMemo(() => {
     return (visibilitySettings || [])
-      .filter((f) => !f?.isVisible)
-      .map((f) => f?.featureId);
+      .filter((f: any) => !f?.isVisible)
+      .map((f: any) => f?.featureId);
   }, [visibilitySettings]);
 
   const trackFeatureStart = useCallback(

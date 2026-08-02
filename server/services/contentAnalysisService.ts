@@ -883,7 +883,7 @@ export class ContentAnalysisService {
         .div(255.0)
         .expandDims(0);
 
-      const prediction = this.faceDetectionModel.predict(imageTensor) as Record<
+      const prediction = this.faceDetectionModel.predict(imageTensor) as unknown as Record<
         string,
         unknown
       >;
@@ -1039,8 +1039,8 @@ export class ContentAnalysisService {
     let score = 0.5;
 
     if (colors?.mood === "vibrant") score += 0.15;
-    if (composition.complexity > 0.6) score += 0.15;
-    if (features.professionalQuality > 0.8) score += 0.2;
+    if ((composition.complexity as any) > 0.6) score += 0.15;
+    if ((features.professionalQuality as any) > 0.8) score += 0.2;
 
     return Math.min(1, score);
   }
@@ -1148,14 +1148,14 @@ export class ContentAnalysisService {
 
       const result: AudioAnalysisResult = {
         music: {
-          tempo: metadata.tempo || 120,
-          key: metadata.key || "C",
-          mode: metadata.mode || "major",
-          genre: metadata.genre || ["pop", "electronic"],
-          energy: metadata.energy || 0.7,
-          danceability: metadata.danceability || 0.8,
-          valence: metadata.valence || 0.6,
-          acousticness: metadata.acousticness || 0.3,
+          tempo: metadata!.tempo || 120,
+          key: metadata!.key || "C",
+          mode: metadata!.mode || "major",
+          genre: metadata!.genre || ["pop", "electronic"],
+          energy: metadata!.energy || 0.7,
+          danceability: metadata!.danceability || 0.8,
+          valence: metadata!.valence || 0.6,
+          acousticness: metadata!.acousticness || 0.3,
         },
         production: {
           quality: 0.85,

@@ -191,7 +191,7 @@ class ChainErrorAutoFixer extends EventEmitter {
           );
         } catch (err) {
           logger.warn(
-            `[ChainFixer] Repeatable job re-registration attempt failed: ${err.message}`,
+            `[ChainFixer] Repeatable job re-registration attempt failed: ${(err as Error).message}`,
           );
           throw err;
         }
@@ -253,7 +253,7 @@ class ChainErrorAutoFixer extends EventEmitter {
           logger.info("[ChainFixer] PocketFabric re-initialized successfully");
         } catch (err) {
           logger.warn(
-            `[ChainFixer] PocketFabric re-init failed: ${err.message}`,
+            `[ChainFixer] PocketFabric re-init failed: ${(err as Error).message}`,
           );
           throw err;
         }
@@ -645,7 +645,7 @@ class ChainErrorAutoFixer extends EventEmitter {
           }
         } catch (err) {
           logger.warn(
-            `[ChainFixer] Autonomous restart attempt failed: ${err.message}`,
+            `[ChainFixer] Autonomous restart attempt failed: ${(err as Error).message}`,
           );
         }
       },
@@ -675,7 +675,7 @@ class ChainErrorAutoFixer extends EventEmitter {
           );
         } catch (err) {
           logger.warn(
-            `[ChainFixer] Session store — DB pool also failing: ${err.message}`,
+            `[ChainFixer] Session store — DB pool also failing: ${(err as Error).message}`,
           );
         }
       },
@@ -1141,7 +1141,7 @@ class ChainErrorAutoFixer extends EventEmitter {
     let matched = false;
 
     for (const pattern of this.patterns) {
-      if (!pattern?.levels.includes(entry?.level as Record<string, unknown>))
+      if (!pattern?.levels.includes(entry?.level as unknown as Record<string, unknown>))
         continue;
       if (!pattern?.matchers.some((r) => r?.test(msg))) continue;
       matched = true;
@@ -1189,7 +1189,7 @@ class ChainErrorAutoFixer extends EventEmitter {
           });
           // Non-fatal known errors — swallow them so the default handler never fires
           if (pattern?.severity === "low" || pattern?.severity === "medium") {
-            process.emit("_chainFixerAbsorbed" as Record<string, unknown>, err);
+            process.emit("_chainFixerAbsorbed" as unknown as Record<string, unknown>, err);
           }
         }
       }
@@ -1413,7 +1413,7 @@ class ChainErrorAutoFixer extends EventEmitter {
       st.failCount++;
       st.lastFixResult = "failed";
       entry.result = "failed";
-      this.emit("fixFailed", { patternId: pattern.id, error: err.message });
+      this.emit("fixFailed", { patternId: pattern.id, error: (err as Error).message });
     }
 
     this.pushHistory(entry);

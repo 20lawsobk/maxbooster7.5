@@ -47,9 +47,9 @@ interface TrackNode {
 
 export function FlowState3DWorkspace({
   tracks = [],
-  projectId,
+  _projectId,
   isPlaying = false,
-  currentTime = 0,
+  _currentTime = 0,
   onTrackSelect = () => {},
   selectedTrackIds = [],
 }: FlowState3DWorkspaceProps) {
@@ -63,7 +63,7 @@ export function FlowState3DWorkspace({
   const [cameraDistance, setCameraDistance] = useState(15);
   const [isDragging, setIsDragging] = useState(false);
   const [lastMousePos, setLastMousePos] = useState({ x: 0, y: 0 });
-  const [hoveredTrack, setHoveredTrack] = useState<string | null>(null);
+  const [hoveredTrack, _setHoveredTrack] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"spatial" | "circular" | "grid">(
     "spatial",
   );

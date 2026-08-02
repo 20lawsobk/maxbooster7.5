@@ -61,7 +61,7 @@ const createSetlistSchema = z.object({
 router?.get(
   "/",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     const userId = req.user!.id;
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
     // Cap offset — unbounded offset causes Postgres to scan N rows before returning
@@ -98,7 +98,7 @@ router?.get(
 router?.post(
   "/",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     const userId = req.user!.id;
     const data = createShowSchema?.parse(req.body);
 
@@ -116,7 +116,7 @@ router?.put(
   "/:id",
   requireAuth,
   requireUUIDParam("id"),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     const userId = req.user!.id;
     const showId = req.params.id;
     const data = createShowSchema?.partial().parse(req.body);
@@ -140,7 +140,7 @@ router?.patch(
   "/:id",
   requireAuth,
   requireUUIDParam("id"),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     const userId = req.user!.id;
     const showId = req.params.id;
     const data = createShowSchema?.partial().parse(req.body);
@@ -164,7 +164,7 @@ router?.delete(
   "/:id",
   requireAuth,
   requireUUIDParam("id"),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     const userId = req.user!.id;
     const showId = req.params.id;
 
@@ -185,7 +185,7 @@ router?.delete(
 router?.patch(
   "/:id/attendance",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     const userId = req.user!.id;
     const showId = req.params.id;
 
@@ -228,7 +228,7 @@ router?.patch(
 router?.patch(
   "/:id/status",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     const userId = req.user!.id;
     const showId = req.params.id;
 
@@ -262,7 +262,7 @@ router?.patch(
 router?.get(
   "/stats",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     const userId = req.user!.id;
 
     const [stats] = await db
@@ -294,7 +294,7 @@ router?.get(
 router?.get(
   "/setlists",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     const userId = req.user!.id;
     const userSetlists = await db
       .select()
@@ -310,7 +310,7 @@ router?.get(
   "/:id",
   requireAuth,
   requireUUIDParam("id"),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     const userId = req.user!.id;
     const showId = req.params.id;
 
@@ -332,7 +332,7 @@ router?.get(
 router?.get(
   "/:id/setlist",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     const userId = req.user!.id;
     const showId = req.params.id;
 
@@ -350,7 +350,7 @@ router?.get(
 router?.post(
   "/setlists",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     const userId = req.user!.id;
     const data = createSetlistSchema?.parse(req.body);
 
@@ -367,7 +367,7 @@ router?.post(
 router?.put(
   "/setlists/:id",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     const userId = req.user!.id;
     const setlistId = req.params.id;
     const data = createSetlistSchema?.partial().parse(req.body);
@@ -390,7 +390,7 @@ router?.put(
 router?.delete(
   "/setlists/:id",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     const userId = req.user!.id;
     const setlistId = req.params.id;
 

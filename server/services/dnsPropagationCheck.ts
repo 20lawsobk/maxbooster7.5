@@ -149,7 +149,7 @@ async function queryResolver(
       values: [],
       latencyMs: Date.now() - start,
       error:
-        err?.name === "AbortError" ? "timeout" : (err?.message ?? "unknown"),
+        (err as any)?.name === "AbortError" ? "timeout" : ((err as any)?.message ?? "unknown"),
     };
   }
 }

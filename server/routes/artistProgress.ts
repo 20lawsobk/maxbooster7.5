@@ -18,7 +18,7 @@ const historyQuerySchema = z.object({
 router?.get(
   "/dashboard",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
 
@@ -32,7 +32,7 @@ router?.get(
         data: dashboardData,
       });
     } catch (error) {
-      logger.warn("Error fetching artist progress dashboard:", error?.message);
+      logger.warn("Error fetching artist progress dashboard:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -41,7 +41,7 @@ router?.get(
 router?.get(
   "/history",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
       const { days = "30" } = req.query as { days?: string };
@@ -67,7 +67,7 @@ router?.get(
         },
       });
     } catch (error) {
-      logger.warn("Error fetching progress history:", error?.message);
+      logger.warn("Error fetching progress history:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -76,7 +76,7 @@ router?.get(
 router?.get(
   "/milestones",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
 
@@ -90,7 +90,7 @@ router?.get(
         data: milestones,
       });
     } catch (error) {
-      logger.warn("Error fetching career milestones:", error?.message);
+      logger.warn("Error fetching career milestones:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -99,7 +99,7 @@ router?.get(
 router?.get(
   "/growth-metrics",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
 
@@ -113,7 +113,7 @@ router?.get(
         data: growthMetrics,
       });
     } catch (error) {
-      logger.warn("Error fetching growth metrics:", error?.message);
+      logger.warn("Error fetching growth metrics:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),
@@ -122,7 +122,7 @@ router?.get(
 router?.post(
   "/capture-snapshot",
   requireAuth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req: any, res: any) => {
     try {
       const userId = req.user!.id;
 
@@ -135,7 +135,7 @@ router?.post(
         message: "Snapshot captured successfully",
       });
     } catch (error) {
-      logger.warn("Error capturing snapshot:", error?.message);
+      logger.warn("Error capturing snapshot:", (error as any)?.message);
       res.status(500).json({ error: "Failed to process request" });
     }
   }),

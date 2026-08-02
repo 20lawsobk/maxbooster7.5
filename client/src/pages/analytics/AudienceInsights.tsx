@@ -158,7 +158,7 @@ interface AudienceInsightsProps {
 }
 
 export function AudienceInsights({
-  userId,
+  _userId,
   timeRange = "30d",
   onTimeRangeChange,
 }: AudienceInsightsProps) {

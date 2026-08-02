@@ -468,7 +468,7 @@ setInterval(
       else break;
     }
     for (const [id, rp] of restorePointCache?.entries()) {
-      if (rp?.expiresAt && new Date(rp?.expiresAt).getTime() < now)
+      if ((rp as any)?.expiresAt && new Date((rp as any)?.expiresAt).getTime() < now)
         restorePointCache?.delete(id);
     }
     while (restorePointCache?.size > MAX_RESTORE_POINTS) {

@@ -4,7 +4,7 @@ import { promises as fsPromises } from "fs";
 import { logger } from "../logger.js";
 import { AIUnavailableError } from "../lib/aiSource.js";
 import { generateAudio as generateLocalAudio } from "./audioGeneratorService.js";
-import { sharpImageService } from "./sharpImageService.js";
+import { _sharpImageService } from "./sharpImageService.js";
 import { db } from "../db.js";
 import { eq } from "drizzle-orm";
 import { autopilotPreferences, userBrandVoices } from "@shared/schema";
@@ -2145,7 +2145,7 @@ function buildStepParamsForPlatform(
 }
 
 async function planTasks(
-  normalized: Record<string, unknown>,
+  _normalized: Record<string, unknown>,
   req: GenerationRequest,
 ): Promise<TaskPlan> {
   // The remote planner (/generate/text with mode: 'planner') always produces
@@ -2234,7 +2234,7 @@ function buildDefaultPlan(req: GenerationRequest): TaskPlan {
       });
     }
   } else {
-    const rawModality = (req.constraints?.outputModality as string) || "text";
+    const rawModality = ((req.constraints as any)?.outputModality as string) || "text";
     const outputModality: "text" | "image" | "audio" | "video" = [
       "text",
       "image",
@@ -2353,26 +2353,26 @@ function buildLocalTextAssets(
 
   // /api/analyze returns { payload_summary, semantic: { hook, core_message } }
   // rather than top-level hook/body/summary — handle both shapes.
-  const semantic: Record<string, string> = normalized.semantic ?? {};
+  const semantic: Record<string, string> = (normalized as any).semantic ?? {};
   const payloadSummary: string =
-    typeof normalized.payload_summary === "string"
-      ? normalized.payload_summary
+    typeof (normalized as any).payload_summary === "string"
+      ? (normalized as any).payload_summary
       : typeof req.input.payload === "string"
         ? req.input.payload.slice(0, 280)
         : "";
   const summary: string =
-    typeof normalized.summary === "string"
-      ? normalized.summary
+    typeof (normalized as any).summary === "string"
+      ? (normalized as any).summary
       : payloadSummary;
 
   const hook: string =
-    normalized.hook ??
+    (normalized as any).hook ??
     semantic.hook ??
     (summary.slice(0, 100) || req.intent || "New music out now");
   const body: string =
-    normalized.body ?? semantic.core_message ?? (summary || hook);
-  const cta: string = normalized.cta ?? "Stream now 🎵";
-  const artist: string = normalized.artistName ?? semantic.artist_name ?? "";
+    (normalized as any).body ?? semantic.core_message ?? (summary || hook);
+  const cta: string = (normalized as any).cta ?? "Stream now 🎵";
+  const artist: string = (normalized as any).artistName ?? semantic.artist_name ?? "";
 
   const TEMPLATES: Record<
     string,
@@ -2381,15 +2381,15 @@ function buildLocalTextAssets(
     instagram: (h, b, c, a, tags) =>
       `${h}\n\n${b}\n\n${c}${a ? ` | ${a}` : ""}${tags}`,
     tiktok: (h, _b, c, _a, tags) => `${h} ${c}${tags}`,
-    twitter: (h, _b, c, _a, tags) => `${h} ${c}`.trim(),
-    threads: (h, b, c, _a, tags) => `${h}\n\n${c}${b ? `\n${b}` : ""}`,
+    twitter: (h, _b, c, _a, _tags) => `${h} ${c}`.trim(),
+    threads: (h, b, c, _a, _tags) => `${h}\n\n${c}${b ? `\n${b}` : ""}`,
     facebook: (h, b, c, a, tags) =>
       `${h}\n\n${b}\n\n${c}${a ? `\n\n— ${a}` : ""}${tags}`,
-    youtube: (h, b, c, _a, tags) =>
+    youtube: (h, b, c, _a, _tags) =>
       `${h}\n\n${b}\n\n${c}\n\nSubscribe for more 🔔`,
-    linkedin: (h, b, c, a, tags) =>
+    linkedin: (h, b, c, a, _tags) =>
       `${a ? `${a} | ` : ""}${h}\n\n${b}\n\n${c}`,
-    google_business: (h, b, c, _a, tags) => `${h}\n\n${b}\n\n${c}`,
+    google_business: (h, b, c, _a, _tags) => `${h}\n\n${b}\n\n${c}`,
   };
 
   return rawSlots.map((slot: Record<string, unknown>) => {
@@ -2397,7 +2397,7 @@ function buildLocalTextAssets(
     const rules = platform ? getRules(platform) : null;
 
     // Use per-platform differentiated copy if available (from localAnalyzeUrl)
-    const perCopy = normalized.perPlatformCopy?.[platform] ?? {};
+    const perCopy = (normalized as any).perPlatformCopy?.[platform] ?? {};
     const platformHook = perCopy.hook ?? hook;
     const platformBody = perCopy.body ?? body;
     const platformCta = perCopy.cta ?? cta;
@@ -2407,7 +2407,7 @@ function buildLocalTextAssets(
       ? (rules.text.hashtags.max ?? 5)
       : 0;
     const tags = getHashtagsForPlatform(
-      normalized.urlCategory ?? "social_post",
+      (normalized as any).urlCategory ?? "social_post",
       platform,
       maxHashtags,
       artist || undefined,
@@ -2444,17 +2444,17 @@ const textWorker = {
   ): Promise<GeneratedAsset[]> {
     const packSpec = req.packId ? (PACK_DEFINITIONS[req.packId] ?? null) : null;
     const rawSlots =
-      step.params.slots ||
-      (step.params.platform
+      step.params!.slots ||
+      (step.params!.platform
         ? [
             {
-              id: `${step.params.platform}_post`,
-              platform: step.params.platform,
+              id: `${step.params!.platform}_post`,
+              platform: step.params!.platform,
               modality: "text",
               purpose: "Post copy",
             },
           ]
-        : packSpec.filter((s) => s.modality === "text") || [
+        : packSpec!.filter((s) => s.modality === "text") || [
             {
               id: "post",
               platform: req.platforms[0],
@@ -2473,7 +2473,7 @@ const textWorker = {
     // caption = hook + "\n\n" + body + "\n\n" + cta server-side (never raw tokens).
     try {
       const normalized = inputs.normalized ?? {};
-      const semantic: Record<string, string> = normalized.semantic ?? {};
+      const semantic: Record<string, string> = (normalized as any).semantic ?? {};
 
       // Fetch this user's stored artist profile / autopilot preferences from the DB.
       // These fields take priority over whatever MaxCore's /analyze guessed, giving
@@ -2498,11 +2498,11 @@ const textWorker = {
           topic = relParts.join(" ");
           logger.debug(`[MultimodalGen] URL matched user release: "${topic}"`);
         } else {
-          const meta = (normalized.metadata ?? {}) as Record<string, string>;
-          const urlTitle = normalized.title ?? meta.title ?? "";
-          const urlAuthor = normalized.author ?? meta.author ?? "";
-          const urlSite = normalized.siteName ?? meta.siteName ?? "";
-          const urlDesc = normalized.description ?? meta.description ?? "";
+          const meta = ((normalized as any).metadata ?? {}) as Record<string, string>;
+          const urlTitle = (normalized as any).title ?? meta.title ?? "";
+          const urlAuthor = (normalized as any).author ?? meta.author ?? "";
+          const urlSite = (normalized as any).siteName ?? meta.siteName ?? "";
+          const urlDesc = (normalized as any).description ?? meta.description ?? "";
           if (urlTitle) {
             const parts: string[] = [urlTitle];
             if (urlAuthor) parts.push(`by ${urlAuthor}`);
@@ -2581,8 +2581,8 @@ const textWorker = {
             })();
             topic =
               slugTopic ||
-              normalized.summary ||
-              normalized.payload_summary ||
+              (normalized as any).summary ||
+              (normalized as any).payload_summary ||
               semantic.core_message ||
               rawUrlFallback;
           }
@@ -2592,7 +2592,7 @@ const textWorker = {
         );
       } else {
         topic =
-          normalized.payload_summary ??
+          (normalized as any).payload_summary ??
           req.input.payload ??
           semantic.core_message ??
           "";
@@ -2602,28 +2602,28 @@ const textWorker = {
       // the user explicitly set them; fall back to whatever /analyze returned.
       const resolvedArtistName =
         userCtx.artistName ??
-        normalized.artistName ??
+        (normalized as any).artistName ??
         semantic.artist_name ??
-        normalized.author ??
-        (normalized.metadata as Record<string, unknown> | undefined)?.author ??
+        (normalized as any).author ??
+        ((normalized as any).metadata as Record<string, unknown> | undefined)?.author ??
         undefined;
       const resolvedGenre =
-        userCtx.genre ?? normalized.genre ?? semantic.genre ?? undefined;
+        userCtx.genre ?? (normalized as any).genre ?? semantic.genre ?? undefined;
       const resolvedBrandVoice =
         userCtx.brandVoice ??
-        normalized.brandVoice ??
+        (normalized as any).brandVoice ??
         semantic.brand_voice ??
         undefined;
       const resolvedTargetAudience =
         userCtx.targetAudience ??
-        normalized.targetAudience ??
+        (normalized as any).targetAudience ??
         semantic.target_audience ??
         undefined;
       const resolvedTone = userCtx.contentTone ?? req.intent ?? "professional";
       // Merge preferred hashtags: DB list first, then any from normalized (deduplicated)
       const dbHashtags = userCtx.preferredHashtags ?? [];
       const normHashtags =
-        (normalized.preferredHashtags as string[] | undefined) ?? [];
+        ((normalized as any).preferredHashtags as string[] | undefined) ?? [];
       const resolvedHashtags = dbHashtags.length
         ? [...new Set([...dbHashtags, ...normHashtags])]
         : normHashtags.length
@@ -2673,16 +2673,16 @@ const textWorker = {
           // the local fallback is instant, so this still fits the 30 s client window.
 
           // /generate/content always returns { caption, hook, body, cta, hashtags, confidence }
-          const caption: string = mc.caption ?? "";
+          const caption: string = (mc as any).caption ?? "";
           if (!caption) throw new Error("empty caption");
 
           const rules = getRules(platform as Platform);
           const payload = enforceTextLength(caption, rules.text);
           const enriched = enrichTextAssetMetadata(payload, platform, rules, {
             platformRules: rules.text,
-            hook: mc.hook ?? "",
-            body: mc.body ?? "",
-            cta: mc.cta ?? "",
+            hook: (mc as any).hook ?? "",
+            body: (mc as any).body ?? "",
+            cta: (mc as any).cta ?? "",
           });
 
           return {
@@ -2776,7 +2776,7 @@ function enrichTextAssetMetadata(
   const emojiCount = (payload.match(emojiRegex) ?? []).length;
   const wordCount = cleanText.split(/\s+/).filter(Boolean).length;
   const charCount = payload.length;
-  const charLimit = rules.text.maxCharCount ?? null;
+  const charLimit = (rules.text as any).maxCharCount ?? null;
 
   let hook: string | undefined = existingMeta.hook;
   let body: string | undefined = existingMeta.body;
@@ -3039,7 +3039,7 @@ const imageWorker = {
     inputs: Record<string, unknown>,
     req: GenerationRequest,
   ): Promise<GeneratedAsset[]> {
-    const slots = step.params.slots || [];
+    const slots = step.params!.slots || [];
     const slotsWithRules = slots.map((slot: Record<string, unknown>) => ({
       ...slot,
       platformRules: getRules(slot.platform as Platform).image ?? null,
@@ -3055,7 +3055,7 @@ const imageWorker = {
         purpose: o.purpose,
         metadata: {
           ...(o.meta ?? {}),
-          aspectRatio: o.aspectRatio ?? step.params.recommendedAspectRatio,
+          aspectRatio: o.aspectRatio ?? step.params!.recommendedAspectRatio,
           platformRules: o.platform
             ? getRules(o.platform as Platform).image
             : null,
@@ -3074,7 +3074,7 @@ const imageWorker = {
           req.platforms.map((p) => [p, getRules(p).image]),
         ),
       });
-      const allOutputs = Array.isArray(result.outputs) ? result.outputs : [];
+      const allOutputs = Array.isArray((result as any).outputs) ? (result as any).outputs : [];
       // MaxCore returns relative /uploads/images/... URLs — absolute-ize them
       // against the MaxCore origin and mirror locally so they serve same-origin.
       const outputs = (
@@ -3107,7 +3107,7 @@ const audioWorker = {
     inputs: Record<string, unknown>,
     req: GenerationRequest,
   ): Promise<GeneratedAsset[]> {
-    const platform = step.params.platform as Platform | undefined;
+    const platform = step.params!.platform as Platform | undefined;
     const audioRules = platform ? getRules(platform).audio : null;
 
     // 1. Try MaxCore remote audio generation first
@@ -3122,14 +3122,14 @@ const audioWorker = {
       });
 
       // Inline outputs (legacy shape) — use them directly.
-      let outputs = Array.isArray(result.outputs) ? result.outputs : [];
+      let outputs = Array.isArray((result as any).outputs) ? (result as any).outputs : [];
 
       // Async job shape — MaxCore returns { job_id, status: "processing" }.
       // Poll GET /api/audio-job/:id until done/error, bounded so the caller's
       // HTTP request cannot hang indefinitely.
       const jobId =
-        outputs.length === 0 && typeof result?.job_id === "string"
-          ? (result.job_id as string)
+        outputs.length === 0 && typeof (result as any)?.job_id === "string"
+          ? ((result as any).job_id as string)
           : null;
       if (jobId) {
         const AUDIO_POLL_ATTEMPTS = 20;
@@ -3192,7 +3192,7 @@ const audioWorker = {
             slotId: o.slotId,
             metadata: {
               ...(o.meta ?? {}),
-              maxDurationSec: audioRules.maxDurationSec,
+              maxDurationSec: audioRules!.maxDurationSec,
               platformRules: audioRules,
             },
           })),
@@ -3208,13 +3208,13 @@ const audioWorker = {
     // 2. Local FFmpeg audio generator fallback — produces a real .mp3 file
     try {
       const normalized = inputs.normalized ?? {};
-      const genre = normalized.genre ?? req.constraints?.genre ?? "default";
-      const maxSec = audioRules.maxDurationSec ?? 30;
+      const genre = (normalized as any).genre ?? (req.constraints as any)?.genre ?? "default";
+      const maxSec = audioRules!.maxDurationSec ?? 30;
       const ttsText = [
-        normalized.hook,
-        normalized.body,
-        normalized.cta,
-        normalized.summary,
+        (normalized as any).hook,
+        (normalized as any).body,
+        (normalized as any).cta,
+        (normalized as any).summary,
       ]
         .filter(Boolean)
         .join(". ");
@@ -3224,7 +3224,7 @@ const audioWorker = {
         duration: Math.min(maxSec, 60),
         text: ttsText || req.intent || undefined,
         topic: req.intent,
-        artistName: normalized.artistName,
+        artistName: (normalized as any).artistName,
       });
 
       if (audioResult.success && audioResult.url) {
@@ -3240,7 +3240,7 @@ const audioWorker = {
             metadata: {
               source: "local_ffmpeg",
               durationSec: audioResult.durationSec,
-              maxDurationSec: audioRules.maxDurationSec,
+              maxDurationSec: audioRules!.maxDurationSec,
               platformRules: audioRules,
             },
           },
@@ -3265,7 +3265,7 @@ const audioWorker = {
 const videoWorker = {
   async run(
     step: TaskStep,
-    inputs: Record<string, unknown>,
+    _inputs: Record<string, unknown>,
     req: GenerationRequest,
   ): Promise<GeneratedAsset[]> {
     // FFmpeg video generation takes 2–5 minutes and cannot be run inline inside

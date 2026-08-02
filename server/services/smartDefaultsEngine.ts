@@ -261,7 +261,7 @@ class SmartDefaultsEngine {
     try {
       const redis = await getRedisClient();
       if (redis) {
-        const cached = await redis?.get(`${this.CACHE_PREFIX}${userId}`);
+        const cached = await (redis as any)?.get(`${this.CACHE_PREFIX}${userId}`);
         if (cached) {
           return JSON.parse(cached);
         }
@@ -270,7 +270,7 @@ class SmartDefaultsEngine {
       const defaults = await this.calculateSmartDefaults(userId);
 
       if (redis) {
-        await redis?.setEx(
+        await (redis as any)?.setEx(
           `${this.CACHE_PREFIX}${userId}`,
           this.CACHE_TTL,
           JSON.stringify(defaults),

@@ -141,15 +141,15 @@ export class AIContentService {
     const enrichedOptions = {
       ...options,
       tone: (preferences?.contentTone as unknown) || options?.tone || "casual",
-      artistName: preferences.artistName,
-      genre: preferences.genre,
-      brandVoice: preferences.brandVoice,
+      artistName: preferences!.artistName,
+      genre: preferences!.genre,
+      brandVoice: preferences!.brandVoice,
       preferredHashtags: (preferences?.preferredHashtags as string[]) || [],
       avoidTopics: (preferences?.avoidTopics as string[]) || [],
-      customInstructions: preferences.customInstructions,
+      customInstructions: preferences!.customInstructions,
     };
 
-    return this.generateContent(enrichedOptions as ContentGenerationOptions);
+    return this.generateContent(enrichedOptions as unknown as ContentGenerationOptions);
   }
 
   private async initializeAIModels() {
@@ -209,7 +209,7 @@ export class AIContentService {
           inferenceType: "generation",
           inputData,
           outputData,
-          confidenceScore: outputData.confidence || 0.85,
+          confidenceScore: (outputData as any).confidence || 0.85,
           executionTimeMs,
           success: true,
           requestId: randomBytes(8).toString("hex"),
@@ -228,11 +228,11 @@ export class AIContentService {
       await db?.insert(explanationLogs).values({
         inferenceId,
         explanationType: "feature_importance",
-        featureImportance: explanation.features || {},
-        decisionPath: explanation.path || {},
-        confidence: explanation.confidence || 0.85,
-        humanReadable: explanation.text || "Content generated using AI model",
-        visualizationData: explanation.viz || {},
+        featureImportance: (explanation as any).features || {},
+        decisionPath: (explanation as any).path || {},
+        confidence: (explanation as any).confidence || 0.85,
+        humanReadable: (explanation as any).text || "Content generated using AI model",
+        visualizationData: (explanation as any).viz || {},
       });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Failed to log explanation:");
@@ -254,8 +254,8 @@ export class AIContentService {
       // Route through the full advanced AI pipeline:
       // MaxCore (trained) → Python AI → ContentGenerator (in-house JS)
       const aiResult = await unifiedAIController?.generateContent({
-        platform: platform as Record<string, unknown>,
-        tone: tone as Record<string, unknown>,
+        platform: platform as unknown as Record<string, unknown>,
+        tone: tone as unknown as Record<string, unknown>,
         topic: prompt || "new music",
         contentType: "engagement",
         includeHashtags: true,
@@ -268,7 +268,7 @@ export class AIContentService {
         // MaxCore is the sole AI source — no local fallback.
         throw new AIUnavailableError("multilingual content generation");
       }
-      const d = aiResult?.data as Record<string, unknown>;
+      const d = aiResult?.data as unknown as Record<string, unknown>;
       const caption =
         (d?.caption as string) || [d?.hook, d?.body, d?.cta].filter(Boolean).join("\n\n");
       const content: string[] = caption ? [caption] : (d?.content as string[]) || [];
@@ -331,8 +331,8 @@ export class AIContentService {
     // Get MaxCore's AI-generated base content once (MaxCore generates in English
     // regardless of language param — we apply cultural post-processing per language)
     const baseAIResult = await unifiedAIController?.generateContent({
-      platform: (options?.platform || "instagram") as Record<string, unknown>,
-      tone: "energetic" as Record<string, unknown>,
+      platform: (options?.platform || "instagram") as unknown as Record<string, unknown>,
+      tone: "energetic" as unknown as Record<string, unknown>,
       topic: prompt,
       contentType: "engagement",
       includeHashtags: true,
@@ -340,7 +340,7 @@ export class AIContentService {
     });
     const baseD =
       baseAIResult?.success && baseAIResult?.data
-        ? (baseAIResult.data as Record<string, unknown>)
+        ? (baseAIResult.data as unknown as Record<string, unknown>)
         : null;
     const baseContent: string = baseD
       ? (baseD?.caption as string) ||
@@ -440,10 +440,10 @@ export class AIContentService {
     // signal words and derive the profile fields from its text.
     const mcText: string =
       aiResult?.success && aiResult?.data
-        ? ((aiResult.data as Record<string, unknown>).caption as string) ||
+        ? ((aiResult.data as unknown as Record<string, unknown>).caption as string) ||
           [
-            (aiResult.data as Record<string, unknown>).hook,
-            (aiResult.data as Record<string, unknown>).body,
+            (aiResult.data as unknown as Record<string, unknown>).hook,
+            (aiResult.data as unknown as Record<string, unknown>).body,
           ]
             .filter(Boolean)
             .join(" ")
@@ -509,7 +509,7 @@ export class AIContentService {
         await db
           .update(userBrandVoices)
           .set({
-            voiceProfile: profile as Record<string, unknown>,
+            voiceProfile: profile as unknown as Record<string, unknown>,
             confidenceScore: profile.confidenceScore,
             postsAnalyzed: historicalPosts.length,
             lastAnalyzedAt: new Date(),
@@ -519,7 +519,7 @@ export class AIContentService {
       } else {
         await db?.insert(userBrandVoices).values({
           userId,
-          voiceProfile: profile as Record<string, unknown>,
+          voiceProfile: profile as unknown as Record<string, unknown>,
           confidenceScore: profile.confidenceScore,
           postsAnalyzed: historicalPosts.length,
           lastAnalyzedAt: new Date(),
@@ -588,7 +588,7 @@ export class AIContentService {
         }).then((r) => (Array.isArray(r?.content) ? r?.content[0] : r?.content));
       }
 
-      const profile = brandVoice?.voiceProfile as unknown as BrandVoiceProfile;
+      const profile = (brandVoice as any)?.voiceProfile as unknown as BrandVoiceProfile;
       let content = prompt;
 
       if (profile?.tone === "casual") {
@@ -718,8 +718,8 @@ export class AIContentService {
       : "";
 
     const aiResult = await unifiedAIController?.generateContent({
-      platform: platform as Record<string, unknown>,
-      tone: "energetic" as Record<string, unknown>,
+      platform: platform as unknown as Record<string, unknown>,
+      tone: "energetic" as unknown as Record<string, unknown>,
       topic,
       contentType: "engagement",
       includeHashtags: true,
@@ -728,7 +728,7 @@ export class AIContentService {
     });
 
     if (aiResult?.success && aiResult?.data) {
-      const d = aiResult?.data as Record<string, unknown>;
+      const d = aiResult?.data as unknown as Record<string, unknown>;
       return (
         d?.caption ||
         [d?.hook, d?.body, d?.cta].filter(Boolean).join("\n\n") ||
@@ -758,8 +758,8 @@ export class AIContentService {
 
     // Route through MaxCore — it knows platform-specific hashtag strategy from 8TB of data
     const aiResult = await unifiedAIController?.generateContent({
-      platform: platform as Record<string, unknown>,
-      tone: "energetic" as Record<string, unknown>,
+      platform: platform as unknown as Record<string, unknown>,
+      tone: "energetic" as unknown as Record<string, unknown>,
       topic: content || "music promotion",
       contentType: "engagement",
       includeHashtags: true,
@@ -769,7 +769,7 @@ export class AIContentService {
 
     const rawHashtags: string[] =
       aiResult?.success && aiResult?.data
-        ? (aiResult?.data as Record<string, unknown>).hashtags || []
+        ? (aiResult?.data as unknown as Record<string, unknown>).hashtags || []
         : [];
 
     const suggestions: HashtagSuggestion[] = rawHashtags
@@ -1034,8 +1034,8 @@ export class AIContentService {
     // Get the MaxCore-generated base content once, then apply tone post-processing
     // for each variant (MaxCore's tone param doesn't vary output, so we differentiate locally)
     const baseAIResult = await unifiedAIController?.generateContent({
-      platform: "instagram" as Record<string, unknown>,
-      tone: "energetic" as Record<string, unknown>,
+      platform: "instagram" as unknown as Record<string, unknown>,
+      tone: "energetic" as unknown as Record<string, unknown>,
       topic: baseContent,
       contentType: "engagement",
       includeHashtags: true,
@@ -1044,11 +1044,11 @@ export class AIContentService {
 
     const baseText: string =
       baseAIResult?.success && baseAIResult?.data
-        ? ((baseAIResult.data as Record<string, unknown>).caption as string) ||
+        ? ((baseAIResult.data as unknown as Record<string, unknown>).caption as string) ||
           [
-            (baseAIResult.data as Record<string, unknown>).hook,
-            (baseAIResult.data as Record<string, unknown>).body,
-            (baseAIResult.data as Record<string, unknown>).cta,
+            (baseAIResult.data as unknown as Record<string, unknown>).hook,
+            (baseAIResult.data as unknown as Record<string, unknown>).body,
+            (baseAIResult.data as unknown as Record<string, unknown>).cta,
           ]
             .filter(Boolean)
             .join("\n\n") ||
@@ -1056,7 +1056,7 @@ export class AIContentService {
         : baseContent;
 
     // Local tone transformers applied to MaxCore's output
-    const applyTone = (text: string, tone: string, label: string): string => {
+    const applyTone = (text: string, tone: string, _label: string): string => {
       const stripped = text.replace(/\p{Emoji_Presentation}/gu, "").replace(/\s+/g, " ").trim();
       const hashtagLine = (text.match(/#\w+(\s+#\w+)*/g) || []).join(" ");
       const bodyText = text.replace(/#\w+/g, "").trim();
@@ -1141,8 +1141,8 @@ export class AIContentService {
     length?: string,
   ): Promise<GeneratedContent> {
     const aiResult = await unifiedAIController?.generateContent({
-      platform: platform as Record<string, unknown>,
-      tone: (tone || "energetic") as Record<string, unknown>,
+      platform: platform as unknown as Record<string, unknown>,
+      tone: (tone || "energetic") as unknown as Record<string, unknown>,
       topic: prompt || "new music",
       contentType: "engagement",
       includeHashtags: true,
@@ -1153,7 +1153,7 @@ export class AIContentService {
       // MaxCore is the sole AI source — no local fallback.
       throw new AIUnavailableError("text content generation");
     }
-    const d2 = aiResult?.data as Record<string, unknown>;
+    const d2 = aiResult?.data as unknown as Record<string, unknown>;
     const caption2 =
       (d2?.caption as string) || [d2?.hook, d2?.body, d2?.cta].filter(Boolean).join("\n\n");
     const content: string[] = caption2 ? [caption2] : (d2?.content as string[]) || [];
@@ -1181,7 +1181,7 @@ export class AIContentService {
       const result = await sharpImageService?.generateImage({
         prompt,
         platform,
-        tone: (tone as Record<string, unknown>) || "creative",
+        tone: (tone as unknown as Record<string, unknown>) || "creative",
       });
 
       return {
@@ -1199,7 +1199,7 @@ export class AIContentService {
         createdAt: new Date(),
       };
     } catch (error) {
-      logger.warn(`Image generation failed: ${error?.message}`);
+      logger.warn(`Image generation failed: ${(error as any)?.message}`);
       throw error;
     }
   }
@@ -1220,18 +1220,18 @@ export class AIContentService {
     let cta = "";
     try {
       const scriptResult = await unifiedAIController?.generateContent({
-        platform: platform as Record<string, unknown>,
-        tone: (tone || "energetic") as Record<string, unknown>,
+        platform: platform as unknown as Record<string, unknown>,
+        tone: (tone || "energetic") as unknown as Record<string, unknown>,
         topic: prompt || "new music",
         contentType: "engagement",
         includeHashtags: false,
         includeEmojis: false,
       });
       if (scriptResult?.success && scriptResult?.data) {
-        const d = scriptResult?.data as Record<string, unknown>;
-        hook = (d?.hook || d?.caption || "").slice(0, 80);
-        body = (d?.body || d?.caption || "").split("\n")[0].slice(0, 120);
-        cta = (d?.cta || "").slice(0, 60);
+        const d = scriptResult?.data as unknown as Record<string, unknown>;
+        hook = ((d?.hook || d?.caption || "") as any).slice(0, 80);
+        body = ((d?.body || d?.caption || "") as any).split("\n")[0].slice(0, 120);
+        cta = ((d?.cta || "") as any).slice(0, 60);
       }
     } catch (scriptErr) {
       logger.warn(
@@ -1328,7 +1328,7 @@ export class AIContentService {
         createdAt: new Date(),
       };
     } catch (error) {
-      logger.warn(`Audio generation failed: ${error?.message}`);
+      logger.warn(`Audio generation failed: ${(error as any)?.message}`);
       throw error;
     }
   }

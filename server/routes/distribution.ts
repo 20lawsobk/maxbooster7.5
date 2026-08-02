@@ -354,7 +354,7 @@ router?.delete(
       const metadata = release?.metadata as Record<string, unknown>;
       if (metadata?.labelGridReleaseId && release?.status !== "draft") {
         try {
-          await labelGridService?.takedownRelease(metadata?.labelGridReleaseId);
+          await labelGridService?.takedownRelease((metadata?.labelGridReleaseId as string));
           logger.info(
             `✅ LabelGrid takedown initiated for release ${metadata?.labelGridReleaseId}`,
           );
@@ -548,7 +548,7 @@ router?.post("/codes/isrc", requireAuth, async (req: Request, res: Response) => 
           title,
         );
       } catch (storeErr) {
-        logger.warn("Failed to store ISRC in database:", storeErr);
+        logger.warn(storeErr, "Failed to store ISRC in database:");
       }
     }
 
@@ -606,7 +606,7 @@ router?.post("/codes/upc", requireAuth, async (req: Request, res: Response) => {
       try {
         await codeGenerationService?.generateUPC(userId, releaseId, title);
       } catch (storeErr) {
-        logger.warn("Failed to store UPC in database:", storeErr);
+        logger.warn(storeErr, "Failed to store UPC in database:");
       }
     }
 
@@ -1236,7 +1236,7 @@ router.get(
       if (metadata.labelGridReleaseId) {
         try {
           labelGridStatus = await labelGridService.getReleaseStatus(
-            metadata.labelGridReleaseId,
+            (metadata.labelGridReleaseId as string),
           );
 
           // Update local database with latest status
@@ -1263,23 +1263,23 @@ router.get(
 
       // Calculate overall progress
       const liveCount = statuses.filter(
-        (s: unknown) => s.status === "live",
+        (s: unknown) => (s as any).status === "live",
       ).length;
       const totalCount = statuses.length || 1;
       const overallProgress = (liveCount / totalCount) * 100;
 
       res.json({
         statuses: statuses.map((status: unknown) => ({
-          platform: status.providerId,
-          platformName: status.providerName || status.providerId,
-          status: status.status,
-          externalId: status.externalId,
-          estimatedGoLive: status.estimatedGoLive,
-          deliveredAt: status.deliveredAt,
-          liveAt: status.liveAt,
-          errorMessage: status.error,
-          errorResolution: status.errorResolution,
-          lastChecked: status.updatedAt,
+          platform: (status as any).providerId,
+          platformName: (status as any).providerName || (status as any).providerId,
+          status: (status as any).status,
+          externalId: (status as any).externalId,
+          estimatedGoLive: (status as any).estimatedGoLive,
+          deliveredAt: (status as any).deliveredAt,
+          liveAt: (status as any).liveAt,
+          errorMessage: (status as any).error,
+          errorResolution: (status as any).errorResolution,
+          lastChecked: (status as any).updatedAt,
         })),
         overallProgress: Math.round(overallProgress),
         labelGridStatus: labelGridStatus
@@ -1392,7 +1392,6 @@ router.post(
 // ===========================
 
 import { ddexPackageService } from "../services/ddexPackageService";
-import { logger } from "../logger.js";
 
 // POST /api/distribution/releases/:id/ddex/preview - Generate and preview XML
 router.post(
@@ -1552,7 +1551,7 @@ router.get(
           outputPath,
         );
       } catch (packageError) {
-        logger.warn("Error generating DDEX package content:", packageError);
+        logger.warn(packageError, "Error generating DDEX package content:");
         return res
           .status(500)
           .json({
@@ -1651,7 +1650,7 @@ router.post(
       // HARDENING: Validate ISRC format for all tracks (12 alphanumeric characters)
       const isrcPattern = /^[A-Z]{2}[A-Z0-9]{3}\d{2}\d{5}$/;
       const invalidISRCs = tracks.filter((t: Record<string, unknown>) => {
-        const isrcClean = (t.isrc || "").replace(/[-\s]/g, "").toUpperCase();
+        const isrcClean = ((t.isrc || "") as any).replace(/[-\s]/g, "").toUpperCase();
         return !isrcPattern.test(isrcClean);
       });
       if (invalidISRCs.length > 0) {
@@ -1668,7 +1667,7 @@ router.post(
 
       // HARDENING: Validate selected platforms
       const selectedPlatforms = metadata.selectedPlatforms || [];
-      if (selectedPlatforms.length === 0) {
+      if ((selectedPlatforms as any).length === 0) {
         return res.status(400).json({
           error: "No platforms selected",
           message: "At least one distribution platform must be selected.",
@@ -1682,7 +1681,7 @@ router.post(
         selectedPlatforms,
       );
       logger.info(
-        `[Distribution] Submitting release ${id} to LabelGrid for ${selectedPlatforms.length} platform(s)`,
+        `[Distribution] Submitting release ${id} to LabelGrid for ${(selectedPlatforms as any).length} platform(s)`,
         { userId, platforms: selectedPlatforms },
       );
       const lgResult = await labelGridService.createRelease(lgPayload);
@@ -1691,7 +1690,7 @@ router.post(
       // This ordering prevents a window where the release is "submitted" but has no dispatch
       // records — which would make per-platform tracking impossible after a mid-flight crash.
       const dispatchResults = await Promise.allSettled(
-        selectedPlatforms.map(async (platformSlug: string) => {
+        (selectedPlatforms as any).map(async (platformSlug: string) => {
           const provider = await storage.getDSPProviderBySlug(platformSlug);
           if (!provider) return;
           const lgPlatformStatus = lgResult.platforms.find(
@@ -1702,12 +1701,12 @@ router.post(
             releaseId: id,
             providerId: provider.id,
             status:
-              lgPlatformStatus.status === "live" ? "delivered" : "processing",
+              lgPlatformStatus!.status === "live" ? "delivered" : "processing",
           });
         }),
       );
       const failedDispatches = dispatchResults.filter(
-        (r) => r.status === "rejected",
+        (r: any) => r.status === "rejected",
       );
       if (failedDispatches.length > 0) {
         logger.warn(
@@ -1724,14 +1723,14 @@ router.post(
           labelGridSubmittedAt: new Date().toISOString(),
           labelGridEstimatedLiveDate: lgResult.estimatedLiveDate,
           dispatchedPlatformCount: dispatchResults.filter(
-            (r) => r.status === "fulfilled",
+            (r: any) => r.status === "fulfilled",
           ).length,
         },
       });
 
       // AUDIT: Log successful submission for tracking
       logger.info(
-        `Release ${id} submitted to LabelGrid (${lgResult.releaseId}) for ${selectedPlatforms.length} platforms`,
+        `Release ${id} submitted to LabelGrid (${lgResult.releaseId}) for ${(selectedPlatforms as any).length} platforms`,
         {
           releaseId: id,
           labelGridReleaseId: lgResult.releaseId,
@@ -1753,7 +1752,7 @@ router.post(
           await notificationService.sendReleaseSubmittedNotification(
             userId,
             release.title || "Untitled Release",
-            selectedPlatforms.length,
+            (selectedPlatforms as any).length,
             lgResult.estimatedLiveDate,
           );
         } catch (err) {
@@ -1947,16 +1946,16 @@ router.get(
       if (metadata.labelGridReleaseId) {
         try {
           const analytics = await labelGridService.getReleaseAnalytics(
-            metadata.labelGridReleaseId,
+            (metadata.labelGridReleaseId as string),
           );
 
           // Save analytics to database for historical tracking
-          await storage.createAnalytics({
+          await (storage as any).createAnalytics({
             userId,
-            projectId: release.projectId || undefined,
+            projectId: (release as any).projectId || undefined,
             date: new Date(),
-            totalStreams: analytics.totalStreams,
-            totalRevenue: analytics.totalRevenue.toString(),
+            totalStreams: analytics.streams,
+            totalRevenue: analytics.revenue.toString(),
             platformData: analytics.platforms,
             trackData: analytics.timeline,
           });
@@ -2008,7 +2007,7 @@ router.get(
       if (metadata.labelGridReleaseId) {
         try {
           const lgAnalytics = await labelGridService.getReleaseAnalytics(
-            metadata.labelGridReleaseId,
+            (metadata.labelGridReleaseId as string),
           );
           const totalRevenue = lgAnalytics.totalRevenue ?? 0;
           const totalStreams = lgAnalytics.totalStreams ?? 0;
@@ -2212,7 +2211,7 @@ router.post("/validate", requireAuth, async (req: Request, res: Response) => {
       upc: data.upc,
       isExplicit: data.isExplicit,
       language: data.language,
-      tracks: data.tracks.map((t) => ({
+      tracks: data.tracks!.map((t) => ({
         title: t.title,
         artist: t.artist,
         featuredArtists: t.featuredArtists,
@@ -2248,7 +2247,7 @@ router.post("/validate", requireAuth, async (req: Request, res: Response) => {
           genre: data.genre,
           releaseDate: data.releaseDate,
           coverArtMetadata: data.coverArt,
-          tracks: data.tracks.map((t) => ({
+          tracks: data.tracks!.map((t) => ({
             title: t.title,
             artist: t.artist,
             lyrics: t.lyrics,
@@ -2267,7 +2266,7 @@ router.post("/validate", requireAuth, async (req: Request, res: Response) => {
         genre: data.genre,
         releaseDate: data.releaseDate,
         coverArtMetadata: data.coverArt,
-        tracks: data.tracks.map((t) => ({
+        tracks: data.tracks!.map((t) => ({
           title: t.title,
           artist: t.artist,
           lyrics: t.lyrics,
@@ -2322,7 +2321,7 @@ router.post(
         upc?: { code: string; formatted: string; checkDigit: string };
       } = {};
 
-      const countryCode = data.countryCode.toUpperCase() || "US";
+      const countryCode = data.countryCode!.toUpperCase() || "US";
 
       if (data.type === "isrc" || data.type === "both") {
         const count = data.count || 1;
@@ -2429,7 +2428,7 @@ router.post("/lint", requireAuth, async (req: Request, res: Response) => {
       upc: data.upc,
       isExplicit: data.isExplicit,
       language: data.language,
-      tracks: data.tracks.map((t) => ({
+      tracks: data.tracks!.map((t) => ({
         title: t.title,
         artist: t.artist,
         featuredArtists: t.featuredArtists,
@@ -2787,12 +2786,12 @@ router.post(
       res.json({
         success: true,
         fingerprint: {
-          id: fingerprint.id,
-          trackId: fingerprint.trackId,
-          releaseId: fingerprint.releaseId,
-          duration: fingerprint.duration,
-          algorithm: fingerprint.algorithm,
-          createdAt: fingerprint.createdAt,
+          id: fingerprint!.id,
+          trackId: fingerprint!.trackId,
+          releaseId: fingerprint!.releaseId,
+          duration: fingerprint!.duration,
+          algorithm: fingerprint!.algorithm,
+          createdAt: fingerprint!.createdAt,
         },
       });
     } catch (error: unknown) {
@@ -3543,7 +3542,7 @@ async function aggregateLabelGridAnalytics(userId: string) {
   const settled = await Promise?.allSettled(
     lgReleases?.map((r) =>
       labelGridService?.getReleaseAnalytics(
-        (r?.metadata as Record<string, unknown>).labelGridReleaseId,
+        ((r?.metadata as Record<string, unknown>).labelGridReleaseId as string),
       ),
     ),
   );
@@ -3551,7 +3550,7 @@ async function aggregateLabelGridAnalytics(userId: string) {
     .filter(
       (r): r is PromiseFulfilledResult<unknown> => r?.status === "fulfilled",
     )
-    .map((r) => r?.value);
+    .map((r) => (r as any)?.value);
   if (results?.length === 0) return null;
 
   const totalStreams = results?.reduce(
@@ -5381,7 +5380,7 @@ router?.post(
     try {
       const {  trackId } = req.body;
 
-      const track = await storage?.getDistroTrack(trackId);
+      const track = await (storage as any)?.getDistroTrack(trackId);
       if (!track) {
         return res.status(404).json({ error: "Track not found" });
       }
@@ -5487,7 +5486,7 @@ router?.post(
       const { registrationId, resolution, notes } = req.body;
 
       const trackId = registrationId?.replace("cid_", "");
-      const track = await storage?.getDistroTrack(trackId);
+      const track = await (storage as any)?.getDistroTrack(trackId);
       if (!track) {
         return res.status(404).json({ error: "Track not found" });
       }
@@ -5550,7 +5549,7 @@ router?.get(
             release?.createdAt?.toISOString() || new Date().toISOString(),
         });
       }
-      if (release?.coverArtUrl) {
+      if ((release as any)?.coverArtUrl) {
         releaseOutcomes?.push({
           type: "cover_upload",
           status: "success",
@@ -5756,7 +5755,7 @@ router?.post(
         return res.status(404).json({ error: "Release not found" });
       }
 
-      logger.info(`Retrying outcome ${type} for release ${id}`, { type, data });
+      logger.info({ type, data }, `Retrying outcome ${type} for release ${id}`);
 
       res.json({
         success: true,
@@ -5809,7 +5808,7 @@ router?.post(
             title,
           );
         } catch (storeErr) {
-          logger.warn("Failed to store ISRC in database:", storeErr);
+          logger.warn(storeErr, "Failed to store ISRC in database:");
         }
       }
 
@@ -5866,7 +5865,7 @@ router?.post(
         try {
           await codeGenerationService?.generateUPC(userId, releaseId, title);
         } catch (storeErr) {
-          logger.warn("Failed to store UPC in database:", storeErr);
+          logger.warn(storeErr, "Failed to store UPC in database:");
         }
       }
 
@@ -6306,8 +6305,8 @@ router.post(
         let isOfficiallyRegistered = true;
         for (let i = 0; i < safeCount; i++) {
           const trackInfo = tracks?.[i] || {
-            title: release.title || `Track ${i + 1}`,
-            artist: release.artist || "",
+            title: release!.title || `Track ${i + 1}`,
+            artist: release!.artist || "",
           };
           try {
             const result = await labelGridService?.generateISRC(
@@ -6793,7 +6792,7 @@ async function buildLabelGridPayload(
       metadata?.artistName ||
       "Unknown Artist",
     releaseDate: release.releaseDate
-      ? new Date(release?.releaseDate).toISOString().split("T")[0]
+      ? new Date(release?.releaseDate as any).toISOString().split("T")[0]
       : new Date().toISOString().split("T")[0],
     upc: (release as { upc?: string }).upc,
     artwork: metadata.artworkUrl || metadata?.artwork || "",

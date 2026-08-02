@@ -140,11 +140,11 @@ router?.get("/", async (req: Request, res: Response) => {
     const mappedNotifications = userNotifications?.map(
       (n: Record<string, unknown>) => ({
         ...n,
-        priority: n.metadata?.priority || "normal",
-        category: n.metadata?.category || getCategory(n?.type),
-        actionLabel: n.metadata?.actionLabel || null,
-        groupId: n.metadata?.groupId || null,
-        expiresAt: n.metadata?.expiresAt || null,
+        priority: (n.metadata as any)?.priority || "normal",
+        category: (n.metadata as any)?.category || getCategory((n?.type as string)),
+        actionLabel: (n.metadata as any)?.actionLabel || null,
+        groupId: (n.metadata as any)?.groupId || null,
+        expiresAt: (n.metadata as any)?.expiresAt || null,
       }),
     );
 
@@ -582,7 +582,7 @@ router.post("/sms/confirm", async (req: Request, res: Response) => {
 
     const user = await storage.getUser(req.user.id);
     const currentSettings =
-      (user.notificationSettings as Record<string, unknown>) || {};
+      (user!.notificationSettings as Record<string, unknown>) || {};
     const smsSettings = (currentSettings.sms as Record<string, unknown>) || {};
     const method = smsSettings.verificationMethod as string | undefined;
     const pendingCode = smsSettings.pendingVerification as string | undefined;
@@ -1026,7 +1026,6 @@ router.post("/push-subscriptions", async (req: Request, res: Response) => {
               ...currentSettings,
               push: { ...currentPush, enabled: true },
             },
-            updatedAt: new Date(),
           })
           .where(eq(users.id, req.user.id));
       }

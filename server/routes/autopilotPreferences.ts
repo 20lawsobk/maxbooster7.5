@@ -61,12 +61,12 @@ router?.get("/", async (req: Request, res: Response) => {
     const [preferences] = await db
       .select()
       .from(autopilotPreferences)
-      .where(eq(autopilotPreferences?.userId, req.user.id))
+      .where(eq(autopilotPreferences?.userId, req.user!.id))
       .limit(1);
 
     if (!preferences) {
       return res.json({
-        userId: req.user.id,
+        userId: req.user!.id,
         artistName: "",
         artistBio: "",
         genre: "",
@@ -137,7 +137,7 @@ router?.post("/", async (req: Request, res: Response) => {
     };
 
     const insertPayload = {
-      userId: req.user.id,
+      userId: req.user!.id,
       ...updatePayload,
     };
 
@@ -150,16 +150,16 @@ router?.post("/", async (req: Request, res: Response) => {
       })
       .returning();
 
-    logger.info(`Autopilot preferences saved for user ${req.user.id}`);
+    logger.info(`Autopilot preferences saved for user ${req.user!.id}`);
     res.json(result);
   } catch (error) {
     logger.warn(
-      { err: error, message: error.message, code: error.code },
+      { err: error, message: (error as Error).message, code: ((error as Error) as any).code },
       "Error saving autopilot preferences",
     );
     res
       .status(500)
-      .json({ error: "Failed to save preferences", detail: error.message });
+      .json({ error: "Failed to save preferences", detail: (error as Error).message });
   }
 });
 
@@ -175,7 +175,7 @@ router?.patch("/", async (req: Request, res: Response) => {
     const [existing] = await db
       .select()
       .from(autopilotPreferences)
-      .where(eq(autopilotPreferences?.userId, req.user.id))
+      .where(eq(autopilotPreferences?.userId, req.user!.id))
       .limit(1);
 
     if (!existing) {
@@ -192,19 +192,19 @@ router?.patch("/", async (req: Request, res: Response) => {
     const [result] = await db
       .update(autopilotPreferences)
       .set(updateData)
-      .where(eq(autopilotPreferences?.userId, req.user.id))
+      .where(eq(autopilotPreferences?.userId, req.user!.id))
       .returning();
 
-    logger.info(`Autopilot preferences updated for user ${req.user.id}`);
+    logger.info(`Autopilot preferences updated for user ${req.user!.id}`);
     res.json(result);
   } catch (error) {
     logger.warn(
-      { err: error, message: error.message, code: error.code },
+      { err: error, message: (error as Error).message, code: ((error as Error) as any).code },
       "Error updating autopilot preferences",
     );
     res
       .status(500)
-      .json({ error: "Failed to update preferences", detail: error.message });
+      .json({ error: "Failed to update preferences", detail: (error as Error).message });
   }
 });
 

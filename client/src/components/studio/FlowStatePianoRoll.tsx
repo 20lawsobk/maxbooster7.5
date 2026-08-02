@@ -82,7 +82,7 @@ const QUANTIZE_OPTIONS = [
 export function FlowStatePianoRoll({
   open,
   onOpenChange,
-  trackId,
+  _trackId,
   trackName = "MIDI Track",
   trackColor = "#8b5cf6",
   notes: initialNotes = [],
@@ -96,7 +96,7 @@ export function FlowStatePianoRoll({
   const [notes, setNotes] = useState<MIDINote[]>(initialNotes);
   const [tool, setTool] = useState<Tool>("pencil");
   const [zoom, setZoom] = useState(100);
-  const [verticalZoom, setVerticalZoom] = useState(100);
+  const [verticalZoom, _setVerticalZoom] = useState(100);
   const [snapValue, setSnapValue] = useState(0.25);
   const [quantizeValue, setQuantizeValue] = useState("1/16");
   const [selectedNotes, setSelectedNotes] = useState<Set<string>>(new Set());
@@ -104,14 +104,14 @@ export function FlowStatePianoRoll({
   useEffect(() => {
     setNotes(initialNotes);
   }, [initialNotes]);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(
+  const [_isDragging, _setIsDragging] = useState(false);
+  const [_dragStart, _setDragStart] = useState<{ x: number; y: number } | null>(
     null,
   );
   const [scrollX, setScrollX] = useState(0);
   const [scrollY, setScrollY] = useState((TOTAL_NOTES * NOTE_HEIGHT) / 2 - 200);
   const [showVelocity, setShowVelocity] = useState(true);
-  const [editingVelocity, setEditingVelocity] = useState<string | null>(null);
+  const [_editingVelocity, _setEditingVelocity] = useState<string | null>(null);
   const [undoStack, setUndoStack] = useState<MIDINote[][]>([]);
   const [redoStack, setRedoStack] = useState<MIDINote[][]>([]);
 

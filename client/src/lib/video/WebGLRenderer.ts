@@ -798,7 +798,7 @@ export class WebGLRenderer {
     if (this.canvas instanceof HTMLCanvasElement) {
       return new Promise((resolve, reject) => {
         this.canvas.toBlob(
-          (blob) => {
+          (blob: any) => {
             if (blob) resolve(blob);
             else reject(new Error("Failed to create blob"));
           },

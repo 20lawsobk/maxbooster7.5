@@ -92,7 +92,7 @@ export class WebhookReliabilityService {
             : this.calculateNextRetry(attemptNumber),
       };
 
-      const attempt = await storage?.createWebhookAttempt(attemptData);
+      const attempt = await (storage as any)?.createWebhookAttempt(attemptData);
 
       if (response?.status >= 200 && response?.status < 300) {
         return {
@@ -118,13 +118,13 @@ export class WebhookReliabilityService {
         error: `HTTP ${response?.status}`,
       };
     } catch (error: unknown) {
-      const errorMessage = error?.message || "Unknown error";
+      const errorMessage = (error as any)?.message || "Unknown error";
 
       const attemptData: InsertWebhookAttempt = {
         webhookEventId: eventId,
         attempt: attemptNumber,
         status: "failed",
-        responseCode: error.response?.status || null,
+        responseCode: (error as any).response?.status || null,
         responseBody: null,
         error: errorMessage.substring(0, 1000),
         url,
@@ -132,7 +132,7 @@ export class WebhookReliabilityService {
         nextRetryAt: this.calculateNextRetry(attemptNumber),
       };
 
-      const attempt = await storage?.createWebhookAttempt(attemptData);
+      const attempt = await (storage as any)?.createWebhookAttempt(attemptData);
 
       if (attemptNumber >= MAX_RETRIES) {
         await this.moveToDeadLetterQueue(
@@ -152,7 +152,7 @@ export class WebhookReliabilityService {
   }
 
   async retryWebhook(attemptId: string): Promise<WebhookDispatchResult> {
-    const attempt = await storage?.getWebhookAttempt(attemptId);
+    const attempt = await (storage as any)?.getWebhookAttempt(attemptId);
     if (!attempt) {
       throw new Error("Webhook attempt not found");
     }
@@ -182,21 +182,21 @@ export class WebhookReliabilityService {
       processedAt: null,
     };
 
-    await storage?.addToDeadLetterQueue(dlqData);
+    await (storage as any)?.addToDeadLetterQueue(dlqData);
   }
 
   async reprocessDeadLetter(dlqId: string): Promise<void> {
-    const item = await storage?.getDeadLetterQueueItem(dlqId);
+    const item = await (storage as any)?.getDeadLetterQueueItem(dlqId);
     if (!item) {
       throw new Error("Dead letter queue item not found");
     }
 
-    const webhookEvent = await storage?.getWebhookEvent(item?.webhookEventId);
+    const webhookEvent = await (storage as any)?.getWebhookEvent(item?.webhookEventId);
     if (!webhookEvent) {
       throw new Error("Webhook event not found");
     }
 
-    await storage?.reprocessDeadLetter(dlqId);
+    await (storage as any)?.reprocessDeadLetter(dlqId);
 
     const url = webhookEvent?.raw?.url || webhookEvent?.raw?.webhook_url || "";
     if (!url) {

@@ -86,7 +86,7 @@ export function BatchEditDialog({
   title = "Batch Edit",
   description,
   showPreview = true,
-  allowPartialApply = true,
+  _allowPartialApply = true,
 }: BatchEditDialogProps) {
   const [changes, setChanges] = useState<Record<string, FieldChange>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -242,7 +242,7 @@ export function BatchEditDialog({
         success: [],
         failed: selectedItems.map((item) => ({
           id: item.id,
-          error: error.message || "Unknown error",
+          error: (error as Error).message || "Unknown error",
         })),
       });
     } finally {

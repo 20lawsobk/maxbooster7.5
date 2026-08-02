@@ -66,7 +66,7 @@ function normalizeError(err: unknown): NormalizedError {
   }
 
   if (err instanceof Error) {
-    const anyErr = err as Record<string, unknown>;
+    const anyErr = err as unknown as Record<string, unknown>;
     return {
       name: err.name,
       message: err.message,
@@ -131,7 +131,7 @@ function extractReasonInfo(reason: unknown): {
   stack?: string;
 } {
   if (reason instanceof Error) {
-    const anyReason = reason as Record<string, unknown>;
+    const anyReason = reason as unknown as Record<string, unknown>;
     return {
       message: reason.message,
       code: typeof anyReason?.code === "string" ? anyReason?.code : undefined,
@@ -183,7 +183,7 @@ export function globalErrorHandler(
     const issues = normalized?.issues || [];
     const firstIssue = issues[0];
     message = firstIssue
-      ? `Validation failed: ${firstIssue?.path?.length ? firstIssue?.path.join(".") + " - " : ""}${firstIssue?.message}`
+      ? `Validation failed: ${(firstIssue as any)?.path?.length ? (firstIssue as any)?.path.join(".") + " - " : ""}${(firstIssue as any)?.message}`
       : "Validation failed";
     code = "VALIDATION_ERROR";
     isOperational = true;
@@ -246,8 +246,8 @@ export function globalErrorHandler(
 
   auditLogger?.log({
     timestamp: new Date().toISOString(),
-    userId: (req as Record<string, unknown>).user?.id,
-    userEmail: (req as Record<string, unknown>).user?.email,
+    userId: ((req as unknown as Record<string, unknown>).user as any)?.id,
+    userEmail: ((req as unknown as Record<string, unknown>).user as any)?.email,
     ip: req.ip || "unknown",
     userAgent: req.get("user-agent") || "unknown",
     action: "ERROR_HANDLED",
@@ -273,16 +273,16 @@ export function globalErrorHandler(
   });
 
   if (statusCode >= 500 && !isOperational) {
-    logger.warn("CRITICAL ERROR:", {
+    logger.warn({
       timestamp: new Date().toISOString(),
       method: req.method,
       url: req.originalUrl,
       error: normalized.message,
       stack: normalized.stack,
       context: normalized.context,
-      userId: (req as Record<string, unknown>).user?.id,
+      userId: ((req as unknown as Record<string, unknown>).user as any)?.id,
       ip: req.ip,
-    });
+    }, "CRITICAL ERROR:");
   }
 
   if (res.headersSent) {
@@ -345,11 +345,11 @@ export function handleUnhandledRejection(server?: Server) {
         return;
       }
 
-      logger.warn("UNHANDLED PROMISE REJECTION:", {
+      logger.warn({
         reason: info.message,
         stack: info.stack,
         timestamp: new Date().toISOString(),
-      });
+      }, "UNHANDLED PROMISE REJECTION:");
 
       auditLogger?.log({
         timestamp: new Date().toISOString(),
@@ -384,11 +384,11 @@ export function handleUncaughtException(server?: Server) {
       logger.warn(`Non-fatal stream error (${code}): ${error?.message}`);
       return;
     }
-    logger.warn("UNCAUGHT EXCEPTION:", {
+    logger.warn({
       error: error.message,
       stack: error.stack,
       timestamp: new Date().toISOString(),
-    });
+    }, "UNCAUGHT EXCEPTION:");
 
     auditLogger?.log({
       timestamp: new Date().toISOString(),
@@ -415,7 +415,7 @@ function gracefulShutdown(server: Server | undefined, reason: string) {
   if (server && typeof server?.close === "function") {
     server?.close((err?: Error) => {
       if (err) {
-        logger.warn("Error during server shutdown:", { error: err.message });
+        logger.warn({ error: err.message }, "Error during server shutdown:");
       } else {
         logger.info("HTTP server closed");
       }

@@ -109,5 +109,5 @@ export async function drainN<T>(
       (r): r is { status: "fulfilled"; value: T } =>
         r?.status === "fulfilled" && r?.value !== null,
     )
-    .map((r) => r?.value);
+    .map((r) => (r as any)?.value);
 }

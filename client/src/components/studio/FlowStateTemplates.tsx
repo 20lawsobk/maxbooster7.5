@@ -575,7 +575,7 @@ export function FlowStateTemplates({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGenre, setSelectedGenre] = useState("All");
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("browse");
+  const [_activeTab, _setActiveTab] = useState("browse");
 
   const filteredTemplates = useMemo(() => {
     return templates

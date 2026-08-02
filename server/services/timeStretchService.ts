@@ -109,13 +109,13 @@ export class TimeStretchService {
       );
     }
     return new Promise((resolve, reject) => {
-      ffmpeg?.ffprobe(filePath, (err, metadata) => {
+      ffmpeg?.ffprobe(filePath, (err: any, metadata: any) => {
         if (err) {
           reject(new Error(`Failed to probe audio file: ${err?.message}`));
           return;
         }
         const audioStream = metadata?.streams.find(
-          (s) => s?.codec_type === "audio",
+          (s: any) => s?.codec_type === "audio",
         );
         if (!audioStream) {
           reject(new Error("No audio stream found in file"));
@@ -157,7 +157,7 @@ export class TimeStretchService {
     } = options;
 
     return new Promise((resolve, reject) => {
-      let command = ffmpeg(inputPath);
+      let command = ffmpeg!(inputPath);
       const filters: string[] = [];
 
       if (algorithm === "rubberband") {
@@ -217,7 +217,7 @@ export class TimeStretchService {
         .outputOptions(["-y", "-acodec", "pcm_s24le"])
         .output(outputPath)
         .on("end", () => resolve())
-        .on("error", (err) =>
+        .on("error", (err: any) =>
           reject(new Error(`Time stretch failed: ${err?.message}`)),
         )
         .run();
@@ -360,7 +360,7 @@ export class TimeStretchService {
         .outputOptions(["-y", "-acodec", "pcm_s24le"])
         .output(outputPath)
         .on("end", () => resolve())
-        .on("error", (err) =>
+        .on("error", (err: any) =>
           reject(new Error(`Extract segment failed: ${err?.message}`)),
         )
         .run();
@@ -399,7 +399,7 @@ export class TimeStretchService {
           .outputOptions(["-y", "-acodec", "pcm_s24le"])
           .output(outputPath)
           .on("end", () => resolve())
-          .on("error", (err) =>
+          .on("error", (err: any) =>
             reject(new Error(`Concatenation failed: ${err?.message}`)),
           )
           .run();
@@ -631,25 +631,25 @@ export class TimeStretchService {
     const payload: WarpJobPayload = {
       userId,
       clipId,
-      storageKey: clip.filePath,
+      storageKey: (clip as any).filePath,
       markers: markers.map((m) => ({
         id: m.id,
-        sourceTime: m.sourceTime,
-        targetTime: m.targetTime,
+        sourceTime: (m as any).sourceTime,
+        targetTime: (m as any).targetTime,
       })),
-      pitchShift: clip.pitchShift ?? undefined,
-      preserveFormants: clip.preserveFormants ?? true,
+      pitchShift: (clip as any).pitchShift ?? undefined,
+      preserveFormants: (clip as any).preserveFormants ?? true,
       algorithm: "phase_vocoder",
       quality: "high",
     };
 
-    await queueService?.addJob("audio-warp", `warp-${jobId}`, payload, {
+    await (queueService as any)?.addJob("audio-warp", `warp-${jobId}`, payload, {
       priority: 1,
       attempts: 3,
     });
 
     return {
-      storageKey: `${clip?.filePath}_warped`,
+      storageKey: `${(clip as any)?.filePath}_warped`,
       duration: clip.duration,
     };
   }

@@ -152,9 +152,9 @@ async function runAllLoadTests(): Promise<void> {
   const fixes: string[] = [];
 
   for (const suite of TEST_SUITES) {
-    logger.info(`Testing: ${suite?.name.toUpperCase()}`, {
+    logger.info({
       endpoint: suite.endpoint,
-    });
+    }, `Testing: ${suite?.name.toUpperCase()}`);
 
     try {
       const results = await tester?.runProgressiveScaleTest(
@@ -182,8 +182,8 @@ async function runAllLoadTests(): Promise<void> {
         }
       }
     } catch (error) {
-      logger.warn(`${suite?.name} test failed`, { error: error.message });
-      issues?.push(`${suite?.name}: Test execution failed - ${error?.message}`);
+      logger.warn({ error: (error as Error).message }, `${suite?.name} test failed`);
+      issues?.push(`${suite?.name}: Test execution failed - ${(error as any)?.message}`);
     }
   }
 
@@ -193,18 +193,18 @@ async function runAllLoadTests(): Promise<void> {
     const maxResult = results[results?.length - 1];
     const passRate =
       (results?.filter((r) => r?.passed).length / results?.length) * 100;
-    logger.info(`Endpoint summary: ${name}`, {
+    logger.info({
       maxTested: `${maxResult?.scale || "N/A"} (${formatNumber(maxResult?.simulatedUsers || 0)} users)`,
       passRate: `${passRate?.toFixed(0)}%`,
       status: maxResult.passed ? "PASSED" : "NEEDS OPTIMIZATION",
-    });
+    }, `Endpoint summary: ${name}`);
   }
 
   if (issues?.length === 0) {
     logger.info("No issues detected");
   } else {
     const uniqueIssues = [...new Set(issues)];
-    logger.warn("Identified issues", { issues: uniqueIssues });
+    logger.warn({ issues: uniqueIssues }, "Identified issues");
   }
 
   const uniqueFixes = [...new Set(fixes)];
@@ -221,16 +221,16 @@ async function runAllLoadTests(): Promise<void> {
     "Implement geo-distributed deployment",
   ];
 
-  logger.info("Recommended optimizations for 80B scale", {
+  logger.info({
     recommendations: [...uniqueFixes, ...criticalFixes].slice(0, 15),
-  });
+  }, "Recommended optimizations for 80B scale");
 
   const avgThroughput =
     Array.from(allResults?.values())
       .map((r) => r[r?.length - 1]?.results?.requestsPerSecond || 0)
       .reduce((a, b) => a + b, 0) / allResults?.size;
 
-  logger.info("Theoretical capacity analysis for 80 billion users", {
+  logger.info({
     currentThroughput: `~${formatNumber(Math.round(avgThroughput))} req/sec per instance`,
     requiredFor80BDAU: `~${formatNumber(80000000000 / 86400)} req/sec`,
     instancesNeeded: `~${formatNumber(Math.ceil(80000000000 / 86400 / avgThroughput))} server instances`,
@@ -241,7 +241,7 @@ async function runAllLoadTests(): Promise<void> {
       "Global CDN with edge computing",
       "Multi-cloud deployment (AWS + GCP + Azure)",
     ],
-  });
+  }, "Theoretical capacity analysis for 80 billion users");
 
   logger.info("Load testing complete");
 }
@@ -255,5 +255,5 @@ function formatNumber(num: number): string {
 }
 
 runAllLoadTests().catch((err) =>
-  logger.warn("Load test suite failed", { error: err }),
+  logger.warn({ error: err }, "Load test suite failed"),
 );

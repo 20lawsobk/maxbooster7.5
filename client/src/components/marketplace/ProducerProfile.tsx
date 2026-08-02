@@ -483,7 +483,7 @@ export function ProducerProfile({
                   </p>
 
                   <div className="flex flex-wrap gap-2 mt-4">
-                    {displayProducer.genres.map((genre) => (
+                    {displayProducer.genres.map((genre: any) => (
                       <Badge key={genre} variant="secondary">
                         {genre}
                       </Badge>
@@ -491,7 +491,7 @@ export function ProducerProfile({
                   </div>
 
                   <div className="flex items-center gap-4 mt-4">
-                    {displayProducer.socials.map((social) => (
+                    {displayProducer.socials.map((social: any) => (
                       <TooltipProvider key={social.platform}>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -543,7 +543,7 @@ export function ProducerProfile({
                   <TabsContent value="beats" className="mt-6">
                     <div className="grid gap-4">
                       <AnimatePresence mode="popLayout">
-                        {displayProducer.featuredBeats.map((beat, index) => (
+                        {displayProducer.featuredBeats.map((beat: any, index: any) => (
                           <motion.div
                             key={beat.id}
                             initial={{ opacity: 0, x: -20 }}
@@ -653,7 +653,7 @@ export function ProducerProfile({
                     </div>
 
                     <div className="space-y-4">
-                      {displayProducer.recentReviews.map((review) => (
+                      {displayProducer.recentReviews.map((review: any) => (
                         <Card key={review.id}>
                           <CardContent className="p-4">
                             <div className="flex items-start gap-3">
@@ -701,7 +701,7 @@ export function ProducerProfile({
 
                   <TabsContent value="stats" className="mt-6">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {displayProducer.achievements.map((achievement) => (
+                      {displayProducer.achievements.map((achievement: any) => (
                         <Card key={achievement.label} className="text-center">
                           <CardContent className="p-4">
                             <p className="text-2xl font-bold">

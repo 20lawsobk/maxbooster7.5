@@ -168,7 +168,7 @@ export function FlowStateAIPanel({
   mode = "create",
   projectId,
   tracks = [],
-  currentTime = 0,
+  _currentTime = 0,
   tempo = 120,
   musicalKey = "C",
   scale = "minor",

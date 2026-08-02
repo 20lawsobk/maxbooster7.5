@@ -345,7 +345,7 @@ router?.post(
 
       if (action === "viral_potential" && result?.data && req.user?.id) {
         const score: number =
-          (result?.data as Record<string, unknown>).overallScore ?? 0;
+          (result?.data as unknown as Record<string, unknown>).overallScore ?? 0;
         if (score >= 0.75) {
           const pct = Math.round(score * 100);
           const platformLabel =
@@ -578,7 +578,7 @@ router?.get("/trends", requireAuth, async (req: Request, res: Response) => {
       : ["twitter", "instagram", "tiktok"];
 
     const trends = unifiedAIController?.detectTrends(
-      platforms as Record<string, unknown>,
+      platforms as unknown as Record<string, unknown>,
     );
 
     res.json({

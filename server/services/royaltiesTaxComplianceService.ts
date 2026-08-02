@@ -4,8 +4,8 @@ const TAX_THRESHOLD = 600;
 
 export class RoyaltiesTaxComplianceService {
   async aggregateAnnualEarnings(userId: string, year: number) {
-    const collaborators = await storage?.getCollaboratorsForTaxYear(year);
-    return collaborators?.find((c) => c?.userId === userId);
+    const collaborators = await (storage as any)?.getCollaboratorsForTaxYear(year);
+    return collaborators?.find((c: any) => c?.userId === userId);
   }
 
   async generate1099MISC(userId: string, year: number) {
@@ -18,7 +18,7 @@ export class RoyaltiesTaxComplianceService {
       };
     }
 
-    const taxProfile = await storage?.getTaxProfile(userId);
+    const taxProfile = await (storage as any)?.getTaxProfile(userId);
 
     if (!taxProfile || !taxProfile?.w9OnFile) {
       return { eligible: false, reason: "W9 form not on file" };
@@ -50,7 +50,7 @@ export class RoyaltiesTaxComplianceService {
   async validateTaxProfile(
     userId: string,
   ): Promise<{ valid: boolean; errors: string[] }> {
-    const profile = await storage?.getTaxProfile(userId);
+    const profile = await (storage as any)?.getTaxProfile(userId);
     const errors: string[] = [];
 
     if (!profile) {

@@ -80,7 +80,7 @@ export function SmartWidget({
   const queryClient = useQueryClient();
   const viewStartRef = useRef<Date | null>(null);
   const intersectionRef = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
+  const [_isVisible, setIsVisible] = useState(false);
 
   const trackViewMutation = useMutation({
     mutationFn: async (duration: number) => {

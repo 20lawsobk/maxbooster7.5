@@ -103,7 +103,7 @@ async function pdimRpush(
   if (!isPdimConfigured()) return false;
   try {
     const client = getPdimClient();
-    await (client as Record<string, unknown>).rpush(
+    await (client as unknown as Record<string, unknown>).rpush(
       key,
       JSON.stringify({ ...payload, ts: Date.now() }),
     );

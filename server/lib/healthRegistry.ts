@@ -100,7 +100,7 @@ export function registerCoreProbes(): void {
   healthRegistry?.register("database", async () => {
     try {
       const { db } = await import("../db.js");
-      await (db as Record<string, unknown>).execute?.("SELECT 1");
+      await (db as unknown as Record<string, unknown>).execute?.("SELECT 1");
       return { status: "ok" };
     } catch (e) {
       return { status: "down", detail: (e as Error).message };
@@ -126,8 +126,8 @@ export function registerCoreProbes(): void {
     try {
       const mod = await import("../audit-system.js");
       const audit =
-        (mod as Record<string, unknown>).default?.getInstance?.() ??
-        (mod as Record<string, unknown>).AuditSystem?.getInstance?.();
+        ((mod as Record<string, unknown>).default as any)?.getInstance?.() ??
+        ((mod as Record<string, unknown>).AuditSystem as any)?.getInstance?.();
       if (!audit) return { status: "unknown", detail: "not initialized" };
       const results = audit?.getAuditResults?.() ?? audit?.auditResults;
       const score = results?.overallScore ?? 0;
@@ -148,8 +148,8 @@ export function registerCoreProbes(): void {
     try {
       const mod = await import("../automation-system.js");
       const auto =
-        (mod as Record<string, unknown>).default?.getInstance?.() ??
-        (mod as Record<string, unknown>).AutomationSystem?.getInstance?.();
+        ((mod as Record<string, unknown>).default as any)?.getInstance?.() ??
+        ((mod as Record<string, unknown>).AutomationSystem as any)?.getInstance?.();
       if (!auto) return { status: "unknown", detail: "not initialized" };
       const m = auto?.getMetrics?.();
       return { status: "ok", detail: `workflows=${m?.totalWorkflows ?? 0}` };

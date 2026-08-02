@@ -156,12 +156,12 @@ export class AudioNormalizationService {
       const clampedGainDb = Math.min(gainDb, availableHeadroom);
       gainLinear = Math.pow(10, clampedGainDb / 20);
       clippingPrevented = true;
-      logger.info("Clipping prevention applied", {
+      logger.info({
         originalGainDb: gainDb,
         clampedGainDb,
         truePeakBefore: truePeakDb,
         projectedPeakAfter: projectedPeakAfterGain,
-      });
+      }, "Clipping prevention applied");
     }
 
     const normalizedSamples = new Float32Array(samples?.length);
@@ -270,7 +270,7 @@ export class AudioNormalizationService {
     return high - low;
   }
 
-  private calculateTruePeak(samples: Float32Array, _sampleRate: number): number {
+  private calculateTruePeak(samples: Float32Array, sampleRate: number): number {
     const oversamplingFactor = 4;
     let maxPeak = 0;
 

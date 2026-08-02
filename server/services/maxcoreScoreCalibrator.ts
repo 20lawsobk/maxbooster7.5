@@ -430,7 +430,7 @@ async function fetchModelStates(): Promise<
  * live POST /api/generate/content generation signals — all in parallel.
  */
 async function fetchMaxCoreCalibration(
-  summary: PerformanceSummary | null,
+  _summary: PerformanceSummary | null,
 ): Promise<{
   calibration: MaxCoreCalibrationResponse | null;
   reachable: boolean;
@@ -529,7 +529,7 @@ async function fetchMaxCoreCalibration(
       const cs = (contentSignals as Record<string, unknown>)[k];
       const dw = (depthWeights as Record<string, unknown>)[k];
       if (cs != null && dw != null) {
-        (mergedWeights as Record<string, unknown>)[k] = Math.max(cs, dw);
+        (mergedWeights as Record<string, unknown>)[k] = Math.max((cs as number), dw);
       } else if (dw != null) {
         (mergedWeights as Record<string, unknown>)[k] = dw;
       }
@@ -579,7 +579,7 @@ function applyCalibration(
   if (resp.weights) {
     for (const [k, v] of Object.entries(resp.weights)) {
       if (k in merged && typeof v === "number") {
-        (merged as Record<string, unknown>)[k] = Math.max(
+        (merged as unknown as Record<string, unknown>)[k] = Math.max(
           0.01,
           Math.min(0.5, v),
         );

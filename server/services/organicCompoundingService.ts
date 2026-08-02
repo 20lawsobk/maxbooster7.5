@@ -497,10 +497,10 @@ class OrganicCompoundingService {
     weekStart: Date,
     timeBudgetHours: number,
   ): Promise<WeeklyState> {
-    logger.info(`Starting weekly organic loop for user ${userId}`, {
+    logger.info({
       weekStart,
       timeBudgetHours,
-    });
+    }, `Starting weekly organic loop for user ${userId}`);
 
     try {
       const assets = await this.getAssets(userId);
@@ -576,11 +576,11 @@ class OrganicCompoundingService {
         placements,
       };
 
-      logger.info(`Weekly organic loop completed for user ${userId}`, {
+      logger.info({
         candidatesGenerated: scoredCandidates.length,
         assetsSelected: selected.length,
         placementsCreated: placements.length,
-      });
+      }, `Weekly organic loop completed for user ${userId}`);
 
       return weeklyState;
     } catch (error) {

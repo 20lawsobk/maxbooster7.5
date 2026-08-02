@@ -1406,9 +1406,9 @@ class AdvancedSocialAIService {
       platform: request.platforms[0] || "instagram",
       topic: request.topic || "new music",
       tone: request.tone || "energetic",
-      genre: request.genre || userContext.genre,
-      artist_name: request.artistName || userContext.artistName,
-      brand_voice: userContext.brandVoice,
+      genre: request.genre || (userContext as any).genre,
+      artist_name: request.artistName || (userContext as any).artistName,
+      brand_voice: (userContext as any).brandVoice,
       target_audience: request.targetAudience,
       storefront_url: request.storefrontUrl,
       beat_context: request.beatContext,
@@ -1585,7 +1585,7 @@ class AdvancedSocialAIService {
           .limit(1),
       ]);
       return {
-        brandVoice: brandVoice?.voiceProfile ?? null,
+        brandVoice: (brandVoice as any)?.voiceProfile ?? null,
         artistName: preferences?.artistName || "Artist",
         genre: preferences?.genre,
         preferences: preferences ?? null,
@@ -1785,7 +1785,7 @@ class AdvancedSocialAIService {
     body: string,
     cta: string,
     hashtags: string[],
-    tone: ToneProfile,
+    _tone: ToneProfile,
   ): ContentVariant[] {
     const variants: ContentVariant[] = [];
     const count = request.variantCount || 3;
@@ -2202,7 +2202,7 @@ class AdvancedSocialAIService {
 
   private analyzeViralPotential(
     content: string,
-    request: AdvancedContentRequest,
+    _request: AdvancedContentRequest,
   ): ViralAnalysis {
     const lowerContent = content.toLowerCase();
     const factors: ViralFactor[] = [];

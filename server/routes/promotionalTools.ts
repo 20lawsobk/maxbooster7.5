@@ -46,7 +46,7 @@ router?.post("/presave", requireAuth, async (req: Request, res: Response) => {
     const userId = (req.user as Record<string, unknown>).id;
     const data = preSavePageSchema?.parse(req.body);
     const page = await promotionalToolsService?.createPreSavePage(
-      userId,
+      (userId as string),
       data?.releaseId,
       data,
     );
@@ -60,7 +60,7 @@ router?.post("/presave", requireAuth, async (req: Request, res: Response) => {
 router?.get("/presave", requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as Record<string, unknown>).id;
-    const pages = await promotionalToolsService?.getUserPreSavePages(userId);
+    const pages = await promotionalToolsService?.getUserPreSavePages((userId as string));
     res.json(pages);
   } catch (error) {
     logger.warn({ err: error }, "Error fetching pre-save pages:");
@@ -103,12 +103,12 @@ router?.put("/presave/:id", requireAuth, async (req: Request, res: Response) => 
     const userId = (req.user as Record<string, unknown>).id;
     const page = await promotionalToolsService?.updatePreSavePage(
       req.params.id,
-      userId,
+      (userId as string),
       req.body,
     );
     res.json(page);
   } catch (error) {
-    if (error?.message === "Pre-save page not found") {
+    if ((error as any)?.message === "Pre-save page not found") {
       return res.status(404).json({ error: "Pre-save page not found" });
     }
     logger.warn({ err: error }, "Error updating pre-save page:");
@@ -175,7 +175,7 @@ router?.delete(
       const userId = (req.user as Record<string, unknown>).id;
       const deleted = await promotionalToolsService?.deletePreSavePage(
         req.params.id,
-        userId,
+        (userId as string),
       );
       if (!deleted)
         return res.status(404).json({ error: "Pre-save page not found" });
@@ -206,7 +206,7 @@ router?.post(
       const userId = (req.user as Record<string, unknown>).id;
       const data = promoCardSchema?.parse(req.body);
       const card = await promotionalToolsService?.createPromoCard(
-        userId,
+        (userId as string),
         data?.releaseId,
         data,
       );
@@ -223,7 +223,7 @@ router?.get("/promo-cards", requireAuth, async (req: Request, res: Response) => 
     const userId = (req.user as Record<string, unknown>).id;
     const releaseId = req.query.releaseId as string | undefined;
     const cards = await promotionalToolsService?.getPromoCards(
-      userId,
+      (userId as string),
       releaseId,
     );
     res.json(cards);
@@ -237,7 +237,7 @@ router?.get("/promo-cards/templates", async (_req: Request, res: Response) => {
   try {
     res.json(promotionalToolsService?.getPromoCardTemplates());
   } catch (error) {
-    logger.warn("Error in promo card templates:", error?.message);
+    logger.warn("Error in promo card templates:", (error as any)?.message);
     res.status(500).json({ error: "Failed to process request" });
   }
 });
@@ -250,7 +250,7 @@ router?.delete(
       const userId = (req.user as Record<string, unknown>).id;
       const deleted = await promotionalToolsService?.deletePromoCard(
         req.params.id,
-        userId,
+        (userId as string),
       );
       if (!deleted)
         return res.status(404).json({ error: "Promo card not found" });
@@ -284,7 +284,7 @@ router?.post(
       const userId = (req.user as Record<string, unknown>).id;
       const data = miniVideoSchema?.parse(req.body);
       const video = await promotionalToolsService?.createMiniVideo(
-        userId,
+        (userId as string),
         data?.releaseId,
         data,
       );
@@ -301,7 +301,7 @@ router?.get("/mini-videos", requireAuth, async (req: Request, res: Response) => 
     const userId = (req.user as Record<string, unknown>).id;
     const releaseId = req.query.releaseId as string | undefined;
     const videos = await promotionalToolsService?.getMiniVideos(
-      userId,
+      (userId as string),
       releaseId,
     );
     res.json(videos);
@@ -319,7 +319,7 @@ router?.delete(
       const userId = (req.user as Record<string, unknown>).id;
       const deleted = await promotionalToolsService?.deleteMiniVideo(
         req.params.id,
-        userId,
+        (userId as string),
       );
       if (!deleted)
         return res.status(404).json({ error: "Mini video not found" });
@@ -347,7 +347,7 @@ router?.post(
       const userId = (req.user as Record<string, unknown>).id;
       const data = spotifyCanvasSchema?.parse(req.body);
       const canvas = await promotionalToolsService?.createSpotifyCanvas(
-        userId,
+        (userId as string),
         data?.releaseId,
         data?.trackId,
         data,
@@ -368,7 +368,7 @@ router?.get(
       const userId = (req.user as Record<string, unknown>).id;
       const releaseId = req.query.releaseId as string | undefined;
       const canvases = await promotionalToolsService?.getSpotifyCanvases(
-        userId,
+        (userId as string),
         releaseId,
       );
       res.json(canvases);
@@ -441,7 +441,7 @@ router?.post(
       const userId = (req.user as Record<string, unknown>).id;
       const data = lyricsSyncSchema?.parse(req.body);
       const sync = await promotionalToolsService?.createLyricsSync(
-        userId,
+        (userId as string),
         data?.releaseId,
         data?.trackId,
         data,
@@ -459,7 +459,7 @@ router?.get("/lyrics-sync", requireAuth, async (req: Request, res: Response) => 
     const userId = (req.user as Record<string, unknown>).id;
     const releaseId = req.query.releaseId as string | undefined;
     const syncs = await promotionalToolsService?.getLyricsSyncs(
-      userId,
+      (userId as string),
       releaseId,
     );
     res.json(syncs);
@@ -509,7 +509,7 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const syncs = await promotionalToolsService?.getLyricsSyncs(
-        (req.user as Record<string, unknown>).id,
+        ((req.user as Record<string, unknown>).id as string),
       );
       const sync = syncs?.find((s) => s?.id === req.params.id);
       if (!sync) {
@@ -535,7 +535,7 @@ router?.get(
   async (req: Request, res: Response) => {
     try {
       const syncs = await promotionalToolsService?.getLyricsSyncs(
-        (req.user as Record<string, unknown>).id,
+        ((req.user as Record<string, unknown>).id as string),
       );
       const sync = syncs?.find((s) => s?.id === req.params.id);
       if (!sync) {

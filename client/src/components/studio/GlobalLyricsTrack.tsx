@@ -14,7 +14,7 @@ interface GlobalLyricsTrackProps {
 
 export function GlobalLyricsTrack({
   duration,
-  zoom,
+  _zoom,
   onTimeChange,
   onOpenFullscreen,
   onOpenLyricsPanel,

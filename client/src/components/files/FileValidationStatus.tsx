@@ -340,7 +340,7 @@ export function FileValidationStatus({
 
               {showDetails && (
                 <div className="space-y-2">
-                  {activeResult.checks.map((check) => (
+                  {activeResult.checks.map((check: any) => (
                     <div
                       key={check.id}
                       className={cn(
@@ -480,7 +480,7 @@ export function FileValidationStatus({
               </div>
 
               <div className="space-y-2 max-h-64 overflow-y-auto">
-                {activeResult.checks.map((check) => (
+                {activeResult.checks.map((check: any) => (
                   <div
                     key={check.id}
                     className="flex items-center gap-3 p-2 rounded border"

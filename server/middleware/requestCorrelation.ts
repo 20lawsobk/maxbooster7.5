@@ -21,7 +21,7 @@ async function getMaxBooster247() {
     } catch (error: unknown) {
       logger.warn(
         "⚠️ Reliability system import failed:",
-        error?.message || error,
+        (error as any)?.message || error,
       );
       importAttempted = true;
       return null;
@@ -109,17 +109,17 @@ export function performanceMonitoring(
       .then((maxBooster247) => {
         if (maxBooster247) {
           try {
-            maxBooster247.trackRequest(duration);
+            (maxBooster247.trackRequest as any)(duration);
 
             // Track errors for 4xx/5xx responses
             if (res.statusCode >= 400) {
-              maxBooster247.trackError(
+              (maxBooster247.trackError as any)(
                 `HTTP ${res.statusCode}: ${req.method} ${req.originalUrl}`,
               );
             }
           } catch (trackingError: unknown) {
             // Don't let tracking errors break requests
-            logger.warn("⚠️ Request tracking failed:", trackingError);
+            logger.warn(trackingError, "⚠️ Request tracking failed:");
           }
         }
       })
@@ -170,12 +170,12 @@ export function memoryMonitoring(
 
     // Log memory leaks (> 10MB increase per request)
     if (memoryDelta > 10 * 1024 * 1024) {
-      logger.warn(`🧠 MEMORY LEAK DETECTED: ${req.method} ${req.originalUrl}`, {
+      logger.warn({
         requestId: req.requestId,
         memoryIncrease: `${Math.round(memoryDelta / 1024 / 1024)}MB`,
         currentHeapUsed: `${Math.round(finalMemory?.heapUsed / 1024 / 1024)}MB`,
         url: req.originalUrl,
-      });
+      }, `🧠 MEMORY LEAK DETECTED: ${req.method} ${req.originalUrl}`);
     }
 
     // Properly forward all arguments to original end method

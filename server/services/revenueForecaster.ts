@@ -511,7 +511,7 @@ class RevenueForecaster {
       const filledData: TimeSeriesDataPoint[] = [];
       const dataMap = new Map(
         data?.map((d) => [
-          d?.date.toISOString().split("T")[0],
+          (d?.date as any).toISOString().split("T")[0],
           Number(d?.revenue),
         ]),
       );
@@ -565,7 +565,7 @@ class RevenueForecaster {
     };
   }
 
-  private detectSeasonality(data: TimeSeriesDataPoint[]): SeasonalityPattern {
+  private detectSeasonality(_data: TimeSeriesDataPoint[]): SeasonalityPattern {
     const dayOfWeek = [1, 1, 1, 1, 1, 1.1, 1.15];
     const monthOfYear = [
       0.9, 0.85, 0.95, 1, 1.05, 1.15, 1.1, 1.05, 1, 1.05, 1.2, 1.35,
@@ -689,7 +689,7 @@ class RevenueForecaster {
       try {
         await db?.insert(revenueForecasts).values(forecastRecord);
       } catch (insertError) {
-        logger.warn("Failed to store forecast record, skipping:", insertError);
+        logger.warn(insertError, "Failed to store forecast record, skipping:");
       }
     }
 

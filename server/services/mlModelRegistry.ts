@@ -183,12 +183,12 @@ export class MLModelRegistry {
       await this.ensureStorageDirectory();
       await this.loadPersistedData();
       this.initialized = true;
-      logger.info("ML Model Registry initialized successfully", {
+      logger.info({
         modelsLoaded: this.models.size,
         storageDir: this.storageDir,
-      });
+      }, "ML Model Registry initialized successfully");
     } catch (error) {
-      logger.warn("Failed to initialize ML Model Registry", error as Error);
+      logger.warn({ err: error as Error }, "Failed to initialize ML Model Registry");
       throw error;
     }
   }
@@ -250,13 +250,13 @@ export class MLModelRegistry {
         }
       }
 
-      logger.info("Registry data loaded from disk", {
+      logger.info({
         models: this.models.size,
         variants: this.variants.size,
         abTests: this.abTests.size,
-      });
+      }, "Registry data loaded from disk");
     } catch (error) {
-      logger.warn("Error loading persisted registry data", error as Error);
+      logger.warn({ err: error as Error }, "Error loading persisted registry data");
     }
   }
 
@@ -275,7 +275,7 @@ export class MLModelRegistry {
         "utf-8",
       );
     } catch (error) {
-      logger.warn("Failed to persist registry data", error as Error);
+      logger.warn({ err: error as Error }, "Failed to persist registry data");
       throw error;
     }
   }
@@ -324,11 +324,11 @@ export class MLModelRegistry {
     this.predictions.set(id, []);
     await this.persistData();
 
-    logger.info("Model registered successfully", {
+    logger.info({
       modelId: id,
       name: options.name,
       version: options.version,
-    });
+    }, "Model registered successfully");
 
     return model;
   }
@@ -350,12 +350,12 @@ export class MLModelRegistry {
       await instance?.save(`file://${modelPath}`);
       model.status = "active";
       await this.persistData();
-      logger.info("Model instance saved to disk", {
+      logger.info({
         modelId: model.id,
         path: modelPath,
-      });
+      }, "Model instance saved to disk");
     } catch (error) {
-      logger.warn("Failed to save model instance", error as Error);
+      logger.warn({ err: error as Error }, "Failed to save model instance");
     }
 
     return model;
@@ -457,11 +457,11 @@ export class MLModelRegistry {
 
     await this.persistData();
 
-    logger.info("Model status updated", {
+    logger.info({
       modelId,
       previousStatus,
       newStatus: status,
-    });
+    }, "Model status updated");
 
     return model;
   }
@@ -499,10 +499,10 @@ export class MLModelRegistry {
 
     await this.persistData();
 
-    logger.info("Model metadata updated", {
+    logger.info({
       modelId,
       updates: Object.keys(updates),
-    });
+    }, "Model metadata updated");
 
     return model;
   }
@@ -540,10 +540,10 @@ export class MLModelRegistry {
 
     await this.persistData();
 
-    logger.info("Model marked as trained", {
+    logger.info({
       modelId,
       accuracy: metrics.accuracy,
-    });
+    }, "Model marked as trained");
 
     return model;
   }
@@ -569,7 +569,7 @@ export class MLModelRegistry {
       try {
         await fs?.promises.rm(model?.filePath, { recursive: true, force: true });
       } catch (error) {
-        logger.warn("Failed to delete model files", { modelId, error });
+        logger.warn({ modelId, error }, "Failed to delete model files");
       }
     }
 
@@ -579,7 +579,7 @@ export class MLModelRegistry {
 
     await this.persistData();
 
-    logger.info("Model deleted", { modelId });
+    logger.info({ modelId }, "Model deleted");
   }
 
   // ============================================================================
@@ -647,21 +647,21 @@ export class MLModelRegistry {
       modelId,
       variants,
       startDate: now,
-      endDate: options.endDate,
+      endDate: options!.endDate,
       status: "running",
-      minSampleSize: options.minSampleSize || 1000,
-      confidenceLevel: options.confidenceLevel || 0.95,
+      minSampleSize: options!.minSampleSize || 1000,
+      confidenceLevel: options!.confidenceLevel || 0.95,
     };
 
     this.abTests.set(experimentId, abTest);
     this.variants.set(modelId, variants);
     await this.persistData();
 
-    logger.info("A/B test created", {
+    logger.info({
       experimentId,
       modelId,
       variantCount: variants.length,
-    });
+    }, "A/B test created");
 
     return abTest;
   }
@@ -795,7 +795,7 @@ export class MLModelRegistry {
 
     await this.persistData();
 
-    logger.info("A/B test ended", { experimentId, status });
+    logger.info({ experimentId, status }, "A/B test ended");
 
     return experiment;
   }
@@ -815,7 +815,7 @@ export class MLModelRegistry {
 
     const model = this.models.get(modelId);
     if (!model) {
-      logger.warn("Tracking prediction for unknown model", { modelId });
+      logger.warn({ modelId }, "Tracking prediction for unknown model");
       return;
     }
 
@@ -1013,7 +1013,7 @@ export class MLModelRegistry {
     this.modelInstances.set(modelId, model);
     await this.persistData();
 
-    logger.info("Model saved to file system", { modelId, path: modelPath });
+    logger.info({ modelId, path: modelPath }, "Model saved to file system");
 
     return modelPath;
   }
@@ -1039,10 +1039,10 @@ export class MLModelRegistry {
     await modelInstance?.load(`file://${registeredModel?.filePath}/model.json`);
     this.modelInstances.set(modelId, modelInstance);
 
-    logger.info("Model loaded from file system", {
+    logger.info({
       modelId,
       path: registeredModel.filePath,
-    });
+    }, "Model loaded from file system");
   }
 
   /**

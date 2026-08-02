@@ -169,7 +169,7 @@ interface PlaylistTrackingProps {
 }
 
 export function PlaylistTracking({
-  userId,
+  _userId,
   timeRange = "30d",
   onTimeRangeChange,
 }: PlaylistTrackingProps) {

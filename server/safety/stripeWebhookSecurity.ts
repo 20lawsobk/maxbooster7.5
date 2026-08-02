@@ -61,7 +61,7 @@ export function stripeWebhookMiddleware(
     });
 
     // Verify the signature using the raw body
-    const rawBody = (req as Record<string, unknown>).rawBody;
+    const rawBody = (req as unknown as Record<string, unknown>).rawBody;
     if (!rawBody) {
       throw new Error(
         "Raw body not available - ensure body parser preserves raw body",
@@ -75,7 +75,7 @@ export function stripeWebhookMiddleware(
     );
 
     // Attach verified event to request
-    (req as Record<string, unknown>).stripeEvent = event;
+    (req as unknown as Record<string, unknown>).stripeEvent = event;
 
     // Add to audit log
     addWebhookAudit({
@@ -83,8 +83,8 @@ export function stripeWebhookMiddleware(
       eventId: event.id,
       eventType: event.type,
       success: true,
-      customerId: (event?.data.object as Record<string, unknown>).customer,
-      amount: (event?.data.object as Record<string, unknown>).amount,
+      customerId: (event?.data.object as unknown as Record<string, unknown>).customer,
+      amount: (event?.data.object as unknown as Record<string, unknown>).amount,
     });
 
     logger.info(`[Stripe Webhook] Verified event: ${event?.type} (${event?.id})`);
@@ -93,7 +93,7 @@ export function stripeWebhookMiddleware(
   } catch (error) {
     logger.warn(
       "[Stripe Webhook] Signature verification failed:",
-      error?.message,
+      (error as any)?.message,
     );
 
     // Add failed attempt to audit log
@@ -102,7 +102,7 @@ export function stripeWebhookMiddleware(
       eventId: "unknown",
       eventType: "unknown",
       success: false,
-      error: error.message,
+      error: (error as Error).message,
     });
 
     res.status(401).json({
@@ -122,7 +122,7 @@ export function stripeRawBodyParser(
   _encoding: BufferEncoding,
 ): void {
   if (req.path === "/api/webhooks/stripe" || req.path.includes("stripe")) {
-    (req as Record<string, unknown>).rawBody = buf;
+    (req as unknown as Record<string, unknown>).rawBody = buf;
   }
 }
 
@@ -288,6 +288,6 @@ export async function handleWebhookEvent(
       { err: error },
       `[Stripe Webhook] Handler error for ${event?.type} (${event?.id}):`,
     );
-    return { success: false, message: error.message };
+    return { success: false, message: (error as Error).message };
   }
 }

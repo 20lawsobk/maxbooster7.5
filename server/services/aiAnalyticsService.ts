@@ -254,7 +254,7 @@ export async function predictChurn(): Promise<ChurnPredictionResponse> {
 
   const atRiskUsers: ChurnPredictionResponse["atRiskUsers"] = [];
 
-  for (const row of (rows as Record<string, unknown>).rows ?? rows) {
+  for (const row of (rows as unknown as Record<string, unknown>).rows ?? rows) {
     const lastActive = new Date(row?.last_active as string);
     const daysSinceActive =
       (now?.getTime() - lastActive?.getTime()) / (24 * 60 * 60 * 1000);

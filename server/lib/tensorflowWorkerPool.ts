@@ -101,9 +101,9 @@ class TensorFlowWorkerPool {
 
         worker?.on("message", (msg: Record<string, unknown>) => {
           if (msg?.ready) return;
-          const req = this.pendingRequests.get(msg?.id);
+          const req = this.pendingRequests.get((msg?.id as string));
           if (!req) return;
-          this.pendingRequests.delete(msg?.id);
+          this.pendingRequests.delete((msg?.id as string));
           state.busy = false;
 
           if (msg?.error) {
@@ -116,7 +116,7 @@ class TensorFlowWorkerPool {
         });
 
         worker?.on("error", (err) => {
-          logger.warn(`[TFWorkerPool] Worker ${index} error: ${err?.message}`);
+          logger.warn(`[TFWorkerPool] Worker ${index} error: ${(err as any)?.message}`);
           clearTimeout(timeout);
           reject(err);
           for (const [id, req] of this.pendingRequests) {
@@ -144,7 +144,7 @@ class TensorFlowWorkerPool {
       );
     } catch (err) {
       logger.warn(
-        `[TFWorkerPool] Could not initialize worker pool: ${err?.message} — falling back to in-process inference`,
+        `[TFWorkerPool] Could not initialize worker pool: ${(err as any)?.message} — falling back to in-process inference`,
       );
     }
   }
@@ -211,7 +211,7 @@ class TensorFlowWorkerPool {
       models = await registry?.listModels();
     } catch (err) {
       logger.warn(
-        `[TFWorkerPool] Could not list models from registry: ${err?.message}`,
+        `[TFWorkerPool] Could not list models from registry: ${(err as any)?.message}`,
       );
       return;
     }

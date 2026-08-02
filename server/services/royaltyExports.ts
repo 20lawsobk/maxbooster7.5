@@ -186,11 +186,11 @@ export class RoyaltyExportsService {
       })),
       recoupmentAccounts: recoupments.map((r) => ({
         id: r.id,
-        accountName: r.accountName,
-        advanceAmount: r.advanceAmount,
+        accountName: (r as any).accountName,
+        advanceAmount: (r as any).advanceAmount,
         recoupedAmount: r.recoupedAmount,
         remainingBalance: r.remainingBalance,
-        transactions: options.includeTransactions ? r?.transactions : undefined,
+        transactions: options.includeTransactions ? (r as any)?.transactions : undefined,
       })),
     };
 
@@ -756,13 +756,13 @@ export class RoyaltyExportsService {
     doc.text((taxDoc as Record<string, unknown>).payer.address, 20, 74);
 
     doc.text("RECIPIENT'S Information:", 110, 50);
-    doc?.text((taxDoc as Record<string, unknown>).recipient?.name, 110, 58);
+    doc?.text(((taxDoc as Record<string, unknown>).recipient as any)?.name, 110, 58);
     doc?.text(
-      `TIN: ${(taxDoc as Record<string, unknown>).recipient?.taxId}`,
+      `TIN: ${((taxDoc as Record<string, unknown>).recipient as any)?.taxId}`,
       110,
       66,
     );
-    doc?.text((taxDoc as Record<string, unknown>).recipient?.address, 110, 74);
+    doc?.text(((taxDoc as Record<string, unknown>).recipient as any)?.address, 110, 74);
 
     doc?.autoTable({
       startY: 90,
@@ -771,17 +771,17 @@ export class RoyaltyExportsService {
         [
           "1",
           "Rents",
-          `$${(taxDoc as Record<string, unknown>).amounts?.box1_rents.toFixed(2)}`,
+          `$${((taxDoc as Record<string, unknown>).amounts as any)?.box1_rents.toFixed(2)}`,
         ],
         [
           "2",
           "Royalties",
-          `$${(taxDoc as Record<string, unknown>).amounts?.box2_royalties.toFixed(2)}`,
+          `$${((taxDoc as Record<string, unknown>).amounts as any)?.box2_royalties.toFixed(2)}`,
         ],
         [
           "3",
           "Other Income",
-          `$${(taxDoc as Record<string, unknown>).amounts?.box3_otherIncome.toFixed(2)}`,
+          `$${((taxDoc as Record<string, unknown>).amounts as any)?.box3_otherIncome.toFixed(2)}`,
         ],
       ],
       theme: "grid",
@@ -802,11 +802,11 @@ export class RoyaltyExportsService {
     return [
       "IRS 1099-MISC SUBMISSION FORMAT",
       `TAX_YEAR:${(taxDoc as Record<string, unknown>).taxYear}`,
-      `PAYER_NAME:${(taxDoc as Record<string, unknown>).payer?.name}`,
-      `PAYER_EIN:${(taxDoc as Record<string, unknown>).payer?.ein}`,
-      `RECIPIENT_NAME:${(taxDoc as Record<string, unknown>).recipient?.name}`,
-      `RECIPIENT_TIN:${(taxDoc as Record<string, unknown>).recipient?.taxId}`,
-      `BOX2_ROYALTIES:${(taxDoc as Record<string, unknown>).amounts?.box2_royalties}`,
+      `PAYER_NAME:${((taxDoc as Record<string, unknown>).payer as any)?.name}`,
+      `PAYER_EIN:${((taxDoc as Record<string, unknown>).payer as any)?.ein}`,
+      `RECIPIENT_NAME:${((taxDoc as Record<string, unknown>).recipient as any)?.name}`,
+      `RECIPIENT_TIN:${((taxDoc as Record<string, unknown>).recipient as any)?.taxId}`,
+      `BOX2_ROYALTIES:${((taxDoc as Record<string, unknown>).amounts as any)?.box2_royalties}`,
       `GENERATED:${new Date().toISOString()}`,
     ].join("\n");
   }

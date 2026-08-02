@@ -885,7 +885,7 @@ class DistributionDataTransferService {
           job.failedItems = failed;
           job.errors.push({
             item: release.title,
-            error: err.message || "Unknown error",
+            error: (err as Error).message || "Unknown error",
           });
           logger.warn(
             { err: err },
@@ -904,7 +904,7 @@ class DistributionDataTransferService {
       job.result = {
         importedReleases: imported,
         totalStreams: releases.reduce(
-          (sum, r) => sum + (r.streamingStats.totalStreams || 0),
+          (sum, r) => sum + (r.streamingStats!.totalStreams || 0),
           0,
         ),
       };
@@ -914,7 +914,7 @@ class DistributionDataTransferService {
       );
     } catch (error) {
       job.status = "failed";
-      job.errors.push({ item: "CSV parsing", error: error.message });
+      job.errors.push({ item: "CSV parsing", error: (error as Error).message });
       logger.warn(
         { err: error },
         `[DataTransfer] Import job ${job.id} failed:`,
@@ -982,18 +982,18 @@ class DistributionDataTransferService {
       },
       streamingStats: {
         totalStreams: Math.max(
-          existingMetadata.streamingStats.totalStreams || 0,
-          importedData.streamingStats.totalStreams || 0,
+          (existingMetadata.streamingStats as any).totalStreams || 0,
+          importedData.streamingStats!.totalStreams || 0,
         ),
         platforms: {
-          ...(existingMetadata.streamingStats.platforms || {}),
-          ...(importedData.streamingStats.platforms || {}),
+          ...((existingMetadata.streamingStats as any).platforms || {}),
+          ...(importedData.streamingStats!.platforms || {}),
         },
       },
     };
 
     if (importedData.upc && !existingMetadata.upc) {
-      mergedMetadata.upc = importedData.upc;
+      (mergedMetadata as any).upc = importedData.upc;
     }
 
     await storage.updateDistroRelease(releaseId, {
@@ -1017,18 +1017,18 @@ class DistributionDataTransferService {
     const profile: StreamingProfileData = {
       platformId,
       artistId,
-      artistName: profileData.artistName || "Unknown Artist",
+      artistName: profileData!.artistName || "Unknown Artist",
       profileUrl,
       verified: false,
-      followers: profileData.followers,
-      monthlyListeners: profileData.monthlyListeners,
-      totalStreams: profileData.totalStreams,
-      topTracks: profileData.topTracks,
-      topCities: profileData.topCities,
-      genres: profileData.genres,
-      imageUrl: profileData.imageUrl,
-      bio: profileData.bio,
-      socialLinks: profileData.socialLinks,
+      followers: profileData!.followers,
+      monthlyListeners: profileData!.monthlyListeners,
+      totalStreams: profileData!.totalStreams,
+      topTracks: profileData!.topTracks,
+      topCities: profileData!.topCities,
+      genres: profileData!.genres,
+      imageUrl: profileData!.imageUrl,
+      bio: profileData!.bio,
+      socialLinks: profileData!.socialLinks,
       syncCount: 0,
       consecutiveFailures: 0,
     };
@@ -1164,7 +1164,7 @@ class DistributionDataTransferService {
     } catch (err) {
       logger.warn(
         "[DataTransfer] Failed to hydrate profiles from storage:",
-        err.message,
+        (err as Error).message,
       );
     }
   }
@@ -1227,7 +1227,7 @@ class DistributionDataTransferService {
     );
 
     const platformDef = STREAMING_PLATFORMS.find((p) => p.id === platformId);
-    const resolvedMethod = platformDef.syncMethod || "api";
+    const resolvedMethod = platformDef!.syncMethod || "api";
 
     if (updatedData) {
       Object.assign(profile, updatedData);
@@ -1276,13 +1276,13 @@ class DistributionDataTransferService {
       | Array<{ title: string; streams: number; isrc?: string }>
       | undefined;
     const spotifyProfile = userProfiles.get("spotify");
-    if (spotifyProfile.artistId) {
+    if (spotifyProfile!.artistId) {
       try {
         const spotifyData = await this.fetchSpotifyData(
-          spotifyProfile.artistId,
+          spotifyProfile!.artistId,
         );
-        if (spotifyData.topTracks) {
-          sharedTopTracks = spotifyData.topTracks;
+        if (spotifyData!.topTracks) {
+          sharedTopTracks = spotifyData!.topTracks;
           logger.info(
             `[DataTransfer] Shared release catalog from Spotify (${sharedTopTracks.length} tracks) for user ${userId}`,
           );
@@ -1311,7 +1311,7 @@ class DistributionDataTransferService {
       const pid = platformIds[i];
       if (
         outcome.status === "fulfilled" &&
-        outcome.value.lastSyncStatus === "success"
+        outcome.value!.lastSyncStatus === "success"
       ) {
         succeeded++;
         results.push({
@@ -1441,7 +1441,7 @@ class DistributionDataTransferService {
     }
 
     const history = this.syncHistory.get(userId);
-    const lastEntry = history[history.length - 1];
+    const lastEntry = history![history!.length - 1];
     const lastSyncAt = lastEntry.timestamp;
 
     let nextSyncAt: string | undefined;
@@ -1509,7 +1509,7 @@ class DistributionDataTransferService {
       const data = (await resp.json()) as Record<string, unknown>;
       this.spotifyTokenCache = {
         token: data.access_token,
-        expiresAt: Date.now() + (data.expires_in - 60) * 1000,
+        expiresAt: Date.now() + ((data.expires_in as any) - 60) * 1000,
       };
       return data.access_token;
     } catch {
@@ -1556,18 +1556,18 @@ class DistributionDataTransferService {
           .slice(0, 5)
           .map((t: Record<string, unknown>) => ({
             title: t.name,
-            streams: t.popularity * 10000,
-            isrc: t.external_ids.isrc,
+            streams: (t.popularity as any) * 10000,
+            isrc: (t.external_ids as any).isrc,
           }));
       }
 
       return {
         artistName: artist.name,
-        followers: artist.followers.total,
-        monthlyListeners: artist.followers.total,
+        followers: (artist.followers as any).total,
+        monthlyListeners: (artist.followers as any).total,
         genres: artist.genres,
-        imageUrl: artist.images[0].url,
-        profileUrl: artist.external_urls.spotify,
+        imageUrl: (artist.images as any)[0].url,
+        profileUrl: (artist.external_urls as any).spotify,
         topTracks,
         verified: true,
       } as Partial<StreamingProfileData>;
@@ -1603,13 +1603,13 @@ class DistributionDataTransferService {
       if (!resp.ok) throw new Error(`iTunes API returned ${resp.status}`);
       const data = (await resp.json()) as Record<string, unknown>;
       const results = data.results || [];
-      if (results.length === 0) return null;
+      if ((results as any).length === 0) return null;
 
-      const artistResult = results.find(
+      const artistResult = (results as any).find(
         (r: Record<string, unknown>) =>
           r.wrapperType === "artist" || r.artistId,
       );
-      const songs = results.filter(
+      const songs = (results as any).filter(
         (r: Record<string, unknown>) => r.wrapperType === "track",
       );
 
@@ -1669,7 +1669,7 @@ class DistributionDataTransferService {
       );
       if (!resp.ok) throw new Error(`YouTube API returned ${resp.status}`);
       const data = (await resp.json()) as Record<string, unknown>;
-      const channel = data.items[0];
+      const channel = (data.items as any)[0];
       if (!channel) return null;
 
       return {
@@ -1780,7 +1780,7 @@ class DistributionDataTransferService {
         throw new Error(`Deezer API returned ${artistResp.status}`);
       const artist = (await artistResp.json()) as Record<string, unknown>;
       if (artist.error)
-        throw new Error(artist.error.message || "Deezer API error");
+        throw new Error((artist.error as any).message || "Deezer API error");
 
       let topTracks: Array<{ title: string; streams: number; isrc?: string }>;
       if (sharedTopTracks) {
@@ -2630,7 +2630,7 @@ class DistributionDataTransferService {
     } catch (err) {
       logger.warn(
         `[DataTransfer] MusicBrainz fallback failed for ${spotifyArtistId}:`,
-        err?.message,
+        (err as any)?.message,
       );
       return [];
     }
@@ -2646,7 +2646,7 @@ class DistributionDataTransferService {
       );
       if (!resp?.ok) return [];
       const data = (await resp?.json()) as Record<string, unknown>;
-      const albums = (data?.results || []).filter(
+      const albums = ((data?.results || []) as any).filter(
         (r: Record<string, unknown>) =>
           r?.collectionType === "Album" || r?.wrapperType === "collection",
       );
@@ -2662,9 +2662,9 @@ class DistributionDataTransferService {
           : item?.trackCount >= 3
             ? "EP"
             : "single") as "single" | "EP" | "album",
-        releaseDate: item.releaseDate ? item?.releaseDate.split("T")[0] : null,
+        releaseDate: item.releaseDate ? (item?.releaseDate as any).split("T")[0] : null,
         trackCount: item.trackCount || 1,
-        coverUrl: item.artworkUrl100?.replace("100x100", "600x600"),
+        coverUrl: (item.artworkUrl100 as any)?.replace("100x100", "600x600"),
         platformUrl: item.collectionViewUrl,
         genre: item.primaryGenreName,
       }));
@@ -2689,7 +2689,7 @@ class DistributionDataTransferService {
       const data = (await resp?.json()) as Record<string, unknown>;
       if (data?.error) return [];
 
-      return (data?.data || []).map((item: Record<string, unknown>) => ({
+      return ((data?.data || []) as any).map((item: Record<string, unknown>) => ({
         id: `deezer-${item?.id}`,
         externalId: String(item?.id),
         platformId: "deezer",
@@ -2705,7 +2705,7 @@ class DistributionDataTransferService {
         coverUrl: item.cover_xl || item?.cover_big || item?.cover_medium,
         platformUrl: item.link,
         upc: item.upc,
-        genre: item.genres?.data?.[0]?.name,
+        genre: (item.genres as any)?.data?.[0]?.name,
       }));
     } catch (err) {
       logger.warn(
@@ -2741,7 +2741,7 @@ class DistributionDataTransferService {
       const bestArtist = artists?.reduce(
         (best: Record<string, unknown>, a: Record<string, unknown>) => {
           const score =
-            (a?.name || "").toLowerCase() === artistName?.toLowerCase()
+            ((a?.name || "") as any).toLowerCase() === artistName?.toLowerCase()
               ? 100
               : a?.nb_fan || 0;
           return score > (best?.score ?? 0) ? { ...a, score: score } : best;
@@ -2758,7 +2758,7 @@ class DistributionDataTransferService {
       const albumData = (await albumResp?.json()) as Record<string, unknown>;
       if (albumData?.error) return [];
 
-      return (albumData?.data || []).map((item: Record<string, unknown>) => ({
+      return ((albumData?.data || []) as any).map((item: Record<string, unknown>) => ({
         id: `deezer-proxy-${item?.id}`,
         externalId: String(item?.id),
         platformId,
@@ -2774,12 +2774,12 @@ class DistributionDataTransferService {
         coverUrl: item.cover_xl || item?.cover_big || item?.cover_medium,
         platformUrl: item.link,
         upc: item.upc,
-        genre: item.genres?.data?.[0]?.name,
+        genre: (item.genres as any)?.data?.[0]?.name,
       }));
     } catch (err) {
       logger.warn(
         `[DataTransfer] Deezer catalog proxy failed for "${artistName}":`,
-        err?.message,
+        (err as any)?.message,
       );
       return [];
     }
@@ -2835,7 +2835,7 @@ class DistributionDataTransferService {
 
       if (tracksResp?.ok) {
         const td = (await tracksResp?.json()) as Record<string, unknown>;
-        for (const track of (td?.collection || []).slice(0, 10)) {
+        for (const track of ((td?.collection || []) as any).slice(0, 10)) {
           results?.push({
             id: `soundcloud-tr-${track?.id}`,
             externalId: String(track?.id),
@@ -2892,9 +2892,9 @@ class DistributionDataTransferService {
         const title = titleM ? titleM[1].replace(/<[^>]+>/g, "").trim() : null;
         if (!title) continue;
 
-        const rawType = typeM[1];
+        const rawType = typeM![1];
         const releaseType = rawType === "album" ? "album" : "single";
-        const href = linkM[1] || "";
+        const href = linkM![1] || "";
         const fullUrl = href.startsWith("http")
           ? href
           : `https://${slug}.bandcamp.com${href}`;
@@ -2908,7 +2908,7 @@ class DistributionDataTransferService {
           releaseType: releaseType as "single" | "EP" | "album",
           releaseDate: null,
           trackCount: releaseType === "album" ? 5 : 1,
-          coverUrl: imgM[1],
+          coverUrl: imgM![1],
           platformUrl: fullUrl,
         });
       }
@@ -2935,15 +2935,15 @@ class DistributionDataTransferService {
       const data = (await resp.json()) as Record<string, unknown>;
       const items = data.results || data.data || [];
 
-      return items.map((item: Record<string, unknown>) => ({
+      return (items as any).map((item: Record<string, unknown>) => ({
         id: `audiomack-${item.id || item.slug}`,
         externalId: String(item.id || item.slug),
         platformId: "audiomack",
         title: item.title,
-        artistName: item.artist.name || artistName,
-        releaseType: (item.song_count >= 6
+        artistName: (item.artist as Error).name || artistName,
+        releaseType: ((item.song_count as any) >= 6
           ? "album"
-          : item.song_count >= 3
+          : (item.song_count as any) >= 3
             ? "EP"
             : "single") as "single" | "EP" | "album",
         releaseDate: item.released_at
@@ -3002,10 +3002,10 @@ class DistributionDataTransferService {
 
     // Manual-only platforms (DJ pools, gaming stores, social CMS) have no
     // automated catalog retrieval path.
-    if (platformMeta.syncMethod === "manual") {
+    if (platformMeta!.syncMethod === "manual") {
       logger.warn(
         `[DataTransfer] "${platformId}" is manual-entry only — no automated scanner. ` +
-          `Category: ${platformMeta.category}`,
+          `Category: ${platformMeta!.category}`,
       );
       return [];
     }
@@ -3034,7 +3034,7 @@ class DistributionDataTransferService {
     // the artist name is sufficient to identify the right catalog.
     logger.info(
       `[DataTransfer] No dedicated scanner for "${platformId}" ` +
-        `(syncMethod: ${platformMeta.syncMethod ?? "proxy"}) — ` +
+        `(syncMethod: ${platformMeta!.syncMethod ?? "proxy"}) — ` +
         `using iTunes proxy catalog for artist "${artistName}"`,
     );
 
@@ -3098,11 +3098,11 @@ class DistributionDataTransferService {
           if (!existingMeta.primaryGenre && release.genre)
             mergedMeta.primaryGenre = release.genre;
           if (
-            release.tracks.length &&
-            (!existingMeta.tracks || existingMeta.tracks.length === 0)
+            release.tracks!.length &&
+            (!existingMeta.tracks || (existingMeta.tracks as any).length === 0)
           ) {
             mergedMeta.tracks = release.tracks;
-            mergedMeta.trackCount = release.tracks.length;
+            mergedMeta.trackCount = release.tracks!.length;
           }
           await storage.updateDistroRelease(existing.id, {
             metadata: mergedMeta,
@@ -3151,7 +3151,7 @@ class DistributionDataTransferService {
         job.failedItems = failed;
         job.errors.push({
           item: release.title,
-          error: err.message || "Unknown error",
+          error: (err as Error).message || "Unknown error",
         });
         logger.warn(
           { err: err },
@@ -3193,10 +3193,10 @@ class DistributionDataTransferService {
 
     for (const release of releases) {
       const metadata = release.metadata as Record<string, unknown>;
-      totalTracks += metadata.tracks.length || 1;
-      totalStreams += metadata.streamingStats.totalStreams || 0;
+      totalTracks += (metadata.tracks as any).length || 1;
+      totalStreams += (metadata.streamingStats as any).totalStreams || 0;
 
-      const platformStreams = metadata.streamingStats.platforms || {};
+      const platformStreams = (metadata.streamingStats as any).platforms || {};
       for (const [platform, stats] of Object.entries(platformStreams)) {
         if (!platformStats[platform]) {
           platformStats[platform] = { releases: 0, streams: 0 };
@@ -3279,7 +3279,7 @@ class DistributionDataTransferService {
         valid: false,
         totalRows: 0,
         validRows: 0,
-        errors: [{ row: 0, error: error.message }],
+        errors: [{ row: 0, error: (error as Error).message }],
         preview: [],
       };
     }

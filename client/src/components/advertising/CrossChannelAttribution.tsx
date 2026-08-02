@@ -87,7 +87,7 @@ export function CrossChannelAttribution() {
   const [comparisonModel, setComparisonModel] =
     useState<AttributionModel>("last-touch");
   const [attributionWindow, setAttributionWindow] = useState("30");
-  const [showAssisted, setShowAssisted] = useState(true);
+  const [_showAssisted, _setShowAssisted] = useState(true);
 
   const { data: attributionData } = useQuery({
     queryKey: ["/api/advertising/attribution/channels", attributionWindow],
@@ -664,7 +664,7 @@ export function CrossChannelAttribution() {
                     <div className="flex items-center gap-2 flex-wrap">
                       {path.path.map((step, stepIdx) => {
                         const channelData = channelData.find(
-                          (c) => c.channel === step,
+                          (c: any) => c.channel === step,
                         );
                         return (
                           <div
@@ -733,7 +733,7 @@ export function CrossChannelAttribution() {
                       cy="50%"
                       outerRadius={100}
                       dataKey="value"
-                      label={({ name, value }) => `${value}`}
+                      label={({ _name, value }) => `${value}`}
                     >
                       {channelOverlapData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />

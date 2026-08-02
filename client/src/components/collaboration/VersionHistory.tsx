@@ -75,7 +75,7 @@ interface VersionHistoryProps {
 }
 
 export function VersionHistory({
-  projectId,
+  _projectId,
   versions,
   currentVersionId,
   hasUnsavedChanges = false,
@@ -91,7 +91,7 @@ export function VersionHistory({
 }: VersionHistoryProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedVersion, setSelectedVersion] = useState<Version | null>(null);
+  const [_selectedVersion, setSelectedVersion] = useState<Version | null>(null);
   const [compareMode, setCompareMode] = useState(false);
   const [compareVersions, setCompareVersions] = useState<
     [string | null, string | null]

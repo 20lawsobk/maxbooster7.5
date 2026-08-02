@@ -109,7 +109,7 @@ interface DistributionOutcomeHandlerProps {
 
 export function DistributionOutcomeHandler({
   releaseId,
-  onAction,
+  _onAction,
 }: DistributionOutcomeHandlerProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();

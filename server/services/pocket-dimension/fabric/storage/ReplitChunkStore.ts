@@ -44,13 +44,13 @@ export class ReplitChunkStore implements ChunkStore {
 
   async putChunk(chunkId: ChunkId, data: Buffer): Promise<void> {
     const client = await this.getClient();
-    const { ok, error } = await client?.uploadFromBytes(this.key(chunkId), data);
+    const { ok, error } = await (client as any)?.uploadFromBytes(this.key(chunkId), data);
     if (!ok) throw new Error(`ReplitChunkStore.putChunk failed: ${error}`);
   }
 
   async getChunk(chunkId: ChunkId): Promise<Buffer> {
     const client = await this.getClient();
-    const { ok, value, error } = await client?.downloadAsBytes(
+    const { ok, value, error } = await (client as any)?.downloadAsBytes(
       this.key(chunkId),
     );
     if (!ok) throw new Error(`ReplitChunkStore.getChunk failed: ${error}`);
@@ -59,14 +59,14 @@ export class ReplitChunkStore implements ChunkStore {
 
   async deleteChunk(chunkId: ChunkId): Promise<void> {
     const client = await this.getClient();
-    const { ok, error } = await client?.delete(this.key(chunkId));
+    const { ok, error } = await (client as any)?.delete(this.key(chunkId));
     if (!ok) logger.warn(`ReplitChunkStore.deleteChunk: ${error}`);
   }
 
   async hasChunk(chunkId: ChunkId): Promise<boolean> {
     try {
       const client = await this.getClient();
-      const { ok } = await client?.downloadAsBytes(this.key(chunkId));
+      const { ok } = await (client as any)?.downloadAsBytes(this.key(chunkId));
       return ok;
     } catch {
       return false;

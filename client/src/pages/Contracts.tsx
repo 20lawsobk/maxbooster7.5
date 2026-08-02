@@ -117,13 +117,13 @@ export default function Contracts() {
   const [currentOutcome, setCurrentOutcome] = useState<ContractOutcome | null>(
     null,
   );
-  const [outcomeDetails, setOutcomeDetails] = useState<Record<
+  const [outcomeDetails, _setOutcomeDetails] = useState<Record<
     string,
     unknown
   > | null>(null);
   const [signStep, setSignStep] = useState<"pick" | "draw">("pick");
   const [signingAs, setSigningAs] = useState<string>("");
-  const [pendingContracts, setPendingContracts] = useState<Contract[]>([]);
+  const [pendingContracts, _setPendingContracts] = useState<Contract[]>([]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
   const lastPosRef = useRef<{ x: number; y: number } | null>(null);
@@ -525,7 +525,7 @@ export default function Contracts() {
     } catch (error) {
       toast({
         title: "Error",
-        description: error.message,
+        description: (error as Error).message,
         variant: "destructive",
       });
     }

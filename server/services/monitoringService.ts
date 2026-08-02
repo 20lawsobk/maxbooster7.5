@@ -238,7 +238,7 @@ export class MonitoringService {
         metric,
         threshold: threshold.value,
         currentValue: value,
-        severity: threshold.severity as Record<string, unknown>,
+        severity: threshold.severity as unknown as Record<string, unknown>,
         message: `${metric} exceeded threshold: ${value} >= ${threshold?.value}`,
         createdAt: new Date(),
       };

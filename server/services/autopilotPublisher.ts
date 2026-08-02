@@ -209,7 +209,7 @@ class AutopilotPublisher {
 
       // Social Media Autopilot - errors propagate upward, not silently logged
       // CRITICAL: Media generation failures must abort scheduling
-      if (config.platforms && config.platforms.length > 0) {
+      if (config.platforms && (config.platforms as any).length > 0) {
         const socialResult = await this.publishSocialContent(config);
         result.socialPosts = socialResult.posts;
         if (socialResult.error) {
@@ -243,7 +243,7 @@ class AutopilotPublisher {
         result.errors.push(`Advertising: ${adResult.error}`);
       }
     } catch (error) {
-      result.errors.push(`General: ${error.message}`);
+      result.errors.push(`General: ${(error as Error).message}`);
       logger.warn({ err: error }, `Error processing user ${config.userId}:`);
     }
 
@@ -430,21 +430,21 @@ class AutopilotPublisher {
     try {
       const userId = config?.userId;
       const platforms: string[] =
-        config?.platforms && config?.platforms.length > 0
+        config?.platforms && (config?.platforms as any).length > 0
           ? config?.platforms
           : ["twitter", "instagram"];
 
       // Fetch live storefront + beat data in parallel with platform selection
       const [targetPlatform, sfContext] = await Promise?.all([
-        this.pickNextPlatform(userId, platforms),
-        this.fetchStorefrontContext(userId),
+        this.pickNextPlatform((userId as string), platforms),
+        this.fetchStorefrontContext((userId as string)),
       ]);
       logger.info(
         `[Autopilot] User ${userId}: targeting platform "${targetPlatform}" this cycle`,
       );
 
       // Get the user's trained social media AI model
-      const socialAI = await aiModelManager.getSocialAutopilot(userId);
+      const socialAI = await aiModelManager.getSocialAutopilot((userId as string));
 
       if (!socialAI.getIsTrained()) {
         // Model not trained yet — route through the A/B quality gate (up to 10 rounds × 7
@@ -458,7 +458,7 @@ class AutopilotPublisher {
           ? `${config.topic || "new music"} — ${sfContext.beatContext}`
           : config.topic || "new music";
 
-        const gateResult = await contentQualityGate.run(userId, {
+        const gateResult = await contentQualityGate.run((userId as string), {
           topic: enrichedTopic,
           objective: "engagement",
           platform: targetPlatform,
@@ -495,12 +495,12 @@ class AutopilotPublisher {
 
         const nextOptimalTime = await this.calculateNextOptimalPostingTime(
           targetPlatform,
-          config.postingFrequency || "daily",
+          (config.postingFrequency || "daily" as string),
           userId,
         );
 
         const scheduledPost = await autoPostingServiceV2.schedulePost(
-          userId,
+          (userId as string),
           [targetPlatform],
           postContent,
           nextOptimalTime,
@@ -520,14 +520,14 @@ class AutopilotPublisher {
       // Pick content type deterministically, rotating per 15-min window so that
       // back-to-back cycles vary without being random.
       const contentTypes = config.contentTypes || ["tips", "insights"];
-      const ctSeed = `${userId}:${contentTypes.join(",")}:${Math.floor(Date.now() / (15 * 60 * 1000))}`;
+      const ctSeed = `${userId}:${(contentTypes as any).join(",")}:${Math.floor(Date.now() / (15 * 60 * 1000))}`;
       const ctIdx = (() => {
         let h = 2166136261;
         for (let i = 0; i < ctSeed.length; i++) {
           h ^= ctSeed.charCodeAt(i);
           h = Math.imul(h, 16777619) >>> 0;
         }
-        return h % contentTypes.length;
+        return h % (contentTypes as any).length;
       })();
       const selectedContentType = contentTypes[ctIdx];
 
@@ -591,7 +591,7 @@ class AutopilotPublisher {
           userId,
           platforms: [targetPlatform],
           topic: mcTopic,
-          tone: toneMap[(config.brandVoice || "").toLowerCase()] || "energetic",
+          tone: toneMap[((config.brandVoice || "") as any).toLowerCase()] || "energetic",
           genre: config.genre,
           targetAudience: config.targetAudience,
           objective: "engagement",
@@ -630,7 +630,7 @@ class AutopilotPublisher {
         ? `${advancedContent.primary.hook}\n\n${advancedContent.primary.body}`
         : advancedContent.primary.body;
       const gateResult = await contentQualityGate.scoreAndGateExisting(
-        userId,
+        (userId as string),
         rawText,
         targetPlatform,
         {
@@ -675,7 +675,7 @@ class AutopilotPublisher {
       if (resolvedMediaType !== "text") {
         const generatedAsset = await aiContentService.generateContent({
           prompt: finalText,
-          platform: targetPlatform as Record<string, unknown>,
+          platform: targetPlatform as unknown as Record<string, unknown>,
           format: resolvedMediaType,
           tone: "creative",
           length: "medium",
@@ -706,13 +706,13 @@ class AutopilotPublisher {
       // Calculate next optimal posting time for this platform
       const nextOptimalTime = await this.calculateNextOptimalPostingTime(
         targetPlatform,
-        config.postingFrequency || "daily",
+        (config.postingFrequency || "daily" as string),
         userId,
       );
 
       // Schedule post for optimal time (not immediate)
       const scheduledPost = await autoPostingServiceV2.schedulePost(
-        userId,
+        (userId as string),
         [targetPlatform],
         postContent,
         nextOptimalTime,
@@ -728,7 +728,7 @@ class AutopilotPublisher {
       return { posts: 1 };
     } catch (error) {
       logger.warn({ err: error }, "Error in publishSocialContent:");
-      return { posts: 0, error: error.message };
+      return { posts: 0, error: (error as Error).message };
     }
   }
 
@@ -742,12 +742,12 @@ class AutopilotPublisher {
       const userId = config.userId;
 
       // Fetch live storefront + beat data for ad content enrichment
-      const sfContext = await this.fetchStorefrontContext(userId);
+      const sfContext = await this.fetchStorefrontContext((userId as string));
 
       // Get the user's advertising AI model (works with or without prior campaign training —
       // generateCampaignRecommendations() runs from its internal prediction engine regardless).
       const advertisingAI =
-        await aiModelManager?.getAdvertisingAutopilot(userId);
+        await aiModelManager?.getAdvertisingAutopilot((userId as string));
       const isTrained = advertisingAI?.getIsTrained();
       logger.info(
         `[Autopilot] User ${userId}: Advertising AI model ${isTrained ? "trained" : "using base predictions (no campaigns yet)"}`,
@@ -757,7 +757,7 @@ class AutopilotPublisher {
       let multimodalFeatures = null;
       if (config?.useMultimodalAnalysis) {
         const recentAnalysis = await storage?.getRecentAnalyzedContent(
-          userId,
+          (userId as string),
           1,
         );
         if (recentAnalysis && recentAnalysis?.length > 0) {
@@ -815,7 +815,7 @@ class AutopilotPublisher {
       if (bestCampaign?.mediaType !== "text") {
         const generatedAsset = await aiContentService?.generateContent({
           prompt: bestCampaign.content,
-          platform: bestCampaign.platforms[0] as Record<string, unknown>,
+          platform: bestCampaign.platforms[0] as unknown as Record<string, unknown>,
           format: bestCampaign.mediaType,
           tone: "promotional",
           length: "medium",
@@ -835,7 +835,7 @@ class AutopilotPublisher {
       const primaryPlatform = bestCampaign?.platforms?.[0] || "facebook";
       const nextOptimalTime = await this.calculateNextOptimalPostingTime(
         primaryPlatform,
-        config?.postingFrequency || "daily",
+        (config?.postingFrequency || "daily" as string),
         userId,
       );
 
@@ -887,7 +887,7 @@ class AutopilotPublisher {
       return { campaigns: 1 };
     } catch (error) {
       logger.warn({ err: error }, "Error in publishAdvertisingCampaigns:");
-      return { campaigns: 0, error: error.message };
+      return { campaigns: 0, error: (error as Error).message };
     }
   }
 
@@ -918,7 +918,7 @@ class AutopilotPublisher {
     };
 
     const minInterval = intervalMs[frequency] ?? intervalMs["daily"];
-    const lastAttempt = this.lastPublishAttempt.get(userId);
+    const lastAttempt = this.lastPublishAttempt.get((userId as string));
 
     if (lastAttempt) {
       const elapsed = now.getTime() - lastAttempt.getTime();
@@ -933,7 +933,7 @@ class AutopilotPublisher {
     }
 
     // Enough time has passed — record this attempt and proceed
-    this.lastPublishAttempt.set(userId, now);
+    this.lastPublishAttempt.set((userId as string), now);
     logger.info(
       `[Autopilot] User ${userId}: frequency="${frequency}" gate passed — proceeding with content generation`,
     );

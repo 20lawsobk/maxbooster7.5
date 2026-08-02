@@ -279,7 +279,7 @@ export function FlowStateSampleBrowser({
   const { toast } = useToast();
 
   const [localSamples, setLocalSamples] = useState<Sample[]>(SAMPLE_LIBRARY);
-  const [apiDataLoaded, setApiDataLoaded] = useState(false);
+  const [_apiDataLoaded, setApiDataLoaded] = useState(false);
 
   const {
     data: apiSamples,

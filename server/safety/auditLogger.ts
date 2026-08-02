@@ -163,7 +163,7 @@ async function flushWAL(): Promise<void> {
       } catch (dbError) {
         // Put back in buffer for retry
         walBuffer?.push(entry);
-        logger.warn("[Audit] Failed to persist audit entry:", dbError);
+        logger.warn(dbError, "[Audit] Failed to persist audit entry:");
       }
     }
   } catch (error) {
@@ -184,7 +184,7 @@ function removeFromWAL(entryId: string): void {
     }
   } catch (error) {
     // Non-critical, just log
-    logger.debug("[Audit] Could not remove WAL file:", error);
+    logger.debug({ err: error }, "[Audit] Could not remove WAL file:");
   }
 }
 

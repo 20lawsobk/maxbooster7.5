@@ -409,7 +409,7 @@ export class SupportAIService {
       platform: "support",
       tone: "professional",
     });
-    const answer = mc?.caption || mc?.body || mc?.hook || "";
+    const answer = (mc as any)?.caption || (mc as any)?.body || (mc as any)?.hook || "";
     if (!answer)
       throw new Error("[SupportAI] MaxCore returned no answer (transient)");
     return answer;

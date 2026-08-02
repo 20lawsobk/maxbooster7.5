@@ -342,7 +342,7 @@ export function DataTransferWizard() {
     } catch (err) {
       toast({
         title: "Scan Failed",
-        description: err.message,
+        description: (err as Error).message,
         variant: "destructive",
       });
     } finally {

@@ -57,7 +57,7 @@ export class KnowledgeBaseService {
     }
 
     if (conditions?.length > 0) {
-      dbQuery = dbQuery?.where(and(...conditions));
+      dbQuery = (dbQuery as any)?.where(and(...conditions));
     }
 
     const articles = await dbQuery

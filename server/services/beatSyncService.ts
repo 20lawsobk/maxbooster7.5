@@ -82,7 +82,7 @@ async function getAudioDuration(audioPath: string): Promise<number> {
     if (m)
       return parseInt(m[1]) * 3600 + parseInt(m[2]) * 60 + parseFloat(m[3]);
   } catch (e) {
-    const m = (e?.stderr || "").match(/Duration:\s*(\d+):(\d+):([\d.]+)/);
+    const m = ((e as any)?.stderr || "").match(/Duration:\s*(\d+):(\d+):([\d.]+)/);
     if (m)
       return parseInt(m[1]) * 3600 + parseInt(m[2]) * 60 + parseFloat(m[3]);
   }
@@ -503,7 +503,7 @@ async function analyzeBeatLibrosa(
   } catch (e) {
     logger.debug(
       "[BeatSync] librosa analysis failed:",
-      e?.message?.slice(0, 100),
+      (e as any)?.message?.slice(0, 100),
     );
     return null;
   } finally {
@@ -517,7 +517,7 @@ async function analyzeBeatLibrosa(
 
 function findMajorPeaks(
   envelope: number[],
-  duration: number,
+  _duration: number,
   threshold: number,
   minGapSamples: number,
 ): number[] {

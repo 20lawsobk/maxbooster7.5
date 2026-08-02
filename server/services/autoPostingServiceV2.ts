@@ -160,7 +160,7 @@ class AutoPostingServiceV2 {
         }
       }
 
-      await storage?.trackSocialPost({
+      await (storage as any)?.trackSocialPost({
         userId: post.userId,
         content: post.content,
         mediaType: post.content.mediaType,
@@ -325,7 +325,7 @@ class AutoPostingServiceV2 {
   private async executePost(post: ScheduledPost): Promise<PostResult[]> {
     const results: PostResult[] = [];
 
-    const user = await storage?.getUserById(post?.userId);
+    const user = await (storage as any)?.getUserById(post?.userId);
     if (!user) {
       throw new Error("User not found");
     }
@@ -339,7 +339,7 @@ class AutoPostingServiceV2 {
         results?.push({
           platform,
           success: false,
-          error: error.message,
+          error: (error as Error).message,
           postedAt: new Date(),
         });
       }
@@ -359,7 +359,7 @@ class AutoPostingServiceV2 {
     platform: string,
     content: PostContent,
   ): Promise<PostResult> {
-    const tokens = await storage?.getSocialTokens(user?.id);
+    const tokens = await (storage as any)?.getSocialTokens(user?.id);
 
     switch (platform) {
       case "instagram":
@@ -388,7 +388,7 @@ class AutoPostingServiceV2 {
   }
 
   private async postToInstagram(
-    user: User,
+    _user: User,
     accessToken: string | undefined,
     content: PostContent,
   ): Promise<PostResult> {
@@ -417,7 +417,7 @@ class AutoPostingServiceV2 {
   }
 
   private async postToFacebook(
-    user: User,
+    _user: User,
     accessToken: string | undefined,
     content: PostContent,
   ): Promise<PostResult> {
@@ -444,7 +444,7 @@ class AutoPostingServiceV2 {
   }
 
   private async postToTwitter(
-    user: User,
+    _user: User,
     accessToken: string | undefined,
     content: PostContent,
   ): Promise<PostResult> {
@@ -580,7 +580,7 @@ class AutoPostingServiceV2 {
   }
 
   private async postToYouTube(
-    user: User,
+    _user: User,
     accessToken: string | undefined,
     content: PostContent,
   ): Promise<PostResult> {
@@ -686,7 +686,7 @@ class AutoPostingServiceV2 {
   }
 
   private async postToLinkedIn(
-    user: User,
+    _user: User,
     accessToken: string | undefined,
     content: PostContent,
   ): Promise<PostResult> {
@@ -768,7 +768,7 @@ class AutoPostingServiceV2 {
     };
 
     if (mediaAssets?.length > 0) {
-      postData.specificContent["com.linkedin.ugc.ShareContent"].media =
+      (postData.specificContent as any)["com.linkedin.ugc.ShareContent"].media =
         mediaAssets;
     }
 
@@ -798,7 +798,7 @@ class AutoPostingServiceV2 {
   }
 
   private async postToThreads(
-    user: User,
+    _user: User,
     accessToken: string | undefined,
     content: PostContent,
   ): Promise<PostResult> {
@@ -830,12 +830,12 @@ class AutoPostingServiceV2 {
     );
     createUrl?.searchParams.set("access_token", accessToken);
     createUrl?.searchParams.set("media_type", mediaType);
-    createUrl?.searchParams.set("text", containerData?.text);
+    createUrl?.searchParams.set("text", (containerData?.text as string));
     if (containerData?.image_url) {
-      createUrl?.searchParams.set("image_url", containerData?.image_url);
+      createUrl?.searchParams.set("image_url", (containerData?.image_url as string));
     }
     if (containerData?.video_url) {
-      createUrl?.searchParams.set("video_url", containerData?.video_url);
+      createUrl?.searchParams.set("video_url", (containerData?.video_url as string));
     }
 
     const createResponse = await axios?.post(createUrl?.toString());
@@ -883,7 +883,7 @@ class AutoPostingServiceV2 {
   }
 
   private async postToGoogleBusiness(
-    user: User,
+    _user: User,
     accessToken: string | undefined,
     content: PostContent,
   ): Promise<PostResult> {
@@ -960,7 +960,7 @@ class AutoPostingServiceV2 {
   }
 
   async cancelScheduledPost(postId: string): Promise<void> {
-    await storage?.deleteScheduledPost(postId);
+    await (storage as any)?.deleteScheduledPost(postId);
     logger.info(`❌ Cancelled scheduled post ${postId}`);
   }
 

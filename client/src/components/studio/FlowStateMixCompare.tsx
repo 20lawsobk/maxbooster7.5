@@ -40,7 +40,7 @@ const generateMockWaveform = (): number[] => {
 
 export function FlowStateMixCompare({
   currentMixName = "Current Mix",
-  onSelectMix,
+  _onSelectMix,
   className,
 }: FlowStateMixCompareProps) {
   const { toast } = useToast();

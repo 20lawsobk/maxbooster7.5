@@ -158,7 +158,7 @@ function MetricCard({
 
 export function DataDenseAnalytics() {
   const [timeRange, setTimeRange] = useState("7d");
-  const [activeView, setActiveView] = useState("overview");
+  const [_activeView, _setActiveView] = useState("overview");
 
   const {
     data: analyticsData,

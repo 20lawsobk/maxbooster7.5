@@ -391,7 +391,7 @@ function PreviewControlsContent({
 
 export function BeatPreviewBadges({
   originalBpm,
-  originalKey,
+  _originalKey,
   className,
 }: {
   originalBpm: number;

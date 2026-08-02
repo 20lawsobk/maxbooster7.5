@@ -439,8 +439,8 @@ export function getRBACStatus(): Record<
 
     result[name] = {
       permissions: config.permissions,
-      actionCount: tracker.actionCount || 0,
-      spentToday: tracker.spentToday || 0,
+      actionCount: tracker!.actionCount || 0,
+      spentToday: tracker!.spentToday || 0,
       pendingApprovals: pending.length,
     };
   }

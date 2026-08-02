@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Video } from "lucide-react";
 
 function useSearchParams() {
-  const [location] = useLocation();
+  const [_location] = useLocation();
   const search = typeof window !== "undefined" ? window.location.search : "";
   return new URLSearchParams(search);
 }

@@ -46,7 +46,7 @@ interface UserCursorOverlayProps {
 export function UserCursorOverlay({
   cursors,
   currentUserId,
-  containerRef,
+  _containerRef,
   showNames = true,
   showSelection = true,
   fadeTimeout = 5000,
@@ -204,13 +204,13 @@ interface UseRemoteCursorsOptions {
 }
 
 export function useRemoteCursors({
-  sessionId,
-  userId,
-  displayName,
-  color,
+  _sessionId,
+  _userId,
+  _displayName,
+  _color,
   updateInterval = 50,
 }: UseRemoteCursorsOptions) {
-  const [cursors, setCursors] = useState<RemoteCursor[]>([]);
+  const [cursors, _setCursors] = useState<RemoteCursor[]>([]);
   const [localPosition, setLocalPosition] = useState<CursorPosition>({
     x: 0,
     y: 0,

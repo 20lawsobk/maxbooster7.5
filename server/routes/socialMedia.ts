@@ -773,7 +773,7 @@ router?.get(
         if (conn?.isActive) {
           const meta = conn?.metadata as Record<string, unknown>;
           const lastSync = meta?.lastSyncedAt
-            ? new Date(meta?.lastSyncedAt).getTime()
+            ? new Date(meta?.lastSyncedAt as any).getTime()
             : conn?.createdAt
               ? new Date(conn?.createdAt).getTime()
               : 0;
@@ -790,7 +790,7 @@ router?.get(
           const conn = connections?.find((c) => c?.platform === p);
           const meta = conn?.metadata as Record<string, unknown>;
           const lastSync = meta?.lastSyncedAt
-            ? new Date(meta?.lastSyncedAt).getTime()
+            ? new Date(meta?.lastSyncedAt as any).getTime()
             : 0;
           return lastSync < SERVER_BOOT_MS;
         });
@@ -872,7 +872,7 @@ router?.get(
           const engagement =
             rates?.length > 0
               ? Math.round(
-                  (rates?.reduce((a: number, b: number) => a + b, 0) /
+                  ((rates as any)?.reduce((a: number, b: number) => a + b, 0) /
                     rates?.length) *
                     100,
                 ) / 100
@@ -880,10 +880,10 @@ router?.get(
 
           // Most recent sync across FB + IG
           const fbSync = fbMeta?.lastSyncedAt
-            ? new Date(fbMeta?.lastSyncedAt).getTime()
+            ? new Date(fbMeta?.lastSyncedAt as any).getTime()
             : 0;
           const igSync = igMeta?.lastSyncedAt
-            ? new Date(igMeta?.lastSyncedAt).getTime()
+            ? new Date(igMeta?.lastSyncedAt as any).getTime()
             : 0;
           const lastSync = new Date(
             Math.max(fbSync, igSync) || Date?.now(),
@@ -1080,7 +1080,7 @@ router?.get(
         new Promise<null>(resolve => setTimeout(() => resolve(null), 10_000)),
       ]).catch(() => null);
 
-      const rawTags: string[] = mcResult?.hashtags?.length ? mcResult.hashtags : FALLBACK_HASHTAGS;
+      const rawTags: string[] = (mcResult as any)?.hashtags?.length ? (mcResult as any).hashtags : FALLBACK_HASHTAGS;
 
       function hashVolume(tag: string, base: number): number {
         let h = 2166136261;
@@ -1829,8 +1829,8 @@ router?.get(
             }
             const contentObj = meta?.content || parsedContent || {};
             const titleText =
-              contentObj?.text ||
-              contentObj?.caption ||
+              (contentObj as any)?.text ||
+              (contentObj as any)?.caption ||
               p?.content?.slice(0, 80) ||
               "(no caption)";
             const resolvedStatus =
@@ -2299,7 +2299,7 @@ router?.post(
       } catch (ssrfErr) {
         return res
           .status(400)
-          .json({ error: ssrfErr.message || "Invalid URL" });
+          .json({ error: (ssrfErr as Error).message || "Invalid URL" });
       }
 
       // Use the in-house URL parser for metadata extraction. If it throws
@@ -2311,7 +2311,7 @@ router?.post(
       } catch (analyzeErr) {
         logger.warn(
           "[generate-from-url] URL analysis failed — using URL-derived stub:",
-          analyzeErr?.message,
+          (analyzeErr as any)?.message,
         );
         const parsedUrl = (() => {
           try {
@@ -2383,7 +2383,7 @@ router?.post(
           apple_music_type: "",
           apple_music_id: "",
           data_sources: ["url_fallback"],
-          error: analyzeErr.message,
+          error: (analyzeErr as Error).message,
         } as Record<string, unknown>;
       }
 
@@ -2917,7 +2917,7 @@ router?.get(
                   unknown
                 >;
                 spotifyStats = {
-                  followers: artist.followers?.total || 0,
+                  followers: (artist.followers as any)?.total || 0,
                   popularity: artist.popularity || 0,
                   genres: artist.genres || [],
                   artistId: profile.spotifyArtistId,
@@ -3416,7 +3416,7 @@ router.get(
         return;
       } catch (err) {
         logger.info(
-          `[VideoProxy] Candidate ${url} fetch error: ${err?.message}`,
+          `[VideoProxy] Candidate ${url} fetch error: ${(err as any)?.message}`,
         );
       }
     }
@@ -3825,12 +3825,12 @@ router?.post(
       const result = await (
         await getVeoMusic()
       ).generateCampaignFromUrl(url, overrides);
-      if (!result || !result?.success) {
+      if (!result || (!result as any)?.success) {
         return res
-          .status(result?.error?.includes("unavailable") ? 503 : 500)
+          .status((result as any)?.error?.includes("unavailable") ? 503 : 500)
           .json({
             success: false,
-            message: result.error || "Campaign generation from URL failed",
+            message: (result as any).error || "Campaign generation from URL failed",
           });
       }
       res.json(result);
@@ -4061,7 +4061,7 @@ router?.post(
         : "";
 
       let story = `Check out "${title}" by ${storefrontName}.`;
-      if (description) story += ` ${description?.slice(0, 150)}.`;
+      if (description) story += ` ${(description as any)?.slice(0, 150)}.`;
       if (category) story += ` Genre: ${category}.`;
       if (priceDisplay) story += ` Available now for ${priceDisplay}.`;
       story += " Get it before it's gone!";
@@ -4268,7 +4268,7 @@ router.post(
       } catch (ssrfErr) {
         return res
           .status(400)
-          .json({ success: false, message: ssrfErr.message || "Invalid URL" });
+          .json({ success: false, message: (ssrfErr as Error).message || "Invalid URL" });
       }
 
       const analysis = await analyzeUrl(url.trim());
@@ -4471,7 +4471,7 @@ router.post(
         success: true,
         analysis,
         seed,
-        content: content.content || content || null,
+        content: (content as any).content || content || null,
         video_config: videoConfig,
         audio_style: audioStyle,
         image_prompt: imagePrompt,
@@ -4493,8 +4493,8 @@ router.post(
   requireAuth,
   (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     audioUpload.single("audio")(
-      req as Record<string, unknown>,
-      res as Record<string, unknown>,
+      req as unknown as Record<string, unknown>,
+      res as unknown as Record<string, unknown>,
       next,
     );
   },
@@ -4549,7 +4549,7 @@ router.post(
         success: true,
         analysis,
         seed,
-        content: content.content || content || null,
+        content: (content as any).content || content || null,
         video_config: videoConfig,
       });
     } catch (error) {
@@ -4571,8 +4571,8 @@ router.post(
   requireAuth,
   (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     artworkUpload.single("image")(
-      req as Record<string, unknown>,
-      res as Record<string, unknown>,
+      req as unknown as Record<string, unknown>,
+      res as unknown as Record<string, unknown>,
       next,
     );
   },
@@ -4625,7 +4625,7 @@ router.post(
         success: true,
         analysis,
         seed,
-        content: content.content || content || null,
+        content: (content as any).content || content || null,
         video_config: videoConfig,
         palette: analysis.palette.slice(0, 5),
       });
@@ -4657,7 +4657,7 @@ router.get(
       const svc = await getVoiceSynthService();
       res.json({ success: true, profiles: svc.listVoiceProfiles() });
     } catch (e) {
-      logger.warn("[Route] voice-profiles:", e.message);
+      logger.warn("[Route] voice-profiles:", (e as Error).message);
       res
         .status(500)
         .json({ success: false, error: "Failed to load voice profiles" });
@@ -4678,8 +4678,8 @@ router.post(
   (req, res, next) => {
     // mediaUpload → disk storage so referenceAudioPath has a real file path for FFmpeg
     mediaUpload.single("reference_audio")(
-      req as Record<string, unknown>,
-      res as Record<string, unknown>,
+      req as unknown as Record<string, unknown>,
+      res as unknown as Record<string, unknown>,
       next,
     );
   },
@@ -4706,7 +4706,7 @@ router.post(
       };
 
       const svc = await getVoiceSynthService();
-      const referenceAudioPath = req.file.path;
+      const referenceAudioPath = req.file!.path;
 
       const options = {
         profileId,
@@ -4732,7 +4732,7 @@ router.post(
         }
         result = await svc.synthesizeSegments(parsedSegments, options);
       } else {
-        if (!text.trim())
+        if (!text!.trim())
           return res
             .status(400)
             .json({ success: false, error: "text is required" });
@@ -4765,7 +4765,7 @@ router.post(
       } catch (e) {
         logger.warn(
           "[Route] voice PDIM store skipped:",
-          e.message.slice(0, 80),
+          (e as Error).message.slice(0, 80),
         );
       }
 
@@ -4789,12 +4789,12 @@ router.post(
           error: e.message,
         });
       }
-      logger.warn("[Route] synthesize-voice:", e.message);
+      logger.warn("[Route] synthesize-voice:", (e as Error).message);
       res
         .status(500)
         .json({
           success: false,
-          error: e.message || "Voice synthesis failed",
+          error: (e as Error).message || "Voice synthesis failed",
         });
     }
   },
@@ -4810,27 +4810,27 @@ router.post(
   requireAuthOnly,
   (req, res, next) => {
     mediaUpload.single("audio")(
-      req as Record<string, unknown>,
-      res as Record<string, unknown>,
+      req as unknown as Record<string, unknown>,
+      res as unknown as Record<string, unknown>,
       next,
     );
   },
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const file = req.file;
-      if (!file.path) {
+      if (!file!.path) {
         return res
           .status(400)
           .json({ success: false, error: "Audio file required" });
       }
       const svc = await getVoiceSynthService();
-      const characteristics = await svc.analyzeReferenceVoice(file.path);
+      const characteristics = await svc.analyzeReferenceVoice(file!.path);
       res.json({ success: true, characteristics });
     } catch (e) {
-      logger.warn("[Route] analyze-reference-voice:", e.message);
+      logger.warn("[Route] analyze-reference-voice:", (e as Error).message);
       res
         .status(500)
-        .json({ success: false, error: e.message || "Analysis failed" });
+        .json({ success: false, error: (e as Error).message || "Analysis failed" });
     }
   },
 );
@@ -4851,15 +4851,15 @@ router.post(
   (req, res, next) => {
     // mediaUpload → disk storage gives us a real file path for FFmpeg analysis
     mediaUpload.single("audio")(
-      req as Record<string, unknown>,
-      res as Record<string, unknown>,
+      req as unknown as Record<string, unknown>,
+      res as unknown as Record<string, unknown>,
       next,
     );
   },
   async (req: AuthenticatedRequest, res: Response) => {
     try {
       const file = req.file;
-      if (!file.path) {
+      if (!file!.path) {
         return res
           .status(400)
           .json({
@@ -4875,28 +4875,28 @@ router.post(
         const { getCachedBeatAnalysis, cacheBeatAnalysis } = await import(
           "../services/pdimMediaStorageService.js"
         );
-        const cached = await getCachedBeatAnalysis(file.path);
+        const cached = await getCachedBeatAnalysis(file!.path);
         if (cached) {
           analysis = cached;
           cacheHit = true;
         } else {
           const svc = await getBeatSyncService();
-          analysis = await svc.analyzeAudio(file.path);
+          analysis = await svc.analyzeAudio(file!.path);
           // Cache the result in PDIM for 24 hours
-          await cacheBeatAnalysis(file.path, analysis);
+          await cacheBeatAnalysis(file!.path, analysis);
         }
       } catch {
         // PDIM unavailable — fall through to direct analysis
         const svc = await getBeatSyncService();
-        analysis = await svc.analyzeAudio(file.path);
+        analysis = await svc.analyzeAudio(file!.path);
       }
 
       res.json({ success: true, analysis, cacheHit });
     } catch (e) {
-      logger.warn("[Route] analyze-audio-beats:", e.message);
+      logger.warn("[Route] analyze-audio-beats:", (e as Error).message);
       res
         .status(500)
-        .json({ success: false, error: e.message || "Beat analysis failed" });
+        .json({ success: false, error: (e as Error).message || "Beat analysis failed" });
     }
   },
 );
@@ -4915,8 +4915,8 @@ router.post(
   requireAuthOnly,
   (req, res, next) => {
     mediaUpload.fields([{ name: "audio", maxCount: 1 }])(
-      req as Record<string, unknown>,
-      res as Record<string, unknown>,
+      req as unknown as Record<string, unknown>,
+      res as unknown as Record<string, unknown>,
       next,
     );
   },
@@ -4936,8 +4936,8 @@ router.post(
       ]);
       return res.json({ success: true, ...result });
     } catch (err) {
-      logger.warn("[BeatAnalyze]", err?.message);
-      return res.status(500).json({ success: false, error: err?.message || "Analysis failed" });
+      logger.warn("[BeatAnalyze]", (err as any)?.message);
+      return res.status(500).json({ success: false, error: (err as any)?.message || "Analysis failed" });
     }
   },
 );
@@ -4986,7 +4986,7 @@ router.post(
       { name: "images", maxCount: 10 },
       { name: "audio", maxCount: 1 },
       { name: "reference_voice", maxCount: 1 },
-    ])(req as Record<string, unknown>, res as Record<string, unknown>, next);
+    ])(req as unknown as Record<string, unknown>, res as unknown as Record<string, unknown>, next);
   },
   async (req: AuthenticatedRequest, res: Response) => {
     const jobId = `mvjob_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -5005,7 +5005,7 @@ router.post(
         const files = req.files as
           | Record<string, Express.Multer.File[]>
           | undefined;
-        const imageFiles = files.images || [];
+        const imageFiles = files!.images || [];
         const audioFile = files?.audio?.[0];
         const voiceRef = files?.reference_voice?.[0];
 
@@ -5062,15 +5062,15 @@ router.post(
             const { storeMusicVideo } = await import("../services/pdimMediaStorageService.js");
             const videoFilePath = `${process.cwd()}/uploads/videos/${studioResult.filename}`;
             const pdimMeta = await Promise.race([
-              storeMusicVideo(userId, videoFilePath, studioResult as Record<string, unknown>).catch(() => null),
+              storeMusicVideo(userId, videoFilePath, studioResult as unknown as Record<string, unknown>).catch(() => null),
               new Promise<null>((resolve) =>
                 setTimeout(() => resolve(null), 30_000),
               ),
             ]);
-            if (pdimMeta) studioResult.pdim = { key: pdimMeta.pdimKey, tier: pdimMeta.tier };
+            if (pdimMeta) studioResult.pdim = { key: pdimMeta.pdimKey, tier: (pdimMeta as any).tier };
             else logger.warn("[MusicVideo/Studio] PDIM store slow/unavailable — continuing without PDIM metadata");
           } catch (e) {
-            logger.warn(`[MusicVideo/Studio] PDIM store skipped: ${e?.message?.slice(0, 80)}`);
+            logger.warn(`[MusicVideo/Studio] PDIM store skipped: ${(e as any)?.message?.slice(0, 80)}`);
           }
 
           // Extract a real first-frame poster so mobile shows a frame instead of
@@ -5084,7 +5084,7 @@ router.post(
                 `${process.cwd()}/uploads/videos/${studioResult.filename}`,
               );
               if (poster)
-                (studioResult as Record<string, unknown>).thumbnail_url = poster;
+                (studioResult as unknown as Record<string, unknown>).thumbnail_url = poster;
             }
           } catch (e) {
             logger.warn(
@@ -5125,14 +5125,14 @@ router.post(
               body.voice_text,
               {
                 profileId: body.voice_profile_id || "smooth_narrator",
-                referenceAudioPath: voiceRef.path,
+                referenceAudioPath: voiceRef!.path,
               },
             );
             if (voiceResult.success && voiceResult.outputPath) {
               voiceSynthPath = voiceResult.outputPath;
             }
           } catch (e) {
-            logger.warn("[MusicVideo] Voice synthesis skipped:", e.message);
+            logger.warn("[MusicVideo] Voice synthesis skipped:", (e as Error).message);
           }
         }
 
@@ -5198,7 +5198,7 @@ router.post(
             ),
           ]);
           if (pdimVideoMeta) {
-            result.pdim = {
+            (result as any).pdim = {
               key: pdimVideoMeta.pdimKey,
               compressedSize: pdimVideoMeta.compressedSize,
               tier: pdimVideoMeta.tier,
@@ -5207,7 +5207,7 @@ router.post(
         } catch (e) {
           logger.warn(
             `[MusicVideo] PDIM store skipped for job ${jobId}:`,
-            e.message.slice(0, 80),
+            (e as Error).message.slice(0, 80),
           );
         }
 
@@ -5221,7 +5221,7 @@ router.post(
               `${process.cwd()}/uploads/videos/${result.filename}`,
             );
             if (poster)
-              (result as Record<string, unknown>).thumbnail_url = poster;
+              (result as unknown as Record<string, unknown>).thumbnail_url = poster;
           }
         } catch (e) {
           logger.warn(
@@ -5238,10 +5238,10 @@ router.post(
           `[MusicVideo] Job ${jobId} complete — ${result.filename} | PDIM: ${pdimVideoMeta?.pdimKey ?? "skipped"}`,
         );
       } catch (e) {
-        logger.warn(`[MusicVideo] Job ${jobId} failed:`, e.message);
+        logger.warn(`[MusicVideo] Job ${jobId} failed:`, (e as Error).message);
         musicVideoJobs.set(jobId, {
           status: "error",
-          error: e.message || "Music video generation failed",
+          error: (e as Error).message || "Music video generation failed",
           createdAt: Date.now(),
         });
       }
@@ -5306,7 +5306,7 @@ router?.get(
   requireAuthOnly,
   async (_req: AuthenticatedRequest, res: Response) => {
     try {
-      const [voiceSvc, imgSvc] = await Promise?.all([
+      const [voiceSvc, _imgSvc] = await Promise?.all([
         getVoiceSynthService(),
         getImageToVideoService(),
       ]);
@@ -5376,7 +5376,7 @@ router?.get(
         .status(500)
         .json({
           success: false,
-          error: e.message || "Failed to load capabilities",
+          error: (e as Error).message || "Failed to load capabilities",
         });
     }
   },

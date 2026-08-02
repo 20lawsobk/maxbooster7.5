@@ -80,8 +80,8 @@ const PLATFORM_TARGETS: Record<string, { lufs: number; truePeak: number }> = {
 };
 
 export function MixingMasteringPanel({
-  projectId,
-  trackId,
+  _projectId,
+  _trackId,
   onMixApplied,
   onMasterApplied,
   className,

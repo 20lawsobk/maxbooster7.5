@@ -300,7 +300,7 @@ class SocialStrategyAIService {
       );
       recommendations?.push({
         id: randomBytes(8).toString("hex"),
-        type: idea.type as Record<string, unknown>,
+        type: idea.type as unknown as Record<string, unknown>,
         platform,
         title: idea.title,
         description: `Create a ${idea?.type} about ${idea?.title.toLowerCase()} to engage your audience.`,
@@ -337,15 +337,15 @@ class SocialStrategyAIService {
     // Priority 1: full advanced AI pipeline (MaxCore → Python AI → in-house JS)
     try {
       const aiResult = await unifiedAIController?.generateContent({
-        platform: platform as Record<string, unknown>,
-        tone: "energetic" as Record<string, unknown>,
+        platform: platform as unknown as Record<string, unknown>,
+        tone: "energetic" as unknown as Record<string, unknown>,
         topic: title,
         contentType: "engagement",
         includeHashtags: true,
         includeEmojis: true,
       });
       if (aiResult?.success && aiResult?.data) {
-        const d = aiResult?.data as Record<string, unknown>;
+        const d = aiResult?.data as unknown as Record<string, unknown>;
         const caption =
           d?.caption || [d?.hook, d?.body, d?.cta].filter(Boolean).join("\n\n");
         if (caption) return caption;
@@ -371,7 +371,7 @@ class SocialStrategyAIService {
     return templates[platform] || templates?.instagram;
   }
 
-  private generateHashtags(pillar: string, platform: string): string[] {
+  private generateHashtags(pillar: string, _platform: string): string[] {
     const baseHashtags = ["music", "artist", "newmusic", "musicproducer"];
     const pillarHashtags: Record<string, string[]> = {
       Educational: ["tutorial", "tips", "howto", "learn"],

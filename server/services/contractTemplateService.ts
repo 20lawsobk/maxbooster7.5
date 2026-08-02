@@ -308,7 +308,7 @@ class ContractTemplateService {
       }
       logger.info(`Loaded ${rows?.length} contracts from database`);
     } catch (err) {
-      logger.warn("Error loading contracts from DB:", err);
+      logger.warn({ err: err }, "Error loading contracts from DB:");
     }
   }
 
@@ -579,7 +579,7 @@ Artist receives:
 ${vars.royaltyPercentage ? `Producer shall receive ${vars.royaltyPercentage}% of net profits from the New Song.` : "No ongoing royalties are owed to Producer beyond the purchase price."}
 
 6. PAYMENT
-Exclusive Purchase Price: ${currency} ${vars.purchasePrice.toLocaleString() || "0.00"}
+Exclusive Purchase Price: ${currency} ${vars.purchasePrice!.toLocaleString() || "0.00"}
 Payment Terms: Full payment due upon execution
 
 7. CREDIT
@@ -748,7 +748,7 @@ Musician agrees to provide professional musical services including:
 - Re-recording if reasonably requested
 
 3. COMPENSATION
-Session Rate: ${currency} ${vars.sessionRate.toLocaleString() || "0.00"} per hour
+Session Rate: ${currency} ${vars.sessionRate!.toLocaleString() || "0.00"} per hour
 Estimated Hours: ${vars.sessionHours || 1}
 Total Estimated Payment: ${currency} ${totalPayment.toLocaleString()}
 
@@ -981,7 +981,7 @@ Licensor grants Licensee the non-exclusive right to:
 - Use the Work in trailers, promos, and advertisements for the Project
 
 4. FEES
-Synchronization Fee: ${currency} ${vars.syncFee.toLocaleString() || "[FEE]"}
+Synchronization Fee: ${currency} ${vars.syncFee!.toLocaleString() || "[FEE]"}
 Master Use Fee: ${currency} [MASTER FEE] (if applicable)
 Total: ${currency} [TOTAL]
 
@@ -1056,7 +1056,7 @@ In the event any work is not deemed a "work for hire," Contractor hereby irrevoc
 - All moral rights (to the extent waivable)
 
 3. COMPENSATION
-Total Fee: ${currency} ${vars.purchasePrice.toLocaleString() || "[AMOUNT]"}
+Total Fee: ${currency} ${vars.purchasePrice!.toLocaleString() || "[AMOUNT]"}
 
 Payment Schedule:
 - Upon signing: ${currency} [AMOUNT]
@@ -1603,8 +1603,8 @@ ${vars?.producerName || "[PRODUCER NAME]"}
         status: (signature?.signedAt ? "signed" : "pending") as
           | "signed"
           | "pending",
-        signedAt: signature.signedAt
-          ? new Date(signature?.signedAt)
+        signedAt: signature!.signedAt
+          ? new Date(signature?.signedAt as any)
           : undefined,
       };
     });

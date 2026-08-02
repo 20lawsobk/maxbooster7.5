@@ -280,12 +280,12 @@ async function deezerFindTrack(
   );
   if (!data?.data?.length) return null;
   for (const t of data?.data) {
-    if (titleMatch(t?.title, trackTitle)) {
-      return { isrc: t.isrc ?? null, albumId: t.album?.id ?? null };
+    if (titleMatch((t as any)?.title, trackTitle)) {
+      return { isrc: (t as any).isrc ?? null, albumId: (t as any).album?.id ?? null };
     }
   }
   const first = data?.data[0];
-  return { isrc: first.isrc ?? null, albumId: first.album?.id ?? null };
+  return { isrc: (first as any).isrc ?? null, albumId: (first as any).album?.id ?? null };
 }
 
 // ─── iTunes / Apple Music helpers ─────────────────────────────────────────────
@@ -308,9 +308,9 @@ async function itunesFindArtistId(
   );
   const counts: Record<number, { count: number; name: string }> = {};
   for (const item of data?.results ?? []) {
-    const id: number = item?.artistId;
+    const id: number = (item as any)?.artistId;
     if (!id) continue;
-    if (!counts[id]) counts[id] = { count: 0, name: item.artistName };
+    if (!counts[id]) counts[id] = { count: 0, name: (item as any).artistName };
     counts[id].count++;
   }
   const sorted = Object.entries(counts).sort((a, b) => b[1].count - a[1].count);
@@ -625,7 +625,7 @@ async function hydrateLabelGridRelease(
   let lgTracks: LabelGridCatalogTrack[] = lgRelease?.tracks ?? [];
   if (lgTracks?.length === 0 && lgRelease?.id) {
     const detail = await labelGridService?.getReleaseDetail(lgRelease?.id);
-    if (detail.tracks.length) lgTracks = detail?.tracks;
+    if (detail!.tracks.length) lgTracks = detail?.tracks;
   }
 
   let upc = lgRelease?.upc ?? null;
@@ -669,7 +669,7 @@ async function hydrateLabelGridRelease(
   await delay(80);
   const amResult = await validateOnAppleMusic({
     lgTitle: cleanTitle,
-    lgReleaseDate: lgRelease.releaseDate.split("T")[0] ?? null,
+    lgReleaseDate: lgRelease.releaseDate!.split("T")[0] ?? null,
     lgTrackCount: lgTracks.length || lgRelease.trackCount,
     lgGenre: genre,
     lgArtwork: artwork,
@@ -855,7 +855,7 @@ async function buildFromLinkedProfiles(
       allScanned.push(...scanned);
     } catch (err) {
       logger.warn(
-        `[CatalogMigration] Scan failed for ${profile.platformId}: ${err.message}`,
+        `[CatalogMigration] Scan failed for ${profile.platformId}: ${(err as Error).message}`,
       );
     }
   }
@@ -877,7 +877,7 @@ async function buildFromLinkedProfiles(
     } else {
       // Merge: prefer the entry with more track data.
       const merged: ScannedRelease = { ...existing };
-      if ((r.tracks.length ?? 0) > (existing.tracks.length ?? 0)) {
+      if ((r.tracks!.length ?? 0) > (existing.tracks!.length ?? 0)) {
         merged.tracks = r.tracks;
       }
       if (!merged.upc && r.upc) merged.upc = r.upc;

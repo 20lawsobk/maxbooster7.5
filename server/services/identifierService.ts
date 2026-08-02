@@ -307,9 +307,9 @@ class IdentifierService {
 
       await db?.insert(isrcRegistry).values({
         isrc: isrcCode,
-        trackId: options.trackId || "pending",
-        artistId: options.userId || "system",
-        title: options.metadata?.title || "Generated ISRC",
+        trackId: options!.trackId || "pending",
+        artistId: options!.userId || "system",
+        title: options!.metadata?.title || "Generated ISRC",
       });
 
       logger.info(
@@ -411,14 +411,14 @@ class IdentifierService {
     return {
       exists: true,
       info: {
-        userId: r.userId,
+        userId: (r as any).userId,
         trackId: r.trackId,
-        countryCode: r.countryCode,
-        registrantCode: r.registrantCode,
-        year: r.year,
-        designation: r.designation,
-        issuedAt: r.issuedAt,
-        status: r.status,
+        countryCode: (r as any).countryCode,
+        registrantCode: (r as any).registrantCode,
+        year: (r as any).year,
+        designation: (r as any).designation,
+        issuedAt: (r as any).issuedAt,
+        status: (r as any).status,
       },
     };
   }
@@ -448,10 +448,10 @@ class IdentifierService {
     return {
       exists: true,
       info: {
-        userId: r.userId,
+        userId: (r as any).userId,
         releaseId: r.releaseId,
-        issuedAt: r.issuedAt,
-        status: r.status,
+        issuedAt: (r as any).issuedAt,
+        status: (r as any).status,
       },
     };
   }
@@ -501,11 +501,11 @@ class IdentifierService {
       .limit(500);
 
     return records?.map((r) => ({
-      code: r.code,
-      formatted: this.formatISRC(r?.code),
+      code: (r as any).code,
+      formatted: this.formatISRC((r as any)?.code),
       trackId: r.trackId,
-      status: r.status,
-      issuedAt: r.issuedAt,
+      status: (r as any).status,
+      issuedAt: (r as any).issuedAt,
     }));
   }
 
@@ -524,10 +524,10 @@ class IdentifierService {
       .orderBy(desc(upcRegistry?.issuedAt));
 
     return records?.map((r) => ({
-      code: r.code,
+      code: (r as any).code,
       releaseId: r.releaseId,
-      status: r.status,
-      issuedAt: r.issuedAt,
+      status: (r as any).status,
+      issuedAt: (r as any).issuedAt,
     }));
   }
 

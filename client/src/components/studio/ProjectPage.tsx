@@ -121,7 +121,7 @@ function SongRow({
   onMaster,
   onRemove,
   isPlaying,
-  targetLoudness,
+  _targetLoudness,
 }: {
   song: MasteringSong;
   index: number;

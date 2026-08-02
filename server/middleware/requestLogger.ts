@@ -35,7 +35,7 @@ export function requestLogger(
     url: req.originalUrl,
     ip: req.ip || "unknown",
     userAgent: req.get("user-agent") || "unknown",
-    userId: (req as Record<string, unknown>).user?.id,
+    userId: ((req as unknown as Record<string, unknown>).user as any)?.id,
     sessionId: req.sessionID,
     query: Object.keys(req.query).length > 0 ? req.query : undefined,
     referrer: req.get("referrer"),
@@ -86,7 +86,7 @@ export function requestLogger(
       auditLogger?.log({
         timestamp: logData.timestamp,
         userId: logData.userId,
-        userEmail: (req as Record<string, unknown>).user?.email,
+        userEmail: ((req as unknown as Record<string, unknown>).user as any)?.email,
         ip: logData.ip,
         userAgent: logData.userAgent,
         action: "HTTP_REQUEST",
@@ -131,9 +131,9 @@ export function requestLogger(
         const message = `${logData?.method} ${logData?.url} - ${logData?.statusCode} in ${responseTime}ms`;
 
         if (logLevel === "error") {
-          logger.warn(`❌ ${message}`, { requestId: logData.requestId });
+          logger.warn({ requestId: logData.requestId }, `❌ ${message}`);
         } else if (logLevel === "warn") {
-          logger.warn(`⚠️  ${message}`, { requestId: logData.requestId });
+          logger.warn({ requestId: logData.requestId }, `⚠️  ${message}`);
         } else {
           logger.info(`✅ ${message}`);
         }
@@ -158,13 +158,13 @@ export function errorContext(
   next = function (error?: unknown) {
     if (error) {
       // Enhance error with request context
-      error.requestContext = {
+      (error as any).requestContext = {
         requestId: req.requestId,
         method: req.method,
         url: req.originalUrl,
         ip: req.ip,
         userAgent: req.get("user-agent"),
-        userId: (req as Record<string, unknown>).user?.id,
+        userId: ((req as unknown as Record<string, unknown>).user as any)?.id,
         sessionId: req.sessionID,
         timestamp: new Date().toISOString(),
       };

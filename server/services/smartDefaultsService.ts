@@ -723,7 +723,7 @@ class SmartDefaultsService {
 
   private getAccountAgeMonths(user: Record<string, unknown>): number {
     if (!user?.createdAt) return 1;
-    const created = new Date(user?.createdAt);
+    const created = new Date(user?.createdAt as any);
     const now = new Date();
     return Math.max(
       1,
@@ -751,9 +751,9 @@ class SmartDefaultsService {
     const older = analyticsData?.slice(Math.floor(analyticsData?.length / 2));
 
     const recentAvg =
-      recent?.reduce((sum, a) => sum + (a[field] || 0), 0) / recent?.length;
+      (recent as any)?.reduce((sum, a) => sum + ((a as any)[field] || 0), 0) / recent?.length;
     const olderAvg =
-      older?.reduce((sum, a) => sum + (a[field] || 0), 0) / older?.length;
+      (older as any)?.reduce((sum, a) => sum + ((a as any)[field] || 0), 0) / older?.length;
 
     if (olderAvg === 0) return recentAvg > 0 ? 100 : 0;
     return Math.round(((recentAvg - olderAvg) / olderAvg) * 100);
@@ -776,7 +776,7 @@ class SmartDefaultsService {
 
   private getPlatformOptimalTimes(
     artistType: ArtistType,
-    genres: string[],
+    _genres: string[],
   ): OptimalSchedule["posting"] {
     const baseTimes: Record<
       string,

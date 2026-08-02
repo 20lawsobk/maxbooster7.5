@@ -230,7 +230,7 @@ export function useTemplate(
 
   const duplicateTemplate = useCallback(
     async (id: string, newName: string): Promise<Template> => {
-      const template = templates?.find((t) => t?.id === id);
+      const template = templates?.find((t: any) => t?.id === id);
       if (!template) throw new Error("Template not found");
 
       return createTemplate({
@@ -247,7 +247,7 @@ export function useTemplate(
 
   const getTemplate = useCallback(
     (id: string): Template | undefined => {
-      return templates?.find((t) => t?.id === id);
+      return templates?.find((t: any) => t?.id === id);
     },
     [templates],
   );
@@ -319,7 +319,7 @@ export function useTemplateLibrary() {
   });
 
   const templatesByType = allTemplates?.reduce<Record<TemplateType, Template[]>>(
-    (acc, template) => {
+    (acc: any, template: any) => {
       if (!acc[template?.type]) {
         acc[template.type] = [];
       }
@@ -329,8 +329,8 @@ export function useTemplateLibrary() {
     {} as Record<TemplateType, Template[]>,
   );
 
-  const defaultTemplates = allTemplates?.filter((t) => t?.isDefault);
-  const sharedTemplates = allTemplates?.filter((t) => t?.isShared);
+  const defaultTemplates = allTemplates?.filter((t: any) => t?.isDefault);
+  const sharedTemplates = allTemplates?.filter((t: any) => t?.isShared);
   const recentTemplates = [...allTemplates]
     .sort(
       (a, b) =>

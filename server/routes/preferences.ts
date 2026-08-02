@@ -12,7 +12,7 @@ const router = Router();
 
 router?.get("/user", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     const preferences = await userPreferencesService?.getUserPreferences(userId);
 
     if (!preferences) {
@@ -30,7 +30,7 @@ router?.get("/user", requireAuth, async (req: Request, res: Response) => {
 
 router?.put("/user", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     const updates = req.body;
 
     const updated = await userPreferencesService?.updateUserPreferences(
@@ -81,7 +81,7 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user!.id;
       const recommendations =
         await userPreferencesService?.getPreferenceRecommendations(userId);
       return res.json(recommendations);
@@ -94,7 +94,7 @@ router?.get(
 
 router?.post("/learn", requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     const { eventType, context } = req.body;
 
     if (!eventType) {
@@ -119,7 +119,7 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user!.id;
       const defaults = await smartDefaultsEngine?.getSmartDefaults(userId);
       return res.json(defaults);
     } catch (error) {
@@ -134,7 +134,7 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user!.id;
       const suggestions =
         await smartDefaultsEngine?.getSchedulingSuggestions(userId);
       return res.json(suggestions);
@@ -152,7 +152,7 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user!.id;
       const recommendations =
         await smartDefaultsEngine?.getDistributionRecommendations(userId);
       return res.json(recommendations);
@@ -191,7 +191,7 @@ router?.get(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user!.id;
       const layout = await userPreferencesService?.getDashboardLayout(userId);
       return res.json(layout);
     } catch (error) {
@@ -208,7 +208,7 @@ router?.put(
   requireAuth,
   async (req: Request, res: Response) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user!.id;
       const layout = req.body;
 
       await userPreferencesService?.saveDashboardLayout(userId, layout);

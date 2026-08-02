@@ -320,14 +320,14 @@ export function auditMiddleware(
     const originalSend = res.send;
 
     res.send = function (data) {
-      const user = (req as Record<string, unknown>).user;
+      const user = (req as unknown as Record<string, unknown>).user;
       const statusCode = res.statusCode;
 
       if (user && statusCode < 400) {
         auditLogger?.log({
           timestamp: new Date().toISOString(),
-          userId: user.id,
-          userEmail: user.email,
+          userId: (user as any).id,
+          userEmail: (user as any).email,
           ip: auditLogger["getClientIP"](req),
           userAgent: req.get("user-agent") || "unknown",
           action,

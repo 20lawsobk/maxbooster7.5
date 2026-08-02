@@ -296,7 +296,7 @@ export class RealLifeSimulationEngine extends EventEmitter {
 
   private users: Map<string, SimulatedUser> = new Map();
   private releases: Map<string, SimulatedRelease> = new Map();
-  private transactions: Map<string, SimulatedTransaction> = new Map();
+  private _transactions: Map<string, SimulatedTransaction> = new Map();
   private events: SimulationEvent[] = [];
   private snapshots: SimulationSnapshot[] = [];
 
@@ -781,7 +781,7 @@ export class RealLifeSimulationEngine extends EventEmitter {
       10,
     );
     let removed = 0;
-    for (const [userId, user] of this.users.entries()) {
+    for (const [userId, _user] of this.users.entries()) {
       if (removed >= sampleChurn) break;
       if (Math.random() < 0.01) {
         this.users.delete(userId);

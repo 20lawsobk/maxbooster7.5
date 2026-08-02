@@ -290,10 +290,10 @@ export function startRetentionWorker(): Worker {
     // always a post-restart cleanup race, never a real job failure.
     if (msg.includes("PDIM HTTP 429") || msg.includes("ERR PDIM")) {
       logger.warn(
-        `[Worker] ⚠️ ${job.id} (${job.name ?? "stale"}) PDIM rate-limit — self-healing: ${msg}`,
+        `[Worker] ⚠️ ${job!.id} (${job!.name ?? "stale"}) PDIM rate-limit — self-healing: ${msg}`,
       );
     } else {
-      logger.warn(`[Worker] ❌ ${job.id} (${job.name}) failed: ${msg}`);
+      logger.warn(`[Worker] ❌ ${job!.id} (${job!.name}) failed: ${msg}`);
     }
   });
 

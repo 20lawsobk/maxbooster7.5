@@ -256,7 +256,7 @@ class UserPreferencesService {
     try {
       const redis = await getRedisClient();
       if (redis) {
-        const cached = await redis?.get(`${this.CACHE_PREFIX}${userId}`);
+        const cached = await (redis as any)?.get(`${this.CACHE_PREFIX}${userId}`);
         if (cached) {
           return JSON.parse(cached);
         }
@@ -274,7 +274,7 @@ class UserPreferencesService {
         this.getDefaultPreferences("solo", "emerging");
 
       if (redis) {
-        await redis?.setEx(
+        await (redis as any)?.setEx(
           `${this.CACHE_PREFIX}${userId}`,
           this.CACHE_TTL,
           JSON.stringify(preferences),
@@ -300,12 +300,12 @@ class UserPreferencesService {
 
       await db
         .update(users)
-        .set({ preferences: updated as Record<string, unknown> })
+        .set({ preferences: updated as unknown as Record<string, unknown> })
         .where(eq(users?.id, userId));
 
       const redis = await getRedisClient();
       if (redis) {
-        await redis?.setEx(
+        await (redis as any)?.setEx(
           `${this.CACHE_PREFIX}${userId}`,
           this.CACHE_TTL,
           JSON.stringify(updated),
@@ -378,9 +378,9 @@ class UserPreferencesService {
       const key = `${this.BEHAVIOR_PREFIX}${userId}:${event?.eventType}`;
       const eventData = JSON.stringify({ ...event, timestamp: new Date() });
 
-      await redis?.lPush(key, eventData);
-      await redis?.lTrim(key, 0, 99);
-      await redis?.expire(key, 86400 * 30);
+      await (redis as any)?.lPush(key, eventData);
+      await (redis as any)?.lTrim(key, 0, 99);
+      await (redis as any)?.expire(key, 86400 * 30);
     } catch (error) {
       logger.warn({ err: error }, "Error recording behavior event:");
     }

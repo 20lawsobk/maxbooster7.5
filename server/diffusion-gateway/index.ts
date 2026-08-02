@@ -398,7 +398,7 @@ async function runSession(sessionNum: number, nSamples: number) {
   sim.progress = 1.0;
 
   console?.log(
-    `[DiffGateway] Session ${sessionNum} complete — loss=${sim.lastLoss.toFixed(4)} simulated_years+=${simYears} total=${tState?.total_simulated_years}`,
+    `[DiffGateway] Session ${sessionNum} complete — loss=${sim.lastLoss!.toFixed(4)} simulated_years+=${simYears} total=${tState?.total_simulated_years}`,
   );
 }
 

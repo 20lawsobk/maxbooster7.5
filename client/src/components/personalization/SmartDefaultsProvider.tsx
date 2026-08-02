@@ -127,7 +127,7 @@ interface SmartDefaultsProviderProps {
 
 export function SmartDefaultsProvider({
   children,
-  userId,
+  _userId,
 }: SmartDefaultsProviderProps) {
   const queryClient = useQueryClient();
   const currentTimeLayout = getCurrentTimeOfDay();

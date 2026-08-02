@@ -318,17 +318,17 @@ class CollaborationService {
     const onboardingData = user?.onboardingData || {};
     const skills: string[] = [];
 
-    if (onboardingData?.artistType) {
-      skills?.push(onboardingData?.artistType.toLowerCase());
+    if ((onboardingData as any)?.artistType) {
+      skills?.push((onboardingData as any)?.artistType.toLowerCase());
     }
-    if (onboardingData?.skills) {
-      skills?.push(...onboardingData?.skills.map((s: string) => s?.toLowerCase()));
+    if ((onboardingData as any)?.skills) {
+      skills?.push(...(onboardingData as any)?.skills.map((s: string) => s?.toLowerCase()));
     }
 
     return {
-      genre: onboardingData.primaryGenre || onboardingData?.genre || null,
+      genre: (onboardingData as any).primaryGenre || (onboardingData as any)?.genre || null,
       skills,
-      followerCount: onboardingData.followerCount || 0,
+      followerCount: (onboardingData as any).followerCount || 0,
       location: user.location || null,
       lastActive: user.createdAt || null,
     };
@@ -631,7 +631,7 @@ class CollaborationService {
         const userGenre = data?.primaryGenre || data?.genre;
         return (
           userGenre &&
-          userGenre?.toLowerCase().includes(filters?.genre!.toLowerCase())
+          (userGenre as any)?.toLowerCase().includes(filters?.genre!.toLowerCase())
         );
       });
     }
@@ -640,8 +640,8 @@ class CollaborationService {
       filteredResults = filteredResults?.filter((user) => {
         const data = user?.onboardingData as Record<string, unknown>;
         const userSkills = [
-          data?.artistType?.toLowerCase(),
-          ...(data?.skills || []).map((s: string) => s?.toLowerCase()),
+          (data?.artistType as any)?.toLowerCase(),
+          ...((data?.skills || []) as any).map((s: string) => s?.toLowerCase()),
         ].filter(Boolean);
 
         return filters?.skills!.some((skill) =>

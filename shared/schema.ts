@@ -73,6 +73,7 @@ export const users = pgTable(
 
 export const insertUserSchema = createInsertSchema(users).pick({
   email: true,
+  username: true,
   password: true,
   firstName: true,
   lastName: true,

@@ -188,7 +188,7 @@ export function ScoreEditor({
   const [keySignature, setKeySignature] = useState("C");
   const [noteDuration, setNoteDuration] = useState(1);
   const [showLyrics, setShowLyrics] = useState(true);
-  const [showDynamics, setShowDynamics] = useState(true);
+  const [showDynamics, _setShowDynamics] = useState(true);
   const [editingLyric, setEditingLyric] = useState<string | null>(null);
   const [lyricInput, setLyricInput] = useState("");
 

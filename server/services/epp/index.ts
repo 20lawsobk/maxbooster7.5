@@ -117,7 +117,7 @@ export class EppSession {
       );
     });
     if (!match) return false;
-    const a = match?.name?.["@avail"];
+    const a = (match as any)?.name?.["@avail"];
     return a === 1 || a === "1" || a === true || a === "true";
   }
 

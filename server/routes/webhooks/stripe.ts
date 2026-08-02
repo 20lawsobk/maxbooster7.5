@@ -86,7 +86,7 @@ registerWebhookHandler("checkout.session.completed", async (event) => {
         );
       }
     } catch (orderError) {
-      logger.warn("[Stripe] Failed to create order record:", orderError);
+      logger.warn(orderError, "[Stripe] Failed to create order record:");
     }
   }
 
@@ -223,8 +223,8 @@ registerWebhookHandler("customer.subscription.created", async (event) => {
         : subscription?.customer.id;
 
     const tier = subscription?.metadata?.planId || "monthly";
-    const endsAt = subscription?.current_period_end
-      ? new Date(subscription?.current_period_end * 1000)
+    const endsAt = (subscription as any)?.current_period_end
+      ? new Date((subscription as any)?.current_period_end * 1000)
       : null;
 
     const updated = await db
@@ -270,8 +270,8 @@ registerWebhookHandler("customer.subscription.updated", async (event) => {
         : subscription?.customer.id;
 
     const tier = subscription?.metadata?.planId || "monthly";
-    const endsAt = subscription?.current_period_end
-      ? new Date(subscription?.current_period_end * 1000)
+    const endsAt = (subscription as any)?.current_period_end
+      ? new Date((subscription as any)?.current_period_end * 1000)
       : null;
 
     const updated = await db
@@ -370,7 +370,7 @@ registerWebhookHandler("invoice.paid", async (event) => {
   await auditPayment?.charge(
     invoice?.customer as string,
     invoice?.amount_paid,
-    (invoice?.payment_intent as string) || invoice?.id,
+    ((invoice as any)?.payment_intent as string) || invoice?.id,
     true,
   );
 
@@ -399,7 +399,7 @@ registerWebhookHandler("invoice.payment_failed", async (event) => {
     const customerId =
       typeof invoice?.customer === "string"
         ? invoice?.customer
-        : (invoice?.customer as Record<string, unknown>)?.id;
+        : (invoice?.customer as unknown as Record<string, unknown>)?.id;
     if (customerId) {
       const found = await db
         .select({ id: users.id, email: users.email })
@@ -408,7 +408,7 @@ registerWebhookHandler("invoice.payment_failed", async (event) => {
         .limit(1);
       if (found?.length > 0) {
         const amount = invoice?.amount_due / 100;
-        const reason = (invoice as Record<string, unknown>).last_payment_error
+        const reason = (invoice as unknown as Record<string, unknown>).last_payment_error
           ?.message;
         await notificationService?.sendPaymentFailedNotification(
           found[0].id,
@@ -425,7 +425,7 @@ registerWebhookHandler("invoice.payment_failed", async (event) => {
         try {
           await dunningService?.startSequence(found[0].id, invoice?.id);
         } catch (dunningErr) {
-          logger.warn("[Stripe] Failed to start dunning sequence:", dunningErr);
+          logger.warn(dunningErr, "[Stripe] Failed to start dunning sequence:");
         }
       }
     }

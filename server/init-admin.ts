@@ -1613,7 +1613,7 @@ export async function seedDSPProviders() {
 
     logger.info(`✅ Seeded/activated ${dspList.length} DSP providers`);
   } catch (error) {
-    logger.warn("Failed to seed DSP providers:", error.message);
+    logger.warn("Failed to seed DSP providers:", (error as Error).message);
   }
 }
 
@@ -1658,7 +1658,7 @@ async function seedDistributionPlatformsFromFile() {
     );
     await seedDistributionPlatforms();
   } catch (error) {
-    logger.warn("Distribution platforms seeding skipped:", error?.message);
+    logger.warn("Distribution platforms seeding skipped:", (error as any)?.message);
   }
 }
 
@@ -1668,7 +1668,7 @@ async function seedAchievementsData() {
     await seedAchievements();
     logger.info("   ✓ Achievements seeded");
   } catch (error) {
-    logger.warn("Achievements seeding skipped:", error?.message);
+    logger.warn("Achievements seeding skipped:", (error as any)?.message);
   }
 }
 
@@ -1680,7 +1680,7 @@ async function seedStatusPageServices() {
     await statusPageService?.initializeDefaultServices();
     logger.info("   ✓ Status page services initialized");
   } catch (error) {
-    logger.warn("Status page services seeding skipped:", error?.message);
+    logger.warn("Status page services seeding skipped:", (error as any)?.message);
   }
 }
 
@@ -1700,7 +1700,7 @@ async function seedAIModels() {
     await initializeAIContentModels();
     logger.info("   ✓ AI models seeded");
   } catch (error) {
-    logger.warn("AI models seeding skipped:", error?.message);
+    logger.warn("AI models seeding skipped:", (error as any)?.message);
   }
 }
 
@@ -1827,7 +1827,7 @@ async function seedSystemSettings() {
     }
     logger.info(`   ✓ System settings seeded (${defaults?.length} defaults)`);
   } catch (error) {
-    logger.warn("System settings seeding skipped:", error?.message);
+    logger.warn("System settings seeding skipped:", (error as any)?.message);
   }
 }
 
@@ -1986,6 +1986,6 @@ async function seedAlertRules() {
     }
     logger.info(`   ✓ Alert rules seeded (${defaults?.length} defaults)`);
   } catch (error) {
-    logger.warn("Alert rules seeding skipped:", error?.message);
+    logger.warn("Alert rules seeding skipped:", (error as any)?.message);
   }
 }

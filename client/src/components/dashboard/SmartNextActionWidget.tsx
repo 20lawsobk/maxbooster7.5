@@ -51,7 +51,7 @@ interface NextActionRecommendation {
 }
 
 export function SmartNextActionWidget() {
-  const [location, setLocation] = useLocation();
+  const [_location, setLocation] = useLocation();
   const { toast } = useToast();
   useQueryClient();
   const [isDismissed, setIsDismissed] = useState(() => {

@@ -29,7 +29,7 @@ const requireAdmin = (req: Request, res: Response, next: Function) => {
 
 // All kill-switch ops require admin role AND 2FA verification.
 // An admin with 2FA enabled must have completed 2FA in the current session.
-router?.use(requireAdmin as Record<string, unknown>, require2FA);
+router?.use(requireAdmin as unknown as Record<string, unknown>, require2FA);
 
 /**
  * GET /api/kill-switch/status
@@ -76,7 +76,7 @@ router?.post("/kill-all", requireAdmin, (req: Request, res: Response) => {
       });
     }
 
-    const success = killSwitch?.killAll(reason, user?.email || user?.id);
+    const success = killSwitch?.killAll(reason, (user?.email || user?.id as string | undefined));
 
     res.json({
       success,
@@ -109,7 +109,7 @@ router?.post("/resume-all", requireAdmin, (req: Request, res: Response) => {
       });
     }
 
-    const success = killSwitch?.resumeAll(reason, user?.email || user?.id);
+    const success = killSwitch?.resumeAll(reason, (user?.email || user?.id as string | undefined));
 
     res.json({
       success,
@@ -144,7 +144,7 @@ router?.post("/kill/:system", requireAdmin, (req: Request, res: Response) => {
     const success = killSwitch?.killSystem(
       systemName,
       reason,
-      user?.email || user?.id,
+      (user?.email || user?.id as string | undefined),
     );
 
     res.json({
@@ -183,7 +183,7 @@ router?.post("/resume/:system", requireAdmin, (req: Request, res: Response) => {
     const success = killSwitch?.resumeSystem(
       systemName,
       reason,
-      user?.email || user?.id,
+      (user?.email || user?.id as string | undefined),
     );
 
     res.json({

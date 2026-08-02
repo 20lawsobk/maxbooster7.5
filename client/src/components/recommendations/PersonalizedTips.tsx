@@ -190,7 +190,7 @@ function InlineTip({
 
 function TipCarousel({
   tips,
-  onDismiss,
+  _onDismiss,
 }: {
   tips: PersonalizedTip[];
   onDismiss: (id: string) => void;

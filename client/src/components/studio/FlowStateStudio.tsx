@@ -41,13 +41,13 @@ export function FlowStateStudio({
   const [isRecording, setIsRecording] = useState(false);
   const [isLooping, setIsLooping] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [bpm, setBpm] = useState(120);
+  const [bpm, _setBpm] = useState(120);
   const [showAISidebar, setShowAISidebar] = useState(true);
   const [showMixer, setShowMixer] = useState(false);
   const [showSpatialViz, setShowSpatialViz] = useState(false);
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
-  const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
-  const [zoom, setZoom] = useState(1);
+  const [selectedClipId, _setSelectedClipId] = useState<string | null>(null);
+  const [zoom, _setZoom] = useState(1);
 
   // Advanced tool panels
   const [activePanel, setActivePanel] = useState<string | null>(null);
@@ -464,7 +464,7 @@ export function FlowStateStudio({
               >
                 <FlowStateMixer
                   tracks={tracks}
-                  onUpdateTrack={(id, updates) => {
+                  onUpdateTrack={(id: any, updates: any) => {
                     setTracks(
                       tracks.map((t) =>
                         t.id === id ? { ...t, ...updates } : t,

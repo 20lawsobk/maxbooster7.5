@@ -58,7 +58,7 @@ const WARP_ALGORITHMS = [
 
 export function FlowStateAudioWarp({
   clipId,
-  audioUrl,
+  _audioUrl,
   duration = 16,
   originalTempo = 120,
   onApply,
@@ -112,9 +112,9 @@ export function FlowStateAudioWarp({
   const [pitchShift, setPitchShift] = useState([0]);
   const [algorithm, setAlgorithm] = useState("elastique");
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
+  const [currentTime, _setCurrentTime] = useState(0);
   const [selectedMarker, setSelectedMarker] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [_isDragging, _setIsDragging] = useState(false);
   const [showTransients, setShowTransients] = useState(true);
   const [quantizeStrength, setQuantizeStrength] = useState([0]);
 

@@ -43,7 +43,7 @@ export async function submitToProvider(
     throw new Error("Rate limit exceeded. Please try again later.");
   }
 
-  const provider = await storage?.getDistroProviderBySlug(providerSlug);
+  const provider = await (storage as any)?.getDistroProviderBySlug(providerSlug);
   if (!provider) {
     throw new Error(`Provider ${providerSlug} not found`);
   }
@@ -57,20 +57,20 @@ export async function submitToProvider(
 
   setTimeout(() => {
     storage
-      .updateDistroDispatch(dispatch?.id, {
+      .updateDistroDispatch((dispatch as any)?.id, {
         status: "processing",
-        logs: `${dispatch?.logs}\nProcessing started at ${new Date().toISOString()}`,
+        logs: `${(dispatch as any)?.logs}\nProcessing started at ${new Date().toISOString()}`,
       })
       .catch((err) => {
         logger.warn(
           { err: err },
-          `Failed to update dispatch ${dispatch?.id} status:`,
+          `Failed to update dispatch ${(dispatch as any)?.id} status:`,
         );
       });
   }, 1000);
 
   return {
-    dispatchId: dispatch.id,
+    dispatchId: (dispatch as any).id,
     status: "queued",
     message: `Successfully queued for ${provider?.name} distribution`,
   };
@@ -396,7 +396,7 @@ export async function kkboxSubmit(
  * Throws if the dispatch ID does not exist.
  */
 export async function getDispatchStatus(dispatchId: string): Promise<unknown> {
-  const dispatch = await storage?.getDistroDispatch(dispatchId);
+  const dispatch = await (storage as any)?.getDistroDispatch(dispatchId);
   if (!dispatch) {
     throw new Error("Dispatch record not found");
   }

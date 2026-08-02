@@ -49,7 +49,7 @@ async function runSeparator(
   });
 
   if (stderr) {
-    logger.warn("[AudioSeparator] Python stderr:", stderr?.slice(0, 500));
+    logger.warn({ value: stderr?.slice(0, 500) }, "[AudioSeparator] Python stderr:");
   }
 
   try {

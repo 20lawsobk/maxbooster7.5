@@ -454,7 +454,7 @@ export class Layer {
   }
 
   updateFromTime(time: number): void {
-    for (const [property, track] of this._timeline.tracks) {
+    for (const [property, _track] of this._timeline.tracks) {
       const value = this.getValueAtTime(property, time);
       if (value === undefined) continue;
 

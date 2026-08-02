@@ -347,7 +347,7 @@ export class RoutingEngine {
     }
 
     let maxLatency = 0;
-    for (const [nodeId, latency] of latencies) {
+    for (const [_nodeId, latency] of latencies) {
       maxLatency = Math.max(maxLatency, latency);
     }
 

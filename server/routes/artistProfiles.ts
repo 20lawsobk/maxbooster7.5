@@ -77,12 +77,12 @@ router?.post("/", async (req: Request, res: Response) => {
 
     res.status(201).json({ profile });
   } catch (err) {
-    const cause = err?.cause;
+    const cause = (err as any)?.cause;
     const causeMsg: string =
       cause?.message ?? (typeof cause === "string" ? cause : "") ?? "";
     logger.warn(
       "[ArtistProfiles] POST / error:",
-      err,
+      (err as undefined),
       cause ? { cause: causeMsg } : {},
     );
 
@@ -265,8 +265,8 @@ router?.post(
       });
     } catch (err) {
       logger.warn({ err: err }, "[ArtistProfiles] POST /:id/fixer error:");
-      if (err?.message?.includes("Invalid Spotify artist URI")) {
-        return res.status(400).json({ error: err.message });
+      if ((err as any)?.message?.includes("Invalid Spotify artist URI")) {
+        return res.status(400).json({ error: (err as any).message });
       }
       res.status(500).json({ error: "Failed to submit fixer request" });
     }
@@ -286,8 +286,8 @@ router?.get(
       res.json(result);
     } catch (err) {
       logger.warn({ err: err }, "[ArtistProfiles] GET /:id/profile-hub error:");
-      if (err?.message === "Artist profile not found")
-        return res.status(404).json({ error: err.message });
+      if ((err as any)?.message === "Artist profile not found")
+        return res.status(404).json({ error: (err as any).message });
       res.status(500).json({ error: "Profile hub failed" });
     }
   },
@@ -315,8 +315,8 @@ router?.post(
         { err: err },
         "[ArtistProfiles] POST /:id/auto-discover error:",
       );
-      if (err?.message === "Artist profile not found")
-        return res.status(404).json({ error: err.message });
+      if ((err as any)?.message === "Artist profile not found")
+        return res.status(404).json({ error: (err as any).message });
       res.status(500).json({ error: "Auto-discover failed" });
     }
   },
@@ -335,8 +335,8 @@ router?.post(
       res.json(result);
     } catch (err) {
       logger.warn({ err: err }, "[ArtistProfiles] POST /:id/auto-sync error:");
-      if (err?.message === "Artist profile not found")
-        return res.status(404).json({ error: err.message });
+      if ((err as any)?.message === "Artist profile not found")
+        return res.status(404).json({ error: (err as any).message });
       res.status(500).json({ error: "Auto-sync failed" });
     }
   },
@@ -442,8 +442,8 @@ router?.post(
         { err: err },
         "[ArtistProfiles] POST /:id/isrc-discover error:",
       );
-      if (err?.message === "Artist profile not found")
-        return res.status(404).json({ error: err.message });
+      if ((err as any)?.message === "Artist profile not found")
+        return res.status(404).json({ error: (err as any).message });
       res.status(500).json({ error: "ISRC chain discovery failed" });
     }
   },
@@ -466,8 +466,8 @@ router?.post(
         { err: err },
         "[ArtistProfiles] POST /:id/scan-splits error:",
       );
-      if (err?.message === "Artist profile not found")
-        return res.status(404).json({ error: err.message });
+      if ((err as any)?.message === "Artist profile not found")
+        return res.status(404).json({ error: (err as any).message });
       res.status(500).json({ error: "Split profile scan failed" });
     }
   },
@@ -490,8 +490,8 @@ router?.get(
         { err: err },
         "[ArtistProfiles] GET /:id/claim-pipeline error:",
       );
-      if (err?.message === "Artist profile not found")
-        return res.status(404).json({ error: err.message });
+      if ((err as any)?.message === "Artist profile not found")
+        return res.status(404).json({ error: (err as any).message });
       res.status(500).json({ error: "Failed to get claim pipeline" });
     }
   },
@@ -535,8 +535,8 @@ router?.patch(
         { err: err },
         "[ArtistProfiles] PATCH /:id/claim-state error:",
       );
-      if (err?.message === "Artist profile not found")
-        return res.status(404).json({ error: err.message });
+      if ((err as any)?.message === "Artist profile not found")
+        return res.status(404).json({ error: (err as any).message });
       res.status(500).json({ error: "Failed to update claim state" });
     }
   },
@@ -556,8 +556,8 @@ router?.get(
       res.json(result);
     } catch (err) {
       logger.warn({ err: err }, "[ArtistProfiles] GET /:id/health error:");
-      if (err?.message === "Artist profile not found")
-        return res.status(404).json({ error: err.message });
+      if ((err as any)?.message === "Artist profile not found")
+        return res.status(404).json({ error: (err as any).message });
       res.status(500).json({ error: "Health score calculation failed" });
     }
   },
@@ -580,8 +580,8 @@ router?.get(
         { err: err },
         "[ArtistProfiles] GET /:id/identity-graph error:",
       );
-      if (err?.message === "Artist profile not found")
-        return res.status(404).json({ error: err.message });
+      if ((err as any)?.message === "Artist profile not found")
+        return res.status(404).json({ error: (err as any).message });
       res.status(500).json({ error: "Failed to get identity graph" });
     }
   },
@@ -608,8 +608,8 @@ router?.post(
         { err: err },
         "[ArtistProfiles] POST /:id/dna-snapshot error:",
       );
-      if (err?.message === "Artist profile not found")
-        return res.status(404).json({ error: err.message });
+      if ((err as any)?.message === "Artist profile not found")
+        return res.status(404).json({ error: (err as any).message });
       res.status(500).json({ error: "DNA snapshot failed" });
     }
   },
@@ -631,8 +631,8 @@ router?.get(
         { err: err },
         "[ArtistProfiles] GET /:id/dna-snapshots error:",
       );
-      if (err?.message === "Artist profile not found")
-        return res.status(404).json({ error: err.message });
+      if ((err as any)?.message === "Artist profile not found")
+        return res.status(404).json({ error: (err as any).message });
       res.status(500).json({ error: "Failed to fetch DNA snapshots" });
     }
   },
@@ -681,10 +681,10 @@ router?.post(
         { err: err },
         "[ArtistProfiles] POST /:id/fixer-multi error:",
       );
-      if (err?.message === "Artist profile not found")
-        return res.status(404).json({ error: err.message });
-      if (err?.message?.includes("Invalid Spotify"))
-        return res.status(400).json({ error: err.message });
+      if ((err as any)?.message === "Artist profile not found")
+        return res.status(404).json({ error: (err as any).message });
+      if ((err as any)?.message?.includes("Invalid Spotify"))
+        return res.status(400).json({ error: (err as any).message });
       res.status(500).json({ error: "Multi-platform fixer failed" });
     }
   },
@@ -725,8 +725,8 @@ router?.post(
         { err: err },
         "[ArtistProfiles] POST /:id/import-history error:",
       );
-      if (err?.message === "Artist profile not found")
-        return res.status(404).json({ error: err.message });
+      if ((err as any)?.message === "Artist profile not found")
+        return res.status(404).json({ error: (err as any).message });
       res.status(500).json({ error: "History import failed" });
     }
   },
@@ -749,8 +749,8 @@ router?.get(
         { err: err },
         "[ArtistProfiles] GET /:id/portability-report error:",
       );
-      if (err?.message === "Artist profile not found")
-        return res.status(404).json({ error: err.message });
+      if ((err as any)?.message === "Artist profile not found")
+        return res.status(404).json({ error: (err as any).message });
       res.status(500).json({ error: "Portability report generation failed" });
     }
   },
@@ -796,8 +796,8 @@ router?.post(
         { err: err },
         "[ArtistProfiles] POST /:id/resolve-handle error:",
       );
-      if (err?.message === "Artist profile not found")
-        return res.status(404).json({ error: err.message });
+      if ((err as any)?.message === "Artist profile not found")
+        return res.status(404).json({ error: (err as any).message });
       res.status(500).json({ error: "Handle resolution failed" });
     }
   },
@@ -818,8 +818,8 @@ router?.post(
       res.json(result);
     } catch (err) {
       logger.warn({ err: err }, "[ArtistProfiles] POST /:id/watch error:");
-      if (err?.message === "Artist profile not found")
-        return res.status(404).json({ error: err.message });
+      if ((err as any)?.message === "Artist profile not found")
+        return res.status(404).json({ error: (err as any).message });
       res.status(500).json({ error: "Profile watch failed" });
     }
   },
@@ -884,7 +884,7 @@ router.get(
           genre: r.genre,
           platforms: r.platforms ?? [],
           tracks: (r?.tracks ?? []).map((t) => ({
-            id: t.id,
+            id: (t as any).id,
             title: t.title,
             isrc: t.isrc,
             trackNumber: t.trackNumber,

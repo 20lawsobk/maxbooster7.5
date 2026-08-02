@@ -238,7 +238,7 @@ export class SocialMediaContentGenerator {
               font-size="${Math.min(width * 0.08, 80)}px" 
               font-weight="bold" 
               fill="white">
-          ${this.escapeXml(title?.substring(0, 30))}
+          ${this.escapeXml((title as any)?.substring(0, 30))}
         </text>
         
         <!-- Artist text -->
@@ -247,7 +247,7 @@ export class SocialMediaContentGenerator {
               font-family="Arial, sans-serif" 
               font-size="${Math.min(width * 0.04, 40)}px" 
               fill="${brandGold}">
-          ${this.escapeXml(artist?.substring(0, 40))}
+          ${this.escapeXml((artist as any)?.substring(0, 40))}
         </text>
         
         <!-- Platform badge -->
@@ -327,8 +327,8 @@ export class SocialMediaContentGenerator {
             </defs>
             <rect width="100%" height="100%" fill="url(#bgGrad${i})"/>
             <circle cx="${dimensions.width / 2}" cy="${dimensions.height / 3}" r="${circleRadius}" fill="url(#accentGrad${i})" opacity="0.3"/>
-            <text x="${dimensions.width / 2}" y="${dimensions.height / 2}" font-family="Arial, sans-serif" font-size="${dimensions.width / 15}" fill="${brandGold}" text-anchor="middle" font-weight="bold">${this.escapeXml(title)}</text>
-            <text x="${dimensions.width / 2}" y="${dimensions.height / 2 + dimensions.width / 12}" font-family="Arial, sans-serif" font-size="${dimensions.width / 25}" fill="white" text-anchor="middle">${this.escapeXml(artist)}</text>
+            <text x="${dimensions.width / 2}" y="${dimensions.height / 2}" font-family="Arial, sans-serif" font-size="${dimensions.width / 15}" fill="${brandGold}" text-anchor="middle" font-weight="bold">${this.escapeXml((title as string))}</text>
+            <text x="${dimensions.width / 2}" y="${dimensions.height / 2 + dimensions.width / 12}" font-family="Arial, sans-serif" font-size="${dimensions.width / 25}" fill="white" text-anchor="middle">${this.escapeXml((artist as string))}</text>
             <text x="${dimensions.width / 2}" y="${dimensions.height - 50}" font-family="Arial, sans-serif" font-size="${dimensions.width / 40}" fill="${brandGold}" text-anchor="middle" opacity="0.8">Stream Now</text>
             <rect x="${dimensions.width / 4}" y="${dimensions.height - 120}" width="${waveOffset}" height="4" fill="url(#accentGrad${i})" rx="2"/>
             <circle cx="${dimensions.width / 4 + waveOffset}" cy="${dimensions.height - 118}" r="8" fill="${brandGold}"/>
@@ -630,7 +630,7 @@ export class SocialMediaContentGenerator {
         topic: data.title || "music",
         trackTitle: data.title,
         artistName: data.artist,
-        genre: data.metadata.genre,
+        genre: (data.metadata as any).genre,
         contentType: "release",
         includeHashtags: true,
         includeEmojis: true,
@@ -721,7 +721,7 @@ export class SocialMediaContentGenerator {
     _targetAudience: unknown,
   ): Record<string, unknown> {
     return {
-      genre: musicData.genre || "pop",
+      genre: (musicData as any).genre || "pop",
       mood: "upbeat",
       tempo: "medium",
       effects: ["reverb", "compression"],

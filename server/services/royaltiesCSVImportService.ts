@@ -28,7 +28,7 @@ export class RoyaltiesCSVImportService {
   ): Partial<InsertRevenueEvent> {
     const mapped: Record<string, unknown> = {};
     for (const [schemaField, csvColumn] of Object.entries(mapping)) {
-      mapped[schemaField] = row[csvColumn];
+      mapped[schemaField] = (row as any)[csvColumn];
     }
     return mapped;
   }
@@ -57,7 +57,7 @@ export class RoyaltiesCSVImportService {
     _userId: string,
   ) {
     const fileHash = this.calculateFileHash(buffer);
-    const existing = await storage?.checkFileHash(fileHash);
+    const existing = await (storage as any)?.checkFileHash(fileHash);
 
     if (existing) {
       return { duplicate: true, existingImport: existing };
@@ -139,7 +139,7 @@ export class RoyaltiesCSVImportService {
       const fileHash = this.calculateFileHash(buffer);
       const rows = this.parseCSV(buffer);
 
-      const importRecord = await storage?.createImportHistory({
+      const importRecord = await (storage as any)?.createImportHistory({
         userId: data.userId,
         filename: data.storageKey.split("/").pop() || "unknown.csv",
         fileHash,
@@ -168,9 +168,9 @@ export class RoyaltiesCSVImportService {
         }
       }
 
-      const result = await storage?.ingestRevenueBatch(events);
+      const result = await (storage as any)?.ingestRevenueBatch(events);
 
-      await storage?.createImportHistory({
+      await (storage as any)?.createImportHistory({
         id: importRecord.id,
         userId: data.userId,
         filename: data.storageKey.split("/").pop() || "unknown.csv",
@@ -212,7 +212,7 @@ export class RoyaltiesCSVImportService {
     const fileHash = this.calculateFileHash(buffer);
     const rows = this.parseCSV(buffer);
 
-    const importRecord = await storage?.createImportHistory({
+    const importRecord = await (storage as any)?.createImportHistory({
       userId,
       filename,
       fileHash,
@@ -241,9 +241,9 @@ export class RoyaltiesCSVImportService {
       }
     }
 
-    const result = await storage?.ingestRevenueBatch(events);
+    const result = await (storage as any)?.ingestRevenueBatch(events);
 
-    await storage?.createImportHistory({
+    await (storage as any)?.createImportHistory({
       id: importRecord.id,
       userId,
       filename,

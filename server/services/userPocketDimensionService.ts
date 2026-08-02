@@ -201,11 +201,11 @@ export class UserPocketDimensionService {
         storageId: storage.id,
         fileName,
         fileKey,
-        mimeType: options.mimeType,
+        mimeType: options!.mimeType,
         sizeBytes: data.length,
         folder,
-        isPublic: options.isPublic || false,
-        metadata: options.metadata || {},
+        isPublic: options!.isPublic || false,
+        metadata: options!.metadata || {},
       });
 
       await db

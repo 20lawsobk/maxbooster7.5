@@ -42,10 +42,10 @@ export class SessionTrackingService {
       const key = `${this.USER_SESSIONS_PREFIX}${userId}`;
 
       // Add sessionId to user's session set (node-redis v4 uses camelCase)
-      await redis.sAdd(key, sessionId);
+      await (redis as any).sAdd(key, sessionId);
 
       // Set TTL to auto-cleanup (same as session TTL)
-      await redis.expire(key, this.SESSION_TTL);
+      await (redis as any).expire(key, this.SESSION_TTL);
 
       logger.debug(`📝 Session tracked: user=${userId}, session=${sessionId}`);
     } catch (error: unknown) {
@@ -70,7 +70,7 @@ export class SessionTrackingService {
       if (!redis) return;
 
       const key = `${this.USER_SESSIONS_PREFIX}${userId}`;
-      await redis?.sRem(key, sessionId);
+      await (redis as any)?.sRem(key, sessionId);
 
       logger.debug(
         `🗑️ Session untracked: user=${userId}, session=${sessionId}`,
@@ -92,7 +92,7 @@ export class SessionTrackingService {
       if (!redis) return [];
 
       const key = `${this.USER_SESSIONS_PREFIX}${userId}`;
-      const sessionIds = await redis?.sMembers(key);
+      const sessionIds = await (redis as any)?.sMembers(key);
 
       return sessionIds;
     } catch (error: unknown) {
@@ -132,12 +132,12 @@ export class SessionTrackingService {
 
       // Delete all sessions in parallel
       const sessionKeys = sessionIds?.map((id) => `sess:${id}`);
-      const deletePromises = sessionKeys?.map((key) => redis?.del(key));
+      const deletePromises = sessionKeys?.map((key) => (redis as any)?.del(key));
       await Promise?.all(deletePromises);
 
       // Clean up the tracking index
       const trackingKey = `${this.USER_SESSIONS_PREFIX}${userId}`;
-      await redis?.del(trackingKey);
+      await (redis as any)?.del(trackingKey);
 
       logger.info(
         `✅ Revoked ${sessionIds?.length} sessions for user ${userId} (O(1) lookup)`,
@@ -168,18 +168,18 @@ export class SessionTrackingService {
         `⚠️ Using O(N) fallback session revocation for user ${userId}`,
       );
 
-      const sessionKeys = await redis?.keys("sess:*");
+      const sessionKeys = await (redis as any)?.keys("sess:*");
       const deletionPromises = [];
 
       for (const key of sessionKeys) {
-        const sessionData = await redis?.get(key);
+        const sessionData = await (redis as any)?.get(key);
         // Check if session belongs to this user
         if (
           sessionData &&
           (sessionData?.includes(userId) ||
             sessionData?.includes(`"id":"${userId}"`))
         ) {
-          deletionPromises?.push(redis?.del(key));
+          deletionPromises?.push((redis as any)?.del(key));
         }
       }
 
@@ -206,16 +206,16 @@ export class SessionTrackingService {
 
       logger.info("🧹 Starting session tracking cleanup...");
 
-      const trackingKeys = await redis?.keys(`${this.USER_SESSIONS_PREFIX}*`);
+      const trackingKeys = await (redis as any)?.keys(`${this.USER_SESSIONS_PREFIX}*`);
       let cleaned = 0;
 
       for (const key of trackingKeys) {
-        const sessionIds = await redis?.sMembers(key);
+        const sessionIds = await (redis as any)?.sMembers(key);
 
         // Check if any sessions still exist
         const validSessions = [];
         for (const sessionId of sessionIds) {
-          const exists = await redis?.exists(`sess:${sessionId}`);
+          const exists = await (redis as any)?.exists(`sess:${sessionId}`);
           if (exists) {
             validSessions?.push(sessionId);
           }
@@ -223,14 +223,14 @@ export class SessionTrackingService {
 
         // If no valid sessions, delete the tracking key
         if (validSessions?.length === 0) {
-          await redis?.del(key);
+          await (redis as any)?.del(key);
           cleaned++;
         } else if (validSessions?.length < sessionIds?.length) {
           // Update with only valid sessions
-          await redis?.del(key);
+          await (redis as any)?.del(key);
           if (validSessions?.length > 0) {
-            await redis?.sAdd(key, ...validSessions);
-            await redis?.expire(key, this.SESSION_TTL);
+            await (redis as any)?.sAdd(key, ...validSessions);
+            await (redis as any)?.expire(key, this.SESSION_TTL);
           }
         }
       }
@@ -257,11 +257,11 @@ export class SessionTrackingService {
       if (!redis)
         return { totalUsers: 0, totalSessions: 0, avgSessionsPerUser: 0 };
 
-      const trackingKeys = await redis?.keys(`${this.USER_SESSIONS_PREFIX}*`);
+      const trackingKeys = await (redis as any)?.keys(`${this.USER_SESSIONS_PREFIX}*`);
       let totalSessions = 0;
 
       for (const key of trackingKeys) {
-        const count = await redis?.sCard(key);
+        const count = await (redis as any)?.sCard(key);
         totalSessions += count;
       }
 

@@ -70,14 +70,14 @@ function getAccountStatus(
   account: Record<string, unknown>,
 ): "connected" | "expired" | "error" {
   if (!account?.isActive) return "error";
-  if (account?.tokenExpiresAt && new Date(account?.tokenExpiresAt) < new Date())
+  if (account?.tokenExpiresAt && new Date(account?.tokenExpiresAt as any) < new Date())
     return "expired";
   return "connected";
 }
 
 router?.get("/", async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     const accounts = await db
       .select()
       .from(socialAccounts)
@@ -137,7 +137,7 @@ router?.get("/", async (req: Request, res: Response) => {
 
 router?.delete("/:accountId", async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     const { accountId } = req.params;
 
     const result = await db
@@ -164,7 +164,7 @@ router?.delete("/:accountId", async (req: Request, res: Response) => {
 
 router?.post("/:accountId/refresh", async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     const { accountId } = req.params;
 
     const now = new Date();
@@ -199,7 +199,7 @@ router?.post("/:accountId/refresh", async (req: Request, res: Response) => {
 
 router?.post("/manual-token", async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     const {
       platform,
       accessToken,
@@ -299,7 +299,7 @@ router?.post("/manual-token", async (req: Request, res: Response) => {
 
 router?.put("/:accountId/permissions", async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     const { accountId } = req.params;
     const permissionUpdates = req.body;
 

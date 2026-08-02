@@ -138,7 +138,7 @@ class SocialFanbaseService {
 
       return contents;
     } catch (error) {
-      logger.warn("Error fetching contents", { userId, date, error });
+      logger.warn({ userId, date, error }, "Error fetching contents");
       return [];
     }
   }
@@ -164,14 +164,14 @@ class SocialFanbaseService {
         })
         .returning();
 
-      logger.info("Saved music impact metric", {
+      logger.info({
         userId,
         contentId,
         totalScore: impactData.totalScore,
-      });
+      }, "Saved music impact metric");
       return inserted;
     } catch (error) {
-      logger.warn("Error saving music impact", { userId, contentId, error });
+      logger.warn({ userId, contentId, error }, "Error saving music impact");
       return null;
     }
   }
@@ -273,7 +273,7 @@ class SocialFanbaseService {
         return inserted;
       }
     } catch (error) {
-      logger.warn("Error saving pattern aggregate", { userId, pattern, error });
+      logger.warn({ userId, pattern, error }, "Error saving pattern aggregate");
       return null;
     }
   }
@@ -286,12 +286,12 @@ class SocialFanbaseService {
       for (const event of events) {
         await this.updateSegmentBehavior(event?.segmentId, event?.signals);
       }
-      logger.info("Updated fan segments", {
+      logger.info({
         userId,
         segmentCount: events.length,
-      });
+      }, "Updated fan segments");
     } catch (error) {
-      logger.warn("Error updating fan segments", { userId, error });
+      logger.warn({ userId, error }, "Error updating fan segments");
     }
   }
 
@@ -325,7 +325,7 @@ class SocialFanbaseService {
 
       return topPatterns;
     } catch (error) {
-      logger.warn("Error deriving patterns", { userId, error });
+      logger.warn({ userId, error }, "Error deriving patterns");
       return [];
     }
   }
@@ -360,7 +360,7 @@ class SocialFanbaseService {
 
       return candidates;
     } catch (error) {
-      logger.warn("Error generating content candidates", { userId, error });
+      logger.warn({ userId, error }, "Error generating content candidates");
       return [];
     }
   }
@@ -432,8 +432,8 @@ class SocialFanbaseService {
 
       const prediction = await model?.predictEngagement(features);
 
-      if (prediction && typeof prediction.expectedEngagement === "number") {
-        return prediction?.expectedEngagement;
+      if (prediction && typeof (prediction as any).expectedEngagement === "number") {
+        return (prediction as any)?.expectedEngagement;
       }
 
       if (candidate?.patternSource) {
@@ -442,11 +442,11 @@ class SocialFanbaseService {
 
       return 0;
     } catch (error) {
-      logger.warn("Error predicting expected impact", {
+      logger.warn({
         userId,
         candidateId: candidate.id,
         error,
-      });
+      }, "Error predicting expected impact");
       return candidate?.patternSource?.avgImpact || 0;
     }
   }
@@ -520,16 +520,16 @@ class SocialFanbaseService {
         exploitCount: selectedExploitCandidates.length,
       };
 
-      logger.info("Built daily schedule", {
+      logger.info({
         userId,
         totalCandidates: finalCandidates.length,
         explore: schedule.exploreCount,
         exploit: schedule.exploitCount,
-      });
+      }, "Built daily schedule");
 
       return schedule;
     } catch (error) {
-      logger.warn("Error building daily schedule", { userId, error });
+      logger.warn({ userId, error }, "Error building daily schedule");
       return {
         userId,
         date: new Date(),
@@ -542,10 +542,10 @@ class SocialFanbaseService {
 
   async dailySocialLoop(userId: string, date: Date): Promise<DailySchedule> {
     try {
-      logger.info("Starting daily social loop", {
+      logger.info({
         userId,
         date: date.toISOString(),
-      });
+      }, "Starting daily social loop");
 
       // Step 1: Ingest yesterday's performance
       const yesterday = new Date(date);
@@ -602,11 +602,11 @@ class SocialFanbaseService {
           .values({
             id: candidate.id,
             userId,
-            type: candidate.type as Record<string, unknown>,
-            format: candidate.format as Record<string, unknown>,
-            hookType: candidate.hookType as Record<string, unknown>,
-            tone: candidate.tone as Record<string, unknown>,
-            platform: platform as Record<string, unknown>,
+            type: candidate.type as unknown as Record<string, unknown>,
+            format: candidate.format as unknown as Record<string, unknown>,
+            hookType: candidate.hookType as unknown as Record<string, unknown>,
+            tone: candidate.tone as unknown as Record<string, unknown>,
+            platform: platform as unknown as Record<string, unknown>,
             trackUsed: candidate.trackUsed || null,
             postingTime,
             lengthSeconds: null,
@@ -622,17 +622,17 @@ class SocialFanbaseService {
       // Step 9: Compress old content to long-term memory
       await this.compressToLongTermMemory(userId);
 
-      logger.info("Completed daily social loop", {
+      logger.info({
         userId,
         scheduleSize: schedule.candidates.length,
         explore: schedule.exploreCount,
         exploit: schedule.exploitCount,
         persistedContent: persistedContentIds.length,
-      });
+      }, "Completed daily social loop");
 
       return schedule;
     } catch (error) {
-      logger.warn("Error in daily social loop", { userId, date, error });
+      logger.warn({ userId, date, error }, "Error in daily social loop");
       return {
         userId,
         date,
@@ -678,12 +678,12 @@ class SocialFanbaseService {
         await this.savePatternAggregate(userId, pattern, impact?.totalScore);
       }
 
-      logger.info("Compressed old content to long-term memory", {
+      logger.info({
         userId,
         contentCount: oldContents.length,
-      });
+      }, "Compressed old content to long-term memory");
     } catch (error) {
-      logger.warn("Error compressing to long-term memory", { userId, error });
+      logger.warn({ userId, error }, "Error compressing to long-term memory");
     }
   }
 
@@ -715,12 +715,12 @@ class SocialFanbaseService {
           .where(eq(socialPatternAggregates?.id, pattern?.id));
       }
 
-      logger.info("Applied time decay to patterns", {
+      logger.info({
         userId,
         patternCount: patterns.length,
-      });
+      }, "Applied time decay to patterns");
     } catch (error) {
-      logger.warn("Error applying time decay", { userId, error });
+      logger.warn({ userId, error }, "Error applying time decay");
     }
   }
 
@@ -742,14 +742,14 @@ class SocialFanbaseService {
         })
         .returning();
 
-      logger.info("Created fan segment", {
+      logger.info({
         userId,
         segmentId: inserted.id,
         name,
-      });
+      }, "Created fan segment");
       return inserted;
     } catch (error) {
-      logger.warn("Error creating fan segment", { userId, name, error });
+      logger.warn({ userId, name, error }, "Error creating fan segment");
       return null;
     }
   }
@@ -766,7 +766,7 @@ class SocialFanbaseService {
         .limit(1);
 
       if (existing?.length === 0) {
-        logger.warn("Segment not found", { segmentId });
+        logger.warn({ segmentId }, "Segment not found");
         return null;
       }
 
@@ -783,10 +783,10 @@ class SocialFanbaseService {
         .where(eq(fanSegments?.id, segmentId))
         .returning();
 
-      logger.info("Updated segment behavior", { segmentId });
+      logger.info({ segmentId }, "Updated segment behavior");
       return updated;
     } catch (error) {
-      logger.warn("Error updating segment behavior", { segmentId, error });
+      logger.warn({ segmentId, error }, "Error updating segment behavior");
       return null;
     }
   }
@@ -829,7 +829,7 @@ class SocialFanbaseService {
 
       return patterns;
     } catch (error) {
-      logger.warn("Error getting preferred patterns", { segmentId, error });
+      logger.warn({ segmentId, error }, "Error getting preferred patterns");
       return [];
     }
   }
@@ -844,7 +844,7 @@ class SocialFanbaseService {
 
       return segments;
     } catch (error) {
-      logger.warn("Error fetching fan segments", { userId, error });
+      logger.warn({ userId, error }, "Error fetching fan segments");
       return [];
     }
   }
@@ -861,7 +861,7 @@ class SocialFanbaseService {
 
       return patterns;
     } catch (error) {
-      logger.warn("Error fetching pattern aggregates", { userId, error });
+      logger.warn({ userId, error }, "Error fetching pattern aggregates");
       return [];
     }
   }
@@ -880,7 +880,7 @@ class SocialFanbaseService {
 
       return metrics;
     } catch (error) {
-      logger.warn("Error fetching music impact metrics", { userId, error });
+      logger.warn({ userId, error }, "Error fetching music impact metrics");
       return [];
     }
   }
@@ -917,13 +917,13 @@ class SocialFanbaseService {
         })
         .returning();
 
-      logger.info("Created social autopilot content", {
+      logger.info({
         userId,
         contentId: inserted.id,
-      });
+      }, "Created social autopilot content");
       return inserted;
     } catch (error) {
-      logger.warn("Error creating content", { userId, error });
+      logger.warn({ userId, error }, "Error creating content");
       return null;
     }
   }
@@ -942,10 +942,10 @@ class SocialFanbaseService {
         .where(eq(socialAutopilotContent?.id, contentId))
         .returning();
 
-      logger.info("Updated content performance", { contentId });
+      logger.info({ contentId }, "Updated content performance");
       return updated;
     } catch (error) {
-      logger.warn("Error updating content performance", { contentId, error });
+      logger.warn({ contentId, error }, "Error updating content performance");
       return null;
     }
   }
@@ -953,10 +953,10 @@ class SocialFanbaseService {
   async deleteSegment(segmentId: string): Promise<boolean> {
     try {
       await db?.delete(fanSegments).where(eq(fanSegments?.id, segmentId));
-      logger.info("Deleted fan segment", { segmentId });
+      logger.info({ segmentId }, "Deleted fan segment");
       return true;
     } catch (error) {
-      logger.warn("Error deleting segment", { segmentId, error });
+      logger.warn({ segmentId, error }, "Error deleting segment");
       return false;
     }
   }
@@ -985,7 +985,7 @@ class SocialFanbaseService {
 
       return sorted?.map((s) => s?.content);
     } catch (error) {
-      logger.warn("Error fetching top performing content", { userId, error });
+      logger.warn({ userId, error }, "Error fetching top performing content");
       return [];
     }
   }

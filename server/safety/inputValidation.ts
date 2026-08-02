@@ -144,9 +144,9 @@ export function validate<T extends ZodSchema>(
       if (source === "body") {
         req.body = validated;
       } else if (source === "query") {
-        (req as Record<string, unknown>).validatedQuery = validated;
+        (req as unknown as Record<string, unknown>).validatedQuery = validated;
       } else {
-        (req as Record<string, unknown>).validatedParams = validated;
+        (req as unknown as Record<string, unknown>).validatedParams = validated;
       }
 
       next();
@@ -157,7 +157,7 @@ export function validate<T extends ZodSchema>(
           message: e.message,
         }));
 
-        logger.warn(`[Validation] Failed validation on ${req.path}:`, errors);
+        logger.warn(errors, `[Validation] Failed validation on ${req.path}:`);
 
         return res.status(400).json({
           success: false,

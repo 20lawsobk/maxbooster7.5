@@ -496,10 +496,10 @@ export function subatomicMiddleware() {
     next: Record<string, unknown>,
   ) => {
     // Check if client accepts brotli
-    const acceptEncoding = req.headers["accept-encoding"] || "";
+    const acceptEncoding = (req.headers as any)["accept-encoding"] || "";
 
     // Store original send
-    const originalSend = res.send.bind(res);
+    const originalSend = (res.send as any).bind(res);
 
     res.send = async function (body: Record<string, unknown>) {
       if (typeof body === "string" || Buffer?.isBuffer(body)) {
@@ -511,12 +511,12 @@ export function subatomicMiddleware() {
 
           if (result?.ratio < 0.9) {
             // Only if we saved >10%
-            res.setHeader(
+            (res.setHeader as any)(
               "Content-Encoding",
               acceptEncoding?.includes("br") ? "br" : "gzip",
             );
-            res.setHeader("X-Subatomic-Ratio", result?.ratio.toFixed(3));
-            res.setHeader("X-Original-Size", result?.original);
+            (res.setHeader as any)("X-Subatomic-Ratio", result?.ratio.toFixed(3));
+            (res.setHeader as any)("X-Original-Size", result?.original);
             return originalSend(
               subatomicCore["compressionCache"].get(result?.hash),
             );

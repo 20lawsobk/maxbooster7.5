@@ -311,7 +311,7 @@ async function main() {
   const allIssues: string[] = [];
 
   for (const ep of endpoints) {
-    logger.info(`Testing: ${ep?.name}`, { path: ep.path });
+    logger.info({ path: ep.path }, `Testing: ${ep?.name}`);
 
     const results: LoadTestResult[] = [];
 
@@ -333,13 +333,13 @@ async function main() {
           (result?.successfulRequests / result?.totalRequests) *
           100
         ).toFixed(1);
-        logger.info(`Load test passed`, {
+        logger.info({
           endpoint: ep.path,
           concurrency,
           reqPerSec: result.requestsPerSecond.toFixed(0),
           avgMs: result.avgResponseMs.toFixed(0),
           successRate: `${successRate}%`,
-        });
+        }, `Load test passed`);
 
         if (result?.failedRequests > 0) {
           allIssues?.push(
@@ -347,12 +347,12 @@ async function main() {
           );
         }
       } catch (error) {
-        logger.warn(`Load test failed`, {
+        logger.warn({
           endpoint: ep.path,
           concurrency,
-          error: error.message,
-        });
-        allIssues?.push(`${ep?.name} at ${concurrency}: ${error?.message}`);
+          error: (error as Error).message,
+        }, `Load test failed`);
+        allIssues?.push(`${ep?.name} at ${concurrency}: ${(error as any)?.message}`);
       }
     }
 
@@ -375,13 +375,13 @@ async function main() {
         `~${formatNumber(projection?.serversNeeded)} servers, ${projection?.projectedLatency.toFixed(0)}ms latency`;
     }
 
-    logger.info(`Scale projection: ${name}`, {
+    logger.info({
       basePerformance: `${bestResult?.requestsPerSecond.toFixed(0)} req/s, ${bestResult?.avgResponseMs.toFixed(0)}ms latency`,
       ...projections,
-    });
+    }, `Scale projection: ${name}`);
   }
 
-  logger.info("Recommendations for 80 billion scale", {
+  logger.info({
     infrastructure: [
       "Deploy 50,000+ Kubernetes pods across 100 regions",
       "Use multi-cloud (AWS + GCP + Azure) for redundancy",
@@ -411,12 +411,12 @@ async function main() {
       "AI-powered anomaly detection",
       "Auto-scaling triggers",
     ],
-  });
+  }, "Recommendations for 80 billion scale");
 
   if (allIssues?.length > 0) {
-    logger.warn("Issues detected during testing", {
+    logger.warn({
       issues: [...new Set(allIssues)],
-    });
+    }, "Issues detected during testing");
   }
 
   const totalEndpoints = allResults?.size;
@@ -426,11 +426,11 @@ async function main() {
       r[r?.length - 1].failedRequests / r[r?.length - 1].totalRequests < 0.05,
   ).length;
 
-  logger.info("Load testing complete", {
+  logger.info({
     summary: `${successfulEndpoints}/${totalEndpoints} endpoints passed stress testing`,
     conclusion:
       "Platform is architecturally prepared for 80 billion scale with recommended infrastructure.",
-  });
+  }, "Load testing complete");
 }
 
-main().catch((err) => logger.warn("Load test failed", { error: err }));
+main().catch((err) => logger.warn({ error: err }, "Load test failed"));

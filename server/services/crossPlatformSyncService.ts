@@ -212,11 +212,11 @@ export function registerDevice(
   };
 
   devices?.set(device?.deviceId, deviceInfo);
-  logger.info("Device registered", {
+  logger.info({
     userId,
     deviceId: device.deviceId,
     platform: device.platform,
-  });
+  }, "Device registered");
   return deviceInfo;
 }
 
@@ -225,7 +225,7 @@ export function unregisterDevice(userId: string, deviceId: string): boolean {
   const removed = devices?.delete(deviceId);
   if (removed) {
     deviceSyncVersions?.delete(`${userId}:${deviceId}`);
-    logger.info("Device unregistered", { userId, deviceId });
+    logger.info({ userId, deviceId }, "Device unregistered");
   }
   return removed;
 }
@@ -268,9 +268,9 @@ export function checkForUpdate(
     currentVersion,
     latestVersion,
     updateAvailable,
-    releaseDate: latest.releaseDate || new Date().toISOString(),
-    changelog: latest.changelog || "",
-    downloadUrl: latest.downloadUrl || "",
+    releaseDate: latest!.releaseDate || new Date().toISOString(),
+    changelog: latest!.changelog || "",
+    downloadUrl: latest!.downloadUrl || "",
     isForced: forcedNotifications.length > 0,
   };
 }
@@ -341,7 +341,7 @@ export function pushUpdateNotification(
   }
   updateNotifications?.get("global")!.push(notification);
 
-  logger.info("Update notification pushed", { platform, version, isForced });
+  logger.info({ platform, version, isForced }, "Update notification pushed");
   return notification;
 }
 
@@ -384,12 +384,12 @@ export function triggerRemoteUpdate(
   setLatestVersion(platform, targetVersion, changelog, "");
   pushUpdateNotification(platform, targetVersion, changelog, isForced);
 
-  logger.info("Remote update triggered", {
+  logger.info({
     rolloutId: rollout.id,
     platform,
     targetVersion,
     affectedDevices: rollout.deviceStatuses.size,
-  });
+  }, "Remote update triggered");
   return rollout;
 }
 
@@ -490,11 +490,11 @@ export function pushSyncState(
   const deviceSyncKey = `${userId}:${deviceId}`;
   deviceSyncVersions?.set(deviceSyncKey, syncState?.syncVersion);
 
-  logger.info("Sync state updated", {
+  logger.info({
     userId,
     deviceId,
     syncVersion: syncState.syncVersion,
-  });
+  }, "Sync state updated");
   return { ...syncState };
 }
 

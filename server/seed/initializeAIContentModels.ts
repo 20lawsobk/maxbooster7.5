@@ -134,7 +134,7 @@ export async function initializeAIContentModels() {
       const [model] = await db?.insert(aiModels).values(modelData).returning();
       logger.info(`   ✓ Created AI Model: ${model?.modelName}`);
 
-      const [version] = await db
+      const [_version] = await db
         .insert(aiModelVersions)
         .values({
           modelId: model.id,

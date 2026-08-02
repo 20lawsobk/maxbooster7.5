@@ -220,11 +220,11 @@ router?.post(
         .insert(systemSettings)
         .values({
           key: `lookalike_audiences:${userId}`,
-          value: updated as Record<string, unknown>,
+          value: updated as unknown as Record<string, unknown>,
         })
         .onConflictDoUpdate({
           target: systemSettings.key,
-          set: { value: updated as Record<string, unknown> },
+          set: { value: updated as unknown as Record<string, unknown> },
         });
       res.status(201).json(newAudience);
     } catch (error) {
@@ -263,11 +263,11 @@ router?.patch(
         .insert(systemSettings)
         .values({
           key: `lookalike_audiences:${userId}`,
-          value: existing as Record<string, unknown>,
+          value: existing as unknown as Record<string, unknown>,
         })
         .onConflictDoUpdate({
           target: systemSettings.key,
-          set: { value: existing as Record<string, unknown> },
+          set: { value: existing as unknown as Record<string, unknown> },
         });
       res.json(existing[idx]);
     } catch (error) {
@@ -903,7 +903,7 @@ router?.get(
           organicReach: reach,
           engagements,
           engagementRate: Math.round(engagementRate * 100) / 100,
-          adEquivalentValue: Math.round(adEquivalentValue(c?.platform || "instagram", reach) * 100) / 100,
+          adEquivalentValue: Math.round(adEquivalentValue((c as any)?.platform || "instagram", reach) * 100) / 100,
           adSpend: 0,
         };
       });
@@ -1026,7 +1026,7 @@ router?.get(
       }, 500 * campaigns.length);
 
       const avgPlatformCpm = campaigns.length > 0
-        ? campaigns.reduce((sum, c) => sum + (PLATFORM_CPM[c?.platform] ?? 8.0), 0) / campaigns.length
+        ? campaigns.reduce((sum, c) => sum + (PLATFORM_CPM[(c as any)?.platform] ?? 8.0), 0) / campaigns.length
         : 8.0;
 
       const daily = Array.from({ length: 7 }, (_, i) => {
@@ -1142,7 +1142,7 @@ router?.post("/optimize-campaign", requireAuth, async (req, res) => {
       success: true,
       campaignId,
       optimization: result.data,
-      recommendations: result.data?.recommendations || [],
+      recommendations: (result.data as any)?.recommendations || [],
     });
 
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -1151,7 +1151,7 @@ router?.post("/optimize-campaign", requireAuth, async (req, res) => {
         try {
           const campaignName = performance?.name || `Campaign ${campaignId}`;
           const topRec =
-            (result?.data?.recommendations as string[] | undefined)?.[0] ||
+            ((result?.data as any)?.recommendations as string[] | undefined)?.[0] ||
             "Review your targeting and creatives for better performance.";
           await notificationService?.sendAdCampaignOptimizedNotification(
             userId,

@@ -47,7 +47,7 @@ export function LyricDisplay({
   lyrics,
   currentTime,
   isPlaying,
-  tempo = 120,
+  _tempo = 120,
   onLyricsChange,
   onSeek,
   className,

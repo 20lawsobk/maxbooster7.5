@@ -76,9 +76,9 @@ export function setupReliabilityEndpoints(
         status: health.status === "healthy" ? "ok" : "degraded",
         uptime_seconds: Math.floor(health?.uptime / 1000),
         uptime_percentage: health.reliability.uptimePercentage,
-        response_time_ms: maxBoosterHealth.reliability?.avgResponseTime || 0,
+        response_time_ms: (maxBoosterHealth.reliability as any)?.avgResponseTime || 0,
         error_rate: health.reliability.errorRate,
-        memory_mb: health.components.memory?.current?.heapUsedMB || 0,
+        memory_mb: (health.components.memory?.current as any)?.heapUsedMB || 0,
         database_status:
           health?.components.database?.circuitBreakerState || "unknown",
         active_connections: health.components.server?.activeConnections || 0,
@@ -195,7 +195,7 @@ export function setupReliabilityEndpoints(
   // Database query telemetry metrics (authenticated users only for security)
   const metricsHandler = requireAuth
     ? requireAuth
-    : (_req: unknown, _res: unknown, next: unknown) => next();
+    : (_req: unknown, _res: unknown, next: unknown) => (next as any)();
   app?.get(
     "/api/system/database/metrics",
     metricsHandler,
@@ -316,7 +316,7 @@ export function setupReliabilityEndpoints(
 
         `# HELP max_booster_memory_usage_bytes Current memory usage in bytes`,
         `# TYPE max_booster_memory_usage_bytes gauge`,
-        `max_booster_memory_usage_bytes ${(health?.components.memory?.current?.heapUsedMB || 0) * 1024 * 1024}`,
+        `max_booster_memory_usage_bytes ${((health?.components.memory?.current as any)?.heapUsedMB || 0) * 1024 * 1024}`,
 
         `# HELP max_booster_active_connections Current active connections`,
         `# TYPE max_booster_active_connections gauge`,

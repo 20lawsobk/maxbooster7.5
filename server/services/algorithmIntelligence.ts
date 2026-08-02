@@ -5,7 +5,7 @@ import {
   RedisClientType,
 } from "../lib/redisConnectionFactory.js";
 import { MaxCoreAIClient } from "./maxcoreClient.js";
-import { requireMaxCore, AIUnavailableError } from "../lib/aiSource.js";
+import { requireMaxCore, _AIUnavailableError } from "../lib/aiSource.js";
 
 export interface AlgorithmHealth {
   platform: string;

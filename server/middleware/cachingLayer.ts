@@ -185,7 +185,7 @@ export const createCachingMiddleware = (
   const generateKey =
     options?.keyGenerator ||
     ((req: Request) => {
-      const userId = (req as Record<string, unknown>).user?.id || "anonymous";
+      const userId = ((req as unknown as Record<string, unknown>).user as any)?.id || "anonymous";
       return `${req.method}:${req.originalUrl}:${userId}`;
     });
 
@@ -253,7 +253,7 @@ export const createCachingMiddleware = (
 export const apiResponseCache = createCachingMiddleware({
   cacheInstance: shortTermCache,
   keyGenerator: (req) => {
-    const userId = (req as Record<string, unknown>).user?.id || "anon";
+    const userId = ((req as unknown as Record<string, unknown>).user as any)?.id || "anon";
     return `api:${req.originalUrl}:${userId}`;
   },
   shouldCache: (req) => {

@@ -164,9 +164,9 @@ router.post(
 
       const storage = await getOrCreateUserStorage(req.user.id);
 
-      if (storage.totalBytes + file.size > storage.quotaBytes) {
+      if (storage.totalBytes! + file.size > storage.quotaBytes!) {
         const usedPercent = Math.round(
-          (storage.totalBytes / storage.quotaBytes) * 100,
+          (storage.totalBytes! / storage.quotaBytes!) * 100,
         );
         return res.status(507).json({
           success: false,
@@ -180,9 +180,9 @@ router.post(
             usedPercent,
             needed: file.size,
             neededFormatted: formatBytes(file.size),
-            available: storage.quotaBytes - storage.totalBytes,
+            available: storage.quotaBytes! - storage.totalBytes!,
             availableFormatted: formatBytes(
-              storage.quotaBytes - storage.totalBytes,
+              storage.quotaBytes! - storage.totalBytes!,
             ),
           },
         });
@@ -264,12 +264,12 @@ router.post(
           uploadedAt: storedFile.uploadedAt,
         },
         storage: {
-          used: storage.totalBytes + file.size,
-          usedFormatted: formatBytes(storage.totalBytes + file.size),
+          used: storage.totalBytes! + file.size,
+          usedFormatted: formatBytes(storage.totalBytes! + file.size),
           quota: storage.quotaBytes,
           quotaFormatted: formatBytes(storage.quotaBytes),
           usedPercent: Math.round(
-            ((storage.totalBytes + file.size) / storage.quotaBytes) * 100,
+            ((storage.totalBytes! + file.size) / storage.quotaBytes!) * 100,
           ),
         },
       });
@@ -557,7 +557,7 @@ router.get("/storage-usage", async (req: Request, res: Response) => {
         usedFormatted: formatBytes(storage?.totalBytes),
         quota: storage.quotaBytes,
         quotaFormatted: formatBytes(storage?.quotaBytes),
-        available: storage.quotaBytes - storage?.totalBytes,
+        available: storage.quotaBytes! - storage?.totalBytes,
         availableFormatted: formatBytes(
           storage?.quotaBytes - storage?.totalBytes,
         ),
@@ -1298,8 +1298,8 @@ router?.post(
             ? `/api/files/${file?.id}/thumbnail`
             : null,
           duration: file.mimeType?.startsWith("audio/")
-            ? file?.size
-              ? Math.floor(file?.size / 16000)
+            ? (file as any)?.size
+              ? Math.floor((file as any)?.size / 16000)
               : null
             : null,
         },

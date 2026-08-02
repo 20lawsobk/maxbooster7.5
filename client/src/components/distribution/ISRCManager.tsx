@@ -81,12 +81,12 @@ interface ISRCManagerProps {
   onCodeAssigned?: (code: string, type: "isrc" | "upc") => void;
 }
 
-export function ISRCManager({ releaseId, onCodeAssigned }: ISRCManagerProps) {
+export function ISRCManager({ _releaseId, onCodeAssigned }: ISRCManagerProps) {
   const [activeTab, setActiveTab] = useState("isrc");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
   const [isGenerateOpen, setIsGenerateOpen] = useState(false);
-  const [isBatchOpen, setIsBatchOpen] = useState(false);
+  const [_isBatchOpen, _setIsBatchOpen] = useState(false);
   const [generateType, setGenerateType] = useState<"isrc" | "upc">("isrc");
   const [generateCount, setGenerateCount] = useState(1);
   const [validationResult, setValidationResult] = useState<{

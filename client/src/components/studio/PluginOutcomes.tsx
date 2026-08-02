@@ -147,7 +147,7 @@ export function PluginOutcomes({
               ? {
                   ...s,
                   state: "error",
-                  error: error.message || "Failed to load plugin",
+                  error: (error as Error).message || "Failed to load plugin",
                 }
               : s,
           ),
@@ -159,7 +159,7 @@ export function PluginOutcomes({
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-red-400" />
               <span>
-                {plugin.name}: {error.message || "Unknown error"}
+                {plugin.name}: {(error as Error).message || "Unknown error"}
               </span>
             </div>
           ),
@@ -191,7 +191,7 @@ export function PluginOutcomes({
       } catch (error) {
         toast({
           title: "Failed to Apply Preset",
-          description: error.message || "An error occurred",
+          description: (error as Error).message || "An error occurred",
           variant: "destructive",
         });
       }
@@ -221,7 +221,7 @@ export function PluginOutcomes({
     } catch (error) {
       toast({
         title: "Failed to Save Preset",
-        description: error.message || "An error occurred",
+        description: (error as Error).message || "An error occurred",
         variant: "destructive",
       });
     } finally {

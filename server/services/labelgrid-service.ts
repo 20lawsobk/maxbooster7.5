@@ -313,7 +313,7 @@ class LabelGridService {
     const cb = this.circuitBreaker;
     this.client.defaults.adapter = async (config: Record<string, unknown>) => {
       return cb?.execute(
-        () => (originalAdapter as Record<string, unknown>)(config),
+        () => (originalAdapter as unknown as Record<string, unknown>)(config),
         async () => {
           throw new Error(
             "LabelGrid API circuit breaker is open - service temporarily unavailable",
@@ -335,14 +335,14 @@ class LabelGridService {
       if (provider) {
         // Use actual fields from the schema
         this.baseUrl =
-          provider?.apiBase || this.baseUrl || "https://api.labelgrid.com";
-        this.endpoints = provider?.requirements?.endpoints || {};
+          (provider as any)?.apiBase || this.baseUrl || "https://api.labelgrid.com";
+        this.endpoints = (provider as any)?.requirements?.endpoints || {};
         this.authHeaderFormat =
-          provider?.authType === "api_key"
+          (provider as any)?.authType === "api_key"
             ? "X-API-Key: {token}"
             : "Bearer {token}";
         this.webhookSecret =
-          provider?.requirements?.webhookSecret || this.webhookSecret;
+          (provider as any)?.requirements?.webhookSecret || this.webhookSecret;
         this.configLoaded = true;
 
         // Update axios client base URL
@@ -412,21 +412,21 @@ class LabelGridService {
 
   private logError(context: string, error: unknown): void {
     const err = error as Record<string, unknown>;
-    logger.warn(`${context}: ${err?.message || "Unknown error"}`, {
+    logger.warn({
       context,
       message: err.message,
       code: err.code,
-      status: err.response?.status,
-      data: err.response?.data,
-    });
+      status: (err.response as any)?.status,
+      data: (err.response as any)?.data,
+    }, `${context}: ${err?.message || "Unknown error"}`);
   }
 
   private logApiCall(method: string, endpoint: string, data?: unknown): void {
-    logger.info(`LabelGrid API ${method} ${endpoint}`, {
+    logger.info({
       endpoint,
       method,
       hasData: !!data,
-    });
+    }, `LabelGrid API ${method} ${endpoint}`);
   }
 
   /**
@@ -468,17 +468,17 @@ class LabelGridService {
           id: p.id,
           name: p.name,
           slug: p.slug,
-          category: p.metadata.category || "streaming",
-          region: p.metadata.region || "global",
+          category: (p.metadata as any).category || "streaming",
+          region: (p.metadata as any).region || "global",
           isActive: p.isActive ?? true,
-          processingTime: p.metadata.processingTime || "3-7 days",
-          requirements: p.metadata.requirements || {
+          processingTime: (p.metadata as any).processingTime || "3-7 days",
+          requirements: (p.metadata as any).requirements || {
             isrc: true,
             upc: true,
             metadata: ["title", "artist", "album"],
             audioFormats: ["WAV", "FLAC"],
           },
-          deliveryMethod: p.metadata.deliveryMethod || "api",
+          deliveryMethod: (p.metadata as any).deliveryMethod || "api",
           logoUrl: p.logoUrl,
         }),
       );
@@ -572,7 +572,7 @@ class LabelGridService {
     } catch (err) {
       logger.warn(
         "[LabelGrid] getUserCatalog failed (non-fatal):",
-        err?.message ?? err,
+        (err as any)?.message ?? err,
       );
       return [];
     }
@@ -608,7 +608,7 @@ class LabelGridService {
     } catch (err) {
       logger.warn(
         `[LabelGrid] getReleaseDetail failed for ${releaseId}:`,
-        err?.message ?? err,
+        (err as any)?.message ?? err,
       );
       return null;
     }
@@ -657,17 +657,17 @@ class LabelGridService {
         });
       });
 
-      logger.info("LabelGrid release created successfully", {
+      logger.info({
         releaseId: response.data.releaseId,
         status: response.data.status,
-      });
+      }, "LabelGrid release created successfully");
 
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
       this.logError("Failed to create LabelGrid release", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -698,7 +698,7 @@ class LabelGridService {
       const axiosErr = error as AxiosError;
       this.logError("Failed to get LabelGrid release status", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -725,18 +725,18 @@ class LabelGridService {
         });
       });
 
-      logger.info("ISRC generated successfully", {
+      logger.info({
         code: response.data.code,
         artist,
         title,
-      });
+      }, "ISRC generated successfully");
 
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
       this.logError("Failed to generate ISRC", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -759,17 +759,17 @@ class LabelGridService {
         });
       });
 
-      logger.info("UPC generated successfully", {
+      logger.info({
         code: response.data.code,
         releaseTitle,
-      });
+      }, "UPC generated successfully");
 
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
       this.logError("Failed to generate UPC", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -800,7 +800,7 @@ class LabelGridService {
       const axiosErr = error as AxiosError;
       this.logError("Failed to get LabelGrid release analytics", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -832,16 +832,16 @@ class LabelGridService {
         );
       });
 
-      logger.info("LabelGrid release updated successfully", {
+      logger.info({
         releaseId,
-      });
+      }, "LabelGrid release updated successfully");
 
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
       this.logError("Failed to update LabelGrid release", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -867,16 +867,16 @@ class LabelGridService {
         return await this.client.delete(endpoint);
       });
 
-      logger.info("LabelGrid release takedown initiated", {
+      logger.info({
         releaseId,
-      });
+      }, "LabelGrid release takedown initiated");
 
       return { success: true };
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
       this.logError("Failed to takedown LabelGrid release", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -907,7 +907,7 @@ class LabelGridService {
       const axiosErr = error as AxiosError;
       this.logError("Failed to get LabelGrid artist analytics", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -969,13 +969,13 @@ class LabelGridService {
         );
       });
 
-      logger.info("Publishing metadata set successfully", { releaseId });
+      logger.info({ releaseId }, "Publishing metadata set successfully");
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
       this.logError("Failed to set publishing metadata", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -1008,7 +1008,7 @@ class LabelGridService {
       const axiosErr = error as AxiosError;
       this.logError("Failed to get publishing metadata", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -1041,13 +1041,13 @@ class LabelGridService {
         });
       });
 
-      logger.info("Release submitted for sync licensing", { releaseId });
+      logger.info({ releaseId }, "Release submitted for sync licensing");
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
       this.logError("Failed to submit for sync", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -1083,7 +1083,7 @@ class LabelGridService {
       const axiosErr = error as AxiosError;
       this.logError("Failed to get sync opportunities", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -1114,13 +1114,13 @@ class LabelGridService {
         });
       });
 
-      logger.info("Sync submission updated", { submissionId, action });
+      logger.info({ submissionId, action }, "Sync submission updated");
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
       this.logError("Failed to update sync submission", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -1145,21 +1145,21 @@ class LabelGridService {
       const response = await this.retryWithBackoff(async () => {
         return await this.client.post<LabelGridSmartLink>(endpoint, {
           release_id: releaseId,
-          custom_slug: options.customSlug,
-          platforms: options.platforms,
+          custom_slug: options!.customSlug,
+          platforms: options!.platforms,
         });
       });
 
-      logger.info("Smart link created", {
+      logger.info({
         releaseId,
         linkId: response.data.id,
-      });
+      }, "Smart link created");
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
       this.logError("Failed to create smart link", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -1190,7 +1190,7 @@ class LabelGridService {
       const axiosErr = error as AxiosError;
       this.logError("Failed to get smart link", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -1226,7 +1226,7 @@ class LabelGridService {
       const axiosErr = error as AxiosError;
       this.logError("Failed to get smart link analytics", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -1257,16 +1257,16 @@ class LabelGridService {
         });
       });
 
-      logger.info("Pre-save campaign created", {
+      logger.info({
         releaseId,
         campaignId: response.data.id,
-      });
+      }, "Pre-save campaign created");
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
       this.logError("Failed to create pre-save campaign", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -1297,7 +1297,7 @@ class LabelGridService {
       const axiosErr = error as AxiosError;
       this.logError("Failed to get pre-save campaign", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -1337,7 +1337,7 @@ class LabelGridService {
       const axiosErr = error as AxiosError;
       this.logError("Failed to get pre-save subscribers", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -1369,13 +1369,13 @@ class LabelGridService {
         });
       });
 
-      logger.info("Content claim submitted", { releaseId, platforms });
+      logger.info({ releaseId, platforms }, "Content claim submitted");
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
       this.logError("Failed to submit content claim", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -1408,7 +1408,7 @@ class LabelGridService {
       const axiosErr = error as AxiosError;
       this.logError("Failed to get content claims", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -1444,7 +1444,7 @@ class LabelGridService {
       const axiosErr = error as AxiosError;
       this.logError("Failed to get content revenue", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -1475,7 +1475,7 @@ class LabelGridService {
       const axiosErr = error as AxiosError;
       this.logError("Failed to get royalty summary", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -1510,7 +1510,7 @@ class LabelGridService {
       const axiosErr = error as AxiosError;
       this.logError("Failed to get royalty statements", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -1539,13 +1539,13 @@ class LabelGridService {
         });
       });
 
-      logger.info("Payout requested", { amount, method: method || "paypal" });
+      logger.info({ amount, method: method || "paypal" }, "Payout requested");
       return response?.data;
     } catch (error: unknown) {
       const axiosErr = error as AxiosError;
       this.logError("Failed to request payout", error);
       throw new Error(
-        `LabelGrid API error: ${axiosErr?.response?.data?.message || axiosErr?.message}`,
+        `LabelGrid API error: ${(axiosErr?.response?.data as any)?.message || axiosErr?.message}`,
       );
     }
   }
@@ -1601,7 +1601,7 @@ class LabelGridService {
     } catch (err) {
       logger.warn(
         "[LabelGrid] Artist search failed (non-fatal):",
-        err.message ?? err,
+        (err as Error).message ?? err,
       );
       return null;
     }
@@ -1634,7 +1634,7 @@ class LabelGridService {
     } catch (err) {
       logger.warn(
         "[LabelGrid] Artist platform presence fetch failed (non-fatal):",
-        err.message ?? err,
+        (err as Error).message ?? err,
       );
       return [];
     }
@@ -1683,7 +1683,7 @@ class LabelGridService {
     } catch (err) {
       logger.warn(
         "[LabelGrid] Artist catalog fetch failed (non-fatal), caller may fall back to direct scan:",
-        err.message ?? err,
+        (err as Error).message ?? err,
       );
       return [];
     }
@@ -1782,7 +1782,7 @@ class LabelGridService {
   }
 
   private simulateGetPublishingMetadata(
-    releaseId: string,
+    _releaseId: string,
   ): LabelGridPublishingMetadata {
     return {
       writers: [],
@@ -1825,7 +1825,7 @@ class LabelGridService {
   }
 
   private simulateCreateSmartLink(
-    releaseId: string,
+    _releaseId: string,
     _options?: { customSlug?: string; platforms?: string[] },
   ): never {
     throw new Error(

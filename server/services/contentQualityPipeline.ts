@@ -401,7 +401,7 @@ class ContentQualityPipeline {
           .limit(1),
       ]);
 
-      const brandVoice = brandVoiceResult?.voiceProfile as
+      const brandVoice = (brandVoiceResult as any)?.voiceProfile as
         | BrandVoiceData
         | undefined;
 
@@ -556,7 +556,7 @@ class ContentQualityPipeline {
           topic: context.topic,
           platforms: [context?.platform],
           objective: context.objective,
-          tone: (context?.tone as Record<string, unknown>) || "casual",
+          tone: (context?.tone as unknown as Record<string, unknown>) || "casual",
           targetAudience: context.targetAudience,
           genre: context.genre,
           artistName: context.artistName,
@@ -1195,7 +1195,7 @@ class ContentQualityPipeline {
     }
 
     if (
-      context.avoidTopics.some((topic) =>
+      context.avoidTopics!.some((topic) =>
         content.toLowerCase().includes(topic.toLowerCase()),
       )
     ) {
@@ -1613,8 +1613,8 @@ class ContentQualityPipeline {
               hashtags: variant.hashtags,
               userId,
             });
-            if (result.score !== undefined) {
-              const mcScore = Math.min(100, Math.max(0, result.score));
+            if (result!.score !== undefined) {
+              const mcScore = Math.min(100, Math.max(0, result!.score));
               const blended = variant.scores.overall * 0.65 + mcScore * 0.35;
               logger.debug(
                 `[MaxCore] Scored variant ${variant.id}: local=${variant.scores.overall.toFixed(1)} ` +
@@ -1637,7 +1637,7 @@ class ContentQualityPipeline {
     logger.info(
       `[VeoGate] Generated ${variants.length} variant(s) (base: ${variantCount} + pressure extra: ${pressureExtra}` +
         `${maxcoreAvailable ? " + MaxCore blend" : ""}), ` +
-        `selected: ${selected.id || "none"} (score: ${selected.scores.overall.toFixed(1) || "N/A"} / gate: ${VEO_QUALITY_GATE})`,
+        `selected: ${selected!.id || "none"} (score: ${selected!.scores.overall.toFixed(1) || "N/A"} / gate: ${VEO_QUALITY_GATE})`,
     );
 
     return { selected, variants, context };
@@ -1672,7 +1672,7 @@ class ContentQualityPipeline {
         topic: context.topic,
         platforms: [context.platform],
         objective: context.objective,
-        tone: context.tone as Record<string, unknown>,
+        tone: context.tone as unknown as Record<string, unknown>,
         targetAudience: context.targetAudience,
         genre: context.genre,
         artistName: context.artistName,

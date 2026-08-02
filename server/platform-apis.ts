@@ -79,12 +79,12 @@ export const platformAPI = {
         }
 
         // Extract content data
-        const text = content.body || content.text || content.message || "";
-        const mediaUrl = content.mediaUrl || content.media || null;
+        const text = (content as any).body || (content as any).text || (content as Error).message || "";
+        const mediaUrl = (content as any).mediaUrl || (content as any).media || null;
         // Local file path for platforms that upload bytes (e.g. Twitter);
         // URL-fetching platforms (IG/FB/TikTok) keep using mediaUrl.
-        const mediaLocalPath = content.mediaLocalPath || null;
-        const hashtags = content.hashtags || [];
+        const mediaLocalPath = (content as any).mediaLocalPath || null;
+        const hashtags = (content as any).hashtags || [];
 
         // Add hashtags to text if provided
         const fullText =
@@ -270,7 +270,7 @@ export const platformAPI = {
     } catch (error: unknown) {
       logger.warn(
         `Failed to collect engagement data for ${platform}:`,
-        error?.message,
+        (error as any)?.message,
       );
 
       // Return zero metrics on error to prevent crashes
@@ -474,7 +474,7 @@ export const platformAPI = {
         };
 
         if (mediaUrl) {
-          shareData.specificContent["com.linkedin.ugc.ShareContent"].media = [
+          (shareData.specificContent as any)["com.linkedin.ugc.ShareContent"].media = [
             {
               status: "READY",
               originalUrl: mediaUrl,
@@ -594,10 +594,10 @@ export const platformAPI = {
 
       return publishResponse?.data.id;
     } catch (error: unknown) {
-      if (error?.response?.status === 401 || error?.response?.status === 403) {
+      if ((error as any)?.response?.status === 401 || (error as any)?.response?.status === 403) {
         throw new Error("Threads OAuth token expired or invalid");
       }
-      if (error?.response?.status === 429) {
+      if ((error as any)?.response?.status === 429) {
         throw new Error("Threads API rate limit exceeded");
       }
       throw error;
@@ -622,13 +622,13 @@ export const platformAPI = {
       const metrics = tweet?.data.public_metrics;
 
       return {
-        likes: metrics.like_count || 0,
-        shares: metrics.retweet_count || 0,
-        retweets: metrics.retweet_count || 0,
-        comments: metrics.reply_count || 0,
-        replies: metrics.reply_count || 0,
-        impressions: metrics.impression_count || 0,
-        engagementRate: metrics.impression_count
+        likes: metrics!.like_count || 0,
+        shares: metrics!.retweet_count || 0,
+        retweets: metrics!.retweet_count || 0,
+        comments: metrics!.reply_count || 0,
+        replies: metrics!.reply_count || 0,
+        impressions: metrics!.impression_count || 0,
+        engagementRate: metrics!.impression_count
           ? (metrics?.like_count + metrics?.retweet_count + metrics?.reply_count) /
             metrics?.impression_count
           : 0,
@@ -672,7 +672,7 @@ export const platformAPI = {
         engagementRate: 0, // Facebook doesn't provide impressions in basic API
       };
     } catch (error: unknown) {
-      if (error.response.status === 401 || error.response.status === 403) {
+      if ((error as any).response.status === 401 || (error as any).response.status === 403) {
         throw new Error("Facebook OAuth token expired or invalid");
       }
       throw error;
@@ -696,7 +696,7 @@ export const platformAPI = {
 
       const data = response.data.data;
       const getMetric = (name: string) => {
-        const metric = data.find((m: unknown) => m.name === name);
+        const metric = data.find((m: unknown) => (m as Error).name === name);
         return metric.values[0].value || 0;
       };
 
@@ -712,7 +712,7 @@ export const platformAPI = {
         engagementRate: impressions > 0 ? engagement / impressions : 0,
       };
     } catch (error: unknown) {
-      if (error.response.status === 401 || error.response.status === 403) {
+      if ((error as any).response.status === 401 || (error as any).response.status === 403) {
         throw new Error("Instagram OAuth token expired or invalid");
       }
       throw error;
@@ -743,7 +743,7 @@ export const platformAPI = {
         engagementRate: 0, // LinkedIn doesn't provide impressions in basic API
       };
     } catch (error: unknown) {
-      if (error?.response?.status === 401) {
+      if ((error as any)?.response?.status === 401) {
         throw new Error("LinkedIn OAuth token expired or invalid");
       }
       throw error;
@@ -767,7 +767,7 @@ export const platformAPI = {
 
       const data = response?.data.data;
       const getMetric = (name: string) => {
-        const metric = data?.find((m: unknown) => m?.name === name);
+        const metric = data?.find((m: unknown) => (m as any)?.name === name);
         return metric?.values?.[0]?.value || 0;
       };
 
@@ -779,7 +779,7 @@ export const platformAPI = {
         engagementRate: 0,
       };
     } catch (error: unknown) {
-      if (error?.response?.status === 401 || error?.response?.status === 403) {
+      if ((error as any)?.response?.status === 401 || (error as any)?.response?.status === 403) {
         throw new Error("Threads OAuth token expired or invalid");
       }
       throw error;
@@ -833,10 +833,10 @@ export const platformAPI = {
         engagementRate: views > 0 ? (likes + comments + shares) / views : 0,
       };
     } catch (error: unknown) {
-      if (error?.response?.status === 401 || error?.response?.status === 403) {
+      if ((error as any)?.response?.status === 401 || (error as any)?.response?.status === 403) {
         throw new Error("TikTok OAuth token expired or invalid");
       }
-      if (error?.response?.status === 429) {
+      if ((error as any)?.response?.status === 429) {
         throw new Error("TikTok API rate limit exceeded");
       }
       throw error;
@@ -885,10 +885,10 @@ export const platformAPI = {
         engagementRate: views > 0 ? (likes + comments) / views : 0,
       };
     } catch (error: unknown) {
-      if (error?.response?.status === 401 || error?.response?.status === 403) {
+      if ((error as any)?.response?.status === 401 || (error as any)?.response?.status === 403) {
         throw new Error("YouTube OAuth token expired or invalid");
       }
-      if (error?.response?.status === 429) {
+      if ((error as any)?.response?.status === 429) {
         throw new Error("YouTube API rate limit exceeded");
       }
       throw error;

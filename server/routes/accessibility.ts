@@ -132,7 +132,7 @@ router?.get(
         return res.status(404).json({ error: "User not found" });
       }
 
-      const preferences = user?.accessibilityPreferences || defaultPreferences;
+      const preferences = (user as any)?.accessibilityPreferences || defaultPreferences;
 
       return res.json({
         ...defaultPreferences,
@@ -170,7 +170,7 @@ router?.put(
       }
 
       const currentPreferences =
-        user?.accessibilityPreferences || defaultPreferences;
+        (user as any)?.accessibilityPreferences || defaultPreferences;
       const newPreferences = {
         ...currentPreferences,
         ...sanitized,

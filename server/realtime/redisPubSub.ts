@@ -54,7 +54,7 @@ export async function initRedisPubSub(): Promise<void> {
         "✅ [WS PubSub] Redis Pub/Sub active — WebSocket broadcasting is cross-instance",
       );
     } catch (err) {
-      logger.warn(`[WS PubSub] PDIM Pub/Sub init warning: ${err?.message}`);
+      logger.warn(`[WS PubSub] PDIM Pub/Sub init warning: ${(err as any)?.message}`);
       _ready = !!publisher;
     }
     return;
@@ -102,7 +102,7 @@ export async function initRedisPubSub(): Promise<void> {
     );
   } catch (err) {
     logger.warn(
-      `[WS PubSub] Failed to init Redis Pub/Sub: ${err?.message} — single-instance only`,
+      `[WS PubSub] Failed to init Redis Pub/Sub: ${(err as any)?.message} — single-instance only`,
     );
     publisher = null;
     subscriber = null;
@@ -143,12 +143,12 @@ export async function publishBroadcast(notification: object): Promise<void> {
 
 export async function closePubSub(): Promise<void> {
   try {
-    if (subscriber?.quit) await subscriber?.quit();
+    if ((subscriber as any)?.quit) await (subscriber as any)?.quit();
   } catch {
     /* ignore */
   }
   try {
-    if (publisher?.quit) await publisher?.quit();
+    if ((publisher as any)?.quit) await (publisher as any)?.quit();
   } catch {
     /* ignore */
   }

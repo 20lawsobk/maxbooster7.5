@@ -90,8 +90,8 @@ export class AutonomousService extends EventEmitter {
   private autonomousWhitelist: Set<string> = new Set();
   private config: AutonomousConfig;
   private metrics: AutonomousMetrics;
-  private processingQueue: Map<string, any> = new Map();
-  private learningData: Map<string, any> = new Map();
+  private _processingQueue: Map<string, any> = new Map();
+  private _learningData: Map<string, any> = new Map();
   private isRunning: boolean = false;
 
   constructor() {
@@ -262,8 +262,8 @@ export class AutonomousService extends EventEmitter {
           approvedAt: new Date(),
         } as Record<string, unknown>);
 
-        await socialQueueService.schedulePost(post.id, new Date());
-        await this.dispatchAutonomousContent(post.id);
+        await socialQueueService.schedulePost((post.id as string), new Date());
+        await this.dispatchAutonomousContent((post.id as string));
 
         this.metrics.postsPublished++;
         this.metrics.lastUpdated = new Date();
@@ -286,7 +286,7 @@ export class AutonomousService extends EventEmitter {
           approvalStatus: "pending",
         } as Record<string, unknown>);
 
-        await approvalService.submitForApproval({
+        await (approvalService as any).submitForApproval({
           type: "social_post",
           itemId: post.id,
           userId,
@@ -421,8 +421,8 @@ export class AutonomousService extends EventEmitter {
       });
 
       const scoredVariants = await Promise?.all(
-        variants?.map(async (variant: Record<string, unknown>) => {
-          const viralScore = await viralScoringService?.calculateViralScore({
+        (variants as any)?.map(async (variant: Record<string, unknown>) => {
+          const viralScore = await (viralScoringService as any)?.calculateViralScore({
             content: variant.content,
             platform: variant.platform,
             hashtags: variant.hashtags,
@@ -432,16 +432,16 @@ export class AutonomousService extends EventEmitter {
       );
 
       const bestVariant = scoredVariants?.sort(
-        (a, b) => b?.viralScore - a?.viralScore,
+        (a: any, b: any) => b?.viralScore - a?.viralScore,
       )[0];
 
-      const optimalTiming = await timingOptimizer?.getOptimalPostingTime({
+      const optimalTiming = await (timingOptimizer as any)?.getOptimalPostingTime({
         userId,
         platforms,
         contentType: "generated",
       });
 
-      this.metrics.contentVariantsGenerated += variants?.length;
+      this.metrics.contentVariantsGenerated += (variants as any)?.length;
       this.metrics.viralScoresComputed += scoredVariants?.length;
       this.metrics.aiDecisionsMade++;
       this.metrics.lastUpdated = new Date();
@@ -671,7 +671,7 @@ export class AutonomousService extends EventEmitter {
 
       logger.info(`[AUTO-ANALYTICS] Generating insights for ${userId}`);
 
-      const analyticsData = await storage?.getAnalyticsData(userId);
+      const analyticsData = await (storage as any)?.getAnalyticsData(userId);
 
       const insights = {
         totalEngagement: analyticsData.totalEngagement || 0,
@@ -732,7 +732,7 @@ export class AutonomousService extends EventEmitter {
 
       logger.info(`[AUTO-GROWTH] Optimizing growth for ${userId}`);
 
-      const algorithmInsights = await algorithmIntelligence?.analyzeAlgorithm({
+      const algorithmInsights = await (algorithmIntelligence as any)?.analyzeAlgorithm({
         platforms: ["instagram", "tiktok", "twitter", "youtube"],
         timeframe: "7d",
       });
@@ -757,7 +757,7 @@ export class AutonomousService extends EventEmitter {
       optimizations?.push("Post during algorithm boost windows");
 
       const viralScore =
-        await viralScoringService?.getUserViralPotential(userId);
+        await (viralScoringService as any)?.getUserViralPotential(userId);
 
       this.metrics.aiDecisionsMade++;
       this.metrics.lastUpdated = new Date();

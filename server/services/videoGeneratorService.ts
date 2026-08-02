@@ -1202,7 +1202,7 @@ async function generateVoiceover(
 
     return existsSync(outPath) ? outPath : null;
   } catch (e) {
-    const msg = e.stderr || e.message || String(e);
+    const msg = (e as any).stderr || (e as Error).message || String(e);
     logger.warn(`[VideoGen] Voiceover generation failed, skipping: ${msg}`);
     return null;
   }
@@ -1485,7 +1485,7 @@ export async function generateVideo(
   const audioProfile = AUDIO_PROFILES[genre] || AUDIO_PROFILES.default;
 
   const scenePrompt =
-    opts.scene_prompt.trim() ||
+    opts.scene_prompt!.trim() ||
     (opts.topic ? `${opts.topic} ${genre} music` : undefined);
 
   // ── AI content generation via Advanced Content Pipeline ──────────────────
@@ -1873,10 +1873,10 @@ export async function generateVideo(
     }
   } catch (err) {
     cleanup(...tempFiles);
-    logger.warn("[VideoGen] Render failed:", err.stderr || err.message);
+    logger.warn("[VideoGen] Render failed:", (err as any).stderr || (err as Error).message);
     return {
       success: false,
-      error: `Video render failed: ${err.message || "FFmpeg error"}`,
+      error: `Video render failed: ${(err as Error).message || "FFmpeg error"}`,
     };
   }
 }

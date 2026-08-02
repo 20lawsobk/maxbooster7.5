@@ -79,7 +79,7 @@ setInterval(
         job?.status,
       );
       const tooOld =
-        (job?.createdAt ? new Date(job?.createdAt).getTime() : 0) < cutoff;
+        ((job as any)?.createdAt ? new Date((job as any)?.createdAt).getTime() : 0) < cutoff;
       if (terminal || tooOld) exportJobs?.delete(id);
     }
   },
@@ -180,8 +180,8 @@ function simulateExportProgress(jobId: string): void {
       if (stage?.progress === 100) {
         currentJob.completedTime = new Date();
         currentJob.downloadUrl = `/api/export/download/${jobId}`;
-        const trackCount = currentJob?.tracks?.length || 1;
-        const durationSec = currentJob?.duration || 180;
+        const trackCount = (currentJob as any)?.tracks?.length || 1;
+        const durationSec = (currentJob as any)?.duration || 180;
         const qualityMultiplier =
           currentJob?.format === "wav"
             ? 176400
@@ -1315,7 +1315,7 @@ router?.get(
         fileName: `${job?.name.replace(/[^a-zA-Z0-9]/g, "_")}.zip`,
         fileSize: job.fileSize,
         itemCount:
-          (job?.settings as Record<string, unknown>)?.items?.length || 0,
+          ((job?.settings as Record<string, unknown>)?.items as any)?.length || 0,
       });
     } catch (error: unknown) {
       logger.warn({ err: error }, "Error downloading ZIP:");

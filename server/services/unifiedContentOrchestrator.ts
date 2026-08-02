@@ -723,7 +723,7 @@ class UnifiedContentOrchestrator {
     try {
       const redis = await getRedisClient();
       for (const job of jobs) {
-        await redis
+        await (redis as any)
           .lpush(job?.queue, JSON.stringify(job?.payload))
           .catch(() => null);
       }

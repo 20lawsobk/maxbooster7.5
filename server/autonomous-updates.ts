@@ -168,7 +168,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
         lastRunAt: this.status.lastRunAt,
         updatedAt: new Date().toISOString(),
       });
-      await (client as Record<string, unknown>).set(
+      await (client as unknown as Record<string, unknown>).set(
         AUTONOMOUS_STATUS_KEY,
         payload,
       );
@@ -181,7 +181,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     if (!isPdimConfigured()) return;
     try {
       const client = getPdimClient();
-      const raw = await (client as Record<string, unknown>).get(
+      const raw = await (client as unknown as Record<string, unknown>).get(
         AUTONOMOUS_STATUS_KEY,
       );
       if (!raw) return;
@@ -417,32 +417,32 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
       {
         name: "studioDAW",
         enabled: this.config.studioDAWEnabled,
-        fn: () => this.runStudioDAWUpgrades(),
+        fn: () => (this as any).runStudioDAWUpgrades(),
       },
       {
         name: "distribution",
         enabled: this.config.distributionEnabled,
-        fn: () => this.runDistributionUpgrades(),
+        fn: () => (this as any).runDistributionUpgrades(),
       },
       {
         name: "marketplace",
         enabled: this.config.marketplaceEnabled,
-        fn: () => this.runMarketplaceUpgrades(),
+        fn: () => (this as any).runMarketplaceUpgrades(),
       },
       {
         name: "analytics",
         enabled: this.config.analyticsEnabled,
-        fn: () => this.runAnalyticsUpgrades(),
+        fn: () => (this as any).runAnalyticsUpgrades(),
       },
       {
         name: "security",
         enabled: this.config.securityEnabled,
-        fn: () => this.runSecurityUpgrades(),
+        fn: () => (this as any).runSecurityUpgrades(),
       },
       {
         name: "performanceInfra",
         enabled: this.config.performanceInfraEnabled,
-        fn: () => this.runPerformanceInfraUpgrades(),
+        fn: () => (this as any).runPerformanceInfraUpgrades(),
       },
     ];
 
@@ -452,7 +452,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
         try {
           result[module.name] = await module?.fn();
         } catch (e) {
-          result[`${module.name}Error`] = e?.message || `${module?.name} failed`;
+          result[`${module.name}Error`] = (e as any)?.message || `${module?.name} failed`;
           // Only log errors if not in silent mode
           if (!this.config.silentMode) {
             logger.warn({ err: e }, `${module?.name} error:`);
@@ -495,7 +495,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     const significantTrends = trends?.filter((t) => t?.impact !== "low");
 
     for (const trend of significantTrends) {
-      await storage?.createTrendEvent(trend);
+      await (storage as any)?.createTrendEvent(trend);
     }
 
     return {
@@ -670,9 +670,9 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
   }
 
   private async tuneContentGeneration(): Promise<TuningResult> {
-    const recentTrends = await storage?.getRecentTrendEvents(7);
+    const recentTrends = await (storage as any)?.getRecentTrendEvents(7);
     const currentVersion =
-      await storage?.getActiveModelVersion("content_generation");
+      await (storage as any)?.getActiveModelVersion("content_generation");
 
     const baseParams = currentVersion?.parameters || {
       temperature: 0.7,
@@ -684,16 +684,16 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     };
 
     const engagementBoost =
-      recentTrends?.filter((t) => t?.impact === "high").length * 0.05;
+      recentTrends?.filter((t: any) => t?.impact === "high").length * 0.05;
     const newParams = {
       ...baseParams,
       temperature: Math.min(0.95, baseParams?.temperature + engagementBoost),
       adaptiveBoost: engagementBoost,
-      trendContext: recentTrends.slice(0, 5).map((t) => t?.eventType),
+      trendContext: recentTrends.slice(0, 5).map((t: any) => t?.eventType),
     };
 
     const performanceImprovement = engagementBoost * 100;
-    const newVersion = await storage?.createModelVersion({
+    const newVersion = await (storage as any)?.createModelVersion({
       modelType: "content_generation",
       version: `v${Date?.now()}`,
       parameters: newParams,
@@ -707,7 +707,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     });
 
     if (performanceImprovement > 5) {
-      await storage?.activateModelVersion(newVersion?.id, "content_generation");
+      await (storage as any)?.activateModelVersion(newVersion?.id, "content_generation");
       await customAI?.updateModelParameters("content_generation", newParams);
 
       this.silentLog(
@@ -732,7 +732,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
 
   private async tuneMusicAnalysis(): Promise<TuningResult> {
     const currentVersion =
-      await storage?.getActiveModelVersion("music_analysis");
+      await (storage as any)?.getActiveModelVersion("music_analysis");
 
     const baseParams = currentVersion?.parameters || {
       bpmTolerance: 2,
@@ -741,22 +741,22 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
       moodDetectionSensitivity: 0.8,
     };
 
-    const musicTrends = await storage?.getTrendEvents(
+    const musicTrends = await (storage as any)?.getTrendEvents(
       10,
       "music_industry_analysis",
     );
     const genreShifts = musicTrends?.filter(
-      (t) => t?.eventType === "genre_trend",
+      (t: any) => t?.eventType === "genre_trend",
     );
 
     const newParams = {
       ...baseParams,
       genreClassificationDepth: genreShifts.length > 5 ? 4 : 3,
       trendAwareAnalysis: true,
-      recentGenreTrends: genreShifts.slice(0, 3).map((t) => t?.metadata?.genre),
+      recentGenreTrends: genreShifts.slice(0, 3).map((t: any) => t?.metadata?.genre),
     };
 
-    const newVersion = await storage?.createModelVersion({
+    const newVersion = await (storage as any)?.createModelVersion({
       modelType: "music_analysis",
       version: `v${Date?.now()}`,
       parameters: newParams,
@@ -769,7 +769,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     });
 
     if (genreShifts?.length > 3) {
-      await storage?.activateModelVersion(newVersion?.id, "music_analysis");
+      await (storage as any)?.activateModelVersion(newVersion?.id, "music_analysis");
       await customAI?.updateModelParameters("music_analysis", newParams);
 
       this.silentLog(
@@ -793,15 +793,15 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
   }
 
   private async tuneSocialPosting(): Promise<TuningResult> {
-    const platformChanges = await storage?.getTrendEvents(10);
+    const platformChanges = await (storage as any)?.getTrendEvents(10);
     const algorithmChanges = platformChanges?.filter(
-      (t) =>
+      (t: any) =>
         t?.eventType === "algorithm_update" ||
         t?.eventType === "engagement_pattern_shift",
     );
 
     const currentVersion =
-      await storage?.getActiveModelVersion("social_posting");
+      await (storage as any)?.getActiveModelVersion("social_posting");
 
     const baseParams = currentVersion?.parameters || {
       optimalPostingTimes: [9, 12, 15, 18, 21],
@@ -829,7 +829,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
       lastTuned: new Date().toISOString(),
     };
 
-    const newVersion = await storage?.createModelVersion({
+    const newVersion = await (storage as any)?.createModelVersion({
       modelType: "social_posting",
       version: `v${Date?.now()}`,
       parameters: newParams,
@@ -842,7 +842,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     });
 
     if (algorithmChanges?.length > 0) {
-      await storage?.activateModelVersion(newVersion?.id, "social_posting");
+      await (storage as any)?.activateModelVersion(newVersion?.id, "social_posting");
       await customAI?.updateModelParameters("social_posting", newParams);
 
       this.silentLog(
@@ -898,7 +898,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
       this.deterministicValue(queriesAnalyzedSeed, 500, 1000),
     );
 
-    const task = await storage?.createOptimizationTask({
+    const task = await (storage as any)?.createOptimizationTask({
       taskType: "db_query",
       status: "completed",
       description: "Analyzed and optimized database query performance",
@@ -939,7 +939,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     const improvement =
       ((avgResponseTime - currentResponseTime) / avgResponseTime) * 100;
 
-    const task = await storage?.createOptimizationTask({
+    const task = await (storage as any)?.createOptimizationTask({
       taskType: "ai_parameter",
       status: "completed",
       description:
@@ -987,7 +987,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     });
 
     if (underutilizedFeatures?.length > 0) {
-      const task = await storage?.createOptimizationTask({
+      const task = await (storage as any)?.createOptimizationTask({
         taskType: "ui_improvement",
         status: "completed",
         description: `Identified ${underutilizedFeatures?.length} underutilized features for UI/UX enhancement`,
@@ -1097,7 +1097,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     this.silentLog(`   Hash: ${versionHash}`);
     this.silentLog(`   Changes: ${changes}`);
 
-    const versionData = await storage?.createAIModelVersion({
+    const versionData = await (storage as any)?.createAIModelVersion({
       modelId,
       versionNumber,
       versionHash,
@@ -1199,7 +1199,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     const startTime = Date?.now();
     const userSegment = this.selectCanaryUsers(initialPercentage);
 
-    const deployment = await storage?.createCanaryDeployment({
+    const deployment = await (storage as any)?.createCanaryDeployment({
       modelId,
       versionId,
       percentage: initialPercentage,
@@ -1348,7 +1348,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     const startTime = Date?.now();
     const frequency = config?.frequency || "weekly";
 
-    const schedule = await storage?.createRetrainingSchedule({
+    const schedule = await (storage as any)?.createRetrainingSchedule({
       modelId,
       triggerType,
       frequency,
@@ -1415,7 +1415,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
       timeRange: "30 days",
     };
 
-    const run = await storage?.createRetrainingRun({
+    const run = await (storage as any)?.createRetrainingRun({
       scheduleId,
       modelId,
       status: "running",
@@ -1452,7 +1452,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
   }
 
   private async completeRetraining(
-    run: RetrainingRun,
+    _run: RetrainingRun,
     modelId: string,
   ): Promise<void> {
     ({
@@ -1639,15 +1639,15 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     this.silentLog(`🚀 Deploying model ${modelId} version ${versionId}`);
     this.silentLog(`   Strategy: ${strategy}`);
     this.silentLog(
-      `   Pre-deployment checks: ${preDeploymentChecks?.passed ? "PASSED" : "FAILED"}`,
+      `   Pre-deployment checks: ${(preDeploymentChecks as any)?.passed ? "PASSED" : "FAILED"}`,
     );
 
-    if (!preDeploymentChecks?.passed) {
+    if ((!preDeploymentChecks as any)?.passed) {
       this.silentLog(
         `❌ Deployment aborted due to failed pre-deployment checks`,
       );
 
-      const deployment = await storage?.createDeploymentHistory({
+      const deployment = await (storage as any)?.createDeploymentHistory({
         modelId,
         versionId,
         deploymentType: strategy,
@@ -1663,10 +1663,10 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     let canaryDeploymentId = null;
     if (strategy === "canary") {
       const canaryResult = await this.deployModelCanary(modelId, versionId);
-      canaryDeploymentId = canaryResult?.id;
+      canaryDeploymentId = (canaryResult as any)?.id;
     }
 
-    const deployment = await storage?.createDeploymentHistory({
+    const deployment = await (storage as any)?.createDeploymentHistory({
       modelId,
       versionId,
       deploymentType: strategy,

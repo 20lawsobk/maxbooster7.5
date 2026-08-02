@@ -306,8 +306,8 @@ function requireAdminInline(
   res: Response,
   next: () => void,
 ): void {
-  const user = (req as Record<string, unknown>).user;
-  if (!user || user?.role !== "admin") {
+  const user = (req as unknown as Record<string, unknown>).user;
+  if (!user || (user as any)?.role !== "admin") {
     res.status(403).json({ error: "Admin access required" });
     return;
   }

@@ -89,11 +89,11 @@ class RequestQueue {
   }
 
   private determinePriority(req: Request): number {
-    const user = (req as Record<string, unknown>).user;
+    const user = (req as unknown as Record<string, unknown>).user;
 
-    if (user?.role === "admin") return 0;
-    if (user?.subscriptionTier === "lifetime") return 0;
-    if (user?.subscriptionTier === "yearly") return 1;
+    if ((user as any)?.role === "admin") return 0;
+    if ((user as any)?.subscriptionTier === "lifetime") return 0;
+    if ((user as any)?.subscriptionTier === "yearly") return 1;
 
     if (req.path.includes("/health") || req.path.includes("/status")) return 0;
 
@@ -332,9 +332,9 @@ export class LoadShedder {
   shouldShed(req: Request): boolean {
     if (!this.shedding) return false;
 
-    const user = (req as Record<string, unknown>).user;
-    if (user?.role === "admin") return false;
-    if (user?.subscriptionTier === "lifetime") return false;
+    const user = (req as unknown as Record<string, unknown>).user;
+    if ((user as any)?.role === "admin") return false;
+    if ((user as any)?.subscriptionTier === "lifetime") return false;
     if (req.path.includes("/health") || req.path.includes("/critical"))
       return false;
 

@@ -80,8 +80,8 @@ router?.post(
         trackIds: data.trackIds,
         exportName: data.exportName,
         format: data.format,
-        sampleRate: data.sampleRate as Record<string, unknown>,
-        bitDepth: data.bitDepth as Record<string, unknown>,
+        sampleRate: data.sampleRate as unknown as Record<string, unknown>,
+        bitDepth: data.bitDepth as unknown as Record<string, unknown>,
         bitrate: data.bitrate,
         normalize: data.normalize,
         normalizationType: data.normalizationType,
@@ -146,7 +146,7 @@ router?.get(
       });
     } catch (error) {
       logger.warn({ err: error }, "Error fetching export status:");
-      if (error?.message === "Export not found") {
+      if ((error as any)?.message === "Export not found") {
         return res.status(404).json({ error: "Export not found" });
       }
       res.status(500).json({ error: "Failed to fetch export status" });
@@ -186,10 +186,10 @@ router?.get(
       });
     } catch (error) {
       logger.warn({ err: error }, "Error getting export download:");
-      if (error?.message === "Export not found") {
+      if ((error as any)?.message === "Export not found") {
         return res.status(404).json({ error: "Export not found" });
       }
-      if (error?.message === "Export is not ready for download") {
+      if ((error as any)?.message === "Export is not ready for download") {
         return res
           .status(400)
           .json({ error: "Export is not ready for download" });
@@ -254,7 +254,7 @@ router?.delete(
       });
     } catch (error) {
       logger.warn({ err: error }, "Error deleting export:");
-      if (error?.message === "Export not found") {
+      if ((error as any)?.message === "Export not found") {
         return res.status(404).json({ error: "Export not found" });
       }
       res.status(500).json({ error: "Failed to delete export" });
@@ -282,10 +282,10 @@ router?.post(
       });
     } catch (error) {
       logger.warn({ err: error }, "Error cancelling export:");
-      if (error?.message === "Export not found") {
+      if ((error as any)?.message === "Export not found") {
         return res.status(404).json({ error: "Export not found" });
       }
-      if (error?.message?.includes("Cannot cancel")) {
+      if ((error as any)?.message?.includes("Cannot cancel")) {
         return res.status(400).json({ error: "Invalid stem export request" });
       }
       res.status(500).json({ error: "Failed to cancel export" });

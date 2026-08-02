@@ -131,7 +131,7 @@ adminRouter?.get("/users", async (req, res) => {
       },
     });
   } catch (error) {
-    logger.warn("Error fetching users:", error);
+    logger.warn({ err: error }, "Error fetching users:");
     res.status(500).json({ error: "Failed to fetch users" });
   }
 });
@@ -177,7 +177,7 @@ adminRouter?.get("/users/export", async (req, res) => {
       },
     });
   } catch (error) {
-    logger.warn("Error exporting users:", error);
+    logger.warn({ err: error }, "Error exporting users:");
     res.status(500).json({ error: "Failed to export users" });
   }
 });
@@ -208,7 +208,7 @@ adminRouter?.get("/users/:userId", async (req, res) => {
 
     res.json(user[0]);
   } catch (error) {
-    logger.warn("Error fetching user:", error);
+    logger.warn({ err: error }, "Error fetching user:");
     res.status(500).json({ error: "Failed to fetch user" });
   }
 });
@@ -254,7 +254,7 @@ adminRouter?.put("/users/:userId", async (req, res) => {
 
     await db?.update(users).set(updateData).where(eq(users?.id, userId));
 
-    logger.info(`Admin ${req.user?.email} updated user ${userId}:`, updateData);
+    logger.info(updateData, `Admin ${req.user?.email} updated user ${userId}:`);
 
     res.json({ success: true, message: "User updated" });
 
@@ -279,7 +279,7 @@ adminRouter?.put("/users/:userId", async (req, res) => {
       });
     }
   } catch (error) {
-    logger.warn("Error updating user:", error);
+    logger.warn({ err: error }, "Error updating user:");
     res.status(500).json({ error: "Failed to update user" });
   }
 });
@@ -321,7 +321,7 @@ adminRouter?.post("/users/:userId/suspend", async (req, res) => {
       }
     });
   } catch (error) {
-    logger.warn("Error suspending user:", error);
+    logger.warn({ err: error }, "Error suspending user:");
     res.status(500).json({ error: "Failed to suspend user" });
   }
 });
@@ -341,7 +341,7 @@ adminRouter?.post("/users/:userId/reactivate", async (req, res) => {
 
     res.json({ success: true, message: "User reactivated" });
   } catch (error) {
-    logger.warn("Error reactivating user:", error);
+    logger.warn({ err: error }, "Error reactivating user:");
     res.status(500).json({ error: "Failed to reactivate user" });
   }
 });
@@ -358,7 +358,7 @@ adminRouter?.delete("/users/:userId", async (req, res) => {
     logger.info(`Admin ${req.user?.email} permanently deleted user ${userId}`);
     res.json({ success: true, message: "User deleted" });
   } catch (error) {
-    logger.warn("Error deleting user:", error);
+    logger.warn({ err: error }, "Error deleting user:");
     res.status(500).json({ error: "Failed to delete user" });
   }
 });
@@ -384,7 +384,7 @@ adminRouter?.post("/subscriptions/lifetime", async (req, res) => {
 
     res.json({ message: "Lifetime subscription granted." });
   } catch (error) {
-    logger.warn("Error granting lifetime subscription:", error);
+    logger.warn({ err: error }, "Error granting lifetime subscription:");
     res.status(500).json({ error: "Failed to grant lifetime subscription" });
   }
 });
@@ -501,12 +501,12 @@ adminRouter?.get("/system-health", async (_req, res) => {
         status: dbStatus,
         latency: dbLatency,
         connectionPool: {
-          active: (pool as Record<string, unknown>).totalCount ?? 0,
-          idle: (pool as Record<string, unknown>).idleCount ?? 0,
-          waiting: (pool as Record<string, unknown>).waitingCount ?? 0,
+          active: (pool as unknown as Record<string, unknown>).totalCount ?? 0,
+          idle: (pool as unknown as Record<string, unknown>).idleCount ?? 0,
+          waiting: (pool as unknown as Record<string, unknown>).waitingCount ?? 0,
           max:
-            (pool as Record<string, unknown>).options?.max ??
-            (pool as Record<string, unknown>).maxSize ??
+            ((pool as unknown as Record<string, unknown>).options as any)?.max ??
+            (pool as unknown as Record<string, unknown>).maxSize ??
             0,
         },
       },
@@ -525,7 +525,7 @@ adminRouter?.get("/system-health", async (_req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger.warn("Error fetching system health:", error);
+    logger.warn({ err: error }, "Error fetching system health:");
     res.status(500).json({ error: "Failed to fetch system health" });
   }
 });
@@ -554,7 +554,7 @@ adminRouter?.get("/moderation/reports", async (req, res) => {
       },
     });
   } catch (error) {
-    logger.warn("Error fetching moderation reports:", error);
+    logger.warn({ err: error }, "Error fetching moderation reports:");
     res.status(500).json({ error: "Failed to fetch moderation reports" });
   }
 });
@@ -594,7 +594,7 @@ adminRouter?.post("/moderation/reports/:reportId/review", async (req, res) => {
       },
     });
   } catch (error) {
-    logger.warn("Error reviewing moderation report:", error);
+    logger.warn({ err: error }, "Error reviewing moderation report:");
     res.status(500).json({ error: "Failed to review moderation report" });
   }
 });
@@ -616,7 +616,7 @@ adminRouter?.post("/moderation/content/:contentId/remove", async (req, res) => {
       notifiedUser: notifyUser,
     });
   } catch (error) {
-    logger.warn("Error removing content:", error);
+    logger.warn({ err: error }, "Error removing content:");
     res.status(500).json({ error: "Failed to remove content" });
   }
 });
@@ -639,7 +639,7 @@ adminRouter?.post("/moderation/users/:userId/warn", async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger.warn("Error warning user:", error);
+    logger.warn({ err: error }, "Error warning user:");
     res.status(500).json({ error: "Failed to warn user" });
   }
 });
@@ -673,7 +673,7 @@ adminRouter?.post("/moderation/users/:userId/ban", async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger.warn("Error banning user:", error);
+    logger.warn({ err: error }, "Error banning user:");
     res.status(500).json({ error: "Failed to ban user" });
   }
 });
@@ -841,7 +841,7 @@ adminRouter?.get("/analytics", async (_req, res) => {
       topCountries: [],
     });
   } catch (error) {
-    logger.warn("Error fetching analytics:", error);
+    logger.warn({ err: error }, "Error fetching analytics:");
     res.status(500).json({ error: "Failed to fetch analytics" });
   }
 });
@@ -881,7 +881,7 @@ adminRouter?.get("/metrics", async (_req, res) => {
       avgResponseTime: 0,
     });
   } catch (error) {
-    logger.warn("Error fetching metrics:", error);
+    logger.warn({ err: error }, "Error fetching metrics:");
     res.status(500).json({ error: "Failed to fetch metrics" });
   }
 });
@@ -905,7 +905,7 @@ adminRouter?.get("/settings", async (_req, res) => {
     settings?.forEach((s) => {
       const key = s?.key.replace("platform.", "");
       try {
-        settingsMap[key] = JSON.parse(s?.value);
+        settingsMap[key] = JSON.parse((s?.value as string));
       } catch {
         settingsMap[key] = s?.value;
       }
@@ -913,7 +913,7 @@ adminRouter?.get("/settings", async (_req, res) => {
 
     res.json(settingsMap);
   } catch (error) {
-    logger.warn("Error fetching settings:", error);
+    logger.warn({ err: error }, "Error fetching settings:");
     res.status(500).json({ error: "Failed to fetch settings" });
   }
 });
@@ -946,7 +946,7 @@ adminRouter?.post("/settings/notifications", async (req, res) => {
     await updateSetting("emailNotifications", enabled);
     res.json({ success: true, enabled });
   } catch (error) {
-    logger.warn("Error updating notifications setting:", error);
+    logger.warn({ err: error }, "Error updating notifications setting:");
     res.status(500).json({ error: "Failed to update setting" });
   }
 });
@@ -957,7 +957,7 @@ adminRouter?.post("/settings/maintenance", async (req, res) => {
     await updateSetting("maintenanceMode", enabled);
     res.json({ success: true, enabled });
   } catch (error) {
-    logger.warn("Error updating maintenance setting:", error);
+    logger.warn({ err: error }, "Error updating maintenance setting:");
     res.status(500).json({ error: "Failed to update setting" });
   }
 });
@@ -968,7 +968,7 @@ adminRouter?.post("/settings/registration", async (req, res) => {
     await updateSetting("userRegistrationEnabled", enabled);
     res.json({ success: true, enabled });
   } catch (error) {
-    logger.warn("Error updating registration setting:", error);
+    logger.warn({ err: error }, "Error updating registration setting:");
     res.status(500).json({ error: "Failed to update setting" });
   }
 });
@@ -994,7 +994,7 @@ adminRouter?.get("/activity", async (_req, res) => {
 
     res.json(activities);
   } catch (error) {
-    logger.warn("Error fetching activity:", error);
+    logger.warn({ err: error }, "Error fetching activity:");
     res.status(500).json({ error: "Failed to fetch activity" });
   }
 });
@@ -1034,7 +1034,7 @@ adminRouter?.post(
         recipient: targetUser[0].email,
       });
     } catch (error) {
-      logger.warn("Error processing email request:", error);
+      logger.warn({ err: error }, "Error processing email request:");
       res.status(500).json({ error: "Failed to process email request" });
     }
   },
@@ -1202,7 +1202,7 @@ adminRouter.get("/chain-fixer/status", async (_req, res) => {
     res.json(chainErrorAutoFixer.getStatus());
   } catch (err) {
     logger.warn({ err: err }, "Admin route error:");
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: (err as Error).message });
   }
 });
 
@@ -1212,7 +1212,7 @@ adminRouter.post("/chain-fixer/reset/:patternId", async (req, res) => {
     res.json({ success: ok });
   } catch (err) {
     logger.warn({ err: err }, "Admin route error:");
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: (err as Error).message });
   }
 });
 
@@ -1224,7 +1224,7 @@ adminRouter.post("/chain-fixer/force-check", async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     logger.warn({ err: err }, "Admin route error:");
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: (err as Error).message });
   }
 });
 
@@ -1235,7 +1235,7 @@ adminRouter.get("/platform-fixer/status", async (_req, res) => {
     res.json(platformAutoFixer.getStatus());
   } catch (err) {
     logger.warn({ err: err }, "Admin route error:");
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: (err as Error).message });
   }
 });
 
@@ -1244,7 +1244,7 @@ adminRouter.get("/platform-fixer/subsystems", async (_req, res) => {
     res.json(platformAutoFixer.getSubsystems());
   } catch (err) {
     logger.warn({ err: err }, "Admin route error:");
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: (err as Error).message });
   }
 });
 
@@ -1253,7 +1253,7 @@ adminRouter.get("/platform-fixer/patches", async (_req, res) => {
     res.json(platformAutoFixer.getPatches());
   } catch (err) {
     logger.warn({ err: err }, "Admin route error:");
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: (err as Error).message });
   }
 });
 
@@ -1262,7 +1262,7 @@ adminRouter.get("/platform-fixer/incidents", async (_req, res) => {
     res.json(platformAutoFixer.getIncidents());
   } catch (err) {
     logger.warn({ err: err }, "Admin route error:");
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: (err as Error).message });
   }
 });
 
@@ -1272,14 +1272,14 @@ adminRouter.post("/platform-fixer/scan", async (_req, res) => {
     res.json({ success: true, status: platformAutoFixer.getStatus() });
   } catch (err) {
     logger.warn({ err: err }, "Admin route error:");
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: (err as Error).message });
   }
 });
 
 adminRouter.post("/platform-fixer/probe/:name", async (req, res) => {
   try {
     const result = await platformAutoFixer.forceProbe(
-      req.params.name as Record<string, unknown>,
+      req.params.name as unknown as Record<string, unknown>,
     );
     if (!result)
       return res
@@ -1288,7 +1288,7 @@ adminRouter.post("/platform-fixer/probe/:name", async (req, res) => {
     res.json(result);
   } catch (err) {
     logger.warn({ err: err }, "Admin route error:");
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: (err as Error).message });
   }
 });
 
@@ -1302,7 +1302,7 @@ adminRouter.post("/platform-fixer/patch/:id/revert", async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     logger.warn({ err: err }, "Admin route error:");
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: (err as Error).message });
   }
 });
 
@@ -1311,7 +1311,7 @@ adminRouter.get("/platform-fixer/degraded-routes", async (_req, res) => {
     res.json({ degradedRoutes: platformAutoFixer.getDegradedRoutes() });
   } catch (err) {
     logger.warn({ err: err }, "Admin route error:");
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: (err as Error).message });
   }
 });
 
@@ -1325,7 +1325,7 @@ adminRouter.get("/permanent-fixes", async (_req, res) => {
     res.json(permanentFixRegistry.getStatus());
   } catch (err) {
     logger.warn({ err: err }, "Admin route error:");
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: (err as Error).message });
   }
 });
 

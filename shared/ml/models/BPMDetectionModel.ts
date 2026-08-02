@@ -206,7 +206,7 @@ export class BPMDetectionModel {
 
   private computeOnsetEnvelope(
     audioBuffer: Float32Array,
-    _sampleRate: number,
+    sampleRate: number,
   ): Float32Array {
     const frameSize = 2048;
     const hopSize = 512;

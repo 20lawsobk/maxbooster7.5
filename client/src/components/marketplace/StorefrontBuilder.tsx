@@ -172,7 +172,7 @@ export default function StorefrontBuilder() {
   const [selectedStorefront, setSelectedStorefront] =
     useState<Storefront | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const [_showTemplateDialog, _setShowTemplateDialog] = useState(false);
   const [showTierDialog, setShowTierDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [storefrontToDelete, setStorefrontToDelete] =
@@ -197,14 +197,14 @@ export default function StorefrontBuilder() {
   );
   const [checkingSubdomain, setCheckingSubdomain] = useState(false);
 
-  const [customDomainForm, setCustomDomainForm] = useState({
+  const [_customDomainForm, setCustomDomainForm] = useState({
     customDomain: "",
     isCustomDomainActive: false,
   });
-  const [requestingCustomDomain, setRequestingCustomDomain] = useState(false);
-  const [verifyingDomain, setVerifyingDomain] = useState(false);
-  const [domainVerified, setDomainVerified] = useState<boolean | null>(null);
-  const [customDomainInstructions, setCustomDomainInstructions] = useState<
+  const [_requestingCustomDomain, _setRequestingCustomDomain] = useState(false);
+  const [_verifyingDomain, _setVerifyingDomain] = useState(false);
+  const [_domainVerified, setDomainVerified] = useState<boolean | null>(null);
+  const [_customDomainInstructions, setCustomDomainInstructions] = useState<
     string | null
   >(null);
   const [newDnsZoneDomain, setNewDnsZoneDomain] = useState("");
@@ -428,7 +428,7 @@ export default function StorefrontBuilder() {
     },
   });
 
-  const { data: domainsData } = useQuery<{
+  const { data: _domainsData } = useQuery<{
     ok: boolean;
     domains: Array<{
       id: string;

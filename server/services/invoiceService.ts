@@ -541,7 +541,7 @@ class InvoiceService {
       this.formatCurrency(item?.total, invoice?.currency),
     ]);
 
-    (doc as Record<string, unknown>).autoTable({
+    (doc as unknown as Record<string, unknown>).autoTable({
       startY: y,
       head: [["Description", "Qty", "Unit Price", "Tax", "Total"]],
       body: tableData,
@@ -564,7 +564,7 @@ class InvoiceService {
       },
     });
 
-    y = (doc as Record<string, unknown>).lastAutoTable?.finalY + 10;
+    y = ((doc as unknown as Record<string, unknown>).lastAutoTable as any)?.finalY + 10;
 
     const totalsX = pageWidth - margin - 60;
 

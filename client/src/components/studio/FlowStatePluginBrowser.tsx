@@ -323,7 +323,7 @@ export function FlowStatePluginBrowser({
   const allPlugins = useMemo(() => {
     if (!pluginsData) return [];
     const plugins: PluginDefinition[] = [];
-    for (const [type, typePlugins] of Object.entries(pluginsData)) {
+    for (const [_type, typePlugins] of Object.entries(pluginsData)) {
       for (const plugin of typePlugins) {
         plugins.push(transformBackendPlugin(plugin));
       }

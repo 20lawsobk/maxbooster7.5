@@ -86,7 +86,7 @@ class OptimizedConnectionPool {
 
     this.pool.on("error", (err) => {
       this.errorCount++;
-      logger.warn("Pool error:", err?.message);
+      logger.warn({ value: err?.message }, "Pool error:");
     });
 
     this.pool.on("remove", () => {
@@ -207,7 +207,7 @@ class OptimizedConnectionPool {
       return {
         healthy: false,
         latencyMs: Date.now() - start,
-        error: error.message,
+        error: (error as Error).message,
       };
     }
   }

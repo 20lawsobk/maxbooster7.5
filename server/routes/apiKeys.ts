@@ -41,7 +41,7 @@ const getKeyPrefix = (key: string): string => {
 
 router?.get("/", async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     const rows = await db
       .select()
       .from(apiKeys)
@@ -73,7 +73,7 @@ router?.get("/", async (req: Request, res: Response) => {
 
 router?.post("/", keyCreateLimiter, async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     const { name, scopes = ["read"] } = req.body;
 
     if (!name || typeof name !== "string" || name?.trim().length === 0) {
@@ -150,7 +150,7 @@ router?.post("/", keyCreateLimiter, async (req: Request, res: Response) => {
 
 router?.delete("/:keyId", async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user!.id;
     const { keyId } = req.params;
 
     const [updated] = await db
@@ -175,7 +175,7 @@ router?.post(
   keyCreateLimiter,
   async (req: Request, res: Response) => {
     try {
-      const userId = req.user.id;
+      const userId = req.user!.id;
       const { keyId } = req.params;
 
       const [existing] = await db

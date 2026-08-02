@@ -257,7 +257,7 @@ function HistoryPanelContent({
 
   const [searchTerm, setSearchTerm] = useState("");
   const [moduleFilter, setModuleFilter] = useState<string>("all");
-  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [typeFilter, _setTypeFilter] = useState<string>("all");
   const [isExpanded, setIsExpanded] = useState(true);
 
   const modules = useMemo(() => {

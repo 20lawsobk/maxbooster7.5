@@ -235,13 +235,13 @@ export class AdvertisingAIService {
     };
 
     // Record AI run for determinism verification
-    await storage?.createAdAIRun({
+    await (storage as any)?.createAdAIRun({
       creativeId: creative.id,
       modelVersion: this.modelVersion,
       inferenceInputs: {
         objective: campaign.objective,
         platforms,
-        contentType: creative.contentType,
+        contentType: (creative as any).contentType,
       },
       inferenceOutputs: outputs,
       executionTime: Date.now() - startTime,
@@ -378,7 +378,7 @@ export class AdvertisingAIService {
       insights: { strengths, weaknesses, contentGaps, opportunities },
     };
 
-    await storage?.createAdAIRun({
+    await (storage as any)?.createAdAIRun({
       creativeId: `competitor_${competitorName}`,
       modelVersion: this.COMPETITOR_ANALYZER,
       inferenceInputs: { competitorName, platform },
@@ -680,7 +680,7 @@ export class AdvertisingAIService {
       aiSource: "maxcore",
     };
 
-    await storage?.createAdAIRun({
+    await (storage as any)?.createAdAIRun({
       creativeId: `campaign_${campaignId}_clustering`,
       modelVersion: this.AUDIENCE_CLUSTERER,
       inferenceInputs: { campaignId, numClusters },
@@ -798,7 +798,7 @@ export class AdvertisingAIService {
     // Store prediction
     await db?.insert(adCreativePredictions).values({
       creativeId: creative.id,
-      targetAudienceId: targetAudience.id || null,
+      targetAudienceId: targetAudience!.id || null,
       predictedCTR: predictedCTR.toFixed(4),
       predictedEngagementRate: predictedEngagementRate.toFixed(4),
       predictedConversionRate: predictedConversionRate.toFixed(4),
@@ -841,7 +841,7 @@ export class AdvertisingAIService {
       aiSource: "maxcore",
     };
 
-    await storage?.createAdAIRun({
+    await (storage as any)?.createAdAIRun({
       creativeId: creative.id,
       modelVersion: this.CREATIVE_PREDICTOR,
       inferenceInputs: { creativeId: creative.id, features },
@@ -881,7 +881,7 @@ export class AdvertisingAIService {
       .where(eq(adAudienceSegments?.campaignId, campaignId))
       .orderBy(adAudienceSegments?.segmentIndex);
 
-    const platforms = campaign[0].platforms || [
+    const platforms = (campaign[0] as any).platforms || [
       "facebook",
       "instagram",
       "tiktok",
@@ -1004,7 +1004,7 @@ export class AdvertisingAIService {
       ],
     };
 
-    await storage?.createAdAIRun({
+    await (storage as any)?.createAdAIRun({
       creativeId: `campaign_${campaignId}_budget_opt`,
       modelVersion: this.BUDGET_OPTIMIZER,
       inferenceInputs: { campaignId, totalBudget, goals },
@@ -1118,7 +1118,7 @@ export class AdvertisingAIService {
       },
     };
 
-    await storage?.createAdAIRun({
+    await (storage as any)?.createAdAIRun({
       creativeId: attributedCreativeId || `campaign_${campaignId}`,
       modelVersion: "conversion_tracker_v1",
       inferenceInputs: { campaignId, conversionType, attributionModel },
@@ -1293,7 +1293,7 @@ export class AdvertisingAIService {
       confidence: 0.78,
     };
 
-    await storage?.createAdAIRun({
+    await (storage as any)?.createAdAIRun({
       creativeId: `campaign_${campaignId}_forecast`,
       modelVersion: "campaign_forecaster_v1",
       inferenceInputs: { campaignId, budget, duration, platforms },
@@ -1316,7 +1316,7 @@ export class AdvertisingAIService {
   private calculateViralityScore(creative: AdCreative): number {
     let score = 50; // baseline
 
-    const text = creative?.normalizedContent || creative?.rawContent || "";
+    const text = (creative as any)?.normalizedContent || (creative as any)?.rawContent || "";
 
     // Text engagement factors
     const hashtagCount = (text?.match(/#/g) || []).length;
@@ -1345,13 +1345,13 @@ export class AdvertisingAIService {
     }
 
     // Media multiplier (visual content performs 10x better organically)
-    if (creative?.assetUrls && creative?.assetUrls.length > 0) {
-      const mediaBonus = creative?.contentType === "video" ? 20 : 15;
+    if ((creative as any)?.assetUrls && (creative as any)?.assetUrls.length > 0) {
+      const mediaBonus = (creative as any)?.contentType === "video" ? 20 : 15;
       score += mediaBonus;
     }
 
     // Content type bonuses
-    if (creative?.contentType === "carousel") score += 8; // High engagement format
+    if ((creative as any)?.contentType === "carousel") score += 8; // High engagement format
 
     return Math.min(Math.max(score, 0), 100);
   }
@@ -1382,7 +1382,7 @@ export class AdvertisingAIService {
     for (const platform of platforms) {
       const baselineMetrics = this.getOrganicBaselineMetrics(platform);
       const contentMultiplier = this.getContentTypeMultiplier(
-        creative?.contentType,
+        (creative as any)?.contentType,
         platform,
       );
 
@@ -1553,10 +1553,10 @@ export class AdvertisingAIService {
    */
   private generateEngagementOptimizations(
     creative: AdCreative,
-    platformPerformance: Record<string, PlatformMetrics>,
+    _platformPerformance: Record<string, PlatformMetrics>,
   ): string[] {
     const optimizations: string[] = [];
-    const text = creative?.normalizedContent || creative?.rawContent || "";
+    const text = (creative as any)?.normalizedContent || (creative as any)?.rawContent || "";
 
     if (text?.length < 50) {
       optimizations?.push(
@@ -1577,7 +1577,7 @@ export class AdvertisingAIService {
       );
     }
 
-    if (!creative?.assetUrls || creative?.assetUrls.length === 0) {
+    if ((!creative as any)?.assetUrls || (creative as any)?.assetUrls.length === 0) {
       optimizations?.push(
         "Add visual content (images/videos increase engagement by 400%+ organically)",
       );
@@ -1631,12 +1631,12 @@ export class AdvertisingAIService {
    * Extract creative features for AI analysis
    */
   private extractCreativeFeatures(creative: AdCreative): CreativeFeatures {
-    const text = creative?.normalizedContent || creative?.rawContent || "";
+    const text = (creative as any)?.normalizedContent || (creative as any)?.rawContent || "";
 
     return {
       visualElements:
-        creative?.assetUrls?.length > 0
-          ? creative?.contentType === "video"
+        (creative as any)?.assetUrls?.length > 0
+          ? (creative as any)?.contentType === "video"
             ? ["video"]
             : ["image"]
           : ["text-only"],

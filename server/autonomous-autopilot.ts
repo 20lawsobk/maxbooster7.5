@@ -64,7 +64,7 @@ export class AutonomousAutopilot extends EventEmitter {
   private contentGenerationInterval: NodeJS.Timeout | null = null;
   private performanceAnalysisInterval: NodeJS.Timeout | null = null;
   private adaptationInterval: NodeJS.Timeout | null = null;
-  private platformPerformance: Map<string, any> = new Map();
+  private _platformPerformance: Map<string, any> = new Map();
   private static readonly DEFAULT_TOPICS = [
     "new release",
     "studio session",
@@ -381,7 +381,7 @@ export class AutonomousAutopilot extends EventEmitter {
 
     const todaysContent = this.contentPerformanceHistory.filter(
       (content) =>
-        content.platform === platform && new Date(content.publishedAt) >= today,
+        content.platform === platform && new Date(content.publishedAt as any) >= today,
     );
 
     const dailyPostCount = todaysContent.length;
@@ -480,7 +480,7 @@ export class AutonomousAutopilot extends EventEmitter {
         [platform],
         this.userId,
       );
-      const successfulPublish = publishResults.find((r: unknown) => r.success);
+      const successfulPublish = publishResults.find((r: unknown) => (r as any).success);
 
       if (successfulPublish) {
         const realPublishedAt = new Date();
@@ -744,13 +744,13 @@ export class AutonomousAutopilot extends EventEmitter {
       .filter(
         (post) =>
           !post.analyzed &&
-          Date.now() - new Date(post.publishedAt).getTime() > 60 * 60 * 1000,
+          Date.now() - new Date(post.publishedAt as any).getTime() > 60 * 60 * 1000,
       ) // At least 1 hour old
       .slice(0, 10); // Analyze up to 10 posts at a time
 
     for (const post of recentPosts) {
       await this.analyzeContentPerformance(
-        post.contentId,
+        (post.contentId as string),
         post.postId,
         post.platform,
       );
@@ -852,10 +852,10 @@ export class AutonomousAutopilot extends EventEmitter {
     const recentPerformance = this.contentPerformanceHistory
       .filter(
         (post) =>
-          Date.now() - new Date(post.publishedAt).getTime() <
+          Date.now() - new Date(post.publishedAt as any).getTime() <
           7 * 24 * 60 * 60 * 1000,
       ) // Last 7 days
-      .map((post) => post.analytics.engagementRate);
+      .map((post) => (post.analytics as any).engagementRate);
 
     if (recentPerformance.length > 5) {
       const avgEngagement =
@@ -882,16 +882,16 @@ export class AutonomousAutopilot extends EventEmitter {
 
     // Analyze performance by hour for each platform
     this.contentPerformanceHistory.forEach((post) => {
-      const hour = new Date(post.publishedAt).getHours();
+      const hour = new Date(post.publishedAt as any).getHours();
       const platform = post.platform;
 
-      if (!platformPerformance.has(platform)) {
-        platformPerformance.set(platform, new Map());
+      if (!platformPerformance.has((platform as string))) {
+        platformPerformance.set((platform as string), new Map());
       }
 
-      const hourlyPerf = platformPerformance.get(platform)!;
+      const hourlyPerf = platformPerformance.get((platform as string))!;
       const currentAvg = hourlyPerf.get(hour) || 0;
-      hourlyPerf.set(hour, (currentAvg + post.analytics.engagementRate) / 2);
+      hourlyPerf.set(hour, (currentAvg + (post.analytics as any).engagementRate) / 2);
     });
 
     // Update optimal times cache
@@ -914,10 +914,10 @@ export class AutonomousAutopilot extends EventEmitter {
 
     this.contentPerformanceHistory.forEach((post) => {
       if (post.topic) {
-        if (!topicPerformance.has(post.topic)) {
-          topicPerformance.set(post.topic, []);
+        if (!topicPerformance.has((post.topic as string))) {
+          topicPerformance.set((post.topic as string), []);
         }
-        topicPerformance.get(post.topic)!.push(post.analytics.engagementRate);
+        topicPerformance.get((post.topic as string))!.push((post.analytics as any).engagementRate);
       }
     });
 
@@ -1217,7 +1217,7 @@ export class AutonomousAutopilot extends EventEmitter {
     const today = new Date();
     today?.setHours(0, 0, 0, 0);
     const postsToday = this.contentPerformanceHistory.filter(
-      (c) => c?.platform === platform && new Date(c?.publishedAt) >= today,
+      (c) => c?.platform === platform && new Date(c?.publishedAt as any) >= today,
     ).length;
     const now = new Date();
     const hoursLeft = Math.max(

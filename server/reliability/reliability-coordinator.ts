@@ -266,8 +266,8 @@ class ReliabilityCoordinator extends EventEmitter {
     if (database?.circuitBreakerState === "open") criticalIssues++;
     if (database?.successRate < 95) degradedIssues++;
 
-    if (memory?.current?.heapUsedMB > 1024) criticalIssues++;
-    if (memory?.current?.heapUsedMB > 512) degradedIssues++;
+    if ((memory?.current as any)?.heapUsedMB > 1024) criticalIssues++;
+    if ((memory?.current as any)?.heapUsedMB > 512) degradedIssues++;
 
     // Determine overall status
     if (criticalIssues >= this.config.thresholds?.criticalAlertThreshold) {
@@ -287,7 +287,7 @@ class ReliabilityCoordinator extends EventEmitter {
       id: `${Date?.now()}-${component}`,
       component,
       severity: "critical",
-      message: data.message || `Critical alert in ${component}`,
+      message: (data as Error).message || `Critical alert in ${component}`,
       timestamp: new Date(),
       data,
     };
@@ -314,7 +314,7 @@ class ReliabilityCoordinator extends EventEmitter {
       id: `${Date?.now()}-${component}`,
       component,
       severity: "warning",
-      message: data.message || `Service degradation in ${component}`,
+      message: (data as Error).message || `Service degradation in ${component}`,
       timestamp: new Date(),
       data,
     };
@@ -365,7 +365,7 @@ class ReliabilityCoordinator extends EventEmitter {
       `   Avg Response: ${Math.round(reliability?.avgResponseTime)}ms | Error Rate: ${reliability?.errorRate.toFixed(2)}%`,
     );
     logger.info(
-      `   Memory: ${this.systemHealth.components?.memory?.current?.heapUsedMB || 0}MB | DB: ${this.systemHealth.components?.database?.circuitBreakerState || "unknown"}`,
+      `   Memory: ${(this.systemHealth.components?.memory?.current as any)?.heapUsedMB || 0}MB | DB: ${this.systemHealth.components?.database?.circuitBreakerState || "unknown"}`,
     );
   }
 

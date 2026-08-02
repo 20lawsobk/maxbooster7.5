@@ -849,7 +849,7 @@ function exec(cmd: string, args: string[]): unknown {
     case "BLPOP":
     case "BRPOP": {
       // Non-blocking: if list has items, pop immediately; else return null
-      const timeout = parseFloat(args[args.length - 1]);
+      const _timeout = parseFloat(args[args.length - 1]);
       for (const k of args.slice(0, -1)) {
         const l = list(k);
         if (l && l.length) {

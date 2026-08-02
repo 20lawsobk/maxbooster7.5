@@ -106,27 +106,27 @@ export function globalErrorHandler(
   res: Response,
   _next: NextFunction,
 ): void {
-  const requestId = (req as Record<string, unknown>).requestId || "unknown";
+  const requestId = (req as unknown as Record<string, unknown>).requestId || "unknown";
 
   let statusCode = 500;
   let message = err?.message || "Internal server error";
 
   if (err?.name === "ZodError") {
     statusCode = 400;
-    const issues = Array.isArray((err as Record<string, unknown>).issues)
-      ? (err as Record<string, unknown>).issues
+    const issues = Array.isArray((err as unknown as Record<string, unknown>).issues)
+      ? (err as unknown as Record<string, unknown>).issues
       : [];
-    const firstIssue = issues[0];
+    const firstIssue = (issues as any)[0];
     message = firstIssue
       ? `Validation failed: ${firstIssue?.path?.length ? firstIssue?.path.join(".") + " - " : ""}${firstIssue?.message}`
       : "Validation failed";
   } else if (err?.name === "ValidationError") {
     statusCode = 400;
     message = err?.message || "Validation failed";
-  } else if ((err as Record<string, unknown>).statusCode) {
-    statusCode = (err as Record<string, unknown>).statusCode;
-  } else if ((err as Record<string, unknown>).status) {
-    statusCode = (err as Record<string, unknown>).status;
+  } else if ((err as unknown as Record<string, unknown>).statusCode) {
+    statusCode = (err as unknown as Record<string, unknown>).statusCode;
+  } else if ((err as unknown as Record<string, unknown>).status) {
+    statusCode = (err as unknown as Record<string, unknown>).status;
   }
 
   if (statusCode >= 500) {
@@ -188,7 +188,7 @@ export function requestIdMiddleware(
   next: NextFunction,
 ): void {
   const requestId = (req.headers["x-request-id"] as string) || randomUUID();
-  (req as Record<string, unknown>).requestId = requestId;
+  (req as unknown as Record<string, unknown>).requestId = requestId;
   res.setHeader("x-request-id", requestId);
   next();
 }
@@ -202,7 +202,7 @@ export function requestLoggingMiddleware(
   next: NextFunction,
 ): void {
   const start = Date.now();
-  const requestId = (req as Record<string, unknown>).requestId;
+  const requestId = (req as unknown as Record<string, unknown>).requestId;
 
   res.on("finish", () => {
     const duration = Date.now() - start;
@@ -415,7 +415,7 @@ export function applyMandatoryMiddleware(
           );
         },
         keyGenerator: (req) => {
-          const userId = (req as Record<string, unknown>).user?.id;
+          const userId = ((req as unknown as Record<string, unknown>).user as any)?.id;
           const ip = req.ip || req.socket?.remoteAddress || "unknown";
           return `mandatory:${userId ?? ip}`;
         },

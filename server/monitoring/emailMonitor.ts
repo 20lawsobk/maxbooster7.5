@@ -30,7 +30,7 @@ class EmailMonitor {
       to: Array.isArray(email?.to)
         ? email?.to[0].toString()
         : email?.to.toString(),
-      templateId: (email as Record<string, unknown>).templateId,
+      templateId: (email as unknown as Record<string, unknown>).templateId,
       subject: email.subject as string,
       status,
       error,

@@ -15,7 +15,7 @@ import {
 import { useRequireAdmin } from "@/hooks/useRequireAuth";
 import {
   Music, TrendingUp, DollarSign, Zap, BarChart2, Globe, Hash,
-  Loader2, RefreshCw, Star, Target, ChevronDown, ChevronUp, Filter,
+  Loader2, _RefreshCw, Star, Target, ChevronDown, ChevronUp, _Filter,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -266,7 +266,7 @@ function BeatsTab() {
 
       {/* Results grid */}
       <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
-        {results.slice(0, showCount).map((beat, i) => (
+        {results.slice(0, showCount).map((beat, _i) => (
           <Card key={beat.id} className={`border ${scoreBg(beat.combinedScore)} transition-all hover:scale-[1.01]`}>
             <CardContent className="p-4">
               <div className="flex items-start justify-between mb-2">
@@ -343,7 +343,7 @@ function PostsTab() {
   const [sortBy, setSortBy] = useState<"combinedScore"|"engagementScore"|"salesScore"|"estimatedRevenue">("combinedScore");
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const { data, isLoading, refetch } = useQuery<{ total: number; results: PostSample[] }>({
+  const { data, isLoading, _refetch } = useQuery<{ total: number; results: PostSample[] }>({
     queryKey: ["/api/admin/content-sampler/posts", genre],
     queryFn: () => fetch(`/api/admin/content-sampler/posts?genre=${genre}`).then(r => r.json()),
     staleTime: 1000 * 60 * 5,

@@ -79,7 +79,7 @@ interface ApiError {
 
 export default function Projects() {
   const { user, isLoading: authLoading } = useRequireSubscription();
-  const [location, setLocation] = useLocation();
+  const [_location, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("projects");
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [currentlyPlaying, setCurrentlyPlaying] = useState<string | null>(null);

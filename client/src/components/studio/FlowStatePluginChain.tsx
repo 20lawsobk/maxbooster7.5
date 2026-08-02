@@ -273,7 +273,7 @@ interface FlowStatePluginChainProps {
 }
 
 export function FlowStatePluginChain({
-  trackId,
+  _trackId,
   trackName = "Master",
   plugins,
   onPluginsChange,

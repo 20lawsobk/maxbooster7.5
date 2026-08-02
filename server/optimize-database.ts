@@ -150,9 +150,9 @@ class DatabaseOptimizer {
         logger.info("🐌 Top Slow Queries (>100ms average):");
         slowQueriesResult?.rows.forEach((row: unknown, i: number) => {
           logger.info(
-            `${i + 1}. ${row?.mean_time.toFixed(2)}ms avg (${row?.calls} calls)`,
+            `${i + 1}. ${(row as any)?.mean_time.toFixed(2)}ms avg (${(row as any)?.calls} calls)`,
           );
-          logger.info(`   ${row?.query.substring(0, 100)}...`);
+          logger.info(`   ${(row as any)?.query.substring(0, 100)}...`);
         });
       } else {
         logger.info(
@@ -180,11 +180,11 @@ class DatabaseOptimizer {
       logger.info("\n📊 Largest Tables:");
       if (tableSizes?.rows) {
         tableSizes?.rows.forEach((row: unknown, i: number) => {
-          logger.info(`${i + 1}. ${row?.tablename}: ${row?.size}`);
+          logger.info(`${i + 1}. ${(row as any)?.tablename}: ${(row as any)?.size}`);
         });
       }
     } catch (error: unknown) {
-      logger.info("❌ Could not analyze table sizes:", error);
+      logger.info({ err: error }, "❌ Could not analyze table sizes:");
     }
   }
 

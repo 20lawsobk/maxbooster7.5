@@ -48,7 +48,7 @@ export function QuickActionsMenu({
   customActions,
 }: QuickActionsMenuProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
+  const [_isDragging, setIsDragging] = useState(false);
   const [favorites, setFavorites] = useState<string[]>([]);
   const { openCommandPalette, openShortcutGuide } = useShortcuts();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -417,8 +417,8 @@ function RadialQuickActions({
   onToggle,
   position,
   className,
-  favorites,
-  onToggleFavorite,
+  _favorites,
+  _onToggleFavorite,
 }: RadialQuickActionsProps) {
   const visibleActions = actions.slice(0, 8);
   const radius = 80;

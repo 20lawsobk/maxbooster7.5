@@ -24,9 +24,9 @@ export class QueueBackpressureManager extends EventEmitter {
     super();
 
     this.config = {
-      maxQueueSize: config.maxQueueSize || 1000,
-      maxMemoryMB: config.maxMemoryMB || 1200,
-      checkIntervalMs: config.checkIntervalMs || 30000,
+      maxQueueSize: config!.maxQueueSize || 1000,
+      maxMemoryMB: config!.maxMemoryMB || 1200,
+      checkIntervalMs: config!.checkIntervalMs || 30000,
     };
 
     logger.info("🚦 Queue Backpressure Manager initialized");
@@ -144,8 +144,8 @@ export class QueueBackpressureManager extends EventEmitter {
 
     if (!check?.allowed) {
       const error = new Error(`Job rejected: ${check?.reason}`);
-      (error as Record<string, unknown>).code = "BACKPRESSURE_REJECTION";
-      (error as Record<string, unknown>).retryAfter = 30;
+      (error as unknown as Record<string, unknown>).code = "BACKPRESSURE_REJECTION";
+      (error as unknown as Record<string, unknown>).retryAfter = 30;
       logger.warn(`🚫 Job rejected for queue ${queueName}: ${check?.reason}`);
       throw error;
     }

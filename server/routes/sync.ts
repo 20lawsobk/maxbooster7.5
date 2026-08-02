@@ -198,7 +198,7 @@ const ACTION_HANDLERS: Record<
 
   // ── Tracks ────────────────────────────────────────────────────────────────
 
-  "track.add": async (payload, userId) => {
+  "track.add": async (payload, _userId) => {
     try {
       const data = payload as {
         projectId: string;
@@ -219,7 +219,7 @@ const ACTION_HANDLERS: Record<
     }
   },
 
-  "track.update": async (payload, userId) => {
+  "track.update": async (payload, _userId) => {
     try {
       const data = payload as {
         trackId: string;
@@ -248,7 +248,7 @@ const ACTION_HANDLERS: Record<
     }
   },
 
-  "track.delete": async (payload, userId) => {
+  "track.delete": async (payload, _userId) => {
     try {
       const data = payload as { trackId: string };
 
@@ -295,20 +295,20 @@ const ACTION_HANDLERS: Record<
 
   // ── Drafts ────────────────────────────────────────────────────────────────
   // Drafts live in the client-side IndexedDB; the server only needs to ACK.
-  "draft.save": async (_payload, userId) => {
+  "draft.save": async (_payload, _userId) => {
     return { success: true, data: { saved: true } };
   },
 
   // ── Audio ─────────────────────────────────────────────────────────────────
   // Audio files are uploaded separately via multipart. This action ACKs
   // pending metadata so the queue item can be cleared.
-  "audio.upload": async (_payload, userId) => {
+  "audio.upload": async (_payload, _userId) => {
     return { success: true, data: { acknowledged: true } };
   },
 
   // ── Fallback ─────────────────────────────────────────────────────────────
   default: async (_payload, userId) => {
-    logger.warn("[sync] Unhandled action type", { userId });
+    logger.warn({ userId }, "[sync] Unhandled action type");
     return { success: true, data: { processed: true } };
   },
 };
@@ -318,10 +318,10 @@ router?.post("/batch", requireAuth, async (req, res) => {
     const userId = req.user!.id;
     const { actions } = batchSyncRequestSchema?.parse(req.body);
 
-    logger.info("Processing batch sync request", {
+    logger.info({
       userId,
       actionCount: actions.length,
-    });
+    }, "Processing batch sync request");
 
     const results: SyncResult[] = [];
     const conflicts: ConflictInfo[] = [];
@@ -340,7 +340,7 @@ router?.post("/batch", requireAuth, async (req, res) => {
             : { error: result.error ?? "Unknown error" }),
         });
       } catch (error: unknown) {
-        logger.warn("Sync action failed", { actionId: action.id, error });
+        logger.warn({ actionId: action.id, error }, "Sync action failed");
         results?.push({
           actionId: action.id,
           success: false,
@@ -352,13 +352,13 @@ router?.post("/batch", requireAuth, async (req, res) => {
     const successCount = results?.filter((r) => r?.success).length;
     const failCount = results?.filter((r) => !r?.success).length;
 
-    logger.info("Batch sync completed", {
+    logger.info({
       userId,
       total: actions.length,
       success: successCount,
       failed: failCount,
       conflicts: conflicts.length,
-    });
+    }, "Batch sync completed");
 
     res.json({
       results,
@@ -411,7 +411,7 @@ router?.post("/resolve-conflict", requireAuth, async (req, res) => {
         .json({ error: "Invalid conflict resolution request" });
     }
 
-    logger.info("Resolving sync conflict", { userId, actionId, resolution });
+    logger.info({ userId, actionId, resolution }, "Resolving sync conflict");
 
     res.json({
       success: true,
