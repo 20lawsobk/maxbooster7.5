@@ -7,6 +7,7 @@
 
 import type { Request, Response, NextFunction } from "express";
 import { logger } from "./logger.js";
+import { responseTimeTracker } from "./services/monitoringService.js";
 
 /**
  * Custom metrics interface for APM integration
@@ -142,6 +143,7 @@ export function metricsMiddleware(
     const endpoint = req.route?.path || req.path;
 
     metrics?.trackAPICall(endpoint, duration, res.statusCode);
+    responseTimeTracker.record(duration);
 
     // Log slow requests
     if (duration > 3000) {

@@ -1,6 +1,94 @@
 import { securityService } from "./securityService";
 import { logger } from "../logger.js";
 
+// ── Response-time ring buffer ─────────────────────────────────────────────
+// Maintains the last BUFFER_SIZE response times (milliseconds) in a circular
+// buffer.  getStats() only considers samples from the last WINDOW_MS so
+// percentiles reflect recent behaviour, not stale data from startup.
+
+const BUFFER_SIZE = 10_000;
+const WINDOW_MS   = 5 * 60 * 1_000; // 5 minutes
+
+class ResponseTimeRingBuffer {
+  private readonly buf: Float64Array;
+  private readonly ts:  Float64Array; // insertion timestamps (epoch ms)
+  private head  = 0;                  // next write position
+  private count = 0;                  // entries written (capped at BUFFER_SIZE)
+
+  constructor(private readonly size = BUFFER_SIZE) {
+    this.buf = new Float64Array(size);
+    this.ts  = new Float64Array(size);
+  }
+
+  /** Record a response time sample (call from request middleware). */
+  record(ms: number): void {
+    this.buf[this.head] = ms;
+    this.ts[this.head]  = Date.now();
+    this.head           = (this.head + 1) % this.size;
+    if (this.count < this.size) this.count++;
+  }
+
+  /**
+   * Return the entries that fall within the sliding window.
+   * We walk backward from the newest entry; because insertions are
+   * chronological, the first entry we encounter that is outside the window
+   * means all earlier entries are even older — safe early-exit.
+   */
+  private windowSamples(): Float64Array {
+    const total  = Math.min(this.count, this.size);
+    if (total === 0) return new Float64Array(0);
+    const cutoff  = Date.now() - WINDOW_MS;
+    const samples: number[] = [];
+    for (let i = 0; i < total; i++) {
+      const idx = (this.head - 1 - i + this.size) % this.size;
+      if (this.ts[idx] < cutoff) break;      // oldest in window reached
+      samples.push(this.buf[idx]);
+    }
+    // Sort ascending for percentile calculation
+    const arr = new Float64Array(samples);
+    arr.sort(); // TypedArray.sort() is numeric by default
+    return arr;
+  }
+
+  /** Return a specific percentile (0–100) from the sliding window. */
+  getPercentile(p: number): number {
+    const arr = this.windowSamples();
+    if (arr.length === 0) return 0;
+    const idx = Math.min(
+      Math.ceil((p / 100) * arr.length) - 1,
+      arr.length - 1,
+    );
+    return arr[Math.max(0, idx)];
+  }
+
+  /** Return a full stats object for the sliding window. */
+  getStats(): {
+    avg: number;
+    p95: number;
+    p99: number;
+    min: number;
+    max: number;
+    count: number;
+  } {
+    const arr = this.windowSamples();
+    const n   = arr.length;
+    if (n === 0) return { avg: 0, p95: 0, p99: 0, min: 0, max: 0, count: 0 };
+    let sum = 0;
+    for (let i = 0; i < n; i++) sum += arr[i];
+    return {
+      avg:   sum / n,
+      p95:   arr[Math.min(Math.ceil(0.95 * n) - 1, n - 1)],
+      p99:   arr[Math.min(Math.ceil(0.99 * n) - 1, n - 1)],
+      min:   arr[0],
+      max:   arr[n - 1],
+      count: n,
+    };
+  }
+}
+
+/** Singleton tracker shared across the process. */
+export const responseTimeTracker = new ResponseTimeRingBuffer();
+
 export interface SystemMetric {
   name: string;
   value: number;
