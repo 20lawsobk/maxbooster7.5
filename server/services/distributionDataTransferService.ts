@@ -1533,11 +1533,13 @@ class DistributionDataTransferService {
       const [artistResp, topTracksResp] = await Promise.all([
         fetch(`https://api.spotify.com/v1/artists/${artistId}`, {
           headers: { Authorization: `Bearer ${token}` },
+          signal: AbortSignal.timeout(15_000),
         }),
         fetch(
           `https://api.spotify.com/v1/artists/${artistId}/top-tracks?market=US`,
           {
             headers: { Authorization: `Bearer ${token}` },
+            signal: AbortSignal.timeout(15_000),
           },
         ),
       ]);
@@ -1611,14 +1613,22 @@ class DistributionDataTransferService {
         (r: Record<string, unknown>) => r.wrapperType === "track",
       );
 
+      // Guard: artistResult may be undefined if iTunes returns only tracks,
+      // and songs[0] may be undefined if the catalog returned artist-only rows.
+      if (!artistResult && songs.length === 0) return null;
+      const firstSong = songs[0] as Record<string, unknown> | undefined;
       return {
-        artistName: artistResult.artistName || songs[0].artistName,
-        genres: artistResult.primaryGenreName
-          ? [artistResult.primaryGenreName]
+        artistName:
+          (artistResult?.artistName as string | undefined) ??
+          (firstSong?.artistName as string | undefined) ??
+          "Unknown Artist",
+        genres: artistResult?.primaryGenreName
+          ? [artistResult.primaryGenreName as string]
           : undefined,
-        profileUrl: artistResult.artistLinkUrl,
-        imageUrl:
-          songs[0].artworkUrl100.replace("100x100", "500x500") ?? undefined,
+        profileUrl: artistResult?.artistLinkUrl as string | undefined,
+        imageUrl: firstSong?.artworkUrl100
+          ? (firstSong.artworkUrl100 as string).replace("100x100", "500x500")
+          : undefined,
         // Use shared Spotify catalog if provided — do NOT re-import from Apple
         topTracks:
           sharedTopTracks ??
@@ -1757,11 +1767,11 @@ class DistributionDataTransferService {
       // When Spotify shared catalog is available, only fetch artist profile (not top tracks)
       // so the release catalog is imported once per sync — not separately from each DSP.
       const requests: Promise<Response>[] = [
-        fetch(`https://api.deezer.com/artist/${artistId}`),
+        fetch(`https://api.deezer.com/artist/${artistId}`, { signal: AbortSignal.timeout(15_000) }),
       ];
       if (!sharedTopTracks) {
         requests.push(
-          fetch(`https://api.deezer.com/artist/${artistId}/top?limit=5`),
+          fetch(`https://api.deezer.com/artist/${artistId}/top?limit=5`, { signal: AbortSignal.timeout(15_000) }),
         );
       }
       const [artistResp, topResp] = await Promise.all(requests);

@@ -498,8 +498,8 @@ async function _computeTimelineData(timeRange: string, userId: string) {
         ),
       );
 
-    const salesCount = Number(periodOrders[0].salesCount) || 0;
-    const totalRevenue = Number(periodOrders[0].totalRevenue) || 0;
+    const salesCount = Number(periodOrders[0]?.salesCount ?? 0) || 0;
+    const totalRevenue = Number(periodOrders[0]?.totalRevenue ?? 0) || 0;
 
     const label =
       timeRange === "7d"

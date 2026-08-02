@@ -23,7 +23,7 @@ export class SessionGuard {
         const result = await db?.execute(
           sql`SELECT reltuples::bigint AS count FROM pg_class WHERE relname = 'sessions'`,
         );
-        SessionGuard.cachedCount = parseInt(result?.rows[0].count as string);
+        SessionGuard.cachedCount = parseInt((result?.rows[0]?.count ?? 0) as string);
         SessionGuard.lastCheck = now;
       }
 

@@ -1255,4 +1255,30 @@ router?.patch("/financial-config/label-settings/:key", async (req, res) => {
   }
 });
 
+// ── Sentry pipeline smoke test ────────────────────────────────────────────────
+// POST /api/admin/sentry-test
+// Fires a controlled Sentry event so operators can confirm the pipeline is live
+// without waiting for a real error. Returns the Sentry event ID on success.
+router.post("/sentry-test", async (_req, res) => {
+  try {
+    const { captureSentryMessage } = await import("../../instrument.js");
+    const eventId = captureSentryMessage(
+      "MaxBooster Sentry smoke-test — pipeline confirmed operational",
+      "info",
+    );
+
+    const Sentry = await import("@sentry/node");
+    await Sentry.flush(3000);
+
+    return res.json({
+      ok: true,
+      eventId: eventId ?? null,
+      note: "Event dispatched. Verify it appears in your Sentry project within ~30 seconds.",
+    });
+  } catch (err) {
+    logger.warn({ err }, "[Admin] sentry-test handler error");
+    return res.status(500).json({ error: "Failed to dispatch Sentry event" });
+  }
+});
+
 export default router;
