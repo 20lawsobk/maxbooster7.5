@@ -43,6 +43,7 @@ export type GenerationType =
   | "drums"
   | "bass"
   | "synth"
+  | "lead"
   | "pad"
   | "pluck"
   | "arp"

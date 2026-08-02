@@ -142,7 +142,7 @@ async function runAllLoadTests(): Promise<void> {
     authCookie = await getAuthCookie();
     logger.info("Authentication successful");
   } catch (error) {
-    logger.warn("Failed to authenticate", { error });
+    logger.warn({ error }, "Failed to authenticate");
     return;
   }
 

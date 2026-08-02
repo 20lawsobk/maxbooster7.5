@@ -231,8 +231,8 @@ export class ScalabilityTester {
     const results: ScaleTestResult[] = [];
 
     for (const profile of this.scaleProfiles) {
-      logger.info(`Testing at ${profile?.name} scale`, {
-        simulatedUsers: this.formatNumber(profile?.multiplier),
+      logger.info({ scale: profile?.name,
+        simulatedUsers: this.formatNumber(profile?.multiplier) }, `Testing at ${profile?.name} scale`);// FIXED
       });
 
       const actualConcurrentUsers = Math.min(profile?.users, 1000);
@@ -275,9 +275,7 @@ export class ScalabilityTester {
 
         if (profile?.name === maxScale) break;
       } catch (error) {
-        logger.warn(`Test failed at ${profile?.name} scale`, {
-          error: error.message,
-        });
+        logger.warn({ error: (error as Error).message }, `Test failed at ${profile?.name} scale`);
         results?.push({
           scale: profile.name,
           simulatedUsers: profile.multiplier,
@@ -445,10 +443,10 @@ export async function runComprehensiveLoadTest(
 
   for (const [endpoint, results] of allResults?.entries()) {
     const lastResult = results[results?.length - 1];
-    logger.info(`Endpoint summary: ${endpoint}`, {
+    logger.info({
       maxScaleTested: lastResult.scale,
       simulatedUsers: tester["formatNumber"](lastResult?.simulatedUsers),
       status: lastResult.passed ? "PASSED" : "NEEDS WORK",
-    });
+    }, `Endpoint summary: ${endpoint}`);
   }
 }

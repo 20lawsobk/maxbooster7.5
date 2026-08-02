@@ -1,7 +1,7 @@
 import cron from "node-cron";
 import { logger } from "../logger.js";
 
-let weeklyInsightsTask: cron.ScheduledTask | null = null;
+let weeklyInsightsTask: ReturnType<typeof cron.schedule> | null = null;
 
 export function initializeWeeklyInsightsCron(): void {
   if (weeklyInsightsTask) {

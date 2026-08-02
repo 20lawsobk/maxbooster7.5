@@ -623,12 +623,12 @@ export class BPMDetectionModel {
     const keyResult = this.detectKey(audioBuffer, sr);
 
     return {
-      mfcc: [new Float32Array(13)],
+      mfcc: [Array.from(new Float32Array(13))],
       spectralCentroid: [spectralCentroid],
       spectralRolloff: [spectralRolloff],
       spectralFlux: spectralFlux,
       zeroCrossingRate: zeroCrossingRate,
-      chroma: [new Float32Array(12)],
+      chroma: [Array.from(new Float32Array(12))],
       tempo: bpmResult.bpm,
       key: `${keyResult.key} ${keyResult.scale}`,
     };
