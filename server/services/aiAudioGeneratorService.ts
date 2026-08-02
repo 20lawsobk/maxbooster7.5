@@ -176,7 +176,7 @@ export async function generateFromText(
   } else if (audioSrc) {
     const mc_base = (process.env.AI_SERVER_URL || "https://secure-ai-forge.replit.app").replace(/\/+$/, "");
     const absUrl = /^https?:\/\//i.test(audioSrc) ? audioSrc : `${mc_base}${audioSrc.startsWith("/") ? "" : "/"}${audioSrc}`;
-    const resp = await fetch(absUrl);
+    const resp = await fetch(absUrl, { signal: AbortSignal.timeout(45_000) });
     if (resp.ok) {
       const { writeFile } = await import("fs/promises");
       await writeFile(filePath, Buffer.from(await resp.arrayBuffer()));
@@ -261,7 +261,7 @@ export async function generateFromReference(
     const { writeFile } = await import("fs/promises");
     await writeFile(filePath, Buffer.from(audioData, "base64"));
   } else if (audioSrc) {
-    const resp = await fetch(audioSrc);
+    const resp = await fetch(audioSrc, { signal: AbortSignal.timeout(45_000) });
     if (!resp.ok) {
       throw new Error(`MaxCore audio download failed: ${resp.status}`);
     }
@@ -323,7 +323,7 @@ export async function generateDrumHit(
     const { writeFile } = await import("fs/promises");
     await writeFile(filePath, Buffer.from(audioData, "base64"));
   } else if (audioSrc) {
-    const resp = await fetch(audioSrc);
+    const resp = await fetch(audioSrc, { signal: AbortSignal.timeout(45_000) });
     if (!resp.ok) throw new Error(`MaxCore audio download failed: ${resp.status}`);
     const { writeFile } = await import("fs/promises");
     await writeFile(filePath, Buffer.from(await resp.arrayBuffer()));
@@ -371,7 +371,7 @@ export async function generateBassNote(
     const { writeFile } = await import("fs/promises");
     await writeFile(filePath, Buffer.from(audioData, "base64"));
   } else if (audioSrc) {
-    const resp = await fetch(audioSrc);
+    const resp = await fetch(audioSrc, { signal: AbortSignal.timeout(45_000) });
     if (!resp.ok) throw new Error(`MaxCore audio download failed: ${resp.status}`);
     const { writeFile } = await import("fs/promises");
     await writeFile(filePath, Buffer.from(await resp.arrayBuffer()));
@@ -421,7 +421,7 @@ export async function generateSynthNote(
     const { writeFile } = await import("fs/promises");
     await writeFile(filePath, Buffer.from(audioData, "base64"));
   } else if (audioSrc) {
-    const resp = await fetch(audioSrc);
+    const resp = await fetch(audioSrc, { signal: AbortSignal.timeout(45_000) });
     if (!resp.ok) throw new Error(`MaxCore audio download failed: ${resp.status}`);
     const { writeFile } = await import("fs/promises");
     await writeFile(filePath, Buffer.from(await resp.arrayBuffer()));

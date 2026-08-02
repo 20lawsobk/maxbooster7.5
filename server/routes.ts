@@ -2590,15 +2590,15 @@ export async function registerRoutes(
             .limit(5),
         ]);
 
-        const totalTracks = trackCountResult[0].count ?? 0;
-        const prevTracks = prevTrackCountResult[0].count ?? 0;
-        const activeDistributions = releaseCountResult[0].count ?? 0;
-        const prevDistributions = prevReleaseCountResult[0].count ?? 0;
-        const socialReach = Number(socialReachResult[0].total ?? 0);
-        const totalRevenue = Number(revenueResult[0].total ?? 0);
-        const prevRevenue = Number(prevRevenueResult[0].total ?? 0);
+        const totalTracks = trackCountResult[0]?.count ?? 0;
+        const prevTracks = prevTrackCountResult[0]?.count ?? 0;
+        const activeDistributions = releaseCountResult[0]?.count ?? 0;
+        const prevDistributions = prevReleaseCountResult[0]?.count ?? 0;
+        const socialReach = Number(socialReachResult[0]?.total ?? 0);
+        const totalRevenue = Number(revenueResult[0]?.total ?? 0);
+        const prevRevenue = Number(prevRevenueResult[0]?.total ?? 0);
         const prevSocialReach = Number(
-          prevSocialReachResult[0].followers ?? 0,
+          prevSocialReachResult[0]?.followers ?? 0,
         );
 
         const growthPct = (curr: number, prev: number) =>
@@ -2728,9 +2728,9 @@ export async function registerRoutes(
             .limit(1),
         ]);
 
-      const tracks = trackCount[0].count ?? 0;
-      const releasesCount = releaseCount[0].count ?? 0;
-      const socials = socialCount[0].count ?? 0;
+      const tracks = trackCount[0]?.count ?? 0;
+      const releasesCount = releaseCount[0]?.count ?? 0;
+      const socials = socialCount[0]?.count ?? 0;
       const hasActiveSub = subResult.length > 0;
 
       if (!hasActiveSub) {
@@ -4081,8 +4081,8 @@ export async function registerRoutes(
               .orderBy(desc(releases.createdAt))
               .limit(20),
           ]);
-        const monthlyRev = parseFloat(String(monthlyRevResult[0].total)) || 0;
-        const yearlyRev = parseFloat(String(yearlyRevResult[0].total)) || 0;
+        const monthlyRev = parseFloat(String(monthlyRevResult[0]?.total ?? 0)) || 0;
+        const yearlyRev = parseFloat(String(yearlyRevResult[0]?.total ?? 0)) || 0;
 
         // Compute weekly aggregations from daily data
         const weeklyMap: Record<

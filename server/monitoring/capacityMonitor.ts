@@ -33,7 +33,7 @@ export class CapacityMonitor {
       const sessionResult = await db?.execute(
         sql`SELECT reltuples::bigint AS count FROM pg_class WHERE relname = 'sessions'`,
       );
-      const totalSessions = parseInt(sessionResult?.rows[0].count as string);
+      const totalSessions = parseInt((sessionResult?.rows[0]?.count ?? 0) as string);
       // Approximate active sessions (assume 80% active within 24h for monitoring purposes)
       const activeSessions = Math.floor(totalSessions * 0.8);
       const sessionUtilization = activeSessions / 50000;
