@@ -86,6 +86,18 @@ export const stripePaymentTotal = new Counter({
   registers: [registry],
 });
 
+/**
+ * Counts HTTP requests that exceeded the 5 s slow-response threshold.
+ * Incremented in metricsMiddleware (server/monitoring.ts).
+ * Labels: method (GET/POST/…), route (Express route pattern).
+ */
+export const slowRequestsTotal = new Counter({
+  name: "maxbooster_slow_requests_total",
+  help: "HTTP requests that exceeded 5 s response time",
+  labelNames: ["method", "route"],
+  registers: [registry],
+});
+
 export const tfWorkerQueueDepth = new Gauge({
   name: "maxbooster_tf_worker_queue_depth",
   help: "Current depth of the TensorFlow worker inference queue",

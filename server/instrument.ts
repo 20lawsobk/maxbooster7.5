@@ -46,6 +46,19 @@ try {
     environment: process.env.NODE_ENV || "development",
     beforeSend(event) {
       if (!isProduction) return null;
+      // ── Noise filter — keep the alert stream actionable ──────────────────
+      // Only the first matching rule suppresses; fall through means "send it".
+      const exMsg = event?.exception?.values?.[0]?.value ?? "";
+      const evMsg = typeof event?.message === "string" ? event.message : "";
+      const combined = `${exMsg} ${evMsg}`;
+      // 1. 401/403 auth responses are normal user-facing flows, not bugs.
+      if (/\b(401|403)\b/.test(combined) && /auth|unauthorized|forbidden/i.test(combined)) return null;
+      // 2. PDIM 429 rate-limits — handled automatically by the circuit breaker.
+      if (/429|rate.?limit/i.test(combined) && /pdim/i.test(combined)) return null;
+      // 3. All patterns in NON_FATAL_MSG / SILENT_MSG (PDIM cold-start,
+      //    LuaExecutor timeouts, BullMQ transients, etc.) — already handled
+      //    by their own subsystems.
+      if (NON_FATAL_MSG.test(combined) || SILENT_MSG.test(combined)) return null;
       return event;
     },
   });
@@ -145,3 +158,33 @@ if (isProduction) {
 }
 
 export { Sentry };
+
+/**
+ * Report an exception to Sentry.
+ * No-op in dev, or when Sentry is unavailable / not configured.
+ * Import this instead of importing @sentry/node directly in service modules.
+ */
+export function captureSentryException(
+  err: Error,
+  extra?: Record<string, unknown>,
+): void {
+  if (!isProduction || !Sentry) return;
+  try {
+    Sentry.captureException(err, extra ? { extra } : undefined);
+  } catch { /* best-effort — must never throw */ }
+}
+
+/**
+ * Send a message-level event to Sentry.
+ * No-op in dev, or when Sentry is unavailable / not configured.
+ */
+export function captureSentryMessage(
+  msg: string,
+  level: "info" | "warning" | "error" = "warning",
+  extra?: Record<string, unknown>,
+): void {
+  if (!isProduction || !Sentry) return;
+  try {
+    Sentry.captureMessage(msg, { level, extra });
+  } catch { /* best-effort */ }
+}

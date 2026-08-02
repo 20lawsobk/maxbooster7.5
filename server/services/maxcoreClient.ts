@@ -192,6 +192,21 @@ export class MaxCoreAIClient {
       logger.warn(
         `[MaxCoreAI] Circuit breaker OPEN after ${MaxCoreAIClient._cbFailures} consecutive failures (last: ${path}) — failing fast for ${MaxCoreAIClient.CB_COOLDOWN_MS / 1000}s`,
       );
+      // MaxCore is designed to stay up — a circuit-open is a genuinely unexpected
+      // condition.  Report as "warning" (not error) since self-healing is automatic.
+      import("../instrument.js")
+        .then(({ captureSentryMessage }) => {
+          captureSentryMessage(
+            "MaxCore circuit breaker opened — unexpected connectivity loss",
+            "warning",
+            {
+              failures: MaxCoreAIClient._cbFailures,
+              cooldownMs: MaxCoreAIClient.CB_COOLDOWN_MS,
+              lastPath: path,
+            },
+          );
+        })
+        .catch(() => { /* instrument not yet loaded — non-fatal */ });
     }
   }
 
